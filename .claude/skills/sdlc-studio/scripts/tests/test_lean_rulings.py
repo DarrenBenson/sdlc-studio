@@ -99,6 +99,59 @@ class RuleTests(unittest.TestCase):
             self.assertEqual(code, 0, err)
 
 
+    def test_a_spaced_subject_is_one_hyphenated_key(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            code, _, err = _rule(root, "Deps: Action Pins", "may a workflow use a tag?")
+            self.assertEqual(code, 0, err)
+            rec = decisions.list_decisions(root)[0]
+            self.assertTrue(rec["decision"].startswith("ruling: deps:action-pins [seat: "),
+                            rec["decision"])
+            self.assertEqual(decisions.ruling_of(rec)["subject"], "deps:action-pins")
+            # the hyphenated spelling is the same subject, so it meets the precedent
+            code, out, err = _rule(root, "deps:action-pins", "float a tag?")
+            self.assertEqual(code, 2)
+            self.assertIn("D0001", out + err)
+
+    def test_a_citation_must_name_a_same_subject_ruling_when_one_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _rule(root, "deps:action-pins", "may a workflow use a tag?")         # D0001
+            decisions.add(root, "Use SQLite", "one file")                          # D0002
+            run_state.update(root, run_id="RUN-TEST")
+            code, out, err = _rule(root, "deps:action-pins", "float a tag?", "--cites", "D0002")
+            self.assertEqual(code, 2)
+            self.assertIn("D0002", err)
+            self.assertIn("D0001", out + err)           # the rulings it may cite are named
+            self.assertEqual(run_state.read(root)["rulings"], [])   # a refusal is not counted
+            code, _, err = _rule(root, "deps:action-pins", "float a tag?", "--cites", "D0001")
+            self.assertEqual(code, 0, err)
+            # a subject with no ruling yet may cite any live decision
+            code, out, err = _rule(root, "db:engine", "which database?", "--cites", "D0002")
+            self.assertEqual(code, 0, err)
+            self.assertIn("Use SQLite", out)
+
+    def test_a_departure_names_only_a_same_subject_precedent(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            decisions.add(root, "Mutation ledger evidence is registered last",
+                          "content hashes")                                        # D0001
+            code, out, err = _rule(root, "review:ledger", "when is ledger evidence registered?",
+                                   "--differs", "a new case", "--format", "json")  # D0002
+            self.assertEqual(code, 0, err)
+            self.assertIsNone(json.loads(out)["departs_from"])   # a keyword match is not one
+            rec = decisions.list_decisions(root)[1]
+            self.assertNotIn("differs from", rec["rationale"])
+            self.assertNotIn("D0001", rec["rationale"])
+            # with a subject ruling it departs from that one, whatever the keywords say
+            code, out, err = _rule(root, "review:ledger", "when is ledger evidence registered?",
+                                   "--differs", "later case", "--format", "json")  # D0003
+            self.assertEqual(code, 0, err)
+            self.assertEqual(json.loads(out)["departs_from"], "D0002")
+            self.assertIn("[differs from D0002: later case]",
+                          decisions.list_decisions(root)[2]["rationale"])
+
+
 class PrecedentTests(unittest.TestCase):
     def test_precedent_ranks_subject_then_keywords(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -134,6 +187,11 @@ class PrecedentTests(unittest.TestCase):
                                       "when is mutation evidence registered in the ledger?")
             self.assertEqual([p["id"] for p in got], ["D0005", "D0001", "D0003"])
             self.assertNotIn("D0002", [p["id"] for p in got])
+            # a row whose only overlap is in its rationale is still found
+            decisions.add(root, "Release cadence is monthly",
+                          "the changelog composer folds fragments at the cut")       # D0009
+            got = decisions.precedent(root, "nothing:here", "who folds changelog fragments?")
+            self.assertEqual([p["id"] for p in got][:1], ["D0009"])
             # the CLI verb prints them
             code, out, err = _run("precedent", "--root", str(root), "--subject",
                                   "review:mutation", "--question", "mutation evidence?")
@@ -148,12 +206,18 @@ class RulingCountTests(unittest.TestCase):
             # no run open: rulings are recorded, but no run state is minted
             _rule(root, "deps:action-pins", "may a workflow use a tag?")               # D0001
             self.assertEqual(run_state.read(root), {})
+            self.assertFalse(run_state.path(root).exists())
             run_state.update(root, run_id="RUN-TEST")
             self.assertTrue(run_state.is_open(root))
+            self.assertEqual(run_state.read(root)["rulings"], [])     # part of the shape
             _rule(root, "deps:lockfile", "commit the lockfile?", seat="qa")            # D0002
             _rule(root, "deps:action-pins", "float a tag?", "--cites", "D0001")
             code, _, err = _run("add", "--root", str(root), "--decision", "Ship Friday",
-                                "--rationale", "operator call")                        # D0003
+                                "--rationale", "operator call", "--by", "operator")    # D0003
+            self.assertEqual(code, 0, err)
+            # an agent's `add` without --by was not the operator answering: counted as neither
+            code, _, err = _run("add", "--root", str(root), "--decision", "Use SQLite",
+                                "--rationale", "one file")                             # D0004
             self.assertEqual(code, 0, err)
             rulings = run_state.read(root)["rulings"]
             self.assertEqual(rulings, [
@@ -169,6 +233,22 @@ class RulingCountTests(unittest.TestCase):
             # a refused ruling is not counted
             _rule(root, "deps:lockfile", "again?")
             self.assertEqual(len(run_state.read(root)["rulings"]), 3)
+            # promote and waive count only with --by, and --by persona counts as persona
+            code, _, err = _run("promote", "--root", str(root), "--from", "PRD-OQ1",
+                                "--decision", "Keep it", "--rationale", "why", "--by", "operator")
+            self.assertEqual(code, 0, err)
+            code, _, err = _run("waive", "--root", str(root), "--leg", "tsd",
+                                "--rationale", "not here", "--by", "persona")
+            self.assertEqual(code, 0, err)
+            code, _, err = _run("waive", "--root", str(root), "--leg", "trd",
+                                "--rationale", "not here")
+            self.assertEqual(code, 0, err)
+            self.assertEqual([r["by"] for r in run_state.read(root)["rulings"][3:]],
+                             ["operator", "persona"])
+            # a closed run counts nothing more
+            run_state.update(root, outcome=run_state.GOAL_REACHED)
+            _rule(root, "deps:closed", "after the close?")
+            self.assertEqual(len(run_state.read(root)["rulings"]), 5)
 
 
 if __name__ == "__main__":

@@ -514,7 +514,9 @@ def _blank() -> dict:
             "batch_changes": [],
             # Likewise `batches`: the delivery-batch spans and their reviews, [] until the first
             # boundary, so no reader has to test for the key's presence.
-            BATCHES: []}
+            BATCHES: [],
+            # Likewise the run's `rulings` count (`record_ruling`), [] until the first ruling.
+            "rulings": []}
 
 
 def _mutate(repo_root: Path | str, fn) -> dict:

@@ -1138,6 +1138,8 @@ One row has been removed since adoption.
 | US0875 | APPROVE | qa-rev-US0875 | lane-D | 2026-09-23 | - | - | [regression] non-blocking: render of a schema-1 report now prints nothing; [new] non-blocking: the delivered summary counts added units against the plan; [pre-existing] a delivered-points 0 edge and P1-P4 priority ranking |
 | US0871 | APPROVE | qa-rev-US0871 | lane-B-fix | 2026-09-23 | - | - | - |
 | US0873 | APPROVE | qa-rev-US0873 | lane-B-fix | 2026-09-23 | - | - | - |
+| US0872 | APPROVE | qa-rev-US0872 | lane-B-fix | 2026-09-23 | - | - | - |
+| US0877 | APPROVE | qa-rev-US0877 | lane-D-fix | 2026-09-23 | - | - | [new] non-blocking: the new scaffold drops Known issues carried while the close checklist still reads it, until US0876 lands; [pre-existing] the demo-count refusal is inert |
 
 ## Supersessions
 

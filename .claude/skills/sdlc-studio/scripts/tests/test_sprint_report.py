@@ -3074,64 +3074,23 @@ class MutationSurvivorCountTests(unittest.TestCase):
 
 
 class StaleMutantRowsAreNotEvidenceTests(unittest.TestCase):
-    """US0835 AC5: a figure states a measurement, and a stale row is not one.
+    """US0835 AC5, SUPERSEDED by US0875: the one-page report states no mutation evidence, so a
+    stale ledger row cannot be published as evidence the tests can fail. The node is kept
+    because US0835's stamped Verify line names this class.
 
-    The ledger judges each row against the site it was applied to, and reads a stale row as
-    NOT-RUN - `register` says so on every registration and `evidence-drift` reports it. The
-    report read the same ledger and counted every row, so a unit whose file moved after its
-    mutants were registered published its full killed count as evidence the tests can fail.
-    """
+    MUTANT: put a per-unit mutant figure back on the page - a row applied to bytes the file no
+    longer holds would then read as killed evidence again."""
 
-    def _tree(self, rows):
-        """A real ledger over a real target: one anchor present, one edited away."""
+    def test_the_report_publishes_no_mutation_evidence(self) -> None:
         d = pathlib.Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, d, ignore_errors=True)
-        (d / "src").mkdir(parents=True)
-        (d / "src" / "thing.py").write_text("def a():\n    return 1\n", encoding="utf-8")
-        local = d / "sdlc-studio" / ".local"
-        local.mkdir(parents=True)
-        (local / "mutation-runs.json").write_text(json.dumps(
-            {"version": 1, "entries": [{"target": "src/thing.py", "hash": "0" * 64,
-                                        "mutants": rows}]}), encoding="utf-8")
-        return d
-
-    def test_a_stale_row_is_not_counted_as_killed_evidence(self) -> None:
-        """MUTANT: count every row in the ledger, as the composer did - the unit reads 2/2 and
-        the confidence profile states evidence for a mutant applied to bytes that exist
-        nowhere. Measured on RUN-01M2SPNS, where nine of nine units' rows had staled behind
-        later fixes and the page reported every one of them as killed.
-        """
-        root = self._tree([
-            {"unit": "US0001", "criterion": "AC1", "verdict": "killed",
-             "anchor": "    return 1"},                       # still in the file: live
-            {"unit": "US0001", "criterion": "AC2", "verdict": "killed",
-             "anchor": "    return 999"},                     # edited away: stale
-        ])
-        got = sr._mutants_by_unit(root, ["US0001"])
-        killed, planned, stale = got["US0001"]
-        self.assertEqual((1, 1, 1), (killed, planned, stale),
-                         f"a stale row was counted as evidence the tests can fail: {got}")
-
-    def test_a_unit_whose_every_row_is_stale_reads_not_measured(self) -> None:
-        """The second half, and the one that decides whether the fix can be gamed: counting a
-        stale row as planned-but-not-killed would publish it as a SURVIVOR, which says a test
-        failed to catch a change nobody applied. Not-run and survived are different facts.
-
-        MUTANT: keep the stale row in `planned` - the unit then reads 0/2 and the Not proven
-        section reports two surviving mutants that never ran.
-        """
-        root = self._tree([
-            {"unit": "US0002", "criterion": "AC1", "verdict": "killed", "anchor": "gone one"},
-            {"unit": "US0002", "criterion": "AC2", "verdict": "killed", "anchor": "gone two"},
-        ])
-        killed, planned, stale = sr._mutants_by_unit(root, ["US0002"])["US0002"]
-        self.assertEqual((0, 0, 2), (killed, planned, stale))
-        section = sr._units_section(root, [("US0002", None)], "state.json")
-        fig = section["rows"][0]["unit_mutants"]
-        self.assertEqual(sr.NOT_MEASURED, fig.get("value"),
-                         f"a unit with no live row still states a mutant figure: {fig}")
-        self.assertIn("stale", (fig.get("reason") or "").lower(),
-                      f"the row does not say WHY it is not measured: {fig}")
+        fixture_run(d)                      # carries a mutation ledger for every unit
+        ledger = d / "sdlc-studio" / ".local" / "mutation-runs.json"
+        self.assertTrue(ledger.is_file(), "the fixture carries no mutation ledger to ignore")
+        rep = sr.build_report(d, FIX_RETRO)
+        self.assertFalse([f"{sec}.{k}" for sec, k, f in _leaf_figures(rep)
+                          if "mutation" in str(f.get("source") or "") or "mutant" in k],
+                         "a figure on the page is derived from the mutation ledger")
 
 
 class ReportIndexTests(unittest.TestCase):
@@ -3640,49 +3599,32 @@ class ReportIsDerivedTests(ReportOfRecordBase):
         fixture_run(self.root)
         rep = sr.build_report(self.root, FIX_RETRO)
         figs = {f"{s}.{k}": f for s, k, f in _leaf_figures(rep)}
-        units = figs["header.unit_count"]
-        points = figs["header.points_delivered"]
-        self.assertEqual(units["value"], 23, "unit_count did not come from the run record")
+        units = figs["delivered.planned_units"]
+        points = figs["delivered.points_delivered"]
+        self.assertEqual(units["value"], 23, "planned_units did not come from the run record")
         self.assertEqual(points["value"], 103, "points_delivered did not come from the unit files")
         self.assertIn("run-state.json", units["source"])
         self.assertIn("US0101-a-fixture-unit.md", points["source"],
                       "points_delivered is not sourced to the unit files")
         retro_rel = "sdlc-studio/retros/RETRO9200-a-fixture-sprint.md"
         sourced_to_retro = {name for name, f in figs.items() if retro_rel in (f["source"] or "")}
-        self.assertTrue(sourced_to_retro, "nothing is sourced to the retro at all")
-        for name in sourced_to_retro:
-            self.assertTrue(name.startswith(("carried.", "rulings.")),
-                            f"{name} is sourced to the retro's prose; only the rulings and the "
-                            f"carried-open table may be")
+        self.assertEqual(set(), sourced_to_retro,
+                         "a figure is sourced to the retro's prose, which a hand edit can rewrite")
 
     def test_the_stakeholder_section_names_its_absent_schema(self) -> None:
-        """AC3. MUTANT: omit the section when no consult artefact is found.
+        """US0835 AC3, SUPERSEDED by US0875: the one-page report carries no stakeholder-consult
+        section at all. The node is kept because US0835's stamped Verify line names it; what it
+        pins now is that the report makes no consult claim either way - with a consult artefact
+        on disk or without one - so a reader cannot take an absent consult for a clean one.
 
-        A reader then cannot tell a run that consulted nobody from a report that forgot to
-        look, which is the distinction the whole Not-proven discipline rests on."""
+        MUTANT: put a consult section or figure back on the page."""
         fixture_run(self.root, consult=True)
-        with_it = sr.build_report(self.root, FIX_RETRO)
-        sec = {s["key"]: s for s in with_it["sections"]}["consult"]
-        self.assertIsNone(sec.get("not_measured"))
-        self.assertEqual(len(sec["rows"]), 3)
-        for row in sec["rows"]:
-            for key in ("persona_name", "persona_role", "persona_verdict", "persona_finding"):
-                self.assertIn(key, row)
-                self.assertIn("RV9001-stakeholder-consult.md", row[key]["source"])
-        second = Path(tempfile.mkdtemp(dir=self.tmp.name))
-        fixture_run(second, consult=False)
-        out, err = io.StringIO(), io.StringIO()
-        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            rc = sr.main(["--root", str(second), "build", "--run", FIX_RUN, "--format", "json"])
-        self.assertEqual(rc, 0, f"a run with no consult did not exit 0: {err.getvalue()}")
-        without = json.loads(out.getvalue())
-        keys = [s["key"] for s in without["sections"]]
-        self.assertIn("consult", keys, "the section was dropped rather than named absent")
-        sec = {s["key"]: s for s in without["sections"]}["consult"]
-        self.assertEqual(sec["not_measured"]["value"], "NOT MEASURED")
-        self.assertEqual(sec["not_measured"]["reason"],
-                         "no stakeholder consult artefact for this run")
-        self.assertEqual(sec["rows"], [], "an absent consult rendered as zero consults")
+        rep = sr.build_report(self.root, FIX_RETRO)
+        self.assertNotIn("consult", [s["key"] for s in rep["sections"]])
+        self.assertFalse([k for sec, k, f in _leaf_figures(rep)
+                          if "stakeholder-consult" in str(f.get("source") or "")],
+                         "a figure is sourced to the consult artefact")
+        self.assertNotIn("Stakeholder consult", sr.render_markdown(rep))
 
     def test_the_fingerprint_covers_the_facts_and_not_the_signature(self) -> None:
         """AC4. MUTANT: fingerprint the whole JSON file.
@@ -3776,24 +3718,24 @@ class RenderingTests(ReportOfRecordBase):
 class TemplateRenderingTests(ReportOfRecordBase):
     """US0836 AC2-AC4."""
 
-    _HEADINGS_MD = re.compile(r"^## (.+)$", re.M)
-    _HEADINGS_HTML = re.compile(r"<h2[^>]*>(.*?)</h2>", re.S)
+    _HEADINGS_MD = re.compile(r"^#{2,3} (.+)$", re.M)
+    _HEADINGS_HTML = re.compile(r"<h[23][^>]*>(.*?)</h[23]>", re.S)
 
     def test_an_empty_section_renders_not_measured_by_name_in_both(self) -> None:
-        """AC2. MUTANT: render an absent figure as an empty table cell.
+        """AC2, over the one-page report. MUTANT: render an absent figure as an empty table
+        cell - a reader then cannot separate a measured zero from a measurement nobody took.
 
-        A reader then cannot separate a measured zero from a measurement nobody took, which is
-        the one distinction this report exists to preserve, and the tables still line up."""
+        With no forge data, no meter stamps and no rulings, the DORA, Tokens by model and
+        Rulings sections of the appendix have no data. (The stakeholder-consult section this
+        criterion first named was removed from the report by US0875.)"""
         fixture_run(self.root, consult=False, ci=False, stamps=False)
         rep = sr.build_report(self.root, FIX_RETRO)
         md = sr.render_markdown(rep)
         html = sr.render_html(rep)
-        md_heads = self._HEADINGS_MD.findall(md)
-        html_heads = [h.strip() for h in self._HEADINGS_HTML.findall(html)]
-        self.assertEqual(md_heads, html_heads,
+        self.assertEqual(self._HEADINGS_MD.findall(md),
+                         [h.strip() for h in self._HEADINGS_HTML.findall(html)],
                          "the two renderings do not carry the same ordered section headings")
-        for heading in ("DORA", "Stakeholder consult", "Cost"):
-            self.assertIn(heading, md_heads)
+        for heading in ("DORA", "Tokens by model", "Rulings"):
             for label, text in (("Markdown", md), ("HTML", html)):
                 body = self._section_body(text, heading)
                 self.assertIn("NOT MEASURED", body,
@@ -3802,12 +3744,6 @@ class TemplateRenderingTests(ReportOfRecordBase):
                 after = body.split("NOT MEASURED", 1)[1]
                 self.assertRegex(after, r"[A-Za-z]{3,}",
                                  f"{heading} gives no reason after NOT MEASURED in {label}")
-        # An ABSENT figure, wherever it renders, reads NOT MEASURED and never one of these.
-        # Scoped to the sections that HAVE no data, because a measured zero is a fact and must
-        # keep printing as `0` - separating the two is the point.
-        for heading in ("DORA", "Stakeholder consult", "Cost", "Estimate accuracy"):
-            for label, text in (("Markdown", md), ("HTML", html)):
-                body = self._section_body(text, heading)
                 for placeholder in ("| 0 |", "| - |", "| None |", "| n/a |", "|  |",
                                     ">0<", ">-<", ">None<", ">n/a<"):
                     self.assertNotIn(placeholder, body,
@@ -3819,14 +3755,13 @@ class TemplateRenderingTests(ReportOfRecordBase):
 
     @staticmethod
     def _section_body(text: str, heading: str) -> str:
+        """The body under a `##`/`###` heading (Markdown) or an h2/h3 (HTML), to the next."""
         if text.lstrip().startswith("#"):
-            parts = re.split(r"^## ", text, flags=re.M)
-            for part in parts:
+            for part in re.split(r"^#{2,3} ", text, flags=re.M):
                 if part.startswith(heading + "\n"):
                     return part
             raise AssertionError(f"no Markdown section {heading!r}")
-        chunks = re.split(r"<h2[^>]*>", text)
-        for chunk in chunks:
+        for chunk in re.split(r"<h[23][^>]*>", text):
             if chunk.startswith(heading):
                 return chunk
         raise AssertionError(f"no HTML section {heading!r}")
@@ -3849,7 +3784,7 @@ class TemplateRenderingTests(ReportOfRecordBase):
             rc = sr.main(["--root", str(self.root), "render", "--report", rid,
                           "--to", "html"])
         self.assertEqual(rc, 0, err.getvalue())
-        self.assertIn("<h2>Sprint goal</h2>", out.getvalue())
+        self.assertIn("<h2>Goal</h2>", out.getvalue())
         self.assertEqual(list((self.root / "sdlc-studio").rglob("*.html")), [],
                          "render with no --out created a file")
         target = self.root / "out" / "report.html"
@@ -3876,13 +3811,13 @@ class TemplateRenderingTests(ReportOfRecordBase):
         rep = sr.build_report(self.root, FIX_RETRO)
         tpl = (Path(sr.__file__).resolve().parents[1] / "templates" / "core"
                / "sprint-report.md").read_text(encoding="utf-8")
-        altered = tpl.replace("## Carried open", "## What this run is still carrying")
+        altered = tpl.replace("## Known issues handed over", "## What this run is still carrying")
         self.assertNotEqual(altered, tpl)
         got = sr.render_markdown(rep, template=altered)
         self.assertIn("## What this run is still carrying", got,
                       "the altered heading did not reach the output, so the template is not the "
                       "source of the layout")
-        self.assertNotIn("## Carried open", got)
+        self.assertNotIn("## Known issues handed over", got)
         unfillable = altered.replace("## Sign-off", "{{no_figure_answers_this}}\n\n## Sign-off")
         with self.assertRaises(sr.ReportError) as ctx:
             sr.render_markdown(rep, template=unfillable)
@@ -4420,42 +4355,6 @@ def _git_window(root: Path, commits: int) -> None:
         subprocess.run(["git", "commit", "-q", "-m", f"c{n}",
                         "--date", f"2026-09-15T0{6 + n}:00:00Z"], cwd=str(root), check=True,
                        env={**env, "GIT_COMMITTER_DATE": f"2026-09-15T0{6 + n}:00:00Z"})
-
-
-class RulingVocabularyTests(ReportOfRecordBase):
-    """`not-stop-ship` is not a stop-ship. Found on the REAL tree, not in a fixture.
-
-    Not a criterion's row - a regression pin for a defect the fixture could not show. Run
-    against RETRO0117's own carried table, every one of whose 76 rows reads `not-stop-ship`,
-    the report printed `76 stop-ship` under Carried risk where the true figure is nought: a
-    substring search for "stop-ship" matches its own negation.
-    """
-
-    def test_a_ruling_is_matched_as_a_whole_word_so_a_negation_is_not_its_own_opposite(self):
-        self.assertEqual(sr._ruling("not-stop-ship"), "not-stop-ship")
-        self.assertEqual(sr._ruling("stop-ship"), "stop-ship")
-        self.assertEqual(sr._ruling("ruled: stop-ship, holds the close"), "stop-ship")
-        self.assertEqual(sr._ruling("accepted-risk"), "accepted-risk")
-        self.assertIsNone(sr._ruling("ships disclosed"))
-        for word in sr.RULINGS:
-            self.assertEqual(sr._ruling(word), word, f"{word} does not read as itself")
-
-    def test_a_carried_table_of_negations_counts_no_stop_ships(self) -> None:
-        fixture_run(self.root)
-        retro = next((self.root / "sdlc-studio" / "retros").glob("RETRO9200*.md"))
-        rep = sr.build_report(self.root, FIX_RETRO)
-        carried = {s["key"]: s for s in rep["sections"]}["carried"]["figures"]
-        self.assertIn("not-stop-ship", retro.read_text(encoding="utf-8"))
-        self.assertEqual(carried["stop_ship_count"]["value"], 0,
-                         "a table of not-stop-ship rulings was counted as stop-ships")
-        self.assertEqual(carried["ruled_count"]["value"], 2)
-        # ... and a real stop-ship IS counted, which is the control the row above needs.
-        text = retro.read_text(encoding="utf-8").replace(
-            "| BG9001 | not-stop-ship |", "| BG9001 | stop-ship |", 1)
-        retro.write_text(text, encoding="utf-8")
-        carried = {s["key"]: s for s in sr.build_report(self.root, FIX_RETRO)["sections"]
-                   }["carried"]["figures"]
-        self.assertEqual(carried["stop_ship_count"]["value"], 1)
 
 
 class FindingAttributionTests(ReportOfRecordBase):

@@ -32,7 +32,7 @@ body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--bo
 h1 { font-family:var(--display); font-weight:600; font-size:clamp(30px,5vw,44px); line-height:1.08;
   margin:.25em 0 0; text-wrap:balance; letter-spacing:-.01em; }
 h2 { font-family:var(--display); font-weight:600; font-size:clamp(20px,2.6vw,26px); margin:0; text-wrap:balance; }
-h3 { font-family:var(--body); font-weight:600; font-size:15px; margin:0 0 6px; }
+h3 { font-family:var(--display); font-weight:600; font-size:18px; margin:8px 0 0; }
 p { margin:0; }
 section { display:flex; flex-direction:column; gap:14px; }
 .head { border-bottom:2px solid var(--ink); padding-bottom:18px; display:flex; flex-direction:column; gap:10px; }
@@ -44,12 +44,6 @@ section { display:flex; flex-direction:column; gap:14px; }
   padding:14px 17px; display:flex; flex-direction:column; gap:6px; }
 .invalid .ik { font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--stop); }
 .invalid p { font-size:14px; line-height:1.5; max-width:70ch; }
-.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1px; background:var(--line);
-  border:1px solid var(--line); }
-.tile { background:var(--surface); padding:16px 18px; display:flex; flex-direction:column; gap:4px; }
-.tile .v { font-family:var(--mono); font-size:27px; font-weight:500; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
-.tile .k { font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
-.tile .s { font-size:13px; color:var(--muted); line-height:1.35; }
 .scroll { overflow-x:auto; border:1px solid var(--line); background:var(--surface); }
 table { border-collapse:collapse; width:100%; font-size:13.5px; }
 th, td { text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
@@ -63,41 +57,17 @@ tbody tr:last-child td, tbody tr:last-child th { border-bottom:0; }
 th[scope="row"] { font-weight:600; }
 .pill { font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
   padding:2px 7px; border-radius:2px; white-space:nowrap; background:var(--accent-soft); color:var(--accent); }
-.np-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; }
-.np { border-left:3px solid var(--warn); background:var(--surface); padding:14px 16px;
-  display:flex; flex-direction:column; gap:7px; }
-.np p { font-size:13.5px; color:var(--muted); line-height:1.5; }
-.tag { font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--warn); }
 .note { font-size:13px; color:var(--muted); max-width:42ch; }
 .lede { max-width:66ch; color:var(--muted); font-size:15px; }
 .unmeasured { font-family:var(--mono); font-size:13px; color:var(--warn); max-width:70ch; }
 .unmeasured b { letter-spacing:.08em; }
-.prov { font-family:var(--mono); font-size:12px; color:var(--muted); display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:6px 24px; }
 footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted); font-size:13px; max-width:70ch; }
 .filing { display:flex; flex-wrap:wrap; gap:4px 20px; font-family:var(--mono); font-size:12px; color:var(--muted); }
-.accuracy { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); }
-.accuracy > div { background:var(--surface); padding:14px 16px; display:flex; flex-direction:column; gap:3px; }
-.accuracy .k { font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
-.accuracy .fig { font-family:var(--mono); font-size:22px; font-variant-numeric:tabular-nums; }
-.accuracy .s { font-size:12.5px; color:var(--muted); line-height:1.4; }
-.people { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); }
-.person { background:var(--surface); padding:15px 17px; display:flex; flex-direction:column; gap:8px;
-  border-left:3px solid var(--line); }
-.person .pt { display:flex; flex-direction:column; gap:1px; }
-.person h3 { margin:0; font-size:15.5px; }
-.person .role { font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-.person p { font-size:13px; color:var(--muted); line-height:1.5; }
-.person .count { font-family:var(--mono); font-size:11px; color:var(--accent); margin-top:auto; }
-.person.stake { border-left:3px solid var(--warn); }
-.guard { border:1px solid var(--accent); border-left:4px solid var(--accent); background:var(--accent-soft);
-  padding:14px 17px; display:flex; flex-direction:column; gap:5px; }
-.guard .gk { font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); }
-.guard p { font-size:14px; line-height:1.5; max-width:70ch; }
 .signoff { border-top:2px solid var(--ink); padding-top:20px; }
 .siggrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px 40px; }
 .siggrid .k { font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:6px; }
 .siggrid .val { font-family:var(--mono); font-size:14px; display:block; border-bottom:1px solid var(--ink); padding-bottom:6px; }
+.appendix { border-top:1px solid var(--line); padding-top:20px; }
 </style>
 <div class="wrap">
 <header class="head">
@@ -113,75 +83,117 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
 <!-- end -->
 
 <section>
-  <h2>Sprint goal</h2>
+  <h2>Goal</h2>
   <p class="goal">{{sprint_goal}}</p>
   <div class="verdictline">
     <span class="stamp">{{goal_verdict}}</span>
     <span class="mono sub">{{goal_verdict_note}}</span>
   </div>
   <div class="filing">
-    <span>Run {{started_at}} &rarr; {{ended_at}}</span><span>{{unit_count}} units &middot; {{points_delivered}} points</span>
-    <span>Retro {{retro_id}}</span><span>Verified on {{verified_sha}}</span><span>Fingerprint {{report_fingerprint}}</span>
+    <span>Run {{started_at}} &rarr; {{ended_at}} ({{duration_hours}})</span>
+    <span>Verified on {{verified_sha}}</span><span>Fingerprint {{report_fingerprint}}</span>
   </div>
 </section>
 
 <section>
-  <h2>Ship guardrail</h2>
-<!-- when: guardrail_measured -->
-  <div class="guard">
-    <span class="gk">Green on the commit that carries the batch</span>
-    <p>{{guardrail_statement}}</p>
-  </div>
+  <h2>Estimates</h2>
+  <p class="lede">How far the plan's forecast was from what the run took. Points are compared over the delivered units; minutes and tokens over the whole run, its span and its meter. Ratio is actual over forecast.</p>
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Measure</th><th scope="col" class="num">Forecast</th><th scope="col" class="num">Actual</th><th scope="col" class="num">Ratio</th><th scope="col">Over</th></tr></thead>
+    <tbody>
+<!-- repeat: estimates -->
+      <tr><th scope="row">{{est_measure}}</th><td class="num">{{est_forecast}}</td><td class="num">{{est_actual}}</td>
+        <td class="num">{{est_ratio}}</td><td class="note">{{est_basis}}</td></tr>
 <!-- end -->
-<!-- unless: guardrail_measured -->
-  <p class="unmeasured"><b>NOT MEASURED</b> - {{guardrail_reason}}</p>
+    </tbody>
+  </table></div>
+<!-- when: estimates_units -->
+  <p class="lede">Each unit's minutes and tokens are measured over its own open span. Units open at the same time share hours and tokens, so these spans may overlap and are never added up into the run's figures above.</p>
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Unit</th><th scope="col" class="num">Forecast minutes</th><th scope="col" class="num">Minutes (open span)</th><th scope="col" class="num">Forecast tokens</th><th scope="col" class="num">Tokens (open span)</th></tr></thead>
+    <tbody>
+<!-- repeat: estimates_units -->
+      <tr><th scope="row"><span class="uid">{{unit_id}}</span></th><td class="num">{{eu_forecast_minutes}}</td><td class="num">{{eu_minutes}}</td>
+        <td class="num">{{eu_forecast_tokens}}</td><td class="num">{{eu_tokens}}</td></tr>
 <!-- end -->
-  <p class="lede">One line, one decision: is the trunk green on the commit that carries this batch? A batch whose guardrail is red is not signed off, whatever the rest of this report says.</p>
+    </tbody>
+  </table></div>
+<!-- end -->
 </section>
 
 <section>
-  <h2>Delivered</h2>
-  <div class="tiles">
-    <div class="tile"><span class="k">Points delivered</span><span class="v">{{points_delivered}}</span><span class="s">{{terminal_summary}}</span></div>
-    <div class="tile"><span class="k">Rework rate</span><span class="v">{{rework_rate}}</span><span class="s">{{rework_reading}}</span></div>
-    <div class="tile"><span class="k">Carried risk</span><span class="v">{{stop_ship_count}}</span><span class="s">{{carried_risk_reading}}</span></div>
+  <h2>Delivered to plan</h2>
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Measure</th><th scope="col" class="num">Units</th><th scope="col" class="num">Points</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Planned</th><td class="num">{{planned_units}}</td><td class="num">{{planned_points}}</td></tr>
+      <tr><th scope="row">Delivered of the plan</th><td class="num">{{plan_delivered_units}}</td><td class="num">{{plan_delivered_points}}</td></tr>
+      <tr><th scope="row">Added mid-run and delivered</th><td class="num">{{added_delivered_units}} of {{added_units}} added</td><td class="num">{{added_points}}</td></tr>
+      <tr><th scope="row">Dropped</th><td class="num">{{dropped_units}}</td><td class="num">{{dropped_points}}</td></tr>
+      <tr><th scope="row">Carried undelivered</th><td class="num">{{carried_units}}</td><td class="num">{{carried_points}}</td></tr>
+    </tbody>
+  </table></div>
+  <p class="lede">Points here are the sizes the plan recorded: a unit resized since keeps its planned size and shows its current size below, and an added unit is sized when it is added. Added units are work outside the plan and are never counted as delivering it. Points delivered at their current size, plan and added together: {{points_delivered}}.</p>
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Unit</th><th scope="col" class="num">Planned points</th><th scope="col" class="num">Points</th><th scope="col">Outcome</th><th scope="col" class="num">Review rounds</th></tr></thead>
+    <tbody>
+<!-- repeat: plan_units -->
+      <tr><th scope="row"><span class="uid">{{unit_id}}</span></th><td class="num">{{unit_planned_points}}</td><td class="num">{{unit_points}}</td>
+        <td>{{unit_outcome}}</td><td class="num">{{unit_rounds}}</td></tr>
+<!-- end -->
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Known issues handed over</h2>
+  <p>{{findings_scan}}</p>
+<!-- when: known_issues_rows -->
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Issue</th><th scope="col">Priority</th><th scope="col">Detail</th></tr></thead>
+    <tbody>
+<!-- repeat: issues -->
+      <tr><th scope="row"><span class="uid">{{issue_id}}</span></th><td><span class="pill">{{issue_priority}}</span></td><td>{{issue_detail}}</td></tr>
+<!-- end -->
+    </tbody>
+  </table></div>
+<!-- end -->
+<!-- unless: known_issues_rows -->
+  <p class="lede">No open finding, close gap or carried unit is recorded.</p>
+<!-- end -->
+</section>
+
+<section class="signoff">
+  <h2>Sign-off</h2>
+  <div class="siggrid">
+    <div><span class="k">Reviewer of record</span><span class="val">{{principal}}</span></div>
+    <div><span class="k">Date</span><span class="val">{{signed_at}}</span></div>
+    <div><span class="k">Fingerprint signed</span><span class="val">{{signed_fingerprint}}</span></div>
   </div>
+  <p class="lede">Signing records the principal, the date and this report's fingerprint against {{run_id}}.</p>
 </section>
 
-<section>
-  <h2>Cost</h2>
+<section class="appendix">
+  <h2>Appendix</h2>
+
+  <h3>Tokens by model</h3>
 <!-- when: cost_measured -->
-  <div class="tiles">
-    <div class="tile"><span class="k">Model</span><span class="v mono" style="font-size:15px">{{model}}</span><span class="s">the model is named beside the cost because it sets it</span></div>
-    <div class="tile"><span class="k">Tokens</span><span class="v">{{tokens_total}}</span><span class="s">{{token_basis}}</span></div>
-    <div class="tile"><span class="k">Of which delegated</span><span class="v">{{tokens_delegated}}</span><span class="s">supplied by each agent, never measured here</span></div>
-    <div class="tile"><span class="k">Per point</span><span class="v">{{tokens_per_point}}</span><span class="s">over {{points_delivered}} points</span></div>
-    <div class="tile"><span class="k">Coverage</span><span class="v" style="font-size:17px">{{token_coverage}}</span><span class="s">{{token_shape}}</span></div>
-  </div>
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Model</th><th scope="col" class="num">Tokens</th></tr></thead>
+    <tbody>
+<!-- repeat: models -->
+      <tr><th scope="row" class="mono">{{model_name}}</th><td class="num">{{model_tokens}}</td></tr>
+<!-- end -->
+    </tbody>
+  </table></div>
+  <p class="lede">Total {{tokens_total}}, of which delegated {{tokens_delegated}}. Coverage: {{token_coverage}}; {{token_shape}}.</p>
 <!-- end -->
 <!-- unless: cost_measured -->
   <p class="unmeasured"><b>NOT MEASURED</b> - {{cost_reason}}</p>
+  <p class="lede">Delegated: {{tokens_delegated}}.</p>
 <!-- end -->
-  <p class="lede">Every per-unit token actual reads {{per_unit_cost}}: the meter is cumulative per session, so a run-level figure is honest where a per-unit split would not be.</p>
-</section>
 
-<section>
-  <h2>Estimate accuracy</h2>
-<!-- when: accuracy_measured -->
-  <div class="accuracy">
-    <div><span class="k">Forecast</span><span class="fig">{{forecast_tokens}}</span><span class="s">sum of the per-unit plan-time estimates</span></div>
-    <div><span class="k">Actual</span><span class="fig">{{actual_tokens}}</span><span class="s">the session meter, stamped per session and summed</span></div>
-    <div><span class="k">Ratio</span><span class="fig">{{forecast_ratio}}</span><span class="s">{{accuracy_note}}</span></div>
-  </div>
-<!-- end -->
-<!-- unless: accuracy_measured -->
-  <p class="unmeasured"><b>NOT MEASURED</b> - {{accuracy_reason}}</p>
-<!-- end -->
-</section>
-
-<section>
-  <h2>DORA</h2>
-  <p class="lede">The four keys, mapped to this project's own delivery shape. The mapping is stated beside each figure, because a figure whose definition is unstated cannot be compared with anyone else's. Benchmarks are the published elite bands, shown so a figure can be read against something.</p>
+  <h3>DORA</h3>
 <!-- when: dora_measured -->
   <div class="scroll"><table>
     <thead><tr><th scope="col">Key</th><th scope="col">This run</th><th scope="col">Mapping</th><th scope="col">Elite band</th><th scope="col">Derived from</th></tr></thead>
@@ -197,50 +209,33 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
 <!-- unless: dora_measured -->
   <p class="unmeasured"><b>NOT MEASURED</b> - {{dora_reason}}</p>
 <!-- end -->
-</section>
 
-<section>
-  <h2>Evidence by unit</h2>
-  <p class="lede">Confidence is a profile, not a score. Mutants prove the tests can fail; ruled lines are what no test reaches; entry-point depth is how many criteria run through the shipped command rather than in-process.</p>
+  <h3>Calibration</h3>
   <div class="scroll"><table>
-    <thead><tr><th scope="col">Unit</th><th scope="col" class="num">Points</th><th scope="col">Status</th><th scope="col">Gate</th>
-    <th scope="col" class="num">ACs</th><th scope="col" class="num">Mutants</th><th scope="col" class="num">Ruled</th>
-    <th scope="col" class="num">Entry</th><th scope="col" class="num">Delivery rounds</th><th scope="col" class="num">Plan rejects</th></tr></thead>
+    <thead><tr><th scope="col">Rate</th><th scope="col" class="num">Value</th><th scope="col">Source</th></tr></thead>
     <tbody>
-<!-- repeat: units -->
-      <tr><th scope="row"><span class="uid">{{unit_id}}</span></th>
-        <td class="num">{{unit_points}}</td><td><span class="pill">{{unit_status}}</span></td>
-        <td>{{unit_gate}}</td>
-        <td class="num">{{unit_acs}}</td><td class="num">{{unit_mutants}}</td><td class="num">{{unit_ruled}}</td>
-        <td class="num">{{unit_entry_depth}}</td><td class="num">{{unit_delivery_rounds}}</td>
-        <td class="num">{{unit_plan_rejects}}</td></tr>
-<!-- end -->
+      <tr><th scope="row">Tokens per point</th><td class="num">{{cal_tokens_per_point}}</td><td class="note">{{cal_tokens_source}}</td></tr>
+      <tr><th scope="row">Minutes per point</th><td class="num">{{cal_minutes_per_point}}</td><td class="note">{{cal_minutes_source}}</td></tr>
     </tbody>
   </table></div>
-</section>
 
-<section>
-  <h2>Not proven</h2>
-  <p class="lede">What this run did not establish, stated as a section rather than an omission.</p>
-<!-- when: not_proven_measured -->
-  <div class="np-grid">
-<!-- repeat: gaps -->
-    <article class="np"><h3>{{gap_title}}</h3><p>{{gap_detail}}</p><span class="tag">{{gap_kind}}</span></article>
+  <h3>Rulings</h3>
+<!-- when: rulings_measured -->
+  <p>Persona seats ruled {{persona_rulings}} time(s), {{cited_rulings}} of them by citing a precedent; the operator ruled {{operator_rulings}} time(s).</p>
 <!-- end -->
-  </div>
+<!-- unless: rulings_measured -->
+  <p class="unmeasured"><b>NOT MEASURED</b> - {{rulings_reason}}</p>
 <!-- end -->
-<!-- unless: not_proven_measured -->
-  <p class="unmeasured"><b>NOT MEASURED</b> - {{not_proven_reason}}</p>
-<!-- end -->
-</section>
 
-<section>
-  <h2>Waivers in force</h2>
-  <p class="lede">Which gates were NOT holding when this page was derived. A signature over a page that does not say so is a signature over a bar nobody stated.</p>
+  <h3>Waivers in force</h3>
 <!-- when: waivers_measured -->
   <p>{{waivers_note}}</p>
+<!-- when: waivers_rows -->
+  <ul>
 <!-- repeat: waivers -->
-    <article class="np"><h3>{{waiver_id}} - {{waiver_subject}}</h3><p>{{waiver_reason}}</p><span class="tag">{{waiver_date}}</span></article>
+    <li><strong>{{waiver_id}}</strong> - {{waiver_subject}} ({{waiver_date}}): {{waiver_reason}}</li>
+<!-- end -->
+  </ul>
 <!-- end -->
 <!-- end -->
 <!-- unless: waivers_measured -->
@@ -248,66 +243,5 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
 <!-- end -->
 </section>
 
-<section>
-  <h2>Who judged this</h2>
-  <p class="lede">Every unit was reviewed by a fresh context that did not write it, and approved by a reviewer of record outside the authoring session. The model is named beside each agent: a review's weight depends on what ran it.</p>
-<!-- when: judges_measured -->
-  <div class="people">
-<!-- repeat: judges -->
-    <article class="person"><div class="pt"><h3>{{judge_name}}</h3><span class="role">{{judge_role}}</span></div>
-      <p>{{judge_contribution}}</p><span class="count">{{judge_model}}</span></article>
-<!-- end -->
-  </div>
-<!-- end -->
-<!-- unless: judges_measured -->
-  <p class="unmeasured"><b>NOT MEASURED</b> - {{judges_reason}}</p>
-<!-- end -->
-</section>
-
-<section>
-  <h2>Stakeholder consult</h2>
-  <p class="lede">The seats judge whether the work is built right; the stakeholder personas judge whether it serves anyone.</p>
-<!-- when: consult_measured -->
-  <div class="people">
-<!-- repeat: consult -->
-    <article class="person stake"><div class="pt"><h3>{{persona_name}}</h3><span class="role">{{persona_role}}</span></div>
-      <p>{{persona_finding}}</p><span class="count">{{persona_verdict}}</span></article>
-<!-- end -->
-  </div>
-<!-- end -->
-<!-- unless: consult_measured -->
-  <p class="unmeasured"><b>NOT MEASURED</b> - {{consult_reason}}</p>
-<!-- end -->
-</section>
-
-<section>
-  <h2>Carried open</h2>
-  <div class="tiles">
-    <div class="tile"><span class="k">Filed this run</span><span class="v">{{filed_count}}</span><span class="s">{{filed_ids}}</span></div>
-    <div class="tile"><span class="k">Ruled</span><span class="v">{{ruled_count}}</span><span class="s">every open finding carries a dated ruling by the operator</span></div>
-    <div class="tile"><span class="k">Mutants killed</span><span class="v">{{mutants_killed}}</span><span class="s">{{mutants_reading}}</span></div>
-    <div class="tile"><span class="k">Seat verdicts</span><span class="v">{{verdict_count}}</span><span class="s">{{verdict_reading}}</span></div>
-  </div>
-</section>
-
-<section class="signoff">
-  <h2>Sign-off</h2>
-  <div class="siggrid">
-    <div><span class="k">Reviewer of record</span><span class="val">{{principal}}</span></div>
-    <div><span class="k">Date</span><span class="val">{{signed_at}}</span></div>
-    <div><span class="k">Fingerprint signed</span><span class="val">{{signed_fingerprint}}</span></div>
-  </div>
-  <p class="lede">Signing records the principal, the date and this report's fingerprint against {{run_id}}. The facts above are frozen: nothing in the run changes after this page is produced.</p>
-</section>
-
-<section>
-  <h2>Provenance</h2>
-  <div class="prov">
-<!-- repeat: provenance -->
-    <span>{{provenance_figure}} &rarr; {{provenance_source}}</span>
-<!-- end -->
-  </div>
-</section>
-
-<footer>Every figure is derived from {{run_id}}'s own artefacts by <span class="mono">sprint_report.py</span> - the unit files, the mutation ledger, the critic ledgers, {{retro_id}} and the forge. Nothing here was typed by hand.</footer>
+<footer>Every figure is derived from {{run_id}}'s own artefacts by <span class="mono">sprint_report.py</span>, and each carries its source in the JSON of record. Nothing here was typed by hand.</footer>
 </div>

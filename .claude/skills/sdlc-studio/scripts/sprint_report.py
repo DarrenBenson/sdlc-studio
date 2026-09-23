@@ -2833,18 +2833,10 @@ def _section(key: str, title: str, figures: dict | None = None, rows: list | Non
 #: act of closing and sealing rather than derived from the delivered work - so including them
 #: would mean the signature changed the fingerprint it had just recorded, and every sealed run
 #: would read INVALIDATED from the moment it was signed. Exactly the reason `fingerprint` already
-#: excludes the signature block and the generation timestamp; these two were missed because they
-#: sit inside a section rather than at the top level. Measured: a seal moved `terminal_summary`
-#: and `duration_hours` and nothing else.
-OUTSIDE_THE_DIGEST = (("header", "ended_at"), ("header", "duration_hours"),
-                      # ...and each unit's STATUS, for the same reason and one level
-                      # down: SEAL transitions every unit, so a signature over the
-                      # statuses is a signature over what it is about to change. The
-                      # durable claim about a unit is `unit_gate` - that its terminal
-                      # gate cleared - and that IS in the digest. The status stays on
-                      # the page, because a reader wants it; it is just not a fact the
-                      # signature freezes.
-                      ("units", "unit_status"))
+#: excludes the signature block and the generation timestamp. A unit's delivered state is read
+#: from the gate PREPARE recorded rather than its status for the same reason: the seal moves
+#: statuses.
+OUTSIDE_THE_DIGEST = (("goal", "ended_at"), ("goal", "duration_hours"))
 
 
 def in_the_digest(section: str, key: str) -> bool:
@@ -2857,8 +2849,8 @@ def leaf_figures(report: dict):
     """Every `(section key, figure key, figure)` in the report's figure set, IN ORDER.
 
     The order is the fingerprint's input, so it is the section list's order, then each
-    section's figures in insertion order, then its rows. A `not_measured` marker is a figure
-    too: a section that stops being measured has moved, and a fingerprint that could not see
+    section's figures in insertion order, then its rows and per-unit rows. A `not_measured`
+    marker is a figure too: a section that stops being measured has moved, and a fingerprint that could not see
     that would certify a report whose facts had gone.
     """
     for sec in report.get("sections") or []:
@@ -2867,9 +2859,10 @@ def leaf_figures(report: dict):
             yield sec["key"], "not_measured", nm
         for key, f in (sec.get("figures") or {}).items():
             yield sec["key"], key, f
-        for i, row in enumerate(sec.get("rows") or []):
-            for key, f in row.items():
-                yield sec["key"], f"{key}[{i}]", f
+        for rows in ("rows", "unit_rows"):
+            for i, row in enumerate(sec.get(rows) or []):
+                for key, f in row.items():
+                    yield sec["key"], f"{key}[{i}]", f
 
 
 def fingerprint(report: dict) -> str:
@@ -2931,21 +2924,6 @@ def _retro_for_run(root: Path, state: dict) -> str:
     return best[1]
 
 
-def _retro_path(root: Path, retro_id: str) -> Path:
-    for p in sorted((root / "sdlc-studio" / "retros").glob("*.md")):
-        if sdlc_md.norm_id(sdlc_md.any_record_id(p.stem) or "") == sdlc_md.norm_id(retro_id):
-            return p
-    raise ReportError(f"no retro file for {retro_id} under sdlc-studio/retros/")
-
-
-def _unit_paths(root: Path, units: list[str]) -> list[tuple[str, Path | None]]:
-    out = []
-    for uid in units:
-        found = sdlc_md.find_by_id(root, uid)
-        out.append((uid, Path(found[0]) if found else None))
-    return out
-
-
 def _table_rows(text: str, header: str) -> list[list[str]]:
     """Every data row of the first table whose header row carries `header` (case-folded).
 
@@ -2980,72 +2958,6 @@ def _verdict_rows(root: Path, phase: str, units=None) -> tuple[list[list[str]], 
         return rows, rel
     want = {sdlc_md.norm_id(u) for u in units}
     return [r for r in rows if r and sdlc_md.norm_id(r[0]) in want], rel
-
-
-def _criteria_count(text: str) -> int:
-    """How many acceptance criteria an artefact declares.
-
-    Through `verify_ac.criteria_blocks`, the ONE reader the runner, the lint, the plan deriver
-    and the seat brief already share. A local `^### AC\\d` scan counted a story's criteria and
-    read ZERO for every bug in this repository, because a bug writes `- [ ] **AC1**` - measured
-    on the real corpus, where 18 of 23 units reported no criteria at all.
-    """
-    try:
-        import verify_ac  # noqa: PLC0415 - the module that owns the criteria format
-        return len(verify_ac.criteria_blocks(text))
-    except Exception:  # noqa: BLE001 - the report never fails on its evidence being unreadable
-        return len(re.findall(r"(?m)^(?:###\s+AC\d|- \[[ x]\] \*\*AC\d)", text))
-
-
-def _mutants_by_unit(root: Path, units=None) -> dict[str, tuple[int, int, int]]:
-    """`{unit: (killed, live_rows, stale_rows)}` from the ledger - evidence the tests can fail.
-
-    Scoped to `units` when given: the ledger accumulates across runs, so an unscoped count
-    is the project's whole mutation history rather than this run's.
-
-    A STALE row is not evidence and is not counted as one. The ledger judges each row against
-    the site its mutant was applied to, and reads a stale row as NOT-RUN - `register` says so
-    on every registration and `evidence-drift` reports it on every commit. Counting it here
-    published a measurement the ledger itself disclaims, and it is the run's own later fixes
-    that stale a row, so the figure was at its most wrong exactly when the page was derived.
-    Nor are stale rows folded into the planned count: `planned - killed` is this module's
-    survivor figure, and a survivor is a change no test failed on, which is a different and
-    far worse fact than a row nobody re-ran. They are returned as their own term so the page
-    can say which it has.
-    """
-    try:
-        sys.path.insert(0, str(Path(__file__).resolve().parent))
-        import mutation  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
-    except ImportError:                                       # pragma: no cover - defensive
-        mutation = None
-    want = None if units is None else {sdlc_md.norm_id(u) for u in units}
-    out: dict[str, list[int]] = {}
-    p = root / "sdlc-studio" / ".local" / "mutation-runs.json"
-    if not p.is_file():
-        return {}
-    try:
-        state = json.loads(p.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return {}
-    for entry in (state.get("entries") or []):
-        for m in (entry.get("mutants") or []) if isinstance(entry, dict) else []:
-            if not isinstance(m, dict) or not m.get("unit") or m.get("withdrawn"):
-                continue
-            uid = sdlc_md.norm_id(str(m["unit"]))
-            if want is not None and uid not in want:
-                continue
-            row = out.setdefault(uid, [0, 0, 0])
-            # `head` is a row whose evidence matches the COMMITTED bytes with an edit still in
-            # the working tree. That is the commit lane's business, not the report's: the
-            # measurement was made, so it counts.
-            state = (mutation.row_staleness(root, entry, m) if mutation is not None else "live")
-            if state in ("stale", "missing"):
-                row[2] += 1
-                continue
-            row[1] += 1
-            if str(m.get("verdict") or "").lower() == "killed":
-                row[0] += 1
-    return {k: (v[0], v[1], v[2]) for k, v in out.items()}
 
 
 # --- the forge, and the git history behind it ------------------------------------------------
@@ -3274,178 +3186,471 @@ def _dora_rows(root: Path, start, end) -> list[dict]:
     return rows
 
 
-# --- the stakeholder consult ------------------------------------------------------------------
-#
-# The consult schema is not settled yet; until it is there is no artefact on most runs, and the
-# section has to say that rather than disappear. A reader who cannot tell a run that consulted
-# nobody from a report that forgot to look has lost the Not-proven discipline's distinction.
-
-def _consult_rows(root: Path) -> tuple[list[dict], str | None]:
-    reviews = root / "sdlc-studio" / "reviews"
-    for p in sorted(reviews.glob("*.md")):
-        text = sdlc_md.read_text_safe(p)
-        if (sdlc_md.extract_field(text, "Kind") or "").strip() != "stakeholder-consult":
-            continue
-        rel = _rel(root, p)
-        rows = []
-        for cells in _table_rows(text, "Persona | Perspective"):
-            if len(cells) < 4:
-                continue
-            rows.append({"persona_name": fig("persona_name", cells[0], rel),
-                         "persona_role": fig("persona_role", cells[1], rel),
-                         "persona_verdict": fig("persona_verdict", cells[2], rel),
-                         "persona_finding": fig("persona_finding", cells[3], rel)})
-        return rows, rel
-    return [], None
-
-
 # --- building the report ----------------------------------------------------------------------
+#
+# ONE PAGE, THREE QUESTIONS. The front page is the goal, then how accurate the estimates were,
+# whether the run delivered to plan and which known issues it hands over, then the sign line.
+# Tokens by model, DORA, calibration, rulings and waivers are appendix. The run state carries
+# the plan snapshot, the per-unit actuals, the close's own known-issue gaps and the rulings; each
+# is read where it is present and reads NOT MEASURED where it is not, never 0.
+
+#: The report schema. A page filed under another schema cannot be re-derived by this builder,
+#: and `revalidate` says so rather than reporting every figure as moved.
+SCHEMA = 2
+#: The front page, in order, and the appendix beneath it.
+FRONT_PAGE = ("goal", "estimates", "delivered", "known_issues", "signoff")
+APPENDIX = ("cost", "dora", "calibration", "rulings", "waivers")
+
+
+def _num(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _review_rounds(root: Path, uid: str, ledger: list[list[str]], found: bool) -> int | None:
+    """A unit's delivery review rounds: `critic.review_rounds` where it exists, else the unit's
+    rows in the verdict ledger, one row per recorded round. None when there is no ledger to
+    count: no ledger is not zero rounds, whichever route would have counted them."""
+    if not found:
+        return None
+    try:
+        import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+        counter = getattr(critic, "review_rounds", None)
+        if callable(counter):
+            return int(counter(root, uid))
+    except Exception as exc:  # noqa: BLE001 - fall back to the ledger rather than fail the page
+        sdlc_md.debug("sprint_report._review_rounds", exc)
+    return sum(1 for r in ledger if r and sdlc_md.norm_id(r[0]) == uid)
+
+
+def _unit_ledger(root: Path, state: dict, state_rel: str) -> list[dict]:
+    """One entry per unit the run planned, added or dropped: plan order, then added order.
+
+    Planned points come from the plan snapshot, never the unit file: a unit resized from 3 to 8
+    after approval was planned at 3, and reading the file erases the very error this page shows.
+    Delivered means the terminal gate PREPARE recorded, when it recorded one - the seal moves
+    statuses, so reading a status would change the page the signature froze - else a terminal
+    status on disk.
+    """
+    snap = {sdlc_md.norm_id(k): v
+            for k, v in ((state.get("plan_snapshot") or {}).get("units") or {}).items()
+            if isinstance(v, dict)}
+    actuals = {sdlc_md.norm_id(k): v for k, v in (state.get("unit_actuals") or {}).items()
+               if isinstance(v, dict)}
+    changes = {sdlc_md.norm_id(c.get("id") or ""): c for c in state.get("batch_changes") or []
+               if isinstance(c, dict) and c.get("id") and not c.get("note")
+               and c.get("action") in ("drop", "add")}
+    planned = ([u for u, v in snap.items() if not v.get("added")] if snap
+               else _planned_ids(state))
+    added = [u for u, v in snap.items() if v.get("added")] + \
+        [u for u, c in changes.items() if c.get("action") == "add"]
+    order = list(dict.fromkeys(planned + added
+                               + [sdlc_md.norm_id(u) for u in state.get("batch") or []]))
+    gate_clear = state.get("report_gate_clear")
+    cleared = {sdlc_md.norm_id(u) for u in gate_clear or []}
+    ledger, ledger_rel = _verdict_rows(root, "delivery", order)
+    ledger_found = (root / ledger_rel).is_file()
+    out = []
+    for uid in order:
+        found = sdlc_md.find_by_id(root, uid)
+        path = Path(found[0]) if found else None
+        change = changes.get(uid) or {}
+        dropped = change.get("action") == "drop"
+        delivered = (False if dropped else uid in cleared if gate_clear is not None
+                     else _terminal(root, uid)[1])
+        plan, act = snap.get(uid) or {}, actuals.get(uid) or {}
+        out.append({
+            "id": uid, "rel": _rel(root, path) if path else state_rel,
+            "planned": uid in planned, "added": uid not in planned and uid in added,
+            "dropped": dropped, "reason": (change.get("reason") or "").strip(),
+            "delivered": delivered, "carried": not dropped and not delivered,
+            "points": sdlc_md.read_points(sdlc_md.read_text_safe(path)) if path else None,
+            "planned_points": plan.get("planned_points"),
+            "forecast_minutes": plan.get("forecast_minutes"),
+            "forecast_tokens": plan.get("forecast_tokens"),
+            "minutes": act.get("minutes"), "tokens": act.get("tokens"),
+            "in_plan": bool(plan), "measured": bool(act),
+            "rounds": _review_rounds(root, uid, ledger, ledger_found),
+            "rounds_rel": ledger_rel})
+    return out
+
+
+def _paired(units: list[dict], fkey: str, akey: str) -> tuple:
+    """`(forecast, actual, basis)` summed like for like: over the units carrying both halves,
+    or - when none does - each half over the units carrying it, so one missing half still
+    shows the other."""
+    both = [u for u in units if _num(u[fkey]) and _num(u[akey])]
+    if both:
+        return (sum(u[fkey] for u in both), sum(u[akey] for u in both),
+                f"{len(both)} of {len(units)} delivered unit(s)")
+    fs = [u[fkey] for u in units if _num(u[fkey])]
+    acts = [u[akey] for u in units if _num(u[akey])]
+    return (sum(fs) if fs else None, sum(acts) if acts else None,
+            f"{len(units)} delivered unit(s)")
+
+
+def _estimate_row(measure: str, forecast, actual, basis: str, src: str,
+                  why_forecast: str, why_actual: str) -> dict:
+    if _num(forecast) and isinstance(forecast, float):
+        forecast = round(forecast, 1)
+    if _num(actual) and isinstance(actual, float):
+        actual = round(actual, 1)
+    ok = _num(forecast) and _num(actual) and forecast
+    return {
+        "est_measure": fig("est_measure", measure, src),
+        "est_forecast": (fig("est_forecast", forecast, src) if _num(forecast)
+                         else unmeasured("est_forecast", src, why_forecast)),
+        "est_actual": (fig("est_actual", actual, src) if _num(actual)
+                       else unmeasured("est_actual", src, why_actual)),
+        "est_ratio": (fig("est_ratio", f"{round(actual / forecast, 2)}x", src) if ok
+                      else unmeasured("est_ratio", src, "needs both a forecast and an actual")),
+        "est_basis": fig("est_basis", basis, src)}
+
+
+def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_tokens,
+                       span_minutes) -> dict:
+    """Forecast, actual and actual over forecast. Points over the units the run delivered;
+    minutes and tokens over the WHOLE run - its span and its meter - because units open at the
+    same time share their hours and tokens, so the per-unit figures beneath overlap and summing
+    them over-counts the run."""
+    delivered = [u for u in ledger if u["delivered"]]
+    no_plan = "no plan snapshot is recorded"
+    f, a, basis = _paired(delivered, "planned_points", "points")
+    rows = [_estimate_row(
+        "Points", f, a, basis, state_rel,
+        no_plan if not any(u["in_plan"] for u in ledger) else
+        "no delivered unit" if not delivered else "no delivered unit is in the plan snapshot",
+        "no delivered unit carries Points" if delivered else "no delivered unit")]
+    live = [u for u in ledger if not u["dropped"]]
+
+    def forecast(key):
+        vals = [u[key] for u in live if _num(u[key])]
+        return (sum(vals) if vals else None,
+                f"the whole run: forecast over {len(vals)} of {len(live)} unit(s) planned or "
+                f"added and not dropped")
+    f, over = forecast("forecast_minutes")
+    rows.append(_estimate_row("Minutes", f, span_minutes,
+                              f"{over}; actual is the run's span, start to end", state_rel,
+                              no_plan, "the run records no start time"))
+    f, over = forecast("forecast_tokens")
+    if f is None:
+        legacy = state.get("token_forecast", state.get("forecast_tokens"))
+        f = legacy if _num(legacy) else None
+        if f is not None:
+            over = "the whole run: the plan's run-level token forecast"
+    tokens = run_tokens.get("tokens")
+    rows.append(_estimate_row(
+        "Tokens", f, tokens or None, f"{over}; actual is the run meter, a lower bound",
+        state_rel, "no token forecast is recorded",
+        run_tokens.get("reason") or ("the run meter read no spend between its readings"
+                                     if tokens == 0 else "no token actual was recorded")))
+
+    def cell(key, value, why):
+        if _num(value):
+            return fig(key, round(value, 1) if isinstance(value, float) else value, state_rel)
+        return unmeasured(key, state_rel, why)
+    unit_rows = [{"unit_id": fig("unit_id", u["id"], u["rel"]),
+                  "eu_forecast_minutes": cell("eu_forecast_minutes", u["forecast_minutes"],
+                                              "not in the plan"),
+                  "eu_minutes": cell("eu_minutes", u["minutes"], "not recorded"),
+                  "eu_forecast_tokens": cell("eu_forecast_tokens", u["forecast_tokens"],
+                                             "not in the plan"),
+                  "eu_tokens": cell("eu_tokens", u["tokens"], "not recorded")}
+                 for u in ledger if not u["dropped"] and (u["in_plan"] or u["measured"])]
+    sec = _section("estimates", "Estimates", rows=rows)
+    sec["unit_rows"] = unit_rows
+    return sec
+
+
+def _delivered_section(root: Path, state_rel: str, ledger: list[dict]) -> dict:
+    """What the plan committed to against what of it was delivered, at PLANNED size, with the
+    units added mid-run counted beside the plan and never inside it: two of four planned units
+    plus one added is not three delivered against four."""
+    snapped = any(u["in_plan"] for u in ledger)
+
+    def at_plan_size(key: str, units: list[dict]) -> dict:
+        missing = [u["id"] for u in units if not _num(u["planned_points"])]
+        if not units:
+            return fig(key, 0, state_rel)
+        if not snapped:
+            return unmeasured(key, state_rel, "no plan snapshot is recorded, so the planned "
+                                              "size is unknown")
+        if missing:
+            return unmeasured(key, state_rel, f"not in the plan snapshot: {', '.join(missing)}")
+        return fig(key, sum(u["planned_points"] for u in units), state_rel)
+    planned = [u for u in ledger if u["planned"]]
+    added = [u for u in ledger if u["added"]]
+    groups = {"planned": planned, "plan_delivered": [u for u in planned if u["delivered"]],
+              "added_delivered": [u for u in added if u["delivered"]],
+              "dropped": [u for u in ledger if u["dropped"]],
+              "carried": [u for u in ledger if u["carried"]]}
+    figures = {}
+    for name, units in groups.items():
+        figures[f"{name}_units"] = fig(f"{name}_units", len(units), state_rel)
+        pkey = "added_points" if name == "added_delivered" else f"{name}_points"
+        figures[pkey] = at_plan_size(pkey, units)
+    figures["added_units"] = fig("added_units", len(added), state_rel)
+    delivered = [u for u in ledger if u["delivered"]]
+    unsized = [u["id"] for u in delivered if not _num(u["points"])]
+    figures["points_delivered"] = (
+        unmeasured("points_delivered", state_rel, "no unit was delivered") if not delivered else
+        unmeasured("points_delivered", state_rel, f"{len(unsized)} delivered unit(s) carry no "
+                                                  f"Points: {', '.join(unsized)}") if unsized
+        else fig("points_delivered", sum(u["points"] for u in delivered),
+                 ", ".join(u["rel"] for u in delivered)))
+    rows = []
+    for u in ledger:
+        why = u["reason"] or "no reason recorded"
+        done = "delivered" if u["delivered"] else "carried, not delivered"
+        outcome = (f"dropped - {why}" if u["dropped"] else
+                   f"added - {why}; {done}" if u["added"] else
+                   f"carried - {why}" if u["carried"] else done)
+        rows.append({
+            "unit_id": fig("unit_id", u["id"], u["rel"]),
+            "unit_planned_points": (fig("unit_planned_points", u["planned_points"], state_rel)
+                                    if _num(u["planned_points"]) else
+                                    unmeasured("unit_planned_points", state_rel,
+                                               "not in the plan snapshot" if any(
+                                                   v["in_plan"] for v in ledger)
+                                               else "no plan snapshot")),
+            "unit_points": (fig("unit_points", u["points"], u["rel"]) if _num(u["points"])
+                            else unmeasured("unit_points", u["rel"], "no Points on the unit")),
+            "unit_outcome": fig("unit_outcome", outcome, state_rel),
+            "unit_rounds": (fig("unit_rounds", u["rounds"], u["rounds_rel"])
+                            if u["rounds"] is not None else
+                            unmeasured("unit_rounds", u["rounds_rel"],
+                                       f"no verdict ledger at {u['rounds_rel']}"))})
+    return _section("delivered", "Delivered to plan", figures, rows)
+
+
+def _priority_rank(priority: str) -> int:
+    """Most severe first, in `critic`'s tiers, so a change request's P0-P4 ranks beside a bug's
+    severity: P0 with Critical, P1 with High, P2 with Medium, P3 with Low. Anything else,
+    P4 included, sorts after Low."""
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    word = critic._normalise_priority(priority)
+    return next((rank for rank, tier in enumerate(critic.PRIORITY_TIERS) if word in tier),
+                len(critic.PRIORITY_TIERS))
+
+
+def _finding_row(root: Path, uid: str) -> tuple[int, dict]:
+    found = sdlc_md.find_by_id(root, uid)
+    path = Path(found[0]) if found else None
+    text = sdlc_md.read_text_safe(path) if path else ""
+    rel = _rel(root, path) if path else "sdlc-studio/bugs"
+    priority = (sdlc_md.extract_field(text, "Severity")
+                or sdlc_md.extract_field(text, "Priority") or "").strip()
+    head = re.search(r"(?m)^#\s+[^:\n]+:\s*(.+)$", text)
+    rank = _priority_rank(priority)
+    return rank, {"issue_id": fig("issue_id", uid, rel),
+                  "issue_priority": (fig("issue_priority", priority, rel) if priority else
+                                     unmeasured("issue_priority", rel, "no priority recorded")),
+                  "issue_detail": fig("issue_detail",
+                                      head.group(1).strip() if head else uid, rel)}
+
+
+def _known_issues_section(root: Path, state: dict, state_rel: str, ledger: list[dict],
+                          start: str | None, end: str | None) -> dict:
+    """Open findings raised inside the run's window, most severe first; then the gaps the close
+    recorded; then the units carried undelivered."""
+    _filed, still_open = _open_findings(root, {"started_at": start, "ended_at": end})
+    ranked = sorted((_finding_row(root, uid) for uid in still_open or []),
+                    key=lambda pair: (pair[0], pair[1]["issue_id"]["value"]))
+    rows = [row for _rank, row in ranked]
+    gaps = state.get("close_known_issues")
+    for gap in gaps or []:
+        if isinstance(gap, dict):
+            rows.append({"issue_id": fig("issue_id", str(gap.get("source") or "close"),
+                                         state_rel),
+                         "issue_priority": fig("issue_priority", "close gap", state_rel),
+                         "issue_detail": fig("issue_detail",
+                                             str(gap.get("detail") or "no detail recorded"),
+                                             state_rel)})
+    carried = [u for u in ledger if not u["dropped"] and not u["delivered"]]
+    for u in carried:
+        rows.append({"issue_id": fig("issue_id", u["id"], u["rel"]),
+                     "issue_priority": fig("issue_priority", "carried unit", state_rel),
+                     "issue_detail": fig("issue_detail",
+                                         f"{'added' if u['added'] else 'planned'} and not "
+                                         f"delivered by this run", state_rel)})
+    scan = (unmeasured("findings_scan", state_rel,
+                       "the run records no start time, so no finding can be placed in it")
+            if still_open is None else
+            fig("findings_scan", f"{len(still_open)} open finding(s) raised in the run, "
+                                 + (f"{len(gaps)} close gap(s)" if isinstance(gaps, list)
+                                    else "close gaps not recorded")
+                                 + f", {len(carried)} carried unit(s)", state_rel))
+    return _section("known_issues", "Known issues handed over", {"findings_scan": scan}, rows)
+
+
+def _model_of(stamps: list[dict]) -> str:
+    models = sorted({str(s["model"]) for s in stamps if s.get("model")})
+    return (models[0] if len(models) == 1 else
+            run_state.SESSION_MODEL_MIXED if models else retro.MODEL_UNRECORDED)
+
+
+def _cost_section(state: dict, state_rel: str, total: dict) -> dict:
+    """Tokens by model, from the meter stamps, and the delegated spend beside them."""
+    delegated = run_state.delegated_total(state)
+    figures = {"tokens_delegated": (
+        fig("tokens_delegated", delegated, state_rel) if delegated else
+        unmeasured("tokens_delegated", state_rel,
+                   "no delegated agent supplied a total, which is not the same fact as no "
+                   "work having been delegated"))}
+    if total.get("tokens") is None:
+        return _section("cost", "Tokens by model", figures, not_measured=unmeasured(
+            "cost", state_rel, total.get("reason") or "the session meter could not be read"))
+    stamps = [s for s in (state.get(run_state.TOKEN_STAMPS) or []) if isinstance(s, dict)]
+    sessions: dict[str, list[dict]] = {}
+    for s in stamps:
+        sessions.setdefault(str(s.get("source")), []).append(s)
+    by_model: dict[str, list[dict]] = {}
+    for rows in sessions.values():
+        by_model.setdefault(_model_of(rows), []).extend(rows)
+    rows = []
+    for model, model_stamps in sorted(by_model.items()):
+        # Each model's total goes through the same summing rule as the run's own total, so the
+        # rows add up to it.
+        sub = run_state.run_token_total({**state, run_state.TOKEN_STAMPS: model_stamps})
+        if sub.get("tokens"):
+            rows.append({"model_name": fig("model_name", model, state_rel),
+                         "model_tokens": fig("model_tokens", sub["tokens"], state_rel)})
+    if not rows:
+        rows = [{"model_name": fig("model_name", total.get("model") or retro.MODEL_UNRECORDED,
+                                   state_rel),
+                 "model_tokens": fig("model_tokens", total["tokens"], state_rel)}]
+    uncovered = total.get("uncovered") or []
+    coverage = f"{total['session_count']} session(s)" + (
+        f"; {len(uncovered)} session(s) wrote to the run with no closing stamp and are NOT in "
+        f"this total: {', '.join(uncovered)}" if uncovered else "")
+    figures.update({
+        "tokens_total": fig("tokens_total", total["tokens"] + delegated, state_rel),
+        "token_coverage": fig("token_coverage", coverage, state_rel),
+        "token_shape": fig("token_shape", f"read from {total['shape']}", state_rel)})
+    return _section("cost", "Tokens by model", figures, rows)
+
+
+def _calibration_section(state: dict, state_rel: str) -> dict:
+    """The rates the plan was estimated from, and where each came from."""
+    rates = (state.get("plan_snapshot") or {}).get("rates") or {}
+    figures = {}
+    for key, name in (("tokens_per_point", "cal_tokens"), ("minutes_per_point", "cal_minutes")):
+        rate = rates.get(key) if isinstance(rates.get(key), dict) else {}
+        figures[f"{name}_per_point"] = (
+            fig(f"{name}_per_point", rate["value"], state_rel) if _num(rate.get("value")) else
+            unmeasured(f"{name}_per_point", state_rel, "the plan snapshot records no rate"))
+        figures[f"{name}_source"] = fig(f"{name}_source",
+                                        str(rate.get("source") or "none recorded"), state_rel)
+    return _section("calibration", "Calibration", figures)
+
+
+def _rulings_section(state: dict, state_rel: str) -> dict:
+    """How many questions a persona seat settled, and how many reached the operator."""
+    recs = state.get("rulings")
+    if not isinstance(recs, list):
+        return _section("rulings", "Rulings", not_measured=unmeasured(
+            "rulings", state_rel, "the run records no rulings"))
+    recs = [r for r in recs if isinstance(r, dict)]
+    return _section("rulings", "Rulings", {
+        "persona_rulings": fig("persona_rulings",
+                               sum(1 for r in recs if r.get("by") == "persona"), state_rel),
+        "cited_rulings": fig("cited_rulings",
+                             sum(1 for r in recs if r.get("kind") == "cited"), state_rel),
+        "operator_rulings": fig("operator_rulings",
+                                sum(1 for r in recs if r.get("by") == "operator"), state_rel)})
+
+
+def _dora_section(root: Path, start, end) -> dict:
+    rows = _dora_rows(root, start, end)
+    if all(r["dora_value"]["value"] == NOT_MEASURED for r in rows):
+        return _section("dora", "DORA", not_measured=unmeasured(
+            "dora", _ci_runs(root)[1],
+            f"{_NO_FORGE} and no commit on main inside the run window"))
+    return _section("dora", "DORA", rows=rows)
+
+
+def _iso(moment) -> str | None:
+    return moment.isoformat().replace("+00:00", "Z") if moment else None
+
 
 def build_report(root, retro_id: str, as_of: str | None = None,
                  window_end: str | None = None) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
-    recorded, no run record, a figure whose deriver produced no source - because a report that
-    invents what the run aimed at, or prints a number nobody can re-derive, is worse than the
-    absence of one.
+    recorded, no run record, a figure whose deriver produced no source.
+
+    THE WINDOW IS CLOSED AND CARRIED. `ended_at` is None until the seal and written by it, so
+    an open run is bounded at the page's generation time, and the resolved end is recorded on
+    the report and replayed on every re-derivation - otherwise signing would widen the window,
+    move the figures and invalidate the page it had just signed.
     """
     root = Path(root)
     state, state_rel = _run_state_for(root, None)
-    units = [sdlc_md.norm_id(u) for u in (state.get("batch") or [])]
-    retro_path = _retro_path(root, retro_id)
-    retro_rel = _rel(root, retro_path)
-    retro_text = sdlc_md.read_text_safe(retro_path)
-    # THE WINDOW MUST BE CLOSED, even on an open run. `ended_at` is None until SEAL, so an
-    # unbounded window let every later commit into the run's DORA figures - and since this
-    # project ships the paperwork in the same commit as the code, COMMITTING THE REPORT moved
-    # the figures the report states, so no report could stay valid long enough to be signed.
-    # The bound is the moment the page was generated, carried on the report so a re-derivation
-    # reproduces the same window rather than a wider one.
     generated_at = as_of or sdlc_md.now_iso8601()
     start = _at(state.get("started_at"))
-    # THE WINDOW'S END IS CARRIED ON THE PAGE, not re-derived from a run record that moves.
-    # `ended_at` is None until SEAL and written BY the seal, so a page derived while the run was
-    # open resolved its end to the generation time and then, on re-derivation, resolved it to
-    # the seal's `ended_at` instead: the act of signing widened the window, moved every figure
-    # derived from it, and left the page INVALIDATED one second after the signature landed.
-    #
-    # Bounding a re-derivation at the generation time instead does NOT fix that - it relocates
-    # it. A page built on a run that had ALREADY ended bounds at `ended_at` when first derived
-    # and at the later generation time when re-derived, so a commit landing between the two
-    # enters only the re-derivation and the page reads INVALID with nothing touched. An
-    # independent plan review caught that, and it is the same defect wearing the other shoe.
-    #
-    # So the resolved end is recorded on the report and replayed, exactly as `generated_at`
-    # already is. A page with no `window_end` predates this and falls back to its generation
-    # time, which is the bound such a page was in fact derived under.
     end = (_at(window_end) if window_end else
            (_at(state.get("ended_at")) or _at(generated_at)))
-
     goal = state.get("sprint_goal") or state.get("goal")
     if not goal or not str(goal).strip():
         raise ReportError(
             f"{state.get('run_id')} records no sprint goal in {state_rel}, and a report cannot "
             f"invent what the run aimed at - nothing was written")
 
-    sections: list[dict] = [
-        _section("identity", "Identity",
-                 {"run_id": fig("run_id", state.get("run_id"), state_rel)}),
-    ]
-
-    # --- the header figures: the batch from the RUN RECORD, the points from the UNIT FILES.
-    # Never from the retro's `Delivered: N / M` line: a hand-edited retro would then rewrite the
-    # report's headline figures, and this repository has already shipped a retro header that
-    # contradicted its own batch.
-    paths = _unit_paths(root, units)
-    unit_rels = [_rel(root, p) for _uid, p in paths if p is not None]
-    points = 0
-    for _uid, p in paths:
-        if p is not None:
-            points += sdlc_md.read_points(sdlc_md.read_text_safe(p)) or 0
-    unit_src = ", ".join(unit_rels) or state_rel
-    duration = round((end - start).total_seconds() / 3600, 1) if start and end else None
-    header = {
-        "started_at": fig("started_at", state.get("started_at"), state_rel),
-        "ended_at": fig("ended_at", state.get("ended_at") or "open", state_rel),
-        "unit_count": fig("unit_count", len(units), state_rel),
-        "points_delivered": fig("points_delivered", points, unit_src),
-        "verified_sha": fig("verified_sha", state.get("verified_sha") or state.get("base_ref"),
-                            state_rel),
-    }
-    # The UNIT travels with the figure. The templates used to append a literal `h`, so an
-    # unmeasured duration rendered as "NOT MEASURED - the run record carries no end timeh" -
-    # a reason with a stray unit stuck to it, which is what any absent value in a suffixed
-    # slot will do. A figure that carries its own unit cannot be mis-suffixed by a layout.
-    header["duration_hours"] = (fig("duration_hours", f"{duration}h", state_rel) if duration else
-                                unmeasured("duration_hours", state_rel,
-                                           "the run record carries no end time"))
-    sections.append(_section("header", "Filing", header))
-
     verdict = state.get("sprint_goal_verdict") or {}
     if isinstance(verdict, str):
         verdict = {"verdict": verdict, "note": ""}
-    goal_figs = {"sprint_goal": fig("sprint_goal", goal, state_rel)}
-    if verdict.get("verdict"):
-        goal_figs["goal_verdict"] = fig("goal_verdict", f"Judged {verdict['verdict']}", state_rel)
-        goal_figs["goal_verdict_note"] = fig("goal_verdict_note",
-                                             verdict.get("note") or "no note recorded", state_rel)
-    else:
-        # NEVER defaulted to `achieved`. The run's own account would then judge itself, and
-        # every reader of the report would see a verdict nobody gave.
-        goal_figs["goal_verdict"] = unmeasured("goal_verdict", state_rel,
-                                               "no goal verdict recorded on this run")
-        goal_figs["goal_verdict_note"] = fig("goal_verdict_note",
-                                             "no goal verdict recorded on this run", state_rel)
-    sections.append(_section("goal", "Sprint goal", goal_figs))
+    duration = round((end - start).total_seconds() / 3600, 1) if start and end else None
+    goal_figs = {
+        "sprint_goal": fig("sprint_goal", goal, state_rel),
+        # Never defaulted to `achieved`: the run would then judge itself.
+        "goal_verdict": (fig("goal_verdict", f"Judged {verdict['verdict']}", state_rel)
+                         if verdict.get("verdict") else
+                         unmeasured("goal_verdict", state_rel,
+                                    "no goal verdict recorded on this run")),
+        "goal_verdict_note": fig("goal_verdict_note",
+                                 (verdict.get("note") or "no note recorded")
+                                 if verdict.get("verdict") else
+                                 "no goal verdict recorded on this run", state_rel),
+        "run_id": fig("run_id", state.get("run_id"), state_rel),
+        "started_at": fig("started_at", state.get("started_at"), state_rel),
+        "ended_at": fig("ended_at", state.get("ended_at") or "open", state_rel),
+        # The unit travels with the figure, so an unmeasured duration is never mis-suffixed.
+        "duration_hours": (fig("duration_hours", f"{duration}h", state_rel) if duration else
+                           unmeasured("duration_hours", state_rel,
+                                      "the run record carries no end time")),
+        "verified_sha": fig("verified_sha", state.get("verified_sha") or state.get("base_ref")
+                            or "none recorded", state_rel),
+    }
 
-    sections.append(_guardrail_section(root, state))
-    sections.append(_delivered_section(root, paths, unit_src, len(units),
-                                       state.get("report_gate_clear") or [], state_rel))
-    sections.append(_cost_section(root, state, state_rel, points))
-    sections.append(_accuracy_section(root, state, state_rel))
-
-    dora_rows = _dora_rows(root, start, end)
-    unmeasured_keys = [r for r in dora_rows if r["dora_value"]["value"] == NOT_MEASURED]
-    if len(unmeasured_keys) == len(dora_rows):
-        sections.append(_section(
-            "dora", "DORA", rows=[],
-            not_measured=unmeasured("dora", _ci_runs(root)[1],
-                                    f"{_NO_FORGE} and no commit on main inside the run "
-                                    f"window")))
-    else:
-        sections.append(_section("dora", "DORA", rows=dora_rows))
-
-    sections.append(_units_section(root, paths, state_rel,
-                                   state.get("report_gate_clear") or []))
-    sections.append(_not_proven_section(root, state, state_rel, units))
-    # Beside the measurement gaps, because a gate that stood down and a figure nobody
-    # measured are the same kind of fact to a signer: something this page does not
-    # establish. Bounded at BOTH ends by the run's own window - the same bounds the DORA
-    # figures use - so a decision taken before or after this run cannot move a signed page.
-    sections.append(_waivers_section(root, end.isoformat().replace('+00:00', 'Z') if end else None,
-                                     start.isoformat().replace('+00:00', 'Z') if start else None))
-    sections.append(_judges_section(root, state, state_rel, units))
-
-    consult_rows, consult_rel = _consult_rows(root)
-    if consult_rows:
-        sections.append(_section("consult", "Stakeholder consult", rows=consult_rows))
-    else:
-        sections.append(_section(
-            "consult", "Stakeholder consult", rows=[],
-            not_measured=unmeasured("consult", "sdlc-studio/reviews",
-                                    "no stakeholder consult artefact for this run")))
-
-    sections.append(_carried_section(root, retro_rel, retro_text, retro_id, units))
-    sections.append(_signoff_section(state_rel))
-    report = {"schema": 1, "report_id": None, "run_id": state.get("run_id"),
+    current = None
+    if not (state.get(run_state.TOKEN_STAMPS) or []) and state.get(run_state.TOKEN_BASELINE):
+        # The LEGACY single baseline needs a closing reading of the same meter, so the
+        # transcript is read here and nowhere else.
+        current = run_state.session_tokens(root)
+    tokens = run_state.run_token_total(state, current)
+    ledger = _unit_ledger(root, state, state_rel)
+    sections = [
+        _section("goal", "Goal", goal_figs),
+        _estimates_section(state, state_rel, ledger, tokens,
+                           round((end - start).total_seconds() / 60, 1) if start and end
+                           else None),
+        _delivered_section(root, state_rel, ledger),
+        _known_issues_section(root, state, state_rel, ledger,
+                              state.get("started_at"), _iso(end)),
+        _signoff_section(state_rel),
+        _cost_section(state, state_rel, tokens),
+        _dora_section(root, start, end),
+        _calibration_section(state, state_rel),
+        _rulings_section(state, state_rel),
+        # Bounded at both ends by the run's own window, like DORA, so a decision taken before
+        # or after the run cannot move a signed page.
+        _waivers_section(root, _iso(end), _iso(start)),
+    ]
+    report = {"schema": SCHEMA, "report_id": None, "run_id": state.get("run_id"),
               "retro_id": sdlc_md.norm_id(retro_id), "generated_at": generated_at,
-              # The window this page's figures were derived under, replayed on every
-              # re-derivation. An envelope field, never a figure: it must not enter the digest,
-              # or recording the bound would itself change the fingerprint it protects.
-              "window_end": (end.isoformat().replace("+00:00", "Z") if end else None),
-              "signature": None, "sections": sections}
-    report["sections"].append(_provenance_section(report))
+              # An envelope field, never a figure: in the digest, recording the bound would
+              # change the fingerprint it protects.
+              "window_end": _iso(end), "signature": None, "sections": sections}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -3520,208 +3725,6 @@ def _refuse_sourceless(report: dict, root: Path | None = None) -> None:
                 f"source, and nothing was written")
 
 
-def _guardrail_section(root: Path, state: dict) -> dict:
-    runs, ci_source = _ci_runs(root)
-    sha = str(state.get("verified_sha") or state.get("base_ref") or "")
-    on_sha = [r for r in runs if str(r.get("headSha") or "") == sha]
-    if on_sha:
-        worst = [r for r in on_sha if str(r.get("conclusion") or "").lower() != "success"]
-        ids = "/".join(str(r.get("databaseId")) for r in on_sha)
-        verdict = "red" if worst else "green"
-        return _section("guardrail", "Ship guardrail", {
-            "guardrail_statement": fig(
-                "guardrail_statement",
-                f"The trunk is {verdict} on {sha}, the commit that carries this batch: "
-                f"{len(on_sha)} CI run(s) on it - {ids} - and {len(worst)} did not conclude "
-                f"success. Nothing merged on a local pass.",
-                f"forge runs {ids} - CI on {sha}")})
-    return _section("guardrail", "Ship guardrail", {}, not_measured=unmeasured(
-        "guardrail", _ci_runs(root)[1],
-        f"no CI run on {sha or 'the verified commit'} is readable"))
-
-
-def _delivered_section(root: Path, paths, unit_src: str, count: int,
-                       gate_clear=(), state_rel: str = "") -> dict:
-    # What is true WHEN THIS PAGE IS DERIVED, which is not each unit's terminal status. Under
-    # D0213 the fan-out belongs to SEAL, so at PREPARE no unit is Done and the signature is what
-    # moves them - a headline counting statuses would therefore be a figure the signature itself
-    # changes, and every sealed report would read INVALIDATED the moment it was signed. The gate
-    # verdict PREPARE recorded does not move, so that is what this counts.
-    cleared = {sdlc_md.norm_id(u) for u in (gate_clear or [])}
-    passed = sum(1 for uid, _p in paths if sdlc_md.norm_id(uid) in cleared)
-    terminal = {"Done": 0, "Fixed": 0}
-    other = 0
-    for _uid, p in paths:
-        st = (sdlc_md.extract_field(sdlc_md.read_text_safe(p), "Status") or "").strip() \
-            if p is not None else ""
-        if st in terminal:
-            terminal[st] += 1
-        else:
-            other += 1
-    rows, verdict_rel = _verdict_rows(root, "delivery", [u for u, _p in paths])
-    rejected = sorted({sdlc_md.norm_id(r[0]) for r in rows
-                       if len(r) > 1 and r[1].strip().upper() == "REJECT"})
-    pct = f"{round(100 * len(rejected) / count)}%" if count else "0%"
-    return _section("delivered", "Delivered", {
-        "terminal_summary": fig(
-            "terminal_summary",
-            f"{passed} of {count} units cleared their terminal gate",
-            state_rel or unit_src),
-        "rework_rate": fig("rework_rate", pct, verdict_rel),
-        "rework_reading": fig(
-            "rework_reading",
-            f"{len(rejected)} of {count} units needed a repair round after delivery review"
-            + (f": {', '.join(rejected)}" if rejected else ""), verdict_rel),
-    })
-
-
-def _cost_section(root: Path, state: dict, state_rel: str, points: int) -> dict:
-    """The run's own spend, from the meter stamps - and NOT MEASURED when no stamp can be read.
-
-    Never `0` and never a per-point figure of zero: a run whose meter could not be read did not
-    cost nothing. The coverage clause is not optional either - an unqualified total over a run
-    closed across sessions is a partial one, and reads as the run's whole cost.
-    """
-    current = None
-    if not (state.get(run_state.TOKEN_STAMPS) or []) and state.get(run_state.TOKEN_BASELINE):
-        # The LEGACY single-baseline shape - the state every run open at delivery time carries.
-        # Its one reading needs a closing one from the same meter, so the transcript is read
-        # here and nowhere else: a run carrying stamps must never pay for a transcript scan.
-        current = run_state.session_tokens(root)
-    total = run_state.run_token_total(state, current)
-    per_unit = fig("per_unit_cost", UNMEASURED, state_rel,
-                   reason="the harness meter is cumulative per session, so interleaved work "
-                          "cannot be split between units honestly")
-    if total.get("tokens") is None:
-        return _section("cost", "Cost", {"per_unit_cost": per_unit}, not_measured=unmeasured(
-            "cost", state_rel, total.get("reason") or "the session meter could not be read"))
-    delegated = run_state.delegated_total(state)
-    sessions = total.get("sessions") or []
-    uncovered = total.get("uncovered") or []
-    coverage = f"{total['session_count']} session(s)"
-    if uncovered:
-        coverage += (f"; {len(uncovered)} session(s) wrote to the run with no closing stamp and "
-                     f"are NOT in this total: {', '.join(uncovered)}")
-    return _section("cost", "Cost", {
-        "model": fig("model", total.get("model") or UNMEASURED, state_rel,
-                     reason=None if total.get("model") else
-                     "the stamps record no model, so the rate this cost was bought at is "
-                     "unstated"),
-        "tokens_total": fig("tokens_total", total["tokens"] + delegated, state_rel),
-        # SUPPLIED, never measured: a delegated agent's meter is not this session's, so the
-        # figure can only be what that agent reported. It is named separately rather than
-        # folded away silently, because a reader has to be able to tell a measured delta from
-        # a reported one - and because 0 here means NOTHING WAS SUPPLIED, which is a different
-        # fact from no delegation having happened. Omitting it entirely was the worse option:
-        # this run delegated five agents, and the page was understating its own cost by them.
-        "tokens_delegated": (fig("tokens_delegated", delegated, state_rel)
-                             if delegated else
-                             unmeasured("tokens_delegated", state_rel,
-                                        "no delegated agent supplied a total, which is not "
-                                        "the same fact as no work having been delegated")),
-        "token_basis": fig("token_basis", total["basis"], state_rel),
-        "tokens_per_point": (fig("tokens_per_point",
-                                 round((total["tokens"] + delegated) / points), state_rel)
-                             if points else unmeasured("tokens_per_point", state_rel,
-                                                       "the batch carries no declared points")),
-        "token_coverage": fig("token_coverage", coverage, state_rel),
-        "token_shape": fig("token_shape",
-                           f"read from {total['shape']}"
-                           + (f" over {', '.join(sessions)}" if sessions else ""), state_rel),
-        "per_unit_cost": per_unit,
-    })
-
-
-def _accuracy_section(root: Path, state: dict, state_rel: str) -> dict:
-    # `token_forecast` is the key `sprint plan` writes; `forecast_tokens` was never written by
-    # anything, so this section read NOT MEASURED on every real run while its fixture supplied
-    # the key by hand. Both are accepted - the run states already on disk carry the one the
-    # planner wrote - and the planner's spelling is read first.
-    forecast = state.get("token_forecast", state.get("forecast_tokens"))
-    current = None
-    if not (state.get(run_state.TOKEN_STAMPS) or []) and state.get(run_state.TOKEN_BASELINE):
-        current = run_state.session_tokens(root)
-    actual = run_state.run_token_total(state, current).get("tokens")
-    # `not actual` as well as `actual is None`: a measured total of zero is not an actual to
-    # divide by, and dividing by it raised ZeroDivisionError out of `build_report` - which
-    # `_file_the_report` does not catch, so it took the whole close down rather than printing
-    # NOT MEASURED.
-    if not isinstance(forecast, int) or not forecast or not actual:
-        missing = ("no plan-time forecast is recorded" if not isinstance(forecast, int)
-                   else "the session meter could not be read, so there is no actual to compare")
-        return _section("accuracy", "Estimate accuracy", {}, not_measured=unmeasured(
-            "accuracy", state_rel, missing))
-    ratio = round(forecast / actual, 2)
-    return _section("accuracy", "Estimate accuracy", {
-        "forecast_tokens": fig("forecast_tokens", forecast, state_rel),
-        "actual_tokens": fig("actual_tokens", actual, state_rel),
-        "forecast_ratio": fig("forecast_ratio", ratio, state_rel),
-        "accuracy_note": fig("accuracy_note",
-                             f"the plan forecast {ratio} of the measured cost", state_rel),
-    })
-
-
-def _units_section(root: Path, paths, state_rel: str, gate_clear=()) -> dict:
-    units = [u for u, _p in paths]
-    # The gate verdicts PREPARE recorded. Passed in rather than re-derived here: judging a
-    # terminal gate means previewing a transition, and this module is read-only by contract.
-    cleared = {sdlc_md.norm_id(u) for u in (gate_clear or [])}
-    mutants = _mutants_by_unit(root, units)
-    delivery, delivery_rel = _verdict_rows(root, "delivery", units)
-    plan, plan_rel = _verdict_rows(root, "plan-review", units)
-    rows = []
-    for uid, p in paths:
-        rel = _rel(root, p) if p is not None else state_rel
-        text = sdlc_md.read_text_safe(p) if p is not None else ""
-        killed, planned, stale_rows = mutants.get(uid, (0, 0, 0))
-        ruled = len(_table_rows(text, "Coverage Ruling"))
-        depth = (sdlc_md.extract_field(text, "Verification depth") or "").split("[[")[0]\
-            .strip()
-        rows.append({
-            "unit_id": fig("unit_id", uid, rel),
-            "unit_points": fig("unit_points", sdlc_md.read_points(text) or 0, rel),
-            "unit_status": fig("unit_status",
-                               (sdlc_md.extract_field(text, "Status") or UNMEASURED).strip(),
-                               rel),
-            # What is TRUE of a unit at report time, which is not its terminal status. Under
-            # D0213 the fan-out belongs to SEAL, so at the moment this page is derived no unit
-            # is Done - it has cleared the gate that lets it become Done. A report printing
-            # Done here would claim the thing the signature has not yet made true.
-            "unit_gate": (fig("unit_gate", "cleared its terminal gate", state_rel)
-                          if uid in cleared else
-                          unmeasured("unit_gate", state_rel,
-                                     "PREPARE recorded no gate verdict for this unit")),
-            "unit_acs": fig("unit_acs", _criteria_count(text), rel),
-            "unit_mutants": (fig("unit_mutants",
-                                 f"{killed}/{planned}"
-                                 + (f" ({stale_rows} stale)" if stale_rows else ""),
-                                 "sdlc-studio/.local/mutation-runs.json") if planned
-                             else unmeasured("unit_mutants", "sdlc-studio/.local",
-                                             f"the mutation ledger carries {stale_rows} row(s) "
-                                             f"for this unit and every one is STALE - the "
-                                             f"mutant was applied to bytes the file no longer "
-                                             f"holds, so the ledger reads it as not-run"
-                                             if stale_rows else
-                                             "the mutation ledger carries no row for this "
-                                             "unit")),
-            "unit_ruled": (fig("unit_ruled", ruled, rel) if ruled else
-                           unmeasured("unit_ruled", rel,
-                                      "the unit declares no Coverage Rulings table")),
-            "unit_entry_depth": (fig("unit_entry_depth", depth, rel) if depth else
-                                 unmeasured("unit_entry_depth", rel,
-                                            "the unit records no Verification depth")),
-            "unit_delivery_rounds": fig(
-                "unit_delivery_rounds",
-                sum(1 for r in delivery if r and sdlc_md.norm_id(r[0]) == uid), delivery_rel),
-            "unit_plan_rejects": fig(
-                "unit_plan_rejects",
-                sum(1 for r in plan
-                    if len(r) > 1 and sdlc_md.norm_id(r[0]) == uid
-                    and r[1].strip().upper() == "REJECT"), plan_rel),
-        })
-    return _section("units", "Evidence by unit", rows=rows)
-
-
 def _waivers_in_force(root: Path | str, window_end: str | None,
                       window_start: str | None = None) -> tuple[list[dict], list[str]]:
     """The ACCEPTED waivers dated at or before `window_end`, as report rows.
@@ -3770,7 +3773,7 @@ def _waivers_in_force(root: Path | str, window_end: str | None,
         if when > hi or when < lo:
             continue
         # `fig()` rows, not raw strings. Every consumer of a section's rows - `leaf_figures`,
-        # `fingerprint`, `render_context`, `_provenance_section` - reads `{"value","source"}`, so
+        # `fingerprint`, `render_context` - reads `{"value","source"}`, so
         # raw strings made `build` exit 1 with an AttributeError on any tree holding a waiver.
         out.append({"waiver_id": fig("waiver_id", rec["id"], rel),
                     "waiver_subject": fig("waiver_subject",
@@ -3813,153 +3816,6 @@ def _waivers_section(root: Path | str, window_end: str | None,
                     rows=rows)
 
 
-def _not_proven_section(root: Path, state: dict, state_rel: str, units: list) -> dict:
-    """What the run did NOT establish, as a section rather than an omission."""
-    rows = [{
-        "gap_title": fig("gap_title", "Per-unit token cost", state_rel),
-        "gap_detail": fig("gap_detail",
-                          "the run total is measured; the split is not. The harness meter is "
-                          "per session and cumulative, so every unit reads UNMEASURED rather "
-                          "than carrying a share nobody can defend.", state_rel),
-        "gap_kind": fig("gap_kind", "measurement", state_rel)}]
-    total = run_state.run_token_total(state)
-    for src in (total.get("uncovered") or []):
-        rows.append({
-            "gap_title": fig("gap_title", "A session with no closing stamp", src or state_rel),
-            "gap_detail": fig("gap_detail",
-                              f"{src} wrote to this run and carries one meter reading, so it "
-                              f"covers no delta and its spend is outside the total above.",
-                              state_rel),
-            "gap_kind": fig("gap_kind", "measurement", state_rel)})
-    survived, stale_rows = 0, 0
-    for _unit, (killed, planned, stale) in _mutants_by_unit(root, units).items():
-        survived += planned - killed
-        stale_rows += stale
-    if survived:
-        rows.append({
-            "gap_title": fig("gap_title", f"{survived} mutant(s) survived",
-                             "sdlc-studio/.local/mutation-runs.json"),
-            "gap_detail": fig("gap_detail",
-                              "a surviving mutant is a production change no test failed on, so "
-                              "the criterion it belongs to is not evidenced by execution.",
-                              "sdlc-studio/.local/mutation-runs.json"),
-            "gap_kind": fig("gap_kind", "instrumentation",
-                            "sdlc-studio/.local/mutation-runs.json")})
-    return _section("not_proven", "Not proven", rows=rows)
-
-
-def _judges_section(root: Path, state: dict, state_rel: str, units: list) -> dict:
-    """Who reviewed this, and on what. The model is named beside each agent, because a review's
-    weight depends on what ran it - and where the ledger records none, that is said."""
-    rows, seen = [], {}
-    for phase, label in (("plan-review", "plan"), ("delivery", "delivery")):
-        ledger, rel = _verdict_rows(root, phase, units)
-        for r in ledger:
-            if len(r) < 3:
-                continue
-            name = r[2].strip()
-            if not name:
-                continue
-            entry = seen.setdefault(name, {"rel": rel, "plan": 0, "delivery": 0})
-            entry[label] += 1
-            entry["rel"] = rel
-    for name, entry in sorted(seen.items()):
-        rows.append({
-            "judge_name": fig("judge_name", name, entry["rel"]),
-            "judge_role": fig("judge_role", "independent reviewer", entry["rel"]),
-            "judge_model": unmeasured("judge_model", entry["rel"],
-                                      "the verdict ledger records no model for this reviewer"),
-            "judge_contribution": fig(
-                "judge_contribution",
-                f"{entry['plan']} plan verdict(s) and {entry['delivery']} delivery verdict(s)",
-                entry["rel"])})
-    total = run_state.run_token_total(state)
-    rows.append({
-        "judge_name": fig("judge_name", "the authoring session", state_rel),
-        "judge_role": fig("judge_role", "author, never the reviewer of record", state_rel),
-        "judge_model": (fig("judge_model", total["model"], state_rel) if total.get("model")
-                        else unmeasured("judge_model", state_rel,
-                                        "the meter stamps record no model")),
-        "judge_contribution": fig(
-            "judge_contribution",
-            "wrote every unit and drove the close. A delegate the author controls does not "
-            "satisfy the independence bar.", state_rel)})
-    if not rows:
-        return _section("judges", "Who judged this", rows=[], not_measured=unmeasured(
-            "judges", "sdlc-studio/reviews", "no verdict ledger names a reviewer for this run"))
-    return _section("judges", "Who judged this", rows=rows)
-
-
-def _carried_section(root: Path, retro_rel: str, retro_text: str, retro_id: str,
-                     units: list) -> dict:
-    """The retro's rulings and its carried-open table - the ONLY figures sourced to the retro.
-
-    The headline counts are not among them: the retro's `Delivered: N / M` line is prose, and a
-    hand-edited retro must not be able to rewrite this report's figures.
-    """
-    carried = _table_rows(retro_text, "Issue |")
-    # THE RULING CELL, matched as a whole word against the doctrine's four-word vocabulary -
-    # `stop-ship`, `not-stop-ship`, `accepted-risk`, `deferred`. A substring search for
-    # "stop-ship" matches `not-stop-ship`, its own negation: on this repository's real retro
-    # that read all 76 carried items as stop-ships and printed `76 stop-ship` under Carried
-    # risk, where the true figure is nought.
-    stop_ship = [r for r in carried
-                 if len(r) > 1 and _ruling(r[1]) == "stop-ship"]
-    actions = _table_rows(retro_text, "Finding |")
-    filed = sorted({m for r in actions for m in re.findall(r"\b(?:BG|CR|US|RFC)\d{4}\b",
-                                                           " ".join(r))})
-    ruled = [r for r in carried if len(r) > 1 and r[1].strip()]
-    mutants = _mutants_by_unit(root, units)
-    killed = sum(k for k, _p, _s in mutants.values())
-    planned = sum(p for _k, p, _s in mutants.values())
-    delivery, delivery_rel = _verdict_rows(root, "delivery", units)
-    plan, plan_rel = _verdict_rows(root, "plan-review", units)
-    d_rej = sum(1 for r in delivery if len(r) > 1 and r[1].strip().upper() == "REJECT")
-    p_rej = sum(1 for r in plan if len(r) > 1 and r[1].strip().upper() == "REJECT")
-    mutation_rel = "sdlc-studio/.local/mutation-runs.json"
-    return _section("carried", "Carried open", {
-        "retro_id": fig("retro_id", sdlc_md.norm_id(retro_id), retro_rel),
-        "filed_count": fig("filed_count", len(filed), retro_rel),
-        "filed_ids": fig("filed_ids", ", ".join(filed) or "none filed this run", retro_rel),
-        "ruled_count": fig("ruled_count", len(ruled), retro_rel),
-        "stop_ship_count": fig("stop_ship_count", len(stop_ship), retro_rel),
-        "carried_risk_reading": fig(
-            "carried_risk_reading",
-            f"{len(carried)} issue(s) carried open, {len(stop_ship)} of them stop-ship",
-            retro_rel),
-        "mutants_killed": (fig("mutants_killed", killed, mutation_rel) if planned
-                           else unmeasured("mutants_killed", "sdlc-studio/.local",
-                                           "the mutation ledger holds no row for this batch")),
-        "mutants_reading": (fig("mutants_reading",
-                                f"{planned - killed} survived of {planned} registered",
-                                mutation_rel) if planned
-                            else unmeasured("mutants_reading", "sdlc-studio/.local",
-                                            "the mutation ledger holds no row for this batch")),
-        "verdict_count": fig("verdict_count", len(delivery) + len(plan), delivery_rel),
-        "verdict_reading": fig(
-            "verdict_reading",
-            f"{p_rej} of {len(plan)} rejected at plan, {d_rej} of {len(delivery)} at delivery",
-            f"{plan_rel}, {delivery_rel}"),
-    })
-
-
-#: The rulings a `Known issues carried` row may carry, from the doctrine's own list. Anything
-#: else is not a ruling and is never guessed at.
-RULINGS = ("stop-ship", "not-stop-ship", "accepted-risk", "deferred")
-
-
-def _ruling(cell: str) -> str | None:
-    """The ruling a carried-issue cell records, or None when it records none.
-
-    Matched as a whole word, longest first, so `not-stop-ship` never reads as `stop-ship`.
-    """
-    text = (cell or "").strip().lower()
-    for word in sorted(RULINGS, key=len, reverse=True):
-        if re.search(rf"(?<![\w-]){re.escape(word)}(?![\w-])", text):
-            return word
-    return None
-
-
 def _signoff_section(state_rel: str) -> dict:
     """The block a signature LANDS in. Unsigned it says so; it is never blanked, because an
     empty cell reads as a signature nobody can find rather than one nobody has given."""
@@ -3972,30 +3828,6 @@ def _signoff_section(state_rel: str) -> dict:
         # a figure holding the digest OF the figure set could not be computed before itself.
         "signed_fingerprint": fig("signed_fingerprint", "not yet signed", state_rel),
     })
-
-
-def _provenance_section(report: dict) -> dict:
-    """One row per section, naming what its figures were derived from. DERIVED from the figure
-    set itself, so it cannot fall out of step with the sources above it."""
-    rows = []
-    for sec in report["sections"]:
-        srcs, seen = [], set()
-        for _s, _k, f in leaf_figures({"sections": [sec]}):
-            for part in str(f.get("source") or "").split(", "):
-                part = part.strip()
-                if not part:
-                    continue
-                short = part.rsplit("/", 1)[0] if "/" in part and part.endswith(".md") else part
-                if short not in seen:
-                    seen.add(short)
-                    srcs.append(short)
-        if not srcs:
-            continue
-        summary = "; ".join(srcs[:4]) + (" ..." if len(srcs) > 4 else "")
-        src = ", ".join(srcs)
-        rows.append({"provenance_figure": fig("provenance_figure", sec["title"], src),
-                     "provenance_source": fig("provenance_source", summary, src)})
-    return _section("provenance", "Provenance", rows=rows)
 
 
 # --- the template engine ------------------------------------------------------------------
@@ -4064,6 +3896,15 @@ def _emit(nodes: list, scope: dict, rows: dict, flags: dict, seen: set) -> str:
     return "".join(out)
 
 
+def _cell(f: dict):
+    """How one figure reads on the page: NOT MEASURED carries its reason, and a large count
+    carries thousands separators."""
+    value = f.get("value")
+    if value == NOT_MEASURED and f.get("reason"):
+        return f"{NOT_MEASURED} - {f['reason']}"
+    return f"{value:,}" if isinstance(value, int) and abs(value) >= 10000 else value
+
+
 def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict, dict, dict]:
     """`(scalars, row lists, flags)` - what the templates are filled from.
 
@@ -4080,15 +3921,12 @@ def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict
         if nm is not None:
             scope[f"{sec['key']}_reason"] = f"{nm.get('reason')} (consulted {nm.get('source')})"
         for key, f in (sec.get("figures") or {}).items():
-            value = f.get("value")
-            if value == NOT_MEASURED and f.get("reason"):
-                value = f"{NOT_MEASURED} - {f['reason']}"
-            scope[key] = f"{value:,}" if isinstance(value, int) and abs(value) >= 10000 else value
-        if sec.get("rows"):
-            rows[_ROW_LISTS.get(sec["key"], sec["key"])] = [
-                {k: (f"{f['value']} - {f['reason']}" if f.get("value") == NOT_MEASURED
-                     and f.get("reason") else f.get("value"))
-                 for k, f in row.items()} for row in sec["rows"]]
+            scope[key] = _cell(f)
+        flags[f"{sec['key']}_rows"] = bool(sec.get("rows"))
+        flags[f"{sec['key']}_units"] = bool(sec.get("unit_rows"))
+        for field, name in (("rows", _ROW_LISTS.get(sec["key"], sec["key"])),
+                            ("unit_rows", f"{sec['key']}_units")):
+            rows[name] = [{k: _cell(f) for k, f in row.items()} for row in sec.get(field) or []]
     scope["report_fingerprint"] = report.get("fingerprint") or "unsigned"
     sig = report.get("signature") or {}
     if sig.get("principal"):
@@ -4106,9 +3944,8 @@ def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict
 
 #: Section key -> the row-list name the templates repeat over. Named here rather than in the
 #: templates so a section can be renamed without editing two files.
-_ROW_LISTS = {"units": "units", "not_proven": "gaps", "dora": "dora",
-              "judges": "judges", "consult": "consult", "provenance": "provenance",
-              "waivers": "waivers"}
+_ROW_LISTS = {"estimates": "estimates", "delivered": "plan_units", "known_issues": "issues",
+              "cost": "models", "dora": "dora", "waivers": "waivers"}
 
 
 def _render(report: dict, template: str, revalidation: dict | None) -> str:
@@ -4159,16 +3996,33 @@ def report_dir(root) -> Path:
     return Path(root) / REPORTS_REL
 
 
+def _unsigned_report_for(root: Path, run_id: str | None) -> str | None:
+    """The id of the unsigned report already filed for `run_id`, or None."""
+    if not run_id:
+        return None
+    for p in sorted(report_dir(root).glob("RPT*.json"), reverse=True):
+        try:
+            stored = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if stored.get("run_id") == run_id and not (stored.get("signature") or {}).get("principal"):
+            return p.stem
+    return None
+
+
 def file_report(root, report: dict) -> str:
     """Write the JSON of record and the Markdown twin. Returns the report id.
 
-    The id is allocated through the shared allocator, so a report can never take a number an
-    index row or origin already holds. No HTML is written: D2a.
+    ONE REPORT PER RUN. Re-filing a run whose unsigned report is already filed rewrites that
+    report in place under its own id; re-running a close used to mint a new id every time. A
+    signed report is a record and is never overwritten, so only a run with no unsigned report
+    is allocated an id, through the shared allocator. No HTML is written.
     """
     root = Path(root)
-    import next_id  # noqa: PLC0415 - sibling script, imported where it is used
-    number = next_id.allocate_number("report", root, remote=False)
-    rid = f"RPT{number:04d}"
+    rid = _unsigned_report_for(root, report.get("run_id"))
+    if rid is None:
+        import next_id  # noqa: PLC0415 - sibling script, imported where it is used
+        rid = f"RPT{next_id.allocate_number('report', root, remote=False):04d}"
     report = {**report, "report_id": rid}
     report["fingerprint"] = report.get("fingerprint") or fingerprint(report)
     write_report(root, report)
@@ -4297,6 +4151,12 @@ def revalidate(root, report_id: str) -> dict:
     rests on. READ-ONLY: nothing on disk is touched.
     """
     stored = read_report(root, report_id)
+    if stored.get("schema") != SCHEMA:
+        # A page of another shape re-derives to different sections, so every figure would read
+        # as moved. Said as what it is instead; the page and its signature stand as filed.
+        raise ReportError(f"{stored.get('report_id') or report_id} was filed under report "
+                          f"schema {stored.get('schema')} and this builder derives schema "
+                          f"{SCHEMA}, so it cannot be re-derived - the page stands as filed")
     # RE-DERIVED OVER THE SAME WINDOW. Passing the stored generation time is what makes this a
     # comparison of the tree against the page, rather than of one window against a wider one:
     # without it every commit made after the report - including the commit that files it -
@@ -4379,18 +4239,37 @@ def cmd_build(args: argparse.Namespace) -> int:
     return 0
 
 
+def _filed_twin(root: Path, report: dict, asked: str, to: str) -> str:
+    """A page filed under another report schema, as it was filed: its Markdown twin under a
+    one-line note. This builder cannot re-derive it, so it has no HTML render."""
+    rid = sdlc_md.norm_id(report.get("report_id") or asked)
+    why = (f"{rid} was filed under report schema {report.get('schema')} and cannot be "
+           f"re-derived by this builder (schema {SCHEMA})")
+    twins = sorted(report_dir(root).glob(f"{rid}-*.md"))
+    if to == "html":
+        raise ReportError(f"{why}, so it has no HTML render - `render --report {rid}` prints "
+                          f"its filed Markdown")
+    if not twins:
+        raise ReportError(f"{why}, and no filed Markdown twin was found beside it")
+    return (f"> {why}; this is the page as it was filed.\n\n"
+            + twins[0].read_text(encoding="utf-8"))
+
+
 def cmd_render(args: argparse.Namespace) -> int:
     root = Path(args.root)
     try:
         report = read_report(root, args.report)
-        state = revalidate(root, args.report)
         if args.out:
             out = Path(args.out).resolve()
             if report_dir(root).resolve() in out.parents or out.parent == report_dir(root).resolve():
                 print(f"error: {out} is inside {REPORTS_REL}/, and {D2A}", file=sys.stderr)
                 return 2
-        page = (render_html(report, revalidation=state) if args.to == "html"
-                else render_markdown(report, revalidation=state))
+        if report.get("schema") != SCHEMA:
+            page = _filed_twin(root, report, args.report, args.to)
+        else:
+            state = revalidate(root, args.report)
+            page = (render_html(report, revalidation=state) if args.to == "html"
+                    else render_markdown(report, revalidation=state))
     except ReportError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

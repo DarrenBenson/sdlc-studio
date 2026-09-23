@@ -477,8 +477,9 @@ def rule(root: Path | str, seat: str, subject: str, question: str, ruling: str, 
     """Record a seat's binding ruling, or cite the precedent that already answers it.
 
     Refused (PrecedentRefused) when the subject already has a ruling and the seat neither
-    cites one (`cites`: no row is written) nor says why it departs (`differs`: the new row
-    names the precedent it departs from)."""
+    cites one of the subject's rulings (`cites`: no row is written) nor says why it departs
+    (`differs`: the new row names the subject ruling it departs from). A subject with no
+    ruling yet may cite any live decision, and a departure from nothing names nothing."""
     from persona_resolve import SEATS  # noqa: PLC0415 - the seat vocabulary has one home
     seat = str(seat or "").strip().lower()
     if seat not in SEATS:
@@ -490,28 +491,42 @@ def rule(root: Path | str, seat: str, subject: str, question: str, ruling: str, 
         raise ValueError("--cites and --differs are exclusive: a ruling follows a precedent "
                          "or departs from it, not both")
     found = precedent(root, key, question)
+    same = [p for p in found if p["match"] == "subject"]
     if cites:
         did = _norm_did(cites)
         cited = next((r for r in _live(root) if r["id"] == did), None)
         if cited is None:
             raise ValueError(f"--cites {cites}: no accepted, live decision with that id")
+        if same and did not in {p["id"] for p in same}:
+            raise PrecedentRefused(
+                f"--cites {did}: {key!r} has its own ruling(s), so cite one of "
+                f"{', '.join(p['id'] for p in same)}, or record a departure with --differs", same)
         return {"id": did, "kind": "cited", "seat": seat, "subject": key, "cited": cited}
-    if not differs and any(p["match"] == "subject" for p in found):
+    if not differs and same:
         raise PrecedentRefused(
             f"{key!r} already has a ruling - cite it with --cites Dxxxx, or record why this one "
             "differs with --differs REASON", found)
     rationale = " ".join(str(reason or "").split())
-    if differs and found:
-        rationale += f" [differs from {found[0]['id']}: {' '.join(differs.split())}]"
+    if differs and same:
+        rationale += f" [differs from {same[0]['id']}: {' '.join(differs.split())}]"
     decision = f"{RULING_PREFIX} {key} [seat: {seat}] {' '.join(question.split())} -> {ruling}"
     r = add(root, decision, rationale, today=today)
     return {**r, "kind": "ruling", "seat": seat, "subject": key,
-            "departs_from": found[0]["id"] if differs and found else None}
+            "departs_from": same[0]["id"] if differs and same else None}
 
 
-def _count(root: Path | str, did: str | None, by: str, seat: str | None = None,
+#: Who answered, for an open run's count. `add`, `promote` and `waive` count only when `--by`
+#: says: an agent recording a decision was not the operator being asked, so an unattributed
+#: row is counted as neither. `rule` is always `persona`.
+BY_CHOICES = ("persona", "operator")
+
+
+def _count(root: Path | str, did: str | None, by: str | None, seat: str | None = None,
            subject: str | None = None, kind: str = "ruling") -> None:
-    """Count who answered in the open run's state; a decision already written stands."""
+    """Count who answered in the open run's state; a decision already written stands.
+    `by` None counts nothing."""
+    if by is None:
+        return
     from lib import run_state  # noqa: PLC0415 - only the counting path needs it
     try:
         run_state.record_ruling(root, did, by, seat, subject, kind)
@@ -606,7 +621,7 @@ def cmd_add(args: argparse.Namespace) -> int:
         return 2
     r = add(args.root, fields["decision"], fields["rationale"], args.status,
             args.supersedes or "")
-    _count(args.root, r["id"], "operator")
+    _count(args.root, r["id"], args.by)
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"recorded {r['id']} ({r['status']}) on {r['date']}")
     return 0
@@ -619,7 +634,7 @@ def cmd_promote(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     r = promote(args.root, args.source, fields["decision"], fields["rationale"])
-    _count(args.root, r["id"], "operator")
+    _count(args.root, r["id"], args.by)
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"promoted {args.source} -> {r['id']} ({r['date']})")
     return 0
@@ -645,7 +660,7 @@ def cmd_waive(args: argparse.Namespace) -> int:
     except ValueError as exc:
         print(f"waive refused: {exc}", file=sys.stderr)
         return 2
-    _count(args.root, r["id"], "operator")
+    _count(args.root, r["id"], args.by)
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"waived {_norm_subject(subject)} -> {r['id']} ({r['date']})")
     return 0
@@ -709,6 +724,12 @@ def cmd_list(args: argparse.Namespace) -> int:
     return 0
 
 
+def _add_by_arg(p: argparse.ArgumentParser) -> None:
+    p.add_argument("--by", choices=BY_CHOICES, default=None,
+                   help="who answered, counted by an open run: `operator` only when the "
+                        "operator was asked; omitted, the row is counted as neither")
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Project decisions log.")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -720,6 +741,7 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--supersedes", default="", help="the D-id this replaces, if any")
     a.add_argument("--root", default=".")
     a.add_argument("--format", choices=("text", "json"), default="text")
+    _add_by_arg(a)
     a.set_defaults(func=cmd_add)
     bf = sub.add_parser("backfill", help="Flip rows superseded-in-lineage but still marked accepted.")
     bf.add_argument("--root", default=".")
@@ -732,6 +754,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_fields_file_arg(pr, PROSE_KEYS)
     pr.add_argument("--root", default=".")
     pr.add_argument("--format", choices=("text", "json"), default="text")
+    _add_by_arg(pr)
     pr.set_defaults(func=cmd_promote)
     wv = sub.add_parser("waive", help="Record a waiver: a required leg or rule is intentionally "
                                       "out of scope here (a machine-detectable decision row).")
@@ -755,6 +778,7 @@ def build_parser() -> argparse.ArgumentParser:
                     help="whether the waiver was taken deliberately, or its window had "
                          "already closed when the item fired - a process failure and a "
                          "decision must not be recorded identically")
+    _add_by_arg(wv)
     wv.set_defaults(func=cmd_waive)
     ru = sub.add_parser("rule", help="Record a persona seat's binding ruling on a subject, or "
                                      "cite the precedent that already answers it.")

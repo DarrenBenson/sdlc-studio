@@ -92,9 +92,13 @@ RETRO_DIR = "sdlc-studio/retros"
 # history). LESSONS-SUMMARY.md is the precedent - a derived, committed sibling of the retros.
 VELOCITY_FILE = "sdlc-studio/retros/VELOCITY.md"
 
-# The sections a retro must carry. Absence is a structural failure, not a style note:
-# each is a question the ceremony exists to ask, and a retro that skips one did not
-# hold the ceremony.
+#: The three lines a retro is written in. Each Try item becomes a lesson when the close extracts
+#: them, so Try is capped: a list that can grow is one nobody acts on.
+KEEP_STOP_TRY = ("Keep", "Stop", "Try")
+TRY_MAX = 3
+
+# The sections a retro written before Keep/Stop/Try carries. Those retros are history, and are
+# still validated against the shape they were written in.
 REQUIRED_SECTIONS = (
     "Delivered",
     "What went well",
@@ -419,9 +423,32 @@ def lesson_title(text: str) -> str:
     return f"{cut}..."
 
 
+def is_three_line(text: str) -> bool:
+    """Is this a Keep/Stop/Try retro, rather than one written in the older shape?"""
+    return any(name in sections(text) for name in KEEP_STOP_TRY)
+
+
 def lessons_in(text: str) -> list[str]:
-    """The retro's lessons, as written. This is the input `extract` lifts into the store."""
-    return _real_bullets(sections(text).get("Lessons", []))
+    """The retro's lessons, as written: its Try items, or an older retro's `## Lessons`. This is
+    the input `extract` lifts into the store."""
+    return _real_bullets(sections(text).get("Try" if is_three_line(text) else "Lessons", []))
+
+
+def three_line_errors(text: str) -> list[str]:
+    """What is wrong with a Keep/Stop/Try retro: an empty line, too many tries, or placeholder
+    text the author never replaced. Nothing else is required."""
+    present = sections(text)
+    errors = [f"'## {name}' is missing or empty - write at least one line of this run's own"
+              for name in KEEP_STOP_TRY if not _real_bullets(present.get(name, []))]
+    tries = _real_bullets(present.get("Try", []))
+    if len(tries) > TRY_MAX:
+        errors.append(f"'## Try' carries {len(tries)} items, over the limit of {TRY_MAX} - keep "
+                      f"the {TRY_MAX} that matter most; each one becomes a lesson")
+    left = sorted(set(PLACEHOLDER_RE.findall(re.sub(r"<!--.*?-->", "", text, flags=re.S))))
+    if left:
+        errors.append(f"placeholder text left in the retro: {', '.join(left)} - replace each "
+                      f"with this run's own words")
+    return errors
 
 
 def carried_max(root) -> int:
@@ -541,6 +568,11 @@ def validate(root, retro_id: str) -> dict:
             f"the sprint (artifact.py new --type retro)"]}
 
     text = path.read_text(encoding="utf-8")
+    if is_three_line(text):
+        errors = three_line_errors(text)
+        return {"ok": not errors, "id": retro_id, "path": str(path), "errors": errors,
+                "demonstration": [], "lessons": lessons_in(text), "carried": [],
+                "findings": [], "filed": [], "fixed": [], "declined": []}
     errors: list[str] = []
 
     present = sections(text)
@@ -2004,7 +2036,8 @@ def velocity_gaps(root, since: str | None = None) -> dict:
 
 
 #: The rate is the median of the most recent RATE_WINDOW usable rows for the model doing the
-#: work; below RATE_MIN_ROWS of them it falls back to the latest single-model rows of any model.
+#: work; below RATE_MIN_ROWS of them it falls back to the latest single-model rows of any model,
+#: and with none of those to the rows that record no model at all.
 RATE_WINDOW = 5
 RATE_MIN_ROWS = 3
 
@@ -2013,6 +2046,11 @@ def _single_model(row: dict) -> str | None:
     """The row's model when it names exactly one, else None (no model, or several)."""
     m = row.get("model")
     return m if m and m not in (MODEL_MIXED, MODEL_UNRECORDED) else None
+
+
+def _unrecorded(row: dict) -> bool:
+    """The row records no model (never one naming several: those were paid by two payers)."""
+    return (row.get("model") or MODEL_UNRECORDED) == MODEL_UNRECORDED
 
 
 def _row_tokens_per_point(row: dict) -> float | None:
@@ -2049,7 +2087,10 @@ def work_model(root, rows: list[dict] | None = None) -> str | None:
 
 
 def _rolling_median(rows: list[dict], per_point, model: str | None) -> tuple:
-    """`(median, rows used, source)` for `model`, or `(None, [], None)` with no usable row."""
+    """`(median, rows used, source)` for `model`, or `(None, [], None)` with no usable row.
+
+    The chain: the model's own rows, then any single model's rows, then the rows that
+    record no model - a last resort, used only when no single-model row exists at all."""
     usable = [(r, v) for r in rows if _single_model(r) and (v := per_point(r)) is not None]
     mine = [u for u in usable if u[0]["model"] == model]
     if len(mine) >= RATE_MIN_ROWS:
@@ -2058,6 +2099,8 @@ def _rolling_median(rows: list[dict], per_point, model: str | None) -> tuple:
         pick = usable[-RATE_WINDOW:]
         how = (f"fallback: {len(mine)} row(s) for {model or 'no named model'}, under "
                f"{RATE_MIN_ROWS}, so the latest rows of any single model")
+    elif unrec := [(r, v) for r in rows if _unrecorded(r) and (v := per_point(r)) is not None]:
+        pick, how = unrec[-RATE_WINDOW:], "measured on unrecorded-model rows"
     else:
         return None, [], None
     used = [r for r, _ in pick]
@@ -2071,15 +2114,16 @@ def measured_rate(root, model: str | None = None) -> dict:
     The median tokens per point of the most recent RATE_WINDOW usable VELOCITY rows for the
     model doing the work (`model`, else `work_model`). A row naming no model, or several, is
     skipped and named, never fatal. Fewer than RATE_MIN_ROWS rows for that model fall back to
-    the latest single-model rows of any model, and `source` says so. With no usable row there
-    is NO rate - None, and the caller quotes its seed as a seed.
+    the latest single-model rows of any model, and `source` says so. With no single-model row
+    at all, the rows naming no model are measured as a last resort, and `source` says that
+    too. With no usable row there is NO rate - None, and the caller quotes its seed.
     """
     project = telemetry.project_name(root)
     rows = velocity_history(root)
     model = model or work_model(root, rows)
     rate, used, source = _rolling_median(rows, _row_tokens_per_point, model)
     skipped = [r["id"] for r in rows
-               if _row_tokens_per_point(r) is not None and not _single_model(r)]
+               if _row_tokens_per_point(r) is not None and not _single_model(r) and r not in used]
     by_model: dict[str, dict] = {}
     for m in sorted({_single_model(r) for r in rows} - {None}):
         v, mused, _ = _rolling_median([r for r in rows if r.get("model") == m],
@@ -3187,6 +3231,24 @@ def cmd_dispose(args) -> int:
     return 1 if left else 0
 
 
+def _flat(value) -> str:
+    return " ".join(str(value or "").split()).lower()
+
+
+def _recorded(text: str, entries: list[dict]) -> bool:
+    """Is this lesson already in the store? Judged on the WHOLE lesson: an entry's body keeps
+    the full text as a paragraph of its own, and a one-sentence lesson is its own headline
+    (compared without a trailing `...`). A headline is never compared with a headline: two
+    lessons opening on the same sentence share one, and the second was dropped as a duplicate,
+    while an elided headline that had lost its `...` matched nothing and was recorded again."""
+    want = _flat(text)
+    for e in entries:
+        paragraphs = {_flat(p) for p in re.split(r"\n\s*\n", str(e.get("body") or ""))}
+        if want in paragraphs or _flat(e.get("title")).removesuffix("...") == want:
+            return True
+    return False
+
+
 def cmd_extract(args) -> int:
     """Lift the retro's lessons into the project store, so a lesson written in a retro
     reaches the digest the next sprint plan prints. Without this the retro is a diary.
@@ -3211,15 +3273,15 @@ def cmd_extract(args) -> int:
     log = lessons.default_project_file(args.root)
     existing_text = log.read_text(encoding="utf-8") if log.is_file() else lessons.PROJECT_HEADER
     existing = lessons.parse_project_lessons(existing_text)
-    have = {e.get("title", "").strip().lower() for e in existing}
 
     added, skipped = [], []
     for text in found:
         title = lesson_title(text)
-        if title.strip().lower() in have:
+        if _recorded(text, existing):
             skipped.append(title)
             continue
         added.append((title, text))
+        existing.append({"title": title, "body": text})
 
     if args.dry_run:
         for title, _text in added:

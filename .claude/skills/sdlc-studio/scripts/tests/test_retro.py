@@ -1157,10 +1157,10 @@ class HarnessTokenCapture(InteractiveSprintFixture):
         row = retro.velocity_history(str(self.root))[0]
         self.assertEqual(row["actual_tokens"], 800_000)   # the sprint-level actual, recorded
         self.assertEqual(row["points"], 8)
-        # US0869: a row naming no model is skipped by the rate, and named, never fatal
+        # D0256: with no single-model row at all, the unrecorded-model row is measured
         rate = retro.measured_rate(str(self.root))
-        self.assertIsNone(rate["tokens_per_point"])
-        self.assertEqual(rate["skipped"], [row["id"]])
+        self.assertEqual(rate["tokens_per_point"], 100_000)   # est-vs-actual can now close
+        self.assertEqual((rate["sprints"], rate["skipped"]), ([row["id"]], []))
 
     def test_recorded_actual_survives_a_plain_rerun_without_flags(self) -> None:
         # round-1 MAJOR: the guard lived only inside --tokens-from-harness, so the plain
@@ -1262,7 +1262,6 @@ class HarnessCaptureReportsModel(InteractiveSprintFixture):
         rate = retro.measured_rate(str(self.root))
         # the rate is booked under the captured model, not the unrecorded-model cell
         self.assertEqual(rate["model"], "claude-opus-4-8")
-        self.assertNotIn(row["id"], rate.get("mixed_sprints", []))
 
 
 class TokenCaptureIsAttributedToTheRun(InteractiveSprintFixture):
@@ -3713,9 +3712,14 @@ class ScaffoldPassesItsValidatorTests(unittest.TestCase):
 
     The template now DEMONSTRATES each shape. That trades one failure for another - a retro
     nobody filled in would pass - so every worked example carries a marker and an unreplaced
-    one is reported."""
+    one is reported.
 
-    TEMPLATE = (Path(__file__).resolve().parents[2] / "templates" / "reviews" / "retro.md")
+    US0877 replaced the shipped scaffold with Keep/Stop/Try, which has no worked examples and
+    is covered by `test_lean_retro`. Retros written in the older shape are history and are
+    still validated in it, so these tests pin that validation against the older template,
+    kept as a fixture."""
+
+    TEMPLATE = Path(__file__).resolve().parent / "fixtures" / "retro-template-legacy.md"
 
     def _scaffold(self) -> Path:
         """The template as `artifact.py new` lands it: front matter filled, body verbatim."""

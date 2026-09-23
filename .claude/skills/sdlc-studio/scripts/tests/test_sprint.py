@@ -12628,12 +12628,20 @@ class CloseRetroDemonstrationTests(CloseDryRunTests):
     that had correctly noticed it.
     """
 
-    def _scaffold_retro(self, root: Path, rid: str = "RETRO9002", *, replaced: bool = False) -> str:
-        """A retro carrying the shipped template's demonstration lines, marked as the template
-        marks them. `replaced=True` strips them, which is what a filled-in retro looks like."""
+    #: The older retro template, whose worked examples these tests are about. US0877 replaced
+    #: the shipped scaffold with Keep/Stop/Try, which has none; retros in the older shape are
+    #: history and the close still reports their unreplaced demonstrations.
+    LEGACY = Path(__file__).resolve().parent / "fixtures" / "retro-template-legacy.md"
+    SHIPPED = Path(__file__).resolve().parents[2] / "templates" / "reviews" / "retro.md"
+
+    def _scaffold_retro(self, root: Path, rid: str = "RETRO9002", *, replaced: bool = False,
+                        shipped: bool = False) -> str:
+        """A retro carrying the older template's demonstration lines, marked as the template
+        marks them. `replaced=True` strips them, which is what a filled-in retro looks like;
+        `shipped=True` lands the shipped scaffold untouched instead."""
         import shutil as _sh
         (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
-        tpl = (Path(__file__).resolve().parents[2] / "templates" / "reviews" / "retro.md")
+        tpl = self.SHIPPED if shipped else self.LEGACY
         text = tpl.read_text(encoding="utf-8")
         if replaced:
             text = "\n".join(l for l in text.splitlines() if "<!-- example -->" not in l)
@@ -12670,7 +12678,7 @@ class CloseRetroDemonstrationTests(CloseDryRunTests):
         one nobody opened."""
         sprint = _load()
         root = self._repo()
-        rid = self._scaffold_retro(root)
+        rid = self._scaffold_retro(root, shipped=True)
         ok, _detail, remedy = sprint._close_retro_validate(root, rid, {})
         self.assertFalse(ok, "an untouched scaffold reached a signed-off close")
         self.assertTrue(remedy.strip(), "a refusal with no remedy is a dead end")
@@ -12703,8 +12711,7 @@ class CloseRetroDemonstrationTests(CloseDryRunTests):
         sprint = _load()
         import retro as retro_mod  # noqa: PLC0415
         root = self._repo()
-        tpl = (Path(__file__).resolve().parents[2] / "templates" / "reviews" / "retro.md")
-        lines = tpl.read_text(encoding="utf-8").splitlines()
+        lines = self.LEGACY.read_text(encoding="utf-8").splitlines()
         kept = [l for l in lines
                 if not (retro_mod.DEMO_MARKER in l and l.strip().startswith("-"))]
         kept += ["", "- a real lesson, with the evidence that produced it", ""]
@@ -19681,8 +19688,8 @@ class PrepareAndSealTests(unittest.TestCase):
                              "the re-run wrote a sign-off row before anyone signed")
             rid2 = (mod.run_state.read(root) or {})["report"]
             rep = sr.read_report(root, rid2)
-            header = {s["key"]: s for s in rep["sections"]}["header"]
-            self.assertEqual(8, header["figures"]["points_delivered"]["value"],
+            delivered = {s["key"]: s for s in rep["sections"]}["delivered"]
+            self.assertEqual(8, delivered["figures"]["points_delivered"]["value"],
                              "the re-derived page does not carry the moved figure's new value")
 
     def test_seal_derives_stopped_from_a_partial_verdict(self):
@@ -19795,17 +19802,15 @@ class ReportCostRowTests(unittest.TestCase):
         self.assertIsNone(cost.get("not_measured"))
         figs = cost["figures"]
         self.assertEqual(figs["tokens_total"]["value"], 7_239_675)
-        self.assertEqual(figs["model"]["value"], "test-model-9")
-        self.assertEqual(figs["tokens_per_point"]["value"], round(7_239_675 / 103))
+        self.assertEqual([("test-model-9", 7_239_675)],
+                         [(r["model_name"]["value"], r["model_tokens"]["value"])
+                          for r in cost["rows"]])
         coverage = figs["token_coverage"]["value"]
         self.assertIn("2", str(coverage), "the coverage clause does not name the session count")
         self.assertIn("s3.jsonl", str(coverage),
                       "the coverage clause does not name the session that wrote to the run "
                       "without a closing stamp")
-        self.assertNotEqual(str(figs["tokens_per_point"]["value"]), "0")
-        # D3: per-unit actuals stay UNMEASURED and are NAMED.
-        self.assertEqual(figs["per_unit_cost"]["value"], "UNMEASURED")
-        units = {s["key"]: s for s in rep["sections"]}["units"]
+        units = {s["key"]: s for s in rep["sections"]}["delivered"]
         self.assertTrue(units["rows"], "the unit table is empty")
 
         # THE SECOND HALF OF THE SAME CRITERION, asserted by the same selector. It used to sit
@@ -19828,10 +19833,9 @@ class ReportCostRowTests(unittest.TestCase):
         self.assertTrue(cost2["not_measured"]["reason"],
                         "NOT MEASURED carries no reason from session_tokens")
         self.assertNotIn("tokens_total", cost2.get("figures") or {})
-        body = sr.render_markdown(rep).split("## Cost", 1)[1].split("\n## ", 1)[0]
+        body = sr.render_markdown(rep).split("### Tokens by model", 1)[1].split("\n### ", 1)[0]
         self.assertIn("NOT MEASURED - ", body,
                       "the rendered cost section does not read NOT MEASURED with its reason")
-        self.assertNotIn("/pt", body, "an unmeasured cost still printed a per-point rate")
 
 
 class PrepareRefusesTests(unittest.TestCase):
@@ -19937,12 +19941,13 @@ class PrepareRefusesTests(unittest.TestCase):
             # the thing the signature has not yet made true.
             import sprint_report as sr
             rep = sr.read_report(root, (mod.run_state.read(root) or {})["report"])
-            rows = {s["key"]: s for s in rep["sections"]}["units"]["rows"]
+            rows = {s["key"]: s for s in rep["sections"]}["delivered"]["rows"]
             self.assertEqual(len(rows), 2)
             for r in rows:
-                self.assertIn("gate", str(r["unit_gate"]["value"]).lower(),
-                              "the unit row does not record that its terminal gate cleared")
-                self.assertTrue(r["unit_gate"]["source"], "the gate figure carries no source")
+                self.assertEqual("delivered", r["unit_outcome"]["value"],
+                                 "a unit whose terminal gate cleared is not read as delivered")
+                self.assertIn("run-state.json", r["unit_outcome"]["source"],
+                              "delivery is not sourced to the gate PREPARE recorded")
 
     def test_the_carve_out_forgives_the_signature_and_nothing_else(self):
         """AC0's carve-out, probed where it matters. MUTANT: return True from

@@ -32,12 +32,16 @@ python3 scripts/decisions.py rule --seat engineering --subject deps:action-pins 
 - **Precedent** lists at most 3 accepted, non-superseded rows: rulings on the same subject
   first (newest first), then rows anywhere in the log that share the question's keywords,
   including rows written before subjects existed.
-- **A subject already ruled on is refused** unless the seat either follows it with
-  `--cites Dxxxx` (nothing new is written; the cited ruling is printed) or departs from it
-  with `--differs REASON` (a new ruling whose rationale names the precedent it departs from).
+- **A subject already ruled on is refused** unless the seat either follows one of its
+  rulings with `--cites Dxxxx` (nothing new is written; the cited ruling is printed; citing any
+  other decision is refused and the subject's rulings are named) or departs from it with
+  `--differs REASON` (a new ruling whose rationale names the subject ruling it departs from).
+  A subject with no ruling yet may cite any live decision, and `--differs` there names nothing.
 - **An open run counts who answered.** Each `rule` (including a citation) adds a `persona`
-  entry to the run state's `rulings` list; each `add`, `promote` or `waive` adds an
-  `operator` entry, so a report can show who answered. Between runs nothing is counted.
+  entry to the run state's `rulings` list. `add`, `promote` and `waive` add an entry only with
+  `--by operator` (the operator was asked) or `--by persona`; without `--by` the row is
+  recorded but counted as neither, so an agent's own `add` never inflates the operator count.
+  Between runs nothing is counted.
 
 `--fields-file FIELDS.json` (or `-` for stdin) supplies the prose fields as JSON instead of
 flags, so text carrying shell metacharacters is stored verbatim. Every verb takes
