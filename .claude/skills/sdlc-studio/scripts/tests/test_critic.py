@@ -30,6 +30,14 @@ def _load():
     return mod
 
 
+@contextlib.contextmanager
+def _before_the_round_rules(mod):
+    """Seed a ledger written before US0872's round rules - several seats on one unit - which
+    every writer now refuses and every reader must still read."""
+    with unittest.mock.patch.object(mod, "round_refusal", lambda *a, **k: None):
+        yield
+
+
 class RecordTests(unittest.TestCase):
     def test_record_and_lookup(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -59,13 +67,15 @@ class RecordTests(unittest.TestCase):
             self.assertEqual(mod.verdict_for(root, "US0017")["verdict"], "APPROVE")  # latest
 
     def test_an_unbriefed_approval_does_not_retire_an_unbriefed_reject(self) -> None:
-        # The other half, and the reason the test above now passes a brief: with neither row
-        # carrying provenance there is nothing to say the approval answered THAT rejection.
+        # The other half: with neither row carrying provenance, only the rejecting reviewer's
+        # own later APPROVE answers the rejection - another reviewer's does not.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
             mod.record_verdict(root, "US0017", "reject", author="builder", issues="bug")
-            mod.record_verdict(root, "US0017", "approve", author="builder")
+            with _before_the_round_rules(mod):
+                mod.record_verdict(root, "US0017", "approve", reviewer="another-critic",
+                                   author="builder")
             self.assertEqual(len(mod.read_verdicts(root)), 2)        # still append-only
             self.assertEqual(mod.verdict_for(root, "US0017")["verdict"], "REJECT")
 
@@ -2036,37 +2046,34 @@ class ReviewRoundCountTests(unittest.TestCase):
                 self.skipTest("PyYAML absent - the override path cannot be exercised")
             self.assertEqual(mod.review_ceiling(root), 7)
 
-    def test_the_shipped_ceiling_default_is_three(self) -> None:
-        """The literal 3, pinned by value rather than through its own symbol.
-
-        Comparing `review_ceiling` to `DEFAULT_REVIEW_CEILING` is true for any value the
-        constant takes, so it pins the wiring and not the number US0261 shipped.
-        """
+    def test_the_shipped_ceiling_default_is_two(self) -> None:
+        """The literal 2, pinned by value rather than through its own symbol: one review and
+        one re-check of its fixes. Comparing `review_ceiling` to `DEFAULT_REVIEW_CEILING` is
+        true for any value the constant takes, so it pins the wiring and not the number."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
-            self.assertEqual(mod.DEFAULT_REVIEW_CEILING, 3)
-            self.assertEqual(mod.review_ceiling(root), 3)   # no config present
+            self.assertEqual(mod.DEFAULT_REVIEW_CEILING, 2)
+            self.assertEqual(mod.review_ceiling(root), 2)   # no config present
 
-    def test_the_default_ceiling_refuses_the_fourth_round_not_the_third(self) -> None:
+    def test_the_default_ceiling_refuses_the_third_round_not_the_second(self) -> None:
         """The numeric boundary, driven through the guard with no explicit ceiling.
 
-        Two-sided: with two rounds recorded the guard returns rather than raises, and with
-        three it raises. A larger default would permit a fourth round; a smaller one would
-        refuse the third.
+        Two-sided: with one round recorded the guard returns rather than raises, and with two
+        it raises. A larger default would permit a third round; a smaller one would refuse the
+        second.
         """
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod, rs = _load(), self._open(root)
-            for _ in range(2):
-                mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
-                                         verdict="reject", findings="f")
-            self.assertEqual(mod.review_round_guard(root), 2)   # still under the ceiling
+            mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
+                                     verdict="reject", findings="f")
+            self.assertEqual(mod.review_round_guard(root), 1)   # still under the ceiling
             mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
                                      verdict="reject", findings="f")
             with self.assertRaises(ValueError):
                 mod.review_round_guard(root)
-            self.assertEqual(rs.review_round_count(root), 3)
+            self.assertEqual(rs.review_round_count(root), 2)
 
     def test_ceiling_override_is_explicit_and_recorded(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -3146,7 +3153,9 @@ class SupersedeTests(unittest.TestCase):
             root = Path(d)
             mod = _load()
             mod.record_verdict(root, "US0300", "reject", reviewer="critic-a", author="builder")
-            mod.record_verdict(root, "US0300", "approve", reviewer="critic-b", author="builder")
+            with _before_the_round_rules(mod):
+                mod.record_verdict(root, "US0300", "approve", reviewer="critic-b",
+                                   author="builder")
             date = mod.read_verdicts(root)[0]["date"]
             with self.assertRaises(ValueError):
                 mod.record_supersession(root, "US0300", date=date, reason="dup",
@@ -3964,15 +3973,15 @@ class BatchFormTests(_BatchBase):
     def test_a_partial_failure_names_the_units_written_and_exits_non_zero(self) -> None:
         """A batch that half-succeeded and reported success is worse than one that never ran:
         the caller reruns nothing and the gap is invisible."""
-        real = self.mod.record_verdict
+        real = self.mod._record          # the writer `record` calls, as `record_verdict` does
 
         def explode(root, unit, *a, **kw):
             if sdlc_md_norm(unit) == "US0002":
                 raise ValueError("US0002 is unwritable")
             return real(root, unit, *a, **kw)
 
-        self.mod.record_verdict = explode
-        self.addCleanup(setattr, self.mod, "record_verdict", real)
+        self.mod._record = explode
+        self.addCleanup(setattr, self.mod, "_record", real)
         rc, out, err = self._run(["record", "--brief", "abcdef123456",
                                   "--units", "US0001,US0002,US0003",
                                   "--verdict", "approve", "--reviewer", "qa",
@@ -5988,8 +5997,9 @@ class LedgerRollupTests(unittest.TestCase):
             root = Path(d)
             mod.record_verdict(root, "US0017", "REJECT", "engineering", "builder",
                                "[new] alpha broke", "delivery", "aaaaaaaaaaaa")
-            mod.record_verdict(root, "US0017", "APPROVE", "product", "builder",
-                               "none", "delivery", "bbbbbbbbbbbb")
+            with _before_the_round_rules(mod):
+                mod.record_verdict(root, "US0017", "APPROVE", "product", "builder",
+                                   "none", "delivery", "bbbbbbbbbbbb")
             self.assertEqual("REJECT", mod.verdict_for(root, "US0017")["verdict"],
                              "a different seat's approval retired an unanswered rejection")
 
@@ -6006,8 +6016,9 @@ class LedgerRollupTests(unittest.TestCase):
             root = Path(d)
             mod.record_verdict(root, "US0017", "REJECT", "qa-seat-round-1", "builder",
                                "[new] alpha broke", "delivery", "aaaaaaaaaaaa")
-            mod.record_verdict(root, "US0017", "APPROVE", "qa-seat-round-2", "builder",
-                               "none", "delivery", "aaaaaaaaaaaa")   # same brief, later round
+            with _before_the_round_rules(mod):   # seats named per round, as they then were
+                mod.record_verdict(root, "US0017", "APPROVE", "qa-seat-round-2", "builder",
+                                   "none", "delivery", "aaaaaaaaaaaa")   # same brief, later
             self.assertEqual("APPROVE", mod.verdict_for(root, "US0017")["verdict"],
                              "a seat could not retire its own rejection in a later round")
 
@@ -6021,12 +6032,13 @@ class LedgerRollupTests(unittest.TestCase):
         mod = _load()
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            mod.record_verdict(root, "US0017", "REJECT", "engineering", "builder",
-                               "[new] the first round finding", "delivery", "aaaaaaaaaaaa")
-            mod.record_verdict(root, "US0017", "REJECT", "qa", "builder",
-                               "[new] the second round finding", "delivery", "bbbbbbbbbbbb")
-            mod.record_verdict(root, "US0017", "APPROVE", "product", "builder",
-                               "none", "delivery", "cccccccccccc")
+            with _before_the_round_rules(mod):
+                mod.record_verdict(root, "US0017", "REJECT", "engineering", "builder",
+                                   "[new] the first round finding", "delivery", "aaaaaaaaaaaa")
+                mod.record_verdict(root, "US0017", "REJECT", "qa", "builder",
+                                   "[new] the second round finding", "delivery", "bbbbbbbbbbbb")
+                mod.record_verdict(root, "US0017", "APPROVE", "product", "builder",
+                                   "none", "delivery", "cccccccccccc")
             standing = mod.verdict_for(root, "US0017")
             self.assertEqual("REJECT", standing["verdict"])
             self.assertIn("second round", standing["issues"],
@@ -6045,10 +6057,11 @@ class LedgerRollupTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             # Two rejections from DIFFERENT seats, so neither retires the other.
-            mod.record_verdict(root, "US0905", "REJECT", "engineering", "b",
-                               "[new] the engineering finding", "delivery", "aaaaaaaaaaaa")
-            mod.record_verdict(root, "US0905", "REJECT", "qa", "b",
-                               "[new] the qa finding", "delivery", "bbbbbbbbbbbb")
+            with _before_the_round_rules(mod):
+                mod.record_verdict(root, "US0905", "REJECT", "engineering", "b",
+                                   "[new] the engineering finding", "delivery", "aaaaaaaaaaaa")
+                mod.record_verdict(root, "US0905", "REJECT", "qa", "b",
+                                   "[new] the qa finding", "delivery", "bbbbbbbbbbbb")
             # The QA rejection is answered; the engineering one is not. This is the real shape
             # of the six units the roll-up surfaced - a partial repair against one round.
             mod.record_repair(root, "US0905", "b",
@@ -6204,9 +6217,9 @@ class RepairPlacementTests(unittest.TestCase):
         repair branch rather than through `per_unit_ok`. Relocating the consultation into
         `verdict_for` makes `per_unit_ok` true, runs `tier_covers`, and flips it.
 
-        The fixture holds a LATER independent APPROVE carrying a DIFFERENT fingerprint: without
-        one, the relocation returns the REJECT as `latest`, `per_unit_ok` stays false and the
-        mutant survives.
+        The fixture holds a LATER independent APPROVE from ANOTHER reviewer carrying a DIFFERENT
+        fingerprint, so it does not retire the REJECT: without one, the relocation returns the
+        REJECT as `latest`, `per_unit_ok` stays false and the mutant survives.
         """
         with tempfile.TemporaryDirectory() as d:
             root = self._proj(d)
@@ -6214,7 +6227,7 @@ class RepairPlacementTests(unittest.TestCase):
                 self._DELIVERY_HEAD
                 + ("| BG0001 | REJECT | qa; independent | eng; session | 2026-08-27 "
                    "| aaaaaaaaaaaa | light | the oracle cannot fail |\n")
-                + ("| BG0001 | APPROVE | qa; independent | eng; session | 2026-08-27 "
+                + ("| BG0001 | APPROVE | qa2; independent | eng; session | 2026-08-27 "
                    "| bbbbbbbbbbbb | light | none blocking |\n"),
                 encoding="utf-8")
             (root / "sdlc-studio" / "reviews" / "repair-record.md").write_text(
@@ -6755,7 +6768,8 @@ class CleanSpanWidthAndRefusalTests(unittest.TestCase):
             mod = self.critic
             for when, seat, issue in [("2026-09-08", "qa", "the older round names one thing"),
                                       ("2026-09-09", "eng", "the newer round names another")]:
-                with unittest.mock.patch.object(mod.sdlc_md, "now_date", lambda w=when: w):
+                with unittest.mock.patch.object(mod.sdlc_md, "now_date", lambda w=when: w), \
+                        _before_the_round_rules(mod):
                     mod.record_verdict(root, "BG9001", "reject", reviewer=seat, author="author",
                                        issues=f"[new] {issue}", tier="full")
             # The stray sits in the closure answering the LATER rejection, so the earlier
@@ -6788,7 +6802,7 @@ class CodeSpanEdgeSpaceTests(unittest.TestCase):
     _HEAD = ("# Critic Verdicts\n\n"
              "| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Issues |\n"
              "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
-    _SEEDED = "| US0001 | APPROVE | qa seat | author | 2026-09-14 | - | full | an earlier round |\n"
+    _SEEDED = "| US0002 | APPROVE | qa seat | author | 2026-09-14 | - | full | an earlier row |\n"
     BIN = REPO_ROOT / "node_modules" / ".bin" / "markdownlint"
     CONFIG = REPO_ROOT / ".markdownlint.json"
 
@@ -7056,13 +7070,18 @@ class UnmatchedBriefFingerprintTests(unittest.TestCase):
             # marked rejection carrying the same fingerprint...
             self._record(root, "US0003", "--brief", self.INVENTED, verdict="REJECT",
                          issues="[new] AC1 is not reached")
-            self._record(root, "US0003", "--brief", self.INVENTED)
+            marked_cell = mod.read_verdicts(root)[-1]["brief"]
+            with _before_the_round_rules(mod):
+                mod.record_verdict(root, "US0003", "APPROVE", "qa seat r2", "author",
+                                   "none blocking", brief=marked_cell)
             self.assertEqual("REJECT", mod.verdict_for(root, "US0003")["verdict"])
             # ...where the same pair on a matched fingerprint does
             _text, fp = self._brief(root, "US0004")
             self._record(root, "US0004", "--brief", fp, verdict="REJECT",
                          issues="[new] AC1 is not reached")
-            self._record(root, "US0004", "--brief", fp)
+            with _before_the_round_rules(mod):
+                mod.record_verdict(root, "US0004", "APPROVE", "qa seat r2", "author",
+                                   "none blocking", brief=fp)
             self.assertEqual("APPROVE", mod.verdict_for(root, "US0004")["verdict"])
             rows = [(r["unit"], r["brief"]) for r in mod.read_verdicts(root)]
             self.assertEqual([("US0003", f"{self.INVENTED} unmatched")] * 2
@@ -7106,6 +7125,9 @@ class UnmatchedBriefFingerprintTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root, mod = Path(d), _load()
             self._workspace(root)
+            # six rows on one unit: this is about what each row records, not the round cap
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "review:\n  max_rounds: 9\n", encoding="utf-8")
             # the fixture must derive differently, or the tier paths below discriminate nothing
             self.assertEqual(("light", "full"),
                              (mod.tier_for(root, "US0001"), mod.tier_for(root, "US0002")))

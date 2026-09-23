@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import contextlib
 import glob
 import tempfile
 import hashlib
@@ -2038,23 +2039,43 @@ def write_report(path: Path, stories: list[StoryReport], dry_run: bool = False,
         }
         for s in stories
     }
-    merged = new_stories
-    if merge and path.exists():
-        try:
-            prior = json.loads(path.read_text(  # bare-read-ok: not an artefact body; the
-                    # enclosing except already catches UnicodeDecodeError via ValueError
-                    encoding="utf-8")).get("stories", {})
-            if isinstance(prior, dict):
-                merged = {**prior, **new_stories}  # this run's entries take precedence
-        except (ValueError, OSError):
-            pass
-    data = {
-        "generated_at": sdlc_md.now_iso8601(),
-        "dry_run": dry_run,
-        "stories": merged,
-    }
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    # Locked read-merge-write, written atomically: parallel verifiers of different stories
+    # each merge into the report the previous one wrote, so no entry is lost.
+    with _report_lock(path):
+        merged = new_stories
+        if merge and path.exists():
+            try:
+                prior = json.loads(path.read_text(  # bare-read-ok: not an artefact body; the
+                        # enclosing except already catches UnicodeDecodeError via ValueError
+                        encoding="utf-8")).get("stories", {})
+                if isinstance(prior, dict):
+                    merged = {**prior, **new_stories}  # this run's entries take precedence
+            except (ValueError, OSError):
+                pass
+        data = {
+            "generated_at": sdlc_md.now_iso8601(),
+            "dry_run": dry_run,
+            "stories": merged,
+        }
+        sdlc_md.atomic_write(path, json.dumps(data, indent=2))
+
+
+@contextlib.contextmanager
+def _report_lock(path: Path):
+    """An exclusive lock on a sibling `.lock` file for the report's read-merge-write. A no-op
+    where `flock` is unavailable (Windows)."""
+    try:
+        import fcntl
+    except ImportError:
+        yield
+        return
+    with open(path.with_name(path.name + ".lock"), "w", encoding="utf-8") as fh:
+        fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
 
 
 def append_history(path: Path, stories: list[StoryReport], dry_run: bool) -> None:

@@ -1027,8 +1027,8 @@ _REJECT_GUARDED_TYPES = ("story", "bug")
 #: table - is named as not being one.
 _REJECT_EXITS = (
     "Answer it with `critic.py repair` closing each finding (`filed:` to an artefact that "
-    "exists, or `fixed:` with the evidence), or with an independent re-review recorded against "
-    "the same brief; a ruling in a retro's `Known issues carried` table does not discharge it, "
+    "exists, or `fixed:` with the evidence), or with a round-2 APPROVE from the reviewer who "
+    "rejected; a ruling in a retro's `Known issues carried` table does not discharge it, "
     "and a `--force` waiver is recorded in the artefact's `Forced-override` field")
 
 
@@ -1037,8 +1037,8 @@ def _unanswered_delivery_reject(root, uid: str) -> str | None:
     reviewer and date with the findings still outstanding - or None when it carries none, or
     carries one that is answered.
 
-    ANSWERED is `critic.coverage_state` reading `approved` (a later independent APPROVE on the
-    same brief) or `repaired` (a complete repair whose `filed:` closures still resolve) - the one
+    ANSWERED is `critic.coverage_state` reading `approved` (a later independent APPROVE from the
+    reviewer who rejected) or `repaired` (a complete repair whose `filed:` closures still resolve) - the one
     reader review-coverage and conformance already use, so a unit this passes is one they count
     as reviewed, and a unit that passes the close cannot then stop at its own Done inside
     apply-signoff. The DELIVERY phase only: a plan-review rejection is the plan gate's to answer.
@@ -1072,8 +1072,8 @@ def _unanswered_delivery_reject(root, uid: str) -> str | None:
         # No repair, and a REJECT that itemises nothing: there is no finding to name and no
         # closure to count, so saying "every finding carries a closure" would state a repair
         # that was never recorded.
-        detail = ("the REJECT itemises no findings, no repair is recorded against it, and no "
-                  "independent re-review on its brief has answered it")
+        detail = ("the REJECT itemises no findings, no repair is recorded against it, and its "
+                  "reviewer has not approved a later round")
     return f"{uid} carries an {UNANSWERED_REJECT} ({who}): {detail}"
 
 
@@ -1518,19 +1518,20 @@ FINDINGS_FILED_FIELD = "Findings-filed-to"
 def _findings_filed_to(root, uid: str) -> list[str]:
     """The artefact ids this unit's delivery repair FILED its findings to, first seen first.
 
-    Read through `critic.repair_state`, the reader review-coverage and conformance share, never
-    from the ledger's latest row: the one-call close appends its APPROVE before the transition
-    runs, and an APPROVE carrying no brief fingerprint retires no REJECT, so a latest-row reading
-    would see the APPROVE and drop a discharge that still stands. Only a `filed:` closure's
-    `artefact` counts. A `fixed:` closure whose evidence happens to name an id is a fix, not a
-    filing, and the other ids a filed closure's evidence mentions are context, not destinations.
+    Read from every repair row the unit carries, not through `critic.repair_state`, which stops
+    reading a repair once a later round's APPROVE has answered its REJECT: the one-call close
+    appends that APPROVE before the transition runs, and a filing still stands after it. Only a
+    `filed:` closure's `artefact` counts, and only while it resolves. A `fixed:` closure whose
+    evidence happens to name an id is a fix, not a filing, and the other ids a filed closure's
+    evidence mentions are context, not destinations.
     """
     import critic  # noqa: PLC0415 - deferred sibling; only a delivered-terminal close pays for it
     out: list[str] = []
-    for closure in critic.repair_state(root, uid, "delivery")["closed"]:
-        artefact = closure["artefact"] if closure["disposition"] == "filed" else ""
-        if artefact and artefact not in out:
-            out.append(artefact)
+    for row in critic.repairs_for(root, uid, "delivery"):
+        for closure in critic.parse_closures(row.get("closed", "")):
+            artefact = closure.get("artefact") if closure["disposition"] == "filed" else ""
+            if artefact and artefact not in out and sdlc_md.find_by_id(root, artefact):
+                out.append(artefact)
     return out
 
 
@@ -1742,6 +1743,15 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
                 new_text, bypassed, result["id"], new_status)
     out = _post_write_sync_and_record(root, type_, path, new_text, result, current,
                                       new_status, vocab, gate_warn, metrics)
+    # The unit's measured time and tokens, for a batch unit of an open run. Never a reason for
+    # the transition to fail: it has already landed, and an unrecorded span is reported.
+    try:
+        from lib import run_state  # noqa: PLC0415
+        run_state.record_unit_actual(root, artifact_id, target_canon or "",
+                                     sdlc_md.is_terminal_status(type_, target_canon or ""))
+    except Exception as exc:  # noqa: BLE001 - the status write has landed; never fail it now
+        print(f"note: {artifact_id}'s time and tokens were not recorded ({exc})",
+              file=sys.stderr)
     # SURVIVOR FILING, and it happens HERE for one reason: `_pre_write_gates` runs up to three
     # times per `set` - the dry-run preflight, the real transition, and the force-bypass re-run
     # with force off - so a filing inside the gate mints two or three artefacts from one
@@ -2150,8 +2160,16 @@ def cmd_set(args: argparse.Namespace) -> int:
         return 2
     # One-call close (the three-verb ceremony was easy to half-do): --depth stamps
     # `Verification depth`, --reviewer/--author record the independent verdict, then the
-    # gated transition runs - with every PREDICTABLE refusal raised before any write.
+    # gated transition runs. A verdict is held to `critic record`'s rules - its vocabulary,
+    # independence and the review rounds - before anything is written, and is withdrawn if
+    # the transition is refused.
+    import critic  # noqa: PLC0415 - the verdict rules, and CarryFailed below
     reviewer, author = getattr(args, "reviewer", None), getattr(args, "author", None)
+    if args.verdict is not None:
+        if args.verdict.upper() not in critic.VERDICTS:
+            print(f"error: --verdict {args.verdict!r} is not a verdict - expected one of "
+                  f"{', '.join(critic.VERDICTS)}. Nothing was written", file=sys.stderr)
+            return 2
     if reviewer or author:
         if not (reviewer and author and args.verdict):
             print("error: the one-call verdict needs --verdict, --reviewer AND --author "
@@ -2159,7 +2177,6 @@ def cmd_set(args: argparse.Namespace) -> int:
                   "(e.g. an acceptance author) with no verdict, use `transition annotate`.",
                   file=sys.stderr)
             return 2
-        import critic
         independent, why = critic.independence(reviewer, author)
         if not independent:
             print(f"error: {why} - independence is the floor, so nothing was written",
@@ -2196,38 +2213,47 @@ def cmd_set(args: argparse.Namespace) -> int:
                 reason = _static_depth_refusal(args.root, aid, args.depth, args.status)
                 if reason:
                     raise ValueError(f"pre-write: {reason}")
-            if pre_writes and not args.dry_run:
-                # The depth gate is not the only predictable refusal, and the others ran AFTER
-                # the stamp and the verdict row - so a refused close left a depth stamp and a
-                # persistent APPROVE for a close that never happened. Run the WHOLE ladder as a
-                # dry-run first, against the text the real run will see; a refusal raises here,
-                # before anything is written.
-                # The coverage options travel with the pre-flight, or `--depth` (the canonical
-                # one-call close) silently drops `--base` and `--coverage-report`: the ladder
-                # refused for want of a base ref the caller had given, and the collection ran
-                # twice when it did not.
-                transition(args.root, aid, args.status, dry_run=True, force=args.force,
-                           triaged_by=args.triaged_by, triage_severity=args.triage_severity,
-                           pending_fields=pending, coverage_opts=coverage_opts)
-            if getattr(args, "depth", None) and not args.dry_run:
-                annotate(args.root, aid, "Verification depth", args.depth)
-            if reviewer and not args.dry_run:
-                import critic
-                critic.record_verdict(args.root, aid, args.verdict, reviewer, author)
-            metrics = {k: v for k, v in {"iterations": _num(args.iterations),
-                                         "wall_time_s": _num(args.wall_time_s),
-                                         "tokens": _num(getattr(args, "tokens", None)),
-                                         "model": getattr(args, "model", None),
-                                         "attempts": attempts,
-                                         "critic_verdict": args.verdict}.items() if v is not None}
-            res = transition(args.root, aid, args.status, dry_run=args.dry_run,
-                             force=args.force, metrics=metrics,
-                             triaged_by=args.triaged_by, triage_severity=args.triage_severity,
-                             pending_fields=pending,
-                             coverage_opts=coverage_opts)
+            # The round rules are `critic.record_verdict`'s, applied as the verdict is written:
+            # a refusal raises before anything else is. The verdict is withdrawn only while the
+            # unit is still at its from-status - a raise after the status write keeps it.
+            start = _status_on_disk(args.root, aid)
+            verdict = (critic.provisional_verdict(
+                args.root, aid, args.verdict, reviewer, author,
+                pending=lambda a=aid, s=start: _status_on_disk(args.root, a) == s)
+                if reviewer and not args.dry_run else contextlib.nullcontext())
+            with verdict:
+                if pre_writes and not args.dry_run:
+                    # The whole ladder as a dry-run BEFORE the depth stamp, against the text
+                    # the real run will see, so a refusal leaves no stamp. The verdict is
+                    # already written, so a gate that reads it judges the real state, and it
+                    # is withdrawn with the refusal. The coverage options travel with the
+                    # pre-flight, or `--depth` silently drops `--base` and `--coverage-report`.
+                    transition(args.root, aid, args.status, dry_run=True, force=args.force,
+                               triaged_by=args.triaged_by,
+                               triage_severity=args.triage_severity,
+                               pending_fields=pending, coverage_opts=coverage_opts)
+                if getattr(args, "depth", None) and not args.dry_run:
+                    annotate(args.root, aid, "Verification depth", args.depth)
+                metrics = {k: v for k, v in {"iterations": _num(args.iterations),
+                                             "wall_time_s": _num(args.wall_time_s),
+                                             "tokens": _num(getattr(args, "tokens", None)),
+                                             "model": getattr(args, "model", None),
+                                             "attempts": attempts,
+                                             "critic_verdict": args.verdict}.items()
+                           if v is not None}
+                res = transition(args.root, aid, args.status, dry_run=args.dry_run,
+                                 force=args.force, metrics=metrics,
+                                 triaged_by=args.triaged_by,
+                                 triage_severity=args.triage_severity,
+                                 pending_fields=pending, coverage_opts=coverage_opts)
             results.append(res)
             if args.format != "json":
                 _print_result(res, args.dry_run)
+        except critic.CarryFailed as exc:
+            # the verdict and the transition landed; only the carry did not, and it says so
+            refused += 1
+            results.append({"id": aid, "carry_failed": str(exc)})
+            print(f"error: {exc}", file=sys.stderr)
         except (ValueError, FileNotFoundError) as exc:
             # one refusal never aborts the rest - each id is individually gated
             refused += 1
@@ -2259,6 +2285,13 @@ def cmd_set(args: argparse.Namespace) -> int:
     if not refused:
         _report_appetite(args)
     return 1 if refused else 0
+
+
+def _status_on_disk(root, aid: str) -> str | None:
+    """The Status the artefact's file holds now, or None when no file resolves."""
+    found = sdlc_md.find_by_id(root, aid)
+    return sdlc_md.extract_field(sdlc_md.read_text_safe(found[0]) or "", "Status") if found \
+        else None
 
 
 def _annotate_fields(args: argparse.Namespace) -> tuple[str, str]:

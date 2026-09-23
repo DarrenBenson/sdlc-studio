@@ -6541,21 +6541,23 @@ class ClosedOverRejectNamesTheBugTests(unittest.TestCase):
     def test_the_one_call_close_names_the_filed_artefacts(self) -> None:
         """AC2. MUTANT: key the write on the unit's latest ledger row being a REJECT. The one-call
         close appends its APPROVE BEFORE the transition runs, so that reading sees an APPROVE and
-        writes nothing - while `repair_state` still reads the filed closures, because an APPROVE
-        carrying no brief fingerprint retires no REJECT."""
+        writes nothing. And read the filings through `repair_state`, which stops reading a repair
+        once the REJECT is answered. The APPROVE is the rejecting reviewer's own round 2, the only
+        reviewer the one-call close accepts there."""
         import critic
         root, path = self._story()
         self._reject_and_repair(root, "#1 -> filed: BG0002; #2 -> filed: BG0003")
         code, out = _cli(root, "set", "--id", "US0001", "--status", "Done",
-                         "--verdict", "APPROVE", "--reviewer", "qa-r2", "--author", "dev")
+                         "--verdict", "APPROVE", "--reviewer", "qa", "--author", "dev")
         self.assertEqual(code, 0, out)
         self.assertEqual(self._status(path), "Done")
         rows = [r for r in critic.read_verdicts(root, "delivery")
                 if sdlc_md.norm_id(r["unit"]) == "US0001"]
         self.assertEqual(rows[-1]["verdict"].upper(), "APPROVE",
                          "the premise: the ledger's LAST row is the one-call close's APPROVE")
-        self.assertEqual(critic.repair_state(root, "US0001", "delivery")["filed"], 2,
-                         "the premise: repair_state still reads both filed closures")
+        self.assertEqual(critic.repair_state(root, "US0001", "delivery")["state"], "none",
+                         "the premise: the round-2 APPROVE answered the REJECT, so repair_state "
+                         "no longer reads the repair")
         line = _findings_filed_line(path)
         self.assertIsNotNone(line, "the one-call close wrote no Findings-filed-to line")
         self.assertEqual(_ids_on(line), {"BG0002", "BG0003"}, line)
@@ -6900,8 +6902,10 @@ class RejectNeedsAnAnswerTests(unittest.TestCase):
             root = self._root()
             path = self._story(root)
             self._reject(root, "US0001")
-            critic.record_verdict(root, "US0001", "APPROVE", reviewer=reviewer, author=author,
-                                  brief=brief)
+            # a ledger from before the round rules, which refuse `product`'s round 2 now
+            with unittest.mock.patch.object(critic, "round_refusal", lambda *a, **k: None):
+                critic.record_verdict(root, "US0001", "APPROVE", reviewer=reviewer,
+                                      author=author, brief=brief)
             results[name] = (root, path, critic.coverage_state(root, "US0001", "delivery"))
         self.assertEqual(results["same"][2], critic.COVERAGE_APPROVED)
         self.assertEqual(results["different"][2], critic.COVERAGE_UNREVIEWED)
@@ -7013,9 +7017,11 @@ class RejectNeedsAnAnswerTests(unittest.TestCase):
 
     def _verdict(self, root: Path, verdict: str, reviewer: str, author: str, brief: str,
                  on: str, issues: str = "") -> None:
-        """One delivery verdict, back-dated to `on`."""
+        """One delivery verdict, back-dated to `on`: history, so written as it was before the
+        round rules, which refuse a second seat's round on one unit."""
         import critic
-        with unittest.mock.patch.object(critic.sdlc_md, "now_date", return_value=on):
+        with unittest.mock.patch.object(critic.sdlc_md, "now_date", return_value=on), \
+                unittest.mock.patch.object(critic, "round_refusal", lambda *a, **k: None):
             critic.record_verdict(root, "US0001", verdict, reviewer=reviewer, author=author,
                                   brief=brief, issues=issues)
 

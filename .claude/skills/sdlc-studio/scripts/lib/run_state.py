@@ -151,6 +151,106 @@ TRANSCRIPTS_ENV = "SDLC_STUDIO_TRANSCRIPTS"
 SESSION_MODEL_MIXED = "mixed"
 
 
+# --- lean loop: unit actuals (EP0260) ---
+# Each batch unit's elapsed time and token spend, measured as it is delivered. Entering
+# In Progress opens a span, stamping the time and the run's token total; a terminal status
+# closes it and adds the span's minutes and token delta. A unit that re-enters In Progress
+# after closing opens another span, so both accumulate. Tokens are the run's own total
+# (`run_token_total`), and a span is measured only when both of its ends were read from the
+# same session's meter: an unread end, or an end in another session, gives None - not
+# measured - never 0.
+UNIT_ACTUALS = "unit_actuals"
+UNIT_START_STATUS = "In Progress"
+
+
+def _unit_clock() -> str:
+    """The moment a span opens or closes, as the ISO stamp the run state stores."""
+    return sdlc_md.now_iso8601()
+
+
+def record_unit_actual(repo_root: Path | str, unit_id: str, status: str,
+                       terminal: bool) -> dict | None:
+    """Open or close `unit_id`'s span for a move to `status`, and return its entry - or None
+    when nothing is recorded: no open run, a unit outside its batch, a status that neither
+    starts nor ends the work, a start while a span is open, or an end with none open."""
+    uid = sdlc_md.norm_id(unit_id)
+    starting = status == UNIT_START_STATUS
+
+    def applies(state: dict) -> bool:
+        if state.get("outcome") != RUNNING or not state.get("run_id") or uid not in {
+                sdlc_md.norm_id(b) for b in (state.get("batch") or [])}:
+            return False
+        is_open = bool(((state.get(UNIT_ACTUALS) or {}).get(uid) or {}).get("open"))
+        return (starting and not is_open) or (terminal and is_open)
+
+    if not (starting or terminal) or not applies(read(repo_root)):
+        return None
+    stamp = _stamp(repo_root, "unit-start" if starting else "unit-end")
+    now = _unit_clock()
+
+    def apply(state: dict) -> dict:
+        if not applies(state):
+            return state
+        if stamp:
+            state[TOKEN_STAMPS] = list(state.get(TOKEN_STAMPS) or []) + [stamp]
+        total = run_token_total(state)["tokens"]
+        actuals = dict(state.get(UNIT_ACTUALS) or {})
+        entry = dict(actuals.get(uid) or {"minutes": 0.0,
+                                          "tokens": 0 if isinstance(total, int) else None})
+        if starting:
+            entry.update(started_at=now, start_tokens=total, open=True,
+                         start_source=(stamp or {}).get("source"))
+            if not isinstance(total, int):
+                entry["tokens"] = None
+        else:
+            elapsed = sdlc_md.parse_iso8601(now) - sdlc_md.parse_iso8601(entry["started_at"])
+            entry["minutes"] = round(entry["minutes"] + elapsed.total_seconds() / 60, 2)
+            start = entry.get("start_tokens")
+            same_meter = bool(stamp and entry.get("start_source")
+                              and stamp.get("source") == entry["start_source"])
+            entry["tokens"] = (entry["tokens"] + max(0, total - start)
+                               if same_meter and all(isinstance(v, int)
+                                                     for v in (entry["tokens"], start, total))
+                               else None)
+            entry["open"] = False
+        actuals[uid] = entry
+        state[UNIT_ACTUALS] = actuals
+        return state
+
+    return (_mutate(repo_root, apply).get(UNIT_ACTUALS) or {}).get(uid)
+
+
+# --- lean loop: review rounds per delivery (EP0260) ---
+# Per batch unit, how many delivery verdict rows the review ledger held for it when this run
+# first reviewed it. The rows past it are this delivery's rounds, so a unit carried out of an
+# earlier run starts again at round 1 - on the same day too, which a row's date cannot tell.
+REVIEW_BASE = "review_base"
+
+
+def batch_holds(state: dict, unit_id: str) -> bool:
+    """True when `state` is an open run whose batch names `unit_id`."""
+    return state.get("outcome") == RUNNING and sdlc_md.norm_id(unit_id) in {
+        sdlc_md.norm_id(b) for b in (state.get("batch") or [])}
+
+
+def mark_review_base(repo_root: Path | str, unit_id: str, count: int) -> None:
+    """Record `count` as `unit_id`'s REVIEW_BASE in the open run holding it, unless one is
+    recorded already: the first review of the unit in the run fixes it, and no later round
+    moves it. Nothing is written with no open run holding the unit."""
+    uid = sdlc_md.norm_id(unit_id)
+
+    def unset(state: dict) -> bool:
+        return batch_holds(state, uid) and uid not in (state.get(REVIEW_BASE) or {})
+
+    def apply(state: dict) -> dict:
+        if unset(state):
+            state[REVIEW_BASE] = {**(state.get(REVIEW_BASE) or {}), uid: int(count)}
+        return state
+
+    if unset(read(repo_root) or {}):
+        _mutate(repo_root, apply)
+
+
 class RunStateError(RuntimeError):
     """The run state exists but cannot be read. Never degraded to "there is no run": that
     reading would let a close write a blank record over a real run's identity."""

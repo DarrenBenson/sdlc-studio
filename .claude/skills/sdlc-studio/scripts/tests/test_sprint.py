@@ -14257,7 +14257,8 @@ class EscalationReachesBothRecordingCommandsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             out = io.StringIO()
-            for seat in ("qa-seat", "engineering-seat"):
+            # one reviewer across both rounds: a round 2 from another reviewer is refused
+            for seat in ("qa-seat", "qa-seat"):
                 with contextlib.redirect_stdout(out):
                     rc = critic.main(["record", "--unit", "US0017", "--verdict", "reject",
                                       "--reviewer", seat, "--author", "builder",

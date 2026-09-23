@@ -1576,12 +1576,17 @@ def cmd_close(args: argparse.Namespace) -> int:
             print(f"error: {why} - independence is the floor, so nothing was written",
                   file=sys.stderr)
             return 2
+    if reviewer and not args.dry_run:
+        # FIRST, so a verdict `critic.record_verdict` refuses (its vocabulary, the review
+        # rounds) leaves nothing written - not even the depth stamp.
+        try:
+            critic.record_verdict(args.root, args.id, args.verdict, reviewer, author,
+                                  issues=getattr(args, "issues", "") or "")
+        except ValueError as exc:
+            print(f"error: {exc} - nothing was written", file=sys.stderr)
+            return 2
     if depth and not args.dry_run:
         transition.annotate(args.root, args.id, "Verification depth", depth)
-    if reviewer and not args.dry_run:
-        import critic
-        critic.record_verdict(args.root, args.id, args.verdict, reviewer, author,
-                              issues=getattr(args, "issues", "") or "")
     metrics = {}
     if args.iterations is not None:
         metrics["iterations"] = int(args.iterations)

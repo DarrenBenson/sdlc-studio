@@ -1130,6 +1130,14 @@ One row has been removed since adoption.
 | BG0719 | APPROVE | independent-critic | Dani Okafor | 2026-09-22 | 58e3f8e4e6cd | - | - |
 | BG0722 | APPROVE | independent-critic | Dani Okafor | 2026-09-22 | 4109cc5551b3 | - | - |
 | BG0730 | APPROVE | independent-critic | Dani Okafor | 2026-09-22 | b3380ed276c6 | - | - |
+| US0869 | APPROVE | qa-rev-US0869 | lane-C | 2026-09-23 | - | - | [new] non-blocking: an unrecorded-only history now seeds (seat ruling to follow); [new] non-blocking: work\_model, median-vs-mean, the 3-row boundary and the minutes guard are unpinned |
+| US0872 | REJECT | qa-rev-US0872 | lane-B | 2026-09-23 | - | - | [new] round rules enforced only in critic record - artifact close and transition bypass them; [new] rounds counted over the whole history, not per delivery |
+| US0873 | REJECT | qa-rev-US0873 | lane-B | 2026-09-23 | - | - | [regression] provisional verdict withdrawn after the terminal status write landed, leaving a Fixed unit with no verdict row; [pre-existing] allocation\_lock fails open after 10s |
+| US0871 | REJECT | qa-rev-US0871 | lane-B | 2026-09-23 | - | - | [new] AC4 not met - a readable start and unreadable end meter records tokens 0 |
+| US0877 | REJECT | qa-rev-US0877 | lane-D | 2026-09-23 | - | - | [regression] two Try items sharing a first sentence merge into one lesson |
+| US0875 | APPROVE | qa-rev-US0875 | lane-D | 2026-09-23 | - | - | [regression] non-blocking: render of a schema-1 report now prints nothing; [new] non-blocking: the delivered summary counts added units against the plan; [pre-existing] a delivered-points 0 edge and P1-P4 priority ranking |
+| US0871 | APPROVE | qa-rev-US0871 | lane-B-fix | 2026-09-23 | - | - | - |
+| US0873 | APPROVE | qa-rev-US0873 | lane-B-fix | 2026-09-23 | - | - | - |
 
 ## Supersessions
 

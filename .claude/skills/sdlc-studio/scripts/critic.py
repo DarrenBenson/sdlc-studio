@@ -17,6 +17,7 @@ workers too, not only persona-framed ones. Pure stdlib.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import re
 import sys
@@ -26,6 +27,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import run_state, sdlc_md  # noqa: E402
 
 APPROVE, REJECT = "APPROVE", "REJECT"
+#: The only words a verdict row may carry. Every writer checks this one tuple.
+VERDICTS = (APPROVE, REJECT)
 # Visible grandfather marker for units closed before the independence gate existed
 # (under the prior risk-scaled policy that permitted light-tier self-review). Stamped
 # once by the migration; never produced by the sprint loop. See is_pre_gate.
@@ -367,7 +370,38 @@ def record_verdict(repo_root: Path | str, unit: str, verdict: str,
     pre-code gate exists one approval discharges both and neither reviewer read the other's
     artefact. An unknown kind is REFUSED here rather than recorded: a misspelt value creates a
     row no gate will ever match, which is a gate nobody can satisfy and nobody can see.
+
+    A DELIVERY verdict is held to the review rounds here, so every writer is: `round_refusal`
+    refuses it with nothing written, and a REJECT at the cap carries the unit (`carry_at_cap`).
+    A carry that fails raises `CarryFailed`, whose message says the REJECT row WAS written.
     """
+    path, _round, bug = _record(repo_root, unit, verdict, reviewer, author, issues, phase,
+                                brief, kind, tier, tier_explicit)
+    if bug:
+        print(carried_notice(unit, bug), file=sys.stderr)
+    return path
+
+
+def _record(repo_root, unit, verdict, reviewer, author, issues="", phase="delivery", brief="",
+            kind=None, tier=None, tier_explicit=False) -> tuple[Path, int | None, str | None]:
+    """Write the verdict, then carry the unit if it is a REJECT at the cap: the ledger path,
+    the row's round in its delivery (None off the delivery phase) and the carried bug's id
+    (None when nothing was carried)."""
+    path, _row = _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase,
+                                brief, kind, tier, tier_explicit)
+    if phase != "delivery":
+        return path, None, None
+    rounds = delivery_rounds(repo_root, unit)
+    return path, len(rounds), _carry_if_capped(repo_root, unit, verdict, path, rounds)
+
+
+def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, brief, kind,
+                   tier, tier_explicit) -> tuple[Path, str]:
+    """Check and write one verdict row, returning the ledger path AND the row it wrote. A
+    delivery verdict's round is checked under the ledger lock, so two writers cannot both take
+    the last round."""
+    if str(verdict or "").upper() not in VERDICTS:
+        raise ValueError(f"{verdict!r} is not a verdict - expected one of {', '.join(VERDICTS)}")
     if phase not in PHASES:
         raise ValueError(f"unknown critic phase {phase!r} - expected one of {PHASES}")
     if phase == "plan-review":
@@ -387,9 +421,6 @@ def record_verdict(repo_root: Path | str, unit: str, verdict: str,
             f"the {phase!r} phase - a delivery verdict judges the diff. Drop it, or record the "
             f"verdict with phase='plan-review'.")
     path = verdicts_path(repo_root, phase)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if not path.exists():
-        path.write_text(_header(phase), encoding="utf-8")
     # BOTH ids floored to `-`, not just the author. The reviewer had no floor, which is what let
     # an empty value reach the ledger; `is_independent` then read `"" != "alice"` as True and the
     # row passed as independently reviewed. Flooring here means the empty case is visible in the
@@ -410,11 +441,64 @@ def record_verdict(repo_root: Path | str, unit: str, verdict: str,
            f"{_clean(author) or '-'} | "
            f"{sdlc_md.now_date()} | {_clean(brief) or '-'} | {extra_cell}"
            f"{_clean(issues) or '-'} |\n")
-    _ensure_brief_column(path)
-    _ensure_eighth_column(path, "Kind" if phase == "plan-review" else "Tier",
-                          DEFAULT_PLAN_KIND if phase == "plan-review" else "-")
-    _write_verdict_row(path, row)
-    return path
+    if phase == "delivery":
+        _mark_review_base(repo_root, unit)
+    with _ledger_lock(path):
+        if phase == "delivery" and (why := round_refusal(repo_root, unit, reviewer)):
+            raise ValueError(why)
+        if not path.exists():
+            sdlc_md.atomic_write(path, _header(phase))
+        _ensure_brief_column(path)
+        _ensure_eighth_column(path, "Kind" if phase == "plan-review" else "Tier",
+                              DEFAULT_PLAN_KIND if phase == "plan-review" else "-")
+        _write_verdict_row(path, row)
+    return path, row
+
+
+def _ledger_lock(path: Path):
+    """The lock every write to a review ledger holds, so parallel reviewers lose no row. Every
+    ledger lives at `<root>/sdlc-studio/reviews/`, so the root's shared lock serves them all."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return sdlc_md.allocation_lock(path.parents[2])
+
+
+@contextlib.contextmanager
+def provisional_verdict(repo_root: Path | str, unit: str, verdict: str, reviewer: str,
+                        author: str, issues: str = "", pending=None):
+    """Record a delivery verdict that stands only if the block's transition lands.
+
+    `transition set --verdict` writes the verdict before the gated transition, because a gate
+    may read it. When the block raises while `pending()` is still true - the unit still at its
+    from-status, so the transition was refused - the row is withdrawn, and a ledger the row
+    created is removed, so a refused close leaves no verdict behind. A raise after the status
+    write landed keeps the row: the unit's new status stands on it. A REJECT at the cap is
+    carried once the row stands, as `record_verdict` carries it."""
+    path = verdicts_path(repo_root)
+    existed = path.exists()
+    path, row = _write_verdict(repo_root, unit, verdict, reviewer, author, issues, "delivery",
+                               "", None, None, False)
+    try:
+        yield path
+    except BaseException:
+        if pending is not None and not pending():
+            try:
+                if bug := _carry_if_capped(repo_root, unit, verdict, path):
+                    print(carried_notice(unit, bug), file=sys.stderr)
+            except CarryFailed as exc:
+                print(f"error: {exc}", file=sys.stderr)
+            raise
+        with _ledger_lock(path):
+            text = path.read_text(encoding="utf-8")
+            at = text.rfind(row)
+            if at >= 0:
+                text = text[:at] + text[at + len(row):]
+            if not existed and text == _header("delivery"):
+                path.unlink()
+            else:
+                sdlc_md.atomic_write(path, text)
+        raise
+    if bug := _carry_if_capped(repo_root, unit, verdict, path):
+        print(carried_notice(unit, bug), file=sys.stderr)
 
 
 def _ensure_brief_column(path: Path) -> None:
@@ -450,7 +534,7 @@ def _ensure_brief_column(path: Path) -> None:
             body = body[:-1].rstrip() if body.endswith("|") else body
             head, _, last = body.rpartition("|")
             lines[j] = f"{head}| - |{last.rstrip()} |\n"
-        path.write_text("".join(lines), encoding="utf-8")
+        sdlc_md.atomic_write(path, "".join(lines))
         return
 
 
@@ -482,7 +566,7 @@ def _ensure_trailing_column(path: Path, first_cell: str, name: str, pad: str) ->
             if len(sdlc_md.table_cells(lines[j])) != width:
                 continue
             lines[j] = lines[j].rstrip("\n").rstrip() + f" {pad} |\n"
-        path.write_text("".join(lines), encoding="utf-8")
+        sdlc_md.atomic_write(path, "".join(lines))
         return
 
 
@@ -522,7 +606,7 @@ def _ensure_eighth_column(path: Path, name: str, pad: str) -> None:
             body = body[:-1].rstrip() if body.endswith("|") else body
             head, _, last = body.rpartition("|")
             lines[j] = f"{head}| {pad} |{last.rstrip()} |\n"
-        path.write_text("".join(lines), encoding="utf-8")
+        sdlc_md.atomic_write(path, "".join(lines))
         return
 
 
@@ -549,7 +633,7 @@ def _write_verdict_row(path: Path, row: str) -> None:
     if not lines[last].endswith("\n"):
         lines[last] += "\n"
     lines.insert(last + 1, row)
-    path.write_text("".join(lines), encoding="utf-8")
+    sdlc_md.atomic_write(path, "".join(lines))
 
 
 def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
@@ -612,7 +696,63 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
             # verdict" signal at the gate. Report and skip, never swallow.
             print(f"warning: malformed row in {path} ({len(cells)} cells, expected 6 or 5), "
                   f"skipped: {' | '.join(cells)[:100]}", file=sys.stderr)
-    return _annotate_superseded(out, read_supersessions(repo_root, phase))
+    return _number_rounds(_annotate_superseded(out, read_supersessions(repo_root, phase)))
+
+
+def _number_rounds(rows: list[dict]) -> list[dict]:
+    """Stamp each row with its `round`: its ordinal among the unit's live rows in this ledger.
+
+    Derived rather than stored. The ledger is append-only and one reviewer records one row per
+    round, so the round IS the row's position; a stored copy could only disagree with it. A
+    superseded row records an event ruled not to have happened, so it is no round (`None`).
+    """
+    seen: dict[str, int] = {}
+    for row in rows:
+        if is_superseded(row):
+            row["round"] = None
+            continue
+        unit = sdlc_md.norm_id(row.get("unit", ""))
+        seen[unit] = seen.get(unit, 0) + 1
+        row["round"] = seen[unit]
+    return rows
+
+
+def delivery_rounds(repo_root: Path | str, unit: str) -> list[dict]:
+    """The live delivery verdict rows of `unit`'s CURRENT delivery, oldest first, each `round`
+    numbered from 1 within it.
+
+    In an open run holding the unit: the rows written since the run first reviewed it (its
+    `REVIEW_BASE`), so a unit carried out of an earlier run starts again at round 1. Outside
+    one: the rows since the APPROVE that closed the previous delivery. A final APPROVE closes
+    the current delivery rather than starting the next, so its rounds still count against a
+    further verdict: outside a run nothing else marks where a new delivery began."""
+    uid = sdlc_md.norm_id(unit)
+    rows = [r for r in read_verdicts(repo_root) if sdlc_md.norm_id(r.get("unit", "")) == uid]
+    state = run_state.read(repo_root) or {}
+    if run_state.batch_holds(state, uid):
+        base = (state.get(run_state.REVIEW_BASE) or {}).get(uid)
+        rows = [r for r in rows[base:] if not is_superseded(r)] if isinstance(base, int) else []
+    else:
+        rows = [r for r in rows if not is_superseded(r)]
+        closed = [i for i, r in enumerate(rows[:-1])
+                  if str(r.get("verdict") or "").upper() == APPROVE]
+        rows = rows[closed[-1] + 1:] if closed else rows
+    return [{**r, "round": n} for n, r in enumerate(rows, 1)]
+
+
+def _mark_review_base(repo_root: Path | str, unit: str) -> None:
+    """Fix `unit`'s REVIEW_BASE at its row count now, before its first review in the open run
+    holding it. A no-op outside such a run, or once the base is fixed."""
+    uid = sdlc_md.norm_id(unit)
+    state = run_state.read(repo_root) or {}
+    if run_state.batch_holds(state, uid) and uid not in (state.get(run_state.REVIEW_BASE) or {}):
+        run_state.mark_review_base(repo_root, uid, sum(
+            1 for r in read_verdicts(repo_root) if sdlc_md.norm_id(r.get("unit", "")) == uid))
+
+
+def review_rounds(repo_root: Path | str, unit: str) -> int:
+    """How many review rounds `unit`'s current delivery has recorded (`delivery_rounds`)."""
+    return len(delivery_rounds(repo_root, unit))
 
 
 def unit_review_rounds(repo_root: Path | str, unit: str, phase: str = "delivery") -> list[dict]:
@@ -707,42 +847,24 @@ def _live_verdict_rows(repo_root: Path | str, unit: str, phase: str = "delivery"
 
 
 def _unanswered_rejects(rows: list[dict]) -> list[dict]:
-    """Every REJECT no LATER APPROVE from the same seat-and-round has retired, oldest first.
+    """Every REJECT in one unit's rows that no LATER APPROVE has answered, oldest first.
 
-    THE KEY IS THE BRIEF FINGERPRINT, not the reviewer string. A panel is several seats recorded
-    one after another, so taking the last row written made a unit's verdict a fact about the
-    order the recorder was invoked in. Keying on the reviewer instead fails the other way: this
-    repository names seats PER ROUND - `qa-seat-ep0171` against `qa-seat-close-r2` - so a
-    legitimate second-round approval by the same seat reads as a different seat and can never
-    retire the rejection. That version shipped and was withdrawn at 579/690.
-
-    The fingerprint hashes the BRIEF the seat was handed, which embeds the seat charter and the
-    unit's own scope, so it identifies the seat and the round together. Measured on this corpus
-    it recovers 32 units the reviewer string leaves unanswered and loses none.
+    A REJECT is answered by an APPROVE from the SAME reviewer at a later round: round 2 is the
+    round-1 reviewer re-checking the fixes (`round_refusal` refuses any other reviewer), so the
+    key is (unit, reviewer, round) and no repair record is needed. The brief fingerprint is kept
+    as a second key for rows written before that rule, whose seats were named per round
+    (`qa-seat-<epic>` against `qa-seat-close-r2`); dropping it would reopen 19 historical units.
+    An absent fingerprint matches nothing.
     """
     out = []
     for i, r in enumerate(rows):
         if not str(r.get("verdict") or "").upper().startswith(REJECT):
             continue
-        fp = _brief_key(r)
-        # An ABSENT fingerprint matches NOTHING. Two rows that both lack one are not two rows
-        # about the same brief - they are two rows nobody can attribute, and treating them as
-        # equal let a DIFFERENT seat's approval retire a rejection, which is the behaviour
-        # BG0607 exists to prevent. Measured on this corpus before the fix: 556 of 856 delivery
-        # rows carry the absent placeholder and nine rejections were retired that way, four of
-        # them cross-seat.
-        #
-        # Reviewer IDENTITY is deliberately NOT the fallback. It matched 0 of those 9 pairs on
-        # exact string, because this repository names seats per round and every approval carries
-        # different free text from its rejection - so it would freeze all nine, including the
-        # five a seat legitimately answered itself. That version shipped once and was withdrawn
-        # at 579/690; `test_a_seat_may_retire_its_own_reject`'s own fixture is the counterexample.
-        # What answers a rejection is a REPAIR, which is BG0629's rule and lives in the gate.
-        if not fp:
-            out.append(r)
-            continue
+        fp, who = _brief_key(r), _id(r.get("reviewer", ""))
         if any(str(l.get("verdict") or "").upper().startswith(APPROVE)
-               and _brief_key(l) == fp for l in rows[i + 1:]):
+               and ((who and _id(l.get("reviewer", "")) == who)
+                    or (fp and _brief_key(l) == fp))
+               for l in rows[i + 1:]):
             continue
         out.append(r)
     return out
@@ -990,13 +1112,11 @@ def record_supersession(repo_root: Path | str, unit: str, date: str, reason: str
             _supersede_value(row["author"] or "-", escape=False),
             _supersede_value(authorised_by), _supersede_value(boundary),
             _supersede_value(reason), sdlc_md.now_date())))
-    text = path.read_text(encoding="utf-8")
-    with path.open("a", encoding="utf-8") as fh:  # append-only, below the table
-        if SUPERSEDE_HEADING not in text:
-            fh.write(_SUPERSEDE_INTRO)
-        else:
-            fh.write("\n")
-        fh.write(record + "\n")
+    with _ledger_lock(path):
+        text = path.read_text(encoding="utf-8")
+        with path.open("a", encoding="utf-8") as fh:  # append-only, below the table
+            fh.write(_SUPERSEDE_INTRO if SUPERSEDE_HEADING not in text else "\n")
+            fh.write(record + "\n")
     return path
 
 
@@ -1100,11 +1220,11 @@ _FILED_HINT = re.compile(r"\b(filed|file[sd]?\s+as|deferred|carried)\b", re.IGNO
 
 
 def _append_row(path: Path, header: str, cells: tuple[str, ...]) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if not path.exists():
-        path.write_text(header, encoding="utf-8")
-    with path.open("a", encoding="utf-8") as fh:  # append-only
-        fh.write("| " + " | ".join(cells) + " |\n")
+    with _ledger_lock(path):
+        if not path.exists():
+            sdlc_md.atomic_write(path, header)
+        with path.open("a", encoding="utf-8") as fh:  # append-only
+            fh.write("| " + " | ".join(cells) + " |\n")
     return path
 
 
@@ -2531,26 +2651,106 @@ def escalation_notice(repo_root: Path | str, unit: str, phase: str = "delivery")
     return f"  ESCALATED to the operator - {sdlc_md.norm_id(unit)}: {why}" if escalate else ""
 
 
-# The shipped ceiling on close-review rounds. Three is the point past which this project's own
-# history stops paying: RUN-01KXVYGR ran five, and rounds 2, 3 and 4 each had a MAJOR created
-# by the previous round's repair. It is a stop-and-ask, never a hard refusal - the operator can
-# buy another round, but must do it deliberately and on the record.
-DEFAULT_REVIEW_CEILING = 3
+# One reviewer, at most this many rounds per unit: round 1 reviews, round 2 re-checks the fixes.
+# A unit still rejected at the cap is carried as a known issue rather than reviewed again.
+DEFAULT_REVIEW_CEILING = 2
 
 
 def review_ceiling(repo_root: Path | str) -> int:
-    """The configured round ceiling (`review.max_rounds`), or the shipped default.
+    """The review round cap (`review.max_rounds`), or the shipped default of 2.
 
-    Read through `project_override`, which degrades fully: a missing config, absent PyYAML or
-    malformed YAML all fall back to the default rather than breaking a close. A non-integer or
-    non-positive setting is ignored the same way - a ceiling of 0 would refuse the FIRST round
-    and make the close unrunnable."""
+    A non-integer or non-positive setting falls back to the default: a cap of 0 would refuse
+    the first round and leave no way to review anything."""
     raw = sdlc_md.project_override(repo_root, "review.max_rounds", DEFAULT_REVIEW_CEILING)
     try:
         value = int(raw)
     except (TypeError, ValueError):
         return DEFAULT_REVIEW_CEILING
     return value if value > 0 else DEFAULT_REVIEW_CEILING
+
+
+def round_refusal(repo_root: Path | str, unit: str, reviewer: str) -> str | None:
+    """Why a further delivery verdict on `unit` by `reviewer` must not be written, or None.
+
+    Two rules: no round past the cap, and a round after a REJECT comes from the reviewer who
+    rejected, because it re-checks that reviewer's findings. Shared by every command that
+    writes a delivery verdict, so the rules cannot differ between them."""
+    prior = delivery_rounds(repo_root, unit)
+    cap = review_ceiling(repo_root)
+    uid = sdlc_md.norm_id(unit)
+    if len(prior) >= cap:
+        return (f"{uid} has {len(prior)} review round(s) recorded, at the cap of {cap} "
+                f"(`review.max_rounds`). A unit still rejected at the cap is carried as a known "
+                f"issue, not reviewed again")
+    last = prior[-1] if prior else None
+    if (last and str(last.get("verdict") or "").upper() == REJECT
+            and not same_identity(last.get("reviewer", ""), reviewer or "")):
+        return (f"round {len(prior) + 1} of {uid} re-checks the fixes to "
+                f"{last.get('reviewer')}'s REJECT, so it must be recorded by "
+                f"{last.get('reviewer')}, not {reviewer}")
+    return None
+
+
+CARRIED_REASON = "carried at the review cap"
+
+
+class CarryFailed(RuntimeError):
+    """A REJECT at the cap WAS written, and carrying the unit then failed. Not a refusal: the
+    row stands, so no writer may report the verdict as unwritten."""
+
+
+def carried_notice(unit: str, bug: str) -> str:
+    return (f"  {sdlc_md.norm_id(unit)} {CARRIED_REASON}: {bug} holds the findings, and the "
+            f"unit leaves the open run's batch so the run continues")
+
+
+def _carry_if_capped(repo_root: Path | str, unit: str, verdict: str, path: Path,
+                     rounds: list[dict] | None = None) -> str | None:
+    """Carry `unit` when the delivery verdict just written is a REJECT at the cap: the bug's
+    id, or None when nothing is carried. Raises `CarryFailed` naming the written row."""
+    if str(verdict or "").upper() != REJECT:
+        return None
+    rounds = delivery_rounds(repo_root, unit) if rounds is None else rounds
+    if not rounds or len(rounds) < review_ceiling(repo_root):
+        return None
+    try:
+        return carry_at_cap(repo_root, unit, rounds[-1])
+    except Exception as exc:  # noqa: BLE001 - any failure here follows a written row
+        raise CarryFailed(
+            f"{sdlc_md.norm_id(unit)}'s round {len(rounds)} REJECT WAS written to {path}, but "
+            f"carrying it at the review cap failed: {exc}. The unit stays in the open run's "
+            f"batch with that REJECT unanswered: file its findings as a bug and drop it from "
+            f"the batch (`sprint batch drop`) by hand") from exc
+
+
+def carry_at_cap(repo_root: Path | str, unit: str, row: dict) -> str | None:
+    """File the findings of a REJECT recorded at the cap as a bug, and drop the unit from the
+    open run's batch naming it. Returns the bug id, or None when no open run holds the unit:
+    there is then no run to keep going, and the REJECT stands against the unit as it is. The
+    run keeps going: the unit becomes a known issue instead of a third round."""
+    uid = sdlc_md.norm_id(unit)
+    if not run_state.batch_holds(run_state.read(repo_root) or {}, uid):
+        return None
+    import file_finding  # noqa: PLC0415 - needed only when a unit is carried
+    issues = str(row.get("issues") or "").strip(" -") or "(the REJECT itemised no findings)"
+    # The fix lands where the unit did, at the unit's own size: the filer refuses a bug that
+    # `sprint plan` could not size or place, and a planned unit carries both.
+    found = sdlc_md.find_by_id(repo_root, uid)
+    text = sdlc_md.read_text_safe(found[0]) if found else ""
+    res = file_finding.file_finding(repo_root, "bug", f"{uid} did not converge in review: "
+                                    f"round {row.get('round')} REJECT findings", {
+        "affects": sdlc_md.extract_field(text, "Affects") or "",
+        "points": sdlc_md.extract_field(text, "Points") or "",
+        "severity": "Medium",
+        "summary": (f"{uid} was rejected at round {row.get('round')}, the review cap, by "
+                    f"{row.get('reviewer')}, so it was carried as a known issue rather than "
+                    f"reviewed again. The findings still open: {issues}"),
+        "steps": f"1. Read the round {row.get('round')} REJECT of {uid} in the verdict ledger.",
+        "fix": f"Fix each finding above, then deliver {uid} again in a later run.",
+    })
+    bug = res["id"]
+    run_state.drop_from_batch(repo_root, uid, f"{CARRIED_REASON}: {bug}")
+    return bug
 
 
 # How a round-N finding relates to round N-1's repair. The distinction is the whole point:
@@ -4518,6 +4718,8 @@ def cmd_record(args: argparse.Namespace) -> int:
               "is false for this project, so this verdict is accepted with no evidence of the "
               "prompt that produced it.", file=sys.stderr)
 
+    carry_failed: list[str] = []
+
     def write(unit: str) -> None:
         # NOT a refusal. The brief embeds the artefact's own state, so it legitimately changes
         # when the unit is transitioned or re-verified between briefing and recording. A
@@ -4541,25 +4743,28 @@ def cmd_record(args: argparse.Namespace) -> int:
                       f"marked {UNMATCHED_MARK} and no reader counts it as briefed; re-brief "
                       f"the seat to clear it.", file=sys.stderr)
                 recorded = f"{brief} {UNMATCHED_MARK}"
-        path = record_verdict(args.root, unit, args.verdict, args.reviewer,
-                              args.author, args.issues, args.phase, recorded,
-                              kind=getattr(args, "kind", None),
-                              tier=getattr(args, "tier", None),
-                              tier_explicit=getattr(args, "tier_explicit", False))
         note = ("" if _id(args.author) != _id(args.reviewer)
                 else "  (WARNING: self-review - blocked at the gate)")
+        try:
+            path, n, bug = _record(args.root, unit, args.verdict, args.reviewer, args.author,
+                                   args.issues, args.phase, recorded,
+                                   kind=getattr(args, "kind", None),
+                                   tier=getattr(args, "tier", None),
+                                   tier_explicit=getattr(args, "tier_explicit", False))
+        except CarryFailed as exc:
+            carry_failed.append(unit)
+            print(f"record: {exc}", file=sys.stderr)
+            return
+        at = f" round {n}" if n is not None else ""
         print(f"recorded {sdlc_md.norm_id(unit)} {args.verdict.upper()} "
-              f"[{args.phase}] -> {path}{note}")
+              f"[{args.phase}]{at} -> {path}{note}")
+        if bug:
+            print(carried_notice(unit, bug))
 
     rc = _run_batch(args, "record", write)
-    # ESCALATION on this path too. A panel that records its rounds with `record` and never runs
-    # `review-batch` notified nobody, because the only caller of the rule was the other command
-    # - so the operator heard about a non-converging repair exactly when the reviewer happened
-    # to have used both commands.
-    #
-    # Only when something was WRITTEN. A refused invocation - a missing `--author`, say - wrote
-    # no round, so escalating on it puts noise on the one channel that has to stay rare, and it
-    # did: a refusal printed "Nothing was written" and an ESCALATED line in the same breath.
+    if carry_failed and rc == 0:
+        rc = 1
+    # Escalation is only a notice: the carry above already keeps the run going.
     try:
         recorded = batch_units(args, "record") if rc == 0 else []
     except BatchRefused:
