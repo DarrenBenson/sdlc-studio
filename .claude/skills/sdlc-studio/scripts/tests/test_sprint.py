@@ -2819,7 +2819,8 @@ class RateFromVelocityRecordTests(unittest.TestCase):
                               "model": "claude-opus-4-8"}])
             rate = sp.tokens_per_point(root)
             self.assertEqual(rate["source"], "velocity-record")
-            self.assertEqual(rate["rate"], round((2_390_624 + 1_265_392) / 61))
+            # US0869: the median of the rows' own rates, not one pooled quotient
+            self.assertEqual(rate["rate"], round((2_390_624 / 30 + 1_265_392 / 31) / 2))
             self.assertIn("VELOCITY.md", rate["basis"])
             _pointed_cr(root, 1, 3)
             fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
@@ -2849,30 +2850,9 @@ class RateFromVelocityRecordTests(unittest.TestCase):
             rate = sp.tokens_per_point(root)
             self.assertEqual(rate["source"], "velocity-record",
                              "the rate advances on sprint-level evidence alone")
-            self.assertEqual(rate["rate"], round((2_390_624 + 1_265_392) / 61))
+            # US0869: the median of the rows' own rates, not one pooled quotient
+            self.assertEqual(rate["rate"], round((2_390_624 / 30 + 1_265_392 / 31) / 2))
             self.assertIsNone(rate.get("refused"))
-
-    def test_a_rate_spanning_two_models_refuses_rather_than_averaging(self) -> None:
-        """The other half of BG0248, and the reason this repo still reads `seed` today: three of
-        its four velocity rows carry no model, so the record spans `unrecorded` and a named one.
-        Averaging them would publish a rate describing neither. Recording the delivering model is
-        CR0373 and is NOT in this batch, so the honest outcome here is a refusal carrying its
-        reason, never a silent seed."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            _velocity(root, [{"id": "RETRO0001", "points": 30, "actual": 2_390_624,
-                              "model": "claude-opus-4-8"},
-                             {"id": "RETRO0002", "points": 31, "actual": 1_265_392}])
-            rate = sp.tokens_per_point(root)
-            self.assertEqual(rate["source"], "seed")
-            self.assertIn("REFUSED", rate["refused"])
-            self.assertIn("model", rate["refused"])
-            _pointed_cr(root, 1, 3)   # the forecast block only renders for a non-empty batch
-            rc, out, err = self._plan(root)
-            self.assertEqual(rc, 0, "a plan is never refused over a token estimate")
-            self.assertIn("velocity record yields no usable rate", out,
-                          "the refusal reaches the operator instead of a bare seed")
 
     def test_no_measured_rate_is_quoted_as_a_seed_and_says_so(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -2890,6 +2870,9 @@ class RateFromVelocityRecordTests(unittest.TestCase):
             self.assertIn("token forecast", out)          # planning is never refused over it
 
     def test_a_refused_rate_reaches_the_plan_output(self) -> None:
+        """US0869 replaced the refusal this once pinned: a record spanning two models is no
+        longer refused. The plan quotes a measured rate whose basis names the rows it used.
+        The name is kept because a delivered criterion's Verify selector names it."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             sp = _load()
@@ -2898,15 +2881,15 @@ class RateFromVelocityRecordTests(unittest.TestCase):
                              {"id": "RETRO0002", "points": 31, "actual": 1_265_392,
                               "model": "claude-haiku-4-5"}])
             rate = sp.tokens_per_point(root)
-            self.assertEqual(rate["source"], "seed")
-            self.assertIn("claude-opus-4-8", rate["refused"])
-            self.assertIn("claude-haiku-4-5", rate["refused"])
+            self.assertEqual(rate["source"], "velocity-record")
+            self.assertIsNone(rate["refused"])
+            self.assertIn("RETRO0001", rate["basis"])
+            self.assertIn("RETRO0002", rate["basis"])
             _pointed_cr(root, 1, 3)
             rc, out, err = self._plan(root)
             self.assertEqual(rc, 0)
-            blob = out + err
-            self.assertIn("claude-opus-4-8", blob)
-            self.assertIn("claude-haiku-4-5", blob)
+            self.assertIn("velocity-record", out)
+            self.assertNotIn("velocity record yields no usable rate", out + err)
 
     def test_the_seed_line_carries_its_out_of_sample_result(self) -> None:
         """The seed's one live test failed at 0.44x. A seed quoted with nothing beside it
@@ -3077,8 +3060,8 @@ class RowClassSurvivesRemeasurementTests(unittest.TestCase):
     reach back and change what a past plan forecast with."""
 
     #: This repo's own four rows carrying both a forecast and a sprint actual. Three record no
-    #: model, which is what refuses the record today and pins the rate at the seed; CR0373 will
-    #: stamp them, and that stamp alone is the whole trigger.
+    #: model, so the rate skips them; CR0373 will stamp them, and that stamp alone is the whole
+    #: trigger.
     ROWS = ((28, 10, 250_000, 564_066), (60, 30, 750_000, 2_390_624),
             (61, 31, 775_000, 1_265_392), (65, 18, 400_000, 2_634_055))
 
@@ -3095,7 +3078,9 @@ class RowClassSurvivesRemeasurementTests(unittest.TestCase):
             sp = _load()
             self._record(root, stamped=False)
             before_rate, before = sp.tokens_per_point(root), sp.whole_sprint_excess(root)
-            self.assertEqual(before_rate["source"], "seed")   # refused across two models
+            # US0869: the unstamped rows are skipped, so the one stamped row sets the rate
+            self.assertEqual(before_rate["source"], "velocity-record")
+            self.assertEqual(before_rate["rate"], round(564_066 / 10))
             self.assertTrue(before["measured"])
             self.assertEqual(before["low"], 1.63)
             self.assertEqual(before["high"], 6.59)
@@ -3103,7 +3088,8 @@ class RowClassSurvivesRemeasurementTests(unittest.TestCase):
             self._record(root, stamped=True)                  # the CR0373 stamp, and nothing else
             after_rate, after = sp.tokens_per_point(root), sp.whole_sprint_excess(root)
             self.assertEqual(after_rate["source"], "velocity-record")
-            self.assertEqual(after_rate["rate"], 77_013)      # the rate DID move, as it should
+            # the rate DID move, as it should: the median of the four rows' own rates
+            self.assertEqual(after_rate["rate"], round((564_066 / 10 + 2_390_624 / 30) / 2))
             self.assertTrue(after["measured"],
                             "a re-measurement must not retire the evidence that justified it")
             self.assertEqual(after["sprints"], before["sprints"])
@@ -3140,12 +3126,9 @@ class RowClassSurvivesRemeasurementTests(unittest.TestCase):
 
 
 class RefusalTravelsWithEverySourceTests(unittest.TestCase):
-    """MAJOR, RUN-01KY3MFX review: `tokens_per_point` promises that neither source is ever
-    silently substituted for the other, and BG0248 AC2 claims the refusal reason is carried to
-    the plan output. The per-unit evidence branch carried no `refused` key at all, so a
-    REFUSED velocity record was discarded in silence whenever the evidence log had enough
-    units. Every existing refusal test left that log EMPTY, so all four landed on the seed and
-    the branch was never reached (L-0174)."""
+    """US0869: the velocity record no longer refuses a history spanning two models, so it is
+    no longer displaced by the per-unit evidence log when it holds a usable row. The class and
+    test names are kept because a delivered criterion's Verify selector names them."""
 
     def _log(self, root: Path, units: int, points: int, tokens: int) -> None:
         import telemetry
@@ -3156,30 +3139,20 @@ class RefusalTravelsWithEverySourceTests(unittest.TestCase):
             telemetry.record(root, {"id": f"BG{i:04d}", "tokens": tokens,
                                     "model": "claude-opus-4-8"})
 
-    def _refusing_record(self, root: Path) -> None:
+    def _two_model_record(self, root: Path) -> None:
         _velocity(root, [{"id": "RETRO0001", "points": 30, "actual": 2_390_624,
                           "model": "claude-opus-4-8"},
                          {"id": "RETRO0002", "points": 31, "actual": 1_265_392,
                           "model": "claude-haiku-4-5"}])
 
-    def test_the_evidence_log_answer_still_carries_the_records_refusal(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            self._refusing_record(root)
-            self._log(root, sp.RATE_MIN_UNITS + 1, 3, 120_000)
-            rate = sp.tokens_per_point(root)
-            self.assertEqual(rate["source"], "measured", "the premise: the branch is reached")
-            self.assertIn("REFUSED", rate["refused"] or "",
-                          "the mandated source was set aside; the reason travels with the answer")
-            self.assertIn("claude-haiku-4-5", rate["refused"])
-
     def test_the_refusal_reaches_the_plan_whatever_source_stood_instead(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             sp = _load()
-            self._refusing_record(root)
+            self._two_model_record(root)
             self._log(root, sp.RATE_MIN_UNITS + 1, 3, 120_000)
+            self.assertEqual(sp.tokens_per_point(root)["source"], sp.RATE_VELOCITY,
+                             "the record stands; the evidence log does not displace it")
             _pointed_cr(root, 1, 3)
             out, err = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
@@ -3187,33 +3160,8 @@ class RefusalTravelsWithEverySourceTests(unittest.TestCase):
                               "--no-fetch", "--skip-personas"])
             self.assertEqual(rc, 0)
             blob = out.getvalue()
-            self.assertIn("velocity record yields no usable rate", blob)
-            self.assertIn("claude-haiku-4-5", blob)
-            self.assertNotIn("so the seed stands instead", blob,
-                             "the seed did NOT stand: the evidence log did, and it says so")
-            self.assertIn("per-unit evidence log stands instead", blob)
-
-    def test_the_refusal_names_the_seed_when_the_seed_is_what_stands(self) -> None:
-        """The OTHER half of the same sentence, and the reason the fallback default under it
-        is dead: only these two sources can be standing here. The velocity record is the one
-        that refused, so it is never also the one that stands (MINOR, round 2)."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            self._refusing_record(root)          # ...and no evidence log at all
-            _pointed_cr(root, 1, 3)
-            out, err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = sp.main(["plan", "--crs", "Proposed", "--root", str(root),
-                              "--no-fetch", "--skip-personas"])
-            self.assertEqual(rc, 0)
-            blob = out.getvalue()
-            self.assertEqual(sp.tokens_per_point(root)["source"], sp.RATE_SEED,
-                             "the premise: the seed is what stood")
-            self.assertIn("velocity record yields no usable rate", blob)
-            self.assertIn("the seed stands instead", blob)
-            self.assertNotIn("per-unit evidence log stands instead", blob)
-
+            self.assertNotIn("velocity record yields no usable rate", blob)
+            self.assertNotIn("stands instead", blob)
 
 class BatchHistoryTests(unittest.TestCase):
     """What sprints ACTUALLY cost is the plan's real input, so it must not silently drop the

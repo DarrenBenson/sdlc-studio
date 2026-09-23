@@ -206,44 +206,15 @@ RATE_SEED = "seed"
 RATE_UNMEASURED_RUNG = "unmeasured-rung"
 
 
-def _velocity_rate(repo_root: Path | str) -> dict:
-    """The tokens-per-point rate the VELOCITY record yields, or why it yields none.
-
-    Delegates to `retro.measured_rate` rather than re-reading the table: the record's header
-    mandates ONE definition of the rate (actual tokens over points delivered, segmented per
-    model and refused across them), and a second reader here would be a second definition.
-
-    Returns `{"rate": int|None, "refused": str|None, ...}`. Fail-safe: an unreadable record
-    yields no rate and no refusal, never an exception.
-    """
-    out = {"rate": None, "refused": None, "sprints": [], "points": 0, "tokens": 0,
-           "model": None}
-    try:
-        import retro  # noqa: PLC0415 - deferred, as everywhere else in this module
-        mr = retro.measured_rate(repo_root)
-    except Exception as exc:  # noqa: BLE001 - no record must never break planning
-        sdlc_md.debug("sprint._velocity_rate", exc)
-        return out
-    out["refused"] = mr.get("refused")
-    rate = mr.get("tokens_per_point")
-    if isinstance(rate, (int, float)) and rate > 0 and not out["refused"]:
-        out.update({"rate": int(round(rate)), "sprints": list(mr.get("sprints") or []),
-                    "points": mr.get("points") or 0, "tokens": mr.get("actual_tokens") or 0,
-                    "model": mr.get("model")})
-    return out
-
-
 def tokens_per_point(repo_root: Path | str | None = None) -> dict:
     """The tokens-per-point rate IN FORCE, MEASURED from this project's own evidence.
 
     TWO SOURCES, ONE ANSWER, AND NEITHER IS EVER SILENTLY SUBSTITUTED FOR THE OTHER.
 
-    1. THE VELOCITY RECORD WINS. `VELOCITY.md`'s header mandates that the rate be re-measured
-       from that file every sprint and that nothing hardcode it, and `retro.measured_rate`
-       implements exactly that read. Nothing here called it, so a project whose sprints are
-       INTERACTIVE - which is now the norm - could never advance past the seed however many
-       sprints it recorded: this project's record held rows measuring 40,819, 79,687 and
-       146,336 tokens per point while every plan quoted 25,000.
+    1. THE VELOCITY RECORD WINS. `retro.measured_rate` is the one definition: the rolling
+       median tokens per point of the latest rows for the model doing the work, falling back
+       to any single model's rows when that model has too few. A row naming no model, or
+       several, is skipped rather than refusing the whole record, so the rate advances.
     2. THE PER-UNIT EVIDENCE LOG is the finer-grained fallback, for a runner-driven project
        that has one. The join is the closed loop: the points a plan RECORDED at plan time (the
        forecast log, first-record-wins, so hindsight cannot rewrite it) against the tokens the
@@ -254,12 +225,7 @@ def tokens_per_point(repo_root: Path | str | None = None) -> dict:
     3. THE SEED, named as a seed, with the fact that this project has measured no rate of its
        own carried beside it. A plan is never REFUSED over a token estimate.
 
-    A REFUSED record does not collapse into a silent anything. `measured_rate` refuses a rate
-    whose rows span more than one model, because a rate averaged over two models describes
-    neither. `refused` is carried on EVERY answer this returns, whichever source ended up
-    standing - the seed OR the per-unit evidence log - so the plan always says why the mandated
-    source was set aside. The evidence-log answer used to carry no `refused` key at all, which
-    dropped the reason entirely on the one path where a second source really did substitute.
+    `refused` stays in the shape and is always None: the record no longer refuses.
 
     Fail-safe throughout: unreadable evidence yields the seed, never an exception - a project
     must be able to plan before it has measured anything.
@@ -269,18 +235,18 @@ def tokens_per_point(repo_root: Path | str | None = None) -> dict:
             "refused": None}
     if repo_root is None:
         return seed
-    vel = _velocity_rate(repo_root)
-    seed["refused"] = vel["refused"]
-    if vel["rate"]:
-        n = len(vel["sprints"])
-        return {"rate": vel["rate"], "source": RATE_VELOCITY, "units": 0,
-                "points": vel["points"], "tokens": vel["tokens"], "ids": vel["sprints"],
+    try:
+        import retro  # noqa: PLC0415 - deferred, as everywhere else in this module
+        vel = retro.measured_rate(repo_root)
+    except Exception as exc:  # noqa: BLE001 - no record must never break planning
+        sdlc_md.debug("sprint.tokens_per_point", exc)
+        vel = {}
+    if vel.get("tokens_per_point"):
+        return {"rate": vel["tokens_per_point"], "source": RATE_VELOCITY, "units": 0,
+                "points": vel["points"], "tokens": vel["actual_tokens"], "ids": vel["sprints"],
                 "min_units": RATE_MIN_UNITS, "refused": None, "model": vel["model"],
-                "basis": (f"measured from this project's VELOCITY.md: {n} sprint(s) "
-                          f"({', '.join(vel['sprints'])}) delivered {vel['points']} point(s) "
-                          f"for {vel['tokens']:,} tokens"
-                          + (f", all by {vel['model']}" if vel["model"] else "")
-                          + ". The record is the mandated source and is re-measured every plan")}
+                "basis": (f"measured from this project's VELOCITY.md, {vel['source']}. "
+                          f"Re-measured every plan")}
     try:
         forecasts = telemetry.forecasts(repo_root)
         actuals = telemetry.actuals(repo_root)
@@ -304,10 +270,7 @@ def tokens_per_point(repo_root: Path | str | None = None) -> dict:
         return seed          # counted, named, and NOT yet trusted
     return {"rate": int(round(tokens / points)), "source": RATE_EVIDENCE, "units": len(ids),
             "points": points, "tokens": tokens, "ids": ids, "min_units": RATE_MIN_UNITS,
-            # The record's refusal travels even though the record is not what answered: this is
-            # the ONE path on which a second source genuinely stands in for the mandated one,
-            # so it is the path that most needs to say so.
-            "refused": vel["refused"],
+            "refused": None,
             "basis": (f"measured from this project's evidence: {len(ids)} delivered unit(s), "
                       f"{points} point(s) forecast at plan time, {tokens:,} tokens actually "
                       f"spent (sdlc-studio/retros/evidence/)")}

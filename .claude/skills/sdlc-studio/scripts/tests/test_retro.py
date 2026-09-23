@@ -1157,8 +1157,10 @@ class HarnessTokenCapture(InteractiveSprintFixture):
         row = retro.velocity_history(str(self.root))[0]
         self.assertEqual(row["actual_tokens"], 800_000)   # the sprint-level actual, recorded
         self.assertEqual(row["points"], 8)
+        # US0869: a row naming no model is skipped by the rate, and named, never fatal
         rate = retro.measured_rate(str(self.root))
-        self.assertEqual(rate["tokens_per_point"], 100_000)   # est-vs-actual can now close
+        self.assertIsNone(rate["tokens_per_point"])
+        self.assertEqual(rate["skipped"], [row["id"]])
 
     def test_recorded_actual_survives_a_plain_rerun_without_flags(self) -> None:
         # round-1 MAJOR: the guard lived only inside --tokens-from-harness, so the plain
@@ -2543,7 +2545,8 @@ class VelocityIsMeasuredInPoints(AccuracyBase):
         rate = retro.measured_rate(str(self.root))
         self.assertIsNone(rate["tokens_per_point"],
                           "a rate pooled across two models describes neither of them")
-        self.assertTrue(rate["refused"])
+        # US0869: the mixed-model row is skipped and named, not a refusal of the record
+        self.assertEqual(rate["skipped"], [retro.velocity_history(str(self.root))[0]["id"]])
 
     def test_the_rate_is_tagged_with_the_project_its_cell_belongs_to(self) -> None:
         """CR0270: the rate is a per-(project, model) quantity. A single VELOCITY.md is one

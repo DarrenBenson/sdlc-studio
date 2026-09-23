@@ -77,6 +77,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import statistics
 import sys
 from pathlib import Path
 
@@ -2002,82 +2003,118 @@ def velocity_gaps(root, since: str | None = None) -> dict:
                      "that the sprint's cost was not recoverable, which no row at all does"}
 
 
-def measured_rate(root) -> dict:
+#: The rate is the median of the most recent RATE_WINDOW usable rows for the model doing the
+#: work; below RATE_MIN_ROWS of them it falls back to the latest single-model rows of any model.
+RATE_WINDOW = 5
+RATE_MIN_ROWS = 3
+
+
+def _single_model(row: dict) -> str | None:
+    """The row's model when it names exactly one, else None (no model, or several)."""
+    m = row.get("model")
+    return m if m and m not in (MODEL_MIXED, MODEL_UNRECORDED) else None
+
+
+def _row_tokens_per_point(row: dict) -> float | None:
+    """A row's tokens per point, or None when its tokens do not cover its points."""
+    if not row.get("points") or not isinstance(row.get("actual_tokens"), (int, float)):
+        return None
+    return row["actual_tokens"] / row["points"] if _tokens_cover_points(row) else None
+
+
+def _row_minutes_per_point(row: dict) -> float | None:
+    """A row's active minutes per point: its Wall (s) column is the summed worker time of the
+    measured units, so it covers the points only when every unit was measured."""
+    wall, units = row.get("wall_time_s"), row.get("units")
+    if not row.get("points") or not isinstance(wall, (int, float)) or wall <= 0:
+        return None
+    return wall / 60 / row["points"] if units and row.get("measured") == units else None
+
+
+def work_model(root, rows: list[dict] | None = None) -> str | None:
+    """The model that will do the work: the open run's latest token stamp naming one model,
+    else the model of the latest VELOCITY row naming one. Both are what the close already
+    records; the session transcript is not re-read at plan time."""
+    try:
+        state = run_state.read(root)
+    except run_state.RunStateError:
+        state = {}
+    if state.get("outcome") == run_state.RUNNING:
+        for stamp in reversed(state.get(run_state.TOKEN_STAMPS) or []):
+            m = _single_model(stamp or {})
+            if m:
+                return m
+    rows = velocity_history(root) if rows is None else rows
+    return next((m for m in map(_single_model, reversed(rows)) if m), None)
+
+
+def _rolling_median(rows: list[dict], per_point, model: str | None) -> tuple:
+    """`(median, rows used, source)` for `model`, or `(None, [], None)` with no usable row."""
+    usable = [(r, v) for r in rows if _single_model(r) and (v := per_point(r)) is not None]
+    mine = [u for u in usable if u[0]["model"] == model]
+    if len(mine) >= RATE_MIN_ROWS:
+        pick, how = mine[-RATE_WINDOW:], f"measured on {model}"
+    elif usable:
+        pick = usable[-RATE_WINDOW:]
+        how = (f"fallback: {len(mine)} row(s) for {model or 'no named model'}, under "
+               f"{RATE_MIN_ROWS}, so the latest rows of any single model")
+    else:
+        return None, [], None
+    used = [r for r, _ in pick]
+    return (statistics.median(v for _, v in pick), used,
+            f"{how}: median of {', '.join(r['id'] for r in used)}")
+
+
+def measured_rate(root, model: str | None = None) -> dict:
     """THE TOKENS-PER-POINT RATE, DERIVED FROM THE HISTORY. Never a constant.
 
-    Actual tokens over points delivered, across every sprint that recorded both. That is the
-    whole definition, and it is why it can be re-measured every sprint instead of decaying into
-    an unvalidated number nobody dares touch - which is the fate of both estimators this project
-    has already had to delete.
-
-    The rate is a per-(PROJECT, MODEL) quantity. This reads ONE project's committed VELOCITY.md,
-    so the project is constant across its rows and resolved once from the repo; it is stamped on
-    the result and on every cell, so a figure lifted out of here is never mistaken for a different
-    project's. SEGMENTED PER MODEL, and REFUSED across them, by the same rule the ratio already
-    obeys: a rate averaged over a sprint delivered by a smaller model and one delivered by a
-    larger describes neither, and a plan that forecast with it would be pricing work in a currency
-    no run ever paid in. The CROSS-project pooling, and its refusal, lives in `collate_rate`,
-    which reads the project off each record rather than off the repo it is reading.
-
-    With no sprint that recorded points, there is NO rate - `None`, and the caller must say so.
-    A project's first sprint cannot forecast from its own history, and the honest answer to that
-    is to say it has none, not to hand back a number borrowed from somebody else's project.
+    The median tokens per point of the most recent RATE_WINDOW usable VELOCITY rows for the
+    model doing the work (`model`, else `work_model`). A row naming no model, or several, is
+    skipped and named, never fatal. Fewer than RATE_MIN_ROWS rows for that model fall back to
+    the latest single-model rows of any model, and `source` says so. With no usable row there
+    is NO rate - None, and the caller quotes its seed as a seed.
     """
     project = telemetry.project_name(root)
-    # Only sprints whose tokens and points describe the SAME units: the Points column is the
-    # DELIVERED series, so a partial per-unit token sum divided by the full points would
-    # quietly understate the rate. Excluded, not averaged in.
-    rows = [r for r in velocity_history(root)
-            if r.get("points") and isinstance(r.get("actual_tokens"), (int, float))
-            and _tokens_cover_points(r)]
+    rows = velocity_history(root)
+    model = model or work_model(root, rows)
+    rate, used, source = _rolling_median(rows, _row_tokens_per_point, model)
+    skipped = [r["id"] for r in rows
+               if _row_tokens_per_point(r) is not None and not _single_model(r)]
     by_model: dict[str, dict] = {}
-    mixed: list[str] = []
-    for r in rows:
-        model = r.get("model") or MODEL_UNRECORDED
-        if model == MODEL_MIXED:
-            # A sprint delivered by more than one model already records no ratio, for the same
-            # reason it can carry no rate: its tokens were paid by two payers. It is named and
-            # excluded, never averaged.
-            mixed.append(r["id"])
-            continue
-        b = by_model.setdefault(model,
-                                {"sprints": [], "points": 0, "actual_tokens": 0, "oversized": 0})
-        b["sprints"].append(r["id"])
-        b["points"] += r["points"]
-        b["actual_tokens"] += r["actual_tokens"]
-        b["oversized"] += int(r.get("oversized") or 0)
-    for b in by_model.values():
-        b["n"] = len(b["sprints"])
-        b["tokens_per_point"] = _rate(b["actual_tokens"], b["points"])
-    why: list[str] = []
-    if len(by_model) > 1:
-        why.append(f"the history spans {len(by_model)} models ({', '.join(sorted(by_model))}). "
-                   f"One rate across two models is a rate for neither - forecast with the row "
-                   f"for the model that will do the work")
-    if mixed:
-        why.append(f"{', '.join(mixed)} was delivered by more than one model, so its tokens "
-                   f"were paid by two payers and it carries no rate at all")
-    refused = f"REFUSED: {'; and '.join(why)}." if why else None
-    for b in by_model.values():
-        b["project"] = project           # the cell is (project, model), not model alone
-    only = next(iter(by_model.values())) if len(by_model) == 1 else None
+    for m in sorted({_single_model(r) for r in rows} - {None}):
+        v, mused, _ = _rolling_median([r for r in rows if r.get("model") == m],
+                                      _row_tokens_per_point, m)
+        if mused:
+            by_model[m] = {"project": project, "sprints": [r["id"] for r in mused],
+                           "n": len(mused), "tokens_per_point": round(v),
+                           "points": sum(r["points"] for r in mused),
+                           "actual_tokens": sum(r["actual_tokens"] for r in mused),
+                           "oversized": sum(int(r.get("oversized") or 0) for r in mused)}
     return {
-        "project": project,
-        "tokens_per_point": only["tokens_per_point"] if only else None,
-        "model": next(iter(by_model)) if only else None,
-        "points": only["points"] if only else None,
-        "actual_tokens": only["actual_tokens"] if only else None,
-        "sprints": only["sprints"] if only else [],
-        "oversized": only["oversized"] if only else 0,
-        "mixed_sprints": mixed,
+        "project": project, "model": model,
+        "tokens_per_point": round(rate) if rate else None,
+        "source": source or "none: no VELOCITY row records points and tokens for one model",
+        "sprints": [r["id"] for r in used],
+        "points": sum(r["points"] for r in used),
+        "actual_tokens": sum(r["actual_tokens"] for r in used),
+        "oversized": sum(int(r.get("oversized") or 0) for r in used),
+        "skipped": skipped,
         "by_model": by_model,
-        "refused": refused,
-        "basis": "actual tokens over points delivered, across the sprints in VELOCITY.md that "
-                 "recorded both. Derived from the record every time it is read; never stored, "
-                 "never fitted, and never assumed from a project that is not this one. It is a "
-                 "rate for ONE (project, model) cell; pooling across projects is refused in "
-                 "collate_rate, not here",
+        "basis": "the rolling median of tokens over points delivered, per VELOCITY.md row, for "
+                 "the model doing the work. Derived from the record every time it is read; "
+                 "never stored and never fitted. Pooling across projects is `collate_rate`'s",
     }
+
+
+def minutes_per_point(root, model: str | None = None) -> dict:
+    """`{value, source}`: active minutes per point by `measured_rate`'s rule, over the rows
+    whose Wall (s) records worker time. `value` None and source `not measured` without one."""
+    rows = velocity_history(root)
+    value, _, source = _rolling_median(rows, _row_minutes_per_point,
+                                       model or work_model(root, rows))
+    if value is None:
+        return {"value": None, "source": "not measured"}
+    return {"value": round(value, 2), "source": source}
 
 
 #: Below this many qualifying whole-sprint rows the fixed per-sprint term is UNMEASURED: a fit
@@ -3017,15 +3054,11 @@ def cmd_velocity(args) -> int:
     # THE RATE, DERIVED. Not a constant, not stored - a quotient of the two columns above,
     # recomputed on every read, so it cannot drift away from the evidence that produced it.
     print()
-    if rate["refused"]:
-        print(rate["refused"])
-        for model, seg in sorted(rate["by_model"].items()):
-            print(f"  {model:24} {seg['points']} point(s) over {seg['n']} sprint(s) -> "
-                  f"{_fmt(seg['tokens_per_point'])} tokens/pt")
-    elif rate["tokens_per_point"]:
-        print(f"MEASURED RATE: {rate['tokens_per_point']:,} tokens per point "
-              f"({rate['points']} points over {len(rate['sprints'])} sprint(s) on "
-              f"{rate['model']}: {', '.join(rate['sprints'])}).")
+    if rate["skipped"]:
+        print(f"{len(rate['skipped'])} row(s) skipped: they name no single model")
+    if rate["tokens_per_point"]:
+        print(f"MEASURED RATE: {rate['tokens_per_point']:,} tokens per point for "
+              f"{rate['model'] or 'no named model'} ({rate['source']}).")
         print("Derived from this history every time it is read - never stored and never fitted, "
               "so it is re-measured each sprint instead of decaying into a constant nobody "
               "dares touch.")

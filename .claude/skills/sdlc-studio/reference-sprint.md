@@ -635,8 +635,10 @@ stops measuring):
   judged by the retro against the recorded prediction. It answers "what will this batch
   burn", never "when will it land".
 
-  **The rate is re-measured every plan, from `VELOCITY.md` first** - the mandated source (actual
-  tokens over points delivered, per project and per model, refused across models). The per-unit
+  **The rate is re-measured every plan, from `VELOCITY.md` first** - the mandated source: the
+  median tokens per point of the latest 5 rows for the model doing the work, or of the latest 5
+  rows of any single model when it has fewer than 3. A row naming no model, or several, is
+  skipped. `retro.minutes_per_point` gives active minutes per point by the same rule. The per-unit
   evidence log is the fallback for a runner-driven project; the shipped seed is quoted as a seed,
   saying so, with its out-of-sample result beside it.
 
