@@ -3339,8 +3339,17 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
         if f is not None:
             over = "the whole run: the plan's run-level token forecast"
     tokens = run_tokens.get("tokens")
+    # Delegated agents' reported totals are real spend the main-thread meter cannot see: a run
+    # that fans its work out would otherwise read a fraction of its cost.
+    delegated = run_state.delegated_total(state)
+    agents = len([r for r in (state.get(run_state.DELEGATED) or []) if isinstance(r, dict)])
+    basis = f"{over}; actual is the run meter, a lower bound"
+    if tokens and delegated:
+        basis = (f"{over}; actual is the main-thread meter plus {agents} delegated agent(s)' "
+                 f"reported totals, split in the appendix")
+        tokens += delegated
     rows.append(_estimate_row(
-        "Tokens", f, tokens or None, f"{over}; actual is the run meter, a lower bound",
+        "Tokens", f, tokens or None, basis,
         state_rel, "no token forecast is recorded",
         run_tokens.get("reason") or ("the run meter read no spend between its readings"
                                      if tokens == 0 else "no token actual was recorded")))
@@ -3357,6 +3366,9 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
                                              "not in the plan"),
                   "eu_tokens": cell("eu_tokens", u["tokens"], "not recorded")}
                  for u in ledger if not u["dropped"] and (u["in_plan"] or u["measured"])]
+    if not any(_num(u[k]) for u in ledger for k in ("forecast_minutes", "minutes",
+                                                    "forecast_tokens", "tokens")):
+        unit_rows = []   # nothing measured per unit: a row of NOT MEASURED each says nothing
     sec = _section("estimates", "Estimates", rows=rows)
     sec["unit_rows"] = unit_rows
     return sec
@@ -3980,7 +3992,9 @@ def render_markdown(report: dict, template: str | None = None,
     # refuses to accept is a page the close cannot land. Normalised here rather than by
     # tightening every block's whitespace in the template, where the next block added would
     # have to remember the rule.
-    return re.sub(r"\n{3,}", "\n\n", out)
+    # One blank line at most anywhere, and exactly one newline at the end: an empty repeat block
+    # at the foot of the page otherwise leaves a trailing blank markdownlint refuses (MD012).
+    return re.sub(r"\n{3,}", "\n\n", out).rstrip("\n") + "\n"
 
 
 def render_html(report: dict, template: str | None = None,

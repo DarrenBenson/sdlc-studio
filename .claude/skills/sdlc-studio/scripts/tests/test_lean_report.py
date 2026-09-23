@@ -200,9 +200,10 @@ class OnePageTests(unittest.TestCase):
                          (mins["est_forecast"]["value"], mins["est_actual"]["value"]))
         self.assertEqual("4.29x", mins["est_ratio"]["value"])
         tok = rows["Tokens"]
-        self.assertEqual((1_400_000, 1_700_000),
+        # Actual is the run meter (1,700,000) plus the delegated agent's reported 123,456.
+        self.assertEqual((1_400_000, 1_823_456),
                          (tok["est_forecast"]["value"], tok["est_actual"]["value"]))
-        self.assertEqual("1.21x", tok["est_ratio"]["value"])
+        self.assertEqual("1.3x", tok["est_ratio"]["value"])
         # The resized unit, per unit: planned from the snapshot, actual from the file.
         units = {r["unit_id"]["value"]: r for r in _sections(rep)["delivered"]["rows"]}
         self.assertEqual(3, units["US0001"]["unit_planned_points"]["value"])
@@ -356,6 +357,38 @@ class RunTotalsTests(unittest.TestCase):
         rep = sr.build_report(self.root, RETRO)
         return {r["est_measure"]["value"]: r for r in _sections(rep)["estimates"]["rows"]}
 
+    def test_the_token_actual_adds_the_delegated_agents_to_the_run_meter(self) -> None:
+        """MUTANT: report the main-thread meter alone - a run that delegated most of its work
+        reads a fraction of its cost, which is the page RPT0004 was rejected for."""
+        lean_run(self.root)
+        tokens = self._estimates()["Tokens"]
+        self.assertEqual(1_823_456, tokens["est_actual"]["value"])
+        basis = tokens["est_basis"]["value"]
+        self.assertIn("1 delegated agent", basis)
+        self.assertIn("appendix", basis, "the split lives in the appendix, not on the front page")
+
+    def test_the_page_ends_with_exactly_one_newline(self) -> None:
+        """MUTANT: return the collapsed text without trimming its tail - a run with no waivers
+        ends the page on an empty repeat block, and the filed page fails markdownlint (MD012)."""
+        lean_run(self.root)
+        md = sr.render_markdown(sr.build_report(self.root, RETRO))
+        self.assertTrue(md.endswith("\n") and not md.endswith("\n\n"), repr(md[-40:]))
+
+    def test_a_run_with_no_per_unit_figures_prints_no_per_unit_table(self) -> None:
+        """MUTANT: always emit the per-unit table - a run with nothing measured per unit prints
+        a row of NOT MEASURED per unit, which buries the three answers on the one page."""
+        lean_run(self.root, measured=False)
+        # This run's own shape: a plan snapshot holding planned points and nothing per unit.
+        self._state(plan_snapshot={"units": {uid: {"planned_points": 3, "forecast_tokens": None,
+                                                   "forecast_minutes": None, "added": False}
+                                             for uid in ("US0001", "US0002", "US0004")},
+                                   "rates": {}})
+        rep = sr.build_report(self.root, RETRO)
+        self.assertEqual([], _sections(rep)["estimates"]["unit_rows"])
+        self.assertNotIn("open span", sr.render_markdown(rep))
+        lean_run(self.root)
+        self.assertTrue(_sections(sr.build_report(self.root, RETRO))["estimates"]["unit_rows"])
+
     def test_overlapping_unit_spans_are_never_summed_into_the_run(self) -> None:
         """MUTANT: take the run's actual as the sum over `unit_actuals` - three units open over
         the same hours read three times the run's spend and time."""
@@ -366,7 +399,8 @@ class RunTotalsTests(unittest.TestCase):
         self._state(unit_actuals=overlapping)
         est = self._estimates()
         self.assertEqual(600.0, est["Minutes"]["est_actual"]["value"])
-        self.assertEqual(1_700_000, est["Tokens"]["est_actual"]["value"])
+        # The run meter (1,700,000) plus the fixture's one delegated agent (123,456).
+        self.assertEqual(1_823_456, est["Tokens"]["est_actual"]["value"])
         self.assertIn("span", est["Minutes"]["est_basis"]["value"])
         self.assertIn("meter", est["Tokens"]["est_basis"]["value"])
         md = _md_section(sr.render_markdown(sr.build_report(self.root, RETRO)), "Estimates")
