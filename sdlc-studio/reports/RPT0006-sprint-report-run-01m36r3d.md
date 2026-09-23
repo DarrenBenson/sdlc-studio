@@ -6,8 +6,8 @@ A sprint runs start to finish on its own, learns from itself, and hands you one 
 
 **Verdict: Judged achieved** - The run went from plan approval to this page without asking the operator anything: four seat rulings (D0256-D0259) answered its questions, each unit had one independent reviewer under the new cap, and the close ran in one pass. It learns from itself through a calibrated token rate measured from its own history and through ruling precedent; lesson graduation was scoped to Sprint 2 from the start.
 
-> **Run:** 2026-09-23T09:10:21Z to open (8.1h)
-> **Verified on:** 4af3dfbc3182a20daea6c4864f7c0b1cd39b9a74   **Fingerprint:** 8ce8051d2635b26f
+> **Run:** 2026-09-23T09:10:21Z to open (8.7h)
+> **Verified on:** 4af3dfbc3182a20daea6c4864f7c0b1cd39b9a74   **Fingerprint:** 601f7a5c68719c2f
 
 ## Estimates
 
@@ -18,8 +18,8 @@ over forecast.
 | Measure | Forecast | Actual | Ratio | Over |
 | --- | --- | --- | --- | --- |
 | Points | 58 | 58 | 1.0x | 11 of 11 delivered unit(s) |
-| Minutes | NOT MEASURED - the plan recorded no minute forecast for any unit | 483.9 | NOT MEASURED - needs both a forecast and an actual | the whole run: forecast over 0 of 11 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
-| Tokens | 5,661,095 | 6,411,344 | 1.13x | the whole run: the plan's run-level token forecast; actual is the main-thread meter plus 21 delegated agent(s)' reported totals, split in the appendix |
+| Minutes | NOT MEASURED - the plan recorded no minute forecast for any unit | 520.9 | NOT MEASURED - needs both a forecast and an actual | the whole run: forecast over 0 of 11 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
+| Tokens | 5,661,095 | 6,463,452 | 1.14x | the whole run: the plan's run-level token forecast; actual is the main-thread meter plus 21 delegated agent(s)' reported totals, split in the appendix |
 
 ## Delivered to plan
 
@@ -78,17 +78,17 @@ Signing records the principal, the date and this report's fingerprint against RU
 
 | Model | Tokens |
 | --- | --- |
-| mixed | 1,684,819 |
+| mixed | 1,736,927 |
 
-Total 6,411,344, of which delegated 4,726,525. Coverage: 1 session(s);
+Total 6,463,452, of which delegated 4,726,525. Coverage: 1 session(s);
 read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp.
 
 ### DORA
 
 | Key | This run | Mapping | Elite band | Derived from |
 | --- | --- | --- | --- | --- |
-| Deployment frequency | 11 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window | on demand | git history - 11 commit(s) on main inside the run window |
-| Lead time for changes | 7h 22m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 11 commit(s) |
+| Deployment frequency | 13 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window | on demand | git history - 13 commit(s) on main inside the run window |
+| Lead time for changes | 7h 59m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 13 commit(s) |
 | Change failure rate | NOT MEASURED - no forge run data | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that did not conclude success | 0-15% | no push-triggered CI run is readable for this run window |
 | Time to restore | NOT MEASURED - no forge run data | the span from a push-triggered run concluding failure on main to the next push-triggered run concluding success | under an hour | no push-triggered CI run is readable for this run window |
 
