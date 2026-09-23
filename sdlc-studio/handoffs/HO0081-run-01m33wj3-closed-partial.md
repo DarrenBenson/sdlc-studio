@@ -18,7 +18,7 @@ None: every batch unit is delivered, abandoned, ruled, dropped, parked or awaiti
 ## Appetite
 
 - **Declared:** wall-clock 5760 min, units 64 unit(s)
-- **Spent:** 1024.2 min, 5 unit(s) terminal
+- **Spent:** 1483.4 min, 5 unit(s) terminal
 - **Delivered:** 5 unit(s)
 - **Token forecast:** ~4,773,343 tokens - a plan-time estimate, never a gate (the total is transcript-measured but a LOWER BOUND - delegated spend is supplied, not observed)
 

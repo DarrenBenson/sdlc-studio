@@ -125,7 +125,7 @@ NOT MEASURED - no stakeholder consult artefact for this run (consulted sdlc-stud
 
 | Reviewer of record | Date | Fingerprint signed |
 | --- | --- | --- |
-| not yet signed | not yet signed | not yet signed |
+| Darren Benson | 2026-09-23T07:07:10Z | 1f4df2ec2ae9f44b |
 
 Signing records the principal, the date and this report's fingerprint against RUN-01M33WJ3.
 The facts above are frozen: nothing in the run changes after this report is produced, which
