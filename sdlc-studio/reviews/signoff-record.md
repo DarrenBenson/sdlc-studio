@@ -782,3 +782,14 @@
 | BG0730 | Darren Benson | - | Claude Opus 5 | 2026-09-22 | Reviewer of record for RUN-01M33WJ3's five bugs. Each carries an independent adversarial pass by a fresh context that did not write it, recorded as evidence: fifteen rounds, ten REJECTs, every round finding something real. Three rejections were the author's fix not fixing the bug. | human |
 | BG0719 | Darren Benson | - | Claude Opus 5 | 2026-09-22 | Reviewer of record for RUN-01M33WJ3's five bugs. Each carries an independent adversarial pass by a fresh context that did not write it, recorded as evidence: fifteen rounds, ten REJECTs, every round finding something real. Three rejections were the author's fix not fixing the bug. | human |
 | BG0722 | Darren Benson | - | Claude Opus 5 | 2026-09-22 | Reviewer of record for RUN-01M33WJ3's five bugs. Each carries an independent adversarial pass by a fresh context that did not write it, recorded as evidence: fifteen rounds, ten REJECTs, every round finding something real. Three rejections were the author's fix not fixing the bug. | human |
+| US0868 | Darren Benson | - | lane-A | 2026-09-23 | - | human |
+| US0869 | Darren Benson | - | lane-C-fix | 2026-09-23 | - | human |
+| US0870 | Darren Benson | - | lane-A | 2026-09-23 | - | human |
+| US0871 | Darren Benson | - | lane-B-fix | 2026-09-23 | - | human |
+| US0872 | Darren Benson | - | lane-B-fix | 2026-09-23 | - | human |
+| US0873 | Darren Benson | - | lane-B-fix | 2026-09-23 | - | human |
+| US0874 | Darren Benson | - | lane-C | 2026-09-23 | - | human |
+| US0875 | Darren Benson | - | lane-D-fix | 2026-09-23 | - | human |
+| US0876 | Darren Benson | - | lane-A-fix | 2026-09-23 | - | human |
+| US0877 | Darren Benson | - | lane-D-fix | 2026-09-23 | - | human |
+| US0878 | Darren Benson | - | lane-A-fix | 2026-09-23 | - | human |
