@@ -717,7 +717,7 @@ def _number_rounds(rows: list[dict]) -> list[dict]:
     return rows
 
 
-def delivery_rounds(repo_root: Path | str, unit: str) -> list[dict]:
+def delivery_rounds(repo_root: Path | str, unit: str, state: dict | None = None) -> list[dict]:
     """The live delivery verdict rows of `unit`'s CURRENT delivery, oldest first, each `round`
     numbered from 1 within it.
 
@@ -728,8 +728,12 @@ def delivery_rounds(repo_root: Path | str, unit: str) -> list[dict]:
     further verdict: outside a run nothing else marks where a new delivery began."""
     uid = sdlc_md.norm_id(unit)
     rows = [r for r in read_verdicts(repo_root) if sdlc_md.norm_id(r.get("unit", "")) == uid]
-    state = run_state.read(repo_root) or {}
-    if run_state.batch_holds(state, uid):
+    # A caller holding a run's own record (the report of a sealed run) counts against THAT
+    # run's base whether or not it is still open: a figure that moved when the run sealed would
+    # invalidate the very page the seal signs.
+    given = state is not None and uid in ((state or {}).get(run_state.REVIEW_BASE) or {})
+    state = state if state is not None else (run_state.read(repo_root) or {})
+    if given or run_state.batch_holds(state, uid):
         base = (state.get(run_state.REVIEW_BASE) or {}).get(uid)
         rows = [r for r in rows[base:] if not is_superseded(r)] if isinstance(base, int) else []
     else:
@@ -750,9 +754,9 @@ def _mark_review_base(repo_root: Path | str, unit: str) -> None:
             1 for r in read_verdicts(repo_root) if sdlc_md.norm_id(r.get("unit", "")) == uid))
 
 
-def review_rounds(repo_root: Path | str, unit: str) -> int:
+def review_rounds(repo_root: Path | str, unit: str, state: dict | None = None) -> int:
     """How many review rounds `unit`'s current delivery has recorded (`delivery_rounds`)."""
-    return len(delivery_rounds(repo_root, unit))
+    return len(delivery_rounds(repo_root, unit, state))
 
 
 def unit_review_rounds(repo_root: Path | str, unit: str, phase: str = "delivery") -> list[dict]:

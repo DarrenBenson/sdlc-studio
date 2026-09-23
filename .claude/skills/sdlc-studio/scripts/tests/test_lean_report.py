@@ -393,6 +393,27 @@ class RunTotalsTests(unittest.TestCase):
         lean_run(self.root)
         self.assertTrue(_sections(sr.build_report(self.root, RETRO))["estimates"]["unit_rows"])
 
+    def test_sealing_the_run_does_not_move_the_review_rounds(self) -> None:
+        """MUTANT: count a sealed run's rounds by the outside-a-run rule (rows after the last
+        non-final APPROVE) rather than against the run's own review base - a unit approved,
+        then re-confirmed by its reviewer, reads 2 rounds while open and 1 once sealed, and the
+        seal invalidates the page it signs (found rehearsing RUN-01M36R3D's seal)."""
+        lean_run(self.root)
+        ledger = self.root / "sdlc-studio" / "reviews" / "critic-verdicts.md"
+        ledger.write_text(ledger.read_text(encoding="utf-8")
+                          + "| US0002 | APPROVE | a seat | author | 2026-09-20 |\n",
+                          encoding="utf-8")
+        self._state(review_base={"US0001": 0, "US0002": 0, "US0004": 0, "US0005": 0})
+
+        def rounds() -> dict:
+            rep = sr.build_report(self.root, RETRO)
+            return {r["unit_id"]["value"]: r["unit_rounds"]["value"]
+                    for r in _sections(rep)["delivered"]["rows"]}
+        before = rounds()
+        self.assertEqual(2, before["US0002"])
+        self._state(outcome="goal-reached")
+        self.assertEqual(before, rounds(), "sealing the run moved a review-round figure")
+
     def test_overlapping_unit_spans_are_never_summed_into_the_run(self) -> None:
         """MUTANT: take the run's actual as the sum over `unit_actuals` - three units open over
         the same hours read three times the run's spend and time."""

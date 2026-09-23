@@ -3206,7 +3206,8 @@ def _num(value) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
-def _review_rounds(root: Path, uid: str, ledger: list[list[str]], found: bool) -> int | None:
+def _review_rounds(root: Path, uid: str, ledger: list[list[str]], found: bool,
+                   state: dict | None = None) -> int | None:
     """A unit's delivery review rounds: `critic.review_rounds` where it exists, else the unit's
     rows in the verdict ledger, one row per recorded round. None when there is no ledger to
     count: no ledger is not zero rounds, whichever route would have counted them."""
@@ -3216,7 +3217,7 @@ def _review_rounds(root: Path, uid: str, ledger: list[list[str]], found: bool) -
         import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
         counter = getattr(critic, "review_rounds", None)
         if callable(counter):
-            return int(counter(root, uid))
+            return int(counter(root, uid, state=state))
     except Exception as exc:  # noqa: BLE001 - fall back to the ledger rather than fail the page
         sdlc_md.debug("sprint_report._review_rounds", exc)
     return sum(1 for r in ledger if r and sdlc_md.norm_id(r[0]) == uid)
@@ -3269,7 +3270,7 @@ def _unit_ledger(root: Path, state: dict, state_rel: str) -> list[dict]:
             "forecast_tokens": plan.get("forecast_tokens"),
             "minutes": act.get("minutes"), "tokens": act.get("tokens"),
             "in_plan": bool(plan), "measured": bool(act),
-            "rounds": _review_rounds(root, uid, ledger, ledger_found),
+            "rounds": _review_rounds(root, uid, ledger, ledger_found, state),
             "rounds_rel": ledger_rel})
     return out
 
