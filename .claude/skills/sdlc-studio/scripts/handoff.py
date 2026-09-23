@@ -753,7 +753,10 @@ def _link_from_retro(retro_path: Path, disp: str, file_name: str, report: dict) 
     body = (f"{mark} [{disp}](../handoffs/{file_name}) - {s['remaining']} remaining item(s): "
             f"{s[COPILOT_TAIL]} copilot-tail, {s[JUDGEMENT]} judgement. Pick up with "
             f"`sprint plan --worklist {report['worklist']}`.\n")
-    sdlc_md.atomic_write(retro_path, artifact._put_section(text, ("Handoff",), body))
+    # Exactly one newline at the end: a Handoff section at the foot of the retro otherwise leaves
+    # a trailing blank line, and markdownlint (MD012) refuses the next commit.
+    new = artifact._put_section(text, ("Handoff",), body)
+    sdlc_md.atomic_write(retro_path, new.rstrip("\n") + "\n")
 
 
 # --------------------------------------------------------------------------- generate

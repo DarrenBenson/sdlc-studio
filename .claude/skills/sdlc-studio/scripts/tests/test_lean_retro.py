@@ -208,6 +208,24 @@ class OneReportPerRunTests(unittest.TestCase):
         self.assertEqual(signature["fingerprint"], signed["fingerprint"])
         self.assertFalse(sr.read_report(self.root, again).get("signature"))
 
+class RetroTailTests(unittest.TestCase):
+    """MUTANT: write the retro with the section helper's tail untouched - a Handoff section at
+    the foot of the retro leaves a trailing blank line, and markdownlint refuses the commit."""
+
+    def test_linking_the_handoff_leaves_exactly_one_newline(self) -> None:
+        import handoff  # noqa: PLC0415 - the writer under test
+        with tempfile.TemporaryDirectory() as tmp:
+            retro = Path(tmp) / "RETRO0001-x.md"
+            retro.write_text("# RETRO-0001: x\n\n## Keep\n\n- a\n\n## Handoff\n\n- old\n",
+                             encoding="utf-8")
+            report = {"summary": {"remaining": 0, handoff.COPILOT_TAIL: 0, handoff.JUDGEMENT: 0},
+                      "worklist": "w.txt"}
+            for _ in range(2):   # a re-run close links again
+                handoff._link_from_retro(retro, "HO-0001", "HO0001-x.md", report)
+                text = retro.read_text(encoding="utf-8")
+                self.assertTrue(text.endswith("\n") and not text.endswith("\n\n"),
+                                repr(text[-40:]))
+
 
 if __name__ == "__main__":
     unittest.main()
