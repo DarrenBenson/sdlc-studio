@@ -38,7 +38,8 @@ Give the verdict an effect. Parse `achievable` and `one_increment` against a sma
 - **Then** it is refused rather than proceeding, unless `--override-goal-review "<reason>"` is
   supplied and stamped on the run - so a negative verdict has an effect rather than discharging
   the gate identically to a positive one
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::NegativeGoalVerdictHasAnEffectTests
+- **Verify:** manual - retired by D0259: superseded by US0868, the goal seat read advises and never refuses the plan
+- **Verified:** manual (2026-09-24) - retired, superseded by US0868 (D0259)
 
 ## Resolution
 

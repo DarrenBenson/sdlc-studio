@@ -34,8 +34,8 @@ it.
 - **Then** the forecast total does not include the fitted fixed term, and the plan reports the
   candidate fit as NOT APPLIED, naming the minimum required and the count the project has - a
   total that moved the moment a second row landed fails this
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AFitIsNeverAppliedAutomaticallyTests::test_a_two_sprint_fit_is_reported_and_kept_out_of_the_total
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by D0259: superseded by D0258 (US0870), one token forecast, the plan snapshot's, with no fixed-term fit
+- **Verified:** manual (2026-09-24) - retired, superseded by D0258 (D0259)
 
 ### AC2: no fixed term is ever quoted without the number of sprints behind it
 
@@ -43,8 +43,8 @@ it.
 - **When** the forecast is rendered
 - **Then** the sprint count the term was fitted from appears beside the figure, so no reader
   can take the number without its sample size
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AFitIsNeverAppliedAutomaticallyTests::test_every_quoted_fixed_term_states_the_sprint_count_behind_it
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by D0259: superseded by D0258 (US0870), one token forecast, the plan snapshot's, with no fixed-term fit
+- **Verified:** manual (2026-09-24) - retired, superseded by D0258 (D0259)
 
 ### AC3: at or above the minimum the fit is applied, and the plan says so
 
@@ -52,8 +52,8 @@ it.
 - **When** a plan is built
 - **Then** the fixed term enters the total and the plan states it was applied on that many
   sprints, so the refusal is a threshold the evidence can clear and not a permanent no
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AFitIsNeverAppliedAutomaticallyTests::test_a_fit_at_the_minimum_is_applied_and_names_its_sprint_count
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by D0259: superseded by D0258 (US0870), one token forecast, the plan snapshot's, with no fixed-term fit
+- **Verified:** manual (2026-09-24) - retired, superseded by D0258 (D0259)
 
 ## Revision History
 

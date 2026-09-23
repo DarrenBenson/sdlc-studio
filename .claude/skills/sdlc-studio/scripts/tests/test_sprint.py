@@ -455,22 +455,6 @@ class BatchCliTests(unittest.TestCase):
             self.assertIn("added US0002", out)
 
 
-class CloseAttemptTrendTests(unittest.TestCase):
-    """US0435's trend line and its file-and-close offer, removed by US0876: a close runs once, so there is no series of attempts to narrate."""
-
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_a_growing_deferrable_set_offers_the_bounded_exit(self) -> None:
-        pass
-
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_a_growing_hard_set_is_told_to_clear_the_lanes_not_sent_to_a_dead_end(self) -> None:
-        pass
-
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_a_converging_or_first_attempt_makes_no_offer(self) -> None:
-        pass
-
-
 class WsjfTests(unittest.TestCase):
     """--order wsjf ranks Cost of Delay (from Priority) against Points. No seat scores needed.
 
@@ -3642,23 +3626,6 @@ class GoalReviewWindowTests(unittest.TestCase):
     """US0592, narrowed by US0868: the seat read advises, so neither a stated nor an omitted goal
     is refused for want of one. The refusal and its `--goal-review-waived` escape are gone."""
 
-    # SUPERSEDED, not deleted: stamped Verify lines in US0592 (AC1, AC2) and US0297 (AC3) still
-    # name these nodes, and those artefacts are repointed or retired by their owner. Each test
-    # pinned a refusal US0868 removes, so each is skipped with that reason rather than kept red.
-    _SUPERSEDED = "superseded by US0868: the goal seat read advises and never refuses the plan"
-
-    @unittest.skip(_SUPERSEDED)
-    def test_a_plan_with_no_sprint_goal_is_refused(self) -> None:
-        """US0592 AC1. See test_lean_goal.GoalSeatReadTests for the behaviour that replaced it."""
-
-    @unittest.skip(_SUPERSEDED)
-    def test_the_escape_is_recorded_at_plan_time(self) -> None:
-        """US0592 AC2: `--goal-review-waived` is removed with the refusal it escaped."""
-
-    @unittest.skip(_SUPERSEDED)
-    def test_plan_refuses_a_sprint_goal_no_seat_has_reviewed(self) -> None:
-        """US0297 AC3. Replaced by test_lean_goal's test_a_missing_seat_read_is_recorded_as_not_read."""
-
     def _plan(self, root, *extra):
         mod = _load()
         out, err = io.StringIO(), io.StringIO()
@@ -4794,10 +4761,6 @@ class FileAndCloseTests(unittest.TestCase):
             rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root), *extra])
         return rc, out.getvalue(), err.getvalue()
 
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_blocked_close_offers_file_and_close(self) -> None:
-        pass
-
     def test_file_and_close_records_linked_artefacts_and_outcome(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = self._fixture(d)
@@ -5022,10 +4985,6 @@ class FileAndCloseTests(unittest.TestCase):
             rc, out, err = self._close(mod, root, self.ADMIN)
             self.assertIn("Which auth method should the sync use?", out + err)
             self.assertIn("oauth", out + err)
-
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_reclose_reports_outstanding_set_trend(self) -> None:
-        pass
 
 
 class DeferredOperatorDecisions(unittest.TestCase):
@@ -8331,13 +8290,6 @@ class CarryForwardCloseTests(unittest.TestCase):
             shutil.rmtree(d, ignore_errors=True)
 
 
-#: SUPERSEDED by D0258 (US0870): one token forecast, the plan snapshot's - points x the calibrated
-#: rate. The fitted fixed per-sprint term left the forecast, so every test below pinned behaviour
-#: the ruling removes. Kept as skipped nodes, not deleted: stamped Verify lines in US0336 (AC1-AC3)
-#: and US0338 (AC1-AC3) name them. See test_lean_plan_snapshot.OneForecastTests for what replaced
-#: them.
-_FIXED_TERM_SUPERSEDED = ("superseded by D0258 (US0870): the fixed-term fit left the forecast; "
-                          "one forecast, the plan snapshot's")
 #: Two whole-sprint velocity rows, same model: enough for the project's own rate to replace the
 #: seed.
 _FIXED_ROWS_CANDIDATE = [
@@ -8346,38 +8298,6 @@ _FIXED_ROWS_CANDIDATE = [
     {"id": "RETRO0002", "units": 33, "measured": 0, "points": 100, "actual": 5_194_538,
      "model": "claude-opus-4-8"},
 ]
-
-
-class TheForecastCarriesAFixedTermTests(unittest.TestCase):
-    """US0336 / CR0391, superseded by D0258."""
-
-    @unittest.skip(_FIXED_TERM_SUPERSEDED)
-    def test_the_total_is_a_fixed_term_plus_points_times_the_marginal_rate(self) -> None:
-        """US0336 AC1."""
-
-    @unittest.skip(_FIXED_TERM_SUPERSEDED)
-    def test_the_rendered_forecast_shows_both_terms_and_not_one_product(self) -> None:
-        """US0336 AC2."""
-
-    @unittest.skip(_FIXED_TERM_SUPERSEDED)
-    def test_a_half_size_batch_costs_more_than_half_and_more_per_point(self) -> None:
-        """US0336 AC3."""
-
-
-class AFitIsNeverAppliedAutomaticallyTests(unittest.TestCase):
-    """US0338 / CR0391, superseded by D0258: no fit is applied at all now."""
-
-    @unittest.skip(_FIXED_TERM_SUPERSEDED)
-    def test_a_two_sprint_fit_is_reported_and_kept_out_of_the_total(self) -> None:
-        """US0338 AC1."""
-
-    @unittest.skip(_FIXED_TERM_SUPERSEDED)
-    def test_every_quoted_fixed_term_states_the_sprint_count_behind_it(self) -> None:
-        """US0338 AC2."""
-
-    @unittest.skip(_FIXED_TERM_SUPERSEDED)
-    def test_a_fit_at_the_minimum_is_applied_and_names_its_sprint_count(self) -> None:
-        """US0338 AC3."""
 
 
 class TheSeedBasisNamesItsConditionTests(unittest.TestCase):
@@ -13804,30 +13724,6 @@ class BlockingScopeTests(unittest.TestCase):
                       "the non-blocking set does not state WHY those findings do not block")
 
 
-class LoopTerminationTests(unittest.TestCase):
-    """US0600's close-attempt cap, removed by US0876: `review.max_rounds` no longer caps close attempts, and `loop_termination` is deleted."""
-
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_the_round_cap_ends_the_loop(self) -> None:
-        pass
-
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_a_growing_set_stops_the_loop(self) -> None:
-        pass
-
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_a_shrinking_set_runs_on(self) -> None:
-        pass
-
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_one_growth_alone_does_not_stop_the_loop(self) -> None:
-        pass
-
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_the_rule_is_wired_into_the_close_not_only_the_library(self) -> None:
-        pass
-
-
 class EscalationTests(unittest.TestCase):
     """A stuck unit reaches the operator immediately, rather than waiting silently.
 
@@ -16775,22 +16671,6 @@ class CallItHereTests(unittest.TestCase):
             self.assertIn("needs a reason", err.getvalue())
 
 
-class ConvergedLoopIsNotStoppedTests(unittest.TestCase):
-    """BG0517's refinement of the close-attempt cap, removed with the cap by US0876."""
-
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_a_series_ending_in_zero_outstanding_never_terminates(self) -> None:
-        pass
-
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_the_cap_still_stops_a_loop_that_is_not_converging(self) -> None:
-        pass
-
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_divergence_still_terminates(self) -> None:
-        pass
-
-
 class MutationEvidenceModeTests(unittest.TestCase):
     """US0660 AC5: the close names WHICH mutation-evidence mode held the run.
 
@@ -18572,10 +18452,6 @@ class LoopConvergenceTests(unittest.TestCase):
             self.assertEqual(["signoff"], rows[-1]["stages"],
                              "stages must name the holding lane's stage and no other")
 
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_the_cap_fires_through_the_shipped_close_only_on_a_blocked_run(self) -> None:
-        pass
-
     def test_the_project_config_pins_no_round_cap(self) -> None:
         """AC4. `review.max_rounds` is REMOVED, not set.
 
@@ -19598,10 +19474,6 @@ class PrepareRefusesTests(unittest.TestCase):
             self.assertIn("verify", str(verdicts["US0102"]).lower(),
                           "the refusal does not name the criterion that is actually owed")
 
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_a_non_terminal_batch_unit_refuses_the_report(self):
-        pass
-
     def test_every_non_terminal_batch_unit_is_one_known_issue(self):
         """AC1. MUTANT: return at the first non-terminal unit found - the operator clears it,
         pays the whole of PREPARE again and meets the second, and every assertion about the
@@ -19647,10 +19519,6 @@ class PrepareRefusesTests(unittest.TestCase):
             self.assertEqual(1, len([i for i in issues
                                      if i["source"] == "report-hold:terminal-gate"]), issues)
 
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_an_unanswered_review_refuses_the_report(self):
-        pass
-
     def test_an_unanswered_review_is_a_known_issue_on_the_report(self):
         """AC2. MUTANT: derive the hold from the batch's non-terminal units, as AC1's does -
         every unit here is terminal, so the hold never fires and a run with a live REJECT
@@ -19677,10 +19545,6 @@ class PrepareRefusesTests(unittest.TestCase):
                              "the refusal names a unit the predicate did not return")
             self.assertIn("REJECT", page, "the refusal does not name the review that is owed")
             self.assertEqual(len(self._reports(root)), 1, "the report was withheld")
-
-    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
-    def test_index_drift_refuses_the_report_and_a_clean_run_produces_one(self):
-        pass
 
     def test_index_drift_is_a_known_issue_and_a_clean_run_has_none(self):
         """AC3. MUTANT: register the drift as a deferrable close blocker, so `--file-and-close`

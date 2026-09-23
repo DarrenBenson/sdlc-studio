@@ -30,8 +30,8 @@
 - **Given** a batch whose second unit fails
 - **When** the loop runs
 - **Then** it stops and reports the failing unit, and the units after it are NOT reported as delivered - a loop that swallows a failure manufactures a green sprint
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_autosprint.py::PrimaryPathTests::test_a_failing_unit_stops_the_loop_and_is_named
-- **Verified:** yes (2026-07-24)
+- **Verify:** manual - retired by D0259: superseded by US0876, the close runs once and finishes, recording gaps as known issues
+- **Verified:** manual (2026-09-24) - retired, superseded by US0876 (D0259)
 
 ### AC3: the test fails against the untested module, proving it is not vacuous
 

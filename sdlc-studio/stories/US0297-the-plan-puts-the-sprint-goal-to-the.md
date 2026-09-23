@@ -46,8 +46,8 @@ wrong goal at the close
 - **When** `sprint plan --write` runs without `--skip-personas`
 - **Then** it exits non-zero, writes no `sprint-plan.json`, opens no run, and names the command
   that records the seat review
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_plan_refuses_a_sprint_goal_no_seat_has_reviewed
-- **Verified:** yes (2026-07-22)
+- **Verify:** manual - retired by D0259: superseded by US0868, the goal seat read advises and never refuses the plan
+- **Verified:** manual (2026-09-24) - retired, superseded by US0868 (D0259)
 
 ### AC4: `--skip-personas` stays the recorded escape
 

@@ -36,8 +36,8 @@ applied at all, are US0337 and US0338.
 - **Then** the forecast carries the fixed per-sprint term and the marginal per-point rate as
   two separate figures, and its total is the fixed term plus points times the marginal rate,
   so neither term can be recovered by dividing the other out
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheForecastCarriesAFixedTermTests::test_the_total_is_a_fixed_term_plus_points_times_the_marginal_rate
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by D0259: superseded by D0258 (US0870), one token forecast, the plan snapshot's, with no fixed-term fit
+- **Verified:** manual (2026-09-24) - retired, superseded by D0258 (D0259)
 
 ### AC2: the plan shows both terms, never a single product
 
@@ -46,8 +46,8 @@ applied at all, are US0337 and US0338.
 - **Then** the output names the fixed per-sprint term and the per-point term on their own
   lines, so a reader can see which half of the number their batch size moves; output that
   quotes only points times a rate fails this
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheForecastCarriesAFixedTermTests::test_the_rendered_forecast_shows_both_terms_and_not_one_product
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by D0259: superseded by D0258 (US0870), one token forecast, the plan snapshot's, with no fixed-term fit
+- **Verified:** manual (2026-09-24) - retired, superseded by D0258 (D0259)
 
 ### AC3: halving the batch does not halve the forecast
 
@@ -56,8 +56,8 @@ applied at all, are US0337 and US0338.
 - **Then** the smaller batch is forecast at MORE than half the larger's total and at a
   strictly higher cost per point, because the fixed term is amortised over fewer points - a
   model that is linear in points returns exactly half and fails this
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheForecastCarriesAFixedTermTests::test_a_half_size_batch_costs_more_than_half_and_more_per_point
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by D0259: superseded by D0258 (US0870), one token forecast, the plan snapshot's, with no fixed-term fit
+- **Verified:** manual (2026-09-24) - retired, superseded by D0258 (D0259)
 
 ## Revision History
 

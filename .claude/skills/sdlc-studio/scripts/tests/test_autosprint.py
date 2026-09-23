@@ -320,10 +320,6 @@ class PrimaryPathTests(unittest.TestCase):
                 self.assertIn(f"close [{i}/{len(chain)}] {name}: ok", out)
             self.assertEqual(closed["batch"], ["BG0001", "BG0002"])
 
-    @unittest.skip("superseded by US0876: a failing step is a known issue and the close runs on")
-    def test_a_failing_unit_stops_the_loop_and_is_named(self) -> None:
-        pass
-
     def test_a_failing_step_is_named_and_the_loop_runs_on(self) -> None:
         """AC2, as US0876 re-states it: the second step fails - the close names it as a known
         issue and runs every later step. A chain that swallowed the failure would report it

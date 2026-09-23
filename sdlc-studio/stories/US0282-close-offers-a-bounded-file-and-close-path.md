@@ -24,8 +24,8 @@
 - **When** the close runs
 - **Then** the operator is offered fix-them or file-them-and-close, rather than only the fix
   path
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_blocked_close_offers_file_and_close
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by D0259: superseded by US0876, the close runs once and finishes, recording gaps as known issues
+- **Verified:** manual (2026-09-24) - retired, superseded by US0876 (D0259)
 
 ### AC2: file-and-close records every blocker as a linked artefact
 

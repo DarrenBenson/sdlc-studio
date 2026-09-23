@@ -38,24 +38,24 @@ Check the outstanding set before the count. A loop whose latest round reports ze
   - **Then** it does NOT terminate, because there is nothing left to iterate on and the next
     round is the one that completes the ceremony. RUN-01KZ5YXM's series was `1, 1, 1, 1, 0, 0`:
     finished, and stopped.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ConvergedLoopIsNotStoppedTests::test_a_series_ending_in_zero_outstanding_never_terminates
-  - **Verified:** yes (2026-08-04)
+  - **Verify:** manual - retired by D0259: superseded by US0876, the close runs once and finishes, recording gaps as known issues
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0876 (D0259)
 
 - [x] **AC2: the cap still stops a loop that is still carrying blockers.**
   - **Given** an attempt series at the cap whose latest round still reports outstanding work
   - **When** it is judged
   - **Then** it terminates on the cap exactly as before, because that is the case the cap was
     written for - an unattended loop going round on work it is not clearing
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ConvergedLoopIsNotStoppedTests::test_the_cap_still_stops_a_loop_that_is_not_converging
-  - **Verified:** yes (2026-08-04)
+  - **Verify:** manual - retired by D0259: superseded by US0876, the close runs once and finishes, recording gaps as known issues
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0876 (D0259)
 
 - [x] **AC3: the divergence detector is untouched.**
   - **Given** a series that grows for three rounds running and ends with outstanding work
   - **When** it is judged
   - **Then** it still terminates on divergence, so the convergence exemption cannot be used to
     keep a loop alive that is re-breaking what the last round cleared
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ConvergedLoopIsNotStoppedTests::test_divergence_still_terminates
-  - **Verified:** yes (2026-08-04)
+  - **Verify:** manual - retired by D0259: superseded by US0876, the close runs once and finishes, recording gaps as known issues
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0876 (D0259)
 
 ## Impact
 

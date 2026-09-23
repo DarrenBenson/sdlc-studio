@@ -23,8 +23,8 @@
 - **Given** a close attempted more than once
 - **When** a close is re-run
 - **Then** it reports whether the outstanding set shrank or grew since the previous attempt
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_reclose_reports_outstanding_set_trend
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by D0259: superseded by US0876, the close runs once and finishes, recording gaps as known issues
+- **Verified:** manual (2026-09-24) - retired, superseded by US0876 (D0259)
 
 ### AC2: a hard correctness gate is never waivable
 

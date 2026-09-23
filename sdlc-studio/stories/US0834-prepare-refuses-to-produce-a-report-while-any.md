@@ -43,8 +43,8 @@ about what an unanswered review is (D0193, D0194).
 - **When** `sprint.py close --retro RETRO0001` runs through `main` - no principal, because PREPARE signs nothing
 - **Then** it exits 2; stderr names BOTH unit ids with their statuses in a single refusal - the statuses named are the GATE's verdict, not the unit's Status line, because under D0213 no unit is terminal until SEAL; no file exists under `sdlc-studio/reports/`; and the run state carries no `report` field
 - **Mutant:** return at the first non-terminal unit found - the operator clears it, pays the whole of PREPARE again and meets the second, and every assertion about the first unit's name still passes
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PrepareRefusesTests::test_a_non_terminal_batch_unit_refuses_the_report
-- **Verified:** yes (2026-09-18)
+- **Verify:** manual - retired by D0259: superseded by US0876, the close runs once and finishes, recording gaps as known issues
+- **Verified:** manual (2026-09-24) - retired, superseded by US0876 (D0259)
 
 ### AC2: an unanswered review refuses it, on the one predicate the rest of the close already reads
 
@@ -52,8 +52,8 @@ about what an unanswered review is (D0193, D0194).
 - **When** PREPARE runs as in AC1
 - **Then** it exits 2, the refusal's unit ids equal the predicate's set compared against the literal, and no report is written; the message names the REJECT's verdict row so the reader knows which review is owed
 - **Mutant:** derive the hold from the batch's non-terminal units, as AC1's does - every unit here is terminal, so the hold never fires and a run with a live REJECT produces a signable report, which is the state D0193 was written against
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PrepareRefusesTests::test_an_unanswered_review_refuses_the_report
-- **Verified:** yes (2026-09-18)
+- **Verify:** manual - retired by D0259: superseded by US0876, the close runs once and finishes, recording gaps as known issues
+- **Verified:** manual (2026-09-24) - retired, superseded by US0876 (D0259)
 
 ### AC3: index drift refuses it, and a clean run produces exactly one report - the paired control
 
@@ -61,8 +61,8 @@ about what an unanswered review is (D0193, D0194).
 - **When** PREPARE runs on each
 - **Then** the drifted copy exits 2, names the drifted index path, and writes no report; the clean copy exits 0, writes exactly one report JSON under `sdlc-studio/reports/`, and its stdout names all three holds as passed, each by its own name, rather than passing them in silence
 - **Mutant:** register the drift as a deferrable close blocker, so `--file-and-close` files it as a CR and continues - the report then ships describing an index that disagrees with the tree it was derived from, with a filed ticket standing in for the fact being right
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PrepareRefusesTests::test_index_drift_refuses_the_report_and_a_clean_run_produces_one
-- **Verified:** yes (2026-09-18)
+- **Verify:** manual - retired by D0259: superseded by US0876, the close runs once and finishes, recording gaps as known issues
+- **Verified:** manual (2026-09-24) - retired, superseded by US0876 (D0259)
 
 ## Test Plan
 

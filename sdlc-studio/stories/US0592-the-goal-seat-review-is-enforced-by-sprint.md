@@ -26,16 +26,16 @@
   guarded on a goal being present: today a plan with no goal returns 0, opens the run, records
   `reviewed: False`, and the close then reports the item outstanding past its window - which is
   the flaw this story exists to end, surviving intact through its own fix
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GoalReviewWindowTests::test_a_plan_with_no_sprint_goal_is_refused
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by D0259: superseded by US0868, the goal seat read advises and never refuses the plan
+- **Verified:** manual (2026-09-24) - retired, superseded by US0868 (D0259)
 
 ### AC2: the recorded escape names its authoriser at the moment it is taken
 
 - **Given** an operator who deliberately skips the seat review
 - **When** the plan is written with the recorded opt-out
 - **Then** the waiver is recorded then and there with its authoriser, so the decision is made when it can still be reconsidered
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::GoalReviewWindowTests::test_the_escape_is_recorded_at_plan_time
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by D0259: superseded by US0868, the goal seat read advises and never refuses the plan
+- **Verified:** manual (2026-09-24) - retired, superseded by US0868 (D0259)
 
 ### AC3: a reviewed goal plans without complaint
 

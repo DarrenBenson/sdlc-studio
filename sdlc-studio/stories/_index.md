@@ -7,10 +7,10 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 149 |
+| Draft | 148 |
 | Ready | 15 |
 | Planned | 0 |
-| In Progress | 4 |
+| In Progress | 5 |
 | Review | 0 |
 | Done | 692 |
 | Won't Implement | 8 |
@@ -247,7 +247,7 @@
 | [US0886](US0886-criteria-that-sprint-1-superseded-are-retired-not.md) | Criteria that Sprint 1 superseded are retired, not left red | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0887](US0887-a-lesson-is-a-failure-class-that-counts.md) | A lesson is a failure class that counts its repeats | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0888](US0888-a-lesson-that-recurs-graduates-into-a-check.md) | A lesson that recurs graduates into a check | Draft | EP0261 | 2026-09-24 | 2026-09-24 |
-| [US0889](US0889-the-close-forward-ports-the-skill-and-keeps.md) | The close forward-ports the skill and keeps one handover per run | Draft | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0889](US0889-the-close-forward-ports-the-skill-and-keeps.md) | The close forward-ports the skill and keeps one handover per run | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |
 
 ## Archived Releases
 

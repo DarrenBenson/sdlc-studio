@@ -26,8 +26,8 @@ the divergence and leaving me to force a false Done or grandfather same-day work
 - **Then** it does not only print "growing - chasing a moving target"; it names the bounded exit
   (`--file-and-close --retro <id>`) as the way to file the deferrable item(s) as follow-ups, and
   says plainly that any remaining hard correctness blocker(s) must be cleared first
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseAttemptTrendTests::test_a_growing_deferrable_set_offers_the_bounded_exit
-- **Verified:** yes (2026-07-26)
+- **Verify:** manual - retired by D0259: superseded by US0876, the close runs once and finishes, recording gaps as known issues
+- **Verified:** manual (2026-09-24) - retired, superseded by US0876 (D0259)
 
 ### AC2: a growing set of only hard blockers is not sent to a dead end
 
@@ -37,8 +37,8 @@ the divergence and leaving me to force a false Done or grandfather same-day work
 - **Then** it does not dangle the file-and-close exit; it says the lanes must be cleared, naming that
   a growing set of correctness lanes is what the batch-scoped conformance and record-based currency
   checks exist to stop
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseAttemptTrendTests::test_a_growing_hard_set_is_told_to_clear_the_lanes_not_sent_to_a_dead_end
-- **Verified:** yes (2026-07-26)
+- **Verify:** manual - retired by D0259: superseded by US0876, the close runs once and finishes, recording gaps as known issues
+- **Verified:** manual (2026-09-24) - retired, superseded by US0876 (D0259)
 
 ### AC3: a shrinking or first-attempt set makes no offer
 
@@ -46,8 +46,8 @@ the divergence and leaving me to force a false Done or grandfather same-day work
 - **When** the trend is reported
 - **Then** no exit is named - reserved for genuine divergence, so it does not train operators to reach
   for file-and-close on a converging close
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseAttemptTrendTests::test_a_converging_or_first_attempt_makes_no_offer
-- **Verified:** yes (2026-07-26)
+- **Verify:** manual - retired by D0259: superseded by US0876, the close runs once and finishes, recording gaps as known issues
+- **Verified:** manual (2026-09-24) - retired, superseded by US0876 (D0259)
 
 ## Revision History
 

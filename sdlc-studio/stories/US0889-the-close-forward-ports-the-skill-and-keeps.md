@@ -1,6 +1,6 @@
 # US0889: The close forward-ports the skill and keeps one handover per run
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
