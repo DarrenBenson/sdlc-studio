@@ -1,6 +1,6 @@
 # US0870: The plan records each unit's forecast points, minutes and tokens, and nothing later overwrites it
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator judging estimate accuracy
+**I want** each unit's planned points, minutes and tokens frozen at plan time
+**So that** the report compares the actuals with what was planned, not with sizes resized along the way
 
 ## Acceptance Criteria
 

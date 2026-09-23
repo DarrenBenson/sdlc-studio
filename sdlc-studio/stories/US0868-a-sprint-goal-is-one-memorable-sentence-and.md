@@ -1,6 +1,6 @@
 # US0868: A sprint goal is one memorable sentence, and its seat read advises rather than blocks
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator starting a sprint
+**I want** a sprint goal short enough for the team to remember, with the seats advising on it rather than holding the plan
+**So that** the goal states the value in one sentence and planning never stalls on a goal-review loop
 
 ## Acceptance Criteria
 

@@ -1,6 +1,6 @@
 # US0869: Estimates are calibrated from the project's own runs, not a seed constant
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator reading a sprint forecast
+**I want** the token and minute rates calibrated from this project's own recent runs
+**So that** forecasts improve run by run instead of resting on a constant that has never been re-fitted
 
 ## Acceptance Criteria
 

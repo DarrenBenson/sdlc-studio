@@ -212,7 +212,7 @@ says, and what the last run taught.
 | `/sdlc-studio gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
 | `/sdlc-studio audit` | Adversarial pressure-test over the whole artifact graph: a refute-panel-verified weakness-hunt that files survivors as Bugs/CRs/RFCs, triage-then-approve by default, with a cost-gated pre-flight. See `help/audit.md` |
 | `/sdlc-studio audit --profile repo` | The same weakness-hunt on an existing repository, zero setup: architecture, code-quality and defensive-security legs, remediation-only on secrets. Also `--profile skill` and `--profile code` |
-| `/sdlc-studio decisions add` / `list` / `promote` | Project decisions log (the project spine + delegated-agent context): append a decision, list them, or promote a resolved open question |
+| `/sdlc-studio decisions add` / `list` / `promote` / `rule` / `precedent` | Project decisions log (the project spine + delegated-agent context): append a decision, list them, promote a resolved open question, or record a persona seat's ruling against its precedent. See `help/decisions.md` |
 | `/sdlc-studio lessons recall` | Surface relevant cross-project lessons before a decision |
 | `/sdlc-studio lessons add` | Append a new lesson to `.local/lessons.md` (**the default tier**) |
 | `/sdlc-studio lessons add --global` | Promote a lesson that generalises beyond this repo to the skill's `lessons/` (needs `skill_source_repo`) |

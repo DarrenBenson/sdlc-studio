@@ -1,6 +1,6 @@
 # US0875: The sprint report is one page answering three questions, with everything else in an appendix
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator signing off a sprint
+**I want** a one-page report that answers how accurate the estimates were, whether we delivered to plan, and what known issues are handed over
+**So that** sign-off is quick and the answers are the ones I need
 
 ## Acceptance Criteria
 

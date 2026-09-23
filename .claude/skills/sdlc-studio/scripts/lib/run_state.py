@@ -1609,6 +1609,28 @@ def start_batch(repo_root: Path | str, units: list[str], now: str | None = None)
     return _mutate(repo_root, apply)
 
 
+# --- lean loop: rulings (EP0260) ---
+RULINGS = "rulings"
+
+
+def record_ruling(repo_root: Path | str, did: str | None, by: str, seat: str | None = None,
+                  subject: str | None = None, kind: str = "ruling") -> bool:
+    """Append one ruling to the OPEN run's `rulings` list: who answered a question (`persona`
+    or `operator`), and whether it was a new ruling or a precedent `cited`. False, and nothing
+    written, when no run is open - a ruling made between runs belongs to no run."""
+    if not is_open(repo_root):
+        return False
+    entry = {"id": did, "by": by, "seat": seat, "subject": subject, "kind": kind}
+
+    def apply(state: dict) -> dict:
+        if state.get("outcome") == RUNNING:
+            state[RULINGS] = [*(state.get(RULINGS) or []), entry]
+        return state
+
+    _mutate(repo_root, apply)
+    return True
+
+
 def close_batch(repo_root: Path | str, *, reviewer: str, author: str, verdict: str,
                 findings: str = "", now: str | None = None) -> dict:
     """Close the open span with the independent review that covered it.

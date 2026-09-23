@@ -1,6 +1,6 @@
 # US0878: Sign checks what it seals and records what actually happened
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator signing off a sprint
+**I want** sign to check that what it seals is the run's report on the tree the close left, and to record what actually happened
+**So that** my signature cannot land on a stale page, and a partial run is never mistaken for an abort
 
 ## Acceptance Criteria
 

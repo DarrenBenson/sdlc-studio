@@ -1,6 +1,6 @@
 # US0873: A verdict is written by one set of rules, and parallel writers never lose a row
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator relying on review verdicts
+**I want** every verdict written by one set of rules, with no row lost when reviewers run in parallel
+**So that** the review record can be trusted as evidence
 
 ## Acceptance Criteria
 

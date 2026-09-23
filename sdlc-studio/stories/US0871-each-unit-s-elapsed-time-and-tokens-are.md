@@ -1,6 +1,6 @@
 # US0871: Each unit's elapsed time and tokens are measured as it is delivered
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator judging estimate accuracy
+**I want** each unit's elapsed time and tokens measured as it is delivered
+**So that** time and token accuracy can be reported per unit rather than guessed from the run's span
 
 ## Acceptance Criteria
 

@@ -1,6 +1,6 @@
 # US0872: One reviewer, at most two rounds: a fixed unit clears and a non-converging unit is carried
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator who wants the run to keep moving
+**I want** one independent review per unit, with at most two rounds and the second re-checking the fixes
+**So that** a fixed unit clears, a unit that does not converge is handed over as a known issue, and review never loops
 
 ## Acceptance Criteria
 

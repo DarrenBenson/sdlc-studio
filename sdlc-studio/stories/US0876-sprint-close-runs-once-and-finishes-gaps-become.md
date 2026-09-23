@@ -1,6 +1,6 @@
 # US0876: sprint close runs once and finishes: gaps become known issues, not refusals
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator waiting for a sprint to finish
+**I want** sprint close to finish in one pass, recording gaps as known issues
+**So that** the close never loops through attempt after attempt while nothing changes
 
 ## Acceptance Criteria
 

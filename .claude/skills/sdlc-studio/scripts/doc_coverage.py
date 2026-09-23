@@ -69,8 +69,6 @@ def _scripts(skill_dir: Path) -> list[str]:
 #: on the page rather than in somebody's memory, and it is CHECKED: a waiver naming a command
 #: that now has a page is stale and reported, so the list can only shrink.
 HELP_PAGE_WAIVERS: dict = {
-    "decisions": "a log verb, documented where the decisions themselves are - not a workflow "
-                 "a reader arrives at needing a page (known debt, 2026-08-02)",
     "repo": "the repo-map builder, whose surface is `repo map build` and is covered by "
             "reference-scripts.md (known debt, 2026-08-02)",
     "migrate": "the upgrade orchestrator, documented in reference-upgrade.md which a migration "

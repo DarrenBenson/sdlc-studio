@@ -402,6 +402,123 @@ def waiver_for(root: Path | str, subject: str) -> str | None:
     return None
 
 
+# A ruling is a decision row a persona seat wrote to answer one of the run's questions. Seat
+# and subject live in the decision cell (`ruling: <subject> [seat: <seat>] <question> ->
+# <ruling>`), not in new columns: every reader parses the six columns by position, and a row
+# with extra cells fails markdownlint. The subject is the waiver key (`_norm_subject`), so a
+# precedent lookup cannot miss on case or padding.
+RULING_PREFIX = "ruling:"
+_RULING_RE = re.compile(r"^ruling:\s*(?P<subject>\S+)\s+\[seat:\s*(?P<seat>[^\]]+?)\s*\]\s*"
+                        r"(?P<text>.*)$", re.IGNORECASE)
+PRECEDENT_LIMIT = 3
+_STOPWORDS = frozenset(
+    "about after also been before being could does each every from have into more most must "
+    "only other over same should some such than that their them then there these they this "
+    "those under upon what when where which while will with would your".split())
+
+
+class PrecedentRefused(ValueError):
+    """A ruling on a subject that already has one, with neither a citation nor a departure."""
+
+    def __init__(self, message: str, precedents: list[dict]) -> None:
+        super().__init__(message)
+        self.precedents = precedents
+
+
+def _subject_key(subject: str | None) -> str:
+    return "-".join(_norm_subject(subject).split())
+
+
+def ruling_of(rec: dict) -> dict | None:
+    """`{seat, subject, text}` of a ruling row, or None for any other decision."""
+    m = _RULING_RE.match(rec.get("decision") or "")
+    if not m:
+        return None
+    return {"seat": m["seat"].lower(), "subject": m["subject"].lower(), "text": m["text"]}
+
+
+def _keywords(text: str) -> set[str]:
+    return {w for w in re.findall(r"[a-z0-9]+", (text or "").lower())
+            if len(w) >= 4 and w not in _STOPWORDS}
+
+
+def _live(root: Path | str) -> list[dict]:
+    """Accepted rows no later row supersedes, newest first."""
+    rows = list_decisions(root)
+    superseded = {_norm_did(r["supersedes"]) for r in rows}
+    return [r for r in reversed(rows) if r["status"] == "accepted" and r["id"] not in superseded]
+
+
+def precedent(root: Path | str, subject: str, question: str = "",
+              limit: int = PRECEDENT_LIMIT) -> list[dict]:
+    """The prior rulings a seat must cite or depart from, best first, at most `limit`.
+
+    Rulings on the same subject come first, newest first. Then every live row in the log -
+    including the ones written before subjects existed - ranked by how many question keywords
+    it shares, ties newest first."""
+    key = _subject_key(subject)
+    words = _keywords(question)
+    hits, scored = [], []
+    for rec in _live(root):
+        meta = ruling_of(rec) or {"seat": None, "subject": None}
+        row = {**rec, "seat": meta["seat"], "subject": meta["subject"]}
+        if key and meta["subject"] == key:
+            hits.append({**row, "match": "subject", "overlap": None})
+        elif words:
+            n = len(words & _keywords(f"{rec['decision']} {rec['rationale']}"))
+            if n:
+                scored.append({**row, "match": "keywords", "overlap": n})
+    scored.sort(key=lambda r: -r["overlap"])   # stable, so ties stay newest first
+    return (hits + scored)[:limit]
+
+
+def rule(root: Path | str, seat: str, subject: str, question: str, ruling: str, reason: str,
+         cites: str = "", differs: str = "", today: str | None = None) -> dict:
+    """Record a seat's binding ruling, or cite the precedent that already answers it.
+
+    Refused (PrecedentRefused) when the subject already has a ruling and the seat neither
+    cites one (`cites`: no row is written) nor says why it departs (`differs`: the new row
+    names the precedent it departs from)."""
+    from persona_resolve import SEATS  # noqa: PLC0415 - the seat vocabulary has one home
+    seat = str(seat or "").strip().lower()
+    if seat not in SEATS:
+        raise ValueError(f"seat {seat!r} is not one of {', '.join(SEATS)}")
+    key = _subject_key(subject)
+    if not key:
+        raise ValueError("a ruling needs a subject key, e.g. deps:action-pins")
+    if cites and differs:
+        raise ValueError("--cites and --differs are exclusive: a ruling follows a precedent "
+                         "or departs from it, not both")
+    found = precedent(root, key, question)
+    if cites:
+        did = _norm_did(cites)
+        cited = next((r for r in _live(root) if r["id"] == did), None)
+        if cited is None:
+            raise ValueError(f"--cites {cites}: no accepted, live decision with that id")
+        return {"id": did, "kind": "cited", "seat": seat, "subject": key, "cited": cited}
+    if not differs and any(p["match"] == "subject" for p in found):
+        raise PrecedentRefused(
+            f"{key!r} already has a ruling - cite it with --cites Dxxxx, or record why this one "
+            "differs with --differs REASON", found)
+    rationale = " ".join(str(reason or "").split())
+    if differs and found:
+        rationale += f" [differs from {found[0]['id']}: {' '.join(differs.split())}]"
+    decision = f"{RULING_PREFIX} {key} [seat: {seat}] {' '.join(question.split())} -> {ruling}"
+    r = add(root, decision, rationale, today=today)
+    return {**r, "kind": "ruling", "seat": seat, "subject": key,
+            "departs_from": found[0]["id"] if differs and found else None}
+
+
+def _count(root: Path | str, did: str | None, by: str, seat: str | None = None,
+           subject: str | None = None, kind: str = "ruling") -> None:
+    """Count who answered in the open run's state; a decision already written stands."""
+    from lib import run_state  # noqa: PLC0415 - only the counting path needs it
+    try:
+        run_state.record_ruling(root, did, by, seat, subject, kind)
+    except run_state.RunStateError as exc:
+        print(f"warning: {did} recorded, but the run could not count it: {exc}", file=sys.stderr)
+
+
 def promote(root: Path | str, source: str, decision: str, rationale: str,
             today: str | None = None) -> dict:
     """Promote a resolved PRD open question into the log with a back-link. One
@@ -489,6 +606,7 @@ def cmd_add(args: argparse.Namespace) -> int:
         return 2
     r = add(args.root, fields["decision"], fields["rationale"], args.status,
             args.supersedes or "")
+    _count(args.root, r["id"], "operator")
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"recorded {r['id']} ({r['status']}) on {r['date']}")
     return 0
@@ -501,6 +619,7 @@ def cmd_promote(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     r = promote(args.root, args.source, fields["decision"], fields["rationale"])
+    _count(args.root, r["id"], "operator")
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"promoted {args.source} -> {r['id']} ({r['date']})")
     return 0
@@ -526,8 +645,54 @@ def cmd_waive(args: argparse.Namespace) -> int:
     except ValueError as exc:
         print(f"waive refused: {exc}", file=sys.stderr)
         return 2
+    _count(args.root, r["id"], "operator")
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"waived {_norm_subject(subject)} -> {r['id']} ({r['date']})")
+    return 0
+
+
+RULING_KEYS: tuple[str, ...] = ("question", "ruling", "reason")
+
+
+def _show(rec: dict) -> str:
+    return f"{rec['id']} {rec['decision']} - {rec['rationale']} ({rec['date']})"
+
+
+def cmd_rule(args: argparse.Namespace) -> int:
+    try:
+        # Read by name, so the dead-flag audit sees each flag consumed.
+        fields = resolve_prose(argparse.Namespace(
+            fields_file=args.fields_file, question=args.question, ruling=args.ruling,
+            reason=args.reason), RULING_KEYS)
+        r = rule(args.root, args.seat, args.subject, fields["question"], fields["ruling"],
+                 fields["reason"], cites=args.cites or "", differs=args.differs or "")
+    except PrecedentRefused as exc:
+        print(f"rule refused: {exc}", file=sys.stderr)
+        for p in exc.precedents:
+            print(f"  [{p['match']}] {_show(p)}")
+        return 2
+    except ValueError as exc:
+        print(f"rule refused: {exc}", file=sys.stderr)
+        return 2
+    _count(args.root, r["id"], "persona", r["seat"], r["subject"], r["kind"])
+    if args.format == "json":
+        print(json.dumps(r, indent=2))
+    elif r["kind"] == "cited":
+        print(f"cited {_show(r['cited'])}")
+    else:
+        departs = f", departing from {r['departs_from']}" if r["departs_from"] else ""
+        print(f"ruled {r['id']} ({r['seat']} on {r['subject']}{departs}) on {r['date']}")
+    return 0
+
+
+def cmd_precedent(args: argparse.Namespace) -> int:
+    found = precedent(args.root, args.subject, args.question or "")
+    if args.format == "json":
+        print(json.dumps(found, indent=2))
+    elif not found:
+        print("no precedent")
+    for p in [] if args.format == "json" else found:
+        print(f"[{p['match']}] {_show(p)}")
     return 0
 
 
@@ -591,6 +756,29 @@ def build_parser() -> argparse.ArgumentParser:
                          "already closed when the item fired - a process failure and a "
                          "decision must not be recorded identically")
     wv.set_defaults(func=cmd_waive)
+    ru = sub.add_parser("rule", help="Record a persona seat's binding ruling on a subject, or "
+                                     "cite the precedent that already answers it.")
+    ru.add_argument("--seat", required=True, help="the seat ruling (engineering, qa, product)")
+    ru.add_argument("--subject", required=True, help="the subject key, e.g. deps:action-pins")
+    ru.add_argument("--question", help="the question being answered")
+    ru.add_argument("--ruling", help="the answer")
+    ru.add_argument("--reason", help="why")
+    add_fields_file_arg(ru, RULING_KEYS)
+    ru_prec = ru.add_mutually_exclusive_group()
+    ru_prec.add_argument("--cites", metavar="Dxxxx",
+                         help="follow this precedent: no new decision is written")
+    ru_prec.add_argument("--differs", metavar="REASON",
+                         help="depart from the subject's precedent, saying why")
+    ru.add_argument("--root", default=".")
+    ru.add_argument("--format", choices=("text", "json"), default="text")
+    ru.set_defaults(func=cmd_rule)
+    pc = sub.add_parser("precedent", help="The prior rulings for a subject, then keyword "
+                                          "matches across the whole log (at most 3).")
+    pc.add_argument("--subject", required=True)
+    pc.add_argument("--question", default="", help="text to match keywords against")
+    pc.add_argument("--root", default=".")
+    pc.add_argument("--format", choices=("text", "json"), default="text")
+    pc.set_defaults(func=cmd_precedent)
     ls = sub.add_parser("list", help="List recorded decisions.")
     ls.add_argument("--status", help="filter by status")
     ls.add_argument("--root", default=".")

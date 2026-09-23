@@ -1,6 +1,6 @@
 # US0877: The retro is three lines, and a re-run close keeps one report per run
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** team learning from each sprint
+**I want** a three-line retro whose Try items become lessons exactly once, and one report per run
+**So that** the retro is quick to write and the record is not cluttered with duplicates
 
 ## Acceptance Criteria
 

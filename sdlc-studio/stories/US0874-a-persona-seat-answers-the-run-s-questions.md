@@ -1,6 +1,6 @@
 # US0874: A persona seat answers the run's questions and cites precedent, so the operator is not asked
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -11,9 +11,9 @@
 
 ## User Story
 
-**As a** {{role}}
-**I want** {{capability}}
-**So that** {{benefit}}
+**As a** operator who wants to be asked only what needs a human
+**I want** persona seats to rule on the run's questions and cite their precedents
+**So that** the run keeps going and the same question is never asked twice
 
 ## Acceptance Criteria
 
