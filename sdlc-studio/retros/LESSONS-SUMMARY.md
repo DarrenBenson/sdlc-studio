@@ -2,10 +2,14 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
-- **L-0429: **A test moved to accommodate a defect is worse than the defect.** It converts a caught error into a permanent blind spot, and only an...**
-- **L-0428: **When a corpus-coupled ceiling breaches, fix what it measures, not the number.** The census ceiling broke because this run filed seven...**
-- **L-0427: **Assert that a mutation applied before trusting its verdict.** A mutant that silently fails to apply reports as killed and is evidence of...**
-- **L-0426: **A derivation is not delivered until something consumes it.** Three units in this run shipped a correct derivation that no caller, no...**
+- **L-0433: **A test moved to accommodate a defect is worse than the defect.** It converts a caught error into a permanent blind spot, and only an...**
+- **L-0432: **When a corpus-coupled ceiling breaches, fix what it measures, not the number.** The census ceiling broke because this run filed seven...**
+- **L-0431: **Assert that a mutation applied before trusting its verdict.** A mutant that silently fails to apply reports as killed and is evidence of...**
+- **L-0430: **A derivation is not delivered until something consumes it.** Three units in this run shipped a correct derivation that no caller, no...**
+- **L-0429: **A test moved to accommodate a defect is worse than the defect.** It converts a caught error into a permanent blind spot, and only an**
+- **L-0428: **When a corpus-coupled ceiling breaches, fix what it measures, not the number.** The census ceiling broke because this run filed seven**
+- **L-0427: **Assert that a mutation applied before trusting its verdict.** A mutant that silently fails to apply reports as killed and is evidence of**
+- **L-0426: **A derivation is not delivered until something consumes it.** Three units in this run shipped a correct derivation that no caller, no**
 - **L-0425: **A test moved to accommodate a defect is worse than the defect.** It converts a caught error into a permanent blind spot, and only an**
 - **L-0424: **When a corpus-coupled ceiling breaches, fix what it measures, not the number.** The census ceiling broke because this run filed seven**
 - **L-0423: **Assert that a mutation applied before trusting its verdict.** A mutant that silently fails to apply reports as killed and is evidence of**

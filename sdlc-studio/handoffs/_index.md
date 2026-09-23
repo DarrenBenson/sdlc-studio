@@ -93,3 +93,4 @@ next `sprint plan --worklist` reads back.
 | [HO-0078](HO0078-the-backlog-tells-the-truth-every-stalled-request.md) | the backlog tells the truth: every stalled request and stale finding carries a dated ruling, and the state that let them accumulate cannot rebuild | 2026-09-21 |
 | [HO-0079](HO0079-the-backlog-tells-the-truth-every-stalled-request.md) | the backlog tells the truth: every stalled request and stale finding carries a dated ruling, and the state that let them accumulate cannot rebuild | 2026-09-21 |
 | [HO-0080](HO0080-run-01m33wj3-closed-partial.md) | RUN-01M33WJ3 closed partial | 2026-09-22 |
+| [HO-0081](HO0081-run-01m33wj3-closed-partial.md) | RUN-01M33WJ3 closed partial | 2026-09-23 |

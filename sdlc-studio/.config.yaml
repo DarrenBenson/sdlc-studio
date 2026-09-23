@@ -107,6 +107,13 @@ review:
   # Of the three bugs the batch fixed, only BG0614 predates the cutoff and is exempt; BG0652
   # and BG0653 were created ON 2026-09-07 and are judged by it, like the stories. Each carries
   # a `verify_ac run --coverage` figure in its revision rows either way.
+  # STOOD DOWN AGAIN for the seal of RUN-01M33WJ3 only, under D0249, and restored to `block`
+  # in the same commit sequence as that run's paperwork - the same shape D0214 used and for the
+  # same cause. Five bugs delivered concurrently into three shared files, so BG0706 charges each
+  # with its siblings' lines: BG0730's refusal names sprint_report.py lines that are BG0715's.
+  # Using this lane rather than filing the report around the hold, which is what the first
+  # attempt did - and that bypass cost the page its closing token stamp and its per-unit gate
+  # verdicts, because both are written by the PREPARE lane the bypass skipped.
   # STOOD DOWN for the seal of RUN-01M2SPNS only, under D0214, and restored to `block` in
   # the same commit sequence as that run's paperwork. BG0706 charges every unit of a batch
   # with its siblings' added lines in a shared file; BG0714 records the 284 lines that

@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-22
+**Last Updated:** 2026-09-23
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 57 |
+| Open | 58 |
 | In Progress | 0 |
 | Fixed | 583 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 10 |
 | Superseded | 6 |
-| **Total** | **743** |
+| **Total** | **744** |
 
 ## All Bugs
 
@@ -102,6 +102,7 @@
 | [BG0741](BG0741-the-stale-lens-is-silenced-by-the-sweep.md) | the stale lens is silenced by the sweep's own audit rulings, and repairing it will make every abandoned request double-report on the same day | Open | Medium | 2026-09-22 | 2026-09-22 |
 | [BG0742](BG0742-ac5-style-corpus-coupled-tests-go-red-when.md) | AC5-style corpus-coupled tests go red when the backlog they measure is acted on, and two are red in this tree already | Open | Medium | 2026-09-22 | 2026-09-22 |
 | [BG0743](BG0743-a-signed-report-s-digest-covers-prose-that.md) | a signed report's digest covers prose that is edited in place, so an unrelated amendment to a decision rationale invalidates a signature over an unchanged run | Open | Medium | 2026-09-22 | 2026-09-22 |
+| [BG0744](BG0744-the-close-refuses-to-file-a-report-but.md) | the close refuses to file a report but a direct build --write files one anyway, skipping the token stamp and the gate verdicts the refusal protects | Open | High | 2026-09-23 | 2026-09-23 |
 
 ## Archived Releases
 

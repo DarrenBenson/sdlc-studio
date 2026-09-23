@@ -1,0 +1,967 @@
+{
+  "schema": 1,
+  "report_id": "RPT0005",
+  "run_id": "RUN-01M33WJ3",
+  "retro_id": "RETRO0120",
+  "generated_at": "2026-09-22T23:29:38Z",
+  "window_end": "2026-09-22T23:29:38Z",
+  "signature": null,
+  "sections": [
+    {
+      "key": "identity",
+      "title": "Identity",
+      "figures": {
+        "run_id": {
+          "key": "run_id",
+          "value": "RUN-01M33WJ3",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "header",
+      "title": "Filing",
+      "figures": {
+        "started_at": {
+          "key": "started_at",
+          "value": "2026-09-22T06:23:44Z",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "ended_at": {
+          "key": "ended_at",
+          "value": "open",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "unit_count": {
+          "key": "unit_count",
+          "value": 5,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "points_delivered": {
+          "key": "points_delivered",
+          "value": 36,
+          "source": "sdlc-studio/bugs/BG0733-a-verified-line-reading-partial-or-no-is.md, sdlc-studio/bugs/BG0715-the-close-attributes-every-finding-raised-outside-a.md, sdlc-studio/bugs/BG0730-a-stop-ship-ruling-is-never-re-derived.md, sdlc-studio/bugs/BG0719-the-report-of-record-does-not-disclose-the.md, sdlc-studio/bugs/BG0722-the-unruled-lens-catches-a-request-nobody-closed.md"
+        },
+        "verified_sha": {
+          "key": "verified_sha",
+          "value": "cc33dc5c83903ce3ecc5b4bf9c0a1d5e04f73a4e",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "duration_hours": {
+          "key": "duration_hours",
+          "value": "17.1h",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "goal",
+      "title": "Sprint goal",
+      "figures": {
+        "sprint_goal": {
+          "key": "sprint_goal",
+          "value": "Every recorded fact the close relies on is read by the machinery rather than by a human, and a sprint goal becomes a contract the close executes. Clause 1: a fact recorded on an artefact is joined to its current source before the close acts on it, so a criterion self-reporting a miss is not counted satisfied, a stop-ship ruling is re-judged against its finding's status rather than blocking forever, and a finding stamped with prose rather than a date is never attributed to a run by that stamp. Clause 2: the report of record discloses what the signer cannot otherwise know, namely the waivers that permitted the seal and the count of operator rulings against persona rulings. Clause 3: a backlog guard is proved against this repository's own corpus and not only a fixture, so the abandoned-request path reports a non-zero count where the shipped lens reports zero. Clause 4: a goal is authored as numbered clauses each carrying a check, a goal carrying none is refused at plan time, a check that cannot run reports unknown rather than green, and the close derives its verdict from running them with any author override recorded beside the derived value it disagrees with, and the report of record carries each clause with its own verdict and evidence.",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "goal_verdict": {
+          "key": "goal_verdict",
+          "value": "Judged partial",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "goal_verdict_note": {
+          "key": "goal_verdict_note",
+          "value": "Clauses 1-3 delivered in full; Clause 4 - a goal authored as checked clauses with a derived verdict - NOT attempted, dropped to the next run with EP0258 intact under D0250. This verdict is ASSERTED by its author because nothing yet derives it, which is exactly what Clause 4 exists to end.",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "guardrail",
+      "title": "Ship guardrail",
+      "figures": {},
+      "rows": [],
+      "not_measured": {
+        "key": "guardrail",
+        "value": "NOT MEASURED",
+        "source": "sdlc-studio/.local/ci-runs.json",
+        "reason": "no CI run on cc33dc5c83903ce3ecc5b4bf9c0a1d5e04f73a4e is readable"
+      }
+    },
+    {
+      "key": "delivered",
+      "title": "Delivered",
+      "figures": {
+        "terminal_summary": {
+          "key": "terminal_summary",
+          "value": "5 of 5 units cleared their terminal gate",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "rework_rate": {
+          "key": "rework_rate",
+          "value": "0%",
+          "source": "sdlc-studio/reviews/critic-verdicts.md"
+        },
+        "rework_reading": {
+          "key": "rework_reading",
+          "value": "0 of 5 units needed a repair round after delivery review",
+          "source": "sdlc-studio/reviews/critic-verdicts.md"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "cost",
+      "title": "Cost",
+      "figures": {
+        "model": {
+          "key": "model",
+          "value": "claude-opus-5",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "tokens_total": {
+          "key": "tokens_total",
+          "value": 9807942,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "tokens_delegated": {
+          "key": "tokens_delegated",
+          "value": "NOT MEASURED",
+          "source": "sdlc-studio/.local/run-state.json",
+          "reason": "no delegated agent supplied a total, which is not the same fact as no work having been delegated"
+        },
+        "token_basis": {
+          "key": "token_basis",
+          "value": "the sum of the per-session meter deltas - a LOWER BOUND: the transcript records main-thread usage only, and a session with no closing stamp contributes nothing",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "tokens_per_point": {
+          "key": "tokens_per_point",
+          "value": 272443,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "token_coverage": {
+          "key": "token_coverage",
+          "value": "1 session(s)",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "token_shape": {
+          "key": "token_shape",
+          "value": "read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp over /home/darren/.claude/projects/-home-darren-code-DarrenBenson-sdlc-studio/506a5e2f-93e3-4810-8d5b-9c5c8b65a3aa.jsonl",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "per_unit_cost": {
+          "key": "per_unit_cost",
+          "value": "UNMEASURED",
+          "source": "sdlc-studio/.local/run-state.json",
+          "reason": "the harness meter is cumulative per session, so interleaved work cannot be split between units honestly"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "accuracy",
+      "title": "Estimate accuracy",
+      "figures": {
+        "forecast_tokens": {
+          "key": "forecast_tokens",
+          "value": 4773343,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "actual_tokens": {
+          "key": "actual_tokens",
+          "value": 9807942,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "forecast_ratio": {
+          "key": "forecast_ratio",
+          "value": 0.49,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "accuracy_note": {
+          "key": "accuracy_note",
+          "value": "the plan forecast 0.49 of the measured cost",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "dora",
+      "title": "DORA",
+      "figures": {},
+      "rows": [
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Deployment frequency",
+            "source": "git log"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": 4,
+            "source": "git log"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window",
+            "source": "git log"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "on demand",
+            "source": "git log"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "git history - 4 commit(s) on main inside the run window",
+            "source": "git log"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Lead time for changes",
+            "source": "git log"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "12h 57m",
+            "source": "git log"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches",
+            "source": "git log"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "under a day",
+            "source": "git log"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "git history - first to last of 4 commit(s)",
+            "source": "git log"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Change failure rate",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/ci-runs.json",
+            "reason": "no forge run data"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that did not conclude success",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "0-15%",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "no push-triggered CI run is readable for this run window",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Time to restore",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/ci-runs.json",
+            "reason": "no forge run data"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "the span from a push-triggered run concluding failure on main to the next push-triggered run concluding success",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "under an hour",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "no push-triggered CI run is readable for this run window",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "units",
+      "title": "Evidence by unit",
+      "figures": {},
+      "rows": [
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0733",
+            "source": "sdlc-studio/bugs/BG0733-a-verified-line-reading-partial-or-no-is.md"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 13,
+            "source": "sdlc-studio/bugs/BG0733-a-verified-line-reading-partial-or-no-is.md"
+          },
+          "unit_status": {
+            "key": "unit_status",
+            "value": "Fixed",
+            "source": "sdlc-studio/bugs/BG0733-a-verified-line-reading-partial-or-no-is.md"
+          },
+          "unit_gate": {
+            "key": "unit_gate",
+            "value": "cleared its terminal gate",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_acs": {
+            "key": "unit_acs",
+            "value": 11,
+            "source": "sdlc-studio/bugs/BG0733-a-verified-line-reading-partial-or-no-is.md"
+          },
+          "unit_mutants": {
+            "key": "unit_mutants",
+            "value": "13/13",
+            "source": "sdlc-studio/.local/mutation-runs.json"
+          },
+          "unit_ruled": {
+            "key": "unit_ruled",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG0733-a-verified-line-reading-partial-or-no-is.md",
+            "reason": "the unit declares no Coverage Rulings table"
+          },
+          "unit_entry_depth": {
+            "key": "unit_entry_depth",
+            "value": "functional",
+            "source": "sdlc-studio/bugs/BG0733-a-verified-line-reading-partial-or-no-is.md"
+          },
+          "unit_delivery_rounds": {
+            "key": "unit_delivery_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          },
+          "unit_plan_rejects": {
+            "key": "unit_plan_rejects",
+            "value": 0,
+            "source": "sdlc-studio/reviews/plan-review-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0715",
+            "source": "sdlc-studio/bugs/BG0715-the-close-attributes-every-finding-raised-outside-a.md"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 5,
+            "source": "sdlc-studio/bugs/BG0715-the-close-attributes-every-finding-raised-outside-a.md"
+          },
+          "unit_status": {
+            "key": "unit_status",
+            "value": "Fixed",
+            "source": "sdlc-studio/bugs/BG0715-the-close-attributes-every-finding-raised-outside-a.md"
+          },
+          "unit_gate": {
+            "key": "unit_gate",
+            "value": "cleared its terminal gate",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_acs": {
+            "key": "unit_acs",
+            "value": 8,
+            "source": "sdlc-studio/bugs/BG0715-the-close-attributes-every-finding-raised-outside-a.md"
+          },
+          "unit_mutants": {
+            "key": "unit_mutants",
+            "value": "8/8",
+            "source": "sdlc-studio/.local/mutation-runs.json"
+          },
+          "unit_ruled": {
+            "key": "unit_ruled",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG0715-the-close-attributes-every-finding-raised-outside-a.md",
+            "reason": "the unit declares no Coverage Rulings table"
+          },
+          "unit_entry_depth": {
+            "key": "unit_entry_depth",
+            "value": "functional",
+            "source": "sdlc-studio/bugs/BG0715-the-close-attributes-every-finding-raised-outside-a.md"
+          },
+          "unit_delivery_rounds": {
+            "key": "unit_delivery_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          },
+          "unit_plan_rejects": {
+            "key": "unit_plan_rejects",
+            "value": 0,
+            "source": "sdlc-studio/reviews/plan-review-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0730",
+            "source": "sdlc-studio/bugs/BG0730-a-stop-ship-ruling-is-never-re-derived.md"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 5,
+            "source": "sdlc-studio/bugs/BG0730-a-stop-ship-ruling-is-never-re-derived.md"
+          },
+          "unit_status": {
+            "key": "unit_status",
+            "value": "Fixed",
+            "source": "sdlc-studio/bugs/BG0730-a-stop-ship-ruling-is-never-re-derived.md"
+          },
+          "unit_gate": {
+            "key": "unit_gate",
+            "value": "cleared its terminal gate",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_acs": {
+            "key": "unit_acs",
+            "value": 6,
+            "source": "sdlc-studio/bugs/BG0730-a-stop-ship-ruling-is-never-re-derived.md"
+          },
+          "unit_mutants": {
+            "key": "unit_mutants",
+            "value": "8/8",
+            "source": "sdlc-studio/.local/mutation-runs.json"
+          },
+          "unit_ruled": {
+            "key": "unit_ruled",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG0730-a-stop-ship-ruling-is-never-re-derived.md",
+            "reason": "the unit declares no Coverage Rulings table"
+          },
+          "unit_entry_depth": {
+            "key": "unit_entry_depth",
+            "value": "functional",
+            "source": "sdlc-studio/bugs/BG0730-a-stop-ship-ruling-is-never-re-derived.md"
+          },
+          "unit_delivery_rounds": {
+            "key": "unit_delivery_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          },
+          "unit_plan_rejects": {
+            "key": "unit_plan_rejects",
+            "value": 0,
+            "source": "sdlc-studio/reviews/plan-review-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0719",
+            "source": "sdlc-studio/bugs/BG0719-the-report-of-record-does-not-disclose-the.md"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 8,
+            "source": "sdlc-studio/bugs/BG0719-the-report-of-record-does-not-disclose-the.md"
+          },
+          "unit_status": {
+            "key": "unit_status",
+            "value": "Fixed",
+            "source": "sdlc-studio/bugs/BG0719-the-report-of-record-does-not-disclose-the.md"
+          },
+          "unit_gate": {
+            "key": "unit_gate",
+            "value": "cleared its terminal gate",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_acs": {
+            "key": "unit_acs",
+            "value": 12,
+            "source": "sdlc-studio/bugs/BG0719-the-report-of-record-does-not-disclose-the.md"
+          },
+          "unit_mutants": {
+            "key": "unit_mutants",
+            "value": "16/16",
+            "source": "sdlc-studio/.local/mutation-runs.json"
+          },
+          "unit_ruled": {
+            "key": "unit_ruled",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG0719-the-report-of-record-does-not-disclose-the.md",
+            "reason": "the unit declares no Coverage Rulings table"
+          },
+          "unit_entry_depth": {
+            "key": "unit_entry_depth",
+            "value": "functional",
+            "source": "sdlc-studio/bugs/BG0719-the-report-of-record-does-not-disclose-the.md"
+          },
+          "unit_delivery_rounds": {
+            "key": "unit_delivery_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          },
+          "unit_plan_rejects": {
+            "key": "unit_plan_rejects",
+            "value": 0,
+            "source": "sdlc-studio/reviews/plan-review-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0722",
+            "source": "sdlc-studio/bugs/BG0722-the-unruled-lens-catches-a-request-nobody-closed.md"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 5,
+            "source": "sdlc-studio/bugs/BG0722-the-unruled-lens-catches-a-request-nobody-closed.md"
+          },
+          "unit_status": {
+            "key": "unit_status",
+            "value": "Fixed",
+            "source": "sdlc-studio/bugs/BG0722-the-unruled-lens-catches-a-request-nobody-closed.md"
+          },
+          "unit_gate": {
+            "key": "unit_gate",
+            "value": "cleared its terminal gate",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_acs": {
+            "key": "unit_acs",
+            "value": 8,
+            "source": "sdlc-studio/bugs/BG0722-the-unruled-lens-catches-a-request-nobody-closed.md"
+          },
+          "unit_mutants": {
+            "key": "unit_mutants",
+            "value": "10/10",
+            "source": "sdlc-studio/.local/mutation-runs.json"
+          },
+          "unit_ruled": {
+            "key": "unit_ruled",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG0722-the-unruled-lens-catches-a-request-nobody-closed.md",
+            "reason": "the unit declares no Coverage Rulings table"
+          },
+          "unit_entry_depth": {
+            "key": "unit_entry_depth",
+            "value": "functional",
+            "source": "sdlc-studio/bugs/BG0722-the-unruled-lens-catches-a-request-nobody-closed.md"
+          },
+          "unit_delivery_rounds": {
+            "key": "unit_delivery_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          },
+          "unit_plan_rejects": {
+            "key": "unit_plan_rejects",
+            "value": 0,
+            "source": "sdlc-studio/reviews/plan-review-verdicts.md"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "not_proven",
+      "title": "Not proven",
+      "figures": {},
+      "rows": [
+        {
+          "gap_title": {
+            "key": "gap_title",
+            "value": "Per-unit token cost",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "gap_detail": {
+            "key": "gap_detail",
+            "value": "the run total is measured; the split is not. The harness meter is per session and cumulative, so every unit reads UNMEASURED rather than carrying a share nobody can defend.",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "gap_kind": {
+            "key": "gap_kind",
+            "value": "measurement",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "waivers",
+      "title": "Waivers in force",
+      "figures": {
+        "waivers_note": {
+          "key": "waivers_note",
+          "value": "no gate stood down for this seal - the log was read and carries no accepted waiver dated inside this report's window",
+          "source": "sdlc-studio/decisions.md"
+        },
+        "waivers_count": {
+          "key": "waivers_count",
+          "value": 0,
+          "source": "sdlc-studio/decisions.md"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "judges",
+      "title": "Who judged this",
+      "figures": {},
+      "rows": [
+        {
+          "judge_name": {
+            "key": "judge_name",
+            "value": "independent-critic",
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          },
+          "judge_role": {
+            "key": "judge_role",
+            "value": "independent reviewer",
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          },
+          "judge_model": {
+            "key": "judge_model",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reviews/critic-verdicts.md",
+            "reason": "the verdict ledger records no model for this reviewer"
+          },
+          "judge_contribution": {
+            "key": "judge_contribution",
+            "value": "5 plan verdict(s) and 5 delivery verdict(s)",
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "judge_name": {
+            "key": "judge_name",
+            "value": "the authoring session",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "judge_role": {
+            "key": "judge_role",
+            "value": "author, never the reviewer of record",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "judge_model": {
+            "key": "judge_model",
+            "value": "claude-opus-5",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "judge_contribution": {
+            "key": "judge_contribution",
+            "value": "wrote every unit and drove the close. A delegate the author controls does not satisfy the independence bar.",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "consult",
+      "title": "Stakeholder consult",
+      "figures": {},
+      "rows": [],
+      "not_measured": {
+        "key": "consult",
+        "value": "NOT MEASURED",
+        "source": "sdlc-studio/reviews",
+        "reason": "no stakeholder consult artefact for this run"
+      }
+    },
+    {
+      "key": "carried",
+      "title": "Carried open",
+      "figures": {
+        "retro_id": {
+          "key": "retro_id",
+          "value": "RETRO0120",
+          "source": "sdlc-studio/retros/RETRO0120-run-01m33wj3-the-close-stops-laundering-its-own.md"
+        },
+        "filed_count": {
+          "key": "filed_count",
+          "value": 9,
+          "source": "sdlc-studio/retros/RETRO0120-run-01m33wj3-the-close-stops-laundering-its-own.md"
+        },
+        "filed_ids": {
+          "key": "filed_ids",
+          "value": "BG0737, BG0738, BG0739, BG0740, BG0741, BG0742, BG0743, CR0592, CR0593",
+          "source": "sdlc-studio/retros/RETRO0120-run-01m33wj3-the-close-stops-laundering-its-own.md"
+        },
+        "ruled_count": {
+          "key": "ruled_count",
+          "value": 9,
+          "source": "sdlc-studio/retros/RETRO0120-run-01m33wj3-the-close-stops-laundering-its-own.md"
+        },
+        "stop_ship_count": {
+          "key": "stop_ship_count",
+          "value": 0,
+          "source": "sdlc-studio/retros/RETRO0120-run-01m33wj3-the-close-stops-laundering-its-own.md"
+        },
+        "carried_risk_reading": {
+          "key": "carried_risk_reading",
+          "value": "9 issue(s) carried open, 0 of them stop-ship",
+          "source": "sdlc-studio/retros/RETRO0120-run-01m33wj3-the-close-stops-laundering-its-own.md"
+        },
+        "mutants_killed": {
+          "key": "mutants_killed",
+          "value": 55,
+          "source": "sdlc-studio/.local/mutation-runs.json"
+        },
+        "mutants_reading": {
+          "key": "mutants_reading",
+          "value": "0 survived of 55 registered",
+          "source": "sdlc-studio/.local/mutation-runs.json"
+        },
+        "verdict_count": {
+          "key": "verdict_count",
+          "value": 10,
+          "source": "sdlc-studio/reviews/critic-verdicts.md"
+        },
+        "verdict_reading": {
+          "key": "verdict_reading",
+          "value": "0 of 5 rejected at plan, 0 of 5 at delivery",
+          "source": "sdlc-studio/reviews/plan-review-verdicts.md, sdlc-studio/reviews/critic-verdicts.md"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "signoff",
+      "title": "Sign-off",
+      "figures": {
+        "principal": {
+          "key": "principal",
+          "value": "not yet signed",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "signed_at": {
+          "key": "signed_at",
+          "value": "not yet signed",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "signed_fingerprint": {
+          "key": "signed_fingerprint",
+          "value": "not yet signed",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "provenance",
+      "title": "Provenance",
+      "figures": {},
+      "rows": [
+        {
+          "provenance_figure": {
+            "key": "provenance_figure",
+            "value": "Identity",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "provenance_source": {
+            "key": "provenance_source",
+            "value": "sdlc-studio/.local/run-state.json",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "provenance_figure": {
+            "key": "provenance_figure",
+            "value": "Filing",
+            "source": "sdlc-studio/.local/run-state.json, sdlc-studio/bugs"
+          },
+          "provenance_source": {
+            "key": "provenance_source",
+            "value": "sdlc-studio/.local/run-state.json; sdlc-studio/bugs",
+            "source": "sdlc-studio/.local/run-state.json, sdlc-studio/bugs"
+          }
+        },
+        {
+          "provenance_figure": {
+            "key": "provenance_figure",
+            "value": "Sprint goal",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "provenance_source": {
+            "key": "provenance_source",
+            "value": "sdlc-studio/.local/run-state.json",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "provenance_figure": {
+            "key": "provenance_figure",
+            "value": "Ship guardrail",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          },
+          "provenance_source": {
+            "key": "provenance_source",
+            "value": "sdlc-studio/.local/ci-runs.json",
+            "source": "sdlc-studio/.local/ci-runs.json"
+          }
+        },
+        {
+          "provenance_figure": {
+            "key": "provenance_figure",
+            "value": "Delivered",
+            "source": "sdlc-studio/.local/run-state.json, sdlc-studio/reviews"
+          },
+          "provenance_source": {
+            "key": "provenance_source",
+            "value": "sdlc-studio/.local/run-state.json; sdlc-studio/reviews",
+            "source": "sdlc-studio/.local/run-state.json, sdlc-studio/reviews"
+          }
+        },
+        {
+          "provenance_figure": {
+            "key": "provenance_figure",
+            "value": "Cost",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "provenance_source": {
+            "key": "provenance_source",
+            "value": "sdlc-studio/.local/run-state.json",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "provenance_figure": {
+            "key": "provenance_figure",
+            "value": "Estimate accuracy",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "provenance_source": {
+            "key": "provenance_source",
+            "value": "sdlc-studio/.local/run-state.json",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "provenance_figure": {
+            "key": "provenance_figure",
+            "value": "DORA",
+            "source": "git log, sdlc-studio/.local/ci-runs.json"
+          },
+          "provenance_source": {
+            "key": "provenance_source",
+            "value": "git log; sdlc-studio/.local/ci-runs.json",
+            "source": "git log, sdlc-studio/.local/ci-runs.json"
+          }
+        },
+        {
+          "provenance_figure": {
+            "key": "provenance_figure",
+            "value": "Evidence by unit",
+            "source": "sdlc-studio/bugs, sdlc-studio/.local/run-state.json, sdlc-studio/.local/mutation-runs.json, sdlc-studio/reviews"
+          },
+          "provenance_source": {
+            "key": "provenance_source",
+            "value": "sdlc-studio/bugs; sdlc-studio/.local/run-state.json; sdlc-studio/.local/mutation-runs.json; sdlc-studio/reviews",
+            "source": "sdlc-studio/bugs, sdlc-studio/.local/run-state.json, sdlc-studio/.local/mutation-runs.json, sdlc-studio/reviews"
+          }
+        },
+        {
+          "provenance_figure": {
+            "key": "provenance_figure",
+            "value": "Not proven",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "provenance_source": {
+            "key": "provenance_source",
+            "value": "sdlc-studio/.local/run-state.json",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "provenance_figure": {
+            "key": "provenance_figure",
+            "value": "Waivers in force",
+            "source": "sdlc-studio"
+          },
+          "provenance_source": {
+            "key": "provenance_source",
+            "value": "sdlc-studio",
+            "source": "sdlc-studio"
+          }
+        },
+        {
+          "provenance_figure": {
+            "key": "provenance_figure",
+            "value": "Who judged this",
+            "source": "sdlc-studio/reviews, sdlc-studio/.local/run-state.json"
+          },
+          "provenance_source": {
+            "key": "provenance_source",
+            "value": "sdlc-studio/reviews; sdlc-studio/.local/run-state.json",
+            "source": "sdlc-studio/reviews, sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "provenance_figure": {
+            "key": "provenance_figure",
+            "value": "Stakeholder consult",
+            "source": "sdlc-studio/reviews"
+          },
+          "provenance_source": {
+            "key": "provenance_source",
+            "value": "sdlc-studio/reviews",
+            "source": "sdlc-studio/reviews"
+          }
+        },
+        {
+          "provenance_figure": {
+            "key": "provenance_figure",
+            "value": "Carried open",
+            "source": "sdlc-studio/retros, sdlc-studio/.local/mutation-runs.json, sdlc-studio/reviews"
+          },
+          "provenance_source": {
+            "key": "provenance_source",
+            "value": "sdlc-studio/retros; sdlc-studio/.local/mutation-runs.json; sdlc-studio/reviews",
+            "source": "sdlc-studio/retros, sdlc-studio/.local/mutation-runs.json, sdlc-studio/reviews"
+          }
+        },
+        {
+          "provenance_figure": {
+            "key": "provenance_figure",
+            "value": "Sign-off",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "provenance_source": {
+            "key": "provenance_source",
+            "value": "sdlc-studio/.local/run-state.json",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        }
+      ],
+      "not_measured": null
+    }
+  ],
+  "fingerprint": "1f4df2ec2ae9f44b"
+}

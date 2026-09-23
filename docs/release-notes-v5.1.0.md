@@ -72,7 +72,17 @@ bug corpus rather than maintained by hand.
 
 **v5.1.0 discloses 57 open defects: 57 Medium, 0 Low.**
 
-**Zero Critical, zero High.** BG0715, BG0718, BG0719, BG0722, BG0730 and BG0733 were all open
+**One High-severity finding is open against the tag: BG0744.** It was raised on 2026-09-23 by
+RUN-01M33WJ3's own close, and it is a defect in the close ceremony rather than in the tool's
+output. `sprint close` holds the report of record behind three checks - a run may end with work
+outstanding, but a report may not, because it is the page a signature freezes. `sprint_report.py
+build --write` files one with none of those checks applied, and because the closing token stamp and
+the per-unit gate verdicts are written by the lane it skips, the resulting page reads `Tokens: 0`
+and `NOT MEASURED` for every unit's gate. A report that looks complete while two of its most
+important figures are absent is worse than a refusal, and the route is disclosed here rather than
+counted quietly because the bar names ids and so must the prose.
+
+BG0715, BG0718, BG0719, BG0722, BG0730 and BG0733 were all open
 against this tag and are now Fixed. Five of the six were closed by RUN-01M33WJ3, which took the
 close and the report being honest about themselves as its whole subject.
 
