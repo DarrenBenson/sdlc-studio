@@ -1140,6 +1140,14 @@ One row has been removed since adoption.
 | US0873 | APPROVE | qa-rev-US0873 | lane-B-fix | 2026-09-23 | - | - | - |
 | US0872 | APPROVE | qa-rev-US0872 | lane-B-fix | 2026-09-23 | - | - | - |
 | US0877 | APPROVE | qa-rev-US0877 | lane-D-fix | 2026-09-23 | - | - | [new] non-blocking: the new scaffold drops Known issues carried while the close checklist still reads it, until US0876 lands; [pre-existing] the demo-count refusal is inert |
+| US0869 | APPROVE | qa-rev-US0869 | lane-C-fix | 2026-09-23 | - | - | - |
+| US0874 | APPROVE | qa-rev-US0874 | lane-C-fix | 2026-09-23 | - | - | [new] non-blocking: the --cites allowed set is capped at precedent's top three |
+| US0875 | APPROVE | qa-rev-US0875 | lane-D-fix | 2026-09-23 | - | - | [new] non-blocking: the Minutes row should name the forecast's basis |
+| US0876 | REJECT | qa-rev-US0876 | lane-A | 2026-09-23 | - | - | [regression] the rolling boundary no longer halts on a close that recorded known issues |
+| US0878 | REJECT | qa-rev-US0878 | lane-A | 2026-09-23 | - | - | [new] an uncommitted report filed by the close is never tree-checked, so an edited report can be signed |
+| US0874 | APPROVE | qa-rev-US0874 | lane-C | 2026-09-23 | - | - | [new] recorded late from the round-1 review, non-blocking: the --differs precedent could be a keyword match; [new] --cites accepted any live decision; [new] an agent's add counted as operator - all fixed in the follow-up |
+| US0868 | APPROVE | qa-rev-US0868 | lane-A | 2026-09-23 | - | - | [new] non-blocking: a spaced hyphen counts as a word; [new] reference-sprint.md still describes the blocking review |
+| US0870 | APPROVE | qa-rev-US0870 | lane-A | 2026-09-23 | - | - | [new] non-blocking: two token forecasts disagree (ruled D0258); [new] the AC1 fixture cannot tell a measured rate from the seed |
 
 ## Supersessions
 
