@@ -1,13 +1,13 @@
 # Story Index
 
-**Last Updated:** 2026-09-21
+**Last Updated:** 2026-09-23
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 148 |
+| Draft | 153 |
 | Ready | 15 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -15,9 +15,9 @@
 | Done | 681 |
 | Won't Implement | 8 |
 | Deferred | 0 |
-| Superseded | 7 |
+| Superseded | 13 |
 | Blocked | 8 |
-| **Total** | **867** |
+| **Total** | **878** |
 
 ## All Stories
 
@@ -218,14 +218,25 @@
 | [US0857](US0857-the-pre-push-hook-runs-its-own-gate.md) | the pre-push hook runs its own gate against HEAD under SDLC_PRE_PUSH_SELF_RUN and pushes nothing, so a hook change can record a self-run | Draft | EP0248 | 2026-09-21 | 2026-09-21 |
 | [US0858](US0858-a-consult-artefact-s-verdicts-and-dispositions-come.md) | a consult artefact's verdicts and dispositions come from closed sets, and a FILE disposition names an id that resolves | Draft | EP0256 | 2026-09-21 | 2026-09-21 |
 | [US0859](US0859-a-consult-artefact-s-coverage-is-the-stamped.md) | a consult artefact's coverage is the stamped unit list and each verdict row's cast role is read from the persona card | Draft | EP0256 | 2026-09-21 | 2026-09-21 |
-| [US0860](US0860-a-sprint-goal-is-authored-as-numbered-clauses.md) | a sprint goal is authored as numbered clauses each carrying a check, and `sprint plan --write` refuses a goal that carries none | Draft | EP0258 | 2026-09-21 | 2026-09-21 |
-| [US0861](US0861-a-clause-check-executes-in-any-of-the.md) | a clause check executes in any of the three ruled shapes, and a check that cannot be run reports `unknown` rather than green | Draft | EP0258 | 2026-09-21 | 2026-09-21 |
-| [US0862](US0862-a-persona-judged-clause-is-refused-at-plan.md) | a persona-judged clause is refused at plan time unless it names what would falsify it, and its ruling is refused unless it records the alternative rejected | Draft | EP0258 | 2026-09-21 | 2026-09-21 |
-| [US0863](US0863-sprint-close-derives-the-goal-verdict-from-the.md) | `sprint close` derives the goal verdict from the clause results, and `--goal-verdict` becomes an override that must carry its justification | Draft | EP0258 | 2026-09-21 | 2026-09-21 |
-| [US0864](US0864-a-derived-verdict-that-contradicts-the-author-s.md) | a derived verdict that contradicts the author's note is filed as a finding naming both, and the close is not refused | Draft | EP0258 | 2026-09-21 | 2026-09-21 |
-| [US0865](US0865-the-report-of-record-carries-every-goal-clause.md) | the report of record carries every goal clause with its own verdict and evidence, and counts operator rulings against persona rulings | Draft | EP0258 | 2026-09-21 | 2026-09-21 |
+| [US0860](US0860-a-sprint-goal-is-authored-as-numbered-clauses.md) | a sprint goal is authored as numbered clauses each carrying a check, and `sprint plan --write` refuses a goal that carries none | Superseded | EP0258 | 2026-09-21 | 2026-09-21 |
+| [US0861](US0861-a-clause-check-executes-in-any-of-the.md) | a clause check executes in any of the three ruled shapes, and a check that cannot be run reports `unknown` rather than green | Superseded | EP0258 | 2026-09-21 | 2026-09-21 |
+| [US0862](US0862-a-persona-judged-clause-is-refused-at-plan.md) | a persona-judged clause is refused at plan time unless it names what would falsify it, and its ruling is refused unless it records the alternative rejected | Superseded | EP0258 | 2026-09-21 | 2026-09-21 |
+| [US0863](US0863-sprint-close-derives-the-goal-verdict-from-the.md) | `sprint close` derives the goal verdict from the clause results, and `--goal-verdict` becomes an override that must carry its justification | Superseded | EP0258 | 2026-09-21 | 2026-09-21 |
+| [US0864](US0864-a-derived-verdict-that-contradicts-the-author-s.md) | a derived verdict that contradicts the author's note is filed as a finding naming both, and the close is not refused | Superseded | EP0258 | 2026-09-21 | 2026-09-21 |
+| [US0865](US0865-the-report-of-record-carries-every-goal-clause.md) | the report of record carries every goal clause with its own verdict and evidence, and counts operator rulings against persona rulings | Superseded | EP0258 | 2026-09-21 | 2026-09-21 |
 | [US0866](US0866-the-sprint-plan-records-its-operational-design-domain.md) | the sprint plan records its operational design domain: the files it may touch, the artefacts it may create, the statuses it may set and the budget it may spend | Draft | EP0259 | 2026-09-21 | 2026-09-21 |
 | [US0867](US0867-plan-time-refusal-rejects-a-goal-clause-whose.md) | plan-time refusal rejects a goal clause whose check reaches outside the declared domain, naming the clause and the path that left it | Draft | EP0259 | 2026-09-21 | 2026-09-21 |
+| [US0868](US0868-a-sprint-goal-is-one-memorable-sentence-and.md) | A sprint goal is one memorable sentence, and its seat read advises rather than blocks | Draft | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0869](US0869-estimates-are-calibrated-from-the-project-s-own.md) | Estimates are calibrated from the project's own runs, not a seed constant | Draft | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0870](US0870-the-plan-records-each-unit-s-forecast-points.md) | The plan records each unit's forecast points, minutes and tokens, and nothing later overwrites it | Draft | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0871](US0871-each-unit-s-elapsed-time-and-tokens-are.md) | Each unit's elapsed time and tokens are measured as it is delivered | Draft | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0872](US0872-one-reviewer-at-most-two-rounds-a-fixed.md) | One reviewer, at most two rounds: a fixed unit clears and a non-converging unit is carried | Draft | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0873](US0873-a-verdict-is-written-by-one-set-of.md) | A verdict is written by one set of rules, and parallel writers never lose a row | Draft | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0874](US0874-a-persona-seat-answers-the-run-s-questions.md) | A persona seat answers the run's questions and cites precedent, so the operator is not asked | Draft | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0875](US0875-the-sprint-report-is-one-page-answering-three.md) | The sprint report is one page answering three questions, with everything else in an appendix | Draft | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0876](US0876-sprint-close-runs-once-and-finishes-gaps-become.md) | sprint close runs once and finishes: gaps become known issues, not refusals | Draft | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0877](US0877-the-retro-is-three-lines-and-a-re.md) | The retro is three lines, and a re-run close keeps one report per run | Draft | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0878](US0878-sign-checks-what-it-seals-and-records-what.md) | Sign checks what it seals and records what actually happened | Draft | EP0260 | 2026-09-23 | 2026-09-23 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # US0864: a derived verdict that contradicts the author's note is filed as a finding naming both, and the close is not refused
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Delivers:** RFC0060
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # Epic Index
 
-**Last Updated:** 2026-09-21
+**Last Updated:** 2026-09-23
 
 ## Summary
 
@@ -10,8 +10,8 @@
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 220 |
-| **Total** | **259** |
+| Done | 221 |
+| **Total** | **260** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -64,8 +64,9 @@
 | [EP0255](EP0255-a-run-ends-with-one-derived-report-and.md) | A run ends with one derived report, and signing it is a transaction | Done | 9 | -- | 2026-09-16 | 2026-09-16 |
 | [EP0256](EP0256-stakeholder-feedback-arrives-while-it-is-still-cheap.md) | Stakeholder feedback arrives while it is still cheap to act on | Draft | 8 | -- | 2026-09-16 | 2026-09-16 |
 | [EP0257](EP0257-the-backlog-tells-the-truth-every-stalled-request.md) | the backlog tells the truth: every stalled request carries a dated ruling, and the state cannot rebuild | Done | 7 | -- | 2026-09-20 | 2026-09-20 |
-| [EP0258](EP0258-ws1-the-sprint-goal-becomes-a-contract-the.md) | WS1: the sprint goal becomes a contract the close can test, and the verdict is derived rather than asserted | Draft | 6 | -- | 2026-09-21 | 2026-09-21 |
+| [EP0258](EP0258-ws1-the-sprint-goal-becomes-a-contract-the.md) | WS1: the sprint goal becomes a contract the close can test, and the verdict is derived rather than asserted | Done | 6 | -- | 2026-09-21 | 2026-09-21 |
 | [EP0259](EP0259-ws2-the-sprint-records-the-boundary-it-may.md) | WS2: the sprint records the boundary it may decide inside, and the plan refuses a goal that reaches past it | Draft | 2 | -- | 2026-09-21 | 2026-09-21 |
+| [EP0260](EP0260-the-lean-loop-a-sprint-that-runs-on.md) | The lean loop: a sprint that runs on its own, learns from itself and hands over one page | Draft | 11 | -- | 2026-09-23 | 2026-09-23 |
 
 ## Archived Releases
 

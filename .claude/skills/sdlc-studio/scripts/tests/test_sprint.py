@@ -18288,9 +18288,19 @@ class RungTerminalAndProductTests(unittest.TestCase):
 
     def test_the_build_rung_still_reports_its_own_terminal(self) -> None:
         """The paired control. Making the report rung-aware must not stop it reporting the
-        build rung correctly - a story past the cutoff is still capped at Review."""
+        build rung correctly - a story past the cutoff is still capped at Review.
+
+        Judged in its own root, not this repository's: D0255 stood this repository's two-role
+        cutoff down, and a control that reads the live config pins that config, not the code."""
         batch = [{"id": "US0700", "type": "story"}]
-        self.assertEqual("Review", sprint.reachable_end_state(".", batch, rung="done")["state"])
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = Path(tmp) / "sdlc-studio" / ".config.yaml"
+            cfg.parent.mkdir(parents=True)
+            cfg.write_text("review:\n  two_role_after: 192\n", encoding="utf-8")
+            self.assertEqual("Review", sprint.reachable_end_state(tmp, batch, rung="done")["state"])
+            cfg.write_text("review:\n  two_role_after: 99999\n", encoding="utf-8")
+            self.assertEqual("Done", sprint.reachable_end_state(tmp, batch, rung="done")["state"],
+                             "a story under the cutoff is capped by nothing")
 
     def test_a_bug_batch_is_not_capped_by_a_story_only_gate(self) -> None:
         """MUTANT: in `sprint.reachable_end_state`, cap every unit rather than stories only.

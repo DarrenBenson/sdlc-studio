@@ -1,6 +1,6 @@
 # US0862: a persona-judged clause is refused at plan time unless it names what would falsify it, and its ruling is refused unless it records the alternative rejected
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Delivers:** RFC0060
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio new

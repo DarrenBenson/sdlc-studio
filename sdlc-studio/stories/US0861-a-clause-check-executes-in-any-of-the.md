@@ -1,6 +1,6 @@
 # US0861: a clause check executes in any of the three ruled shapes, and a check that cannot be run reports `unknown` rather than green
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Delivers:** RFC0060
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio new

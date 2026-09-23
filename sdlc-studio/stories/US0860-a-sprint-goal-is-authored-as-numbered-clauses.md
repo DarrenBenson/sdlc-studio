@@ -1,6 +1,6 @@
 # US0860: a sprint goal is authored as numbered clauses each carrying a check, and `sprint plan --write` refuses a goal that carries none
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Delivers:** RFC0060
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio new

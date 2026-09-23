@@ -78,7 +78,9 @@ review:
   # units past US0192 clear `critiqued` only with the adversarial pass recorded as
   # evidence AND an independent reviewer-of-record sign-off (critic.py evidence/signoff).
   # Under it, Done means signed off - units hold at Review until the close ceremony.
-  two_role_after: 192
+  # D0255 (2026-09-23): stood down for good by the back-to-basics programme - one review of
+  # at most two rounds replaces the two-role and per-unit sign-off ceremony.
+  two_role_after: 99999
   # D0130: the reviewer of record may be a NAMED SEAT, held disjoint from the adversarial ones.
   # The operator's framing, recorded because it is the whole argument: "human in the loop is too
   # slow for true AI speed; human in the lead is the best approach." The independence rule is
@@ -91,7 +93,7 @@ review:
   # states plainly that a seat signed - `capacity: seat` - so no reader can mistake it for a
   # person's signature, and `sprint_report.py operator-summary` derives the page the operator
   # leads from. Adopted on RUN-01KZ9315, the sprint that made the path reachable (US0643).
-  signoff: panel
+  signoff: operator  # D0255: the operator signs the run once, at `sprint sign`
   # D0131: the test-plan gate goes live, dated so it captures the bug lane and exempts the
   # story lane. That is chosen, not arbitrary. EP0207 shipped the mechanism on RUN-01KZBBZ0 and
   # its own units could not measure it - the cutoff that protects an existing backlog necessarily
@@ -100,7 +102,7 @@ review:
   # units created from 2026-08-01 (the recent bugs) derive and independently review a test plan
   # before any code; older units (the stories) do not. `retro.py accuracy` reports both arms, and
   # that number decides whether this process is pointed at the remaining unplanned backlog.
-  test_plan_after: "2026-08-01"
+  # test_plan_after removed under D0255: plan and test-plan review are deleted.
   # D0183/US0816 (2026-09-07): the line-coverage gate is ON here from the day the batch that
   # built it was planned, so the three stories created that day - US0815, US0816, US0818 - are
   # judged by it rather than exempted, the exemption D0131's cutoff granted its own builders.
@@ -119,7 +121,9 @@ review:
   # with its siblings' added lines in a shared file; BG0714 records the 284 lines that
   # survive even the run-scope reading BG0706 proposes. `report` prints the identical
   # figures and proceeds, so nothing is hidden - only the refusal is lifted.
-  line_coverage: block
+  line_coverage: off  # D0255: opt-in only from the back-to-basics programme on
+  mutation_evidence: off  # D0255: opt-in only
+  require_brief_provenance: false  # D0255
   line_coverage_after: "2026-09-07"
   # D0146 (2026-08-21) CUTS this from 6 to 2, superseding D0132's raise, and the reason is a
   # measurement rather than a preference. D0132 raised it to 6 saying "revisit if a run reaches 6";
@@ -317,3 +321,7 @@ triage:
 # D0128: raised from the default 4 because BG0516 made four close rounds unactionable -
 # the close reported an unattributable refusal while the gate named its failing lane.
 # The cap stays and the divergence detector is untouched; revisit when BG0516 lands.
+
+# D0255: plan review is deleted by the back-to-basics programme.
+plan_review:
+  enabled: false

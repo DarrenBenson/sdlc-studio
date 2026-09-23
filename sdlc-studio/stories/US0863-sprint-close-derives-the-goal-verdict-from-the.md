@@ -1,6 +1,6 @@
 # US0863: `sprint close` derives the goal verdict from the clause results, and `--goal-verdict` becomes an override that must carry its justification
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Delivers:** RFC0060
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio new

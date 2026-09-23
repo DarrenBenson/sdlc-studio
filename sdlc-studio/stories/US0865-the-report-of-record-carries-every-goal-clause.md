@@ -1,6 +1,6 @@
 # US0865: the report of record carries every goal clause with its own verdict and evidence, and counts operator rulings against persona rulings
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Delivers:** RFC0060
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio new
