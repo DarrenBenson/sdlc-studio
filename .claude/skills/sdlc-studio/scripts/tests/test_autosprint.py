@@ -16,7 +16,7 @@ what is under test here is the chain's own control flow. `handoff` runs for real
 is the step that closes the run object - the state every assertion below reads.
 
 `test_the_suite_kills_a_loop_control_mutant` is the anti-vacuity proof. It copies the scripts
-tree, disables the chain loop's stop-on-failure at the CALL SITE, and re-runs the loop test
+tree, makes the chain loop swallow a failing step at the CALL SITE, and re-runs the loop test
 against the copy in a child process, asserting it goes red - having first asserted that the
 same test goes GREEN against an unmutated copy, so a mutant "killed" by a broken harness is
 not mistaken for a mutant killed by the test.
@@ -198,18 +198,19 @@ def _stubbed(failing: str | None = None):
 
 # --- the mutant ---------------------------------------------------------------------
 #
-# The call site of the close chain's stop-on-failure, not the body of a step: a mutant applied
-# inside a step would only prove the step's own tests bind. Disabling this branch makes the
-# loop run every remaining step and report each one green - exactly the failure mode the loop
-# test exists to refuse.
+# The call site of the close chain's failure handling, not the body of a step: a mutant applied
+# inside a step would only prove the step's own tests bind. Reading every step as green makes the
+# loop report a failed step as passed and record no known issue - exactly the failure mode the
+# loop test exists to refuse.
 _MUTATION_TARGET = "sprint.py"
 _ORIGINAL = ("        ok, detail, remedy = step(root, args.retro, state)\n"
-             "        if not ok:\n")
+             "        if ok:\n")
 _MUTANT = ("        ok, detail, remedy = step(root, args.retro, state)\n"
-           "        if not ok and False:  # MUTANT: chain loop never stops\n")
+           "        if ok or True:  # MUTANT: a failed step is swallowed\n")
 #: The single test node re-run against the mutant. Naming ONE node keeps the mutation test
 #: from re-entering itself.
-_MUTATION_PROBE = "test_autosprint.PrimaryPathTests.test_a_failing_unit_stops_the_loop_and_is_named"
+_MUTATION_PROBE = ("test_autosprint.PrimaryPathTests."
+                   "test_a_failing_step_is_named_and_the_loop_runs_on")
 
 
 def _copy_tree(dest: Path) -> Path:
@@ -217,6 +218,8 @@ def _copy_tree(dest: Path) -> Path:
     same-length mutant can report SURVIVED without its code ever running."""
     out = dest / "scripts"
     shutil.copytree(SCRIPTS, out, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".local"))
+    # the close now runs through to the report, which renders from the skill's templates
+    shutil.copytree(SCRIPTS.parent / "templates", dest / "templates")
     return out
 
 
@@ -317,9 +320,14 @@ class PrimaryPathTests(unittest.TestCase):
                 self.assertIn(f"close [{i}/{len(chain)}] {name}: ok", out)
             self.assertEqual(closed["batch"], ["BG0001", "BG0002"])
 
+    @unittest.skip("superseded by US0876: a failing step is a known issue and the close runs on")
     def test_a_failing_unit_stops_the_loop_and_is_named(self) -> None:
-        """AC2: the second step fails - the loop stops there, names it, and nothing after it
-        is reported as done. A chain that swallowed a failure would seal the run anyway."""
+        pass
+
+    def test_a_failing_step_is_named_and_the_loop_runs_on(self) -> None:
+        """AC2, as US0876 re-states it: the second step fails - the close names it as a known
+        issue and runs every later step. A chain that swallowed the failure would report it
+        green and record nothing."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _ws(root); _bug(root, 1); _bug(root, 2)
@@ -331,21 +339,18 @@ class PrimaryPathTests(unittest.TestCase):
             with _stubbed(failing="retro_extract"):
                 rc, out = _close(root, rid)
 
-            self.assertEqual(rc, 1, out)
+            self.assertEqual(rc, 0, out)
             chain = sprint_at_load._CLOSE_CHAIN
-            self.assertIn(f"close STOPPED at retro-extract "
-                          f"[{chain.index('retro-extract') + 1}/{len(chain)}]", out)
-            self.assertIn("retro-extract failed", out)
+            self.assertIn(f"close [{chain.index('retro-extract') + 1}/{len(chain)}] "
+                          f"retro-extract: 1 known issue(s)", out)
             self.assertIn("fix the fixture failure", out)
-            # the steps after the failure are neither run nor reported
-            for i, name in enumerate(("lessons-summary", "gate", "handoff", "reconcile",
-                                      "review-anchor"), start=3):
-                self.assertNotIn(f"close [{i}/{len(sprint_at_load._CLOSE_CHAIN)}] {name}", out)
-            # ...and the state agrees with the report: the run is still open, unsealed
+            # the steps after the failure all run
+            for name in ("lessons-summary", "gate", "handoff", "reconcile", "review-anchor"):
+                self.assertIn(f"close [{chain.index(name) + 1}/{len(chain)}] {name}", out)
             state = run_state.read(root)
-            self.assertEqual(state["outcome"], "running")
-            self.assertTrue(run_state.is_open(root))
-            self.assertIsNone(state.get("handoff"))
+            self.assertIn({"source": "retro-extract", "detail": "retro-extract failed"},
+                          state["close_known_issues"])
+            self.assertTrue(state.get("handoff"))
 
     def test_the_suite_kills_a_loop_control_mutant(self) -> None:
         """AC3: the loop test is bound to the loop, not merely running over it.

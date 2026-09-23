@@ -45,7 +45,8 @@ These block. Everything else in this file is guidance.
 | `sprint plan` | a batch whose units lack `Affects:` or `Points:`, or exceed the split threshold |
 | `transition -> Done` | a story whose executable ACs have not passed, or that is past `review.two_role_after` without both review halves |
 | `transition -> Fixed` | a bug with no parseable `Verification depth` |
-| `sprint close` | units no independent pass covers; an unanswered checklist item |
+| `sprint close` | an uncommitted change to a file a batch unit declares (uncovered units, unanswered items and failing lanes are recorded as known issues on the report, not refused) |
+| `sprint sign` | a report that is not the run's, or a tree changed since the close |
 | `critic record` | a verdict carrying no brief provenance (`--brief`), unless stood down by a recorded config decision |
 | `critic signoff` | a principal the authoring session controls |
 

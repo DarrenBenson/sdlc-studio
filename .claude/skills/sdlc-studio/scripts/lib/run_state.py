@@ -68,7 +68,12 @@ STOPPED = "stopped"
 # recorded - the bounded exit between "fix everything" and "bypass the gate". States
 # plainly that work is outstanding; never used while a hard correctness gate is red.
 CLOSED_OUTSTANDING = "closed-outstanding"
-OUTCOMES = (RUNNING, GOAL_REACHED, BUDGET_SPENT, BLOCKED, STOPPED, CLOSED_OUTSTANDING)
+# A SIGNED run whose goal verdict was partial or missed. Distinct from `stopped`, which is an
+# abandonment: a run carried to its signature is never recorded as one.
+PARTIAL = "partial"
+MISSED = "missed"
+OUTCOMES = (RUNNING, GOAL_REACHED, BUDGET_SPENT, BLOCKED, STOPPED, CLOSED_OUTSTANDING,
+            PARTIAL, MISSED)
 CLOSED = tuple(o for o in OUTCOMES if o != RUNNING)
 
 # The fields this module owns. Anything else a caller writes is preserved verbatim - see
@@ -1090,6 +1095,7 @@ def add_to_batch(repo_root: Path | str, unit_id: str, reason: str = "") -> dict:
         already = norm in batch
         if not already:
             batch.append(norm)
+            _snapshot_added(repo_root, state, norm)
         state["batch"] = batch
         entry = {"action": "add", "id": norm, "at": sdlc_md.now_iso8601()}
         # STORED, not dropped. The flag was accepted and silently discarded, so an operator who
@@ -1754,6 +1760,86 @@ def close_batch(repo_root: Path | str, *, reviewer: str, author: str, verdict: s
         return state
 
     return _mutate(repo_root, apply)
+
+
+# --- lean loop: plan snapshot and close (EP0260) ---
+#: The plan's forecast, written when the plan is approved and never overwritten after:
+#: `{"units": {id: {"planned_points", "forecast_tokens", "forecast_minutes", "added"}},
+#: "rates": {"tokens_per_point": {"value", "source"}, "minutes_per_point": {...}}}`. None means
+#: not measured. A unit that joins later gets its own row marked `added`, so the approved plan's
+#: totals stay what was approved.
+PLAN_SNAPSHOT = "plan_snapshot"
+#: What a one-pass close could not settle, `[{"source": str, "detail": str}]`: each failed chain
+#: step, gate lane, unanswered checklist item and report hold, handed over on the report.
+CLOSE_KNOWN_ISSUES = "close_known_issues"
+
+
+def forecast_row(points, rates: dict, added: bool = False) -> dict:
+    """One unit's forecast: its points times each rate, None where either is not measured."""
+    def times(key: str):
+        rate = ((rates or {}).get(key) or {}).get("value")
+        return None if points is None or rate is None else points * rate
+
+    tokens, minutes = times("tokens_per_point"), times("minutes_per_point")
+    return {"planned_points": points,
+            "forecast_tokens": None if tokens is None else int(round(tokens)),
+            "forecast_minutes": None if minutes is None else round(float(minutes), 1),
+            "added": added}
+
+
+def _unit_points(repo_root: Path | str, unit_id: str):
+    found = sdlc_md.find_by_id(repo_root, unit_id)
+    return sdlc_md.read_points(sdlc_md.read_text_safe(found[0]) or "") if found else None
+
+
+def record_plan_snapshot(repo_root: Path | str, points: dict, rates: dict) -> dict:
+    """Write the forecast for each unit not already in the snapshot; rows written are kept.
+
+    The first write IS the plan. A unit a later re-plan brings in is marked `added`, and the
+    rates stay the ones the plan was approved on."""
+    def apply(state: dict) -> dict:
+        state = state or _blank()
+        snap = state.get(PLAN_SNAPSHOT) or {}
+        first = not snap
+        snap_rates = snap.get("rates") or rates
+        units = dict(snap.get("units") or {})
+        for uid, pts in points.items():
+            units.setdefault(sdlc_md.norm_id(uid), forecast_row(pts, snap_rates, added=not first))
+        state[PLAN_SNAPSHOT] = {"units": units, "rates": snap_rates}
+        return state
+
+    return _mutate(repo_root, apply)
+
+
+def _snapshot_added(repo_root: Path | str, state: dict, unit_id: str) -> None:
+    """Give a unit added to an open run its own forecast row, at the plan's rates. In place."""
+    snap = state.get(PLAN_SNAPSHOT)
+    if not snap or unit_id in (snap.get("units") or {}):
+        return
+    snap["units"] = {**(snap.get("units") or {}),
+                     unit_id: forecast_row(_unit_points(repo_root, unit_id),
+                                           snap.get("rates") or {}, added=True)}
+
+
+def plan_points(repo_root: Path | str) -> dict:
+    """Each snapshot unit's points as planned and as its Points field reads now:
+    `{id: {"planned": int|None, "current": int|None}}`."""
+    snap = read(repo_root).get(PLAN_SNAPSHOT) or {}
+    return {uid: {"planned": row.get("planned_points"), "current": _unit_points(repo_root, uid)}
+            for uid, row in (snap.get("units") or {}).items()}
+
+
+def plan_totals(snapshot: dict) -> dict:
+    """The approved plan's totals - rows marked `added` excluded. A figure any row lacks is
+    None, never a partial sum."""
+    rows = [r for r in ((snapshot or {}).get("units") or {}).values() if not r.get("added")]
+
+    def total(key: str):
+        vals = [r.get(key) for r in rows]
+        return None if any(v is None for v in vals) else sum(vals)
+
+    return {"units": len(rows), "points": total("planned_points"),
+            "tokens": total("forecast_tokens"), "minutes": total("forecast_minutes")}
 
 
 def note_finding(repo_root: Path | str, finding_id: str) -> str | None:

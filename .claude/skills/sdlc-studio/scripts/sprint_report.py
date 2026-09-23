@@ -3329,7 +3329,8 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
                 f"added and not dropped")
     f, over = forecast("forecast_minutes")
     rows.append(_estimate_row("Minutes", f, span_minutes,
-                              f"{over}; actual is the run's span, start to end", state_rel,
+                              f"{over}; forecast is active work minutes per point, actual is the run's "
+                              "wall-clock span, start to end, so waiting counts", state_rel,
                               no_plan, "the run records no start time"))
     f, over = forecast("forecast_tokens")
     if f is None:
@@ -3450,21 +3451,23 @@ def _finding_row(root: Path, uid: str) -> tuple[int, dict]:
 
 def _known_issues_section(root: Path, state: dict, state_rel: str, ledger: list[dict],
                           start: str | None, end: str | None) -> dict:
-    """Open findings raised inside the run's window, most severe first; then the gaps the close
-    recorded; then the units carried undelivered."""
+    """STOP-SHIP rulings the close recorded, first and marked, so the signer cannot miss one;
+    then open findings raised inside the run's window, most severe first; then the other gaps
+    the close recorded; then the units carried undelivered."""
     _filed, still_open = _open_findings(root, {"started_at": start, "ended_at": end})
     ranked = sorted((_finding_row(root, uid) for uid in still_open or []),
                     key=lambda pair: (pair[0], pair[1]["issue_id"]["value"]))
-    rows = [row for _rank, row in ranked]
     gaps = state.get("close_known_issues")
-    for gap in gaps or []:
-        if isinstance(gap, dict):
-            rows.append({"issue_id": fig("issue_id", str(gap.get("source") or "close"),
-                                         state_rel),
-                         "issue_priority": fig("issue_priority", "close gap", state_rel),
-                         "issue_detail": fig("issue_detail",
-                                             str(gap.get("detail") or "no detail recorded"),
-                                             state_rel)})
+    gap_rows = [({"issue_id": fig("issue_id", str(gap.get("source") or "close"), state_rel),
+                  "issue_priority": fig("issue_priority",
+                                        "STOP-SHIP" if gap.get("stop_ship") else "close gap",
+                                        state_rel),
+                  "issue_detail": fig("issue_detail",
+                                      str(gap.get("detail") or "no detail recorded"),
+                                      state_rel)}, bool(gap.get("stop_ship")))
+                for gap in gaps or [] if isinstance(gap, dict)]
+    rows = ([row for row, stop in gap_rows if stop] + [row for _rank, row in ranked]
+            + [row for row, stop in gap_rows if not stop])
     carried = [u for u in ledger if not u["dropped"] and not u["delivered"]]
     for u in carried:
         rows.append({"issue_id": fig("issue_id", u["id"], u["rel"]),
@@ -3609,8 +3612,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                                     "no goal verdict recorded on this run")),
         "goal_verdict_note": fig("goal_verdict_note",
                                  (verdict.get("note") or "no note recorded")
-                                 if verdict.get("verdict") else
-                                 "no goal verdict recorded on this run", state_rel),
+                                 if verdict.get("verdict") else "", state_rel),
         "run_id": fig("run_id", state.get("run_id"), state_rel),
         "started_at": fig("started_at", state.get("started_at"), state_rel),
         "ended_at": fig("ended_at", state.get("ended_at") or "open", state_rel),

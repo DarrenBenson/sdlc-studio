@@ -347,8 +347,9 @@ def close_time_repairs(root: Path, uncovered: list) -> tuple[list, list]:
 #: The run outcomes that mean THIS RUN'S CLOSE COMPLETED. Read from the run vocabulary rather
 #: than "not running": `budget-spent`, `blocked` and `stopped` are mid-flight states that filed
 #: no account, and crediting a unit to one of them would forgive work no retro ever described.
-#: The same pair `--file-and-close` refuses to re-file over, for the same reason.
-_CLOSED_OUTCOMES = (run_state.GOAL_REACHED, run_state.CLOSED_OUTSTANDING)
+#: `partial` and `missed` are SIGNED runs whose verdict fell short: their close completed too.
+_CLOSED_OUTCOMES = (run_state.GOAL_REACHED, run_state.CLOSED_OUTSTANDING, run_state.PARTIAL,
+                    run_state.MISSED)
 
 
 def _raised_in_batch_stamp(root: Path, cid: str) -> str:

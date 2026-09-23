@@ -456,59 +456,19 @@ class BatchCliTests(unittest.TestCase):
 
 
 class CloseAttemptTrendTests(unittest.TestCase):
-    """CR0421 US0435: once the outstanding set is GROWING across close attempts, the trend line
-    names the way out - but HONESTLY. `--file-and-close` can only file deferrable (ceremony)
-    blockers; it refuses a hard correctness lane. So the offer names file-and-close only for the
-    deferrable items, and a set of only hard blockers is told to clear the lanes, not sent to a
-    dead-end. A first or converging attempt makes no offer at all."""
+    """US0435's trend line and its file-and-close offer, removed by US0876: a close runs once, so there is no series of attempts to narrate."""
 
-    def _pre(self, stages: list[str]) -> dict:
-        return {"blockers": [{"stage": s, "detail": "", "remedy": ""} for s in stages]}
-
-    def _grow(self, mod, root, first: dict, second: dict) -> str:
-        mod.run_state.open_run(root, batch=["US0001"], goal="g")
-        self.assertIsNone(mod._record_close_attempt(root, first), "first attempt: no trend")
-        return mod._record_close_attempt(root, second)
-
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
     def test_a_growing_deferrable_set_offers_the_bounded_exit(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = str(Path(d))
-            mod = _load()
-            line = self._grow(mod, root, self._pre(["retro", "sign-off"]),
-                              self._pre(["retro", "sign-off", "goal-verdict"]))  # 2 -> 3, all deferrable
-            self.assertIn("growing", line)
-            self.assertIn("--file-and-close", line, "deferrable growth names the bounded exit")
+        pass
 
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
     def test_a_growing_hard_set_is_told_to_clear_the_lanes_not_sent_to_a_dead_end(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = str(Path(d))
-            mod = _load()
-            line = self._grow(mod, root, self._pre(["gate", "gate"]),
-                              self._pre(["gate", "gate", "gate"]))  # 2 -> 3, all hard
-            self.assertIn("growing", line)
-            self.assertNotIn("Bounded exit", line,
-                             "an all-hard set is not offered an exit that would refuse it")
-            self.assertIn("clear the lane", line)
+        pass
 
-    def test_a_mixed_growing_set_files_the_deferrable_and_names_the_hard(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = str(Path(d))
-            mod = _load()
-            line = self._grow(mod, root, self._pre(["gate", "retro"]),
-                              self._pre(["gate", "gate", "retro"]))  # 2 -> 3, mixed
-            self.assertIn("--file-and-close", line)
-            self.assertIn("must be cleared first", line, "the hard remainder is named, not filed")
-
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
     def test_a_converging_or_first_attempt_makes_no_offer(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = str(Path(d))
-            mod = _load()
-            mod.run_state.open_run(root, batch=["US0001"], goal="g")
-            self.assertIsNone(mod._record_close_attempt(root, self._pre(["gate"] * 5)),
-                              "first attempt: no offer")
-            shrank = mod._record_close_attempt(root, self._pre(["gate"] * 2))  # 5 -> 2
-            self.assertIn("shrinking", shrank)
-            self.assertNotIn("--file-and-close", shrank, "a converging close makes no offer")
+        pass
 
 
 class WsjfTests(unittest.TestCase):
@@ -3679,11 +3639,25 @@ class CloseReportsExpiredRowsTests(unittest.TestCase):
 
 
 class GoalReviewWindowTests(unittest.TestCase):
-    """US0592. The goal-review refusal was guarded on a goal being PRESENT, so omitting
-    `--sprint-goal` walked past it for free: the plan returned 0, the run opened, and the close
-    reported the item outstanding at a point where the batch had already been delivered and the
-    only exit was a waiver. Enforce it where it can still be run.
-    """
+    """US0592, narrowed by US0868: the seat read advises, so neither a stated nor an omitted goal
+    is refused for want of one. The refusal and its `--goal-review-waived` escape are gone."""
+
+    # SUPERSEDED, not deleted: stamped Verify lines in US0592 (AC1, AC2) and US0297 (AC3) still
+    # name these nodes, and those artefacts are repointed or retired by their owner. Each test
+    # pinned a refusal US0868 removes, so each is skipped with that reason rather than kept red.
+    _SUPERSEDED = "superseded by US0868: the goal seat read advises and never refuses the plan"
+
+    @unittest.skip(_SUPERSEDED)
+    def test_a_plan_with_no_sprint_goal_is_refused(self) -> None:
+        """US0592 AC1. See test_lean_goal.GoalSeatReadTests for the behaviour that replaced it."""
+
+    @unittest.skip(_SUPERSEDED)
+    def test_the_escape_is_recorded_at_plan_time(self) -> None:
+        """US0592 AC2: `--goal-review-waived` is removed with the refusal it escaped."""
+
+    @unittest.skip(_SUPERSEDED)
+    def test_plan_refuses_a_sprint_goal_no_seat_has_reviewed(self) -> None:
+        """US0297 AC3. Replaced by test_lean_goal's test_a_missing_seat_read_is_recorded_as_not_read."""
 
     def _plan(self, root, *extra):
         mod = _load()
@@ -3693,88 +3667,7 @@ class GoalReviewWindowTests(unittest.TestCase):
             rc = mod.main(["plan", "--bugs", "Open", "--no-fetch", "--root", str(root), *extra])
         return rc, out.getvalue(), err.getvalue()
 
-    def test_a_plan_with_no_sprint_goal_is_refused(self) -> None:
-        """Mutant: revert the goal-presence guard so the write path is reached with no goal."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _bug(root, 1)
-            _seats(root)
-            rc, _out, err = self._plan(root, "--write")
-            self.assertEqual(2, rc, "a plan with no Sprint Goal was written")
-            self.assertIn("no Sprint Goal", err)
-            self.assertFalse((root / "sdlc-studio" / ".local" / "run-state.json").exists(),
-                             "the refusal still opened a run")
-
-    def test_the_escape_is_recorded_at_plan_time(self) -> None:
-        """Mutant: pass a constant authoriser rather than the one given on the command line.
-
-        Asserting merely that a waiver row exists is satisfied by an implementation writing an
-        empty or hard-coded authoriser, and "names its authoriser" is the whole criterion. The
-        name in the fixture is distinctive for exactly that reason, and the row is resolved
-        through `waiver_for` against the item id the CLOSE reads - a row written under a subject
-        nothing reads is a defect this repo has already had twice.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _bug(root, 1)
-            _seats(root)
-            rc, _out, err = self._plan(root, "--write", "--goal-review-waived",
-                                       "Wilhelmina Okonkwo-Reyes")
-            self.assertEqual(0, rc, err)
-            import decisions
-            subject = "rule:sprint-checklist:goal-seat-reviewed"
-            self.assertIsNotNone(decisions.waiver_for(root, subject),
-                                 "no waiver the close can read was recorded")
-            self.assertEqual("Wilhelmina Okonkwo-Reyes",
-                             decisions.waiver_authoriser(root, subject))
-            self.assertEqual("deliberate", decisions.waiver_kind(root, subject))
-
-    def test_the_escape_with_no_authoriser_is_refused(self) -> None:
-        """An escape taken by nobody in particular is a decision with no decider."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _bug(root, 1)
-            _seats(root)
-            rc, _out, err = self._plan(root, "--write", "--goal-review-waived", "   ")
-            self.assertEqual(2, rc)
-            self.assertIn("no Sprint Goal", err)
-
-    def test_a_preview_plan_cannot_bank_a_waiver(self) -> None:
-        """Mutant: drop the `--write` gate from the waiver recording.
-
-        A waiver is a PERMANENT row in the decision log, and the close reads it by subject, not
-        by run. A preview that banked one silenced the compulsory `goal-seat-reviewed` item for a
-        later, unrelated run - demonstrated end to end by an independent review.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _bug(root, 1)
-            _seats(root)
-            rc, _out, err = self._plan(root, "--goal-review-waived", "somebody")
-            self.assertEqual(2, rc, "a preview plan banked a permanent waiver")
-            import decisions
-            self.assertIsNone(
-                decisions.waiver_for(root, "rule:sprint-checklist:goal-seat-reviewed"),
-                "the decision log carries a waiver from a plan that wrote nothing")
-
-    def test_the_escape_is_refused_when_a_goal_was_stated(self) -> None:
-        """The gate is ARMED when a goal exists, so the escape is not the answer - and silently
-        ignoring the flag would leave the operator believing they had taken one."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _bug(root, 1)
-            _seats(root)
-            rc, _out, err = self._plan(root, "--write", "--sprint-goal", "a goal",
-                                       "--goal-review-waived", "somebody")
-            self.assertEqual(2, rc)
-            self.assertIn("the gate is armed", err)
-
     def test_a_reviewed_goal_plans_cleanly(self) -> None:
-        """Mutant: drop the `not reviewed` term, so a reviewed goal is refused too.
-
-        The control. Refusing the write path unconditionally reddens 33 existing tests and so
-        discriminates nothing; dropping that one term is the edit a careless implementer makes.
-        """
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _bug(root, 1)
@@ -3848,17 +3741,6 @@ class GoalConsultTests(unittest.TestCase):
             self.assertEqual(gr["reviewed_at"], "2026-07-22T00:00:00Z")
             self.assertEqual([s["seat"] for s in gr["seats"]], ["product"])
 
-    def test_plan_refuses_a_sprint_goal_no_seat_has_reviewed(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _bug(root, 1)
-            _seats(root)
-            rc, out, err = self._plan(root, "--write", "--sprint-goal", "empty the backlog")
-            self.assertEqual(rc, 2)
-            self.assertFalse((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
-            self.assertFalse((root / "sdlc-studio" / ".local" / "run-state.json").exists())
-            self.assertIn("goal-review record", err)
-
     def test_a_review_of_a_different_goal_does_not_count_as_a_review(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -3866,8 +3748,10 @@ class GoalConsultTests(unittest.TestCase):
             _seats(root)
             _goal_review(root, "some other goal entirely")
             rc, out, err = self._plan(root, "--write", "--sprint-goal", "empty the backlog")
-            self.assertEqual(rc, 2)
-            self.assertIn("a different goal", err)
+            self.assertEqual(rc, 0, err)      # US0868: the read advises, it does not refuse
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertFalse(state["sprint_goal_review"]["reviewed"])
+            self.assertIn("a different goal", state["sprint_goal_review"]["reason"])
 
     def test_a_verdict_missing_an_answer_is_not_a_review(self) -> None:
         """Achievability without a definition of done is an opinion about an unstated target:
@@ -3883,8 +3767,7 @@ class GoalConsultTests(unittest.TestCase):
                 encoding="utf-8")
             status = _load().goal_review_status(root, "empty the backlog")
             self.assertFalse(status["reviewed"])
-            rc, out, err = self._plan(root, "--write", "--sprint-goal", "empty the backlog")
-            self.assertEqual(rc, 2)
+            self.assertEqual(status["status"], "not read")
 
     def test_skip_personas_records_the_goal_as_unreviewed(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -3928,9 +3811,8 @@ class GoalConsultTests(unittest.TestCase):
 
 
 class NegativeGoalVerdictHasAnEffectTests(unittest.TestCase):
-    """BG0262: a seat that judged the Sprint Goal NOT achievable used to discharge the plan gate
-    exactly as one that said it was - the verdict's CONTENT was never read. Now a negative verdict
-    refuses the plan unless an override with a reason is recorded."""
+    """BG0262: the verdict's CONTENT is read. Since US0868 a negative verdict is advice printed
+    with the plan (test_lean_goal), not a refusal, so the override flag is gone."""
 
     def _plan(self, root, *extra):
         mod = _load()
@@ -3947,19 +3829,6 @@ class NegativeGoalVerdictHasAnEffectTests(unittest.TestCase):
         self.assertEqual(sp.verdict_polarity("never"), "no")
         self.assertEqual(sp.verdict_polarity("maybe later"), "unclear")
 
-    def test_a_negative_verdict_refuses_the_plan(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _bug(root, 1)
-            _seats(root)
-            _goal_review(root, "empty the sized backlog",
-                         seats=(("engineering", "no", "every bug Fixed", "no"),))
-            rc, out, err = self._plan(root, "--write", "--sprint-goal", "empty the sized backlog")
-            self.assertEqual(rc, 2, "a seat saying NOT achievable must stop the plan")
-            self.assertFalse((root / "sdlc-studio" / ".local" / "run-state.json").exists())
-            self.assertFalse((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
-            self.assertIn("NOT achievable", err)
-
     def test_a_positive_verdict_still_proceeds(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -3969,22 +3838,6 @@ class NegativeGoalVerdictHasAnEffectTests(unittest.TestCase):
             rc, out, err = self._plan(root, "--write", "--sprint-goal", "empty the sized backlog")
             self.assertEqual(rc, 0, err)
             self.assertTrue((root / "sdlc-studio" / ".local" / "run-state.json").exists())
-
-    def test_an_override_lets_the_plan_proceed_and_records_the_reason(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _bug(root, 1)
-            _seats(root)
-            _goal_review(root, "empty the sized backlog",
-                         seats=(("engineering", "no", "every bug Fixed", "yes"),))
-            rc, out, err = self._plan(root, "--write", "--sprint-goal", "empty the sized backlog",
-                                      "--override-goal-review", "accepted the appetite risk")
-            self.assertEqual(rc, 0, err)
-            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
-            ovr = state["goal_review_override"]
-            self.assertEqual(ovr["reason"], "accepted the appetite risk")
-            self.assertEqual(ovr["objections"][0]["seat"], "engineering")
-
 
 class GoalReviewKeepsItsRoundsTests(unittest.TestCase):
     """BG0263: the goal review had ONE record - a second review overwrote the first, so a goal
@@ -4024,12 +3877,13 @@ class GoalReviewKeepsItsRoundsTests(unittest.TestCase):
             _seats(root)
             self._record(root, "goal A", "engineering|no|every bug Fixed|no")
             self._record(root, "goal B", "engineering|yes|every bug Fixed|yes")
-            # the LATEST round (goal B) discharges the gate; the earlier goal A no longer matches
-            rc_b, _, _ = self._plan(root, "--write", "--sprint-goal", "goal B")
-            self.assertEqual(rc_b, 0)
-            rc_a, _, err_a = self._plan(root, "--write", "--sprint-goal", "goal A")
-            self.assertEqual(rc_a, 2, "a goal that is not the latest round no longer discharges")
-            self.assertIn("different goal", err_a)
+            # the LATEST round (goal B) is the read; the earlier goal A no longer matches
+            sp = _load()
+            self.assertTrue(sp.goal_review_status(root, "goal B")["reviewed"])
+            status_a = sp.goal_review_status(root, "goal A")
+            self.assertFalse(status_a["reviewed"],
+                             "a goal that is not the latest round is not read")
+            self.assertIn("different goal", status_a["reason"])
 
     def test_the_round_count_reaches_the_run_state(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -4267,7 +4121,7 @@ def _close_state(root: Path, **over) -> dict:
         "handoff": None, "appetite": {"minutes": 240.0, "units": 8},
         "sprint_goal": "make the close honest",
         "sprint_goal_verdict": {"verdict": "achieved", "note": "chain ran"},
-        "token_forecast": 50000,
+        "token_forecast": 50000, "report": "RPT0001",
     }
     state.update(over)
     p = root / "sdlc-studio" / ".local" / "run-state.json"
@@ -4355,7 +4209,7 @@ class CloseChainTests(unittest.TestCase):
     """US0198: sprint close runs the chain in order, stops loudly at the first
     failing gate naming the remedy, and a re-run resumes idempotently."""
 
-    def test_runs_steps_in_order_and_stops_at_first_failure(self) -> None:
+    def test_runs_every_step_in_order_and_a_failing_step_is_a_known_issue(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _close_state(root)
@@ -4368,11 +4222,12 @@ class CloseChainTests(unittest.TestCase):
                                     record=calls), \
                     contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
                 rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
-            self.assertNotEqual(rc, 0)
-            self.assertEqual(calls, [*_CLOSE_STEP_NAMES[:_CLOSE_STEP_NAMES.index("lessons-summary") + 1]],
-                             "the chain did not run every step up to the failing one, in order")
-            self.assertIn("STOPPED", err.getvalue())
+            self.assertEqual(rc, 0, err.getvalue())
+            self.assertEqual(calls, list(_CLOSE_STEP_NAMES), "the chain stopped or ran out of order")
             self.assertIn("run lessons summary", err.getvalue())   # the remedy, named
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
+            self.assertIn({"source": "lessons-summary", "detail": "lessons-summary broke"},
+                          state["close_known_issues"])
 
     def test_rerun_after_repair_resumes_and_names_the_signing_command(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -4939,14 +4794,9 @@ class FileAndCloseTests(unittest.TestCase):
             rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root), *extra])
         return rc, out.getvalue(), err.getvalue()
 
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
     def test_blocked_close_offers_file_and_close(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = self._fixture(d)
-            mod = _load()
-            rc, out, err = self._close(mod, root, self.ADMIN)
-            offer = out + err
-            self.assertIn("fix", offer.lower())
-            self.assertIn("--file-and-close", offer)   # the bounded second path is NAMED
+        pass
 
     def test_file_and_close_records_linked_artefacts_and_outcome(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -5173,24 +5023,9 @@ class FileAndCloseTests(unittest.TestCase):
             self.assertIn("Which auth method should the sync use?", out + err)
             self.assertIn("oauth", out + err)
 
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
     def test_reclose_reports_outstanding_set_trend(self) -> None:
-        """The counts are 3 -> 1, not 5 -> 2, and the difference is deliberate: under D0213 the
-        series counts only what PREPARE can MOVE, so the `sign-off` rows in `ADMIN` are excluded
-        from it. They still hold the close and are still printed; they are simply not evidence
-        about whether the close is converging, because no close can clear them - `sign` does.
-        Counting them made the series unable to reach zero on any unsigned run, which is every
-        run at PREPARE time, and the round cap then refused the close whatever was fixed.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = self._fixture(d)
-            mod = _load()
-            five = {"ready": False, "blockers": self.ADMIN["blockers"] * 2 + self.HARD["blockers"]}
-            self._close(mod, root, five)
-            rc, out, err = self._close(mod, root, self.ADMIN)
-            self.assertIn("3 -> 1", out + err)
-            self.assertIn("shrinking", out + err)
-            rc, out, err = self._close(mod, root, five)
-            self.assertIn("growing", out + err)
+        pass
 
 
 class DeferredOperatorDecisions(unittest.TestCase):
@@ -6008,8 +5843,8 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
             root = Path(d)
             harness(root, extra=("US0103",))
             rc, out, err = _ua_close(mod, root)
-            self.assertEqual(1, rc)
-            self.assertIn("close STOPPED at checklist", err)
+            self.assertEqual(0, rc, err)
+            self.assertIn("checklist: 1 known issue(s)", err)
             self.assertEqual(["US0103"], sorted(
                 _ua_ids(" ".join(ln for ln in _ua_known_issues_lines(err)
                                  if "US0103 (Ready)" in ln), ("US0101", "US0102", "US0103",
@@ -6259,17 +6094,16 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
                 # refused up front and names `sign`, which is its own criterion (AC3).
                 rc, out, err = _ua_close(mod, root)
                 if tree == "i":
-                    self.assertEqual(1, rc)
-                    self.assertIn("close STOPPED at checklist", err)
+                    self.assertEqual(0, rc, err)
+                    self.assertIn("checklist: 1 known issue(s)", err)
                     line = next(ln for ln in _ua_known_issues_lines(err) if "US0101" in ln)
                     self.assertIn("US0101 (Review)", line)
                     self.assertIn("remaining work at Review", line)
-                    remedy = next(ln for ln in err.splitlines() if ln.startswith("remedy:"))
+                    remedy = next(ln for ln in err.splitlines()
+                                  if ln.lstrip().startswith("remedy:"))
                     remedy_block = err[err.index(remedy):]
                     self.assertIn("Done transition", remedy_block)
                     self.assertIn("transition.py set <id> Done", remedy_block)
-                    self.assertNotIn("apply-signoff:", out + err,
-                                     "apply-signoff ran before the checklist refused")
                     self.assertEqual("Review", _ua_status(root, "US0101"))
                 else:
                     self.assertIn("checklist: ok", out, err)
@@ -6379,7 +6213,7 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
         self.assertEqual({"unanswered": [], "rulings_from": "RETRO0002"}, named)
         self.assertEqual("RETRO0001", fallback["rulings_from"])
         self.assertEqual(["US0101"], [h["unit"] for h in fallback["unanswered"]], fallback)
-        self.assertEqual(1, rc_control, err_control)
+        self.assertEqual(0, rc_control, err_control)
         self.assertTrue([ln for ln in _ua_known_issues_lines(err_control)
                          if "US0101 (In Progress)" in ln], err_control)
         self.assertIn("checklist: ok", out, f"the close over its named retro refused:\n{err}")
@@ -8097,7 +7931,8 @@ class ClosePreflightTests(unittest.TestCase):
                 mod._close_retro_validate = original
             self.assertIn("close pre-flight", out)
             self.assertIn("this is ALL of them", out)
-            self.assertLess(out.index("close pre-flight"), out.index("close STOPPED"),
+            self.assertLess(out.index("close pre-flight"),
+                            out.index("retro-validate: 1 known issue"),
                             "the pre-flight report came after a chain step had already run")
 
     def test_close_with_nothing_outstanding_is_unchanged(self) -> None:
@@ -8496,139 +8331,53 @@ class CarryForwardCloseTests(unittest.TestCase):
             shutil.rmtree(d, ignore_errors=True)
 
 
-def _plan_text(root: Path) -> str:
-    """Run `plan` and return its stdout - the surface an operator reads."""
-    out, err = io.StringIO(), io.StringIO()
-    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-        _load().main(["plan", "--crs", "Proposed", "--root", str(root),
-                      "--no-fetch", "--skip-personas"])
-    return out.getvalue()
-
-
-#: Three whole-sprint velocity rows (Measured 0, ceremony included), same model - at or above
-#: FIXED_MIN_SPRINTS, so the fitted fixed term may be APPLIED to a forecast total.
-_FIXED_ROWS_APPLIED = [
+#: SUPERSEDED by D0258 (US0870): one token forecast, the plan snapshot's - points x the calibrated
+#: rate. The fitted fixed per-sprint term left the forecast, so every test below pinned behaviour
+#: the ruling removes. Kept as skipped nodes, not deleted: stamped Verify lines in US0336 (AC1-AC3)
+#: and US0338 (AC1-AC3) name them. See test_lean_plan_snapshot.OneForecastTests for what replaced
+#: them.
+_FIXED_TERM_SUPERSEDED = ("superseded by D0258 (US0870): the fixed-term fit left the forecast; "
+                          "one forecast, the plan snapshot's")
+#: Two whole-sprint velocity rows, same model: enough for the project's own rate to replace the
+#: seed.
+_FIXED_ROWS_CANDIDATE = [
     {"id": "RETRO0001", "units": 4, "measured": 0, "points": 18, "actual": 4_119_916,
      "model": "claude-opus-4-8"},
     {"id": "RETRO0002", "units": 33, "measured": 0, "points": 100, "actual": 5_194_538,
      "model": "claude-opus-4-8"},
-    {"id": "RETRO0003", "units": 12, "measured": 0, "points": 50, "actual": 4_650_000,
-     "model": "claude-opus-4-8"},
 ]
-#: Two whole-sprint rows - the fit is MEASURED but below the apply minimum (CR0391's own case).
-_FIXED_ROWS_CANDIDATE = _FIXED_ROWS_APPLIED[:2]
 
 
 class TheForecastCarriesAFixedTermTests(unittest.TestCase):
-    """US0336 / CR0391: the forecast carries an explicit FIXED per-sprint term beside the
-    marginal per-point term, and the plan shows BOTH rather than a single product. A small batch
-    is not priced as though the ceremony, review rounds and close were free."""
+    """US0336 / CR0391, superseded by D0258."""
 
-    def _applied_root(self, d) -> Path:
-        root = Path(d)
-        _velocity(root, _FIXED_ROWS_APPLIED)
-        return root
-
+    @unittest.skip(_FIXED_TERM_SUPERSEDED)
     def test_the_total_is_a_fixed_term_plus_points_times_the_marginal_rate(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = self._applied_root(d)
-            sp = _load()
-            _pointed_cr(root, 1, 5)
-            _pointed_cr(root, 2, 3)
-            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
-            self.assertTrue(fc["fixed_applied"])
-            self.assertGreater(fc["fixed_term"], 0)
-            self.assertGreater(fc["fixed_marginal"], 0)
-            self.assertEqual(fc["rate"], fc["fixed_marginal"],
-                             "the marginal half of the fit is the per-point rate")
-            self.assertEqual(fc["points"], 8)
-            self.assertEqual(fc["tokens"], fc["fixed_term"] + fc["points"] * fc["fixed_marginal"])
-            # neither term can be recovered by dividing the other out: total/points != marginal
-            self.assertNotEqual(fc["tokens"] // fc["points"], fc["rate"])
+        """US0336 AC1."""
 
+    @unittest.skip(_FIXED_TERM_SUPERSEDED)
     def test_the_rendered_forecast_shows_both_terms_and_not_one_product(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = self._applied_root(d)
-            _pointed_cr(root, 1, 5)
-            text = _plan_text(root)
-            self.assertIn("fixed per-sprint term", text)   # the fixed term, its own line
-            self.assertIn("per-point (build) term", text)  # the marginal term, its own line
-            self.assertIn("APPLIED", text)
-            # the fixed figure is quoted, not folded into a bare points-times-a-rate product
-            fixed_line = next(ln for ln in text.splitlines() if "fixed per-sprint term" in ln)
-            self.assertRegex(fixed_line, r"[0-9][0-9,]+")
+        """US0336 AC2."""
 
+    @unittest.skip(_FIXED_TERM_SUPERSEDED)
     def test_a_half_size_batch_costs_more_than_half_and_more_per_point(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = self._applied_root(d)
-            sp = _load()
-            _pointed_cr(root, 1, 8)
-            _pointed_cr(root, 2, 4)
-            cr1 = root / "sdlc-studio" / "change-requests" / "CR0001-x.md"
-            cr2 = root / "sdlc-studio" / "change-requests" / "CR0002-x.md"
-            big = sp._token_forecast(root, [{"id": "CR0001", "path": str(cr1), "points": 8}])
-            small = sp._token_forecast(root, [{"id": "CR0002", "path": str(cr2), "points": 4}])
-            self.assertTrue(big["fixed_applied"] and small["fixed_applied"])
-            self.assertGreater(small["tokens"], big["tokens"] / 2,
-                               "the fixed term is amortised over fewer points, so > half")
-            self.assertGreater(small["tokens"] / small["points"],
-                               big["tokens"] / big["points"],
-                               "and the smaller batch costs strictly more per point")
+        """US0336 AC3."""
 
 
 class AFitIsNeverAppliedAutomaticallyTests(unittest.TestCase):
-    """US0338 / CR0391: a fit is never applied automatically. The plan states how many sprints it
-    rests on and refuses to spend a fit below FIXED_MIN_SPRINTS - a line through two points is not
-    calibration."""
+    """US0338 / CR0391, superseded by D0258: no fit is applied at all now."""
 
+    @unittest.skip(_FIXED_TERM_SUPERSEDED)
     def test_a_two_sprint_fit_is_reported_and_kept_out_of_the_total(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            _velocity(root, _FIXED_ROWS_CANDIDATE)         # two whole-sprint rows
-            _pointed_cr(root, 1, 5)
-            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
-            self.assertFalse(fc["fixed_applied"])
-            self.assertIsNotNone(fc["fixed_term"], "the candidate fit is still reported")
-            self.assertEqual(fc["fixed_in_total"], 0, "and kept OUT of the total")
-            self.assertEqual(fc["tokens"], fc["points"] * fc["rate"],
-                             "the total prices the build only - it did not move when row 2 landed")
-            text = _plan_text(root)
-            self.assertIn("NOT APPLIED", text)
-            self.assertIn(str(sp.FIXED_MIN_SPRINTS), text)   # the minimum required
-            self.assertIn("2", text)                         # the count the project has
+        """US0338 AC1."""
 
+    @unittest.skip(_FIXED_TERM_SUPERSEDED)
     def test_every_quoted_fixed_term_states_the_sprint_count_behind_it(self) -> None:
-        sp = _load()
-        # candidate case: a figure is quoted, so its sample size (2) must sit beside it
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _velocity(root, _FIXED_ROWS_CANDIDATE)
-            _pointed_cr(root, 1, 5)
-            self.assertIn("fitted on 2 sprint", _plan_text(root))
-        # applied case: the figure is quoted, so its sample size (3) must sit beside it
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _velocity(root, _FIXED_ROWS_APPLIED)
-            _pointed_cr(root, 1, 5)
-            self.assertIn("fitted on 3 whole-sprint", _plan_text(root))
+        """US0338 AC2."""
 
+    @unittest.skip(_FIXED_TERM_SUPERSEDED)
     def test_a_fit_at_the_minimum_is_applied_and_names_its_sprint_count(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sp = _load()
-            self.assertEqual(len(_FIXED_ROWS_APPLIED), sp.FIXED_MIN_SPRINTS,
-                             "the fixture sits exactly AT the apply minimum")
-            _velocity(root, _FIXED_ROWS_APPLIED)
-            _pointed_cr(root, 1, 5)
-            fc = sp.build_plan(root, "cr", "Proposed", order="wsjf")["token_forecast"]
-            self.assertTrue(fc["fixed_applied"], "at the minimum the fit is applied")
-            self.assertEqual(fc["fixed_in_total"], fc["fixed_term"])
-            self.assertGreater(fc["tokens"], fc["points"] * fc["fixed_marginal"],
-                               "the fixed term entered the total")
-            text = _plan_text(root)
-            self.assertIn("APPLIED", text)
-            self.assertIn("3", text)                         # the sprint count behind it
+        """US0338 AC3."""
 
 
 class TheSeedBasisNamesItsConditionTests(unittest.TestCase):
@@ -13857,9 +13606,8 @@ class TheCommandActuallyReachesTheseMechanismsTests(unittest.TestCase):
         finally:
             mod.close_goal_judgement = real
 
-    def test_the_judgement_is_not_reached_when_the_chain_stops(self) -> None:
-        """The negative control. Without it the sentinel could be firing from somewhere other
-        than the close's own reporting, and the test would prove nothing about placement."""
+    def test_the_judgement_is_reached_when_a_step_fails(self) -> None:
+        """A failing step is a known issue, so the close runs on to its own reporting."""
         class _Reached(Exception):
             pass
 
@@ -13868,9 +13616,9 @@ class TheCommandActuallyReachesTheseMechanismsTests(unittest.TestCase):
         real = mod.close_goal_judgement
         mod.close_goal_judgement = lambda *a, **k: (_ for _ in ()).throw(_Reached())
         try:
-            with _patch_close_steps(mod, fail_at="retro-validate"):
-                rc = self._run(mod, root)     # stops early; must NOT reach the judgement
-            self.assertNotEqual(rc, 0)
+            with _patch_close_steps(mod, fail_at="retro-validate"), \
+                    self.assertRaises(_Reached):
+                self._run(mod, root)          # runs on past the failure to the judgement
         finally:
             mod.close_goal_judgement = real
 
@@ -14057,86 +13805,27 @@ class BlockingScopeTests(unittest.TestCase):
 
 
 class LoopTerminationTests(unittest.TestCase):
-    """A review-repair loop that has stopped converging must STOP, not keep going.
+    """US0600's close-attempt cap, removed by US0876: `review.max_rounds` no longer caps close attempts, and `loop_termination` is deleted."""
 
-    The existing growing-set detector reported divergence and carried on. A loop that announces
-    it is diverging and then runs another round has reported nothing - and unattended, it burns
-    a night going backwards.
-    """
-
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
     def test_the_round_cap_ends_the_loop(self) -> None:
-        """MUTANT: raise the cap to infinity, or compare with `>` instead of `>=`.
+        pass
 
-        Asserted at the boundary rather than well past it, because an off-by-one here is a
-        whole extra round of the most expensive thing the sprint does.
-        """
-        sprint = _load()
-        stop, why = sprint.loop_termination([{"outstanding": 3}] * 4, cap=4)
-        self.assertTrue(stop, "the loop ran past its declared round cap")
-        self.assertIn("cap", why.lower(), "the reason does not name the cap")
-
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
     def test_a_growing_set_stops_the_loop(self) -> None:
-        """MUTANT: report the growth without stopping, as the detector did before."""
-        sprint = _load()
-        stop, why = sprint.loop_termination(
-            [{"outstanding": 2}, {"outstanding": 4}, {"outstanding": 6}], cap=10)
-        self.assertTrue(stop, "an outstanding set growing twice in a row did not stop the loop")
-        self.assertIn("grew", why.lower(), "the reason does not name the divergence")
+        pass
 
-    def test_one_growth_alone_does_not_stop_the_loop(self) -> None:
-        """MUTANT: stop on a single growth.
-
-        One round can legitimately surface more than it fixed - a repair exposing a neighbour
-        is normal. TWO consecutive is the signal that the loop is chasing a moving target.
-        """
-        sprint = _load()
-        stop, _why = sprint.loop_termination(
-            [{"outstanding": 2}, {"outstanding": 5}, {"outstanding": 3}], cap=10)
-        self.assertFalse(stop, "a single round of growth stopped a loop that then converged")
-
-    def test_the_rule_is_wired_into_the_close_not_only_the_library(self) -> None:
-        """MUTANT: delete the `loop_termination` call from `_record_close_attempt`.
-
-        `loop_termination` passing in isolation says nothing about whether any close consults
-        it. A rule reachable only from Python is the lane-not-library defect (LL0040) that cost
-        this project a review round last sprint.
-        """
-        sprint = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio" / "stories").mkdir(parents=True)
-            (root / "sdlc-studio" / "retros").mkdir(parents=True)
-            (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
-            (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
-                "# US0001: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
-                "> **Affects:** src/a.py\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
-            (root / "sdlc-studio" / "retros" / "RETRO0001-r.md").write_text(
-                "# RETRO0001: r\n\n> **Status:** Draft\n", encoding="utf-8")
-            # FOUR attempts: the declared cap is reached, so the rule says stop.
-            attempts = [{"at": f"2026-08-02T00:0{i}:00Z", "outstanding": n, "stages": ["gate"]}
-                        for i, n in enumerate([3, 4, 5, 6])]
-            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(
-                {"run_id": "RUN-T", "batch": ["US0001"], "outcome": "running",
-                 "close_attempts": attempts}), encoding="utf-8")
-            buf, err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
-                rc = sprint.main(["close", "--retro", "RETRO0001", "--root", str(root)])
-            out = buf.getvalue() + err.getvalue()
-        self.assertNotEqual(0, rc, "a close over a non-converging loop reported success")
-        self.assertIn("LOOP STOPPED", out, "the close never consulted the termination rule")
-        self.assertIn("stops here", out,
-                      "the close REPORTED the divergence and carried on - a loop that announces "
-                      "it is diverging and then runs the next round has reported nothing")
-
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
     def test_a_shrinking_set_runs_on(self) -> None:
-        """The control. MUTANT: stop unconditionally.
+        pass
 
-        A gate that ends every loop discriminates no better than one that ends none.
-        """
-        sprint = _load()
-        stop, _why = sprint.loop_termination(
-            [{"outstanding": 9}, {"outstanding": 5}, {"outstanding": 2}], cap=10)
-        self.assertFalse(stop, "a converging loop was stopped")
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
+    def test_one_growth_alone_does_not_stop_the_loop(self) -> None:
+        pass
+
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
+    def test_the_rule_is_wired_into_the_close_not_only_the_library(self) -> None:
+        pass
 
 
 class EscalationTests(unittest.TestCase):
@@ -17087,56 +16776,19 @@ class CallItHereTests(unittest.TestCase):
 
 
 class ConvergedLoopIsNotStoppedTests(unittest.TestCase):
-    """BG0517. `loop_termination` tested `len(attempts) >= cap` FIRST and returned, before any
-    check of what the attempts contained. RUN-01KZ5YXM's series was `1, 1, 1, 1, 0, 0` - every
-    blocker cleared, the next round certain to complete - and it was told to `hand off with the
-    outstanding set named` over an outstanding set that was empty. Raising the cap only moved
-    the number at which a finished loop was refused; it was raised twice before this was seen
-    for what it is.
+    """BG0517's refinement of the close-attempt cap, removed with the cap by US0876."""
 
-    MUTANTS:
-      1. move the converged check back below the cap test -> AC1 reddens.
-      2. treat any zero ANYWHERE in the series as converged -> a loop that cleared everything
-         and then broke it again escapes the cap.
-      3. drop the divergence detector -> AC3 reddens.
-    """
-
-    @staticmethod
-    def _series(*counts):
-        return [{"outstanding": n} for n in counts]
-
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
     def test_a_series_ending_in_zero_outstanding_never_terminates(self) -> None:
-        sprint = _load()
-        # The exact series RUN-01KZ5YXM recorded, at and well beyond the cap.
-        stop, why = sprint.loop_termination(self._series(1, 1, 1, 1, 0, 0), cap=4)
-        self.assertFalse(stop, f"a converged loop was stopped: {why}")
-        stop, _ = sprint.loop_termination(self._series(*([3] * 20), 0), cap=4)
-        self.assertFalse(stop, "length alone still terminates a converged loop")
+        pass
 
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
     def test_the_cap_still_stops_a_loop_that_is_not_converging(self) -> None:
-        """The case the cap was written for is untouched: an unattended loop going round on
-        work it is not clearing."""
-        sprint = _load()
-        stop, why = sprint.loop_termination(self._series(1, 1, 1, 1), cap=4)
-        self.assertTrue(stop, "the cap stopped stopping a stuck loop")
-        self.assertIn("round cap", why)
+        pass
 
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
     def test_divergence_still_terminates(self) -> None:
-        """The convergence exemption must not become a way to keep alive a loop that is
-        re-breaking what the last round cleared."""
-        sprint = _load()
-        stop, why = sprint.loop_termination(self._series(1, 2, 3, 4), cap=99)
-        self.assertTrue(stop, "a diverging loop was allowed to continue")
-        self.assertIn("grew", why)
-
-    def test_a_zero_EARLIER_in_the_series_does_not_exempt_it(self) -> None:
-        """The mutant worth naming. Convergence is a fact about the LATEST round: a loop that
-        cleared everything and then broke it again is exactly the loop the cap exists for, and
-        reading `0 in counts` would let it run forever."""
-        sprint = _load()
-        stop, _ = sprint.loop_termination(self._series(1, 0, 2, 3), cap=4)
-        self.assertTrue(stop, "a loop that cleared and then re-broke its work escaped the cap")
-
+        pass
 
 
 class MutationEvidenceModeTests(unittest.TestCase):
@@ -18920,42 +18572,9 @@ class LoopConvergenceTests(unittest.TestCase):
             self.assertEqual(["signoff"], rows[-1]["stages"],
                              "stages must name the holding lane's stage and no other")
 
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
     def test_the_cap_fires_through_the_shipped_close_only_on_a_blocked_run(self) -> None:
-        """AC3, narrowed by D0179 and driven through `sprint.py close` as a SUBPROCESS.
-
-        The original wording asked for a CONVERGED run at the cap to reach a stage past the
-        convergence check. That is not demonstrable here: the close records a FRESH attempt
-        before consulting `loop_termination`, so a converged run is one whose pre-flight is
-        genuinely clear - and clearing it needs a goal, a verdict, an anchor and a valid retro,
-        after which the checklist stage raises eighteen more prerequisites. The fixture would be
-        a complete run, reimplementing what it checks.
-
-        What IS checkable through the shipped command is the half that discriminates: the cap
-        FIRES on a run whose outstanding set never clears. A review deleted `cmd_close`'s
-        `if trend and trend.startswith("LOOP STOPPED")` branch - the decision to stop at all -
-        and an absence-only assertion stayed green. This kills that. The converged direction is
-        pinned where it is observable: AC1 and AC2 assert the recorded attempt reads zero with
-        no stages when every blocker is advisory.
-        """
-        import subprocess  # noqa: PLC0415
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d)
-            (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
-            from lib import run_state  # noqa: PLC0415
-            run_state.update(root, close_attempts=[
-                {"at": "2026-09-02T00:00:00Z", "outstanding": 3, "stages": ["signoff"]}] * 8)
-            r = subprocess.run(
-                [sys.executable, str(SCRIPT), "close", "--root", str(root)],
-                capture_output=True, text=True, timeout=600, check=False)
-            page = r.stdout + r.stderr
-            # The DECISION, not the trend string. `LOOP STOPPED` is what `loop_termination`
-            # RETURNS and the close narrates; the branch at `sprint.py`:8987 is what acts on it.
-            # Asserting the returned string alone let a mutant deleting that branch survive -
-            # the narration still printed while the close no longer stopped.
-            self.assertIn("the review-repair loop is NOT converging", page,
-                          f"the close did not ACT on a stuck loop - the decision branch is "
-                          f"gone, however the trend reads:\n{page[:1200]}")
-            self.assertIn("LOOP STOPPED", page, page[:600])
+        pass
 
     def test_the_project_config_pins_no_round_cap(self) -> None:
         """AC4. `review.max_rounds` is REMOVED, not set.
@@ -19692,9 +19311,10 @@ class PrepareAndSealTests(unittest.TestCase):
             self.assertEqual(8, delivered["figures"]["points_delivered"]["value"],
                              "the re-derived page does not carry the moved figure's new value")
 
-    def test_seal_derives_stopped_from_a_partial_verdict(self):
+    def test_seal_derives_partial_from_a_partial_verdict(self):
         """The outcome derivation moved from PREPARE's handoff step to SEAL, so it is tested
-        where it now lives: only an achieved goal seals goal-reached.
+        where it now lives: only an achieved goal seals goal-reached, and a partial one seals
+        `partial`, never the `stopped` an abandonment gets.
 
         MUTANT: seal every run `goal-reached` - a partial or missed run then closes claiming
         the thing its own verdict denied, which is the defect the derivation was added for.
@@ -19707,8 +19327,8 @@ class PrepareAndSealTests(unittest.TestCase):
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
                 mod.main(["sign", "--principal", "Darren Benson", "--author", "agent",
                           "--report", "RPT0001", "--root", str(root)])
-            self.assertEqual(mod.run_state.read(root).get("outcome"), "stopped",
-                             "a partial verdict sealed as something other than stopped")
+            self.assertEqual(mod.run_state.read(root).get("outcome"), "partial",
+                             "a partial verdict sealed as something other than partial")
 
     def test_prepare_prints_exactly_one_account_of_the_run(self):
         """AC5. MUTANT: leave `_draw_report` in place - the operator decides over two accounts
@@ -19978,7 +19598,11 @@ class PrepareRefusesTests(unittest.TestCase):
             self.assertIn("verify", str(verdicts["US0102"]).lower(),
                           "the refusal does not name the criterion that is actually owed")
 
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
     def test_a_non_terminal_batch_unit_refuses_the_report(self):
+        pass
+
+    def test_every_non_terminal_batch_unit_is_one_known_issue(self):
         """AC1. MUTANT: return at the first non-terminal unit found - the operator clears it,
         pays the whole of PREPARE again and meets the second, and every assertion about the
         first unit's name still passes."""
@@ -20005,7 +19629,7 @@ class PrepareRefusesTests(unittest.TestCase):
             _close_state(root, batch=["US0101", "US0102", "US0103", "US0104", "BG0201",
                                       "BG0202"])
             rc, out, err = self._close(root, mod)
-            self.assertEqual(rc, 2, out)
+            self.assertEqual(rc, 0, err)
             # The HOLD'S OWN LINE, not the whole page. The close pre-flight above prints its
             # own blockers naming these same units, so a search over everything printed passes
             # on text the hold did not write - which is how a first-unit-only hold survives a
@@ -20018,11 +19642,16 @@ class PrepareRefusesTests(unittest.TestCase):
                           "only one unmet unit was named - the hold returned at the first")
             self.assertIn("2 batch unit(s)", line,
                           "the hold does not count every unmet unit it found")
-            self.assertEqual(self._reports(root), [], "a refused PREPARE still filed a report")
-            self.assertFalse((mod.run_state.read(root) or {}).get("report"),
-                             "a refused PREPARE still named a report on the run state")
+            self.assertEqual(len(self._reports(root)), 1, "the report was withheld")
+            issues = (mod.run_state.read(root) or {})["close_known_issues"]
+            self.assertEqual(1, len([i for i in issues
+                                     if i["source"] == "report-hold:terminal-gate"]), issues)
 
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
     def test_an_unanswered_review_refuses_the_report(self):
+        pass
+
+    def test_an_unanswered_review_is_a_known_issue_on_the_report(self):
         """AC2. MUTANT: derive the hold from the batch's non-terminal units, as AC1's does -
         every unit here is terminal, so the hold never fires and a run with a live REJECT
         produces a signable report, which is the state D0193 was written against."""
@@ -20041,15 +19670,19 @@ class PrepareRefusesTests(unittest.TestCase):
                          "why": "standing REJECT at delivery, no repair record",
                          "filed": []}]}):
                 rc, out, err = self._close(root, mod)
-            self.assertEqual(rc, 2, out)
-            page = out + err
+            self.assertEqual(rc, 0, err)
+            page = next((ln for ln in err.splitlines() if "[unanswered-review]" in ln), "")
             self.assertIn("US0102", page, "the refusal does not name the owed unit")
             self.assertNotIn("US0101", page.split("US0102")[0].split("hold")[-1],
                              "the refusal names a unit the predicate did not return")
             self.assertIn("REJECT", page, "the refusal does not name the review that is owed")
-            self.assertEqual(self._reports(root), [])
+            self.assertEqual(len(self._reports(root)), 1, "the report was withheld")
 
+    @unittest.skip("superseded by US0876: the close runs once and finishes, recording gaps as known issues")
     def test_index_drift_refuses_the_report_and_a_clean_run_produces_one(self):
+        pass
+
+    def test_index_drift_is_a_known_issue_and_a_clean_run_has_none(self):
         """AC3. MUTANT: register the drift as a deferrable close blocker, so `--file-and-close`
         files it as a CR and continues - the report then ships describing an index that
         disagrees with the tree it was derived from, a filed ticket standing in for the fact
@@ -20069,23 +19702,15 @@ class PrepareRefusesTests(unittest.TestCase):
             idx.write_text(idx.read_text(encoding="utf-8").replace(
                 "| a unit | Review |", "| a unit | Draft |"), encoding="utf-8")
             rc, out, err = self._close(root, mod)
-            self.assertEqual(rc, 2, out)
+            self.assertEqual(rc, 0, err)
             line = next((ln for ln in (out + err).splitlines() if "[index-drift]" in ln), "")
             self.assertTrue(line, f"no index-drift refusal was printed:\n{out}{err}")
             self.assertIn("sdlc-studio/stories/_index.md", line,
                           "the refusal does not name a path the reader can open")
             self.assertIn("US0101", line, "the refusal does not name the drifted row")
-            self.assertEqual(self._reports(root), [])
-            # THE HOLDS' DEFINING PROPERTY, and nothing asserted it: they REFUSE rather than
-            # being filed and deferred. `--file-and-close` is the bounded exit that lets a run
-            # end honestly with work outstanding, and it must not buy a report over a drifted
-            # index - an implementation that registered the drift as a deferrable close blocker
-            # would satisfy every assertion above and then file the page anyway.
-            rc2, out2, err2 = self._close(root, mod, extra=["--file-and-close"])
-            self.assertNotEqual(rc2, 0,
-                                "`--file-and-close` filed a report over a drifted index")
-            self.assertEqual(self._reports(root), [],
-                             "a deferred close still wrote the page a signature freezes")
+            self.assertEqual(len(self._reports(root)), 1, "the report was withheld")
+            self.assertIn("report-hold:index-drift",
+                          [i["source"] for i in mod.run_state.read(root)["close_known_issues"]])
         with tempfile.TemporaryDirectory() as d2:
             # The PAIRED CONTROL, identical but undrifted.
             mod = _load()
@@ -20100,6 +19725,8 @@ class PrepareRefusesTests(unittest.TestCase):
             for name in ("terminal-gate", "unanswered-review", "index-drift"):
                 self.assertIn(name, out,
                               f"the clean run passed the {name} hold in silence")
+            self.assertEqual([], [i for i in mod.run_state.read(clean)["close_known_issues"]
+                                  if i["source"].startswith("report-hold:")])
 
 
 

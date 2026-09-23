@@ -137,14 +137,14 @@ POINTS_RATE_SEED = 25_000
 #: The condition the "no base term" finding was measured under. Stated, not asserted flatly:
 #: that a fitted base term did worse than none was TRUE OF PER-UNIT ACTUALS with no sprint
 #: ceremony, review rounds or close in the numerator - runner-era data about the BUILD. Applied
-#: to whole sprints the same claim is false by roughly 300 times, which is why the fixed
-#: per-sprint cost is now a term of its own. It travels with every forecast basis, seed or local,
-#: so the sentence a future author would cite to reject that term carries its own scope.
+#: to whole sprints the same claim is false by roughly 300 times. The forecast prices the build
+#: alone (D0258: one forecast, the plan snapshot's), so it travels with every forecast basis, seed
+#: or local, and the figure is never read as a whole sprint's cost.
 NO_BASE_TERM_CONDITION = (
     "the no-base-term result was measured on PER-UNIT ACTUALS with no sprint ceremony, review "
     "rounds or close in the numerator, so it holds for the BUILD, not for a whole sprint - a "
-    "fitted base term did worse than none ON THAT DATA. A whole sprint's fixed cost is priced "
-    "by its own term")
+    "fitted base term did worse than none ON THAT DATA. This forecast prices the build; a whole "
+    "sprint's ceremony is not in it")
 POINTS_RATE_SEED_BASIS = (
     "the shipped default from a blind re-estimation of 21 delivered units, recovered as filed "
     "and sized in modified Fibonacci by three independent estimators with no access to the "
@@ -155,15 +155,8 @@ POINTS_RATE_SEED_BASIS = (
 #: re-fitted to one or two units is fitting noise - a fit to one or two sprints has burned this
 #: estimator before, and a wild single unit would drag the rate for the whole next sprint.
 RATE_MIN_UNITS = 5
-
-#: Whole-sprint rows before a FITTED fixed per-sprint term may enter a forecast TOTAL. The fit
-#: (retro.fixed_sprint_cost) MEASURES from two rows, but two points fit a straight line exactly,
-#: so a two-sprint fit is reported and kept OUT of the total until the record earns it - the same
-#: discipline RATE_MIN_UNITS is on the marginal side, on the axis that has burned this estimator
-#: twice. Below this the forecast prices the build only and names the candidate as NOT APPLIED.
-FIXED_MIN_SPRINTS = 3
-#: The marker a per-point rate carries when it is the MARGINAL half of an applied fixed-plus-
-#: marginal fit, rather than the measured build rate. The plan shows the fixed term beside it.
+#: The rate source a forecast carried when a fitted fixed-plus-marginal term priced it. No plan
+#: produces it since D0258; kept because forecasts recorded before then still name it.
 RATE_FIXED_FIT = "fixed-fit"
 
 # ---------------------------------------------------------------------------
@@ -274,6 +267,42 @@ def tokens_per_point(repo_root: Path | str | None = None) -> dict:
             "basis": (f"measured from this project's evidence: {len(ids)} delivered unit(s), "
                       f"{points} point(s) forecast at plan time, {tokens:,} tokens actually "
                       f"spent (sdlc-studio/retros/evidence/)")}
+
+
+def plan_rates(repo_root: Path | str) -> dict:
+    """The two per-point rates a plan forecasts with, each `{"value", "source"}`. A value of None
+    means not measured: minutes stay unmeasured until `retro.minutes_per_point` answers."""
+    tpp = tokens_per_point(repo_root)
+    minutes: dict = {"value": None, "source": "not measured"}
+    try:
+        import retro  # noqa: PLC0415 - deferred, as everywhere else in this module
+        fn = getattr(retro, "minutes_per_point", None)
+        got = fn(repo_root) if fn else None
+    except Exception as exc:  # noqa: BLE001 - no rate must never break planning
+        sdlc_md.debug("sprint.plan_rates", exc)
+        got = None
+    if isinstance(got, dict):
+        value = got.get("value", got.get("rate"))
+        source = got.get("source") or "retro.minutes_per_point"
+    else:
+        value, source = got, "retro.minutes_per_point"
+    if isinstance(value, (int, float)) and not isinstance(value, bool) and value > 0:
+        minutes = {"value": value, "source": source}
+    elif isinstance(got, dict) and got.get("source"):
+        minutes["source"] = got["source"]
+    return {"tokens_per_point": {"value": tpp.get("rate"), "source": tpp.get("source")},
+            "minutes_per_point": minutes}
+
+
+def record_plan_snapshot(repo_root: Path | str, batch: list[dict]) -> dict:
+    """Record the plan snapshot for `batch` (each unit's planned points and its token and minute
+    forecast, kept as approved) and set run state `token_forecast` to the snapshot's total -
+    the ONE token forecast (D0258). A total no row set can price is left unrecorded, never 0."""
+    state = run_state.record_plan_snapshot(
+        repo_root, {u["id"]: _declared_size(sdlc_md.read_text_safe(u["path"]) or "")
+                    for u in batch}, plan_rates(repo_root))
+    tokens = run_state.plan_totals(state.get(run_state.PLAN_SNAPSHOT))["tokens"]
+    return run_state.update(repo_root, token_forecast=tokens) if tokens is not None else state
 
 
 def forecast_constants(repo_root: Path | str | None = None) -> dict:
@@ -574,7 +603,7 @@ def capacity_report(repo_root: Path | str, batch: list[dict], forecast: dict | N
     # exact shape of the previous sprint's MAJOR. An unmeasured marginal is carried as None and
     # the token half of the budget is reported unjudged rather than passed.
     fc = forecast or {}
-    tokens_unmeasured = bool(fc.get("marginal_unmeasured")) and not fc.get("fixed_applied")
+    tokens_unmeasured = bool(fc.get("marginal_unmeasured"))
     tokens = None if tokens_unmeasured else int(fc.get("tokens") or 0)
     units = len(batch)
     token_budget = cap["tokens"]
@@ -1499,35 +1528,6 @@ def select_batch(repo_root: Path | str, kind: str, status: str, order: str = "pr
                           skip_personas=skip_personas, epics=epics)
 
 
-def _fixed_term(repo_root: Path | str) -> dict:
-    """The project's FIXED per-sprint cost candidate, and whether it may enter a forecast total.
-
-    Wraps `retro.fixed_sprint_cost` (which MEASURES the fit from whole-sprint actuals) and adds
-    the planner's APPLICATION decision: the fit enters a total only at or above `FIXED_MIN_SPRINTS`
-    whole-sprint rows, because two points fit a straight line exactly and this estimator has been
-    burned twice refitting to one or two observations. Fail-safe: an unreadable record is
-    UNMEASURED, never an exception.
-    """
-    unmeasured = {"fixed": None, "marginal": None, "n": 0, "min_measure": None,
-                  "min_apply": FIXED_MIN_SPRINTS, "unmeasured": True, "applied": False,
-                  "sprints": [], "excluded": [],
-                  "reason": "UNMEASURED: this project's velocity record could not be read"}
-    try:
-        import retro  # noqa: PLC0415 - deferred, as everywhere else in this module
-        fit = retro.fixed_sprint_cost(repo_root)
-    except Exception as exc:  # noqa: BLE001 - no record must never break planning
-        sdlc_md.debug("sprint._fixed_term", exc)
-        return unmeasured
-    n = int(fit.get("n") or 0)
-    applied = (not fit.get("unmeasured") and n >= FIXED_MIN_SPRINTS
-               and bool(fit.get("fixed")) and bool(fit.get("marginal")))
-    return {"fixed": fit.get("fixed"), "marginal": fit.get("marginal"), "n": n,
-            "min_measure": fit.get("min"), "min_apply": FIXED_MIN_SPRINTS,
-            "unmeasured": bool(fit.get("unmeasured")), "applied": applied,
-            "sprints": fit.get("sprints") or [], "excluded": fit.get("excluded") or [],
-            "reason": fit.get("reason") or ""}
-
-
 #: Statuses at which a unit is CLOSED, so it cannot be "built but not closed". Mirrors
 #: integrity.TERMINAL, inlined so the forecast carries no heavy import.
 _CLOSED_STATUSES = {
@@ -1620,23 +1620,13 @@ def _built_not_closed(root: Path, uid: str, text: str) -> bool:
 
 
 def _token_forecast(root: Path, batch: list[dict], goal: str = "done") -> dict:
-    """The batch's token cost: a FIXED per-sprint term plus SUM OF THE POINTS x a marginal rate.
+    """The batch's token cost: SUM OF THE POINTS x the calibrated tokens-per-point rate.
 
-    TWO TERMS, carried and shown separately. The per-point (marginal) term prices the BUILD, and
-    points predict measured cost at r = +0.68 (+0.78 at 8 points and below) where every computed
-    signal this project tried failed - the one the forecast used to run on scored +0.03. The
-    FIXED term prices what a point never could: the ceremony, the review rounds, the repairs and
-    the close, which two measured sprints showed dwarf the build at real batch sizes. The two are
-    never a single product - halving the batch does not halve the forecast, because the fixed term
-    is amortised over fewer points.
-
-    THE FIXED TERM IS MEASURED, NEVER SEEDED, and never APPLIED on faith. `_fixed_term` fits it
-    from this project's own whole-sprint actuals and reports UNMEASURED where too few sprints carry
-    one; the fit enters the total only at or above `FIXED_MIN_SPRINTS` rows. Below that, or with no
-    fit at all, the total is the marginal term alone and the candidate is reported NOT APPLIED with
-    the count it rests on - a line through two points is not spent as though it were calibration.
-    When the fit IS applied its own marginal replaces the build rate, so the ceremony is priced
-    once, in the fixed term, and not a second time inside an amortised per-point rate.
+    ONE FORECAST (D0258): the figure the plan snapshot records, points times the rate
+    `tokens_per_point` resolves, and nothing else. Points predict measured cost at r = +0.68
+    (+0.78 at 8 points and below) where every computed signal this project tried failed. A fitted
+    fixed per-sprint term once sat beside it and disagreed with the snapshot by nearly 2x on this
+    repository; two figures answer the operator's question twice and differently, so it left.
 
     An ESTIMATE and never a gate: a script cannot observe real token spend (see telemetry.py), so
     a token ceiling would depend on the actor self-reporting the budget meant to constrain it.
@@ -1649,29 +1639,16 @@ def _token_forecast(root: Path, batch: list[dict], goal: str = "done") -> dict:
     `unpriced` and left out of the total.
     """
     rate_info = tokens_per_point(root)
-    fixed_info = _fixed_term(root)
-    # When the fixed fit is APPLIED its own marginal is the per-point rate (the build term), so
-    # the ceremony is not priced twice. Otherwise the measured build rate stands and the fixed
-    # candidate is reported but kept out of the total.
-    if fixed_info["applied"]:
-        rate = fixed_info["marginal"]
-        rate_source = RATE_FIXED_FIT
-        rate_basis = fixed_info["reason"]
-        fixed_applied = int(fixed_info["fixed"])
-    else:
-        rate = rate_info["rate"]
-        rate_source = rate_info["source"]
-        rate_basis = rate_info["basis"]
-        fixed_applied = 0
+    rate, rate_source, rate_basis = rate_info["rate"], rate_info["source"], rate_info["basis"]
     # A rung other than `done` has no measured per-point rate on this project, so the marginal
     # term reads UNMEASURED rather than borrowing the build rate. The build
-    # rung keeps whatever rate the fit/seed above resolved.
+    # rung keeps whatever rate the evidence or the seed above resolved.
     rung = (goal or "done")
     rung_unmeasured = rung != "done"
     # The marginal PER-POINT rate a non-`done` rung is priced at: NONE, because it has no measured
     # rate on this project. It must not merely be RELABELLED - it must not be SPENT. So the marginal
-    # term drops out of the total, the per-unit costs and each unit's rate, and only a measured
-    # fixed term (if any) survives. A design run that writes no code is not priced as a build.
+    # term drops out of the total, the per-unit costs and each unit's rate. A design run that
+    # writes no code is not priced as a build.
     marginal_rate = None if rung_unmeasured else rate
     if rung_unmeasured:
         rate_source = RATE_UNMEASURED_RUNG
@@ -1718,20 +1695,13 @@ def _token_forecast(root: Path, batch: list[dict], goal: str = "done") -> dict:
                       "rate_source": rate_source,
                       "estimator": estimator_of(root, text), "size_gate": gate}
     marginal_total = 0 if marginal_rate is None else total_points * marginal_rate
-    return {"tokens": fixed_applied + marginal_total, "points": total_points,
+    return {"tokens": marginal_total, "points": total_points,
             "marginal_unmeasured": rung_unmeasured,
             "per_unit": per_unit,
             "units": units, "rate": marginal_rate, "rate_source": rate_source,
             "rate_units": rate_info["units"], "rate_basis": rate_basis,
             "rate_refused": rate_info.get("refused"),
             "rate_out_of_sample": calibration(root)["rows"],
-            # THE FIXED PER-SPRINT TERM, carried SEPARATELY so the total is fixed + points x rate
-            # and neither term can be recovered by dividing the other out.
-            "fixed_term": fixed_info["fixed"], "fixed_applied": fixed_info["applied"],
-            "fixed_in_total": fixed_applied, "fixed_marginal": fixed_info["marginal"],
-            "fixed_sprints": fixed_info["n"], "fixed_min": fixed_info["min_apply"],
-            "fixed_min_measure": fixed_info["min_measure"],
-            "fixed_unmeasured": fixed_info["unmeasured"], "fixed_basis": fixed_info["reason"],
             "rung": rung, "rung_unmeasured": rung_unmeasured,
             # Units already built (green verifiers) but not yet closed: a close, not a build.
             "built_not_closed": built_not_closed, "built_points": built_points,
@@ -1741,12 +1711,9 @@ def _token_forecast(root: Path, batch: list[dict], goal: str = "done") -> dict:
             "whole_sprint_excess": whole_sprint_excess(root),
             "unpriced": unpriced, "history": batch_history(root),
             "constants": forecast_constants(root),
-            "basis": "a FIXED per-sprint term plus sum(points) x a marginal tokens-per-point "
-                     "rate. The marginal term prices the build (points predict measured cost at "
-                     "r = +0.68, +0.78 at 8 points and below, the range the gate allows); the "
-                     "fixed term prices the ceremony, review rounds and close a point cannot. "
-                     + NO_BASE_TERM_CONDITION + ". An ESTIMATE, never a gate - a script cannot "
-                     "observe token spend"}
+            "basis": "sum(points) x the calibrated tokens-per-point rate (points predict "
+                     "measured cost at r = +0.68, +0.78 at 8 points and below, the range the gate "
+                     "allows). " + NO_BASE_TERM_CONDITION + ". An ESTIMATE, never a gate"}
 
 
 #: How a row's per-unit cost was arrived at. `measured` counts the units carrying PER-UNIT
@@ -3073,12 +3040,13 @@ def goal_review_status(repo_root: Path | str, sprint_goal: str | None,
     failure), and a goal rewritten in answer to a REJECT is judged on its final wording while the
     earlier rounds stay on the record.
 
-    The verdict has an EFFECT: a seat that judged the goal NOT achievable (or not one increment)
-    is reported in `objections`, and the plan refuses on one unless an override is recorded. A
-    recorded verdict nobody can act on is not a review.
+    The read ADVISES: a seat that judged the goal NOT achievable is reported in `objections`
+    and printed with the plan, and the plan proceeds. `status` is `read` or `not read`, so a
+    goal no seat looked at is never recorded as approved.
     """
     root = Path(repo_root)
-    base = {"reviewed": False, "skipped": None, "seats": [], "goal": sprint_goal,
+    base = {"reviewed": False, "status": "not read", "skipped": None, "seats": [],
+            "goal": sprint_goal,
             "available_seats": project_seats(root), "rounds": 0,
             "objected": False, "objections": []}
     if skip_personas:
@@ -3092,8 +3060,8 @@ def goal_review_status(repo_root: Path | str, sprint_goal: str | None,
     seats = [s for s in (latest.get("seats") or []) if isinstance(s, dict)
              and all(str(s.get(f) or "").strip() for f in GOAL_REVIEW_FIELDS)]
     if seats and _norm_goal(latest.get("goal")) == _norm_goal(sprint_goal):
-        # TWO DIFFERENT ANSWERS, never one predicate. `achievable = no` is an OBJECTION: a seat
-        # saying the goal cannot be met by this batch must stop the plan. `one_increment = no` is
+        # TWO DIFFERENT ANSWERS, never one predicate. `achievable = no` is an OBJECTION: advice
+        # the operator reads before approving the plan. `one_increment = no` is
         # a CLASSIFICATION: it says the batch is not one atomic increment, which a themed batch
         # (a tooling sweep, a bug-fix clearance, an audit remediation) legitimately is not. Folding
         # them into one blocking test refused every themed sprint and, worse, REPORTED those seats
@@ -3109,7 +3077,7 @@ def goal_review_status(repo_root: Path | str, sprint_goal: str | None,
         reviewed_roles = {str(s.get("seat") or "").strip() for s in seats}
         needs_reconsult = sorted(r for r in base["available_seats"]
                                  if r not in reviewed_roles)
-        return {**base, "reviewed": True, "seats": seats,
+        return {**base, "reviewed": True, "status": "read", "seats": seats,
                 "reviewed_at": latest.get("reviewed_at"),
                 "change_type": latest.get("change_type"),
                 "amended_from": latest.get("amended_from"),
@@ -3706,6 +3674,10 @@ def _render_goal_review(data: dict) -> None:
             print(f"    {s.get('seat', '?')}: achievable={s.get('achievable')}, "
                   f"one increment={s.get('one_increment')}, done means "
                   f"\"{s.get('done_means')}\"")
+        for o in review.get("objections") or []:
+            print(f"    advice from {o.get('seat')}: judged the goal NOT achievable"
+                  + (f" - {o['note']}" if o.get("note") else "")
+                  + " (advice for the operator approving this plan; the plan is not refused)")
         themed = review.get("themed") or []
         if themed and not review.get("objected"):
             # Surfaced as ADVICE so separating it from achievability loses no information: the
@@ -4406,11 +4378,8 @@ def _render_forecast_scope(tf: dict) -> None:
 
     The point term prices the BUILD. Saying so is half the fix; the other half is a proving
     term the operator can SEE, and it is read off the record rather than fitted to one sprint.
-
-    Silent once an explicit FIXED per-sprint term is APPLIED: the fixed term prices the ceremony
-    the whole-sprint multiple stood in for, and quoting both would price it twice and contradict
-    the total on screen."""
-    if not tf.get("scope") or tf.get("fixed_applied"):
+"""
+    if not tf.get("scope"):
         return
     print(f"    this prices the {tf['scope'].upper()} only. It excludes: "
           f"{'; '.join(tf['excludes'])}")
@@ -4429,41 +4398,6 @@ def _render_forecast_scope(tf: dict) -> None:
         print("    whole-sprint cost against the forecast: UNMEASURED - no out-of-sample row "
               "records both a plan-time forecast and a sprint actual, and no multiplier is "
               "assumed in place of one")
-
-
-def _render_fixed_term(tf: dict) -> None:
-    """The FIXED per-sprint term and the per-point term, on their OWN lines - never a single
-    product. Every quoted figure carries the sprint count it was fitted from, so no reader takes
-    the number without its sample size. Three states: APPLIED, a candidate NOT APPLIED (below the
-    minimum), and UNMEASURED (too few whole-sprint sprints to fit)."""
-    if "fixed_applied" not in tf:   # a forecast dict from before the fixed term (or a fixture)
-        return
-    if tf.get("marginal_unmeasured"):
-        # No per-point build term to break out on a non-build rung - the header line already said
-        # the marginal is UNMEASURED, and there is no rate to multiply.
-        return
-    n = tf.get("fixed_sprints") or 0
-    minimum = tf.get("fixed_min")
-    point_subtotal = (tf.get("points") or 0) * (tf.get("rate") or 0)
-    if tf.get("fixed_applied"):
-        print(f"    fixed per-sprint term: {tf['fixed_term']:,} tokens, APPLIED - fitted on "
-              f"{n} whole-sprint(s)")
-        print(f"    per-point (build) term: {tf['points']} point(s) x {tf['rate']:,} per point "
-              f"= {point_subtotal:,} tokens")
-    elif tf.get("fixed_unmeasured"):
-        need = tf.get("fixed_min_measure")
-        print(f"    fixed per-sprint term: UNMEASURED - {n} whole-sprint actual(s) recorded"
-              + (f" (a fit needs {need})" if need else "")
-              + "; no figure is supplied and the total prices the build only")
-        print(f"    per-point (build) term: {tf['points']} point(s) x {tf['rate']:,} per point "
-              f"= {point_subtotal:,} tokens")
-    else:
-        # A measured candidate held out of the total until the record earns it.
-        print(f"    fixed per-sprint term: {tf['fixed_term']:,} tokens fitted on {n} sprint(s), "
-              f"NOT APPLIED - a fit needs {minimum} sprint(s) and the project has {n}; the total "
-              f"prices the build only")
-        print(f"    per-point (build) term: {tf['points']} point(s) x {tf['rate']:,} per point "
-              f"= {point_subtotal:,} tokens")
 
 
 def exclusion_line(tf: dict) -> str:
@@ -4561,18 +4495,11 @@ def _render_token_forecast(data: dict) -> None:
     if marginal_unmeasured:
         # The marginal term is UNMEASURED on this rung, so there is no `points x rate` to print -
         # naming a rate here would be the very borrowing the rung change exists to stop.
-        fixed_note = (f"a fixed per-sprint term = ~{tf['tokens']:,} tokens"
-                      if tf.get("fixed_applied") else "no priced build term")
         print(f"  token forecast: marginal term UNMEASURED on the `{tf.get('rung')}` rung - "
-              f"{tf['points']} point(s) are NOT priced as a build; {fixed_note}")
-    elif tf.get("fixed_applied"):
-        # TWO TERMS, never one product: the header names both and the lines below carry each.
-        print(f"  token forecast: ~{tf['tokens']:,} tokens = a fixed per-sprint term plus "
-              f"{tf['points']} point(s) x {tf['rate']:,} per point{band}")
+              f"{tf['points']} point(s) are NOT priced as a build")
     else:
         print(f"  token forecast: ~{tf['tokens']:,} tokens = {tf['points']} point(s) x "
               f"{tf['rate']:,} tokens per point{band}")
-    _render_fixed_term(tf)
     print(f"    rate ({tf['rate_source']}): {tf['rate_basis']}")
     _render_rate_provenance(tf)
     _render_forecast_scope(tf)
@@ -5984,14 +5911,19 @@ def _close_checklist(root, retro, state, read_root=None):
         return (False, detail + (f"\n{held_line}" if held_line else ""),
                 remedy + (f"\n{held_way}" if held_way else ""))
 
+    named = [r for r in ck["items"] if r["id"] in set(ck["outstanding"])]
+    detail = "\n".join(f"  {r['id']}: {r['title']} - {r['value']}"
+                       + (f"\n      {r['detail']}" if r["detail"] else "") for r in named)
     if ck["stop_ship"]:
         # ANSWERED, and the answer stops the ship. Held separately from the unanswered items
         # because the remedy is the opposite one: an unanswered item needs somebody to look, a
-        # stop-ship ruling needs the defect fixed or the ruling revised by whoever made it.
+        # stop-ship ruling needs the defect fixed or the ruling revised by whoever made it. The
+        # unanswered items travel with it: each is a known issue in its own right.
         return _with_hold(
             "known-issues: " + ", ".join(ck["stop_ship"]) + " "
             + ("is" if len(ck["stop_ship"]) == 1 else "are")
-            + " ruled STOP-SHIP in the retro's carried-issues table" + past,
+            + " ruled STOP-SHIP in the retro's carried-issues table" + past
+            + (f"\n{detail}" if detail else ""),
             "fix the finding, or have the ruler revise the ruling in the retro - a close "
             "that proceeds over a stop-ship ruling makes every future ruling a note")
     mode_ok, mode_note = mutation_evidence_note(root)
@@ -6010,9 +5942,6 @@ def _close_checklist(root, retro, state, read_root=None):
         return (True,
                 f"{len(ck['items'])} compulsory item(s), none outstanding{pending}{past}"
                 f"; {mode_note}", "")
-    named = [r for r in ck["items"] if r["id"] in set(ck["outstanding"])]
-    detail = "\n".join(f"  {r['id']}: {r['title']} - {r['value']}"
-                       + (f"\n      {r['detail']}" if r["detail"] else "") for r in named)
     return _with_hold(
         f"{len(named)} compulsory checklist item(s) unanswered{past}; {mode_note}:"
         f"\n{detail}",
@@ -8095,17 +8024,6 @@ def hard_blockers(blockers: list) -> list:
             and b.get("blocking", True)]
 
 
-#: The declared ceiling on review-repair rounds. Read from config so a project can set its own;
-#: the default is deliberately low, because rounds past three have historically found repairs
-#: of repairs rather than defects.
-DEFAULT_LOOP_CAP = 4
-
-#: How many CONSECUTIVE growing rounds mean the loop is chasing a moving target. One round can
-#: legitimately surface more than it fixed - a repair exposing its neighbour is ordinary, and
-#: LL0052 says to expect it. Two in a row is the signal.
-_DIVERGENCE_RUN = 2
-
-
 #: A unit rejected this many times by the panel goes to the operator. TWO, not one: a first
 #: REJECT is the loop working - the finding gets repaired. Escalating on the first would fire
 #: on every ordinary finding and train the operator to ignore the channel, which is how a
@@ -8127,114 +8045,44 @@ def panel_escalation(rounds: list, seat_verdicts: dict) -> tuple[bool, str]:
     return critic.panel_escalation(rounds, seat_verdicts)
 
 
-def loop_termination(attempts: list, *, cap: int = DEFAULT_LOOP_CAP) -> tuple[bool, str]:
-    """Whether the review-repair loop must STOP, and why.
+def _record_close_attempt(root, pre: dict) -> None:
+    """Append this close attempt's outstanding count to the run state. A record, never a cap:
+    the close runs once and finishes, so the count is evidence for the report, not a brake.
 
-    The growing-set detector already existed and only REPORTED: a loop that announces it is
-    diverging and then runs another round has reported nothing, and unattended it burns a night
-    going backwards. This is the same signal made into a decision.
-
-    Pure and total: it takes the recorded attempts and returns an answer, so the rule can be
-    tested at its boundaries without driving a whole close.
-    """
-    counts = [a.get("outstanding") for a in (attempts or [])
-              if isinstance(a.get("outstanding"), int)]
-    # CONVERGED, before anything else. A loop whose latest round cleared everything has nothing
-    # left to iterate on, and the next round is the one that completes the ceremony - stopping it
-    # refuses a run that has done everything asked of it. The cap read only the LENGTH, so
-    # RUN-01KZ5YXM, whose series was 1,1,1,1,0,0, was told to hand off with an outstanding set
-    # that was empty. Raising the cap only moves the number at which a finished loop is refused.
-    if counts and counts[-1] == 0:
-        return (False, "")
-    if len(attempts or []) >= cap:
-        return (True, f"the declared round cap of {cap} is reached - a cap nobody enforces is "
-                      f"a comment. Hand off with the outstanding set named.")
-    growth = 0
-    for prev, now in zip(counts, counts[1:]):
-        growth = growth + 1 if now > prev else 0
-        if growth >= _DIVERGENCE_RUN:
-            return (True, f"the outstanding set grew {_DIVERGENCE_RUN} rounds running "
-                          f"({' -> '.join(str(c) for c in counts)}) - each round is re-breaking "
-                          f"what the last one cleared. Stop and hand off; another round chases "
-                          f"a moving target.")
-    return (False, "")
-
-
-def _record_close_attempt(root, pre: dict) -> str | None:
-    """Append this close attempt's outstanding count to the run state; return the trend line.
-
-    A close that will not terminate is indistinguishable from one that is converging unless
-    the record says which - so every attempt writes its count, and a re-run states plainly
-    whether the outstanding set shrank or grew since the previous one."""
-    state = run_state.read(root) or {}
-    attempts = list(state.get("close_attempts") or [])
-    # THE HELD ROWS, not every row. `pre["blockers"]` carries the lanes this same pre-flight
-    # prints as `reported not blocking`, and counting those made the series unable to reach
-    # zero in any repository carrying a standing advisory - which is most of them, and all of
-    # this one. `loop_termination` short-circuits to CONVERGED on a latest count of zero
-    # precisely so a finished loop is never refused, and that branch was therefore unreachable:
-    # RUN-01M11MEP recorded 5, 5, 4, 4, 4, 4 against an empty real blocker set and was stopped
-    # by a cap no value could have satisfied. `held_blockers` already existed twenty lines
-    # above and `preflight_headline` already used it.
-    #
-    # BOTH cells come from the filtered list. They are separate expressions over the same data,
-    # so filtering only the count writes `outstanding: 0` beside `stages: ["gate"]` - an
-    # attempt that reads converged while naming the lane it converged past.
-    # ...and NOT the rows only the SEAL can clear. `held_blockers` already drops the advisories
-    # for the reason above; this drops the stages PREPARE structurally cannot move. Under D0213
-    # the sign-off and done-gate previews ask whether the FAN-OUT could run, and the fan-out is
-    # `sign`'s - so a close that has cleared everything of its own still records them, the series
-    # plateaus, and `loop_termination` reads a loop that will never terminate. Measured on
-    # RUN-01M2SPNS as 31 -> 20 -> 19 -> 20, where the floor was nine units' sign-off rows and
-    # nothing else. They still HOLD the close and are still printed - the reviewer of record has
-    # to be told what is owed - they simply are not evidence about whether PREPARE is converging.
-    held = held_blockers(pre["blockers"])
-    movable = [b for b in held if b["stage"] not in _SIGNOFF_ONLY_STAGES]
-    n = len(movable)
-    prev = attempts[-1]["outstanding"] if attempts else None
-    attempts.append({"at": sdlc_md.now_iso8601(), "outstanding": n,
+    Counted AFTER the early refusals (no goal, no retro, no verdict), so a trivial refusal is
+    not an attempt. The held rows only, less the ones only the signature can clear."""
+    attempts = list((run_state.read(root) or {}).get("close_attempts") or [])
+    movable = [b for b in held_blockers(pre["blockers"])
+               if b["stage"] not in _SIGNOFF_ONLY_STAGES]
+    attempts.append({"at": sdlc_md.now_iso8601(), "outstanding": len(movable),
                      "stages": sorted({b["stage"] for b in movable})})
     run_state.update(root, close_attempts=attempts)
-    # The DECISION, not just the narration below. A detector that reports divergence and lets
-    # the next round start has reported nothing; this is the half that ends the loop. Wired
-    # here rather than left as a library function, because a rule reachable only from Python
-    # is the lane-not-library defect this sprint exists to remove (LL0040).
-    cap = sdlc_md.project_override(root, "review.max_rounds", DEFAULT_LOOP_CAP)
-    stop, why = loop_termination(attempts, cap=int(cap or DEFAULT_LOOP_CAP))
-    if stop:
-        return f"LOOP STOPPED: {why}"
-    if prev is None:
-        return None
-    if n < prev:
-        word = "shrinking"
-    elif n > prev:
-        # A growing set means each attempt re-breaks a lane the last one cleared. Naming the
-        # divergence is not a way out - so once the set is growing, name the exit, or the only
-        # moves left are the ones the gate exists to stop: a forced false Done, or a grandfather
-        # bump. But `--file-and-close` can only file DEFERRABLE (ceremony) blockers; it REFUSES a
-        # hard correctness lane. So the offer must be honest about which of the outstanding items
-        # it would actually file, or it dangles a dead-end for the moving-target case (all `gate`
-        # blockers) that most often triggers it. Made ONLY when growing, never on a converging
-        # close, so it does not train an operator to reach for the exit on a close that is working.
-        word = "growing - the close is chasing a moving target, not converging"
-        deferrable = sum(1 for b in pre["blockers"]
-                         if b.get("stage") in _DEFERRABLE_CLOSE_STAGES)
-        head = f"outstanding set {prev} -> {n} ({word})."
-        if deferrable:
-            hard = n - deferrable
-            tail = (f" Bounded exit: rerun the close with `--file-and-close --retro <RETROxxxx>` to "
-                    f"file the {deferrable} deferrable item(s) as linked follow-ups")
-            tail += (f"; the remaining {hard} correctness blocker(s) must be cleared first - "
-                     f"file-and-close cannot file a red gate lane." if hard else
-                     " - honestly recorded as outstanding, not waived.")
-            return head + tail
-        return (head + f" Every outstanding item is a hard correctness blocker, which "
-                f"`--file-and-close` cannot file - clear the lane(s) named above. A growing set of "
-                f"correctness lanes is lanes re-breaking each other, the case the batch-scoped "
-                f"conformance and record-based review-currency checks exist to stop.")
-    else:
-        word = "unchanged"
-    return f"outstanding set {prev} -> {n} ({word})"
+
+
+_CHECKLIST_ROW_RE = re.compile(r"^  (?! )(\S+): (.+)$", re.MULTILINE)
+#: The checklist step's stop-ship line, as `_close_checklist` writes it.
+_STOP_SHIP_RE = re.compile(r"^known-issues: (.+?) (?:is|are) ruled STOP-SHIP", re.MULTILINE)
+
+
+def close_known_issues_from(step: str, detail: str) -> list[dict]:
+    """A failed close step as known issues, `[{"source", "detail"}]`: one per failing gate lane,
+    one per stop-ship ruling (marked `stop_ship`), one per unanswered checklist item, else one
+    per non-empty detail line - a step's last line alone can name no unit."""
+    if step == "gate":
+        lanes = gate_failed_lanes(detail)
+        if lanes:
+            return [{"source": "gate", "detail": f"{name}: {why}"} for name, why in lanes]
+    if step == "checklist":
+        stop = [{"source": "checklist", "stop_ship": True,
+                 "detail": f"{fid} is ruled STOP-SHIP in the retro's carried-issues table"}
+                for m in _STOP_SHIP_RE.finditer(detail or "") for fid in m.group(1).split(", ")]
+        rows = [f"{rid}: {rest}" for rid, rest in _CHECKLIST_ROW_RE.findall(detail or "")]
+        rows += [ln.strip() for ln in (detail or "").splitlines()
+                 if ln.startswith("known-issues:") and not _STOP_SHIP_RE.match(ln)]
+        if stop or rows:
+            return stop + [{"source": "checklist", "detail": row} for row in rows]
+    lines = [ln.strip() for ln in (detail or "").splitlines() if ln.strip()]
+    return [{"source": step, "detail": ln} for ln in lines or ["failed with no detail"]]
 
 
 def _print_close_strategy(root, state: dict) -> dict:
@@ -9477,20 +9325,14 @@ def cmd_close(args: argparse.Namespace) -> int:
     if noop := close_is_a_noop(root, state):
         print(noop)
         return 0
-    pre = _report_preflight(root, args.retro)
-    trend = _record_close_attempt(root, pre)
-    if trend:
-        print(f"close: {trend}")
-    if trend and trend.startswith("LOOP STOPPED"):
-        # ACTED ON, not narrated. A close that reports it is diverging and then runs every
-        # remaining stage has reported nothing - the whole value of the detector is that the
-        # next round does not start. The run is left open deliberately: stopping the loop is
-        # not the same as closing the run, and the operator decides which.
-        print("close: the review-repair loop is NOT converging, so this close stops here "
-              "rather than starting another round.\n"
-              "  Take it to the operator, or raise the cap deliberately with "
-              "`review.max_rounds` in .config.yaml.", file=sys.stderr)
+    if getattr(args, "apply_signoff", False):
+        # Refused before anything runs: the flag signs nothing, and `sign` is the one verb that
+        # writes a signature.
+        print("close: `--apply-signoff` no longer signs anything.", file=sys.stderr)
+        print(f"  Sign the run with: sprint.py sign --report "
+              f"{state.get('report') or '<report id>'} --principal \"<name>\"", file=sys.stderr)
         return 2
+    pre = _report_preflight(root, args.retro)
     # An OVER-APPETITE batch is reported as the over-commitment it was, not as the raised ceiling
     # Placed above every refusal so a close that stops later still states it.
     overage = appetite_overage_line(root)
@@ -9516,14 +9358,6 @@ def cmd_close(args: argparse.Namespace) -> int:
         print()
     if getattr(args, "file_and_close", False):
         return _file_and_close(root, args, state, pre)
-    if pre["blockers"]:
-        # The bounded choice, offered where the operator is deciding what to do next: fix
-        # the blockers, or file them and close honestly. Never only the fix path.
-        deferrable = [b for b in pre["blockers"] if b["stage"] in _DEFERRABLE_CLOSE_STAGES]
-        if deferrable and len(deferrable) == len(pre["blockers"]):
-            print(f"close: a bounded choice - [fix] clear the {len(deferrable)} blocker(s) "
-                  f"above and re-run, or [file-and-close] re-run with --file-and-close to "
-                  f"file them as artefacts and close with the work recorded as outstanding")
     if not state.get("sprint_goal"):
         print("close refused: no sprint goal recorded on this run - set one at plan time "
               "with --sprint-goal; a close cannot invent what the run aimed at",
@@ -9557,17 +9391,27 @@ def cmd_close(args: argparse.Namespace) -> int:
               "`sprint.py goal-verdict --verdict achieved|partial|missed --note \"...\"` "
               "(or pass --goal-verdict/--note here), then re-run close", file=sys.stderr)
         return 1
+    # THE ATTEMPT IS COUNTED HERE, after every early refusal: a close refused for a missing
+    # goal, retro or verdict has not attempted anything.
+    _record_close_attempt(root, pre)
+    # ONE PASS. A step that fails is recorded as a known issue for the report and the chain runs
+    # on; the report is the page that hands those issues over, so a gap no longer stops it.
+    known: list[dict] = []
     module = sys.modules[__name__]
     for i, name in enumerate(_CLOSE_CHAIN, start=1):
         step = getattr(module, "_close_" + name.replace("-", "_"))
         ok, detail, remedy = step(root, args.retro, state)
-        if not ok:
-            print(f"close STOPPED at {name} [{i}/{len(_CLOSE_CHAIN)}]:\n{detail}",
-                  file=sys.stderr)
-            print(f"remedy: {remedy}\nthen re-run: sprint.py close --retro {args.retro} "
-                  "(completed steps are idempotent)", file=sys.stderr)
-            return 1
-        print(f"close [{i}/{len(_CLOSE_CHAIN)}] {name}: ok - {detail.splitlines()[-1] if detail else 'ok'}")
+        if ok:
+            print(f"close [{i}/{len(_CLOSE_CHAIN)}] {name}: ok - "
+                  f"{detail.splitlines()[-1] if detail else 'ok'}")
+        else:
+            issues = close_known_issues_from(name, detail)
+            known += issues
+            print(f"close [{i}/{len(_CLOSE_CHAIN)}] {name}: {len(issues)} known issue(s), "
+                  f"carried to the report", file=sys.stderr)
+            print(detail or "    failed with no detail", file=sys.stderr)
+            if remedy:
+                print(f"  remedy: {remedy}", file=sys.stderr)
         if name == "handoff":
             state = run_state.read(root) or state  # the handoff closes the run object
     # A carried lesson violated anyway is reported HERE, on both close paths, before the brief or
@@ -9591,37 +9435,14 @@ def cmd_close(args: argparse.Namespace) -> int:
     # is measured against a number rather than an impression. Read from the execution ledger:
     # an unrecorded component reads as UNMEASURED, never as zero seconds.
     print(close_cost_line(close_cost(root, (state or {}).get("run_id"))))
-    # `--apply-signoff`: the operator has already reviewed the brief and decided - fan their
-    # recorded approval into per-unit sign-offs + Done transitions, then the tail. Replaces the
-    # brief print (the brief is what you read to DECIDE; here the decision is made).
-    if getattr(args, "apply_signoff", False):
-        # US0832 AC3. NOT an alias: an alias keeps the old path alive in every operator's
-        # fingers, help file and runbook row, and the split would ship with its own bypass
-        # intact (LL0027 - gate it in the command people run).
-        print("close: `--apply-signoff` no longer signs anything.", file=sys.stderr)
-        print(f"  This run is PREPARED. Sign it with: sprint.py sign --report "
-              f"{(state or {}).get('report') or '<report id>'} --principal \"<name>\"",
-              file=sys.stderr)
-        print("  `sign` writes the per-unit rows, the transitions and the run's signature "
-              "from one principal, and nothing runs after it.", file=sys.stderr)
-        return 2
-    # US0832 AC5: PREPARE leaves exactly ONE account of the run - the filed report. Both
-    # legacy accounts are gone from this path: `_draw_report`, which printed
-    # `sprint_report.render(sprint_report.report(...))`, and `_tell_the_operator`, which
-    # printed shipped/carried per unit with its own cost block. Two pages derived from two
-    # different root objects are two chances to disagree, and the operator signs one of them.
-    record_close_tree(root)
-    # US0834: the three holds the REPORT is refused over, as distinct from the close blockers
-    # above. Those can be filed and deferred by `--file-and-close`, because a run may honestly
-    # end with work outstanding. A report may not: it is the page a signature freezes.
+    # The report holds are known issues too: the page states them rather than being withheld.
     held = _report_holds(root, state)
-    if held:
-        for h in held:
-            print(f"close: the report is REFUSED - [{h['hold']}] {h['detail']}", file=sys.stderr)
-            print(f"      -> {h['remedy']}", file=sys.stderr)
-        return 2
+    for h in held:
+        known.append({"source": f"report-hold:{h['hold']}", "detail": h["detail"]})
+        print(f"close: report hold [{h['hold']}]: known issue - {h['detail']}", file=sys.stderr)
     for name in _REPORT_HOLDS:
-        print(f"close: report hold {name}: passed")
+        if name not in {h["hold"] for h in held}:
+            print(f"close: report hold {name}: passed")
     # The tail is PREPARE's, not SEAL's. The velocity row, the handoff re-render and the final
     # reconcile all CHANGE FACTS the report states, so they run BEFORE the page is derived and
     # long before anyone signs it. They rode inside `--apply-signoff` before, which is precisely
@@ -9642,8 +9463,16 @@ def cmd_close(args: argparse.Namespace) -> int:
     # that its terminal gate cleared, and the report says that instead. Written before the
     # report is built, because the composer reads it from the run state as a sourced figure.
     run_state.update(root, report_gate_clear=sorted(
-        u for u, why in _report_gate_verdicts(root, state).items() if not why))
-    report_id, fingerprint = _file_the_report(root, args.retro)
+        u for u, why in _report_gate_verdicts(root, state).items() if not why),
+                     **{run_state.CLOSE_KNOWN_ISSUES: known})
+    report_id, _fingerprint = _file_the_report(root, args.retro)
+    # The tree the close LEFT, stamped after the last thing it writes: `sign` refuses a tree
+    # that has moved since.
+    record_close_tree(root)
+    if known:
+        print(f"close: finished with {len(known)} known issue(s), recorded on the run and "
+              + (f"handed over on the report {report_id}" if report_id else
+                 "NOT handed over - no report was filed"))
     # The sign-off BRIEF is gone from this path, and its absence is the point of US0832 AC5.
     # It was a second account of the run - per-unit rows and a cost block of its own, derived
     # from a different root object than the page being signed - and its closing instruction was
@@ -9924,6 +9753,44 @@ def _principal_refusals(root, state, principal: str | None, author_default: str 
     return out
 
 
+#: The outcome a signature records for each goal verdict. No verdict reads as `stopped`.
+SIGNED_OUTCOMES = {"achieved": run_state.GOAL_REACHED, "partial": run_state.PARTIAL,
+                   "missed": run_state.MISSED}
+
+
+def tree_moved_since_close(root, state: dict) -> list[str] | None:
+    """Paths whose content differs from the tree the close left: `[]` when none, None when no
+    tree was recorded. A recorded tree that cannot be compared is itself named, never passed.
+
+    Content, not commits: committing the close's paperwork moves nothing. A file ADDED since the
+    close and still untracked is not counted - scratch nobody staged - but one the close wrote
+    (its report, uncommitted when sign runs) is. The signature's own writes never are, because
+    `sign` re-records the tree after writing."""
+    recorded = str(state.get("close_tree") or "")
+    if not recorded:
+        return None
+    now = tree_digest(root)
+    if not now:
+        return [f"(git cannot read this tree, so it cannot be compared with the one the close "
+                f"recorded, {recorded[:12]})"]
+    if now == recorded:
+        return []
+    try:
+        diff = subprocess.run(["git", "-C", str(root), "diff", "--name-status", "--no-renames",
+                               "-z", recorded, now], capture_output=True, text=True, timeout=30)
+        others = subprocess.run(["git", "-C", str(root), "ls-files", "--others",
+                                 "--exclude-standard", "-z"],
+                                capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return [f"(git could not compare this tree with the close's, {recorded[:12]}: {exc})"]
+    if diff.returncode != 0:
+        return [f"(the tree the close recorded, {recorded[:12]}, cannot be read)"]
+    untracked = set(others.stdout.split("\0")) if others.returncode == 0 else set()
+    parts = diff.stdout.split("\0")
+    return sorted(p for status, p in zip(parts[0::2], parts[1::2])
+                  if p and not (status == "A" and p in untracked))
+
+
 def cmd_sign(args: argparse.Namespace) -> int:
     """SEAL. One command, one principal, and only what the signature entails.
 
@@ -9945,8 +9812,24 @@ def cmd_sign(args: argparse.Namespace) -> int:
               "first, which prepares the run and files the page you are signing",
               file=sys.stderr)
         return 2
+    # A SIGNATURE SEALS THE RUN'S OWN REPORT, over the tree the close left.
+    recorded = state.get("report") or ""
+    if sdlc_md.norm_id(report_id) != sdlc_md.norm_id(recorded):
+        print(f"sign REFUSED: {report_id} is not this run's report - {state.get('run_id')} "
+              f"records {recorded or 'no report'}. Sign the page the close filed.",
+              file=sys.stderr)
+        return 2
+    moved = tree_moved_since_close(root, state)
+    if moved:
+        print(f"sign REFUSED: {len(moved)} file(s) changed since the close, so "
+              f"{report_id} no longer describes this tree: {', '.join(moved)}. Re-run the "
+              f"close, or restore the files.", file=sys.stderr)
+        return 2
+    if moved is None:
+        print("sign: the close recorded no tree to compare with - signing on the report alone",
+              file=sys.stderr)
     verdict = (state.get("sprint_goal_verdict") or {}).get("verdict")
-    outcome = run_state.GOAL_REACHED if verdict == "achieved" else run_state.STOPPED
+    outcome = SIGNED_OUTCOMES.get(verdict, run_state.STOPPED)
     # THE PRINCIPAL IS JUDGED OVER THE WHOLE BATCH, BEFORE ANYTHING IS WRITTEN. `record_signoff`
     # already refuses a principal the authoring session controls, but per unit and as it walks -
     # so a subagent recorded on the LAST unit alone is caught only after the first ones have
@@ -9960,21 +9843,33 @@ def cmd_sign(args: argparse.Namespace) -> int:
         print("  the run is untouched and still open - sign with a reviewer of record outside "
               "the authoring session's control", file=sys.stderr)
         return 2
-    rc = _apply_signoff(root, state, getattr(args, "principal", None),
-                        getattr(args, "author", None),
-                        retro_arg=getattr(args, "retro", None), tail=False)
-    if rc != 0:
-        return rc
-    _cascade_after_signature(root, state, list(state.get("batch") or []))
+    # A STOP-SHIP RULING DOES NOT REFUSE THE SEAL (D0257): the signer decides, and so is shown
+    # every one before the seal is written.
+    stop_ship = [g for g in state.get(run_state.CLOSE_KNOWN_ISSUES) or []
+                 if isinstance(g, dict) and g.get("stop_ship")]
+    for g in stop_ship:
+        print(f"sign: STOP-SHIP known issue on {report_id}: {g.get('detail')}")
+    if stop_ship:
+        print(f"sign: sealing over {len(stop_ship)} STOP-SHIP known issue(s), listed first on "
+              f"{report_id}, on {args.principal}'s decision")
     try:
-        ua = unanswered_units(root, state)
-    except Exception as exc:               # noqa: BLE001 - a seal records what it ended over
-        ua, exc_note = None, f"{type(exc).__name__}: {exc}"
-        run_state.update(root, **unanswered_record(None, exc_note))
-    else:
-        run_state.update(root, **unanswered_record(ua))
-    signature = _write_the_signature(root, report_id, args.principal)
-    run_state.close_run(root, outcome, handoff=state.get("handoff"))
+        rc = _apply_signoff(root, state, getattr(args, "principal", None),
+                            getattr(args, "author", None),
+                            retro_arg=getattr(args, "retro", None), tail=False)
+        if rc != 0:
+            return rc
+        _cascade_after_signature(root, state, list(state.get("batch") or []))
+        try:
+            ua = unanswered_units(root, state)
+        except Exception as exc:           # noqa: BLE001 - a seal records what it ended over
+            run_state.update(root, **unanswered_record(None, f"{type(exc).__name__}: {exc}"))
+        else:
+            run_state.update(root, **unanswered_record(ua))
+        signature = _write_the_signature(root, report_id, args.principal)
+        run_state.close_run(root, outcome, handoff=state.get("handoff"))
+    finally:
+        # What the signature wrote is its own, so a resumed sign is judged against this tree.
+        record_close_tree(root)
     print(f"sealed {state.get('run_id')} {outcome}: signed by {args.principal} over "
           f"{report_id}" + (f" (fingerprint {signature.get('fingerprint')})"
                             if signature.get("fingerprint") else ""))
@@ -10044,6 +9939,37 @@ def _abandon_open_run(root, state) -> None:
         sdlc_md.debug("sprint._abandon_open_run", exc)
 
 
+#: A Sprint Goal is one sentence somebody can say back. Inclusive: 20 words plans, 21 is refused.
+GOAL_WORD_LIMIT = 20
+
+
+def goal_length_refusal(goal: str | None) -> str | None:
+    """The refusal for a goal over the word limit, or None. Binds a goal being AUTHORED (the
+    plan); a run already under way is never refused over the goal it recorded. A word carries a
+    letter or digit, so a spaced hyphen is punctuation, not a word."""
+    words = sum(1 for tok in (goal or "").split() if any(c.isalnum() for c in tok))
+    if words <= GOAL_WORD_LIMIT:
+        return None
+    return (f"plan refused: the Sprint Goal is {words} words and the limit is {GOAL_WORD_LIMIT}. "
+            f"Say the user value in one sentence somebody can repeat. Nothing is written and no "
+            f"run is opened.")
+
+
+def _resolve_sprint_goal(args: argparse.Namespace) -> str | None:
+    """The goal from `--sprint-goal`, else a prompt on an interactive `--write`, else none.
+    An explicit empty value means none and never prompts."""
+    raw = getattr(args, "sprint_goal", None)
+    if raw is not None:
+        return raw.strip() or None
+    if getattr(args, "write", False) and sys.stdin.isatty():
+        try:
+            return input("Sprint Goal (one sentence of user value, 20 words or fewer; blank "
+                         "for none): ").strip() or None
+        except (EOFError, KeyboardInterrupt):
+            return None
+    return None
+
+
 def cmd_plan(args: argparse.Namespace) -> int:
     """Print the ordered batch the operator approves before a run."""
     #: Why the queue did not advance, or "" when it did. A run whose charter stayed Queued has
@@ -10059,6 +9985,13 @@ def cmd_plan(args: argparse.Namespace) -> int:
         return 2
     if getattr(args, "prd", None):  # greenfield authoring - the batch is a PRD
         return _plan_authoring(args)
+    # THE SPRINT GOAL - one sentence of user value, judged at the close (goal-verdict). Resolved
+    # and length-checked FIRST, so a refusal costs nothing and leaves no trace. Never invented:
+    # absent and non-interactive records none.
+    sprint_goal = _resolve_sprint_goal(args)
+    if refusal := goal_length_refusal(sprint_goal):
+        print(refusal, file=sys.stderr)
+        return 2
     queries, worklist, rc = _plan_batch_source(args)
     if rc is not None:
         return rc
@@ -10176,105 +10109,11 @@ def cmd_plan(args: argparse.Namespace) -> int:
     rc = _origin_drift_preflight(args, data)
     if rc is not None:
         return rc
-    # THE SPRINT GOAL - the product outcome this batch serves, judged at the closing
-    # review (goal-verdict). One line of ceremony, never invented: absent + non-interactive
-    # records none. Recorded on the plan unconditionally (like the forecast: the intent is
-    # part of the prediction), and on the run state with --write.
-    raw_goal = getattr(args, "sprint_goal", None)
-    if raw_goal is not None:
-        sprint_goal = raw_goal.strip() or None  # explicit "" = explicitly none: never prompt
-    elif getattr(args, "write", False) and sys.stdin.isatty():
-        try:
-            sprint_goal = input("Sprint Goal (one product-outcome line, blank for none): ").strip() or None
-        except (EOFError, KeyboardInterrupt):
-            sprint_goal = None
-    else:
-        sprint_goal = None
     data["sprint_goal"] = sprint_goal
-    # THE GOAL CONSULT (D0045: BLOCKING). Before the plan is written and before the run is
-    # opened, so a refusal leaves NO trace - no sprint-plan.json, no run, not even a forecast
-    # record. A stated goal no seat has reviewed is exactly the case RUN-01KXVYGR paid a whole
-    # session for, and `--skip-personas` is the recorded escape rather than a silent one.
-    review = goal_review_status(args.root, sprint_goal,
-                                skip_personas=getattr(args, "skip_personas", False))
-    data["goal_review"] = review
-    # OMITTING THE GOAL WAS THE FREE BYPASS. The refusal below is guarded on a goal being
-    # PRESENT, so a plan written with no `--sprint-goal` returned 0, opened the run, recorded
-    # `reviewed: False` - and the close then reported the item outstanding at a point where the
-    # batch had already been delivered and the only exit was a waiver. That is the flaw this
-    # unit exists to end, and it was surviving inside the fix for it.
-    #
-    # The escape is recorded HERE, where the decision can still be reconsidered, and it names
-    # who took it. `--skip-personas` cannot serve: it is a general `store_true` used by thirty
-    # other call sites and carries no authoriser, so it would record a decision with no decider.
-    #
-    # Carved out on `available_seats`, exactly as the sibling refusal below is: a project with
-    # no review seats configured has nobody who COULD have reviewed a goal, so refusing to plan
-    # without one refuses something nobody can satisfy - which is the shape that gets a gate
-    # switched off wholesale rather than answered.
-    waived_by = (getattr(args, "goal_review_waived", None) or "").strip()
-    if getattr(args, "write", False) and not sprint_goal and not waived_by \
-            and review["available_seats"]:
-        print("plan refused: no Sprint Goal was stated, so there is nothing for a seat to "
-              "review and the goal-review gate below never fires. Omitting the goal is not a "
-              "way past it. Nothing is written and no run is opened.", file=sys.stderr)
-        print("  state the goal with `--sprint-goal \"<goal>\"`, or record the deliberate "
-              "escape with `--goal-review-waived \"<who authorised it>\"` - which is written "
-              "to the decision log now, while it can still be reconsidered.", file=sys.stderr)
-        return 2
-    if waived_by and not getattr(args, "write", False):
-        print("plan refused: `--goal-review-waived` records a permanent waiver in the decision "
-              "log, so it belongs only to a plan that is actually being written. A preview that "
-              "banked one silenced the compulsory close item for a LATER, unrelated run.",
-              file=sys.stderr)
-        return 2
-    if waived_by and sprint_goal:
-        print("plan refused: `--goal-review-waived` escapes the goal-review gate, and a goal was "
-              "stated - so the gate is armed and the escape is not the answer. Record the seat "
-              "review, or drop the goal.", file=sys.stderr)
-        return 2
-    # ... and only when the gate could actually have fired. Banking an escape from a refusal that
-    # was never armed leaves a row nothing asked for, holding open an item somebody else will
-    # meet at their close.
-    if waived_by and not sprint_goal and review["available_seats"]:
-        try:
-            import decisions  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
-            decisions.record_waiver(
-                args.root, "rule:sprint-checklist:goal-seat-reviewed",
-                "planned with no Sprint Goal, so no seat could review one",
-                authorised_by=waived_by, kind="deliberate")
-        except Exception as exc:  # noqa: BLE001 - a log that cannot be written must not pass
-            print(f"plan refused: the goal-review escape could not be recorded ({exc}) - an "
-                  f"escape nothing records is a silent one, which is what this replaces.",
-                  file=sys.stderr)
-            return 2
-    if sprint_goal and not review["reviewed"] and review["available_seats"] \
-            and not review["skipped"]:
-        print(f"plan refused: the Sprint Goal has not been reviewed by any seat - "
-              f"{review['reason']}. Nothing is written and no run is opened.", file=sys.stderr)
-        print(f"  record the seat review with `sprint.py goal-review record --goal "
-              f"\"{sprint_goal}\" --seat \"<role>|<achievable>|<what done means>|"
-              f"<one increment?>\"` (seats available: "
-              f"{', '.join(review['available_seats'])}), or plan with --skip-personas to "
-              f"record that it went unreviewed.", file=sys.stderr)
-        return 2
-    # THE VERDICT HAS AN EFFECT. A seat that judged the goal NOT achievable (or not one
-    # increment) REFUSES the plan - the same weight the engagement floor and the review legs give
-    # a negative verdict - unless the operator records an explicit override with a reason. A
-    # warning the operator can walk past is what the presence-test gate already was; refusing, or
-    # a recorded override, is what makes the verdict decide something.
-    override = (getattr(args, "override_goal_review", None) or "").strip()
-    if sprint_goal and review.get("objected") and not override:
-        who = "; ".join(f"{o['seat']} (achievable={o['achievable']}, one increment="
-                        f"{o['one_increment']}"
-                        + (f", note: {o['note']}" if o.get("note") else "") + ")"
-                        for o in review["objections"])
-        print(f"plan refused: {len(review['objections'])} review seat(s) judged the Sprint Goal "
-              f"NOT achievable as stated: {who}. A negative verdict stops the plan. Answer the "
-              f"objection and re-record the seat review (a new round), or record a deliberate "
-              f"override with `--override-goal-review \"<reason>\"`. Nothing is written and no "
-              f"run is opened.", file=sys.stderr)
-        return 2
+    # THE SEAT READ ADVISES. What the seats said is recorded beside the goal and printed with the
+    # plan; an objection is advice for the operator approving the plan, never a refusal.
+    data["goal_review"] = goal_review_status(args.root, sprint_goal,
+                                             skip_personas=getattr(args, "skip_personas", False))
     # THE ONE-RUN-SLOT GATE. A --write plan against an open run holding a DISJOINT batch is
     # refused: a project holds one run slot, and folding an unrelated batch into the open run
     # strands its goal verdict. Checked here, ahead of the forecast record and the sprint-plan
@@ -10402,19 +10241,10 @@ def cmd_plan(args: argparse.Namespace) -> int:
         # than against a reconstruction. Recorded whether reviewed or not: "unreviewed" is a
         # fact the close needs as much as a verdict is.
         extra["sprint_goal_review"] = data["goal_review"]
-        # A deliberate override of a negative verdict is stamped on the run with its reason, so
-        # the closing goal-verdict judges the outcome against what the seats objected to and the
-        # operator's reason for proceeding anyway - never a silent walk-past.
-        if override and data["goal_review"].get("objected"):
-            extra["goal_review_override"] = {
-                "reason": override, "objections": data["goal_review"]["objections"],
-                "at": sdlc_md.now_iso8601()}
         # ...and the constraint that was known at plan time, so the close cites it rather than
         # re-deriving it from a config that may have moved since.
         if data.get("reachable_end_state"):
             extra["reachable_end_state"] = data["reachable_end_state"]
-        if data.get("token_forecast"):
-            extra["token_forecast"] = data["token_forecast"]["tokens"]
         # THE STANDING POLICY. Recorded on the run so every later cycle plans under the rule
         # approved here rather than under whatever the CLI defaults to at 3am.
         policy = None
@@ -10424,6 +10254,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
             extra["cycle"] = {"index": 1, "remaining": max(policy["cycles"] - 1, 0),
                               "policy_run_id": state["run_id"]}
         state = run_state.update(args.root, **extra)
+        state = record_plan_snapshot(args.root, data["batch"])
         print(f"{run_opened_line(state, appetite)} -> {run_state.path(args.root)}")
         # THE QUEUE'S EXIT, and the ONE place that writes it. `Spent` shipped in the charter
         # vocabulary and in the schema contract with no code path setting it, so a charter stayed
@@ -10707,9 +10538,8 @@ def _open_next_cycle(root, policy: dict, data: dict, prev: dict) -> dict:
         "appetite": {"minutes": cap["minutes"], "units": cap["units"]},
         "sprint_goal": policy.get("sprint_goal"),
     }
-    if data.get("token_forecast"):
-        extra["token_forecast"] = data["token_forecast"]["tokens"]
-    state = run_state.update(root, **extra)
+    run_state.update(root, **extra)
+    state = record_plan_snapshot(root, data["batch"])
     print(f"opened cycle {index} of {policy['cycles']} as run {state['run_id']} "
           f"({data['count']} unit(s), {remaining} cycle(s) left after this one)")
     return state
@@ -10745,6 +10575,18 @@ def cmd_boundary(args: argparse.Namespace) -> int:
             f"the close-down chain for cycle {index} did not complete",
             "fix the step the close named above, then re-run `sprint.py boundary`; the "
             "completed steps are idempotent")
+    # A close that FINISHED with known issues is a finished close, not a clean one. A hand-run
+    # close hands those issues to a signer; a rolling boundary has no signer before the next
+    # cycle opens, so it halts rather than rolling on over them unread.
+    gaps = (run_state.read(root) or {}).get(run_state.CLOSE_KNOWN_ISSUES) or []
+    if gaps:
+        return _boundary_stop(
+            root, "close-gate",
+            f"the close-down for cycle {index} recorded {len(gaps)} known issue(s): "
+            + "; ".join(str(g.get("detail") or g) for g in gaps[:5])
+            + (f" (+{len(gaps) - 5} more)" if len(gaps) > 5 else ""),
+            "resolve the known issues the close named above and re-run `sprint.py boundary`, "
+            "or close and sign this cycle by hand")
     # The cycle's retro belongs on its record - it is what makes the archived cycle
     # self-describing rather than a batch with no account of itself.
     run_state.update(root, retro=args.retro)
@@ -11127,7 +10969,7 @@ def cmd_stop(args) -> int:
               f"give: {', '.join(out['awaiting_signoff'])}. They are finished bar an "
               f"independent reviewer-of-record signature, so they are not counted as work "
               f"this stop threw away.")
-    cause = STOP_OPERATOR if forced else STOP_PENDING_DECISION
+    cause = STOP_PENDING_DECISION if out["pending"] and not forced else STOP_OPERATOR
     stop = {"cause": cause, "detail": (args.reason or "").strip() or None,
             "blocked": out["blocked"], "could_have_proceeded": out["unblocked"],
             "awaiting_signoff": out.get("awaiting_signoff", []),
@@ -11479,7 +11321,7 @@ def cmd_goal_review(args) -> int:
     themed_seats = [s["seat"] for s in seats
                     if verdict_polarity(s.get("one_increment")) == "no"]
     tail = (f" - {len(objected)} seat(s) judged it NOT achievable ({', '.join(objected)}); "
-            f"`sprint plan` will refuse it unless overridden" if objected else "")
+            f"`sprint plan` prints it as advice and does not refuse" if objected else "")
     if themed_seats and not objected:
         tail += (f" - {len(themed_seats)} seat(s) classed it a THEMED batch, not one increment "
                  f"({', '.join(themed_seats)}); that is advice, not an objection, and does not "
@@ -11769,9 +11611,9 @@ def build_parser() -> argparse.ArgumentParser:
                         "--content-review)")
     p.add_argument("--sprint-goal", dest="sprint_goal", metavar="TEXT",
                    help="the Sprint Goal - ONE product-outcome sentence unifying this batch "
-                        "(what the increment is judged against at the closing review). Distinct "
-                        "from --goal, which is a pipeline rung. Optional: prompted when "
-                        "interactive; absent is recorded as none, never invented")
+                        "(what the increment is judged against at the closing review), 20 words "
+                        "or fewer. Distinct from --goal, which is a pipeline rung. Optional: "
+                        "prompted when interactive; absent is recorded as none, never invented")
     p.add_argument("--charter", default="",
                    help="The charter this batch was materialised from. With --write, opening the "
                         "run marks it Spent - the queue's only exit.")
@@ -11797,18 +11639,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--skip-personas", action="store_true", dest="skip_personas",
                    help="ignore review-seat WSJF inputs; the Cost of Delay is then derived from "
                         "the declared Priority, which is what WSJF runs on by default")
-    p.add_argument("--goal-review-waived", dest="goal_review_waived", metavar="WHO",
-                   default=None,
-                   help="plan with NO Sprint Goal, recording who authorised the escape. Written "
-                        "to the decision log at plan time, where the decision can still be "
-                        "reconsidered - not discovered at a close where the batch has already "
-                        "been delivered")
-    p.add_argument("--override-goal-review", dest="override_goal_review", metavar="REASON",
-                   default=None,
-                   help="proceed past a seat verdict that judged the Sprint Goal NOT achievable, "
-                        "recording this reason on the run. Without it a negative verdict refuses "
-                        "the plan; the override is stamped so the close judges the outcome against "
-                        "what the seats objected to")
     p.add_argument("--cycles", type=int, default=None, metavar="N",
                    help="Opt in to a ROLLING policy of N sprint cycles. Records the standing "
                         "policy (goal, capacity, order, stop conditions) on the run; each "

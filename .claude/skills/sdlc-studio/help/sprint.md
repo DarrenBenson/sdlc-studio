@@ -78,13 +78,16 @@ The exception is the carried known issues. Whether an open defect stops the ship
 it is recorded in the retro's `## Known issues carried` table (`| id | ruling | ruled by | date |`,
 ruling one of `stop-ship`, `not-stop-ship`, `accepted-risk`, `deferred`) and read back here. An open
 finding with no row is reported UNRULED: "we carried it" and "nobody looked" must never read the
-same, and a `stop-ship` ruling HOLDS the close, which is the point of being able to make one.
+same. A `stop-ship` ruling does not refuse the close or the seal - the signer decides - but it
+cannot be missed: the report lists every STOP-SHIP known issue first, marked, and `sprint sign`
+prints each one before it seals.
 
-`sprint close` refuses on any unanswered item and names it. To close without one, record a waiver -
-`decisions.py waive --subject rule:sprint-checklist:<item> --rationale "<why>"` - on the same terms
-as a conformance waiver, so closing without an item and forgetting it are different events in the
-record. The sign-off and the handoff rows are reported but never held: the close produces them
-itself, and a gate whose only exit is the step it blocks is a deadlock rather than a gate.
+`sprint close` runs once and finishes. An unanswered item, an uncovered unit, a failing gate lane or
+a report hold is recorded in run state `close_known_issues`, one row each, and handed over on the
+report; the close does not refuse over it. To answer an item instead, record a waiver -
+`decisions.py waive --subject rule:sprint-checklist:<item> --rationale "<why>"` - so closing without
+an item and forgetting it are different events in the record. What still stops it: no sprint goal,
+no goal verdict, no retro, and an uncommitted change to a file a batch unit declares.
 
 **The close is in two halves, and the signature is the second one.** `close` is PREPARE: it runs
 every step that can change a fact - the ten-step chain, the handoff, the velocity row, the
@@ -119,7 +122,7 @@ next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
 | --- | --- | --- |
 | `<batch>` | status queries (`--bugs`/`--crs`/`--stories <status>` - **combinable** into one mixed tranche), `--worklist <file>` (ids one per line), `--epic EPxxxx`, or a **PRD path** (greenfield authoring) | required |
 | `--goal` | `triage` (plan) / `plan` (sprint plan) / `design` (Ready, estimated backlog) / `done` (delivered) | `done` |
-| `--sprint-goal TEXT` | the Sprint Goal - one product-outcome sentence unifying the batch, judged at the closing review (`sprint goal-verdict --verdict achieved\|partial\|missed --note "..."`) and shown on the sprint report. Prompted interactively when absent; never invented | none |
+| `--sprint-goal TEXT` | the Sprint Goal - one sentence of user value, 20 words or fewer (a longer goal is refused at plan; a run already open is never refused over its goal), judged at the closing review (`sprint goal-verdict --verdict achieved\|partial\|missed --note "..."`) and shown on the sprint report. Prompted interactively when absent; never invented | none |
 | `--order` | `priority` / `wsjf` (priority over complexity) / `manual` | `priority` |
 | `--epic EPxxxx` | (with `--stories`, repeatable) scope a story plan to one or more epics, not the whole status class | all epics |
 | `--write` | (with `plan`) persist the sprint plan to `.local/sprint-plan.json` | off |
@@ -211,9 +214,9 @@ refused. Probe one unit on its own with `verify_ac.py testplan probe --unit <id>
    same list up front; it reports, it never adds a refusal.
 7. **Close** - `sprint close` runs the close ceremony as one deterministic chain
    (goal-verdict, retro validate + extract, lessons summary, the close gate, handoff,
-   reconcile), stopping loudly at the first failing step with the remedy named, and
-   prints the sign-off decision brief. Run it with **no `--retro`** the first time and it
-   **scaffolds the retro for you** (allocated id + template + index row, Batch/Goal
+   reconcile) in one pass: a failing step is printed with its remedy, recorded as a known
+   issue, and the chain runs on to file the report you sign. Run it with **no `--retro`**
+   the first time and it **scaffolds the retro for you** (allocated id + template + index row, Batch/Goal
    pre-filled from the run), then stops so you fill it; re-run with the id it prints
    (`sprint close --retro RETROxxxx`) to finish. Never hand-author the retro - the
    scaffold is the one path that also wires its index row.
@@ -274,8 +277,9 @@ Any finding filed while a span is open is stamped `Raised-in-batch` and recorded
 span, so a sprint can report where its defects were found. Filed with no span open, the
 artefact says so rather than being attributed to the last one.
 
-`sprint close` refuses a batch carrying units no independent pass covered, and names them:
-**the close asserts that coverage exists, it does not perform the review.**
+`sprint close` records each batch unit no independent pass covered as a known issue, naming it:
+**the close asserts that coverage exists, it does not perform the review.** A rolling boundary
+halts on any known issue rather than open the next cycle over it.
 
 ## In-flight controls: changing a run without lying about it
 
@@ -283,7 +287,7 @@ A run is a controllable object, not a train you either ride or abandon. Each con
 RECORDED, so the close can say what the delivered batch was and why it differs from the plan.
 
 ```bash
-# the goal, reviewed by the seats BEFORE the run opens (plan refuses an unreviewed goal)
+# the goal, read by a seat BEFORE the run opens - advice printed with the plan, never a refusal
 python3 <skill>/scripts/sprint.py goal-review record \
   --goal "<the sprint goal>" \
   --seat "engineering|yes|what done means|one increment?|optional note"

@@ -250,6 +250,23 @@ class RulingCountTests(unittest.TestCase):
             _rule(root, "deps:closed", "after the close?")
             self.assertEqual(len(run_state.read(root)["rulings"]), 5)
 
+class CiteAnyLiveSubjectRulingTests(unittest.TestCase):
+    """MUTANT: build the citable set from `precedent`'s top three - on a subject with four live
+    rulings the oldest could then never be cited, though it is accepted and live."""
+
+    def test_the_oldest_of_four_live_rulings_can_be_cited(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "sdlc-studio").mkdir()
+            first = decisions.rule(root, "qa", "s:x", "q one", "r one", "why", today="2026-09-01")
+            for n in range(3):
+                decisions.rule(root, "qa", "s:x", f"q {n}", f"r {n}", "why",
+                               differs="a new case", today="2026-09-0%d" % (n + 2))
+            got = decisions.rule(root, "qa", "s:x", "q again", "r", "why", cites=first["id"],
+                                 today="2026-09-09")
+            self.assertEqual("cited", got["kind"])
+            self.assertEqual(first["id"], got["id"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -497,7 +497,9 @@ def rule(root: Path | str, seat: str, subject: str, question: str, ruling: str, 
         cited = next((r for r in _live(root) if r["id"] == did), None)
         if cited is None:
             raise ValueError(f"--cites {cites}: no accepted, live decision with that id")
-        if same and did not in {p["id"] for p in same}:
+        # Every live ruling on the subject may be cited, not just the few `precedent` shows.
+        allowed = {r["id"] for r in _live(root) if (ruling_of(r) or {}).get("subject") == key}
+        if allowed and did not in allowed:
             raise PrecedentRefused(
                 f"--cites {did}: {key!r} has its own ruling(s), so cite one of "
                 f"{', '.join(p['id'] for p in same)}, or record a departure with --differs", same)

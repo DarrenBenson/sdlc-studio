@@ -421,8 +421,10 @@ class BoundaryGateHaltTests(unittest.TestCase):
             # The positive anchor first: without it this passes on a boundary command that
             # does not exist, because a run that never starts also never regenerates.
             self.assertIn("[1/4] close-down", out)
-            self.assertNotIn("regenerate", out)
-            self.assertNotIn("preview", out)
+            # the boundary's own step lines: the close now runs through, and its own output
+            # says "lessons summary regenerated", which is not the next cycle being selected
+            self.assertNotIn("boundary [3/4]", out)
+            self.assertNotIn("preview of cycle", out)
 
 
 # --- US0231: fetch and origin drift at each boundary ---------------------------------
@@ -826,6 +828,23 @@ class PerCycleRunStateTests(unittest.TestCase):
             self.assertGreaterEqual(second["started_at"], first["started_at"])
             self.assertEqual(second["cycle"]["index"], 2)
             self.assertEqual(second["cycle"]["policy_run_id"], first["run_id"])
+
+    def test_the_next_cycle_records_its_own_plan_snapshot(self) -> None:
+        """US0870. Mutant: `_open_next_cycle` opens the run with no plan snapshot, or records
+        `token_forecast` from a figure other than the snapshot's total (D0258)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rid = _ready_cycle(root)
+            first = run_state.read(root)["run_id"]
+            with _stubbed_close():
+                rc, out = _boundary(root, "--retro", rid, "--no-fetch")
+            self.assertEqual(rc, 0, out)
+            state = run_state.read(root)
+            self.assertNotEqual(first, state["run_id"])
+            snap = state["plan_snapshot"]
+            self.assertEqual(sorted(state["batch"]), sorted(snap["units"]))
+            self.assertFalse(any(r["added"] for r in snap["units"].values()))
+            self.assertEqual(run_state.plan_totals(snap)["tokens"], state["token_forecast"])
 
     def test_the_closed_cycle_is_still_readable(self) -> None:
         with tempfile.TemporaryDirectory() as d:

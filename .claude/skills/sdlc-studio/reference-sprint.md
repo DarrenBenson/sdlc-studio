@@ -414,13 +414,12 @@ otherwise refuses an unsized batch. With no seat inputs (or `--skip-personas`) t
 Priority alone. The seat consult is the isolated-subagent consult; the planner math is
 deterministic.
 
-Distinct from this ordering consult, `sprint plan` runs a **blocking Sprint Goal review**: seats
-judge whether the goal is achievable by this batch, what done means for it, and whether it reads as
-one increment. The verdict has an EFFECT, not merely a print - a seat that judges the goal NOT
-achievable (or not one increment) **refuses the plan**, and proceeding needs an explicit
-`--override-goal-review "<reason>"` stamped on the run. The rounds accumulate: a goal rewritten in
-answer to a rejection keeps the earlier round on the record, and the gate reads the latest, so the
-close can say how many rounds the goal took to agree.
+Distinct from this ordering consult, the **Sprint Goal seat read advises**: seats judge whether the
+goal is achievable by this batch, what done means for it, and whether it reads as one increment,
+and `sprint plan` prints what they said beside the plan as advice. An objection never refuses the
+plan and there is no override flag; a goal no seat read is recorded as not read, never approved.
+The goal itself is one sentence of 20 words or fewer, and a longer one is refused. The rounds
+accumulate: a reworded goal keeps the earlier round on the record, and the latest is read.
 
 **Amend vs material.** When a goal is reworded at a seat's request, record the next round with
 `--amend-from "<prior goal>" --requesting-seat <role>`: the requesting seat's verdict CARRIES
@@ -692,25 +691,17 @@ to go unattended. The appetite is that ceiling (Shape Up's fixed timebox: appeti
   ceiling would depend on the actor self-reporting the budget meant to constrain it. The
   plan reports a token forecast, labelled an estimate; the close repeats it. It never
   stops a run.
-- **The forecast has two terms: a fixed per-sprint cost plus points times a marginal rate.**
-  `forecast = fixed + sum(Points) x tokens-per-point`. The marginal term prices the BUILD - the
-  rate is derived from this project's own history (actual tokens over points delivered, recorded
-  in `retros/VELOCITY.md`, re-measured every sprint). Nothing hardcodes it: a blind re-estimation
-  of 21 delivered units scored points at r = +0.68 against measured cost (r = +0.78 on units of 8
-  or below), where every computed signal tried before it managed +0.03. A point is a stable unit
-  of cost from 2 to 8 (about 25,000 tokens each) and breaks above it, which is why a unit over 8
-  points is split rather than forecast. The fixed term prices what a point cannot - the ceremony,
-  the review rounds and the close - and is MEASURED from the project's own whole-sprint actuals:
-  it reads UNMEASURED where fewer than two sprints carry one, and stays OUT of the total until a
-  stated minimum of sprints is reached, because a line drawn through two points is not
-  calibration. The earlier finding that a fitted base term did worse than none was measured on
-  per-unit actuals with no sprint ceremony, review rounds or close in the numerator: it holds for
-  the build, not for a whole sprint, whose fixed cost is a separate term. Until the project has
-  measured enough of its own units the marginal rate falls back to a seed, and the plan says which
-  it used. **Read the velocity history the plan prints** - `retro.py velocity` - to see the rate
-  the next forecast will use and how past sprints actually landed against it.
+- **One forecast: points times the calibrated rate.** `forecast = sum(Points) x
+  tokens-per-point`, the figure the plan snapshot records per unit and the run records as
+  `token_forecast`. The rate is this project's own (actual tokens over the points the plan
+  recorded, re-measured every plan), falling back to a seed until enough units are measured, and
+  the plan says which. A blind re-estimation of 21 delivered units scored points at r = +0.68
+  against measured cost (+0.78 at 8 points and below); a unit over 8 points is split rather than
+  forecast. The finding that a fitted base term did worse than none was measured on per-unit
+  actuals with no sprint ceremony, review rounds or close in the numerator, so the forecast
+  prices the build, not a whole sprint. **Read the velocity history** - `retro.py velocity`.
 - **Batch size trades fixed cost against review convergence - and this project names no
-  optimum.** The fixed per-sprint term above is spread over the batch's points, so its share
+  optimum.** A sprint's fixed cost - the ceremony, the close - is spread over its points, so its share
   PER POINT falls as the batch grows: a larger sprint amortises the one ceremony, the one
   close and the review setup over more delivered points. Pulling the other way, review
   convergence cost RISES with the batch: a bigger diff carries more surface, more claims to

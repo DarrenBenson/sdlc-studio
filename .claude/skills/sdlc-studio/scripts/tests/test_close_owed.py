@@ -1106,6 +1106,17 @@ class RunAttributedTests(CloseOwedBase):
         self.assertEqual([], r["run_attributed"])
         self.assertEqual([("BG0005", "bug")], r["unaccounted"])
 
+    def test_a_signed_partial_or_missed_run_credits_its_units(self) -> None:
+        """US0878: `sign` records a partial or missed verdict as its own outcome, and that run's
+        close completed. MUTANT: leave PARTIAL and MISSED out of `_CLOSED_OUTCOMES`."""
+        for outcome in ("partial", "missed"):
+            with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as d:
+                self.root = Path(d)
+                (self.root / "sdlc-studio" / "retros").mkdir(parents=True)
+                r = self._tree(raised="2026-07-29T15:35:33Z", terminal_day="2026-07-30",
+                               outcome=outcome)
+                self.assertEqual([("BG0005", "bug", "RUN-01KYPZ1G")], r["run_attributed"])
+
     def test_a_run_that_never_completed_its_close_credits_nothing(self) -> None:
         """MUTANT: accept any outcome that is not `running`.
 
