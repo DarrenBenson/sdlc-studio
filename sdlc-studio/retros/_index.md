@@ -130,3 +130,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0118](RETRO0118-run-01m2spns-the-close-splits-and-the-run.md) | RUN-01M2SPNS: the close splits, and the run ends with one page and one act | 2026-09-18 | -- | -- |
 | [RETRO-0119](RETRO0119-the-backlog-tells-the-truth-what-38-requests.md) | the backlog tells the truth: what 38 requests and 24 claims said when somebody finally asked them | 2026-09-21 | -- | -- |
 | [RETRO-0120](RETRO0120-run-01m33wj3-the-close-stops-laundering-its-own.md) | RUN-01M33WJ3: the close stops laundering its own misses, and the reviews cost 2.8x | 2026-09-22 | -- | -- |
+| [RETRO-0121](RETRO0121-run-01m36r3d-sprint-1-of-back-to-basics.md) | RUN-01M36R3D: Sprint 1 of back to basics, the lean loop | 2026-09-23 | -- | -- |

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 58 |
+| Open | 63 |
 | In Progress | 0 |
 | Fixed | 583 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 10 |
 | Superseded | 6 |
-| **Total** | **744** |
+| **Total** | **749** |
 
 ## All Bugs
 
@@ -103,6 +103,11 @@
 | [BG0742](BG0742-ac5-style-corpus-coupled-tests-go-red-when.md) | AC5-style corpus-coupled tests go red when the backlog they measure is acted on, and two are red in this tree already | Open | Medium | 2026-09-22 | 2026-09-22 |
 | [BG0743](BG0743-a-signed-report-s-digest-covers-prose-that.md) | a signed report's digest covers prose that is edited in place, so an unrelated amendment to a decision rationale invalidates a signature over an unchanged run | Open | Medium | 2026-09-22 | 2026-09-22 |
 | [BG0744](BG0744-the-close-refuses-to-file-a-report-but.md) | the close refuses to file a report but a direct build --write files one anyway, skipping the token stamp and the gate verdicts the refusal protects | Open | High | 2026-09-23 | 2026-09-23 |
+| [BG0745](BG0745-sprint-report-check-reads-a-report-hand-edited.md) | sprint_report check reads a report hand-edited after signing as VALID | Open | High | 2026-09-23 | 2026-09-23 |
+| [BG0746](BG0746-the-spec-claims-timing-claim-deadlocks-every-fresh.md) | The spec-claims timing claim deadlocks every fresh worktree under parallel load | Open | Medium | 2026-09-23 | 2026-09-23 |
+| [BG0747](BG0747-the-evidence-drift-lane-still-enforces-mutation-evidence.md) | The evidence-drift lane still enforces mutation evidence that D0255 switched off, and re-registration drops other rows | Open | Medium | 2026-09-23 | 2026-09-23 |
+| [BG0748](BG0748-the-report-s-dora-window-is-second-resolution.md) | The report's DORA window is second-resolution, so a same-second commit reads the report INVALID | Open | Medium | 2026-09-23 | 2026-09-23 |
+| [BG0749](BG0749-thirty-stamped-criteria-on-older-units-point-at.md) | Thirty stamped criteria on older units point at tests this sprint made skipped stubs | Open | Medium | 2026-09-23 | 2026-09-23 |
 
 ## Archived Releases
 

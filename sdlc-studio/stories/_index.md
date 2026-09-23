@@ -10,9 +10,9 @@
 | Draft | 142 |
 | Ready | 15 |
 | Planned | 0 |
-| In Progress | 11 |
+| In Progress | 0 |
 | Review | 0 |
-| Done | 681 |
+| Done | 692 |
 | Won't Implement | 8 |
 | Deferred | 0 |
 | Superseded | 13 |
@@ -226,17 +226,17 @@
 | [US0865](US0865-the-report-of-record-carries-every-goal-clause.md) | the report of record carries every goal clause with its own verdict and evidence, and counts operator rulings against persona rulings | Superseded | EP0258 | 2026-09-21 | 2026-09-21 |
 | [US0866](US0866-the-sprint-plan-records-its-operational-design-domain.md) | the sprint plan records its operational design domain: the files it may touch, the artefacts it may create, the statuses it may set and the budget it may spend | Draft | EP0259 | 2026-09-21 | 2026-09-21 |
 | [US0867](US0867-plan-time-refusal-rejects-a-goal-clause-whose.md) | plan-time refusal rejects a goal clause whose check reaches outside the declared domain, naming the clause and the path that left it | Draft | EP0259 | 2026-09-21 | 2026-09-21 |
-| [US0868](US0868-a-sprint-goal-is-one-memorable-sentence-and.md) | A sprint goal is one memorable sentence, and its seat read advises rather than blocks | In Progress | EP0260 | 2026-09-23 | 2026-09-23 |
-| [US0869](US0869-estimates-are-calibrated-from-the-project-s-own.md) | Estimates are calibrated from the project's own runs, not a seed constant | In Progress | EP0260 | 2026-09-23 | 2026-09-23 |
-| [US0870](US0870-the-plan-records-each-unit-s-forecast-points.md) | The plan records each unit's forecast points, minutes and tokens, and nothing later overwrites it | In Progress | EP0260 | 2026-09-23 | 2026-09-23 |
-| [US0871](US0871-each-unit-s-elapsed-time-and-tokens-are.md) | Each unit's elapsed time and tokens are measured as it is delivered | In Progress | EP0260 | 2026-09-23 | 2026-09-23 |
-| [US0872](US0872-one-reviewer-at-most-two-rounds-a-fixed.md) | One reviewer, at most two rounds: a fixed unit clears and a non-converging unit is carried | In Progress | EP0260 | 2026-09-23 | 2026-09-23 |
-| [US0873](US0873-a-verdict-is-written-by-one-set-of.md) | A verdict is written by one set of rules, and parallel writers never lose a row | In Progress | EP0260 | 2026-09-23 | 2026-09-23 |
-| [US0874](US0874-a-persona-seat-answers-the-run-s-questions.md) | A persona seat answers the run's questions and cites precedent, so the operator is not asked | In Progress | EP0260 | 2026-09-23 | 2026-09-23 |
-| [US0875](US0875-the-sprint-report-is-one-page-answering-three.md) | The sprint report is one page answering three questions, with everything else in an appendix | In Progress | EP0260 | 2026-09-23 | 2026-09-23 |
-| [US0876](US0876-sprint-close-runs-once-and-finishes-gaps-become.md) | sprint close runs once and finishes: gaps become known issues, not refusals | In Progress | EP0260 | 2026-09-23 | 2026-09-23 |
-| [US0877](US0877-the-retro-is-three-lines-and-a-re.md) | The retro is three lines, and a re-run close keeps one report per run | In Progress | EP0260 | 2026-09-23 | 2026-09-23 |
-| [US0878](US0878-sign-checks-what-it-seals-and-records-what.md) | Sign checks what it seals and records what actually happened | In Progress | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0868](US0868-a-sprint-goal-is-one-memorable-sentence-and.md) | A sprint goal is one memorable sentence, and its seat read advises rather than blocks | Done | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0869](US0869-estimates-are-calibrated-from-the-project-s-own.md) | Estimates are calibrated from the project's own runs, not a seed constant | Done | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0870](US0870-the-plan-records-each-unit-s-forecast-points.md) | The plan records each unit's forecast points, minutes and tokens, and nothing later overwrites it | Done | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0871](US0871-each-unit-s-elapsed-time-and-tokens-are.md) | Each unit's elapsed time and tokens are measured as it is delivered | Done | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0872](US0872-one-reviewer-at-most-two-rounds-a-fixed.md) | One reviewer, at most two rounds: a fixed unit clears and a non-converging unit is carried | Done | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0873](US0873-a-verdict-is-written-by-one-set-of.md) | A verdict is written by one set of rules, and parallel writers never lose a row | Done | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0874](US0874-a-persona-seat-answers-the-run-s-questions.md) | A persona seat answers the run's questions and cites precedent, so the operator is not asked | Done | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0875](US0875-the-sprint-report-is-one-page-answering-three.md) | The sprint report is one page answering three questions, with everything else in an appendix | Done | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0876](US0876-sprint-close-runs-once-and-finishes-gaps-become.md) | sprint close runs once and finishes: gaps become known issues, not refusals | Done | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0877](US0877-the-retro-is-three-lines-and-a-re.md) | The retro is three lines, and a re-run close keeps one report per run | Done | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0878](US0878-sign-checks-what-it-seals-and-records-what.md) | Sign checks what it seals and records what actually happened | Done | EP0260 | 2026-09-23 | 2026-09-23 |
 
 ## Archived Releases
 

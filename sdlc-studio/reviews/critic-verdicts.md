@@ -1148,6 +1148,8 @@ One row has been removed since adoption.
 | US0874 | APPROVE | qa-rev-US0874 | lane-C | 2026-09-23 | - | - | [new] recorded late from the round-1 review, non-blocking: the --differs precedent could be a keyword match; [new] --cites accepted any live decision; [new] an agent's add counted as operator - all fixed in the follow-up |
 | US0868 | APPROVE | qa-rev-US0868 | lane-A | 2026-09-23 | - | - | [new] non-blocking: a spaced hyphen counts as a word; [new] reference-sprint.md still describes the blocking review |
 | US0870 | APPROVE | qa-rev-US0870 | lane-A | 2026-09-23 | - | - | [new] non-blocking: two token forecasts disagree (ruled D0258); [new] the AC1 fixture cannot tell a measured rate from the seed |
+| US0876 | APPROVE | qa-rev-US0876 | lane-A-fix | 2026-09-23 | - | - | [new] non-blocking: the multi-id stop-ship split is unpinned; [new] guidance lines become known-issue rows |
+| US0878 | APPROVE | qa-rev-US0878 | lane-A-fix | 2026-09-23 | - | - | - |
 
 ## Supersessions
 

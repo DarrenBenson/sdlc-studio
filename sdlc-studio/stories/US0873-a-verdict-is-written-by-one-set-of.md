@@ -1,6 +1,6 @@
 # US0873: A verdict is written by one set of rules, and parallel writers never lose a row
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-23
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,12 +19,16 @@
 
 - **AC1:** Given transition set with --verdict lgtm, when it runs, then it is refused naming the allowed verdicts and nothing is written to the ledger
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_verdict_integrity.py::VerdictVocabularyTests::test_an_unknown_verdict_word_is_refused
+  - **Verified:** yes (2026-09-23)
 - **AC2:** Given transition set with --verdict APPROVE whose transition is then refused by a gate, when it runs, then no verdict row remains
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_verdict_integrity.py::VerdictVocabularyTests::test_a_refused_transition_leaves_no_verdict
+  - **Verified:** yes (2026-09-23)
 - **AC3:** Given 8 concurrent critic record calls for different units against one ledger, when all complete, then the ledger holds all 8 rows and still parses
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_verdict_integrity.py::LedgerConcurrencyTests::test_concurrent_verdicts_are_all_kept
+  - **Verified:** yes (2026-09-23)
 - **AC4:** Given 8 concurrent verify-report writes for different stories, when all complete, then all 8 entries are present
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_verdict_integrity.py::LedgerConcurrencyTests::test_concurrent_verify_reports_are_all_kept
+  - **Verified:** yes (2026-09-23)
 
 ## Revision History
 
