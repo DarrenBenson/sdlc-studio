@@ -1,23 +1,23 @@
 # Story Index
 
-**Last Updated:** 2026-09-23
+**Last Updated:** 2026-09-24
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 142 |
+| Draft | 149 |
 | Ready | 15 |
 | Planned | 0 |
-| In Progress | 0 |
+| In Progress | 4 |
 | Review | 0 |
 | Done | 692 |
 | Won't Implement | 8 |
 | Deferred | 0 |
 | Superseded | 13 |
 | Blocked | 8 |
-| **Total** | **878** |
+| **Total** | **889** |
 
 ## All Stories
 
@@ -237,6 +237,17 @@
 | [US0876](US0876-sprint-close-runs-once-and-finishes-gaps-become.md) | sprint close runs once and finishes: gaps become known issues, not refusals | Done | EP0260 | 2026-09-23 | 2026-09-23 |
 | [US0877](US0877-the-retro-is-three-lines-and-a-re.md) | The retro is three lines, and a re-run close keeps one report per run | Done | EP0260 | 2026-09-23 | 2026-09-23 |
 | [US0878](US0878-sign-checks-what-it-seals-and-records-what.md) | Sign checks what it seals and records what actually happened | Done | EP0260 | 2026-09-23 | 2026-09-23 |
+| [US0879](US0879-a-commit-runs-only-the-checks-that-catch.md) | A commit runs only the checks that catch real defects | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0880](US0880-a-commit-s-tests-finish-inside-a-90.md) | A commit's tests finish inside a 90-second budget | Draft | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0881](US0881-a-push-runs-the-full-suite-once-and.md) | A push runs the full suite once, and CI runs it once | Draft | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0882](US0882-mutation-evidence-that-is-switched-off-stops-blocking.md) | Mutation evidence that is switched off stops blocking commits | Draft | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0883](US0883-a-signed-report-cannot-be-edited-unnoticed.md) | A signed report cannot be edited unnoticed | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0884](US0884-a-sprint-report-is-filed-only-by-the.md) | A sprint report is filed only by the close | Draft | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0885](US0885-a-report-s-time-window-does-not-race.md) | A report's time window does not race its own paperwork | Draft | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0886](US0886-criteria-that-sprint-1-superseded-are-retired-not.md) | Criteria that Sprint 1 superseded are retired, not left red | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0887](US0887-a-lesson-is-a-failure-class-that-counts.md) | A lesson is a failure class that counts its repeats | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0888](US0888-a-lesson-that-recurs-graduates-into-a-check.md) | A lesson that recurs graduates into a check | Draft | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0889](US0889-the-close-forward-ports-the-skill-and-keeps.md) | The close forward-ports the skill and keeps one handover per run | Draft | EP0261 | 2026-09-24 | 2026-09-24 |
 
 ## Archived Releases
 

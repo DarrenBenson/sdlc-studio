@@ -1,17 +1,17 @@
 # Epic Index
 
-**Last Updated:** 2026-09-23
+**Last Updated:** 2026-09-24
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 38 |
+| Draft | 39 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 222 |
-| **Total** | **260** |
+| **Total** | **261** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -67,6 +67,7 @@
 | [EP0258](EP0258-ws1-the-sprint-goal-becomes-a-contract-the.md) | WS1: the sprint goal becomes a contract the close can test, and the verdict is derived rather than asserted | Done | 6 | -- | 2026-09-21 | 2026-09-21 |
 | [EP0259](EP0259-ws2-the-sprint-records-the-boundary-it-may.md) | WS2: the sprint records the boundary it may decide inside, and the plan refuses a goal that reaches past it | Draft | 2 | -- | 2026-09-21 | 2026-09-21 |
 | [EP0260](EP0260-the-lean-loop-a-sprint-that-runs-on.md) | The lean loop: a sprint that runs on its own, learns from itself and hands over one page | Done | 11 | -- | 2026-09-23 | 2026-09-23 |
+| [EP0261](EP0261-fast-gates-and-lessons-that-graduate-the-lean.md) | Fast gates and lessons that graduate: the lean loop's second sprint | Draft | 11 | -- | 2026-09-24 | 2026-09-24 |
 
 ## Archived Releases
 
