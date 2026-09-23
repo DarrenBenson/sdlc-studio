@@ -38,7 +38,7 @@
 
 **0 of 11 unit(s) measured; 11 of 11 forecast at plan time.**
 
-**Sprint tokens/point: 24,017** (1,392,991 tokens over 58 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+**Sprint tokens/point: 105,509** (6,119,516 tokens over 58 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 
 **Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
 
@@ -59,4 +59,4 @@ Ratio is estimate / actual: above 1 the plan over-forecast, below 1 it under-for
 
 ## Handoff
 
-- [HO-0082](../handoffs/HO0082-a-sprint-runs-start-to-finish-on-its.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
+- [HO-0083](../handoffs/HO0083-a-sprint-runs-start-to-finish-on-its.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

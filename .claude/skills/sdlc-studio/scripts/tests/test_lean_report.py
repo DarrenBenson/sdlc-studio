@@ -385,6 +385,10 @@ class RunTotalsTests(unittest.TestCase):
                                    "rates": {}})
         rep = sr.build_report(self.root, RETRO)
         self.assertEqual([], _sections(rep)["estimates"]["unit_rows"])
+        minutes = {r["est_measure"]["value"]: r
+                   for r in _sections(rep)["estimates"]["rows"]}["Minutes"]["est_forecast"]
+        self.assertEqual("the plan recorded no minute forecast for any unit", minutes["reason"],
+                         "a snapshot IS recorded here, so 'no plan snapshot' would be false")
         self.assertNotIn("open span", sr.render_markdown(rep))
         lean_run(self.root)
         self.assertTrue(_sections(sr.build_report(self.root, RETRO))["estimates"]["unit_rows"])

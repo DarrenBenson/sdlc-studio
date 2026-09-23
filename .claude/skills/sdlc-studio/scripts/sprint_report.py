@@ -3331,7 +3331,9 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
     rows.append(_estimate_row("Minutes", f, span_minutes,
                               f"{over}; forecast is active work minutes per point, actual is the run's "
                               "wall-clock span, start to end, so waiting counts", state_rel,
-                              no_plan, "the run records no start time"))
+                              no_plan if not any(u["in_plan"] for u in ledger) else
+                              "the plan recorded no minute forecast for any unit",
+                              "the run records no start time"))
     f, over = forecast("forecast_tokens")
     if f is None:
         legacy = state.get("token_forecast", state.get("forecast_tokens"))
