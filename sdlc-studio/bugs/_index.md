@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 60 |
+| Open | 61 |
 | In Progress | 0 |
 | Fixed | 590 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 10 |
 | Superseded | 9 |
-| **Total** | **756** |
+| **Total** | **757** |
 
 ## All Bugs
 
@@ -115,6 +115,7 @@
 | [BG0754](BG0754-a-commit-touching-a-widely-imported-script-runs.md) | A commit touching a widely imported script runs well over the 90-second budget | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0755](BG0755-artifact-py-batch-ignores-a-story-s-role.md) | artifact.py batch ignores a story's role, capability and benefit, and its default template leaves a page of placeholders | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0756](BG0756-us0900-did-not-converge-in-review-round-2.md) | US0900 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-24 | 2026-09-24 |
+| [BG0757](BG0757-repo-map-py-build-crashes-on-python-3.md) | repo_map.py build crashes on Python 3.10 when a source file holds a null byte | Open | Medium | 2026-09-24 | 2026-09-24 |
 
 ## Archived Releases
 

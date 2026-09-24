@@ -16165,7 +16165,7 @@ class BatchValidationTests(unittest.TestCase):
     declaration into the collision analysis and the engagement floor, both of which read
     `Affects`. The check is scoped to the batch on purpose: a defect in work nobody is planning
     cannot block a plan, and a check that refused on the standing corpus tail would be switched
-    off within a day - `validate.py warning-ratchet` is what holds that tail.
+    off within a day. `validate.py check` reports the undeclared half on open work as advice.
     """
 
     def _unit(self, root: Path, uid: str, *, declared: str, verified: str) -> None:

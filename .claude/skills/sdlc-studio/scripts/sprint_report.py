@@ -422,8 +422,8 @@ def _mutation_lines(m: dict | None) -> list[str]:
     if tree.get("isolated") is False:
         qualifier = f" MEASURED IN A SHARED TREE: {tree.get('why', '')}"
     elif tree.get("isolated") is None:
-        qualifier = (f" TREE UNESTABLISHED: {tree.get('why') or 'no isolation evidence was '
-                     'recorded for this run'}")
+        why = tree.get("why") or "no isolation evidence was recorded for this run"
+        qualifier = f" TREE UNESTABLISHED: {why}"
     return [f"Mutation gate: {cur['elapsed_s']}s, {cur['applied']} applied, "
             f"{cur['killed']} killed, {cur['survived']} survived{equiv}; "
             f"yield {cur['yield']} filed artefact(s) ({filed}){per}.{qualifier}", *trailing]

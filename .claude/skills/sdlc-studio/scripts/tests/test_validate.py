@@ -348,60 +348,28 @@ class ContradictedAffectsTests(unittest.TestCase):
     work, the engagement floor to judge a declared footprint. Two implementations of
     "contradicted" is how the same bytes come to pass one check and fail the other.
 
-    The fixtures are TERMINAL (US0528): the predicate is still the planner's and still shared,
-    but validate reports the `unresolvable` half only once the unit is closed, because
-    declaring the file you are about to create is what an open unit is for. What the two
-    readers must agree on is what is unresolvable, which is what these tests assert."""
+    The fixtures are OPEN work (US0896): validate advises on open work and never re-judges a
+    terminal artefact, and it reports only the `undeclared` half. The `unresolvable` half is the
+    file an open unit will create, or one a finished unit's successor deleted on purpose, so the
+    planner alone reads it. What the two readers must agree on is what is undeclared."""
 
-    def _story(self, root: Path, affects: str, verify: str, status: str = "Done") -> Path:
+    def _story(self, root: Path, affects: str, verify: str,
+               status: str = "In Progress") -> Path:
         return _write(root, "sdlc-studio/stories/US0001-x.md",
                       f"# US0001: s\n\n> **Status:** {status}\n> **Affects:** {affects}\n"
                       f"> **Points:** 2\n\n## Acceptance Criteria\n\n### AC1: a\n\n"
                       f"- **Given** x\n- **Verify:** {verify}\n")
 
-    def test_validate_reports_an_affects_the_story_contradicts(self) -> None:
+    def test_validate_reports_an_undeclared_verify_target_on_open_work(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _write(root, "src/real.py", "x = 1\n")
             _write(root, "tests/test_p.py", "def test_x(): pass\n")
             p = self._story(root, "src/real.py,src/typo.py", "pytest tests/test_p.py -k test_x")
-            rules = {v["rule"] for v in validate.validate_file(p, "story", repo_root=root)}
-            self.assertIn("affects-unresolvable", rules)
-            self.assertIn("affects-undeclared", rules)
-
-    def test_a_consumed_changelog_fragment_is_not_an_unresolvable_affects(self) -> None:
-        """BG0538. `compose --apply` folds a fragment into CHANGELOG.md and DELETES it, so a
-        delivered unit that declared its own fragment names a path guaranteed to vanish at the
-        next release cut. Warning about it says "this file should exist by now" about a file
-        the toolchain removed on purpose, and the v5 cut minted nine such warnings at once -
-        one for every unit that had done the right thing.
-
-        Mutant: drop the `_is_consumed_fragment` filter - the warning returns.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _write(root, "src/real.py", "x = 1\n")
-            _write(root, "tests/test_p.py", "def test_x(): pass\n")
-            p = self._story(root, "src/real.py,changelog.d/US0001.md",
-                            "pytest tests/test_p.py -k test_x")
-            rules = {v["rule"] for v in validate.validate_file(p, "story", repo_root=root)}
-            self.assertNotIn("affects-unresolvable", rules,
-                             "a consumed changelog fragment was reported as a broken reference")
-
-    def test_a_real_missing_path_beside_a_fragment_is_still_reported(self) -> None:
-        """The control. Exempting the fragment must not exempt the typo sitting next to it."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _write(root, "src/real.py", "x = 1\n")
-            _write(root, "tests/test_p.py", "def test_x(): pass\n")
-            p = self._story(root, "src/real.py,changelog.d/US0001.md,src/typo.py",
-                            "pytest tests/test_p.py -k test_x")
             found = [v for v in validate.validate_file(p, "story", repo_root=root)
-                     if v["rule"] == "affects-unresolvable"]
-            self.assertEqual(1, len(found), "the real missing path was lost with the fragment")
-            self.assertIn("src/typo.py", found[0]["message"])
-            self.assertNotIn("changelog.d", found[0]["message"],
-                             "the exempt fragment was still named in the warning")
+                     if v["rule"].startswith("affects-")]
+            self.assertEqual(["affects-undeclared"], [v["rule"] for v in found])
+            self.assertIn("tests/test_p.py", found[0]["message"])
 
     def test_a_clean_affects_is_reported_by_neither_rule(self) -> None:
         """The negative control: without it, a function reporting every story unconditionally
@@ -428,7 +396,8 @@ class ContradictedAffectsTests(unittest.TestCase):
             mism = sprint.affects_mismatch(root, p.read_text(encoding="utf-8"))
             msgs = " ".join(v["message"] for v in validate.validate_file(p, "story",
                                                                         repo_root=root))
-            for path in mism["unresolvable"] + mism["undeclared"]:
+            self.assertTrue(mism["undeclared"], "the fixture carries no undeclared target")
+            for path in mism["undeclared"]:
                 self.assertIn(path, msgs, "validate names exactly what the planner found")
 
     def test_the_severity_is_a_warning_not_an_error(self) -> None:
@@ -437,7 +406,7 @@ class ContradictedAffectsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _write(root, "src/real.py", "x = 1\n")
-            p = self._story(root, "src/real.py,src/not-yet.py", "file src/real.py")
+            p = self._story(root, "src/real.py", "file src/other.py")
             sev = {v["severity"] for v in validate.validate_file(p, "story", repo_root=root)
                    if v["rule"].startswith("affects-")}
             self.assertEqual(sev, {validate.SEVERITY_WARNING})
@@ -2290,16 +2259,6 @@ class ScopedCheckTests(unittest.TestCase):
             self.assertNotIn("affects-unresolvable", self._rules(p, root),
                              "declaring what you will create is the normal case for new work")
 
-    def test_a_terminal_unit_with_a_missing_path_is_still_warned(self):
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            p = self._affects(root, "US9971", "Done", "src/never_existed.py")
-            self.assertIn("affects-unresolvable", self._rules(p, root),
-                          "at a terminal status the file should exist and its absence is real")
-            # and the file existing clears it, so the warning tracks the tree, not the status
-            _write(root, "src/never_existed.py", "x = 1\n")
-            self.assertNotIn("affects-unresolvable", self._rules(p, root))
-
 
 class VerifierAuthorityAgreementTests(unittest.TestCase):
     """BG0356. The validator called a bug's command-shaped `Verify:` "executed by nothing"
@@ -2768,354 +2727,6 @@ class RepeatedFieldTests(unittest.TestCase):
                 hits += [(f.name, x["message"]) for x in validate.validate_file(f, type_)
                          if x["rule"] == "repeated-field"]
         self.assertEqual(hits, [], f"{len(hits)} repeated single-valued field(s) in the corpus")
-
-
-def _ratchet_story(root: Path, sid: str, verify_target: str, affects: str) -> None:
-    """A story whose `Verify:` line targets a file its `Affects` omits - one
-    `affects-undeclared` instance, with the target under our control."""
-    d = root / "sdlc-studio" / "stories"
-    d.mkdir(parents=True, exist_ok=True)
-    for rel in {verify_target, affects}:
-        f = root / rel
-        f.parent.mkdir(parents=True, exist_ok=True)
-        f.write_text("x\n", encoding="utf-8")
-    (d / f"{sid}-x.md").write_text(
-        f"# {sid}: a story\n\n> **Status:** Ready\n> **Epic:** EP0100\n> **Points:** 2\n"
-        f"> **Affects:** {affects}\n\n## Acceptance Criteria\n\n### AC1: it behaves\n\n"
-        f"- **Given** a thing\n- **When** it runs\n- **Then** it works\n"
-        f"- **Verify:** pytest {verify_target}\n", encoding="utf-8")
-
-
-def _masking_story(root: Path) -> Path:
-    """A story carrying two `affects-unresolvable` instances - the OTHER kind, the one a
-    repair elsewhere could be spent to mask a regression in `affects-undeclared`.
-
-    TERMINAL on purpose. `affects-unresolvable` is reported only at a terminal status -
-    declaring the file you are about to create is what a Draft story is for - so the `Ready`
-    this fixture carried emitted ZERO instances of the kind it exists to be about, and the
-    masking scenario reduced to the single-kind one its sibling already covers (BG0523).
-    """
-    d = root / "sdlc-studio" / "stories"
-    d.mkdir(parents=True, exist_ok=True)
-    (root / "src").mkdir(parents=True, exist_ok=True)
-    p = d / "US0003-x.md"
-    p.write_text(
-        "# US0003: a story\n\n> **Status:** Done\n> **Epic:** EP0100\n"
-        "> **Points:** 2\n> **Affects:** src/gone-one.py, src/gone-two.py\n\n"
-        "## Acceptance Criteria\n\n### AC1: it behaves\n\n- **Given** a thing\n"
-        "- **When** it runs\n- **Then** it works\n- **Verify:** shell true\n",
-        encoding="utf-8")
-    return p
-
-
-def _stamp(root: Path, instances, reason: str = "recorded at adoption") -> None:
-    (root / validate.WARNING_RATCHET_FILE).parent.mkdir(parents=True, exist_ok=True)
-    (root / validate.WARNING_RATCHET_FILE).write_text(json.dumps({
-        "stamped": "2026-01-01",
-        "entries": [{"id": i, "rule": r, "target": tgt, "reason": reason}
-                    for i, r, tgt in instances]}, indent=2) + "\n", encoding="utf-8")
-
-
-class WarningRatchetTests(unittest.TestCase):
-    """US0480: the Affects/Verify warning family stops accumulating.
-
-    It stood at 371 instances and was purely advisory, so a new one was indistinguishable from
-    the standing tail. A COUNT cannot fix that - it says a number moved and never which instance
-    is new, and it lets a repair in one place pay for a regression in another. The reference is
-    therefore a SET of instance identities, each with a stated reason, and it may only shrink.
-    """
-
-    def test_an_unrecorded_instance_refuses_while_the_recorded_ones_pass(self) -> None:
-        """MUTANT: compare totals instead of identities."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _ratchet_story(root, "US0001", "src/a.py", "src/known.py")
-            _stamp(root, sorted(validate.ratchet_instances(root)))
-            self.assertTrue(validate.warning_ratchet(root)["ok"], "the recorded set does not pass")
-
-            _ratchet_story(root, "US0002", "src/b.py", "src/other.py")
-            rep = validate.warning_ratchet(root)
-        self.assertFalse(rep["ok"], "an unrecorded instance did not refuse")
-        self.assertEqual([i for i, _r, _t in rep["new"]], ["US0002"],
-                         f"the refusal does not name the new instance alone: {rep['new']}")
-        self.assertIn("affects-undeclared", {r for _i, r, _t in rep["new"]})
-        self.assertIn("src/b.py", {t for _i, _r, t in rep["new"]},
-                      "the refusal does not name the specific target")
-
-    def test_a_swap_that_keeps_the_total_flat_is_still_refused(self) -> None:
-        """MUTANT: consult a recomputed total anywhere in the comparison.
-
-        One instance repaired, one introduced: the total is unchanged, so a count-based ratchet
-        reports clean. The repaired entry must also be reported stale, so it cannot be spent
-        again to admit a third.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _ratchet_story(root, "US0001", "src/a.py", "src/known.py")
-            before = sorted(validate.ratchet_instances(root))
-            _stamp(root, before)
-            (root / "sdlc-studio" / "stories" / "US0001-x.md").unlink()   # repaired
-            _ratchet_story(root, "US0002", "src/b.py", "src/other.py")    # and a new one
-            rep = validate.warning_ratchet(root)
-        self.assertEqual(len(rep["new"]), len(rep["stale"]),
-                         "the fixture is not a flat swap, so it proves nothing about totals")
-        self.assertFalse(rep["ok"], "a flat swap passed - the ratchet is counting, not comparing")
-        self.assertEqual([i for i, _r, _t in rep["new"]], ["US0002"])
-        self.assertEqual([i for i, _r, _t in rep["stale"]], ["US0001"],
-                         "the repaired entry is not reported as stale and removable")
-
-    def test_a_kind_paid_down_elsewhere_cannot_mask_another(self) -> None:
-        """MUTANT: make the rule a per-kind tally rather than part of each identity.
-
-        The fixture must actually CARRY the other kind, which is where this failed: with the
-        masking story at `Ready` it emitted none, so the scenario reduced to AC1's and dropping
-        the rule from the identity survived. The surplus is asserted, not assumed.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _ratchet_story(root, "US0001", "src/a.py", "src/known.py")
-            other = _masking_story(root)          # two of a DIFFERENT kind, repaired below
-            surplus = [x for x in validate.ratchet_instances(root)
-                       if x[1] == "affects-unresolvable"]
-            self.assertEqual(len(surplus), 2,
-                             f"the fixture carries no surplus of the other kind, so it cannot "
-                             f"show that one cannot mask the other: {surplus}")
-            _stamp(root, sorted(validate.ratchet_instances(root)))
-            other.unlink()                                                 # two repaired
-            _ratchet_story(root, "US0002", "src/b.py", "src/other.py")     # one introduced
-            rep = validate.warning_ratchet(root)
-        self.assertFalse(rep["ok"],
-                         "a surplus repaired in one kind masked a regression in another")
-        self.assertEqual({r for _i, r, _t in rep["new"]}, {"affects-undeclared"})
-        self.assertEqual({r for _i, r, _t in rep["stale"]}, {"affects-unresolvable"},
-                         "the repaired surplus was not of the other kind")
-
-    def test_the_masking_fixture_emits_the_second_kind_it_is_named_for(self) -> None:
-        """MUTANT: drop `affects-unresolvable` from `validate.RATCHET_RULES`, or put the masking
-        story back at a non-terminal status.
-
-        The cross-kind scenario is only a cross-kind scenario if TWO kinds are present. Its
-        fixture emitted one, so `a kind paid down elsewhere` was tested by a workspace that had
-        no elsewhere - the finding BG0523 records. Both kinds are named here, and the second is
-        asserted on its own so a rule quietly leaving the ratchet's judgement cannot go unseen.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _ratchet_story(root, "US0001", "src/a.py", "src/known.py")
-            _masking_story(root)
-            live = validate.ratchet_instances(root)
-        by_rule = {}
-        for unit, rule, target in live:
-            by_rule.setdefault(rule, set()).add((unit, target))
-        self.assertEqual(
-            sorted(by_rule), ["affects-undeclared", "affects-unresolvable"],
-            f"the fixture carries fewer than the two kinds the masking scenario needs: {live}")
-        self.assertEqual(
-            by_rule["affects-unresolvable"],
-            {("US0003", "src/gone-one.py"), ("US0003", "src/gone-two.py")},
-            "the masking story does not emit its two unresolvable instances by identity")
-
-    def test_no_untrustworthy_baseline_reports_clean(self) -> None:
-        """MUTANT: treat an absent, unreadable or reasonless baseline as an empty one.
-
-        Four workspaces, four distinct states, none of them clean. "I could not establish the
-        reference" must never render as "there is nothing new".
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _ratchet_story(root, "US0001", "src/a.py", "src/known.py")
-            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-
-            rep = validate.warning_ratchet(root)                     # no file
-            self.assertEqual(rep["state"], "not-baselined")
-            self.assertFalse(rep["ok"])
-
-            (root / validate.WARNING_RATCHET_FILE).write_text("{not json", encoding="utf-8")
-            rep = validate.warning_ratchet(root)                     # unreadable
-            self.assertEqual(rep["state"], "corrupt")
-            self.assertFalse(rep["ok"])
-
-            live = sorted(validate.ratchet_instances(root))
-            _stamp(root, live + [("US9999", "affects-undeclared", "src/never.py")])
-            rep = validate.warning_ratchet(root)                     # records a vanished instance
-            self.assertEqual(rep["state"], "ok")
-            self.assertIn("US9999", [i for i, _r, _t in rep["stale"]],
-                          "a recorded instance no artefact carries is not reported stale")
-
-            _stamp(root, live, reason="   ")
-            rep = validate.warning_ratchet(root)                     # entry with no reason
-            self.assertEqual(rep["state"], "reasonless")
-            self.assertFalse(rep["ok"], "an unjustified tolerated instance reported clean")
-
-    def test_a_workspace_with_no_instances_and_no_baseline_is_clean(self) -> None:
-        """MUTANT: refuse `not-baselined` unconditionally.
-
-        Caught by the shipped gate's own fixture, not by these tests: every fixture here had
-        instances, so the empty workspace - a fresh project, or a consuming one with nothing to
-        tolerate - was never exercised, and the lane refused its first commit. An empty
-        tolerated set needs no file to record it; the first instance to appear is new against it
-        and refuses then, which is the ratchet working rather than failing.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio").mkdir(parents=True)
-            rep = validate.warning_ratchet(root)
-        self.assertTrue(rep["ok"], f"an empty workspace was refused: {rep}")
-        self.assertEqual(rep["live"], 0)
-
-    def test_the_first_instance_in_an_unbaselined_workspace_still_refuses(self) -> None:
-        """The control for the case above. MUTANT: treat every not-baselined state as clean.
-
-        That would make the empty-workspace relaxation into a blanket exemption, and the lane
-        would never fire on a project that simply never stamped one.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _ratchet_story(root, "US0001", "src/a.py", "src/known.py")
-            rep = validate.warning_ratchet(root)
-        self.assertFalse(rep["ok"], "an unbaselined workspace WITH an instance reported clean")
-        self.assertEqual(rep["state"], "not-baselined")
-
-    def test_the_render_names_the_offending_instance_in_every_refusing_state(self) -> None:
-        """MUTANT: report a bare count with no identities.
-
-        A refusal an author cannot act on is the advisory this replaces.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _ratchet_story(root, "US0001", "src/a.py", "src/known.py")
-            _stamp(root, sorted(validate.ratchet_instances(root)))
-            _ratchet_story(root, "US0002", "src/b.py", "src/other.py")
-            text = validate.render_ratchet(validate.warning_ratchet(root))
-        self.assertIn("US0002", text)
-        self.assertIn("src/b.py", text)
-        self.assertIn("affects-undeclared", text)
-
-
-
-
-class RatchetStatesTests(unittest.TestCase):
-    """BG0524: a stale baseline printed `clean` and then contradicted itself on the next line.
-
-    The premise was corrected before any code. `validate.py` deliberately does NOT hold the gate
-    on stale - "a repaired instance is good news, and refusing the commit that repaired it would
-    teach an author to stop repairing" - and that reasoning is better than US0480 AC4's, which
-    lumped stale in with the untrustworthy states. The defect was the WORD, not the exit code.
-    """
-
-    def test_a_stale_baseline_is_not_clean(self) -> None:
-        """Mutant: restore the shared `clean` line for the no-new case - the render says `clean`
-        and the very next line it prints says two recorded instances no artefact still carries."""
-        v = validate
-        out = v.render_ratchet({"state": "ok", "live": 5, "new": [],
-                                "stale": [("US0001", "r", "t"), ("US0002", "r", "t")]})
-        first = out.splitlines()[0]
-        self.assertNotIn("clean.", first,
-                         "a baseline recording what the tree no longer carries reported clean")
-        self.assertIn("STALE", first)
-        self.assertIn("removable", out)
-
-    def test_each_untrustworthy_state_is_distinct(self) -> None:
-        """The four states have different fixes, so one message for four sends the reader to the
-        wrong one. Mutant: collapse them to a shared string - this reddens on the pairwise
-        comparison rather than on any single message."""
-        v = validate
-        # IDENTICAL payloads, so only the MESSAGE can differ. The first version varied `live`
-        # per fixture and the strings then differed on interpolated data rather than on message
-        # identity - a mutant making `corrupt` return the not-baselined text verbatim survived
-        # it. The test was discriminating by accident.
-        payload = {"live": 3, "new": [], "stale": [], "reasonless": [("US0001", "r", "t")],
-                   "error": "bad json"}
-        msgs = {
-            "not-baselined": validate.render_ratchet({**payload, "state": "not-baselined"}),
-            "corrupt": validate.render_ratchet({**payload, "state": "corrupt"}),
-            "reasonless": validate.render_ratchet({**payload, "state": "reasonless"}),
-            "stale": validate.render_ratchet({**payload, "state": "ok",
-                                              "stale": [("US0001", "r", "t")]}),
-        }
-        firsts = [m.splitlines()[0] for m in msgs.values()]
-        self.assertEqual(len(set(firsts)), 4,
-                         f"two states share a message, so they cannot be told apart: {firsts}")
-
-    def test_a_clean_ratchet_still_passes(self) -> None:
-        """THE POSITIVE CONTROL, and it covers the FRESH workspace too - not-baselined with zero
-        live instances, which every consuming project hits on its first commit of the per-commit
-        lint chain. A guard that refuses there is switched off within a day.
-
-        Mutant: report stale-style prose whenever anything is recorded - a genuinely clean
-        baseline stops reading clean and the lane becomes noise.
-        """
-        v = validate
-        out = v.render_ratchet({"state": "ok", "live": 5, "new": [], "stale": []})
-        self.assertIn("clean.", out.splitlines()[0])
-        # The FRESH workspace: no baseline and nothing live is `ok`, not a refusal. Every
-        # consuming project hits this on its first commit of the per-commit lint chain, and a
-        # guard that refuses there is switched off within a day.
-        self.assertIn("clean.", validate.render_ratchet(
-            {"state": "ok", "live": 0, "new": [], "stale": []}).splitlines()[0])
-
-
-class WarningRatchetExitCodeTests(unittest.TestCase):
-    """BG0543: the ratchet's message and its EXIT CODE must agree.
-
-    Every shipped verifier for this lane called `render_ratchet` in-process, which is why an
-    earlier repair could change the wording and leave the exit status untouched. These run the
-    command as a SUBPROCESS and assert the code.
-    """
-
-    _SCRIPTS = pathlib.Path(__file__).resolve().parents[1]
-
-    def _run(self, root):
-        import subprocess  # noqa: PLC0415
-        return subprocess.run(
-            [sys.executable, str(self._SCRIPTS / "validate.py"), "warning-ratchet",
-             "--root", str(root)],
-            capture_output=True, text=True, timeout=300, check=False)
-
-    def _baseline(self, root, entries):
-        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / ".validate-warning-baseline.json").write_text(
-            json.dumps({"stamped": "2026-01-01", "entries": entries}), encoding="utf-8")
-
-    _ENTRY = {"id": "US0001", "rule": "affects-undeclared", "target": "x.py", "reason": "r"}
-
-    def test_a_stale_ratchet_baseline_says_it_is_not_refusing(self) -> None:
-        # The measured gap. Stale exits 0 BY DESIGN - a repaired instance is good news - but the
-        # headline said "Not `clean`", and the whole `npm run lint` chain reads exit 0 as clean.
-        # A message and an exit status that disagree is a refusal that does not refuse, pointing
-        # the other way.
-        with tempfile.TemporaryDirectory() as d:
-            root = pathlib.Path(d)
-            self._baseline(root, [dict(self._ENTRY)])
-            r = self._run(root)
-            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
-            self.assertIn("REPORTED, not refused", r.stdout,
-                          "the stale headline does not say it is reporting rather than refusing, "
-                          "so a reader infers a refusal from `Not clean` while the command "
-                          "exits 0")
-            self.assertIn("exit 0", r.stdout, "the message does not state the exit code it has")
-
-    def test_every_refusing_ratchet_state_exits_non_zero(self) -> None:
-        with tempfile.TemporaryDirectory() as d:          # corrupt
-            root = pathlib.Path(d)
-            (root / "sdlc-studio").mkdir(parents=True)
-            (root / "sdlc-studio" / ".validate-warning-baseline.json").write_text(
-                "not json", encoding="utf-8")
-            self.assertNotEqual(0, self._run(root).returncode, "a corrupt baseline exited 0")
-        with tempfile.TemporaryDirectory() as d:          # reasonless
-            root = pathlib.Path(d)
-            self._baseline(root, [{**self._ENTRY, "reason": ""}])
-            self.assertNotEqual(0, self._run(root).returncode, "a reasonless entry exited 0")
-
-    def test_a_clean_ratchet_baseline_exits_zero(self) -> None:
-        # The positive control: without it, "every refusing state exits non-zero" is satisfied by
-        # a command that always fails.
-        with tempfile.TemporaryDirectory() as d:
-            root = pathlib.Path(d)
-            self._baseline(root, [])
-            r = self._run(root)
-            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
-            self.assertIn("clean", r.stdout)
 
 
 class UnresolvableVerifySelectorSweepTests(unittest.TestCase):

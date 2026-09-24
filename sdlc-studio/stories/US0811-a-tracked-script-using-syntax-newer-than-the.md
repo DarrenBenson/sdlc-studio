@@ -1,6 +1,7 @@
 # US0811: A tracked script using syntax newer than the declared floor is REFUSED, with its file and line named
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Superseded by:** US0908 - US0908 checks every tracked script under a real Python 3.10 as a CI step, so no per-commit refusing lane is needed (LC-008)
 > **Delivers:** CR0561
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
@@ -25,3 +26,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Superseded by US0908 (RUN-01M39MC0): US0908 checks every tracked script under a real Python 3.10 as a CI step, so no per-commit refusing lane is needed (LC-008) |

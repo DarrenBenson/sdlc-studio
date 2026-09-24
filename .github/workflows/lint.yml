@@ -33,6 +33,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Set up Python 3.10, the declared floor
+        # US0908: SKILL.md and README declare Python 3.10+, and sprint_report.py stopped parsing
+        # there without anything noticing, because every machine ran 3.12 or newer. This puts
+        # `python3.10` on PATH; the suite step below runs tools/tests/test_lean_python_floor.py
+        # ONCE under it (every tracked file compiles, every shipped script starts), and that
+        # module fails rather than skips under CI when no 3.10 is found. Not a commit lane:
+        # installed before the 3.12 step, so 3.12 stays the default interpreter.
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.10'
+
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
@@ -139,9 +150,13 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
+        # 3.10 as well, because this lane executes US0908's criteria, which fail under CI
+        # without a real 3.10 interpreter. The last version listed is the default.
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          python-version: '3.12'
+          python-version: |
+            3.10
+            3.12
 
       - name: Install Python deps
         # `coverage` for the same reason the ci job installs it: criteria that measure a unit's

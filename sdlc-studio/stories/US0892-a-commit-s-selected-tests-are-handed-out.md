@@ -1,6 +1,6 @@
 # US0892: A commit's selected tests are handed out one at a time across every worker
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

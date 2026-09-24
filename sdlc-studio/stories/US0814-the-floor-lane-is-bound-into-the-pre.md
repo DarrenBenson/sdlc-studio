@@ -1,6 +1,7 @@
 # US0814: The floor lane is bound into the pre-commit gate, so it runs in the command people actually run
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Superseded by:** US0908 - US0908 runs the floor check once per push in CI; binding a lane into pre-commit would add to the 90s commit budget, which LC-008 and the Sprint 3 goal rule out
 > **Delivers:** CR0561
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
@@ -25,3 +26,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Superseded by US0908 (RUN-01M39MC0): US0908 runs the floor check once per push in CI; binding a lane into pre-commit would add to the 90s commit budget, which LC-008 and the Sprint 3 goal rule out |

@@ -1686,8 +1686,6 @@ SAFE_INPUT_WRITERS = {"file_finding.py", "artifact.py",
                       "critic.py", "close_owed.py", "sprint.py",
                       # ...and the four the six original flag spellings could not see at all:
                       "decisions.py", "lessons.py", "ledger.py", "handoff.py",
-                      # ...and validate.py, whose warning-ratchet --stamp takes a reason:
-                      "validate.py",
                       # ...and verify_ac.py, whose `coverage rule --reason` gained --fields-file (US0816):
                       "verify_ac.py"}
 

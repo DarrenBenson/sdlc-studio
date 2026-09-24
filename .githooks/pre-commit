@@ -87,11 +87,6 @@ run "changelog-shape" \
   "rewrite each fragment named above - first line '<!-- section: Added|Changed|Fixed -->', the entry below it - and stage it again; the staged bytes are what is judged, not the working tree" \
   -- python3 "$skill/changelog.py" shape --staged
 
-run "warning-ratchet" \
-  "no NEW Affects/Verify warning instance: the tolerated set may only shrink" \
-  "repair the instance named above, or record it with a reason in sdlc-studio/.validate-warning-baseline.json (validate.py warning-ratchet --stamp --reason ...) - a repaired entry is reported stale and removable, never re-spendable" \
-  -- python3 .claude/skills/sdlc-studio/scripts/validate.py warning-ratchet
-
 run "budgets" \
   "each reference-*.md stays under its declared line ceiling (keeps load cost bounded)" \
   "shrink the file, or raise its ceiling in tools/check_budgets.py deliberately (with a rationale comment)" \

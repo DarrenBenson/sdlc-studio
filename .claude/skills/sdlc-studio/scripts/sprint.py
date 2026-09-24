@@ -3782,7 +3782,8 @@ def affects_findings(repo_root: Path | str, unit_ids) -> list[dict]:
 
     Scoped to the batch on purpose. The corpus carries a standing tail this unit is not for -
     a defect in work nobody is planning cannot block a plan, and a check that refused on it
-    would be switched off within a day. `validate.py warning-ratchet` is what holds the tail.
+    would be switched off within a day. `validate.py check` reports the undeclared half on
+    open work as advice, and nothing refuses on the tail.
     """
     root = Path(repo_root)
     out: list[dict] = []

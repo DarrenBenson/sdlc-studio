@@ -1,6 +1,6 @@
 # EP0246: The declared Python floor is a gate, not a sentence in six documents
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 9
 > **Parent:** CR0561
 > **Created:** 2026-08-27
@@ -14,10 +14,10 @@ Decomposed from CR0561. Delivers the work CR0561 requested.
 
 ## Story Breakdown
 
-- [ ] [US0811: A tracked script using syntax newer than the declared floor is REFUSED, with its file and line named](../stories/US0811-a-tracked-script-using-syntax-newer-than-the.md)
-- [ ] [US0812: The floor lane is silent when every script parses, so it is not a check that always fires](../stories/US0812-the-floor-lane-is-silent-when-every-script.md)
-- [ ] [US0813: sprint_report.py is repaired, so the lane's first run over the real tree has something to find](../stories/US0813-sprint-report-py-is-repaired-so-the-lane.md)
-- [ ] [US0814: The floor lane is bound into the pre-commit gate, so it runs in the command people actually run](../stories/US0814-the-floor-lane-is-bound-into-the-pre.md)
+- [x] [US0811: A tracked script using syntax newer than the declared floor is REFUSED, with its file and line named](../stories/US0811-a-tracked-script-using-syntax-newer-than-the.md)
+- [x] [US0812: The floor lane is silent when every script parses, so it is not a check that always fires](../stories/US0812-the-floor-lane-is-silent-when-every-script.md)
+- [x] [US0813: sprint_report.py is repaired, so the lane's first run over the real tree has something to find](../stories/US0813-sprint-report-py-is-repaired-so-the-lane.md)
+- [x] [US0814: The floor lane is bound into the pre-commit gate, so it runs in the command people actually run](../stories/US0814-the-floor-lane-is-bound-into-the-pre.md)
 
 ## Acceptance Criteria (Epic Level)
 

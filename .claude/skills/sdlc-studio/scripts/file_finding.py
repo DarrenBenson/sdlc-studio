@@ -517,9 +517,8 @@ def _classify_selector(verify_ac, root: Path, expr: str) -> tuple[bool, str]:
         # SILENT. Writing the story before the test is the NORMAL ordering, and in a greenfield
         # project it is the only ordering available - so a note here fires on every story anyone
         # writes. A warning that fires on the normal case is one an author learns to scroll past,
-        # which costs the signal in the case that matters; the same reason `affects-unresolvable`
-        # is reported only at a terminal status. The environment case above is not normal and does
-        # keep its note.
+        # which costs the signal in the case that matters. The environment case above is not
+        # normal and does keep its note.
         return (False, "")
     except Exception as exc:  # noqa: BLE001 - fail CLOSED: unclassifiable keeps the refusal
         # RECORDED, never discarded. A blanket catch here silently converted a defect in this

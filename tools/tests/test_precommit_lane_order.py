@@ -73,13 +73,14 @@ def _lane_keys(hook: Path = HOOK) -> list[str]:
 #: stays a decision rather than a habit.
 EXPECTED_LANES = {
     "style", "links", "skill-spec", "versions", "verify-ratchet",
-    "stamps-staged", "warning-ratchet",
+    "stamps-staged",
     # US0879 deleted runbook, lens-signatures, spec-claims and practice-rules: four lanes that
     # checked documents against documents and caught nothing.
     # BG0662: nothing opened a changelog fragment until the release cut, where compose refused
     # the whole fold; 59 of 119 had drifted past a green gate.
     "changelog-shape",
     # US0902 deleted script-tests: it held the TSD's prose map to the scripts tree.
+    # US0896 deleted warning-ratchet: every entry it refused was a file deleted by design.
     "budgets",
     "neutrality",
     "action-pins", "dead-flags", "floor-pending", "markdown", "markdown-payload",

@@ -162,9 +162,8 @@ def _leaky_module(n_leaks: int) -> str:
     """A passing test module whose tests print `n_leaks` warning-shaped lines to stderr."""
     body = ["import sys, unittest", "", "", "class Leaky(unittest.TestCase):"]
     for i in range(max(n_leaks, 1)):
-        body += [f"    def test_{i}(self):",
-                 f"        {'sys.stderr.write(\"warning: fixture leak\\n\")' if i < n_leaks else 'pass'}",
-                 ""]
+        line = 'sys.stderr.write("warning: fixture leak\\n")' if i < n_leaks else "pass"
+        body += [f"    def test_{i}(self):", f"        {line}", ""]
     return "\n".join(body) + "\n"
 
 

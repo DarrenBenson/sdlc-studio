@@ -64,7 +64,8 @@ Take them one at a time; they are five separate repairs sharing a cause. Derive 
   `affects-unresolvable` instances on that story, named target by named target - rather than
   assumed; without it the scenario reduces to its single-kind sibling and dropping the rule from
   the comparison survives
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::WarningRatchetTests::test_the_masking_fixture_emits_the_second_kind_it_is_named_for
+- **Verify:** manual - retired by US0896: the warning-ratchet lane, its verb and its baseline were deleted; footprint warnings are advice
+- **Verified:** manual (2026-09-24) - retired, superseded by US0896
 
 ### AC3: the lane's refusal is attributable to the ratchet and actionable on its own
 
@@ -75,7 +76,8 @@ Take them one at a time; they are five separate repairs sharing a cause. Derive 
 - **Then** the check fails, because it reads the `FAIL warning-ratchet` line and then only that
   lane's own block - the bare token `warning-ratchet` also appears on the hook's `ok` line, and
   the returncode and HEAD assertions were being carried by the unrelated failing lanes
-- **Verify:** pytest tools/tests/test_message_first_gate.py::WarningRatchetLaneTests::test_the_refusal_names_the_instance_inside_the_ratchet_lane_own_block
+- **Verify:** manual - retired by US0896: the warning-ratchet lane, its verb and its baseline were deleted; footprint warnings are advice
+- **Verified:** manual (2026-09-24) - retired, superseded by US0896
 
 ### AC4: the exempt set follows the resolver where a verb heuristic would disagree
 
@@ -120,3 +122,4 @@ Five criteria read as evidence and are not. The changelog for US0468 states that
 | --- | --- | --- |
 | 2026-08-05 | sdlc-studio | Filed |
 | 2026-08-11 | Claude Opus 5 | Groomed: the three tool-derived criteria replaced by five, one per repair, each naming the production change that must redden it and carrying its own verifier |
+| 2026-09-24 | Claude Opus 5.5 | 2 criterion(s) retired by US0896 in the D0259 pattern: the test nodes they named were deleted |

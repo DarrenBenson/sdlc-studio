@@ -65,14 +65,15 @@ can be checked without building a plan.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_the_affects_advisory_never_changes_the_grooming_verdict
 - **Verified:** yes (2026-07-22)
 
-### AC4: validate reports the same mismatch on a single artefact
+### AC4: validate reports the undeclared half on open work
 
-- **Given** one story file with a contradicted `Affects`
+- **Given** one open story whose `Verify:` lines target a file its `Affects` omits
 - **When** `validate` checks it
-- **Then** it reports the same paths as a warning, from the same predicate the planner uses, so
-  the two cannot drift into disagreeing about what a contradicted `Affects` is
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k test_validate_reports_an_affects_the_story_contradicts
-- **Verified:** yes (2026-07-22)
+- **Then** it reports those paths as a warning, from the same predicate the planner uses, so the
+  two cannot drift into disagreeing about what an undeclared target is. The unresolvable half is
+  the planner's alone, and a terminal story is not judged at all (US0896)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k test_validate_reports_an_undeclared_verify_target_on_open_work
+- **Verified:** yes (2026-09-24)
 
 ## Open Questions
 
@@ -86,3 +87,4 @@ can be checked without building a plan.
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-22 | sdlc-studio | Groomed against CR0347 AC2 and breakdown's existing unresolvable computation |
+| 2026-09-24 | Claude Opus 5.5 | AC4 amended by US0896: validate now reports only the undeclared half, on open work only; its test renamed to match and the criterion re-stamped |

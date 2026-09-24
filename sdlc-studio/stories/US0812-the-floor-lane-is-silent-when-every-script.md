@@ -1,6 +1,7 @@
 # US0812: The floor lane is silent when every script parses, so it is not a check that always fires
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Superseded by:** US0908 - the lane it describes is not built; US0908's CI check replaces it
 > **Delivers:** CR0561
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
@@ -25,3 +26,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Superseded by US0908 (RUN-01M39MC0): the lane it describes is not built; US0908's CI check replaces it |

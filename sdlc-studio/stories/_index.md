@@ -7,15 +7,15 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 169 |
+| Draft | 163 |
 | Ready | 15 |
 | Planned | 0 |
 | In Progress | 4 |
 | Review | 0 |
-| Done | 709 |
+| Done | 711 |
 | Won't Implement | 8 |
 | Deferred | 0 |
-| Superseded | 13 |
+| Superseded | 17 |
 | Blocked | 8 |
 | **Total** | **926** |
 
@@ -176,10 +176,10 @@
 | [US0808](US0808-a-filed-medium-or-low-finding-is-already.md) | A filed Medium or Low finding is already disclosed on `docs/known-issues.md` when the filer returns | Draft | EP0245 | 2026-08-27 | 2026-08-27 |
 | [US0809](US0809-a-finding-filed-at-a-barred-severity-leaves.md) | A finding filed at a BARRED severity leaves the page and the count unchanged - the paired control | Draft | EP0245 | 2026-08-27 | 2026-08-27 |
 | [US0810](US0810-the-release-notes-disclosed-count-is-derived-rather.md) | The release notes' disclosed count is DERIVED rather than hand-edited | Draft | EP0245 | 2026-08-27 | 2026-08-27 |
-| [US0811](US0811-a-tracked-script-using-syntax-newer-than-the.md) | A tracked script using syntax newer than the declared floor is REFUSED, with its file and line named | Draft | EP0246 | 2026-08-27 | 2026-08-27 |
-| [US0812](US0812-the-floor-lane-is-silent-when-every-script.md) | The floor lane is silent when every script parses, so it is not a check that always fires | Draft | EP0246 | 2026-08-27 | 2026-08-27 |
-| [US0813](US0813-sprint-report-py-is-repaired-so-the-lane.md) | sprint_report.py is repaired, so the lane's first run over the real tree has something to find | Draft | EP0246 | 2026-08-27 | 2026-08-27 |
-| [US0814](US0814-the-floor-lane-is-bound-into-the-pre.md) | The floor lane is bound into the pre-commit gate, so it runs in the command people actually run | Draft | EP0246 | 2026-08-27 | 2026-08-27 |
+| [US0811](US0811-a-tracked-script-using-syntax-newer-than-the.md) | A tracked script using syntax newer than the declared floor is REFUSED, with its file and line named | Superseded | EP0246 | 2026-08-27 | 2026-08-27 |
+| [US0812](US0812-the-floor-lane-is-silent-when-every-script.md) | The floor lane is silent when every script parses, so it is not a check that always fires | Superseded | EP0246 | 2026-08-27 | 2026-08-27 |
+| [US0813](US0813-sprint-report-py-is-repaired-so-the-lane.md) | sprint_report.py is repaired, so the lane's first run over the real tree has something to find | Superseded | EP0246 | 2026-08-27 | 2026-08-27 |
+| [US0814](US0814-the-floor-lane-is-bound-into-the-pre.md) | The floor lane is bound into the pre-commit gate, so it runs in the command people actually run | Superseded | EP0246 | 2026-08-27 | 2026-08-27 |
 | [US0817](US0817-a-unit-whose-affects-names-a-gate-lane.md) | A unit whose Affects names a gate lane, a hook or the suite runner cannot reach Fixed or Done without a recorded green self-run of the affected lane on this repository | Superseded | EP0248 | 2026-09-07 | 2026-09-07 |
 | [US0823](US0823-every-other-route-that-ends-a-run-reads.md) | every other route that ends a run reads the same unanswered-unit predicate as the close, and stop --force records what it waived | Done | EP0206 | 2026-09-15 | 2026-09-15 |
 | [US0824](US0824-module-alone-at-the-push-boundary-runs-the.md) | module-alone at the push boundary runs the changed modules and everything that imports them | Draft | EP0253 | 2026-09-16 | 2026-09-16 |
@@ -250,11 +250,11 @@
 | [US0889](US0889-the-close-forward-ports-the-skill-and-keeps.md) | The close forward-ports the skill and keeps one handover per run | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0890](US0890-recording-a-waiver-no-longer-re-reads-every.md) | Recording a waiver no longer re-reads every script | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0891](US0891-a-commit-s-pre-commit-lanes-run-side.md) | A commit's pre-commit lanes run side by side | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
-| [US0892](US0892-a-commit-s-selected-tests-are-handed-out.md) | A commit's selected tests are handed out one at a time across every worker | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
-| [US0893](US0893-a-commit-leaves-the-live-repository-tests-to.md) | A commit leaves the live-repository tests to the push | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0892](US0892-a-commit-s-selected-tests-are-handed-out.md) | A commit's selected tests are handed out one at a time across every worker | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0893](US0893-a-commit-leaves-the-live-repository-tests-to.md) | A commit leaves the live-repository tests to the push | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0894](US0894-the-close-owed-report-walks-the-corpus-once.md) | The close-owed report walks the corpus once, not once per epic | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0895](US0895-a-commit-runs-only-the-gate-lanes-that.md) | A commit runs only the gate lanes that can refuse it | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
-| [US0896](US0896-footprint-warnings-advise-and-a-finished-artefact-is.md) | Footprint warnings advise, and a finished artefact is never re-judged | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0896](US0896-footprint-warnings-advise-and-a-finished-artefact-is.md) | Footprint warnings advise, and a finished artefact is never re-judged | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0897](US0897-a-shared-verify-selector-is-an-advisory-note.md) | A shared Verify selector is an advisory note within one artefact, never a commit refusal | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0898](US0898-a-shipped-release-s-notes-stay-as-shipped.md) | A shipped release's notes stay as shipped, and the defect count is written at the cut | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0899](US0899-mechanical-index-and-epic-drift-is-fixed-at.md) | Mechanical index and epic drift is fixed at commit, not refused | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
@@ -266,7 +266,7 @@
 | [US0905](US0905-adding-a-commit-lane-means-removing-one.md) | Adding a commit lane means removing one | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0906](US0906-the-review-seats-push-back-on-a-check.md) | The review seats push back on a check that earns nothing | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0907](US0907-the-backlog-holds-only-the-work-the-lean.md) | The backlog holds only the work the lean direction still wants | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
-| [US0908](US0908-the-skill-s-scripts-run-on-the-python.md) | The skill's scripts run on the Python 3.10 it declares | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0908](US0908-the-skill-s-scripts-run-on-the-python.md) | The skill's scripts run on the Python 3.10 it declares | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0909](US0909-a-story-reaches-in-progress-and-done-without.md) | A story reaches In Progress and Done without a plan review | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0910](US0910-a-bug-reaches-fixed-without-a-verification-depth.md) | A bug reaches Fixed without a verification depth tier | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0911](US0911-a-unit-reaches-done-without-a-test-plan.md) | A unit reaches Done without a test plan or a falsifiability probe | Draft | EP0263 | 2026-09-24 | 2026-09-24 |

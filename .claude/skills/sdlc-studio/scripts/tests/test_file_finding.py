@@ -3046,7 +3046,7 @@ class VerifySelectorWriteGuardTests(unittest.TestCase):
     def test_a_resolving_verify_selector_is_accepted(self) -> None:
         # The positive control: the guard must discriminate, not refuse every write.
         r = self._file("it works. **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/"
-                       "test_validate.py -k WarningRatchetExitCode")
+                       "test_validate.py -k ContradictedAffectsTests")
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)
 
     def test_an_unjudgeable_selector_is_accepted_and_reported(self) -> None:

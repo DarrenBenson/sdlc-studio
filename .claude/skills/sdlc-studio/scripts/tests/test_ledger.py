@@ -263,8 +263,9 @@ class FieldsFileTypeTests(unittest.TestCase):
                 0, ff.load_fields_file(str(other),
                                        allowed=("file", "line", "reason", "author"))["line"])
 
-    def test_the_five_shipped_commands_refuse_by_name_and_never_traceback(self) -> None:
-        """AC3. Each of the five modules' COMMANDS, driven as a subprocess.
+    def test_the_four_shipped_commands_refuse_by_name_and_never_traceback(self) -> None:
+        """AC3. Each module's COMMAND, driven as a subprocess. The fifth, `validate.py
+        warning-ratchet --stamp`, was deleted with the warning ratchet (US0896).
 
         MUTANT (one per module): bypass the shared loader and read the JSON directly at that
         command's call site. The refusal asserted here is the LOADER'S, so a command that stops
@@ -280,7 +281,6 @@ class FieldsFileTypeTests(unittest.TestCase):
             ("decisions.py", "rationale", {"decision": "a ruling", "rationale": False},
              ["add"]),
             ("handoff.py", "title", {"title": 0}, ["generate", "--dry-run"]),
-            ("validate.py", "reason", {"reason": []}, ["warning-ratchet", "--stamp"]),
             ("file_finding.py", "impact",
              {"title": "t", "summary": "s", "severity": "Medium", "steps": "1. a", "fix": "f",
               "impact": False, "affects": "scripts/a.py", "points": 3},
@@ -309,8 +309,6 @@ class FieldsFileTypeTests(unittest.TestCase):
              ["record", "--tranche", "CR0020"]),
             ("decisions", 0, {"decision": "a ruling", "rationale": "why it was taken"}, ["add"]),
             ("handoff", 2, {"title": "a handoff"}, ["generate", "--dry-run"]),
-            ("validate", 0, {"reason": "predates the ratchet"},
-             ["warning-ratchet", "--stamp"]),
             ("file_finding", 0,
              {"title": "t", "summary": "a summary", "severity": "Medium",
               "steps": "1. run it", "fix": "repair it", "impact": "an impact",

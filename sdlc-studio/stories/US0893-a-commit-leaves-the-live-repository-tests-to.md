@@ -1,6 +1,6 @@
 # US0893: A commit leaves the live-repository tests to the push
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

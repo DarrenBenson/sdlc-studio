@@ -1,6 +1,7 @@
 # US0813: sprint_report.py is repaired, so the lane's first run over the real tree has something to find
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Superseded by:** US0908 - US0908 repaired sprint_report.py:425 itself
 > **Delivers:** CR0561
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
@@ -26,3 +27,4 @@
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: tools/tests/test_test_noise.py:166 also fails to parse under Python 3.10 ('f-string expression part cannot include a backslash'); repair it with sprint_report.py or US0811's lane lands red over the real tree. |
+| 2026-09-24 | Claude Opus 5.5 | Superseded by US0908 (RUN-01M39MC0): US0908 repaired sprint_report.py:425 itself |

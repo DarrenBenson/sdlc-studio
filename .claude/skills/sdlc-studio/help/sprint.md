@@ -351,7 +351,8 @@ answered, never filed.
 check on the unit it adds, so joining a batch late is not a way past it.
 
 Scoped to the batch, never the corpus: a defect in work nobody is planning cannot block a plan.
-The standing tail is held by `validate.py warning-ratchet` instead.
+`validate.py check` reports only the undeclared half (a `Verify:` target the `Affects` omits), on
+open work only, as advice; it never re-judges a finished unit.
 
 `sprint.affects_check` decides what a finding does. The shipped default is `warn` - it reports
 and refuses nothing, because a declaration naming a file the unit will CREATE is legitimate.

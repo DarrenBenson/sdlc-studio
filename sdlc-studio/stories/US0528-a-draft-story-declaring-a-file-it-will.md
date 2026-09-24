@@ -31,8 +31,8 @@
 - **Given** a terminal unit whose Affects names a path absent from the tree
 - **When** validate runs
 - **Then** the warning is raised, because at that point the file should exist and its absence is a real signal
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::ScopedCheckTests::test_a_terminal_unit_with_a_missing_path_is_still_warned
-- **Verified:** yes (2026-07-28)
+- **Verify:** manual - retired by US0896: a terminal unit is never re-judged, so a path it names that is gone is no longer warned
+- **Verified:** manual (2026-09-24) - retired, superseded by US0896
 
 ## Revision History
 
@@ -40,3 +40,4 @@
 | --- | --- | --- |
 | 2026-07-28 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-28 | Claude Fable 5 | Groomed against the carried lessons |
+| 2026-09-24 | Claude Opus 5.5 | 1 criterion(s) retired by US0896 in the D0259 pattern: the test nodes they named were deleted |

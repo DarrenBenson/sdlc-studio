@@ -63,8 +63,8 @@ AC1's declared mutant is also unapplicable - `validate.py` already reads `"ok": 
 - **Then** it exits 0 AND its message states that it is reporting rather than refusing, so a
   reader learns the exit code from the text instead of inferring the opposite from "Not `clean`".
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k a_stale_ratchet_baseline_says_it_is_not_refusing
-- **Verified:** yes (2026-08-10)
+- **Verify:** manual - retired by US0896: the warning-ratchet lane, its verb and its baseline were deleted; footprint warnings are advice
+- **Verified:** manual (2026-09-24) - retired, superseded by US0896
 - **Mutant:** in `validate.py`, remove the non-blocking statement from the stale message, restoring a headline that reads as a refusal while the command exits 0.
 
 ### AC2
@@ -76,8 +76,8 @@ AC1's declared mutant is also unapplicable - `validate.py` already reads `"ok": 
   verifiers call `render_ratchet` in-process, which is exactly why the previous repair could
   change the words and leave the code untouched.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k every_refusing_ratchet_state_exits_non_zero
-- **Verified:** yes (2026-08-10)
+- **Verify:** manual - retired by US0896: the warning-ratchet lane, its verb and its baseline were deleted; footprint warnings are advice
+- **Verified:** manual (2026-09-24) - retired, superseded by US0896
 - **Mutant:** in `validate.py`, change `cmd_warning_ratchet` to return 0 for every state.
 
 ### AC3
@@ -87,8 +87,8 @@ AC1's declared mutant is also unapplicable - `validate.py` already reads `"ok": 
 - **Then** it exits ZERO - the positive control, without which AC2 is satisfied by a command that
   always fails.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k a_clean_ratchet_baseline_exits_zero
-- **Verified:** yes (2026-08-10)
+- **Verify:** manual - retired by US0896: the warning-ratchet lane, its verb and its baseline were deleted; footprint warnings are advice
+- **Verified:** manual (2026-09-24) - retired, superseded by US0896
 - **Mutant:** in `validate.py`, change `cmd_warning_ratchet` to return 1 unconditionally.
 
 ## Test Plan
@@ -104,3 +104,4 @@ AC1's declared mutant is also unapplicable - `validate.py` already reads `"ok": 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-07 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | 3 criterion(s) retired by US0896 in the D0259 pattern: the test nodes they named were deleted |

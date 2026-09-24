@@ -18,7 +18,7 @@ Sprint 3 of the back-to-basics programme, part one. Makes a code commit clear in
 - [ ] [US0893: A commit leaves the live-repository tests to the push](../stories/US0893-a-commit-leaves-the-live-repository-tests-to.md)
 - [x] [US0894: The close-owed report walks the corpus once, not once per epic](../stories/US0894-the-close-owed-report-walks-the-corpus-once.md)
 - [ ] [US0895: A commit runs only the gate lanes that can refuse it](../stories/US0895-a-commit-runs-only-the-gate-lanes-that.md)
-- [ ] [US0896: Footprint warnings advise, and a finished artefact is never re-judged](../stories/US0896-footprint-warnings-advise-and-a-finished-artefact-is.md)
+- [x] [US0896: Footprint warnings advise, and a finished artefact is never re-judged](../stories/US0896-footprint-warnings-advise-and-a-finished-artefact-is.md)
 - [ ] [US0897: A shared Verify selector is an advisory note within one artefact, never a commit refusal](../stories/US0897-a-shared-verify-selector-is-an-advisory-note.md)
 - [x] [US0898: A shipped release's notes stay as shipped, and the defect count is written at the cut](../stories/US0898-a-shipped-release-s-notes-stay-as-shipped.md)
 - [ ] [US0899: Mechanical index and epic drift is fixed at commit, not refused](../stories/US0899-mechanical-index-and-epic-drift-is-fixed-at.md)
@@ -30,7 +30,7 @@ Sprint 3 of the back-to-basics programme, part one. Makes a code commit clear in
 - [ ] [US0905: Adding a commit lane means removing one](../stories/US0905-adding-a-commit-lane-means-removing-one.md)
 - [x] [US0906: The review seats push back on a check that earns nothing](../stories/US0906-the-review-seats-push-back-on-a-check.md)
 - [ ] [US0907: The backlog holds only the work the lean direction still wants](../stories/US0907-the-backlog-holds-only-the-work-the-lean.md)
-- [ ] [US0908: The skill's scripts run on the Python 3.10 it declares](../stories/US0908-the-skill-s-scripts-run-on-the-python.md)
+- [x] [US0908: The skill's scripts run on the Python 3.10 it declares](../stories/US0908-the-skill-s-scripts-run-on-the-python.md)
 
 ## Revision History
 
