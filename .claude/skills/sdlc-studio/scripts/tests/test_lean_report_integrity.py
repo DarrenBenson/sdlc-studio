@@ -419,6 +419,52 @@ class FiledByCloseTests(unittest.TestCase):
         self.assertEqual(2, self._build("--write")[0])
         self.assertEqual(report, sr.read_report(self.root, rid))
 
+    def test_a_sealed_run_is_called_signed_only_when_it_was(self) -> None:
+        """The QA seat's finding: a stopped run nobody signed was refused as "a signed record".
+        MUTANT: the old wording, whatever the signature says."""
+        self.fx._state(self.root, outcome="stopped", ended_at="2026-09-24T00:00:00Z")
+        rc, out, err = self._build("--write")
+        self.assertEqual(2, rc, out + err)
+        self.assertIn("RUN-LEAN0001 is sealed (stopped) and its report is the close's record", err)
+        self.assertNotIn("signed", err)
+        self.fx._state(self.root, outcome="goal-reached", ended_at="2026-09-24T00:00:00Z",
+                       signature={"principal": "operator", "report": "RPT0001"})
+        self.assertIn("its report is a signed record", self._build("--write")[2])
+
+    def test_the_refile_remedy_names_a_route_that_can_work(self) -> None:
+        """MUTANTS: the signed branch is never taken, so a signed page is told to re-run a
+        close that refuses its sealed run; an archived run's page is told to reopen, which only
+        ever reaches the live run."""
+        page = {"report_id": "RPT0001", "valid": False, "edited": [], "moved": ["tokens"]}
+        signed = {**page, "signature": {"principal": "operator"}}
+        unsigned_line = sr.status_line(page)
+        self.assertIn("re-run `sprint.py close`", unsigned_line)
+        self.assertNotIn("reopen", unsigned_line)
+        self.assertIn("reopen the run with `sprint.py reopen --reason ...`, then re-run",
+                      sr.status_line(signed))
+        for state in (page, signed):
+            archived_line = sr.status_line({**state, "archived": True})
+            self.assertIn("a page re-files only while its run is live", archived_line)
+            self.assertNotIn("reopen", archived_line)
+            self.assertNotIn("sprint.py close", archived_line)
+
+    def test_an_archived_runs_page_is_not_sent_to_reopen(self) -> None:
+        """`reopen` and the close reach only the live run, so once the next run opens neither
+        can re-file the last one's page. MUTANT: `archived` never set, or set for the live run."""
+        rc, _out, err = self.fx._close(self.root)
+        self.assertEqual(0, rc, err)
+        rid = self._state()["report"]
+        self.assertFalse(sr.revalidate(self.root, rid)["archived"], "the live run is archived")
+        sealed = {**self._state(), "outcome": "goal-reached", "ended_at": "2026-09-24T00:00:00Z"}
+        sr.run_state.archive(self.root, sealed)
+        self.fx._state(self.root, run_id="RUN-LEAN0002")
+        self.assertTrue(sr.revalidate(self.root, rid)["archived"])
+        rc, out, err = self._build("--write", "--run", "RUN-LEAN0001")
+        self.assertEqual(2, rc, out + err)
+        self.assertIn("RUN-LEAN0001 is sealed (goal-reached)", err)
+        self.assertIn("a page re-files only while its run is live", err)
+        self.assertNotIn("reopen", err)
+
 
 class WindowRaceTests(unittest.TestCase):
     """US0885: a report's DORA window does not race its own paperwork (BG0748).

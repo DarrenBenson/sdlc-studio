@@ -12121,7 +12121,7 @@ HOOK_PATHS = (".githooks/pre-commit", ".githooks/commit-msg",
               ".git/hooks/pre-commit", ".git/hooks/commit-msg")
 
 #: Evidence that the hook DECIDES whether to run the suites from what the commit touched.
-_HOOK_SELECTS = ("--suite-decision", "--test-relevant", "suites_needed")
+_HOOK_SELECTS = ("--suite-decision", "suites_needed")
 
 #: Evidence that the hook runs a test suite at all.
 _HOOK_RUNS = ("unittest discover", "pytest", "skill-tests.sh", "npm test", "npm run test")

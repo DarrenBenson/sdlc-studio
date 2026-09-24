@@ -23,24 +23,24 @@
 - **Given** a test module declaring `GATE_LISTING_ONLY` with a directory and a set of ids
 - **When** the gate reads that declaration
 - **Then** both the directory and the id set are parsed, and a malformed id set is refused rather than partially honoured
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ListingOnlyIdScopeTests::test_a_declaration_parses_its_directory_and_its_ids
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0880: the measured test-relevant set and its listing-only narrowing are deleted, and per-commit selection reads imports, loads and test names only
+- **Verified:** manual (2026-09-24) - retired, superseded by US0880
 
 ### AC2: a new file under the directory whose id is not named is not structural
 
 - **Given** a declaration naming ids
 - **When** an artefact is added under that directory whose id the declaration does not name
 - **Then** the file does not enter the test-relevant surface, and the declaring module is not selected for it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ListingOnlyIdScopeTests::test_an_unnamed_id_is_not_structural
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0880: the measured test-relevant set and its listing-only narrowing are deleted, and per-commit selection reads imports, loads and test names only
+- **Verified:** manual (2026-09-24) - retired, superseded by US0880
 
 ### AC3: a change to a named id remains structural
 
 - **Given** the same declaration
 - **When** an artefact whose id IS named changes or is added
 - **Then** the file is structural exactly as before and the declaring module is selected for it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ListingOnlyIdScopeTests::test_a_named_id_stays_structural
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0880: the measured test-relevant set and its listing-only narrowing are deleted, and per-commit selection reads imports, loads and test names only
+- **Verified:** manual (2026-09-24) - retired, superseded by US0880
 
 ### AC4: the fail-safe direction is preserved
 
@@ -48,16 +48,16 @@
 - **When** the gate reads it
 - **Then** the whole directory stays structural exactly as now, so the narrowing is opt-in and a module that omits its ids is slower rather than wrong
 - **Preserves:** every existing `GATE_LISTING_ONLY` declaration that names no ids keeps its current whole-directory meaning, so this story owns the gate.py seam it shares with US0553
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ListingOnlyIdScopeTests::test_a_declaration_with_no_ids_keeps_the_whole_directory_structural
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0880: the measured test-relevant set and its listing-only narrowing are deleted, and per-commit selection reads imports, loads and test names only
+- **Verified:** manual (2026-09-24) - retired, superseded by US0880
 
 ### AC5: the root census declares the ids it reads
 
 - **Given** `test_root_census.py`, which reaches named artefacts through `_artefact_on_disk`
 - **When** its declaration is read
 - **Then** it names exactly the ids the census file lists, and a census id the declaration omits is reported rather than left silently unprotected
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_root_census.py::DeclaredIdsCoverTheCensusTests::test_every_census_id_is_named_by_the_declaration
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0880: the measured test-relevant set and its listing-only narrowing are deleted, and per-commit selection reads imports, loads and test names only
+- **Verified:** manual (2026-09-24) - retired, superseded by US0880
 
 ## Revision History
 

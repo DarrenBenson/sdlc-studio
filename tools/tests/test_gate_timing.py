@@ -28,10 +28,6 @@ def _load():
 
 gt = _load()
 
-_US0880_RETIRED = ("retired by US0880: `gate_timing.py budget` and its per-commit "
-                   "ratchet are deleted; the commit hook reports elapsed time against "
-                   "90 seconds instead")
-
 
 class RecordTests(unittest.TestCase):
     """AC1: durations accumulate to a bounded per-suite history."""
@@ -208,10 +204,6 @@ class ScopeTests(unittest.TestCase):
             self.assertIn("total.selected.tests", data)
             self.assertNotIn(1171, data.get("total.tests", []),
                              "a selected count landed in the full series and will erode the peak")
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_the_budget_reports_the_series_the_run_ACTUALLY_used(self) -> None:
-        """Retired by US0880; kept as a skipped stub because BG0467 AC3 names it."""
 
     def test_a_loader_error_is_refused_even_at_a_full_count(self) -> None:
         """The filed reproduction. A module that fails to import is a FACT, not a threshold, so it
@@ -524,82 +516,6 @@ class ScopeCollapseTests(unittest.TestCase):
                 (root / "sdlc-studio" / gt.COLLAPSE_ACK).write_text(payload, encoding="utf-8")
                 self.assertTrue(gt.scope_ok(root, "total", 510)["collapsed"],
                                 f"{payload} was accepted as an acknowledgement")
-
-
-
-class BudgetLaneTests(unittest.TestCase):
-    """Retired by US0880. Skipped stubs, kept only because stamped criteria
-    (US0287 AC1-AC3) name these nodes; delete them when those criteria are retired."""
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_budget_config_carries_its_baseline(self) -> None:
-        pass
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_over_budget_warns_and_never_blocks(self) -> None:
-        pass
-
-
-
-class GateBudgetRedeclaredTests(unittest.TestCase):
-    """Retired by US0880. Skipped stubs, kept only because stamped criteria
-    (US0432 AC1-AC2) name these nodes; delete them when those criteria are retired."""
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_the_declared_budget_covers_the_measured_cost(self) -> None:
-        pass
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_a_regression_above_the_new_budget_still_flags(self) -> None:
-        pass
-
-
-
-class BudgetSeriesTests(unittest.TestCase):
-    """Retired by US0880. Skipped stubs, kept only because stamped criteria
-    (BG0594 AC1-AC5) name these nodes; delete them when those criteria are retired."""
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_the_rate_is_reported_beside_the_total(self) -> None:
-        pass
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_the_full_suite_is_judged_against_its_own_ceiling(self) -> None:
-        pass
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_two_widths_of_equal_rate_reach_the_same_verdict(self) -> None:
-        pass
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_a_risen_rate_on_a_narrower_run_is_still_visible(self) -> None:
-        pass
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_an_undeclared_full_ceiling_falls_back_and_says_so(self) -> None:
-        pass
-
-
-
-class BudgetLineTests(unittest.TestCase):
-    """Retired by US0880. Skipped stubs, kept only because stamped criteria
-    (BG0608 AC1-AC4) name these nodes; delete them when those criteria are retired."""
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_the_line_leads_with_the_rate_verdict(self) -> None:
-        pass
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_an_over_rate_run_reads_over_in_the_same_leading_clause(self) -> None:
-        pass
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_a_cross_width_drift_clause_names_both_widths_or_is_withheld(self) -> None:
-        pass
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_an_unmeasured_width_is_named_beside_its_total(self) -> None:
-        pass
 
 
 if __name__ == "__main__":

@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 65 |
+| Open | 64 |
 | In Progress | 0 |
 | Fixed | 586 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 10 |
-| Superseded | 6 |
+| Superseded | 7 |
 | **Total** | **754** |
 
 ## All Bugs
@@ -82,7 +82,7 @@
 | [BG0721](BG0721-the-duplicate-lens-cannot-tell-one-change-filed.md) | the duplicate lens cannot tell one change filed twice from one method applied to several disjoint scopes | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0722](BG0722-the-unruled-lens-catches-a-request-nobody-closed.md) | the unruled lens catches a request nobody closed, not the request everybody abandoned - the dominant accumulation path is still unguarded | Fixed | High | 2026-09-21 | 2026-09-21 |
 | [BG0723](BG0723-a-stated-count-in-source-or-test-prose.md) | a stated count in source or test prose is never checked against the tree it counts | Open | Medium | 2026-09-21 | 2026-09-21 |
-| [BG0724](BG0724-check-spec-claims-reads-raw-text-so-a.md) | check_spec_claims reads raw text, so a claim inside a fenced code block is judged as a live claim | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0724](BG0724-check-spec-claims-reads-raw-text-so-a.md) | check_spec_claims reads raw text, so a claim inside a fenced code block is judged as a live claim | Superseded | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0725](BG0725-two-spellings-of-the-stop-ship-constant-and.md) | two spellings of the stop-ship constant, and a hand-maintained verb list whose stale entries nothing can report | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0726](BG0726-the-report-renders-no-declared-seat-without-asking.md) | the report renders NO DECLARED SEAT without asking whether the project declares any personas at all | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0727](BG0727-check-script-tests-sweeps-two-fixed-globs-so.md) | check_script_tests sweeps two fixed globs, so a script in any other scripts subdirectory needs no test | Open | Medium | 2026-09-21 | 2026-09-21 |

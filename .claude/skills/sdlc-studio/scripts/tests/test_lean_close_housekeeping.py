@@ -153,6 +153,29 @@ class CloseHousekeepingTests(unittest.TestCase):
             self.assertEqual(2, len(_handovers(root)))
             self.assertNotEqual(first, lean._read(root)["handoff"])
 
+    def test_only_the_open_runs_own_handover_is_refreshed(self) -> None:
+        """Mutants: `_open_handoff` refreshes a handover the state names although the run has
+        ended (a sealed run's handover is a record), or although the document records a
+        different run."""
+        tail = unittest.mock.patch.object(lean._live("sprint"), "_apply_signoff_tail",
+                                          lambda *a, **k: 0)
+        for label, over in (("sealed", {"outcome": "goal-reached"}),
+                            ("another run's", {"run_id": "RUN-LEAN0002"})):
+            with self.subTest(label), tempfile.TemporaryDirectory() as d, tail:
+                root = Path(d)
+                lean._fixture(root)
+                rc, _out, err = lean._close(root, real=("handoff",))
+                self.assertEqual(0, rc, err)
+                first = lean._read(root)["handoff"]
+                [name] = _handovers(root)
+                before = (root / "sdlc-studio" / "handoffs" / name).read_text(encoding="utf-8")
+                lean._state(root, handoff=first, **over)
+                res = lean._live("handoff").generate(root, "next")
+                self.assertNotEqual(first, res["id"], f"{label} handover was reused")
+                self.assertEqual(2, len(_handovers(root)))
+                self.assertEqual(before, (root / "sdlc-studio" / "handoffs" / name).read_text(
+                    encoding="utf-8"), f"{label} handover was rewritten")
+
 
 if __name__ == "__main__":
     unittest.main()

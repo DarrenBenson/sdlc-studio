@@ -4267,7 +4267,9 @@ def revalidate(root, report_id: str) -> dict:
             "report_id": stored.get("report_id") or report_id,
             "signed_fingerprint": signed, "fingerprint": current, "page_fingerprint": digest,
             "moved": [c["key"] for c in changes], "changes": changes, "edited": edited,
-            "twin_note": twin_note, "signature": stored.get("signature")}
+            "twin_note": twin_note, "signature": stored.get("signature"),
+            "archived": _run_state_for(Path(root), stored.get("run_id"))[1]
+            != _rel(root, run_state.path(root))}
 
 
 def _lifecycle_edits(root, stored: dict, fresh: dict) -> list[dict]:
@@ -4494,13 +4496,14 @@ def status_line(state: dict | None) -> str | None:
 
 # --- the verbs ---------------------------------------------------------------------------------
 
-def _filed_by_close_only(state: dict, retro_id: str) -> str:
+def _filed_by_close_only(state: dict, retro_id: str, archived: bool = False) -> str:
     """Why `build --write` files nothing: a report of record is filed ONLY by `sprint close`.
 
     The close takes the closing token stamp and records each unit's gate verdict before it
     derives the page, and holds the page behind its checks; a report filed here skipped all
-    three and read Tokens 0. An open run is re-filed by re-running the close. A sealed
-    run's report is a signed record, so it too is refused: a new page needs the run reopened.
+    three and read Tokens 0. An open run is re-filed by re-running the close. A sealed run's
+    report is the close's record, so it too is refused: a new page needs the run reopened, and
+    an archived run cannot be reopened at all.
     """
     run_id, outcome = state.get("run_id"), state.get("outcome")
     close = f"`sprint.py close --retro {retro_id}`"
@@ -4508,12 +4511,22 @@ def _filed_by_close_only(state: dict, retro_id: str) -> str:
         return (f"refused: {run_id} is open, and a report of record is filed only by the close, "
                 f"which stamps the tokens and records the gate verdicts first - run {close}. "
                 f"Without --write, build previews the page and files nothing")
-    return (f"refused: {run_id} is sealed ({outcome}) and its report is a signed record - "
-            f"`sprint.py reopen --reason ...` then {close} to file a new one")
+    record = ("a signed record" if (state.get("signature") or {}).get("principal")
+              else "the close's record")
+    return (f"refused: {run_id} is sealed ({outcome}) and its report is {record} - "
+            + (_LIVE_ONLY if archived else
+               f"`sprint.py reopen --reason ...` then {close} to file a new one"))
+
+
+#: An archived run is no longer the live one, so neither `reopen` nor the close can reach it.
+_LIVE_ONLY = "a page re-files only while its run is live, and this run is archived"
 
 
 def _refile_remedy(state: dict) -> str:
-    """The route that re-files an invalidated report: the close, after a reopen once signed."""
+    """The route that re-files an invalidated report: the close, after a reopen once signed,
+    and none once its run is archived."""
+    if state.get("archived"):
+        return _LIVE_ONLY
     if (state.get("signature") or {}).get("principal"):
         return "reopen the run with `sprint.py reopen --reason ...`, then re-run `sprint.py close`"
     return "re-run `sprint.py close`, which re-files it under the same id"
@@ -4522,9 +4535,10 @@ def _refile_remedy(state: dict) -> str:
 def cmd_build(args: argparse.Namespace) -> int:
     root = Path(args.root)
     try:
-        state, _rel_ = _run_state_for(root, getattr(args, "run", None))
+        state, state_rel = _run_state_for(root, getattr(args, "run", None))
         if args.write:
-            print(f"error: {_filed_by_close_only(state, args.id or 'RETROxxxx')}",
+            archived = state_rel != _rel(root, run_state.path(root))
+            print(f"error: {_filed_by_close_only(state, args.id or 'RETROxxxx', archived)}",
                   file=sys.stderr)
             return 2
         report = build_report(root, args.id or _retro_for_run(root, state))

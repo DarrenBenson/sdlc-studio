@@ -10041,8 +10041,8 @@ class ApplySignoffRequestDerivationTests(unittest.TestCase):
 # is that the mode is DERIVED from the hook rather than restated beside it, so a hook that
 # selects and a hook that always runs must produce different answers from the same reader.
 _HOOK_SELECTS = """#!/usr/bin/env bash
-relevance_out="$(python3 "$skill/gate.py" --root . --test-relevant)"
-case "$relevance_out" in *"test-relevant: yes"*) suites_needed=1 ;; esac
+decision_out="$(python3 "$skill/gate.py" --root . --suite-decision --staged)"
+case "$decision_out" in *"suite-decision: run"*) suites_needed=1 ;; esac
 python3 -m unittest discover -s tools/tests
 """
 _HOOK_ALWAYS = """#!/usr/bin/env bash

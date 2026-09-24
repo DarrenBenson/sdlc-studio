@@ -252,17 +252,5 @@ class RootCensusTests(unittest.TestCase):
                                       f"{script}: the census names {opt}, which it never declares")
 
 
-_US0880_RETIRED = ("retired by US0880: the measured test-relevant set and its listing-only "
-                   "narrowing are deleted; selection reads imports, loads and test names only")
-
-class DeclaredIdsCoverTheCensusTests(unittest.TestCase):
-    """Retired by US0880. Skipped stubs, kept only because stamped criteria
-    (US0554 AC5) name these nodes; delete them when those criteria are retired."""
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_every_census_id_is_named_by_the_declaration(self) -> None:
-        pass
-
-
 if __name__ == "__main__":
     unittest.main()

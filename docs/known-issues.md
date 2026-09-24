@@ -70,7 +70,6 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0720` | Medium | the report's Filed this run figure names the batch's delivered units as findings and omits a finding that was filed |
 | `BG0721` | Medium | the duplicate lens cannot tell one change filed twice from one method applied to several disjoint scopes |
 | `BG0723` | Medium | a stated count in source or test prose is never checked against the tree it counts |
-| `BG0724` | Medium | check_spec_claims reads raw text, so a claim inside a fenced code block is judged as a live claim |
 | `BG0725` | Medium | two spellings of the stop-ship constant, and a hand-maintained verb list whose stale entries nothing can report |
 | `BG0726` | Medium | the report renders NO DECLARED SEAT without asking whether the project declares any personas at all |
 | `BG0727` | Medium | check_script_tests sweeps two fixed globs, so a script in any other scripts subdirectory needs no test |
@@ -96,7 +95,7 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0753` | Medium | The test suite leaks temporary directories into /tmp |
 | `BG0754` | Medium | A commit touching a widely imported script runs well over the 90-second budget |
 
-65 findings: 65 Medium, 0 Low.
+64 findings: 64 Medium, 0 Low.
 
 ## Not carried
 

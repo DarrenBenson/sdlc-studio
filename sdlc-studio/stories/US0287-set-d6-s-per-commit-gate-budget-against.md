@@ -36,8 +36,8 @@ the check reports the trend against a dated baseline.
 - **When** the budget is written to config
 - **Then** it carries the measured baseline and the date it was set against, so a later reader
   can tell what the number was a judgement about
-- **Verify:** pytest tools/tests/test_gate_timing.py::BudgetLaneTests::test_budget_config_carries_its_baseline
-- **Verified:** yes (2026-07-21)
+- **Verify:** manual - retired by US0880: `gate_timing.py budget` and its per-commit ratchet are deleted, and the commit hook reports elapsed time against 90 seconds instead
+- **Verified:** manual (2026-09-24) - retired, superseded by US0880
 
 ### AC2: the report shows drift, not just the current value
 
@@ -45,8 +45,8 @@ the check reports the trend against a dated baseline.
 - **When** the lane reports
 - **Then** it names the baseline and its date alongside the current value, so a 28% drift is
   visible as drift rather than as a still-passing number
-- **Verify:** pytest tools/tests/test_gate_timing.py::BudgetLaneTests
-- **Verified:** yes (2026-07-21)
+- **Verify:** manual - retired by US0880: `gate_timing.py budget` and its per-commit ratchet are deleted, and the commit hook reports elapsed time against 90 seconds instead
+- **Verified:** manual (2026-09-24) - retired, superseded by US0880
 
 ### AC3: over budget warns and never blocks
 
@@ -54,8 +54,8 @@ the check reports the trend against a dated baseline.
 - **When** the lane runs
 - **Then** it warns and the gate is not refused, so a slow or loaded machine cannot block a
   correct commit
-- **Verify:** pytest tools/tests/test_gate_timing.py::BudgetLaneTests::test_over_budget_warns_and_never_blocks
-- **Verified:** yes (2026-07-21)
+- **Verify:** manual - retired by US0880: `gate_timing.py budget` and its per-commit ratchet are deleted, and the commit hook reports elapsed time against 90 seconds instead
+- **Verified:** manual (2026-09-24) - retired, superseded by US0880
 
 ### AC4: D6 is closed with the number and its baseline
 

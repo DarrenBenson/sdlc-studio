@@ -75,8 +75,8 @@ Have the budget report the series the run actually used, and say when it is a se
 - **Given** a selected commit following a full one
 - **When** the budget line is printed
 - **Then** it names the selected duration and marks it as such, rather than reporting the previous full run's - a budget line naming a number the commit did not pay is worse than none, because it is believed
-- **Verify:** pytest tools/tests/test_gate_timing.py::ScopeTests::test_the_budget_reports_the_series_the_run_ACTUALLY_used
-- **Verified:** yes (2026-07-31)
+- **Verify:** manual - retired by US0880: `gate_timing.py budget` and its per-commit ratchet are deleted, and the commit hook reports elapsed time against 90 seconds instead
+- **Verified:** manual (2026-09-24) - retired, superseded by US0880
 
 ## Revision History
 

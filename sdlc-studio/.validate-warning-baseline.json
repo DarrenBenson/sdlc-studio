@@ -392,6 +392,12 @@
       "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
     },
     {
+      "id": "BG0724",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_spec_claims.py",
+      "reason": "BG0724 is Superseded by US0879, which deleted tools/check_spec_claims.py; its Affects names the file the finding was against, which no longer exists."
+    },
+    {
       "id": "CR0010",
       "rule": "affects-unresolvable",
       "target": "prd.md",

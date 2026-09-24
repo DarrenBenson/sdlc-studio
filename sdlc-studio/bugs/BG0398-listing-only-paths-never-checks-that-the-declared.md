@@ -29,32 +29,32 @@ Scope the declaration to the declaring module's own contribution and reject one 
 - **Given** one module declaring a directory listing-only and a second reading the same directory without declaring it
 - **When** the listing-only scopes are read
 - **Then** the directory is NOT listing-only, because a declaration is one module's statement about its own read and cannot speak for a neighbour's
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DeclarationScopedToItsDeclarerTests::test_one_modules_declaration_does_not_silence_anothers_read
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0880: the measured test-relevant set and its listing-only narrowing are deleted, and per-commit selection reads imports, loads and test names only
+- **Verified:** manual (2026-09-24) - retired, superseded by US0880
 
 ### AC2: a directory every reader declares is still narrowed
 
 - **Given** every module that reads the directory declaring it listing-only
 - **When** the listing-only scopes are read
 - **Then** the narrowing applies, so unanimity is a condition on the feature rather than a refusal of it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DeclarationScopedToItsDeclarerTests::test_a_directory_every_reader_declares_is_still_narrowed
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0880: the measured test-relevant set and its listing-only narrowing are deleted, and per-commit selection reads imports, loads and test names only
+- **Verified:** manual (2026-09-24) - retired, superseded by US0880
 
 ### AC3: a directory-level content read can never be declared listing-only
 
 - **Given** `.githooks`, read at directory level for its contents
 - **When** the listing-only scopes are read
 - **Then** no declaration makes it listing-only, because a declaration is a narrowing and its floor has to be stated rather than inferred
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DeclarationScopedToItsDeclarerTests::test_a_content_read_directory_can_never_be_declared_listing_only
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0880: the measured test-relevant set and its listing-only narrowing are deleted, and per-commit selection reads imports, loads and test names only
+- **Verified:** manual (2026-09-24) - retired, superseded by US0880
 
 ### AC4: the rule is held against the real repository
 
 - **Given** this repository, where two modules read `sdlc-studio` and one declares it
 - **When** the listing-only scopes are read
 - **Then** the narrowing is withheld and the test says so - the saving US0554 delivered is suspended, honestly, until BG0400 corrects the fixture-path attribution behind the second reader
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::WorkspaceRelevanceGranularityTests::test_the_repo_s_own_workspace_narrows_only_when_every_reader_agrees
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0880: the measured test-relevant set and its listing-only narrowing are deleted, and per-commit selection reads imports, loads and test names only
+- **Verified:** manual (2026-09-24) - retired, superseded by US0880
 
 ## Revision History
 

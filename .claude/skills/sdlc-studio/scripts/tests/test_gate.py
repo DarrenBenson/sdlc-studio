@@ -3453,6 +3453,19 @@ class WindowLaneIsPathScopedTests(unittest.TestCase):
             self.assertIn("tools/thing.py", lane["detail"])
             self.assertTrue(lane["blocking"])
 
+    def test_a_dot_slash_claim_covers_the_repo_relative_staged_path(self) -> None:
+        """`git diff --cached` never spells a leading `./`, so a claim written `./tools/x.py`
+        matched nothing as a literal pattern. MUTANT: drop the `./` normalisation."""
+        self.assertTrue(gate._window_claims("./tools/x.py", "tools/x.py"))
+        self.assertTrue(gate._window_claims("./tools", "tools/x.py"))
+        self.assertFalse(gate._window_claims("./tools/y.py", "tools/x.py"))
+        with tempfile.TemporaryDirectory() as t:
+            root = self._repo(t)
+            self._record(root, ["./tools/thing.py"])
+            self._stage(root, "tools/thing.py", "VALUE = 999\n")
+            lane = gate.DEFAULT_CHECKS["window"](str(root))
+            self.assertEqual(lane["count"], 1, lane["detail"])
+
     def test_an_index_that_cannot_be_read_refuses_rather_than_passing(self) -> None:
         """"I cannot tell" must never be reported as "nothing is staged". A root that is not a
         git repo at all is the reachable shape of it."""
@@ -6896,69 +6909,6 @@ class VerifyTimeoutOverrideTests(unittest.TestCase):
                             f"SDLC_VERIFY_TIMEOUT={bad} was READ rather than refused - an "
                             f"unusable override must fall back to the default, not become a "
                             f"ceiling of its own:\n{pages[bad]}")
-
-
-_US0880_RETIRED = ("retired by US0880: the measured test-relevant set and its listing-only "
-                   "narrowing are deleted; selection reads imports, loads and test names only")
-
-class TestRelevantSetTests(unittest.TestCase):
-    """Retired by US0880. Skipped stubs, kept only because stamped criteria
-    (US0368 AC1-AC2) name these nodes; delete them when those criteria are retired."""
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_every_path_a_shipped_test_reads_is_in_the_set(self) -> None:
-        pass
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_a_doc_a_test_reads_defeats_the_docs_only_skip(self) -> None:
-        pass
-
-
-class ListingOnlyIdScopeTests(unittest.TestCase):
-    """Retired by US0880. Skipped stubs, kept only because stamped criteria
-    (US0554 AC1-AC4) name these nodes; delete them when those criteria are retired."""
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_a_declaration_parses_its_directory_and_its_ids(self) -> None:
-        pass
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_an_unnamed_id_is_not_structural(self) -> None:
-        pass
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_a_named_id_stays_structural(self) -> None:
-        pass
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_a_declaration_with_no_ids_keeps_the_whole_directory_structural(self) -> None:
-        pass
-
-
-class DeclarationScopedToItsDeclarerTests(unittest.TestCase):
-    """Retired by US0880. Skipped stubs, kept only because stamped criteria
-    (BG0398 AC1-AC3) name these nodes; delete them when those criteria are retired."""
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_one_modules_declaration_does_not_silence_anothers_read(self) -> None:
-        pass
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_a_directory_every_reader_declares_is_still_narrowed(self) -> None:
-        pass
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_a_content_read_directory_can_never_be_declared_listing_only(self) -> None:
-        pass
-
-
-class WorkspaceRelevanceGranularityTests(unittest.TestCase):
-    """Retired by US0880. Skipped stubs, kept only because stamped criteria
-    (BG0398 AC4) name these nodes; delete them when those criteria are retired."""
-
-    @unittest.skip(_US0880_RETIRED)
-    def test_the_repo_s_own_workspace_narrows_only_when_every_reader_agrees(self) -> None:
-        pass
 
 
 if __name__ == "__main__":

@@ -127,6 +127,9 @@ class RetiredCriteriaTests(unittest.TestCase):
             stories = json.loads(written[0].read_text(encoding="utf-8"))["stories"]
             self.assertTrue((root / "sdlc-studio" / ".local" / "verify-history.jsonl").is_file(),
                             "the run's history did not land in the mirror")
+            # a symlinked `.local` would put that history in this repository's own
+            self.assertFalse((root / "sdlc-studio" / ".local").is_symlink(),
+                             "the mirror's .local is this repository's")
         by_unit = {verify_ac.sdlc_md.extract_record_id(stem): row
                    for stem, row in stories.items()}
         self.assertEqual(set(_RETIRED), set(by_unit), "the run did not cover every D0259 unit")

@@ -70,20 +70,20 @@ The staleness guard needs the same treatment and is the reason AC4 exists. `test
 ## Acceptance Criteria
 
 - [x] **AC1** Given a per-commit series whose runs differ in selection width, when the budget lane reports, then it states the per-test rate beside the total, and the VERDICT is taken on that rate against a ceiling DECLARED as a rate in `gate_budget.rate_seconds_per_test` - never derived by dividing the seconds ceiling by the run's own width, which gives every run its own ceiling and makes the comparison tautological. The declared rate is shown to separate the two populations it must judge: measured 2026-08-19 over the ten runs the timings file then held - a dated snapshot, not a standing figure - the selected series' median rate is 0.1233 s/test with extremes 0.0964 and 0.1480 (-22% to +20%), while the full-suite rate rose 0.0947 to 0.1267 (+34%), so a band loose enough to absorb the first cannot be the band that flags the second
-  - **Verify:** pytest tools/tests/test_gate_timing.py::BudgetSeriesTests::test_the_rate_is_reported_beside_the_total
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0880: `gate_timing.py budget` and its per-commit ratchet are deleted, and the commit hook reports elapsed time against 90 seconds instead
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0880
 - [x] **AC2** Given a full-suite run, when the lane reports on it, then it is judged against a full-suite figure DECLARED in `gate_budget:` with its own baseline and date, not against the per-commit ceiling: `budget_report` reads `latest(root, "total")` whenever the last run was not selected and compares it to `gate_budget.seconds`, so a 899s full run is permanently OVER a 380s budget and that verdict carries no information
-  - **Verify:** pytest tools/tests/test_gate_timing.py::BudgetSeriesTests::test_the_full_suite_is_judged_against_its_own_ceiling
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0880: `gate_timing.py budget` and its per-commit ratchet are deleted, and the commit hook reports elapsed time against 90 seconds instead
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0880
 - [x] **AC3** Given two runs of equal per-test cost whose totals STRADDLE the declared ceiling - one above it, one below - when the lane judges them, then it reaches the same verdict for both; a fixture whose runs are both under the ceiling cannot see the defect, because a raw comparison already agrees there
-  - **Verify:** pytest tools/tests/test_gate_timing.py::BudgetSeriesTests::test_two_widths_of_equal_rate_reach_the_same_verdict
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0880: `gate_timing.py budget` and its per-commit ratchet are deleted, and the commit hook reports elapsed time against 90 seconds instead
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0880
 - [x] **AC4** Given a run whose per-test rate rose on a NARROWER selection, so its total fell, when the lane judges it, then it reports the regression - the control proving a rate-based verdict discriminates rather than excusing every total that happens to drop
-  - **Verify:** pytest tools/tests/test_gate_timing.py::BudgetSeriesTests::test_a_risen_rate_on_a_narrower_run_is_still_visible
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0880: `gate_timing.py budget` and its per-commit ratchet are deleted, and the commit hook reports elapsed time against 90 seconds instead
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0880
 - [x] **AC5** Given a FULL run and no declared full-suite figure, when the lane reports, then it judges against the per-commit ceiling as before AND says so, naming `gate_budget.full_seconds` as the key that would judge it on its own terms - going silent would drop the budget line entirely for every project that declares only `seconds` and never runs selected, and an UNLABELLED mis-comparison is the defect this bug is about
-  - **Verify:** pytest tools/tests/test_gate_timing.py::BudgetSeriesTests::test_an_undeclared_full_ceiling_falls_back_and_says_so
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0880: `gate_timing.py budget` and its per-commit ratchet are deleted, and the commit hook reports elapsed time against 90 seconds instead
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0880
 - [x] **AC6** Given `sprint.execution_cost`, whose docstring says "the measured cost of one full run", when a plan prints its execution policy, then the figure quoted for the close and release boundaries is a FULL-run measurement - today it returns the latest series whichever that is, which is why this run's own plan priced its close at ~295s against a recorded full series of ~899s
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DryRunScratchParityTests::test_the_close_and_release_boundaries_price_a_full_run
   - **Verified:** yes (2026-08-20)

@@ -1,6 +1,7 @@
 # BG0724: check_spec_claims reads raw text, so a claim inside a fenced code block is judged as a live claim
 
-> **Status:** Open
+> **Status:** Superseded
+> **Closed with findings in:** Superseded by US0879, which deleted tools/check_spec_claims.py and its lane; there is no longer a reader of raw claim text to misjudge a fenced block.
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** tools/check_spec_claims.py, tools/tests/test_check_spec_claims.py
@@ -36,3 +37,4 @@ Route `check()` through `_live_lines` (or have `claims_in` take live lines), and
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-21 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Superseded by US0879 (RUN-01M3891F): the checker this finding is against was deleted |
