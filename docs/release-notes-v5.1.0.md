@@ -70,7 +70,7 @@ evidence re-measured by hand for one line moving in a shared file.
 The open findings are on [the disclosure page](known-issues.md), which is generated from the
 bug corpus rather than maintained by hand.
 
-**v5.1.0 discloses 61 open defects: 61 Medium, 0 Low.**
+**v5.1.0 discloses 62 open defects: 62 Medium, 0 Low.**
 
 **Zero Critical, zero High.** Two High-severity findings were raised after the tag, and both
 are now Fixed on main by RUN-01M3891F. **BG0744**: `sprint_report.py build --write` filed a report

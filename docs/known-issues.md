@@ -91,8 +91,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0752` | Medium | Per-commit test selection skips hooks, test infrastructure and code reached through another script |
 | `BG0753` | Medium | The test suite leaks temporary directories into /tmp |
 | `BG0754` | Medium | A commit touching a widely imported script runs well over the 90-second budget |
+| `BG0755` | Medium | artifact.py batch ignores a story's role, capability and benefit, and its default template leaves a page of placeholders |
 
-61 findings: 61 Medium, 0 Low.
+62 findings: 62 Medium, 0 Low.
 
 ## Not carried
 

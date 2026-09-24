@@ -1,6 +1,6 @@
 # US0898: A shipped release's notes stay as shipped, and the defect count is written at the cut
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

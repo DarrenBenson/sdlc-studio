@@ -1,6 +1,6 @@
 # BG0742: AC5-style corpus-coupled tests go red when the backlog they measure is acted on, and two are red in this tree already
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py, .claude/skills/sdlc-studio/scripts/tests/workspace.py

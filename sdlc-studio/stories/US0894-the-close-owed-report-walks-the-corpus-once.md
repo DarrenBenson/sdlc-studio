@@ -1,6 +1,6 @@
 # US0894: The close-owed report walks the corpus once, not once per epic
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

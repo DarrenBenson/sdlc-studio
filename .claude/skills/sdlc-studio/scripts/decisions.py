@@ -171,15 +171,43 @@ RULES_ATTR_RE = re.compile(r"^WAIV(?:ER|ABLE)_RULES?$")
 SUBJECT_RULE = "rule:"
 
 
+#: The last scan of each scripts tree this process made, keyed by the tree's path and held with
+#: the (name, mtime, size) of every script it read. Parsing all of them costs about a third of a
+#: second, and one process may validate many waivers over a tree that never moves.
+_SCANS: dict[str, tuple[tuple, tuple[str, ...], tuple[str, ...]]] = {}
+
+
+def _stamp(path: Path) -> tuple:
+    try:
+        st = path.stat()
+    except OSError:  # gone since the glob: the parse reports it unreadable
+        return (path.name, None, None)
+    return (path.name, st.st_mtime_ns, st.st_size)
+
+
 def _modules_declaring_rules(scripts: Path) -> tuple[list[str], list[str]]:
     """(module names assigning a rules constant, module names that could not be read).
 
     A static parse, so discovery costs no imports and cannot cycle back through this module.
     An unreadable script is returned as UNREADABLE, never as "declares nothing": a file the
     scan could not answer for must widen what the caller admits it does not know.
+
+    Parsed once per process while the tree stands still: a script added, deleted, or changed in
+    size or modification time re-runs the scan. The lists returned are fresh copies, because
+    the caller extends `unreadable` with the checkers it then fails to import.
     """
+    paths = sorted(scripts.glob("*.py"))
+    stamps = tuple(_stamp(p) for p in paths)
+    scan = _SCANS.get(str(scripts))
+    if scan is None or scan[0] != stamps:
+        declaring, unreadable = _parse_declaring(paths)
+        scan = _SCANS[str(scripts)] = (stamps, tuple(declaring), tuple(unreadable))
+    return list(scan[1]), list(scan[2])
+
+
+def _parse_declaring(paths: list[Path]) -> tuple[list[str], list[str]]:
     declaring, unreadable = [], []
-    for path in sorted(scripts.glob("*.py")):
+    for path in paths:
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))
         except (OSError, SyntaxError, ValueError, UnicodeDecodeError):

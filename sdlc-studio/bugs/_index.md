@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 62 |
-| In Progress | 0 |
+| Open | 61 |
+| In Progress | 1 |
 | Fixed | 589 |
 | Verified | 0 |
 | Closed | 87 |
@@ -100,7 +100,7 @@
 | [BG0739](BG0739-close-owed-reads-the-raised-in-batch-stamp.md) | close_owed reads the Raised-in-batch stamp by its last token while asserting it reads it exactly as sprint_report does, and the two now genuinely disagree | Open | Medium | 2026-09-22 | 2026-09-22 |
 | [BG0740](BG0740-a-gate-stood-down-in-prose-rather-than.md) | a gate stood down in prose rather than as a waiver row is invisible to the report's waiver disclosure, which is how the one the operator most needed went unnamed | Open | Medium | 2026-09-22 | 2026-09-22 |
 | [BG0741](BG0741-the-stale-lens-is-silenced-by-the-sweep.md) | the stale lens is silenced by the sweep's own audit rulings, and repairing it will make every abandoned request double-report on the same day | Open | Medium | 2026-09-22 | 2026-09-22 |
-| [BG0742](BG0742-ac5-style-corpus-coupled-tests-go-red-when.md) | AC5-style corpus-coupled tests go red when the backlog they measure is acted on, and two are red in this tree already | Open | Medium | 2026-09-22 | 2026-09-22 |
+| [BG0742](BG0742-ac5-style-corpus-coupled-tests-go-red-when.md) | AC5-style corpus-coupled tests go red when the backlog they measure is acted on, and two are red in this tree already | In Progress | Medium | 2026-09-22 | 2026-09-22 |
 | [BG0743](BG0743-a-signed-report-s-digest-covers-prose-that.md) | a signed report's digest covers prose that is edited in place, so an unrelated amendment to a decision rationale invalidates a signature over an unchanged run | Open | Medium | 2026-09-22 | 2026-09-22 |
 | [BG0744](BG0744-the-close-refuses-to-file-a-report-but.md) | the close refuses to file a report but a direct build --write files one anyway, skipping the token stamp and the gate verdicts the refusal protects | Fixed | High | 2026-09-23 | 2026-09-23 |
 | [BG0745](BG0745-sprint-report-check-reads-a-report-hand-edited.md) | sprint_report check reads a report hand-edited after signing as VALID | Fixed | High | 2026-09-23 | 2026-09-23 |
