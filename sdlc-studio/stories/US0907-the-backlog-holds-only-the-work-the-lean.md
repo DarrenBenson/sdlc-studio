@@ -1,6 +1,6 @@
 # US0907: The backlog holds only the work the lean direction still wants
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

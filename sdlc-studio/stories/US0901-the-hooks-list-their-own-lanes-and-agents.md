@@ -1,6 +1,6 @@
 # US0901: The hooks list their own lanes, and AGENTS.md stops restating them
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
