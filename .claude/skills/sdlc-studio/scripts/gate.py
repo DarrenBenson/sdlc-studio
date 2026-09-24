@@ -14,10 +14,8 @@ the registry is injectable so the aggregation logic is testable without a full r
 from __future__ import annotations
 
 import argparse
-import ast
 import hashlib
 import json
-import functools
 import os
 import re
 import sys
@@ -2602,813 +2600,15 @@ def _split(v: str | None) -> list[str] | None:
     return [x.strip() for x in v.split(",") if x.strip()] if v else None
 
 
-# --- test-relevant set -------------------------------------------------------------
-# Which staged paths can change a test outcome, and therefore oblige the commit gate to
-# pay for the unit suites. The first version of this named three directories by hand -
-# scripts/, templates/, tools/ - and a hand enumeration is a lower bound: it is right
-# about what somebody thought of and silent about everything else. The suites here read
-# the hooks, the workflow file, `install.sh`, `package.json`, reference docs, help pages
-# and shipped artefacts, none of which were in it, so a commit touching one of those took
-# the docs-only fast path and skipped the very suite asserting over it.
-#
-# So the set is MEASURED from the suite sources rather than listed. Each test module is
-# parsed and every path expression anchored on the module's own location - `Path(__file__)
-# .resolve().parents[N] / "a" / "b"` and the names bound from it - is resolved to a
-# concrete repo path. Anchoring is what makes this precise: a bare `root / "sdlc-studio"`
-# inside a temporary-directory fixture names no repo file and is not counted, while
-# `_REPO / ".githooks" / "pre-commit"` is.
-#
-# Two honest limits. A path assembled entirely at run time (a name from an environment
-# variable, a glob result) is not visible to a source scan, so this is a measurement of
-# the suite sources, not of a run; and where the two differ the resolution is deliberately
-# over-inclusive - a directory used as a whole makes its whole subtree relevant. Both
-# errors run suites that were not needed. Neither skips one that was.
-TEST_SUITE_DIRS = (
-    ".claude/skills/sdlc-studio/scripts/tests",
-    "tools/tests",
-)
-
-# Fallback for a tree with no suites to measure (a consuming project installs the skill
-# without them). Never the answer where the suites exist - that is the defect above.
-LEGACY_TEST_RELEVANT = (
-    ".claude/skills/sdlc-studio/scripts",
-    ".claude/skills/sdlc-studio/templates",
-    "tools",
-)
-
-_PATH_CALLS = {"Path", "str", "fspath"}
-_PATH_PASSTHROUGH = {"resolve", "absolute", "expanduser"}
-
-
-def _anchored_path(node: ast.AST, env: dict, self_path: str):
-    """Resolve `node` to ("ABS", abspath) or ("STR", fragment), else None.
-
-    Only expressions rooted in `__file__` (directly, or through a name already bound to
-    such an expression) yield an ABS - that is the anchor that separates a real repo read
-    from a fixture path built under a temporary directory.
-    """
-    if isinstance(node, ast.Constant):
-        return ("STR", node.value) if isinstance(node.value, str) else None
-    if isinstance(node, ast.Name):
-        if node.id == "__file__":
-            return ("ABS", self_path)
-        hit = env.get(node.id)
-        return ("ABS", hit) if hit else None
-    if isinstance(node, ast.Call):
-        fn = node.func
-        if isinstance(fn, ast.Name) and fn.id in _PATH_CALLS and node.args:
-            return _anchored_path(node.args[0], env, self_path)
-        if isinstance(fn, ast.Attribute) and fn.attr in _PATH_PASSTHROUGH:
-            return _anchored_path(fn.value, env, self_path)
-        return None
-    if isinstance(node, ast.Attribute):
-        if node.attr == "parent":
-            base = _anchored_path(node.value, env, self_path)
-            if base and base[0] == "ABS":
-                return ("ABS", os.path.dirname(base[1]))
-        return None
-    if isinstance(node, ast.Subscript):
-        holder = node.value
-        if isinstance(holder, ast.Attribute) and holder.attr == "parents":
-            base = _anchored_path(holder.value, env, self_path)
-            idx = node.slice
-            if (base and base[0] == "ABS" and isinstance(idx, ast.Constant)
-                    and isinstance(idx.value, int) and 0 <= idx.value < 12):
-                out = base[1]
-                for _ in range(idx.value + 1):
-                    out = os.path.dirname(out)
-                return ("ABS", out)
-        return None
-    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
-        left = _anchored_path(node.left, env, self_path)
-        right = _anchored_path(node.right, env, self_path)
-        if not left or not right or right[0] != "STR":
-            return None
-        if left[0] == "ABS":
-            return ("ABS", os.path.normpath(os.path.join(left[1], right[1])))
-        return ("STR", left[1].rstrip("/") + "/" + right[1].lstrip("/"))
-    return None
-
-
-# Attribute methods that read the filesystem at their receiver. A path reaching one of
-# these is a path the test reads: `.read_text` / `.open` name a file, `.glob` / `.iterdir`
-# name a directory (so its whole subtree is relevant). This is what separates a read from a
-# path merely passed to a helper - `foo(SKILL, "x")` hands SKILL on without touching disk,
-# and counting that would drag the whole skill directory in and defeat the docs-only skip.
-_READ_METHODS = frozenset({
-    "read_text", "read_bytes", "open", "glob", "rglob", "iterdir", "walk",
-    "exists", "is_file", "is_dir", "stat", "lstat", "scandir", "samefile",
-})
-# Builtin / stdlib callables whose FIRST argument is a path they read.
-_READ_FUNCS = frozenset({"open", "listdir", "scandir", "walk"})
-
-
-#: Probes that ask only whether a path IS THERE. Applied to a DIRECTORY, no file under it can
-#: change the answer: creating, editing or deleting an artefact leaves `is_dir()` exactly as it
-#: was. Such a read is still recorded - deleting the directory must run the suite that probes it
-#: - but it does not make the module a CONTENT reader, which is what the listing-only unanimity
-#: rule asks about. Without the distinction, one `(repo / "sdlc-studio").is_dir()` guard in one
-#: module outvoted a real declaration and every artefact-only commit paid the full suites.
-_EXISTENCE_PROBES = frozenset({"exists", "is_file", "is_dir"})
-
-
-def _read_targets(tree: ast.AST, existence_only: bool | None = None):
-    """Yield the AST node of every path expression the module reads on disk.
-
-    `existence_only=True` yields only the existence probes, `False` only the reads that depend
-    on content or listing, `None` (the default) yields both."""
-    def wanted(is_probe: bool) -> bool:
-        return existence_only is None or existence_only is is_probe
-
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Call):
-            continue
-        fn = node.func
-        if isinstance(fn, ast.Attribute) and fn.attr in _READ_METHODS:
-            if wanted(fn.attr in _EXISTENCE_PROBES):
-                yield fn.value
-        elif isinstance(fn, ast.Name) and fn.id in _READ_FUNCS and node.args:
-            if wanted(False):
-                yield node.args[0]
-        elif (isinstance(fn, ast.Attribute) and fn.attr in _READ_FUNCS
-              and isinstance(fn.value, ast.Name) and fn.value.id == "os" and node.args):
-            if wanted(False):
-                yield node.args[0]
-
-
-def _module_read_paths(src: str, module_path: str, root: str) -> set[str]:
-    """Repo-relative paths the module at `module_path` reads, measured from its source.
-
-    Two kinds of evidence, chosen so the set is over-inclusive on files and precise on
-    directories - the direction that never skips a suite that was needed while not dragging
-    a whole tree in on a bare anchor:
-
-    * A maximal anchored expression resolving to a FILE - `SKILL_DIR / "reference-sprint.md"`,
-      or a name bound to it. A test that names a specific file is a test about that file,
-      whether it reads it directly or hands it to a helper.
-    * A DIRECTORY only where it is the receiver of a real read - a `.glob`, an `.iterdir`,
-      an `os.listdir`. A directory merely passed to a helper (`foo(SKILL_DIR, "x")`) touches
-      no disk here, and counting it would pull the whole skill tree in and delete the
-      docs-only fast path this measurement exists to keep honest.
-    """
-    try:
-        tree = ast.parse(src)
-    except SyntaxError:
-        return set()
-    env: dict[str, str] = {}
-    # Three passes so a name bound from an earlier name resolves whatever the order.
-    for _ in range(3):
-        for node in ast.walk(tree):
-            if (isinstance(node, ast.Assign) and len(node.targets) == 1
-                    and isinstance(node.targets[0], ast.Name)):
-                got = _anchored_path(node.value, env, module_path)
-                if got and got[0] == "ABS":
-                    env[node.targets[0].id] = got[1]
-
-    def _record(abs_path: str, want_dir: bool, out: set[str]) -> None:
-        if not abs_path.startswith(root + os.sep):
-            return
-        if os.path.exists(abs_path):
-            # What is on disk classifies it: a bare directory is only relevant at a
-            # read-site (below), and a read-site naming a file is not a directory read.
-            if want_dir != os.path.isdir(abs_path):
-                return
-        # A path the suites name but that is NOT on disk is KEPT, classified by how the
-        # suite used it. The set is measured from the suite SOURCES, and a staged deletion
-        # or rename is exactly the change that breaks the suite reading it - dropping it
-        # here would skip the suites on the one commit that most needs them.
-        out.add(os.path.relpath(abs_path, root).replace(os.sep, "/"))
-
-    out: set[str] = set()
-    # Maximal anchored expressions: a node no anchored ancestor contains. The prefixes along
-    # the way (`_REPO`, `.claude`, `sdlc-studio`) are inner and excluded - counting them is
-    # what made every commit test-relevant.
-    inner: set[int] = set()
-    for node in ast.walk(tree):
-        if not _anchored_path(node, env, module_path):
-            continue
-        for child in ast.walk(node):
-            if child is not node:
-                inner.add(id(child))
-    for node in ast.walk(tree):
-        if id(node) in inner:
-            continue
-        got = _anchored_path(node, env, module_path)
-        if got and got[0] == "ABS":
-            _record(got[1], want_dir=False, out=out)
-    # Directory read-sites: the receiver of a glob / iterdir / listdir naming a directory.
-    for target in _read_targets(tree):
-        got = _anchored_path(target, env, module_path)
-        if got and got[0] == "ABS":
-            _record(got[1], want_dir=True, out=out)
-    return out
-
-
-def _existence_only_dirs(src: str, module_path: str, root: str) -> set[str]:
-    """Directories this module probes for EXISTENCE and never reads the contents or listing of.
-
-    A read of `sdlc-studio` is not one thing. `(repo / "sdlc-studio").is_dir()` asks a question
-    about the shape of the checkout; `SKILL_DIR.glob("*.md")` asks about what is inside. Only
-    the second can be falsified by filing an artefact, so only the second should be able to
-    outvote a listing-only declaration - and conflating them cost this repo the whole saving
-    US0554 delivered: one existence guard in one module made every artefact-only commit
-    structural, and a commit touching no code paid 313 seconds of unit suites.
-
-    Returned as the subtraction rather than as the whole read set, so the fail-safe direction is
-    untouched: the path stays in `_module_read_paths`, so DELETING the directory still runs this
-    module's suite. What changes is only whether the module counts as a content reader."""
-    try:
-        tree = ast.parse(src)
-    except SyntaxError:
-        return set()
-    env: dict[str, str] = {}
-    for _ in range(3):
-        for node in ast.walk(tree):
-            if (isinstance(node, ast.Assign) and len(node.targets) == 1
-                    and isinstance(node.targets[0], ast.Name)):
-                got = _anchored_path(node.value, env, module_path)
-                if got and got[0] == "ABS":
-                    env[node.targets[0].id] = got[1]
-
-    def dirs(existence_only: bool) -> set[str]:
-        found: set[str] = set()
-        for target in _read_targets(tree, existence_only=existence_only):
-            got = _anchored_path(target, env, module_path)
-            if not (got and got[0] == "ABS" and got[1].startswith(root + os.sep)):
-                continue
-            if os.path.exists(got[1]) and not os.path.isdir(got[1]):
-                continue
-            found.add(os.path.relpath(got[1], root).replace(os.sep, "/"))
-        return found
-
-    # A directory read BOTH ways is a content read: the stronger evidence wins, so a module
-    # that probes and then globs the same tree keeps its vote.
-    return dirs(True) - dirs(False)
-
-
-def content_readers(root: str = ".") -> dict:
-    """`path -> the modules whose read of it depends on its CONTENTS or its listing`.
-
-    The electorate the listing-only unanimity rule counts. A module that only probes whether a
-    directory exists is not in it: no file under the directory can change that answer, so it has
-    no stake in whether the directory is read for content, and letting it vote suspended a
-    correct declaration for the whole repository.
-
-    THE one place that subtraction is made. Both this rule's tests previously re-derived the
-    reader set from the raw read map, which is how they came to assert the suspension itself -
-    a test that re-implements the thing it checks agrees with it by construction."""
-    root = os.path.abspath(root)
-    read_map = suite_read_map(root)
-    if read_map is None:
-        return {}
-    out: dict = {}
-    for module, paths in read_map.items():
-        try:
-            with open(os.path.join(root, module), encoding="utf-8") as handle:
-                probe_only = _existence_only_dirs(handle.read(), os.path.join(root, module), root)
-        except OSError:
-            probe_only = set()
-        for rel in paths:
-            if rel.rstrip("/") in probe_only:
-                continue
-            out.setdefault(rel.rstrip("/"), set()).add(module)
-    return out
-
-
-#: Per-process memo for the suite measurement, keyed by the suite files' own
-#: (path, mtime, size) signature. One `--suite-decision` invocation asks for it three
-#: times - the surface hash, the relevance set and the selection - and parsing forty large
-#: test modules three times is most of that command's cost. Keyed on the signature rather
-#: than on the root, so a caller that EDITS a test module and asks again (which is what the
-#: tests here do, and what a watch loop would do) gets the new answer, not the cached one.
-_READ_MAP_MEMO: dict[str, tuple[tuple, dict[str, set[str]] | None]] = {}
-
-
-def _suite_signature(root: str) -> tuple:
-    sig: list[tuple] = []
-    for suite in TEST_SUITE_DIRS:
-        suite_dir = os.path.join(root, suite)
-        if not os.path.isdir(suite_dir):
-            continue
-        for name in sorted(os.listdir(suite_dir)):
-            if not name.endswith(".py"):
-                continue
-            try:
-                st = os.stat(os.path.join(suite_dir, name))
-            except OSError:
-                continue
-            sig.append((suite, name, st.st_mtime_ns, st.st_size))
-    return tuple(sig)
-
-
-def suite_read_map(root: str = ".") -> dict[str, set[str]] | None:
-    """test module (repo-relative) -> the repo-relative paths its own source reads.
-
-    The per-module form of the measurement `test_relevant_paths` unions. Selection needs
-    the attribution, not only the union: a changed file that no import edge can reach - a
-    reference doc, a hook, a shipped artefact - is still reachable from the ONE suite module
-    that names it, and that is precisely the module that must run.
-
-    None when there are no suites to measure (a consuming project installs the skill without
-    them), which is the same condition that sends `test_relevant_paths` to its fallback.
-    """
-    root = os.path.abspath(root)
-    signature = _suite_signature(root)
-    cached = _READ_MAP_MEMO.get(root)
-    if cached is not None and cached[0] == signature:
-        return cached[1]
-    out: dict[str, set[str]] = {}
-    scanned = False
-    for suite in TEST_SUITE_DIRS:
-        suite_dir = os.path.join(root, suite)
-        if not os.path.isdir(suite_dir):
-            continue
-        for name in sorted(os.listdir(suite_dir)):
-            if not name.endswith(".py"):
-                continue
-            module_path = os.path.join(suite_dir, name)
-            try:
-                with open(module_path, encoding="utf-8") as handle:
-                    src = handle.read()
-            except OSError:
-                continue
-            scanned = True
-            rel = os.path.relpath(module_path, root).replace(os.sep, "/")
-            out[rel] = _module_read_paths(src, module_path, root)
-    measured = out if scanned else None
-    _READ_MAP_MEMO[root] = (signature, measured)
-    return measured
-
-
-def test_relevant_paths(root: str = ".") -> set[str]:
-    """The measured set of repo-relative paths the shipped suites read.
-
-    A directory in the set means its whole subtree; a file means that file.
-    """
-    root = os.path.abspath(root)
-    read_map = suite_read_map(root)
-    if read_map is None:
-        return {p for p in LEGACY_TEST_RELEVANT if os.path.exists(os.path.join(root, p))}
-    measured: set[str] = set()
-    for paths in read_map.values():
-        measured |= paths
-    for suite in TEST_SUITE_DIRS:
-        # A suite directory is itself read by whatever discovers it.
-        if os.path.isdir(os.path.join(root, suite)):
-            measured.add(suite)
-    # The suites import the scripts they exercise, and a template edit can change an
-    # assertion over the shipped payload. Those two are structural, not measurable from a
-    # path expression, so they are unioned in rather than replaced by the measurement.
-    # Unioned WITHOUT an existence test, for the reason `_record` keeps a missing path: a
-    # commit deleting one of these trees is a commit the suites must run on, and a set
-    # filtered by what survives the commit cannot see it.
-    measured |= set(LEGACY_TEST_RELEVANT)
-    return _minimal({p for p in measured if p and not p.startswith("..")},
-                    keep_under=listing_only_paths(root))
-
-
-#: Directories read at directory level for their CONTENTS, never as a listing. No declaration
-#: may make one of these listing-only: an edit inside them changes what a suite asserts, and a
-#: declaration is a narrowing, so the floor has to be stated rather than inferred.
-CONTENT_READ_DIRS = (".githooks",)
-
-
-#: The module-level name a test declares to say "I read this directory's LISTING, not the
-#: contents of the files in it". Opt-in, so the default stays fully relevant: a module that
-#: declares nothing is treated exactly as before, and a wrong declaration is a test defect that
-#: `test_relevant_paths` reports rather than a silent widening.
-LISTING_DECL = "GATE_LISTING_ONLY"
-
-
-#: A path's artefact id: the leading id token of the file's basename, as the artefact naming
-#: convention writes it (`BG0399-file-finding-....md`). A file whose name carries none cannot
-#: be matched against an id scope, which is why the caller degrades to structural for it.
-_PATH_ID = re.compile(r"^(?P<id>[A-Z]{2,4}-?\d{3,4})[-.]")
-
-
-def _path_artefact_id(path: str) -> str | None:
-    """The artefact id a path names, or None when its basename carries none."""
-    base = os.path.basename(str(path).strip().replace(os.sep, "/"))
-    match = _PATH_ID.match(base)
-    return match.group("id").replace("-", "") if match else None
-
-
-def unmeasurable_modules(root: str = ".") -> set:
-    """Suite modules whose measured read set is EMPTY.
-
-    THE one place that silence is interpreted, so the two readers of it cannot disagree. An
-    empty read set means the static scanner learned nothing about what the module reads - a
-    path assembled at run time from an imported constant is invisible to it - and that is an
-    UNANSWERED question, not an answer of "it reaches nothing".
-
-    `select_tests` already read it that way and always included such a module. `listing_only_scopes`
-    read the identical silence as "not a reader, so the declaration is unanimous", which silenced
-    the content read of the one module the mechanism could not see. Both now call this.
-    """
-    read_map = suite_read_map(root)
-    if read_map is None:
-        return set()
-    return {mod for mod, paths in read_map.items() if not paths}
-
-
-def withheld_narrowings(root: str = ".") -> list:
-    """Every listing-only narrowing that was NOT applied, and why, in plain sentences.
-
-    A declaration that has STOPPED working must be as visible as one that never worked. Both
-    causes were previously reported only through `sdlc_md.debug` - a no-op without SDLC_DEBUG=1 -
-    so the author saw a gate that silently never got faster and no reason for it, and
-    the cost of an unmeasurable reader was attributable to nobody."""
-    notes: list = []
-    listing_only_scopes(root, _notes=notes)
-    return notes
-
-
-def listing_only_scopes(root: str = ".", _notes: "list | None" = None) -> dict:
-    """Each listing-only directory mapped to the ids its structural read depends on.
-
-    `None` means the whole directory, which is what a bare-string declaration has always
-    meant and what a declaration naming no readable ids falls back to. A `frozenset` narrows
-    it: only a structural change to an artefact whose id is in the set can change the
-    declaring module's answer.
-
-    Two declaration shapes, and the narrower one is opt-in::
-
-        GATE_LISTING_ONLY = ("sdlc-studio",)                             # whole directory
-        GATE_LISTING_ONLY = ({"path": "sdlc-studio", "ids": ("BG0288",)},)  # these ids only
-
-    The fail-safe direction is preserved throughout, because this is a narrowing and a
-    narrowing that goes wrong makes a real change look irrelevant. An unparseable declaration,
-    an unreadable `ids` value and an empty id set all degrade to the whole directory - slower
-    than intended, never blind. The same reasoning governs the path side: a directory the
-    module does not actually read is ignored, and the shipped code trees are excluded
-    outright, since `scripts/`, `templates/` and `tools/` are imported and asserted over."""
-    root = os.path.abspath(root)
-    read_map = suite_read_map(root)
-    if read_map is None:
-        return {}
-    protected = ({p.rstrip("/") for p in LEGACY_TEST_RELEVANT}
-                 | {s.rstrip("/") for s in TEST_SUITE_DIRS}
-                 | {d.rstrip("/") for d in CONTENT_READ_DIRS})
-    # Who READS each directory, so a declaration can be held to covering all of them. A
-    # declaration is one module's statement about its OWN read; honouring it tree-wide let it
-    # silence a second module's CONTENT read of the same directory, which the second module
-    # never agreed to and cannot see.
-    readers = content_readers(root)
-    declarers: dict = {}
-    out: dict = {}
-    for module, paths in read_map.items():
-        try:
-            with open(os.path.join(root, module), encoding="utf-8") as handle:
-                tree = ast.parse(handle.read())
-        except (OSError, SyntaxError):
-            continue
-        for node in ast.walk(tree):
-            if not (isinstance(node, ast.Assign) and len(node.targets) == 1
-                    and isinstance(node.targets[0], ast.Name)
-                    and node.targets[0].id == LISTING_DECL):
-                continue
-            try:
-                declared = ast.literal_eval(node.value)
-            except ValueError:
-                continue
-            entries = declared if isinstance(declared, (list, tuple)) else [declared]
-            for entry in entries:
-                raw_ids = entry.get("ids") if isinstance(entry, dict) else None
-                rel = (str(entry.get("path", "")) if isinstance(entry, dict)
-                       else str(entry)).strip().strip("/")
-                # Declared AND measured: a declaration about a directory this module never
-                # reads narrows nothing, and letting it through would be a way to exempt a
-                # tree by writing its name down.
-                if not rel or rel not in paths or rel in protected:
-                    continue
-                # UNDER a protected tree counts as protected. `rel in protected` was an exact
-                # string test, so declaring `.githooks/pre-commit` walked straight past a floor
-                # written to be absolute - and "listing-only" is meaningless for a FILE, which
-                # has no listing, so a file declaration is a pure content-blindness switch.
-                if any(rel == d or rel.startswith(d.rstrip("/") + "/")
-                       for d in (str(x).rstrip("/") for x in protected)):
-                    continue
-                if not os.path.isdir(os.path.join(root, rel)):
-                    continue
-                # Resolved only HERE, after every filter that can discard the entry - an entry
-                # immediately thrown away used to pay a full directory walk first.
-                ids = _declared_ids(raw_ids, root, rel, _notes)
-                declarers.setdefault(rel, set()).add(module)
-                if rel in out:
-                    # Two modules reading the same tree: the union of what they depend on,
-                    # and a single whole-directory declaration wins over any id set. One
-                    # module's narrowing must never speak for another's read - the defect
-                    # BG0398 records about applying a declaration globally.
-                    prior = out[rel]
-                    out[rel] = None if prior is None or ids is None else prior | ids
-                else:
-                    out[rel] = ids
-    # UNANIMITY. A directory is listing-only only when every module that reads it says so. One
-    # module's narrowing must never speak for another's read: a tree-wide honouring made a
-    # second module's content read of the same directory invisible, so an edit it asserts over
-    # answered `test-relevant: no` while its own assertion would have failed.
-    # The electorate includes every module whose read could not be MEASURED. Its silence is an
-    # unanswered question, so it withholds the narrowing rather than granting it.
-    unmeasurable = unmeasurable_modules(root)
-    kept = {}
-    for rel, ids in out.items():
-        declared_by = declarers.get(rel, set())
-        missing = (readers.get(rel, set()) | unmeasurable) - declared_by
-        if not missing:
-            kept[rel] = ids
-            continue
-        if _notes is not None:
-            blind = sorted(missing & unmeasurable)
-            content = sorted(missing - unmeasurable)
-            why = []
-            if blind:
-                why.append(f"{len(blind)} module(s) whose reads could not be measured "
-                           f"({', '.join(os.path.basename(m) for m in blind[:4])}"
-                           f"{', ...' if len(blind) > 4 else ''})")
-            if content:
-                why.append(f"{len(content)} module(s) that read it for CONTENT without declaring")
-            _notes.append(
-                f"listing-only narrowing WITHHELD for {rel}: " + "; ".join(why)
-                + ". The gate runs more than it needs to until those reads are made visible.")
-    return kept
-
-
-def _declared_ids(value, root: str | None = None, rel: str | None = None,
-                  notes: "list | None" = None) -> "frozenset | None":
-    """The id set a declaration names, or None - meaning the WHOLE directory - when it names
-    none this module can trust.
-
-    The fail-safe list used to cover every malformed shape and miss the likeliest one: a
-    well-formed but WRONG id. `ids: ('BG288',)` for `BG0288` is a perfectly good tuple of a
-    perfectly good string, and it narrowed the tree to an id that matches nothing - so a
-    structural change to the very artefact the declaring module asserts about answered
-    `test-relevant: no`. A false green, from a typo.
-
-    So every declared id must RESOLVE to a file under the declared directory. One that does not
-    voids the whole narrowing rather than being dropped: a declaration half of which is wrong is
-    a declaration nobody has checked, and the safe reading of it is the un-narrowed one."""
-    if not isinstance(value, (list, tuple, set, frozenset)):
-        return None
-    ids = {str(i).strip().replace("-", "").upper() for i in value if str(i).strip()}
-    if not ids:
-        return None
-    if root is None or rel is None:
-        return frozenset(ids)
-    # Resolved against the ARTEFACT INDEX, which is what the bug's Proposed Fix asked for and
-    # what a filename cannot forge. Two weaker versions shipped first: a filename-pattern walk
-    # (defeated by any stray `BG288-repro.png`), then an extension check (defeated by
-    # `BG288-repro.md` - the "scratch note" the bug report itself named as sufficient). A file
-    # is not an artefact because it is markdown; it is an artefact because the workspace holds
-    # it as one.
-    present = set()
-    for declared in ids:
-        found = sdlc_md.find_by_id(root, declared)
-        if not found:
-            continue
-        # ...and it must live UNDER the declared directory, or an artefact elsewhere in the
-        # workspace would satisfy a declaration about this tree.
-        try:
-            rel_found = os.path.relpath(str(found[0]), root).replace(os.sep, "/")
-        except ValueError:
-            continue
-        if rel_found == rel or rel_found.startswith(rel.rstrip("/") + "/"):
-            present.add(declared)
-    unresolved = ids - present
-    if unresolved:
-        # On the NORMAL output path, not through `debug`. A declaration that has stopped
-        # working must be at least as visible as one that never worked; reported only under
-        # SDLC_DEBUG it was strictly less visible.
-        if notes is not None:
-            notes.append(
-                f"listing-only narrowing WITHHELD for {rel}: declared id(s) "
-                f"{', '.join(sorted(unresolved))} name no artefact under it. A declaration "
-                f"half of which is wrong is a declaration nobody has checked, so the whole "
-                f"narrowing is voided rather than partly honoured.")
-        return None
-    return frozenset(ids)
-
-
-def _is_artefact_file(path: str) -> bool:
-    """True when `path` is a real ARTEFACT, not merely a markdown file whose NAME carries an id.
-
-    An extension check is not enough, and the bug report said so: it named "a screenshot, an
-    attachment or a SCRATCH NOTE" as sufficient to defeat the old check - and a scratch note is
-    markdown. `BG288-repro.md` restored the false green in full. The declaration's contract is
-    that the id names an artefact, so the file has to look like one: a markdown file whose FIRST
-    HEADING carries the same id its name does, which is the shape every writer in this project
-    emits and which no stray note has.
-    """
-    p = str(path)
-    if not p.lower().endswith(".md") or not os.path.isfile(p):
-        return False
-    named = _path_artefact_id(p)
-    if not named:
-        return False
-    try:
-        with open(p, encoding="utf-8") as handle:
-            for line in handle:
-                if not line.strip():
-                    continue
-                if not line.startswith("#"):
-                    return False        # an artefact opens with its heading
-                # The HEADING form (`# BG0288: title`), not the FILENAME form - `_PATH_ID`
-                # requires a `-` or `.` after the id and a heading uses `:`.
-                m = re.match(r"([A-Z]{2,4}-?\d{3,4})\b", line.lstrip("# ").strip())
-                return bool(m) and m.group(1).replace("-", "").upper() == named.upper()
-    except OSError:
-        return False
-    return False
-
-
-def listing_only_paths(root: str = ".") -> set[str]:
-    """Directories the suites read as a LISTING - which files exist - and never open.
-
-    A census over the artefact workspace answers a question about the tree's SHAPE. Adding,
-    deleting or renaming a file under it can change that answer; editing the prose inside one
-    cannot. Recording such a directory as fully relevant made every artefact commit pay for
-    both suites, because one entry then absorbed the four narrow reads under it.
-
-    The set only - see `listing_only_scopes` for which ids each entry's read depends on."""
-    return set(listing_only_scopes(root))
-
-
-def _minimal(entries: set[str], keep_under: set[str] | None = None) -> set[str]:
-    """The set with every entry another entry already covers removed.
-
-    `_matches_relevant` reads every entry as a prefix, so an entry under another answers
-    nothing the covering one does not - dropping it cannot change any verdict. It keeps the
-    listing readable: without this, one measured directory drags in every path a fixture
-    ever built beneath it, and a set nobody can read is a set nobody checks.
-
-    `keep_under` is the exception, and it is the whole repair: an entry nested under a
-    LISTING-ONLY directory is NOT covered by it, because the covering entry answers only for
-    structural change. Dropping it would lose the content relevance of `sdlc-studio/trd.md`
-    behind a census of `sdlc-studio`."""
-    keep_under = {k.rstrip("/") for k in (keep_under or set())}
-    prefixes = {e.rstrip("/") for e in entries}
-    return {e for e in entries
-            if not any(e.startswith(p + "/")
-                       for p in prefixes if p != e.rstrip("/") and p not in keep_under)}
-
-
-def is_test_relevant(paths, root: str = ".", structural=None) -> bool:
-    """True when any of `paths` (repo-relative) can change a test outcome.
-
-    `structural` is the subset of `paths` whose change is an ADD, DELETE or RENAME. A path
-    that matches only listing-only entries is relevant just when it is structural: the census
-    reading that directory sees a file appear or vanish, and sees nothing at all when the words
-    inside one change. Omit it and every path is treated as structural, which is the old
-    behaviour and the safe direction - an unanswered question runs the suites.
-
-    A listing-only entry may narrow further by naming the ids its read depends on, in which
-    case a structural change is relevant only for those ids. A path whose basename carries no
-    id cannot be judged against that set and stays relevant, the same direction
-    `structural=None` degrades in."""
-    relevant = test_relevant_paths(root)
-    scopes = {p.rstrip("/"): ids for p, ids in listing_only_scopes(root).items()}
-    listing = set(scopes)
-    content = relevant - listing
-    structural = None if structural is None else {str(p).strip() for p in structural}
-    for p in paths:
-        if _matches_relevant(p, content):
-            return True
-        if not _matches_relevant(p, listing):
-            continue
-        if structural is not None and str(p).strip() not in structural:
-            continue
-        # `structural is None` means the CALLER COULD NOT SAY. The id scope must not answer a
-        # question nobody asked: applying it here turned the documented fail-safe ("an
-        # unanswered question runs the suites") into a "no" for every unscoped id.
-        if structural is None or _in_scope(p, scopes):
-            return True
-    return False
-
-
-def _in_scope(path: str, scopes: dict) -> bool:
-    """Whether a structural change to `path` can change any declaration that covers it.
-
-    True for every entry that named no ids. For a scoped entry it asks whether the path's own
-    artefact id is one it named - and an unidentifiable path answers True, because a scope
-    cannot rule out what it cannot recognise."""
-    ident = _path_artefact_id(path)
-    for entry, ids in scopes.items():
-        if not _matches_relevant(path, {entry}):
-            continue
-        if ids is None or ident is None or ident in ids:
-            return True
-    return False
-
-
-def _matches_relevant(path: str, relevant: set[str]) -> bool:
-    # Strip a leading "./" as a PREFIX, never as a character class: `lstrip("./")` would
-    # eat the leading dot of `.githooks/pre-commit` and quietly match nothing.
-    candidate = path.strip().replace(os.sep, "/")
-    while candidate.startswith("./"):
-        candidate = candidate[2:]
-    candidate = candidate.lstrip("/")
-    if not candidate:
-        return False
-    return any(candidate == entry or candidate.startswith(entry.rstrip("/") + "/")
-               for entry in relevant)
-
-
-def _matched_entries(paths, root: str = ".", structural=None) -> set[str]:
-    """Which relevance entries each path matched, and why - the answer to "what dragged the
-    suites in this time". Without it, one reader collapsing the set is invisible from the tool
-    and has to be found by reading the read map by hand, which is how it went unnoticed."""
-    relevant = test_relevant_paths(root)
-    listing = {p.rstrip("/") for p in listing_only_paths(root)}
-    structural = None if structural is None else {str(p).strip() for p in structural}
-    out: set[str] = set()
-    for p in paths:
-        for entry in relevant:
-            if not _matches_relevant(p, {entry}):
-                continue
-            if entry.rstrip("/") in listing:
-                if structural is None or str(p).strip() in structural:
-                    out.add(f"{entry} (listing-only, structural change)")
-            else:
-                out.add(entry)
-    return out
-
-
-#: Git name-status letters that mean the SET of files changed rather than the bytes in one:
-#: added, deleted, renamed, copied. A listing-only directory is relevant to exactly these.
-_STRUCTURAL_STATUS = ("A", "D", "R", "C")
-
-
-def _split_name_status(lines) -> tuple[list[str], set[str] | None]:
-    """`(paths, structural)` from stdin that may be `--name-only` OR `--name-status`.
-
-    Accepts both because the answer must not depend on how the caller was spelled: a plain path
-    list yields `structural=None`, which `is_test_relevant` reads as "unknown, treat everything
-    as structural" - the old behaviour, and the safe direction. A rename line carries both names
-    and both are recorded, since the old path vanishing is as structural as the new one arriving.
-    """
-    paths: list[str] = []
-    structural: set[str] = set()
-    tagged = False
-    for line in lines:
-        parts = [p for p in line.rstrip("\n").split("\t") if p != ""]
-        if len(parts) >= 2 and re.fullmatch(r"[A-Z]\d*", parts[0]):
-            tagged = True
-            names = parts[1:]
-            paths.extend(names)
-            if parts[0][0] in _STRUCTURAL_STATUS:
-                structural.update(names)
-        elif parts:
-            paths.append(parts[0])
-    return paths, (structural if tagged else None)
-
-
-def cmd_test_relevant(args: argparse.Namespace) -> int:
-    paths = list(args.test_relevant or [])
-    structural = None
-    asked = bool(paths)
-    if not paths and not sys.stdin.isatty():
-        paths, structural = _split_name_status(
-            [line for line in sys.stdin.read().splitlines() if line.strip()])
-        asked = True   # an EMPTY pipe is an empty commit, not a request for the listing
-    if getattr(args, "format", "text") == "json":
-        relevant = is_test_relevant(paths, args.root, structural)
-        print(json.dumps({"set": sorted(test_relevant_paths(args.root)),
-                          "listing_only": sorted(listing_only_paths(args.root)),
-                          "matched": sorted(_matched_entries(paths, args.root, structural)),
-                          "relevant": relevant}, indent=2))
-        return 0 if (not asked or relevant) else 1
-    if not asked:
-        for entry in sorted(test_relevant_paths(args.root)):
-            print(entry)
-        return 0
-    relevant = is_test_relevant(paths, args.root, structural)
-    # A SENTINEL line, not just the exit code. A caller (the commit hook) must be able to tell
-    # a real answer from a stub that exits 0 for every argument - the pre-commit fixtures stub
-    # gate.py to `sys.exit(0)`, which without this would read as "everything is relevant". The
-    # hook keys on this line and falls back to its own coarse regex when it is absent.
-    print(f"test-relevant: {'yes' if relevant else 'no'}")
-    return 0 if relevant else 1
-# --- end test-relevant set ---------------------------------------------------------
-
-
 # --- suite decision ----------------------------------------------------------------
-# Whether the unit suites need to run at all, and if so over what. `--test-relevant` above
-# answers a FILE-TYPE question - did this commit touch anything a test reads - and it is
-# binary in both directions: a commit touching one script pays for every test, and two
-# consecutive commits over an identical tree pay twice.
+# Whether the unit suites need to run at all, and if so over what. A commit runs what its
+# change reaches (`select_tests` below), and nothing when that is nothing; a boundary runs
+# everything. Between them sits the reuse: a green verdict recorded over a byte-identical
+# tracked tree answers the question already, so a retry over the same tree pays nothing.
 #
-# Measured over one working day on this repository: the suites ran about 52 times for about
-# 218 minutes, against about 35 minutes of delivery. A large share of those runs were over a
-# byte-identical source tree - paperwork commits, and closes retried after a refusal. Nothing
-# about the code had changed, so nothing about the answer could have.
-#
-# So the question asked here is the content one: has the test-relevant SURFACE changed since
-# the last run that was green? The surface is the same measured set `test_relevant_paths`
-# reports, hashed by content, and the verdict is a record naming the run that earned it.
-#
-# Every failure degrades to RUNNING. An unhashable surface, an absent or malformed record, a
+# Every unknown degrades to RUNNING. An unhashable surface, an absent or malformed record, a
 # record with no hash, a record whose verdict was red: each of those is a thing not known, and
-# a cache that answered "skip" on a thing not known would be the false-green class this whole
-# gate exists to refuse. Slow is the safe direction; silent is not.
+# a cache that answered "skip" on a thing not known would be a false green.
 
 #: Where the last suite verdict is recorded. Under `.local/`, so it is untracked and a gate
 #: run never dirties the tree it is judging.
@@ -3516,54 +2716,25 @@ def record_suite_verdict(root: str = ".", *, run: str, status: str = "green",
 
 
 # --- test selection ---
-#: The repo map's index, where `repo map build` writes it.
-REPO_MAP_REL = "sdlc-studio/.local/repo-map.json"
+# What a commit runs: the test modules its change reaches, read from the test sources alone.
+# Three routes, each a fact a test module states about itself - the changed test module, the
+# `x.py` -> `test_x.py` naming convention `check_script_tests.py` enforces, and the modules that
+# import or load `x` by name. Edges are DIRECT: a hub such as `sdlc_md` is imported by nearly
+# every script, so following dependents transitively selects most of the suite on every commit.
+# Whatever these routes miss - a docs page a test reads, a hook, test infrastructure (conftest,
+# pytest.ini, a test helper, tools/skill-tests.sh), a library reached only through another
+# script - selects NOTHING per commit and is caught by the full suite at the push boundary.
+# That is the price of a commit that stays fast, and the skip reason says so.
 
+#: Where the suites live, as repo-relative directories.
+TEST_SUITE_DIRS = (
+    ".claude/skills/sdlc-studio/scripts/tests",
+    "tools/tests",
+)
 
-def _import_graph(root: str) -> dict[str, list[str]] | None:
-    """Repo-relative path -> its imports, for every indexed source file, or None.
-
-    Prefers the on-disk repo map, and only while it is NEWER than every file it indexes.
-    A stale graph would narrow a run using edges the code no longer has, which is the one
-    way selection could lose a defect rather than defer finding it - so a map that is not
-    demonstrably current is rebuilt in memory instead (pure stdlib, a couple of seconds
-    over this repository, against the minutes a full suite costs).
-    """
-    try:
-        import repo_map
-    except Exception:  # noqa: BLE001 - no map means no selection, never a wrong selection
-        return None
-    rootp = Path(root).resolve()
-    ignores = set(repo_map.DEFAULT_IGNORES)
-    try:
-        sources = list(repo_map.walk_source_files(rootp, ignores))
-    except OSError:
-        return None
-    try:
-        map_mtime = (rootp / REPO_MAP_REL).stat().st_mtime
-    except OSError:
-        map_mtime = None
-    if map_mtime is not None:
-        newest = 0.0
-        try:
-            for src in sources:
-                newest = max(newest, src.stat().st_mtime)
-        except OSError:
-            newest = float("inf")     # cannot prove currency: do not trust the map
-        if newest <= map_mtime:
-            try:
-                data = json.loads((rootp / REPO_MAP_REL).read_text(encoding="utf-8"))
-                files = data.get("files")
-                if isinstance(files, dict) and files:
-                    return {str(k): list((v or {}).get("imports") or [])
-                            for k, v in files.items() if isinstance(v, dict)}
-            except (OSError, ValueError, TypeError, AttributeError):
-                pass                  # an unreadable map is no map
-    try:
-        entries = repo_map.build_index(rootp, ignores)
-    except Exception:  # noqa: BLE001 - as above
-        return None
-    return {path: list(entry.imports) for path, entry in entries.items()} or None
+#: The file kinds a test module can import, load or be named for. A doc, a template or an
+#: artefact is none of these, so a commit touching only those selects nothing.
+_CODE_SUFFIXES = (".py", ".sh")
 
 
 def _normalise(paths) -> list[str]:
@@ -3578,9 +2749,13 @@ def _normalise(paths) -> list[str]:
     return out
 
 
-#: How a test module NAMES the script it loads, when it loads it dynamically. These modules
-#: mostly do not import their subject - they build it with `spec_from_file_location`, so there
-#: is no import edge and often no resolvable read either.
+#: `from X import a, b` (one line or parenthesised) and `import a.b, c`.
+_FROM_IMPORT = re.compile(
+    r"^[ \t]*from[ \t]+([\w.]+)[ \t]+import[ \t]+(?:\(([^)]*)\)|([^\n#]*))", re.M)
+_PLAIN_IMPORT = re.compile(r"^[ \t]*import[ \t]+([^\n#]*)", re.M)
+
+#: How a test module NAMES the script it loads dynamically. Most modules here build their
+#: subject with `spec_from_file_location`, so there is no import statement to read.
 _LOADER_NAME = re.compile(
     r"""spec_from_file_location\(\s*["']([a-z_][a-z0-9_]*)["']"""
     r"""|_load\(\s*["']([a-z_][a-z0-9_]*)["']"""
@@ -3588,138 +2763,137 @@ _LOADER_NAME = re.compile(
     re.IGNORECASE)
 
 
-@functools.lru_cache(maxsize=8)
-def loader_index(root: str) -> dict:
-    """`{script stem: {test modules that load it}}`, read from the loader calls themselves.
+def _imported_names(text: str) -> set[str]:
+    """Every module-name component a source imports: `from lib import sdlc_md` yields both
+    `lib` and `sdlc_md`, since the imported name may itself be the module."""
+    items: list[str] = []
+    for m in _FROM_IMPORT.finditer(text):
+        items.append(m.group(1))
+        items.extend((m.group(2) or m.group(3) or "").split(","))
+    for m in _PLAIN_IMPORT.finditer(text):
+        items.extend(m.group(1).split(","))
+    names: set[str] = set()
+    for item in items:
+        words = item.split()
+        if words:
+            names.update(p.lower() for p in words[0].split(".") if p.isidentifier())
+    return names
 
-    The naming route only matches a script's OWN convention-named test (`x.py` ->
-    `test_x.py`), while the class is broader: `test_two_backlogs.py` loads `refine.py`, and no
-    route reached it. Such a change fell back to the whole suite, which is the cost this
-    selection exists to avoid - and worse, a test module that gained resolvable reads could be
-    silently DROPPED from the selection for the very script it tests.
 
-    Derived from what the modules actually do, never from a hand-kept table: a second list
-    would drift from the first and silently exempt whatever it forgot.
+def reach_index(root: str) -> dict:
+    """`{module stem: {test modules that import or load it}}`, read from the test sources.
+
+    The import graph restricted to the edges selection needs, in one regex pass: building the
+    whole repository's graph took four seconds, and the commit hook asks this on every commit.
     """
     out: dict = {}
     base = Path(root)
-    for tests_dir in (base / ".claude/skills/sdlc-studio/scripts/tests",
-                      base / "tools" / "tests"):
+    for suite in TEST_SUITE_DIRS:
+        tests_dir = base / suite
         if not tests_dir.is_dir():
             continue
         for module in sorted(tests_dir.glob("test_*.py")):
             text = sdlc_md.read_text_safe(module)
             if not text:
                 continue
-            rel = os.path.relpath(module, base)
-            for match in _LOADER_NAME.finditer(text):
-                name = next(g for g in match.groups() if g)
-                out.setdefault(name.lower(), set()).add(rel)
+            rel = f"{suite}/{module.name}"
+            names = _imported_names(text)
+            names.update(next(g for g in m.groups() if g).lower()
+                         for m in _LOADER_NAME.finditer(text))
+            for name in names:
+                out.setdefault(name, set()).add(rel)
     return out
 
 
 def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
-    """The test modules `changed` can reach, or an unresolved verdict meaning "run all".
+    """The test modules `changed` reaches, or an unresolved verdict meaning "run all".
 
     `{"resolved": bool, "selectors": [...], "total": int, "excluded": int, "reason": str}`.
-    `resolved` False ALWAYS means run everything - never run nothing.
-
-    Two routes, because the suites read two kinds of thing. A changed Python file is followed
-    through the import graph transitively (the repo map's own resolution, so this and the hub
-    score cannot come to disagree about what an import names). A changed file the graph has no
-    edge for - a reference doc, a hook, a shipped artefact - is attributed to the suite modules
-    whose SOURCE names it, which is the measurement `test_relevant_paths` already takes.
-
-    Anything neither route resolves widens the run: an unanswerable changed-file probe, a file
-    in the surface no module claims, and a resolvable change that reaches no test at all. That
-    last one matters most - a selection of zero tests reported as a pass is a vacuous green,
-    which is the failure this whole gate exists to refuse.
+    `resolved` False means nothing is known about the change - no suites to select from, or a
+    changed-file probe that could not answer - and the caller runs everything. Resolved with no
+    selectors is an answer: nothing the change touches is imported, loaded or named by a test
+    module, so the commit runs no unit suite and the push's full run is the check.
     """
     result: dict = {"resolved": False, "selectors": [], "total": 0, "excluded": 0,
                     "reason": ""}
-    read_map = suite_read_map(root)
-    if read_map is None:
-        result["reason"] = "no shipped suites here to select from - running everything"
+    base = Path(root)
+    modules = sorted(f"{suite}/{p.name}" for suite in TEST_SUITE_DIRS
+                     if (base / suite).is_dir() for p in (base / suite).glob("test_*.py"))
+    if not modules:
+        result["reason"] = "no test suites here to select from - running everything"
         return result
-    modules = sorted(m for m in read_map if os.path.basename(m).startswith("test_"))
     result["total"] = len(modules)
     if changed is None:
         result["reason"] = ("the changed-file probe could not answer, so nothing is known "
                             "about this diff - running everything")
         return result
-    norm = _normalise(changed)
-    if not norm:
-        result["reason"] = "no changed path was named - running everything"
-        return result
     module_set = set(modules)
-    relevant = test_relevant_paths(root)
-    graph = _import_graph(root)
-    dependents = {}
-    if graph is not None:
-        import repo_map
-        dependents = repo_map.dependents_index(graph)
+    index = reach_index(root)
     selected: set[str] = set()
-    for path in norm:
-        hits: set[str] = {path} if path in module_set else set()   # the test module itself
-        if graph is not None and path in graph:
-            seen = {path}
-            frontier = [path]
-            while frontier:                       # transitive: a dependent's dependents too
-                current = frontier.pop()
-                for dep in dependents.get(current, ()):
-                    if dep not in seen:
-                        seen.add(dep)
-                        frontier.append(dep)
-            hits |= seen & module_set
-        # BOTH routes, never one or the other. A shipped script loaded by its test through
-        # `spec_from_file_location` has no import edge at all, and is reached only by the
-        # read measurement; bailing out after an empty graph lookup sent every such change
-        # to the full suite, which is most of `tools/`.
-        hits.update(m for m in module_set if _matches_relevant(path, read_map[m]))
-        # THIRD route: the naming convention `check_script_tests.py` enforces repo-wide -
-        # `x.py` is tested by `test_x.py`. Neither route above finds it. A script loaded by
-        # `spec_from_file_location(name, dir / f"{name}.py")` has no import edge and no
-        # resolvable read, so it was reaching its own test module only by that module measuring
-        # EMPTY and being swept in as unattributable. Adding two real path reads to such a test
-        # then quietly dropped it from the selection for changes to the very script it tests.
-        hits |= {m for m in module_set
-                 if os.path.basename(m) == f"test_{os.path.basename(path)}"}
-        # FOURTH route: what the test modules actually LOAD. The naming route above reaches a
-        # script's own conventionally-named test and nothing else, while the class is broader -
-        # `test_two_backlogs.py` loads `refine.py`, and no route reached it, so any change to
-        # refine.py widened to the whole suite.
-        stem = os.path.splitext(os.path.basename(path))[0].lower()
-        hits |= (loader_index(root).get(stem, set()) & module_set)
-        if hits:
-            selected |= hits
-            continue
-        if _matches_relevant(path, relevant):
-            result["selectors"] = []
-            result["reason"] = (f"{path} is test-relevant but reaches no test module (no "
-                                f"import edge and no suite read resolves it), and a run of "
-                                f"nothing is not a pass - running everything")
-            return result
-        # Outside the surface entirely: it can change no test outcome, so it selects nothing
-        # and forces nothing. Whether the suites run at all is `is_test_relevant`'s question.
-    if not selected:
-        result["reason"] = ("no changed path reaches any test module - running everything "
-                            "rather than nothing")
-        return result
-    # A module whose measured read set is EMPTY told us nothing about what it reads; that is an
-    # unanswered question, not an answer of "it reaches nothing". 57 of 162 modules here measure
-    # empty, because a path built from an IMPORTED constant is invisible to the static reader.
-    # Counting silence as "unreachable" is exactly how a selection reported itself resolved while
-    # excluding the module the change actually reddened. Always include the unattributable.
-    _unattributable = unmeasurable_modules(root)
-    selected |= (_unattributable & set(modules))
+    code = [p for p in _normalise(changed) if p.endswith(_CODE_SUFFIXES)]
+    for path in code:
+        if path in module_set:
+            selected.add(path)
+        stem = Path(path).stem.replace("-", "_").lower()
+        selected |= {m for m in modules if os.path.basename(m).lower() == f"test_{stem}.py"}
+        selected |= index.get(stem, set())
     result["resolved"] = True
     result["selectors"] = sorted(selected)
     result["excluded"] = len(modules) - len(selected)
-    result["reason"] = (f"{len(selected)} of {len(modules)} test module(s) selected from the "
-                        f"import graph for {len(norm)} changed file(s); "
-                        f"{result['excluded']} excluded - nothing this change touches "
-                        f"reaches them")
+    if selected:
+        result["reason"] = (f"{len(selected)} of {len(modules)} test module(s) import, load or "
+                            f"are named for the {len(code)} changed code file(s); "
+                            f"{result['excluded']} excluded, and the full suite runs at push")
+    else:
+        result["reason"] = ("no test module imports, loads or is named for a changed file - "
+                            "per-commit selection follows direct edges only, so docs, "
+                            "artefacts, hooks, test infrastructure and code reached only "
+                            "through another script run no unit suite here; the full suite "
+                            "at push catches them")
     return result
+
+
+def run_tests_plan(selectors: list[str], parallel: bool, root: str = ".") -> list[list[str]]:
+    """The pytest command lines that run `selectors`, in order.
+
+    With pytest-xdist, the selection runs across every core and the tests marked `serial_only`
+    (they assert on global tree state, so a concurrent worker makes them wrong) follow on their
+    own, over only the modules that carry the marker. Without it, one serial run."""
+    base = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"]
+    if not parallel:
+        return [base + list(selectors)]
+    serial = [s for s in selectors
+              if "serial_only" in (sdlc_md.read_text_safe(Path(root) / s) or "")]
+    plan = [base + ["-n", "auto", "-m", "not serial_only"] + list(selectors)]
+    if serial:
+        plan.append(base + ["-m", "serial_only"] + serial)
+    return plan
+
+
+def cmd_run_tests(args: argparse.Namespace) -> int:
+    """Run the selected test modules; exit non-zero when any test fails.
+
+    pytest's exit 5 (nothing collected) is a pass here: a module whose every test is
+    `serial_only` leaves the parallel phase empty, and the serial phase then runs them."""
+    import importlib.util
+    import subprocess
+    if importlib.util.find_spec("pytest") is None:
+        print("unit-tests: pytest is not installed, so the selection cannot run here",
+              file=sys.stderr)
+        return 2
+    parallel = importlib.util.find_spec("xdist") is not None
+    selectors = list(args.run_tests)
+    how = ("in parallel (pytest-xdist, -n auto), serial_only tests after" if parallel
+           else "serially (pytest-xdist is not installed)")
+    print(f"unit-tests: {len(selectors)} selected module(s) {how}")
+    started = time.monotonic()
+    rc = 0
+    for argv in run_tests_plan(selectors, parallel, args.root):
+        code = subprocess.run(argv, cwd=args.root).returncode
+        if code not in (0, 5):
+            rc = code
+    print(f"unit-tests: finished in {time.monotonic() - started:.0f}s")
+    return rc
 
 
 #: The moments the FULL suite is worth its price: a wrong answer past one of these is
@@ -3757,23 +2931,30 @@ def resolve_boundary(args=None) -> str | None:
 
 
 def suite_decision(root: str = ".", changed: "list[str] | None" = None,
-                   boundary: str | None = None) -> dict:
+                   boundary: str | None = None, reuse: bool = True) -> dict:
     """Whether the unit suites must run over this tree, over what, and why.
 
     `{"run", "mode", "reason", "reused", "selectors", "excluded", "surface_hash"}`, where
-    `mode` is one of `reuse` (run nothing), `selected` (run `selectors`) or `full`.
+    `mode` is one of `none` (the change reaches no test module), `reuse` (a green verdict
+    covers this exact tree), `selected` (run `selectors`) or `full`.
 
-    Two questions in order. WHY a run is needed: every branch that is not a hash-for-hash
-    match against a green record runs. Then WHAT to run: a boundary runs everything, and
-    anywhere else the selection decides - falling back to everything whenever it cannot.
+    Off a boundary the selection answers first: a change no test module reaches runs nothing,
+    whatever the verdict record says. A boundary runs everything and never reuses. `reuse`
+    False asks only what `changed` selects, whatever verdict this tree has recorded.
     """
+    at_boundary = bool(boundary)
+    selection = None if at_boundary else select_tests(root, changed)
+    if selection is not None and selection["resolved"] and not selection["selectors"]:
+        return {"run": False, "mode": "none", "reused": None, "surface_hash": None,
+                "selectors": [], "excluded": selection["excluded"],
+                "reason": selection["reason"]}
     digest = surface_hash(root)
     verdict = read_suite_verdict(root)
-    at_boundary = bool(boundary)
     why: str | None = None
     if digest is None:
-        why = ("the test-relevant surface could not be hashed, so nothing is known about "
-               "this tree")
+        why = "the tracked surface could not be hashed, so nothing is known about it"
+    elif not reuse:
+        why = "asked for the selection alone, so no recorded verdict is consulted"
     elif verdict is None:
         why = "no readable suite verdict is recorded (absent, unreadable or malformed)"
     else:
@@ -3784,56 +2965,62 @@ def suite_decision(root: str = ".", changed: "list[str] | None" = None,
             why = (f"the last recorded verdict ({run_id}) is {verdict.get('status')!r}, "
                    f"not green")
         elif not isinstance(recorded, str) or not recorded:
-            # Two unknowns must never compare equal into a green - the same trap the
-            # mutation coverage lane's `_matches` guards.
+            # Two unknowns must never compare equal into a green.
             why = (f"the recorded verdict ({run_id}) carries no surface hash, so it proves "
                    f"nothing about this tree")
         elif recorded != digest:
-            why = f"the test-relevant surface has changed since the green verdict of {run_id}"
+            why = f"the tracked surface has changed since the green verdict of {run_id}"
         elif at_boundary:
-            # A boundary NEVER reuses, whatever the digest says. Reuse at a boundary inherits
-            # every gap in whatever produced the earlier verdict, and the boundary is precisely
-            # the backstop the per-commit selection leans on. Verified by construction: with a
-            # full green recorded and a tracked file then edited, reuse let the change through
-            # a push and a tag alike.
+            # A boundary NEVER reuses, whatever the digest says: it is the backstop the
+            # per-commit selection leans on, and reuse would inherit every gap in whatever
+            # produced the earlier verdict.
             why = (f"boundary {boundary}: a boundary always runs in full - it is the backstop "
                    f"the per-commit selection relies on, so it never reuses a verdict")
-        elif False and recorded_mode != "full":
-            # The coverage half of the boundary rule. A green earned by a partial run is
-            # evidence about the tests that ran; reusing it here would let selection become
-            # the whole coverage story, which is the one way it could lose a defect rather
-            # than defer finding it.
-            why = (f"the green verdict of {run_id} was earned by a {recorded_mode} run, not "
-                   f"a full one, so it cannot stand in for a boundary's coverage")
         else:
             return {"run": False, "mode": "reuse", "reused": run_id, "surface_hash": digest,
                     "selectors": [], "excluded": 0,
-                    "reason": (f"the test-relevant surface is unchanged since the "
-                               f"{recorded_mode} green verdict of {run_id} - reusing it and "
-                               f"running no tests")}
+                    "reason": (f"the tracked surface is unchanged since the {recorded_mode} "
+                               f"green verdict of {run_id} - reusing it and running no tests")}
     if at_boundary:
         return {"run": True, "mode": "full", "reused": None, "surface_hash": digest,
                 "selectors": [], "excluded": 0,
                 "reason": f"{why}; {boundary} is a boundary, so the FULL suite runs"}
-    selection = select_tests(root, changed)
     return {"run": True, "mode": "selected" if selection["resolved"] else "full",
             "reused": None, "surface_hash": digest,
             "selectors": selection["selectors"], "excluded": selection["excluded"],
             "reason": f"{why}; {selection['reason']}"}
 
 
+def staged_paths(root: str) -> list[str] | None:
+    """The paths the pending commit stages, both sides of a rename, or None when git cannot
+    answer. What a commit hook selects from: the working tree may hold unrelated edits."""
+    import subprocess
+    try:
+        proc = subprocess.run(["git", "diff", "--cached", "--name-only", "--no-renames"],
+                              cwd=str(root), capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return proc.stdout.splitlines() if proc.returncode == 0 else None
+
+
 def cmd_suite_decision(args: argparse.Namespace) -> int:
     """Print the decision and exit 0 when a run is needed, 1 when it is not.
 
-    Same shape as `--test-relevant`: a SENTINEL line the hook keys on, so a stubbed or old
-    gate.py (which prints nothing) is told apart from a real answer, plus an exit code."""
+    A SENTINEL line the hook keys on, so a stubbed or old gate.py (which prints nothing) is
+    told apart from a real answer, plus an exit code."""
     try:
         boundary = resolve_boundary(args)
     except BoundaryError as exc:
         print(f"suite-decision: refused - {exc}", file=sys.stderr)
         return 2
-    decision = suite_decision(args.root, changed=changed_paths(args.root),
-                              boundary=boundary)
+    reuse = getattr(args, "changed", None) is None
+    if not reuse:
+        changed = list(args.changed)
+    elif getattr(args, "staged", False):
+        changed = staged_paths(args.root)
+    else:
+        changed = changed_paths(args.root)
+    decision = suite_decision(args.root, changed=changed, boundary=boundary, reuse=reuse)
     if getattr(args, "format", "text") == "json":
         print(json.dumps(decision, indent=2))
     else:
@@ -3877,8 +3064,8 @@ def lane_stamp(check: dict) -> str:
 
 
 def cmd_gate(args: argparse.Namespace) -> int:
-    if getattr(args, "test_relevant", None) is not None:
-        return cmd_test_relevant(args)
+    if getattr(args, "run_tests", None):
+        return cmd_run_tests(args)
     if getattr(args, "record_suite_verdict", None):
         return cmd_record_suite_verdict(args)
     if getattr(args, "suite_decision", False):
@@ -3969,17 +3156,21 @@ def build_parser() -> argparse.ArgumentParser:
                    help="--release: run shell-backed verifiers on stories stamped "
                         "`Provenance: external` too (off by default - the trust boundary; "
                         "those verifiers are otherwise reported BLOCKED, never green)")
-    p.add_argument("--test-relevant", dest="test_relevant", nargs="*", metavar="PATH",
-                   help="Answer whether the given repo-relative paths (or the paths on "
-                        "stdin) can change a test outcome, and exit 0 when any can. The "
-                        "set is measured from what the shipped suites read, so a commit "
-                        "touching a doc a test asserts over is never taken for docs-only. "
-                        "With no paths and no stdin, print the measured set")
+    p.add_argument("--run-tests", dest="run_tests", nargs="+", metavar="PATH",
+                   help="Run these test modules under pytest, in parallel when pytest-xdist is "
+                        "installed (the `serial_only` tests after), and exit non-zero on any "
+                        "failure. The commit hook runs its selection through this")
     p.add_argument("--suite-decision", dest="suite_decision", action="store_true",
-                   help="Answer whether the unit suites must run over this tree. Skips only "
-                        "when the test-relevant surface hashes identically to the tree the "
-                        "last GREEN verdict was recorded over; every unknown (no record, an "
-                        "unreadable one, a red one) runs. Exits 0 when a run is needed")
+                   help="Answer whether the unit suites must run, and over which modules: "
+                        "those that import, load or are named for a changed code file. Skips "
+                        "when none is reached (a docs or artefact change) or when the tracked "
+                        "tree hashes identically to the last GREEN verdict's. A boundary runs "
+                        "everything. Exits 0 when a run is needed")
+    p.add_argument("--changed", nargs="+", metavar="PATH",
+                   help="--suite-decision: what these repo-relative paths select, instead of "
+                        "the working tree's changes; no recorded verdict is reused")
+    p.add_argument("--staged", action="store_true",
+                   help="--suite-decision: decide for the staged paths only (the commit hook)")
     p.add_argument("--boundary", choices=BOUNDARIES,
                    help="Declare that this run is at a boundary, so the FULL suite runs "
                         f"rather than a selection (or set {BOUNDARY_ENV}). A boundary also "

@@ -27,20 +27,6 @@ SCRIPTS = Path(__file__).resolve().parent.parent
 REPO = SCRIPTS.parents[3]
 RECORD = REPO / "sdlc-studio" / "reviews" / "root-census.md"
 
-# This module globs the whole artefact workspace to answer "does an artefact with this id
-# exist" (`_artefact_on_disk`). That is a read of the tree's SHAPE: a file appearing, vanishing
-# or being renamed changes the answer, and the words inside a file never can. Declared so
-# `gate.listing_only_paths` can tell the two apart - without it this one glob made every
-# artefact commit in the repo pay for both unit suites. The narrower reads this module also
-# performs (RECORD, below) are measured separately and stay fully relevant.
-#
-# `ids` narrows it the rest of the way. The glob only ever asks about the follow-up ids the
-# census record names, so every OTHER artefact filed under the workspace - which is most of
-# what a sprint close writes - cannot change this module's answer. Left as a bare directory,
-# one id's worth of dependency made every filing in the repository structural.
-# `DeclaredIdsCoverTheCensusTests` holds this list against the record, so an id added to the
-# census and not to this line fails rather than going quietly unprotected.
-GATE_LISTING_ONLY = ({"path": "sdlc-studio", "ids": ("BG0288",)},)
 # The census is a fact about the skill's OWN source tree, so it is only meaningful where that
 # tree is under development - detected by the repo's guard directory sitting beside the
 # workspace. A project that merely installed the skill has no census to hold, and holding it
@@ -266,77 +252,16 @@ class RootCensusTests(unittest.TestCase):
                                       f"{script}: the census names {opt}, which it never declares")
 
 
-@unittest.skipUnless(DEV_TREE, "no skill source tree here, so there is no census to hold")
+_US0880_RETIRED = ("retired by US0880: the measured test-relevant set and its listing-only "
+                   "narrowing are deleted; selection reads imports, loads and test names only")
+
 class DeclaredIdsCoverTheCensusTests(unittest.TestCase):
-    """US0554. `GATE_LISTING_ONLY` now names the ids this module's glob depends on, which makes
-    every OTHER filing under the workspace irrelevant to it. That is only safe while the list
-    stays true: an id added to the census record and not to the declaration would be an id
-    whose artefact could vanish without the suite that checks it ever running. Held here so the
-    omission fails loudly rather than becoming a silent hole in the narrowing."""
+    """Retired by US0880. Skipped stubs, kept only because stamped criteria
+    (US0554 AC5) name these nodes; delete them when those criteria are retired."""
 
-    @staticmethod
-    def _declared_ids() -> set:
-        ids: set = set()
-        for entry in GATE_LISTING_ONLY:
-            if isinstance(entry, dict):
-                ids |= {str(i).replace("-", "").upper() for i in (entry.get("ids") or ())}
-        return ids
-
-    @staticmethod
-    def _census_ids() -> set:
-        """Every artefact id `_artefact_on_disk` can be asked about - the ids named in the
-        reason of an unanchored row, which is the only place the glob is reached from."""
-        return {i.replace("-", "").upper()
-                for _script, klass, reason in read_record() if klass == "unanchored"
-                for i in _ARTEFACT_ID.findall(reason)}
-
+    @unittest.skip(_US0880_RETIRED)
     def test_every_census_id_is_named_by_the_declaration(self) -> None:
-        missing = sorted(self._census_ids() - self._declared_ids())
-        self.assertFalse(
-            missing,
-            f"the census names {missing}, which GATE_LISTING_ONLY does not: a structural "
-            f"change to one of those artefacts would not select this module. Add them to the "
-            f"`ids` tuple, or drop the tuple to go back to the whole directory")
-
-    def test_the_declaration_names_no_id_the_census_does_not(self) -> None:
-        """The other direction is not a safety hole - a stale id only makes the narrowing less
-        effective - but it is how the list rots into decoration nobody trusts."""
-        stale = sorted(self._declared_ids() - self._census_ids())
-        self.assertFalse(stale, f"declared but the census no longer names it: {stale}")
-
-    def test_the_declaration_actually_narrows_this_module(self) -> None:
-        """The point of the whole story, asserted against the real repository: filing an
-        artefact this census never asks about must not select this module."""
-        sys.path.insert(0, str(SCRIPTS))
-        import gate  # noqa: PLC0415 - imported here so the module loads without the skill root
-        # The CONTENT readers, from the rule's own subtraction. Deriving this from the raw read
-        # map counted a module that only probes the workspace exists, so this test skipped
-        # itself on a suspension that had already been repaired.
-        readers = gate.content_readers(str(REPO)).get("sdlc-studio", set())
-        scopes = gate.listing_only_scopes(str(REPO))
-        undeclared = {m for m in readers
-                      if "GATE_LISTING_ONLY" not in (REPO / m).read_text(encoding="utf-8")}
-        # A module whose read set could not be MEASURED is an unanswered question, and an
-        # unanswered question withholds a narrowing rather than granting it. On this repository
-        # 59 of 170 suite modules measure empty, so the narrowing is withheld here and the
-        # saving is SUSPENDED - a fact about the repository's static readability, not about
-        # this module's declaration, which is still the right one to hold. The rule and its
-        # cost are asserted; the cost is not asserted away.
-        blind = gate.unmeasurable_modules(str(REPO))
-        if undeclared or blind:
-            self.assertNotIn("sdlc-studio", scopes,
-                             "the narrowing was granted while a reader had not agreed to it")
-            notes = " ".join(gate.withheld_narrowings(str(REPO)))
-            self.assertIn("sdlc-studio", notes,
-                          "the narrowing is withheld and nothing says so - the cost is "
-                          "unattributable and reads as a gate that never got faster")
-            self.skipTest(
-                f"withheld: {len(undeclared)} content reader(s) have not declared it and "
-                f"{len(blind)} module(s) could not be measured. The saving returns when those "
-                f"reads are made statically visible.")
-        self.assertIsNotNone(scopes.get("sdlc-studio"))
-        filed = "sdlc-studio/bugs/BG9999-an-artefact-this-census-never-asks-about.md"
-        self.assertFalse(gate.is_test_relevant([filed], str(REPO), structural={filed}))
+        pass
 
 
 if __name__ == "__main__":

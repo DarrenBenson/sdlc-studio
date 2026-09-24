@@ -85,8 +85,11 @@ had drifted past it, BG0662), `warning-ratchet` (`validate.py warning-ratchet`),
 `floor-pending` (`engagement_floor.py check --pending`), `gate.py`'s own block (conformance,
 reconcile, validate, integrity, duplicate-id, docs, derived-depth, `evidence-drift`, and `window`,
 the one concurrent-write window check), and `markdown` and `markdown-payload` (markdownlint).
-`commit-msg` checks the message rules, then runs `skill-tests` (`skill-tests.sh`) and `tool-tests`
-when `pre-commit` selected the suites.
+`commit-msg` checks the message rules, then runs what `pre-commit` selected: `unit-tests`
+(`gate.py --run-tests`, the test modules the staged change reaches, in parallel under
+pytest-xdist), or `skill-tests` (`skill-tests.sh`) and `tool-tests` when no selection could be made
+or pytest is absent. It reports the commit's time against a 90-second budget and never refuses on
+it.
 One of those, `evidence-drift`, is BLOCKING and guards the mutation ledger: a commit whose staged
 file drifts a delivered unit's registered mutant rows is refused with the unit, the file, the rows
 and the re-register remedy named, and drift that predates the commit is reported, never refused.
@@ -240,14 +243,15 @@ holding a `.local/forward-port.pin` marker.
 every check except markdownlint is a plain Python or bash command** - do not skip the gate
 because npm is missing.
 
-**Budget the time.** The unit suites take ~2.5 minutes, longer than most tooling's 2-minute
-default, so give a commit at least a 10-minute timeout. The hook prints its expected duration
-first and skips the suites for a commit touching no `scripts/`, `templates/` or `tools/` file.
+**Budget the time.** A commit runs only the test modules its staged change imports, loads or is
+named for, in parallel, and reports its time against a 90-second budget; a docs or artefact commit
+runs none. A change to a hub script still selects large modules, so give a commit a 10-minute
+timeout. The full suite runs at push.
 
 **The gate spans two hooks, cheapest first.** `pre-commit` runs the cheap guards and decides
 whether the suites are needed; `commit-msg` checks the message rules and only then runs them.
 Git creates the commit message after `pre-commit`, so this is the only order in which a
-message defect is refused before a 2.5-minute run rather than after it.
+message defect is refused before the suites run rather than after them.
 
 One lane is deliberately outside the gate: `npm run lint:corpus` lints every tracked markdown
 file under the strict root rules, attributing findings against the latest tag. It runs from a

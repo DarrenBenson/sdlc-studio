@@ -28,6 +28,10 @@ def _load():
 
 gt = _load()
 
+_US0880_RETIRED = ("retired by US0880: `gate_timing.py budget` and its per-commit "
+                   "ratchet are deleted; the commit hook reports elapsed time against "
+                   "90 seconds instead")
+
 
 class RecordTests(unittest.TestCase):
     """AC1: durations accumulate to a bounded per-suite history."""
@@ -144,132 +148,6 @@ class MedianTests(unittest.TestCase):
             self.assertGreater(exp, 90.0)
 
 
-class BudgetLaneTests(unittest.TestCase):
-    """RFC0048 D6: a per-commit gate budget, declared against a measured baseline, reported as a
-    TREND and never blocking."""
-
-    def _project(self, root: Path, body: str) -> None:
-        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / ".config.yaml").write_text(body, encoding="utf-8")
-
-    def setUp(self) -> None:
-        try:
-            import yaml  # noqa: F401
-        except ImportError:
-            self.skipTest("PyYAML absent - the budget block cannot be read")
-
-    def test_budget_config_carries_its_baseline(self) -> None:
-        """A ceiling recorded without the measurement it was chosen against cannot be reviewed
-        later - 'is 120s still right?' is unanswerable without knowing what it was 29% above."""
-        repo = Path(__file__).resolve().parents[2]
-        block = gt.budget_config(repo)
-        self.assertIsNotNone(block, "this repo declares no gate_budget")
-        self.assertIn("seconds", block)
-        self.assertIn("baseline_seconds", block)
-        self.assertIn("baseline_date", block)
-
-    def test_over_budget_warns_and_never_blocks(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._project(root, "gate_budget:\n  seconds: 100\n"
-                                "  baseline_seconds: 90\n  baseline_date: 2026-07-21\n")
-            gt.record(root, "total", 250.0)                 # far over
-            rep = gt.budget_report(root)
-            self.assertTrue(rep["over"])
-            out = io.StringIO()
-            with contextlib.redirect_stdout(out):
-                rc = gt.main(["--root", str(root), "budget"])
-            self.assertEqual(rc, 0)                          # ...and STILL exits clean
-            self.assertIn("OVER", out.getvalue())
-
-    def test_the_report_names_the_baseline_and_the_drift(self) -> None:
-        """Reporting only 'under budget' is how test_gate.py grew 28% unnoticed: it was under
-        every ceiling the whole time. The drift is the signal, not the verdict.
-
-        The baseline declares its WIDTH since BG0608: a full run judged against the per-commit
-        ceiling is compared with the per-commit baseline, which is not like-for-like, so the
-        percentage is withheld there unless both widths are on record. Declaring one keeps this
-        row about the drift rather than about the withholding, which has its own criteria."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._project(root, "gate_budget:\n  seconds: 200\n"
-                                "  baseline_seconds: 100\n  baseline_date: 2026-07-21\n"
-                                "  baseline_tests: 1000\n")
-            gt.record(root, "total", 128.0)                  # under budget, but +28% on baseline
-            rep = gt.budget_report(root)
-            self.assertFalse(rep["over"])
-            self.assertIn("2026-07-21", rep["detail"])
-            self.assertIn("+28%", rep["detail"])
-
-    def test_the_budget_reads_the_latest_run_not_the_median(self) -> None:
-        """A median over a ten-run window lags a step change: when the suite went 153s -> 79s the
-        median still read ~152s. A budget built on it would report a number true of no run that
-        had happened."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._project(root, "gate_budget:\n  seconds: 120\n"
-                                "  baseline_seconds: 93.1\n  baseline_date: 2026-07-21\n")
-            for s in (153.0, 152.0, 154.0, 153.0, 155.0, 152.0, 159.0, 161.0, 109.0, 79.0):
-                gt.record(root, "total", s)
-            self.assertEqual(gt.latest(root, "total"), 79.0)
-            self.assertGreater(gt.expected(root, "total"), 140.0)   # the median still says ~153
-            self.assertEqual(gt.budget_report(root)["measured"], 79.0)
-
-    def test_no_budget_or_no_history_is_silent(self) -> None:
-        """Silence, never a guessed number - the same rule `estimate` follows."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            gt.record(root, "total", 50.0)
-            self.assertIsNone(gt.budget_report(root))        # recorded, but no budget declared
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._project(root, "gate_budget:\n  seconds: 100\n")
-            self.assertIsNone(gt.budget_report(root))        # declared, but nothing recorded
-
-
-
-
-class GateBudgetRedeclaredTests(unittest.TestCase):
-    """US0432 / CR0420: the 120s ceiling was set when the suites were half the size, so every
-    commit reported OVER and the signal became noise. It is re-declared against the measured peak."""
-
-    def test_the_declared_budget_covers_the_measured_cost(self) -> None:
-        """AC1. The repo's declared budget now has headroom over a baseline that reflects the grown
-        suite - so a normal run reads under budget, not OVER. Guards against the ceiling silently
-        going stale again: a baseline back near the old ~99s would fail here."""
-        repo = Path(__file__).resolve().parents[2]
-        block = gt.budget_config(repo)
-        self.assertIsNotNone(block, "this repo declares no gate_budget")
-        seconds = float(block["seconds"])
-        baseline = float(block["baseline_seconds"])
-        self.assertGreaterEqual(seconds, baseline, "the ceiling must cover its own baseline")
-        # the baseline reflects the CURRENT suite, not the pre-growth ~99s that made it fire OVER
-        self.assertGreaterEqual(baseline, 250.0,
-                                "baseline is stale against the measured ~317s peak")
-
-    def test_a_regression_above_the_new_budget_still_flags(self) -> None:
-        """AC2. Re-budgeting must not silence the instrument: a run above the new ceiling still
-        reports OVER, with the drift since the new baseline, so a genuine regression is caught."""
-        import contextlib
-        import io
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-            (root / "sdlc-studio" / ".config.yaml").write_text(
-                "gate_budget:\n  seconds: 380\n  baseline_seconds: 317\n"
-                "  baseline_date: 2026-07-26\n", encoding="utf-8")
-            gt.record(root, "total", 317.0)                  # a normal run: under the new ceiling
-            self.assertFalse(gt.budget_report(root)["over"])
-            gt.record(root, "total", 460.0)                  # a real regression: over it
-            rep = gt.budget_report(root)
-            self.assertTrue(rep["over"])
-            self.assertIn("2026-07-26", rep["detail"])       # drift is measured from the new baseline
-            out = io.StringIO()
-            with contextlib.redirect_stdout(out):
-                gt.main(["--root", str(root), "budget"])
-            self.assertIn("OVER", out.getvalue())
-
-
 class ScopeTests(unittest.TestCase):
     """BG0239: a lane that was INVOKED is not a lane that RAN.
 
@@ -331,29 +209,9 @@ class ScopeTests(unittest.TestCase):
             self.assertNotIn(1171, data.get("total.tests", []),
                              "a selected count landed in the full series and will erode the peak")
 
+    @unittest.skip(_US0880_RETIRED)
     def test_the_budget_reports_the_series_the_run_ACTUALLY_used(self) -> None:
-        """A budget line naming a number this commit did not pay is worse than none, because it
-        is believed. Reading `total` unconditionally reported the last FULL run after a cheap
-        one: the first selected commit ran in 226s and the line said `OVER - 554s`."""
-        import argparse
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-            (root / "sdlc-studio" / ".config.yaml").write_text(
-                "gate_budget:\n  seconds: 380\n", encoding="utf-8")
-            gt.record(root, "total", 554)
-            rep = gt.budget_report(root)
-            self.assertIn("554", rep["detail"])
-            gt.record(root, "total.selected", 226)
-            rep = gt.budget_report(root)
-            self.assertIn("226", rep["detail"],
-                          "the budget reports a full run's duration after a selected commit")
-            self.assertIn("selected run", rep["detail"],
-                          "a selected total is reported without saying so, so its drift reads "
-                          "as like-for-like against the full-run baseline")
-            gt.record(root, "total", 540)
-            self.assertIn("540", gt.budget_report(root)["detail"],
-                          "the report stayed on the selected series after a full run")
+        """Retired by US0880; kept as a skipped stub because BG0467 AC3 names it."""
 
     def test_a_loader_error_is_refused_even_at_a_full_count(self) -> None:
         """The filed reproduction. A module that fails to import is a FACT, not a threshold, so it
@@ -668,421 +526,81 @@ class ScopeCollapseTests(unittest.TestCase):
                                 f"{payload} was accepted as an acknowledgement")
 
 
+
+class BudgetLaneTests(unittest.TestCase):
+    """Retired by US0880. Skipped stubs, kept only because stamped criteria
+    (US0287 AC1-AC3) name these nodes; delete them when those criteria are retired."""
+
+    @unittest.skip(_US0880_RETIRED)
+    def test_budget_config_carries_its_baseline(self) -> None:
+        pass
+
+    @unittest.skip(_US0880_RETIRED)
+    def test_over_budget_warns_and_never_blocks(self) -> None:
+        pass
+
+
+
+class GateBudgetRedeclaredTests(unittest.TestCase):
+    """Retired by US0880. Skipped stubs, kept only because stamped criteria
+    (US0432 AC1-AC2) name these nodes; delete them when those criteria are retired."""
+
+    @unittest.skip(_US0880_RETIRED)
+    def test_the_declared_budget_covers_the_measured_cost(self) -> None:
+        pass
+
+    @unittest.skip(_US0880_RETIRED)
+    def test_a_regression_above_the_new_budget_still_flags(self) -> None:
+        pass
+
+
+
 class BudgetSeriesTests(unittest.TestCase):
-    """BG0594: one scalar cannot describe a population that varies with selection width.
+    """Retired by US0880. Skipped stubs, kept only because stamped criteria
+    (BG0594 AC1-AC5) name these nodes; delete them when those criteria are retired."""
 
-    The full suite WAS read - `latest(root, "total")` whenever the last run was not selected -
-    but it was judged against the per-commit ceiling, so a 899s full run read OVER a 380s budget
-    as a matter of course and the verdict carried no information.
-    """
-
-    def _timings(self, root, *, selected, series):
-        d = root / "sdlc-studio" / ".local"
-        d.mkdir(parents=True, exist_ok=True)
-        (d / "gate-timings.json").write_text(json.dumps(selected), encoding="utf-8")
-        return d / "gate-timings.json"
-
-    def _cfg(self, root, **kw):
-        block = {"seconds": 380, "baseline_seconds": 317, "baseline_date": "2026-07-26"}
-        block.update(kw)
-        body = "gate_budget:\n" + "".join(f"  {k}: {v}\n" for k, v in block.items())
-        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / ".config.yaml").write_text(body, encoding="utf-8")
-
+    @unittest.skip(_US0880_RETIRED)
     def test_the_rate_is_reported_beside_the_total(self) -> None:
-        """MUTANT: in `gate_timing.py`, drop the rate term from the detail string."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._cfg(root)
-            self._timings(root, selected={"total.selected": [200.0], "total.last_series":
-                                          "selected", "total.selected.tests": [1600.0]},
-                          series="selected")
-            res = gt.budget_report(root)
-            self.assertIsNotNone(res)
-            self.assertIn("s/test", res["detail"],
-                          f"the budget line states a total with no rate, so a wide commit and a "
-                          f"regression look the same:\n{res['detail']}")
+        pass
 
+    @unittest.skip(_US0880_RETIRED)
     def test_the_full_suite_is_judged_against_its_own_ceiling(self) -> None:
-        """MUTANT: in `gate_timing.py`, change the whole-suite branch to read the per-commit
-        ceiling.
+        pass
 
-        899s against 380s is OVER by construction; against a declared full ceiling it is not.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._cfg(root, full_seconds=1080, full_baseline_seconds=899,
-                      full_baseline_date="2026-08-19")
-            self._timings(root, selected={"total": [899.0], "total.tests": [7417.0],
-                                          "total.last_series": "full"}, series="full")
-            res = gt.budget_report(root)
-            self.assertIsNotNone(res)
-            self.assertEqual(1080.0, res["budget"],
-                             "the full suite is still judged against the per-commit ceiling")
-            self.assertFalse(res["over"],
-                             f"a full run inside its own declared ceiling reported OVER:\n"
-                             f"{res['detail']}")
-
+    @unittest.skip(_US0880_RETIRED)
     def test_two_widths_of_equal_rate_reach_the_same_verdict(self) -> None:
-        """MUTANT: in `gate_timing.py`, revert `over` to `measured > budget`.
+        pass
 
-        The criterion is that the two VERDICTS agree, so the assertion is on `over` - the first
-        cut asserted only that the totals straddled the ceiling and that each detail string
-        carried its own rate, which is true of the unfixed code and was exactly the shape an
-        independent review refused. The runs must straddle in RAW seconds, or a raw comparison
-        already agrees and the mutant survives.
-        """
-        with tempfile.TemporaryDirectory() as d1, tempfile.TemporaryDirectory() as d2:
-            narrow, wide = Path(d1), Path(d2)
-            for root, secs, tests in ((narrow, 200.0, 1600.0), (wide, 620.0, 4960.0)):
-                # A DECLARED rate ceiling, because that is what the verdict is on. 0.125s/test
-                # is the fixture's cost; 0.152 is the ceiling, so both runs sit under it and
-                # must agree - while their raw totals straddle 380s and would not.
-                self._cfg(root, rate_seconds_per_test=0.152)
-                self._timings(root, selected={"total.selected": [secs],
-                                              "total.selected.tests": [tests],
-                                              "total.last_series": "selected"},
-                              series="selected")
-            a, b = gt.budget_report(narrow), gt.budget_report(wide)
-            self.assertLess(a["measured"], a["budget"],
-                            "the narrow run must sit UNDER the ceiling in raw seconds")
-            self.assertGreater(b["measured"], b["budget"],
-                               "the wide run must sit OVER it in raw seconds, or a raw "
-                               "comparison already agrees and this proves nothing")
-            self.assertAlmostEqual(a["rate"], b["rate"], places=4,
-                                   msg="the two runs do not have equal per-test cost, so the "
-                                       "criterion is not being exercised")
-            self.assertEqual(a["over"], b["over"],
-                             f"two runs at an identical {a['rate']:.3f}s/test reached OPPOSITE "
-                             f"verdicts - narrow over={a['over']}, wide over={b['over']} - so "
-                             f"width alone decides, which is the defect")
-            self.assertFalse(b["over"],
-                             f"a wide run at the measured norm is reported as a regression: "
-                             f"{b['detail']}")
-
+    @unittest.skip(_US0880_RETIRED)
     def test_a_risen_rate_on_a_narrower_run_is_still_visible(self) -> None:
-        """MUTANT: in `gate_timing.py`, revert `over` to `measured > budget`.
+        pass
 
-        The CONTROL, and it asserts the VERDICT rather than a substring: this run is cheaper in
-        raw seconds than the ceiling and dearer per test than the norm, so a total-based reading
-        calls it headroom. The first cut only checked that `0.300s/test` appeared in the detail
-        string, which is true of code that prints the rate and never compares it.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._cfg(root, rate_seconds_per_test=0.152)
-            self._timings(root, selected={"total.selected": [300.0],
-                                          "total.selected.tests": [1000.0],
-                                          "total.last_series": "selected"}, series="selected")
-            res = gt.budget_report(root)
-            self.assertLess(res["measured"], res["budget"],
-                            "the fixture must be UNDER the ceiling in raw seconds, or the total "
-                            "alone already flags it and the rate proves nothing")
-            self.assertTrue(res["over"],
-                            f"a run at 0.300s/test - nearly double the declared 0.152 ceiling - "
-                            f"was reported as within budget because its TOTAL was small: "
-                            f"{res['detail']}")
-            self.assertIn("REGRESSION", res["detail"],
-                          f"the regression is not named in the line an operator reads: "
-                          f"{res['detail']}")
-
-    def test_a_declared_rate_with_no_test_count_says_it_fell_back(self) -> None:
-        """MUTANT: in `gate_timing.py`, drop the second fallback label.
-
-        The state next door - no rate ceiling at all - discloses its fallback. This one did not,
-        and an unlabelled mis-comparison is the whole defect this unit is about, so the two
-        states must be labelled on the same terms.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._cfg(root, rate_seconds_per_test=0.152)
-            self._timings(root, selected={"total.selected": [200.0],
-                                          "total.last_series": "selected"}, series="selected")
-            res = gt.budget_report(root)
-            self.assertIsNotNone(res)
-            self.assertIsNone(res.get("rate"),
-                              "the fixture recorded a test count, so the fallback under test is "
-                              "never reached")
-            self.assertIn("no test count", res["detail"],
-                          f"a declared rate ceiling with no test count fell back to the raw "
-                          f"total and said nothing about it:\n{res['detail']}")
-
-    def test_a_run_at_the_norm_is_not_flagged(self) -> None:
-        """MUTANT: in `gate_timing.py`, set the comparison to `rate > 0`.
-
-        The other side of the control. A rate verdict that flags everything is no more use than
-        a total that flags by width; this pins that an ordinary run passes.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._cfg(root, rate_seconds_per_test=0.152)
-            self._timings(root, selected={"total.selected": [187.0],
-                                          "total.selected.tests": [1539.0],
-                                          "total.last_series": "selected"}, series="selected")
-            res = gt.budget_report(root)
-            self.assertFalse(res["over"],
-                             f"a run at this repository's own measured norm is reported as a "
-                             f"regression: {res['detail']}")
-            self.assertNotIn("REGRESSION", res["detail"], res["detail"])
-
+    @unittest.skip(_US0880_RETIRED)
     def test_an_undeclared_full_ceiling_falls_back_and_says_so(self) -> None:
-        """MUTANT: in `gate_timing.py`, drop the fallback label from the detail string.
+        pass
 
-        The first cut of this criterion said `absent means silent`, and two PRE-EXISTING tests
-        proved it wrong: a project that declares only `seconds` and never runs selected would
-        have lost its budget line entirely. So the fallback stays - and is LABELLED, because an
-        unlabelled mis-comparison is the defect this unit is about. The drift clause must
-        survive the fallback too; reading `full_baseline_seconds` there silently dropped it.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._cfg(root)                        # no full_seconds
-            self._timings(root, selected={"total": [899.0], "total.tests": [7417.0],
-                                          "total.last_series": "full"}, series="full")
-            res = gt.budget_report(root)
-            self.assertIsNotNone(res, "the lane went silent and dropped the budget line for a "
-                                      "project that declares only the per-commit ceiling")
-            self.assertEqual(380.0, res["budget"], "the fallback did not use the declared "
-                                                   "per-commit ceiling")
-            self.assertIn("full_seconds", res["detail"],
-                          f"the fallback is unlabelled, so a reader takes a full run judged "
-                          f"against a per-commit ceiling for a like-for-like verdict:\n"
-                          f"{res['detail']}")
-            self.assertIn("baseline 317s", res["detail"],
-                          f"the drift clause was dropped on the fallback path, so the trend "
-                          f"the line exists to show is gone:\n{res['detail']}")
 
 
 class BudgetLineTests(unittest.TestCase):
-    """BG0608: the line opened with a seconds total against a seconds budget and appended the
-    rate verdict last, so the figure a reader took away was the one the tool does not judge on.
-    A total is selection width times cost-per-test, and width varies continuously here."""
+    """Retired by US0880. Skipped stubs, kept only because stamped criteria
+    (BG0608 AC1-AC4) name these nodes; delete them when those criteria are retired."""
 
-    def _root(self, d, cfg: str) -> Path:
-        root = Path(d)
-        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / ".config.yaml").write_text(cfg, encoding="utf-8")
-        return root
-
-    RATED = ("gate_budget:\n  seconds: 380\n  rate_seconds_per_test: 0.152\n")
-
-    def _record(self, root, seconds, tests):
-        """Seed one SELECTED run. `record` stamps `total.last_series` itself, so the series is
-        set by writing into `total.selected` rather than by a second write that can disagree."""
-        gt.record(root, "total.selected", seconds)
-        gt.record(root, "total.selected.tests", tests)
-
+    @unittest.skip(_US0880_RETIRED)
     def test_the_line_leads_with_the_rate_verdict(self) -> None:
-        """MUTANT: move the rate-verdict concatenation back below the drift block."""
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, self.RATED)
-            self._record(root, 200.0, 2000.0)          # 0.100 s/test, inside the 0.152 ceiling
-            detail = gt.budget_report(root)["detail"]
-            self.assertTrue(detail.startswith("rate "),
-                            f"the line does not lead with the rate verdict:\n{detail}")
-            self.assertIn("under", detail.split(";")[0],
-                          f"the leading clause does not state the verdict:\n{detail}")
+        pass
 
+    @unittest.skip(_US0880_RETIRED)
     def test_an_over_rate_run_reads_over_in_the_same_leading_clause(self) -> None:
-        """MUTANT: hard-code the word chosen from `over` to the literal `under`.
+        pass
 
-        The paired control. Both halves are false at HEAD before the fix, because at HEAD
-        neither run leads with a rate clause at all."""
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, self.RATED)
-            self._record(root, 400.0, 1000.0)          # 0.400 s/test, over the ceiling
-            detail = gt.budget_report(root)["detail"]
-            lead = detail.split(";")[0]
-            self.assertTrue(lead.startswith("rate "), detail)
-            self.assertIn("OVER", lead, f"an over-rate run did not read over:\n{detail}")
-            self.assertNotIn("under", lead)
-
+    @unittest.skip(_US0880_RETIRED)
     def test_a_cross_width_drift_clause_names_both_widths_or_is_withheld(self) -> None:
-        """MUTANT: hoist the baseline block above the selected test so it runs unconditionally.
+        pass
 
-        A percentage between two totals measured at different selection widths is a number
-        about the widths, not about the cost."""
-        cfg = self.RATED + "  baseline_seconds: 317\n  baseline_date: 2026-07-26\n"
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, cfg)
-            self._record(root, 200.0, 2000.0)
-            detail = gt.budget_report(root)["detail"]
-            self.assertIn("baseline 317s", detail, detail)
-            self.assertNotIn("% since", detail,
-                             f"a percentage was stated against a baseline of unrecorded "
-                             f"width:\n{detail}")
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, cfg + "  baseline_tests: 2500\n")
-            self._record(root, 200.0, 2000.0)
-            detail = gt.budget_report(root)["detail"]
-            self.assertIn("2500 tests", detail, detail)
-            self.assertIn("% since", detail,
-                          f"with both widths on record the trend must still be stated:\n"
-                          f"{detail}")
-
+    @unittest.skip(_US0880_RETIRED)
     def test_an_unmeasured_width_is_named_beside_its_total(self) -> None:
-        """MUTANT: delete the `else` limb that annotates the line when no rate can be computed.
+        pass
 
-        The Given is the measured one: no test count AND no rate ceiling. With a ceiling
-        declared, the line already says a run recorded no test count, so a wider wording would
-        pass before any code was written."""
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, "gate_budget:\n  seconds: 380\n")
-            gt.record(root, "total.selected", 200.0)
-            detail = gt.budget_report(root)["detail"]
-            self.assertIn("did not record", detail,
-                          f"a bare total was printed with no width and no note that the width "
-                          f"is unrecorded:\n{detail}")
-
-
-    def test_the_note_is_withheld_when_a_count_is_recorded(self) -> None:
-        """AC4's paired control. MUTANT: append the "did not record" note unconditionally.
-
-        Without it, a note that fires on every line satisfies the row above - and a line that
-        says the width is unrecorded while printing the width is the same wrong number, read
-        the other way."""
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, "gate_budget:\n  seconds: 380\n")
-            self._record(root, 200.0, 2000.0)
-            detail = gt.budget_report(root)["detail"]
-            self.assertNotIn("did not record", detail,
-                             f"the width WAS recorded and the line says otherwise:\n{detail}")
-            self.assertIn("2000 tests", detail,
-                          f"the recorded width is not named beside its total:\n{detail}")
-
-    def test_the_withheld_clause_names_the_key_that_restores_the_figure(self) -> None:
-        """MUTANT: delete the `Declare ... to restore it` sentence from the withheld clause.
-
-        Both sibling disclosures in the same line name their key, and BG0594 AC5 made that law
-        for the neighbouring clause. A reader who has just lost the trend needs the route back
-        from the line they are looking at, not from a changelog."""
-        cfg = self.RATED + "  baseline_seconds: 317\n  baseline_date: 2026-07-26\n"
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, cfg)
-            self._record(root, 200.0, 2000.0)
-            detail = gt.budget_report(root)["detail"]
-            self.assertIn("gate_budget.baseline_tests", detail,
-                          f"the withheld clause never names the key that restores it:\n{detail}")
-
-    def test_the_leading_clause_names_the_width_the_rate_was_taken_over(self) -> None:
-        """MUTANT: delete `over {tests} tests` from the rate clause.
-
-        The whole premise: a total is width times cost-per-test, so a total printed without its
-        width is the figure this bug exists to stop being quoted."""
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, self.RATED)
-            self._record(root, 200.0, 2000.0)
-            detail = gt.budget_report(root)["detail"]
-            self.assertIn("over 2000 tests", detail,
-                          f"the leading clause does not name the width:\n{detail}")
-
-    def test_an_unrecorded_current_width_is_named_in_the_withheld_clause(self) -> None:
-        """MUTANT: replace the `an unrecorded number of` arm with a literal.
-
-        Reachable, and reached by nothing until now: a selected run with a baseline declared
-        and no `total.selected.tests` recorded. The clause compares "this width" against the
-        baseline's, so when this side is unknown too the clause has to say so rather than
-        print a bare number."""
-        cfg = self.RATED + "  baseline_seconds: 317\n  baseline_date: 2026-07-26\n"
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, cfg)
-            gt.record(root, "total.selected", 200.0)          # seconds only: no width recorded
-            detail = gt.budget_report(root)["detail"]
-            self.assertIn("an unrecorded number of tests here", detail,
-                          f"the unknown CURRENT width is not named:\n{detail}")
-
-    def test_a_non_numeric_baseline_width_degrades_to_silence(self) -> None:
-        """MUTANT: read the key with a bare `float()`, unguarded.
-
-        `budget_config` states that a bad config is advisory here and never a commit failure,
-        and the module docstring promises the report degrades to silence rather than to a wrong
-        number. An unguarded read raised, `budget` exited 1 with a traceback, and the hook
-        swallows this command's stderr - so the whole line vanished with no diagnostic."""
-        cfg = (self.RATED + "  baseline_seconds: 317\n  baseline_date: 2026-07-26\n"
-               "  baseline_tests: not-a-number\n")
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, cfg)
-            self._record(root, 200.0, 2000.0)
-            detail = gt.budget_report(root)["detail"]
-            self.assertIn("baseline 317s", detail,
-                          f"a bad width key took the whole line down:\n{detail}")
-            self.assertNotIn("% since", detail,
-                             f"an unreadable width was treated as a recorded one:\n{detail}")
-
-    def test_a_full_run_judged_on_the_per_commit_baseline_withholds_the_percentage(self) -> None:
-        """MUTANT: exempt every non-selected series, as the first cut did.
-
-        The FALLBACK limb: a full run with no `gate_budget.full_seconds` declared is judged
-        against the per-commit ceiling and the per-commit baseline. Measured on this repo that
-        printed `+184% since` for a 7,400-test run against a ~1,400-test baseline - the
-        cross-population percentage this unit exists to remove, exempted by the first cut and
-        defended in a comment as like-for-like, which it is only for a full run judged on its
-        OWN series."""
-        cfg = self.RATED + "  baseline_seconds: 317\n  baseline_date: 2026-07-26\n"
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, cfg)
-            gt.record(root, "total", 900.0)                   # a FULL run, no full_seconds declared
-            gt.record(root, "total.tests", 7400.0)
-            detail = gt.budget_report(root)["detail"]
-            self.assertIn("FULL run judged against the per-commit ceiling", detail,
-                          f"the fixture did not reach the fallback limb:\n{detail}")
-            self.assertNotIn("% since", detail,
-                             f"a full total was compared with the per-commit baseline as a "
-                             f"percentage:\n{detail}")
-
-    def test_a_full_run_on_its_own_series_keeps_its_percentage(self) -> None:
-        """The paired control for the row above. MUTANT: withhold on every series.
-
-        A full run judged against a full-run baseline IS like-for-like even with neither count
-        recorded, and withholding there would remove the trend from the only comparison that
-        never needed a width."""
-        cfg = ("gate_budget:\n  seconds: 380\n  full_seconds: 1080\n"
-               "  full_baseline_seconds: 899\n  full_baseline_date: 2026-08-19\n")
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, cfg)
-            gt.record(root, "total", 900.0)
-            gt.record(root, "total.tests", 7400.0)
-            detail = gt.budget_report(root)["detail"]
-            self.assertIn("% since", detail,
-                          f"a full run on its own series lost its trend:\n{detail}")
-
-    def test_the_shipped_command_prints_the_verdict_word_once(self) -> None:
-        """AC12. MUTANT: prefix the command's own OVER whenever the run is over budget.
-
-        DRIVEN through `gate_timing.py budget`, because the stutter lives in the COMMAND and
-        not in the report: every other node here reads `budget_report`, which never carried the
-        prefix, so the doubled word was invisible to all of them. The repo's own lane-check
-        named this unit as one whose verifiers never enter the shipped entry point."""
-        import subprocess  # noqa: PLC0415
-        script = Path(__file__).resolve().parents[2] / "tools" / "gate_timing.py"
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, self.RATED)
-            self._record(root, 400.0, 1000.0)          # 0.400 s/test, over the 0.152 ceiling
-            r = subprocess.run([sys.executable, "-B", str(script), "--root", str(root), "budget"],
-                               capture_output=True, text=True, check=False, timeout=120)
-            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
-            line = r.stdout.strip()
-            self.assertTrue(line.startswith("gate-budget: rate "),
-                            f"the printed line does not lead with the rate verdict:\n{line}")
-            self.assertEqual(1, line.count("OVER -"),
-                             f"the verdict word is printed more than once:\n{line}")
-
-    def test_the_shipped_command_still_says_over_when_only_the_total_decides(self) -> None:
-        """AC13, the paired control. MUTANT: drop the command's prefix altogether.
-
-        With no rate ceiling declared the detail carries no verdict word of its own, so the
-        command's prefix is the only thing that says the run is over - removing it to fix the
-        stutter would take the verdict off the line entirely."""
-        import subprocess  # noqa: PLC0415
-        script = Path(__file__).resolve().parents[2] / "tools" / "gate_timing.py"
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, "gate_budget:\n  seconds: 100\n")
-            self._record(root, 400.0, 1000.0)          # over the seconds budget, no rate ceiling
-            r = subprocess.run([sys.executable, "-B", str(script), "--root", str(root), "budget"],
-                               capture_output=True, text=True, check=False, timeout=120)
-            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
-            self.assertIn("OVER -", r.stdout,
-                          f"an over-budget run did not say so on the printed line:\n{r.stdout}")
 
 if __name__ == "__main__":
     unittest.main()

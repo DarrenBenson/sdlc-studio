@@ -223,8 +223,11 @@ class CommitLaneTests(unittest.TestCase):
             rc, out = _commit(root, {"tools/thing.py": "VALUE = 3\n"})
             self.assertEqual(0, rc, f"a timing claim refused the commit:\n{out}")
             self.assertIn("gate green.", out)
-            # The control: the hook READ the slow sample, so it was in play and did not refuse.
-            self.assertIn("expect ~9999s", out, f"the timing store was never read:\n{out}")
+            # The control: the suites ran and the timing lanes after them reported, so the slow
+            # sample was in play and did not refuse. US0880 replaced the up-front estimate that
+            # read it with one elapsed-time report against the 90-second budget.
+            self.assertRegex(out, r"this commit took \d+s (of its|against a) 90s budget",
+                             f"the timing lanes never ran:\n{out}")
             self.assertFalse((root / TRIPWIRE_LOG).exists(), out)
 
     def test_the_kept_lint_lanes_still_refuse(self) -> None:

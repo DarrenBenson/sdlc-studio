@@ -86,7 +86,9 @@ EXPECTED_LANES = {
 
 #: The lanes that cost real wall-clock, and that therefore may not run until every cheap
 #: refusal - including the commit-message rules - has had its chance.
-EXPENSIVE_LANES = {"skill-tests", "tool-tests"}
+#: `unit-tests` runs a selection in parallel; `skill-tests` and `tool-tests` are the unittest
+#: path, taken with no selection or no pytest (US0880).
+EXPENSIVE_LANES = {"unit-tests", "skill-tests", "tool-tests"}
 
 #: Every lane `commit-msg` declares, on the same hand-maintained terms as EXPECTED_LANES above.
 #: `repo-writes` is cheap and still lives here rather than in `pre-commit`, because what it
@@ -183,12 +185,12 @@ class MessageCheckOrderTests(unittest.TestCase):
         self.assertEqual(EXPENSIVE_LANES & set(_lane_keys(HOOK)), set())
 
     def test_the_timing_and_budget_recording_moved_with_the_suites(self) -> None:
-        """The measurement has to wrap the lanes wherever they now run: an estimate before
-        them, a per-suite record, the scope judgement and the per-commit total after."""
+        """The measurement has to wrap the lanes wherever they now run: a per-suite record, the
+        scope judgement and the per-commit total after. US0880 removed the up-front estimate and
+        the budget ratchet; the one budget report is pinned by test_lean_test_selection.py."""
         msg = _text(MSG_HOOK)
-        for fragment in ("gate_timing.py estimate", "record --suite skill-tests",
-                         "record --suite tool-tests", "gate_timing.py scope",
-                         "gate_timing.py budget"):
+        for fragment in ("record --suite skill-tests", "record --suite tool-tests",
+                         "gate_timing.py scope"):
             self.assertIn(fragment, msg, f"{fragment!r} did not move with the suites")
         # The per-commit TOTAL, asserted on the behaviour rather than one spelling. The suite
         # name is now a variable, because a selected run records into `total.selected` so its
@@ -200,9 +202,6 @@ class MessageCheckOrderTests(unittest.TestCase):
         self.assertIn("total.selected", msg,
                       "a selected run has no separate series, so its partial count will drag "
                       "the peak down until the scope floor protects nothing")
-        self.assertLess(_line_matching(r"gate_timing\.py estimate", MSG_HOOK),
-                        _lane_line("skill-tests", MSG_HOOK),
-                        "the cost must be announced before it is paid")
 
     def test_the_message_hook_never_blocks_a_commit_on_its_own_timing(self) -> None:
         # Same rule the pre-commit lanes are held to: an advisory measurement that can fail
@@ -237,21 +236,18 @@ class ShortCircuitTests(unittest.TestCase):
         # and pinning the flag made it fail when the staged list moved to --name-status for
         # a reason that has nothing to do with lane order.
         text = _text()
-        guard = re.search(r'if \[ "\$fail" -eq 0 \].*?git diff --cached --name-', text, re.S)
+        guard = re.search(r'if \[ "\$fail" -eq 0 \].*?--suite-decision --staged', text, re.S)
         self.assertIsNotNone(
             guard,
             'the unit-suite block must be guarded by `[ "$fail" -eq 0 ]`, or a failing cheap '
             "lane still pays for the full suite - `run` records the failure and returns 0")
 
     def test_the_staged_list_carries_the_change_kind(self) -> None:
-        # `--name-status`, not `--name-only`: the letter says whether a file was added,
-        # deleted or renamed rather than edited, and the relevance measurer needs that to
-        # tell a census of the artefact tree (which sees files appear and vanish) from a
-        # read of what is inside them. With --name-only every artefact commit paid for both
-        # suites, which is the cost BG0383 records.
-        self.assertRegex(
-            _text(), r"git diff --cached --name-status",
-            "the staged list feeding --test-relevant must carry each file's change kind")
+        # US0880: the selection reads the staged paths itself (`--suite-decision --staged`),
+        # both sides of a rename, and the change kind no longer matters - the listing-only
+        # narrowing that needed it is deleted.
+        self.assertIn("--suite-decision --staged", _text(),
+                      "the commit's selection is not taken from the staged paths")
 
     def test_the_short_circuit_skip_is_named(self) -> None:
         # A silent skip is indistinguishable from a lane that ran and passed.

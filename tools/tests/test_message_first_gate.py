@@ -393,7 +393,9 @@ class LaneInventoryTests(_GateFixture):
             declared |= set(re.findall(r'^\s*run\s+"([^"]+)"', hook.read_text(encoding="utf-8"),
                                        re.M))
         declared.add("gate")      # an inline if/else block, not a `run "..."` lane
-        self.assertEqual(declared, set(EXPECTED_LANES))
+        # `unit-tests` runs only a selection gate.py hands over (US0880); this fixture's stubbed
+        # gate hands over none, so the unittest lanes run. test_lean_test_selection.py drives it.
+        self.assertEqual(declared, set(EXPECTED_LANES) | {"unit-tests"})
 
 
 class HandoffTests(_GateFixture):
@@ -492,8 +494,8 @@ class BudgetAcrossThePairTests(_GateFixture):
         rc, out, _ = self._commit("chore: touch a tool")
         self.assertEqual(rc, 0, out)
         self.assertEqual(len(self._totals()), 1, f"the full-lane commit was not recorded:\n{out}")
-        self.assertIn("gate-budget:", out)
-        self.assertIn("baseline 99s", out)
+        # US0880: the one report is the elapsed time against 90 seconds.
+        self.assertRegex(out, r"this commit took \d+s (of its|against a) 90s budget")
 
     def test_a_docs_only_commit_still_enters_no_series(self) -> None:
         (self.root / "README.md").write_text("x\n", encoding="utf-8")
@@ -501,7 +503,7 @@ class BudgetAcrossThePairTests(_GateFixture):
         rc, out, _ = self._commit("docs: tidy the README")
         self.assertEqual(rc, 0, out)
         self.assertEqual(self._totals(), [], "a docs-only commit was recorded as a gate cost")
-        self.assertNotIn("gate-budget:", out)
+        self.assertNotIn("90s budget", out)
 
 
 class TotalSpansBothHooksTests(BudgetAcrossThePairTests):

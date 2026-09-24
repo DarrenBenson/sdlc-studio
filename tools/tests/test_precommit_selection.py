@@ -5,12 +5,11 @@ Two ways that goes wrong, and both are tested here: skipping something that CAN 
 test (a false green), and skipping SILENTLY (indistinguishable from having run and
 passed - the state in which a real regression ships unnoticed).
 
-The rule was one grep pattern in the hook, naming scripts/, templates/ and tools/ by
-hand. US0368 replaced it with a set MEASURED from what the suites read, because a hand
-list is a lower bound - the suites also read the hooks, the workflow file, install.sh,
-package.json, reference docs, help pages and the shipped artefacts. These tests drive the
-shipped hook's own selector, so a change that widens or narrows the skip has to come here
-first - the hook is the artefact, not a copy of it.
+US0880 narrowed the rule to what a test module states about itself: a changed code file
+runs the test modules that are named for it, import it or load it, and anything else - a doc a
+test reads, a hook, a template - runs no unit suite per commit; the full suite at push catches
+it. These tests drive the shipped selector the hook calls, so a change that widens or narrows
+the skip has to come here first - the hook is the artefact, not a copy of it.
 """
 from __future__ import annotations
 
@@ -31,17 +30,17 @@ MSG_HOOK = GITHOOKS / "commit-msg"
 
 
 def _selects(path: str) -> bool:
-    """True when `path` would trigger the unit suites, via the call the hook makes."""
+    """True when `path` would select a unit suite, via the call the hook makes."""
     proc = subprocess.run([sys.executable, str(GATE), "--root", str(REPO),
-                           "--test-relevant"],
-                          input=path + "\n", text=True, capture_output=True)
+                           "--suite-decision", "--changed", path],
+                          text=True, capture_output=True)
     assert proc.returncode in (0, 1), (
         f"the selector failed rather than answering: {proc.stderr.strip()}")
-    return proc.returncode == 0
+    return "suite-selector: " in proc.stdout
 
 
 class RunTests(unittest.TestCase):
-    """AC2: anything that can change a test outcome must force the full suite."""
+    """AC2: a changed code file selects the test modules that reach it."""
 
     def test_script_change_runs_the_suite(self) -> None:
         self.assertTrue(_selects(".claude/skills/sdlc-studio/scripts/gate.py"))
@@ -49,33 +48,11 @@ class RunTests(unittest.TestCase):
     def test_skill_test_change_runs_the_suite(self) -> None:
         self.assertTrue(_selects(".claude/skills/sdlc-studio/scripts/tests/test_gate.py"))
 
-    def test_template_change_runs_the_suite(self) -> None:
-        # several skill tests assert over the shipped templates
-        self.assertTrue(_selects(".claude/skills/sdlc-studio/templates/core/story.md"))
-
     def test_tools_change_runs_the_suite(self) -> None:
         self.assertTrue(_selects("tools/check_links.py"))
 
     def test_tools_test_change_runs_the_suite(self) -> None:
         self.assertTrue(_selects("tools/tests/test_gate_timing.py"))
-
-    def test_a_doc_a_test_reads_runs_the_suite(self) -> None:
-        """US0368: the hand list stopped at scripts/templates/tools, so a reference doc a
-        test asserts over took the docs-only fast path and skipped that test. Now measured:
-        `reference-sprint.md` is read by test_docs_single_writer.py, so it selects."""
-        self.assertTrue(_selects(".claude/skills/sdlc-studio/reference-sprint.md"))
-        self.assertTrue(_selects(".claude/skills/sdlc-studio/help/sprint.md"))
-        # BG0560 moved README here from the skip list. It is asserted over by
-        # test_existing_users_page.py, which reads its three routes to the upgrade page and
-        # checks none of them still calls v5 a drop-in - so a README edit CAN now change a
-        # test outcome, and this class's rule is that such a file selects. The skip entry was
-        # correct until the day a test started reading it.
-        self.assertTrue(_selects("README.md"))
-
-    def test_a_hook_a_test_reads_runs_the_suite(self) -> None:
-        """The hooks assert over themselves - a change to one can break its own suite, and
-        the old regex named none of them."""
-        self.assertTrue(_selects(".githooks/pre-commit"))
 
 
 class SkipTests(unittest.TestCase):
@@ -98,9 +75,9 @@ class SkipTests(unittest.TestCase):
         self.assertIn("no test-relevant file staged", text)
 
     def test_the_hook_calls_the_measured_selector(self) -> None:
-        """The selection rule is the measurement, not a regex the hook keeps of its own -
-        that regex is exactly the hand enumeration US0368 removed."""
-        self.assertIn("--test-relevant", HOOK.read_text(encoding="utf-8"))
+        """The selection rule is gate.py's, not a regex the hook keeps of its own: the hook's
+        path match is only the fallback for a gate that gives no answer."""
+        self.assertIn("--suite-decision --staged", HOOK.read_text(encoding="utf-8"))
 
 
 class SelectionReachesTheRunnersTests(unittest.TestCase):
@@ -156,9 +133,6 @@ class SelectionReachesTheRunnersTests(unittest.TestCase):
 
 class WiringTests(unittest.TestCase):
     """AC3: US0219's measurement must actually be called by the hook pair, not merely exist."""
-
-    def test_hook_estimates_before_running(self) -> None:
-        self.assertIn("gate_timing.py estimate", MSG_HOOK.read_text(encoding="utf-8"))
 
     def test_hook_records_both_suites(self) -> None:
         text = MSG_HOOK.read_text(encoding="utf-8")

@@ -173,7 +173,7 @@ class BudgetRecordingTests(unittest.TestCase):
             self.assertNotIn(ALREADY_FAILED, out)
             self.assertEqual(self._totals(root), [],
                              "a docs-only commit was recorded as a gate cost")
-            self.assertNotIn("gate-budget:", out)
+            self.assertNotIn("90s budget", out)
 
     def test_a_commit_blocked_before_the_suites_is_not_recorded_either(self) -> None:
         """The other skip path: a cheap lane failed, so the suites never ran. Its 10s is not
@@ -186,7 +186,7 @@ class BudgetRecordingTests(unittest.TestCase):
             self.assertIn(ALREADY_FAILED, out, "this test did not reach the blocked branch")
             self.assertNotIn(DOCS_ONLY, out)
             self.assertEqual(self._totals(root), [])
-            self.assertNotIn("gate-budget:", out)
+            self.assertNotIn("90s budget", out)
 
     def test_a_commit_that_ran_the_suites_IS_recorded(self) -> None:
         """The positive control, and the reason the two tests above are not vacuous: a hook that
@@ -197,8 +197,8 @@ class BudgetRecordingTests(unittest.TestCase):
             self.assertNotIn(DOCS_ONLY, out)
             self.assertNotIn(ALREADY_FAILED, out)
             self.assertEqual(len(self._totals(root)), 1, "a full-lane commit was not recorded")
-            self.assertIn("gate-budget:", out)
-            self.assertIn("baseline 99s", out)          # ...against the corrected baseline
+            # US0880: the one report is the elapsed time against 90 seconds.
+            self.assertRegex(out, r"this commit took \d+s (of its|against a) 90s budget")
 
     def test_a_suite_that_failed_to_import_is_not_recorded_as_this_commit_s_cost(self) -> None:
         """BG0239: `suites_ran` was set once the lane was INVOKED, not once it ran its scope. A

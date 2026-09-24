@@ -228,29 +228,20 @@ else
   printf '       markdown (.github/) that the lanes above do. For those files this SKIP is total.\n'
 fi
 
-# Unit tests: only when the commit touches a file that can change a test outcome -
-# scripts/, tools/, or templates/ (several skill tests assert over the shipped templates,
-# so a template edit can break the suite). A pure README/CHANGELOG/reference/help commit
-# cannot, and paying ~2.5 minutes for it is how a guard gets bypassed.
+# Unit tests: the commit runs the test modules its staged change reaches, and none when it
+# reaches none - a docs or artefact commit, or code no test module imports, loads or is named
+# for. `gate.py --suite-decision --staged` answers with a `suite-decision: run|skip` sentinel and
+# one `suite-selector:` line per module. What it misses, the full suite at push catches.
 #
-# The suites no longer RUN here. Git invokes pre-commit before the commit message exists -
-# at this point $GIT_DIR/COMMIT_EDITMSG is absent, or still holds the PREVIOUS commit's
-# message, which is why the floor-pending lane above cannot read it either. So no ordering
-# of lanes inside this hook could ever put the commit-message rules ahead of a 2.5-minute
-# run, and a one-line subject defect was refused only after the whole gate had been paid
-# for, then paid for again on the retry. The lanes therefore live in the commit-msg hook,
-# behind the message check; this hook decides only whether they are SELECTED.
+# The suites RUN in the commit-msg hook, not here. Git invokes pre-commit before the commit
+# message exists, so only commit-msg can refuse a message defect before the suites are paid
+# for. This hook decides what is SELECTED and hands it over in a one-shot record in the git
+# directory - per worktree, never in the working tree, because a gate that dirties the tree it
+# is gating trains people to stage past it. The record is written or removed on EVERY path
+# through this block, and commit-msg removes it before running.
 #
-# The handover is a one-shot record in the git directory - per worktree, and never in the
-# working tree, because a gate that dirties the tree it is gating trains people to stage
-# past it. It is written or removed on EVERY path through this block, and commit-msg
-# removes it before running: a record that outlived its commit would charge the next
-# commit-msg-only operation (git merge runs commit-msg without pre-commit) for a suite run
-# nobody asked for.
-#
-# The skip is NAMED, never silent: a guard that quietly does not run is indistinguishable
-# from one that ran and passed, and that is precisely the state in which a real regression
-# ships. Two suites: shipped skill scripts, and the repo-only tools/ checkers.
+# A skip is NAMED, never silent: a guard that quietly does not run is indistinguishable from one
+# that ran and passed.
 handoff="$(git rev-parse --git-path sdlc-gate-suites 2>/dev/null || true)"
 [ -n "$handoff" ] || handoff="$(git rev-parse --git-dir 2>/dev/null)/sdlc-gate-suites"
 rm -f "$handoff" 2>/dev/null
@@ -260,68 +251,29 @@ rm -f "$handoff" 2>/dev/null
 writes_snapshot="$(git rev-parse --git-path sdlc-repo-writes 2>/dev/null || true)"
 [ -n "$writes_snapshot" ] || writes_snapshot="$(git rev-parse --git-dir 2>/dev/null)/sdlc-repo-writes"
 rm -f "$writes_snapshot" 2>/dev/null
-#
-# WHICH paths are test-relevant is no longer just a regex written here. That hand list -
-# three directories - is a lower bound: the suites also read the hooks, the workflow file,
-# install.sh, package.json, reference docs, help pages and the shipped artefacts, so a commit
-# touching any of those took the docs-only fast path and skipped the suite asserting over it.
-# `gate.py --test-relevant` MEASURES the set from what the suites read and answers with a
-# `test-relevant: yes|no` sentinel line. The regex below stays as the FALLBACK for a tree
-# where that call cannot answer (an old gate, or a stubbed one), and the sentinel is what
-# tells a real answer from a stub that exits 0 for every argument.
-# Anchored at a line start OR after the status letter's tab, because the staged list is now
-# `--name-status`. A bare `^` anchor stopped matching the moment that letter appeared, which
-# would have disabled this fallback in silence - it only runs when the measurer cannot answer,
-# so nothing would have failed to tell us.
+# The FALLBACK for a gate.py that prints no sentinel (an old or stubbed one): a coarse match over
+# the staged paths, and a match runs everything.
 test_relevant='(^|[[:space:]])(\.claude/skills/sdlc-studio/scripts/|\.claude/skills/sdlc-studio/templates/|tools/)'
 suites_needed=0
-# Measured only when a commit is still viable: once a cheaper lane has failed the commit is
-# blocked either way, so paying the relevance measurement (a python call) is wasted. The
-# selection therefore sits UNDER the `$fail -eq 0` guard, not before it.
-# --name-STATUS, not --name-only: the letter says whether the file was ADDED, DELETED or RENAMED
-# or merely edited, and a directory the suites read as a LISTING (a census asking which artefacts
-# exist) is relevant to the first kind and not the second. The measurer accepts either spelling
-# and treats a bare path list as "unknown, assume structural", so an older gate still answers.
-if [ "$fail" -eq 0 ] && staged_paths="$(git diff --cached --name-status)"; then
-  relevance_out="$(printf '%s\n' "$staged_paths" | python3 "$skill/gate.py" --root . --test-relevant 2>/dev/null)"
-  case "$relevance_out" in
-    *"test-relevant: yes"*) suites_needed=1 ;;
-    *"test-relevant: no"*)  suites_needed=0 ;;
-    *)  # No sentinel: the measurer could not answer, so fall back to the coarse regex, which
-        # under-selects but never mis-fires on a stub.
-        printf '%s\n' "$staged_paths" | grep -qE "$test_relevant" && suites_needed=1 ;;
-  esac
-fi
-# Even a test-relevant commit need not pay when the test-relevant SURFACE is byte-identical
-# to the tree a green verdict was already recorded over. Measured over one working day here:
-# the suites ran about 52 times for about 218 minutes, against about 35 minutes of delivery,
-# and a large share of those runs were over an identical source tree - paperwork commits, and
-# closes retried after a refusal. Nothing about the code had changed, so nothing about the
-# answer could have.
-#
-# `gate.py --suite-decision` answers that with a `suite-decision: run|skip` sentinel, read the
-# same way as the relevance sentinel above: no sentinel means the measurer could not answer,
-# and an unanswered question runs the suites. Every unknown inside it - an unhashable surface,
-# an absent or unreadable record, a red one, one earned by a partial run at a boundary -
-# already degrades to `run`, so this reads only the affirmative skip.
-suite_reuse=""
-if [ "$fail" -eq 0 ] && [ "$suites_needed" -eq 1 ]; then
-  decision_out="$(python3 "$skill/gate.py" --root . --suite-decision 2>/dev/null)"
+suite_skip=""
+decision_out=""
+# Only when the commit is still viable: once a cheaper lane has failed it is blocked either way,
+# so the selection sits UNDER the `$fail -eq 0` guard.
+if [ "$fail" -eq 0 ]; then
+  decision_out="$(python3 "$skill/gate.py" --root . --suite-decision --staged 2>/dev/null)"
   case "$decision_out" in
+    *"suite-decision: run"*) suites_needed=1 ;;
     *"suite-decision: skip"*)
-      suites_needed=0
-      suite_reuse="$(printf '%s\n' "$decision_out" \
-        | sed -n 's/^suite-decision: skip - //p' | head -1)"
-      [ -n "$suite_reuse" ] || suite_reuse="the recorded green verdict covers this surface"
+      suite_skip="$(printf '%s\n' "$decision_out" | sed -n 's/^suite-decision: skip - //p' | head -1)"
+      [ -n "$suite_skip" ] || suite_skip="the staged change reaches no test module"
       ;;
+    *) git diff --cached --name-only | grep -qE "$test_relevant" && suites_needed=1 ;;
   esac
 fi
 if [ "$fail" -eq 0 ] && [ "$suites_needed" -eq 1 ]; then
-  # This hook's share of the gate travels with the record, so the per-commit total the
-  # budget reads still covers BOTH hooks rather than only the half that runs last.
-  # Carry the SELECTION through, not only the elapsed seconds. commit-msg is where the suites
-  # actually run, so a decision computed here and not handed over is a decision nothing acts on -
-  # the whole mechanism was inert for exactly this reason.
+  # This hook's seconds travel with the record, so the elapsed time commit-msg reports against
+  # the budget covers BOTH hooks rather than only the half that runs last. The SELECTION travels
+  # too: commit-msg is where the suites run, so a selection not handed over is one nothing uses.
   # Written in ONE redirection so an unwritable handover still fails the way it always did: the
   # refusal below is load-bearing, because a handover that cannot be written means the suites
   # never run at all, and a silently unrunnable lane inside a green gate is the coverage loss
@@ -372,16 +324,13 @@ if [ "$fail" -eq 0 ] && [ "$suites_needed" -eq 1 ]; then
 elif [ "$fail" -ne 0 ]; then
   printf '  %sSKIP%s unit suites - a cheaper lane already failed, so the commit is blocked either way.\n' "$Y" "$N"
   printf '       Fix the failure above and commit again; the suites run once the cheap guards are green.\n'
-elif [ -n "$suite_reuse" ]; then
-  # Named, like every other skip in this hook: a reused verdict a reader cannot see is
-  # indistinguishable from a run that passed, and the reuse is exactly the claim that has
-  # to be checkable on its face.
-  printf '  %sSKIP%s unit suites - %s\n' "$Y" "$N" "$suite_reuse"
-  printf '       The tests were run over this exact surface already; edit any file the suites\n'
-  printf '       read and the next commit pays in full.\n'
+elif [ -n "$suite_skip" ]; then
+  # Named, like every other skip in this hook: nothing the commit touches is tested per commit,
+  # or a green verdict already covers this exact tree. Either way the reason is printed.
+  printf '  %sSKIP%s unit suites - %s\n' "$Y" "$N" "$suite_skip"
 else
-  printf '  %sSKIP%s unit suites - no test-relevant file staged (measured from what the suites read).\n' "$Y" "$N"
-  printf '       Docs-only commit: style, links, budgets, markdown and the artefact gate still ran.\n'
+  printf '  %sSKIP%s unit suites - no test-relevant file staged (gate.py gave no selection, so a\n' "$Y" "$N"
+  printf '       path match decided). Style, links, budgets, markdown and the artefact gate still ran.\n'
 fi
 
 if [ "$fail" -ne 0 ]; then

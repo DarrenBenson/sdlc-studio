@@ -93,32 +93,39 @@ module passing only because a sibling imported a name first. A hung module is na
 
 ```bash
 python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --suite-decision                  # what a commit owes
+python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --suite-decision --staged         # staged paths only
+python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --suite-decision --changed a.py   # what named paths select
 python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --suite-decision --boundary push  # what a push owes
-SDLC_GATE_BOUNDARY=release python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --suite-decision
+python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --run-tests tests/test_a.py       # run a selection
 ```
 
 `--suite-decision` prints a `suite-decision: run|skip` sentinel, the `suite-mode:` it chose
-(`reuse`, `selected` or `full`), and one `suite-selector:` line per test module a selective run
-needs. It exits 0 when a run is owed. Set the boundary with `--boundary` or with the
-`SDLC_GATE_BOUNDARY` environment variable, for a push step that runs the gate through a
+(`none`, `reuse`, `selected` or `full`), and one `suite-selector:` line per test module a
+selective run needs. It exits 0 when a run is owed. Set the boundary with `--boundary` or with
+the `SDLC_GATE_BOUNDARY` environment variable, for a push step that runs the gate through a
 wrapper. An unrecognised boundary is **refused**, never downgraded to the cheap path: a caller
 who asked for everything and silently got a selection would be wrong about their coverage.
 
-Three rules keep this from becoming a way to test less:
+`--run-tests` runs the named modules under pytest, across every core when pytest-xdist is
+installed, with the tests marked `serial_only` after on their own. The commit hook runs its
+selection through it and reports the commit's elapsed time against a 90-second budget - a
+report, never a refusal.
 
-- **An unchanged surface reuses the last green verdict.** The test-relevant surface is hashed
-  by content, so consecutive paperwork commits and a retried close cost nothing. Record a
-  verdict with `--record-suite-verdict RUN-xxxx` (`--status red` for a failure, which is never
-  reused). Every unknown - an absent, unreadable or malformed record, a red one, a surface that
-  cannot be hashed - runs the suites. A broken cache degrades to the slow answer, never to a
-  false green.
-- **A selection reports what it excluded.** The selected set comes from the import graph the
-  repo map builds, plus the paths each suite module is measured to read. A changed file that
-  neither route resolves runs **everything** and says why, and a selection that reaches no test
-  at all runs everything too - a run of nothing is not a pass.
-- **Selection trades when the coverage is paid, never whether.** A green earned by a selected
-  run is evidence about the tests that ran, so a boundary declines it and runs the full suite
-  anyway.
+How a commit's selection is made, and why it is safe to keep it narrow:
+
+- **Three routes, read from the test sources.** A changed test module selects itself; `x.py` (or
+  `x.sh`) selects `test_x.py`; and a module that imports `x` or loads it by name is selected for
+  it. Edges are **direct only**, so a change to a widely imported helper selects its importers,
+  not the whole suite. A change no route reaches runs **no** unit suite per commit, and says so.
+  That covers docs, templates and artefacts, and also hooks, test infrastructure (`conftest.py`,
+  `pytest.ini`, a test helper, a suite runner script) and a library reached only through another
+  script - even when tests exercise it that way.
+- **The push is the backstop.** Whatever the selection misses, the full suite at the push
+  boundary catches. A boundary never selects and never reuses a verdict.
+- **An unchanged tree reuses the last green verdict.** Every tracked file is hashed by content,
+  so a retry over the same tree costs nothing. Record a verdict with `--record-suite-verdict
+  RUN-xxxx` (`--status red` for a failure, which is never reused). Every unknown - an absent,
+  unreadable or malformed record, a red one, a tree that cannot be hashed - runs the suites.
 
 ## `--release`: the one command before a tag
 
