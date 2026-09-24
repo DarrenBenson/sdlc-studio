@@ -78,6 +78,12 @@ def _add_stamp(text: str) -> tuple[str, bool]:
     return "\n".join(lines) + nl, True
 
 
+def enforced(repo_root: Path | str) -> bool:
+    """Whether the project set `provenance.enforce`, so an unstamped artefact blocks. The one
+    reader: `check` and the gate's choice to keep this lane in a plain run both ask here."""
+    return _truthy(sdlc_md.project_override(repo_root, "provenance.enforce", False))
+
+
 def check(repo_root: Path | str, types: list[str] | None = None) -> dict:
     root = Path(repo_root)
     # Shared cutoff parser: accepts a bare int (57) or a prefixed id (US0057), and raises
@@ -86,7 +92,7 @@ def check(repo_root: Path | str, types: list[str] | None = None) -> dict:
     cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "provenance.adopt_after"))
     if cutoff is None:
         cutoff = 0
-    enforce = _truthy(sdlc_md.project_override(root, "provenance.enforce", False))
+    enforce = enforced(root)
     findings = []
     for t in (types or list(sdlc_md.ARTIFACT_TYPES)):
         # Consume the (path, text) pairs rather than re-reading: iter_artifact_files

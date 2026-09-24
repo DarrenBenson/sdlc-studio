@@ -11,9 +11,13 @@ Detail pages for the **reconcile, verify & checks** scripts. See
 ### `gate.py`
 
 Portable, ecosystem-neutral CI quality gate. Aggregates the deterministic checks
-(conformance, reconcile drift, validate, constitution, integrity, the engagement floor) into
+(conformance, reconcile drift, validate, integrity, the engagement floor) into
 one consolidated pass/fail and exits non-zero only when a blocking check fails. `--only` / `--skip` select
-checks; constitution blocks only when `constitution.enforce` is set. No network, no CI
+checks. The advisory lanes that never refuse a commit (`gate.ON_DEMAND_CHECKS`: constitution,
+provenance, doc-surface, disclosure, doc-freshness, mutation, hook-enabled, batch-size) run only
+when named with `--only`; doc-freshness also runs at the sprint close. Constitution and
+provenance stay in the plain gate, and block, when `constitution.enforce` /
+`provenance.enforce` is set. No network, no CI
 assumption - runnable in any CI or a pre-commit hook (see `help/gate.md` for wiring). The
 check registry is injectable, so the aggregation logic is unit-tested without a full repo.
 `--require-retro RETROxxxx` is the **sprint-close** form: it binds three blocking lanes, because
@@ -174,7 +178,8 @@ It is bounded at 200 entries, oldest out first, with a cumulative `dropped` coun
 truncation is never silent; a repeated `register` accumulates into one entry, whose own mutant
 list is bounded at 100 while its tallies stay exact.
 
-**The gate's `mutation` lane is advisory in v1** - it reports and never changes the exit code.
+**The gate's `mutation` lane is advisory in v1** - it reports and never changes the exit code,
+and runs only when named (`gate.py --only mutation`).
 It reads the ledger, not the report, for coverage, judging each file of the changed surface
 (or, when git cannot name one, the files the ledger holds) against that file's content hash
 now: a matching `measured` entry is **covered**; a matching `registered` one is covered and

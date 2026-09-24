@@ -142,6 +142,12 @@ def parse_constitution(repo_root: Path | str) -> list[dict]:
     return principles
 
 
+def enforced(repo_root: Path | str) -> bool:
+    """Whether the project set `constitution.enforce`, so a violation blocks. The one reader:
+    the check below and the gate's choice to keep this lane in a plain run both ask here."""
+    return bool(sdlc_md.project_override(repo_root, "constitution.enforce", False))
+
+
 def check_constitution(repo_root: Path | str) -> dict:
     """Assert each checkable principle. Returns the report; `ok` is False only when a
     gated principle is violated."""
@@ -151,7 +157,7 @@ def check_constitution(repo_root: Path | str) -> dict:
                     "gated": [], "advisory": [], "unknown_rules": [], "violations": [], "ok": True}
     if not result["exists"]:
         return result
-    result["enforced"] = bool(sdlc_md.project_override(root, "constitution.enforce", False))
+    result["enforced"] = enforced(root)
     for p in parse_constitution(root):
         if p["rule"] is None:
             result["advisory"].append(p["text"])

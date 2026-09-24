@@ -26,8 +26,8 @@
 - **Given** a missing doc entry
 - **When** the gate / conformance run
 - **Then** doc-coverage is a blocking gate check and `documented` is a hard-fail conformance stage for Done units; a consuming repo (no SKILL.md) is unaffected
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::GateRealWrapperTests::test_default_checks_present
-- **Verified:** yes (2026-06-21)
+- **Verify:** manual - retired by US0895: the hand-kept pin of the standard gate's lane set was deleted when the eight advisory lanes left it; doc-coverage stays a blocking lane of the standard gate
+- **Verified:** manual (2026-09-24) - retired, superseded by US0895
 
 ### AC3: the autosprint DoD documents the requirement
 

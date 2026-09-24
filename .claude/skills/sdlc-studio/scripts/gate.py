@@ -1528,30 +1528,51 @@ def _record_revert_yield(root: Path, examined: int, refused: int) -> None:
         pass
 
 
+#: The standard gate: the lanes a plain run, and so every commit, pays for.
 DEFAULT_CHECKS = {
     "conformance": _conformance_scoped,
     "reconcile": _reconcile,
     "index-derived": _index_derived,
     "validate": _validate_scoped,
-    "constitution": _constitution,
     "integrity": _integrity,
     "duplicate-id": _duplicate_id,
-    "provenance": _provenance,
     "doc-coverage": _doc_coverage,
-    "doc-surface": _doc_surface,
     "engagement-floor": _engagement_floor,
-    "disclosure": _disclosure,
-    "doc-freshness": _doc_freshness,
-    "mutation": _mutation,
     "window": _window,
-    "hook-enabled": _hook_enabled,
-    "batch-size": _batch_size,
     # Structure + hand-edit are COMMITTED faults, so the changelog lane runs in the standard
     # gate too; --release swaps in the superset that also refuses a stray fragment at the cut.
     "changelog-fragments": _changelog,
     "derived-depth": _derived_depth,
     "evidence-drift": _evidence_drift,
 }
+
+#: Advisory lanes a plain run leaves out. None refuses a commit, and together they cost about
+#: 70s of every one. Each runs when named with `--only`; doc-freshness also runs at the sprint
+#: close (`--require-retro`), where it reports once a sprint and never blocks. Constitution and
+#: provenance stay in a plain run for a project that set them to block (`_enforced_lanes`).
+ON_DEMAND_CHECKS = {
+    "constitution": _constitution,
+    "provenance": _provenance,
+    "doc-surface": _doc_surface,
+    "disclosure": _disclosure,
+    "doc-freshness": _doc_freshness,
+    "mutation": _mutation,
+    "hook-enabled": _hook_enabled,
+    "batch-size": _batch_size,
+}
+
+#: The on-demand lanes the sprint close runs without being named.
+CLOSE_ADVISORY_CHECKS = ("doc-freshness",)
+
+
+def _enforced_lanes(root: str) -> set[str]:
+    """The on-demand lanes this project configured to block. A refusal a project opted into
+    stays in its plain gate; only a lane that can merely advise leaves it (D0263). Each asks
+    the lane's own module, so the gate and the lane cannot disagree about the setting."""
+    import constitution
+    import provenance
+    return ({"constitution"} if constitution.enforced(root) else set()) | (
+        {"provenance"} if provenance.enforced(root) else set())
 
 
 def _lessons_loop_blocking(root: str) -> bool:
@@ -2482,7 +2503,12 @@ def run_gate(root: str = ".", only: list[str] | None = None,
             return {"ok": False, "checks": [{
                 "check": "scope", "count": 0, "blocking": True, "status": "fail",
                 "detail": f"no SDLC project under {root} (no sdlc-studio/ dir) - wrong --root?"}]}
-    registry = dict(checks) if checks is not None else dict(DEFAULT_CHECKS)
+    registry = dict(checks) if checks is not None else {**DEFAULT_CHECKS, **ON_DEMAND_CHECKS}
+    # Registered so `--only` can name them, and left out of a run that names nothing, unless
+    # the close runs one or the project set one to block.
+    on_demand = set() if checks is not None else (
+        set(ON_DEMAND_CHECKS) - set(CLOSE_ADVISORY_CHECKS if require_retro else ())
+        - _enforced_lanes(root))
     bound: list[str] = []  # lanes a mode bound in: deselecting one is refused, not honoured
     # The sprint- and release-level Definition of Done, when the project declares one,
     # decides which close/release criteria the gate binds (the un-skippable close-down
@@ -2588,7 +2614,7 @@ def run_gate(root: str = ".", only: list[str] | None = None,
             "detail": f"unknown check name(s): {', '.join(unknown)} - "
                       f"valid: {', '.join(sorted(registry))}"}]}
     selected = [n for n in registry
-                if (not only or n in only) and (not skip or n not in skip)]
+                if (n in only if only else n not in on_demand) and (not skip or n not in skip)]
     if not selected:
         return {"ok": False, "checks": [{
             "check": "selection", "count": 0, "blocking": True, "status": "fail",
@@ -3202,7 +3228,8 @@ def cmd_gate(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Portable CI quality gate.")
     p.add_argument("--root", default=".", help="Repo root (default: .)")
-    p.add_argument("--only", help="Comma-separated checks to run (default: all)")
+    p.add_argument("--only", help="Comma-separated checks to run (default: the standard lanes; "
+                                  "an on-demand advisory lane runs only when named here)")
     p.add_argument("--skip", help="Comma-separated checks to skip")
     p.add_argument("--require-retro", metavar="RETROxxxx",
                    help="Sprint-close gate: fail unless this batch retro exists in "

@@ -167,9 +167,12 @@ with the agent's built-in tools.
 
 A third architectural element sits over both: `gate.py` composes the deterministic
 checks into **lanes**, each returning PASS / warn / FAIL, and the whole into one
-exit code. The default sweep runs `batch-size`, `changelog-fragments`, `conformance`, `constitution`, `derived-depth`, `disclosure`, `doc-coverage`, `doc-freshness`, `doc-surface`, `duplicate-id`, `engagement-floor`, `evidence-drift`, `hook-enabled`, `index-derived`, `integrity`, `mutation`, `provenance`, `reconcile`, `validate` and `window`
+exit code. The default sweep runs `changelog-fragments`, `conformance`, `derived-depth`, `doc-coverage`, `duplicate-id`, `engagement-floor`, `evidence-drift`, `index-derived`, `integrity`, `reconcile`, `validate` and `window`
 (the registry is `gate.DEFAULT_CHECKS`; this list is held to it by
-`tools/tests/test_trd_surface_derivation.py`). Bound lanes attach to a
+`tools/tests/test_trd_surface_derivation.py`). Eight advisory lanes that never refuse a
+commit (`gate.ON_DEMAND_CHECKS`) run only when named with `--only`; doc-freshness also runs
+at the sprint close, where it reports and never blocks, and constitution and provenance stay
+in the default sweep for a project that sets them to block. Bound lanes attach to a
 specific obligation and cannot be skipped or excluded away: `--require-retro` (the
 retro's content, plus the lessons summary and validity), `--require-review` (review
 currency, not presence), `--require-handoff`, and `--release`, which EXECUTES every

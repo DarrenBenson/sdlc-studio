@@ -298,14 +298,6 @@ class GateRealWrapperTests(unittest.TestCase):
             (root / ".claude" / "skills").mkdir(parents=True)
             self.assertFalse(_in_dev_repo(root))
 
-    def test_default_checks_present(self) -> None:
-        self.assertEqual(set(gate.DEFAULT_CHECKS),
-                         {"conformance", "reconcile", "index-derived", "validate", "constitution",
-                          "integrity", "duplicate-id", "provenance", "doc-coverage", "doc-surface",
-                          "engagement-floor",
-                          "disclosure", "doc-freshness", "mutation", "window", "hook-enabled",
-                          "batch-size", "changelog-fragments", "derived-depth", "evidence-drift"})
-
     @live_repository
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
@@ -314,7 +306,9 @@ class GateRealWrapperTests(unittest.TestCase):
         # dev-repo guard rather than repeating it (BG0237).
         r = self._report()
         self.assertIsInstance(r["ok"], bool)
-        self.assertEqual(len(r["checks"]), 20)   # +doc-surface advisory, +derived-depth, +evidence-drift blocking
+        # The plain gate reports the standard lanes and nothing else: the on-demand advisory
+        # lanes run only when named (US0895).
+        self.assertEqual([c["check"] for c in r["checks"]], list(gate.DEFAULT_CHECKS))
         for c in r["checks"]:
             # `seconds` is part of the row shape: the cost report derives the dominant lane
             # from it, and a lane with no share of the total cannot be named as the cause.
@@ -2282,7 +2276,7 @@ class AdvisoryRegistryTests(unittest.TestCase):
         import tempfile
         with tempfile.TemporaryDirectory() as t:
             (Path(t) / "sdlc-studio").mkdir()
-            for name, fn in gate.DEFAULT_CHECKS.items():
+            for name, fn in {**gate.DEFAULT_CHECKS, **gate.ON_DEMAND_CHECKS}.items():
                 try:
                     res = fn(str(t))
                 except Exception:  # noqa: BLE001 - a lane needing richer state is not this probe's target
@@ -2362,7 +2356,7 @@ class RaisingCheckTests(unittest.TestCase):
         # check that returns blocking=True on a clean workspace must be in BLOCKING_ON_ERROR.
         with tempfile.TemporaryDirectory() as d:
             (Path(d) / "sdlc-studio").mkdir(parents=True)
-            for name, fn in gate.DEFAULT_CHECKS.items():
+            for name, fn in {**gate.DEFAULT_CHECKS, **gate.ON_DEMAND_CHECKS}.items():
                 try:
                     r = fn(str(Path(d)))
                 except Exception:
@@ -2427,7 +2421,7 @@ class HookEnabledLaneTests(unittest.TestCase):
             self.assertEqual(r["count"], 0)
 
     def test_lane_registered_and_advisory(self) -> None:
-        self.assertIn("hook-enabled", gate.DEFAULT_CHECKS)
+        self.assertIn("hook-enabled", gate.ON_DEMAND_CHECKS)
         self.assertNotIn("hook-enabled", gate.BLOCKING_ON_ERROR)
 
 
@@ -2928,7 +2922,7 @@ class BatchSizeTests(unittest.TestCase):
     def test_batch_size_lane_off_without_thresholds(self):
         with tempfile.TemporaryDirectory() as d:
             root = _batch_repo(d, config=False)
-            r = gate.DEFAULT_CHECKS["batch-size"](str(root))
+            r = gate.ON_DEMAND_CHECKS["batch-size"](str(root))
             self.assertEqual(r["count"], 0)
             self.assertFalse(r["blocking"])
             self.assertIn("off", r["detail"])
@@ -2937,7 +2931,7 @@ class BatchSizeTests(unittest.TestCase):
     def test_batch_size_flags_over_threshold_unit(self):
         with tempfile.TemporaryDirectory() as d:
             root = _batch_repo(d, lines=30)  # 31 lines added > max_lines 10
-            r = gate.DEFAULT_CHECKS["batch-size"](str(root))
+            r = gate.ON_DEMAND_CHECKS["batch-size"](str(root))
             self.assertEqual(r["count"], 1)
 
     def test_batch_size_under_threshold_is_quiet(self):
@@ -2945,7 +2939,7 @@ class BatchSizeTests(unittest.TestCase):
             root = _batch_repo(d, lines=3)  # story file + 4 lines src < 10... measure asserts
             (root / "sdlc-studio" / ".config.yaml").write_text(
                 "batch_size:\n  max_lines: 500\n  max_files: 50\n", encoding="utf-8")
-            r = gate.DEFAULT_CHECKS["batch-size"](str(root))
+            r = gate.ON_DEMAND_CHECKS["batch-size"](str(root))
             self.assertEqual(r["count"], 0)
 
     def test_prefix_id_commit_never_attributed(self):
@@ -2955,7 +2949,7 @@ class BatchSizeTests(unittest.TestCase):
             root = _batch_repo(d, lines=30)
             _git(root, "commit", "-q", "--amend", "-m",
                  "feat: other unit entirely\n\nRefs: US00013")
-            r = gate.DEFAULT_CHECKS["batch-size"](str(root))
+            r = gate.ON_DEMAND_CHECKS["batch-size"](str(root))
             self.assertEqual(r["count"], 0)
             self.assertIn("no identifiable commits", r["detail"])
 
@@ -2963,7 +2957,7 @@ class BatchSizeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = _batch_repo(d)
             (root / "sdlc-studio" / ".local" / "run-state.json").unlink()
-            r = gate.DEFAULT_CHECKS["batch-size"](str(root))
+            r = gate.ON_DEMAND_CHECKS["batch-size"](str(root))
             self.assertEqual(r["count"], 0)
             self.assertIn("no open run", r["detail"])
 
@@ -2972,7 +2966,7 @@ class BatchWarnTests(unittest.TestCase):
     def test_batch_warning_names_unit_points_size_threshold_and_is_advisory(self):
         with tempfile.TemporaryDirectory() as d:
             root = _batch_repo(d, lines=30)
-            r = gate.DEFAULT_CHECKS["batch-size"](str(root))
+            r = gate.ON_DEMAND_CHECKS["batch-size"](str(root))
             self.assertFalse(r["blocking"])  # NEVER hard-fails
             for needle in ("US0001", "2pt", "lines", "10", "advisory"):
                 self.assertIn(needle, r["detail"])
@@ -5452,7 +5446,7 @@ class DocSurfaceApplicabilityTests(unittest.TestCase):
     def test_doc_surface_is_not_applicable_outside_the_skill_repo(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = self._consuming(d)
-            r = self._gate(root)
+            r = self._gate(root, "--only", "doc-surface")
             line = self._lane(r.stdout + r.stderr)
             self.assertIn("N/A (not the skill repo)", line)
             self.assertNotIn("NOT MEASURED", line)

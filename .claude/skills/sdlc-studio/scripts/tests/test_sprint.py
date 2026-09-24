@@ -17044,12 +17044,26 @@ class OnePreflightCountReadByBothRenderersTests(unittest.TestCase):
                 "schema": 1, "run_id": "RUN-T", "started_at": "2026-01-01T00:00:00Z",
                 "outcome": "running", "batch": ["US0001"], "batch_changes": [],
                 "base_ref": "abc", "goal": "done"}), encoding="utf-8")
-            pre = sprint.close_preflight(str(root), None)
+            # ...and a named retro over a stale LATEST.md in a skill tree, so the close's one
+            # advisory gate lane, doc-freshness, reports a finding: the other advisory lanes run
+            # only when named with `gate.py --only` (US0895).
+            (root / ".claude" / "skills" / "sdlc-studio").mkdir(parents=True)
+            (root / ".claude" / "skills" / "sdlc-studio" / "SKILL.md").write_text(
+                "---\nname: sdlc-studio\n---\n", encoding="utf-8")
+            (root / "sdlc-studio" / "reviews").mkdir()
+            (root / "sdlc-studio" / "reviews" / "LATEST.md").write_text(
+                "".join(f"- line {i}\n" for i in range(100)), encoding="utf-8")
+            argv = [sys.executable, "-B", str(script), "preflight", "--retro", "RETRO0001",
+                    "--root", str(root)]
+            # The blockers as the COMMAND computes them, read from its own JSON rather than an
+            # in-process call: test_docgen caches a `surface` module that command_audit's
+            # _surface_module then reuses for this fixture, dropping the doc-surface row (BG0758).
+            pre = json.loads(subprocess.run([*argv, "--format", "json"], capture_output=True,
+                                            text=True).stdout)
             self.assertLess(len(sprint.held_blockers(pre["blockers"])), len(pre["blockers"]),
                             "the fixture produces no advisory row, so the two counts cannot "
                             "diverge and this test would pass on the defect")
-            r = subprocess.run([sys.executable, "-B", str(script), "preflight",
-                                "--root", str(root)], capture_output=True, text=True)
+            r = subprocess.run(argv, capture_output=True, text=True)
             page = r.stdout + r.stderr
             # Derived from the SAME helper over the SAME root, so what is asserted is "the
             # command reaches this code", never "the tree is in a particular state".

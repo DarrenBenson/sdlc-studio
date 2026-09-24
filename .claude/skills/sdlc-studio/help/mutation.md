@@ -51,8 +51,8 @@ python3 <skill>/scripts/mutation.py prefilter --tests tests/test_*.py
    per-unit run mid-sprint replaces the previous unit's.
    `sdlc-studio/.local/mutation-runs.json` is the **ledger**, the durable per-target half the
    gate lane reads as coverage (below). The gate's `mutation` lane surfaces both and is
-   advisory in v1: it never changes the exit code, and an absent report reads not-run,
-   never PASS.
+   advisory in v1: it runs only when named (`gate.py --only mutation`), never changes the
+   exit code, and an absent report reads not-run, never PASS.
 5. Names what the survivors were measured against: the report and the text output carry
    the test files the command statically resolves to (`selected_tests`; UNRESOLVED when
    no file, directory or module token parses - never a guessed empty set), and a

@@ -275,18 +275,24 @@ A sprint is complete only when the close gate is green and shown, **never at "de
 
 | Group | Checks | Blocks? |
 | --- | --- | --- |
-| **Artifact quality** | `conformance` (lifecycle stages), `validate` (structure/vocab), `integrity` (required links/refs), `constitution` (project principles) | yes (constitution only when `constitution.enforce`) |
+| **Artifact quality** | `conformance` (lifecycle stages), `validate` (structure/vocab), `integrity` (required links/refs) | yes |
 | **Engagement floor** | `engagement-floor` (a shipped multi-file unit with no AC / Verify / linked plan) | yes (advisory under `engagement_floor: judgement`) |
 | **Index consistency** | `reconcile` (file-census drift), `duplicate-id` | yes |
-| **Provenance** | `provenance` (tool-created stamps) | only when `provenance.enforce` |
-| **Skill docs (skill repo only)** | `doc-coverage` (every command/script documented), `disclosure` (progressive-disclosure hygiene), `doc-freshness` (LATEST.md vs reality) | doc-coverage yes; disclosure + doc-freshness advisory |
+| **Skill docs (skill repo only)** | `doc-coverage` (every command/script documented) | yes |
+| **Enforced by the project** | `constitution` (project principles), `provenance` (tool-created stamps) | yes, and in the plain gate, when `constitution.enforce` / `provenance.enforce` is set; otherwise on demand and advisory |
+| **On demand (`--only <lane>`)** | `doc-surface`, `disclosure` (progressive-disclosure hygiene), `doc-freshness` (LATEST.md vs reality), `mutation`, `hook-enabled`, `batch-size` | never |
 | **Executable ACs (`--release` only)** | `verify` (executes every story's `Verify:` expression) | yes |
 | **Required legs (`--release` only)** | `review-legs` (every required document leg present or waived; CODE out of scope) | yes |
 | **Sprint close (`--require-retro` / `--require-lessons` only)** | `retro` (the batch retro exists), `lessons-summary` (LESSONS-SUMMARY.md is current), `lessons-validity` (no expired or horizon-less open lesson) | yes |
 | **Close-owed guard (`--require-close` only)** | `close-owed` (no delivery unit reached terminal since the baseline with no covering retro) | yes |
 
-The four **artifact-quality** checks are the ones that police every artifact; the rest guard the
-index, provenance, and the skill's own docs. `--only` / `--skip` select a subset. The `verify`
+The **artifact-quality** checks are the ones that police every artifact; the rest guard the
+index and the skill's own docs. `--only` / `--skip` select a subset. A lane that can only advise
+never refuses a commit, so a plain run leaves it out and pays nothing for it: each runs when named
+with `--only`, and `doc-freshness` also runs at the sprint close (`--require-retro`), where it
+reports and never blocks. A lane the project set to block stays in the plain gate: with
+`constitution.enforce` or `provenance.enforce` set, that lane runs on every plain run and its
+finding fails the gate. The `verify`
 lane only joins the registry under `--release` (it runs test suites; the standard gate stays fast
 and read-only for a pre-commit hook).
 
