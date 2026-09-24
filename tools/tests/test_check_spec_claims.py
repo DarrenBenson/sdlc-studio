@@ -104,9 +104,10 @@ class GateLaneTests(unittest.TestCase):
         self.assertIn("module-alone", agents, "AGENTS.md's roster does not name the module-alone lane")
         para = next((b for b in agents.split("\n\n") if "`module-alone`" in b), "")
         self.assertTrue(para, "no paragraph in AGENTS.md names `module-alone`")
-        self.assertIn("push and release boundaries only", para,
-                      "the roster does not say the lane binds at BOTH boundaries and nowhere else")
-        self.assertIn("never per commit", para, "the roster does not say the lane is off the per-commit path")
+        # US0881 moved the lane to the tag: a push pays the full suite once instead
+        self.assertIn("release boundary only", para,
+                      "the roster does not say the lane binds at the release boundary and nowhere else")
+        self.assertIn("never per push", para, "the roster does not say the lane is off the push path")
         # the COST, not only the decision it is stated beside: a false figure shipped once
         # because this pin read "D0180" alone, and deleting the whole cost sentence passed it
         # the figure is stated IN MINUTES immediately, so a false "about 45 s" cannot borrow

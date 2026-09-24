@@ -74,16 +74,22 @@ shift 2>/dev/null || true
 budget="${TEST_NOISE_BUDGET_FILE:-$(dirname "$0")/test-noise-baseline.json}"
 python3 "$(dirname "$0")/test_noise.py" --budget-check "$budget" || exit 1
 
+# SKILL_TESTS_COVERAGE=1 runs the same one pass under `coverage run --source=<skill>`, so CI
+# measures coverage on the run it already pays for instead of running the suite a second time.
+# `coverage report` reads the data file it leaves in the working directory.
+runner=(python3)
+[ "${SKILL_TESTS_COVERAGE:-}" = 1 ] && runner=(python3 -m coverage run --source="$skill")
+
 if [ "$#" -gt 0 ]; then
   mods=""
   for f in "$@"; do
     base="${f##*/}"
     mods="$mods ${base%.py}"
   done
-  out="$(PYTHONPATH="$skill/tests${PYTHONPATH:+:$PYTHONPATH}" python3 -m unittest $mods 2>&1)"
+  out="$(PYTHONPATH="$skill/tests${PYTHONPATH:+:$PYTHONPATH}" "${runner[@]}" -m unittest $mods 2>&1)"
   rc=$?
 else
-  out="$(python3 -m unittest discover -s "$skill/tests" 2>&1)"
+  out="$("${runner[@]}" -m unittest discover -s "$skill/tests" 2>&1)"
   rc=$?
 fi
 

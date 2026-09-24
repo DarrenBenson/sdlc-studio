@@ -15,8 +15,9 @@ So this is not a speed-up. It is the same boundary rule, applied to the tests th
 
 WHAT THIS IS NOT. Not a skip, and not an exclusion. A marked test runs in FULL at push, release
 and CI - the runs whose own command sets the marker - and is deferred only in the per-commit
-selected run. The pre-push hook sets it on both of its gate invocations, so `module-alone`'s
-per-module interpreters execute every marked test at the push and release boundaries; CI sets it
+selected run. The pre-push hook sets it on both of its gate invocations, so the `full-suite` lane
+(and at a tag `module-alone`'s per-module interpreters) execute every marked test at the push and
+release boundaries; CI sets it
 on its suite commands. Nothing on a sprint close sets it, so a close is not one of those runs.
 Nothing here reduces what is ever executed; it moves when. A guard that quietly stopped running
 would be the very defect this repository files bugs about, so `test_boundary_marker.py` asserts

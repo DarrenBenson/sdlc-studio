@@ -5513,7 +5513,8 @@ class DocSurfaceApplicabilityTests(unittest.TestCase):
 
 
 class ReleaseRehearsalLaneTests(unittest.TestCase):
-    """US0666: the rehearsal binds at the push and release boundaries and nowhere else."""
+    """US0666: the rehearsal binds at the release boundary and nowhere else (US0881 moved it
+    off the push boundary)."""
 
     def _repo(self):
         return pathlib.Path(__file__).resolve().parents[5]
@@ -5547,7 +5548,7 @@ class ReleaseRehearsalLaneTests(unittest.TestCase):
         self.assertNotIn("release-rehearsal", plain,
                          "the rehearsal ran on a per-commit gate - it builds two fixture "
                          "projects, and the gate is already over its budget there")
-        for boundary in ("push", "release"):
+        for boundary in ("release",):
             # SCOPED to this lane. An unscoped boundary gate here binds every boundary lane
             # against THIS repository, and `revert-check` reverts a batch unit's production
             # files on disk to measure them. That is correct at a real push and wrong inside a
@@ -5573,7 +5574,7 @@ class ReleaseRehearsalLaneTests(unittest.TestCase):
         self.assertIn("duplicate-id", out, "the scoped run printed no lane at all")
 
     def _scoped_failing_run(self):
-        """Drive the gate at the push boundary, SCOPED to the rehearsal lane, over a clone whose
+        """Drive the gate at the release boundary, SCOPED to the rehearsal lane, over a clone whose
         harness fails its greenfield half - and return the lane's line and the whole output."""
         import shutil, tempfile  # noqa: PLC0415
         repo = self._repo()
@@ -5598,7 +5599,7 @@ class ReleaseRehearsalLaneTests(unittest.TestCase):
             # days with the green-run noise gate never reaching the end of the run (BG0660).
             # The sibling row above already proves the lane BINDS at both boundaries, and
             # `--boundary push --only <lane>` is proven acceptable by the row above that.
-            r = self._gate("--boundary", "push", "--only", "release-rehearsal", root=clone)
+            r = self._gate("--boundary", "release", "--only", "release-rehearsal", root=clone)
             out = r.stdout + r.stderr
             line = next((ln for ln in out.splitlines() if "release-rehearsal" in ln), "")
             self.assertTrue(line, f"no rehearsal lane in the output:\n{out}")
@@ -5948,7 +5949,7 @@ class RevertCheckLaneTests(unittest.TestCase):
         # production files on disk. Pointed at this repository it would rewrite `verify_ac.py`
         # underneath the parallel suite reading it.
         fixture = self._fixture_root(green_after_revert=False)
-        for boundary in ("push", "release"):
+        for boundary in ("release",):
             r = self._gate("--boundary", boundary, "--only", "revert-check", root=fixture)
             self.assertEqual(0, r.returncode, r.stdout + r.stderr)
             self.assertIn("revert-check", self._lanes(r.stdout),
@@ -5968,7 +5969,7 @@ class RevertCheckLaneTests(unittest.TestCase):
         base revision. A test that mutates the shared tree mid-suite is the hazard this whole
         unit exists to handle, met from the other side."""
         root = self._fixture_root(green_after_revert=False)
-        out = self._gate("--boundary", "push", "--only", "revert-check", root=root).stdout
+        out = self._gate("--boundary", "release", "--only", "revert-check", root=root).stdout
         line = next((ln for ln in out.splitlines() if "revert-check" in ln), "")
         self.assertTrue(line, f"no revert-check lane in the output:\n{out}")
         self.assertIn("none stayed green without its change", line,
@@ -5994,7 +5995,7 @@ class RevertCheckLaneTests(unittest.TestCase):
         yield_path = Path(root) / gate_mod._REVERT_YIELD_REL
         self.assertFalse(yield_path.exists(),
                          "the fixture already carries a yield file, so a later read proves nothing")
-        r = self._gate("--boundary", "push", "--only", "revert-check", root=root)
+        r = self._gate("--boundary", "release", "--only", "revert-check", root=root)
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)
         self.assertTrue(yield_path.exists(),
                         f"the lane ran at the boundary and wrote no yield file:\n{r.stdout}")
@@ -6002,7 +6003,7 @@ class RevertCheckLaneTests(unittest.TestCase):
         self.assertEqual(1, first["runs"], first)
         self.assertGreaterEqual(first["examined"], 1, first)
         self.assertGreaterEqual(first["would_refuse"], 1, first)
-        self._gate("--boundary", "push", "--only", "revert-check", root=root)
+        self._gate("--boundary", "release", "--only", "revert-check", root=root)
         second = json.loads(yield_path.read_text(encoding="utf-8"))
         self.assertEqual(2, second["runs"], second)
         self.assertEqual(first["examined"] * 2, second["examined"],
@@ -6110,7 +6111,7 @@ class RevertCheckLaneTests(unittest.TestCase):
         passes. Advisory means reported-and-not-blocking, so both halves need asserting -
         a lane that never fires and a lane that blocks are different failures."""
         root = self._fixture_root(green_after_revert=True)
-        r = self._gate("--boundary", "push", "--only", "revert-check", root=root)
+        r = self._gate("--boundary", "release", "--only", "revert-check", root=root)
         line = next((ln for ln in r.stdout.splitlines() if "revert-check" in ln), "")
         self.assertIn("would be refused", line, r.stdout)
         self.assertIn("US9200", line, r.stdout)
@@ -6262,11 +6263,11 @@ class RevertCheckSetAsideUnitsTests(unittest.TestCase):
         refused-path detail built as today; (2) replace `_first_three(named)` on the refused path
         with `_first_three(set_aside)`, losing the refused unit's finding.
 
-        Driven through the shipped `gate.py --boundary push --only revert-check` on a two-unit
+        Driven through the shipped `gate.py --boundary release --only revert-check` on a two-unit
         fixture, then in-process with a crash beside the refusal, because the refused path's
         `if crashed:` appends after the set-aside tokens and must not displace them."""
         root = self._root(green_after_revert=True, test_only=("US9201",))
-        r = self._lane_case._gate("--boundary", "push", "--only", "revert-check", root=root)
+        r = self._lane_case._gate("--boundary", "release", "--only", "revert-check", root=root)
         line = next((ln for ln in r.stdout.splitlines() if "revert-check" in ln), "")
         self.assertIn("1 examined, 1 would be refused - US9200: green after the revert - AC1",
                       line, r.stdout + r.stderr)
@@ -6761,7 +6762,7 @@ class ModuleAloneLaneTests(unittest.TestCase):
         self.assertNotEqual(0, off.returncode)
         self.assertIn("unknown check name(s): module-alone", off.stdout + off.stderr,
                       "the module-alone lane is registered on the per-commit gate")
-        for boundary in ("push", "release"):
+        for boundary in ("release",):
             (root / "phase.log").unlink(missing_ok=True)
             r = self._gate("--boundary", boundary, "--only", "module-alone", root=root)
             out = r.stdout + r.stderr
@@ -6807,7 +6808,7 @@ class ModuleAloneLaneTests(unittest.TestCase):
         (tests / "test_z_serial.py").write_text(
             "import unittest\nimport pytest\n\n@pytest.mark.serial_only\nclass T(unittest.TestCase):\n    def test_alone(self):\n        pass\n",
             encoding="utf-8")
-        g = self._gate("--boundary", "push", "--only", "module-alone", root=root)
+        g = self._gate("--boundary", "release", "--only", "module-alone", root=root)
         self.assertEqual(0, g.returncode, g.stdout + g.stderr)
         self.assertRegex(g.stdout, r"\[PASS\] module-alone \[[0-9.]+s\]: %d module\(s\) alone under unittest from " % (6 + self.n_sleepers))
         # the refusal's reason is clipped at a word past 300 characters, never mid-path
@@ -6822,7 +6823,7 @@ class ModuleAloneLaneTests(unittest.TestCase):
         self.assertEqual("short reason", _gate._clip_reason("  short reason  "))
         # a partition that cannot be read is REFUSED, never read as empty
         (tests / "conftest.py").write_text("raise RuntimeError('broken conftest')\n", encoding="utf-8")
-        c = self._gate("--boundary", "push", "--only", "module-alone", root=root)
+        c = self._gate("--boundary", "release", "--only", "module-alone", root=root)
         self.assertNotEqual(0, c.returncode)
         self.assertIn("could not read the serial_only partition", c.stdout + c.stderr)
         self.assertIn("the modules were NOT run", c.stdout + c.stderr)
@@ -6834,14 +6835,14 @@ class ModuleAloneLaneTests(unittest.TestCase):
         (ht / "test_hang.py").write_text("import time\ntime.sleep(30)\n", encoding="utf-8")
         import os as _os, subprocess as _sp  # noqa: PLC0415
         scripts = pathlib.Path(__file__).resolve().parents[1]
-        h = _sp.run([sys.executable, str(scripts / "gate.py"), "--root", str(hang), "--boundary", "push", "--only", "module-alone"],
+        h = _sp.run([sys.executable, str(scripts / "gate.py"), "--root", str(hang), "--boundary", "release", "--only", "module-alone"],
                     capture_output=True, text=True, timeout=600, check=False, env={**_os.environ, "SDLC_MODULE_ALONE_TIMEOUT": "2"})
         self.assertNotEqual(0, h.returncode)
         self.assertIn("test_hang [parallel]: timed out after 2 s", h.stdout + h.stderr)
         # and a root with no skill tests directory reports N/A rather than a vacuous pass
         bare = pathlib.Path(tempfile.mkdtemp(prefix="module_alone_bare_")); self.addCleanup(_shutil.rmtree, bare, True)
         (bare / "sdlc-studio").mkdir()
-        n = self._gate("--boundary", "push", "--only", "module-alone", root=bare)
+        n = self._gate("--boundary", "release", "--only", "module-alone", root=bare)
         self.assertIn("N/A (no skill tests directory under --root)", n.stdout + n.stderr)
 
 

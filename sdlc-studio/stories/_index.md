@@ -10,9 +10,9 @@
 | Draft | 142 |
 | Ready | 15 |
 | Planned | 0 |
-| In Progress | 1 |
+| In Progress | 0 |
 | Review | 0 |
-| Done | 702 |
+| Done | 703 |
 | Won't Implement | 8 |
 | Deferred | 0 |
 | Superseded | 13 |
@@ -239,7 +239,7 @@
 | [US0878](US0878-sign-checks-what-it-seals-and-records-what.md) | Sign checks what it seals and records what actually happened | Done | EP0260 | 2026-09-23 | 2026-09-23 |
 | [US0879](US0879-a-commit-runs-only-the-checks-that-catch.md) | A commit runs only the checks that catch real defects | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0880](US0880-a-commit-s-tests-finish-inside-a-90.md) | A commit's tests finish inside a 90-second budget | Done | EP0261 | 2026-09-24 | 2026-09-24 |
-| [US0881](US0881-a-push-runs-the-full-suite-once-and.md) | A push runs the full suite once, and CI runs it once | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0881](US0881-a-push-runs-the-full-suite-once-and.md) | A push runs the full suite once, and CI runs it once | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0882](US0882-mutation-evidence-that-is-switched-off-stops-blocking.md) | Mutation evidence that is switched off stops blocking commits | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0883](US0883-a-signed-report-cannot-be-edited-unnoticed.md) | A signed report cannot be edited unnoticed | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0884](US0884-a-sprint-report-is-filed-only-by-the.md) | A sprint report is filed only by the close | Done | EP0261 | 2026-09-24 | 2026-09-24 |

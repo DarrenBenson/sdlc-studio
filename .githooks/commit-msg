@@ -222,7 +222,7 @@ if [ -n "$selectors" ] && python3 -c 'import pytest' >/dev/null 2>&1; then
   # THE SELECTED RUN: one pytest invocation over both trees, across every core when pytest-xdist
   # is installed, with the `serial_only` tests after (`gate.py --run-tests`). pytest captures a
   # passing test's output, so the green-run noise ratchet in tools/skill-tests.sh is held where
-  # the whole suite runs under it: at push and in CI.
+  # the whole suite runs under it: in CI.
   ran_pytest=1
   run "unit-tests" \
     "every selected test module passes (in parallel when pytest-xdist is installed)" \

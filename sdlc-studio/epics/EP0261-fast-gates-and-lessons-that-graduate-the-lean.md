@@ -1,6 +1,6 @@
 # EP0261: Fast gates and lessons that graduate: the lean loop's second sprint
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -13,7 +13,7 @@ Sprint 2 of the back-to-basics programme. Deletes the per-commit and per-push ce
 
 - [x] [US0879: A commit runs only the checks that catch real defects](../stories/US0879-a-commit-runs-only-the-checks-that-catch.md)
 - [x] [US0880: A commit's tests finish inside a 90-second budget](../stories/US0880-a-commit-s-tests-finish-inside-a-90.md)
-- [ ] [US0881: A push runs the full suite once, and CI runs it once](../stories/US0881-a-push-runs-the-full-suite-once-and.md)
+- [x] [US0881: A push runs the full suite once, and CI runs it once](../stories/US0881-a-push-runs-the-full-suite-once-and.md)
 - [x] [US0882: Mutation evidence that is switched off stops blocking commits](../stories/US0882-mutation-evidence-that-is-switched-off-stops-blocking.md)
 - [x] [US0883: A signed report cannot be edited unnoticed](../stories/US0883-a-signed-report-cannot-be-edited-unnoticed.md)
 - [x] [US0884: A sprint report is filed only by the close](../stories/US0884-a-sprint-report-is-filed-only-by-the.md)

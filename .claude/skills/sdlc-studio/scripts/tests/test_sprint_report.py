@@ -1989,7 +1989,9 @@ class SprintChecklistKnownIssuesBlindnessTests(ChecklistBase):
         """The exception limb, which the missing-retro test does not reach: `find_retro` answers
         None there rather than raising. Both limbs must report blindness or the row can still be
         made to say "none carried" while it saw nothing."""
-        import retro as retro_mod
+        # The module sprint_report CALLS, not a fresh `import retro`: in a full pytest run another
+        # module can leave a second `retro` in sys.modules, and patching that one reached nothing.
+        retro_mod = sr.retro
         real = retro_mod.carried_issues
 
         def boom(_text):

@@ -41,7 +41,7 @@ These block. Everything else in this file is guidance.
 | Gate | Refuses |
 | --- | --- |
 | pre-commit + commit-msg hooks | any guard failure; a multi-id subject with no `Refs:` trailer; a collapsed test suite |
-| pre-push hook | a red boundary gate (`gate.py --boundary push`, or `release` for a tag): the full suite plus the three boundary lanes, minutes per push - until a boundary run is recorded the floor is the full suite's own recorded figure, else about ten minutes, and `python3 tools/gate_timing.py estimate --suite boundary-push --warn-seconds 0` prints the current figure |
+| pre-push hook | a red boundary gate (`gate.py --boundary push`, or `release` for a tag): a push runs the full suite once plus the core gate lanes, about five minutes, and a tag adds the three heavy lanes below; `python3 tools/gate_timing.py estimate --suite boundary-push --warn-seconds 0` prints the current figure |
 | `sprint plan` | a batch whose units lack `Affects:` or `Points:`, or exceed the split threshold |
 | `transition -> Done` | a story whose executable ACs have not passed, or that is past `review.two_role_after` without both review halves |
 | `transition -> Fixed` | a bug with no parseable `Verification depth` |
@@ -63,7 +63,9 @@ nothing else.
 **Pushes go straight to main and a red main is read before the next push (D0181).** The pre-push
 hook asks the forge for the latest push-triggered Lint run on main before it runs the gate; on any
 conclusion but success it refuses until that run's id is acknowledged once per clone with
-`SDLC_PUSH_ACK_RED=<run id> git push`. An unreadable or empty answer is named and never read as
+`SDLC_PUSH_ACK_RED=<run id> git push`. A red answer is read once more before it refuses, and the
+second answer is judged: the forge's ordering is eventually consistent, and a stale first row once
+named a two-month-old red (BG0709). An unreadable or empty answer is named and never read as
 green, and it does not block an offline push. The required status check a direct push can never
 satisfy was removed from branch protection under the same ruling on 2026-09-06, and the
 protection read-back shows none.
@@ -98,32 +100,38 @@ working tree in `pre-commit` at the moment the suites are selected, and refuses 
 if running them modified a tracked file, created an untracked one, or touched gitignored
 `sdlc-studio/.local/`. It costs two directory reads and never a second suite run.
 
-One lane is deliberately NOT per-commit: `release-rehearsal` binds at the **push and release
-boundaries only** (`gate.py --boundary push|release`, invoked by `.githooks/pre-push`: a branch ref
-is the push boundary, a tag ref the release boundary, and `tools/boundary_roster.py` refuses a
-boundary named here that no hook invokes). It drives `tools/rehearse-release.sh` -
+A push pays the full suite ONCE: `full-suite` binds at the **push and release boundaries**
+(`gate.py --boundary push`, invoked by `.githooks/pre-push`: a branch ref is the push boundary, a
+tag ref the release boundary, and `tools/boundary_roster.py` refuses a boundary named here that no
+hook invokes). It runs every test module of both suites through the commit hook's runner, across
+every core under pytest-xdist with the `serial_only` tests after, and BLOCKS; it catches what
+per-commit selection cannot reach. About four and a half minutes here, where the push used to pay
+about 750 seconds with the three lanes below beside it. The green-run noise gate reads the
+unittest run CI makes, not this one.
+
+Three lanes cost minutes each and bind at the **release boundary only**
+(`gate.py --boundary release`, a tag push). `release-rehearsal`, at the release boundary, drives
+`tools/rehearse-release.sh` -
 greenfield `init` to a written sprint plan, and a v4-era workspace through `migrate --apply` to a
 gate matching `tools/release-rehearsal-baseline.txt`. Those are the two situations this repository
 cannot occupy, and walking them by hand once found three consumer-facing defects the whole suite
-had missed. It is off the per-commit path because the gate is already over its budget there.
+had missed.
 
-A SECOND lane binds at the push and release boundaries only, and it is ADVISORY there:
-`revert-check` (`gate.py --boundary push|release`) reverts each batch unit's declared production
+The SECOND is ADVISORY at the release boundary:
+`revert-check` (`gate.py --boundary release`) reverts each batch unit's declared production
 files to the run's base ref and re-runs that unit's own `Verify:` selectors. Green after the
 revert is the finding - a test that passes without the change never reached it. It reports and
 never blocks while its yield is measured, accumulated in `sdlc-studio/.local/revert-check-yield.json`.
-It is off the per-commit path for `release-rehearsal`'s reason: a revert-and-run per unit is
-minutes against a gate already at its ceiling.
 
-A THIRD lane binds at the push and release boundaries only, and it BLOCKS there: `module-alone`
-(`gate.py --boundary push|release`) runs every skill test module alone under the unittest runner,
+The THIRD binds at the release boundary only, and it BLOCKS there: `module-alone`
+(`gate.py --boundary release`) runs every skill test module alone under the unittest runner,
 one fresh interpreter per module from the repository root, in parallel with the `serial_only`
 partition after. The discovery run is green while a module passes only because a sibling
 imported a name first, and pytest imports the missing name itself, so only this shape sees it
 (`test_critic` was red alone for a month). Its cost is the lane's wall clock, four to five
 minutes on this machine - the slowest module, `test_gate`, near four of them, then the serial
-phase - against a serial sum of fifteen to seventeen minutes; paid at the boundary beside
-D0180's full suite and never per commit. It reads the marker through pytest, so a clone
+phase - against a serial sum of fifteen to seventeen minutes; paid at the tag beside
+D0180's full suite and never per push. It reads the marker through pytest, so a clone
 without pytest is refused at the boundary with the reason named rather than run without the
 partition.
 

@@ -265,9 +265,8 @@ class ThePushBoundaryHasAHookTests(unittest.TestCase):
     def test_the_hook_announces_its_cost_and_the_bypass_before_running(self) -> None:
         """AC4. MUTANTS: (1) print nothing before invoking the gate; (2) print the estimate only
         when history exists, so the first push announces nothing; (3) never record the
-        boundary's duration after the gate; (4) drop the full suite's own median as the middle
-        floor, so a first push with a suite series announces the literal; (5) drop the two lane
-        names from the literal."""
+        boundary's duration after the gate; (4) announce the tag's heavy lanes on a branch push
+        (US0881); (5) drop the three lane names from the tag's literal."""
         seeded = _Clone(timings=[700.0, 720.0])
         try:
             r = seeded.push(rc=1)
@@ -283,30 +282,24 @@ class ThePushBoundaryHasAHookTests(unittest.TestCase):
             self.assertEqual(3, len(data["boundary-push"]), "the hook did not record its run")
         finally:
             seeded.cleanup()
-        # the middle floor: no boundary series, but the full suite's own series (qa seat, X3)
-        mid = _Clone()
-        try:
-            r = mid.push(rc=1)
-            out = r.stderr
-            self.assertIn("expect at least the full suite (~62", out, "the suite's own median was not the floor:\n" + out)
-            self.assertNotIn("about ten minutes", out, "the literal was printed beside the suite's own figure:\n" + out)
-            self.assertLess(out.index("at least the full suite"), out.index("release-rehearsal STUBBED"),
-                            "the floor line did not precede the gate's own output:\n" + out)
-            self.assertIn("git push --no-verify", out.split("release-rehearsal STUBBED")[0],
-                          "the bypass was not named before the gate ran")
-        finally:
-            mid.cleanup()
+        # no boundary series: a measured literal, naming what THIS boundary runs (US0881)
         bare = _Clone(no_timings_file=True)
         try:
             r = bare.push(rc=1)
             out = r.stderr
-            self.assertIn("about ten minutes", out, "with no history the floor literal was not printed:\n" + out)
-            self.assertIn("release-rehearsal, revert-check and module-alone", out, "the literal does not name the three lanes:\n" + out)
-            self.assertNotIn("at least the full suite", out, "a suite figure was printed with no suite series:\n" + out)
-            self.assertLess(out.index("about ten minutes"), out.index("release-rehearsal STUBBED"),
+            self.assertIn("about five minutes (the full suite once, plus the core gate lanes)", out,
+                          "with no history the push literal was not printed:\n" + out)
+            self.assertNotIn("module-alone", out.split("release-rehearsal STUBBED")[0],
+                             "a branch push announced the tag's heavy lanes:\n" + out)
+            self.assertLess(out.index("about five minutes"), out.index("release-rehearsal STUBBED"),
                             "the literal did not precede the gate's own output:\n" + out)
             self.assertIn("git push --no-verify", out.split("release-rehearsal STUBBED")[0],
                           "the bypass was not named before the gate ran")
+            _git(bare.clone, "tag", "v0.0.1")
+            tag = bare.push("v0.0.1", rc=1).stderr
+            self.assertIn("about fifteen minutes", tag, "with no history the tag literal was not printed:\n" + tag)
+            self.assertIn("release-rehearsal, revert-check and module-alone", tag,
+                          "the tag literal does not name the three lanes:\n" + tag)
         finally:
             bare.cleanup()
 
@@ -327,7 +320,7 @@ class ARedMainIsReadBeforeTheNextPushTests(unittest.TestCase):
             self.assertIn("SDLC_PUSH_ACK_RED=33731466380 git push", out, "the acknowledgement command was not printed verbatim:\n" + out)
             self.assertNotIn("--no-verify", out, "the CI refusal must never name the bypass - it names the acknowledgement:\n" + out)
             self.assertEqual([], fx.gate_calls(), "the gate ran before CI was read")
-            self.assertEqual(1, len(fx.gh_calls()))
+            self.assertEqual(2, len(fx.gh_calls()), "a red answer is read once more before refusing (BG0709)")
             for flag in ("--workflow Lint", "--branch main", "--event push", "--status completed"):
                 self.assertIn(flag, fx.gh_calls()[0], fx.gh_calls())
             self.assertEqual(0, fx.remote_count())
@@ -606,13 +599,15 @@ class KeepaliveTests(unittest.TestCase):
 MARKED_SENTINEL = "MARKED-TEST-EXECUTED-7f3a91"
 
 #: The gate at the hook's path: record the argv the hook handed it, then exec the TRACKED gate
-#: with that argv plus only the root and the one lane, so the chain under test is the real one.
+#: with that argv plus only the root and the one lane that runs the tests at that boundary -
+#: `full-suite` at a push, `module-alone` at a tag - so the chain under test is the real one.
 FORWARDING_SHIM = textwrap.dedent('''
     import os, sys
     from pathlib import Path
     Path(os.environ["STUB_ARGV"]).open("a").write(" ".join(sys.argv[1:]) + "\\n")
+    lane = "full-suite" if "push" in sys.argv[1:] else "module-alone"
     os.execv(sys.executable, [sys.executable, {gate!r}, *sys.argv[1:],
-                              "--root", {root!r}, "--only", "module-alone"])
+                              "--root", {root!r}, "--only", lane])
 ''').lstrip()
 
 MARKED_RED = textwrap.dedent('''
@@ -644,8 +639,9 @@ class BoundaryMarkerReachesThePushTests(unittest.TestCase):
 
     def test_a_red_boundary_only_test_refuses_the_push(self) -> None:
         """The REAL chain, marker removed from every fixture push: the tracked hook, a shim at the
-        hook's gate path forwarding to the tracked gate (`--only module-alone`), and a clone whose
-        skill tests directory holds the tracked `boundary.py` and one marked test.
+        hook's gate path forwarding to the tracked gate (`--only full-suite` at a push, `--only
+        module-alone` at a tag, US0881), and a clone whose skill tests directory holds the tracked
+        `boundary.py` and one marked test.
 
         MUTANTS: (1) the marker on the release invocation only - the branch push is accepted;
         (2) on the push invocation only - the tag push is accepted; (3) `=true`, which
@@ -668,16 +664,19 @@ class BoundaryMarkerReachesThePushTests(unittest.TestCase):
             marked.write_text(MARKED_RED.format(sentinel=MARKED_SENTINEL), encoding="utf-8")
             _git(fx.clone, "tag", "v0.0.1")
 
-            for refspec, boundary in (("main", "push"), ("v0.0.1", "release")):
+            log = fx.clone / "sdlc-studio" / ".local" / "boundary-suite-last.log"
+            for refspec, boundary, lane in (("main", "push", "full-suite"), ("v0.0.1", "release", "module-alone")):
                 with self.subTest(boundary=boundary):
                     r = fx.push(refspec, gh_mode="empty")
                     self.assertNotEqual(0, r.returncode,
                                         f"a red marked test did not refuse the {boundary} push - it was "
                                         f"skipped, not executed:\n{r.stderr}")
-                    fail_line = next((ln for ln in r.stderr.splitlines() if "[FAIL] module-alone" in ln), "")
-                    self.assertTrue(fail_line, f"no `[FAIL] module-alone` line on the {boundary} refusal:\n{r.stderr}")
-                    self.assertIn(MARKED_SENTINEL, fail_line,
-                                  f"the module-alone refusal does not carry the marked test's own failure, "
+                    fail_line = next((ln for ln in r.stderr.splitlines() if f"[FAIL] {lane}" in ln), "")
+                    self.assertTrue(fail_line, f"no `[FAIL] {lane}` line on the {boundary} refusal:\n{r.stderr}")
+                    # the full-suite lane names the test and keeps the traceback in its log
+                    evidence = fail_line + (log.read_text(encoding="utf-8") if lane == "full-suite" else "")
+                    self.assertIn(MARKED_SENTINEL, evidence,
+                                  f"the {lane} refusal does not carry the marked test's own failure, "
                                   f"so it did not execute at {boundary}:\n{r.stderr}")
                     # the re-run the refusal prints must reach the same test, or it reads green
                     self.assertIn(f"re-run: SDLC_STUDIO_BOUNDARY_SUITE=1 python3", r.stderr,
@@ -691,12 +690,12 @@ class BoundaryMarkerReachesThePushTests(unittest.TestCase):
             # behind, deleted between the pushes so EACH boundary proves its own execution.
             ran = fx.clone / "marked-test-ran.txt"
             marked.write_text(MARKED_GREEN.format(ran=str(ran)), encoding="utf-8")
-            for refspec, boundary in (("main", "push"), ("v0.0.1", "release")):
+            for refspec, boundary, lane in (("main", "push", "full-suite"), ("v0.0.1", "release", "module-alone")):
                 with self.subTest(control=boundary):
                     ran.unlink(missing_ok=True)
                     r = fx.push(refspec, gh_mode="empty")
                     self.assertEqual(0, r.returncode, f"the green control's {boundary} push was refused:\n{r.stderr}")
-                    self.assertIn("[PASS] module-alone", r.stderr, r.stderr)
+                    self.assertIn(f"[PASS] {lane}", r.stderr, r.stderr)
                     self.assertTrue(ran.exists(), f"the marked test was skipped at {boundary}, not executed")
             self.assertEqual(1, fx.remote_count(), "the green control's branch push did not land")
             self.assertIn("v0.0.1", _git(fx.remote, "tag", "-l").stdout, "the green control's tag did not land")

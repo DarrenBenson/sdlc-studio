@@ -79,12 +79,16 @@ reach.
 | Moment | What runs | Why |
 | --- | --- | --- |
 | A commit | the tests the changed files reach | the answer is cheap to correct, and a five-minute wait per commit is what trains people to batch commits or reach for `--no-verify` |
-| A **push** | everything | the change is leaving your tree |
-| A **release** | everything | a tag is a claim other people rely on |
+| A **push** | the full suite, once, plus the standard lanes | the change is leaving your tree |
+| A **release** | the full suite plus the three lanes below | a tag is a claim other people rely on |
 | A sprint **close** | everything | the close is the moment the batch is declared done |
 
-Three lanes bind at the push and release boundaries and nowhere else, because each costs
-minutes: `release-rehearsal` drives a greenfield init and a v4 upgrade end to end;
+At a push and a tag, `full-suite` runs every test module of both suites once, as `--run-tests`
+runs a selection: in parallel under pytest-xdist, the `serial_only` tests after. It blocks, names
+each failing test, and keeps the whole output in `sdlc-studio/.local/boundary-suite-last.log`.
+
+Three lanes bind at the release boundary and nowhere else, because each costs minutes a push
+should not pay: `release-rehearsal` drives a greenfield init and a v4 upgrade end to end;
 `revert-check` (advisory) re-runs each batch unit's verifiers with its change reverted;
 `module-alone` runs every skill test module alone under `unittest` in a fresh interpreter from
 the repository root, in parallel, with the `serial_only` partition after - the run that sees a

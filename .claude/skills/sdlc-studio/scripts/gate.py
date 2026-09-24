@@ -824,7 +824,7 @@ BLOCKING_ON_ERROR = {
     "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
     "lessons-summary", "lessons-validity", "handoff", "review-legs",
     "engagement-floor", "review-current", "close-owed", "window",
-    "changelog-fragments", "derived-depth", "evidence-drift", "module-alone",
+    "changelog-fragments", "derived-depth", "evidence-drift", "module-alone", "full-suite",
 }
 
 def _changelog(root: str) -> dict:
@@ -1090,9 +1090,9 @@ def _release_rehearsal(root: str) -> dict:
     cannot occupy, and walking them by hand once turned up three consumer-facing defects that the
     whole suite and every other lane had missed.
 
-    Bound to the push and release boundaries, never to a per-commit run. The gate is already over
-    its budget on most commits and this lane builds two fixture projects; a guard whose cost is
-    paid on every commit gets switched off, and then it guards nothing.
+    Bound to the release (tag) boundary only. It builds two fixture projects, minutes a push
+    should not pay; a guard whose cost is paid too often gets switched off, and then it guards
+    nothing.
     """
     import subprocess  # noqa: PLC0415 - local: only this lane spawns the harness
     script = Path(root) / "tools" / "rehearse-release.sh"
@@ -1148,6 +1148,51 @@ def _clip_reason(text: str, limit: int = 300) -> str:
     return (head.rsplit(" ", 1)[0] if " " in head else head) + " ..."
 
 
+def _full_suite(root: str) -> dict:
+    """PUSH-BOUNDARY lane: every test module of both suites, run ONCE.
+
+    Per-commit selection follows direct edges only, so a hook, test infrastructure or a library
+    reached through another script selects nothing on a commit; this lane is what catches those.
+    Run as the commit hook runs a selection (`run_tests_plan`): across every core under
+    pytest-xdist, the `serial_only` tests after. A red run names each failing test and keeps the
+    whole output in `sdlc-studio/.local/boundary-suite-last.log`, since the gate prints one line.
+    """
+    import importlib.util  # noqa: PLC0415
+    import subprocess  # noqa: PLC0415 - local: only this lane spawns the runner
+    modules = suite_modules(root)
+    if not modules:
+        return {"count": 0, "blocking": False, "detail": "N/A (no test suites under --root)"}
+    if importlib.util.find_spec("pytest") is None:
+        return {"count": 1, "blocking": True,
+                "detail": "pytest is not installed, so the full suite cannot run here"}
+    parallel = importlib.util.find_spec("xdist") is not None
+    outputs, failed, summaries = [], [], []
+    for argv in run_tests_plan(modules, parallel, root):
+        cp = subprocess.run(argv, cwd=root, capture_output=True, text=True, check=False)
+        text = cp.stdout + cp.stderr
+        outputs.append(text)
+        lines = [ln for ln in text.splitlines() if ln.strip()]
+        summaries.append(lines[-1].strip("= ") if lines else "no output")
+        if cp.returncode not in (0, 5):     # 5: a phase that collected nothing
+            named = [ln.split(" - ")[0].removeprefix("FAILED ").removeprefix("ERROR ")
+                     for ln in lines if ln.startswith(("FAILED ", "ERROR "))]
+            failed.extend(named or [f"exit {cp.returncode}: {summaries[-1]}"])
+    failed = list(dict.fromkeys(failed))    # xdist reports a collection error once per worker
+    how = f"{len(modules)} module(s){' in parallel' if parallel else ''}: {'; '.join(summaries)}"
+    log = Path(root) / "sdlc-studio" / ".local" / "boundary-suite-last.log"
+    if not failed:
+        log.unlink(missing_ok=True)         # an earlier red's log must not outlive a green
+        return {"count": 0, "blocking": True, "detail": how}
+    try:
+        log.parent.mkdir(parents=True, exist_ok=True)
+        log.write_text("\n".join(outputs), encoding="utf-8")
+        kept = f"; output in {log.relative_to(root)}"
+    except OSError:
+        kept = ""
+    return {"count": len(failed), "blocking": True,
+            "detail": f"{len(failed)} red - {', '.join(failed)} - {how}{kept}"}
+
+
 def _module_alone(root: str) -> dict:
     """BOUNDARY lane: every skill test module run ALONE, under the unittest runner, in a fresh
     interpreter, from the repository root.
@@ -1165,9 +1210,8 @@ def _module_alone(root: str) -> dict:
     delivery); the `serial_only` partition is read the runner's way - the marker,
     through `pytest --collect-only -m serial_only`, never a source scan - and those modules run
     in a serial phase after the parallel one, as the suite's runner partitions them. Bound at the
-    push and release boundaries only, on `release-rehearsal`'s precedent: minutes per run is a
-    cost the per-commit gate cannot carry, and a guard whose cost is paid on every commit gets
-    switched off.
+    release (tag) boundary only, on `release-rehearsal`'s precedent: minutes per run is a cost a
+    push should not carry beside the full suite it already pays.
     """
     import os  # noqa: PLC0415
     import subprocess  # noqa: PLC0415 - local: only this lane spawns interpreters
@@ -1378,10 +1422,9 @@ def _evidence_drift(root: str) -> dict:
 def _revert_check(root: str) -> dict:
     """ADVISORY boundary lane: units whose own verifiers stay green with the change reverted.
 
-    Bound at the push and release boundaries only, on `release-rehearsal`'s precedent. Reverting
-    and re-running a unit's selectors costs minutes; the per-commit gate is already at its
-    ceiling, and a lane whose cost is paid on every commit gets switched off - and then it
-    guards nothing.
+    Bound at the release (tag) boundary only, on `release-rehearsal`'s precedent. Reverting
+    and re-running a unit's selectors costs minutes, and a lane whose cost is paid on every push
+    gets switched off - and then it guards nothing.
 
     ADVISORY while its yield is measured. A new blocking check on a gate already over budget
     earns its place on a number rather than on an assertion, which is the term the claim-drift
@@ -2415,7 +2458,7 @@ def run_gate(root: str = ".", only: list[str] | None = None,
              require_lessons: bool = False, require_handoff: str | None = None,
              require_review: bool = False, require_close: bool = False,
              conformance_scope: "set[str] | None" = None,
-             record_cost: bool = False, boundary_lanes: bool = False) -> dict:
+             record_cost: bool = False, boundary: str | None = None) -> dict:
     """Run the selected checks and report. `ok` is False only when a BLOCKING check
     fails; a non-blocking failure is reported but does not fail the gate. `require_retro`
     is the SPRINT-CLOSE gate: it binds a blocking check that the named batch retro exists,
@@ -2509,19 +2552,16 @@ def run_gate(root: str = ".", only: list[str] | None = None,
             bound.append("changelog-fragments")
         else:
             downgraded.append("release.changelog")
-    if boundary_lanes:
-        # The two paths a user arrives on are DRIVEN, not reasoned about. Bound at the BOUNDARY -
-        # `--boundary push|release` - and NOT by the `--release` mode flag, which is the pre-tag
-        # lane set rather than a boundary. Binding it to the mode refused every existing
-        # `--release --only <lane>` run, and a lane nothing can select around makes the mode
-        # unusable for anything narrower than the whole gate.
+    # The boundary lanes, REGISTERED rather than BOUND, so a `--boundary push --only <lane>` run
+    # stays a caller deliberately narrowing. Keyed on the BOUNDARY, not the `--release` mode flag,
+    # which is the pre-tag lane set: binding lanes to the mode refused every `--release --only`.
+    # A push pays the full suite ONCE; the lanes that cost minutes each stay at the tag.
+    if boundary in ("push", "release"):
+        registry["full-suite"] = _full_suite
+    if boundary == "release":
         registry["release-rehearsal"] = _release_rehearsal
         registry["revert-check"] = _revert_check
         registry["module-alone"] = _module_alone
-        # REGISTERED, not BOUND. Binding it refused every `--boundary push --only <lane>` run,
-        # which the base ref supported for every other lane - a scoped boundary run is a caller
-        # deliberately narrowing, and the refusal named mode flags they had not passed. The same
-        # argument that kept this lane off `--release` applies here.
     # The sprint close scopes conformance to the BATCH it owns. On a clean tree the diff scope is
     # empty, so the default lane judges the whole workspace and blocks an in-batch close on another
     # author's out-of-batch debt. Applied AFTER the release swap - a TAG still judges
@@ -2805,6 +2845,13 @@ def reach_index(root: str) -> dict:
     return out
 
 
+def suite_modules(root: str = ".") -> list[str]:
+    """Every test module of both suites, repo-relative: the whole of what a full run covers."""
+    base = Path(root)
+    return sorted(f"{suite}/{p.name}" for suite in TEST_SUITE_DIRS
+                  if (base / suite).is_dir() for p in (base / suite).glob("test_*.py"))
+
+
 def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
     """The test modules `changed` reaches, or an unresolved verdict meaning "run all".
 
@@ -2816,9 +2863,7 @@ def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
     """
     result: dict = {"resolved": False, "selectors": [], "total": 0, "excluded": 0,
                     "reason": ""}
-    base = Path(root)
-    modules = sorted(f"{suite}/{p.name}" for suite in TEST_SUITE_DIRS
-                     if (base / suite).is_dir() for p in (base / suite).glob("test_*.py"))
+    modules = suite_modules(root)
     if not modules:
         result["reason"] = "no test suites here to select from - running everything"
         return result
@@ -3075,12 +3120,12 @@ def cmd_gate(args: argparse.Namespace) -> int:
     # Resolved through the shared reader so `--boundary` and SDLC_GATE_BOUNDARY agree, and an
     # unrecognised value is refused rather than quietly read as "no boundary".
     try:
-        at_boundary = resolve_boundary(args) in ("push", "release")
+        boundary = resolve_boundary(args)
     except BoundaryError as exc:
         print(f"gate: refused - {exc}", file=sys.stderr)
         return 2
     report = run_gate(args.root, only=_split(args.only), skip=_split(args.skip),
-                      boundary_lanes=at_boundary,
+                      boundary=boundary,
                       require_retro=getattr(args, "require_retro", None), release=release,
                       allow_external=getattr(args, "allow_external", False),
                       require_lessons=getattr(args, "require_lessons", False),
