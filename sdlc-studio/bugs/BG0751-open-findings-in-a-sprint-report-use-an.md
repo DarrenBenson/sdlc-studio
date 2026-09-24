@@ -36,3 +36,4 @@ Use the half-open bound (`when >= hi`) for timestamped stamps, and exclude date-
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-24 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Recurred after a seal: RPT0008 checked VALID at dcbee3d4, then BG0762, filed the same day after the seal, entered the re-derivation's known issues through the date-level Created fallback, and `check` now reads the signed page INVALID. Nothing about the run changed |
