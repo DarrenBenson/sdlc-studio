@@ -31,8 +31,8 @@
 - **Given** a runbook step naming a command absent from the shipped surface
 - **When** the guard runs
 - **Then** it fails naming the step, because a runbook that has rotted is worse than none
-- **Verify:** pytest tools/tests/test_runbook.py::RunbookTests::test_a_missing_command_fails_the_guard
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0879: tools/runbook.py, with its runbook lane, was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ## Revision History
 

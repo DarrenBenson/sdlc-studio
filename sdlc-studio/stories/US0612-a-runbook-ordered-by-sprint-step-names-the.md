@@ -23,16 +23,16 @@
 - **Given** the runbook as shipped
 - **When** it is read
 - **Then** it covers plan, groom, batch, deliver a unit, review a unit and close in that order, each naming the one command that performs it and its fields-file path where prose is involved
-- **Verify:** pytest tools/tests/test_runbook.py::RunbookTests::test_every_step_names_its_command
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0879: tools/runbook.py, with its runbook lane, was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ### AC2: each step names the hand-rolled shape it replaces
 
 - **Given** any step in the runbook
 - **When** it is read
 - **Then** it names what an agent would otherwise hand-roll, so the entry is findable from the wrong instinct rather than only from the right one
-- **Verify:** pytest tools/tests/test_runbook.py::RunbookTests::test_each_step_names_what_it_replaces
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0879: tools/runbook.py, with its runbook lane, was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ## Revision History
 

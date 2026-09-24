@@ -22,8 +22,8 @@
 - **Given** the real commit `67fc683f` and the tree as it stood at that point, where `changelog.d/BG0413.md` asserted the collapse signal exits 2 while the hunk moved the code to 3
 - **When** the claim-drift lane is replayed over that commit against that tree
 - **Then** it names `changelog.d/BG0413.md` - the exact stale claim BG0471 was filed for
-- **Verify:** pytest tools/tests/test_claim_drift_replay.py::ReplayTests::test_the_lane_names_the_prose_drift_finding
-- **Verified:** yes (2026-08-01)
+- **Verify:** manual - retired by US0879: the advisory claim-drift lane this replayed was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 > **NARROWED, and the limit recorded (D0106).** The criterion first read "names all three". The
 > replay this story exists to run is what disproved it: the three findings are not one class.
@@ -38,16 +38,16 @@
 - **When** the lane is replayed over it
 - **Then** it reports nothing, so the replay cannot be satisfied by a lane that flags everything - the control without which AC1 proves only that the lane fires
 
-- **Verify:** pytest tools/tests/test_claim_drift_replay.py::ReplayTests::test_a_clean_diff_replays_silent
-- **Verified:** yes (2026-08-01)
+- **Verify:** manual - retired by US0879: the advisory claim-drift lane this replayed was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ### AC3: the before-and-after is recorded as a number, not a claim
 
 - **Given** the recorded verdicts of RUN-01KYX375
 - **When** the replay runs
 - **Then** the blocking-finding count before and after the scoping rule is written to the evidence directory with the units it covers, so the sprint's justification is a figure a later reader can check rather than a sentence in a retro
-- **Verify:** pytest tools/tests/test_claim_drift_replay.py::ReplayTests::test_the_before_and_after_is_recorded
-- **Verified:** yes (2026-08-01)
+- **Verify:** manual - retired by US0879: the advisory claim-drift lane this replayed was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ## Revision History
 

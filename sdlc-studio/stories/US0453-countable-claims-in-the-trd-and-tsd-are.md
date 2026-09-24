@@ -22,32 +22,32 @@
 - **Given** a claim in the TRD or TSD marked derivable, such as the number of command types or of shipped scripts
 - **When** the checker runs against a census of the repo
 - **Then** a claim disagreeing with the census is reported with both the claimed and the counted value, and a claim agreeing with it passes
-- **Verify:** pytest tools/tests/test_check_spec_claims.py::CountableClaimTests::test_a_claim_disagreeing_with_the_census_fails
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0879: tools/check_spec_claims.py, with its spec-claims lane, was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ### AC2: the expected count is derived from the tree, never stored
 
 - **Given** the shipped set changes, a script being added or removed
 - **When** the checker runs with no edit to the checker
 - **Then** the expected number moves with the repo, because the check counts the tree rather than reading a total recorded earlier
-- **Verify:** pytest tools/tests/test_check_spec_claims.py::CountableClaimTests::test_the_expected_count_is_derived_from_the_tree_not_stored
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0879: tools/check_spec_claims.py, with its spec-claims lane, was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ### AC3: a marked claim that cannot be checked is reported, not skipped
 
 - **Given** a claim marked derivable whose value cannot be parsed, or one naming a census the checker does not know
 - **When** it runs
 - **Then** it reports that claim as unchecked and exits non-zero, rather than passing over it in silence
-- **Verify:** pytest tools/tests/test_check_spec_claims.py::CountableClaimTests::test_an_unparseable_marked_claim_is_reported_not_skipped
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0879: tools/check_spec_claims.py, with its spec-claims lane, was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ### AC4: the check runs in the gate people already run
 
 - **Given** the repo's quality gate
 - **When** it runs
 - **Then** the spec-claim check is one of its lanes, so drift is caught at the commit that causes it rather than at the next audit
-- **Verify:** pytest tools/tests/test_check_spec_claims.py::GateLaneTests::test_the_spec_claim_check_is_a_gate_lane
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0879: the spec-claims lane, with tools/check_spec_claims.py, was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ## Revision History
 

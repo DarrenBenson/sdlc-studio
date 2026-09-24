@@ -70,21 +70,23 @@ protection read-back shows none.
 
 The pre-commit lanes, recorded here because a review once found the repo's own account of its
 gates incomplete, and a guard nobody has written down is one nobody notices losing. The hook
-prints each lane's rule and fix on failure, so this is the roster, not the manual:
-`lint-style.sh`, `check_links.py`, `check_budgets.py`, `check_versions.py`,
-`check_spec_claims.py`, `check_script_tests.py`, `check_neutrality.py`,
-`check_action_pins.sh`, `validate_skill.py`, `verify_ac.py`, `readiness.py`, `runbook.py`,
-`best_practice_rules.py` (the shipped testing practice states the entry-point rule; it existed
-and was wired into nothing until BG0493),
-`validate.py` (the warning ratchet), `stamps-staged` (`verify_ac.py stamps --staged`, which refuses a
-commit that stages a rename or deletion of a test node a stamped `Verify:` selector names, judging
-the staged blobs by AST - the write-time guard cannot see a rename, and the scheduled corpus lane that
-can was red three weeks unread, BG0653), `changelog-shape` (`changelog.py shape --staged`, which
-refuses a commit that stages a `changelog.d/` fragment the release cut's `compose` could not fold,
-naming every one with compose's own message and judging the staged blob - nothing opened a
-fragment before the cut, and 59 of 119 had drifted past it, BG0662), plus `gate.py`'s
-own block (conformance, reconcile, validate, integrity, duplicate-id, docs,
-derived-depth, evidence-drift) and markdownlint.
+prints each lane's rule and fix on failure, so this is the roster, not the manual. `pre-commit`
+runs `style` (`lint-style.sh`), `links` (`check_links.py`), `skill-spec` (`validate_skill.py`),
+`versions` (`check_versions.py`), `verify-ratchet` (`verify_ac.py lint --ratchet --bugs`),
+`stamps-staged` (`verify_ac.py stamps --staged`, which refuses a commit that stages a rename or
+deletion of a test node a stamped `Verify:` selector names, judging the staged blobs by AST - the
+write-time guard cannot see a rename, and the scheduled corpus lane that can was red three weeks
+unread, BG0653), `changelog-shape` (`changelog.py shape --staged`, which refuses a commit that
+stages a `changelog.d/` fragment the release cut could not fold, naming every one with the cut's
+own message and judging the staged blob - nothing opened a fragment before the cut, and 59 of 119
+had drifted past it, BG0662), `warning-ratchet` (`validate.py warning-ratchet`), `script-tests`
+(`check_script_tests.py`), `budgets` (`check_budgets.py`), `neutrality` (`check_neutrality.py`),
+`dead-flags` (`command_audit.py --dead-flags`), `action-pins` (`check_action_pins.sh`),
+`floor-pending` (`engagement_floor.py check --pending`), `gate.py`'s own block (conformance,
+reconcile, validate, integrity, duplicate-id, docs, derived-depth, `evidence-drift`, and `window`,
+the one concurrent-write window check), and `markdown` and `markdown-payload` (markdownlint).
+`commit-msg` checks the message rules, then runs `skill-tests` (`skill-tests.sh`) and `tool-tests`
+when `pre-commit` selected the suites.
 One of those, `evidence-drift`, is BLOCKING and guards the mutation ledger: a commit whose staged
 file drifts a delivered unit's registered mutant rows is refused with the unit, the file, the rows
 and the re-register remedy named, and drift that predates the commit is reported, never refused.
@@ -92,6 +94,7 @@ One lane spans BOTH hooks: `repo-writes` (`tools/repo_writes.py`) snapshots the
 working tree in `pre-commit` at the moment the suites are selected, and refuses in `commit-msg`
 if running them modified a tracked file, created an untracked one, or touched gitignored
 `sdlc-studio/.local/`. It costs two directory reads and never a second suite run.
+
 One lane is deliberately NOT per-commit: `release-rehearsal` binds at the **push and release
 boundaries only** (`gate.py --boundary push|release`, invoked by `.githooks/pre-push`: a branch ref
 is the push boundary, a tag ref the release boundary, and `tools/boundary_roster.py` refuses a
@@ -121,12 +124,9 @@ D0180's full suite and never per commit. It reads the marker through pytest, so 
 without pytest is refused at the boundary with the reason named rather than run without the
 partition.
 
-One lane is ADVISORY and cannot fail a commit: `claim-drift`, which reports where a diff's
-code and the diff's own prose disagree. It ships advisory while its yield is measured,
-because a new blocking check on a gate already over its ceiling earns its place on a
-number rather than on assertion.
-`tools/tests/test_check_spec_claims.py` pins that this roster names its checker; extend the
-pinning when you add a lane, or the list silently exempts whatever it forgot - LL0013 in the
+`tools/tests/test_lean_commit_lanes.py` pins that the per-commit roster above names exactly the
+lanes the hooks run, in both directions; extend it when you add a lane, or the list silently
+exempts whatever it forgot - LL0013 in the
 [lessons registry](.claude/skills/sdlc-studio/lessons/_index.md).
 
 ## Non-negotiable rules

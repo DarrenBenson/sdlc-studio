@@ -47,8 +47,8 @@
 - **Given** the shipped `.githooks/commit-msg`
 - **When** it is read
 - **Then** it invokes the check and REFUSES there, rather than setting a flag section 2 resets - a lane that sets a variable nobody reads is the library-not-lane defect in a shell script
-- **Verify:** pytest tools/tests/test_run_suite.py::CommitClaimLaneTests::test_the_lane_is_wired_into_the_hook
-- **Verified:** yes (2026-08-01)
+- **Verify:** manual - retired by US0879: commit-msg's suite-claim lane was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ### AC5: a current green verdict passes
 

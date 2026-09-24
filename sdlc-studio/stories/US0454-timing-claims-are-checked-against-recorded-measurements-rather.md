@@ -22,16 +22,16 @@
 - **Given** a timing claim in the TSD and a recorded measurement history showing a materially different duration
 - **When** the checker runs
 - **Then** it fails, naming the claim, the bound it asserts and the measured value that contradicts it
-- **Verify:** pytest tools/tests/test_check_spec_claims.py::TimingClaimTests::test_a_timing_claim_contradicted_by_measurement_fails
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0879: tools/check_spec_claims.py's timing claims, with its spec-claims lane, was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ### AC2: an absent measurement is unverifiable, never a pass
 
 - **Given** a timing claim for which no measurement has been recorded yet
 - **When** the checker runs
 - **Then** it reports the claim as unverifiable and says so plainly, rather than treating a missing measurement as agreement
-- **Verify:** pytest tools/tests/test_check_spec_claims.py::TimingClaimTests::test_absent_measurement_is_unverifiable_not_a_pass
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0879: tools/check_spec_claims.py's timing claims, with its spec-claims lane, was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ## Revision History
 

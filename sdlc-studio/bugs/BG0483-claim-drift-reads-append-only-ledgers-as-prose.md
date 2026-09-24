@@ -35,16 +35,16 @@ Exclude append-only ledgers from the prose corpus - the verdict logs, evidence l
 - **Given** a diff touching `critic.py` alongside a row appended to the verdict log
 - **When** the drift lane runs
 - **Then** nothing is reported from the ledger, because a verdict row records a judgement somebody made and asserts nothing a diff could contradict
-- **Verify:** pytest tools/tests/test_precommit_claim_drift.py::LedgerExclusionTests::test_a_verdict_ledger_is_not_read_as_prose
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0879: the advisory claim-drift lane was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ### AC2: ordinary paperwork in the same diff still fires
 
 - **Given** a changelog fragment in that same diff stating a replaced value
 - **When** the lane runs
 - **Then** it is still reported, so excluding ledgers does not become excluding paperwork - which is the whole point of the lane
-- **Verify:** pytest tools/tests/test_precommit_claim_drift.py::LedgerExclusionTests::test_ordinary_prose_in_the_same_diff_still_fires
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0879: the advisory claim-drift lane was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ## Revision History
 

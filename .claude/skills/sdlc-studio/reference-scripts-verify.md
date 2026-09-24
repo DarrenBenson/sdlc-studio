@@ -186,7 +186,13 @@ is **stale** - that file was edited since its mutant ran; no entry at all is **u
 live while that text occurs exactly once in the target and stale otherwise, whatever else in the
 file changed - so an edit somewhere else in a shared target no longer stales every unit's
 evidence at once. A row with no anchor (every row written before this) keeps the whole-file
-rule. Both the commit-time evidence-drift lane and the join the terminal transition reads
+rule. `register` applies it too: registering on changed bytes carries the registering unit's
+own earlier rows whose anchor still occurs once onto the current entry, and drops only the rest;
+another unit's rows stay on their own entry, where the per-row rule still reads them live. A
+carry never evicts a row: past the per-entry cap, a row stays where it is. The evidence-drift
+lane refuses under `review.mutation_evidence` `block` or `report`; under `off` it reports the
+drift and passes the commit. Both the commit-time evidence-drift lane and the join the terminal
+transition reads
 (`plan_execution`) apply the same rule, so the two cannot disagree about whether a row counts. The
 report's `target_hashes` is deliberately not read as coverage: it is written for every file
 named as a target before any verdict exists, so a refused run would report its targets covered.

@@ -704,9 +704,8 @@ def _window(root: str) -> dict:
     this lane does not look for mutants and does not lean on the suite: it reads the declaration.
 
     It judges the STAGED PATHS, not the record's existence. A lane that failed on existence
-    alone froze the whole tree for a review's duration while the pre-commit hook - reading the
-    same records - printed "no staged path is claimed by it, so this commit proceeds": one run
-    saying both, and the blocking one winning. The window scopes staging; it does not stop work.
+    alone froze the whole tree for a review's duration. The window scopes staging; it does not
+    stop work.
 
     REFUSE rather than warn (D0053) for a path a window claims. A warning is what the observed
     failure mode defeats: in a passing run it reads as noise, and the run that matters is
@@ -714,7 +713,9 @@ def _window(root: str) -> dict:
     author running the gate learns of the concurrent writer before staging into it.
 
     Discovery and parsing are `mutation`'s, so the rule that an unreadable record counts as OPEN
-    has ONE home rather than a copy here that could drift the safe way into 'closed'."""
+    has ONE home rather than a copy here that could drift the safe way into 'closed'. This lane
+    is the only window check a commit runs: the pre-commit hook reaches it through the standard
+    gate and carries no copy of its own."""
     import mutation
     held = mutation.read_windows(root)
     if not held:
@@ -722,12 +723,9 @@ def _window(root: str) -> dict:
     staged = _window_staged(root)
     lines, claiming = [], 0
     for win in held:
-        # The record's claims as `mutation.window_claims` normalised them - ONE reading, shared
-        # with the hook's inline reader and pinned against it by test, rather than a second
-        # derivation here. The two readings diverged once: a record naming no owner had its
-        # `paths` discarded upstream and was re-read here as claiming the whole tree, while the
-        # hook read the same record as claiming one file and let the commit proceed. What is
-        # DISPLAYED is what was MATCHED on, so a refusal can be checked on its face.
+        # The record's claims as `mutation.window_claims` normalised them - ONE reading rather
+        # than a second derivation here. What is DISPLAYED is what was MATCHED on, so a refusal
+        # can be checked on its face.
         claims = win["paths"]
         if staged is None:
             hit = ["(the staged file list could not be read, so every path is treated "
@@ -745,15 +743,18 @@ def _window(root: str) -> dict:
         # claiming what this commit stages is worse news than one. A fixed 1 could not report
         # the multi-writer case the reader was generalised to see.
         claiming += 1
+        # Self-diagnosing, because this is the commit's only window check: the scoped-staging
+        # remedy, the owner's clearing command, and the record to delete once its owner is gone.
         lines.append(f"a rewrite window is OPEN and claims a STAGED path - {note}; staged: "
                      f"{', '.join(hit)}. A commit now stages whatever that process has left on "
-                     f"disk. Wait for it, or clear it: {win['clear_with']}")
+                     f"disk. Stage only unclaimed paths by name (`git add <path> ...`, never "
+                     f"`git add -A`), wait for it, or clear it: {win['clear_with']}; a record a "
+                     f"killed process left behind: rm {win.get('record_path', '')}")
     return {"count": claiming, "blocking": True, "detail": "; ".join(lines)}
 
 
 def _window_claims(pattern, staged: str) -> bool:
-    """True when `pattern` covers the staged path. Kept identical in rule to the pre-commit
-    hook's own matcher, and pinned against it by test: a claim this cannot INTERPRET (anything
+    """True when `pattern` covers the staged path. A claim this cannot INTERPRET (anything
     that is not a string, an absolute path, or one that traverses out of this root) claims
     EVERYTHING, because the record says a writer is active and a matcher that shrugged would
     report it as harmless."""
@@ -1265,9 +1266,17 @@ def _evidence_drift(root: str) -> dict:
     target that exists neither at HEAD nor on disk, and rows of a unit not yet delivered are
     REPORTED by unit with the same remedy and never refused, so the lane names earlier drift
     without refusing the commit that ships it.
+
+    The project's `review.mutation_evidence` decides whether a drift refuses. `off` stands the
+    evidence down, so the lane reports what it finds and refuses nothing - a switched-off
+    ceremony that still blocks commits is paid for and never used. `block` and `report` both
+    refuse: under `report` the rows still feed the survivor findings, so drifted rows are still
+    evidence being read. An unrecognised mode raises, and this lane blocks on a raise.
     """
     import mutation as _mu  # noqa: PLC0415 - deferred; it owns the ledger
     root = Path(root)
+    enforced = _mu.evidence_mode(root) != "off"
+    off_note = "" if enforced else "review.mutation_evidence is off - reported, not refused: "
     state, _reset = _mu._load_ledger(_mu.ledger_path(root))
     registered = [e for e in state.get("entries", []) or []
                   if isinstance(e, dict) and _mu.entry_provenance(e) == _mu.PROVENANCE_REGISTERED]
@@ -1277,9 +1286,10 @@ def _evidence_drift(root: str) -> dict:
         return {"count": 0, "blocking": True, "detail": "no registered mutant rows in the ledger - nothing to drift"}
     staged = _window_staged(str(root))
     if staged is None:
-        return {"count": 1, "blocking": True,
-                "detail": "git could not be asked which paths are staged while the ledger holds "
-                          "registered rows - refused rather than passed blind, like the repo-writes lane"}
+        return {"count": 1, "blocking": enforced,
+                "detail": off_note + "git could not be asked which paths are staged while the "
+                          "ledger holds registered rows - refused rather than passed blind, like "
+                          "the repo-writes lane"}
     staged_set = {str(p) for p in staged}
     refused: list[str] = []
     reported: list[str] = []
@@ -1355,8 +1365,8 @@ def _evidence_drift(root: str) -> dict:
             elif staleness == "stale":
                 reported.append(f"{line} (already stale before this commit)")
     if refused:
-        return {"count": len(refused), "blocking": True,
-                "detail": "this commit drifts a delivered unit's registered mutant evidence - "
+        return {"count": len(refused), "blocking": enforced,
+                "detail": off_note + "this commit drifts a delivered unit's registered mutant evidence - "
                           + "; ".join(refused) + f" - {remedy}"
                           + (f"; also reported, not refused: {'; '.join(reported)}" if reported else "")}
     if reported:

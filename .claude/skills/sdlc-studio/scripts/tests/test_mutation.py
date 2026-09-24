@@ -928,14 +928,14 @@ class RegisterTests(unittest.TestCase):
 
     def test_an_edit_to_the_target_starts_a_fresh_entry(self) -> None:
         """The old claim was about bytes that no longer exist. Keeping its counts would carry
-        evidence forward across the very change it says nothing about."""
+        evidence forward across the very change it says nothing about. The edit moves the row's
+        own anchored site: a row whose anchor still occurs once is carried (US0882)."""
         mut = _load()
         with tempfile.TemporaryDirectory() as d:
             root = _fixture(Path(d))
             self._register(mut, root, mutant="before")
-            (root / "target.py").write_text(TARGET + "\ndef extra():\n    return 7\n",
-                                            encoding="utf-8")
-            self._register(mut, root, mutant="after")
+            (root / "target.py").write_text(TARGET.replace("x > 0", "x > 1"), encoding="utf-8")
+            self._register(mut, root, mutant="after", anchor="    if x > 1:")
             entries = self._ledger(root)["entries"]
             self.assertEqual(len(entries), 1)
             self.assertEqual(entries[0]["hash"], self._sha(root / "target.py"))
@@ -2179,7 +2179,7 @@ class WindowClaimNormalisationTests(unittest.TestCase):
 
 
 class WindowRecordNormalisationTests(unittest.TestCase):
-    """ONE record-level normalisation, shared with the pre-commit hook's inline reader.
+    """ONE record-level normalisation, which the pre-commit hook's inline reader once duplicated.
 
     Round 2 of the same review: the two PATTERN matchers agreed, and the RECORD readings did
     not. This reader DISCARDED `paths` whenever `owner` was falsy and passed un-stripped claims

@@ -1,6 +1,6 @@
 # US0882: Mutation evidence that is switched off stops blocking commits
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,10 +19,13 @@
 
 - **AC1:** Given `review.mutation_evidence` off, when a commit drifts a registered mutant row, then the evidence-drift lane reports it and does not refuse
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_off.py::EvidenceDriftTests::test_off_means_reported_not_refused
+  - **Verified:** yes (2026-09-24)
 - **AC2:** Given `review.mutation_evidence` block, when the same commit runs, then it is still refused
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_off.py::EvidenceDriftTests::test_block_still_refuses
+  - **Verified:** yes (2026-09-24)
 - **AC3:** Given a target holding anchored rows whose sites did not move, when another row on that target is re-registered, then the anchored rows are kept, not dropped
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_off.py::EvidenceDriftTests::test_register_keeps_anchored_rows_that_did_not_move
+  - **Verified:** yes (2026-09-24)
 
 ## Revision History
 

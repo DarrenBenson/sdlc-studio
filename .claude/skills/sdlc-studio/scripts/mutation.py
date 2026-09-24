@@ -584,7 +584,7 @@ def window_records(root: Path | str) -> list[Path]:
     `windows/reviewer.json` was then told by `window status` that no window was open, and
     `window open` let a second writer declare one over the same tree: the refusal that exists
     precisely because two declared writers in one tree is the hazard. So discovery lives HERE,
-    once, and the hook's inline reader is pinned against it by test."""
+    once; the hook's inline reader is gone, and the gate's `window` lane calls this."""
     base = window_dir(root)
     found: list[Path] = []
     if base.is_dir():
@@ -603,8 +603,7 @@ def claims_everything(claim) -> bool:
     """Does this single claim cause a MATCHER to refuse every staged path?
 
     The matchers' rule, in one place a caller can ask BEFORE a commit is attempted. It is
-    duplicated in `gate._window_claims` and inline in the pre-commit hook (which must run where
-    these scripts are absent), and the three are pinned against each other by test over a
+    duplicated in `gate._window_claims`, and the two are pinned against each other by test over a
     battery of unrelated paths - NOT over a hand-picked list of spellings, which is how the
     previous version came to agree with the matchers on exactly the shapes it had chosen.
 
@@ -673,16 +672,14 @@ def everything_reason(claim, probes=WINDOW_PROBES) -> str | None:
 def window_claims(raw) -> list[str]:
     """What a record's `paths` field CLAIMS, normalised to what a matcher may be handed.
 
-    The RECORD-level half of the one contract, and its one home here. The pre-commit hook
-    implements the same rule inline - it must run in a clone where these scripts are absent or
-    broken, so it cannot import them - and the two are pinned against each other by test.
+    The RECORD-level half of the one contract, and its one home here: the gate's `window` lane
+    reads records through this module, and the pre-commit hook's inline copy is gone.
 
-    They diverged once, and the divergence is why this exists: this module DISCARDED `paths`
-    whenever `owner` was falsy, and passed un-stripped claims to a matcher where a blank one
-    means the repo root. So `{"paths": ["tools/x.py"]}` was read here as claiming the whole
-    tree while the hook read it as claiming one file - and since the hook runs the gate a few
-    lines later, one commit was told both, with the blocking half winning. A malformed owner
-    must not change which paths are claimed.
+    Two readers diverged once, and the divergence is why this exists: this module DISCARDED
+    `paths` whenever `owner` was falsy, and passed un-stripped claims to a matcher where a blank
+    one means the repo root. So `{"paths": ["tools/x.py"]}` was read here as claiming the whole
+    tree while the hook's copy read it as claiming one file, with the blocking half winning. A
+    malformed owner must not change which paths are claimed.
 
     `paths` absent, empty, all-blank, not a list, or holding anything that is not a string
     reads as EVERYTHING: a claim nobody can interpret comes from a record saying a writer is
@@ -2023,7 +2020,9 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     accidentally read one file and miss the other.
 
     Keyed on the target's content hash, exactly as a run's entry is: an edit to the target
-    starts the entry again, because the earlier claim was about bytes that no longer exist.
+    starts the entry again, because the earlier claim was about bytes that no longer exist -
+    except the registering unit's own rows whose anchor still occurs exactly once, which are
+    carried onto the new entry while it has room.
     Registrations on unchanged content ACCUMULATE, since a builder applies many mutants to one
     file across a sprint and overwriting per call would leave the ledger permanently reading 1.
     Accumulation is bounded at MUTANT_LIMIT descriptions per entry, oldest out - the entry
@@ -2167,25 +2166,63 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     # file - and left the commit-time lane nothing to refuse. A stale row reads as not-run to
     # every reader (`entry_staleness`), so the earlier unit cannot reach Fixed on it; it is
     # named, and its remedy is the same re-register.
+    #
+    # A row whose ANCHOR still occurs exactly once in the new bytes is not stale at all: its
+    # site did not move, which is the rule every reader judges a row by (`row_staleness`).
+    # This unit's own such rows are CARRIED onto the current entry - dropping them cost BG0719
+    # twelve good rows when one of its thirteen was re-registered - and the row being
+    # re-registered never is, since the new record replaces it. Other units' rows are not
+    # moved: they stay on their own entry, where `row_staleness` already reads them live, and
+    # carrying them all onto one entry ran it past MUTANT_LIMIT and evicted live rows. Nor is
+    # the cap allowed to evict for a carry: a row with no room left stays where it is.
     me = sdlc_md.norm_id(unit) if unit else None
+    text_now = path.read_text(encoding="utf-8", errors="replace")
     def _own(m):
         return not isinstance(m, dict) or not m.get("unit") or m.get("unit") == me
+    def _key(m):                           # None for a row no join can key
+        if not (m.get("unit") and m.get("criterion")):
+            return None
+        return (m.get("unit"), str(m["criterion"]).upper(), int(m.get("row") or 0))
+    def _site_live(m):
+        return (isinstance(m, dict) and bool(m.get("anchor"))
+                and text_now.count(str(m["anchor"])) == 1)
+    current = (entry or {}).get("mutants") or []
+    held = {_key(m) for m in current + [record] if isinstance(m, dict) and not m.get("withdrawn")}
+    held.discard(None)
+    room = max(0, MUTANT_LIMIT - 1 - len(current))
+    carried: list[dict] = []
+    staying: list[dict] = []
+    for e in reversed(stale):              # newest first, so a newer copy of a row wins
+        for m in e.get("mutants") or []:
+            if not (_own(m) and _site_live(m)) or m.get("withdrawn"):
+                continue
+            k = _key(m)
+            if k in held:
+                continue                   # a newer copy, or the new record, holds this key
+            if k is not None:
+                held.add(k)
+            (carried if len(carried) < room else staying).append(m)
+    moved = {id(m) for m in carried}
+    stays = {id(m) for m in staying}
     dropped_mutants = 0
     kept: list[dict] = []
     mine: list[dict] = []
     for e in stale:
-        own = [m for m in (e.get("mutants") or []) if _own(m)]
-        others = [m for m in (e.get("mutants") or []) if not _own(m)]
+        rows = [m for m in e.get("mutants") or [] if id(m) not in moved]
+        own = [m for m in rows if _own(m) and id(m) not in stays]
+        others = [m for m in rows if not _own(m) or id(m) in stays]
         dropped_mutants += len(own)
         if others:
-            # a shared entry gives up only this unit's own rows; the other units' rows stay
+            # a shared entry gives up only this unit's dropped rows; every other row stays
             e["mutants"] = others
             e["stale"] = {"at": record["at"], "by": me, "hash_now": digest}
             kept.append(e)
         else:
             mine.append(e)
+    # named only for a row every reader now takes as not-run: an unmoved row stays live
     kept_units = sorted({str(m.get("unit")) for e in kept for m in e["mutants"]
-                         if isinstance(m, dict) and m.get("unit") and not m.get("withdrawn")})
+                         if isinstance(m, dict) and m.get("unit") and not m.get("withdrawn")
+                         and not _site_live(m)})
     entries = [e for e in entries if e not in mine]
     if entry is None:
         entry = {"target": rel, "hash": digest, "provenance": PROVENANCE_REGISTERED,
@@ -2196,6 +2233,10 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
         entries.remove(entry)              # re-appended below, so the newest entry sorts last
         entry["git_rev"] = _git_rev(root)
         entry["generated_at"] = record["at"]
+    for m in carried:
+        entry["mutants"].append(m)
+        entry["summary"]["applied"] += 1
+        entry["summary"][m["verdict"]] = entry["summary"].get(m["verdict"], 0) + 1
     # NOT superseded by a later registration for the same mutant, though a review round asked
     # for it. `plan_execution` holds the opposite rule deliberately - the WORST verdict per
     # criterion wins, so a later kill cannot cancel an earlier survivor - and that rule exists
@@ -3151,9 +3192,11 @@ def cmd_register(args: argparse.Namespace) -> int:
         # who registers, edits, then registers again would otherwise see a reassuring "1
         # registered" and never learn that four earlier claims had just gone.
         print(f"  DROPPED {res['dropped_stale']} earlier registration(s) for this target: the "
-              f"file's bytes changed since they were recorded, so they were evidence about code "
-              f"that no longer exists. If those mutants still matter, re-apply and re-register "
-              f"them against the current content - register AFTER the last edit, not before")
+              f"file's bytes changed since they were recorded and their anchor no longer occurs "
+              f"exactly once (or they carried none), so they were evidence about code that no "
+              f"longer exists. Rows whose anchor still occurs once were kept. If the dropped "
+              f"mutants still matter, re-apply and re-register them against the current content "
+              f"- register AFTER the last edit, not before")
     if res.get("kept_stale_units"):
         # Said out loud and NAMED. The rows are kept, not deleted, and they now read
         # as not-run to every reader of the ledger until their unit re-registers them.

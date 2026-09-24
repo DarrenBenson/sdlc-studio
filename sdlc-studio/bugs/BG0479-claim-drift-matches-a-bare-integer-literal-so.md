@@ -82,24 +82,24 @@ number now on disk was measured with the noise included.
 - **Given** a hunk whose added lines carry no integer, so there is no replacement to reason about
 - **When** the lane runs over it
 - **Then** it emits no finding whose code anchor is empty, and a hunk that DOES carry a new value still fires
-- **Verify:** pytest tools/tests/test_precommit_claim_drift.py::DiscriminationTests::test_a_finding_never_names_an_empty_code_anchor
-- **Verified:** yes (2026-08-01)
+- **Verify:** manual - retired by US0879: the advisory claim-drift lane was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ### AC2: a shared digit alone is not a finding
 
 - **Given** prose whose only tie to the changed code is the replaced digit
 - **When** the lane runs over it
 - **Then** nothing is reported, while prose naming the changed subject still is
-- **Verify:** pytest tools/tests/test_precommit_claim_drift.py::DiscriminationTests::test_a_shared_digit_alone_is_not_a_finding
-- **Verified:** yes (2026-08-01)
+- **Verify:** manual - retired by US0879: the advisory claim-drift lane was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ### AC3: the empty-anchor class is gone, not merely smaller
 
 - **Given** the same 40-commit window replayed before and after the repair
 - **When** the recorded arms are read
 - **Then** the before arm records empty-anchor findings and the after arm records none, because a report that cannot name the code it objects to is not actionable by construction
-- **Verify:** pytest tools/tests/test_claim_drift_replay.py::ReplayTests::test_the_after_arm_records_no_empty_anchors
-- **Verified:** yes (2026-08-01)
+- **Verify:** manual - retired by US0879: the advisory claim-drift lane this replayed was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ## Revision History
 

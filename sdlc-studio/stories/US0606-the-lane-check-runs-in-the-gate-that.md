@@ -23,8 +23,8 @@
 - **Given** a commit touching a CLI-bearing script
 - **When** the gate runs
 - **Then** the lane-check runs with it and reports on a channel that cannot fail the commit
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::LaneCheckLaneTests::test_the_lane_runs_and_does_not_block
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0879: the advisory lane-check lane was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ### AC2: its yield accumulates where a decision can read it
 

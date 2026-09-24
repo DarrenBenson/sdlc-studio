@@ -5778,39 +5778,12 @@ class ADeclaredIdMustNameARealArtefactTests(unittest.TestCase):
 
 
 class LaneCheckLaneTests(unittest.TestCase):
-    """The lane-check must run in the gate, advisorily, with its yield recorded.
+    """`verify_ac.py lane-check` runs through its own command, with its yield recorded.
 
-    A detector nobody runs finds nothing, and a yield nobody accumulates cannot support the
-    decision to make it block. Both halves are pinned because the first version of the
-    claim-drift accumulator wrote to a TRACKED path and dirtied the tree on every commit
-    (BG0481).
+    US0879 deleted the advisory commit lane that ran it; the command stays for a hand run. The
+    yield is pinned because the first version of the claim-drift accumulator wrote to a TRACKED
+    path and dirtied the tree on every commit (BG0481).
     """
-
-    # scripts/tests -> scripts -> sdlc-studio -> skills -> .claude -> REPO ROOT
-    HOOK = Path(__file__).resolve().parents[5] / ".githooks" / "pre-commit"
-
-    def test_the_lane_runs_and_does_not_block(self) -> None:
-        """MUTANT: delete the lane from the hook, or let its exit code reach the gate."""
-        text = self.HOOK.read_text(encoding="utf-8")
-        self.assertIn("lane-check", text,
-                      "the pre-commit hook never runs lane-check, so the detector finds "
-                      "nothing on any real commit")
-        self.assertIn("verify_ac.py", text,
-                      "the hook mentions lane-check but never invokes verify_ac")
-        # ANCHORED ON THE GUARD'S OWN CALL SITE, not on a fixed window from the first mention
-        # of the word. The 600-character slice ended on the id-gathering pipeline, because the
-        # comment that carries the literal sits above the lane's own code - so the assertion
-        # was reading a `|| true` belonging to a different pipeline, and any window bound that
-        # kept it there satisfied a test written against the number instead of the target.
-        call = text.index('verify_ac.py" lane-check')
-        block = text[call:text.index("\nfi\n", call)]
-        self.assertTrue(block.startswith('verify_ac.py" lane-check'),
-                        f"the examined block does not begin at the guard's own call, so the "
-                        f"`|| true` below could belong to any pipeline that happens to fall "
-                        f"inside the window:\n{block[:120]}")
-        self.assertIn("|| true", block,
-                      f"the lane can fail the commit - it ships ADVISORY until its yield is "
-                      f"measured:\n{block}")
 
     def test_the_pass_runs_through_its_own_command(self) -> None:
         """MUTANT: break the `lane-check` subcommand wiring in verify_ac's parser.
@@ -7709,68 +7682,6 @@ class ModuleAloneLaneTests(unittest.TestCase):
         (bare / "sdlc-studio").mkdir()
         n = self._gate("--boundary", "push", "--only", "module-alone", root=bare)
         self.assertIn("N/A (no skill tests directory under --root)", n.stdout + n.stderr)
-
-
-
-class LaneCheckAnchorTests(unittest.TestCase):
-    """BG0493: US0606's assertion took a fixed 600-character window from the first mention of
-    `lane-check`. The comment carrying that literal sits above the lane's own code, so the
-    window landed in commentary and the or-true fallback it found belonged to a different
-    pipeline. Any window bound that kept it there satisfied a test written against the number
-    rather than the target."""
-
-    HOOK = Path(__file__).resolve().parents[5] / ".githooks" / "pre-commit"
-
-    #: A hook on which the two readings DISAGREE, which is the only shape that can tell them
-    #: apart. The first mention of the keyword sits in a comment; an unrelated pipeline carrying
-    #: `|| true` follows it inside the fixed window; and the lane's own block, past the window,
-    #: carries none - so it CAN fail a commit. An assertion anchored on the guard's own call
-    #: sees that and fails; one slicing a fixed window from the first mention finds the other
-    #: pipeline's `|| true` and passes.
-    DISAGREEING_HOOK = (
-        "#!/usr/bin/env bash\n"
-        "# The lane-check detector is described here, above the code that runs it.\n"
-        # An UNRELATED pipeline, inside the fixed window, carrying the token the sliced
-        # reading goes looking for.
-        + 'ids="$(git diff --cached --name-only | sort -u)" || true\n'
-        # Padding that pushes the lane's own call PAST the window, so the anchored reading and
-        # the sliced one are looking at different text.
-        + "# padding so the fixed window ends inside this commentary and never reaches the\n"
-          "# lane's own call site, which is the whole shape this pin exists to tell apart.\n" * 6
-        + "if [ -n \"$ids\" ]; then\n"
-          '  python3 "$SKILL/verify_ac.py" lane-check --units "$ids"\n'
-          "fi\n")
-
-    def test_the_assertion_is_anchored_on_the_guards_own_call(self) -> None:
-        """MUTANT: revert US0606's assertion to slicing a fixed window from the first mention.
-
-        DRIVEN, not restated. The first cut of this row asserted properties of the HOOK, so
-        reverting the assertion it is about left it green and its own declared mutant survived -
-        found by three independent seats. US0606's own test method is RUN here, against a
-        fixture hook built so the two readings disagree: the anchored reading must fail it,
-        because the lane's own block carries no `|| true` and so can fail a commit."""
-        import unittest.mock  # noqa: PLC0415
-        with tempfile.TemporaryDirectory() as d:
-            hook = Path(d) / "pre-commit"
-            hook.write_text(self.DISAGREEING_HOOK, encoding="utf-8")
-            text = self.DISAGREEING_HOOK
-            first = text.index("lane-check")
-            call = text.index('verify_ac.py" lane-check')
-            self.assertNotIn('verify_ac.py" lane-check', text[first:first + 600],
-                             "the fixture's fixed window reaches the call, so the two readings "
-                             "agree on it and it cannot tell them apart")
-            self.assertNotIn("|| true", text[call:text.index("\nfi\n", call)],
-                             "the fixture's lane block is advisory, so the anchored reading "
-                             "passes it and there is nothing to detect")
-            case = LaneCheckLaneTests("test_the_lane_runs_and_does_not_block")
-            result = unittest.TestResult()
-            with unittest.mock.patch.object(LaneCheckLaneTests, "HOOK", hook):
-                case.run(result)
-        self.assertFalse(
-            result.wasSuccessful(),
-            "US0606's assertion passed a hook whose lane CAN fail a commit, so it is reading a "
-            "`|| true` from some other pipeline inside a fixed window rather than the guard's "
-            "own block")
 
 
 class VerifyTimeoutOverrideTests(unittest.TestCase):

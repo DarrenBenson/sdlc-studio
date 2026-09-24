@@ -1,5 +1,5 @@
 {
-  "stamped": "2026-09-21",
+  "stamped": "2026-09-24",
   "entries": [
     {
       "id": "BG0138",
@@ -65,12 +65,6 @@
       "id": "BG0212",
       "rule": "affects-unresolvable",
       "target": ".claude/skills/sdlc-studio/scripts/tests/test_audit.py",
-      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
-    },
-    {
-      "id": "BG0262",
-      "rule": "affects-undeclared",
-      "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
       "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
     },
     {
@@ -284,10 +278,22 @@
       "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
     },
     {
+      "id": "BG0463",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_spec_claims.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
       "id": "BG0468",
       "rule": "affects-undeclared",
       "target": "tools/tests/test_dependency_advisories.py",
       "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0476",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_precommit_claim_drift.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
     },
     {
       "id": "BG0478",
@@ -303,15 +309,87 @@
     },
     {
       "id": "BG0479",
-      "rule": "affects-undeclared",
-      "target": "tools/tests/test_claim_drift_replay.py",
-      "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+      "rule": "affects-unresolvable",
+      "target": "tools/check_spec_claims.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "BG0479",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_precommit_claim_drift.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "BG0480",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_spec_claims.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "BG0481",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_spec_claims.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "BG0481",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_precommit_claim_drift.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
     },
     {
       "id": "BG0482",
       "rule": "affects-unresolvable",
       "target": "sdlc-studio/stories/US0597-the-claim-drift-premise-is-replayed-against-the.md",
       "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "BG0483",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_spec_claims.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "BG0483",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_precommit_claim_drift.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "BG0493",
+      "rule": "affects-unresolvable",
+      "target": "tools/best_practice_rules.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "BG0493",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_best_practice_rules.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "BG0500",
+      "rule": "affects-unresolvable",
+      "target": "tools/runbook.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "BG0500",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_runbook.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "BG0505",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_spec_claims.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "BG0575",
+      "rule": "affects-unresolvable",
+      "target": "tools/runbook.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
     },
     {
       "id": "CR0010",
@@ -738,6 +816,18 @@
       "rule": "pseudo-verify",
       "target": "pytest tools/tests/test_commit_msg_hook.py::UnnamedUnitAttributionTests::test_a_shared_or_unowned_file_does_not_refuse",
       "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "CR0517",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_spec_claims.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "CR0517",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_precommit_claim_drift.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
     },
     {
       "id": "CR0519",
@@ -2180,6 +2270,18 @@
       "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
     },
     {
+      "id": "US0453",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_spec_claims.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "US0454",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_spec_claims.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
       "id": "US0536",
       "rule": "affects-undeclared",
       "target": "fragment",
@@ -2222,10 +2324,76 @@
       "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
     },
     {
+      "id": "US0583",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_spec_claims.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "US0584",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_spec_claims.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "US0585",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_precommit_claim_drift.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "US0597",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_spec_claims.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "US0597",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_claim_drift_replay.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
       "id": "US0602",
       "rule": "affects-undeclared",
       "target": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py",
       "reason": "Adopted at the CR0443 ratchet baseline on 2026-08-05: the standing advisory tail that existed when the ratchet was introduced. Refusing it wholesale would block every commit; recording it by identity means only a NEW instance refuses, and each of these can only be removed, never re-spent."
+    },
+    {
+      "id": "US0607",
+      "rule": "affects-unresolvable",
+      "target": "tools/best_practice_rules.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "US0607",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_best_practice_rules.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "US0612",
+      "rule": "affects-unresolvable",
+      "target": "tools/runbook.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "US0612",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_runbook.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "US0613",
+      "rule": "affects-unresolvable",
+      "target": "tools/runbook.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "US0613",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_runbook.py",
+      "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
     },
     {
       "id": "US0840",
@@ -2238,6 +2406,24 @@
       "rule": "affects-unresolvable",
       "target": ".claude/skills/sdlc-studio/scripts/tests/test_consult.py",
       "reason": "US0840 is SUPERSEDED by US0858 and US0859 (RUN-01M306PY, D0222 decomposition of an 8-point unit). Its Affects names consult.py and test_consult.py, which do not exist because the consult feature is unbuilt - the successors carry the same unresolvable Affects for the same reason, and will resolve it when they are built. The instances are new to the baseline only because superseding the parent changed how it is judged, not because anything regressed."
+    },
+    {
+      "id": "US0879",
+      "rule": "affects-unresolvable",
+      "target": "tools/best_practice_rules.py",
+      "reason": "US0879 deletes these three files (the dead spec-claims, runbook and practice-rules lanes); its Affects names them because they are what the story removed, so they cannot resolve to a file after it lands."
+    },
+    {
+      "id": "US0879",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_spec_claims.py",
+      "reason": "US0879 deletes these three files (the dead spec-claims, runbook and practice-rules lanes); its Affects names them because they are what the story removed, so they cannot resolve to a file after it lands."
+    },
+    {
+      "id": "US0879",
+      "rule": "affects-unresolvable",
+      "target": "tools/runbook.py",
+      "reason": "US0879 deletes these three files (the dead spec-claims, runbook and practice-rules lanes); its Affects names them because they are what the story removed, so they cannot resolve to a file after it lands."
     }
   ]
 }

@@ -22,12 +22,12 @@ These tests read the shipped hooks, so a change to either has to come here first
 they cannot show is that a lane ran at all - `tools/tests/test_message_first_gate.py`
 executes the pair over a real `git commit` for that.
 """
+# test-census-subject: .githooks/pre-commit
 from __future__ import annotations
 
 import re
 import json
 import unittest
-import os
 import shutil
 import subprocess
 import tempfile
@@ -73,13 +73,9 @@ def _lane_keys(hook: Path = HOOK) -> list[str]:
 #: stays a decision rather than a habit.
 EXPECTED_LANES = {
     "style", "links", "skill-spec", "versions", "verify-ratchet",
-    "stamps-staged", "warning-ratchet", "runbook",
-    "lens-signatures",
-    "spec-claims",
-    # BG0493: the practice-rules checker existed and was wired into nothing, so it guarded
-    # nothing. Added to the roster in the same commit that added the lane, because a roster
-    # that is not updated is how a lane is dropped silently.
-    "practice-rules",
+    "stamps-staged", "warning-ratchet",
+    # US0879 deleted runbook, lens-signatures, spec-claims and practice-rules: four lanes that
+    # checked documents against documents and caught nothing.
     # BG0662: nothing opened a changelog fragment until the release cut, where compose refused
     # the whole fold; 59 of 119 had drifted past a green gate.
     "changelog-shape",
@@ -100,37 +96,9 @@ MSG_HOOK_LANES = EXPENSIVE_LANES | {"repo-writes"}
 
 
 class LensSignatureLaneTests(unittest.TestCase):
-    """The lens-signature contract must run in the gate people actually run.
-
-    A rule reachable only from a unit test is enforced for this repo and for nobody else - the
-    packs are SHIPPED, and `reference-audit.md#audit-extend` tells a consuming project the rule is
-    enforced. That claim is only true if the shipped CLI carries it.
-    """
-
-    def test_the_lane_is_in_both_the_hook_and_the_npm_chain(self) -> None:
-        self.assertIn("lens-signatures", _lane_keys(HOOK),
-                      "the lens-signature lane is not in the pre-commit hook")
-        pkg = json.loads((REPO / "package.json").read_text(encoding="utf-8"))
-        self.assertIn("lint:lens-signatures", pkg["scripts"],
-                      "no npm script for the lens-signature lane")
-        self.assertIn("lint:lens-signatures", pkg["scripts"]["lint"],
-                      "the lane exists but the `lint` chain does not run it")
-
-    def test_the_lane_invokes_the_VALIDATE_verb_not_a_bare_profile_resolve(self) -> None:
-        """MUTANT: drop `--validate` from either invocation. `readiness.py profile` without it
-        exits 0 while checking nothing, so the lane would be present, green, and inert - the
-        precise shape a reviewer demonstrated on the sibling ratchet lane, which lost `--bugs`
-        with the whole suite still green.
-        """
-        hook = HOOK.read_text(encoding="utf-8")
-        i = hook.find('run "lens-signatures"')
-        self.assertNotEqual(-1, i)
-        block = hook[i:i + 700]
-        self.assertIn("readiness.py profile --validate", block,
-                      "the hook lane does not pass --validate, so it resolves profiles and "
-                      "asserts nothing")
-        pkg = json.loads((REPO / "package.json").read_text(encoding="utf-8"))
-        self.assertIn("profile --validate", pkg["scripts"]["lint:lens-signatures"])
+    """A lint lane's flags, pinned at both of its invocation sites. The class kept its name when
+    US0879 deleted the lens-signature lane it was written for, because a stamped criterion names
+    the node below."""
 
     def test_the_ratchet_lane_carries_its_flags_at_both_invocation_sites(self) -> None:
         """MUTANT: drop `--ratchet` or `--bugs` from either the hook or package.json.
@@ -461,68 +429,11 @@ class SuiteVerdictFailOpenTests(unittest.TestCase):
 
 
 class PracticeRulesLaneTests(unittest.TestCase):
-    """BG0493: `best_practice_rules.py` was referenced by nothing in `.githooks/` or
-    `package.json`, so it guarded nothing. Naming it in a lane is half the fix; the lane has to
-    RUN it and carry its exit, or an enumeration-only criterion is satisfied by a dead lane."""
+    """BG0493 wired `best_practice_rules.py` into a lane; US0879 deleted both, and the criteria
+    pinning the lane are retired. The `run` helper test is general to every lane and stays."""
 
     REPO = Path(__file__).resolve().parents[2]
     HOOK = REPO / ".githooks" / "pre-commit"
-
-    def test_the_checker_is_named_by_a_lane(self) -> None:
-        """MUTANT: delete the block that invokes the practice-rules module."""
-        text = self.HOOK.read_text(encoding="utf-8")
-        self.assertIn("best_practice_rules.py", text,
-                      "no pre-commit lane names the practice-rules checker, so it guards nothing")
-
-    def _lane_argv(self) -> list:
-        """The practice-rules lane's own command, taken from the hook rather than retyped."""
-        text = self.HOOK.read_text(encoding="utf-8")
-        i = text.index("best_practice_rules.py")
-        line = text[text.rindex("\n", 0, i) + 1:text.index("\n", i)].strip()
-        self.assertTrue(line.startswith("--"),
-                        f"the checker is named outside a lane's command position:\n{line}")
-        block = text[text.rindex('run "', 0, i):i]
-        self.assertTrue(block.startswith('run "practice-rules"'),
-                        f"the checker is not the command of a named lane:\n{block}")
-        return line[2:].split()
-
-    def _tree(self, name: str, *, practice: bool):
-        d = Path(tempfile.mkdtemp(prefix=f"bpr_{name}_"))
-        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
-        bp = d / ".claude" / "skills" / "sdlc-studio" / "best-practices"
-        bp.mkdir(parents=True)
-        if practice:
-            shutil.copy2(self.REPO / ".claude" / "skills" / "sdlc-studio" / "best-practices"
-                         / "testing.md", bp / "testing.md")
-        return d
-
-    def test_the_lane_runs_the_checker_and_carries_its_exit(self) -> None:
-        """MUTANTS: swap the lane body for a bare echo naming the module path; give the checker
-        `--help` so the lane runs it and guards nothing; point the lane at a fixed root so it
-        answers the same whatever tree it is run against.
-
-        DRIVEN, not read. The first cut of this row only inspected the hook's text, so every one
-        of those mutants satisfied it - three seats found the same hole. The lane's OWN argv is
-        taken from the hook and executed against two trees that the checker is known to judge
-        differently, so a command that cannot tell them apart fails here whatever it is named."""
-        argv = self._lane_argv()
-        good = self._tree("good", practice=True)
-        bad = self._tree("bad", practice=False)
-        env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
-        runs = {}
-        for name, tree in (("good", good), ("bad", bad)):
-            # The lane's command resolves its paths from the working directory, which is what
-            # the hook gives it - so the tree under test is supplied the same way.
-            shutil.copytree(self.REPO / "tools", tree / "tools",
-                            ignore=shutil.ignore_patterns("__pycache__"))
-            runs[name] = subprocess.run(argv, cwd=tree, capture_output=True, text=True,
-                                        check=False, env=env, timeout=300)
-        self.assertEqual(0, runs["good"].returncode,
-                         f"the lane refused a tree the checker accepts:\n"
-                         f"{runs['good'].stdout}{runs['good'].stderr}")
-        self.assertNotEqual(0, runs["bad"].returncode,
-                            f"the lane accepted a tree the checker refuses, so it guards "
-                            f"nothing:\n{runs['bad'].stdout}{runs['bad'].stderr}")
 
     def test_the_hooks_run_helper_carries_a_lanes_failure(self) -> None:
         """MUTANT: discard the command's exit inside the hook's `run` helper.

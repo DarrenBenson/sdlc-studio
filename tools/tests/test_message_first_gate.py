@@ -57,13 +57,9 @@ _GIT_ENV_VARS = (
 #: itself.
 EXPECTED_LANES = (
     "style", "links", "skill-spec", "versions", "verify-ratchet",
-    "stamps-staged", "changelog-shape", "warning-ratchet", "runbook",
-    "lens-signatures",
-    "spec-claims",
-    # BG0493: the practice-rules checker was wired into nothing and guarded nothing. Added to
-    # BOTH lane rosters in the commit that added the lane - two inventories of one hook is how
-    # a lane comes to exist in one list and not the other.
-    "practice-rules",
+    "stamps-staged", "changelog-shape", "warning-ratchet",
+    # US0879 deleted runbook, lens-signatures, spec-claims and practice-rules from BOTH lane
+    # rosters: two inventories of one hook is how a lane comes to exist in one list only.
     "script-tests", "budgets",
     "neutrality",
     "action-pins", "dead-flags", "floor-pending", "gate", "markdown", "markdown-payload",

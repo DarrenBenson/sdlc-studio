@@ -45,17 +45,17 @@ verifiers named here would still pass over a delivery that had been made inert.
   - **Verify:** pytest tools/tests/test_test_census.py::TheGuardSeesTheCallNotTheDocstringTests::test_deleting_the_call_reddens_ac1
   - **Verified:** yes (2026-09-09)
 - [x] **AC2** Given US0606's `lane-check` assertion, when it runs, then it is anchored on the guard's own call site. Measured, the 600-character window ends on the id-gathering pipeline at relative offset 556, because the comment carrying the literal sits above the lane's own code; moving the hook block alone leaves that window in place, so the anchor is what the fix has to change
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::LaneCheckAnchorTests::test_the_assertion_is_anchored_on_the_guards_own_call
-  - **Verified:** yes (2026-09-09)
+  - **Verify:** manual - retired by US0879: the advisory lane-check lane whose test this pinned was deleted as a docs-against-docs lane that caught nothing
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0879
 - [x] **AC3** Given `best_practice_rules.py` with its practice file ABSENT, when it runs, then it REFUSES rather than returning zero findings. An exemption reachable by deleting a file is the shape US0608 AC4 exists to prevent
-  - **Verify:** pytest tools/tests/test_best_practice_rules.py::AnAbsentPracticeFileRefusesTests::test_a_missing_file_is_not_an_exemption
-  - **Verified:** yes (2026-09-09)
+  - **Verify:** manual - retired by US0879: tools/best_practice_rules.py, with its practice-rules lane, was deleted as a docs-against-docs lane that caught nothing
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0879
 - [x] **AC4** Given the shipped gate, when its lanes are enumerated, then one of them NAMES `best_practice_rules.py`. It is referenced by nothing in `.githooks/` or `package.json` today, so it guards nothing
-  - **Verify:** pytest tools/tests/test_precommit_lane_order.py::PracticeRulesLaneTests::test_the_checker_is_named_by_a_lane
-  - **Verified:** yes (2026-09-09)
+  - **Verify:** manual - retired by US0879: the practice-rules lane, with tools/best_practice_rules.py, was deleted as a docs-against-docs lane that caught nothing
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0879
 - [x] **AC5** Given a tree the checker REFUSES, when that lane is driven as a subprocess, then the gate refuses too, and given a tree it accepts, the lane passes. Naming a script is not running it: a lane that mentions the checker in an echo and never invokes it satisfies AC4 exactly, and this bug is about a checker that guards nothing
-  - **Verify:** pytest tools/tests/test_precommit_lane_order.py::PracticeRulesLaneTests::test_the_lane_runs_the_checker_and_carries_its_exit
-  - **Verified:** yes (2026-09-09)
+  - **Verify:** manual - retired by US0879: the practice-rules lane, with tools/best_practice_rules.py, was deleted as a docs-against-docs lane that caught nothing
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0879
 - [ ] **AC6** Given the hook's own `run` helper, when it invokes a command that FAILS, then the hook's failure flag is set - and when the command succeeds, it is not. The other half of AC5, and the half no assertion about the lane's argv can reach: a lane whose command refuses correctly still guards nothing if the helper that invokes it drops the exit. The helper is extracted from the hook and executed rather than retyped
   - **Verify:** pytest tools/tests/test_precommit_lane_order.py::PracticeRulesLaneTests::test_the_hooks_run_helper_carries_a_lanes_failure
 

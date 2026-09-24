@@ -23,24 +23,24 @@
 - **Given** `best-practices/testing.md` as shipped
 - **When** it is read
 - **Then** it says to name the ENTRY POINT the test enters through before writing it, and that a library import standing in for a command is not evidence for a claim about the command
-- **Verify:** pytest tools/tests/test_best_practice_rules.py::TestingPracticeTests::test_the_entry_point_rule_is_stated
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0879: tools/best_practice_rules.py, with its practice-rules lane, was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ### AC2: the guard cannot be satisfied by prose describing the change
 
 - **Given** the stating passage deleted while a Revision History row describing it remains
 - **When** the guard runs
 - **Then** it goes red, because a whole-file substring satisfied by its own changelog row is BG0457's shape
-- **Verify:** pytest tools/tests/test_best_practice_rules.py::TestingPracticeTests::test_deleting_the_passage_reddens_the_guard
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0879: tools/best_practice_rules.py, with its practice-rules lane, was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ### AC3: the guard is a runnable command, not only a test
 
 - **Given** `tools/best_practice_rules.py`
 - **When** it is run against a practice missing the rule and against the shipped one
 - **Then** it exits 1 and 0 respectively, so the rule is enforceable by a gate rather than only where a test runner happens to look
-- **Verify:** pytest tools/tests/test_best_practice_rules.py::TestingPracticeTests::test_the_command_exits_non_zero_when_the_rule_is_absent
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0879: tools/best_practice_rules.py, with its practice-rules lane, was deleted as a docs-against-docs lane that caught nothing
+- **Verified:** manual (2026-09-24) - retired, superseded by US0879
 
 ## Revision History
 

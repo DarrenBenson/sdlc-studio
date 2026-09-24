@@ -400,57 +400,6 @@ class VerdictBindsToTheTreeTests(unittest.TestCase):
                          f"an `all` verdict was refused for a `scripts` request:\n{r.stderr}")
 
 
-class CommitClaimLaneTests(unittest.TestCase):
-    """The commit-msg lane: a message that CLAIMS greenness is checked against the verdict.
-
-    Scoped to messages making the claim rather than to every commit. A gate demanding a
-    six-minute suite before every commit is one people bypass, and a bypassed gate protects
-    nothing - the claim is the thing worth holding to account.
-    """
-
-    HOOK = REPO / ".githooks" / "commit-msg"
-
-    def test_the_lane_is_wired_into_the_hook(self) -> None:
-        """MUTANT: delete the lane from .githooks/commit-msg.
-
-        Pinned on the hook's text because the lane living only in `run-suite.sh` is exactly the
-        library-not-lane defect this sprint exists to stop (LL0040): `--check` passing in
-        isolation says nothing about whether any commit ever runs it.
-        """
-        text = self.HOOK.read_text(encoding="utf-8")
-        self.assertIn("run-suite.sh", text,
-                      "the commit-msg hook never invokes the verdict check, so the claim is "
-                      "held to account by nothing")
-        self.assertIn("--check", text, "the hook invokes run-suite.sh but not its check mode")
-        # The lane must END the hook, not set a flag: `fail=0` in section 2 would wipe it, and
-        # with no pre-commit handover the hook exits before section 2 is ever reached.
-        lane = text.split("suite-claim")[1][:1200]
-        self.assertIn("exit 1", lane,
-                      "the lane sets a flag instead of refusing - section 2 resets it")
-        self.assertIn("suite-claim", text, "the lane has no name in the hook's output")
-
-    def test_the_claim_pattern_matches_how_these_messages_are_actually_written(self) -> None:
-        """MUTANT: narrow the pattern to one exact phrase.
-
-        The phrasings are taken from THIS repo's own log - the commits that made the false
-        claim. A pattern that misses them guards nothing, which is LL0013's shape: an
-        enumeration silently exempts what it forgot.
-        """
-        import re
-        pattern = re.compile(
-            r'(both )?suites? (are |were |is )?green|suite green|tests? (are |were |is )?green',
-            re.IGNORECASE)
-        for claim in ("Both suites green, exit codes checked directly rather than",
-                      "both full suites green",
-                      "Both suites are green with the working tree byte-identical",
-                      "the suite is green"):
-            self.assertRegex(claim, pattern, f"the lane would not fire on {claim!r}")
-        for innocent in ("the green lane ordering was corrected",
-                         "greenfield init now refuses an unreadable PRD"):
-            self.assertNotRegex(innocent, pattern,
-                                f"the lane would fire on unrelated prose: {innocent!r}")
-
-
 class RedRunNamesItsFailureTests(unittest.TestCase):
     """BG0513: a red leg reported a COUNT and never a NAME, so an intermittent failure in the
     full runner went unnamed across five invocations.
