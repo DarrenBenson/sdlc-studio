@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 22 |
+| Proposed | 25 |
 | Approved | 0 |
 | In Progress | 3 |
 | Complete | 505 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 43 |
 | Blocked | 0 |
-| **Total** | **594** |
+| **Total** | **597** |
 
 ## All Changes
 
@@ -92,6 +92,9 @@
 | [CR-0592](CR0592-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Proposed | Low | Improvement | 2026-09-21 | -- |
 | [CR-0593](CR0593-nothing-refuses-a-batch-unit-that-no-goal.md) | nothing refuses a batch unit that no goal clause covers, so a run can deliver work its own goal never tested | Superseded | Medium | Enhancement | 2026-09-22 | -- |
 | [CR-0594](CR0594-the-record-informs-the-work-goals-trace-to.md) | The record informs the work: goals trace to the PRD, and briefs carry the history of the files they touch | Proposed | High | Improvement | 2026-09-24 | -- |
+| [CR-0595](CR0595-prevent-or-retire-lesson-lc-002-criterion-words.md) | Prevent or retire lesson LC-002 (criterion words outrun the fixture) | Proposed | Medium | Improvement | 2026-09-24 | -- |
+| [CR-0596](CR0596-prevent-or-retire-lesson-lc-006-absence-read.md) | Prevent or retire lesson LC-006 (absence read as an answer) | Proposed | Medium | Improvement | 2026-09-24 | -- |
+| [CR-0597](CR0597-prevent-or-retire-lesson-lc-008-constraint-added.md) | Prevent or retire lesson LC-008 (constraint added without retirement) | Proposed | Medium | Improvement | 2026-09-24 | -- |
 
 ## Archived Releases
 

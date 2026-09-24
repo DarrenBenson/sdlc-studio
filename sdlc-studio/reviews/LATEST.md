@@ -1,5 +1,5 @@
 <!-- close-status:begin -->
-> **RUN-01M3891F closed running.** 11 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> **RUN-01M39MC0 closed running.** 16 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 > **RUN-01M39MC0, Sprint 3 of back to basics: commits under ninety seconds, lanes that show their
