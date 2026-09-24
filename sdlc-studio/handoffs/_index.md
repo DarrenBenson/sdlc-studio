@@ -99,3 +99,4 @@ next `sprint plan --worklist` reads back.
 | [HO-0084](HO0084-a-sprint-runs-start-to-finish-on-its.md) | A sprint runs start to finish on its own, learns from itself, and hands you one page | 2026-09-23 |
 | [HO-0085](HO0085-a-sprint-runs-start-to-finish-on-its.md) | A sprint runs start to finish on its own, learns from itself, and hands you one page | 2026-09-23 |
 | [HO-0086](HO0086-a-sprint-runs-start-to-finish-on-its.md) | A sprint runs start to finish on its own, learns from itself, and hands you one page | 2026-09-23 |
+| [HO-0087](HO0087-run-01m3891f-closed-partial.md) | RUN-01M3891F closed partial | 2026-09-24 |

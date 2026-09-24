@@ -1,5 +1,5 @@
 <!-- close-status:begin -->
-> **RUN-01M36R3D closed running.** 11 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> **RUN-01M3891F closed running.** 11 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 > **RUN-01M3891F, Sprint 2 of back to basics: fast gates and lessons that graduate.** Goal:
