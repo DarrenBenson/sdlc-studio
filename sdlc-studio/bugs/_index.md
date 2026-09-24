@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 62 |
+| Open | 63 |
 | In Progress | 0 |
 | Fixed | 590 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 10 |
 | Superseded | 9 |
-| **Total** | **758** |
+| **Total** | **759** |
 
 ## All Bugs
 
@@ -117,6 +117,7 @@
 | [BG0756](BG0756-us0900-did-not-converge-in-review-round-2.md) | US0900 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0757](BG0757-repo-map-py-build-crashes-on-python-3.md) | repo_map.py build crashes on Python 3.10 when a source file holds a null byte | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0758](BG0758-command-audit-surface-module-reuses-whatever-surface-module.md) | command_audit._surface_module reuses whatever surface module the process already imported | Open | Medium | 2026-09-24 | 2026-09-24 |
+| [BG0759](BG0759-us0891-did-not-converge-in-review-round-2.md) | US0891 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-24 | 2026-09-24 |
 
 ## Archived Releases
 
