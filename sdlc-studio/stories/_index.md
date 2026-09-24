@@ -10,9 +10,9 @@
 | Draft | 161 |
 | Ready | 15 |
 | Planned | 0 |
-| In Progress | 4 |
+| In Progress | 3 |
 | Review | 0 |
-| Done | 713 |
+| Done | 714 |
 | Won't Implement | 8 |
 | Deferred | 0 |
 | Superseded | 17 |
@@ -251,7 +251,7 @@
 | [US0890](US0890-recording-a-waiver-no-longer-re-reads-every.md) | Recording a waiver no longer re-reads every script | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0891](US0891-a-commit-s-pre-commit-lanes-run-side.md) | A commit's pre-commit lanes run side by side | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0892](US0892-a-commit-s-selected-tests-are-handed-out.md) | A commit's selected tests are handed out one at a time across every worker | Done | EP0262 | 2026-09-24 | 2026-09-24 |
-| [US0893](US0893-a-commit-leaves-the-live-repository-tests-to.md) | A commit leaves the live-repository tests to the push | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0893](US0893-a-commit-leaves-the-live-repository-tests-to.md) | A commit leaves the live-repository tests to the push | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0894](US0894-the-close-owed-report-walks-the-corpus-once.md) | The close-owed report walks the corpus once, not once per epic | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0895](US0895-a-commit-runs-only-the-gate-lanes-that.md) | A commit runs only the gate lanes that can refuse it | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0896](US0896-footprint-warnings-advise-and-a-finished-artefact-is.md) | Footprint warnings advise, and a finished artefact is never re-judged | Done | EP0262 | 2026-09-24 | 2026-09-24 |

@@ -84,8 +84,9 @@ reach.
 | A sprint **close** | everything | the close is the moment the batch is declared done |
 
 At a push and a tag, `full-suite` runs every test module of both suites once, as `--run-tests`
-runs a selection: in parallel under pytest-xdist, the `serial_only` tests after. It blocks, names
-each failing test, and keeps the whole output in `sdlc-studio/.local/boundary-suite-last.log`.
+runs a selection: in parallel under pytest-xdist, the `serial_only` tests after, and the
+`boundary_only` tests a commit leaves out included. It blocks, names each failing test, and keeps
+the whole output in `sdlc-studio/.local/boundary-suite-last.log`.
 
 Three lanes bind at the release boundary and nowhere else, because each costs minutes a push
 should not pay: `release-rehearsal` drives a greenfield init and a v4 upgrade end to end;
@@ -111,8 +112,9 @@ wrapper. An unrecognised boundary is **refused**, never downgraded to the cheap 
 who asked for everything and silently got a selection would be wrong about their coverage.
 
 `--run-tests` runs the named modules under pytest, across every core when pytest-xdist is
-installed, with the tests marked `serial_only` after on their own. The commit hook runs its
-selection through it and reports the commit's elapsed time against a 90-second budget - a
+installed, with the tests marked `serial_only` after on their own. It leaves out the tests
+marked `boundary_only` - those that run the real gate, or a boundary lane, for 17-36s each - and the push's full suite runs them. The commit hook runs its selection through it and
+reports the commit's elapsed time against a 90-second budget - a
 report, never a refusal.
 
 How a commit's selection is made, and why it is safe to keep it narrow:

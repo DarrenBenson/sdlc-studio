@@ -11,6 +11,7 @@ reads this repository, because its criterion is about this repository.
 # test-census-subject: .claude/skills/sdlc-studio/scripts/gate.py
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -421,6 +422,110 @@ class SchedulingTests(unittest.TestCase):
                     self.assertIn("a failed run left its sink behind", out)
                 else:
                     self.assertEqual(0, proc.returncode, out)
+
+
+#: Four tests, each recording that it ran: two the commit leaves to the push, in each phase.
+BOUNDARY_ONLY_MODULE = """\
+import os
+from pathlib import Path
+
+import pytest
+
+
+def _ran(name):
+    Path(os.environ["US0893_RAN"], name).write_text("ran")
+
+
+@pytest.mark.boundary_only
+def test_live_repository():
+    _ran("boundary")
+
+
+def test_quick():
+    _ran("quick")
+
+
+@pytest.mark.serial_only
+@pytest.mark.boundary_only
+def test_live_tree():
+    _ran("serial-boundary")
+
+
+@pytest.mark.serial_only
+def test_tree():
+    _ran("serial")
+"""
+
+#: The tests the measurement named: each runs the real gate over this repository.
+LIVE_REPOSITORY_TESTS = (
+    "GateRealWrapperTests::test_real_wrappers_run_and_shape",
+    "GateRealWrapperTests::test_the_real_gate_runs_once_per_class",
+    "RevertCheckLaneTests::test_the_lane_runs_at_the_boundary_and_not_per_commit",
+    "ModuleAloneLaneTests::test_the_push_boundary_runs_every_module_alone_and_names_the_one_"
+    "that_fails",
+    "DocSurfaceApplicabilityTests::test_doc_surface_still_measures_the_skill_repo_and_a_bare_tree",
+)
+
+
+class BoundaryOnlyTests(unittest.TestCase):
+    """US0893: a commit's selected run leaves the `boundary_only` tests to the push, whose full
+    suite runs them."""
+
+    def test_the_commit_skips_boundary_only_and_the_push_runs_it(self) -> None:
+        """AC1. MUTANTS: never pass the commit switch (the commit runs the marked tests); exclude
+        the marker in the parallel phase only (the serial phase runs `test_live_tree`); exclude
+        it where xdist is installed only (the serial path runs both); exclude it at the push
+        too (the full suite never runs them)."""
+        with tempfile.TemporaryDirectory() as d:
+            root, ran = Path(d) / "proj", Path(d) / "ran"
+            (root / "sdlc-studio").mkdir(parents=True)
+            _write(root, "pytest.ini", (REPO / "pytest.ini").read_text(encoding="utf-8"))
+            _write(root, "tools/tests/test_us0893.py", BOUNDARY_ONLY_MODULE)
+            env = {k: v for k, v in _pytest_env(US0893_RAN=str(ran)).items()
+                   if not k.startswith("GIT_")}
+            gate_py = str(SCRIPTS / "gate.py")
+            runs = (
+                ("commit", [gate_py, "--root", str(root), "--run-tests",
+                            "tools/tests/test_us0893.py"], {"quick", "serial"}),
+                ("commit without xdist", ["-c", HIDE_XDIST, gate_py, "--root", str(root),
+                                          "--run-tests", "tools/tests/test_us0893.py"],
+                 {"quick", "serial"}),
+                ("push", [gate_py, "--root", str(root), "--boundary", "push", "--only",
+                          "full-suite"], {"quick", "serial", "boundary", "serial-boundary"}),
+            )
+            for label, argv, expected in runs:
+                with self.subTest(run=label):
+                    shutil.rmtree(ran, ignore_errors=True)
+                    ran.mkdir()
+                    proc = subprocess.run([sys.executable, *argv], cwd=root, capture_output=True,
+                                          text=True, env=env, timeout=600)
+                    out = proc.stdout + proc.stderr
+                    self.assertEqual(0, proc.returncode, out)
+                    self.assertEqual(expected, {p.name for p in ran.iterdir()}, out)
+
+    def test_the_live_repository_tests_are_boundary_only(self) -> None:
+        """AC2. MUTANTS: drop a named test's marker (it leaves the collected set); mark the whole
+        class (an unmarked sibling joins it); drop the marker's registration from pytest.ini."""
+        import configparser  # noqa: PLC0415
+        ini = configparser.ConfigParser()
+        ini.read(REPO / "pytest.ini", encoding="utf-8")
+        markers = {line.split(":")[0].strip()
+                   for line in ini["pytest"]["markers"].splitlines() if line.strip()}
+        self.assertLessEqual({"serial_only", "boundary_only"}, markers, markers)
+        module = f"{SKILL}/tests/test_gate.py"
+        proc = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider",
+                               "-p", "no:xdist", "--collect-only", "-m", "boundary_only", module],
+                              cwd=REPO, capture_output=True, text=True, env=_pytest_env(),
+                              timeout=300)
+        collected = {line.split("::", 1)[1] for line in proc.stdout.splitlines()
+                     if line.startswith(f"{module}::")}
+        for node in LIVE_REPOSITORY_TESTS:
+            self.assertIn(node, collected, proc.stdout + proc.stderr)
+        # The control: each marked test's quick sibling still runs on the commit.
+        for sibling in ("GateRealWrapperTests::test_main_maps_result_to_exit_code_without_rerunning",
+                        "DocSurfaceApplicabilityTests::test_one_applicability_predicate_decides_"
+                        "for_every_reader"):
+            self.assertNotIn(sibling, collected, collected)
 
 
 if __name__ == "__main__":

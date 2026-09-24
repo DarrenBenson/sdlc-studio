@@ -50,6 +50,16 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from boundary import boundary_only  # noqa: E402 - the per-commit / boundary split
 
+try:
+    import pytest
+    #: The pytest marker a commit's selected run deselects (`gate.py --run-tests`) and the push's
+    #: full suite runs. For the tests that run the real gate or a boundary lane: 17-36s
+    #: each, and nothing a cheaper test would not also turn red on first.
+    live_repository = pytest.mark.boundary_only
+except ImportError:     # the unittest runner without pytest deselects nothing, so no marker
+    def live_repository(test):
+        return test
+
 class GateLogicTests(unittest.TestCase):
     def test_all_pass(self) -> None:
         r = gate.run_gate(".", checks={"a": _fake(0), "b": _fake(0)})
@@ -192,6 +202,7 @@ class GateRealWrapperTests(unittest.TestCase):
                 cls._real_report = gate.run_gate(str(REPO))
         return cls._real_report
 
+    @live_repository
     def test_the_real_gate_runs_once_per_class(self) -> None:
         """The saving itself, pinned. Counts FULL runs over this repo across the whole MODULE, so
         re-introducing a second end-to-end run - in any class, by any spelling - fails rather than
@@ -295,6 +306,7 @@ class GateRealWrapperTests(unittest.TestCase):
                           "disclosure", "doc-freshness", "mutation", "window", "hook-enabled",
                           "batch-size", "changelog-fragments", "derived-depth", "evidence-drift"})
 
+    @live_repository
     def test_real_wrappers_run_and_shape(self) -> None:
         # Exercises the real checks end-to-end against this repo; asserts structure,
         # not pass/fail (state-independent, so not fragile). Reads the ONE run made on first
@@ -5446,6 +5458,7 @@ class DocSurfaceApplicabilityTests(unittest.TestCase):
             self.assertNotIn("NOT MEASURED", line)
             self.assertNotIn("ModuleNotFoundError", line)
 
+    @live_repository
     def test_doc_surface_still_measures_the_skill_repo_and_a_bare_tree(self) -> None:
         # The positive control. A repair that switched the lane off everywhere would satisfy the
         # test above for the wrong reason, and pushing the predicate into the measurement would
@@ -5918,6 +5931,7 @@ class RevertCheckLaneTests(unittest.TestCase):
         return {m.group(1) for m in re.finditer(r"^\s+\[(?:PASS|FAIL|warn)\] ([a-z-]+) ",
                                                 out, re.M)}
 
+    @live_repository
     def test_the_lane_runs_at_the_boundary_and_not_per_commit(self) -> None:
         """MUTANT: in `gate.py`, register `revert-check` in `DEFAULT_CHECKS` so it binds on
         every commit.
@@ -6754,6 +6768,7 @@ class ModuleAloneLaneTests(unittest.TestCase):
             encoding="utf-8")
         return root
 
+    @live_repository
     def test_the_push_boundary_runs_every_module_alone_and_names_the_one_that_fails(self) -> None:
         root = self._fixture()
         tests = root / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"

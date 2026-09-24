@@ -2919,7 +2919,8 @@ def xdist_takes_maxschedchunk() -> bool:
         return False
 
 
-def run_tests_plan(selectors: list[str], parallel: bool, root: str = ".") -> list[list[str]]:
+def run_tests_plan(selectors: list[str], parallel: bool, root: str = ".", *,
+                   commit: bool = False) -> list[list[str]]:
     """The pytest command lines that run `selectors`, in order.
 
     With pytest-xdist, the selection runs across every core and the tests marked `serial_only`
@@ -2930,16 +2931,21 @@ def run_tests_plan(selectors: list[str], parallel: bool, root: str = ".") -> lis
     keeps two queued per worker. Its default first hand-out is a block of consecutive tests per
     worker - about 33 on a hub commit's selection - so a class of heavy tests queued on one
     worker while the rest idled (21% busy, measured). An xdist older than 3.2.0 does not know
-    the option, so it gets the default hand-out rather than a refused run."""
+    the option, so it gets the default hand-out rather than a refused run.
+
+    `commit` is a commit's selected run: every phase leaves out the tests marked
+    `boundary_only`, which run the real gate or a boundary lane for 10-37s each (measured). The
+    push's full-suite lane calls this without it, so it runs them."""
     base = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"]
+    deferred = " and not boundary_only" if commit else ""
     if not parallel:
-        return [base + list(selectors)]
+        return [base + (["-m", "not boundary_only"] if commit else []) + list(selectors)]
     serial = [s for s in selectors
               if "serial_only" in (sdlc_md.read_text_safe(Path(root) / s) or "")]
     chunk = ["--maxschedchunk=1"] if xdist_takes_maxschedchunk() else []
-    plan = [base + ["-n", "auto", *chunk, "-m", "not serial_only"] + list(selectors)]
+    plan = [base + ["-n", "auto", *chunk, "-m", "not serial_only" + deferred] + list(selectors)]
     if serial:
-        plan.append(base + ["-m", "serial_only"] + serial)
+        plan.append(base + ["-m", "serial_only" + deferred] + serial)
     return plan
 
 
@@ -2959,10 +2965,11 @@ def cmd_run_tests(args: argparse.Namespace) -> int:
     hand = ", one test at a time, two queued per worker" if xdist_takes_maxschedchunk() else ""
     how = (f"in parallel (pytest-xdist, -n auto{hand}), serial_only tests after" if parallel
            else "serially (pytest-xdist is not installed)")
-    print(f"unit-tests: {len(selectors)} selected module(s) {how}")
+    print(f"unit-tests: {len(selectors)} selected module(s) {how}; "
+          "boundary_only tests run at push")
     started = time.monotonic()
     rc = 0
-    for argv in run_tests_plan(selectors, parallel, args.root):
+    for argv in run_tests_plan(selectors, parallel, args.root, commit=True):
         code = subprocess.run(argv, cwd=args.root).returncode
         if code not in (0, 5):
             rc = code
@@ -3232,8 +3239,9 @@ def build_parser() -> argparse.ArgumentParser:
                         "those verifiers are otherwise reported BLOCKED, never green)")
     p.add_argument("--run-tests", dest="run_tests", nargs="+", metavar="PATH",
                    help="Run these test modules under pytest, in parallel when pytest-xdist is "
-                        "installed (the `serial_only` tests after), and exit non-zero on any "
-                        "failure. The commit hook runs its selection through this")
+                        "installed (the `serial_only` tests after, the `boundary_only` tests "
+                        "left to the push), and exit non-zero on any failure. The commit hook "
+                        "runs its selection through this")
     p.add_argument("--suite-decision", dest="suite_decision", action="store_true",
                    help="Answer whether the unit suites must run, and over which modules: "
                         "those that import, load or are named for a changed code file. Skips "
