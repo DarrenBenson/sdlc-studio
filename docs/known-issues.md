@@ -72,7 +72,6 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0723` | Medium | a stated count in source or test prose is never checked against the tree it counts |
 | `BG0725` | Medium | two spellings of the stop-ship constant, and a hand-maintained verb list whose stale entries nothing can report |
 | `BG0726` | Medium | the report renders NO DECLARED SEAT without asking whether the project declares any personas at all |
-| `BG0727` | Medium | check_script_tests sweeps two fixed globs, so a script in any other scripts subdirectory needs no test |
 | `BG0728` | Medium | a unit's declared Affects is never compared with the files its delivering commit changed |
 | `BG0729` | Medium | the batch-level reviewer contribution to the lens count is asserted by no test |
 | `BG0731` | Medium | filing a Low-severity finding recreates the consolidation bucket that was just ruled not to be a change request |
@@ -91,7 +90,7 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0754` | Medium | A commit touching a widely imported script runs well over the 90-second budget |
 | `BG0755` | Medium | artifact.py batch ignores a story's role, capability and benefit, and its default template leaves a page of placeholders |
 
-60 findings: 60 Medium, 0 Low.
+59 findings: 59 Medium, 0 Low.
 
 ## Not carried
 
@@ -101,7 +100,8 @@ open, and a disclosure that pads its count is as misleading as one that trims it
 
 ## How this list is kept
 
-It is derived from the bug corpus by `tools/known_issues.py`, not maintained by hand, and
-`tools/tests/test_known_issues.py` fails when the two disagree. Any bug at `Open` whose
-severity is Medium or Low appears here; a bug that reaches a terminal status leaves.
-Regenerate with `python3 tools/known_issues.py --write`.
+It is derived from the bug corpus by `tools/known_issues.py` when a release is cut, not
+maintained by hand, and the pre-push hook refuses a tag whose page disagrees with the corpus.
+Any open bug whose severity is Medium or Low appears here; a bug that reaches a terminal
+status leaves at the next cut. Cut it with
+`python3 tools/known_issues.py write --release <version>`.

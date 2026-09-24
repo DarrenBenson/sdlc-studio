@@ -1,6 +1,6 @@
 # US0908: The skill's scripts run on the Python 3.10 it declares
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

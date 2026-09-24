@@ -20,15 +20,33 @@ cd "$repo_root"
 skill=".claude/skills/sdlc-studio/scripts"
 zero="0000000000000000000000000000000000000000"
 boundary=""
+tag_shas=""
 while read -r _local_ref local_sha remote_ref _remote_sha; do
   [ -z "${local_sha:-}" ] && continue
   [ "$local_sha" = "$zero" ] && continue           # a deletion pushes nothing to gate
   case "$remote_ref" in
-    refs/tags/*) boundary="release" ;;
+    refs/tags/*) boundary="release"; tag_shas="$tag_shas $local_sha" ;;
     *) [ "$boundary" = "release" ] || boundary="push" ;;
   esac
 done
 [ -z "$boundary" ] && exit 0
+
+# A tag publishes docs/known-issues.md as that release's disclosure, so the page must agree with
+# the bug corpus there, and only there (US0898): between releases it states what the last cut
+# wrote, and filing or closing a finding does not redden anything. Judged at each pushed tag's
+# COMMIT, never the working tree: a page written and left uncommitted is not the page the tag
+# ships. Exit 1 is a disagreement; anything else means the check could not run. Cheap, so first.
+for sha in $tag_shas; do
+  python3 tools/known_issues.py check --at "$sha" 1>&2
+  ki_rc=$?
+  if [ "$ki_rc" -eq 1 ]; then
+    echo "pre-push: docs/known-issues.md disagrees with the bug corpus at tagged commit $sha - cut it with: python3 tools/known_issues.py write --release <version>, commit, and tag that commit" >&2
+    exit 1
+  elif [ "$ki_rc" -ne 0 ]; then
+    echo "pre-push: the known-issues check could not run on tagged commit $sha (exit $ki_rc, see above) - the tag is refused until it can" >&2
+    exit 1
+  fi
+done
 
 # The connection has to survive the gate. Minutes of boundary lanes run before git writes a
 # byte, and an ssh connection idle that long is dropped before the push starts - so the gate

@@ -14,12 +14,16 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import textwrap
 import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO / "tools"))
+import known_issues  # noqa: E402
+
 HOOK = REPO / ".githooks" / "pre-push"
 ENABLE = REPO / "tools" / "enable-hooks.sh"
 GATE_TIMING = REPO / "tools" / "gate_timing.py"
@@ -109,6 +113,12 @@ class _Clone:
         (scripts / "gate.py").write_text(STUB_GATE, encoding="utf-8")
         (self.clone / "tools").mkdir()
         shutil.copy(GATE_TIMING, self.clone / "tools" / "gate_timing.py")
+        # A tag push checks the disclosure page against the corpus (US0898), so the seed carries
+        # the checker and a page cut from its (empty) corpus.
+        shutil.copy(REPO / "tools" / "known_issues.py", self.clone / "tools" / "known_issues.py")
+        (self.clone / "docs").mkdir()
+        (self.clone / known_issues.PAGE_REL).write_text(known_issues.render(self.clone),
+                                                        encoding="utf-8")
         local = self.clone / "sdlc-studio" / ".local"
         if not no_timings_file:
             local.mkdir(parents=True)

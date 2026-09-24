@@ -3,12 +3,14 @@
 
 The page is a release disclosure: every finding this release ships open, by id. A disclosure
 maintained by hand decays in one direction only, because a bug filed after the page was written
-is simply absent and nothing notices. So the page is GENERATED here and compared against the
-corpus by `tools/tests/test_known_issues.py`, which is what makes the page's own claim to be
-derived a fact rather than a sentence.
+is simply absent and nothing notices. So the page is GENERATED here, at the release cut, together
+with the one open-defect sentence of that version's notes. It is checked against the corpus at
+the tag only (`.githooks/pre-push`): between releases the page and the notes state what the last
+cut shipped, and filing or closing a finding moves neither.
 
-    python3 tools/known_issues.py --check    # non-zero when the page and the corpus disagree
-    python3 tools/known_issues.py --write    # regenerate the page
+    python3 tools/known_issues.py write --release 5.2.0   # the cut: the page and the notes' count
+    python3 tools/known_issues.py check [--at REV]        # 1 when page and corpus disagree
+    python3 tools/known_issues.py bar                     # non-zero while a barred finding is open
 
 Repo-only tooling: not shipped with the skill. Pure stdlib.
 """
@@ -16,8 +18,14 @@ Repo-only tooling: not shipped with the skill. Pure stdlib.
 from __future__ import annotations
 
 import argparse
+import io
+import os
 import re
+import subprocess
 import sys
+import tarfile
+import tempfile
+import traceback
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -34,12 +42,13 @@ DISCLOSED = ("Medium", "Low")
 #: sets in both directions and was silent on the one sentence a reader actually acts on.
 BARRED = ("Critical", "High")
 
-#: The page that states the bar in prose, for a reader outside this repository.
-#: The CURRENT release's notes - the ones whose finding count must match the corpus today.
-#: Pointed at v5.0.0 until v5.0.1 shipped, which made the guard demand that a HISTORICAL record
-#: be rewritten every time a bug closed. A released version's notes state what THAT version
-#: shipped with and must not move; only the current one tracks the corpus.
-NOTES_REL = "docs/release-notes-v5.1.0.md"
+#: The notes of the release being cut, by version. Derived from `--release`, never pinned: a
+#: hand-kept pointer at "the current notes" made every finding filed or closed demand an edit to
+#: notes that had already shipped.
+NOTES_TEMPLATE = "docs/release-notes-v{version}.md"
+
+#: The one sentence of the notes the cut writes. Everything else in them is the author's prose.
+_NOTES_COUNT = r"^\*\*v{version} discloses \d+ open defects: \d+ Medium, \d+ Low\.\*\*$"
 
 #: Titles are the finding's own H1. Long ones are elided rather than wrapped, because a table
 #: cell that wraps to five lines is a table nobody reads to the bottom of.
@@ -51,7 +60,6 @@ _SEVERITY = re.compile(r"^> \*\*Severity:\*\* *(.+)$", re.M)
 #: heading that does not match skips the WHOLE file - status and severity with it. A finding
 #: does not leave the release bar because of a hyphen.
 _HEADING = re.compile(r"^# (BG-?\d+): (.+)$", re.M)
-_ROW = re.compile(r"^\| `(BG\d+)` \| (\w+) \|", re.M)
 
 #: The page's prose is DERIVED from the count it sits above, because a sentence that is true of
 #: fifteen findings is false of none: "they ship open, listed here by id" describes an empty
@@ -107,10 +115,11 @@ open, and a disclosure that pads its count is as misleading as one that trims it
 
 ## How this list is kept
 
-It is derived from the bug corpus by `tools/known_issues.py`, not maintained by hand, and
-`tools/tests/test_known_issues.py` fails when the two disagree. Any bug at `Open` whose
-severity is Medium or Low appears here; a bug that reaches a terminal status leaves.
-Regenerate with `python3 tools/known_issues.py --write`.
+It is derived from the bug corpus by `tools/known_issues.py` when a release is cut, not
+maintained by hand, and the pre-push hook refuses a tag whose page disagrees with the corpus.
+Any open bug whose severity is Medium or Low appears here; a bug that reaches a terminal
+status leaves at the next cut. Cut it with
+`python3 tools/known_issues.py write --release <version>`.
 """
 
 
@@ -235,12 +244,10 @@ def barred_open(repo: Path | None = None) -> dict[str, str]:
     return found
 
 
-def listed(repo: Path | None = None) -> dict[str, str]:
-    """`{bug id: severity}` as the shipped page's table states it."""
-    page = (repo or REPO) / PAGE_REL
-    if not page.exists():
-        return {}
-    return dict(_ROW.findall(page.read_text(encoding="utf-8")))
+def _split(found: dict[str, tuple[str, str]]) -> tuple[int, int, int]:
+    """`(total, mediums, lows)` - the one count the page's line and the notes' sentence state."""
+    sevs = [s for s, _t in found.values()]
+    return len(sevs), sevs.count("Medium"), sevs.count("Low")
 
 
 def render(repo: Path | None = None) -> str:
@@ -252,27 +259,85 @@ def render(repo: Path | None = None) -> str:
         if len(title) > TITLE_MAX:
             title = title[: TITLE_MAX - 3].rstrip() + "..."
         lines.append(f"| `{bug_id}` | {sev} | {title} |")
-    mediums = sum(1 for _, (s, _t) in rows if s == "Medium")
-    lows = sum(1 for _, (s, _t) in rows if s == "Low")
-    lines += ["", f"{len(rows)} findings: {mediums} Medium, {lows} Low."]
-    return _head(len(rows)) + "\n".join(lines) + "\n" + TAIL
+    total, mediums, lows = _split(found)
+    lines += ["", f"{total} findings: {mediums} Medium, {lows} Low."]
+    return _head(total) + "\n".join(lines) + "\n" + TAIL
+
+
+def _git(root: Path, *args: str, text: bool = True) -> subprocess.CompletedProcess:
+    """git at `root`, never steered elsewhere by a locating variable a hook exported."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    return subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=text,
+                          timeout=120, check=False, env=env)
+
+
+def _tagged(root: Path, tag: str) -> bool | None:
+    """Whether `tag` exists in the repository at `root`; None when git cannot say."""
+    try:
+        r = _git(root, "tag", "--list", tag)
+    except OSError:
+        return None
+    return bool(r.stdout.strip()) if r.returncode == 0 else None
+
+
+def _cut(root: Path, version: str) -> int:
+    """Write the page and the notes' open-defect sentence for `version`, or refuse and write
+    nothing. A tagged version is refused: its notes state what THAT release shipped with, and a
+    count rewritten after the tag describes a release nobody cut."""
+    tag = f"v{version}"
+    tagged = _tagged(root, tag)
+    if tagged is None:
+        print(f"cannot tell whether {tag} is tagged: git could not read the tags at {root}",
+              file=sys.stderr)
+        return 1
+    if tagged:
+        print(f"{tag} already has a tag, so its notes stay as shipped - cut the next version "
+              f"instead", file=sys.stderr)
+        return 1
+    notes_rel = NOTES_TEMPLATE.format(version=version)
+    notes = root / notes_rel
+    if not notes.is_file():
+        print(f"{notes_rel} does not exist - write the release notes first", file=sys.stderr)
+        return 1
+    sentence = re.compile(_NOTES_COUNT.format(version=re.escape(version)), re.M)
+    text = notes.read_text(encoding="utf-8")
+    if len(sentence.findall(text)) != 1:
+        print(f"{notes_rel} must carry exactly one line reading `**{tag} discloses N open "
+              f"defects: N Medium, N Low.**` for the cut to fill in", file=sys.stderr)
+        return 1
+    total, mediums, lows = _split(corpus(root))
+    line = f"**{tag} discloses {total} open defects: {mediums} Medium, {lows} Low.**"
+    (root / PAGE_REL).write_text(render(root), encoding="utf-8")
+    notes.write_text(sentence.sub(lambda _m: line, text), encoding="utf-8")
+    print(f"wrote {PAGE_REL} and {notes_rel}: {total} disclosed finding(s)")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--write", action="store_true", help="regenerate the page")
-    ap.add_argument("--check", action="store_true",
-                    help="exit non-zero when the page and the corpus disagree")
-    ap.add_argument("--bar", action="store_true",
-                    help="exit non-zero when any finding at a barred severity is still open. "
-                         "A RELEASE-boundary check, not a per-commit one: an open High is "
-                         "ordinary mid-sprint and is only a defect at the tag")
-    ap.add_argument("--root", default=str(REPO))
+    # No default mode: a generator that writes by default rewrites the page for anyone who runs
+    # it to see what it does, so the mode is always stated.
+    sub = ap.add_subparsers(dest="mode", required=True)
+    write = sub.add_parser("write", help="the release cut: write the page and the open-defect "
+                                         "sentence of that version's notes")
+    write.add_argument("--release", required=True,
+                       help="the version being cut, e.g. 5.2.0; refused once it has a tag")
+    check = sub.add_parser("check", help="exit 1 when the page and the corpus disagree, 2 when "
+                                         "they cannot be read - the tag-time check the pre-push "
+                                         "hook runs")
+    check.add_argument("--at", metavar="REV",
+                       help="judge the page and the corpus as committed at REV (the pushed tag), "
+                            "not as they stand in the working tree")
+    sub.add_parser("bar", help="exit non-zero when any finding at a barred severity is still "
+                               "open. A RELEASE-boundary check: an open High is ordinary "
+                               "mid-sprint and is only a defect at the tag")
+    for mode in sub.choices.values():
+        mode.add_argument("--root", default=str(REPO))
     args = ap.parse_args(argv)
+    root = Path(args.root).resolve()
 
-    if args.bar:
-        root = Path(args.root).resolve()
+    if args.mode == "bar":
         # Named on this path too, and BEFORE the verdict. A severity in neither set is
         # dropped by both readers, so it does not hold the bar - but saying nothing about
         # it is how it stayed invisible, and this is the surface a release is judged on.
@@ -294,36 +359,65 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         listing = ", ".join(f"{b} ({s})" for b, s in sorted(open_barred.items()))
         print(f"release bar NOT met: {len(open_barred)} open finding(s) at a barred severity - "
-              f"{listing}. {NOTES_REL} claims zero; fix them or change the bar in a recorded "
-              f"decision, but do not tag against a claim the corpus contradicts.", file=sys.stderr)
+              f"{listing}. Fix them or change the bar in a recorded decision, but do not tag "
+              f"against a bar the corpus contradicts.", file=sys.stderr)
         return 1
 
-    if args.write == args.check:
-        # Neither, or both. A generator whose default action is to WRITE rewrites the page for
-        # anyone who runs it to see what it does, and one whose default is to check makes --check
-        # a switch that changes nothing - which is a documented flag doing nothing, the thing the
-        # dead-flags lane exists to refuse. So the mode is stated.
-        ap.error("pass exactly one of --write or --check")
+    if args.mode == "write":
+        _warn_unparseable(root)     # every path that reads the corpus, not the bar alone
+        _warn_unclassifiable(root)  # ...and the severities neither reader recognises
+        return _cut(root, args.release.removeprefix("v"))
+    if args.at is None:
+        return _check(root)
+    with tempfile.TemporaryDirectory(prefix="known_issues_at_") as tmp:
+        if not _export(root, args.at, Path(tmp)):
+            return 2
+        return _check(Path(tmp))
 
-    root = Path(args.root).resolve()
-    _warn_unparseable(root)   # every path that reads the corpus, not only the release boundary
+
+def _export(root: Path, rev: str, dest: Path) -> bool:
+    """Extract the page and the corpus as committed at `rev` into `dest`; False when unreadable.
+
+    A tag ships its COMMIT, not the working tree: a page written and left uncommitted must not
+    pass for the page the tag carries. Only the paths the commit holds are extracted, because
+    `git archive` refuses a pathspec matching nothing: an absent corpus is an empty one, and an
+    absent page is a disagreement."""
+    held = _git(root, "ls-tree", "--name-only", rev, "--", PAGE_REL, BUGS_REL)
+    if held.returncode != 0:
+        return _unreadable(rev, held.stderr)
+    paths = held.stdout.splitlines()
+    if not paths:
+        return True
+    tar = _git(root, "archive", "--format=tar", rev, "--", *paths, text=False)
+    if tar.returncode != 0:
+        return _unreadable(rev, tar.stderr.decode(errors="replace"))
+    with tarfile.open(fileobj=io.BytesIO(tar.stdout)) as archive:
+        archive.extractall(dest, filter="data")
+    return True
+
+
+def _unreadable(rev: str, why: str) -> bool:
+    print(f"cannot read {PAGE_REL} and {BUGS_REL} at {rev}: {why.strip()}", file=sys.stderr)
+    return False
+
+
+def _check(root: Path) -> int:
+    """0 when the page is what the corpus implies, 1 when it is not."""
+    _warn_unparseable(root)     # every path that reads the corpus, not the bar alone
     _warn_unclassifiable(root)  # ...and the severities neither reader recognises
-    want = render(root)
     page = root / PAGE_REL
-
-    if args.write:
-        page.write_text(want, encoding="utf-8")
-        print(f"wrote {page} ({len(corpus(root))} disclosed finding(s))")
-        return 0
-
-    have = page.read_text(encoding="utf-8") if page.exists() else ""
-    if have == want:
+    if page.is_file() and page.read_text(encoding="utf-8") == render(root):
         print(f"{PAGE_REL} agrees with the corpus ({len(corpus(root))} disclosed finding(s))")
         return 0
-    print(f"{PAGE_REL} disagrees with the bug corpus - regenerate with "
-          f"`python3 tools/known_issues.py --write`", file=sys.stderr)
+    print(f"{PAGE_REL} disagrees with the bug corpus - cut it with "
+          f"`python3 tools/known_issues.py write --release <version>`", file=sys.stderr)
     return 1
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    # Exit 1 means "disagrees" and nothing else, so a crash exits 2 and the hook can say which.
+    try:
+        raise SystemExit(main())
+    except Exception:  # noqa: BLE001 - reported in full, then a distinct exit code
+        traceback.print_exc()
+        raise SystemExit(2)

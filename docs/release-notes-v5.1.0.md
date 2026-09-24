@@ -70,42 +70,7 @@ evidence re-measured by hand for one line moving in a shared file.
 The open findings are on [the disclosure page](known-issues.md), which is generated from the
 bug corpus rather than maintained by hand.
 
-**v5.1.0 discloses 60 open defects: 60 Medium, 0 Low.**
-
-**Zero Critical, zero High.** Two High-severity findings were raised after the tag, and both
-are now Fixed on main by RUN-01M3891F. **BG0744**: `sprint_report.py build --write` filed a report
-of record with none of the close's checks applied, so the page read `Tokens: 0`; it now refuses and
-names the close (US0884). **BG0745**: `sprint_report.py check` never compared a filed page's own
-figures with its recorded fingerprint, so a page hand-edited after signing read VALID; it now
-digests the filed figures and its Markdown twin and names each edited figure (US0883).
-
-BG0715, BG0718, BG0719, BG0722, BG0730 and BG0733 were all open
-against this tag and are now Fixed. Five of the six were closed by RUN-01M33WJ3, which took the
-close and the report being honest about themselves as its whole subject.
-
-What those five changed, in one line each:
-
-- **BG0733** - a criterion's `Verified:` line was not read, and a green selector overwrote a
-  recorded `no`, `manual` or `stale` with `yes`, destroying the author's own disclosure. The tool
-  now marks the downgrades it writes itself, so an unmarked non-positive verdict is treated as the
-  author's and protected. All 18 such lines in this corpus are unmarked.
-- **BG0715** - a finding was dated by the last word of its `Raised-in-batch` stamp, and the stamp
-  written outside a batch ends in the word `batch`, which sorts after every timestamp. One run
-  filed two findings and its close demanded stop-ship rulings for 99. The moment is now parsed by
-  shape, with `Created` as the fallback and undatable findings disclosed rather than dropped.
-- **BG0730** - a stop-ship ruling was never re-judged against its finding's status, so a ruling on
-  a finding since Fixed blocked every later close permanently. Rulings are now joined to the
-  artefact they name; a terminal finding discharges, an unreadable id still blocks.
-- **BG0719** - the report of record did not name the waivers in force when it was derived, so an
-  operator signed without being told which gate was not holding. It now carries a waivers section
-  bounded by the run's own window, which reports NOT MEASURED rather than a clean sheet when it
-  cannot bound one.
-- **BG0722** - the `unruled` backlog lens caught the request nobody closed and reported zero here,
-  because the path that actually accumulates is the request everybody abandoned. A complementary
-  `abandoned` lens judges a request by its open children's dates and names three on this backlog.
-
-**BG0718** was closed earlier, by RUN-01M306PY: the seal wrote `ended_at`, the DORA window was
-bounded by it, so signing a report widened its window and invalidated it one second later.
+**v5.1.0 discloses 8 open defects: 8 Medium, 0 Low.** Zero Critical, zero High.
 
 ## What is in it
 
