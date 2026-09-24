@@ -39,7 +39,23 @@
 #   (bash tools/enable-hooks.sh -> core.hooksPath=.githooks). Never forced on a consuming
 #   project.
 # The one escape is the repo's usual one: git commit --no-verify. There is no second bypass.
+# Its lanes:  .githooks/commit-msg --list
 set -uo pipefail
+
+# --list prints one line per lane, `<key><TAB><rule>`, and runs nothing. It reads this file's own
+# `run` calls, so a lane added below is listed with no other file edited. The same reader as
+# pre-commit's: each hook is copied and run on its own, so neither can source the other.
+if [ "${1:-}" = "--list" ]; then
+  awk -f - "${BASH_SOURCE[0]}" <<'AWK'
+want { if (match($0, /"[^"]*"/)) print key "\t" substr($0, RSTART + 1, RLENGTH - 2); want = 0; next }
+/^[[:space:]]*run "[^"]+"/ {
+  rest = $0; sub(/^[[:space:]]*run "/, "", rest)
+  key = rest; sub(/".*/, "", key); rest = substr(rest, length(key) + 2)
+  if (match(rest, /"[^"]*"/)) print key "\t" substr(rest, RSTART + 1, RLENGTH - 2); else want = 1
+}
+AWK
+  exit 0
+fi
 
 msg_file="${1:-}"
 # Absolute before anything changes directory. Git runs hooks from the top of the working
@@ -55,6 +71,33 @@ script="$repo_root/$skill/engagement_floor.py"
 
 # Colour only when writing to a terminal.
 if [ -t 1 ]; then R=$'\033[31m'; G=$'\033[32m'; Y=$'\033[33m'; B=$'\033[1m'; N=$'\033[0m'; else R=; G=; Y=; B=; N=; fi
+
+fail=0
+
+# run KEY  "what it enforces"  "how to fix"  -- command...
+# Every refusal in this hook goes through here, the message rule first, so `--list` names them all.
+run() {
+  local key="$1" what="$2" fixhint="$3"; shift 3
+  [ "$1" = "--" ] && shift
+  local out
+  # Stashed for the caller on BOTH paths: the budget lane needs to know how many tests
+  # actually ran, which is only knowable from the output of a run that passed as well as
+  # one that failed.
+  if out="$("$@" 2>&1)"; then
+    last_run_out="$out"
+    printf '  %sok%s   %s\n' "$G" "$N" "$key"
+    return 0
+  fi
+  last_run_out="$out"
+  fail=1
+  printf '  %sFAIL%s %s%s%s\n' "$R" "$N" "$B" "$key" "$N"
+  printf '       enforces: %s\n' "$what"
+  if [ -n "$out" ]; then
+    printf '       %s─ details ─%s\n' "$Y" "$N"
+    printf '%s\n' "$out" | sed 's/^/         /'
+  fi
+  printf '       %s→ fix:%s %s\n\n' "$B" "$N" "$fixhint"
+}
 
 # ---------------------------------------------------------------------------
 # 1. The commit-message rules.
@@ -82,15 +125,16 @@ if [ "$check_message" -eq 1 ]; then
   esac
 fi
 
-msg_rc=0
-if [ "$check_message" -eq 1 ]; then
-  # The decision is the script's (single source of the id grammar). --strict makes it exit
-  # non-zero on a finding; a parse/read failure inside it still exits 0, so a message the
-  # script cannot understand never blocks.
-  msg_out="$(python3 "$script" check-commit-msg --strict "$msg_file" 2>&1)" || msg_rc=1
-fi
-
-if [ "$msg_rc" -ne 0 ]; then
+# The decision is the script's (single source of the id grammar). --strict makes it exit
+# non-zero on a finding; a parse/read failure inside it still exits 0, so a message the
+# script cannot understand never blocks. A pass prints only the attribution advisory, which
+# reaches the block below through `last_run_out`.
+message_lane() {
+  local out
+  if out="$(python3 "$script" check-commit-msg --strict "$msg_file" 2>&1)"; then
+    printf '%s' "$out"
+    return 0
+  fi
   # Paste-ready trailers for the ids the subject names but no `Refs:` line covers. Ids are
   # normalised (CR-0257 -> CR0257) on both sides so a dashed spelling does not read as a gap.
   # The SAME grammar the engagement floor reads: the v2 four-or-more digit form AND the v3
@@ -102,26 +146,29 @@ if [ "$msg_rc" -ne 0 ]; then
   named="$(printf '%s\n' "$subject" | ids)"
   covered="$(grep -iE '^[[:space:]]*Refs:' "$msg_file" | ids)"
   uncovered="$(comm -23 <(printf '%s\n' "$named") <(printf '%s\n' "$covered"))"
-  {
-    printf '%sCommit refused.%s %scommit-msg: multi-id subject with no Refs: trailer%s\n' \
-      "$R" "$N" "$B" "$N"
-    printf '  enforces: a subject naming two or more work-item ids carries a `Refs: <id>` trailer\n'
-    printf '            per owning id, so the engagement floor can attribute this commit files\n'
-    printf '            per id (a shared commit with no trailer is skipped, and an understated\n'
-    printf '            Affects then goes uncaught).\n'
-    printf '  %s- detail -%s\n' "$Y" "$N"
-    printf '%s\n' "$msg_out" | grep -v 'blocked by strict mode' | sed 's/^/    /'
-    printf '  %s-> fix:%s add these lines to the message body (after a blank line), then commit again:\n\n' \
-      "$B" "$N"
-    if [ -n "$uncovered" ]; then
-      printf '%s\n' "$uncovered" | sed 's/^/      Refs: /'
-    else
-      printf '      Refs: <id>   # one line per id the subject names\n'
-    fi
-    printf '\n  A subject naming a single id needs no trailer.\n'
-    printf '  The unit suites did NOT run: this refusal cost seconds, not a full gate.\n'
-    printf '  Genuine emergency only: %sgit commit --no-verify%s\n' "$B" "$N"
-  } >&2
+  printf '%s\n' "$out" | grep -v 'blocked by strict mode'
+  printf 'add these lines to the message body (after a blank line):\n\n'
+  if [ -n "$uncovered" ]; then
+    printf '%s\n' "$uncovered" | sed 's/^/  Refs: /'
+  else
+    printf '  Refs: <id>   # one line per id the subject names\n'
+  fi
+  return 1
+}
+
+msg_out=""
+if [ "$check_message" -eq 1 ]; then
+  run "message-refs" \
+    "a subject naming two or more work-item ids carries a Refs: <id> trailer per owning id, so the engagement floor can attribute the commit's files per id (a shared commit with no trailer is skipped, and an understated Affects then goes uncaught)" \
+    "add the Refs: lines printed above to the message body, then commit again; a subject naming a single id needs no trailer" \
+    -- message_lane
+  msg_out="$last_run_out"
+fi
+
+# The message lane refuses BEFORE the suites: a message defect costs seconds, not a full gate.
+if [ "$fail" -ne 0 ]; then
+  printf '  The unit suites did NOT run: this refusal cost seconds, not a full gate.\n'
+  printf '  Genuine emergency only: %sgit commit --no-verify%s\n' "$B" "$N"
   # Left where it is: the retry runs pre-commit again, which rewrites the record from the
   # index as it stands then.
   exit 1
@@ -181,32 +228,6 @@ selectors="$(sed -n 's/^suite-selector=//p' "$handoff" 2>/dev/null | tr '\n' ' '
 # commit-msg-only operation for a suite run nobody asked for. Deleted AFTER both reads.
 rm -f "$handoff" 2>/dev/null
 command -v python3 >/dev/null 2>&1 || exit 0
-
-fail=0
-
-# run KEY  "what it enforces"  "how to fix"  -- command...
-run() {
-  local key="$1" what="$2" fixhint="$3"; shift 3
-  [ "$1" = "--" ] && shift
-  local out
-  # Stashed for the caller on BOTH paths: the budget lane needs to know how many tests
-  # actually ran, which is only knowable from the output of a run that passed as well as
-  # one that failed.
-  if out="$("$@" 2>&1)"; then
-    last_run_out="$out"
-    printf '  %sok%s   %s\n' "$G" "$N" "$key"
-    return 0
-  fi
-  last_run_out="$out"
-  fail=1
-  printf '  %sFAIL%s %s%s%s\n' "$R" "$N" "$B" "$key" "$N"
-  printf '       enforces: %s\n' "$what"
-  if [ -n "$out" ]; then
-    printf '       %s─ details ─%s\n' "$Y" "$N"
-    printf '%s\n' "$out" | sed 's/^/         /'
-  fi
-  printf '       %s→ fix:%s %s\n\n' "$B" "$N" "$fixhint"
-}
 
 # The repo-locating variables every suite lane clears, for the reason tools/skill-tests.sh gives:
 # a hook invoked by `git commit -a` is handed GIT_INDEX_FILE pointing at the OUTER repo's index,
@@ -348,12 +369,15 @@ if [ "$ran_pytest" -eq 0 ]; then
   # shellcheck disable=SC2086
   scope_note="$(python3 tools/gate_timing.py scope $scope_args 2>/dev/null)"
   scope_rc=$?
-  if [ "$scope_rc" -eq 3 ] && [ -n "$scope_note" ]; then
-    # THREE and a non-empty note: python exits 2 for an argparse error or a missing script,
-    # and a verdict this lane blocks on must be able to say why.
-    printf '  %s%s%s\n' "$R" "$scope_note" "$N"
-    fail=1
-  elif [ "$scope_rc" -ne 0 ] && [ -n "$scope_note" ]; then
+  # Refuses on THREE and a non-empty note only: python exits 2 for an argparse error or a
+  # missing script, and a verdict this lane blocks on must be able to say why.
+  scope_lane() { printf '%s\n' "$scope_note"; [ "$scope_rc" -ne 3 ] || [ -z "$scope_note" ]; }
+  run "suite-collapse" \
+    "a unittest run is not a collapsed suite: its test count is not far below what the surface demands" \
+    "find why the suite stopped running most of itself - a deleted, renamed or unloadable test module - and restore it; the note above gives the count against the floor" \
+    -- scope_lane
+  # Any other note is advisory: printed, never refused.
+  if [ "$scope_rc" -ne 0 ] && [ "$scope_rc" -ne 3 ] && [ -n "$scope_note" ]; then
     printf '  %s%s%s\n' "$Y" "$scope_note" "$N"
   fi
 fi

@@ -5,9 +5,7 @@
 # sha>`. A tag ref is the RELEASE boundary, a branch ref is the PUSH boundary, and a deletion
 # (all-zero local sha) runs no gate at all. A push runs the full suite ONCE plus the core gate
 # lanes; `release` adds release-rehearsal, revert-check and module-alone, so a push carrying both
-# a branch and a tag runs the gate ONCE, at `release`. One literal invocation per boundary below,
-# so `tools/boundary_roster.py` can read which boundaries this hook binds without resolving a
-# variable.
+# a branch and a tag runs the gate ONCE, at `release`. One literal invocation per boundary below.
 #
 # The cost is announced BEFORE it is paid: minutes rather than seconds, and a guard whose cost
 # arrives unannounced is one that gets killed and then bypassed (D0180 records the ruling to pay

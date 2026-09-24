@@ -335,21 +335,6 @@ class HookWiringTests(unittest.TestCase):
                              "a snapshot was taken for a commit that ran no suite")
 
 
-class RosterTests(unittest.TestCase):
-    """A guard nobody has written down is one nobody notices losing."""
-
-    def test_the_roster_names_this_lane_and_both_hooks_that_carry_it(self) -> None:
-        agents = (REPO / "AGENTS.md").read_text(encoding="utf-8")
-        self.assertIn("repo_writes.py", agents,
-                      "AGENTS.md's lane roster does not name the repo-writes checker")
-        self.assertIn('run "repo-writes"',
-                      (GITHOOKS / "commit-msg").read_text(encoding="utf-8"),
-                      "commit-msg does not carry the lane the roster claims")
-        self.assertIn("repo_writes.py snapshot",
-                      (GITHOOKS / "pre-commit").read_text(encoding="utf-8"),
-                      "pre-commit does not take the snapshot the lane compares against")
-
-
 class RefusalAttributionTests(unittest.TestCase):
     """BG0572: the refusal asserted a cause the guard cannot know."""
 

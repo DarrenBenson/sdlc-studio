@@ -110,8 +110,8 @@ Add a lane that snapshots the working tree - tracked, untracked AND `sdlc-studio
   losing, and the hook-derived sweep that keeps the roster honest reads `pre-commit` only, so
   this lane is invisible to it.
 
-- **Verify:** pytest tools/tests/test_repo_writes.py -k the_roster_names_this_lane_and_both_hooks_that_carry_it
-- **Verified:** yes (2026-08-11)
+- **Verify:** manual - retired by US0901: AGENTS.md no longer carries a lane roster, the hooks list their own lanes (.githooks/pre-commit --list, .githooks/commit-msg --list)
+- **Verified:** manual (2026-09-24) - retired, superseded by US0901
 - **Mutant:** delete the `repo-writes` paragraph from `AGENTS.md`'s lane roster.
 
 ### AC6

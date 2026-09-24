@@ -38,8 +38,8 @@ Two halves. Repoint BG0585 AC6 at the renamed node so the stamp count returns to
   - **Verify:** pytest tools/tests/test_message_first_gate.py::StampsStagedLaneTests::test_the_hook_refuses_an_orphaning_rename_naming_the_lane
   - **Verified:** yes (2026-09-07)
 - [ ] **AC4** Given AGENTS.md's pre-commit lane roster paragraph and the hook's `run "stamps-staged"` line, when the pin runs, then both name the literal `stamps-staged` - the LITERAL, because the existing derived sweep in `test_check_spec_claims.py::GateLaneTests` captures a `$skill`-quoted lane with its trailing quote and skips it (filed as a Low under CR0511 at plan time).
-  - **Verify:** pytest tools/tests/test_check_spec_claims.py::StampsStagedRosterTests::test_the_lane_roster_names_stamps_staged
-  - **Verified:** yes (2026-09-07)
+  - **Verify:** manual - retired by US0901: AGENTS.md no longer carries a lane roster, the hooks list their own lanes (.githooks/pre-commit --list, .githooks/commit-msg --list)
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0901
 - [ ] **AC5** Given BG0585 AC6 after the repoint to `test_the_corpus_census_stays_within_its_measured_bounds` (the same class, line 3289 today), when `verify_ac.py stamps --story <BG0585 file>` runs from the repository root resolved by the `parents[5]` pattern, then it reports zero stamped criteria resting on a dead selector. The whole-lane reading (`bash tools/verify-corpus.sh stamps` back at its baseline of 3, and `verify-corpus.sh full` re-measured so D0142's red-criteria baseline is current) is a delivery obligation recorded in the revision row with both commands, not this criterion, because a corpus count moves whenever anybody stamps a criterion elsewhere.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StagedStampsTests::test_bg0585_ac6_rests_on_a_live_selector
   - **Verified:** yes (2026-09-07)

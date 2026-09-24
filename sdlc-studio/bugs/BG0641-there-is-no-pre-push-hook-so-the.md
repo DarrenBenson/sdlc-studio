@@ -49,11 +49,11 @@ Plan review round 2 (2026-09-04): three findings were executed against the tree.
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::EnableHooksNamesEveryHookTests::test_enable_hooks_names_each_tracked_hook
   - **Verified:** yes (2026-09-04)
 - [x] **AC6** Given `tools/boundary_roster.py` run over this tree, when it reads AGENTS.md's roster in its actual shape (`gate.py --boundary push|release`), then it REPORTS the boundaries it read - both `push` and `release` - and exits 0 because a hook INVOCATION line binds each, accepting both spellings the gate accepts: `--boundary <b>` and `SDLC_GATE_BOUNDARY=<b>` (a fixture hook spelled `SDLC_GATE_BOUNDARY=release python3 .../gate.py` is asserted as binding `release`). The tests live in `tools/tests/test_boundary_roster.py`, which the census attributes to the checker by name, and bind `REPO / "AGENTS.md"` to a module-level name so the gate's static relevance scan runs them when AGENTS.md alone changes
-  - **Verify:** pytest tools/tests/test_boundary_roster.py::BoundaryRosterTests::test_every_boundary_agents_md_names_has_a_gate_invocation_behind_it
-  - **Verified:** yes (2026-09-04)
+  - **Verify:** manual - retired by US0901: tools/boundary_roster.py is deleted with the AGENTS.md boundary roster it read; the pre-push hook binds the boundaries and the gate prints its lanes
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0901
 - [x] **AC7** Given three fixture rosters in the same `push|release` shape: one naming `deploy` beside a hooks directory whose hook invokes push and release and never `deploy`; one whose only `--boundary deploy` sits in a COMMENT line of a hook; and one that parses to NO boundary - when the checker runs, then the first two exit non-zero naming `deploy`, and the third is refused as unreadable rather than passed as empty
-  - **Verify:** pytest tools/tests/test_boundary_roster.py::BoundaryRosterTests::test_a_boundary_with_nothing_behind_it_is_refused
-  - **Verified:** yes (2026-09-04)
+  - **Verify:** manual - retired by US0901: tools/boundary_roster.py is deleted with the AGENTS.md boundary roster it read; the pre-push hook binds the boundaries and the gate prints its lanes
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0901
 - [x] **AC8** Given AGENTS.md after the change, when read, then the "What will refuse you" table carries the pre-push row with its cost as the floor and the command that prints the current figure (`tools/gate_timing.py estimate --suite boundary-push --warn-seconds 0`) - never a number that goes stale, the hooks paragraph names three hooks, the boundary-lane prose says the lanes bind in `.githooks/pre-push`, and the emergency-bypass sentence names `git push --no-verify` beside `git commit --no-verify` - the document this bug is about no longer describes a hook nobody wrote
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::AgentsMdNamesTheHookTests::test_the_refusal_table_and_hooks_paragraph_name_pre_push
   - **Verified:** yes (2026-09-04)

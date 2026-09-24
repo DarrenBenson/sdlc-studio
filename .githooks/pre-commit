@@ -8,7 +8,22 @@
 #
 # Enable once per clone:  bash tools/enable-hooks.sh   (sets core.hooksPath)
 # Bypass (emergencies only):  git commit --no-verify
+# Its lanes:  .githooks/pre-commit --list
 set -uo pipefail
+
+# --list prints one line per lane, `<key><TAB><rule>`, and runs nothing. It reads this file's own
+# `run` calls, so a lane added below is listed with no other file edited.
+if [ "${1:-}" = "--list" ]; then
+  awk -f - "${BASH_SOURCE[0]}" <<'AWK'
+want { if (match($0, /"[^"]*"/)) print key "\t" substr($0, RSTART + 1, RLENGTH - 2); want = 0; next }
+/^[[:space:]]*run "[^"]+"/ {
+  rest = $0; sub(/^[[:space:]]*run "/, "", rest)
+  key = rest; sub(/".*/, "", key); rest = substr(rest, length(key) + 2)
+  if (match(rest, /"[^"]*"/)) print key "\t" substr(rest, RSTART + 1, RLENGTH - 2); else want = 1
+}
+AWK
+  exit 0
+fi
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "pre-commit: not a git repo"; exit 1; }
 cd "$repo_root" || exit 1
@@ -140,13 +155,8 @@ run "floor-pending" \
 # it buys is that the two can no longer disagree about one tree). Most of what remains is
 # reconcile's own corpus re-reads. The gate prints its own `gate cost:` line and its
 # dominant lane on every run, so read that line rather than this comment for the number.
-if gate_out="$(python3 "$skill/gate.py" --root . 2>&1)"; then
-  printf '  %sok%s   gate (conformance / reconcile / validate / integrity / duplicate-id / docs)\n' "$G" "$N"
-else
-  fail=1
-  printf '  %sFAIL%s %sgate%s (conformance / reconcile / validate / integrity / duplicate-id / docs)\n' "$R" "$N" "$B" "$N"
-  printf '       %s─ checks ─%s\n' "$Y" "$N"
-  printf '%s\n' "$gate_out" | grep -E '\[(FAIL|warn)\]|^gate:' | sed 's/^/         /'
+gate_lane() { if gate_out="$(python3 "$skill/gate.py" --root . 2>&1)"; then return 0; fi
+  printf '%s\n' "$gate_out" | grep -E '\[(FAIL|warn)\]|^gate:'
   # Reconcile drift is the common case: list each item with its own fix (self-diagnosing).
   DRIFT_JSON="$(python3 "$skill/reconcile.py" detect --format json 2>/dev/null)"
   drift_report="$(DRIFT_JSON="$DRIFT_JSON" python3 -c '
@@ -159,12 +169,13 @@ for t, info in d.get("types", {}).items():
     for x in info.get("drift", []):
         print("%s %s: %s -> %s" % (t, x.get("id") or "(summary)", x.get("kind"), x.get("fix", "no fix hint")))
 ')"
-  if [ -n "$drift_report" ]; then
-    printf '       %s─ drift detail ─%s\n' "$Y" "$N"
-    printf '%s\n' "$drift_report" | sed 's/^/         /'
-  fi
-  printf '       %s→ fix:%s address each failing check; run the named script for per-item detail (e.g. `%s/validate.py check`, `%s/conformance.py`); mechanical drift clears with `%s/reconcile.py apply`\n\n' "$B" "$N" "$skill" "$skill" "$skill"
-fi
+  [ -n "$drift_report" ] && printf -- '- drift detail -\n%s\n' "$drift_report"
+  return 1
+}
+run "gate" \
+  "the artefact gate CI runs: conformance, reconcile drift, validate, integrity, duplicate ids and docs (it prints each of its own lanes and its cost)" \
+  "address each failing check; run the named script for per-item detail (e.g. \`$skill/validate.py check\`, \`$skill/conformance.py\`); mechanical drift clears with \`$skill/reconcile.py apply\`" \
+  -- gate_lane
 
 # Markdown mechanics (markdownlint-cli, a devDependency). Prefer the npm-local
 # binary so `npm install` is enough - no global install needed. If Node is absent
@@ -277,11 +288,21 @@ if [ "$fail" -eq 0 ] && [ "$suites_needed" -eq 1 ]; then
   # Written in ONE redirection so an unwritable handover still fails the way it always did: the
   # refusal below is load-bearing, because a handover that cannot be written means the suites
   # never run at all, and a silently unrunnable lane inside a green gate is the coverage loss
-  # every named skip here exists to prevent.
-  if {
-       printf 'precommit_seconds=%s\n' "$SECONDS"
-       printf '%s\n' "$decision_out" | sed -n 's/^suite-selector: /suite-selector=/p'
-     } > "$handoff" 2>/dev/null; then
+  # every named skip here exists to prevent. The seconds are read here, not in the lane's subshell.
+  handover_seconds=$SECONDS
+  write_handover() {
+    {
+      printf 'precommit_seconds=%s\n' "$handover_seconds"
+      printf '%s\n' "$decision_out" | sed -n 's/^suite-selector: /suite-selector=/p'
+    } > "$handoff" 2>/dev/null && return 0
+    printf 'the selection could not be written to %s\n' "$handoff"
+    return 1
+  }
+  run "suite-handover" \
+    "the unit suites run in the commit-msg hook, and this hook hands the selection over in the git directory; a handover that cannot be written means the suites never run" \
+    "make the git directory writable, then commit again" \
+    -- write_handover
+  if [ "$fail" -eq 0 ]; then
     printf '  %snote%s unit suites selected - they run in the commit-msg hook, after the commit\n' "$Y" "$N"
     printf '       message rules, so a message defect is refused in seconds instead of after them.\n'
     # THE BEFORE HALF OF THE REPO-WRITES LANE. Running the tests must not modify a tracked file,
@@ -311,15 +332,6 @@ if [ "$fail" -eq 0 ] && [ "$suites_needed" -eq 1 ]; then
       printf '  %sSKIP%s repo-writes - the working tree could not be snapshotted, so whether the\n' "$Y" "$N"
       printf '       suites write into it will NOT be checked for this commit.\n'
     fi
-  else
-    # A handover that cannot be written means the suites will not run at all. Refused, not
-    # warned: an unrunnable expensive lane inside an otherwise green gate is the silent
-    # coverage loss every named skip in this hook exists to prevent.
-    fail=1
-    printf '  %sFAIL%s %ssuite-handover%s\n' "$R" "$N" "$B" "$N"
-    printf '       enforces: the unit suites run in the commit-msg hook, and this hook hands the\n'
-    printf '                 selection over in %s\n' "$handoff"
-    printf '       %s-> fix:%s make the git directory writable, then commit again.\n\n' "$B" "$N"
   fi
 elif [ "$fail" -ne 0 ]; then
   printf '  %sSKIP%s unit suites - a cheaper lane already failed, so the commit is blocked either way.\n' "$Y" "$N"

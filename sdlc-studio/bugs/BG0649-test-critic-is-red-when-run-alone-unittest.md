@@ -34,8 +34,8 @@ Import `unittest.mock` (or `from unittest import mock`) at the top of `test_crit
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ModuleAloneLaneTests::test_the_push_boundary_runs_every_module_alone_and_names_the_one_that_fails
   - **Verified:** yes (2026-09-07)
 - [x] **AC3** Given the AGENTS.md lane roster, when `tools/tests/test_check_spec_claims.py` runs, then `module-alone` is named in the roster as bound at the push and release boundaries only, with its cost stated in minutes beside D0180's and the slowest module named - a pin that fails when the cost sentence is deleted or its figure is not stated in minutes, so a boundary-only lane the hook-derived sweep cannot see is not one nobody wrote down (LL0013)
-  - **Verify:** pytest tools/tests/test_check_spec_claims.py::GateLaneTests::test_the_lane_roster_names_module_alone_as_boundary_bound
-  - **Verified:** yes (2026-09-07)
+  - **Verify:** manual - retired by US0901: AGENTS.md no longer carries a lane roster, the hooks list their own lanes (.githooks/pre-commit --list, .githooks/commit-msg --list)
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0901
 
 ## Test Plan
 

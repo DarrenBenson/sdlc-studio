@@ -41,8 +41,8 @@ Add a `changelog.py shape` verb that parses each given (or every pending) fragme
   - **Verify:** pytest tools/tests/test_precommit_lane_order.py::ChangelogShapeLaneTests::test_the_lane_passes_the_release_cut_a_well_formed_fragment_and_an_untracked_draft
   - **Verified:** yes (2026-09-15)
 - [ ] **AC5** Given AGENTS.md's pre-commit lane roster (the paragraph opening "The pre-commit lanes, recorded here"), then that paragraph names `changelog.py shape`. The roster's own pinning test (`GateLaneTests` in `tools/tests/test_check_spec_claims.py`) skips a lane whose script is written `"$skill/x.py"`, which is how this lane's command will be spelt, so without this criterion the roster could omit it and pass
-  - **Verify:** pytest tools/tests/test_precommit_lane_order.py::ChangelogShapeLaneTests::test_the_agents_roster_names_the_lane
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0901: AGENTS.md no longer carries a lane roster, the hooks list their own lanes (.githooks/pre-commit --list, .githooks/commit-msg --list)
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0901
 
 ## Impact
 

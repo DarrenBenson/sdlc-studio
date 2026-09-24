@@ -31,8 +31,8 @@
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckLaneTests::test_the_recorded_yield_changes_with_the_input
   - **Verified:** yes (2026-08-21)
 - [x] **AC4** Given the pre-commit lane roster AGENTS.md documents, when `tools/tests/test_check_spec_claims.py` runs, then it names `revert-check` and names it as ADVISORY - a lane absent from the roster is one nobody notices losing (LL0013), and a lane the roster miscategorises is one whose blocking status nobody can check
-  - **Verify:** pytest tools/tests/test_check_spec_claims.py -k revert_check
-  - **Verified:** yes (2026-08-21)
+  - **Verify:** manual - retired by US0901: AGENTS.md no longer carries a lane roster, the hooks list their own lanes (.githooks/pre-commit --list, .githooks/commit-msg --list)
+  - **Verified:** manual (2026-09-24) - retired, superseded by US0901
 - [x] **AC5** Given the yield file, when the lane writes it, then it is written under gitignored `sdlc-studio/.local/` - the pair is this repository's own working measurement, not a tracked artefact every consuming project inherits
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckLaneTests::test_the_yield_is_written_under_local
   - **Verified:** yes (2026-08-24)

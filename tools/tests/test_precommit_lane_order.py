@@ -62,7 +62,10 @@ def _lane_keys(hook: Path = HOOK) -> list[str]:
 #: Every lane each hook is expected to declare. This is the anti-loss guard: a reorder
 #: that drops a lane would otherwise pass every ordering assertion below while silently
 #: reducing coverage.
-#: `gate` is deliberately absent: it is an inline if/else block, not a `run "..."` lane.
+#: `gate` is a `run` lane since US0901, so `--list` names it like every other.
+#: US0901 kept this list: it is the one hand record that fails when a lane is DROPPED, which
+#: `--list` (derived from the hook) cannot, since it agrees with any hook. US0905's lane cap is
+#: the candidate to replace it; until then adding a lane means a line here.
 #:
 #: HAND-MAINTAINED ON PURPOSE - do not "fix" this by deriving it from the hook. This list IS
 #: the assertion: derived from the thing it checks, it would agree with any hook including one
@@ -83,7 +86,9 @@ EXPECTED_LANES = {
     # US0897 deleted verify-ratchet: it refused a bug sharing its fixing story's selector.
     "budgets",
     "neutrality",
-    "action-pins", "dead-flags", "floor-pending", "markdown", "markdown-payload",
+    "action-pins", "dead-flags", "floor-pending", "gate", "markdown", "markdown-payload",
+    # US0901: the handover refusal became a `run` lane so `--list` names it.
+    "suite-handover",
 }
 
 #: The lanes that cost real wall-clock, and that therefore may not run until every cheap
@@ -96,7 +101,10 @@ EXPENSIVE_LANES = {"unit-tests", "skill-tests", "tool-tests"}
 #: `repo-writes` is cheap and still lives here rather than in `pre-commit`, because what it
 #: checks is what the SUITES did: it compares the tree against the snapshot `pre-commit` took
 #: when it selected them, so it cannot run until they have.
-MSG_HOOK_LANES = EXPENSIVE_LANES | {"repo-writes"}
+MSG_HOOK_LANES = EXPENSIVE_LANES | {"repo-writes",
+                                     # US0901: the message rule and the collapse check (BG0413)
+                                     # became `run` lanes so `--list` names them.
+                                     "message-refs", "suite-collapse"}
 
 
 class LaneOrderTests(unittest.TestCase):
@@ -575,21 +583,6 @@ class ChangelogShapeLaneTests(unittest.TestCase):
                     self.assertNotIn(other, out,
                                      f"the lane named {other}, which this commit does not "
                                      f"record as a fragment:\n{out}")
-
-    def test_the_agents_roster_names_the_lane(self) -> None:
-        """MUTANT: delete the `changelog.py shape` entry from AGENTS.md's lane roster.
-
-        The roster's own pinning test skips a lane whose script is spelt `"$skill/x.py"`, as
-        this one is, so it cannot see this lane go missing from the paragraph."""
-        agents = (REPO / "AGENTS.md").read_text(encoding="utf-8")
-        opening = "The pre-commit lanes, recorded here"
-        self.assertIn(opening, agents, "AGENTS.md's pre-commit lane roster moved or vanished")
-        start = agents.index(opening)
-        end = agents.find("\n\n", start)
-        paragraph = agents[start:end if end != -1 else len(agents)]
-        self.assertIn("changelog.py shape", paragraph,
-                      "AGENTS.md's pre-commit lane roster does not name the changelog-shape "
-                      "lane - a guard nobody has written down is one nobody notices losing")
 
 
 if __name__ == "__main__":

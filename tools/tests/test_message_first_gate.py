@@ -47,8 +47,8 @@ _GIT_ENV_VARS = (
 
 #: Every lane the hook PAIR is expected to execute for a code commit, each exactly once.
 #: This is the anti-loss and anti-duplication guard of AC2: the move must neither drop a
-#: check nor run one twice. `gate` is an inline if/else block rather than a `run "..."`
-#: lane, and it prints the same verdict line, so it counts here too.
+#: check nor run one twice. Since US0901 every refusal in both hooks is a `run` lane, the
+#: gate, the suite handover, the message rule and the collapse check included.
 #: The lanes the hook pair runs, in order. DELIBERATELY hand-maintained, unlike the tool-file
 #: list below: this tuple IS the record of what the gate does, so adding a lane should require
 #: saying so here. A derived version of this would assert only that the hook agrees with
@@ -63,7 +63,8 @@ EXPECTED_LANES = (
     "budgets",
     "neutrality",
     "action-pins", "dead-flags", "floor-pending", "gate", "markdown", "markdown-payload",
-    "skill-tests", "tool-tests", "repo-writes",
+    "suite-handover", "message-refs",
+    "skill-tests", "tool-tests", "repo-writes", "suite-collapse",
 )
 
 #: The hooks' verdict lines: `  ok   <key>` / `  FAIL <key>` (no colour when captured).
@@ -390,7 +391,6 @@ class LaneInventoryTests(_GateFixture):
         for hook in (PRE_COMMIT, COMMIT_MSG):
             declared |= set(re.findall(r'^\s*run\s+"([^"]+)"', hook.read_text(encoding="utf-8"),
                                        re.M))
-        declared.add("gate")      # an inline if/else block, not a `run "..."` lane
         # `unit-tests` runs only a selection gate.py hands over (US0880); this fixture's stubbed
         # gate hands over none, so the unittest lanes run. test_lean_test_selection.py drives it.
         self.assertEqual(declared, set(EXPECTED_LANES) | {"unit-tests"})

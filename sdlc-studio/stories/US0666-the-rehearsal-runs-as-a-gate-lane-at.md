@@ -47,8 +47,8 @@
 - **Then** it names the rehearsal lane and states that it runs at the push and release boundaries
   rather than per commit, and a guard checks the roster names it.
 
-- **Verify:** pytest tools/tests/test_check_spec_claims.py -k the_lane_roster_names_the_release_rehearsal
-- **Verified:** yes (2026-08-10)
+- **Verify:** manual - retired by US0901: AGENTS.md no longer carries a lane roster, the hooks list their own lanes (.githooks/pre-commit --list, .githooks/commit-msg --list)
+- **Verified:** manual (2026-09-24) - retired, superseded by US0901
 
 ## Test Plan
 

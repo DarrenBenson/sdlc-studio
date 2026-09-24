@@ -1,10 +1,10 @@
 # US0901: The hooks list their own lanes, and AGENTS.md stops restating them
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** AGENTS.md, .githooks/pre-commit, .githooks/commit-msg, tools/boundary_roster.py, tools/tests/test_lean_commit_lanes.py, tools/tests/test_boundary_roster.py, tools/tests/test_check_spec_claims.py, tools/tests/test_precommit_lane_order.py
+> **Affects:** AGENTS.md, .githooks/pre-commit, .githooks/commit-msg, tools/boundary_roster.py, tools/tests/test_lean_commit_lanes.py, tools/tests/test_boundary_roster.py, tools/tests/test_check_spec_claims.py, tools/tests/test_precommit_lane_order.py, .githooks/pre-push, changelog.d/US0901.md, sdlc-studio/bugs/BG0569-nothing-stops-a-tool-or-fixture-writing-into.md, sdlc-studio/bugs/BG0641-there-is-no-pre-push-hook-so-the.md, sdlc-studio/bugs/BG0649-test-critic-is-red-when-run-alone-unittest.md, sdlc-studio/bugs/BG0651-a-later-commit-that-changes-a-target-file.md, sdlc-studio/bugs/BG0653-a-test-rename-at-a-close-commit-orphaned.md, sdlc-studio/bugs/BG0662-nothing-checks-a-changelog-fragment-s-shape-until.md, sdlc-studio/stories/US0666-the-rehearsal-runs-as-a-gate-lane-at.md, sdlc-studio/stories/US0674-revert-check-runs-as-a-gate-lane-so.md, sdlc-studio/stories/US0879-a-commit-runs-only-the-checks-that-catch.md, tools/tests/test_commit_msg_hook.py, tools/tests/test_message_first_gate.py, tools/tests/test_repo_writes.py
 > **Epic:** EP0262
 > **Points:** 3
 > **Persona:** Maya Okafor
@@ -19,10 +19,13 @@
 
 - **AC1:** Given `.githooks/pre-commit --list` and `.githooks/commit-msg --list`, then each prints every lane it runs, one per line with its key and the rule it enforces, runs none of them (the hook fixture's tripwires stay silent) and exits 0; a lane added to a hook appears in its list with no other file edited
   - **Verify:** pytest tools/tests/test_lean_commit_lanes.py::LaneListTests::test_each_hook_lists_its_lanes_without_running_them
+  - **Verified:** yes (2026-09-24)
 - **AC2:** Given AGENTS.md, then it carries no lane roster and points at the two `--list` commands; the tests that pinned its prose (the roster half of `test_lean_commit_lanes`, GateLaneTests and StampsStagedRosterTests in `test_check_spec_claims`, `ChangelogShapeLaneTests::test_the_agents_roster_names_the_lane`, `test_boundary_roster)` and tools/`boundary_roster.py` are deleted, so no test reads AGENTS.md to pin a lane or boundary name
   - **Verify:** pytest tools/tests/test_lean_commit_lanes.py::LaneListTests::test_agents_md_points_at_the_lists_and_no_test_pins_its_prose
+  - **Verified:** yes (2026-09-24)
 - **AC3:** Given the test nodes this story deletes, then every stamped criterion naming one is retired in the D0259 pattern (`Verify: manual - retired by <this story>: <why>`, `Verified: manual (<date>) - retired, superseded by <this story>`), and US0879's revision history records that AC1's roster clause is superseded by this story, so `verify_ac.py stamps --staged` passes on the deleting commit
   - **Verify:** pytest tools/tests/test_lean_commit_lanes.py::LaneListTests::test_the_roster_criteria_are_retired
+  - **Verified:** yes (2026-09-24)
 
 ## Revision History
 

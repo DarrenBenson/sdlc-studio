@@ -97,7 +97,8 @@ class CommitMsgGateTests(unittest.TestCase):
     def test_multi_id_with_refs_trailers_passes(self):
         r = _run("feat(CR0257, CR0258): batch fix\n\nRefs: CR0257\nRefs: CR0258\n")
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        self.assertEqual((r.stdout + r.stderr).strip(), "")
+        # The message rule is a `run` lane (US0901): its verdict line and nothing else.
+        self.assertEqual((r.stdout + r.stderr).strip(), "ok   message-refs")
 
     def test_multi_id_with_comma_list_trailer_passes(self):
         r = _run("feat(CR0257, CR0258): batch fix\n\nRefs: CR0257, CR0258\n")
@@ -304,7 +305,8 @@ class UnnamedUnitAttributionTests(unittest.TestCase):
             out = r.stdout + r.stderr
             self.assertEqual(r.returncode, 0, out)
             self.assertNotIn("BG0268", out)          # two owners: no claim about whose work it is
-            self.assertEqual(out.strip(), "", out)   # ... and a clean run stays silent
+            # ... and a clean run prints only the message lane's verdict (US0901)
+            self.assertEqual(out.strip(), "ok   message-refs", out)
 
 
 class _VerdictPlacementFixture:

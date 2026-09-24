@@ -1,12 +1,13 @@
-"""Guards over what the repo's own documents claim: the AGENTS.md lane roster, SKILL.md's
-sections, and the doctrine's repair-evidence rule.
+"""Guards over what the repo's own documents claim: SKILL.md's sections, the lint chain, and the
+doctrine's repair-evidence rule. The AGENTS.md lane roster pins went with the roster (US0901): the
+hooks list their own lanes (`--list`).
 
 The module is named for `tools/check_spec_claims.py`, which US0879 deleted with its commit lane:
 it checked the specs' countable and timing claims against a census, caught nothing, and its
 timing claims deadlocked every fresh worktree (BG0746). The tests of the checker itself went
 with it, and the criteria that named them are retired.
 """
-# test-census-subject: AGENTS.md
+# test-census-subject: .claude/skills/sdlc-studio/SKILL.md
 from __future__ import annotations
 
 import re
@@ -14,128 +15,6 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-
-class GateLaneTests(unittest.TestCase):
-    """The AGENTS.md roster rows for the lanes the hook-derived sweep cannot see: the boundary
-    lanes, and the gate lanes whose blocking status is the thing a reader needs. The per-commit
-    roster itself is pinned in both directions by `test_lean_commit_lanes.py`."""
-
-    def test_the_lane_roster_names_the_revert_check_and_calls_it_advisory(self) -> None:
-        """US0674. The second boundary-bound lane, and the same argument as the rehearsal above:
-        the hook-derived sweep reads the pre-commit hook, so a lane that deliberately does not
-        run per commit is invisible to it (LL0013).
-
-        Its BLOCKING STATUS is pinned as well as its name, which the rehearsal's row does not
-        need. This one ships advisory while its yield is measured, and a roster that named the
-        lane without saying so would leave nobody able to check whether it had quietly started
-        blocking - or quietly stopped."""
-        repo = Path(__file__).resolve().parents[2]
-        agents = (repo / "AGENTS.md").read_text(encoding="utf-8")
-        self.assertIn("revert-check", agents,
-                      "AGENTS.md's roster does not name the revert-check lane")
-        # Bounded by DISTANCE rather than by "up to the next full stop": the row names
-        # `gate.py --boundary`, so a sentence-terminator rule stops at the dot in the filename
-        # and the word it is looking for is always just past it.
-        self.assertRegex(agents, r"(?s)revert-check.{0,120}boundar",
-                         "the roster does not say the lane binds at a boundary rather than per "
-                         "commit")
-        # Read the lane's OWN paragraph, not a window around its name. A 900-character window
-        # reached the `claim-drift` row, which also says ADVISORY, so the assertion passed with
-        # the word deleted from this lane's row - a guard satisfied by a neighbouring sentence.
-        para = next((b for b in agents.split("\n\n") if "revert-check" in b), "")
-        self.assertTrue(para, "no paragraph in AGENTS.md mentions revert-check")
-        self.assertIn("ADVISORY", para,
-                      "the roster names the lane but not that it is ADVISORY - a reader cannot "
-                      "tell whether it blocks, which is the one thing they need to know")
-        gate = (repo / ".claude" / "skills" / "sdlc-studio" / "scripts"
-                / "gate.py").read_text(encoding="utf-8")
-        self.assertIn('"revert-check"', gate,
-                      "AGENTS.md names a lane the gate does not register")
-        self.assertIn('"derived-depth"', gate,
-                      "AGENTS.md's gate block names derived-depth and the gate does not "
-                      "register it")
-        self.assertIn("derived-depth", agents,
-                      "the gate blocks on derived-depth and the roster does not name it")
-        # TIE THE WORD TO THE FLAG. Everything above pins the roster's PROSE and the lane's
-        # NAME, and an independent review pointed out that neither reaches the lane's actual
-        # `blocking` value: flip the lane to blocking and the roster's "ADVISORY" becomes a
-        # lie with this test still green. So the flag itself is read here, on both of the
-        # lane's return paths - the one that found nothing and the one that found something -
-        # because a lane that is advisory only while it is silent is not an advisory lane.
-        import sys as _sys  # noqa: PLC0415 - local: only this assertion loads the gate
-        scripts = repo / ".claude" / "skills" / "sdlc-studio" / "scripts"
-        if str(scripts) not in _sys.path:
-            _sys.path.insert(0, str(scripts))
-        import gate as gate_mod  # noqa: PLC0415
-        from unittest import mock as _mock  # noqa: PLC0415
-        for found, label in ((0, "found nothing"), (2, "found two units")):
-            with self.subTest(path=label):
-                import verify_ac as _va  # noqa: PLC0415 - the lane imports both deferred
-                from lib import run_state as _rs  # noqa: PLC0415
-                with _mock.patch.object(gate_mod, "_record_revert_yield"), \
-                        _mock.patch.object(_rs, "base_ref", return_value="deadbeef"), \
-                        _mock.patch.object(_rs, "read", return_value={
-                            "batch": [f"US{9000 + i}" for i in range(2)]}), \
-                        _mock.patch.object(_va, "revert_check", return_value={
-                            "status": "refused" if found else "pass", "green": ["AC1"]}):
-                    res = gate_mod._revert_check(str(repo))
-                self.assertIs(False, res["blocking"],
-                              f"the lane returned blocking=True when it {label}, while "
-                              f"AGENTS.md's roster calls it ADVISORY")
-
-    def test_the_lane_roster_names_evidence_drift_and_its_blocking_status(self) -> None:
-        """BG0651. The lane that refuses a commit drifting a delivered unit's mutation evidence
-        is named in the roster with its status, the way the revert-check row is. MUTANT: leave
-        the roster without the lane."""
-        repo = Path(__file__).resolve().parents[2]
-        agents = (repo / "AGENTS.md").read_text(encoding="utf-8")
-        self.assertIn("evidence-drift", agents, "AGENTS.md's roster does not name the evidence-drift lane")
-        para = next((b for b in agents.split("\n\n") if "`evidence-drift`" in b), "")
-        self.assertTrue(para, "no paragraph in AGENTS.md names `evidence-drift`")
-        self.assertIn("BLOCKING", para, "the roster names the lane but not that it BLOCKS")
-        self.assertIn("mutation", para.lower(), "the roster does not say what the lane guards")
-
-    def test_the_lane_roster_names_module_alone_as_boundary_bound(self) -> None:
-        """BG0649. A third boundary-bound lane, invisible to the hook-derived sweep for the same
-        reason as the two above (LL0013). MUTANTS: leave the roster without the lane; name it
-        without saying it binds at the boundaries only."""
-        repo = Path(__file__).resolve().parents[2]
-        agents = (repo / "AGENTS.md").read_text(encoding="utf-8")
-        self.assertIn("module-alone", agents, "AGENTS.md's roster does not name the module-alone lane")
-        para = next((b for b in agents.split("\n\n") if "`module-alone`" in b), "")
-        self.assertTrue(para, "no paragraph in AGENTS.md names `module-alone`")
-        # US0881 moved the lane to the tag: a push pays the full suite once instead
-        self.assertIn("release boundary only", para,
-                      "the roster does not say the lane binds at the release boundary and nowhere else")
-        self.assertIn("never per push", para, "the roster does not say the lane is off the push path")
-        # the COST, not only the decision it is stated beside: a false figure shipped once
-        # because this pin read "D0180" alone, and deleting the whole cost sentence passed it
-        # the figure is stated IN MINUTES immediately, so a false "about 45 s" cannot borrow
-        # the word from a later clause of the same sentence
-        self.assertRegex(para, r"(?s)Its cost is the lane's wall clock, (?:\w+ to \w+|about \w+)\s+minutes.{0,200}D0180",
-                         "the roster does not state the lane's wall-clock cost in minutes beside D0180's")
-        self.assertIn("test_gate", para, "the roster does not name the slowest module the cost is made of")
-        gate = (repo / ".claude" / "skills" / "sdlc-studio" / "scripts" / "gate.py").read_text(encoding="utf-8")
-        self.assertIn('"module-alone"', gate, "AGENTS.md names a lane the gate does not register")
-
-    def test_the_lane_roster_names_the_release_rehearsal(self) -> None:
-        """US0666: a lane bound at a BOUNDARY is invisible to the hook-derived sweep above, which
-        reads the pre-commit hook - so the one lane that deliberately does not run per commit is
-        the one that roster cannot see. It is pinned here by name, with the boundary it binds at,
-        because a lane nobody has written down is one nobody notices losing (LL0013)."""
-        repo = Path(__file__).resolve().parents[2]
-        agents = (repo / "AGENTS.md").read_text(encoding="utf-8")
-        self.assertIn("release-rehearsal", agents,
-                      "AGENTS.md's roster does not name the release-rehearsal lane")
-        self.assertIn("rehearse-release.sh", agents,
-                      "the roster names the lane but not the harness it runs")
-        self.assertRegex(agents, r"release-rehearsal[^.]*boundar",
-                         "the roster does not say the lane binds at a boundary rather than per "
-                         "commit, which is the only thing a reader needs to know about it")
-        gate = (repo / ".claude" / "skills" / "sdlc-studio" / "scripts"
-                / "gate.py").read_text(encoding="utf-8")
-        self.assertIn('"release-rehearsal"', gate,
-                      "AGENTS.md names a lane the gate does not register")
 
 
 class LintAggregateTests(unittest.TestCase):
@@ -155,8 +34,6 @@ class LintAggregateTests(unittest.TestCase):
         self.assertIn("lint:disclosure", pkg["lint"],
                       "the `lint` chain does not call `lint:disclosure`, so the checker runs "
                       "nowhere and reports nothing however good it is")
-
-
 
 
 class SkillSectionTests(unittest.TestCase):
@@ -518,24 +395,6 @@ class DoctrineTests(unittest.TestCase):
                       "the lesson does not cite the doctrine passage")
         self.assertIn("transition.py", lessons,
                       "the lesson does not name the verb that enforces it")
-
-
-class StampsStagedRosterTests(unittest.TestCase):
-    """BG0653 AC4: the roster and the hook name the `stamps-staged` lane by LITERAL. The derived
-    sweep in `GateLaneTests` captures a `$skill`-quoted lane with its trailing quote and skips
-    it (a Low under CR0511), so this pin does not rely on it."""
-
-    def test_the_lane_roster_names_stamps_staged(self) -> None:
-        """MUTANT: remove `stamps-staged` from AGENTS.md's pre-commit lane roster paragraph."""
-        repo = Path(__file__).resolve().parents[2]
-        agents = (repo / "AGENTS.md").read_text(encoding="utf-8")
-        start = agents.index("The pre-commit lanes, recorded here")
-        paragraph = agents[start:start + 2500]
-        self.assertIn("`stamps-staged`", paragraph, "the roster must name the lane")
-        self.assertIn("stamps --staged", paragraph, "and the command that runs it")
-        hook = (repo / ".githooks" / "pre-commit").read_text(encoding="utf-8")
-        self.assertIn('run "stamps-staged"', hook, "the hook must wire the lane by that name")
-        self.assertIn("stamps --staged", hook)
 
 
 if __name__ == "__main__":

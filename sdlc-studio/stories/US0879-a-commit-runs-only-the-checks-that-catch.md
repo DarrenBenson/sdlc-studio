@@ -35,3 +35,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-24 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | sdlc-studio | AC1's roster clause (the AGENTS.md lane roster names only the lanes that run) is superseded by US0901: AGENTS.md carries no roster, each hook lists its own lanes with `--list`, and the roster half of the AC1 test is deleted |
