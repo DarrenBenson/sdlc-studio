@@ -60,7 +60,8 @@ EXPECTED_LANES = (
     "stamps-staged", "changelog-shape", "warning-ratchet",
     # US0879 deleted runbook, lens-signatures, spec-claims and practice-rules from BOTH lane
     # rosters: two inventories of one hook is how a lane comes to exist in one list only.
-    "script-tests", "budgets",
+    # US0902 deleted script-tests from both, for the same reason.
+    "budgets",
     "neutrality",
     "action-pins", "dead-flags", "floor-pending", "gate", "markdown", "markdown-payload",
     "skill-tests", "tool-tests", "repo-writes",

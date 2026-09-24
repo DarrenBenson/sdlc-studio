@@ -92,11 +92,6 @@ run "warning-ratchet" \
   "repair the instance named above, or record it with a reason in sdlc-studio/.validate-warning-baseline.json (validate.py warning-ratchet --stamp --reason ...) - a repaired entry is reported stale and removable, never re-spendable" \
   -- python3 .claude/skills/sdlc-studio/scripts/validate.py warning-ratchet
 
-run "script-tests" \
-  "the TSD's per-script test contract agrees with the scripts tree, in both directions" \
-  "add the missing test, or update the Unit coverage map's fenced exception list - a stale exemption hides a real gap beside it" \
-  -- python3 tools/check_script_tests.py
-
 run "budgets" \
   "each reference-*.md stays under its declared line ceiling (keeps load cost bounded)" \
   "shrink the file, or raise its ceiling in tools/check_budgets.py deliberately (with a rationale comment)" \

@@ -104,8 +104,8 @@ approach that fits it.
 the part of the system that can be tested as code, so they are. Nearly every script has a
 matching `test_<script>.py` under `scripts/tests/`, and the contract (TRD section 5,
 rule 8) mandates this; the named exceptions are exercised indirectly and are listed in the
-Unit coverage map, where `tools/check_script_tests.py` holds the list to the tree. New script behaviour is expected to land with its tests; the
-release gate refuses to tag until the suite is green.
+Unit coverage map. New script behaviour is expected to land with its tests; the release gate
+refuses to tag until the suite is green.
 
 **Markdown tier - validated by linters, the script suite, the gates, and the eval
 scenarios, not by executable behaviour tests.** The markdown command flows describe
@@ -221,14 +221,10 @@ turn a red gate green.
 #### Unit coverage map
 
 Most scripts and shared-library modules have a dedicated `test_<name>.py`; the script
-contract (TRD section 5, rule 8) mandates one. It is no longer a convention held only in
-review: `tools/check_script_tests.py` enumerates the scripts - top level and `lib/` both -
-and fails the build on a module that arrives without a test and without an entry below.
-A handful are exercised indirectly under a
-differently-named module rather than a dedicated one. That set is MACHINE-READABLE and
-`tools/check_script_tests.py` holds it to the tree in both directions - a module listed here
-that has since gained a dedicated test fails, and a module the sweep finds without one that
-is missing from this list fails too:
+contract (TRD section 5, rule 8) mandates one, and review holds a new script to it. A handful
+are exercised indirectly under a differently-named module rather than a dedicated one. No
+commit lane pins this list to the tree: the one that did caught missing list entries, never a
+code defect.
 
 ```text
 carry_forward

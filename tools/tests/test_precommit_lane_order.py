@@ -79,7 +79,8 @@ EXPECTED_LANES = {
     # BG0662: nothing opened a changelog fragment until the release cut, where compose refused
     # the whole fold; 59 of 119 had drifted past a green gate.
     "changelog-shape",
-    "script-tests", "budgets",
+    # US0902 deleted script-tests: it held the TSD's prose map to the scripts tree.
+    "budgets",
     "neutrality",
     "action-pins", "dead-flags", "floor-pending", "markdown", "markdown-payload",
 }

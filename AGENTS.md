@@ -81,9 +81,9 @@ write-time guard cannot see a rename, and the scheduled corpus lane that can was
 unread, BG0653), `changelog-shape` (`changelog.py shape --staged`, which refuses a commit that
 stages a `changelog.d/` fragment the release cut could not fold, naming every one with the cut's
 own message and judging the staged blob - nothing opened a fragment before the cut, and 59 of 119
-had drifted past it, BG0662), `warning-ratchet` (`validate.py warning-ratchet`), `script-tests`
-(`check_script_tests.py`), `budgets` (`check_budgets.py`), `neutrality` (`check_neutrality.py`),
-`dead-flags` (`command_audit.py --dead-flags`), `action-pins` (`check_action_pins.sh`),
+had drifted past it, BG0662), `warning-ratchet` (`validate.py warning-ratchet`), `budgets`
+(`check_budgets.py`), `neutrality` (`check_neutrality.py`), `dead-flags`
+(`command_audit.py --dead-flags`), `action-pins` (`check_action_pins.sh`),
 `floor-pending` (`engagement_floor.py check --pending`), `gate.py`'s own block (conformance,
 reconcile, validate, integrity, duplicate-id, docs, derived-depth, `evidence-drift`, and `window`,
 the one concurrent-write window check), and `markdown` and `markdown-payload` (markdownlint).

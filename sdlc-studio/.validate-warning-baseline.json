@@ -280,8 +280,20 @@
     {
       "id": "BG0463",
       "rule": "affects-unresolvable",
+      "target": "tools/check_script_tests.py",
+      "reason": "Deleted by design in US0902 (2026-09-24): tools/check_script_tests.py and its test module went with the script-tests commit lane, which held the TSD's prose coverage map to the scripts tree and caught no code defect. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "BG0463",
+      "rule": "affects-unresolvable",
       "target": "tools/check_spec_claims.py",
       "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "BG0463",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_check_script_tests.py",
+      "reason": "Deleted by design in US0902 (2026-09-24): tools/check_script_tests.py and its test module went with the script-tests commit lane, which held the TSD's prose coverage map to the scripts tree and caught no code defect. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
     },
     {
       "id": "BG0468",
@@ -396,6 +408,18 @@
       "rule": "affects-unresolvable",
       "target": "tools/check_spec_claims.py",
       "reason": "BG0724 is Superseded by US0879, which deleted tools/check_spec_claims.py; its Affects names the file the finding was against, which no longer exists."
+    },
+    {
+      "id": "BG0727",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_script_tests.py",
+      "reason": "US0902 deleted tools/check_script_tests.py and its test by design; US0902 (which deleted them) and BG0727 (superseded by that deletion) name them in Affects because they are what the change removed."
+    },
+    {
+      "id": "BG0727",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_check_script_tests.py",
+      "reason": "US0902 deleted tools/check_script_tests.py and its test by design; US0902 (which deleted them) and BG0727 (superseded by that deletion) name them in Affects because they are what the change removed."
     },
     {
       "id": "BG0746",
@@ -2294,6 +2318,18 @@
       "reason": "Deleted by design in US0879 (2026-09-24): tools/check_spec_claims.py, tools/runbook.py and tools/best_practice_rules.py went with their docs-against-docs commit lanes, and the test modules that held only their stubs went with the criteria retired against them. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
     },
     {
+      "id": "US0456",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_script_tests.py",
+      "reason": "Deleted by design in US0902 (2026-09-24): tools/check_script_tests.py and its test module went with the script-tests commit lane, which held the TSD's prose coverage map to the scripts tree and caught no code defect. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
+      "id": "US0456",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_check_script_tests.py",
+      "reason": "Deleted by design in US0902 (2026-09-24): tools/check_script_tests.py and its test module went with the script-tests commit lane, which held the TSD's prose coverage map to the scripts tree and caught no code defect. The unit's Affects records what it touched when it was delivered; the path is gone on purpose, not by a typo."
+    },
+    {
       "id": "US0536",
       "rule": "affects-undeclared",
       "target": "fragment",
@@ -2436,6 +2472,18 @@
       "rule": "affects-unresolvable",
       "target": "tools/runbook.py",
       "reason": "US0879 deletes these three files (the dead spec-claims, runbook and practice-rules lanes); its Affects names them because they are what the story removed, so they cannot resolve to a file after it lands."
+    },
+    {
+      "id": "US0902",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_script_tests.py",
+      "reason": "US0902 deleted tools/check_script_tests.py and its test by design; US0902 (which deleted them) and BG0727 (superseded by that deletion) name them in Affects because they are what the change removed."
+    },
+    {
+      "id": "US0902",
+      "rule": "affects-unresolvable",
+      "target": "tools/tests/test_check_script_tests.py",
+      "reason": "US0902 deleted tools/check_script_tests.py and its test by design; US0902 (which deleted them) and BG0727 (superseded by that deletion) name them in Affects because they are what the change removed."
     }
   ]
 }

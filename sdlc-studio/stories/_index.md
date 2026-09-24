@@ -10,9 +10,9 @@
 | Draft | 172 |
 | Ready | 15 |
 | Planned | 0 |
-| In Progress | 5 |
+| In Progress | 4 |
 | Review | 0 |
-| Done | 705 |
+| Done | 706 |
 | Won't Implement | 8 |
 | Deferred | 0 |
 | Superseded | 13 |
@@ -260,7 +260,7 @@
 | [US0899](US0899-mechanical-index-and-epic-drift-is-fixed-at.md) | Mechanical index and epic drift is fixed at commit, not refused | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0900](US0900-a-change-request-can-be-filed-before-it.md) | A change request can be filed before it is sized | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0901](US0901-the-hooks-list-their-own-lanes-and-agents.md) | The hooks list their own lanes, and AGENTS.md stops restating them | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
-| [US0902](US0902-adding-a-script-no-longer-needs-a-matching.md) | Adding a script no longer needs a matching TSD sentence to commit | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0902](US0902-adding-a-script-no-longer-needs-a-matching.md) | Adding a script no longer needs a matching TSD sentence to commit | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0903](US0903-a-recurring-lesson-asks-for-a-fix-or.md) | A recurring lesson asks for a fix or a retirement, not another check | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0904](US0904-each-lane-s-refusals-are-counted-against-the.md) | Each lane's refusals are counted against the defects they caught | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0905](US0905-adding-a-commit-lane-means-removing-one.md) | Adding a commit lane means removing one | Draft | EP0262 | 2026-09-24 | 2026-09-24 |

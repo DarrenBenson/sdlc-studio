@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 60 |
+| Open | 59 |
 | In Progress | 0 |
 | Fixed | 590 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 10 |
-| Superseded | 8 |
+| Superseded | 9 |
 | **Total** | **755** |
 
 ## All Bugs
@@ -85,7 +85,7 @@
 | [BG0724](BG0724-check-spec-claims-reads-raw-text-so-a.md) | check_spec_claims reads raw text, so a claim inside a fenced code block is judged as a live claim | Superseded | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0725](BG0725-two-spellings-of-the-stop-ship-constant-and.md) | two spellings of the stop-ship constant, and a hand-maintained verb list whose stale entries nothing can report | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0726](BG0726-the-report-renders-no-declared-seat-without-asking.md) | the report renders NO DECLARED SEAT without asking whether the project declares any personas at all | Open | Medium | 2026-09-21 | 2026-09-21 |
-| [BG0727](BG0727-check-script-tests-sweeps-two-fixed-globs-so.md) | check_script_tests sweeps two fixed globs, so a script in any other scripts subdirectory needs no test | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0727](BG0727-check-script-tests-sweeps-two-fixed-globs-so.md) | check_script_tests sweeps two fixed globs, so a script in any other scripts subdirectory needs no test | Superseded | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0728](BG0728-a-unit-s-declared-affects-is-never-compared.md) | a unit's declared Affects is never compared with the files its delivering commit changed | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0729](BG0729-the-batch-level-reviewer-contribution-to-the-lens.md) | the batch-level reviewer contribution to the lens count is asserted by no test | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0730](BG0730-a-stop-ship-ruling-is-never-re-derived.md) | a stop-ship ruling is never re-derived against its finding's status, so a ruling on a Fixed finding blocks every close permanently | Fixed | High | 2026-09-21 | 2026-09-21 |
