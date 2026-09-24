@@ -6,8 +6,8 @@ A commit clears in ninety seconds, and every commit lane left standing shows wha
 
 **Verdict: Judged partial** - Half one missed by 3s: a one-line gate.py commit measured 93s end to end against 90 (229s at the start), with its suites down to 43s; code commits this run cleared in 60-75s. The rest is the sequential pre-commit, as US0891 was carried (BG0759). Half two not delivered: US0904's lane-yield log was carried at the review cap on a one-character defect (BG0761). Deleted: the warning ratchet, verify ratchet, boundary roster and release-notes count pin, plus eight advisory lanes off the commit.
 
-> **Run:** 2026-09-24T12:03:22Z to open (7.0h)
-> **Verified on:** 9169d40340f57dbeaa6c2f9e3bd79275719a4d21   **Fingerprint:** 73e9f83f9a5ecaaa
+> **Run:** 2026-09-24T12:03:22Z to open (7.2h)
+> **Verified on:** 9169d40340f57dbeaa6c2f9e3bd79275719a4d21   **Fingerprint:** ed21330f92c071cb
 
 ## Estimates
 
@@ -18,8 +18,8 @@ over forecast.
 | Measure | Forecast | Actual | Ratio | Over |
 | --- | --- | --- | --- | --- |
 | Points | 32 | 32 | 1.0x | 16 of 16 delivered unit(s) |
-| Minutes | 204.8 | 418.8 | 2.04x | the whole run: forecast over 16 of 16 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
-| Tokens | 11,321,920 | 11,610,466 | 1.03x | the whole run: forecast over 16 of 16 unit(s) planned or added and not dropped; actual is the main-thread meter plus 72 delegated agent(s)' reported totals, split in the appendix |
+| Minutes | 204.8 | 429.5 | 2.1x | the whole run: forecast over 16 of 16 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
+| Tokens | 11,321,920 | 11,644,284 | 1.03x | the whole run: forecast over 16 of 16 unit(s) planned or added and not dropped; actual is the main-thread meter plus 72 delegated agent(s)' reported totals, split in the appendix |
 
 Each unit's minutes and tokens are measured over its own open span. Units open at the same time
 share hours and tokens, so these spans may overlap and are never added up into the run's figures
@@ -119,17 +119,17 @@ Signing records the principal, the date and this report's fingerprint against RU
 
 | Model | Tokens |
 | --- | --- |
-| mixed | 1,841,767 |
+| mixed | 1,875,585 |
 
-Total 11,610,466, of which delegated 9,768,699. Coverage: 1 session(s);
+Total 11,644,284, of which delegated 9,768,699. Coverage: 1 session(s);
 read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp.
 
 ### DORA
 
 | Key | This run | Mapping | Elite band | Derived from |
 | --- | --- | --- | --- | --- |
-| Deployment frequency | 22 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window | on demand | git history - 22 commit(s) on main inside the run window |
-| Lead time for changes | 6h 31m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 22 commit(s) |
+| Deployment frequency | 23 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window | on demand | git history - 23 commit(s) on main inside the run window |
+| Lead time for changes | 6h 43m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 23 commit(s) |
 | Change failure rate | NOT MEASURED - no forge run data | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that did not conclude success | 0-15% | no push-triggered CI run is readable for this run window |
 | Time to restore | NOT MEASURED - no forge run data | the span from a push-triggered run concluding failure on main to the next push-triggered run concluding success | under an hour | no push-triggered CI run is readable for this run window |
 

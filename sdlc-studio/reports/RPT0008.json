@@ -3,8 +3,8 @@
   "report_id": "RPT0008",
   "run_id": "RUN-01M39MC0",
   "retro_id": "RETRO0123",
-  "generated_at": "2026-09-24T19:02:10Z",
-  "window_end": "2026-09-24T19:02:10Z",
+  "generated_at": "2026-09-24T19:12:51Z",
+  "window_end": "2026-09-24T19:12:51Z",
   "signature": null,
   "sections": [
     {
@@ -43,7 +43,7 @@
         },
         "duration_hours": {
           "key": "duration_hours",
-          "value": "7.0h",
+          "value": "7.2h",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "verified_sha": {
@@ -100,12 +100,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 418.8,
+            "value": 429.5,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "2.04x",
+            "value": "2.1x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -127,7 +127,7 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 11610466,
+            "value": 11644284,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
@@ -1517,7 +1517,7 @@
         },
         "tokens_total": {
           "key": "tokens_total",
-          "value": 11610466,
+          "value": 11644284,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "token_coverage": {
@@ -1540,7 +1540,7 @@
           },
           "model_tokens": {
             "key": "model_tokens",
-            "value": 1841767,
+            "value": 1875585,
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -1560,7 +1560,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": 22,
+            "value": 23,
             "source": "git log"
           },
           "dora_mapping": {
@@ -1575,7 +1575,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - 22 commit(s) on main inside the run window",
+            "value": "git history - 23 commit(s) on main inside the run window",
             "source": "git log"
           }
         },
@@ -1587,7 +1587,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "6h 31m",
+            "value": "6h 43m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -1602,7 +1602,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 22 commit(s)",
+            "value": "git history - first to last of 23 commit(s)",
             "source": "git log"
           }
         },
@@ -1992,5 +1992,5 @@
       "not_measured": null
     }
   ],
-  "fingerprint": "73e9f83f9a5ecaaa"
+  "fingerprint": "ed21330f92c071cb"
 }
