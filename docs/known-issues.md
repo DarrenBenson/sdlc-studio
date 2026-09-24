@@ -86,16 +86,13 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0741` | Medium | the stale lens is silenced by the sweep's own audit rulings, and repairing it will make every abandoned request double-report on the same day |
 | `BG0742` | Medium | AC5-style corpus-coupled tests go red when the backlog they measure is acted on, and two are red in this tree already |
 | `BG0743` | Medium | a signed report's digest covers prose that is edited in place, so an unrelated amendment to a decision rationale invalidates a signature over an un... |
-| `BG0746` | Medium | The spec-claims timing claim deadlocks every fresh worktree under parallel load |
-| `BG0747` | Medium | The evidence-drift lane still enforces mutation evidence that D0255 switched off, and re-registration drops other rows |
-| `BG0749` | Medium | Thirty stamped criteria on older units point at tests this sprint made skipped stubs |
 | `BG0750` | Medium | A same-day waiver flips a filed sprint report INVALID |
 | `BG0751` | Medium | Open findings in a sprint report use an inclusive window end |
 | `BG0752` | Medium | Per-commit test selection skips hooks, test infrastructure and code reached through another script |
 | `BG0753` | Medium | The test suite leaks temporary directories into /tmp |
 | `BG0754` | Medium | A commit touching a widely imported script runs well over the 90-second budget |
 
-64 findings: 64 Medium, 0 Low.
+61 findings: 61 Medium, 0 Low.
 
 ## Not carried
 

@@ -398,6 +398,12 @@
       "reason": "BG0724 is Superseded by US0879, which deleted tools/check_spec_claims.py; its Affects names the file the finding was against, which no longer exists."
     },
     {
+      "id": "BG0746",
+      "rule": "affects-unresolvable",
+      "target": "tools/check_spec_claims.py",
+      "reason": "BG0746 is Fixed by US0879, which deleted tools/check_spec_claims.py and its timing claim; its Affects names the file the defect lived in, which no longer exists."
+    },
+    {
       "id": "CR0010",
       "rule": "affects-unresolvable",
       "target": "prd.md",

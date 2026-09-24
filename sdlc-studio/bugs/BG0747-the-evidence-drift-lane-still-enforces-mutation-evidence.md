@@ -1,9 +1,10 @@
 # BG0747: The evidence-drift lane still enforces mutation evidence that D0255 switched off, and re-registration drops other rows
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_off.py
+> **Verification depth:** functional (the criteria drive gate.py's evidence-drift lane under off, block and report, and re-registration on a copy of the real ledger lost no live row over 56 targets; 12 reviewer mutants were killed)
 > **Created:** 2026-09-23
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,12 +24,15 @@ Make evidence-drift honour `review.mutation_evidence` (off -> report only), and 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: D0255 set `review.mutation_evidence`: off, but gate.py's evidence-drift lane still blocks any commit that drifts a registered mutant row.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Stage an edit to a file that holds unanchored registered mutant rows of a delivered unit, with `review.mutation_evidence`: off: the commit is refused by...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Make evidence-drift honour `review.mutation_evidence` (off -> report only), and stop `register` from dropping anchored rows whose site did not move; long term...
+- [x] **AC1** The behaviour described is corrected: D0255 set `review.mutation_evidence`: off, but gate.py's evidence-drift lane still blocks any commit that drifts a registered mutant row.
+- [x] **AC2** Following the recorded steps no longer reproduces the defect: Stage an edit to a file that holds unanchored registered mutant rows of a delivered unit, with `review.mutation_evidence`: off: the commit is refused by...
+- [x] **AC3** The proposed fix lands, pinned by a test: Make evidence-drift honour `review.mutation_evidence` (off -> report only), and stop `register` from dropping anchored rows whose site did not move; long term...
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_off.py::EvidenceDriftTests
+  - **Verified:** yes (2026-09-24)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-23 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Fixed by US0882 (RUN-01M3891F): the story's criteria are this bug's proposed fix, and its test class verifies it here |
