@@ -23,8 +23,11 @@ the shared read helper it calls (`master_terminal_rows`).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -1021,10 +1024,13 @@ def epic_status_stale_drift(repo_root: Path | str) -> list[dict]:
     reading the delivery backlog to decide what is left - `status backlog`, `backlog_triage`, an
     appetite - reads a number overstated by exactly those epics, and by the requests they deliver.
 
-    DETECT-ONLY, deliberately. No applier is registered for this kind, because closing an epic is
-    a status transition and `transition.py set` is where an epic's own gates live. An `apply` that
-    wrote `Done` into the file would route around them, which is how the roll-up would come to
-    claim a completion no gate had agreed to. The `fix` names the command instead.
+    No `apply` writer is registered for this kind, because closing an epic is a status transition
+    and `transition.py set` is where an epic's own gates live. An `apply` that wrote `Done` into the
+    file would route around them, which is how the roll-up would come to claim a completion no gate
+    had agreed to. The `fix` names the command, and `settle` runs that same transition.
+
+    The status is DERIVED, never assumed Done (`epic_derived_status`): an epic whose every child
+    was ruled out rather than built is `Superseded`, so closing it can never claim a delivery.
 
     Silent in three states, each because the epic asserts nothing to contradict:
 
@@ -1057,15 +1063,30 @@ def epic_status_stale_drift(repo_root: Path | str) -> list[dict]:
         if any(u_canon == "Deferred" or not sdlc_md.is_terminal_status(utype, u_canon)
                for _ln, _ticked, _uid, utype, u_canon in units):
             continue
-        terminal = sorted(sdlc_md.terminal_statuses("epic"))
+        target = epic_derived_status([(utype, u_canon) for _ln, _t, _u, utype, u_canon in units])
         drift.append({"type": "epic", "id": eid, "kind": "epic-status-stale",
                       "file_status": canon, "index_status": None,
-                      "children": len(units),
+                      "children": len(units), "target": target,
                       "fix": f"{eid} is `{canon}` and all {len(units)} of its breakdown units are "
                              f"terminal - close it with `transition.py set --id {eid} --status "
-                             f"{terminal[0]}`, which runs the epic's own gates (`reconcile apply` "
-                             f"deliberately does not, so a completion is never written round them)"})
+                             f"{target}`, which runs the epic's own gates (`reconcile settle` does "
+                             f"this at commit; `reconcile apply` deliberately does not, so a "
+                             f"completion is never written round them)"})
     return drift
+
+
+def epic_derived_status(children: "list[tuple[str, str]]") -> str:
+    """The terminal an epic derives from a finished breakdown of `(type, status)` children.
+
+    The successful terminal (`Done`) when ANY child was delivered; the epic's abandonment
+    terminal (`Superseded`) when every child was ruled out rather than built - Superseded, Won't
+    Implement, Won't Fix. Deciding it here, rather than defaulting to `Done`, is what lets a
+    commit close a retired epic automatically without claiming a delivery nobody made.
+    """
+    if any(sdlc_md.is_delivered_terminal(utype, status) for utype, status in children):
+        return sdlc_md.default_terminal_status("epic")
+    return next(s for s in sdlc_md.STATUS_VOCAB["epic"]
+                if sdlc_md.is_terminal_status("epic", s) and sdlc_md.is_decision_terminal(s))
 
 
 def apply_breakdown(repo_root: Path | str, dry_run: bool = False) -> dict:
@@ -2947,6 +2968,203 @@ def index_derived_issues(repo_root: Path | str, types=None) -> list[str]:
     return out
 
 
+# --- Settle: the mechanical drift a commit fixes rather than refuses -----------------
+#: The index drift kinds `apply_type` writes for a pipeline type: rows, counts, cells and stamp.
+#: Scoped to DEFAULT_TYPES on purpose - the meta indexes (retros, reviews, handoffs) report
+#: `missing-row` too, and `settle` does not write them, so theirs still blocks.
+SETTLED_INDEX_KINDS = ("status-mismatch", "missing-row", "count-mismatch", "index-field",
+                       "stale-index-stamp")
+
+
+def settled_items(repo_root: Path | str, drift: list[dict]) -> list[dict]:
+    """The items of `drift` that `settle` would actually apply - the ones a gate may report
+    without counting, because a commit fixes them rather than a person.
+
+    DERIVED from the writers' own dry runs, never from the kind alone: an index row `apply_type`
+    reports it cannot write (`unapplied`, `missing_unapplied`, an unplaceable summary row, a
+    structurally broken index) is not settled, and nor is an epic whose derived close
+    `transition` would refuse. Claiming otherwise would tell the committer a fix is coming that
+    never lands. Every other kind, and every other type, is left out.
+    """
+    import transition  # noqa: PLC0415 - lazy: transition imports reconcile at module level
+    root = Path(repo_root)
+    plans: dict[str, dict] = {}
+    out: list[dict] = []
+    for d in drift:
+        kind, type_ = d.get("kind"), d.get("type")
+        if kind == "epic-status-stale" and d.get("target"):
+            try:
+                transition.transition(root, d["id"], d["target"], dry_run=True)
+            except Exception:  # noqa: BLE001 - any refusal or fault means it will not land
+                continue
+            out.append(d)
+            continue
+        if kind not in SETTLED_INDEX_KINDS or type_ not in DEFAULT_TYPES:
+            continue
+        if type_ not in plans:
+            plans[type_] = apply_type(type_, root, dry_run=True)
+        res = plans[type_]
+        blocked = {_norm_id(u["id"]) for u in res.get("unapplied", [])} | {
+            _norm_id(str(a)) for a in res.get("missing_unapplied", [])}
+        if res.get("refused"):
+            continue
+        if kind == "count-mismatch" and (blocked or res.get("summary_missing")):
+            continue
+        if d.get("id") and _norm_id(str(d["id"])) in blocked:
+            continue
+        out.append(d)
+    return out
+
+
+def _git(top: Path, *args: str) -> str:
+    """Run git in `top` through the caller's environment, on purpose: inside a commit hook,
+    `GIT_INDEX_FILE` names the index being committed, and that is the one to read and stage."""
+    proc = subprocess.run(["git", "-C", str(top), "-c", "core.quotepath=false", *args],
+                          capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise RuntimeError(f"git {args[0]} failed in {top}: {proc.stderr.strip()}")
+    return proc.stdout
+
+
+def _temporary_index(top: Path) -> str | None:
+    """Why staging here would be lost, or None when it is safe.
+
+    `git commit -- <paths>` (`--only`) runs the hook against a TEMPORARY index holding just
+    those paths; anything staged into it is committed, but the repository's own index keeps
+    the old bytes, so the next plain commit silently reverts it. A plain commit reads the
+    repository's index, and `-a`/`-i` its lock, which becomes that index - both safe.
+    """
+    named = os.environ.get("GIT_INDEX_FILE")
+    if not named:
+        return None
+    own = Path(_git(top, "rev-parse", "--absolute-git-dir").strip()) / "index"
+    path = Path(named) if Path(named).is_absolute() else top / named
+    if path.resolve() in (own.resolve(), Path(str(own) + ".lock").resolve()):
+        return None
+    return (f"this commit names its paths (`git commit -- <paths>`), so git is committing from "
+            f"a temporary index ({path.name}) and anything staged into it would be reverted by "
+            f"the next commit - nothing was settled. Commit the settled files normally: run "
+            f"`reconcile.py settle`, then `git commit` without paths")
+
+
+def _unstaged(top: Path) -> dict[str, str]:
+    """Every path (relative to the work tree `top`) whose working-tree bytes differ from the
+    index - modified or untracked - mapped to a hash of those bytes."""
+    stdout = _git(top, "status", "--porcelain=v1", "-z", "--untracked-files=all")
+    fields = stdout.split("\0")
+    out: dict[str, str] = {}
+    i = 0
+    while i < len(fields):
+        entry = fields[i]
+        i += 1
+        if len(entry) < 4:
+            continue
+        code, rel = entry[:2], entry[3:]
+        if code[0] in ("R", "C"):
+            i += 1        # a rename/copy entry is followed by its source path
+        if code[1] == " ":
+            continue      # staged, and the working tree matches what is staged
+        try:
+            out[rel] = hashlib.sha1((top / rel).read_bytes()).hexdigest()
+        except OSError:
+            out[rel] = "gone"
+    return out
+
+
+def settle(repo_root: Path | str) -> dict:
+    """Apply the drift `settled_items` names and restage exactly the files the fix wrote.
+
+    Two writers, each the one that already owns the change: `transition.transition` closes every
+    epic `epic_status_stale_drift` reports, to its DERIVED status and through the epic's own
+    gates; then `apply_type` regenerates every pipeline index. A refusal or a fault on one epic
+    or one index is recorded and the rest still run; nothing is forced.
+
+    The fix reads the WORKING TREE, so the author's unstaged work must not reach the commit
+    through it, directly or derived. A written file is restaged only when it had no unstaged
+    edits of its own, and an index only when nothing else in its directory had any either (its
+    rows derive from those files); anything else is left in the working tree and named. An epic
+    whose own file or any breakdown child carries unstaged edits is not closed at all. That is
+    why this compares hashes before and after rather than restaging every tracked change. Under
+    a temporary index (`_temporary_index`) nothing is written or staged at all.
+
+    Returns {skipped: reason|None, closed: [(id, from, to)], refused: [(id, reason)],
+    restaged: [path], left: [path], index_refused: [(type, reason)]}.
+    """
+    import transition  # noqa: PLC0415 - lazy: transition imports reconcile at module level
+    root = Path(repo_root).resolve()
+    # git reports paths from the top of the work tree, which need not be the project root.
+    top = Path(_git(root, "rev-parse", "--show-toplevel").strip()).resolve()
+    out: dict = {"skipped": _temporary_index(top), "closed": [], "refused": [], "restaged": [],
+                 "left": [], "index_refused": []}
+    if out["skipped"]:
+        return out
+    before = _unstaged(top)
+    stale = []
+    with sdlc_md.corpus_cache():
+        for d in epic_status_stale_drift(root):
+            hit = sdlc_md.find_by_id(root, d["id"])
+            text = sdlc_md.read_text_safe(hit[0]) if hit else ""
+            inputs = [hit] + [sdlc_md.find_by_id(root, u) for u in declared_breakdown_ids(text)]
+            dirty = sorted({Path(p).resolve().relative_to(top).as_posix()
+                            for p, _t in filter(None, inputs)} & set(before))
+            if dirty:
+                out["refused"].append((d["id"], f"it derives from unstaged edits in "
+                                                f"{', '.join(dirty)} - stage them first"))
+            else:
+                stale.append(d)
+    for d in stale:
+        try:
+            transition.transition(root, d["id"], d["target"])
+            out["closed"].append((d["id"], d["file_status"], d["target"]))
+        except Exception as exc:  # noqa: BLE001 - one epic's fault must not stop the rest
+            out["refused"].append((d["id"], (str(exc).strip() or type(exc).__name__)
+                                   .splitlines()[0]))
+    for type_ in DEFAULT_TYPES:
+        try:
+            res = apply_type(type_, root)
+        except Exception as exc:  # noqa: BLE001 - one index's fault must not stop the rest
+            res = {"refused": f"{type(exc).__name__}: {exc}"}
+        if res.get("refused"):
+            out["index_refused"].append((type_, res["refused"]))
+    after = _unstaged(top)
+    written = sorted(p for p, h in after.items() if before.get(p) != h)
+    dirty_dirs = {p.rsplit("/", 1)[0] for p in before if "/" in p}
+
+    def _carries_unstaged(p: str) -> bool:
+        return p in before or (p.endswith("/_index.md") and p.rsplit("/", 1)[0] in dirty_dirs)
+    out["left"] = [p for p in written if _carries_unstaged(p)]
+    out["restaged"] = [p for p in written if not _carries_unstaged(p)]
+    if out["restaged"]:
+        _git(top, "add", "--", *out["restaged"])
+    return out
+
+
+def cmd_settle(args: argparse.Namespace) -> int:
+    """Fix the mechanical drift and restage it; name everything it could not settle. Exit 0
+    whatever it left: this verb replaces a refusal, so it never becomes one."""
+    try:
+        res = settle(Path(args.root).resolve())
+    except (RuntimeError, OSError) as exc:
+        print(f"settle: could not run ({exc})", file=sys.stderr)
+        return 2
+    if res["skipped"]:
+        print(f"skipped: {res['skipped']}")
+        return 0
+    for eid, frm, to in res["closed"]:
+        print(f"settled {eid}: {frm} -> {to} (every breakdown unit is terminal)")
+    for path in res["restaged"]:
+        print(f"restaged {path}")
+    for path in res["left"]:
+        print(f"left {path}: it, or an artefact it derives from, carries unstaged edits, so the "
+              f"fix is in the working tree and NOT staged - review it and stage it yourself "
+              f"(git add -p {path})")
+    for eid, reason in res["refused"]:
+        print(f"left {eid}: its derived close was refused - {reason}")
+    for type_, reason in res["index_refused"]:
+        print(f"left the {type_} index: {reason}")
+    return 0
+
+
 # --- File-owned index-cell projection ----------------------------------------
 # The index displays per-row fields the FILE owns - Title and Points. `detect`/`apply`
 # above sync only Status + counts, so these drift and must be hand-copied (the audited
@@ -3486,6 +3704,10 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--format", choices=("text", "json"), default="text",
                    help="Output format (json for programmatic callers)")
     a.set_defaults(func=cmd_apply)
+    st = sub.add_parser("settle", help="Fix the mechanical drift a commit would otherwise refuse "
+                                       "(indexes, derived epic closes) and restage what it wrote.")
+    st.add_argument("--root", default=".", help="Repo root (default: .)")
+    st.set_defaults(func=cmd_settle)
     fi = sub.add_parser("fields", help="Project file-owned index cells (title/points).")
     fi.add_argument("--type", default="story", help="Artifact type (default: story)")
     fi.add_argument("--apply", action="store_true", help="Write the cells (default: report only)")

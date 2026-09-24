@@ -44,6 +44,21 @@ run() {
 
 echo "${B}sdlc-studio pre-commit gate${N}"
 
+# MECHANICAL DRIFT IS FIXED, NOT REFUSED. A stale index, or an epic whose every child is terminal,
+# has one remedy with no judgement in it, so `reconcile.py settle` applies it (the epic closes to
+# its DERIVED status through its own gates) and restages exactly the files it wrote. A file that
+# already carried unstaged edits is left unstaged and named, so the author's own work never
+# enters the commit unasked. FIRST, so every lane below judges the settled tree, and above the
+# repo-writes snapshot, which must not read these writes as the suites'. Only when the commit
+# stages an artefact: nothing else can move the drift. Never refuses; the gate reports the rest.
+# A pathspec commit (`git commit -- <paths>`) runs against a temporary index, so settle stages
+# nothing then and says so: staging there would be reverted by the next commit.
+if [ -n "$(git diff --cached --name-only -- sdlc-studio/)" ] && [ -f "$skill/reconcile.py" ]; then
+  settle_out="$(python3 "$skill/reconcile.py" settle --root . 2>&1)" \
+    || settle_out="settle could not run, so mechanical drift is left for the gate to report: $settle_out"
+  [ -n "$settle_out" ] && printf '%s\n' "$settle_out" | sed "s/^/  ${Y}settle${N} /"
+fi
+
 # The concurrent-write window guard is the gate's `window` lane, run by `gate.py --root .` below:
 # ONE implementation. An inline copy used to run here first, duplicating the lane's reader and
 # matcher, and the two drifted apart more than once.

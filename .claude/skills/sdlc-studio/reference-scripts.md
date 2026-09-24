@@ -192,6 +192,9 @@ lists every script with a one-line summary; open the linked page for the full en
   the keys whose rows name different tests or disagree on their verdict, exits 1 when any exist
   or the ledger cannot be parsed, and is silent with exit 0 on a clean ledger.
 - `reconcile.py` - Builds the artifact-file census and reports `_index.md` drift as JSON.
+  `settle` applies the mechanical drift (indexes, and each epic whose units are all terminal,
+  closed to its derived Done or Superseded) and restages exactly what it wrote; a commit hook
+  runs it, and a file carrying unstaged work is left and named, never staged.
 - `status.py` - `pillars`: four-pillar census (Requirements/Code/Tests/Reviews) as JSON
 - `validate.py` - `check`: lint artifact structure (ID, Status vocabulary, title, AC presence, an optional
 - `conformance.py` - The lifecycle-conformance gate. `detect_conformance` reports per-story stages (decomposed -> AC -> verifiabl...

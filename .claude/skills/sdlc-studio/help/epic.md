@@ -106,7 +106,7 @@ Review Epic status based on Stories and codebase. **Cascades by default** - revi
 - `sdlc-studio/epics/EP{NNNN}-{slug}.md` per Epic
 - `sdlc-studio/epics/_index.md` registry
 
-**Status values:** Draft | Ready | Approved | In Progress | Done
+**Status values:** Draft | Ready | Approved | In Progress | Done | Superseded
 
 **Status rules:**
 

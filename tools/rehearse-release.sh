@@ -93,8 +93,9 @@ STORY
 
 # ------------------------------------------------------------------- upgrade
 
-# The upgrade does NOT reach a green gate today: conformance, reconcile and index-derived all fail
-# on a freshly migrated project, and the remedy is the grandfathering work in a later charter.
+# The upgrade does NOT reach a green gate today: conformance fails on a freshly migrated project,
+# and the remedy is the grandfathering work in a later charter. (Its stale indexes still show,
+# reported rather than refused, as mechanical drift the reconcile and index-derived lanes name.)
 # Claiming green here would be exactly the false claim this rehearsal exists to prevent, so the
 # failing lanes are compared against a recorded baseline and the comparison reddens in BOTH
 # directions - a new failure blocks, and a baselined lane that starts passing blocks too, because

@@ -145,7 +145,7 @@ into the index and any parent epic; a status is never edited into a file by hand
 
 | Type | Status vocabulary (lifecycle order) | Terminal states |
 | --- | --- | --- |
-| epic | Draft, Ready, Approved, In Progress, Done | Done |
+| epic | Draft, Ready, Approved, In Progress, Done, Superseded | Done, Superseded |
 | story | Proposed, Draft, Ready, Planned, In Progress, Review, Blocked, Done, Won't Implement, Deferred, Superseded | Done, Won't Implement, Superseded |
 | plan | Draft, In Progress, Complete, Superseded | Complete, Superseded |
 | bug | Open, In Progress, Fixed, Verified, Closed, Won't Fix, Superseded | Fixed, Verified, Closed, Won't Fix, Superseded |

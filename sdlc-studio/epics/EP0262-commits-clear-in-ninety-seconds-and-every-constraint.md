@@ -21,7 +21,7 @@ Sprint 3 of the back-to-basics programme, part one. Makes a code commit clear in
 - [x] [US0896: Footprint warnings advise, and a finished artefact is never re-judged](../stories/US0896-footprint-warnings-advise-and-a-finished-artefact-is.md)
 - [x] [US0897: A shared Verify selector is an advisory note within one artefact, never a commit refusal](../stories/US0897-a-shared-verify-selector-is-an-advisory-note.md)
 - [x] [US0898: A shipped release's notes stay as shipped, and the defect count is written at the cut](../stories/US0898-a-shipped-release-s-notes-stay-as-shipped.md)
-- [ ] [US0899: Mechanical index and epic drift is fixed at commit, not refused](../stories/US0899-mechanical-index-and-epic-drift-is-fixed-at.md)
+- [x] [US0899: Mechanical index and epic drift is fixed at commit, not refused](../stories/US0899-mechanical-index-and-epic-drift-is-fixed-at.md)
 - [ ] [US0900: A change request can be filed before it is sized](../stories/US0900-a-change-request-can-be-filed-before-it.md)
 - [ ] [US0901: The hooks list their own lanes, and AGENTS.md stops restating them](../stories/US0901-the-hooks-list-their-own-lanes-and-agents.md)
 - [x] [US0902: Adding a script no longer needs a matching TSD sentence to commit](../stories/US0902-adding-a-script-no-longer-needs-a-matching.md)

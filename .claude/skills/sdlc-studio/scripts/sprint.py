@@ -6507,7 +6507,7 @@ def _declared_breakdown_ids(text: str) -> list[str]:
 
 
 def _derive_parent_epics(root, units=None) -> list[str]:
-    """Transition an epic whose breakdown units are ALL terminal to Done.
+    """Transition an epic whose breakdown units are ALL terminal to its derived terminal.
 
     The per-unit cascade ticks an epic's breakdown checkbox but never sets the epic's own
     Status, and with `two_backlog.enforce` off (the default) reconcile does not derive it
@@ -6555,11 +6555,13 @@ def _derive_parent_epics(root, units=None) -> list[str]:
         if not all(sdlc_md.is_terminal_status(utype, canon)
                    for _ln, _ticked, _uid, utype, canon in resolved):
             continue
+        # Done only when a unit was DELIVERED; an epic of abandoned units closes Superseded.
+        target = reconcile.epic_derived_status([(u, c) for _l, _t, _i, u, c in resolved])
         try:
-            transition.transition(root, eid, "Done")
+            transition.transition(root, eid, target)
             moved.append(eid)
         except (ValueError, OSError) as exc:
-            print(f"apply-signoff: {eid} not derived Done ({exc})", file=sys.stderr)
+            print(f"apply-signoff: {eid} not derived {target} ({exc})", file=sys.stderr)
     return moved
 
 
@@ -6610,7 +6612,7 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
     import retro  # noqa: PLC0415
     derived = _derive_parent_epics(root, units)
     if derived:
-        print(f"apply-signoff: derived {', '.join(derived)} Done (all children terminal)")
+        print(f"apply-signoff: derived {', '.join(derived)} terminal (all children terminal)")
     # A request ABOVE those epics reaches its terminal by derivation too - run it AFTER the epics,
     # so a CR/RFC whose last child was an epic just marked Done is now itself derivable and the
     # close no longer leaves it for a manual `reconcile apply`. Scoped to this run's units plus the
@@ -9616,7 +9618,7 @@ def _cascade_after_signature(root, state, units) -> None:
     """
     derived = _derive_parent_epics(root, units)
     if derived:
-        print(f"sign: derived {', '.join(derived)} Done (all children terminal)")
+        print(f"sign: derived {', '.join(derived)} terminal (all children terminal)")
     derived_requests = _derive_parent_requests(root, scope_ids=list(units or []) + derived)
     if derived_requests:
         print(f"sign: derived parent request(s) {', '.join(derived_requests)} terminal")

@@ -1366,7 +1366,10 @@ def two_backlog_enforced(repo_root) -> bool:
 # Allowed Status values per artifact type. A status outside this set is a
 # validation error (it breaks dashboard/reconcile counting).
 STATUS_VOCAB: dict[str, list[str]] = {
-    "epic": ["Draft", "Ready", "Approved", "In Progress", "Done"],
+    # `Superseded` is the epic's abandonment terminal: every child was ruled out rather than
+    # built, so `Done` would claim a completion nobody delivered. `Done` stays first, so a bare
+    # close still derives the successful terminal.
+    "epic": ["Draft", "Ready", "Approved", "In Progress", "Done", "Superseded"],
     "story": [
         "Proposed", "Draft", "Ready", "Planned", "In Progress", "Review", "Blocked",
         "Done", "Won't Implement", "Deferred", "Superseded",
@@ -1398,7 +1401,7 @@ STATUS_VOCAB: dict[str, list[str]] = {
 # still re-activate - Blocked, Deferred, Paused, Planned - are deliberately NOT
 # terminal. Every value here must be a member of the type's STATUS_VOCAB.
 TERMINAL_STATUS: dict[str, set[str]] = {
-    "epic": {"Done"},
+    "epic": {"Done", "Superseded"},
     "story": {"Done", "Won't Implement", "Superseded"},
     "plan": {"Complete", "Superseded"},
     "bug": {"Fixed", "Verified", "Closed", "Won't Fix", "Superseded"},
@@ -1708,7 +1711,7 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "index-status-column": "the index table's Status column is mis-named or absent, so rows cannot be compared - fix the `_index.md` header row (name the column `Status`) and re-run reconcile",
         "breakdown-unticked": "an epic breakdown checkbox is unticked over a terminal unit - run `reconcile apply` to sync every breakdown box to its unit's status (both directions)",
         "breakdown-ticked-early": "an epic breakdown checkbox is ticked over a still-live unit (masks unfinished work) - run `reconcile apply` to untick it, or finish the unit",
-        "epic-status-stale": "an epic is still live over a breakdown whose every declared unit is terminal (masks FINISHED work - the delivery backlog reads as larger than it is) - close it with `transition.py set --id EPxxxx --status Done`, which runs the epic's own gates; `reconcile apply` deliberately does not write this one, so a completion is never recorded round them",
+        "epic-status-stale": "an epic is still live over a breakdown whose every declared unit is terminal (masks FINISHED work - the delivery backlog reads as larger than it is) - close it with `transition.py set --id EPxxxx --status <derived>` (Done when any unit was delivered, Superseded when every unit was ruled out), which runs the epic's own gates - `reconcile settle` does exactly that at commit; `reconcile apply` deliberately does not write this one, so a completion is never recorded round them",
         "epic-points-stale": "an epic's derived point total no longer equals the sum of its stories' points - run `reconcile apply` to recompute it (the total is DERIVED, never hand-set; the epic's own coarse estimate is its T-shirt `Size`, not points)",
         "link-asymmetry": "a request/child link is declared on one side only - add the missing half (the child's `Parent:` or the request's `Decomposed-into:`) so it resolves both ways, or fix the id that resolves to nothing; a decomposition writes BOTH sides",
         "supersession-asymmetry": "a supersession is recorded on one side of the pair only - add the missing half (the superseder's `Supersedes:` or the superseded artefact's `Superseded by:`) so a reader arriving from either direction sees it, or record the pair in sdlc-studio/.supersession-waivers.json with the reason it is legitimate asymmetry (a partial supersession is); the tolerated set may only shrink",

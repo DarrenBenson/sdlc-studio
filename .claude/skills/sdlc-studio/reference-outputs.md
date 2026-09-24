@@ -79,7 +79,7 @@ Single source of truth for all output formats, file locations, status values, an
 | TRD | `sdlc-studio/trd.md` | Fixed | Draft/Approved |
 | Persona | `sdlc-studio/personas.md` | Fixed | - |
 | TSD | `sdlc-studio/tsd.md` | Fixed | - |
-| Epic | `sdlc-studio/epics/EP{NNNN}-*.md` | EP0001, EP0002, EP0003... | Draft/Ready/Approved/In Progress/Done |
+| Epic | `sdlc-studio/epics/EP{NNNN}-*.md` | EP0001, EP0002, EP0003... | Draft/Ready/Approved/In Progress/Done/Superseded |
 | Story | `sdlc-studio/stories/US{NNNN}-*.md` | US0001, US0002, US0003... | Proposed/Draft/Ready/Planned/In Progress/Review/Done/Won't Implement/Deferred/Superseded |
 | Plan | `sdlc-studio/plans/PL{NNNN}-*.md` | PL0001, PL0002, PL0003... | Draft/In Progress/Complete/Superseded |
 | Bug | `sdlc-studio/bugs/BG{NNNN}-*.md` | BG0001, BG0002, BG0003... | Open/In Progress/Fixed/Verified/Closed/Won't Fix/Superseded |
@@ -95,7 +95,7 @@ Single source of truth for all output formats, file locations, status values, an
 
 ```text
 
-Draft → Ready → Approved → In Progress → Done
+Draft → Ready → Approved → In Progress → Done | Superseded
   ↑                           ↓
   └──────── (revision) ───────┘
 ```
@@ -105,7 +105,10 @@ Draft → Ready → Approved → In Progress → Done
 - **Draft → Ready:** All User Stories created and Ready
 - **Ready → Approved:** Stakeholder review complete
 - **Approved → In Progress:** First Story moves to In Progress
-- **In Progress → Done:** All Stories Done
+- **→ Done / Superseded:** derived, not judged. Once every breakdown unit is terminal the epic
+  closes to Done if any unit was delivered, or to Superseded if every unit was ruled out
+  (Superseded, Won't Implement, Won't Fix). `reconcile.py settle` applies it through
+  `transition.py set`, restaging what it wrote; a commit hook can run it.
 - **Any → Draft:** Requirements change (revision)
 
 ### Story Status Flow {#story-status-flow}
@@ -269,7 +272,7 @@ Each artifact type has a **canonical set of status values**. Do not use ad-hoc s
 
 | Type | Allowed Statuses | Terminal |
 | --- | --- | --- |
-| Epic | Draft, Ready, Approved, In Progress, Done | Done |
+| Epic | Draft, Ready, Approved, In Progress, Done, Superseded | Done, Superseded |
 | Story | Proposed, Draft, Ready, Planned, In Progress, Review, Done, Won't Implement, Deferred, Superseded | Done, Won't Implement, Deferred, Superseded |
 | Plan | Draft, In Progress, Complete, Superseded | Complete, Superseded |
 | Test Spec | Draft, Ready, In Progress, Complete, Superseded | Complete, Superseded |
@@ -768,7 +771,7 @@ When a story reaches any **terminal status** (Done, Won't Implement, Deferred, S
 2. **Find and update test spec:** Search `sdlc-studio/test-specs/` for the spec linked to this story. Update `> **Status:**` to the target status. Update `test-specs/_index.md` entry. For epic-scoped specs, see [Epic-Scoped Coverage](reference-test-spec.md#epic-scoped-coverage) - only cascade when ALL covered stories are terminal.
 3. **Find and update workflow:** Search `sdlc-studio/workflows/WF*` for the workflow linked to this story. Update `> **Status:**` to the target status. Update any non-terminal phase statuses.
 4. **Recalculate index counts:** Update summary counts in `plans/_index.md`, `test-specs/_index.md`, and `workflows/_index.md` if they contain summary sections.
-5. **Check epic status:** If all stories in the parent epic are now terminal, suggest marking the epic as Done (user confirms - never auto-assign).
+5. **Check epic status:** If all stories in the parent epic are now terminal, the epic's close is derived (see [Epic Status Flow](#epic-status-flow)): `scripts/reconcile.py settle` applies it, and never marks an epic of abandoned units Done.
 6. **Document reason:** For non-Done terminal statuses, ensure the story file contains a reason (e.g. "Superseded by US0026 which combines US0025 and US0027").
 7. **Story index entries** -- *(done by `artifact.py close`; do not hand-edit - listed for completeness):* the story's status in `stories/_index.md` (both the per-epic and All Stories tables) and the summary counts (Draft↓, Done↑) are synced by the close. This is mechanical bookkeeping, not a status decision.
 8. **Epic story breakdown** -- *(done by `artifact.py close`; do not hand-edit):* this story's checkbox in the parent epic's Story Breakdown section is ticked (`- [ ]` → `- [x]`) by the close.

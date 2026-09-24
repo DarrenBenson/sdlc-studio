@@ -75,17 +75,36 @@ def _reconcile(root: str) -> dict:
     # and any future detector setting it is carved out automatically.
     blocked = sum(1 for d in drift if d.get("blocked_by"))
     total -= blocked
+    # Mechanical drift is REPORTED, never counted: its remedy has no judgement in it, and the
+    # commit hook applies it (`reconcile settle`) before this lane runs. Refusing over it only
+    # made people run the fix by hand and stage again. Exactly the items settle WOULD apply are
+    # exempt, as its own writers' dry runs say - not every item of a kind - so a meta index row,
+    # or a row `apply` cannot write, still blocks.
+    settled: dict[str, int] = {}
+    for d in reconcile.settled_items(rr, [d for d in drift if not d.get("blocked_by")]):
+        settled[d["kind"]] = settled.get(d["kind"], 0) + 1
+    total -= sum(settled.values())
     detail = f"{total} drift item(s)"
     if blocked:
         detail += f" (+{blocked} awaiting another gate, not blocking)"
+    if settled:
+        kinds = ", ".join(f"{k} x{n}" for k, n in sorted(settled.items()))
+        detail += (f" (+{sum(settled.values())} mechanical, not blocking: {kinds} - "
+                   f"`reconcile.py settle` applies them)")
     return {"count": total, "blocking": True, "detail": detail}
 
 
 def _index_derived(root: str) -> dict:
+    """Reports, never blocks: an index that is not a fixed point of `apply` is fixed by running
+    it, which the commit hook does (`reconcile settle`) rather than refusing the commit. What
+    `apply` cannot write - a structurally broken index, a row it declines - is counted by the
+    reconcile lane, which still blocks on it."""
     import reconcile
     issues = reconcile.index_derived_issues(Path(root).resolve())
-    return {"count": len(issues), "blocking": True,
-            "detail": "; ".join(issues) if issues else "indexes are derived output"}
+    return {"count": len(issues), "blocking": False,
+            "detail": ("; ".join(issues) + " - not blocking: `reconcile.py settle` regenerates "
+                       "what `apply` can write, and the reconcile lane blocks on the rest")
+            if issues else "indexes are derived output"}
 
 
 def _validate(root: str, changed: bool = False) -> dict:

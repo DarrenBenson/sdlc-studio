@@ -124,11 +124,16 @@ class IndexDerivedCheckTests(unittest.TestCase):
             self.assertTrue(r["ok"], r["checks"])
 
     def test_hand_edited_row_caught(self) -> None:
+        """Caught and REPORTED, not refused: the lane names the drift, and the commit hook's
+        `reconcile settle` regenerates the index rather than the gate blocking on it."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._repo(root, "Open")  # index row hand-edited to the wrong status
             r = gate.run_gate(str(root), only=["index-derived"])
-            self.assertFalse(r["ok"])
+            lane = r["checks"][0]
+            self.assertEqual(("fail", False), (lane["status"], lane["blocking"]))
+            self.assertIn("bug", lane["detail"])
+            self.assertTrue(r["ok"])
 
 
 # The real gate over this repo costs ~35s (now ~7s), and this file used to pay it TWICE - once

@@ -257,7 +257,7 @@ class OneArchiveWriterTests(unittest.TestCase):
         actions = [a for a in rc.build_parser()._subparsers._group_actions]
         names = sorted({n for a in actions for n in a.choices})
         self.assertNotIn("archive", names, "reconcile must not re-register an archive subcommand")
-        self.assertEqual(names, ["apply", "detect", "fields"])
+        self.assertEqual(names, ["apply", "detect", "fields", "settle"])
 
     def test_reconcile_has_no_archive_writer(self):
         for name in ("archive_plan", "archive_type", "cmd_archive"):
