@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 172 |
+| Draft | 171 |
 | Ready | 15 |
 | Planned | 0 |
 | In Progress | 4 |
 | Review | 0 |
-| Done | 706 |
+| Done | 707 |
 | Won't Implement | 8 |
 | Deferred | 0 |
 | Superseded | 13 |
@@ -254,14 +254,14 @@
 | [US0893](US0893-a-commit-leaves-the-live-repository-tests-to.md) | A commit leaves the live-repository tests to the push | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0894](US0894-the-close-owed-report-walks-the-corpus-once.md) | The close-owed report walks the corpus once, not once per epic | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0895](US0895-a-commit-runs-only-the-gate-lanes-that.md) | A commit runs only the gate lanes that can refuse it | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
-| [US0896](US0896-footprint-warnings-advise-and-a-finished-artefact-is.md) | Footprint warnings advise, and a finished artefact is never re-judged | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0896](US0896-footprint-warnings-advise-and-a-finished-artefact-is.md) | Footprint warnings advise, and a finished artefact is never re-judged | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0897](US0897-a-shared-verify-selector-is-an-advisory-note.md) | A shared Verify selector is an advisory note within one artefact, never a commit refusal | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0898](US0898-a-shipped-release-s-notes-stay-as-shipped.md) | A shipped release's notes stay as shipped, and the defect count is written at the cut | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0899](US0899-mechanical-index-and-epic-drift-is-fixed-at.md) | Mechanical index and epic drift is fixed at commit, not refused | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0900](US0900-a-change-request-can-be-filed-before-it.md) | A change request can be filed before it is sized | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0901](US0901-the-hooks-list-their-own-lanes-and-agents.md) | The hooks list their own lanes, and AGENTS.md stops restating them | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0902](US0902-adding-a-script-no-longer-needs-a-matching.md) | Adding a script no longer needs a matching TSD sentence to commit | Done | EP0262 | 2026-09-24 | 2026-09-24 |
-| [US0903](US0903-a-recurring-lesson-asks-for-a-fix-or.md) | A recurring lesson asks for a fix or a retirement, not another check | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0903](US0903-a-recurring-lesson-asks-for-a-fix-or.md) | A recurring lesson asks for a fix or a retirement, not another check | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0904](US0904-each-lane-s-refusals-are-counted-against-the.md) | Each lane's refusals are counted against the defects they caught | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0905](US0905-adding-a-commit-lane-means-removing-one.md) | Adding a commit lane means removing one | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0906](US0906-the-review-seats-push-back-on-a-check.md) | The review seats push back on a check that earns nothing | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |

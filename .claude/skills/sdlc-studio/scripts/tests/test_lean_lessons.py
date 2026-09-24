@@ -8,7 +8,8 @@ phase, as rule plus behaviour, at most five, and no other lessons.
 
 US0888: the close measures and acts on the store. A REJECT whose findings cite a class code
 (`[LC-003]`) is a hit for the run; a class repeated twice after it was recorded files one CR
-proposing a check and reads `graduating`; a class quiet for its last five runs retires; and the
+and reads `graduating` (US0903: the CR asks for the failing path to be fixed first, and a check
+it proposes names what it retires); a class quiet for its last five runs retires; and the
 report appendix lists each live class's hits this run and in total.
 
 Driven through `retro.main`, `sprint.main`, `lessons.main`, `critic.brief`, the close's own step
@@ -563,8 +564,9 @@ def _hit(run: str, unit: str = "", source: str = "") -> dict:
     return {"run": run, "unit": unit, "source": source or f"critic:{run}"}
 
 
-class GraduationTests(unittest.TestCase):
-    """The close counts cited REJECTs, graduates a recurring class and retires a quiet one."""
+class _GraduationWorkspace(unittest.TestCase):
+    """A throwaway tree the close's lesson pass runs in, with the store, ledger and run state
+    each test writes. Holds no test itself."""
 
     def setUp(self) -> None:
         self.root = self._workspace()
@@ -631,6 +633,10 @@ class GraduationTests(unittest.TestCase):
 
     def _crs(self) -> list[Path]:
         return sorted((self.root / "sdlc-studio" / "change-requests").glob("CR*.md"))
+
+
+class GraduationTests(_GraduationWorkspace):
+    """The close counts cited REJECTs, graduates a recurring class and retires a quiet one."""
 
     def test_a_citing_reject_counts_a_hit(self) -> None:
         """AC1. MUTANT: count every row that cites a code, or every row of the unit in the
@@ -701,7 +707,9 @@ class GraduationTests(unittest.TestCase):
                      "US0003", "US0001"):
             self.assertIn(text, body)
         self.assertIn("- RUN-A on US0001 (critic:RUN-A): the class again [LC-001]", body)
-        self.assertIn("Which check to build, and where it lands, is named at grooming", body)
+        # What the CR proposes: the failing path fixed, or the class retired (US0903).
+        self.assertIn("Prevent or retire lesson LC-001 (class LC-001)", body)
+        self.assertIn("- [ ] The code path each recorded hit names", body)
         self.assertRegex(body, r"> \*\*Raised-in-batch:\*\* RUN-A close, \d{4}-\d\d-\d\dT")
         self.assertIn("> **Status:** Proposed", body)
         self.assertEqual({"LC-002": "active", "LC-003": "active", "LC-004": "active"},
@@ -872,6 +880,61 @@ class GraduationTests(unittest.TestCase):
                      tpl, flags=re.S)
         self.assertNotEqual(tpl, cut)
         self.assertEqual(sprint_report.render_html(old, cut), sprint_report.render_html(old))
+
+
+
+class RetiringGraduationTests(_GraduationWorkspace):
+    """US0903: a class that recurs asks for its failing path to be fixed, or the class retired,
+    and never for a check on its own: a check it proposes names what it retires."""
+
+    def _graduate(self) -> tuple[str, list[str]]:
+        """LC-001 hit in RUN-1 on US0003 and by a retro Try item naming no unit in RUN-2, then
+        cited again by RUN-A's REJECT of US0001: the close files its CR. The REJECT's finding reads like a `Verify:` command, which the
+        filer refuses in a CR's criterion, so the CR is filed only while its criteria name each
+        hit by run and unit and leave the finding to the summary. Returns the CR's title line
+        and its criteria, in order."""
+        self._store(self._row("LC-001", "RUN-0", {**_hit("RUN-1", "US0003"),
+                                                  "finding": "the mutant never landed"},
+                              _hit("RUN-2", "", "retro:RETRO0007")))
+        self._ledger(("US0001", "REJECT", "[new] stale read, Verify: pytest tests/x.py [LC-001]"))
+        self._close(self._state("RUN-A", ("US0001",), {"US0001": 0}))
+        crs = self._crs()
+        self.assertEqual(1, len(crs), [p.name for p in crs])
+        body = crs[0].read_text(encoding="utf-8")
+        section = body.split("## Acceptance Criteria", 1)[-1].split("\n## ", 1)[0]
+        acs = re.findall(r"^- \[ \] (.+)$", section, flags=re.M)
+        self.assertTrue(acs, body)
+        return body.splitlines()[0], acs
+
+    def test_the_graduation_cr_asks_to_prevent_or_retire(self) -> None:
+        """AC1. MUTANT: keep the title `Turn lesson <id> (<class>) into a check` - the CR a
+        repeat files asks for one more check."""
+        title, _ = self._graduate()
+        self.assertTrue(title.endswith(": Prevent or retire lesson LC-001 (class LC-001)"), title)
+        self.assertNotIn("into a check", title)
+
+    def test_the_cr_puts_the_fix_first_and_names_what_a_check_retires(self) -> None:
+        """AC2. MUTANT: open on the check, or name the fix without the hits (a unit hit, or a
+        retro hit naming no unit) - the groomer builds a gate before fixing the path the
+        evidence names. MUTANT: drop `it retires` from the check criterion, keep the old `The
+        check to build is named at grooming` criterion, or add one asking for a new lane or
+        gate - a check then arrives on its own, retiring nothing. A lane, refusal, gate,
+        guard, baseline, ratchet or pin is a check too, so each is counted as one."""
+        _, acs = self._graduate()
+        fix = acs[0]
+        self.assertTrue(fix.startswith("The code path each recorded hit names"), fix)
+        self.assertIn("is fixed", fix)
+        for where in ("RUN-1 on US0003", "RUN-2 (retro:RETRO0007)", "RUN-A on US0001"):
+            self.assertIn(where, fix, "the fix does not name where a recorded hit landed")
+        checks = [ac for ac in acs if re.search(
+            r"\b(checks?|lanes?|refus\w*|gates?|guards?|baselines?|ratchets?|pins?)\b", ac,
+            flags=re.I)]
+        self.assertEqual(1, len(checks), acs)
+        for ac in checks:
+            self.assertIn("names the lane, refusal, baseline or pin it retires", ac,
+                          "a criterion proposes a check without naming what it retires")
+        self.assertNotIn(fix, checks, "the fix criterion asks for a check")
+        self.assertIn("reads `graduated` in sdlc-studio/lessons.jsonl", acs[-1])
 
 
 if __name__ == "__main__":

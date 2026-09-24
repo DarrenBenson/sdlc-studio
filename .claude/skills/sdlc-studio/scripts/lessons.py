@@ -1625,7 +1625,8 @@ def cmd_revalidate(args: argparse.Namespace) -> int:
 # the stable class code (`LC-001`) a Try item or a finding cites; `class` is its short name;
 # `recorded_source` is the document that recorded it (`retro:RETRO0012`). A hit is
 # {run, unit, source}. A row is never deleted: the close moves it to `graduating` (with the
-# `cr` proposing its check) or `retired`, and the check shipping moves it to `graduated`.
+# `cr` asking for its path to be fixed) or `retired`, and the fix landing moves it to
+# `graduated`.
 
 STORE_FILE = "sdlc-studio/lessons.jsonl"
 #: The generic classes bundled with the skill (D0261). A project with no store of its own reads
@@ -1636,9 +1637,9 @@ SEED_LABEL = "the skill's bundled seed, templates/lessons-seed.jsonl"
 PHASES = ("plan", "build", "review")
 STATES = ("active", "graduating", "graduated", "retired")
 #: The states still injected and reported. A `graduating` class has its CR filed, not its
-#: check shipped, so its rule still has to reach the work.
+#: fix landed, so its rule still has to reach the work.
 LIVE_STATES = ("active", "graduating")
-#: Repeats after recording that make a class a proposed check rather than a note to reread.
+#: Repeats after recording that make a class a request to fix its path, not a note to reread.
 GRADUATE_AT = 2
 #: A class with no hit in this many of the most recent runs retires.
 QUIET_RUNS = 5
@@ -1802,33 +1803,43 @@ def repeats_after_recording(row: dict) -> int:
 
 
 def _graduation_cr(row: dict, run: str) -> tuple[str, dict]:
-    """The title and filer fields of the CR a recurring class files. The rule and every hit,
+    """The title and filer fields of the CR a recurring class files. It asks for the failing
+    path to be fixed first, and admits a check only in exchange for a constraint it retires: a
+    repeat that files one more check is how a process ratchets shut. The rule and every hit,
     with the finding that named it, travel into it, so whoever grooms it reads the evidence
     rather than a pointer to it."""
     hits = [f"{h.get('run')}{' on ' + h['unit'] if h.get('unit') else ''} "
             f"({h.get('source') or 'source unrecorded'})"
             f"{': ' + h['finding'] if h.get('finding') else ''}" for h in row.get("hits") or ()]
+    where = [f"{h.get('run')} on {h['unit']}" if h.get("unit")
+             else f"{h.get('run')} ({h.get('source') or 'source unrecorded'})"
+             for h in row.get("hits") or ()]
     n = repeats_after_recording(row)
     summary = (f"The failure class {row['id']} ({row.get('class')}) recurred {n} time(s) after it "
                f"was recorded in {row.get('recorded_run') or 'an unrecorded run'}, while its rule "
-               f"was injected into the work. A rule that is read and repeated anyway needs a "
-               f"check or a mechanism, not another reading. Which check to build, and where it "
-               f"lands, is named at grooming: this CR carries the class and its evidence, not a "
-               f"design.\n\n"
+               f"was injected into the work. A rule that is read and repeated anyway needs the "
+               f"path it fails on fixed, not another reading and not one more check. This CR "
+               f"carries the class and its evidence, not a design.\n\n"
                f"Rule: {row.get('rule')}\n\nBehaviour asked of the agent: {row.get('behaviour')}"
                f"\n\nHits:\n" + "\n".join(f"- {h}" for h in hits))
-    return (f"Turn lesson {row['id']} ({row.get('class')}) into a check", {
+    return (f"Prevent or retire lesson {row['id']} ({row.get('class')})", {
         "summary": summary, "priority": "Medium", "ctype": "Improvement", "size": "M",
-        # The row moves to `graduated` when the check ships. Where the check itself lands is a
-        # grooming decision the close cannot make, so it is not guessed here.
+        # The row moves to `graduated` when the fix lands. Where the fix lands is a grooming
+        # decision the close cannot make, so it is not guessed here.
         "affects": STORE_FILE,
         "impact": (f"Every lane and review the class reaches: each repeat of {row['id']} has "
                    f"cost a review round, {n} so far."),
-        "acs": [f"The check to build is named at grooming, and the class {row['id']} describes "
-                f"is then caught by it or made impossible by a mechanism, rather than depending "
-                f"on the rule being read.",
-                "The check is proven against the recorded hits above.",
-                f"Once it ships, {row['id']} reads `graduated` in {STORE_FILE}."],
+        # Each hit by run and unit only: its finding, already listed in the summary, is
+        # reviewer prose, and a criterion carrying it verbatim could read to the filer as a
+        # command-shaped `Verify:` and be refused.
+        "acs": [f"The code path each recorded hit names (its finding is under Hits above) is "
+                f"fixed, so the failure {row['id']} describes cannot recur there: "
+                f"{'; '.join(where)}.",
+                "Any check this CR proposes names the lane, refusal, baseline or pin it "
+                "retires, and ships only in exchange for it; a check that retires nothing is "
+                "not added.",
+                f"Once the path is fixed, {row['id']} reads `graduated` in {STORE_FILE}; a class "
+                f"that no longer describes a live failure reads `retired` instead."],
         # The lean run opens no batch span, so without this the filer stamps the CR as raised
         # outside any batch, although the close of `run` raised it.
         "_batch": f"{run} close, {sdlc_md.now_iso8601()}"})

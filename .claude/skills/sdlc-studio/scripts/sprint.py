@@ -4784,8 +4784,8 @@ def _close_retro_validate(root, retro_id, state):
 
 def _close_retro_extract(root, retro_id, state):
     """Lift the retro's Try items into the lessons stores, then act on the class store: a REJECT
-    citing a class is a hit, a class that keeps recurring files a CR proposing a check, and a
-    quiet one retires (`lessons.close_pass`). The pass runs whether or not the extract did, so
+    citing a class is a hit, a class that keeps recurring files a CR asking for its failing
+    path to be fixed or the class retired, and a quiet one retires (`lessons.close_pass`). The pass runs whether or not the extract did, so
     a malformed retro does not also lose the review's evidence."""
     import retro  # noqa: PLC0415
     run = (state or {}).get("run_id") or retro_id
