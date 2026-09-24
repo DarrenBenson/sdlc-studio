@@ -10,9 +10,9 @@
 | Draft | 173 |
 | Ready | 15 |
 | Planned | 0 |
-| In Progress | 5 |
+| In Progress | 4 |
 | Review | 0 |
-| Done | 704 |
+| Done | 705 |
 | Won't Implement | 8 |
 | Deferred | 0 |
 | Superseded | 13 |
@@ -252,7 +252,7 @@
 | [US0891](US0891-a-commit-s-pre-commit-lanes-run-side.md) | A commit's pre-commit lanes run side by side | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0892](US0892-a-commit-s-selected-tests-are-handed-out.md) | A commit's selected tests are handed out one at a time across every worker | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0893](US0893-a-commit-leaves-the-live-repository-tests-to.md) | A commit leaves the live-repository tests to the push | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
-| [US0894](US0894-the-close-owed-report-walks-the-corpus-once.md) | The close-owed report walks the corpus once, not once per epic | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0894](US0894-the-close-owed-report-walks-the-corpus-once.md) | The close-owed report walks the corpus once, not once per epic | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0895](US0895-a-commit-runs-only-the-gate-lanes-that.md) | A commit runs only the gate lanes that can refuse it | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0896](US0896-footprint-warnings-advise-and-a-finished-artefact-is.md) | Footprint warnings advise, and a finished artefact is never re-judged | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0897](US0897-a-shared-verify-selector-is-an-advisory-note.md) | A shared Verify selector is an advisory note within one artefact, never a commit refusal | Draft | EP0262 | 2026-09-24 | 2026-09-24 |

@@ -16,7 +16,7 @@ Sprint 3 of the back-to-basics programme, part one. Makes a code commit clear in
 - [ ] [US0891: A commit's pre-commit lanes run side by side](../stories/US0891-a-commit-s-pre-commit-lanes-run-side.md)
 - [ ] [US0892: A commit's selected tests are handed out one at a time across every worker](../stories/US0892-a-commit-s-selected-tests-are-handed-out.md)
 - [ ] [US0893: A commit leaves the live-repository tests to the push](../stories/US0893-a-commit-leaves-the-live-repository-tests-to.md)
-- [ ] [US0894: The close-owed report walks the corpus once, not once per epic](../stories/US0894-the-close-owed-report-walks-the-corpus-once.md)
+- [x] [US0894: The close-owed report walks the corpus once, not once per epic](../stories/US0894-the-close-owed-report-walks-the-corpus-once.md)
 - [ ] [US0895: A commit runs only the gate lanes that can refuse it](../stories/US0895-a-commit-runs-only-the-gate-lanes-that.md)
 - [ ] [US0896: Footprint warnings advise, and a finished artefact is never re-judged](../stories/US0896-footprint-warnings-advise-and-a-finished-artefact-is.md)
 - [ ] [US0897: A shared Verify selector is an advisory note within one artefact, never a commit refusal](../stories/US0897-a-shared-verify-selector-is-an-advisory-note.md)

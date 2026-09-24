@@ -572,7 +572,18 @@ def owed(root: Path) -> dict:
     highest-id cutoff silently forgives any unit that was in flight (a lower id, non-terminal) at
     adoption and closes later - the precise false "none owed" this feature exists to kill - and
     breaks entirely on non-numeric (ULID / schema-v3) ids. Membership in a set has neither hole.
+
+    The report reads the corpus ONCE, inside `sdlc_md.corpus_cache()`: every terminal epic asks
+    `find_by_id` and `children_of`, and outside a sweep each of those walks and reads the whole
+    tree (over 500k reads, about a minute, on a large workspace). The sweep lives for this call
+    only, so a retro or artefact written between two calls is seen by the second.
     """
+    with sdlc_md.corpus_cache():
+        return _owed(root)
+
+
+def _owed(root: Path) -> dict:
+    """`owed` without its sweep; `owed` is the only caller."""
     # The scan is wrapped so an UNREADABLE tree can be told from an empty one. Every read below
     # degrades quietly by design - one bad artefact must not abort the walk - and the tag guard
     # was reading that silence as "nothing is owed". The swallow stays; the witness is new.
