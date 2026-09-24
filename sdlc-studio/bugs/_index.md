@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-23
+**Last Updated:** 2026-09-24
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 60 |
+| Open | 65 |
 | In Progress | 0 |
 | Fixed | 586 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 10 |
 | Superseded | 6 |
-| **Total** | **749** |
+| **Total** | **754** |
 
 ## All Bugs
 
@@ -108,6 +108,11 @@
 | [BG0747](BG0747-the-evidence-drift-lane-still-enforces-mutation-evidence.md) | The evidence-drift lane still enforces mutation evidence that D0255 switched off, and re-registration drops other rows | Open | Medium | 2026-09-23 | 2026-09-23 |
 | [BG0748](BG0748-the-report-s-dora-window-is-second-resolution.md) | The report's DORA window is second-resolution, so a same-second commit reads the report INVALID | Fixed | Medium | 2026-09-23 | 2026-09-23 |
 | [BG0749](BG0749-thirty-stamped-criteria-on-older-units-point-at.md) | Thirty stamped criteria on older units point at tests this sprint made skipped stubs | Open | Medium | 2026-09-23 | 2026-09-23 |
+| [BG0750](BG0750-a-same-day-waiver-flips-a-filed-sprint.md) | A same-day waiver flips a filed sprint report INVALID | Open | Medium | 2026-09-24 | 2026-09-24 |
+| [BG0751](BG0751-open-findings-in-a-sprint-report-use-an.md) | Open findings in a sprint report use an inclusive window end | Open | Medium | 2026-09-24 | 2026-09-24 |
+| [BG0752](BG0752-per-commit-test-selection-skips-hooks-test-infrastructure.md) | Per-commit test selection skips hooks, test infrastructure and code reached through another script | Open | Medium | 2026-09-24 | 2026-09-24 |
+| [BG0753](BG0753-the-test-suite-leaks-temporary-directories-into-tmp.md) | The test suite leaks temporary directories into /tmp | Open | Medium | 2026-09-24 | 2026-09-24 |
+| [BG0754](BG0754-a-commit-touching-a-widely-imported-script-runs.md) | A commit touching a widely imported script runs well over the 90-second budget | Open | Medium | 2026-09-24 | 2026-09-24 |
 
 ## Archived Releases
 

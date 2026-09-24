@@ -90,8 +90,13 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0746` | Medium | The spec-claims timing claim deadlocks every fresh worktree under parallel load |
 | `BG0747` | Medium | The evidence-drift lane still enforces mutation evidence that D0255 switched off, and re-registration drops other rows |
 | `BG0749` | Medium | Thirty stamped criteria on older units point at tests this sprint made skipped stubs |
+| `BG0750` | Medium | A same-day waiver flips a filed sprint report INVALID |
+| `BG0751` | Medium | Open findings in a sprint report use an inclusive window end |
+| `BG0752` | Medium | Per-commit test selection skips hooks, test infrastructure and code reached through another script |
+| `BG0753` | Medium | The test suite leaks temporary directories into /tmp |
+| `BG0754` | Medium | A commit touching a widely imported script runs well over the 90-second budget |
 
-60 findings: 60 Medium, 0 Low.
+65 findings: 65 Medium, 0 Low.
 
 ## Not carried
 
