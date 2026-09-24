@@ -15,7 +15,7 @@ HOOKS = Path(__file__).resolve().parents[2] / ".githooks"
 def hook_skill_scripts(*hooks: str) -> list[str]:
     """Every `.claude/skills/.../scripts/*.py` the named hooks invoke, as repo-relative paths.
 
-    A lane may invoke a SKILL script rather than a `tools/` checker - the verify-ratchet lane
+    A lane may invoke a SKILL script rather than a `tools/` checker - the stamps-staged lane
     does - and a fixture that stubs only `tools/` leaves that lane running the real script
     against a fixture workspace. One reader for each shape, both derived from the hook.
 
@@ -55,17 +55,3 @@ def hook_tool_scripts(*hooks: str) -> list[str]:
                                 path.read_text(encoding="utf-8")))
     return sorted(names)
 
-
-def seed_verify_baseline(root) -> None:
-    """Write an EMPTY verify-lint baseline into a fixture workspace.
-
-    The verify-ratchet lane refuses an unrecorded tolerated set, by design - an absent baseline
-    means nothing can be held to it. A fixture workspace has no duplicate groups, so the honest
-    baseline is an empty one, and writing it here keeps every hook fixture consistent instead of
-    four copies deciding separately."""
-    import json
-    from pathlib import Path as _P
-    dest = _P(root) / "sdlc-studio" / ".verify-lint-baseline.json"
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    if not dest.exists():
-        dest.write_text(json.dumps({"groups": {}}) + "\n", encoding="utf-8")

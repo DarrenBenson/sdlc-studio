@@ -26,7 +26,6 @@ executes the pair over a real `git commit` for that.
 from __future__ import annotations
 
 import re
-import json
 import unittest
 import shutil
 import subprocess
@@ -72,7 +71,7 @@ def _lane_keys(hook: Path = HOOK) -> list[str]:
 #: deliberate exception, and the guard below refuses a new hand-copied list so the distinction
 #: stays a decision rather than a habit.
 EXPECTED_LANES = {
-    "style", "links", "skill-spec", "versions", "verify-ratchet",
+    "style", "links", "skill-spec", "versions",
     "stamps-staged",
     # US0879 deleted runbook, lens-signatures, spec-claims and practice-rules: four lanes that
     # checked documents against documents and caught nothing.
@@ -81,6 +80,7 @@ EXPECTED_LANES = {
     "changelog-shape",
     # US0902 deleted script-tests: it held the TSD's prose map to the scripts tree.
     # US0896 deleted warning-ratchet: every entry it refused was a file deleted by design.
+    # US0897 deleted verify-ratchet: it refused a bug sharing its fixing story's selector.
     "budgets",
     "neutrality",
     "action-pins", "dead-flags", "floor-pending", "markdown", "markdown-payload",
@@ -97,36 +97,6 @@ EXPENSIVE_LANES = {"unit-tests", "skill-tests", "tool-tests"}
 #: checks is what the SUITES did: it compares the tree against the snapshot `pre-commit` took
 #: when it selected them, so it cannot run until they have.
 MSG_HOOK_LANES = EXPENSIVE_LANES | {"repo-writes"}
-
-
-class LensSignatureLaneTests(unittest.TestCase):
-    """A lint lane's flags, pinned at both of its invocation sites. The class kept its name when
-    US0879 deleted the lens-signature lane it was written for, because a stamped criterion names
-    the node below."""
-
-    def test_the_ratchet_lane_carries_its_flags_at_both_invocation_sites(self) -> None:
-        """MUTANT: drop `--ratchet` or `--bugs` from either the hook or package.json.
-
-        The sibling lane above pins its flags at both sites; this one pinned neither, and it is
-        the lane that ALREADY lost `--bugs` once with the whole suite still green. Without
-        `--ratchet` the lint reports and never refuses; without `--bugs` it judges stories only,
-        so half the corpus is silently exempt - both leave the lane present, green and inert.
-        """
-        hook = HOOK.read_text(encoding="utf-8")
-        i = hook.find('run "verify-ratchet"')
-        self.assertNotEqual(-1, i, "the hook has no verify-ratchet lane")
-        block = hook[i:i + 700]
-        for flag in ("--ratchet", "--bugs"):
-            with self.subTest(site="hook", flag=flag):
-                self.assertIn(flag, block,
-                              f"the hook lane does not pass {flag}, so it is inert")
-        pkg = json.loads((REPO / "package.json").read_text(encoding="utf-8"))
-        script = pkg["scripts"]["lint:verify-ratchet"]
-        for flag in ("--ratchet", "--bugs"):
-            with self.subTest(site="package.json", flag=flag):
-                self.assertIn(flag, script,
-                              f"the npm lane does not pass {flag}, so `npm run lint` checks "
-                              f"less than the hook does")
 
 
 class LaneOrderTests(unittest.TestCase):

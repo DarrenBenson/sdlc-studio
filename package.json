@@ -4,7 +4,7 @@
   "description": "Claude Code skill for managing the full software development lifecycle",
   "private": true,
   "scripts": {
-    "lint": "npm run lint:md && npm run lint:style && npm run lint:links && npm run lint:skill && npm run lint:versions && npm run lint:verify-ratchet && npm run lint:budgets && npm run lint:neutrality && npm run lint:dead-flags && npm run lint:action-pins && npm run lint:disclosure",
+    "lint": "npm run lint:md && npm run lint:style && npm run lint:links && npm run lint:skill && npm run lint:versions && npm run lint:budgets && npm run lint:neutrality && npm run lint:dead-flags && npm run lint:action-pins && npm run lint:disclosure",
     "lint:md": "bash tools/lint-md.sh",
     "lint:style": "bash tools/lint-style.sh",
     "lint:links": "python3 tools/check_links.py",
@@ -20,7 +20,6 @@
     "test": "npm run test:skill && npm run test:tools",
     "test:skill": "bash tools/skill-tests.sh",
     "test:tools": "python3 -m unittest discover -s tools/tests",
-    "lint:verify-ratchet": "python3 .claude/skills/sdlc-studio/scripts/verify_ac.py lint --ratchet --bugs",
     "verify:corpus": "bash tools/verify-corpus.sh full",
     "verify:stamps": "bash tools/verify-corpus.sh stamps"
   },

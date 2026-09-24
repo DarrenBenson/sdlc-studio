@@ -74,7 +74,7 @@ The pre-commit lanes, recorded here because a review once found the repo's own a
 gates incomplete, and a guard nobody has written down is one nobody notices losing. The hook
 prints each lane's rule and fix on failure, so this is the roster, not the manual. `pre-commit`
 runs `style` (`lint-style.sh`), `links` (`check_links.py`), `skill-spec` (`validate_skill.py`),
-`versions` (`check_versions.py`), `verify-ratchet` (`verify_ac.py lint --ratchet --bugs`),
+`versions` (`check_versions.py`),
 `stamps-staged` (`verify_ac.py stamps --staged`, which refuses a commit that stages a rename or
 deletion of a test node a stamped `Verify:` selector names, judging the staged blobs by AST - the
 write-time guard cannot see a rename, and the scheduled corpus lane that can was red three weeks

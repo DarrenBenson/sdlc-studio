@@ -10,9 +10,9 @@
 | Draft | 163 |
 | Ready | 15 |
 | Planned | 0 |
-| In Progress | 4 |
+| In Progress | 3 |
 | Review | 0 |
-| Done | 711 |
+| Done | 712 |
 | Won't Implement | 8 |
 | Deferred | 0 |
 | Superseded | 17 |
@@ -255,7 +255,7 @@
 | [US0894](US0894-the-close-owed-report-walks-the-corpus-once.md) | The close-owed report walks the corpus once, not once per epic | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0895](US0895-a-commit-runs-only-the-gate-lanes-that.md) | A commit runs only the gate lanes that can refuse it | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0896](US0896-footprint-warnings-advise-and-a-finished-artefact-is.md) | Footprint warnings advise, and a finished artefact is never re-judged | Done | EP0262 | 2026-09-24 | 2026-09-24 |
-| [US0897](US0897-a-shared-verify-selector-is-an-advisory-note.md) | A shared Verify selector is an advisory note within one artefact, never a commit refusal | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0897](US0897-a-shared-verify-selector-is-an-advisory-note.md) | A shared Verify selector is an advisory note within one artefact, never a commit refusal | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0898](US0898-a-shipped-release-s-notes-stay-as-shipped.md) | A shipped release's notes stay as shipped, and the defect count is written at the cut | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0899](US0899-mechanical-index-and-epic-drift-is-fixed-at.md) | Mechanical index and epic drift is fixed at commit, not refused | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0900](US0900-a-change-request-can-be-filed-before-it.md) | A change request can be filed before it is sized | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |

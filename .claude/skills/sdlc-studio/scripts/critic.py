@@ -3863,6 +3863,24 @@ def _withdrawn_block(root: Path, unit: str) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _shared_selector_block(path: Path) -> str:
+    """One advisory line per Verify selector two or more of this unit's criteria share, or "".
+
+    Advice, not a refusal: two criteria on one run cannot both discriminate, and the seat judging
+    them is the one who can say whether they assert one indivisible behaviour or need splitting.
+    Judged within this artefact only - a bug sharing its fixing story's selector is correct."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import verify_ac  # noqa: PLC0415 - sibling; the grouping is the lint's own
+    lines = []
+    for group in verify_ac.duplicate_verifiers([path]):
+        acs = [a.split(" ", 1)[-1] for a in group["acs"]]
+        names = ", ".join(acs[:-1]) + f" and {acs[-1]}"
+        lines.append(f"Advisory: {names} share one Verify selector (`{group['verifier']}`) - "
+                     f"two criteria on one run cannot both discriminate; judge whether each is "
+                     f"exercised on its own.")
+    return "".join(f"{ln}\n" for ln in lines)
+
+
 def _criteria_from_whole_file(text: str) -> str:
     """The criteria of an artefact with NO `## Acceptance Criteria` section, as the runner reads
     them: every block, wherever it sits. The brief rendered nothing for such an artefact while
@@ -3931,6 +3949,7 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full",
     # got the supersede design rejected. A correction the author paid for has to reach the seat
     # judging the evidence, or the ledger's honesty is a claim about a file nobody opens.
     withdrawn = _withdrawn_block(root, unit)
+    shared = _shared_selector_block(path)
     unit_id = sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or unit)
     title = sdlc_md.extract_h1_title(text) or unit_id
     if phase == "plan-review":
@@ -3950,7 +3969,7 @@ Diff scope (the unit's declared Affects - inspect with git diff/status on these 
 
 Acceptance criteria (canonical - judge against THESE, not a paraphrase):
 {acs}
-{withdrawn}
+{shared}{withdrawn}
 Review depth: {depth}
 
 {inventory}{_REVIEW_PRACTICES_BLOCK}

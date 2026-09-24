@@ -47,8 +47,8 @@ had not landed AC3 would fail on thirteen entries this unit is not permitted to 
 - **Then** it reports no intra-record duplicate group in that directory, each having been
   split into a per-criterion selector that RESOLVES, on the same terms a story's is - because
   uniqueness alone is met by a cosmetic split that collects nothing
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_no_intra_record_group_remains_in_bugs
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0897: the verify-lint baseline this burn-down emptied was deleted with its ratchet; a shared selector is an advisory note within one artefact
+- **Verified:** manual (2026-09-24) - retired, superseded by US0897
 
 ### AC2: emptying the bug side did not disarm the guard
 
@@ -57,8 +57,8 @@ had not landed AC3 would fail on thirteen entries this unit is not permitted to 
 - **Then** it refuses, naming that fixture's own selector, with `verdict["state"]` still `ok` -
   and the same live paths WITHOUT the fixture answer ok, the control - proving the entries were
   removed by splitting the selectors rather than by weakening the check that protects them
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_a_fresh_duplicate_in_a_bug_is_still_refused
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0897: the verify-lint baseline this burn-down emptied was deleted with its ratchet; a shared selector is an advisory note within one artefact
+- **Verified:** manual (2026-09-24) - retired, superseded by US0897
 
 ### AC3: with both halves landed, the baseline carries no intra-record group at all
 
@@ -66,8 +66,8 @@ had not landed AC3 would fail on thirteen entries this unit is not permitted to 
 - **When** the baseline is read after this unit lands
 - **Then** it lists no intra-record group in either directory - the burn-down is complete
   rather than half-done, and what remains in the file is cross-record only
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_the_baseline_holds_no_intra_record_group_in_either_directory
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0897: the verify-lint baseline this burn-down emptied was deleted with its ratchet; a shared selector is an advisory note within one artefact
+- **Verified:** manual (2026-09-24) - retired, superseded by US0897
 
 ## Test-plan notes
 

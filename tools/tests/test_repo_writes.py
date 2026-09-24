@@ -241,10 +241,9 @@ class HookWiringTests(unittest.TestCase):
             p.chmod(0o755)
         # DERIVED from the hooks - see tools/tests/hookutil.py - so a lane added to the gate
         # reaches this fixture without anybody remembering to come here.
-        from hookutil import hook_skill_scripts, hook_tool_scripts, seed_verify_baseline
+        from hookutil import hook_skill_scripts, hook_tool_scripts
         for name in hook_tool_scripts():
             (root / "tools" / name).write_text(PASS_PY, encoding="utf-8")
-        seed_verify_baseline(root)
         for rel in hook_skill_scripts():
             dest = root / rel
             if dest.exists() or not dest.parent.is_dir():

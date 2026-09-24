@@ -48,8 +48,8 @@ criteria - a selector that discriminates by accident is the debt this pays down.
 - **Then** it reports no intra-record duplicate group in that directory, each having been
   split into a per-criterion selector that RESOLVES - `selector_resolves` answers True, not
   None and not False - because uniqueness alone is met by appending junk that collects nothing
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_no_intra_record_group_remains_in_stories
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0897: the verify-lint baseline this burn-down emptied was deleted with its ratchet; a shared selector is an advisory note within one artefact
+- **Verified:** manual (2026-09-24) - retired, superseded by US0897
 
 ### AC2: the baseline no longer carries the story-side entries, and only shrank
 
@@ -59,8 +59,8 @@ criteria - a selector that discriminates by accident is the debt this pays down.
 - **Then** no intra-record story-side group remains listed, and no entry has been added -
   compared against the file at this story's base ref, so the direction is proven rather than
   asserted
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_the_story_side_baseline_entries_are_gone_and_none_were_added
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0897: the verify-lint baseline this burn-down emptied was deleted with its ratchet; a shared selector is an advisory note within one artefact
+- **Verified:** manual (2026-09-24) - retired, superseded by US0897
 
 ### AC3: emptying the story side did not disarm the guard
 
@@ -68,8 +68,8 @@ criteria - a selector that discriminates by accident is the debt this pays down.
 - **When** the ratchet runs
 - **Then** it refuses, proving the entries were removed by splitting the selectors rather than
   by weakening the check that protects them
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DuplicateBurndownTests::test_a_fresh_duplicate_in_a_story_is_still_refused
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0897: the verify-lint baseline this burn-down emptied was deleted with its ratchet; a shared selector is an advisory note within one artefact
+- **Verified:** manual (2026-09-24) - retired, superseded by US0897
 
 ## Test-plan notes
 

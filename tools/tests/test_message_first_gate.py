@@ -54,11 +54,12 @@ _GIT_ENV_VARS = (
 #: saying so here. A derived version of this would assert only that the hook agrees with
 #: itself.
 EXPECTED_LANES = (
-    "style", "links", "skill-spec", "versions", "verify-ratchet",
+    "style", "links", "skill-spec", "versions",
     "stamps-staged", "changelog-shape",
     # US0879 deleted runbook, lens-signatures, spec-claims and practice-rules from BOTH lane
     # rosters: two inventories of one hook is how a lane comes to exist in one list only.
-    # US0902 deleted script-tests from both, for the same reason, and US0896 warning-ratchet.
+    # US0902 deleted script-tests from both, for the same reason, US0896 warning-ratchet and
+    # US0897 verify-ratchet.
     "budgets",
     "neutrality",
     "action-pins", "dead-flags", "floor-pending", "gate", "markdown", "markdown-payload",
@@ -184,8 +185,6 @@ class _GateFixture(unittest.TestCase):
         # script rather than a tools/ checker, and stubbing only tools/ leaves it
         # running the real script against a fixture workspace.
         from hookutil import hook_skill_scripts
-        from hookutil import seed_verify_baseline
-        seed_verify_baseline(root)
         for rel in hook_skill_scripts():
             dest = root / rel
             # NEVER create the parent: this fixture SYMLINKS the real skill tree

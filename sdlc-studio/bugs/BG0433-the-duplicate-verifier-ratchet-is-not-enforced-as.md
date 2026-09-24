@@ -32,24 +32,24 @@ Add the JSON baseline to the shrink guard with a reader that can parse it; group
 - **Given** `.verify-lint-baseline.json`, absent from the shrink guard because the line-splitting reader could not have parsed it
 - **When** the guard reads it
 - **Then** it yields real group keys rather than JSON punctuation, and every file declared a baseline parses to a non-empty set - one that parses to nothing passes every comparison and ratchets nothing
-- **Verify:** pytest tools/tests/test_baselines_only_shrink.py::JsonBaselineReaderTests::test_the_json_baseline_is_parsed_into_real_entries
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0897: the verify-lint baseline and its ratchet lane were deleted, so no JSON baseline is left to parse and no lane flags to pin
+- **Verified:** manual (2026-09-24) - retired, superseded by US0897
 
 ### AC2: a declared baseline that cannot be read is caught
 
 - **Given** the BASELINES tuple
 - **When** each file is parsed
 - **Then** none yields an empty set, because a baseline in the tuple that parses to nothing is exactly the state this bug found - present, green and holding nothing
-- **Verify:** pytest tools/tests/test_baselines_only_shrink.py::JsonBaselineReaderTests::test_every_declared_baseline_is_readable
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0897: the verify-lint baseline and its ratchet lane were deleted, so no JSON baseline is left to parse and no lane flags to pin
+- **Verified:** manual (2026-09-24) - retired, superseded by US0897
 
 ### AC3: the ratchet lane's flags are asserted at BOTH invocation sites
 
 - **Given** the pre-commit hook and `package.json`
 - **When** the `verify-ratchet` lane is read at each
 - **Then** both carry `--ratchet` and `--bugs` - without the first the lint reports and never refuses, without the second it judges stories only and half the corpus is silently exempt. This is the lane that already lost `--bugs` once with the whole suite green
-- **Verify:** pytest tools/tests/test_precommit_lane_order.py::LensSignatureLaneTests::test_the_ratchet_lane_carries_its_flags_at_both_invocation_sites
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0897: the verify-lint baseline and its ratchet lane were deleted, so no JSON baseline is left to parse and no lane flags to pin
+- **Verified:** manual (2026-09-24) - retired, superseded by US0897
 
 > The third defect in the filing - grouping on the resolved argv rather than a normalised
 > string - is NOT delivered here. It is a change to how duplicate verifiers are grouped, and it

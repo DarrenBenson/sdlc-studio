@@ -19,7 +19,7 @@ Sprint 3 of the back-to-basics programme, part one. Makes a code commit clear in
 - [x] [US0894: The close-owed report walks the corpus once, not once per epic](../stories/US0894-the-close-owed-report-walks-the-corpus-once.md)
 - [ ] [US0895: A commit runs only the gate lanes that can refuse it](../stories/US0895-a-commit-runs-only-the-gate-lanes-that.md)
 - [x] [US0896: Footprint warnings advise, and a finished artefact is never re-judged](../stories/US0896-footprint-warnings-advise-and-a-finished-artefact-is.md)
-- [ ] [US0897: A shared Verify selector is an advisory note within one artefact, never a commit refusal](../stories/US0897-a-shared-verify-selector-is-an-advisory-note.md)
+- [x] [US0897: A shared Verify selector is an advisory note within one artefact, never a commit refusal](../stories/US0897-a-shared-verify-selector-is-an-advisory-note.md)
 - [x] [US0898: A shipped release's notes stay as shipped, and the defect count is written at the cut](../stories/US0898-a-shipped-release-s-notes-stay-as-shipped.md)
 - [ ] [US0899: Mechanical index and epic drift is fixed at commit, not refused](../stories/US0899-mechanical-index-and-epic-drift-is-fixed-at.md)
 - [ ] [US0900: A change request can be filed before it is sized](../stories/US0900-a-change-request-can-be-filed-before-it.md)
