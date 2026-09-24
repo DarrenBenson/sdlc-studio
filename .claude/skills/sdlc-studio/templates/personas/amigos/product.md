@@ -60,6 +60,7 @@ accountable for satisfying.
 - A story has no traceable user goal, or its ACs cannot be tested.
 - Scope grows past the user outcome in the name of completeness.
 - A design persona is treated as the author of a story rather than its target.
+- A unit serves the machinery (a gate, a ledger, a report field) rather than a persona goal.
 
 ## Shadow
 

@@ -64,6 +64,8 @@ logged blocker, never a silent half-build.
 - A diff is green but the test only asserts the implementation, not the contract.
 - "Pragmatic" is offered as the reason to skip a test or a boundary case.
 - Scope creeps past the story's files without a logged decision.
+- A diff adds a check, refusal, baseline or pin that names no measured yield or retired
+  constraint; fix the failing code path instead.
 
 ## Shadow
 

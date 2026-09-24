@@ -471,12 +471,13 @@ class ClassesListingTests(unittest.TestCase):
 
 
 class SeedFallbackTests(unittest.TestCase):
-    """D0261: a project with no store of its own reads the six generic classes bundled with the
+    """D0261: a project with no store of its own reads the generic classes bundled with the
     skill, so a greenfield plan and review carry lessons rather than none. Its first write
-    creates its own store from that seed, and the seed itself is never written."""
+    creates its own store from that seed, and the seed itself is never written. US0906: the
+    seed carries LC-007 and LC-008, the ratchet class, so every installing project hears it."""
 
-    PLAN = ["LC-004", "LC-003", "LC-002"]    # the seed's plan classes, newest first on no hits
-    REVIEW = ["LC-006", "LC-004", "LC-003", "LC-002", "LC-001"]
+    PLAN = ["LC-008", "LC-004", "LC-003", "LC-002"]   # the seed's plan classes, newest first
+    REVIEW = ["LC-008", "LC-006", "LC-004", "LC-003", "LC-002"]   # six review classes, cap five
 
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
@@ -499,12 +500,30 @@ class SeedFallbackTests(unittest.TestCase):
         worklist.write_text("BG0001\n", encoding="utf-8")
         return worklist
 
-    def test_the_seed_is_six_generic_classes_with_no_hits(self) -> None:
+    def test_the_seed_carries_the_ratchet_class(self) -> None:
+        """MUTANT: leave LC-007 and LC-008 out of the seed, ship them with this repository's hits,
+        or inject LC-008 at build only - a greenfield plan and review never hear the ratchet."""
         rows = lessons.load_store(self.root)
-        self.assertEqual([f"LC-{n:03d}" for n in range(1, 7)], [r["id"] for r in rows])
+        self.assertEqual([f"LC-{n:03d}" for n in range(1, 9)], [r["id"] for r in rows])
         for r in rows:
             self.assertLessEqual(FIELDS, set(r))
             self.assertEqual(([], "active"), (r["hits"], r["state"]), r["id"])
+        rc, out = _cli(lessons.main, ["classes", "--root", str(self.root)])
+        self.assertEqual(0, rc, out)
+        self.assertRegex(out, r"LC-007\s+active\s+0 hit\(s\)\s+shared machine resources exhausted")
+        self.assertRegex(out, r"LC-008\s+active\s+0 hit\(s\)\s+constraint added without retirement")
+        self.assertIn("bundled seed", out)
+        worklist = self._greenfield_unit()
+        rc, plan = _cli(sprint.main, ["plan", "--worklist", str(worklist), "--no-fetch",
+                                      "--root", str(self.root)])
+        self.assertEqual(0, rc, plan)
+        ratchet = rows[7]
+        for name, text in (("plan", plan), ("critic", critic.brief(self.root, "BG0001", "qa"))):
+            with self.subTest(output=name):
+                self.assertIn("LC-008 constraint added without retirement", text)
+                self.assertIn(ratchet["rule"], text)
+                self.assertIn(ratchet["behaviour"], text)
+        self.assertFalse((self.root / STORE).exists(), "reading the seed wrote a store")
 
     def test_a_greenfield_plan_and_review_carry_the_seed(self) -> None:
         """MUTANT: no fallback - read only the project's store, as round 2 did. The greenfield
@@ -540,10 +559,10 @@ class SeedFallbackTests(unittest.TestCase):
         rc, out = _extract(self.root, "RUN-A")
         self.assertEqual(0, rc, out)
         rows = {r["id"]: r for r in _rows(self.root)}
-        self.assertEqual([f"LC-{n:03d}" for n in range(1, 8)], sorted(rows))
+        self.assertEqual([f"LC-{n:03d}" for n in range(1, 10)], sorted(rows))
         self.assertEqual([{"run": "RUN-A", "unit": "US0007", "source": "retro:RETRO0001"}],
                          rows["LC-003"]["hits"])
-        self.assertEqual("fixture unreachable", rows["LC-007"]["class"])
+        self.assertEqual("fixture unreachable", rows["LC-009"]["class"])
         self.assertEqual(self.seed, lessons.SEED_FILE.read_bytes(), "the seed was written")
         rc, out = _cli(lessons.main, ["classes", "--root", str(self.root)])
         self.assertNotIn("bundled seed", out)

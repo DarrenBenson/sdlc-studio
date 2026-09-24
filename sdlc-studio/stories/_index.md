@@ -10,9 +10,9 @@
 | Draft | 171 |
 | Ready | 15 |
 | Planned | 0 |
-| In Progress | 4 |
+| In Progress | 3 |
 | Review | 0 |
-| Done | 707 |
+| Done | 708 |
 | Won't Implement | 8 |
 | Deferred | 0 |
 | Superseded | 13 |
@@ -264,7 +264,7 @@
 | [US0903](US0903-a-recurring-lesson-asks-for-a-fix-or.md) | A recurring lesson asks for a fix or a retirement, not another check | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0904](US0904-each-lane-s-refusals-are-counted-against-the.md) | Each lane's refusals are counted against the defects they caught | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0905](US0905-adding-a-commit-lane-means-removing-one.md) | Adding a commit lane means removing one | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
-| [US0906](US0906-the-review-seats-push-back-on-a-check.md) | The review seats push back on a check that earns nothing | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0906](US0906-the-review-seats-push-back-on-a-check.md) | The review seats push back on a check that earns nothing | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0907](US0907-the-backlog-holds-only-the-work-the-lean.md) | The backlog holds only the work the lean direction still wants | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0908](US0908-the-skill-s-scripts-run-on-the-python.md) | The skill's scripts run on the Python 3.10 it declares | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0909](US0909-a-story-reaches-in-progress-and-done-without.md) | A story reaches In Progress and Done without a plan review | Draft | EP0263 | 2026-09-24 | 2026-09-24 |

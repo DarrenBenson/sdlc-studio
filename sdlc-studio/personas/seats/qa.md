@@ -60,6 +60,8 @@ never Sam's judgement.
 - A suite is green but a key AC has only a happy-path test.
 - Tests trace to the author's reading of the requirement rather than the canonical AC.
 - A risk-bearing unit is routed to a lighter review on the grounds that tests exist.
+- A check is kept on faith: ask whether it ever caught a real defect, and flag a lane whose
+  refusals caught none as noise to delete.
 
 ## Shadow
 
