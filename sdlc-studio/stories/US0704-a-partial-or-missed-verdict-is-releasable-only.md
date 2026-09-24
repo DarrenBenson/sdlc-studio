@@ -1,6 +1,7 @@
 # US0704: A partial or missed verdict is releasable only as an explicitly recorded operator decision
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Delivers:** CR0499
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
@@ -25,3 +26,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - partial verdict releasable only by operator decision: D0257 signer decides |

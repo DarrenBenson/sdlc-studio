@@ -1,6 +1,7 @@
 # US0824: module-alone at the push boundary runs the changed modules and everything that imports them
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Delivers:** CR0586
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
@@ -66,3 +67,4 @@ The selection must be judged against the defect the lane exists for: `test_criti
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-18 | goal review round 2 | AC1 rebuilt on US0843's census: 103 of 133 test modules reach production through `spec_from_file_location` on a runtime path and only 27 through a static import, so an import closure would have exempted 106 modules while reporting a clean selection. AC4 now judges the push's OWN recorded figure - `gate_timing estimate` is a ten-run MEDIAN (gate_timing.py:194), so it could not move inside the run. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - US0881 |

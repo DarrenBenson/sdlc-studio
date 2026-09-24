@@ -1,6 +1,7 @@
 # EP0219: An exemption states what would discharge it, and the mirror states what it did not compare
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Derived Point Total:** 10
 > **Parent:** CR0496
 > **Created:** 2026-08-27
@@ -14,10 +15,10 @@ Decomposed from CR0496. Delivers the work CR0496 requested.
 
 ## Story Breakdown
 
-- [ ] [US0691: `forward-port --check` names the project-state files its verdict deliberately excludes](../stories/US0691-forward-port-check-names-the-project-state-files.md)
-- [ ] [US0692: A raised adopt_after threshold records a machine-readable restore condition beside the number](../stories/US0692-a-raised-adopt-after-threshold-records-a-machine.md)
-- [ ] [US0693: A fired restore condition is REPORTED, naming the number the exemption should return to](../stories/US0693-a-fired-restore-condition-is-reported-naming-the.md)
-- [ ] [US0694: An exemption whose condition has fired is distinguishable from one still legitimately held](../stories/US0694-an-exemption-whose-condition-has-fired-is-distinguishable.md)
+- [x] [US0691: `forward-port --check` names the project-state files its verdict deliberately excludes](../stories/US0691-forward-port-check-names-the-project-state-files.md)
+- [x] [US0692: A raised adopt_after threshold records a machine-readable restore condition beside the number](../stories/US0692-a-raised-adopt-after-threshold-records-a-machine.md)
+- [x] [US0693: A fired restore condition is REPORTED, naming the number the exemption should return to](../stories/US0693-a-fired-restore-condition-is-reported-naming-the.md)
+- [x] [US0694: An exemption whose condition has fired is distinguishable from one still legitimately held](../stories/US0694-an-exemption-whose-condition-has-fired-is-distinguishable.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -34,3 +35,4 @@ Decomposed from CR0496. Delivers the work CR0496 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - exemption restore-condition bookkeeping for adopt_after thresholds: a new ledger on grandfathering the deletions make moot |

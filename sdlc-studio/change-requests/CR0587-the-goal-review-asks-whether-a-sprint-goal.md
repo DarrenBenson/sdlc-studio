@@ -1,6 +1,7 @@
 # CR-0587: the goal review asks whether a Sprint Goal is achievable, not whether it states value, so a shopping list passes
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
@@ -35,3 +36,4 @@ Add a VALUE field to the goal review - one per seat, answering who is better off
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - goal review asks value: US0868 / D0253 one-sentence value goal with advisory seat read |

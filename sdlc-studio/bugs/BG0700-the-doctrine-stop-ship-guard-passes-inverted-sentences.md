@@ -1,6 +1,7 @@
 # BG0700: The doctrine stop-ship guard passes inverted sentences and a second rule under the same anchor
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** tools/tests/test_doctrine_stop_ship.py, changelog.d/US0625.md
@@ -32,3 +33,4 @@ Apply AC2's negation guard to the AC1 and AC4 probes; refuse more than one rule 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - prose-keyword test of a doctrine rule D0257 rewrites |

@@ -1,6 +1,7 @@
 # EP0220: An upgrade proposes its grandfathering, records each grant, and can still answer for it a year later
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Derived Point Total:** 19
 > **Parent:** CR0497
 > **Created:** 2026-08-27
@@ -14,11 +15,11 @@ Decomposed from CR0497. Delivers the work CR0497 requested.
 
 ## Story Breakdown
 
-- [ ] [US0695: The upgrade ENUMERATES the grandfathering it proposes, per gate, before applying any of it](../stories/US0695-the-upgrade-enumerates-the-grandfathering-it-proposes-per.md)
-- [ ] [US0696: Each granted exemption writes a durable artefact naming the era, the reason and the re-arm condition](../stories/US0696-each-granted-exemption-writes-a-durable-artefact-naming.md)
-- [ ] [US0697: A pre-adoption cohort is discharged by a stub RETRO rather than by a baseline file](../stories/US0697-a-pre-adoption-cohort-is-discharged-by-a.md)
-- [ ] [US0698: A stub retro is visibly a stub, and the accuracy and velocity paths exclude it from both sides](../stories/US0698-a-stub-retro-is-visibly-a-stub-and.md)
-- [ ] [US0699: `status` shows the standing exemptions and their re-arm conditions on demand](../stories/US0699-status-shows-the-standing-exemptions-and-their-re.md)
+- [x] [US0695: The upgrade ENUMERATES the grandfathering it proposes, per gate, before applying any of it](../stories/US0695-the-upgrade-enumerates-the-grandfathering-it-proposes-per.md)
+- [x] [US0696: Each granted exemption writes a durable artefact naming the era, the reason and the re-arm condition](../stories/US0696-each-granted-exemption-writes-a-durable-artefact-naming.md)
+- [x] [US0697: A pre-adoption cohort is discharged by a stub RETRO rather than by a baseline file](../stories/US0697-a-pre-adoption-cohort-is-discharged-by-a.md)
+- [x] [US0698: A stub retro is visibly a stub, and the accuracy and velocity paths exclude it from both sides](../stories/US0698-a-stub-retro-is-visibly-a-stub-and.md)
+- [x] [US0699: `status` shows the standing exemptions and their re-arm conditions on demand](../stories/US0699-status-shows-the-standing-exemptions-and-their-re.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -37,3 +38,4 @@ Decomposed from CR0497. Delivers the work CR0497 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - grandfathering records for gates batch 2-3 delete; v6 migrate carries config forward instead |

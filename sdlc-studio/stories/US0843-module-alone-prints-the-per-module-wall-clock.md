@@ -1,6 +1,7 @@
 # US0843: module-alone prints the per-module wall clock it already computes, so a narrowing can be judged before it is built
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -57,3 +58,4 @@ The lane already measures every module: `run()` returns elapsed seconds as its f
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-18 | goal review round 2 | AC4 added: the timing run also records HOW each module reaches production code (static import, runtime spec load, subprocess), because EP0253's selection cannot be designed without it and a static-import census sees 27 of 133. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - US0881 |

@@ -1,6 +1,7 @@
 # US0830: a shard that dies fails the lane by name, so a lost shard can never read as a corpus that got smaller
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Delivers:** CR0585
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
@@ -49,3 +50,4 @@ The lane blocks in BOTH directions, and its remedy for a count BELOW the baselin
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - shard death reporting |

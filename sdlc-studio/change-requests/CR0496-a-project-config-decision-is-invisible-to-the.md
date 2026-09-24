@@ -1,6 +1,7 @@
 # CR-0496: A project-config decision is invisible to the forward-port check, so 'in sync' reads as 'everything is mirrored' when the reasoning stayed behind
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Decomposed-into:** EP0219
 > **Created:** 2026-07-28
 > **Created-by:** sdlc-studio new
@@ -35,3 +36,4 @@ A threshold raised as a temporary exemption stays raised silently. The 2026-07-2
 | 2026-07-28 | Claude Opus 5 | Created via `new` (deterministic) |
 | 2026-07-28 | Claude Opus 5 | Related: CR0497 applies the same rule at the ADOPTION moment. This one is about an exemption granted mid-life by an operator who knows why; that one is about the exemptions v5 grants a project automatically on the day it upgrades, when nobody has written a reason down at all. Same defect, two moments. |
 | 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed. `forward-port.sh --check` still emits no scope statement - its only verdicts are in-sync or N-files-differ - and the three `adopt_after` restore conditions remain prose in YAML comments that no tool reads. Every commit naming it is a refine or decompose, none a feat or fix. All four EP0219 children are Draft. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - exemption restore-condition ledger (EP0219) |

@@ -1,6 +1,7 @@
 # CR-0562: no shipped command ticks a delivered unit's acceptance criteria, so the close's tick-verification row can only be satisfied by hand-editing the artefact
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Priority:** Medium
 > **Type:** enhancement
 > **Size:** S
@@ -40,3 +41,4 @@ Have `transition.py set <id> Fixed` tick a criterion at the moment it writes tha
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-28 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - compulsory tick-verification row: US0876 close no longer refuses on checklist rows; batch 3 deletes the checklist |

@@ -16,8 +16,8 @@ Decomposed from CR0559. Delivers the work CR0559 requested.
 
 - [ ] [US0804: Every verb identifying a unit accepts `--unit`, including `verify_ac run` where it is refused today](../stories/US0804-every-verb-identifying-a-unit-accepts-unit-including.md)
 - [ ] [US0805: A `--fields-file` document whose keys are spelled as the verb's own flags is accepted](../stories/US0805-a-fields-file-document-whose-keys-are-spelled.md)
-- [ ] [US0806: A deprecated alias still works and says once that it is deprecated](../stories/US0806-a-deprecated-alias-still-works-and-says-once.md)
-- [ ] [US0807: The surface reference names the accepted flags and document keys per verb](../stories/US0807-the-surface-reference-names-the-accepted-flags-and.md)
+- [x] [US0806: A deprecated alias still works and says once that it is deprecated](../stories/US0806-a-deprecated-alias-still-works-and-says-once.md)
+- [x] [US0807: The surface reference names the accepted flags and document keys per verb](../stories/US0807-the-surface-reference-names-the-accepted-flags-and.md)
 
 ## Acceptance Criteria (Epic Level)
 

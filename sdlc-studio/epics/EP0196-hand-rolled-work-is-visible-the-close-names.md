@@ -1,6 +1,7 @@
 # EP0196: Hand-rolled work is visible: the close names what an agent did by hand instead of by tool
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Derived Point Total:** 17
 > **Parent:** CR0515
 > **Created:** 2026-08-01
@@ -14,11 +15,11 @@ Decomposed from CR0515. Delivers the work CR0515 requested.
 
 ## Story Breakdown
 
-- [ ] [US0586: Every skill script records the artefact it touched and the action it performed, per run](../stories/US0586-every-skill-script-records-the-artefact-it-touched.md)
-- [ ] [US0587: An artefact changed in the run diff with no tool provenance is reported by name at the close](../stories/US0587-an-artefact-changed-in-the-run-diff-with.md)
-- [ ] [US0588: A hand-rolled action carrying a filed gap id is reported and does not block; one without is outstanding](../stories/US0588-a-hand-rolled-action-carrying-a-filed-gap.md)
-- [ ] [US0589: A run that uses the tools throughout reports zero manual actions, so the detector cannot be one that never fires](../stories/US0589-a-run-that-uses-the-tools-throughout-reports.md)
-- [ ] [US0590: The doctrine states the content-versus-tooling line and names reference-scripts.md as the pre-task catalogue](../stories/US0590-the-doctrine-states-the-content-versus-tooling-line.md)
+- [x] [US0586: Every skill script records the artefact it touched and the action it performed, per run](../stories/US0586-every-skill-script-records-the-artefact-it-touched.md)
+- [x] [US0587: An artefact changed in the run diff with no tool provenance is reported by name at the close](../stories/US0587-an-artefact-changed-in-the-run-diff-with.md)
+- [x] [US0588: A hand-rolled action carrying a filed gap id is reported and does not block; one without is outstanding](../stories/US0588-a-hand-rolled-action-carrying-a-filed-gap.md)
+- [x] [US0589: A run that uses the tools throughout reports zero manual actions, so the detector cannot be one that never fires](../stories/US0589-a-run-that-uses-the-tools-throughout-reports.md)
+- [x] [US0590: The doctrine states the content-versus-tooling line and names reference-scripts.md as the pre-task catalogue](../stories/US0590-the-doctrine-states-the-content-versus-tooling-line.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -37,3 +38,4 @@ Decomposed from CR0515. Delivers the work CR0515 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-01 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - hand-rolled-work detection: a new per-script provenance ledger plus a close report section, no evidence it catches product defects |

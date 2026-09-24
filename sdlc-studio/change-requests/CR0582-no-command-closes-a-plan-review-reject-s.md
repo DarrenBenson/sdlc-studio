@@ -1,6 +1,7 @@
 # CR-0582: No command closes a plan-review REJECT's findings from the independent re-review that approved the repaired plan
 
 > **Status:** Proposed
+> **Closes with:** US0909 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S
@@ -34,3 +35,4 @@ Add a critic.py repair --phase plan-review mode that, for a unit whose latest pl
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0909 ships - planning: SUPERSEDED - plan-review REJECT closure: plan review and repair ledger deleted in batch 2; superseded only once US0909 ships (D0264) |

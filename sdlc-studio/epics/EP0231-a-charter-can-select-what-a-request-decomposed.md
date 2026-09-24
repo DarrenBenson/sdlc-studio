@@ -15,9 +15,9 @@ Decomposed from CR0531. Delivers the work CR0531 requested.
 ## Story Breakdown
 
 - [ ] [US0750: A charter's scope query can select the units a request was decomposed into](../stories/US0750-a-charter-s-scope-query-can-select-the.md)
-- [ ] [US0751: The vocabulary stays `sprint plan`'s own, parsed by the same code](../stories/US0751-the-vocabulary-stays-sprint-plan-s-own-parsed.md)
-- [ ] [US0752: SC0001's query and its prose rule agree, pinned by a test](../stories/US0752-sc0001-s-query-and-its-prose-rule-agree.md)
-- [ ] [US0753: A charter whose query cannot be reconciled with its rule is REPORTED at materialise time](../stories/US0753-a-charter-whose-query-cannot-be-reconciled-with.md)
+- [x] [US0751: The vocabulary stays `sprint plan`'s own, parsed by the same code](../stories/US0751-the-vocabulary-stays-sprint-plan-s-own-parsed.md)
+- [x] [US0752: SC0001's query and its prose rule agree, pinned by a test](../stories/US0752-sc0001-s-query-and-its-prose-rule-agree.md)
+- [x] [US0753: A charter whose query cannot be reconciled with its rule is REPORTED at materialise time](../stories/US0753-a-charter-whose-query-cannot-be-reconciled-with.md)
 
 ## Acceptance Criteria (Epic Level)
 

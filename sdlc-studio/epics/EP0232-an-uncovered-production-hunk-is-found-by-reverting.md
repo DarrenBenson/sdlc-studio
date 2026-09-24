@@ -1,6 +1,7 @@
 # EP0232: An uncovered production hunk is found by reverting it, not by reading it
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Derived Point Total:** 16
 > **Parent:** CR0533
 > **Created:** 2026-08-27
@@ -14,11 +15,11 @@ Decomposed from CR0533. Delivers the work CR0533 requested.
 
 ## Story Breakdown
 
-- [ ] [US0754: The check reverts each hunk of a unit's declared Affects in turn and reports GREEN as uncovered](../stories/US0754-the-check-reverts-each-hunk-of-a-unit.md)
-- [ ] [US0755: All five measured instances from RUN-01KZ9315 are reported - the named regression corpus](../stories/US0755-all-five-measured-instances-from-run-01kz9315-are.md)
-- [ ] [US0756: A legitimately uncovered hunk is ANSWERABLE and the answer is recorded rather than assumed](../stories/US0756-a-legitimately-uncovered-hunk-is-answerable-and-the.md)
-- [ ] [US0757: It runs at the BATCH BOUNDARY, and the placement is a recorded decision](../stories/US0757-it-runs-at-the-batch-boundary-and-the.md)
-- [ ] [US0758: An uncovered hunk is distinguished from one whose verifiers could not RUN](../stories/US0758-an-uncovered-hunk-is-distinguished-from-one-whose.md)
+- [x] [US0754: The check reverts each hunk of a unit's declared Affects in turn and reports GREEN as uncovered](../stories/US0754-the-check-reverts-each-hunk-of-a-unit.md)
+- [x] [US0755: All five measured instances from RUN-01KZ9315 are reported - the named regression corpus](../stories/US0755-all-five-measured-instances-from-run-01kz9315-are.md)
+- [x] [US0756: A legitimately uncovered hunk is ANSWERABLE and the answer is recorded rather than assumed](../stories/US0756-a-legitimately-uncovered-hunk-is-answerable-and-the.md)
+- [x] [US0757: It runs at the BATCH BOUNDARY, and the placement is a recorded decision](../stories/US0757-it-runs-at-the-batch-boundary-and-the.md)
+- [x] [US0758: An uncovered hunk is distinguished from one whose verifiers could not RUN](../stories/US0758-an-uncovered-hunk-is-distinguished-from-one-whose.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -37,3 +38,4 @@ Decomposed from CR0533. Delivers the work CR0533 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - revert each hunk to prove coverage: coverage becomes opt-in in batch 2; a new batch-boundary evidence lane |

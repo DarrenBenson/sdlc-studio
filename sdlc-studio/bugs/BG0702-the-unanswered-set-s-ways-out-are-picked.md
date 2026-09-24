@@ -1,6 +1,7 @@
 # BG0702: The unanswered set's ways out are picked by substring and offer dead ends for a stop-ship ruling, and the set is rendered and recorded in drifting copies
 
-> **Status:** Open
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/handoff.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_handoff.py
@@ -103,3 +104,4 @@ another. So each criterion is asserted at the surface that prints it, never on t
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
 | 2026-09-17 | sdlc-studio | Groomed for `sprint plan`: the two derived criteria are replaced by five authored ones, one per defect the summary names - reason-keyed remedies with a constant for an unreadable ruling, the stop-ship ways out, the pre-flight's double count, the handoff's duplicated row shape, and the stale `unanswered_error`. Each is asserted at the surface that prints it and names the edit it must fail on. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - unanswered-set remedies for stop-ship: D0257 makes stop-ship a listed known issue, not a hold |

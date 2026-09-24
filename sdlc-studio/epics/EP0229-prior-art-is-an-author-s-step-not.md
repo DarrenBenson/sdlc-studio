@@ -1,6 +1,7 @@
 # EP0229: Prior art is an author's step, not something a reviewer discovers for them
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), MERGE: merged into CR0594
 > **Derived Point Total:** 11
 > **Parent:** CR0529
 > **Created:** 2026-08-27
@@ -14,11 +15,11 @@ Decomposed from CR0529. Delivers the work CR0529 requested.
 
 ## Story Breakdown
 
-- [ ] [US0740: The toolchain runbook's DELIVER section names the prior-art check with its command](../stories/US0740-the-toolchain-runbook-s-deliver-section-names-the.md)
-- [ ] [US0741: The check names BOTH halves: the history search and the one reference document](../stories/US0741-the-check-names-both-halves-the-history-search.md)
-- [ ] [US0742: The guidance states that an artefact records BELIEF and history records what happened](../stories/US0742-the-guidance-states-that-an-artefact-records-belief.md)
-- [ ] [US0743: Reading the artefact corpus in bulk is explicitly NOT the instruction, and the row says so](../stories/US0743-reading-the-artefact-corpus-in-bulk-is-explicitly.md)
-- [ ] [US0744: Whether `critic.py brief` gains an author-facing form is decided and recorded either way](../stories/US0744-whether-critic-py-brief-gains-an-author-facing.md)
+- [x] [US0740: The toolchain runbook's DELIVER section names the prior-art check with its command](../stories/US0740-the-toolchain-runbook-s-deliver-section-names-the.md)
+- [x] [US0741: The check names BOTH halves: the history search and the one reference document](../stories/US0741-the-check-names-both-halves-the-history-search.md)
+- [x] [US0742: The guidance states that an artefact records BELIEF and history records what happened](../stories/US0742-the-guidance-states-that-an-artefact-records-belief.md)
+- [x] [US0743: Reading the artefact corpus in bulk is explicitly NOT the instruction, and the row says so](../stories/US0743-reading-the-artefact-corpus-in-bulk-is-explicitly.md)
+- [x] [US0744: Whether `critic.py brief` gains an author-facing form is decided and recorded either way](../stories/US0744-whether-critic-py-brief-gains-an-author-facing.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -37,3 +38,4 @@ Decomposed from CR0529. Delivers the work CR0529 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): MERGE, merged into CR0594 - prior-art as an author step: CR0594 (briefs carry the history of the files they touch) |

@@ -1,6 +1,7 @@
 # US0867: plan-time refusal rejects a goal clause whose check reaches outside the declared domain, naming the clause and the path that left it
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Delivers:** RFC0060
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio new
@@ -53,3 +54,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-21 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - [+constraint] refusal of a goal clause reaching outside the domain: no clauses under D0253 |

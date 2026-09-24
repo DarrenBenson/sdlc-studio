@@ -1,6 +1,7 @@
 # CR-0567: The done-gate demands a generated mutation run over the unit's Affects beside its self-reported rows
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
@@ -28,3 +29,4 @@ Mutation evidence covers the delivered code's branches, so a criterion's Verify 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-07 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - [+constraint] done-gate demands generated mutation run: mutation stays opt-in |

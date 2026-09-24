@@ -1,6 +1,7 @@
 # CR-0574: Units abandoned or forced past an unanswered delivery REJECT within a run are not listed at the close
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S
@@ -33,3 +34,4 @@ List, in the close report and the handoff, every unit in the run's window abando
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - forced-past-REJECT listing: US0872 AC4 carries at cap and US0875 lists carried units |

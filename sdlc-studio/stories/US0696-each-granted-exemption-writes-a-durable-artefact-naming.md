@@ -1,6 +1,7 @@
 # US0696: Each granted exemption writes a durable artefact naming the era, the reason and the re-arm condition
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Delivers:** CR0497
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
@@ -25,3 +26,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - [+constraint] durable exemption artefact per grant: new ledger |

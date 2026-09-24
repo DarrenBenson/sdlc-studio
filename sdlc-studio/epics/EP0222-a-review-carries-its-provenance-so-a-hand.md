@@ -1,6 +1,7 @@
 # EP0222: A review carries its provenance, so a hand-rolled pass is not indistinguishable from a briefed one
 
 > **Status:** Draft
+> **Closes with:** US0923 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Derived Point Total:** 18
 > **Parent:** CR0503
 > **Created:** 2026-08-27
@@ -15,10 +16,10 @@ Decomposed from CR0503. Delivers the work CR0503 requested.
 ## Story Breakdown
 
 - [ ] [US0707: An evidence or verdict row records HOW it was obtained, and marks a row not produced through `brief`](../stories/US0707-an-evidence-or-verdict-row-records-how-it.md)
-- [ ] [US0708: `brief` gains a review KIND beside `--seat`, each emitting the standing practices for that kind](../stories/US0708-brief-gains-a-review-kind-beside-seat-each.md)
-- [ ] [US0709: The missing-practice refusal extends to every kind, with a test per kind that strips one practice](../stories/US0709-the-missing-practice-refusal-extends-to-every-kind.md)
-- [ ] [US0710: A round run with one reviewer, or two on the same lens, is RECORDED as such](../stories/US0710-a-round-run-with-one-reviewer-or-two.md)
-- [ ] [US0711: The agent-facing instructions name the seat path as the only supported route to an adversarial review](../stories/US0711-the-agent-facing-instructions-name-the-seat-path.md)
+- [x] [US0708: `brief` gains a review KIND beside `--seat`, each emitting the standing practices for that kind](../stories/US0708-brief-gains-a-review-kind-beside-seat-each.md)
+- [x] [US0709: The missing-practice refusal extends to every kind, with a test per kind that strips one practice](../stories/US0709-the-missing-practice-refusal-extends-to-every-kind.md)
+- [x] [US0710: A round run with one reviewer, or two on the same lens, is RECORDED as such](../stories/US0710-a-round-run-with-one-reviewer-or-two.md)
+- [x] [US0711: The agent-facing instructions name the seat path as the only supported route to an adversarial review](../stories/US0711-the-agent-facing-instructions-name-the-seat-path.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -37,3 +38,4 @@ Decomposed from CR0503. Delivers the work CR0503 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0923 ships - planning: SUPERSEDED - review provenance: brief provenance deleted in batch 2 (D0255); superseded only once US0923 ships (D0264) |

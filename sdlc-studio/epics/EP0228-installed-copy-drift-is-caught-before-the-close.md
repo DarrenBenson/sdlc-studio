@@ -1,6 +1,7 @@
 # EP0228: Installed-copy drift is caught before the close, without weakening the close's backstop
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Derived Point Total:** 11
 > **Parent:** CR0528
 > **Created:** 2026-08-27
@@ -14,11 +15,11 @@ Decomposed from CR0528. Delivers the work CR0528 requested.
 
 ## Story Breakdown
 
-- [ ] [US0735: Drift is reported at a point BEFORE the close, with the point chosen and priced](../stories/US0735-drift-is-reported-at-a-point-before-the.md)
-- [ ] [US0736: The report NAMES the drifted files rather than a count](../stories/US0736-the-report-names-the-drifted-files-rather-than.md)
-- [ ] [US0737: The two reported-not-failed states stay reported: no installed copy, and a pinned copy](../stories/US0737-the-two-reported-not-failed-states-stay-reported.md)
-- [ ] [US0738: The `sprint close` installed-copy gate is UNCHANGED and still blocks](../stories/US0738-the-sprint-close-installed-copy-gate-is-unchanged.md)
-- [ ] [US0739: Which shape was chosen - refuse, warn or mirror - is recorded as a decision with its reasoning](../stories/US0739-which-shape-was-chosen-refuse-warn-or-mirror.md)
+- [x] [US0735: Drift is reported at a point BEFORE the close, with the point chosen and priced](../stories/US0735-drift-is-reported-at-a-point-before-the.md)
+- [x] [US0736: The report NAMES the drifted files rather than a count](../stories/US0736-the-report-names-the-drifted-files-rather-than.md)
+- [x] [US0737: The two reported-not-failed states stay reported: no installed copy, and a pinned copy](../stories/US0737-the-two-reported-not-failed-states-stay-reported.md)
+- [x] [US0738: The `sprint close` installed-copy gate is UNCHANGED and still blocks](../stories/US0738-the-sprint-close-installed-copy-gate-is-unchanged.md)
+- [x] [US0739: Which shape was chosen - refuse, warn or mirror - is recorded as a decision with its reasoning](../stories/US0739-which-shape-was-chosen-refuse-warn-or-mirror.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -37,3 +38,4 @@ Decomposed from CR0528. Delivers the work CR0528 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - installed-copy drift before close: US0889 close forward-ports the skill |

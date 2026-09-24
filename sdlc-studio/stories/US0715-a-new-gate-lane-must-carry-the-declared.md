@@ -1,6 +1,7 @@
 # US0715: A new gate lane must carry the declared-inventory guards its sibling lanes carry
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Delivers:** CR0504
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
@@ -25,3 +26,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - [+constraint] new gate lane must carry inventory guards: meta-gate on gates, the ratchet itself |

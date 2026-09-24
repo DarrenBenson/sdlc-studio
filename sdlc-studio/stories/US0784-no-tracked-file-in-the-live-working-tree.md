@@ -1,6 +1,7 @@
 # US0784: No tracked file in the live working tree changes at any point while the lane runs
 
 > **Status:** Draft
+> **Merged from:** US0785, US0786, US0787 (backlog sweep 2026-09-24, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0552
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,7 @@
 # CR-0571: A Known issues carried ruling is not checked against who may rule, so the stop-ship hold the doctrine gives the operator is self-releasable
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
@@ -34,3 +35,4 @@ Treat a row whose ruler is inside the authoring session's trust boundary as a pr
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - [+constraint] principal check on carried rulings: D0257 signer decides |

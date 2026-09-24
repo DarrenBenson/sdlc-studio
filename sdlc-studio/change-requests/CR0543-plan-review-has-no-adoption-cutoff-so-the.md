@@ -1,6 +1,7 @@
 # CR-0543: plan_review has no adoption cutoff, so the one hard risk-proportional plan gate in the codebase cannot be turned on by any project with history - including this one
 
 > **Status:** Proposed
+> **Closes with:** US0909 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Created:** 2026-08-11
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -25,7 +26,7 @@ Ships the gate in a state where its own repository cannot use it. Any consuming 
 
 ## Acceptance Criteria
 
-- [ ] {{criterion}}
+None written: the request is held open under D0264 until US0909 ships, which closes it.
 
 ## Proposed Fix
 
@@ -38,3 +39,4 @@ The test that matters is the one that would have caught this: enabling the gate 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-11 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0909 ships - planning: SUPERSEDED - plan_review adoption cutoff: plan review deleted in batch 2; superseded only once US0909 ships (D0264) |

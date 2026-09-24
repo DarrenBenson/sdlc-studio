@@ -1,6 +1,7 @@
 # EP0254: The corpus lane runs in shards and judges one union
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Derived Point Total:** 15
 > **Parent:** CR0585
 > **Created:** 2026-09-16
@@ -14,10 +15,10 @@ Decomposed from CR0585. Delivers the work CR0585 requested.
 
 ## Story Breakdown
 
-- [ ] [US0828: the red-criteria pass runs as N shards over a deterministic partition, every criterion in exactly one](../stories/US0828-the-red-criteria-pass-runs-as-n-shards.md)
-- [ ] [US0829: one collector unions the shard identities and judges them against the single baseline, naming NEW, went-green and VANISHED as the serial lane does](../stories/US0829-one-collector-unions-the-shard-identities-and-judges.md)
-- [ ] [US0830: a shard that dies fails the lane by name, so a lost shard can never read as a corpus that got smaller](../stories/US0830-a-shard-that-dies-fails-the-lane-by.md)
-- [ ] [US0831: per-shard wall clock is recorded and the job cap is set from the measured figure](../stories/US0831-per-shard-wall-clock-is-recorded-and-the.md)
+- [x] [US0828: the red-criteria pass runs as N shards over a deterministic partition, every criterion in exactly one](../stories/US0828-the-red-criteria-pass-runs-as-n-shards.md)
+- [x] [US0829: one collector unions the shard identities and judges them against the single baseline, naming NEW, went-green and VANISHED as the serial lane does](../stories/US0829-one-collector-unions-the-shard-identities-and-judges.md)
+- [x] [US0830: a shard that dies fails the lane by name, so a lost shard can never read as a corpus that got smaller](../stories/US0830-a-shard-that-dies-fails-the-lane-by.md)
+- [x] [US0831: per-shard wall clock is recorded and the job cap is set from the measured figure](../stories/US0831-per-shard-wall-clock-is-recorded-and-the.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -35,3 +36,4 @@ Decomposed from CR0585. Delivers the work CR0585 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - sharding the weekly corpus lane: lean CI runs the suite once; decide the corpus lane's survival in the deletion batches rather than optimise it |

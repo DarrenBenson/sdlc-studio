@@ -1,6 +1,7 @@
 # CR-0544: Nothing reviews a REPAIR's approach or a PROCEDURE's plan before it is executed, and that is where this session's most expensive findings were
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Created:** 2026-08-11
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -27,7 +28,7 @@ Every repair in this project is written straight from the finding, and the revie
 
 ## Acceptance Criteria
 
-- [ ] {{criterion}}
+None written: the request was closed by the D0265 backlog sweep before it was groomed.
 
 ## Proposed Fix
 
@@ -42,3 +43,4 @@ What to avoid: making this a document nobody runs. The practice already exists i
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-11 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - [+constraint] new pre-execution review of repair approaches and procedures |

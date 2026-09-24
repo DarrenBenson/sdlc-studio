@@ -1,6 +1,7 @@
 # CR-0572: Ruling a close's findings means hand-editing one table row per finding; no bulk ruling command exists
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Priority:** Medium
 > **Type:** Feature
 > **Size:** S
@@ -33,3 +34,4 @@ Operators ruling a close: the cost pushes them to rubber-stamp or skip.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - bulk ruling command: US0876 turns gaps into known issues without per-row rulings |

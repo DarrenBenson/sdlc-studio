@@ -1,6 +1,7 @@
 # CR-0577: Stakeholder persona consultation is advisory with no gate, so a story batch reaches delivery with no persona ever consulted
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
@@ -34,3 +35,4 @@ Record a consult as an artefact (the consultation template's output under review
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - [+constraint] stakeholder consult gate on batches |

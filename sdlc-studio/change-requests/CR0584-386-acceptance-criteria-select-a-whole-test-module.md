@@ -1,6 +1,7 @@
 # CR-0584: 386 acceptance criteria select a whole test module, so each one over-claims and costs minutes
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** L
@@ -35,3 +36,4 @@ Census the 386 by module and by unit; narrow each to the node that would die on 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - rewrite 386 whole-module Verify selectors on closed artefacts: D0259 rules such rewrites ceremony |

@@ -1,6 +1,7 @@
 # US0726: The threshold is configurable, with a default DERIVED from what this repo actually does
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Delivers:** CR0523
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
@@ -25,3 +26,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - configurable span threshold: follows US0725 |

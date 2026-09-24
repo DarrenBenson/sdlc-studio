@@ -1,6 +1,7 @@
 # BG0707: the corpus baseline's CI-run line is judged by shape alone, so a hand-typed run id reads as a re-measure
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** tools/tests/test_lint_workflow_coverage.py, tools/verify-corpus-baseline.txt
@@ -32,3 +33,4 @@ Judge the named run, not the line's shape: read it through the forge (as AC5's V
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - corpus baseline CI-run line checked by shape: test nit on a corpus lane |

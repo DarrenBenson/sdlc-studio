@@ -1,6 +1,7 @@
 # US0731: Evidence debt is recorded against the CRITERION it attaches to, naming the surviving mutant
 
 > **Status:** Draft
+> **Closes with:** US0921 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0524
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
@@ -25,3 +26,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0921 ships - planning: SUPERSEDED - [+constraint] evidence debt per criterion naming surviving mutant: mutation register deleted in batch 2; superseded only once US0921 ships (D0264) |

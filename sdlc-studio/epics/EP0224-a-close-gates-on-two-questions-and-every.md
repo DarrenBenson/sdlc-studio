@@ -1,6 +1,7 @@
 # EP0224: A close gates on two questions, and every other step becomes a report
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Derived Point Total:** 19
 > **Parent:** CR0507
 > **Created:** 2026-08-27
@@ -14,11 +15,11 @@ Decomposed from CR0507. Delivers the work CR0507 requested.
 
 ## Story Breakdown
 
-- [ ] [US0717: The close GATES on the goal verdict and the stop-ship ruling, and on nothing else](../stories/US0717-the-close-gates-on-the-goal-verdict-and.md)
-- [ ] [US0718: The stop-ship question is answered per defect and the ruling records who made it](../stories/US0718-the-stop-ship-question-is-answered-per-defect.md)
+- [x] [US0717: The close GATES on the goal verdict and the stop-ship ruling, and on nothing else](../stories/US0717-the-close-gates-on-the-goal-verdict-and.md)
+- [x] [US0718: The stop-ship question is answered per defect and the ruling records who made it](../stories/US0718-the-stop-ship-question-is-answered-per-defect.md)
 - [x] [US0719: A sprint closes WITH open defects as the normal case, needing no waiver](../stories/US0719-a-sprint-closes-with-open-defects-as-the.md)
-- [ ] [US0720: A verdict is judged on the revision it was given for, so a repaired REJECT does not gate for ever](../stories/US0720-a-verdict-is-judged-on-the-revision-it.md)
-- [ ] [US0721: The close's own cost is measured and reported beside the delivery's](../stories/US0721-the-close-s-own-cost-is-measured-and.md)
+- [x] [US0720: A verdict is judged on the revision it was given for, so a repaired REJECT does not gate for ever](../stories/US0720-a-verdict-is-judged-on-the-revision-it.md)
+- [x] [US0721: The close's own cost is measured and reported beside the delivery's](../stories/US0721-the-close-s-own-cost-is-measured-and.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -37,3 +38,4 @@ Decomposed from CR0507. Delivers the work CR0507 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - close gates on two questions: US0876 one-pass close |

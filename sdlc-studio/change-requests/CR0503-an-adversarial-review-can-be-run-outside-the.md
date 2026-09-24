@@ -1,6 +1,7 @@
 # CR-0503: an adversarial review can be run outside the seat ceremony, losing every standing practice, and nothing detects that it was
 
 > **Status:** Proposed
+> **Closes with:** US0923 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Decomposed-into:** EP0222
 > **Priority:** High
 > **Type:** Improvement
@@ -72,3 +73,4 @@ Two mechanisms are also confirmed, since the second occurrence exercised them:
 | 2026-07-30 | Claude Opus 5 (operator-directed, from the US0484-US0485 close) | Raised |
 | 2026-07-30 | Claude Opus 5 (operator-directed, from the RUN-01KYPZ1G close) | Second attestation recorded: the same bypass recurred hours after filing, in the same session, and was caught by the operator rather than by any lane. Brief-content diff and two confirmed mechanisms added. |
 | 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed. Its load-bearing AC1 was delivered by a sibling: verdict provenance ships via US0577/US0578 under CR0512's EP0194, but only for the verdict row - `critic.py evidence` still takes no `--brief`, so an evidence row carries no provenance. AC2-AC4 are untouched and AC5 is half-done: AGENTS.md carries the brief-with-the-tool rule but the SHIPPED `templates/agent-instructions.md` mentions neither `critic.py brief` nor the seat path, so a consuming project inherits the rule nowhere. Re-cut AC1 against US0577/US0578 before re-proposing. All five EP0222 children are Draft. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0923 ships - planning: SUPERSEDED - review provenance: brief provenance deleted in batch 2; superseded only once US0923 ships (D0264) |

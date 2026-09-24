@@ -1,6 +1,7 @@
 # US0808: A filed Medium or Low finding is already disclosed on `docs/known-issues.md` when the filer returns
 
 > **Status:** Draft
+> **Merged from:** US0809, US0810 (backlog sweep 2026-09-24, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0560
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new

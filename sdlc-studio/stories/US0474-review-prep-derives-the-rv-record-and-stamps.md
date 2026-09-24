@@ -1,6 +1,7 @@
 # US0474: review_prep derives the RV record and stamps the covered units from one recorded sprint-review APPROVE, without touching operator prose
 
-> **Status:** Ready
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Delivers:** CR0424
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -58,3 +59,4 @@
 | --- | --- | --- |
 | 2026-07-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-27 | Claude Fable 5 | Groomed: authored from the reviewed breakdown (two adversarial rounds), scope capped to the request per D0069 |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - RV record from sprint-review APPROVE: US0876 close no longer gates on review-current; sprint-review ledger deleted in batch 2 |

@@ -1,6 +1,7 @@
 # CR-0583: No command applies a unit's authored Test Plan mutants, runs each criterion's selector and registers the kills
 
 > **Status:** Proposed
+> **Closes with:** US0911 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
@@ -34,3 +35,4 @@ Add a mode to mutation.py run that takes a unit's planned rows with their anchor
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0911 ships - planning: SUPERSEDED - Test Plan mutant runner: test plans and mutation register deleted in batch 2; mutation run stays opt-in; superseded only once US0911 ships (D0264) |

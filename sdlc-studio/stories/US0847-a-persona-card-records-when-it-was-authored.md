@@ -1,6 +1,7 @@
 # US0847: a persona card records when it was authored, from what evidence and when it was last revisited, and every consult figure carries that age
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Created:** 2026-09-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -40,3 +41,4 @@ RFC0058 D5 is ruled this far (D0213's sibling ruling): provenance and age are re
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-17 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - persona card provenance fields: ceremony |

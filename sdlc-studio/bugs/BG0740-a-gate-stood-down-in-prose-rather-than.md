@@ -1,6 +1,7 @@
 # BG0740: a gate stood down in prose rather than as a waiver row is invisible to the report's waiver disclosure, which is how the one the operator most needed went unnamed
 
 > **Status:** Open
+> **Closes with:** US0926 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/decisions.py, .claude/skills/sdlc-studio/scripts/tests/test_decisions.py
@@ -38,3 +39,4 @@ The disclosure is only as complete as the vocabulary that records a stand-down, 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-22 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0926 ships - planning: SUPERSEDED - gate stood down in prose invisible to waiver disclosure: batch 2 deletes the stood-down gates, leaving nothing to disclose; superseded only once US0926 ships (D0264) |

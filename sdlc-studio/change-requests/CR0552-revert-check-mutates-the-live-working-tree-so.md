@@ -1,6 +1,7 @@
 # CR-0552: revert-check mutates the live working tree, so a boundary gate rewrites files underneath anything else reading the repo
 
 > **Status:** Proposed
+> **Merged from:** CR0579 (backlog sweep 2026-09-24, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Decomposed-into:** EP0239
 > **Priority:** High
 > **Type:** Improvement

@@ -1,6 +1,7 @@
 # CR-0580: handoff generate --outcome goal-reached or closed-outstanding ends a run over an unanswered set, and close_owed credits it as a completed close
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** S
@@ -34,3 +35,4 @@ On the operator's ruling, refuse goal-reached and closed-outstanding in handoff 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - handoff side door over the unanswered set: US0876/D0257 no longer hold on it |

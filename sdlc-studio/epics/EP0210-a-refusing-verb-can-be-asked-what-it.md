@@ -1,6 +1,7 @@
 # EP0210: A refusing verb can be asked what it demands, before it refuses
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Derived Point Total:** 24
 > **Parent:** CR0535
 > **Created:** 2026-08-07
@@ -14,12 +15,12 @@ Decomposed from CR0535. Delivers the work CR0535 requested.
 
 ## Story Breakdown
 
-- [ ] [US0646: A shared contract reporter derives a verb's demands by executing its own guard, never by restating them](../stories/US0646-a-shared-contract-reporter-derives-a-verb-s.md)
-- [ ] [US0647: The vocabularies that gate a caller print from the constant that enforces them](../stories/US0647-the-vocabularies-that-gate-a-caller-print-from.md)
-- [ ] [US0648: The four verbs whose refusals cost most in the measured session answer the contract reporter](../stories/US0648-the-four-verbs-whose-refusals-cost-most-in.md)
-- [ ] [US0649: A lint lane counts contract-reporter coverage and names every refusing verb it cannot reach](../stories/US0649-a-lint-lane-counts-contract-reporter-coverage-and.md)
-- [ ] [US0650: help and reference-scripts point at the contract reporter instead of restating any contract](../stories/US0650-help-and-reference-scripts-point-at-the-contract.md)
-- [ ] [US0651: The refusals a run hits are counted, so the round-trip saving is a figure in the retro](../stories/US0651-the-refusals-a-run-hits-are-counted-so.md)
+- [x] [US0646: A shared contract reporter derives a verb's demands by executing its own guard, never by restating them](../stories/US0646-a-shared-contract-reporter-derives-a-verb-s.md)
+- [x] [US0647: The vocabularies that gate a caller print from the constant that enforces them](../stories/US0647-the-vocabularies-that-gate-a-caller-print-from.md)
+- [x] [US0648: The four verbs whose refusals cost most in the measured session answer the contract reporter](../stories/US0648-the-four-verbs-whose-refusals-cost-most-in.md)
+- [x] [US0649: A lint lane counts contract-reporter coverage and names every refusing verb it cannot reach](../stories/US0649-a-lint-lane-counts-contract-reporter-coverage-and.md)
+- [x] [US0650: help and reference-scripts point at the contract reporter instead of restating any contract](../stories/US0650-help-and-reference-scripts-point-at-the-contract.md)
+- [x] [US0651: The refusals a run hits are counted, so the round-trip saving is a figure in the retro](../stories/US0651-the-refusals-a-run-hits-are-counted-so.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -38,3 +39,4 @@ Decomposed from CR0535. Delivers the work CR0535 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-07 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - contract reporter over 39 refusing verbs: the lean answer is fewer refusals (deletion batches), not tooling to describe them |

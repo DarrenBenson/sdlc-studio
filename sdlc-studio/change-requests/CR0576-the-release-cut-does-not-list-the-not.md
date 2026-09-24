@@ -1,6 +1,7 @@
 # CR-0576: The release cut does not list the not-stop-ship and accepted-risk rulings carried since the previous tag
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Priority:** Medium
 > **Type:** Feature
 > **Size:** S
@@ -33,3 +34,4 @@ Roll up the carried not-stop-ship and accepted-risk ids since the previous tag, 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - release roll-up of not-stop-ship rulings: ruling tables are old-close ceremony; known-issues page discloses open findings |

@@ -1,6 +1,7 @@
 # US0723: A verdict records the base commit the review was measured against
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Delivers:** CR0509
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
@@ -25,3 +26,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - the review base recorded today is the unit's verdict row count, not a commit (critic._mark_review_base), so the planning reason was wrong; US0722 (kept) stops a review on a tree without the unit before it runs, which is the defect this epic exists for, so a commit stamped on each verdict afterwards adds a field no persona reads |

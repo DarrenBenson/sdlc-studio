@@ -1,6 +1,7 @@
 # BG0735: the checklist's authority field is carried on 22 rows and read by no renderer
 
-> **Status:** Open
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -37,3 +38,4 @@ Either render it - the checklist row's provenance is worth showing beside its ve
 | --- | --- | --- |
 | 2026-09-21 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-21 | US0853 AC2 | Minted as its own artefact so no BG0463 survivor is carried as a bullet inside another. The filer routes Low findings into a themed consolidation CR by design, so this was created through `artifact.py new` instead - not a severity inflated to dodge the mechanism, and not the mechanism switched off. BG0731 carries the conflict. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - 22-row checklist authority field: US0875 moved the checklist off the page; batch 3 deletes it |

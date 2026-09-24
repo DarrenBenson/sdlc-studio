@@ -1,6 +1,7 @@
 # CR-0579: revert-check's set-aside report merges four reasons under one token, repeats error text unbounded, and reads a declared but unedited file as the unit's production
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), MERGE: merged into CR0552
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S
@@ -34,3 +35,4 @@ Give each set-aside reason its own token. Print a reason several units share onc
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): MERGE, merged into CR0552 - CR0552 (same lane; its fate follows revert-check's) |

@@ -1,6 +1,7 @@
 # CR-0593: nothing refuses a batch unit that no goal clause covers, so a run can deliver work its own goal never tested
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Parent:** RFC0060
 > **Priority:** Medium
 > **Type:** Enhancement
@@ -36,3 +37,4 @@ B first, measured, then A. A new blocking refusal on the planning path earns its
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-22 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - [+constraint] refuse unit no goal clause covers: no clauses under D0253 |

@@ -15,7 +15,7 @@ Decomposed from RFC0060. Delivers the work RFC0060 requested.
 ## Story Breakdown
 
 - [ ] [US0866: the sprint plan records its operational design domain: the files it may touch, the artefacts it may create, the statuses it may set and the budget it may spend](../stories/US0866-the-sprint-plan-records-its-operational-design-domain.md)
-- [ ] [US0867: plan-time refusal rejects a goal clause whose check reaches outside the declared domain, naming the clause and the path that left it](../stories/US0867-plan-time-refusal-rejects-a-goal-clause-whose.md)
+- [x] [US0867: plan-time refusal rejects a goal clause whose check reaches outside the declared domain, naming the clause and the path that left it](../stories/US0867-plan-time-refusal-rejects-a-goal-clause-whose.md)
 
 ## Revision History
 

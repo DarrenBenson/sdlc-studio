@@ -1,6 +1,7 @@
 # CR-0589: PREPARE rehearses the seal, and refuses to file a report that cannot survive being signed
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
@@ -37,3 +38,4 @@ The failure mode is silent and total: the page reads VALID when signed and INVAL
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-20 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - rehearse the seal: US0878 sign checks tree and report; US0883/US0885 keep a signed page VALID |

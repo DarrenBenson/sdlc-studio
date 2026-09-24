@@ -1,6 +1,7 @@
 # EP0242: A bug's plan or evidence gets an independent judgement, and the asymmetry is stated
 
 > **Status:** Draft
+> **Closes with:** US0921 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Derived Point Total:** 11
 > **Parent:** CR0556
 > **Created:** 2026-08-27
@@ -16,7 +17,7 @@ Decomposed from CR0556. Delivers the work CR0556 requested.
 
 - [x] [US0797: The independent element the gate demands is STATED in the refusal when a bug reaches terminal](../stories/US0797-the-independent-element-the-gate-demands-is-stated.md)
 - [x] [US0798: A project that has not adopted the change is unaffected, bound behind a dated cutoff](../stories/US0798-a-project-that-has-not-adopted-the-change.md)
-- [ ] [US0799: The doctrine STATES which types are independently judged and at which transition](../stories/US0799-the-doctrine-states-which-types-are-independently-judged.md)
+- [x] [US0799: The doctrine STATES which types are independently judged and at which transition](../stories/US0799-the-doctrine-states-which-types-are-independently-judged.md)
 - [ ] [US0800: A bug whose declared mutant was killed by a test its criterion does not name is REPORTED](../stories/US0800-a-bug-whose-declared-mutant-was-killed-by.md)
 
 ## Acceptance Criteria (Epic Level)
@@ -35,3 +36,4 @@ Decomposed from CR0556. Delivers the work CR0556 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0921 ships - planning: SUPERSEDED - independent judgement for bugs: US0872 one reviewer per unit; two-role sign-off deleted in batch 2; superseded only once US0921 ships (D0264) |

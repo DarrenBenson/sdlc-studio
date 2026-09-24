@@ -1,6 +1,7 @@
 # CR-0555: The expensive half of the test-plan gate fires before a diff exists, so move it to where one does instead of banding a signal that cannot discriminate
 
 > **Status:** In Progress
+> **Closes with:** US0911 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Decomposed-into:** EP0218
 > **Priority:** High
 > **Type:** Improvement
@@ -110,3 +111,4 @@ Option 1. The plan must still EXIST at entry, which preserves the authoring-time
 | 2026-08-25 | sdlc-studio | Correction: the two-role gate is story-and-Done only (transition.py:961), so the saving does not exist for bugs and BG0606 stays blocked. Claim must narrow to stories. |
 | 2026-08-25 | sdlc-studio | Second correction: measured across all 23 open bugs - NONE owes an independent review. The entry gate never fires for a bug. Request narrowed to stories; its bug Impact was wrong as filed. |
 | 2026-09-21 | audit ruling | still wanted, correctly in progress, and the situation crossed since filing. The MOVE has not happened: BG0630 ADDED a terminal firing of `_test_plan_gate` beside the entry one rather than moving it, so an independent plan-review APPROVE is now demanded at BOTH ends of a story's life with no staleness pin, which is more of the cost this request exists to cut. AC3 is satisfied by that addition; AC2 is false at HEAD and AC4's one-brief saving is unbuilt. All six EP0218 children are Blocked with recorded dispositions. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0911 ships - planning: SUPERSEDED - test-plan gate relocation: gate deleted in batch 2; superseded only once US0911 ships (D0264) |

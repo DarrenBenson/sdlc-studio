@@ -1,6 +1,7 @@
 # BG0738: the low-severity consolidation writes a Consolidated Findings section with no blank line after the heading, so the commit that files a Low finding is refused by the markdown gate
 
-> **Status:** Open
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), MERGE: merged into BG0731
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
@@ -38,3 +39,4 @@ A deterministic tool writes a file its own repository's blocking gate rejects, s
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-22 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): MERGE, merged into BG0731 - BG0731 (the consolidation section disappears with the bucket) |

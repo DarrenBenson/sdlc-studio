@@ -15,8 +15,8 @@ Decomposed from CR0560. Delivers the work CR0560 requested.
 ## Story Breakdown
 
 - [ ] [US0808: A filed Medium or Low finding is already disclosed on `docs/known-issues.md` when the filer returns](../stories/US0808-a-filed-medium-or-low-finding-is-already.md)
-- [ ] [US0809: A finding filed at a BARRED severity leaves the page and the count unchanged - the paired control](../stories/US0809-a-finding-filed-at-a-barred-severity-leaves.md)
-- [ ] [US0810: The release notes' disclosed count is DERIVED rather than hand-edited](../stories/US0810-the-release-notes-disclosed-count-is-derived-rather.md)
+- [x] [US0809: A finding filed at a BARRED severity leaves the page and the count unchanged - the paired control](../stories/US0809-a-finding-filed-at-a-barred-severity-leaves.md)
+- [x] [US0810: The release notes' disclosed count is DERIVED rather than hand-edited](../stories/US0810-the-release-notes-disclosed-count-is-derived-rather.md)
 
 ## Acceptance Criteria (Epic Level)
 

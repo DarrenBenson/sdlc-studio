@@ -1,6 +1,7 @@
 # CR-0524: a review verdict separates a broken feature from evidence that cannot fail
 
 > **Status:** Proposed
+> **Closes with:** US0918 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Decomposed-into:** EP0227
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
@@ -36,3 +37,4 @@ The count is what a reader acts on, and today it flattens 'this does not work' i
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0918 ships - planning: SUPERSEDED - evidence debt verdicts: evidence surface deleted in batch 2; superseded only once US0918 ships (D0264) |

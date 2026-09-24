@@ -1,6 +1,7 @@
 # CR-0533: A production hunk whose reversion leaves the suite green is uncovered: make the gate prove coverage rather than assume it
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Decomposed-into:** EP0232
 > **Priority:** High
 > **Type:** Improvement
@@ -69,3 +70,4 @@ Build the reporting command first and run it over the RUN-01KZ9315 diff before w
 | --- | --- | --- |
 | 2026-08-05 | sdlc-studio | Raised |
 | 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed, but it MUST be re-scoped before it is re-proposed, not returned at size M with its original criteria. Three of its five criteria were delivered by its own successor CR0547 (US0671-US0674): the answerable exemption, the boundary placement under D0149, and distinguishing a verifier that could not run. Its live residue is AC1 (per-HUNK granularity, where CR0547 shipped the per-FILE form that AC1's own mutant names) and AC2's five-instance RUN-01KZ9315 corpus, which exists in no test or fixture. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - revert-each-hunk coverage proof: coverage opt-in in batch 2 |

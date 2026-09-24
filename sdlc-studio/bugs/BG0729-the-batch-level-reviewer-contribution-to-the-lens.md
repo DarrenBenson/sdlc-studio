@@ -1,6 +1,7 @@
 # BG0729: the batch-level reviewer contribution to the lens count is asserted by no test
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -36,3 +37,4 @@ Add a fixture placing a reviewer ONLY in `review_rounds` and another only in `sp
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-21 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - unasserted lens-count input: test gap in a figure the one-page report dropped |

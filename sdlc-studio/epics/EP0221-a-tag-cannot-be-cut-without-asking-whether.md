@@ -1,6 +1,7 @@
 # EP0221: A tag cannot be cut without asking whether the increment is shippable
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Derived Point Total:** 19
 > **Parent:** CR0499
 > **Created:** 2026-08-27
@@ -14,13 +15,13 @@ Decomposed from CR0499. Delivers the work CR0499 requested.
 
 ## Story Breakdown
 
-- [ ] [US0700: The shipped Release definition-of-done carries a mechanical shippable-increment clause](../stories/US0700-the-shipped-release-definition-of-done-carries-a.md)
-- [ ] [US0701: The goal half is DERIVED from the recorded sprint goal verdict and never re-asked at release time](../stories/US0701-the-goal-half-is-derived-from-the-recorded.md)
-- [ ] [US0702: The defect half judges the run's own goal clauses, so release and close cannot disagree](../stories/US0702-the-defect-half-judges-the-run-s-own.md)
-- [ ] [US0703: `release_cut.tag_check` refuses a tag naming which half failed and what would clear it](../stories/US0703-release-cut-tag-check-refuses-a-tag-naming.md)
-- [ ] [US0704: A partial or missed verdict is releasable only as an explicitly recorded operator decision](../stories/US0704-a-partial-or-missed-verdict-is-releasable-only.md)
-- [ ] [US0705: The defect judgement reports its own LOWER BOUND when unfiled findings exist](../stories/US0705-the-defect-judgement-reports-its-own-lower-bound.md)
-- [ ] [US0706: A project with no adopted definition-of-done inherits the clause from the shipped template](../stories/US0706-a-project-with-no-adopted-definition-of-done.md)
+- [x] [US0700: The shipped Release definition-of-done carries a mechanical shippable-increment clause](../stories/US0700-the-shipped-release-definition-of-done-carries-a.md)
+- [x] [US0701: The goal half is DERIVED from the recorded sprint goal verdict and never re-asked at release time](../stories/US0701-the-goal-half-is-derived-from-the-recorded.md)
+- [x] [US0702: The defect half judges the run's own goal clauses, so release and close cannot disagree](../stories/US0702-the-defect-half-judges-the-run-s-own.md)
+- [x] [US0703: `release_cut.tag_check` refuses a tag naming which half failed and what would clear it](../stories/US0703-release-cut-tag-check-refuses-a-tag-naming.md)
+- [x] [US0704: A partial or missed verdict is releasable only as an explicitly recorded operator decision](../stories/US0704-a-partial-or-missed-verdict-is-releasable-only.md)
+- [x] [US0705: The defect judgement reports its own LOWER BOUND when unfiled findings exist](../stories/US0705-the-defect-judgement-reports-its-own-lower-bound.md)
+- [x] [US0706: A project with no adopted definition-of-done inherits the clause from the shipped template](../stories/US0706-a-project-with-no-adopted-definition-of-done.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -41,3 +42,4 @@ Decomposed from CR0499. Delivers the work CR0499 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - shippable-increment release gate: goal verdict recorded once at close (D0254) and stop-ship printed at sign (D0257) |

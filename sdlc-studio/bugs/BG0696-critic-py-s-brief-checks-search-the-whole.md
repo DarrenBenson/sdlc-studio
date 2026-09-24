@@ -1,6 +1,7 @@
 # BG0696: critic.py's brief checks search the whole brief, so a unit's own text hides a dropped surface, and a REJECT marked as matching no brief can never be retired
 
 > **Status:** Open
+> **Closes with:** US0923 closes part (2), brief provenance matching, only. Part (1), missing_practices and missing_claim_surfaces searching the whole brief, has no closing story and stays live, so this bug is not closed when that story ships (D0264, backlog sweep D0265)
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/reference-review.md
@@ -32,3 +33,5 @@ Search only the rendered block for practices and claim surfaces. Share one helpe
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0923 ships - planning: SUPERSEDED - brief practice checks: brief provenance/practice checks deleted in batch 2; superseded only once US0923 ships (D0264) |
+| 2026-09-24 | Claude Opus 5.5 | US0907 round-2 review: US0923 covers part (2) only; part (1), the whole-brief practice and claim-surface search, stays live |

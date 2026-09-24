@@ -1,6 +1,7 @@
 # BG0728: a unit's declared Affects is never compared with the files its delivering commit changed
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, tools/check_spec_claims.py, tools/tests/test_check_spec_claims.py
@@ -36,3 +37,4 @@ At the terminal transition, compare the unit's Affects with the files of the com
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-21 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - [+constraint] compare Affects with delivering commit: new check |

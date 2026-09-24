@@ -1,6 +1,7 @@
 # US0690: The close names which units had the approval demanded at terminal and which the cutoff exempted
 
 > **Status:** Blocked
+> **Closes with:** US0909 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0555
 > **Created:** 2026-08-25
 > **Created-by:** sdlc-studio new
@@ -31,3 +32,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-25 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0909 ships - planning: SUPERSEDED - close report of plan-review exemptions: gate deleted in batch 2; superseded only once US0909 ships (D0264) |

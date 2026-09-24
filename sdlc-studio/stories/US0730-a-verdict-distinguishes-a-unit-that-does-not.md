@@ -1,6 +1,7 @@
 # US0730: A verdict distinguishes a unit that does not work from one whose evidence cannot fail
 
 > **Status:** Draft
+> **Closes with:** US0918 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0524
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
@@ -25,3 +26,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0918 ships - planning: SUPERSEDED - evidence-cannot-fail verdict class: evidence ledger deleted in batch 2; superseded only once US0918 ships (D0264) |

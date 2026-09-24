@@ -1,6 +1,7 @@
 # BG0686: BG0493 AC2's test reads a fixture hook, so deleting the real pre-commit hook's lane-check block survives
 
-> **Status:** Open
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .githooks/pre-commit
@@ -34,3 +35,4 @@ Point AC2's test at the tracked hook's text (or run the tracked hook in a fixtur
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - lane-check pre-commit block test: D0260/US0879 removed lane-check from pre-commit |

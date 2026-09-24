@@ -1,6 +1,7 @@
 # US0827: a module the selection omitted and the sweep later finds red is recorded as a miss, so the rule is judged on evidence
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Delivers:** CR0586
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
@@ -41,3 +42,4 @@ An advisory ledger with no threshold is a third instrument that accumulates and 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - US0881 |

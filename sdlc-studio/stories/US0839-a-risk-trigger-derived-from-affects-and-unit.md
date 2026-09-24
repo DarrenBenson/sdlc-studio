@@ -1,6 +1,7 @@
 # US0839: a risk trigger derived from Affects and unit type names which units still owe a consult, and most bugs skip without a reason
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Delivers:** RFC0058
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
@@ -62,3 +63,4 @@ treats any other shape as no coverage; D3, which would settle that shape, is ope
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - [+constraint] risk trigger naming units that owe a consult: new obligation |

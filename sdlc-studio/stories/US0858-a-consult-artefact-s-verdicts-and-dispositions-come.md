@@ -1,6 +1,7 @@
 # US0858: a consult artefact's verdicts and dispositions come from closed sets, and a FILE disposition names an id that resolves
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Supersedes:** US0840
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio new
@@ -42,3 +43,4 @@ Carried VERBATIM from US0840 (criteria AC1, AC2), which was groomed and goal-rev
 | --- | --- | --- |
 | 2026-09-21 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-21 | decomposition | Split from US0840 (8 points, at the ceiling where estimation reliability falls off) in RUN-01M306PY under D0222. Criteria carried verbatim rather than rewritten, so nothing is silently dropped or widened in the split. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - [+constraint] closed-set validation of consult artefacts: new refusal |

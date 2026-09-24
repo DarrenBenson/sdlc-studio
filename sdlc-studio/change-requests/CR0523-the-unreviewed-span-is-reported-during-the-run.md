@@ -1,6 +1,7 @@
 # CR-0523: the unreviewed span is reported DURING the run, not discovered at the close
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Decomposed-into:** EP0226
 > **Created:** 2026-08-02
 > **Created-by:** sdlc-studio new
@@ -36,3 +37,4 @@ The batch-boundary review is the mechanism that keeps findings cheap, and it is 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - unreviewed span: US0872 per-unit review |

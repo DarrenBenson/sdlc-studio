@@ -1,6 +1,7 @@
 # US0750: A charter's scope query can select the units a request was decomposed into
 
 > **Status:** Draft
+> **Merged from:** US0751 (backlog sweep 2026-09-24, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0531
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new

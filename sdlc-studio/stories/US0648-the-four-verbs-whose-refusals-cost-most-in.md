@@ -1,6 +1,7 @@
 # US0648: The four verbs whose refusals cost most in the measured session answer the contract reporter
 
-> **Status:** Ready
+> **Status:** Won't Implement
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Delivers:** CR0535
 > **Created:** 2026-08-07
 > **Created-by:** sdlc-studio new
@@ -47,3 +48,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-07 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - reporter for four verbs whose refusals batch 2 deletes (critic, verify_ac) |

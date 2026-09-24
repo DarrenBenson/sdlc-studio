@@ -1,6 +1,7 @@
 # US0720: A verdict is judged on the revision it was given for, so a repaired REJECT does not gate for ever
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Delivers:** CR0507
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
@@ -26,3 +27,4 @@
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: checked for supersession and kept open - a proposal to mark it superseded by CR0506 was REFUTED: only the author's critic.py repair retires a REJECT. A re-review APPROVE under the rejoinder brief (always a different fingerprint) leaves it unanswered, and nothing judges a verdict against the code revision it was given for. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - US0872 AC2: a fixed unit clears at round 2 |

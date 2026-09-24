@@ -1,6 +1,7 @@
 # US0718: The stop-ship question is answered per defect and the ruling records who made it
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Delivers:** CR0507
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
@@ -26,3 +27,4 @@
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: checked for supersession and kept open - partly delivered by US0571 (per-finding stop-ship ruling, who ruled, a stop-ship holds the close), but only for findings raised in the run: a defect already open when the run starts is never asked the stop-ship question (_open_findings filters on the batch window). |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - D0257: stop-ship listed first and printed at sign, signer decides |

@@ -1,6 +1,7 @@
 # CR-0529: the prior-art check is scoped to the reviewer, so an author rediscovers by being rejected what one command would have told them
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), MERGE: merged into CR0594
 > **Decomposed-into:** EP0229
 > **Priority:** Medium
 > **Type:** Improvement
@@ -45,3 +46,4 @@ Two bounded moves, both already half-present. First, add a DELIVER row to the to
 | --- | --- | --- |
 | 2026-08-04 | sdlc-studio | Raised |
 | 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed, and deliberately: RETRO0116 ruled it `deferred` on 2026-09-10. The premise is verified intact - `git log -S` appears twice in shipped guidance, both reviewer-facing inside the review-scope rule, and the toolchain runbook's Deliver table has seven rows and no prior-art row, so an author still rediscovers by being rejected. All five EP0229 children are Draft. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): MERGE, merged into CR0594 - CR0594 |

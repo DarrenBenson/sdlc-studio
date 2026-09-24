@@ -1,6 +1,7 @@
 # BG0684: transition's two-role gate ignores a Definition of Done that stands the review.two-role tag down
 
 > **Status:** Open
+> **Closes with:** US0916 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
@@ -33,3 +34,4 @@ Apply the stand-down before the applies-to check returns, so the three readers a
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0916 ships - planning: SUPERSEDED - two-role gate: per-unit two-role sign-off deleted in batch 2; superseded only once US0916 ships (D0264) |

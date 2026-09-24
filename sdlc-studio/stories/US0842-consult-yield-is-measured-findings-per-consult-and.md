@@ -1,6 +1,7 @@
 # US0842: consult yield is measured - findings per consult and the share folded or filed - so the requirement is revisited on evidence
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Delivers:** RFC0058
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
@@ -62,3 +63,4 @@ counting is over US0840's parsed rows; this story adds no reading of its own.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - consult yield metrics: new ledger |

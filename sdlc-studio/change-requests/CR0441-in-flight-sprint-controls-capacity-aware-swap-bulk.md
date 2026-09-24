@@ -1,6 +1,7 @@
 # CR-0441: In-flight sprint controls: capacity-aware swap, bulk add by epic, and a resizable appetite
 
-> **Status:** In Progress
+> **Status:** Complete
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), DELIVERED
 > **Decomposed-into:** EP0171
 > **Priority:** High
 > **Type:** Improvement
@@ -32,3 +33,4 @@ Who: every operator running a sprint that meets reality, which is every sprint -
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (operator-raised, RFC0057 discussion) | Raised |
 | 2026-09-21 | audit ruling | still wanted, correctly in progress. Four of five criteria shipped - `batch swap`, `batch add-epic`, `appetite resize` and the docs (US0470-US0473, Done). The residue is AC1 and AC5: plain `batch add`/`batch drop` still print a unit COUNT with no points, batch total, appetite or over-appetite warning. US0469 is exactly that residue and is Ready. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): DELIVERED - four of five criteria shipped as EP0171 (US0470 to US0473: swap, add-epic, appetite resize, docs); the residue, add and drop stating their effect on the plan, is answered by the shipped forecast row for an added unit and the report's drops and adds against plan (US0870 AC3, US0875 AC3); planning ruled it SUPERSEDED, but the work shipped, so it is Complete |

@@ -1,6 +1,7 @@
 # US0826: the full 133-module sweep runs on the schedule, and a week with no scheduled run is reported rather than silently skipped
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Delivers:** CR0586
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
@@ -49,3 +50,4 @@ BG0653 is this project's own precedent, recorded in AGENTS.md: a scheduled lane 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - US0881 (scheduled sweep not needed at push) |

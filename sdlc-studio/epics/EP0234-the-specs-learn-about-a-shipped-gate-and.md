@@ -1,6 +1,7 @@
 # EP0234: The specs learn about a shipped gate, and the guards that say so can fail
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Derived Point Total:** 16
 > **Parent:** CR0536
 > **Created:** 2026-08-27
@@ -14,11 +15,11 @@ Decomposed from CR0536. Delivers the work CR0536 requested.
 
 ## Story Breakdown
 
-- [ ] [US0764: A verb that gains a refusal fails a spec lane until the TRD's gate inventory names it](../stories/US0764-a-verb-that-gains-a-refusal-fails-a.md)
-- [ ] [US0765: The TSD's test-strategy rows for a shipped gate are DERIVED from the same source](../stories/US0765-the-tsd-s-test-strategy-rows-for-a.md)
-- [ ] [US0766: Each of BG0457's four spec-agreement guards is shown RED under the mutation its criterion names](../stories/US0766-each-of-bg0457-s-four-spec-agreement-guards.md)
-- [ ] [US0767: The lane regenerates and DIFFS rather than searching for prose](../stories/US0767-the-lane-regenerates-and-diffs-rather-than-searching.md)
-- [ ] [US0768: The count of shipped refusing verbs not named in the spec is reported as a number](../stories/US0768-the-count-of-shipped-refusing-verbs-not-named.md)
+- [x] [US0764: A verb that gains a refusal fails a spec lane until the TRD's gate inventory names it](../stories/US0764-a-verb-that-gains-a-refusal-fails-a.md)
+- [x] [US0765: The TSD's test-strategy rows for a shipped gate are DERIVED from the same source](../stories/US0765-the-tsd-s-test-strategy-rows-for-a.md)
+- [x] [US0766: Each of BG0457's four spec-agreement guards is shown RED under the mutation its criterion names](../stories/US0766-each-of-bg0457-s-four-spec-agreement-guards.md)
+- [x] [US0767: The lane regenerates and DIFFS rather than searching for prose](../stories/US0767-the-lane-regenerates-and-diffs-rather-than-searching.md)
+- [x] [US0768: The count of shipped refusing verbs not named in the spec is reported as a number](../stories/US0768-the-count-of-shipped-refusing-verbs-not-named.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -37,3 +38,4 @@ Decomposed from CR0536. Delivers the work CR0536 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - specs learn about gates via failing spec lanes: gate inventories in TRD/TSD are ceremony; CR0594 covers the loop reading the specs |

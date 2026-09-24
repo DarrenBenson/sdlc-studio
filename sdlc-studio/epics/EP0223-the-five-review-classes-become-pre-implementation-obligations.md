@@ -1,6 +1,7 @@
 # EP0223: The five review classes become pre-implementation obligations, and two of them become detectors
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Derived Point Total:** 21
 > **Parent:** CR0504
 > **Created:** 2026-08-27
@@ -14,11 +15,11 @@ Decomposed from CR0504. Delivers the work CR0504 requested.
 
 ## Story Breakdown
 
-- [ ] [US0712: The doctrine names each of the five classes as a pre-implementation obligation with its attesting instances](../stories/US0712-the-doctrine-names-each-of-the-five-classes.md)
-- [ ] [US0713: A divergent-reader DETECTOR reports a new read of a shared field that does not use the established idiom](../stories/US0713-a-divergent-reader-detector-reports-a-new-read.md)
-- [ ] [US0714: A self-agreeing test is REFUSED where an assertion reads its expected value from the code under test](../stories/US0714-a-self-agreeing-test-is-refused-where-an.md)
-- [ ] [US0715: A new gate lane must carry the declared-inventory guards its sibling lanes carry](../stories/US0715-a-new-gate-lane-must-carry-the-declared.md)
-- [ ] [US0716: The design rung records a SHAPE CENSUS for any parser or matcher a unit adds, counted before implementation](../stories/US0716-the-design-rung-records-a-shape-census-for.md)
+- [x] [US0712: The doctrine names each of the five classes as a pre-implementation obligation with its attesting instances](../stories/US0712-the-doctrine-names-each-of-the-five-classes.md)
+- [x] [US0713: A divergent-reader DETECTOR reports a new read of a shared field that does not use the established idiom](../stories/US0713-a-divergent-reader-detector-reports-a-new-read.md)
+- [x] [US0714: A self-agreeing test is REFUSED where an assertion reads its expected value from the code under test](../stories/US0714-a-self-agreeing-test-is-refused-where-an.md)
+- [x] [US0715: A new gate lane must carry the declared-inventory guards its sibling lanes carry](../stories/US0715-a-new-gate-lane-must-carry-the-declared.md)
+- [x] [US0716: The design rung records a SHAPE CENSUS for any parser or matcher a unit adds, counted before implementation](../stories/US0716-the-design-rung-records-a-shape-census-for.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -37,3 +38,4 @@ Decomposed from CR0504. Delivers the work CR0504 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - five review classes as obligations/detectors: US0887/US0888 failure-class store graduates recurring classes into checks on evidence |

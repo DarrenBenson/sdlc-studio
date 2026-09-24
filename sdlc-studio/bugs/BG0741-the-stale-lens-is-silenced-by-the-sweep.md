@@ -1,6 +1,7 @@
 # BG0741: the stale lens is silenced by the sweep's own audit rulings, and repairing it will make every abandoned request double-report on the same day
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/backlog_triage.py, .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py
@@ -38,3 +39,4 @@ A lens that its own remedy switches off, and a second lens that will collide wit
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-22 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - advisory stale lens silenced by audit rulings: note-level lens |

@@ -1,6 +1,7 @@
 # US0825: the lane line names its selection and the rule that produced it, so a narrowed lane is never read as a full one
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Delivers:** CR0586
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
@@ -41,3 +42,4 @@ A narrowed lane that reports like a full one is worse than either: the reader ca
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - US0881 |

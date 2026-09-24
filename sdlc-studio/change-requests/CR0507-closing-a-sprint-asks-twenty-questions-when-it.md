@@ -1,6 +1,7 @@
 # CR-0507: closing a sprint asks twenty questions when it should ask two, and the ceremony now costs more than the work it certifies
 
-> **Status:** In Progress
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Decomposed-into:** EP0224
 > **Priority:** High
 > **Type:** Improvement
@@ -42,3 +43,4 @@ Check during refine whether this SUBSUMES CR0505 rather than sitting beside it. 
 | 2026-07-30 | Darren Benson (operator), from the RUN-01KYPZ1G close | Raised |
 | 2026-09-15 | sprint planning 2026-09-15 | Amended by D0193 (2026-09-15): AC1's two gates stand, and the question whether every batch unit is answered lives INSIDE the stop-ship gate rather than as a third. US0717 is to be read that way when it is groomed. |
 | 2026-09-21 | audit ruling | still wanted, correctly in progress, and the premise has got WORSE since it was raised. Its core criterion is not merely unmet: the close chain has grown from nine blocking steps to ten, because sibling CR0505 added the `checklist` step this request warned against by name. The decomposition has genuinely been maintained - AC3 retired via US0719, AC4 delivered by CR0506, AC5 partly delivered as `close_cost_line` - which is what puts it here rather than never-started. Residue is AC1 and AC2. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - close asks two questions: US0876 |

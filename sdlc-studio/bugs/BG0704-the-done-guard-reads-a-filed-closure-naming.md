@@ -1,6 +1,7 @@
 # BG0704: The Done guard reads a filed closure naming the unit itself as a repair, and lists repaired findings as outstanding when the only APPROVE is the author's own
 
 > **Status:** Open
+> **Closes with:** US0914 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/conformance.py
@@ -91,3 +92,4 @@ only at read time is already in an append-only ledger by the time anybody sees i
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
 | 2026-09-17 | sdlc-studio | Groomed for `sprint plan`: the two derived criteria are replaced by four authored ones - the self-naming filed closure, a closure filed to a type that carries no finding, the refusal that misdescribes a self-authored APPROVE as outstanding findings, and one corpus window per sweep. The three round-two observations the summary records (the close tail's epic derivation over abandoned units, the stale `_batch_unfanned_units` docstring, and step-1 review coverage listing an abandoned unit) are not covered by these criteria and remain unfiled work. AC4's second sweep lives in `conformance.py`, which `Affects` does not yet name - add it before delivery, or the review's bounded scope will not reach the change. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0914 ships - planning: SUPERSEDED - Done guard reading repair closures: repair ledger deleted in batch 2; superseded only once US0914 ships (D0264) |

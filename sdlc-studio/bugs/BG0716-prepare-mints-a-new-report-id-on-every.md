@@ -1,6 +1,8 @@
 # BG0716: PREPARE mints a new report id on every re-file, so a run that prepares twice has two reports of record
 
-> **Status:** Open
+> **Status:** Fixed
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), DELIVERED
+> **Verification depth:** functional (US0877 AC4's test files a run's report twice through file_report and reads one id; a second run gets a new id)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -23,8 +25,16 @@ In `file_report` (or its caller `_file_the_report`), take the report id from the
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `_file_the_report` calls `file_report`, which allocates a fresh RPT id through `next_id` on every call.
-- [ ] **AC2** The proposed fix lands, pinned by a test: In `file_report` (or its caller `_file_the_report`), take the report id from the run record when the run already names one and allocate through `next_id` only...
+- [x] **AC1** The behaviour described is corrected: `_file_the_report` calls `file_report`, which allocates a fresh RPT id through `next_id` on every call.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_retro.py::OneReportPerRunTests::test_refiling_a_runs_report_reuses_its_id
+  - **Verified:** yes (2026-09-24)
+- [x] **AC2** The proposed fix lands, pinned by a test: In `file_report` (or its caller `_file_the_report`), take the report id from the run record when the run already names one and allocate through `next_id` only...
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_retro.py::OneReportPerRunTests::test_refiling_a_runs_report_reuses_its_id
+  - **Verified:** yes (2026-09-24)
+
+Both are met by US0877 AC4: `file_report` now rewrites a run's unsigned report in place under its
+own id and allocates a new id only for a run with no unsigned report. Its test above is the
+verification of this fix.
 
 ## Revision History
 
@@ -32,3 +42,4 @@ In `file_report` (or its caller `_file_the_report`), take the report id from the
 | --- | --- | --- |
 | 2026-09-18 | sdlc-studio | Filed |
 | 2026-09-20 | operator ruling | RFC0059 D7 ruled: ONE report per run, kept forever, indexed and diffable - a run owns exactly one RPT id, stable across every re-prepare. That settles this bug's fix rather than leaving it to the implementer: take the id from the run record when the run already names one, allocate only when it does not. The reading in which each derivation is its own artefact is ruled out. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): DELIVERED - fixed by US0877 AC4: file_report rewrites an unsigned report of the same run in place under its own id; planning ruled it SUPERSEDED, but the fix shipped, so it moves to Fixed |

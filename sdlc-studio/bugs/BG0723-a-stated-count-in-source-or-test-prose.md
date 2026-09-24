@@ -1,6 +1,7 @@
 # BG0723: a stated count in source or test prose is never checked against the tree it counts
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** tools/check_spec_claims.py, tools/tests/test_check_spec_claims.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, tools/tests/test_check_versions.py
@@ -36,3 +37,4 @@ Fix the five instances, then gate the class: `check_spec_claims` already knows h
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-21 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - [+constraint] check stated counts in prose against the tree: new check |

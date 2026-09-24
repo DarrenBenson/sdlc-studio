@@ -1,6 +1,8 @@
 # BG0709: the pre-push red-main check trusts the forge's ordering, so a stale first row demands acknowledgement of a two-month-old red
 
-> **Status:** Open
+> **Status:** Fixed
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), DELIVERED
+> **Verification depth:** functional (US0881 AC4's test drives the real .githooks/pre-push against a stub forge that answers a stale red first and green on the re-read, and the push is not refused; fixed in commit 8daaa2fe)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .githooks/pre-push, tools/tests/test_pre_push_hook.py
@@ -24,11 +26,20 @@ Judge recency rather than position: request several rows with createdAt, take th
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The hook reads the latest push-triggered Lint run with `gh run list --workflow Lint --branch main --event push --status completed --limit 1` and trusts element...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Judge recency rather than position: request several rows with createdAt, take the newest by that field, and refuse to read a row older than the local HEAD's...
+- [x] **AC1** The behaviour described is corrected: The hook reads the latest push-triggered Lint run with `gh run list --workflow Lint --branch main --event push --status completed --limit 1` and trusts element...
+  - **Verify:** pytest tools/tests/test_lean_push.py::PushBoundaryTests::test_a_stale_red_answer_is_re_read
+  - **Verified:** yes (2026-09-24)
+- [x] **AC2** The proposed fix lands, pinned by a test: Judge recency rather than position: request several rows with createdAt, take the newest by that field, and refuse to read a row older than the local HEAD's...
+  - **Verify:** pytest tools/tests/test_lean_push.py::PushBoundaryTests::test_a_stale_red_answer_is_re_read
+  - **Verified:** yes (2026-09-24)
+
+Both are met by US0881 AC4 (commit 8daaa2fe), which took a different shape from the proposed fix: a
+red answer is re-read once before the hook refuses, and the second answer is judged, so a stale
+first row no longer refuses a push. Its test above is the verification of this fix.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): DELIVERED - fixed at HEAD by US0881 AC4 (commit 8daaa2fe: a red answer is re-read, the second judged); planning ruled it SUPERSEDED, but the fix shipped, so it moves to Fixed |

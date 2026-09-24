@@ -1,6 +1,7 @@
 # CR-0499: A sprint is never asked whether it produced a SHIPPABLE increment: the release definition-of-done encodes mechanism, not outcome
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Decomposed-into:** EP0221
 > **Priority:** High
 > **Type:** Improvement
@@ -76,3 +77,4 @@ Add the missing clause and DERIVE both halves from facts the process already rec
 | --- | --- | --- |
 | 2026-07-29 | sdlc-studio | Raised |
 | 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed. The premise holds unchanged at HEAD: the shipped Release definition-of-done carries four mechanical clauses and no shippable-increment clause, and `release_cut.tag_check` still refuses only on mechanism. Neither `goal_panel` nor `judge_defects_against_goal` is reachable from the release path. All seven children (US0700-US0706) are Draft, decomposed and untouched. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - shippable-increment question: D0254 goal verdict at close, D0257 stop-ship at sign |

@@ -1,6 +1,7 @@
 # CR-0578: Plan review has no round ceiling in the tooling; D0204's three-round cap is a ruling nothing enforces
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
@@ -35,3 +36,4 @@ Count a unit's plan-review rounds from the verdict ledger (distinct REJECT brief
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - plan-review round ceiling: plan review deleted in batch 2 (delivery cap is US0872) |

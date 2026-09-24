@@ -1,6 +1,7 @@
 # CR-0566: claim-drift flags a numeric claim in a diff's prose that no measurement backs
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S
@@ -28,3 +29,4 @@ A figure in consumer-facing prose carries a command behind it; a wrong cost or c
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-07 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - [+constraint] claim-drift flag for numeric claims: new check (same class as BG0723) |

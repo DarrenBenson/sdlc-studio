@@ -1,6 +1,7 @@
 # BG0699: sprint queue show's not-materialised line is pinned by no test, and next, plan and queue show hold the discovery partition in separate copies
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -32,3 +33,4 @@ Pin queue show's line through the CLI on a discovery-only and a mixed head. Rout
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - surviving mutant on a correct queue-show line: evidence-only finding, behaviour confirmed by CLI |

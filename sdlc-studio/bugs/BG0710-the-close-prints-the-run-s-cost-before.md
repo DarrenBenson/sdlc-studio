@@ -1,6 +1,7 @@
 # BG0710: the close prints the run's cost before the step that captures it, so every close reports the sprint as not attributable
 
-> **Status:** Open
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -32,3 +33,4 @@ Capture the token actual BEFORE the summary is rendered, or render the summary a
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - close cost printed before capture: US0871 per-unit capture feeds US0875's estimates; apply-signoff goes with per-unit sign-off in batch 2 |

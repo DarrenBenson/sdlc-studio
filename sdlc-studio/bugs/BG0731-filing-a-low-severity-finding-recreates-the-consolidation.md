@@ -1,6 +1,7 @@
 # BG0731: filing a Low-severity finding recreates the consolidation bucket that was just ruled not to be a change request
 
 > **Status:** Open
+> **Merged from:** BG0738 (backlog sweep 2026-09-24, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/triage_noise.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py

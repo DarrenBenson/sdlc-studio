@@ -1,6 +1,7 @@
 # EP0240: An exemption reason is judged on meaning, not on character count
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Derived Point Total:** 8
 > **Parent:** CR0553
 > **Created:** 2026-08-27
@@ -14,10 +15,10 @@ Decomposed from CR0553. Delivers the work CR0553 requested.
 
 ## Story Breakdown
 
-- [ ] [US0789: A reason carrying no distinct meaning-bearing tokens is REFUSED however long it is](../stories/US0789-a-reason-carrying-no-distinct-meaning-bearing-tokens.md)
-- [ ] [US0790: A reason that is mostly the criterion's own words returned to it is refused as a restatement](../stories/US0790-a-reason-that-is-mostly-the-criterion-s.md)
-- [ ] [US0791: One reason repeated verbatim across several criterion ids is refused](../stories/US0791-one-reason-repeated-verbatim-across-several-criterion-ids.md)
-- [ ] [US0792: The number of existing exemptions the tightened floor newly refuses is REPORTED before it blocks](../stories/US0792-the-number-of-existing-exemptions-the-tightened-floor.md)
+- [x] [US0789: A reason carrying no distinct meaning-bearing tokens is REFUSED however long it is](../stories/US0789-a-reason-carrying-no-distinct-meaning-bearing-tokens.md)
+- [x] [US0790: A reason that is mostly the criterion's own words returned to it is refused as a restatement](../stories/US0790-a-reason-that-is-mostly-the-criterion-s.md)
+- [x] [US0791: One reason repeated verbatim across several criterion ids is refused](../stories/US0791-one-reason-repeated-verbatim-across-several-criterion-ids.md)
+- [x] [US0792: The number of existing exemptions the tightened floor newly refuses is REPORTED before it blocks](../stories/US0792-the-number-of-existing-exemptions-the-tightened-floor.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -35,3 +36,4 @@ Decomposed from CR0553. Delivers the work CR0553 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - exemption reason judged on meaning: tightens refusals on revert-check exemptions |

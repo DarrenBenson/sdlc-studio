@@ -1,6 +1,7 @@
 # CR-0573: US0627's REJECT guard applies to the whole existing backlog with no cutoff and no adoption report
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S
@@ -33,3 +34,4 @@ A report line in migrate/upgrade naming the units the guard will refuse (nothing
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Raised |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - REJECT guard cutoff: US0872 replaced REJECT handling (fixed unit clears, round-2 REJECT carried) |

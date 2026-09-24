@@ -1,6 +1,7 @@
 # CR-0556: A bug reaches a terminal status with no independent judgement of its plan OR its code - the only gate is evidence it reports about itself
 
 > **Status:** In Progress
+> **Closes with:** US0921 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Decomposed-into:** EP0242
 > **Priority:** High
 > **Type:** Improvement
@@ -37,3 +38,4 @@ Option 2, and NOT before the backlog sweep. The gate's weak point is precise: it
 | --- | --- | --- |
 | 2026-08-25 | sdlc-studio | Raised |
 | 2026-09-21 | audit ruling | still wanted, correctly in progress, with half its premise now false. BG0630's terminal firing means a bug past `review.test_plan_after` IS refused into Fixed without an independent plan approval - US0797/US0798 were closed Superseded-by-BG0630. The other half stands and is the sharper one: the two-role delivery review is still `story` and `Done` only, so a bug's CODE is never independently judged. Residue is thin and partly duplicated - US0800 is the same check CR0554/EP0241 owns as US0793-US0796, and one of the two should be dropped. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0921 ships - planning: SUPERSEDED - bug independent judgement: US0872 plus two-role deletion in batch 2; superseded only once US0921 ships (D0264) |

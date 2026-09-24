@@ -1,6 +1,7 @@
 # EP0226: The unreviewed span is reported while the run can still act on it
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Derived Point Total:** 13
 > **Parent:** CR0523
 > **Created:** 2026-08-27
@@ -14,11 +15,11 @@ Decomposed from CR0523. Delivers the work CR0523 requested.
 
 ## Story Breakdown
 
-- [ ] [US0725: A unit reaching Review past the span threshold is REPORTED by the command that transitions it](../stories/US0725-a-unit-reaching-review-past-the-span-threshold.md)
-- [ ] [US0726: The threshold is configurable, with a default DERIVED from what this repo actually does](../stories/US0726-the-threshold-is-configurable-with-a-default-derived.md)
-- [ ] [US0727: `sprint status` states the open span without anyone running the close](../stories/US0727-sprint-status-states-the-open-span-without-anyone.md)
-- [ ] [US0728: The report is advisory until its yield is measured, on the terms claim-drift and lane-check shipped under](../stories/US0728-the-report-is-advisory-until-its-yield-is.md)
-- [ ] [US0729: A run with every unit covered stays silent, so the signal does not become noise](../stories/US0729-a-run-with-every-unit-covered-stays-silent.md)
+- [x] [US0725: A unit reaching Review past the span threshold is REPORTED by the command that transitions it](../stories/US0725-a-unit-reaching-review-past-the-span-threshold.md)
+- [x] [US0726: The threshold is configurable, with a default DERIVED from what this repo actually does](../stories/US0726-the-threshold-is-configurable-with-a-default-derived.md)
+- [x] [US0727: `sprint status` states the open span without anyone running the close](../stories/US0727-sprint-status-states-the-open-span-without-anyone.md)
+- [x] [US0728: The report is advisory until its yield is measured, on the terms claim-drift and lane-check shipped under](../stories/US0728-the-report-is-advisory-until-its-yield-is.md)
+- [x] [US0729: A run with every unit covered stays silent, so the signal does not become noise](../stories/US0729-a-run-with-every-unit-covered-stays-silent.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -37,3 +38,4 @@ Decomposed from CR0523. Delivers the work CR0523 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - unreviewed span during run: US0872 reviews each unit as it is delivered |

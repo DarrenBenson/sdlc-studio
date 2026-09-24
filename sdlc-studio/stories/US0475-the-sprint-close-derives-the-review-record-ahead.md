@@ -1,6 +1,7 @@
 # US0475: The sprint close derives the review record ahead of the gate, and the review-current lane demonstrably clears on a git fixture
 
-> **Status:** Ready
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Delivers:** CR0424
 > **Created:** 2026-07-27
 > **Created-by:** sdlc-studio new
@@ -58,3 +59,4 @@
 | --- | --- | --- |
 | 2026-07-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-27 | Claude Fable 5 | Groomed: authored from the reviewed breakdown (two adversarial rounds), scope capped to the request per D0069 |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - review-current lane clearing: US0876 (lane failures become known issues); batch 2 deletes the sprint-review ledger |

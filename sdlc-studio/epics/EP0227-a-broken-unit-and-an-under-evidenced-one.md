@@ -1,6 +1,7 @@
 # EP0227: A broken unit and an under-evidenced one get different verdicts
 
 > **Status:** Draft
+> **Closes with:** US0918, US0920, US0921 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Derived Point Total:** 16
 > **Parent:** CR0524
 > **Created:** 2026-08-27
@@ -18,7 +19,7 @@ Decomposed from CR0524. Delivers the work CR0524 requested.
 - [ ] [US0731: Evidence debt is recorded against the CRITERION it attaches to, naming the surviving mutant](../stories/US0731-evidence-debt-is-recorded-against-the-criterion-it.md)
 - [ ] [US0732: The batch summary reports the two counts separately](../stories/US0732-the-batch-summary-reports-the-two-counts-separately.md)
 - [ ] [US0733: A unit carrying evidence debt is still refused a terminal status until it is cleared or deferred with a reason](../stories/US0733-a-unit-carrying-evidence-debt-is-still-refused.md)
-- [ ] [US0734: The seat briefs tell a reviewer which verdict fits which finding, calibrated on RUN-01KYZKY5](../stories/US0734-the-seat-briefs-tell-a-reviewer-which-verdict.md)
+- [x] [US0734: The seat briefs tell a reviewer which verdict fits which finding, calibrated on RUN-01KYZKY5](../stories/US0734-the-seat-briefs-tell-a-reviewer-which-verdict.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -37,3 +38,4 @@ Decomposed from CR0524. Delivers the work CR0524 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0918, US0920, US0921 ships - planning: SUPERSEDED - broken vs under-evidenced verdicts / evidence debt: evidence ledger and mutation register deleted in batch 2; superseded only once US0918, US0920, US0921 ships (D0264) |

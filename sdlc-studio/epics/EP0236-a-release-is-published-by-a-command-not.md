@@ -14,8 +14,8 @@ Decomposed from CR0545. Delivers the work CR0545 requested.
 
 ## Story Breakdown
 
-- [ ] [US0772: A tag whose Release is missing any of its four assets is REFUSED at the release boundary](../stories/US0772-a-tag-whose-release-is-missing-any-of.md)
-- [ ] [US0773: The check ships as `release_cut.py` rather than in repo-only `tools/`](../stories/US0773-the-check-ships-as-release-cut-py-rather.md)
+- [x] [US0772: A tag whose Release is missing any of its four assets is REFUSED at the release boundary](../stories/US0772-a-tag-whose-release-is-missing-any-of.md)
+- [x] [US0773: The check ships as `release_cut.py` rather than in repo-only `tools/`](../stories/US0773-the-check-ships-as-release-cut-py-rather.md)
 - [ ] [US0774: A project with no release automation of its own inherits a working release step](../stories/US0774-a-project-with-no-release-automation-of-its.md)
 
 ## Acceptance Criteria (Epic Level)

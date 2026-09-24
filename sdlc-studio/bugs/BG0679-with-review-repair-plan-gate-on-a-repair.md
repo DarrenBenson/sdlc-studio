@@ -1,6 +1,7 @@
 # BG0679: With review.repair_plan_gate on, a repair bug set straight to Closed or Verified skips the gate
 
 > **Status:** Open
+> **Closes with:** US0913 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
@@ -33,3 +34,4 @@ Bind the gate on `is_delivered_terminal` rather than the Fixed/Done pair; pin Cl
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0913 ships - planning: SUPERSEDED - repair-plan gate: repair ledger deleted in batch 2; superseded only once US0913 ships (D0264) |

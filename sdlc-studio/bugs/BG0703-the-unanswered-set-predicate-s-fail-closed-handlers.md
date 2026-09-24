@@ -1,6 +1,7 @@
 # BG0703: The unanswered-set predicate's fail-closed handlers and the handoff behaviours around it survive mutants no test kills
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_handoff.py, .claude/skills/sdlc-studio/scripts/tests/test_handoff_line.py
@@ -120,3 +121,4 @@ command, because an in-process call cannot see a line the CLI never prints.
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
 | 2026-09-17 | sdlc-studio | Groomed for `sprint plan`: the three derived criteria are replaced by five authored ones covering all seventeen surviving mutants the summary names - the three fail-closed handlers, the four vocabulary and id reads, the two duplicated readers, the four printed lines, and the four handoff and record renderings. Each criterion names its edits and its test carries one subTest per edit, so no repair can cover a sibling branch. |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - surviving mutants in fail-closed handlers of the unanswered-set machinery: evidence-only |

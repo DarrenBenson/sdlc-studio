@@ -1,6 +1,7 @@
 # US0829: one collector unions the shard identities and judges them against the single baseline, naming NEW, went-green and VANISHED as the serial lane does
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Delivers:** CR0585
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new
@@ -57,3 +58,4 @@ The baseline stays one file and one row per metric, because a per-shard baseline
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - shard union collector with baseline judging |

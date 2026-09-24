@@ -1,6 +1,7 @@
 # US0688: The plan review and the delivery review are carried in ONE brief, so a unit takes one round where it took two
 
-> **Status:** Blocked
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), SUPERSEDED
 > **Delivers:** CR0555
 > **Created:** 2026-08-25
 > **Created-by:** sdlc-studio new
@@ -33,3 +34,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-25 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): SUPERSEDED - merge plan+delivery review into one brief: US0872 single review; plan review deleted in batch 2 |

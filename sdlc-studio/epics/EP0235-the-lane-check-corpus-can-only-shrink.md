@@ -1,6 +1,7 @@
 # EP0235: The lane-check corpus can only shrink
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0265 backlog sweep 2026-09-24 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md), RETIRE
 > **Derived Point Total:** 13
 > **Parent:** CR0539
 > **Created:** 2026-08-27
@@ -14,9 +15,9 @@ Decomposed from CR0539. Delivers the work CR0539 requested.
 
 ## Story Breakdown
 
-- [ ] [US0769: lane-check records the corpus count as a baseline and REFUSES an increase](../stories/US0769-lane-check-records-the-corpus-count-as-a.md)
-- [ ] [US0770: The baseline falls automatically when a unit is repaired, and rises only by recorded decision](../stories/US0770-the-baseline-falls-automatically-when-a-unit-is.md)
-- [ ] [US0771: A unit under construction sees its OWN lane-check line at delivery, not the corpus total](../stories/US0771-a-unit-under-construction-sees-its-own-lane.md)
+- [x] [US0769: lane-check records the corpus count as a baseline and REFUSES an increase](../stories/US0769-lane-check-records-the-corpus-count-as-a.md)
+- [x] [US0770: The baseline falls automatically when a unit is repaired, and rises only by recorded decision](../stories/US0770-the-baseline-falls-automatically-when-a-unit-is.md)
+- [x] [US0771: A unit under construction sees its OWN lane-check line at delivery, not the corpus total](../stories/US0771-a-unit-under-construction-sees-its-own-lane.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -33,3 +34,4 @@ Decomposed from CR0539. Delivers the work CR0539 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): RETIRE - lane-check corpus ratchet: D0260 moved lane-check to a hand-run review aid |
