@@ -1154,6 +1154,11 @@ One row has been removed since adoption.
 | US0883 | REJECT | qa-rev-US0883 | US0883-build | 2026-09-24 | - | - | [new] the markdown twin is compared through the current template, so any later template change reads a signed report as edited (reproduced on RPT0006) |
 | US0887 | REJECT | qa-rev-US0887 | US0887-build | 2026-09-24 | - | - | [new] a manual extract followed by the close double-counts one repeat, which graduates a class on its first real repeat |
 | US0889 | APPROVE | qa-rev-US0889 | US0889-build | 2026-09-24 | - | - | [new] non-blocking: the sealed-run and run-id guards in \_open\_handoff are unpinned; [pre-existing] --file-and-close does not forward-port |
+| US0879 | APPROVE | qa-rev-US0879 | US0879-build | 2026-09-24 | - | - | [new] non-blocking: the deleted test was the only cover for the window matcher dot-slash normalisation; [new] non-blocking: lane-check did surface real defects (advisory), so the caught-nothing claim is false for it; [pre-existing] since None in the window message |
+| US0884 | APPROVE | qa-rev-US0884 | US0884-build | 2026-09-24 | - | - | [new] non-blocking: the signed-remedy branch is unpinned (M5); [pre-existing] the remedy for an archived run names reopen, which cannot work; [new] non-blocking: a stopped run is called signed |
+| US0883 | APPROVE | qa-rev-US0883 | US0883-fix | 2026-09-24 | - | - | [new] none: all four round-1 findings closed, 12 mutants killed, the real RPT0006 reads VALID under committed and uncommitted template changes |
+| US0882 | REJECT | qa-rev-US0882 | US0882-build | 2026-09-24 | - | - | [new] register carries every unit's rows onto one entry and the 100-row cap evicts live evidence (27 rows lost on verify\_ac.py on a real-ledger copy); [new] non-blocking: withdrawn, duplicate-key and ordering rules are unpinned |
+| US0888 | REJECT | qa-rev-US0888 | US0888-build | 2026-09-24 | - | - | [new] the cite instruction reaches the goal-review brief, not the critic brief whose REJECTs are counted, so AC1 is never fed in practice; [new] a per-clone retirement window retires classes hit on another clone, irreversibly |
 
 ## Supersessions
 

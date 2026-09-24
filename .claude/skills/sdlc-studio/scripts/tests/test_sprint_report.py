@@ -4196,11 +4196,12 @@ class InvalidatedReportTests(ReportOfRecordBase):
         fixture_run(root)
         rep = sr.build_report(root, FIX_RETRO)
         rid = sr.file_report(root, rep)
-        p = root / "sdlc-studio" / "reports" / f"{rid}.json"
-        data = json.loads(p.read_text(encoding="utf-8"))
+        data = sr.read_report(root, rid)
         data["signature"] = {"principal": "the operator", "signed_at": "2026-09-16T09:00:00Z",
                              "fingerprint": data["fingerprint"]}
-        p.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        # Through the seal's own writer, which re-renders the twin: a signature written into
+        # the JSON alone leaves a twin that disagrees with it, and check reads that as an edit.
+        sr.write_report(root, data)
         return root, rid
 
     @staticmethod

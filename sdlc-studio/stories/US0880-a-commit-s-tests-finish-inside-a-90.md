@@ -1,6 +1,6 @@
 # US0880: A commit's tests finish inside a 90-second budget
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

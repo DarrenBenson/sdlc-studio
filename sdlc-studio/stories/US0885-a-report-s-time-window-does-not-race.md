@@ -1,6 +1,6 @@
 # US0885: A report's time window does not race its own paperwork
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

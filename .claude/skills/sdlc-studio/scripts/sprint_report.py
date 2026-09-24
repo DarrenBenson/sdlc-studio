@@ -27,6 +27,7 @@ Two honesty rules it will not bend:
 from __future__ import annotations
 
 import argparse
+import difflib
 import hashlib
 import importlib
 import json
@@ -3591,11 +3592,12 @@ def _iso(moment) -> str | None:
 
 
 def build_report(root, retro_id: str, as_of: str | None = None,
-                 window_end: str | None = None) -> dict:
+                 window_end: str | None = None, run_id: str | None = None) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
-    recorded, no run record, a figure whose deriver produced no source.
+    recorded, no run record, a figure whose deriver produced no source. `run_id` names an
+    archived run to re-derive; unset, the live run is reported.
 
     THE WINDOW IS CLOSED AND CARRIED. `ended_at` is None until the seal and written by it, so
     an open run is bounded at the page's generation time, and the resolved end is recorded on
@@ -3603,7 +3605,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     move the figures and invalidate the page it had just signed.
     """
     root = Path(root)
-    state, state_rel = _run_state_for(root, None)
+    state, state_rel = _run_state_for(root, run_id)
     generated_at = as_of or sdlc_md.now_iso8601()
     start = _at(state.get("started_at"))
     end = (_at(window_end) if window_end else
@@ -3955,7 +3957,10 @@ def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict
         rows["invalidation"] = [{
             "signed_fingerprint": revalidation.get("signed_fingerprint"),
             "current_fingerprint": revalidation.get("fingerprint"),
-            "moved_figures": ", ".join(revalidation.get("moved") or []) or "an unnamed figure"}]
+            "moved_figures": ", ".join(dict.fromkeys(
+                (revalidation.get("moved") or [])
+                + [e["figure"] for e in revalidation.get("edited") or []]))
+            or "an unnamed figure"}]
     return scope, rows, flags
 
 
@@ -3983,11 +3988,15 @@ def template_path(name: str) -> Path:
     return Path(__file__).resolve().parent.parent / "templates" / name
 
 
+#: The Markdown twin's template, under `templates/`.
+MD_TEMPLATE = "core/sprint-report.md"
+
+
 def render_markdown(report: dict, template: str | None = None,
                     revalidation: dict | None = None) -> str:
     """The committed twin, from `templates/core/sprint-report.md`."""
     if template is None:
-        template = template_path("core/sprint-report.md").read_text(encoding="utf-8")
+        template = template_path(MD_TEMPLATE).read_text(encoding="utf-8")
     out = _render(report, template, revalidation)
     # A repeat block that emits NOTHING - the invalidation banner on a valid report is the
     # ordinary case - leaves its surrounding blank line behind, and two blank lines in a row
@@ -4064,11 +4073,16 @@ def write_report(root, report: dict) -> Path:
     d.mkdir(parents=True, exist_ok=True)
     path = d / f"{rid}.json"
     path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    stem = sdlc_md.slug(f"sprint report {report.get('run_id') or ''}")[:60].strip("-")
-    md = d / f"{rid}-{stem or 'sprint-report'}.md"
+    md = _twin_path(root, {**report, "report_id": rid})
     md.write_text(render_markdown(report), encoding="utf-8")
     _sync_report_index(root, d, rid, md, report)
     return path
+
+
+def _twin_path(root, report: dict) -> Path:
+    """Where a report's Markdown twin is filed: one name, for the writer and the check."""
+    stem = sdlc_md.slug(f"sprint report {report.get('run_id') or ''}")[:60].strip("-")
+    return report_dir(root) / f"{report['report_id']}-{stem or 'sprint-report'}.md"
 
 
 #: The index a filed report has to leave behind. `report` is a registered artefact type, so
@@ -4152,7 +4166,7 @@ def _legacy_window_end(root, stored: dict) -> str | None:
     gen = stored.get("generated_at")
     if stored.get("window_end"):
         return stored["window_end"]
-    state, _rel = _run_state_for(Path(root), None)
+    state, _rel = _run_state_for(Path(root), stored.get("run_id"))
     ended, g = _at(state.get("ended_at")), _at(gen)
     if ended and g and ended < g:
         return state["ended_at"]
@@ -4176,12 +4190,14 @@ def revalidate(root, report_id: str) -> dict:
         raise ReportError(f"{stored.get('report_id') or report_id} was filed under report "
                           f"schema {stored.get('schema')} and this builder derives schema "
                           f"{SCHEMA}, so it cannot be re-derived - the page stands as filed")
-    # RE-DERIVED OVER THE SAME WINDOW. Passing the stored generation time is what makes this a
-    # comparison of the tree against the page, rather than of one window against a wider one:
-    # without it every commit made after the report - including the commit that files it -
-    # entered the fresh figures and nothing else had to change for INVALIDATED to appear.
+    # RE-DERIVED OVER THE SAME WINDOW AND THE SAME RUN. Passing the stored generation time is
+    # what makes this a comparison of the tree against the page, rather than of one window
+    # against a wider one: without it every commit made after the report - including the commit
+    # that files it - entered the fresh figures and nothing else had to change for INVALIDATED
+    # to appear. The run is the page's own, archived once the next run opens.
     fresh = build_report(root, stored.get("retro_id"), as_of=stored.get("generated_at"),
-                         window_end=_legacy_window_end(root, stored))
+                         window_end=_legacy_window_end(root, stored),
+                         run_id=stored.get("run_id"))
     was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(stored)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)
@@ -4193,10 +4209,205 @@ def revalidate(root, report_id: str) -> dict:
                             "signed": was.get(name), "current": now.get(name)})
     signed = stored.get("fingerprint")
     current = fresh["fingerprint"]
-    return {"valid": signed == current, "report_id": stored.get("report_id") or report_id,
-            "signed_fingerprint": signed, "fingerprint": current,
-            "moved": [c["key"] for c in changes], "changes": changes,
-            "signature": stored.get("signature")}
+    # THE FILED PAGE IS CHECKED AGAINST ITSELF TOO. Re-deriving the tree says nothing about a
+    # page edited by hand while the tree still re-derives the original, so the filed figures
+    # are digested the way the fingerprint was, and the twin is compared with its own rendering.
+    digest = fingerprint(stored)
+    edited = []
+    if digest != signed:
+        edited = [{"page": "json", "figure": c["figure"],
+                   "detail": f"filed {c['signed']!r}, the tree re-derives {c['current']!r}"}
+                  for c in changes] or [
+            {"page": "json", "figure": "an unnamed figure",
+             "detail": f"the filed figures digest to {digest}, not the {signed} recorded"}]
+    edited += _lifecycle_edits(root, stored, fresh)
+    twin_edits, twin_note = _twin_check(root, {**stored, "report_id": sdlc_md.norm_id(
+        stored.get("report_id") or report_id)})
+    edited += twin_edits
+    return {"valid": signed == current and not edited,
+            "report_id": stored.get("report_id") or report_id,
+            "signed_fingerprint": signed, "fingerprint": current, "page_fingerprint": digest,
+            "moved": [c["key"] for c in changes], "changes": changes, "edited": edited,
+            "twin_note": twin_note, "signature": stored.get("signature")}
+
+
+def _lifecycle_edits(root, stored: dict, fresh: dict) -> list[dict]:
+    """The figures OUTSIDE_THE_DIGEST, checked against the run record instead of signed.
+
+    The seal writes the run's end after the page, so neither figure is in the digest, but each
+    was still fixed when the page was generated. The end is the run record's `ended_at`, or
+    `open` when the run had not ended by the page's generation time; the duration runs to the
+    window the page carries, which the re-derivation replays.
+    """
+    state, _state_rel = _run_state_for(Path(root), stored.get("run_id"))
+    ended, generated = _at(state.get("ended_at")), _at(stored.get("generated_at"))
+    derived = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)
+               if not in_the_digest(s, k)}
+    filed = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(stored)
+             if not in_the_digest(s, k)}
+    edits = []
+    for name in sorted(set(derived) | set(filed)):
+        allowed = {derived.get(name)}
+        if name == "goal.ended_at" and (ended is None or generated is None or ended >= generated):
+            allowed.add("open")
+        if filed.get(name) not in allowed:
+            edits.append({"page": "json", "figure": name,
+                          "detail": f"filed {filed.get(name)!r}, the run record gives "
+                                    f"{' or '.join(sorted(repr(a) for a in allowed))}"})
+    return edits
+
+
+#: What a figure reads while it is probed for the Markdown lines it fills.
+_PROBE = "\ufffcprobe\ufffc"
+
+
+#: What a twin difference inside no figure's text is named: the template owns that wording.
+_NO_FIGURE = "wording no figure fills"
+
+
+def _lines(text: str) -> list[str]:
+    """A page's lines, trailing blank lines dropped: an editor's extra newline is not an edit."""
+    lines = text.splitlines()
+    while lines and not lines[-1].strip():
+        lines.pop()
+    return lines
+
+
+def _twin_check(root, stored: dict) -> tuple[list[dict], str | None]:
+    """Where the filed Markdown twin is not what its JSON renders to, and a note when the twin
+    could not be compared.
+
+    A twin rendered under an earlier template differs from today's rendering in wording no
+    figure fills, and that is not an edit. So a twin that differs is also rendered under each
+    template the repository held at the commits that wrote the page, and a match under any of
+    them is a match; a mismatch is named against the closest. Without that history, a
+    difference only in wording no figure fills is noted as not comparable. A differing figure
+    is an edit either way.
+    """
+    twin = _twin_path(root, stored)
+    if not twin.is_file():
+        return [{"page": "markdown", "figure": "the Markdown twin",
+                 "detail": f"no twin is filed at {_rel(Path(root), twin)}"}], None
+    have = _lines(twin.read_text(encoding="utf-8"))
+    current = template_path(MD_TEMPLATE).read_text(encoding="utf-8")
+    edits = _twin_edits(stored, have, current)
+    if not edits:
+        return [], None
+    history = [tpl for tpl in _filed_templates(Path(root), [
+        twin, report_dir(root) / f"{stored['report_id']}.json"]) if tpl != current]
+    for tpl in history:
+        found = _twin_edits(stored, have, tpl)
+        if not found:
+            return [], None
+        if len(found) <= len(edits):
+            edits = found
+    if not history and all(e["figure"] == _NO_FIGURE for e in edits):
+        return [], ("the twin differs from today's template only in wording no figure fills, "
+                    "and no commit holds the template it was rendered with - not comparable")
+    return edits, None
+
+
+def _filed_templates(root: Path, page: list[Path]) -> list[str]:
+    """The twin's template as each commit that wrote the page held it, newest first; empty
+    when git, those commits or the template at them cannot be read."""
+    def git(*args: str) -> str | None:
+        try:
+            proc = subprocess.run(["git", *args], cwd=str(root), capture_output=True,
+                                  text=True, encoding="utf-8", timeout=30)
+        except (OSError, subprocess.SubprocessError):
+            return None
+        return proc.stdout if proc.returncode == 0 else None
+
+    top = (git("rev-parse", "--show-toplevel") or "").strip()
+    if not top:
+        return []
+    try:
+        rel = template_path(MD_TEMPLATE).resolve().relative_to(Path(top).resolve())
+    except ValueError:
+        return []
+    shas = (git("log", "--format=%H", "--", *map(str, page)) or "").split()
+    texts = (git("show", f"{sha}:{rel.as_posix()}") for sha in shas)
+    return list(dict.fromkeys(text for text in texts if text is not None))
+
+
+def _differing(a: list[str], b: list[str]):
+    """`(i1, i2, j1, j2)` for every block where the line lists `a` and `b` differ."""
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        if tag != "equal":
+            yield i1, i2, j1, j2
+
+
+def _spans(line: str, probed: str) -> list[tuple[int, int]]:
+    """Where in `line` a figure renders, from the same line rendered with the figure probed.
+
+    Only the figure differs between the two, so each marker stands where the figure's text
+    does and the text is as much longer or shorter than the marker as the lines differ. When
+    that cannot be read off - the probe moved more than the one line - the whole line is the
+    figure's.
+    """
+    hits = probed.count(_PROBE)
+    width, spare = divmod(len(line) - len(probed), hits) if hits else (0, 1)
+    width += len(_PROBE)
+    if spare or width < 0:
+        return [(0, len(line))]
+    spans, at = [], probed.find(_PROBE)
+    for n in range(hits):
+        start = at - n * (len(_PROBE) - width)
+        spans.append((start, start + width))
+        at = probed.find(_PROBE, at + len(_PROBE))
+    return spans
+
+
+def _twin_edits(stored: dict, have: list[str], template: str) -> list[dict]:
+    """The twin's lines that differ from `template`'s rendering of the FILED JSON, by figure.
+
+    The whole twin is compared, so the signature row `sprint sign` writes through the same
+    renderer is on both sides and never reads as an edit. A difference is attributed by
+    probing: each figure in turn renders as a marker, which places its text on a line of the
+    rendering, and a figure is named when the twin's characters differ inside its text. A
+    difference inside no figure's text is the template's own wording.
+    """
+    want = _lines(render_markdown(stored, template))
+    blocks = list(_differing(want, have))
+    if not blocks:
+        return []
+    sig = stored.get("signature") if isinstance(stored.get("signature"), dict) else {}
+    probes = ([(f"{s}.{k}", f, "value") for s, k, f in leaf_figures(stored)]
+              + [("fingerprint", stored, "fingerprint")]
+              + [(f"signature.{k}", sig, k) for k in ("principal", "signed_at", "fingerprint")
+                 if k in sig])
+    filled: dict[int, list[tuple[str, int, int]]] = {}
+    for name, holder, field in probes:
+        old = holder.get(field)
+        holder[field] = _PROBE
+        try:
+            probe = _lines(render_markdown(stored, template))
+        finally:
+            holder[field] = old
+        for i1, i2, j1, j2 in _differing(want, probe):
+            paired = i2 - i1 == j2 - j1
+            for n, i in enumerate(range(i1, min(max(i2, i1 + 1), len(want)))):
+                for a, b in (_spans(want[i], probe[j1 + n]) if paired
+                             else [(0, len(want[i]))]):
+                    filled.setdefault(i, []).append((name, a, b))
+    edits = []
+    for i1, i2, j1, j2 in blocks:
+        was, now = "\n".join(want[i1:i2]), "\n".join(have[j1:j2])
+        changed = [(c1, c2) for tag, c1, c2, _d1, _d2 in difflib.SequenceMatcher(
+            None, was, now, autojunk=False).get_opcodes() if tag != "equal"]
+        names, offset = [], 0
+        for i in range(i1, i2):
+            for name, a, b in filled.get(i, []):
+                s, e = offset + a, offset + b
+                if any(s <= c1 <= e if c1 == c2 else (c1 < e and c2 > s) or s == e == c1
+                       for c1, c2 in changed):
+                    names.append(name)
+            offset += len(want[i]) + 1
+        shown = (" / ".join(have[j1:j2]) or "nothing", " / ".join(want[i1:i2]) or "nothing")
+        edits += [{"page": "markdown", "figure": name,
+                   "detail": f"the twin reads {shown[0]!r} where its JSON renders {shown[1]!r}"}
+                  for name in list(dict.fromkeys(names)) or [_NO_FIGURE]]
+    return edits
 
 
 def report_status(root) -> dict | None:
@@ -4233,6 +4444,10 @@ def status_line(state: dict | None) -> str | None:
             return (f"Report:       {rid} signed by {sig['principal']} on "
                     f"{sig.get('signed_at')}")
         return f"Report:       {rid} built and not yet signed"
+    if state.get("edited"):
+        named = ", ".join(dict.fromkeys(e["figure"] for e in state["edited"]))
+        return (f"Report:       {rid} INVALID - the filed page was edited ({named}); restore it "
+                f"from version control, or `sprint_report.py check --report {rid}` for detail")
     moved = ", ".join(state.get("moved") or []) or "an unnamed figure"
     return (f"Report:       {rid} INVALIDATED - re-deriving it now moves {moved}; "
             f"re-prepare it with `sprint_report.py build --write`")
@@ -4310,7 +4525,17 @@ def cmd_check(args: argparse.Namespace) -> int:
     rid = state["report_id"]
     if state["valid"]:
         print(f"VALID: {rid} re-derives to the fingerprint it records ({state['fingerprint']})")
+        if state.get("twin_note"):
+            print(f"  note: {state['twin_note']}")
         return 0
+    if state["edited"]:
+        print(f"INVALID: {rid} as filed is not the page that was written - edited:")
+        for e in state["edited"]:
+            print(f"  {e['page']} {e['figure']}: {e['detail']}")
+        print("restore the filed page from version control - a report is re-derived, never "
+              "edited")
+        if state["signed_fingerprint"] == state["fingerprint"]:
+            return 1
     print(f"INVALIDATED: {rid} records fingerprint {state['signed_fingerprint']}; re-deriving "
           f"it from the tree now yields {state['fingerprint']}")
     for change in state["changes"]:

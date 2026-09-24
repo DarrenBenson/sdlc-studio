@@ -1,6 +1,6 @@
 # US0883: A signed report cannot be edited unnoticed
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,10 +19,13 @@
 
 - **AC1:** Given a filed report, when a figure in its JSON is edited, then `sprint_report.py` check reads INVALID and names the edited figure, although the tree still re-derives the original
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_integrity.py::PageIntegrityTests::test_an_edited_json_figure_is_invalid
+  - **Verified:** yes (2026-09-24)
 - **AC2:** Given a filed report, when a figure in its markdown page is edited, then check reads INVALID and names it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_integrity.py::PageIntegrityTests::test_an_edited_markdown_figure_is_invalid
+  - **Verified:** yes (2026-09-24)
 - **AC3:** Given a report signed with sprint sign, then the signature row it writes does not trip the check, which stays VALID
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_integrity.py::PageIntegrityTests::test_the_signature_does_not_invalidate
+  - **Verified:** yes (2026-09-24)
 
 ## Revision History
 
