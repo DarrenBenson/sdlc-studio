@@ -4,7 +4,7 @@
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** tools/tests/test_lean_commit_lanes.py, tools/tests/test_precommit_lane_order.py
+> **Affects:** tools/tests/test_lean_commit_lanes.py, tools/tests/test_precommit_lane_order.py, tools/tests/test_test_census.py, changelog.d/US0905.md, sdlc-studio/stories/US0268-order-the-pre-commit-lanes-cheapest-first-so.md, sdlc-studio/bugs/BG0420-test-fixtures-mirror-real-lists-by-hand-so.md, tools/tests/test_message_first_gate.py
 > **Epic:** EP0262
 > **Points:** 1
 > **Persona:** Maya Okafor
