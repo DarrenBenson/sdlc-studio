@@ -427,7 +427,7 @@ next one**. Both halves are enforced; neither is a prose instruction to remember
 | --- | --- | --- |
 | Summarise at close | `gate --require-retro` (or `--require-lessons`) recomputes the digest from the lessons log and compares it with the committed `retros/LESSONS-SUMMARY.md` | non-zero, naming the lessons added or closed since it was last regenerated; fix: `lessons summary` |
 | Re-validate at close | the same gate reports every open lesson past its validity horizon, and every lesson carrying none | non-zero; fix: `lessons revalidate --close` / `--extend` / `--stamp` |
-| Read at start | `sprint plan` prints the still-valid lessons IN the plan (and carries them in its JSON) | nothing to skip: the digest arrives unasked |
+| Read at start | `sprint plan` prints the failure classes injected at plan IN the plan, from `lessons.jsonl` or the skill's bundled seed | nothing to skip: the lessons arrive unasked |
 
 The summary is **derived output**, exactly like an `_index.md`. The check
 regenerates it from the log and compares, rather than trusting a freshness stamp
@@ -484,8 +484,8 @@ every Agent Prompt Template. Agents read this alongside
 `reference-agentic-lessons.md` and the story-specific prompt. The
 goal is for each wave to start smarter than the last.
 
-At sprint start, `sprint plan` emits the same still-valid lessons as part of the
-plan, so the batch an operator approves already carries them. The log is
-gitignored, so on a fresh clone the plan falls back to the committed
-`retros/LESSONS-SUMMARY.md` - which is why the close gate insists that file is
-current: it is the only copy that travels.
+At sprint start, `sprint plan` prints the failure classes injected at plan, from
+the committed `sdlc-studio/lessons.jsonl` (or the skill's bundled seed while the
+project has none), so the batch an operator approves already carries them. The
+prose log's digest travels in the plan's JSON as history; the close gate still
+insists the committed `retros/LESSONS-SUMMARY.md` is current.

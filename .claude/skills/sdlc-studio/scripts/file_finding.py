@@ -2181,7 +2181,9 @@ def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields:
     # cost is priced where the work was rather than as close overhead. The absence is STATED,
     # never guessed: with no batch open the field says so, because silently attributing to the
     # last-closed span is exactly the misattribution this exists to remove.
-    batch_key = _open_batch_key(root)
+    # A caller filing for a run whose batch span is closed, or was never opened (the close), names
+    # the run itself in `_batch`; the open span, when there is one, still wins.
+    batch_key = _open_batch_key(root) or fields.get("_batch")
     fields = {**fields, "_batch": batch_key or "none open - raised outside a delivery batch"}
     sdlc_md.atomic_write(path, _render(type_, disp_id, title, today, fields, create_status))
     triage_noise.record_creation(root)  # count this minted finding against the session budget

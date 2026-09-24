@@ -37,8 +37,8 @@ Subcommands:
 The close loop is a mechanism, not doctrine: `summary` is DERIVED output of the lessons log,
 so `gate --require-retro` (the sprint-close gate) recomputes the digest and fails loud when
 the committed summary no longer matches, or when an open lesson has passed its validity
-horizon without being closed or extended. `sprint plan` carries the digest into the plan an
-agent reads at sprint start.
+horizon without being closed or extended. What reaches the plan an agent reads at sprint start
+is the class store's plan phase (`phase_digest`), or the bundled seed while a project has none.
 
 Output: text by default, or JSON with --format json.
 """
@@ -1621,13 +1621,27 @@ def cmd_revalidate(args: argparse.Namespace) -> int:
 # carries it (plan, build, review), so the rule reaches the agent doing the work rather than a
 # digest nobody opens. Committed, unlike `.local/`, so every clone reads the same classes.
 #
-# Row: {id, class, rule, behaviour, inject, hits, state, recorded_run}. `id` is the stable class
-# code (`LC-001`) a Try item or a finding cites; `class` is its short name. A hit is
-# {run, unit, source}. A row is never deleted: it moves to `graduated` or `retired`.
+# Row: {id, class, rule, behaviour, inject, hits, state, recorded_run, recorded_source}. `id` is
+# the stable class code (`LC-001`) a Try item or a finding cites; `class` is its short name;
+# `recorded_source` is the document that recorded it (`retro:RETRO0012`). A hit is
+# {run, unit, source}. A row is never deleted: the close moves it to `graduating` (with the
+# `cr` proposing its check) or `retired`, and the check shipping moves it to `graduated`.
 
 STORE_FILE = "sdlc-studio/lessons.jsonl"
+#: The generic classes bundled with the skill (D0261). A project with no store of its own reads
+#: them, so a greenfield plan and review carry lessons; its first write creates its own store
+#: from them, so the codes it cites stay the codes it was shown. Never written.
+SEED_FILE = Path(__file__).resolve().parent.parent / "templates" / "lessons-seed.jsonl"
+SEED_LABEL = "the skill's bundled seed, templates/lessons-seed.jsonl"
 PHASES = ("plan", "build", "review")
-STATES = ("active", "graduated", "retired")
+STATES = ("active", "graduating", "graduated", "retired")
+#: The states still injected and reported. A `graduating` class has its CR filed, not its
+#: check shipped, so its rule still has to reach the work.
+LIVE_STATES = ("active", "graduating")
+#: Repeats after recording that make a class a proposed check rather than a note to reread.
+GRADUATE_AT = 2
+#: A class with no hit in this many of the most recent runs retires.
+QUIET_RUNS = 5
 #: How many lessons one phase's output carries. Five is what a reader holds while working.
 INJECT_MAX = 5
 CLASS_CODE_RE = re.compile(r"^LC-(\d{3,})$")
@@ -1637,13 +1651,20 @@ def store_path(repo_root) -> Path:
     return Path(repo_root) / STORE_FILE
 
 
+def store_source(repo_root) -> str:
+    """Where `load_store` reads this project's classes from: its own store, else the seed."""
+    return STORE_FILE if store_path(repo_root).is_file() else SEED_LABEL
+
+
 def load_store(repo_root) -> list[dict]:
-    """Every row of the store, in file order; [] when there is no store yet. A line that is not
-    a JSON object raises ValueError naming the line, because a lesson silently skipped is a
-    lesson that stops reaching the work."""
+    """Every row of the project's store, in file order, or of the bundled seed when the project
+    has none yet (an empty store is a store: it replaces the seed). A line that is not a JSON
+    object raises ValueError naming the line, because a lesson silently skipped is a lesson that
+    stops reaching the work; a missing seed raises OSError naming it, as a broken install."""
     path = store_path(repo_root)
     if not path.is_file():
-        return []
+        path = SEED_FILE
+    label = STORE_FILE if path != SEED_FILE else SEED_LABEL
     rows = []
     for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         if not line.strip():
@@ -1651,15 +1672,17 @@ def load_store(repo_root) -> list[dict]:
         try:
             row = json.loads(line)
         except json.JSONDecodeError as exc:
-            raise ValueError(f"{STORE_FILE} line {n} is not JSON: {exc.msg}") from exc
+            raise ValueError(f"{label} line {n} is not JSON: {exc.msg}") from exc
         if not isinstance(row, dict) or not CLASS_CODE_RE.match(str(row.get("id") or "")):
-            raise ValueError(f"{STORE_FILE} line {n} is not a lesson row with an LC-NNN id")
+            raise ValueError(f"{label} line {n} is not a lesson row with an LC-NNN id")
         rows.append(row)
     return rows
 
 
 def save_store(repo_root, rows: list[dict]) -> None:
-    """Write the store atomically, one row per line, so a diff shows the one class that moved."""
+    """Write the project's store atomically, one row per line, so a diff shows the one class
+    that moved. Always the project's: rows `load_store` read from the seed land here, which is
+    how a project's first write creates its store from the seed."""
     sdlc_md.atomic_write(store_path(repo_root),
                          "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
 
@@ -1684,9 +1707,10 @@ def next_class_id(rows: list[dict]) -> str:
 
 
 def new_lesson(rows: list[dict], cls: str, rule: str, behaviour: str,
-               inject=PHASES, run: str = "") -> dict:
+               inject=PHASES, run: str = "", source: str = "") -> dict:
     """Append a new active class to `rows` and return it. Recording a class is not a repeat of
-    it, so it starts with no hits; `recorded_run` is what "hits after recording" is read from."""
+    it, so it starts with no hits; `recorded_run` is what "hits after recording" is read from,
+    and `recorded_source` is how a second read of the recording item is told from a repeat."""
     bad = [p for p in inject if p not in PHASES]
     if bad or not inject:
         raise ValueError(f"inject must name one or more of {', '.join(PHASES)}, got "
@@ -1694,37 +1718,48 @@ def new_lesson(rows: list[dict], cls: str, rule: str, behaviour: str,
     row = {"id": next_class_id(rows), "class": " ".join(str(cls).split()),
            "rule": " ".join(str(rule).split()), "behaviour": " ".join(str(behaviour).split()),
            "inject": [p for p in PHASES if p in inject], "hits": [], "state": "active",
-           "recorded_run": run}
+           "recorded_run": run, "recorded_source": source}
     rows.append(row)
     return row
 
 
-def add_hit(row: dict, run: str, unit: str = "", source: str = "") -> bool:
-    """Record one repeat of the class. Idempotent on (run, unit, source), so a re-run close
-    counts a repeat once. Returns whether a hit was added."""
-    hit = {"run": run, "unit": unit, "source": source}
-    if hit in row.setdefault("hits", []):
+def add_hit(row: dict, run: str, unit: str = "", source: str = "", finding: str = "") -> bool:
+    """Record one repeat of the class, with the finding that named it when there is one.
+    Idempotent on (source, unit), NOT on the run: the same retro item read twice is one repeat
+    whatever run each read was told it belonged to, so a manual extract followed by the close's
+    own cannot count it twice. A source that recurs across runs names its run itself (the
+    close's `critic:<run>`). A repeat of a retired class puts it back in force: it retired
+    because it had stopped recurring, and it has not. Returns whether a hit was added."""
+    hits = row.setdefault("hits", [])
+    if any(h.get("source") == source and h.get("unit") == unit for h in hits):
         return False
-    row["hits"].append(hit)
+    key = {"run": run, "unit": unit, "source": source}
+    hits.append({**key, "finding": finding} if finding else key)
+    if row.get("state") == "retired":
+        row["state"] = "active"
+        row.pop("retired_run", None)
     return True
 
 
 def active_for(repo_root, phase: str) -> list[dict]:
-    """The active lessons injected at `phase`, most-repeated first (newest class on a tie), so
+    """The live lessons injected at `phase`, most-repeated first (newest class on a tie), so
     a cap drops the quietest. Uncapped: the renderer caps and says how many it dropped."""
     rows = [r for r in load_store(repo_root)
-            if r.get("state") == "active" and phase in (r.get("inject") or ())]
+            if r.get("state") in LIVE_STATES and phase in (r.get("inject") or ())]
     return sorted(rows, key=lambda r: (-len(r.get("hits") or ()), -int(r["id"][3:])))
 
 
 def phase_digest(repo_root, phase: str) -> dict:
-    """What `phase`'s output carries: `{phase, lessons, active, error}`, capped at INJECT_MAX.
-    An unreadable store is reported in `error`, never read as a store with nothing in it."""
+    """What `phase`'s output carries: `{phase, lessons, active, source, error}`, capped at
+    INJECT_MAX. An unreadable store is reported in `error`, never read as a store with nothing
+    in it."""
+    source = store_source(repo_root)
     try:
         rows = active_for(repo_root, phase)
     except (OSError, ValueError) as exc:
-        return {"phase": phase, "lessons": [], "active": 0, "error": str(exc)}
-    return {"phase": phase, "lessons": rows[:INJECT_MAX], "active": len(rows), "error": ""}
+        return {"phase": phase, "lessons": [], "active": 0, "source": source, "error": str(exc)}
+    return {"phase": phase, "lessons": rows[:INJECT_MAX], "active": len(rows),
+            "source": source, "error": ""}
 
 
 def render_phase(digest: dict) -> list[str]:
@@ -1734,9 +1769,11 @@ def render_phase(digest: dict) -> list[str]:
         return [f"LESSONS UNREADABLE for {phase}: {digest['error']}. Reported rather than "
                 f"omitted: a brief that drops them cannot be told from one with none."]
     items = digest.get("lessons") or []
+    source = digest.get("source") or STORE_FILE
     if not items:
-        return [f"Lessons for {phase}: none active in {STORE_FILE}."]
-    lines = [f"Lessons for {phase} ({len(items)} of {digest.get('active', len(items))} active) "
+        return [f"Lessons for {phase}: none active in {source}."]
+    lines = [f"Lessons for {phase} ({len(items)} of {digest.get('active', len(items))} active"
+             f"{', from ' + source if source != STORE_FILE else ''}) "
              f"- apply these while you work:"]
     for r in items:
         lines.append(f"  {r['id']} {r.get('class', '')} ({len(r.get('hits') or ())} hit(s)): "
@@ -1744,7 +1781,133 @@ def render_phase(digest: dict) -> list[str]:
         lines.append(f"    Behaviour: {r.get('behaviour', '')}")
     if digest.get("active", 0) > len(items):
         lines.append(f"  (+{digest['active'] - len(items)} more active, fewer hits)")
+    if phase == "review":
+        # What turns a review into a hit: the close counts a REJECT that cites the code.
+        lines.append("  A finding that repeats one of these cites its code after the origin "
+                     "tag, `[new] ... [LC-NNN]`, and the close counts it as a hit.")
     return lines
+
+
+def repeats_after_recording(row: dict) -> int:
+    """How many times the class recurred after the run that recorded it: distinct (run, unit)
+    pairs, so a retro and a review naming the same repeat count it once. A hit naming no unit
+    is one of its run's unit hits when that run has any - a retro Try item citing the class
+    beside the REJECT that cited it on US0001 is one repeat, not two."""
+    rec = row.get("recorded_run")
+    units: dict[str, set] = {}
+    for h in row.get("hits") or ():
+        if h.get("run") != rec:
+            units.setdefault(h.get("run"), set()).add(h.get("unit") or "")
+    return sum(len(u - {""}) or 1 for u in units.values())
+
+
+def _graduation_cr(row: dict, run: str) -> tuple[str, dict]:
+    """The title and filer fields of the CR a recurring class files. The rule and every hit,
+    with the finding that named it, travel into it, so whoever grooms it reads the evidence
+    rather than a pointer to it."""
+    hits = [f"{h.get('run')}{' on ' + h['unit'] if h.get('unit') else ''} "
+            f"({h.get('source') or 'source unrecorded'})"
+            f"{': ' + h['finding'] if h.get('finding') else ''}" for h in row.get("hits") or ()]
+    n = repeats_after_recording(row)
+    summary = (f"The failure class {row['id']} ({row.get('class')}) recurred {n} time(s) after it "
+               f"was recorded in {row.get('recorded_run') or 'an unrecorded run'}, while its rule "
+               f"was injected into the work. A rule that is read and repeated anyway needs a "
+               f"check or a mechanism, not another reading. Which check to build, and where it "
+               f"lands, is named at grooming: this CR carries the class and its evidence, not a "
+               f"design.\n\n"
+               f"Rule: {row.get('rule')}\n\nBehaviour asked of the agent: {row.get('behaviour')}"
+               f"\n\nHits:\n" + "\n".join(f"- {h}" for h in hits))
+    return (f"Turn lesson {row['id']} ({row.get('class')}) into a check", {
+        "summary": summary, "priority": "Medium", "ctype": "Improvement", "size": "M",
+        # The row moves to `graduated` when the check ships. Where the check itself lands is a
+        # grooming decision the close cannot make, so it is not guessed here.
+        "affects": STORE_FILE,
+        "impact": (f"Every lane and review the class reaches: each repeat of {row['id']} has "
+                   f"cost a review round, {n} so far."),
+        "acs": [f"The check to build is named at grooming, and the class {row['id']} describes "
+                f"is then caught by it or made impossible by a mechanism, rather than depending "
+                f"on the rule being read.",
+                "The check is proven against the recorded hits above.",
+                f"Once it ships, {row['id']} reads `graduated` in {STORE_FILE}."],
+        # The lean run opens no batch span, so without this the filer stamps the CR as raised
+        # outside any batch, although the close of `run` raised it.
+        "_batch": f"{run} close, {sdlc_md.now_iso8601()}"})
+
+
+def recent_runs(repo_root, run: str) -> list[str]:
+    """Every run on record, oldest first, ending with `run`: the run archive (the cheapest
+    source that names runs rather than retros), with the closing run last whether or not it
+    has been archived yet."""
+    from lib import run_state  # noqa: PLC0415 - deferred, like the other sibling imports
+    return [r["run_id"] for r in run_state.archived(repo_root) if r["run_id"] != run] + [run]
+
+
+def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
+    """What the close does to the store, with no operator step: count each REJECT this run
+    recorded that cites a class as a hit (a hit on a retired class puts it back in force), file
+    ONE CR for a class repeated GRADUATE_AT times after it was recorded (the row then reads
+    `graduating`), and retire an active class quiet for the last QUIET_RUNS runs. Idempotent: a
+    re-run close adds no hit and files no CR.
+
+    Quiet is judged on runs THIS clone's archive knows. The archive is per clone while the store
+    is committed, so a class recorded or hit in another clone's run names a run this archive has
+    never seen; that run is not known to be old, and the class stays active until a clone that
+    knows it judges it. Only a recording and hits all in archived runs older than the last
+    QUIET_RUNS retire a class.
+
+    Returns `{hits, unknown, reactivated, graduating: [(code, cr)], retired, errors}`."""
+    res = {"hits": 0, "unknown": [], "reactivated": [], "graduating": [], "retired": [],
+           "errors": []}
+    rows = load_store(repo_root)
+    if not rows:
+        return res
+    import critic  # noqa: PLC0415 - deferred: the ledger reader is only needed at close
+    for code, unit, finding in critic.cited_lessons(repo_root, state or {}):
+        row = find_class(rows, code)
+        if row is None:
+            res["unknown"].append(code)
+            continue
+        was = row.get("state")
+        if add_hit(row, run, unit, f"critic:{run}", finding):
+            res["hits"] += 1
+            if was == "retired":
+                res["reactivated"].append(row["id"])
+    old = set(recent_runs(repo_root, run)[:-QUIET_RUNS])
+    for row in rows:
+        if (row.get("state") == "active" and row.get("recorded_run") in old
+                and all(h.get("run") in old for h in row.get("hits") or ())):
+            row["state"], row["retired_run"] = "retired", run
+            res["retired"].append(row["id"])
+    if res["hits"] or res["retired"]:
+        save_store(repo_root, rows)
+    import file_finding  # noqa: PLC0415 - deferred: the filer imports the world, this does not
+    for row in rows:
+        if row.get("state") != "active" or repeats_after_recording(row) < GRADUATE_AT:
+            continue
+        title, fields = _graduation_cr(row, run)
+        try:
+            filed = file_finding.file_finding(repo_root, "cr", title, fields)
+        except (OSError, ValueError) as exc:
+            res["errors"].append(f"{row['id']} recurred but its CR was not filed: {exc}")
+            continue
+        # Saved per filing: the state change is what stops a later close filing a second CR.
+        row["state"], row["cr"] = "graduating", sdlc_md.norm_id(filed["id"])
+        save_store(repo_root, rows)
+        res["graduating"].append((row["id"], row["cr"]))
+    return res
+
+
+def close_pass_line(res: dict) -> str:
+    """The close pass as one line of the close's output."""
+    parts = [f"{res['hits']} hit(s) from cited REJECTs"]
+    if res["unknown"]:
+        parts.append(f"cited but not in {STORE_FILE}: {', '.join(sorted(set(res['unknown'])))}")
+    if res.get("reactivated"):
+        parts.append(f"hit again, back in force: {', '.join(res['reactivated'])}")
+    parts += [f"{code} graduating -> {cr}" for code, cr in res["graduating"]]
+    if res["retired"]:
+        parts.append(f"quiet for {QUIET_RUNS} runs, retired {', '.join(res['retired'])}")
+    return "lessons: " + "; ".join(parts)
 
 
 def build_summary_text(entries: list[dict]) -> str:
@@ -2016,6 +2179,12 @@ def build_parser() -> argparse.ArgumentParser:
     _common(cy)
     cy.set_defaults(func=cmd_carry)
 
+    cl = sub.add_parser("classes",
+                        help=f"List every failure class in {STORE_FILE}: code, state, hits and "
+                             f"name - the code a Try item or a finding cites.")
+    _common(cl)
+    cl.set_defaults(func=cmd_classes)
+
     cd = sub.add_parser("carried", help="Show the carried set (and what it displaced).")
     _common(cd)
     cd.set_defaults(func=cmd_carried)
@@ -2077,6 +2246,34 @@ def cmd_carry(args: argparse.Namespace) -> int:
         return 0
     swap = f", displacing {res['displaced']}" if res["displaced"] else ""
     print(f"carried {res['id']}{swap} -> {res['path']} ({len(res['carried'])} in the set)")
+    return 0
+
+
+def cmd_classes(args: argparse.Namespace) -> int:
+    """Every class in the store - code, state, hits, name - so a retro author can find the code
+    to cite rather than recording the same class again under a new name."""
+    try:
+        rows = load_store(_root(args))
+    except (OSError, ValueError) as exc:
+        print(f"classes refused: {exc}", file=sys.stderr)
+        return 1
+    if args.format == "json":
+        print(json.dumps([{"id": r["id"], "class": r.get("class"), "state": r.get("state"),
+                           "inject": r.get("inject"), "hits": len(r.get("hits") or ())}
+                          for r in rows], indent=2))
+        return 0
+    if not rows:
+        print(f"no classes in {STORE_FILE} yet - record one with a Try item "
+              f"`[new: <class name>] Rule. Behaviour.`")
+        return 0
+    for r in rows:
+        print(f"{r['id']}  {r.get('state', '?'):<9}  {len(r.get('hits') or ()):>2} hit(s)  "
+              f"{r.get('class', '')}  [{', '.join(r.get('inject') or ())}]")
+    source = store_source(_root(args))
+    seeded = (f" from {source}; the first hit or new class creates {STORE_FILE} from it"
+              if source != STORE_FILE else "")
+    print(f"\n{len(rows)} class(es){seeded}. Cite one in a Try item as `[LC-NNN] what "
+          f"happened`.")
     return 0
 
 

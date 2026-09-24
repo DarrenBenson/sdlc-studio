@@ -954,7 +954,7 @@ NON_CEREMONY_VERBS = {
     "critic": ("brief", "caller-check", "correct", "evidence", "repair", "show",
                "signoff", "signoff-brief", "supersede"),
     "handoff": ("show",),
-    "lessons": ("add", "carried", "carry", "list", "propose", "prune", "rank",
+    "lessons": ("add", "carried", "carry", "classes", "list", "propose", "prune", "rank",
                 "recall", "repeats", "revalidate", "violated"),
     "retro": ("accuracy", "collate", "dispose", "estimator", "extract", "velocity"),
 }
@@ -2838,12 +2838,17 @@ def _section(key: str, title: str, figures: dict | None = None, rows: list | Non
 #: from the gate PREPARE recorded rather than its status for the same reason: the seal moves
 #: statuses.
 OUTSIDE_THE_DIGEST = (("goal", "ended_at"), ("goal", "duration_hours"))
+#: Whole sections the digest does not cover. The lessons appendix reads the class store, which
+#: every later close moves; in the digest, the next run's close would invalidate this signed
+#: page. The page still shows the store as the close left it, from the JSON of record.
+SECTIONS_OUTSIDE_THE_DIGEST = ("lessons",)
 
 
 def in_the_digest(section: str, key: str) -> bool:
     """Is this figure one the signature is over? One predicate, so what is COMPARED on
     revalidation and what is SIGNED can never be two different sets."""
-    return (section, key.split("[", 1)[0]) not in OUTSIDE_THE_DIGEST
+    return (section not in SECTIONS_OUTSIDE_THE_DIGEST
+            and (section, key.split("[", 1)[0]) not in OUTSIDE_THE_DIGEST)
 
 
 def leaf_figures(report: dict):
@@ -3208,7 +3213,7 @@ def _dora_rows(root: Path, start, end) -> list[dict]:
 SCHEMA = 2
 #: The front page, in order, and the appendix beneath it.
 FRONT_PAGE = ("goal", "estimates", "delivered", "known_issues", "signoff")
-APPENDIX = ("cost", "dora", "calibration", "rulings", "waivers")
+APPENDIX = ("cost", "dora", "calibration", "rulings", "waivers", "lessons")
 
 
 def _num(value) -> bool:
@@ -3672,6 +3677,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         # Bounded at both ends by the run's own window, like DORA, so a decision taken before
         # or after the run cannot move a signed page.
         _waivers_section(root, _iso(end), _iso(start)),
+        _lessons_section(root, state.get("run_id")),
     ]
     report = {"schema": SCHEMA, "report_id": None, "run_id": state.get("run_id"),
               "retro_id": sdlc_md.norm_id(retro_id), "generated_at": generated_at,
@@ -3843,6 +3849,29 @@ def _waivers_section(root: Path | str, window_end: str | None,
                     rows=rows)
 
 
+def _lessons_section(root: Path, run_id: str | None) -> dict:
+    """Each live lesson class, with its hits this run and in total, from the class store. Kept
+    out of the digest (SECTIONS_OUTSIDE_THE_DIGEST): later closes move the store."""
+    import lessons  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    rel = lessons.STORE_FILE
+    try:
+        live = [r for r in lessons.load_store(root) if r.get("state") in lessons.LIVE_STATES]
+    except (OSError, ValueError) as exc:
+        return _section("lessons", "Lessons", not_measured=unmeasured(
+            "lessons", rel, f"the lesson store could not be read: {exc}"))
+    rows = [{"lesson_id": fig("lesson_id", r["id"], rel),
+             "lesson_class": fig("lesson_class", r.get("class") or "", rel),
+             "lesson_state": fig("lesson_state", r["state"] + (f" ({r['cr']})" if r.get("cr")
+                                                               else ""), rel),
+             "lesson_hits_run": fig("lesson_hits_run", sum(
+                 1 for h in r.get("hits") or () if h.get("run") == run_id), rel),
+             "lesson_hits_total": fig("lesson_hits_total", len(r.get("hits") or ()), rel)}
+            for r in live]
+    note = (f"{len(rows)} lesson class(es) in force at this close." if rows else
+            f"No lesson class is in force: {rel} holds no active or graduating class.")
+    return _section("lessons", "Lessons", {"lessons_note": fig("lessons_note", note, rel)}, rows)
+
+
 def _signoff_section(state_rel: str) -> dict:
     """The block a signature LANDS in. Unsigned it says so; it is never blanked, because an
     empty cell reads as a signature nobody can find rather than one nobody has given."""
@@ -3944,6 +3973,8 @@ def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict
     flags: dict = {}
     for sec in report.get("sections") or []:
         nm = sec.get("not_measured")
+        # A section a page was filed without renders nothing, so a later section is additive.
+        flags[f"{sec['key']}_present"] = True
         flags[f"{sec['key']}_measured"] = nm is None
         if nm is not None:
             scope[f"{sec['key']}_reason"] = f"{nm.get('reason')} (consulted {nm.get('source')})"
@@ -3975,7 +4006,7 @@ def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict
 #: Section key -> the row-list name the templates repeat over. Named here rather than in the
 #: templates so a section can be renamed without editing two files.
 _ROW_LISTS = {"estimates": "estimates", "delivered": "plan_units", "known_issues": "issues",
-              "cost": "models", "dora": "dora", "waivers": "waivers"}
+              "cost": "models", "dora": "dora", "waivers": "waivers", "lessons": "lessons"}
 
 
 def _render(report: dict, template: str, revalidation: dict | None) -> str:

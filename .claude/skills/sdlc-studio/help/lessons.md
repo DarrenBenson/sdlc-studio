@@ -26,7 +26,14 @@ project-specific *fact* (a config path, an incident, a box name) is **memory**,
 not a lesson – keep those in the project's memory store.
 
 All actions are backed by `python3 "$CLAUDE_SKILL_DIR/scripts/lessons.py"`
-(`list` / `add` / `prune` / `recall` / `revalidate` / `summary`).
+(`list` / `add` / `prune` / `recall` / `revalidate` / `summary` / `classes`).
+
+The sprint's own learning loop runs on a third store: `sdlc-studio/lessons.jsonl`, committed,
+one row per failure CLASS. A retro Try item cites a class (`[LC-003] ...`) or records one
+(`[new: <class name>] Rule. Behaviour.`), a repeat counts as a hit on the class, and the plan,
+lane and review briefs carry the classes injected at their phase. `lessons classes` lists every
+code, name, state and hit count, so the code to cite is one command away
+(`reference-retro.md#extraction-a-lesson-must-leave-the-retro`).
 
 ## You can just ask
 
@@ -81,8 +88,9 @@ one. Neither half depends on anyone remembering:
   --extend`, still true). A lesson carrying no horizon at all is a finding too -
   `revalidate --stamp` backfills one.
 - **The next sprint reads them without being asked.** `sprint plan` prints the
-  still-valid lessons in the plan itself, so they arrive in the output the agent
-  already reads - not as a pointer to a file it may not open.
+  failure classes injected at plan in the plan itself (from `lessons.jsonl`, or the
+  skill's bundled seed while the project has none), so they arrive in the output the
+  agent already reads - not as a pointer to a file it may not open.
 
 ## Actions
 

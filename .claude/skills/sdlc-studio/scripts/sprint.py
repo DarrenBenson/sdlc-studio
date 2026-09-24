@@ -31,10 +31,11 @@ measures the session total from the transcript, but only as a LOWER BOUND - dele
 sidechain spend is supplied rather than observed - and the token model is a hypothesis, not a
 measurement.
 
-The plan also EMITS the still-valid lessons digest (`lessons.plan_digest`): the lessons the
-last sprints paid for arrive inside the plan the agent reads at sprint start, rather than as a
-prose instruction to open a file that an agent under effort pressure skips. Read-only;
-pure stdlib (lessons, telemetry and route are sibling helpers).
+The plan also EMITS the failure classes injected at plan (`lessons.phase_digest`), as rule
+plus behaviour: the lessons the last sprints paid for arrive inside the plan the agent reads at
+sprint start, rather than as a prose instruction to open a file that an agent under effort
+pressure skips. The lane and review briefs carry their own phase's classes the same way.
+Read-only; pure stdlib (lessons, telemetry and route are sibling helpers).
 """
 from __future__ import annotations
 
@@ -4160,17 +4161,6 @@ def _report_ungroomed(bd: dict, count: int) -> None:
     print("\n".join(_breakdown_detail(bd)), file=sys.stderr)
 
 
-# Lessons printed in the text plan before the tail is elided. One line per lesson costs
-# roughly 40 tokens, so the whole of a mature registry fits inside a rounding error on a
-# sprint plan; the cap exists to bound the display, not to ration the content. Growth is
-# handled by decay (`revalidate` closes what no longer holds), never by silent truncation.
-PLAN_DIGEST_MAX = 50
-
-# The cross-project registry is ranked, so a cap here drops the LEAST-biting lessons, not
-# an arbitrary tail. The top of this list is what the next mistake is most likely to be.
-CROSS_DIGEST_MAX = 12
-
-
 def _render_triage(data: dict) -> None:
     """The judgement triage lenses, printed with the plan so a dirty backlog is seen BEFORE it is
     planned FROM. Reporting-only - the human decides whether a suspected duplicate is really one -
@@ -4192,26 +4182,6 @@ def _render_triage(data: dict) -> None:
               f"(fix the header, then re-plan)")
 
 
-def _render_lessons(data: dict) -> None:
-    """The still-valid lessons, printed IN the plan. The sprint-start read was doctrine -
-    a prose instruction to open a file - so it was skipped; here it arrives unasked, in the
-    output the agent already reads. (The JSON form carries every lesson, uncapped.)"""
-    digest = data.get("lessons")
-    if not digest:
-        return
-    if digest["stale"]:  # the close gate FAILS on this; at plan time it is a loud warning
-        print(f"  warning: {digest['reason']}", file=sys.stderr)
-    if not digest["lessons"]:
-        return
-    print(f"  lessons in force ({digest['count']}) - read before starting:")
-    for item in digest["lessons"][:PLAN_DIGEST_MAX]:
-        gist = f" - {item['gist']}" if item["gist"] else ""
-        print(f"    {item['id']}: {item['title']}{gist}")
-    if digest["count"] > PLAN_DIGEST_MAX:
-        print(f"    (+{digest['count'] - PLAN_DIGEST_MAX} more - `lessons revalidate` closes "
-              f"the ones that no longer hold)")
-
-
 def _render_phase_lessons(data: dict) -> None:
     """The lessons injected at plan, printed in the plan - and their ABSENCE printed too,
     because a plan that silently omits them reads exactly like a plan with none to carry."""
@@ -4227,31 +4197,6 @@ def _render_phase_lessons(data: dict) -> None:
     print("")
     for line in render_runbook_pointer(data.get("root") or "."):
         print(f"  {line}")
-
-
-def _render_cross_lessons(data: dict) -> None:
-    """The CROSS-PROJECT lessons, ranked, printed in the plan.
-
-    This tier had no automatic reader at all. It was reachable only by explicitly running
-    `recall` - a prose instruction, and prose instructions are what get skipped. So a class
-    could be written down, paid for, and written down again, without ever reaching the agent
-    about to repeat it.
-
-    Ranked by what is biting hardest, so the cap drops the least-relevant lessons rather than
-    an arbitrary tail. A project with no lessons of its own still gets this: it is the only
-    tier that can help a team before they have made the mistake.
-    """
-    cross = data.get("cross_lessons")
-    if not cross or not cross.get("lessons"):
-        return
-    n = cross["count"]
-    print(f"\n  cross-project lessons ({n}) - the classes that keep biting, hardest first:")
-    for item in cross["lessons"][:CROSS_DIGEST_MAX]:
-        cited = f" [x{item['recurrence']}]" if item.get("recurrence") else ""
-        print(f"    {item['id']}{cited}: {item['title']}")
-    if n > CROSS_DIGEST_MAX:
-        print(f"    (+{n - CROSS_DIGEST_MAX} more, ranked lower - `lessons rank` for the "
-              f"full order, `lessons recall` to read one)")
 
 
 #: What stood in place of the refused velocity record, one sentence per rate source.
@@ -4593,8 +4538,6 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_token_forecast(data)
     _render_capacity(data)
     _render_gate_briefing(data)
-    _render_lessons(data)
-    _render_cross_lessons(data)
     _render_phase_lessons(data)
 
 
@@ -4609,8 +4552,6 @@ def _plan_authoring(args: argparse.Namespace) -> int:
         print(json.dumps(data, indent=2))
         return 0
     print(f"authoring plan: bootstrap from {data['prd']} (PRD -> epics -> stories)")
-    _render_lessons(data)
-    _render_cross_lessons(data)
     _render_phase_lessons(data)
     return 0
 
@@ -4842,13 +4783,26 @@ def _close_retro_validate(root, retro_id, state):
 
 
 def _close_retro_extract(root, retro_id, state):
+    """Lift the retro's Try items into the lessons stores, then act on the class store: a REJECT
+    citing a class is a hit, a class that keeps recurring files a CR proposing a check, and a
+    quiet one retires (`lessons.close_pass`). The pass runs whether or not the extract did, so
+    a malformed retro does not also lose the review's evidence."""
     import retro  # noqa: PLC0415
     run = (state or {}).get("run_id") or retro_id
     rc, out = _run_cli(retro.main, ["--root", str(root), "extract", "--id", retro_id,
                                     "--run", run])
+    try:
+        res = lessons.close_pass(root, run, state)
+        passed, errors = lessons.close_pass_line(res), res["errors"]
+    except (OSError, ValueError) as exc:
+        passed, errors = "", [f"the lesson store could not be acted on: {exc}"]
     if rc != 0:
-        return False, out, f"`retro.py extract --id {retro_id}` must succeed - see its output"
-    return True, "lessons lifted into the lessons stores (idempotent by content)", ""
+        return False, "\n".join([out, *errors, passed]).strip(), \
+            f"`retro.py extract --id {retro_id}` must succeed - see its output"
+    if errors:
+        return False, "\n".join([*errors, passed]).strip(), \
+            f"fix what `{lessons.STORE_FILE}` names above, then re-run the close"
+    return True, f"lessons lifted into the lessons stores (idempotent by content)\n{passed}", ""
 
 
 def _close_retro_accuracy(root, retro_id, state):
@@ -11044,10 +10998,9 @@ def _plan_path(root: Path) -> Path:
     return Path(root) / "sdlc-studio" / ".local" / "sprint-plan.json"
 
 
-def _compose_seat_brief(plan: dict, goal: str | None, digest: dict,
-                        injected: dict | None = None) -> str:
+def _compose_seat_brief(plan: dict, goal: str | None, injected: dict | None = None) -> str:
     """The seat brief text, composed PURELY from the planner's output, the goal and the lessons
-    digest - so the same batch and goal produce the same brief every time."""
+    injected at review - so the same batch and goal produce the same brief every time."""
     bd = plan.get("breakdown") or {}
     ungroomed = bd.get("ungroomed") or []
     clusters = bd.get("clusters") or []
@@ -11066,16 +11019,9 @@ def _compose_seat_brief(plan: dict, goal: str | None, digest: dict,
     else:
         lines.append("Shared-file clusters: none")
     lines.append(f"Reachable end state: {end.get('state', '?')} - {end.get('basis', '')}")
-    items = (digest or {}).get("lessons") or []
-    if items:
-        lines.append("This project's own relevant failure modes (from the lessons registry):")
-        for lesson in items[:5]:
-            lines.append(f"  - {lesson.get('id')}: {lesson.get('title')}")
-    else:
-        lines.append("Lessons registry: no recorded failure modes yet")
-    # The failure classes injected at review, as well as the registry digest: the review is the
-    # pass most likely to catch a repeat, so it must know what has been repeating. An absence
-    # is reported too - a reviewer who is not told there are none assumes they were given them.
+    # The failure classes injected at review, and only those: the review is the pass most likely
+    # to catch a repeat, so it must know what has been repeating. An absence is reported too - a
+    # reviewer who is not told there are none assumes they were given them.
     lines.extend(lessons.render_phase(injected or {"phase": "review"}))
     return "\n".join(lines)
 
@@ -11103,26 +11049,25 @@ def seat_brief(repo_root: Path | str, worklist: str | None = None,
                goal: str | None = None) -> str:
     """The context a review seat is GIVEN before it judges the Sprint Goal: what the batch is, the
     grooming state the first live review turned on (placeholder ACs, shared-file clusters, the
-    reachable end state), and THIS project's own relevant failure modes from the lessons registry -
-    not a generic checklist.
+    reachable end state), and THIS project's failure classes injected at review from the class
+    store - not a generic checklist.
 
     Give it the batch it is to brief (`worklist`) and it composes from a DRY plan of exactly that
     batch. Without one it falls back to the persisted plan, and REFUSES to render a stale one as
     current - the goal review gates `plan --write`, so on a new sprint the persisted plan is the
     previous sprint's by construction."""
     root = Path(repo_root)
-    digest = lessons.plan_digest(root)
     injected = lessons.phase_digest(root, "review")
     if worklist:
         plan = build_plan(root, worklist=worklist, skip_personas=True)
-        return _compose_seat_brief(plan, _brief_goal(root, goal, plan), digest, injected)
+        return _compose_seat_brief(plan, _brief_goal(root, goal, plan), injected)
     plan = sdlc_md.read_json(_plan_path(root), {})
     stale = _persisted_plan_is_stale(root, plan)
     if stale:
         return (f"NO CURRENT BATCH TO BRIEF: {stale}. Give the brief the batch it is to describe "
                 f"(`goal-review brief --worklist <file>`); the previous run's plan is not rendered "
                 f"here, because a brief describing the wrong batch cannot be told from a right one.")
-    return _compose_seat_brief(plan, _brief_goal(root, goal, plan), digest, injected)
+    return _compose_seat_brief(plan, _brief_goal(root, goal, plan), injected)
 
 
 def _brief_goal(root: Path, supplied: str | None, plan: dict) -> str | None:

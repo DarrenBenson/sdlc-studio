@@ -253,13 +253,16 @@ and the skill's own cross-project `lessons/` registry.
 - `summary`: regenerate the committed `retros/LESSONS-SUMMARY.md` from the
   still-valid lessons - deterministic for a given log (no date in the output), so
   it is reproducible and the close gate can recompute it and compare
+- `classes`: every failure class in the committed store `sdlc-studio/lessons.jsonl` -
+  code, state, hit count, name and inject phases - the code a retro Try item or a
+  review finding cites (`--format json` for the rows)
 
 The close loop is mechanical, not doctrine: `gate --require-retro` (or
 `--require-lessons`) fails loud on a **stale** summary - it recomputes the digest
 from the log, so a lesson closed since the last regeneration fails it exactly as
 an added one does - and on any open lesson past its validity horizon or carrying
-none. `sprint plan` emits the still-valid digest into the plan itself, so the
-sprint-start read is not something an agent can skip. See
+none. `sprint plan`, each lane brief and each review brief print the class store's
+lessons injected at their phase, so the read is not something an agent can skip. See
 `reference-agentic-lessons.md#close-loop`.
 
 The project tier is the default; `--global` is the deliberate promotion, and it
@@ -278,7 +281,7 @@ Full workflow: `reference-agentic-lessons.md#lessons-accumulation`. Config key:
 
 ### `sprint.py`
 
-The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. `plan --prd <path>` bootstraps greenfield authoring; `plan --write` persists the sprint-plan artifact; `plan` runs `reconcile detect` first and surfaces drift, refusing under `--strict` (reconcile-before-plan). The plan **emits the still-valid lessons digest** (`lessons.plan_digest`: the project log, else the committed `LESSONS-SUMMARY.md`), so the sprint-start read arrives inside the plan rather than as an instruction to open a file; a stale summary is warned about here and **fails** the close gate. `--order wsjf` orders by seat-scored WSJF = (value+time-criticality+risk-reduction)/size from `.local/wsjf-inputs.json`, degrading to priority+complexity without inputs or under `--skip-personas`. Every planned unit is stamped with a `difficulty` band (route.py, advisory); with `routing.enabled` it also carries the `tier`/`model` recommendation; an estimator failure degrades that unit's routing fields, never the plan. See reference-sprint.md.
+The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf` selects + dependency-orders the batch (the triage plan); priority dominates, complexity breaks ties. `plan --prd <path>` bootstraps greenfield authoring; `plan --write` persists the sprint-plan artifact; `plan` runs `reconcile detect` first and surfaces drift, refusing under `--strict` (reconcile-before-plan). The plan **prints the failure classes injected at plan** (`lessons.phase_digest`: rule plus behaviour, at most five, from `sdlc-studio/lessons.jsonl`, or from the skill's bundled seed `templates/lessons-seed.jsonl` while the project has no store of its own), so the sprint-start read arrives inside the plan rather than as an instruction to open a file; the prose log's digest stays in the JSON payload as history, and a stale `LESSONS-SUMMARY.md` still **fails** the close gate. `--order wsjf` orders by seat-scored WSJF = (value+time-criticality+risk-reduction)/size from `.local/wsjf-inputs.json`, degrading to priority+complexity without inputs or under `--skip-personas`. Every planned unit is stamped with a `difficulty` band (route.py, advisory); with `routing.enabled` it also carries the `tier`/`model` recommendation; an estimator failure degrades that unit's routing fields, never the plan. See reference-sprint.md.
 
 `plan` **REFUSES an ungroomed batch** (the breakdown gate): a unit must declare `Affects:` and a size (`Effort:` / `Points:` / a seat score), or `plan` names it, says what it lacks, and exits non-zero **printing no plan** - a plan over unsized units cannot be sized or safely parallelised and looks authoritative anyway. The recorded opt-out is `sprint.breakdown: judgement` (the lane then reports); omission is not an escape. From the same `Affects` the plan derives **shared-file clusters** - units touching one file are not parallel, however the declared `Depends on:` graph waves them - and flags a large CR no story yet cites for decomposition (`cr action`), since only a story's Done is gated on executable ACs. `breakdown <query>` reports the same census read-only (never blocks, never writes).
 

@@ -1,10 +1,10 @@
 # US0887: A lesson is a failure class that counts its repeats
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lessons.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lessons.py, .claude/skills/sdlc-studio/help/lessons.md, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_rank.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/templates/reviews/retro.md, sdlc-studio/lessons.jsonl, .claude/skills/sdlc-studio/reference-agentic-lessons.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/templates/lessons-seed.jsonl
 > **Epic:** EP0261
 > **Points:** 5
 > **Persona:** Maya Okafor
@@ -19,10 +19,13 @@
 
 - **AC1:** Given the lesson store sdlc-studio/lessons.jsonl, then each row carries id, class, rule, behaviour, inject (plan, build, review), hits and state (active, graduated, retired)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lessons.py::LessonStoreTests::test_a_lesson_row_carries_its_fields
+  - **Verified:** yes (2026-09-24)
 - **AC2:** Given a retro Try item whose class matches an active lesson, when the close extracts lessons, then a hit naming the run is appended to that lesson and no new lesson is written; a new class writes a new row
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lessons.py::LessonStoreTests::test_a_repeat_is_a_hit_not_a_new_lesson
+  - **Verified:** yes (2026-09-24)
 - **AC3:** Given active lessons, when the plan output, a build brief and a review brief are rendered, then each carries the lessons injected at its phase as rule plus behaviour, at most 5
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lessons.py::LessonStoreTests::test_lessons_reach_the_phase_they_inject
+  - **Verified:** yes (2026-09-24)
 
 ## Revision History
 

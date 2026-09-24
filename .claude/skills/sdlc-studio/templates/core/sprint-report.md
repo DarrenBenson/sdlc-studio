@@ -145,3 +145,22 @@ NOT MEASURED - {{rulings_reason}}
 <!-- unless: waivers_measured -->
 NOT MEASURED - {{waivers_reason}}
 <!-- end -->
+
+<!-- when: lessons_present -->
+### Lessons
+
+<!-- when: lessons_measured -->
+{{lessons_note}}
+
+<!-- when: lessons_rows -->
+| Lesson | Class | State | Hits this run | Hits in total |
+| --- | --- | --- | --- | --- |
+<!-- repeat: lessons -->
+| {{lesson_id}} | {{lesson_class}} | {{lesson_state}} | {{lesson_hits_run}} | {{lesson_hits_total}} |
+<!-- end -->
+<!-- end -->
+<!-- end -->
+<!-- unless: lessons_measured -->
+NOT MEASURED - {{lessons_reason}}
+<!-- end -->
+<!-- end -->

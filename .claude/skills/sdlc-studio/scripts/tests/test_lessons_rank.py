@@ -115,9 +115,11 @@ class EveryReadPointCarriesTheLessons(unittest.TestCase):
     test exists so that claim is provable rather than asserted.
     """
 
-    def test_sprint_plan_carries_the_cross_project_digest(self) -> None:
+    def test_sprint_plan_has_a_phase_lessons_renderer(self) -> None:
+        """Since US0887 the plan prints the class store's lessons injected at plan, not the
+        cross-project titles (test_lean_lessons pins what it prints)."""
         import sprint
-        self.assertTrue(hasattr(sprint, "_render_cross_lessons"))
+        self.assertTrue(hasattr(sprint, "_render_phase_lessons"))
 
     def test_review_prep_carries_the_lessons_as_lenses(self) -> None:
         import review_prep

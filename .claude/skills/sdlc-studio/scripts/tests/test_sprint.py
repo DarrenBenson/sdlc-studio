@@ -1753,9 +1753,13 @@ class PlanLessonsDigestTests(unittest.TestCase):
                                    "--no-fetch"])
             self.assertEqual(rc, 0)
             text = out.getvalue()
-            self.assertIn("L-0002", text)
-            self.assertIn("Read every creation path", text)
-            self.assertNotIn("L-0001", text)  # closed lessons are not in force
+            # US0887: the plan prints only the class store's lessons injected at plan. The prose
+            # log stays in the JSON payload as history, and no longer reaches the printed plan.
+            # With no store of its own the project reads the bundled seed (D0261).
+            self.assertIn("from the skill's bundled seed", text)
+            self.assertIn("LC-002", text)
+            self.assertNotIn("Read every creation path", text)
+            self.assertNotIn("L-0002", text)
 
 
 try:
@@ -8896,9 +8900,19 @@ class SeatBriefEmitTests(unittest.TestCase):
         self.assertIn("Review", brief)                            # reachable end state
 
     def test_the_brief_draws_failure_modes_from_the_lessons_registry(self):
+        """Since US0887 the registry the brief draws from is the class store: this project's
+        own failure classes injected at review, rule plus behaviour. The prose log is history
+        and no longer reaches the brief."""
         s = _load()
-        brief = s.seat_brief(self._planned())
-        self.assertIn("L-0001", brief)                            # this project's own lesson
+        root = self._planned()
+        (root / "sdlc-studio" / "lessons.jsonl").write_text(json.dumps(
+            {"id": "LC-001", "class": "repair breaks its neighbour",
+             "rule": "A repair masks the defect beside it.", "behaviour": "Re-check the neighbour.",
+             "inject": ["review"], "hits": [], "state": "active", "recorded_run": "R"}) + "\n")
+        brief = s.seat_brief(root)
+        self.assertIn("LC-001", brief)                            # this project's own class
+        self.assertIn("Re-check the neighbour.", brief)
+        self.assertNotIn("L-0001", brief)                         # the prose digest is gone
 
 
 class SeatBriefRecordedTests(_GoalReviewFixture):
@@ -11085,9 +11099,11 @@ class CarriedLessonsBriefTests(unittest.TestCase):
         sprint = _load()
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            # No store at all: the brief says there are none, never silence.
+            # A store with no class: the brief says there are none, never silence. (No store at
+            # all reads the skill's bundled seed instead, D0261.)
             _lane_story(root, 933, "## Acceptance Criteria\n\n### AC1: it holds\n\n"
                                    "- **Verify:** file src/lane.py\n")
+            (root / "sdlc-studio" / "lessons.jsonl").write_text("", encoding="utf-8")
             brief = sprint.lane_brief_text(sprint.lane_dispatch(root, ["US0933"])["briefs"][0])
             self.assertIn("Lessons for build: none active", brief)
             # A store that cannot be read is an unanswered question, not an answer of "none".

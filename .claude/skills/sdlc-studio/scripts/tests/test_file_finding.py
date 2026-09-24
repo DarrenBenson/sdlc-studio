@@ -2077,6 +2077,21 @@ class AFindingIsPricedWhereTheWorkWasTests(unittest.TestCase):
         self.assertFalse(state.exists(),
                          "filing a finding minted a run state in a project with no run")
 
+    def test_an_open_span_beats_the_callers_run_stamp(self) -> None:
+        """MUTANT: let a caller's `_batch` run stamp win over the open span - a finding raised
+        inside a delivery batch is then priced as close overhead."""
+        from lib import run_state
+        root = self._repo()
+        run_state.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
+        run_state.start_batch(root, ["US0001"])
+        with contextlib.redirect_stdout(io.StringIO()), quiet.diagnostics():
+            f = dict(self.FIELDS, _batch="RUN-X close, 2026-09-24T00:00:00Z")
+            res = ff.file_finding(root, "bug", f.pop("title"), f)
+        stamped = sdlc_md.extract_field(Path(res["path"]).read_text(encoding="utf-8"),
+                                        "Raised-in-batch") or ""
+        self.assertTrue(stamped and "RUN-X" not in stamped and "none open" not in stamped,
+                        f"the caller's stamp beat the open span: {stamped!r}")
+
     def test_no_open_batch_is_stated_not_guessed(self) -> None:
         """An absence stated is evidence; an absence omitted is indistinguishable from an
         attribution nobody made. Attributing to the last CLOSED span would price a close-time

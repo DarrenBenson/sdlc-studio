@@ -2826,6 +2826,33 @@ def non_blocking_findings(issues: str) -> list[dict]:
     return [f for f in parse_findings(issues) if f["origin"] == ORIGIN_PRE_EXISTING]
 
 
+#: A finding that repeats a recorded failure class cites its code anywhere in its text, after
+#: the origin tag: `[new] the mutant was never applied [LC-003]`.
+LESSON_CITE_RE = re.compile(r"\[\s*(LC-\d{3,})\s*\]", re.IGNORECASE)
+
+
+def cited_lessons(repo_root: Path | str, state: dict) -> list[tuple[str, str, str]]:
+    """`(class code, unit, finding)` for each REJECT the run in `state` recorded whose findings
+    cite a lesson class, once per (code, unit); `finding` is the text of every finding that
+    cited it, so the class's hits carry the evidence and not only a pointer to it. Only a unit
+    the run reviewed counts - its rows past the `REVIEW_BASE` the run fixed - so an APPROVE, or
+    a REJECT an earlier run recorded, is never read as this run's repeat."""
+    found: dict[tuple[str, str], list[str]] = {}
+    for unit in (state or {}).get("batch") or []:
+        uid = sdlc_md.norm_id(unit)
+        if uid not in ((state or {}).get(run_state.REVIEW_BASE) or {}):
+            continue
+        for row in delivery_rounds(repo_root, uid, state):
+            if str(row.get("verdict") or "").upper() != REJECT:
+                continue
+            for f in parse_findings(row.get("issues") or ""):
+                for code in LESSON_CITE_RE.findall(f["text"]):
+                    texts = found.setdefault((code.upper(), uid), [])
+                    if f["text"] not in texts:
+                        texts.append(f["text"])
+    return [(code, uid, "; ".join(texts)) for (code, uid), texts in found.items()]
+
+
 FRESH = "fresh"
 REPAIR_REGRESSION = "repair-regression"
 UNCLASSIFIED = "unclassified"
@@ -3791,7 +3818,25 @@ Ask of each row, in this order:
 5. **Is a positive control named** beside each refusal? A guard tested only by what it
    refuses passes for the wrong reason when it refuses everything.
 
+{_lessons_block(root)}
+
 {_PLAN_RETURN_CONTRACT}"""
+
+
+def _lessons_block(root: Path) -> str:
+    """The failure classes injected at review (rule plus behaviour, at most five), and how a
+    finding that repeats one cites it. The class store is the only lesson source a review brief
+    carries: a seat told what has been repeating is the pass most likely to catch the repeat,
+    and a cited code is what lets the repeat be counted rather than written up again."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import lessons  # noqa: PLC0415 - sibling; deferred so only a brief pays for it
+    digest = lessons.phase_digest(root, "review")
+    lines = lessons.render_phase(digest)
+    if digest.get("lessons"):
+        lines.append("A finding that repeats one of these cites its class code after the origin "
+                     "tag, e.g. `[new] the mutant was never applied (x.py:12) [LC-NNN]`, so the "
+                     "repeat is counted on the class rather than written up again.")
+    return "\n".join(lines)
 
 
 def _withdrawn_block(root: Path, unit: str) -> str:
@@ -3909,6 +3954,8 @@ Acceptance criteria (canonical - judge against THESE, not a paraphrase):
 Review depth: {depth}
 
 {inventory}{_REVIEW_PRACTICES_BLOCK}
+
+{_lessons_block(root)}
 
 {_RETURN_CONTRACT}"""
 

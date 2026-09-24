@@ -275,11 +275,12 @@ independent critic plus the gate - the check's output states this scoping.
       nothing is trusted, so there is no freshness claim to forge - the only way to green is for the
       file to say what the log implies. (Progressive disclosure: the full log stays the archive, the
       summary is what is loaded.)
-   5. **Read the summary at the start - emitted, not requested.** `sprint plan` **prints the
-      still-valid lessons in the plan itself** (the JSON form carries them all), so the batch an
+   5. **Read the lessons at the start - emitted, not requested.** `sprint plan` **prints the
+      failure classes injected at plan in the plan itself**, rule plus behaviour, so the batch an
       agent approves already contains the lessons the last sprints paid for; it does not point at a
-      file the agent may not open. It reads the log when there is one and the committed summary
-      otherwise (the log is gitignored, so a fresh clone has only the summary). Pair it with
+      file the agent may not open. It reads the committed `sdlc-studio/lessons.jsonl`, or the
+      skill's bundled seed while the project has none; the prose log's digest stays in the JSON
+      form as history. Pair it with
       `lessons recall` for the cross-project tier. Lessons are recorded on the **project tier**
       (`lessons add`, the default); a lesson is promoted with `lessons add --global` only once it
       clearly generalises beyond this repo, and promotion needs `skill_source_repo` set - see
@@ -785,7 +786,7 @@ in loop step 5; per-tier escape/escalation rates accumulate in telemetry
 
 | Script | Role |
 | --- | --- |
-| `scripts/sprint.py plan` | select + order the batch (the triage plan); emits the still-valid lessons digest; REFUSES an ungroomed batch |
+| `scripts/sprint.py plan` | select + order the batch (the triage plan); prints the failure classes injected at plan (`lessons.jsonl`, or the bundled seed); REFUSES an ungroomed batch |
 | `scripts/sprint.py breakdown` | the read-only grooming census: ungroomed units, shared-file clusters, decomposition candidates |
 | `scripts/sprint.py boundary` | cross one boundary of a rolling run: close down, fetch, regenerate, preview, open the next cycle |
 | `scripts/lessons.py` | `revalidate` (close/extend/stamp by validity) + `summary` (regenerate the digest) |

@@ -105,7 +105,13 @@ TRY_MAX = 3
 #:   `[new: <class name> | build, review] ...`      a new class, injected at the named phases
 #: The first sentence after a `new` tag is the rule; the rest is what to do differently. An
 #: untagged item goes to the prose log as before.
-TRY_TAG_RE = re.compile(r"^\[\s*(?:(LC-\d{3,})|new\s*:([^\]]*))\]\s*(.*)$", re.IGNORECASE)
+TRY_TAG_RE = re.compile(r"^\[\s*(?:(LC-\d{3,})|new\s*:([^\]]*))\s*\]\s*(.*)$", re.IGNORECASE)
+#: An item that reads as an attempted tag - it LEADS with a class code, bare or behind `[`, `(`
+#: or `*`, or with `new` behind one of them - but does not parse is refused, never sent to the
+#: prose log: `[LC 001]`, `[LC-01]`, `(LC-001)`, `LC-001:` or `[new scope drift]` is a repeat
+#: its author meant to count. Prose is not: a leading link or checkbox, a code named in passing,
+#: or a sentence opening on the word "New".
+TRY_TAGLIKE_RE = re.compile(r"^\s*(?:[\[(*]\W*)?LC(?:\b|\d)|^\s*[\[(*]\W*new\b", re.IGNORECASE)
 #: The unit a repeat happened on: the first story, bug or CR the Try item names.
 TRY_UNIT_RE = re.compile(r"\b((?:US|BG|CR)\d{4})\b")
 
@@ -455,6 +461,10 @@ def try_class(item: str) -> dict | None:
     Raises ValueError naming what is wrong with a malformed tag."""
     m = TRY_TAG_RE.match(item or "")
     if not m:
+        if TRY_TAGLIKE_RE.search(item or ""):
+            raise ValueError(f"'{item[:60]}': reads as a class tag but is not one - lead the "
+                             f"item with `[LC-NNN]` (a recorded class; `lessons.py classes` "
+                             f"lists them) or `[new: <class name>] Rule. Behaviour.`")
         return None
     code, spec, rest = m.group(1), m.group(2), " ".join(m.group(3).split())
     unit = (TRY_UNIT_RE.search(rest) or [None, ""])[1]
@@ -479,8 +489,8 @@ def try_class(item: str) -> dict | None:
 
 
 def class_errors(root, items: list[str]) -> list[str]:
-    """What is wrong with the class tags on these Try items: a malformed tag, or a code the
-    store does not hold. Each names the item and the fix."""
+    """What is wrong with the class tags on these Try items: a malformed tag, a code the store
+    does not hold, or a store that cannot be read. Each names the item and the fix."""
     errors, codes = [], []
     for item in items:
         try:
@@ -490,15 +500,16 @@ def class_errors(root, items: list[str]) -> list[str]:
             continue
         if tag and tag["kind"] == "hit":
             codes.append(tag["code"])
-    if codes:
-        try:
-            rows = lessons.load_store(root)
-        except ValueError as exc:
-            return [*errors, str(exc)]
-        errors += [f"{c} is not a class in {lessons.STORE_FILE} - cite a recorded code, or "
-                   f"record the class with `[new: <class name>] Rule. Behaviour.`"
-                   for c in codes if lessons.find_class(rows, c) is None]
-    return errors
+    try:
+        rows = lessons.load_store(root)
+    except (OSError, ValueError) as exc:
+        # Flagged whether or not this retro tags a class: an unreadable store is what every
+        # brief then reports instead of its lessons, and the close is where it gets repaired.
+        return [*errors, f"{exc} - repair {lessons.STORE_FILE} before the close counts a class"]
+    return errors + [f"{c} is not a class in {lessons.STORE_FILE} - cite a recorded code "
+                     f"(`lessons.py classes` lists them), or record the class with "
+                     f"`[new: <class name>] Rule. Behaviour.`"
+                     for c in codes if lessons.find_class(rows, c) is None]
 
 
 def three_line_errors(text: str) -> list[str]:
@@ -3316,13 +3327,27 @@ def _recorded(text: str, entries: list[dict]) -> bool:
     return False
 
 
-def _extract_classes(args, retro_id: str, tags: list[dict]) -> str:
+def extract_run(root, supplied: str | None, retro_id: str) -> str:
+    """The run a classed Try item's hit is counted against: `--run` when given, else the OPEN
+    run's id, else - with no run open - the retro id. A manual extract during the close must
+    name the run the close will, or one repeat is recorded under two runs. Raises
+    `run_state.RunStateError` when the run state exists but cannot be read."""
+    if supplied:
+        return supplied
+    state = run_state.read(root)
+    if state.get("outcome") == run_state.RUNNING and state.get("run_id"):
+        return state["run_id"]
+    return retro_id
+
+
+def _extract_classes(args, retro_id: str, tags: list[dict], run: str) -> str:
     """Count each classed Try item on the class store: a hit on a known class, a new row for a
-    new one. A `new` tag naming a class this same run recorded is that record, not a repeat, so
-    a re-run close converges. Returns the summary suffix for the extract line."""
+    new one. Keyed on the retro, never on the run: a `new` tag read again from the retro that
+    recorded the class is that record, not a repeat, and a hit is one per (retro, unit) - so a
+    manual extract and the close's own converge whatever run each names. Returns the summary
+    suffix for the extract line."""
     if not tags:
         return ""
-    run = getattr(args, "run", None) or retro_id
     source = f"retro:{retro_id}"
     rows = lessons.load_store(args.root)
     hits, new = 0, 0
@@ -3330,10 +3355,11 @@ def _extract_classes(args, retro_id: str, tags: list[dict]) -> str:
         row = lessons.find_class(rows, tag["code"] if tag["kind"] == "hit" else tag["class"])
         if row is None:
             lessons.new_lesson(rows, tag["class"], tag["rule"], tag["behaviour"],
-                               tag["inject"], run)
+                               tag["inject"], run, source)
             new += 1
-        elif (tag["kind"] == "hit" or row.get("recorded_run") != run) and \
-                lessons.add_hit(row, run, tag["unit"], source):
+        elif tag["kind"] == "new" and row.get("recorded_source") == source:
+            continue
+        elif lessons.add_hit(row, run, tag["unit"], source):
             hits += 1
     if (hits or new) and not args.dry_run:
         lessons.save_store(args.root, rows)
@@ -3372,7 +3398,14 @@ def cmd_extract(args) -> int:
         return 1
     classed = [(t, try_class(t)) for t in found]
     found = [t for t, tag in classed if tag is None]
-    counted = _extract_classes(args, res["id"], [tag for _t, tag in classed if tag])
+    tags = [tag for _t, tag in classed if tag]
+    try:
+        run = extract_run(args.root, args.run, res["id"]) if tags else ""
+    except run_state.RunStateError as exc:
+        print(f"retro {args.id}: cannot tell which run the repeats belong to: {exc}",
+              file=sys.stderr)
+        return 1
+    counted = _extract_classes(args, res["id"], tags, run)
 
     log = lessons.default_project_file(args.root)
     existing_text = log.read_text(encoding="utf-8") if log.is_file() else lessons.PROJECT_HEADER
@@ -3468,7 +3501,7 @@ def build_parser() -> argparse.ArgumentParser:
             p.add_argument("--dry-run", action="store_true")
             p.add_argument("--run", default=None, metavar="RUN_ID",
                            help="the run a classed Try item's hit is counted against "
-                                "(default: the retro id); the close passes its run")
+                                "(default: the open run, else the retro id)")
         if name == "accuracy":
             p.add_argument("--write", action="store_true",
                            help="record the report in the retro and append the sprint's row "

@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 143 |
+| Draft | 142 |
 | Ready | 15 |
 | Planned | 0 |
-| In Progress | 3 |
+| In Progress | 2 |
 | Review | 0 |
-| Done | 699 |
+| Done | 701 |
 | Won't Implement | 8 |
 | Deferred | 0 |
 | Superseded | 13 |
@@ -239,14 +239,14 @@
 | [US0878](US0878-sign-checks-what-it-seals-and-records-what.md) | Sign checks what it seals and records what actually happened | Done | EP0260 | 2026-09-23 | 2026-09-23 |
 | [US0879](US0879-a-commit-runs-only-the-checks-that-catch.md) | A commit runs only the checks that catch real defects | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0880](US0880-a-commit-s-tests-finish-inside-a-90.md) | A commit's tests finish inside a 90-second budget | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |
-| [US0881](US0881-a-push-runs-the-full-suite-once-and.md) | A push runs the full suite once, and CI runs it once | Draft | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0881](US0881-a-push-runs-the-full-suite-once-and.md) | A push runs the full suite once, and CI runs it once | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0882](US0882-mutation-evidence-that-is-switched-off-stops-blocking.md) | Mutation evidence that is switched off stops blocking commits | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0883](US0883-a-signed-report-cannot-be-edited-unnoticed.md) | A signed report cannot be edited unnoticed | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0884](US0884-a-sprint-report-is-filed-only-by-the.md) | A sprint report is filed only by the close | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0885](US0885-a-report-s-time-window-does-not-race.md) | A report's time window does not race its own paperwork | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0886](US0886-criteria-that-sprint-1-superseded-are-retired-not.md) | Criteria that Sprint 1 superseded are retired, not left red | Done | EP0261 | 2026-09-24 | 2026-09-24 |
-| [US0887](US0887-a-lesson-is-a-failure-class-that-counts.md) | A lesson is a failure class that counts its repeats | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |
-| [US0888](US0888-a-lesson-that-recurs-graduates-into-a-check.md) | A lesson that recurs graduates into a check | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0887](US0887-a-lesson-is-a-failure-class-that-counts.md) | A lesson is a failure class that counts its repeats | Done | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0888](US0888-a-lesson-that-recurs-graduates-into-a-check.md) | A lesson that recurs graduates into a check | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0889](US0889-the-close-forward-ports-the-skill-and-keeps.md) | The close forward-ports the skill and keeps one handover per run | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 
 ## Archived Releases

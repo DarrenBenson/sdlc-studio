@@ -241,6 +241,26 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
 <!-- unless: waivers_measured -->
   <p class="unmeasured"><b>NOT MEASURED</b> - {{waivers_reason}}</p>
 <!-- end -->
+<!-- when: lessons_present -->
+
+  <h3>Lessons</h3>
+<!-- when: lessons_measured -->
+  <p>{{lessons_note}}</p>
+<!-- when: lessons_rows -->
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Lesson</th><th scope="col">Class</th><th scope="col">State</th><th scope="col" class="num">Hits this run</th><th scope="col" class="num">Hits in total</th></tr></thead>
+    <tbody>
+<!-- repeat: lessons -->
+      <tr><th scope="row" class="mono">{{lesson_id}}</th><td>{{lesson_class}}</td><td>{{lesson_state}}</td><td class="num">{{lesson_hits_run}}</td><td class="num">{{lesson_hits_total}}</td></tr>
+<!-- end -->
+    </tbody>
+  </table></div>
+<!-- end -->
+<!-- end -->
+<!-- unless: lessons_measured -->
+  <p class="unmeasured"><b>NOT MEASURED</b> - {{lessons_reason}}</p>
+<!-- end -->
+<!-- end -->
 </section>
 
 <footer>Every figure is derived from {{run_id}}'s own artefacts by <span class="mono">sprint_report.py</span>, and each carries its source in the JSON of record. Nothing here was typed by hand.</footer>

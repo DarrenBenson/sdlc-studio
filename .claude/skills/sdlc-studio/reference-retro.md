@@ -17,11 +17,11 @@ File: `sdlc-studio/retros/RETRO{NNNN}-{slug}.md` · Index: `sdlc-studio/retros/_
 sprint closes
   -> retro created            artifact new --type retro
   -> findings dispositioned   filed as BG/CR, or declined with a reason
-  -> lessons extracted        retro extract   -> project lessons log
+  -> lessons extracted        retro extract   -> lessons.jsonl (classed) or the prose log
   -> summary regenerated      lessons summary -> the digest
   -> close gate               retro validate  (blocking)
        |
-next sprint plan prints the still-valid lessons, unasked, in the plan the agent reads
+next sprint plan prints the classes injected at plan, unasked, in the plan the agent reads
 ```
 
 The last line is the whole point. A lesson that does not reach the next plan has not been
@@ -100,7 +100,7 @@ retro file is read by nobody after the sprint that wrote it.
 
 A Try item that names its failure class goes to the committed class store,
 `sdlc-studio/lessons.jsonl`, one row per class (`id`, `class`, `rule`, `behaviour`,
-`inject`, `hits`, `state`, `recorded_run`):
+`inject`, `hits`, `state`, `recorded_run`, `recorded_source`):
 
 | Try item | Effect |
 | --- | --- |
@@ -109,11 +109,31 @@ A Try item that names its failure class goes to the committed class store,
 | `[new: class name \| build, review] ...` | the same, injected at the named phases only |
 | untagged | the project lessons log, as before |
 
-A `new` tag naming a class already recorded counts as a hit on it. An unknown code, an
-unknown phase, or a new class with no behaviour sentence is refused by `validate` and
-`extract`. The plan output, each lane brief and the review brief carry the active classes
-injected at their phase, rule plus behaviour, at most five, most-repeated first. The close
-passes its run id (`extract --run`), so a re-run close counts a repeat once.
+`lessons.py classes` lists every code, name, state and hit count, so the author cites the
+class rather than recording it again. A `new` tag naming a class another retro recorded counts
+as a hit on it. An unknown code, an unknown phase, a new class with no behaviour sentence, an
+item that reads as a tag but does not parse (`[LC 001]`, `[LC-01]`, `(LC-001)`,
+`[new scope drift]`) and an unreadable store are refused by `validate` and `extract`, which
+then writes nothing. The plan output, each lane brief and the review brief (`critic.py brief`)
+carry the active classes injected at their phase, rule plus behaviour, at most five,
+most-repeated first, and no other lessons.
+
+A hit counts once per retro item: it is keyed on the retro and the unit, never on the run, so a
+manual `extract` followed by the close's own records one repeat. The run a hit names is
+`--run`, else the open run, else the retro id.
+
+The close then acts on the store, with no operator step:
+
+| When | The close |
+| --- | --- |
+| a REJECT this run recorded cites a class (`[new] the mutant never landed [LC-003]`) | adds a hit `{run, unit, source: critic:<run>, finding}`, once per run and unit; a hit on a retired class, cited or named again in a Try item, puts it back in force |
+| a class has recurred twice after the run that recorded it (distinct run and unit; a hit naming no unit is one of its run's unit hits) | files one CR, stamped with the closing run, naming the class, its rule and each hit with its finding text, leaving the check to be named at grooming, and marks the row `graduating` with the CR id |
+| an active class was recorded and hit only in runs this clone's archive holds, all older than the last five (closing run last) | retires it; a run the archive does not know, such as another clone's, keeps the class active |
+
+A `graduating` class is still injected and is never filed again; it reads `graduated` when
+its check ships. The sprint report's appendix lists each active or graduating class with its
+hits this run and in total. That section is outside the report's fingerprint, because every
+later close moves the store and a signed page must not move with it.
 
 Extraction is idempotent by content, so re-running converges rather than duplicating - a
 retro can be extracted, edited, and extracted again.
