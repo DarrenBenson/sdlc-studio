@@ -3,8 +3,8 @@
   "report_id": "RPT0007",
   "run_id": "RUN-01M3891F",
   "retro_id": "RETRO0122",
-  "generated_at": "2026-09-24T04:30:28Z",
-  "window_end": "2026-09-24T04:30:28Z",
+  "generated_at": "2026-09-24T04:57:38Z",
+  "window_end": "2026-09-24T04:57:38Z",
   "signature": null,
   "sections": [
     {
@@ -43,7 +43,7 @@
         },
         "duration_hours": {
           "key": "duration_hours",
-          "value": "5.0h",
+          "value": "5.4h",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "verified_sha": {
@@ -100,12 +100,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 297.8,
+            "value": 325.0,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "1.11x",
+            "value": "1.21x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -127,7 +127,7 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 7369111,
+            "value": 7459811,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
@@ -815,62 +815,11 @@
       "figures": {
         "findings_scan": {
           "key": "findings_scan",
-          "value": "8 open finding(s) raised in the run, 1 close gap(s), 0 carried unit(s)",
+          "value": "5 open finding(s) raised in the run, 1 close gap(s), 0 carried unit(s)",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
       "rows": [
-        {
-          "issue_id": {
-            "key": "issue_id",
-            "value": "BG0746",
-            "source": "sdlc-studio/bugs/BG0746-the-spec-claims-timing-claim-deadlocks-every-fresh.md"
-          },
-          "issue_priority": {
-            "key": "issue_priority",
-            "value": "Medium",
-            "source": "sdlc-studio/bugs/BG0746-the-spec-claims-timing-claim-deadlocks-every-fresh.md"
-          },
-          "issue_detail": {
-            "key": "issue_detail",
-            "value": "The spec-claims timing claim deadlocks every fresh worktree under parallel load",
-            "source": "sdlc-studio/bugs/BG0746-the-spec-claims-timing-claim-deadlocks-every-fresh.md"
-          }
-        },
-        {
-          "issue_id": {
-            "key": "issue_id",
-            "value": "BG0747",
-            "source": "sdlc-studio/bugs/BG0747-the-evidence-drift-lane-still-enforces-mutation-evidence.md"
-          },
-          "issue_priority": {
-            "key": "issue_priority",
-            "value": "Medium",
-            "source": "sdlc-studio/bugs/BG0747-the-evidence-drift-lane-still-enforces-mutation-evidence.md"
-          },
-          "issue_detail": {
-            "key": "issue_detail",
-            "value": "The evidence-drift lane still enforces mutation evidence that D0255 switched off, and re-registration drops other rows",
-            "source": "sdlc-studio/bugs/BG0747-the-evidence-drift-lane-still-enforces-mutation-evidence.md"
-          }
-        },
-        {
-          "issue_id": {
-            "key": "issue_id",
-            "value": "BG0749",
-            "source": "sdlc-studio/bugs/BG0749-thirty-stamped-criteria-on-older-units-point-at.md"
-          },
-          "issue_priority": {
-            "key": "issue_priority",
-            "value": "Medium",
-            "source": "sdlc-studio/bugs/BG0749-thirty-stamped-criteria-on-older-units-point-at.md"
-          },
-          "issue_detail": {
-            "key": "issue_detail",
-            "value": "Thirty stamped criteria on older units point at tests this sprint made skipped stubs",
-            "source": "sdlc-studio/bugs/BG0749-thirty-stamped-criteria-on-older-units-point-at.md"
-          }
-        },
         {
           "issue_id": {
             "key": "issue_id",
@@ -1010,7 +959,7 @@
         },
         "tokens_total": {
           "key": "tokens_total",
-          "value": 7369111,
+          "value": 7459811,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "token_coverage": {
@@ -1033,7 +982,7 @@
           },
           "model_tokens": {
             "key": "model_tokens",
-            "value": 1393949,
+            "value": 1484649,
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -1053,7 +1002,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": 13,
+            "value": 15,
             "source": "git log"
           },
           "dora_mapping": {
@@ -1068,7 +1017,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - 13 commit(s) on main inside the run window",
+            "value": "git history - 15 commit(s) on main inside the run window",
             "source": "git log"
           }
         },
@@ -1080,7 +1029,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "4h 44m",
+            "value": "5h 8m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -1095,7 +1044,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 13 commit(s)",
+            "value": "git history - first to last of 15 commit(s)",
             "source": "git log"
           }
         },
@@ -1431,5 +1380,5 @@
       "not_measured": null
     }
   ],
-  "fingerprint": "58fce17ce784e581"
+  "fingerprint": "898129ed43c8b31d"
 }

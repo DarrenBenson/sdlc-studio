@@ -6,8 +6,8 @@ Commits clear in about a minute, and the sprint learns from repeated mistakes wi
 
 **Verdict: Judged partial** - The sprint learns from repeated mistakes without being told: lessons are failure classes that count repeats from retros and cited REJECTs, reach the plan, build and review briefs, graduate to a CR on a second repeat and retire when quiet, with a bundled seed for new projects (US0887, US0888). Commits do not yet clear in about a minute: a paperwork commit clears in seconds and a push fell from about 750s to 284s, but a code commit that reaches a widely imported script still took 165-258s under this machine's load against the 90s budget (BG0754).
 
-> **Run:** 2026-09-23T23:32:40Z to open (5.0h)
-> **Verified on:** 2b08ef7b9a6f7a9ec29ed9a87c0133f375b51a35   **Fingerprint:** 58fce17ce784e581
+> **Run:** 2026-09-23T23:32:40Z to open (5.4h)
+> **Verified on:** 2b08ef7b9a6f7a9ec29ed9a87c0133f375b51a35   **Fingerprint:** 898129ed43c8b31d
 
 ## Estimates
 
@@ -18,8 +18,8 @@ over forecast.
 | Measure | Forecast | Actual | Ratio | Over |
 | --- | --- | --- | --- | --- |
 | Points | 42 | 42 | 1.0x | 11 of 11 delivered unit(s) |
-| Minutes | 268.8 | 297.8 | 1.11x | the whole run: forecast over 11 of 11 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
-| Tokens | 14,860,020 | 7,369,111 | 0.5x | the whole run: forecast over 11 of 11 unit(s) planned or added and not dropped; actual is the main-thread meter plus 36 delegated agent(s)' reported totals, split in the appendix |
+| Minutes | 268.8 | 325.0 | 1.21x | the whole run: forecast over 11 of 11 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
+| Tokens | 14,860,020 | 7,459,811 | 0.5x | the whole run: forecast over 11 of 11 unit(s) planned or added and not dropped; actual is the main-thread meter plus 36 delegated agent(s)' reported totals, split in the appendix |
 
 Each unit's minutes and tokens are measured over its own open span. Units open at the same time
 share hours and tokens, so these spans may overlap and are never added up into the run's figures
@@ -70,13 +70,10 @@ size, plan and added together: 42.
 
 ## Known issues handed over
 
-8 open finding(s) raised in the run, 1 close gap(s), 0 carried unit(s)
+5 open finding(s) raised in the run, 1 close gap(s), 0 carried unit(s)
 
 | Issue | Priority | Detail |
 | --- | --- | --- |
-| BG0746 | Medium | The spec-claims timing claim deadlocks every fresh worktree under parallel load |
-| BG0747 | Medium | The evidence-drift lane still enforces mutation evidence that D0255 switched off, and re-registration drops other rows |
-| BG0749 | Medium | Thirty stamped criteria on older units point at tests this sprint made skipped stubs |
 | BG0750 | Medium | A same-day waiver flips a filed sprint report INVALID |
 | BG0751 | Medium | Open findings in a sprint report use an inclusive window end |
 | BG0752 | Medium | Per-commit test selection skips hooks, test infrastructure and code reached through another script |
@@ -98,17 +95,17 @@ Signing records the principal, the date and this report's fingerprint against RU
 
 | Model | Tokens |
 | --- | --- |
-| mixed | 1,393,949 |
+| mixed | 1,484,649 |
 
-Total 7,369,111, of which delegated 5,975,162. Coverage: 1 session(s);
+Total 7,459,811, of which delegated 5,975,162. Coverage: 1 session(s);
 read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp.
 
 ### DORA
 
 | Key | This run | Mapping | Elite band | Derived from |
 | --- | --- | --- | --- | --- |
-| Deployment frequency | 13 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window | on demand | git history - 13 commit(s) on main inside the run window |
-| Lead time for changes | 4h 44m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 13 commit(s) |
+| Deployment frequency | 15 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window | on demand | git history - 15 commit(s) on main inside the run window |
+| Lead time for changes | 5h 8m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 15 commit(s) |
 | Change failure rate | NOT MEASURED - no forge run data | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that did not conclude success | 0-15% | no push-triggered CI run is readable for this run window |
 | Time to restore | NOT MEASURED - no forge run data | the span from a push-triggered run concluding failure on main to the next push-triggered run concluding success | under an hour | no push-triggered CI run is readable for this run window |
 
