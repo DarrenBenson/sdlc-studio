@@ -1,6 +1,6 @@
 # US0886: Criteria that Sprint 1 superseded are retired, not left red
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,8 +19,10 @@
 
 - **AC1:** Given every criterion D0259 lists, when `verify_ac` runs over those units, then none reads FAIL for an all-skipped selection: each is retired with a Verified line naming the unit that superseded it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_retired.py::RetiredCriteriaTests::test_no_d0259_criterion_reads_red
+  - **Verified:** yes (2026-09-24)
 - **AC2:** Given the test suites, then the skipped stub tests those criteria named are deleted
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_retired.py::RetiredCriteriaTests::test_the_stub_tests_are_gone
+  - **Verified:** yes (2026-09-24)
 
 ## Revision History
 

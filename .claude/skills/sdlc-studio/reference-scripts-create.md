@@ -326,9 +326,10 @@ something to interrogate other than the filesystem.
   nothing is not a retro, and a gate that only checks the filename is satisfied by `touch`.
 - `dispose --id RETROxxxx`: report each finding as **filed** (an artefact id), **declined**
   (with a reason) or **undecided**. Read-only; non-zero while any finding is undecided.
-- `extract --id RETROxxxx`: lift the retro's `## Lessons` bullets into the project lessons
-  log, so a lesson written in a retro reaches the digest the next sprint plan prints.
-  Idempotent by content - re-running converges rather than duplicating.
+- `extract --id RETROxxxx [--run RUN_ID]`: lift the retro's Try items into the lessons
+  stores. A classed item (`[LC-003] ...`, `[new: <class>] Rule. Behaviour.`) counts on its
+  class in `sdlc-studio/lessons.jsonl`; an untagged one goes to the project lessons log.
+  Idempotent - re-running converges rather than duplicating.
 
 **The disposition rule.** A finding is dispositioned when it is either filed as an artefact
 or **declined with a reason**. Declining is a first-class answer and is equally green, so

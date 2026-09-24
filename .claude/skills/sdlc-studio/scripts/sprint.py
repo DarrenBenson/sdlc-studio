@@ -2427,13 +2427,13 @@ def _write_lane_worklists(lanes: list[list[str]], out_dir: Path | str,
     artefact handed to a team: disjointness is only as good as the declared `Affects`, and a unit
     touching a file it did not declare (an undeclared file) can still collide with another lane.
 
-    With `repo_root`, the carried lessons travel in the same header - the file handed to a team
-    is the last thing between the curation and the work, so the set arrives with the units rather
-    than in a terminal the person picking this up never saw."""
+    With `repo_root`, the lessons injected at build travel in the same header - the file handed
+    to a team is the last thing between the lessons and the work, so they arrive with the units
+    rather than in a terminal the person picking this up never saw."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     carried = [f"# {line}" for line in
-               render_carried_lessons(carried_lessons(repo_root))] if repo_root else []
+               lessons.render_phase(lessons.phase_digest(repo_root, "build"))] if repo_root else []
     lane_files: list[str] = []
     for i, lane in enumerate(lanes, start=1):
         p = out / f"lane-{i:02d}.worklist.txt"
@@ -2460,71 +2460,11 @@ def export_lanes(repo_root: Path | str, batch: list[dict], out_dir: Path | str) 
 
 
 # ---------------------------------------------------------------------------
-# The carried lessons: the curated set, read at plan and carried into every brief
+# The lessons a phase carries: `lessons.phase_digest(root, "plan"|"build"|"review")`
 # ---------------------------------------------------------------------------
-# The retro curates a FIXED-SIZE set of the lessons that matter most for the next batch. Before
-# this, the plan printed the registry digest once, into a terminal the delivery agent never saw:
-# the learning reached the operator and stopped there, and three of the five carried lessons were
-# violated by their own author inside a day. So the set is read here and travels into every lane
-# brief and the review brief - the two places where the work that would repeat a lesson happens.
-
-#: Where the retro writes the curated set, relative to the repo root.
-def _carried_lessons_rel() -> tuple[str, ...]:
-    """The carried-lessons path, DERIVED from `lessons.CARRIED_FILE` rather than restated.
-
-    This module named LESSONS-TOP.md while `lessons` named CARRIED-LESSONS.md, so the file a
-    retro curated and the file a lane brief read were two different files and nothing
-    reconciled them. A hard-coded fallback stays for a tree without the sibling, but
-    the sibling is the authority whenever it can be imported."""
-    try:
-        import lessons  # noqa: PLC0415 - deferred sibling, as elsewhere
-        return tuple(lessons.CARRIED_FILE.split("/"))
-    except Exception:  # noqa: BLE001 - a missing sibling must not break a brief
-        return ("sdlc-studio", "retros", "LESSONS-TOP.md")
-
-
-CARRIED_LESSONS_REL = _carried_lessons_rel()
-#: A curated lesson is a numbered `## N. Title` heading. Derived by the parser, so the count is
-#: whatever the retro curated - this module never asserts how many there should be.
-_CARRIED_HEADING_RE = re.compile(r"^##\s+(\d+)\.\s+(.+?)\s*$", re.M)
-
-
-def carried_lessons(repo_root: Path | str) -> dict:
-    """The curated carried-lessons set: `{available, path, count, lessons, why}`.
-
-    `available` is False - with `why` saying which of the two it is - when the file is absent or
-    unreadable, and when it exists but names no curated lesson. Those are different facts and
-    NEITHER is "there are no lessons to carry": an empty read is an unanswered question, and a
-    brief that silently omits the set reads exactly like a brief with nothing to carry.
-    """
-    path = Path(repo_root).joinpath(*CARRIED_LESSONS_REL)
-    rel = "/".join(CARRIED_LESSONS_REL)
-    text = sdlc_md.read_text_safe(path)
-    if not text.strip():
-        return {"available": False, "path": str(path), "count": 0, "lessons": [],
-                "why": f"no readable carried-lessons set at {rel} - either no retro has curated "
-                       f"one yet or the file cannot be read; this is an unanswered question, "
-                       f"not a set with nothing in it"}
-    lessons_found = [{"n": int(m.group(1)), "title": m.group(2).strip()}
-                     for m in _CARRIED_HEADING_RE.finditer(text)]
-    if not lessons_found:
-        return {"available": False, "path": str(path), "count": 0, "lessons": [],
-                "why": f"{rel} exists but names no curated lesson (`## N. Title`) - the file was "
-                       f"read and answered nothing, which is not the same as a curated set of "
-                       f"zero"}
-    lessons_found.sort(key=lambda item: item["n"])
-    return {"available": True, "path": str(path), "count": len(lessons_found),
-            "lessons": lessons_found, "why": ""}
-
-
-def render_carried_lessons(carried: dict) -> list[str]:
-    """The carried set as brief lines - or the reported absence, which is never silence."""
-    if not carried.get("available"):
-        return [f"CARRIED LESSONS UNAVAILABLE: {carried.get('why', 'unknown')}. Reported rather "
-                f"than omitted, because a brief that drops them silently cannot be told from one "
-                f"with none to carry."]
-    return [f"Carried lessons ({carried['count']}) - read these before starting:",
-            *(f"  {item['n']}. {item['title']}" for item in carried["lessons"])]
+# The plan output, every lane brief and the review brief each carry the active failure classes
+# injected at their phase, as rule plus behaviour, at most five (`lessons.render_phase`). They
+# replaced a curated set of five titles that every brief carried unchanged for eight weeks.
 
 
 #: The step-ordered toolchain. Printed at plan time rather than left to be found, because the
@@ -2640,9 +2580,9 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
     """
     root = Path(repo_root)
     # Read ONCE per dispatch and put the same object in every brief: a set read per lane could
-    # differ between lanes of one sprint, and "every brief carries the set" would stop being one
-    # fact about the sprint.
-    carried = carried_lessons(root)
+    # differ between lanes of one sprint, and "every brief carries the lessons" would stop being
+    # one fact about the sprint.
+    injected = lessons.phase_digest(root, "build")
     # The batch's seam map, computed ONCE for the dispatch. A seam is a fact about a PAIR, and
     # a lane reads one unit - so the neighbouring property a lane must not regress is the one
     # thing it can never learn by reading its own brief's unit. Thirteen of seventeen round-one
@@ -2679,8 +2619,8 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
                        "obligations": list(LANE_OBLIGATIONS),
                        "proof": lane_proof(root, contract["id"]),
                        "seams": [s for s in seams if contract["id"] in s["units"]],
-                       "carried_lessons": carried})
-    return {"briefs": briefs, "refused": refused, "seams": seams, "carried_lessons": carried,
+                       "lessons": injected})
+    return {"briefs": briefs, "refused": refused, "seams": seams, "lessons": injected,
             "scope_note": scope_note}
 
 
@@ -2696,8 +2636,9 @@ def _batch_seams(root: Path, unit_ids: list[str]) -> list[dict]:
 
 def lane_brief_text(brief: dict) -> str:
     """One lane's brief as the text handed to whoever (or whatever) picks the unit up: the
-    criteria it is held to, the proof its unit owes, the standing obligations, and the carried
-    lessons. Composed purely from the brief record, so the same dispatch renders identically."""
+    criteria it is held to, the proof its unit owes, the standing obligations, and the lessons
+    injected at build. Composed purely from the brief record, so the same dispatch renders
+    identically."""
     lines = [f"Unit: {brief['id']} ({brief.get('path') or 'path unknown'})",
              f"Acceptance criteria ({len(brief['criteria'])}) - these are the contract:"]
     for crit in brief["criteria"]:
@@ -2725,7 +2666,7 @@ def lane_brief_text(brief: dict) -> str:
         lines.append("Proof this unit owes: none beyond its own acceptance criteria")
     lines.append("Obligations on this lane:")
     lines.extend(f"  - {ob}" for ob in brief.get("obligations", ()))
-    lines.extend(render_carried_lessons(brief.get("carried_lessons") or {}))
+    lines.extend(lessons.render_phase(brief.get("lessons") or {"phase": "build"}))
     return "\n".join(lines)
 
 
@@ -3322,11 +3263,9 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         # The cross-project tier, ranked. It had NO automatic reader: recall was a prose
         # instruction, and prose instructions are the ones that get skipped.
         "cross_lessons": lessons.cross_digest(root),
-        # The RETRO's curated fixed-size set. Distinct from the digest above: that is everything
-        # still in force, this is a judgement about what to carry into THIS batch. Recorded on
-        # the plan so it travels into every lane brief and the review brief rather than scrolling
-        # past in a terminal the delivery agent never sees.
-        "carried_lessons": carried_lessons(root),
+        # The failure classes injected at plan, as rule plus behaviour, at most five. The lane
+        # and review briefs read their own phase's classes from the store at brief time.
+        "phase_lessons": lessons.phase_digest(root, "plan"),
         # Carried so the runbook renderer can resolve it; the plan payload travels to lanes
         # that do not share this process's cwd.
         "root": str(root),
@@ -3476,9 +3415,9 @@ def build_authoring_plan(repo_root: Path | str, prd_path: str) -> dict:
         # A greenfield project has no lessons of its own - so the inherited registry is the
         # ONLY tier that can help it, and the one it most needs.
         "cross_lessons": lessons.cross_digest(repo_root),
-        # A greenfield plan has no curated set either, and says so: the authoring path reports
-        # the absence rather than being the one plan shape that omits it silently.
-        "carried_lessons": carried_lessons(repo_root),
+        # The plan-phase classes, or the reported absence: the authoring path is not the one
+        # plan shape that omits them silently.
+        "phase_lessons": lessons.phase_digest(repo_root, "plan"),
     }
 
 
@@ -4273,14 +4212,14 @@ def _render_lessons(data: dict) -> None:
               f"the ones that no longer hold)")
 
 
-def _render_carried_lessons(data: dict) -> None:
-    """The retro's curated set, printed in the plan - and its ABSENCE printed too, because a
-    plan that silently omits it reads exactly like a plan with none to carry."""
-    carried = data.get("carried_lessons")
-    if carried is None:
+def _render_phase_lessons(data: dict) -> None:
+    """The lessons injected at plan, printed in the plan - and their ABSENCE printed too,
+    because a plan that silently omits them reads exactly like a plan with none to carry."""
+    injected = data.get("phase_lessons")
+    if injected is None:
         return
     print("")
-    for line in render_carried_lessons(carried):
+    for line in lessons.render_phase(injected):
         print(f"  {line}")
     # The toolchain, beside the lessons and for the same reason: both are things an agent is
     # supposed to have read, and both get skipped unless the command that runs anyway prints
@@ -4656,7 +4595,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_gate_briefing(data)
     _render_lessons(data)
     _render_cross_lessons(data)
-    _render_carried_lessons(data)
+    _render_phase_lessons(data)
 
 
 def _plan_authoring(args: argparse.Namespace) -> int:
@@ -4672,7 +4611,7 @@ def _plan_authoring(args: argparse.Namespace) -> int:
     print(f"authoring plan: bootstrap from {data['prd']} (PRD -> epics -> stories)")
     _render_lessons(data)
     _render_cross_lessons(data)
-    _render_carried_lessons(data)
+    _render_phase_lessons(data)
     return 0
 
 
@@ -4904,10 +4843,12 @@ def _close_retro_validate(root, retro_id, state):
 
 def _close_retro_extract(root, retro_id, state):
     import retro  # noqa: PLC0415
-    rc, out = _run_cli(retro.main, ["--root", str(root), "extract", "--id", retro_id])
+    run = (state or {}).get("run_id") or retro_id
+    rc, out = _run_cli(retro.main, ["--root", str(root), "extract", "--id", retro_id,
+                                    "--run", run])
     if rc != 0:
         return False, out, f"`retro.py extract --id {retro_id}` must succeed - see its output"
-    return True, "lessons lifted into the project log (idempotent by content)", ""
+    return True, "lessons lifted into the lessons stores (idempotent by content)", ""
 
 
 def _close_retro_accuracy(root, retro_id, state):
@@ -11067,7 +11008,7 @@ def _plan_path(root: Path) -> Path:
 
 
 def _compose_seat_brief(plan: dict, goal: str | None, digest: dict,
-                        carried: dict | None = None) -> str:
+                        injected: dict | None = None) -> str:
     """The seat brief text, composed PURELY from the planner's output, the goal and the lessons
     digest - so the same batch and goal produce the same brief every time."""
     bd = plan.get("breakdown") or {}
@@ -11095,11 +11036,10 @@ def _compose_seat_brief(plan: dict, goal: str | None, digest: dict,
             lines.append(f"  - {lesson.get('id')}: {lesson.get('title')}")
     else:
         lines.append("Lessons registry: no recorded failure modes yet")
-    # The CURATED set as well as the registry digest, and for a different reason: the review is
-    # the pass most likely to catch a repeat, so it must know what has been repeating. An absent
-    # set is reported here too - a reviewer who is not told the set is missing assumes they were
-    # given it.
-    lines.extend(render_carried_lessons(carried or {}))
+    # The failure classes injected at review, as well as the registry digest: the review is the
+    # pass most likely to catch a repeat, so it must know what has been repeating. An absence
+    # is reported too - a reviewer who is not told there are none assumes they were given them.
+    lines.extend(lessons.render_phase(injected or {"phase": "review"}))
     return "\n".join(lines)
 
 
@@ -11135,17 +11075,17 @@ def seat_brief(repo_root: Path | str, worklist: str | None = None,
     previous sprint's by construction."""
     root = Path(repo_root)
     digest = lessons.plan_digest(root)
-    carried = carried_lessons(root)
+    injected = lessons.phase_digest(root, "review")
     if worklist:
         plan = build_plan(root, worklist=worklist, skip_personas=True)
-        return _compose_seat_brief(plan, _brief_goal(root, goal, plan), digest, carried)
+        return _compose_seat_brief(plan, _brief_goal(root, goal, plan), digest, injected)
     plan = sdlc_md.read_json(_plan_path(root), {})
     stale = _persisted_plan_is_stale(root, plan)
     if stale:
         return (f"NO CURRENT BATCH TO BRIEF: {stale}. Give the brief the batch it is to describe "
                 f"(`goal-review brief --worklist <file>`); the previous run's plan is not rendered "
                 f"here, because a brief describing the wrong batch cannot be told from a right one.")
-    return _compose_seat_brief(plan, _brief_goal(root, goal, plan), digest, carried)
+    return _compose_seat_brief(plan, _brief_goal(root, goal, plan), digest, injected)
 
 
 def _brief_goal(root: Path, supplied: str | None, plan: dict) -> str | None:

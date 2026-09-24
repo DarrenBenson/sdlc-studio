@@ -502,7 +502,7 @@ A delivery lane is dispatched with a brief and accepted back with evidence. Both
 the obligations travel with the work rather than with whoever wrote the prompt.
 
 ```bash
-python3 <skill>/scripts/sprint.py lane brief  --units US0123 US0124     # the contract, the obligations, the proof owed, the carried lessons
+python3 <skill>/scripts/sprint.py lane brief  --units US0123 US0124     # the contract, the obligations, the proof owed, the build lessons
 python3 <skill>/scripts/sprint.py lane return --units US0123 --proof unit="<evidence>"   # runs the unit's OWN criteria and reports each
 ```
 

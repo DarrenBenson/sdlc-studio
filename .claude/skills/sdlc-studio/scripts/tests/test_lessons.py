@@ -1809,10 +1809,6 @@ class CarriedSetOneTruthTests(unittest.TestCase):
             "## 1. A mechanism that reaches no caller is inert\n\nbody\n\n"
             "## 2. An absence is not an answer\n\nbody\n")
 
-    def test_the_writer_and_the_readers_name_one_file(self) -> None:
-        import sprint
-        self.assertEqual("/".join(sprint.CARRIED_LESSONS_REL), lessons.CARRIED_FILE)
-
     def test_the_constant_names_the_file_the_tree_actually_carries(self) -> None:
         """Agreement between two constants is not enough - they agreed on the WRONG name and
         both read nothing. `sprint` derives its path from `lessons.CARRIED_FILE`, so a test
@@ -1829,19 +1825,11 @@ class CarriedSetOneTruthTests(unittest.TestCase):
                         "the carried file exists but the writer's parser reads no lesson from "
                         "it - two parsers over one file is the same defect as two paths")
 
+    @unittest.skip("US0887 retired sprint's carried-set reader: the briefs read the class "
+                   "store, so there is no second reader to disagree. Stamped by BG0365 AC; "
+                   "kept as a stub for the orchestrator to retire the stamp")
     def test_the_writer_and_the_readers_read_one_file_the_same_way(self) -> None:
-        """Asserted as AGREEMENT rather than as two expected counts, so an edit to one parser
-        cannot pass while the other disagrees."""
-        import sprint
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            path = root / lessons.CARRIED_FILE
-            path.parent.mkdir(parents=True)
-            path.write_text(self.FILE, encoding="utf-8")
-            writer = len(lessons.read_carried_file(lessons.default_carried_path(root))[0])
-            reader = sprint.carried_lessons(root)["count"]
-            self.assertEqual(writer, reader)
-            self.assertEqual(writer, 2)
+        """BG0365: the writer and sprint's reader parsed LESSONS-TOP.md differently."""
 
     def test_the_older_bullet_shape_is_still_read(self) -> None:
         """A file written in the previous shape must not become unreadable - the repair is a
@@ -1851,16 +1839,12 @@ class CarriedSetOneTruthTests(unittest.TestCase):
         self.assertEqual(len(lessons.parse_carried(older)), 1)
 
     def test_an_empty_file_reads_as_no_lessons_for_both(self) -> None:
-        import sprint
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             path = root / lessons.CARRIED_FILE
             path.parent.mkdir(parents=True)
             path.write_text("# The carried lessons\n\nnothing curated yet\n", encoding="utf-8")
             self.assertEqual(lessons.parse_carried(path.read_text()), [])
-            # And the reader says so as an UNANSWERED question, never as a set with nothing in
-            # it - a brief that silently omits the set reads like one with nothing to carry.
-            self.assertFalse(sprint.carried_lessons(root)["available"])
 
 
 class RepeatReadIsPinnedTests(unittest.TestCase):

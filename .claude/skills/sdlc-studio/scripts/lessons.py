@@ -9,6 +9,11 @@ Two lesson tiers (see help/lessons.md and reference-agentic-lessons.md):
   Skill tier    the skill's own `lessons/` folder - durable, generalisable
                 `LL{NNNN}-{slug}.md` lessons indexed in `_index.md`. Reached
                 with `--global`, the deliberate promotion, never the reflex.
+  Class store   `sdlc-studio/lessons.jsonl`, committed: one row per failure CLASS,
+                fed by the retro's classed Try items (`retro.py extract`). A repeat
+                is a hit on its class, and the plan, build and review outputs carry
+                the active classes injected at that phase (`phase_digest`).
+                The two prose tiers above are kept as history.
 
 `add --global` only ever writes where git will actually hold the file: the lessons
 registry it appends to must be version-controlled (not merely sitting inside a work
@@ -1604,6 +1609,142 @@ def cmd_revalidate(args: argparse.Namespace) -> int:
           "`lessons revalidate --close L-NNNN`, keep the still-true ones with `--extend "
           "L-NNNN`, give the undated ones a horizon with `--stamp`")
     return 0
+
+
+# -----------------------------------------------------------------------------
+# The class store: one committed row per failure class, counted and injected
+# -----------------------------------------------------------------------------
+#
+# The prose tiers above record a lesson each time it is written, so a class that recurs is
+# written again as a new lesson and its repeats are never counted. The store keeps one row per
+# failure CLASS: a repeat appends a hit to the row, and each row names the phases whose output
+# carries it (plan, build, review), so the rule reaches the agent doing the work rather than a
+# digest nobody opens. Committed, unlike `.local/`, so every clone reads the same classes.
+#
+# Row: {id, class, rule, behaviour, inject, hits, state, recorded_run}. `id` is the stable class
+# code (`LC-001`) a Try item or a finding cites; `class` is its short name. A hit is
+# {run, unit, source}. A row is never deleted: it moves to `graduated` or `retired`.
+
+STORE_FILE = "sdlc-studio/lessons.jsonl"
+PHASES = ("plan", "build", "review")
+STATES = ("active", "graduated", "retired")
+#: How many lessons one phase's output carries. Five is what a reader holds while working.
+INJECT_MAX = 5
+CLASS_CODE_RE = re.compile(r"^LC-(\d{3,})$")
+
+
+def store_path(repo_root) -> Path:
+    return Path(repo_root) / STORE_FILE
+
+
+def load_store(repo_root) -> list[dict]:
+    """Every row of the store, in file order; [] when there is no store yet. A line that is not
+    a JSON object raises ValueError naming the line, because a lesson silently skipped is a
+    lesson that stops reaching the work."""
+    path = store_path(repo_root)
+    if not path.is_file():
+        return []
+    rows = []
+    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"{STORE_FILE} line {n} is not JSON: {exc.msg}") from exc
+        if not isinstance(row, dict) or not CLASS_CODE_RE.match(str(row.get("id") or "")):
+            raise ValueError(f"{STORE_FILE} line {n} is not a lesson row with an LC-NNN id")
+        rows.append(row)
+    return rows
+
+
+def save_store(repo_root, rows: list[dict]) -> None:
+    """Write the store atomically, one row per line, so a diff shows the one class that moved."""
+    sdlc_md.atomic_write(store_path(repo_root),
+                         "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
+
+
+def _class_key(name: str) -> str:
+    return " ".join(re.sub(r"[-_]", " ", str(name or "")).lower().split())
+
+
+def find_class(rows: list[dict], ref: str) -> dict | None:
+    """The row a Try item or a finding names: by its code (`LC-003`), else by its class name
+    compared case- and spacing-blind, so the same class named twice is one class."""
+    ref = str(ref or "").strip()
+    if CLASS_CODE_RE.match(ref.upper()):
+        return next((r for r in rows if r["id"] == ref.upper()), None)
+    key = _class_key(ref)
+    return next((r for r in rows if key and _class_key(r.get("class")) == key), None)
+
+
+def next_class_id(rows: list[dict]) -> str:
+    nums = [int(m.group(1)) for r in rows if (m := CLASS_CODE_RE.match(r["id"]))]
+    return f"LC-{max(nums, default=0) + 1:03d}"
+
+
+def new_lesson(rows: list[dict], cls: str, rule: str, behaviour: str,
+               inject=PHASES, run: str = "") -> dict:
+    """Append a new active class to `rows` and return it. Recording a class is not a repeat of
+    it, so it starts with no hits; `recorded_run` is what "hits after recording" is read from."""
+    bad = [p for p in inject if p not in PHASES]
+    if bad or not inject:
+        raise ValueError(f"inject must name one or more of {', '.join(PHASES)}, got "
+                         f"{', '.join(inject) or 'nothing'}")
+    row = {"id": next_class_id(rows), "class": " ".join(str(cls).split()),
+           "rule": " ".join(str(rule).split()), "behaviour": " ".join(str(behaviour).split()),
+           "inject": [p for p in PHASES if p in inject], "hits": [], "state": "active",
+           "recorded_run": run}
+    rows.append(row)
+    return row
+
+
+def add_hit(row: dict, run: str, unit: str = "", source: str = "") -> bool:
+    """Record one repeat of the class. Idempotent on (run, unit, source), so a re-run close
+    counts a repeat once. Returns whether a hit was added."""
+    hit = {"run": run, "unit": unit, "source": source}
+    if hit in row.setdefault("hits", []):
+        return False
+    row["hits"].append(hit)
+    return True
+
+
+def active_for(repo_root, phase: str) -> list[dict]:
+    """The active lessons injected at `phase`, most-repeated first (newest class on a tie), so
+    a cap drops the quietest. Uncapped: the renderer caps and says how many it dropped."""
+    rows = [r for r in load_store(repo_root)
+            if r.get("state") == "active" and phase in (r.get("inject") or ())]
+    return sorted(rows, key=lambda r: (-len(r.get("hits") or ()), -int(r["id"][3:])))
+
+
+def phase_digest(repo_root, phase: str) -> dict:
+    """What `phase`'s output carries: `{phase, lessons, active, error}`, capped at INJECT_MAX.
+    An unreadable store is reported in `error`, never read as a store with nothing in it."""
+    try:
+        rows = active_for(repo_root, phase)
+    except (OSError, ValueError) as exc:
+        return {"phase": phase, "lessons": [], "active": 0, "error": str(exc)}
+    return {"phase": phase, "lessons": rows[:INJECT_MAX], "active": len(rows), "error": ""}
+
+
+def render_phase(digest: dict) -> list[str]:
+    """A phase digest as brief lines: each lesson's rule, then what to do differently."""
+    phase = digest.get("phase") or "?"
+    if digest.get("error"):
+        return [f"LESSONS UNREADABLE for {phase}: {digest['error']}. Reported rather than "
+                f"omitted: a brief that drops them cannot be told from one with none."]
+    items = digest.get("lessons") or []
+    if not items:
+        return [f"Lessons for {phase}: none active in {STORE_FILE}."]
+    lines = [f"Lessons for {phase} ({len(items)} of {digest.get('active', len(items))} active) "
+             f"- apply these while you work:"]
+    for r in items:
+        lines.append(f"  {r['id']} {r.get('class', '')} ({len(r.get('hits') or ())} hit(s)): "
+                     f"{r.get('rule', '')}")
+        lines.append(f"    Behaviour: {r.get('behaviour', '')}")
+    if digest.get("active", 0) > len(items):
+        lines.append(f"  (+{digest['active'] - len(items)} more active, fewer hits)")
+    return lines
 
 
 def build_summary_text(entries: list[dict]) -> str:

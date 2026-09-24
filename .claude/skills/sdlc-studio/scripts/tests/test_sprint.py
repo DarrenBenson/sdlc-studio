@@ -11014,22 +11014,24 @@ class LaneProofTests(unittest.TestCase):
             self.assertIn("Test Levels", proof["why"])
 
 
-def _carried_set(root: Path, *titles: str) -> Path:
-    """The curated carried-lessons file the retro writes - a fixed-size set, numbered."""
-    d = root / "sdlc-studio" / "retros"
-    d.mkdir(parents=True, exist_ok=True)
-    body = "# The carried lessons\n\nA fixed-size set.\n\n"
-    for i, t in enumerate(titles, 1):
-        body += f"## {i}. {t}\n\nWhy it is here.\n\n"
-    p = d / "LESSONS-TOP.md"
-    p.write_text(body, encoding="utf-8")
-    return p
+def _carried_set(root: Path, *rules: str) -> Path:
+    """The class store (`sdlc-studio/lessons.jsonl`) holding one active lesson per rule,
+    injected at build and review - what the lane and review briefs read (US0887)."""
+    path = root / "sdlc-studio" / "lessons.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    rows = [{"id": f"LC-{i:03d}", "class": f"class {i}", "rule": rule,
+             "behaviour": "do the thing differently", "inject": ["build", "review"],
+             "hits": [], "state": "active", "recorded_run": "R"}
+            for i, rule in enumerate(rules, 1)]
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    return path
 
 
 class CarriedLessonsBriefTests(unittest.TestCase):
-    """US0520. The retro curates the set and the plan printed it once, into a terminal the
-    delivery agent never sees. A lesson that reaches only the operator has been paid for and
-    not spent, so it travels in every lane brief and in the reviewers'."""
+    """US0520. The plan printed the lessons once, into a terminal the delivery agent never sees.
+    A lesson that reaches only the operator has been paid for and not spent, so it travels in
+    every lane brief and in the reviewers'. Since US0887 the lessons are the class store's
+    active rows injected at the phase, not a curated set of titles."""
 
     TITLES = ("a mechanism that reaches no caller is inert",
               "an absence is not an answer")
@@ -11052,7 +11054,7 @@ class CarriedLessonsBriefTests(unittest.TestCase):
             for brief in dispatch["briefs"]:
                 text = sprint.lane_brief_text(brief)
                 for title in self.TITLES:
-                    self.assertIn(title, text, f"{brief['id']} went out without the carried set")
+                    self.assertIn(title, text, f"{brief['id']} went out without the lessons")
             # ...and in the lane worklists the plan exports for a team to pick up.
             batch = [{"id": i, "path": str(next((root / "sdlc-studio" / "stories").glob(
                 f"{i}-*.md")))} for i in ids]
@@ -11061,7 +11063,7 @@ class CarriedLessonsBriefTests(unittest.TestCase):
             for f in out["lane_files"]:
                 body = Path(f).read_text(encoding="utf-8")
                 for title in self.TITLES:
-                    self.assertIn(title, body, f"{f} went out without the carried set")
+                    self.assertIn(title, body, f"{f} went out without the lessons")
 
     def test_the_review_brief_carries_the_set(self) -> None:
         sprint = _load()
@@ -11083,22 +11085,16 @@ class CarriedLessonsBriefTests(unittest.TestCase):
         sprint = _load()
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            # No LESSONS-TOP.md at all.
-            missing = sprint.carried_lessons(root)
-            self.assertFalse(missing["available"])
-            self.assertTrue(missing["why"])
+            # No store at all: the brief says there are none, never silence.
             _lane_story(root, 933, "## Acceptance Criteria\n\n### AC1: it holds\n\n"
                                    "- **Verify:** file src/lane.py\n")
             brief = sprint.lane_brief_text(sprint.lane_dispatch(root, ["US0933"])["briefs"][0])
-            self.assertIn("CARRIED LESSONS UNAVAILABLE", brief)
-            # A file that exists but names no lesson is the same unanswered question, not an
-            # answer of "there are none".
-            (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
-            (root / "sdlc-studio" / "retros" / "LESSONS-TOP.md").write_text(
-                "# The carried lessons\n\nnothing curated yet.\n", encoding="utf-8")
-            empty = sprint.carried_lessons(root)
-            self.assertFalse(empty["available"])
-            self.assertTrue(empty["why"])
+            self.assertIn("Lessons for build: none active", brief)
+            # A store that cannot be read is an unanswered question, not an answer of "none".
+            (root / "sdlc-studio" / "lessons.jsonl").write_text("not json\n", encoding="utf-8")
+            brief = sprint.lane_brief_text(sprint.lane_dispatch(root, ["US0933"])["briefs"][0])
+            self.assertIn("LESSONS UNREADABLE", brief)
+            self.assertNotIn("none active", brief)
 
 
 class DropVersusDeferredDoneGateTests(unittest.TestCase):

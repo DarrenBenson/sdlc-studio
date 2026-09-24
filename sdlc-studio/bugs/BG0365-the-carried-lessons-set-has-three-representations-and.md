@@ -30,8 +30,8 @@ Name one store authoritative - the file - and derive the other two from it: the 
 
 ### AC2: The writer and the readers read that file the same way, asserted as agreement
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::CarriedSetOneTruthTests::test_the_writer_and_the_readers_read_one_file_the_same_way
-- **Verified:** yes (2026-07-28)
+- **Verify:** manual - retired: superseded by US0887, which removed the second reader (sprint.carried_lessons) this criterion compared the writer against; the class store is now the one lesson source
+- **Verified:** manual (2026-09-24) - retired, superseded by US0887
 
 ### AC3: The older bullet shape is still read, so the repair is a widening rather than a replacement
 

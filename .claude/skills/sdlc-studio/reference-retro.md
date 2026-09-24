@@ -94,9 +94,26 @@ question, then enforce the answer. A gate on a question nobody was asked is just
 
 ## Extraction: a lesson must leave the retro
 
-`retro.py extract --id RETROxxxx` lifts the `## Lessons` bullets into the project lessons
-log. Without it, a lesson lives only in the retro file, and the retro file is read by nobody
-after the sprint that wrote it.
+`retro.py extract --id RETROxxxx` lifts the Try items (an older retro's `## Lessons`
+bullets) into the lessons stores. Without it, a lesson lives only in the retro file, and the
+retro file is read by nobody after the sprint that wrote it.
+
+A Try item that names its failure class goes to the committed class store,
+`sdlc-studio/lessons.jsonl`, one row per class (`id`, `class`, `rule`, `behaviour`,
+`inject`, `hits`, `state`, `recorded_run`):
+
+| Try item | Effect |
+| --- | --- |
+| `[LC-003] it happened again on US0123` | a hit `{run, unit, source}` on LC-003; no new lesson |
+| `[new: class name] Rule. What to do differently.` | a new active class, injected at plan, build and review |
+| `[new: class name \| build, review] ...` | the same, injected at the named phases only |
+| untagged | the project lessons log, as before |
+
+A `new` tag naming a class already recorded counts as a hit on it. An unknown code, an
+unknown phase, or a new class with no behaviour sentence is refused by `validate` and
+`extract`. The plan output, each lane brief and the review brief carry the active classes
+injected at their phase, rule plus behaviour, at most five, most-repeated first. The close
+passes its run id (`extract --run`), so a re-run close counts a repeat once.
 
 Extraction is idempotent by content, so re-running converges rather than duplicating - a
 retro can be extracted, edited, and extracted again.

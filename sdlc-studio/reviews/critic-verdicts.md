@@ -1150,6 +1150,7 @@ One row has been removed since adoption.
 | US0870 | APPROVE | qa-rev-US0870 | lane-A | 2026-09-23 | - | - | [new] non-blocking: two token forecasts disagree (ruled D0258); [new] the AC1 fixture cannot tell a measured rate from the seed |
 | US0876 | APPROVE | qa-rev-US0876 | lane-A-fix | 2026-09-23 | - | - | [new] non-blocking: the multi-id stop-ship split is unpinned; [new] guidance lines become known-issue rows |
 | US0878 | APPROVE | qa-rev-US0878 | lane-A-fix | 2026-09-23 | - | - | - |
+| US0886 | APPROVE | qa-rev-US0886 | US0886-build | 2026-09-24 | - | - | [new] non-blocking: the mirror's .local symlink is unpinned (M7); [new] non-blocking: the manual count is not pinned exactly |
 
 ## Supersessions
 

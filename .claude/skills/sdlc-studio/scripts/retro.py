@@ -15,8 +15,9 @@ Subcommands:
 
   validate  content check - required sections, at least one real lesson, and every
             finding dispositioned. This is what the gate calls instead of a glob.
-  extract   lift the `## Lessons` bullets into the project lessons log (`lessons add`),
-            so a lesson written in a retro reaches the store that the next sprint reads.
+  extract   lift the Try items (an older retro's `## Lessons`) into the lessons stores: a
+            classed item (`[LC-003]`, `[new: <class>]`) counts on `lessons.jsonl`, an
+            untagged one goes to the project lessons log (`lessons add`).
   dispose   report every finding and its disposition; non-zero while any is undecided.
             The read-only half of `validate`, for a human deciding what to file.
   accuracy  estimate vs actual for the units in the retro's `Batch`: the plan's forecast
@@ -96,6 +97,17 @@ VELOCITY_FILE = "sdlc-studio/retros/VELOCITY.md"
 #: them, so Try is capped: a list that can grow is one nobody acts on.
 KEEP_STOP_TRY = ("Keep", "Stop", "Try")
 TRY_MAX = 3
+
+#: A Try item names its failure class with a leading tag, so a repeat is counted on the class
+#: in `lessons.jsonl` rather than written again as a new lesson:
+#:   `[LC-003] what happened this time`            a hit on class LC-003
+#:   `[new: <class name>] Rule. Behaviour.`         a new class, injected at plan, build, review
+#:   `[new: <class name> | build, review] ...`      a new class, injected at the named phases
+#: The first sentence after a `new` tag is the rule; the rest is what to do differently. An
+#: untagged item goes to the prose log as before.
+TRY_TAG_RE = re.compile(r"^\[\s*(?:(LC-\d{3,})|new\s*:([^\]]*))\]\s*(.*)$", re.IGNORECASE)
+#: The unit a repeat happened on: the first story, bug or CR the Try item names.
+TRY_UNIT_RE = re.compile(r"\b((?:US|BG|CR)\d{4})\b")
 
 # The sections a retro written before Keep/Stop/Try carries. Those retros are history, and are
 # still validated against the shape they were written in.
@@ -400,23 +412,25 @@ _ABBREV = frozenset({"e.g", "i.e", "cf", "vs", "etc", "fig", "approx", "no", "cr
 _SENTENCE_END_RE = re.compile(r"[.!?]\s")
 
 
+def _first_sentence(text: str) -> str:
+    """The first complete sentence of the wrap-normalised text, or all of it."""
+    flat = " ".join(str(text or "").split())
+    for m in _SENTENCE_END_RE.finditer(flat):
+        end = m.start()
+        prev = re.split(r"[\s(\[]", flat[:end])[-1].lower()
+        if len(prev) <= 1 or prev in _ABBREV:   # an initial, a decimal, or a known abbreviation
+            continue
+        return flat[:end + 1]
+    return flat
+
+
 def lesson_title(text: str) -> str:
     """A lesson's headline: its first complete SENTENCE, from the wrap-normalised text.
 
     Independent of where the author broke the line, which is the whole defect. A lesson that is
     already one short sentence is its own title (so the store's existing entries do not churn);
     a very long first sentence is elided at a word boundary rather than cut mid-word."""
-    flat = " ".join(str(text or "").split())
-    if not flat:
-        return ""
-    first = flat
-    for m in _SENTENCE_END_RE.finditer(flat):
-        end = m.start()
-        prev = re.split(r"[\s(\[]", flat[:end])[-1].lower()
-        if len(prev) <= 1 or prev in _ABBREV:   # an initial, a decimal, or a known abbreviation
-            continue
-        first = flat[:end + 1]
-        break
+    first = _first_sentence(text)
     if len(first) <= LESSON_TITLE_MAX:
         return first
     cut = first[:LESSON_TITLE_MAX].rsplit(" ", 1)[0].rstrip(" ,;:")
@@ -432,6 +446,59 @@ def lessons_in(text: str) -> list[str]:
     """The retro's lessons, as written: its Try items, or an older retro's `## Lessons`. This is
     the input `extract` lifts into the store."""
     return _real_bullets(sections(text).get("Try" if is_three_line(text) else "Lessons", []))
+
+
+def try_class(item: str) -> dict | None:
+    """The failure class a Try item names (see TRY_TAG_RE), or None for an untagged item.
+
+    `{kind: "hit", code, unit}` or `{kind: "new", class, inject, rule, behaviour, unit}`.
+    Raises ValueError naming what is wrong with a malformed tag."""
+    m = TRY_TAG_RE.match(item or "")
+    if not m:
+        return None
+    code, spec, rest = m.group(1), m.group(2), " ".join(m.group(3).split())
+    unit = (TRY_UNIT_RE.search(rest) or [None, ""])[1]
+    if code:
+        return {"kind": "hit", "code": code.upper(), "unit": unit}
+    name, _bar, phases = spec.partition("|")
+    name = " ".join(name.split())
+    if not name:
+        raise ValueError(f"'{item[:60]}': a `[new: ...]` tag must name the class")
+    inject = [p.strip().lower() for p in phases.split(",") if p.strip()] or list(lessons.PHASES)
+    bad = [p for p in inject if p not in lessons.PHASES]
+    if bad:
+        raise ValueError(f"'{item[:60]}': unknown phase {', '.join(bad)} - inject at "
+                         f"{', '.join(lessons.PHASES)}")
+    rule = _first_sentence(rest)
+    behaviour = rest[len(rule):].strip()
+    if not rule or not behaviour:
+        raise ValueError(f"'{item[:60]}': a new class needs a rule sentence and a behaviour "
+                         f"sentence after it - what the agent does differently")
+    return {"kind": "new", "class": name, "inject": inject, "rule": rule,
+            "behaviour": behaviour, "unit": unit}
+
+
+def class_errors(root, items: list[str]) -> list[str]:
+    """What is wrong with the class tags on these Try items: a malformed tag, or a code the
+    store does not hold. Each names the item and the fix."""
+    errors, codes = [], []
+    for item in items:
+        try:
+            tag = try_class(item)
+        except ValueError as exc:
+            errors.append(str(exc))
+            continue
+        if tag and tag["kind"] == "hit":
+            codes.append(tag["code"])
+    if codes:
+        try:
+            rows = lessons.load_store(root)
+        except ValueError as exc:
+            return [*errors, str(exc)]
+        errors += [f"{c} is not a class in {lessons.STORE_FILE} - cite a recorded code, or "
+                   f"record the class with `[new: <class name>] Rule. Behaviour.`"
+                   for c in codes if lessons.find_class(rows, c) is None]
+    return errors
 
 
 def three_line_errors(text: str) -> list[str]:
@@ -569,7 +636,7 @@ def validate(root, retro_id: str) -> dict:
 
     text = path.read_text(encoding="utf-8")
     if is_three_line(text):
-        errors = three_line_errors(text)
+        errors = three_line_errors(text) + class_errors(root, lessons_in(text))
         return {"ok": not errors, "id": retro_id, "path": str(path), "errors": errors,
                 "demonstration": [], "lessons": lessons_in(text), "carried": [],
                 "findings": [], "filed": [], "fixed": [], "declined": []}
@@ -3249,6 +3316,31 @@ def _recorded(text: str, entries: list[dict]) -> bool:
     return False
 
 
+def _extract_classes(args, retro_id: str, tags: list[dict]) -> str:
+    """Count each classed Try item on the class store: a hit on a known class, a new row for a
+    new one. A `new` tag naming a class this same run recorded is that record, not a repeat, so
+    a re-run close converges. Returns the summary suffix for the extract line."""
+    if not tags:
+        return ""
+    run = getattr(args, "run", None) or retro_id
+    source = f"retro:{retro_id}"
+    rows = lessons.load_store(args.root)
+    hits, new = 0, 0
+    for tag in tags:
+        row = lessons.find_class(rows, tag["code"] if tag["kind"] == "hit" else tag["class"])
+        if row is None:
+            lessons.new_lesson(rows, tag["class"], tag["rule"], tag["behaviour"],
+                               tag["inject"], run)
+            new += 1
+        elif (tag["kind"] == "hit" or row.get("recorded_run") != run) and \
+                lessons.add_hit(row, run, tag["unit"], source):
+            hits += 1
+    if (hits or new) and not args.dry_run:
+        lessons.save_store(args.root, rows)
+    verb = "would record" if args.dry_run else "recorded"
+    return f"; {lessons.STORE_FILE}: {verb} {new} new class(es), {hits} repeat hit(s)"
+
+
 def cmd_extract(args) -> int:
     """Lift the retro's lessons into the project store, so a lesson written in a retro
     reaches the digest the next sprint plan prints. Without this the retro is a diary.
@@ -3260,6 +3352,10 @@ def cmd_extract(args) -> int:
 
     Idempotent by content: a lesson already in the store is not added twice, so running
     extract on the same retro repeatedly converges rather than duplicating.
+
+    A Try item tagged with its failure class (TRY_TAG_RE) goes to the class store instead: a
+    known class gains a hit for `--run`, a new class writes a new row. Nothing is written while
+    any tag is malformed or names a code the store does not hold.
     """
     res = validate(args.root, args.id)
     if res["path"] is None:
@@ -3269,6 +3365,14 @@ def cmd_extract(args) -> int:
     if not found:
         print(f"retro {args.id}: no lessons to extract")
         return 0
+    errors = class_errors(args.root, found)
+    if errors:
+        for e in errors:
+            print(f"retro {args.id}: {e}", file=sys.stderr)
+        return 1
+    classed = [(t, try_class(t)) for t in found]
+    found = [t for t, tag in classed if tag is None]
+    counted = _extract_classes(args, res["id"], [tag for _t, tag in classed if tag])
 
     log = lessons.default_project_file(args.root)
     existing_text = log.read_text(encoding="utf-8") if log.is_file() else lessons.PROJECT_HEADER
@@ -3288,7 +3392,7 @@ def cmd_extract(args) -> int:
             print(f"  + would add: {title[:70]}")
         for t in skipped:
             print(f"  = already recorded: {t[:70]}")
-        print(f"\n{len(added)} to add, {len(skipped)} already present")
+        print(f"\n{len(added)} to add, {len(skipped)} already present{counted}")
         return 0
 
     log.parent.mkdir(parents=True, exist_ok=True)
@@ -3306,7 +3410,8 @@ def cmd_extract(args) -> int:
             print(f"failed to record: {title[:60]}", file=sys.stderr)
             return rc
 
-    print(f"retro {res['id']}: {len(added)} lesson(s) extracted, {len(skipped)} already present")
+    print(f"retro {res['id']}: {len(added)} lesson(s) extracted, {len(skipped)} already present"
+          f"{counted}")
     if added:
         print("regenerate the summary so the next sprint reads them: lessons.py summary")
     return 0
@@ -3328,7 +3433,8 @@ def build_parser() -> argparse.ArgumentParser:
     for name, fn, helptext in (
         ("validate", cmd_validate, "content check: sections, lessons, dispositions (the gate's leg)"),
         ("dispose", cmd_dispose, "report each finding and whether it is filed, declined or undecided"),
-        ("extract", cmd_extract, "lift the retro's lessons into the project lessons log"),
+        ("extract", cmd_extract, "lift the retro's lessons into the lessons stores: a classed "
+                                 "Try item counts on its class in lessons.jsonl"),
         ("accuracy", cmd_accuracy, "estimate vs actual for the batch, in points and tokens: the "
                                    "plan's forecast against telemetry, and any unit that should "
                                    "have been split"),
@@ -3360,6 +3466,9 @@ def build_parser() -> argparse.ArgumentParser:
                                 "tail of history nothing can clear")
         if name == "extract":
             p.add_argument("--dry-run", action="store_true")
+            p.add_argument("--run", default=None, metavar="RUN_ID",
+                           help="the run a classed Try item's hit is counted against "
+                                "(default: the retro id); the close passes its run")
         if name == "accuracy":
             p.add_argument("--write", action="store_true",
                            help="record the report in the retro and append the sprint's row "

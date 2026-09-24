@@ -1,6 +1,6 @@
 # US0888: A lesson that recurs graduates into a check
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
