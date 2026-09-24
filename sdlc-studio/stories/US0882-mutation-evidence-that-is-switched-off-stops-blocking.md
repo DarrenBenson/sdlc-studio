@@ -1,6 +1,6 @@
 # US0882: Mutation evidence that is switched off stops blocking commits
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

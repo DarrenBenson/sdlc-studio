@@ -5284,7 +5284,8 @@ def _close_handoff(root, retro_id, state):
                                       "--retro", retro_id, "--root", str(root)])
     if rc != 0:
         return False, out, "`handoff.py generate` must write the handoff - see its output"
-    return True, (f"handoff generated; the run stays OPEN for `sprint.py sign`, which writes "
+    verb = "refreshed" if out.startswith("refreshed") else "generated"
+    return True, (f"handoff {verb}; the run stays OPEN for `sprint.py sign`, which writes "
                   f"the {outcome} outcome from the {verdict} verdict"), ""
 
 
@@ -9098,6 +9099,41 @@ def record_close_tree(root) -> None:
             run_state.update(root, close_tree=digest)
 
 
+def _close_forward_port(root, pre: dict) -> list[dict]:
+    """Mirror the skill into the installed copy when the pre-flight found it drifted.
+
+    Reporting the drift was not enough: Sprint 1's close printed the count and the mirror was
+    forgotten until the operator asked. So where the repository ships the forward-port tool
+    (`status.DRIFT_CHECK`), the close applies it and re-checks. It acts only on the pre-flight's
+    own drift row, so a consuming project (no tool), and a copy the check answers as in sync,
+    absent or pinned, is never written. A failure is a known issue for the report, never a
+    refusal. Returns the known-issue rows.
+    """
+    if not any(b.get("stage") == "installed-copy" for b in pre.get("blockers") or []):
+        return []
+    import subprocess  # noqa: PLC0415
+    import status  # noqa: PLC0415 - deferred, like the other close-path siblings
+    tool = ["bash", str(Path(root).joinpath(*status.DRIFT_CHECK))]
+    for flag in ("--yes", "--check"):
+        try:
+            proc = subprocess.run([*tool, flag], cwd=root, capture_output=True, text=True,
+                                  timeout=600)
+        except (OSError, subprocess.SubprocessError) as exc:
+            detail = f"`forward-port.sh {flag}` could not run: {exc}"
+            break
+        if proc.returncode:
+            said = (proc.stderr.strip() or proc.stdout.strip()).splitlines()[-1:]
+            detail = (f"`forward-port.sh {flag}` exited {proc.returncode}"
+                      + (f": {said[0]}" if said else "")
+                      + f" - the installed copy is not in sync; run `{status.DRIFT_REMEDY}`")
+            break
+    else:
+        print("close: installed copy forward-ported - in sync")
+        return []
+    print(f"close: installed-copy: known issue - {detail}", file=sys.stderr)
+    return [{"source": "installed-copy", "detail": detail}]
+
+
 def close_is_a_noop(root, state: dict) -> str:
     """The already-accounted message when re-running would change nothing, else "".
 
@@ -9372,6 +9408,7 @@ def cmd_close(args: argparse.Namespace) -> int:
             print(f"close: the content review was NOT recorded - {exc}", file=sys.stderr)
     for line in close_goal_judgement(root, state):
         print(f"  {line}")
+    known += _close_forward_port(root, pre)
     # What this close itself cost, on BOTH paths and before the decision, so the next reduction
     # is measured against a number rather than an impression. Read from the execution ledger:
     # an unrecorded component reads as UNMEASURED, never as zero seconds.

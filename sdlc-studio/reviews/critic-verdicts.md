@@ -1151,6 +1151,9 @@ One row has been removed since adoption.
 | US0876 | APPROVE | qa-rev-US0876 | lane-A-fix | 2026-09-23 | - | - | [new] non-blocking: the multi-id stop-ship split is unpinned; [new] guidance lines become known-issue rows |
 | US0878 | APPROVE | qa-rev-US0878 | lane-A-fix | 2026-09-23 | - | - | - |
 | US0886 | APPROVE | qa-rev-US0886 | US0886-build | 2026-09-24 | - | - | [new] non-blocking: the mirror's .local symlink is unpinned (M7); [new] non-blocking: the manual count is not pinned exactly |
+| US0883 | REJECT | qa-rev-US0883 | US0883-build | 2026-09-24 | - | - | [new] the markdown twin is compared through the current template, so any later template change reads a signed report as edited (reproduced on RPT0006) |
+| US0887 | REJECT | qa-rev-US0887 | US0887-build | 2026-09-24 | - | - | [new] a manual extract followed by the close double-counts one repeat, which graduates a class on its first real repeat |
+| US0889 | APPROVE | qa-rev-US0889 | US0889-build | 2026-09-24 | - | - | [new] non-blocking: the sealed-run and run-id guards in \_open\_handoff are unpinned; [pre-existing] --file-and-close does not forward-port |
 
 ## Supersessions
 

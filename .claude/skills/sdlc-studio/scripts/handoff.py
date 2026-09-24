@@ -797,8 +797,21 @@ def generate(repo_root: Path | str, title: str, batch: list[str] | None = None,
                 "retro_linked": bool(retro_path), "worklist": str(root / WORKLIST_REL),
                 "report": report}
     _ensure_index(root, sdlc_md.now_date())
-    res = artifact.meta_new(root, TYPE, title,
-                            {"body": render_body(report), "meta": _meta_lines(report)})
+    # ONE HANDOVER PER RUN. A re-run close re-generates, and minting every time filed five
+    # handovers for one run. The open run's own handover is refreshed in place instead - same id,
+    # same index row - and only a run with none is allocated one.
+    existing = _open_handoff(root)
+    if existing is None:
+        res = artifact.meta_new(root, TYPE, title,
+                                {"body": render_body(report), "meta": _meta_lines(report)})
+    else:
+        hid, path = existing
+        if _h1_title(path) != title:
+            # the title follows the verdict, which a re-run close may have changed
+            artifact.retitle(root, hid, title)
+            path = _handoff_path(root, hid)
+        _rewrite(path, hid, report)
+        res = {"id": hid, "path": str(path), "indexed": False, "refreshed": True}
     worklist = root / WORKLIST_REL
     worklist.parent.mkdir(parents=True, exist_ok=True)
     sdlc_md.atomic_write(worklist, _worklist_text(report, res["id"]))
@@ -852,14 +865,7 @@ def refresh(repo_root: Path | str, handoff_id: str, batch: list[str] | None = No
     handoff wearing another run's id misdirects whoever picks the work up.
     """
     root = Path(repo_root)
-    norm = sdlc_md.norm_id(handoff_id)
-    path = next((p for p in sorted((root / "sdlc-studio" / "handoffs").glob("*.md"))
-                 # `split("-")[0]` on a v3 key `HO-<ulid>-slug` yields `HO`, so the comparison
-                 # never matched and the reader was blind to every v3 handoff. `stem_record_id`
-                 # is the shared parse for families outside `ARTIFACT_TYPES` - which handoffs
-                 # are, so `extract_record_id` returns None here and would be a second defect.
-                 if p.is_file()
-                 and sdlc_md.norm_id(sdlc_md.stem_record_id(p.stem) or "") == norm), None)
+    path = _handoff_path(root, handoff_id)
     if path is None:
         return None
     existing = path.read_text(encoding="utf-8")
@@ -870,6 +876,49 @@ def refresh(repo_root: Path | str, handoff_id: str, batch: list[str] | None = No
             f"{handoff_id} belongs to {doc_run} but the open run is {open_run_id} - refusing to "
             f"re-stamp it with another run's identity; close or clear the open run first")
     report = build(root, batch=batch)
+    _rewrite(path, handoff_id, report)
+    sdlc_md.atomic_write(root / WORKLIST_REL, _worklist_text(report, handoff_id))
+    run_state.update(root, handoff_remaining=report["summary"]["remaining"])
+    return report
+
+
+def _handoff_path(root: Path, handoff_id: str) -> Path | None:
+    """The file holding `handoff_id`, or None."""
+    norm = sdlc_md.norm_id(handoff_id)
+    return next((p for p in sorted((root / "sdlc-studio" / "handoffs").glob("*.md"))
+                 # `split("-")[0]` on a v3 key `HO-<ulid>-slug` yields `HO`, so the comparison
+                 # never matched and the reader was blind to every v3 handoff. `stem_record_id`
+                 # is the shared parse for families outside `ARTIFACT_TYPES` - which handoffs
+                 # are, so `extract_record_id` returns None here and would be a second defect.
+                 if p.is_file()
+                 and sdlc_md.norm_id(sdlc_md.stem_record_id(p.stem) or "") == norm), None)
+
+
+def _open_handoff(root: Path) -> tuple[str, Path] | None:
+    """The OPEN run's own handover as `(id, path)`, or None.
+
+    Open means the run state names a handover, the run has not ended (a sealed run's handover
+    is a record, never rewritten), and the document on disk records this same run id.
+    """
+    state = run_state.read(root) or {}
+    hid = (state.get("handoff") or "").strip()
+    run_id = (state.get("run_id") or "").strip()
+    if not hid or not run_id or state.get("outcome") in run_state.CLOSED:
+        return None
+    path = _handoff_path(root, hid)
+    if path is None or _recorded_run_id(path.read_text(encoding="utf-8")) != run_id:
+        return None
+    return hid, path
+
+
+def _h1_title(path: Path) -> str:
+    first = path.read_text(encoding="utf-8").splitlines()[:1]
+    return first[0].split(":", 1)[1].strip() if first and ":" in first[0] else ""
+
+
+def _rewrite(path: Path, handoff_id: str, report: dict) -> None:
+    """Re-render a handover in place from `report`, keeping its H1, Date, Created-by and
+    Revision History."""
     lines = path.read_text(encoding="utf-8").splitlines()
     # Keep the H1 and the Revision History; regenerate everything the join owns.
     head = lines[0] if lines and lines[0].startswith("# ") else f"# {handoff_id}"
@@ -889,9 +938,6 @@ def refresh(repo_root: Path | str, handoff_id: str, batch: list[str] | None = No
     # refresh.
     body = re.sub(r"\n{3,}", "\n\n", body)
     sdlc_md.atomic_write(path, body)
-    sdlc_md.atomic_write(root / WORKLIST_REL, _worklist_text(report, handoff_id))
-    run_state.update(root, handoff_remaining=report["summary"]["remaining"])
-    return report
 
 
 # --------------------------------------------------------------------------- CLI
@@ -919,7 +965,8 @@ def cmd_generate(args: argparse.Namespace) -> int:
         print(json.dumps(r, indent=2))
     else:
         s = r["report"]["summary"]
-        verb = "would generate" if r["dry_run"] else "generated"
+        verb = ("would generate" if r["dry_run"] else
+                "refreshed" if r.get("refreshed") else "generated")
         print(f"{verb} handoff {r['id'] or '(dry run)'}: {s['delivered']} delivered, "
               f"{s['remaining']} remaining ({s[COPILOT_TAIL]} {COPILOT_TAIL}, "
               f"{s[JUDGEMENT]} {JUDGEMENT})")
