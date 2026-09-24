@@ -2,37 +2,40 @@
 > **RUN-01M3891F closed running.** 11 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
-> **RUN-01M3891F, Sprint 2 of back to basics: fast gates and lessons that graduate.** Goal:
-> "Commits clear in about a minute, and the sprint learns from repeated mistakes without being
-> told." 11 of 11 units delivered (42 points), each reviewed once by a fresh reviewer under the
-> two-round cap. Verdict: partial.
+> **RUN-01M39MC0, Sprint 3 of back to basics: commits under ninety seconds, lanes that show their
+> yield.** Goal: "A commit clears in ninety seconds, and every commit lane left standing shows what
+> it caught." 16 of 21 planned units delivered (32 of 45 points), each reviewed by one QA-seat
+> reviewer under the two-round cap; four were carried at the cap and BG0754 stays open. Verdict:
+> partial.
 >
-> Closing review of record: RETRO0122.
+> Closing review of record: RETRO0123.
 
 ## What landed
 
-- **Lessons learn.** A lesson is a failure class in `sdlc-studio/lessons.jsonl` (LC-001 to
-  LC-006, seeded from the review). Retro Try items and cited REJECTs count repeats once per run
-  and unit; the classes reach the plan, the build brief and the critic brief; a class that
-  repeats twice after it was recorded graduates to a CR, and one quiet for five runs retires. A
-  project with no store reads the seed bundled with the skill (US0887, US0888, D0261).
-- **Gates got cheaper.** Seven dead per-commit lanes are gone (US0879); a commit runs only the
-  test modules its change reaches, in parallel (US0880); a push runs the full suite once, in
-  about 284s against 607-881s, and CI runs it once (US0881). Switched-off mutation evidence no
-  longer blocks, and re-registration no longer evicts other units' rows (US0882).
-- **The report is honest about itself.** A hand-edited filed page reads INVALID (US0883), only
-  the close files a report (US0884), and its time window no longer races its own paperwork
-  (US0885). BG0744, BG0745 and BG0748 are Fixed; nothing Critical or High is open.
-- **The close does its own housekeeping**: it forward-ports the skill and keeps one handover per
-  run (US0889). Sprint 1's superseded criteria are retired (US0886).
+- **Lanes deleted, not tuned.** The warning ratchet and its baselines (US0896), the verify
+  ratchet (US0897), the boundary roster (US0901) and the hand-edited release-notes count, now
+  derived by `known_issues.py` (US0898), are gone. Eight advisory gate lanes left the commit and
+  run on demand or at the close (US0895, D0263).
+- **Commits got faster.** The decisions scan is memoised (US0890), xdist takes one test at a time
+  where supported (US0892), live-repository tests wait for the push (US0893), and `close_owed`
+  walks the corpus once, 58s to 0.4s (US0894). A one-line gate.py commit measured 93s end to end
+  at the close, against 229s at the start; its suites took 43s.
+- **Drift is fixed at commit, not refused.** Mechanical index and epic drift is settled by the
+  pre-commit hook itself (US0899). Each hook lists its own lanes with `--list` (US0901).
+- **The ratchet is watched.** Lesson class LC-008 and the PRD principle "Every gate earns its
+  place"; lesson graduation proposes retiring a check as readily as adding one (US0903), and the
+  seats push back on new pins (US0906). Python 3.10 works again, with a CI step (US0908).
+- **The backlog matches the lean direction.** D0265 closed 197 items and holds 47 open until the
+  deletion work they wait on ships (US0907, D0264). 121 of the 327 reviewed items stay open.
 
 ## What is owed
 
-- **A code commit is still over the minute.** One reaching a widely imported script took
-  165-258s under this machine's load against the 90s budget, reported and not refused (BG0754).
-- Per-commit selection follows direct edges only: hooks, test infrastructure and code reached
-  through another script are caught at push, not at commit (BG0752).
-- The test suite leaks temporary directories; /tmp ran out of inodes mid-run (BG0753).
-- Two report-window races remain in waivers and open findings (BG0750, BG0751).
-- CR0592 collects the Low findings, including six older criteria that still describe push
-  behaviour US0881 moved to the release boundary.
+- **Four units carried at the review cap, each with its fix filed:** US0891, concurrent
+  pre-commit lanes (BG0759, a one-line HUP trap); US0900 (BG0756); US0904, the lane-yield log
+  (BG0761, a one-character same-second join); US0905, the lane cap (BG0760, controls to derive
+  from `--list`). Carried patches are in `sdlc-studio/.local/`.
+- **A commit is 3s over budget.** BG0754 stays open until BG0759 lands: the sequential
+  pre-commit is the remaining cost.
+- Also open: BG0757 (repo map null byte under Python 3.10), BG0758 (a command-audit module leak),
+  BG0750-BG0753 from Sprint 2, and CR0592 for the Low findings.
+- **Next: Sprint 4, led by CR0594** (the record informs the work), then EP0263's deletions.

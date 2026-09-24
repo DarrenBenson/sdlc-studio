@@ -1,6 +1,7 @@
 # BG0754: A commit touching a widely imported script runs well over the 90-second budget
 
 > **Status:** Open
+> **Measured at close:** RUN-01M39MC0 close (2026-09-24, load 0.7): a one-line gate.py change committed through both hooks in a clone of 016f29c7 took 93s against the 90s budget (229s at sprint start); its unit suites took 43s over 14 modules, and the rest is the pre-commit lanes, still sequential because US0891 was carried (BG0759). AC1 misses by 3s and AC2 is unmet while US0891 is open, so this stays Open until BG0759 lands
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/decisions.py, .claude/skills/sdlc-studio/scripts/gate.py, .githooks/pre-commit, .claude/skills/sdlc-studio/scripts/close_owed.py
