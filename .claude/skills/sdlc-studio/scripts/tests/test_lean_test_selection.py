@@ -249,5 +249,179 @@ class SelectionTests(unittest.TestCase):
         self.assertLess(elapsed, 3.0, f"selection took {elapsed:.1f}s")
 
 
+#: Forty quick tests, each recording the xdist worker that ran it under its own index.
+RECORD_WORKER = """\
+import os
+from pathlib import Path
+
+import pytest
+
+OUT = Path(__file__).parent / "ran"
+
+
+@pytest.mark.parametrize("i", range(40))
+def test_n(i):
+    OUT.mkdir(exist_ok=True)
+    (OUT / f"{i:02d}").write_text(os.environ.get("PYTEST_XDIST_WORKER", ""))
+"""
+
+#: A pytest plugin standing in for a sibling process: each time a mutation run creates its sink,
+#: another process drops a `mutation_run_*` file into the SHARED temp directory. With
+#: US0892_LEAK set it also stops the run removing its own sink, which is the leak the check is for.
+SIBLING_PLUGIN = """\
+import itertools
+import os
+import subprocess
+import tempfile
+
+_mkstemp, _unlink, _count = tempfile.mkstemp, os.unlink, itertools.count()
+
+
+def mkstemp(*args, **kwargs):
+    if kwargs.get("prefix") == "mutation_run_":
+        shared = os.environ["US0892_SHARED"]
+        subprocess.run(["touch", os.path.join(shared, f"mutation_run_sibling_{next(_count)}.log")],
+                       check=True)
+    return _mkstemp(*args, **kwargs)
+
+
+def unlink(path, *args, **kwargs):
+    if os.environ.get("US0892_LEAK") and os.path.basename(path).startswith("mutation_run_"):
+        return None
+    return _unlink(path, *args, **kwargs)
+
+
+tempfile.mkstemp, os.unlink = mkstemp, unlink
+"""
+
+LEAK_CHECK = (f"{SKILL}/tests/test_mutation.py::TheRunLeavesNothingBehindTests::"
+              "test_a_construction_failure_leaks_no_descriptor_and_no_temp_file")
+
+
+def _pytest_env(**extra: str) -> dict:
+    """This environment minus the pytest identity of the run executing THIS test, plus `extra`."""
+    import os  # noqa: PLC0415
+    env = {k: v for k, v in os.environ.items()
+           if not k.startswith(("PYTEST_XDIST", "PYTEST_CURRENT_TEST"))}
+    env.update(extra)
+    return env
+
+
+def _xdist_version(version: "str | None"):
+    """Stub the installed pytest-xdist version; None stands for a missing distribution."""
+    import importlib.metadata  # noqa: PLC0415
+    import unittest.mock  # noqa: PLC0415
+    real = importlib.metadata.version
+
+    def version_of(name: str) -> str:
+        if name != "pytest-xdist":
+            return real(name)
+        if version is None:
+            raise importlib.metadata.PackageNotFoundError(name)
+        return version
+    return unittest.mock.patch("importlib.metadata.version", side_effect=version_of)
+
+
+class SchedulingTests(unittest.TestCase):
+    """US0892: the parallel phase hands tests out one at a time, so a run of heavy consecutive
+    tests is spread across the workers rather than queued up front on one of them."""
+
+    def test_the_parallel_phase_hands_out_one_test_at_a_time(self) -> None:
+        """AC1. MUTANTS: drop `--maxschedchunk=1` (xdist's first hand-out is then a quarter of
+        each worker's share, so tests 0-4 of 40 land on one of two workers); misspell it (pytest
+        refuses the option); add it to the serial phase or the xdist-less command (the exact
+        command comparison below changes)."""
+        with tempfile.TemporaryDirectory() as d, _xdist_version("3.2.0"):
+            root = Path(d)
+            _write(root, "a/test_a.py", "def test_a():\n    pass\n")
+            _write(root, "b/test_b.py",
+                   "import pytest\n\n\n@pytest.mark.serial_only\ndef test_b():\n    pass\n")
+            plan = gate.run_tests_plan(["a/test_a.py", "b/test_b.py"], parallel=True, root=d)
+        base = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"]
+        self.assertEqual(2, len(plan), plan)
+        self.assertIn("--maxschedchunk=1", plan[0])
+        self.assertEqual(base + ["-m", "serial_only", "b/test_b.py"], plan[1],
+                         "the serial_only phase changed")
+        with _xdist_version("3.2.0"):
+            serial = gate.run_tests_plan(["a/test_a.py"], parallel=False)
+        self.assertEqual([base + ["a/test_a.py"]], serial)
+        # Behaviour, not the flag's spelling: the parallel command, on two workers, over forty
+        # tests. xdist's default first hand-out gives each worker five consecutive tests; one at
+        # a time it gives two (the floor xdist keeps queued), so test 02 is on the other worker.
+        import importlib.util  # noqa: PLC0415
+        if importlib.util.find_spec("xdist") is None:
+            self.skipTest("pytest-xdist is not installed, so there is no hand-out to observe")
+        if not gate.xdist_takes_maxschedchunk():
+            self.skipTest("this pytest-xdist predates --maxschedchunk, so the default hand-out")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "test_record.py", RECORD_WORKER)
+            argv = gate.run_tests_plan(["test_record.py"], parallel=True, root=d)[0]
+            argv[argv.index("-n") + 1] = "2"
+            proc = subprocess.run(argv, cwd=d, capture_output=True, text=True,
+                                  env=_pytest_env(), timeout=300)
+            self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+            ran = {p.name: p.read_text() for p in (root / "ran").iterdir()}
+        self.assertEqual(40, len(ran), ran)
+        self.assertEqual({"gw0", "gw1"}, set(ran.values()), ran)
+        self.assertNotEqual(ran["00"], ran["02"],
+                            f"tests 00 and 02 were handed to one worker up front: {ran}")
+
+    def test_an_xdist_without_the_option_gets_the_default_hand_out(self) -> None:
+        """Round-2 review: `--maxschedchunk` arrived in pytest-xdist 3.2.0, and an older one exits
+        4 on it, refusing every commit and push. MUTANTS: add the flag whatever the version;
+        compare the version as text ("3.10.0" < "3.2.0"); read a missing or unparseable version
+        as new enough."""
+        for version, expected in (("3.1.0", False), ("2.5.0", False), ("3.2.0", True),
+                                  ("3.10.1", True), ("4.0", True), ("3.2.0rc1", False),
+                                  (None, False)):
+            with self.subTest(version=version), _xdist_version(version):
+                plan = gate.run_tests_plan(["a/test_a.py"], parallel=True)
+                self.assertEqual(expected, "--maxschedchunk=1" in plan[0], plan[0])
+                self.assertEqual(["-n", "auto"], plan[0][6:8], plan[0])
+
+    def test_a_refused_option_is_named_in_the_full_suite_verdict(self) -> None:
+        """Round-2 review: a pytest usage error (exit 4) ends on its rootdir line, so the push's
+        full-suite refusal named no reason. MUTANT: name the last line of the output again."""
+        import unittest.mock  # noqa: PLC0415
+        bad = [[sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider",
+                "--no-such-option-us0892", "tools/tests/test_x.py"]]
+        with tempfile.TemporaryDirectory() as d:
+            _write(Path(d), "tools/tests/test_x.py", "def test_x():\n    pass\n")
+            with unittest.mock.patch.object(gate, "run_tests_plan", return_value=bad):
+                got = gate._full_suite(d)
+        self.assertEqual(1, got["count"], got)
+        self.assertIn("unrecognized arguments: --no-such-option-us0892", got["detail"])
+
+    def test_a_sibling_temp_file_cannot_redden_the_leak_check(self) -> None:
+        """AC2. The leak check runs while a sibling process drops `mutation_run_*` files into the
+        shared temp directory, and passes; the control makes the run leak its own sink, and the
+        check still catches it. MUTANTS: count the shared temp directory again (the siblings
+        redden it); count a private directory the sink never lands in (the control passes)."""
+        import importlib.util  # noqa: PLC0415
+        if importlib.util.find_spec("pytest") is None:
+            self.skipTest("pytest is not installed")
+        for leak in (False, True):
+            with self.subTest(leak=leak), tempfile.TemporaryDirectory() as d:
+                shared, plugins = Path(d) / "tmp", Path(d) / "plugins"
+                shared.mkdir()
+                _write(plugins, "us0892_sibling.py", SIBLING_PLUGIN)
+                env = _pytest_env(TMPDIR=str(shared), US0892_SHARED=str(shared),
+                                  PYTHONPATH=str(plugins), **({"US0892_LEAK": "1"} if leak else {}))
+                proc = subprocess.run(
+                    [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider",
+                     "-p", "no:xdist", "-p", "us0892_sibling", str(REPO / LEAK_CHECK)],
+                    cwd=d, capture_output=True, text=True, env=env, timeout=300)
+                out = proc.stdout + proc.stderr
+                siblings = list(shared.glob("mutation_run_sibling_*"))
+                self.assertEqual(5, len(siblings),
+                                 f"the sibling never wrote, so a pass proves nothing:\n{out}")
+                if leak:
+                    self.assertNotEqual(0, proc.returncode, f"a leaked sink went unseen:\n{out}")
+                    self.assertIn("a failed run left its sink behind", out)
+                else:
+                    self.assertEqual(0, proc.returncode, out)
+
+
 if __name__ == "__main__":
     unittest.main()

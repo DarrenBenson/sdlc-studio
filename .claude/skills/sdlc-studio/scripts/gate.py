@@ -1176,7 +1176,12 @@ def _full_suite(root: str) -> dict:
         if cp.returncode not in (0, 5):     # 5: a phase that collected nothing
             named = [ln.split(" - ")[0].removeprefix("FAILED ").removeprefix("ERROR ")
                      for ln in lines if ln.startswith(("FAILED ", "ERROR "))]
-            failed.extend(named or [f"exit {cp.returncode}: {summaries[-1]}"])
+            # A usage error ends on pytest's rootdir line, so name the last line that says why.
+            # Exit 1 is an ordinary red: its summary line is the honest reason, and an "error"
+            # line there may be nothing but a passing test's warning.
+            why = summaries[-1] if cp.returncode == 1 else next(
+                (ln.strip() for ln in reversed(lines) if "error" in ln.lower()), summaries[-1])
+            failed.extend(named or [f"exit {cp.returncode}: {why}"])
     failed = list(dict.fromkeys(failed))    # xdist reports a collection error once per worker
     how = f"{len(modules)} module(s){' in parallel' if parallel else ''}: {'; '.join(summaries)}"
     log = Path(root) / "sdlc-studio" / ".local" / "boundary-suite-last.log"
@@ -2758,9 +2763,9 @@ def record_suite_verdict(root: str = ".", *, run: str, status: str = "green",
 # --- test selection ---
 # What a commit runs: the test modules its change reaches, read from the test sources alone.
 # Three routes, each a fact a test module states about itself - the changed test module, the
-# `x.py` -> `test_x.py` naming convention `check_script_tests.py` enforces, and the modules that
-# import or load `x` by name. Edges are DIRECT: a hub such as `sdlc_md` is imported by nearly
-# every script, so following dependents transitively selects most of the suite on every commit.
+# `x.py` -> `test_x.py` naming convention the TSD states, and the modules that import or load
+# `x` by name. Edges are DIRECT: a hub such as `sdlc_md` is imported by nearly every script, so
+# following dependents transitively selects most of the suite on every commit.
 # Whatever these routes miss - a docs page a test reads, a hook, test infrastructure (conftest,
 # pytest.ini, a test helper, tools/skill-tests.sh), a library reached only through another
 # script - selects NOTHING per commit and is caught by the full suite at the push boundary.
@@ -2898,18 +2903,41 @@ def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
     return result
 
 
+#: The pytest-xdist release that added `--maxschedchunk`. An older one refuses the option with
+#: exit 4, which would fail every commit's tests and every push's full suite.
+MAXSCHEDCHUNK_SINCE = (3, 2, 0)
+
+
+def xdist_takes_maxschedchunk() -> bool:
+    """Whether the installed pytest-xdist knows `--maxschedchunk`. A missing or unparseable
+    version answers no: the flag is a speed-up, never a reason to refuse a run."""
+    import importlib.metadata  # noqa: PLC0415
+    try:
+        version = importlib.metadata.version("pytest-xdist")
+        return tuple(int(part) for part in version.split(".")[:3]) >= MAXSCHEDCHUNK_SINCE
+    except (importlib.metadata.PackageNotFoundError, ValueError):
+        return False
+
+
 def run_tests_plan(selectors: list[str], parallel: bool, root: str = ".") -> list[list[str]]:
     """The pytest command lines that run `selectors`, in order.
 
     With pytest-xdist, the selection runs across every core and the tests marked `serial_only`
     (they assert on global tree state, so a concurrent worker makes them wrong) follow on their
-    own, over only the modules that carry the marker. Without it, one serial run."""
+    own, over only the modules that carry the marker. Without it, one serial run.
+
+    The parallel phase hands tests out one at a time (`--maxschedchunk=1`), though xdist still
+    keeps two queued per worker. Its default first hand-out is a block of consecutive tests per
+    worker - about 33 on a hub commit's selection - so a class of heavy tests queued on one
+    worker while the rest idled (21% busy, measured). An xdist older than 3.2.0 does not know
+    the option, so it gets the default hand-out rather than a refused run."""
     base = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"]
     if not parallel:
         return [base + list(selectors)]
     serial = [s for s in selectors
               if "serial_only" in (sdlc_md.read_text_safe(Path(root) / s) or "")]
-    plan = [base + ["-n", "auto", "-m", "not serial_only"] + list(selectors)]
+    chunk = ["--maxschedchunk=1"] if xdist_takes_maxschedchunk() else []
+    plan = [base + ["-n", "auto", *chunk, "-m", "not serial_only"] + list(selectors)]
     if serial:
         plan.append(base + ["-m", "serial_only"] + serial)
     return plan
@@ -2928,7 +2956,8 @@ def cmd_run_tests(args: argparse.Namespace) -> int:
         return 2
     parallel = importlib.util.find_spec("xdist") is not None
     selectors = list(args.run_tests)
-    how = ("in parallel (pytest-xdist, -n auto), serial_only tests after" if parallel
+    hand = ", one test at a time, two queued per worker" if xdist_takes_maxschedchunk() else ""
+    how = (f"in parallel (pytest-xdist, -n auto{hand}), serial_only tests after" if parallel
            else "serially (pytest-xdist is not installed)")
     print(f"unit-tests: {len(selectors)} selected module(s) {how}")
     started = time.monotonic()

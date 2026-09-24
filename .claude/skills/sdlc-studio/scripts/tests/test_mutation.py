@@ -3720,14 +3720,18 @@ class TheRunLeavesNothingBehindTests(unittest.TestCase):
 
     def test_a_construction_failure_leaks_no_descriptor_and_no_temp_file(self) -> None:
         """`mkstemp` and `Popen` sat OUTSIDE the try, so any Popen failure - a nonexistent cwd
-        is enough - leaked both, once per call."""
+        is enough - leaked both, once per call.
+
+        The sinks go to a temp directory private to this test: counting the shared one read a
+        sibling worker's `mutation_run_*` file as this run's leak (US0892)."""
+        private = tempfile.mkdtemp(prefix="leak_check_")
+        self.addCleanup(__import__("shutil").rmtree, private, ignore_errors=True)
         before_fds = len(os.listdir("/proc/self/fd")) if os.path.isdir("/proc/self/fd") else None
-        before_tmp = len(list(Path(tempfile.gettempdir()).glob("mutation_run_*")))
-        for _ in range(5):
-            with self.assertRaises(OSError):
-                self.mut._run_tests("true", Path("/nonexistent/definitely/not/a/repo"))
-        self.assertEqual(before_tmp,
-                         len(list(Path(tempfile.gettempdir()).glob("mutation_run_*"))),
+        with unittest.mock.patch.object(tempfile, "tempdir", private):
+            for _ in range(5):
+                with self.assertRaises(OSError):
+                    self.mut._run_tests("true", Path("/nonexistent/definitely/not/a/repo"))
+        self.assertEqual([], list(Path(private).glob("mutation_run_*")),
                          "a failed run left its sink behind")
         if before_fds is not None:
             self.assertEqual(before_fds, len(os.listdir("/proc/self/fd")),

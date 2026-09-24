@@ -1,6 +1,6 @@
 # US0891: A commit's pre-commit lanes run side by side
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

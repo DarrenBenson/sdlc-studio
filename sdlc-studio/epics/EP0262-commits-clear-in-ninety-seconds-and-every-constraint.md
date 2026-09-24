@@ -14,7 +14,7 @@ Sprint 3 of the back-to-basics programme, part one. Makes a code commit clear in
 
 - [x] [US0890: Recording a waiver no longer re-reads every script](../stories/US0890-recording-a-waiver-no-longer-re-reads-every.md)
 - [ ] [US0891: A commit's pre-commit lanes run side by side](../stories/US0891-a-commit-s-pre-commit-lanes-run-side.md)
-- [ ] [US0892: A commit's selected tests are handed out one at a time across every worker](../stories/US0892-a-commit-s-selected-tests-are-handed-out.md)
+- [x] [US0892: A commit's selected tests are handed out one at a time across every worker](../stories/US0892-a-commit-s-selected-tests-are-handed-out.md)
 - [ ] [US0893: A commit leaves the live-repository tests to the push](../stories/US0893-a-commit-leaves-the-live-repository-tests-to.md)
 - [x] [US0894: The close-owed report walks the corpus once, not once per epic](../stories/US0894-the-close-owed-report-walks-the-corpus-once.md)
 - [ ] [US0895: A commit runs only the gate lanes that can refuse it](../stories/US0895-a-commit-runs-only-the-gate-lanes-that.md)
