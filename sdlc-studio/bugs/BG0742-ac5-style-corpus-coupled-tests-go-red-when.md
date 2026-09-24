@@ -1,9 +1,10 @@
 # BG0742: AC5-style corpus-coupled tests go red when the backlog they measure is acted on, and two are red in this tree already
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py, .claude/skills/sdlc-studio/scripts/tests/workspace.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py, .claude/skills/sdlc-studio/scripts/tests/workspace.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/fixtures/bg0742-corpus
+> **Verification depth:** functional (the reviewer disposed of CR0424, CR0441, CR0512, US0793 and US0794 by status change and by deletion, and added 200 derived-only bugs: at the base each case turns the live-corpus tests red, with the fix all stay green; eight lens and census mutants killed)
 > **Evidence:** Raised by the independent engineering seat during BG0722's review, 2026-09-22, which both defended the instrument and asked that the cost be filed. It also identified the pre-existing red test as corroboration that this coupling bites in practice.
 > **Created:** 2026-09-22
 > **Created-by:** sdlc-studio file
@@ -26,11 +27,13 @@ Replace each assertion over the live backlog (`test_backlog_triage`'s `test_the_
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given `test_backlog_triage`'s abandoned-lens and duplicate assertions, when they run, then they read a fixture of verbatim copies of the artefacts that exposed BG0722 and BG0585, dated against a fixed today, not the live backlog; and making the lens return nothing still turns them red.
+- [x] **AC1** Given `test_backlog_triage`'s abandoned-lens and duplicate assertions, when they run, then they read a fixture of verbatim copies of the artefacts that exposed BG0722 and BG0585, dated against a fixed today, not the live backlog; and making the lens return nothing still turns them red.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::AbandonedRequestLensTests
-- [ ] **AC2** Given the live backlog's abandoned CR0424, CR0441 and CR0512 and the US0793/US0794 duplicate are disposed of, when the suite runs, then `test_backlog_triage` and the derived-only census BG0732 raised stay green.
+  - **Verified:** yes (2026-09-24)
+- [x] **AC2** Given the live backlog's abandoned CR0424, CR0441 and CR0512 and the US0793/US0794 duplicate are disposed of, when the suite runs, then `test_backlog_triage` and the derived-only census BG0732 raised stay green.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::DuplicateLensTests
-- [ ] **AC3** Given the change, then no expectation file, recorded count or other hand-kept pin is added, and the test names BG0722's and BG0585's stamps cite still resolve.
+  - **Verified:** yes (2026-09-24)
+- [x] **AC3** Given the change, then no expectation file, recorded count or other hand-kept pin is added, and the test names BG0722's and BG0585's stamps cite still resolve.
   - **Verify:** manual - the reviewer confirms the diff adds no expectation file, recorded count or hand-kept pin
 
 ## Impact
@@ -44,3 +47,4 @@ A green suite is the signal every gate in this repository depends on, and a test
 | 2026-09-22 | Claude Opus 5 | A SECOND instance surfaced the same day, and one of its two forms is now fixed. `test_file_finding.DerivedDetectorSeesItsOwnWriterTests::test_the_corpus_census_stays_within_its_measured_bounds` asserted an ABSOLUTE count of bugs reading derived-only, ceiling 60, to catch the pattern OVER-REACHING. It breached on the very run that filed this finding: 53 before that run's seven filings, 60 after, with `conformance.py` untouched. That is backlog volume, not over-reach. It is now a RATIO with a 15% ceiling - currently 8.1% - which falls as findings are groomed and still kills the over-reach mutant the test names (verified by making `unit_is_ungroomed` always answer derived-only). The remedy this bug proposes is the general form of that: measure the property, not the corpus. BG0722's AC5 is still the absolute-count shape and still needs it. |
 | 2026-09-22 | sdlc-studio | Filed |
 | 2026-09-24 | Claude Opus 5.5 | Proposed fix reworded at Sprint 3 planning from measurement: the previous fix was refuted or would add a hand-kept pin (LC-008) |
+| 2026-09-24 | Claude Opus 5.5 | Fixed in RUN-01M39MC0: the corpus-coupled assertions read verbatim fixture copies; AC2's selector cannot perform its own Given, so the sweep simulation above is its evidence (review finding, LC-002) |

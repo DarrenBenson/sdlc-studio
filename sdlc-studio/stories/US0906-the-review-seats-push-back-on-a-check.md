@@ -1,6 +1,6 @@
 # US0906: The review seats push back on a check that earns nothing
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

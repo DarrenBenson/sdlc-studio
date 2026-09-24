@@ -15,8 +15,30 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import backlog_triage  # noqa: E402
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import workspace  # noqa: E402 - the one authority for "am I in the dev repo?"
+
+#: Verbatim copies of real artefacts, so a lens is proved on wording nobody tuned for it without
+#: the test reading the live backlog. Read live, it went red the moment the backlog was acted on,
+#: which is the act the lenses exist to prompt (BG0742). `change-requests/` and `epics/` are the
+#: artefacts that exposed BG0722, and US0793/US0794 in `stories/` the duplicate the lens reported
+#: on the same backlog, all taken at 9169d403; `bugs/` and the other stories are the corpus
+#: BG0585's census measured, taken at 7697ee36 (read by `test_file_finding`).
+#: Each is its artefact byte for byte under a `.txt` suffix, so the repository's markdown guards
+#: do not judge a frozen copy's relative links against a tree it no longer sits in.
+MEASURED = Path(__file__).resolve().parent / "fixtures" / "bg0742-corpus"
+
+#: The day BG0722's AC5 measured the live backlog: CR0424 and CR0441 57 days idle, CR0512 52.
+MEASURED_TODAY = "2026-09-22"
+
+
+def _measured_backlog(root: Path) -> None:
+    """Lay the verbatim copies out as a workspace under `root`, each under its own name."""
+    copies = sorted(MEASURED.glob("*/*.txt"))
+    if not copies:
+        raise AssertionError(f"no measured artefacts under {MEASURED}")
+    for src in copies:
+        dst = root / "sdlc-studio" / src.parent.name / f"{src.stem}.md"
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes(src.read_bytes())
 
 
 def _w(path: Path, text: str) -> None:
@@ -87,6 +109,15 @@ class DuplicateLensTests(TriageBase):
               affects="scripts/status.py", summary="an empty project raises a division by zero")
         report = backlog_triage.triage(self.root, today="2026-07-16")
         self.assertNotIn("duplicate", self._lenses(report))
+
+    def test_the_pair_found_on_the_real_backlog_is_flagged_from_its_verbatim_copies(self) -> None:
+        """The duplicate the lens reported on this repository's own backlog, US0793 against
+        US0794, read from verbatim copies so disposing of the live pair cannot turn this red
+        (BG0742). The fixtures above are worded to match; this is wording nobody tuned."""
+        _measured_backlog(self.root)
+        report = backlog_triage.triage(self.root, today=MEASURED_TODAY)
+        pairs = [set(f["units"]) for f in report["findings"] if f["lens"] == "duplicate"]
+        self.assertIn({"US0793", "US0794"}, pairs)
 
 
 class OversizedLensTests(TriageBase):
@@ -461,16 +492,20 @@ class AbandonedRequestLensTests(TriageBase):
     def test_the_lens_is_not_inert_against_the_real_corpus(self) -> None:
         """AC5, and the criterion that matters most. The shipped `unruled` lens is CORRECT and its
         mutants are killed, yet it reports ZERO against this repository - a detector proved only
-        on a fixture is the inert-mechanism class this project has paid for repeatedly. Skipped
-        rather than failed outside the dev repo, because a consuming project's backlog is its own
-        and says nothing about this lens."""
-        if not workspace.in_dev_repo():
-            self.skipTest("not the dev repo - a consuming backlog cannot pin this lens")
-        report = backlog_triage.triage(workspace.REPO)
-        abandoned = [f for f in report["findings"] if f["lens"] == "abandoned"]
-        self.assertGreater(len(abandoned), 0,
-                           "the lens reports nothing against the very backlog it was built for, "
-                           "which is the defect BG0722 records about its predecessor")
+        on a fixture is the inert-mechanism class this project has paid for repeatedly.
+
+        BG0742: it reads verbatim copies of the requests it found and the epics they name, dated
+        against the day it found them, not the live backlog. Read live, it went red the moment
+        somebody closed them, which is the act the finding asks for. The copies are artefacts
+        nobody wrote for this lens, so the claim still rests on the corpus, not a tuned fixture."""
+        _measured_backlog(self.root)
+        report = backlog_triage.triage(self.root, today=MEASURED_TODAY)
+        named = {u for f in report["findings"] if f["lens"] == "abandoned" for u in f["units"]}
+        requests = {p.name.split("-")[0] for p in (MEASURED / "change-requests").glob("*.txt")}
+        self.assertTrue(requests, f"no request copies under {MEASURED}")
+        self.assertEqual(requests, named,
+                         "the lens does not name the requests it found on the backlog it was "
+                         "built for, which is the defect BG0722 records about its predecessor")
 
     def test_a_request_with_no_children_is_not_reported(self) -> None:
         """A request nobody has decomposed is the separate `undecomposed` case `status` already

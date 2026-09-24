@@ -3306,45 +3306,33 @@ class DerivedDetectorSeesItsOwnWriterTests(unittest.TestCase):
 
         Naming shapes pins nothing about REACH: a review made that mutation and every shape
         assertion above still passed, while the census went 17 bugs / 0 stories -> 364 / 669.
-        The NUMBER is the claim. Bounded rather than exact, because filing or grooming a bug
-        must not turn this red - the ceiling is what an over-reach breaches, and stories are
-        asserted at zero because the whole corpus of them is authored.
+        The census reads REAL artefacts, because a synthetic negative pins one authored shape
+        and the corpus holds many.
+
+        BG0742: it reads verbatim copies, not the live corpus. Read live, first as a ceiling
+        on the count and then on the share, it moved whenever anybody filed or groomed a bug,
+        and it breached on a run that filed seven findings with `conformance.py` untouched.
+        The copies are the four bugs two seats measured and the authored bugs and stories filed
+        next to them, taken at the commit the measurement names (7697ee36), plus every other
+        story the shared fixture holds. Held still, the census can be exact: the measured four
+        read derived-only and nothing else does, so the over-reach mutant flips every authored
+        copy and the inert one flips the four.
         """
         import conformance as _c  # noqa: PLC0415 - sibling, resolved via the tests path
-        repo = Path(__file__).resolve().parents[5]
-        bugs_dir = repo / "sdlc-studio" / "bugs"
-        self.assertTrue(bugs_dir.is_dir(), f"{bugs_dir} is not the repo's bug corpus - the "
-                                           f"root resolved to {repo}, so this census would "
-                                           f"measure nothing while reporting green")
-
-        def census(kind: str, dirname: str) -> int:
-            n = 0
-            for f in sorted((repo / "sdlc-studio" / dirname).glob("*.md")):
-                if f.name == "_index.md":
-                    continue
+        corpus = Path(__file__).resolve().parent / "fixtures" / "bg0742-corpus"
+        census: dict[str, str] = {}
+        for kind, dirname in (("bug", "bugs"), ("story", "stories")):
+            for f in sorted((corpus / dirname).glob("*.txt")):
                 _, why = _c.unit_is_ungroomed(kind, f.read_text(encoding="utf-8"))
-                n += (why == "derived-only")
-            return n
-
-        bugs = census("bug", "bugs")
-        # A RATIO, not a raw count. The ceiling guards against the pattern OVER-REACHING - eating
-        # authored prose - and an absolute number cannot do that, because it also rises every
-        # time a finding is filed with the scaffold criteria `file_finding` writes. It breached
-        # on a run that filed seven findings and never touched `conformance.py`: 53 before those
-        # filings, 60 after, detector unchanged. That is backlog volume, not over-reach, and it
-        # is BG0742's class - a corpus-coupled assertion going red because the corpus moved.
-        # The share is what the guard actually means, and it FALLS as findings are groomed.
-        total = len([f for f in (repo / "sdlc-studio" / "bugs").glob("*.md")
-                     if f.name != "_index.md"])
-        self.assertGreater(total, 0, "no bug corpus to measure")
-        share = bugs / total
-        self.assertLess(share, 0.15,
-                        f"{bugs} of {total} bugs read derived-only ({share:.1%}) - the fix is "
-                        f"over-reaching; it was 13 of 574 (2.3%) before and 17 after, measured "
-                        f"by two seats, and 60 of 767 (7.8%) when this bound was made a ratio")
-        self.assertEqual(0, census("story", "stories"),
-                         "no story in this corpus carries tool-derived criteria, so any "
-                         "story reading derived-only is the pattern eating authored prose")
+                census[f.name.split("-")[0]] = why
+        self.assertTrue(set(self.DERIVED_ONLY_SHAPES) < set(census),
+                        f"the measured bugs and an authored control must all be under {corpus}")
+        misread = {uid: why for uid, why in census.items()
+                   if (why == "derived-only") != (uid in self.DERIVED_ONLY_SHAPES)}
+        self.assertEqual({}, misread,
+                         "only the four measured bugs carry tool-derived criteria; an authored "
+                         "copy reading derived-only is the pattern eating authored prose, and a "
+                         "measured one reading otherwise is the detector gone inert")
 
 
 class ScalarForListTests(unittest.TestCase):

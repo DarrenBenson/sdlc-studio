@@ -1,6 +1,7 @@
 # BG0732: the derived-only corpus ceiling is an absolute count, so a run that files findings breaches it without the detector over-reaching
 
-> **Status:** Open
+> **Status:** Superseded
+> **Closed with findings in:** Superseded by BG0742 (RUN-01M39MC0), which moved the derived-only census onto verbatim fixture copies and removed the live-corpus ceiling this finding was about.
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py
@@ -31,3 +32,4 @@ Bound the RATIO rather than the count, or bound the count of bugs that have been
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-21 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Superseded by BG0742: the census no longer reads the live corpus |
