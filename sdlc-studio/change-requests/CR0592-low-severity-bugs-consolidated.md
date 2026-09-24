@@ -31,6 +31,9 @@ Each finding here is Low-severity on its own; the batch is triaged, then actione
 - **The report's Lessons appendix names the project store as its source when the bundled seed was read**: On a project with no `sdlc-studio/lessons.jsonl`, the lessons read comes from the skill's bundled seed, but `_lessons_section` still cites `sdlc-studio/lessons.jsonl`, a file that does not exist.
 - **An unreviewed batch unit's review rounds move at the seal**: A batch unit with no review in the run has no `review_base`, so its round count reads 0 while the run is open and the ledger's rows once sealed; the report's figure moves at the seal.
 - **Six stamped criteria still state push-boundary behaviour that US0881 moved to the release boundary**: US0881 moved module-alone, release-rehearsal and revert-check to the release boundary and retargeted their tests, keeping node names for the stamps. The criteria beside those stamps still say push: BG0649 AC2 and AC3, US0666 (release-rehearsal runs at both), US0674 AC1 (revert-check at push or release), BG0664 AC1 (the shim's module-alone push refusal) and BG0641 AC4 (the 'about ten minutes' floor). Two node names also claim push while testing release: test_gate.py test_the_rehearsal_lane_runs_at_the_push_and_release_boundaries and test_the_push_boundary_runs_every_module_alone_and_names_the_one_that_fails.
+- **US0063 AC2's stamp selects nothing**: its Verify line is `pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_check.py`, which `verify_ac.py stamps` reports as selecting no test. Found by the US0905 review; pre-existing and unrelated to that diff.
+- **A unit carried at the review cap still reads as an unanswered REJECT at the close**: `critic record` carries the unit and files a bug holding its findings, but writes no repair closure, so `sprint close` refuses on every carried unit until each finding is closed by hand with `critic repair ... filed: <bug>`. It cost RUN-01M39MC0 four hand repairs across four carried units.
+- **`critic repair`'s refusal offers ordinals it then refuses**: the refusal lists findings from every verdict on the unit (#1 to #8), but an ordinal resolves only against the latest verdict (3 findings), so `#7` as offered is refused with 'the verdict raised 3'. A quoted prefix works, but must start at the finding's own opening words, including `non-blocking:`.
 
 ## Revision History
 
@@ -38,3 +41,5 @@ Each finding here is Low-severity on its own; the batch is triaged, then actione
 | --- | --- | --- |
 | 2026-09-21 | sdlc-studio | Consolidation opened |
 | 2026-09-21 | US0853 AC2 | The two BG0463 survivors this bucket had absorbed are minted as their own artefacts, BG0734 and BG0735, and removed from here. US0853's AC2 says nothing carries forward as a bullet inside another artefact, and delivery review was right that a bucket is exactly that. This page keeps whatever else it consolidates. |
+| 2026-09-24 | Claude Opus 5.5 | US0063 AC2's stale stamp added, from the US0905 review (RUN-01M39MC0) |
+| 2026-09-24 | Claude Opus 5.5 | Two `critic` carry and repair findings added from the RUN-01M39MC0 close |
