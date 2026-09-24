@@ -109,7 +109,7 @@ size, plan and added together: 32.
 
 | Reviewer of record | Date | Fingerprint signed |
 | --- | --- | --- |
-| not yet signed | not yet signed | not yet signed |
+| Darren Benson | 2026-09-24T20:56:51Z | ed21330f92c071cb |
 
 Signing records the principal, the date and this report's fingerprint against RUN-01M39MC0.
 
