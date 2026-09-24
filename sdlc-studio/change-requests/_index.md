@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-09-22
+**Last Updated:** 2026-09-24
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 54 |
+| Proposed | 55 |
 | Approved | 0 |
 | In Progress | 7 |
 | Complete | 503 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 24 |
 | Blocked | 0 |
-| **Total** | **593** |
+| **Total** | **594** |
 
 ## All Changes
 
@@ -91,6 +91,7 @@
 | [CR-0591](CR0591-audit-the-41-in-progress-discovery-requests-against.md) | audit the 41 In-Progress discovery requests against HEAD and close what is dead | Complete | High | Improvement | 2026-09-20 | EP0257 |
 | [CR-0592](CR0592-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Proposed | Low | Improvement | 2026-09-21 | -- |
 | [CR-0593](CR0593-nothing-refuses-a-batch-unit-that-no-goal.md) | nothing refuses a batch unit that no goal clause covers, so a run can deliver work its own goal never tested | Proposed | Medium | Enhancement | 2026-09-22 | -- |
+| [CR-0594](CR0594-the-record-informs-the-work-goals-trace-to.md) | The record informs the work: goals trace to the PRD, and briefs carry the history of the files they touch | Proposed | High | Improvement | 2026-09-24 | -- |
 
 ## Archived Releases
 

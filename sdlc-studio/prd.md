@@ -67,6 +67,16 @@ artefact fields and config, never from the model's own read of how big the job
 feels; the escape is a recorded operator decision, never an omission; and an
 absent config blocks rather than disarms (see TRD ADR-006 through ADR-011).
 
+**Every gate earns its place.** Gates over goodwill has a failure mode of its own: a process
+that turns each failure into a lesson and each lesson into a gate, and never removes one,
+ratchets until the work becomes the process. By September 2026, 82% of this repository's
+sprint units served its own machinery. So the counterweight is part of the discipline: a new
+check, refusal, baseline or pin names the measured yield that justifies it or the constraint
+it retires; a derived fact is generated, never pinned by hand; a repeated failure is fixed in
+the code path before a check is added; and a lane whose refusals catch no real defect is
+deleted. The persona seats apply this while they build, review and rule (LL0056, lesson
+class LC-008).
+
 ---
 
 ## 1. Project Overview
@@ -377,6 +387,8 @@ honestly size, so a plan is never false authority over unsized work.
   deterministic signals - never from model judgement. An escape is a recorded
   operator decision; an absent config blocks rather than disarms.
 - Ship the paperwork in the same commit as the code (doctrine).
+- **Every gate earns its place:** a new check, refusal, baseline or pin names its measured
+  yield or the constraint it retires; a lane with no yield is deleted, not kept by default.
 
 ---
 

@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 142 |
+| Draft | 179 |
 | Ready | 15 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 13 |
 | Blocked | 8 |
-| **Total** | **889** |
+| **Total** | **926** |
 
 ## All Stories
 
@@ -248,6 +248,43 @@
 | [US0887](US0887-a-lesson-is-a-failure-class-that-counts.md) | A lesson is a failure class that counts its repeats | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0888](US0888-a-lesson-that-recurs-graduates-into-a-check.md) | A lesson that recurs graduates into a check | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0889](US0889-the-close-forward-ports-the-skill-and-keeps.md) | The close forward-ports the skill and keeps one handover per run | Done | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0890](US0890-recording-a-waiver-no-longer-re-reads-every.md) | Recording a waiver no longer re-reads every script | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0891](US0891-a-commit-s-pre-commit-lanes-run-side.md) | A commit's pre-commit lanes run side by side | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0892](US0892-a-commit-s-selected-tests-are-handed-out.md) | A commit's selected tests are handed out one at a time across every worker | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0893](US0893-a-commit-leaves-the-live-repository-tests-to.md) | A commit leaves the live-repository tests to the push | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0894](US0894-the-close-owed-report-walks-the-corpus-once.md) | The close-owed report walks the corpus once, not once per epic | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0895](US0895-a-commit-runs-only-the-gate-lanes-that.md) | A commit runs only the gate lanes that can refuse it | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0896](US0896-footprint-warnings-advise-and-a-finished-artefact-is.md) | Footprint warnings advise, and a finished artefact is never re-judged | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0897](US0897-a-shared-verify-selector-is-an-advisory-note.md) | A shared Verify selector is an advisory note within one artefact, never a commit refusal | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0898](US0898-a-shipped-release-s-notes-stay-as-shipped.md) | A shipped release's notes stay as shipped, and the defect count is written at the cut | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0899](US0899-mechanical-index-and-epic-drift-is-fixed-at.md) | Mechanical index and epic drift is fixed at commit, not refused | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0900](US0900-a-change-request-can-be-filed-before-it.md) | A change request can be filed before it is sized | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0901](US0901-the-hooks-list-their-own-lanes-and-agents.md) | The hooks list their own lanes, and AGENTS.md stops restating them | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0902](US0902-adding-a-script-no-longer-needs-a-matching.md) | Adding a script no longer needs a matching TSD sentence to commit | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0903](US0903-a-recurring-lesson-asks-for-a-fix-or.md) | A recurring lesson asks for a fix or a retirement, not another check | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0904](US0904-each-lane-s-refusals-are-counted-against-the.md) | Each lane's refusals are counted against the defects they caught | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0905](US0905-adding-a-commit-lane-means-removing-one.md) | Adding a commit lane means removing one | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0906](US0906-the-review-seats-push-back-on-a-check.md) | The review seats push back on a check that earns nothing | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0907](US0907-the-backlog-holds-only-the-work-the-lean.md) | The backlog holds only the work the lean direction still wants | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0908](US0908-the-skill-s-scripts-run-on-the-python.md) | The skill's scripts run on the Python 3.10 it declares | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0909](US0909-a-story-reaches-in-progress-and-done-without.md) | A story reaches In Progress and Done without a plan review | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0910](US0910-a-bug-reaches-fixed-without-a-verification-depth.md) | A bug reaches Fixed without a verification depth tier | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0911](US0911-a-unit-reaches-done-without-a-test-plan.md) | A unit reaches Done without a test plan or a falsifiability probe | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0912](US0912-the-test-plan-tooling-is-gone-and-an.md) | The test-plan tooling is gone and an old Test Plan section is inert | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0913](US0913-a-repair-closes-without-a-reviewed-repair-plan.md) | A repair closes without a reviewed repair plan | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0914](US0914-a-standing-reject-clears-only-by-a-round.md) | A standing REJECT clears only by a round-2 APPROVE or by carrying the unit | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0915](US0915-a-review-verdict-has-one-phase-delivery.md) | A review verdict has one phase: delivery | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0916](US0916-a-story-reaches-done-without-a-per-unit.md) | A story reaches Done without a per-unit reviewer-of-record sign-off | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0917](US0917-the-operator-s-signature-seals-the-run-without.md) | The operator's signature seals the run without a per-unit sign-off row | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0918](US0918-one-verdict-ledger-decides-whether-a-unit-was.md) | One verdict ledger decides whether a unit was reviewed | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0919](US0919-sign-off-is-the-operator-s-one-signature.md) | Sign-off is the operator's one signature and the per-unit sign-off verbs are gone | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0920](US0920-a-repair-reaches-fixed-without-registered-mutation-evidence.md) | A repair reaches Fixed without registered mutation evidence | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0921](US0921-mutation-testing-is-an-opt-in-run-with.md) | Mutation testing is an opt-in run with a yield and nothing more | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0922](US0922-line-coverage-is-measured-only-when-a-project.md) | Line coverage is measured only when a project opts in | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0923](US0923-a-review-verdict-records-without-brief-provenance.md) | A review verdict records without brief provenance | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0924](US0924-the-shipped-docs-teach-only-the-surviving-review.md) | The shipped docs teach only the surviving review path | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0925](US0925-an-upgrading-project-s-config-carries-forward-without.md) | An upgrading project's config carries forward without the retired review keys | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0926](US0926-this-repository-runs-on-the-shipped-defaults-with.md) | This repository runs on the shipped defaults with no stand-down keys | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 
 ## Archived Releases
 

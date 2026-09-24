@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 61 |
+| Open | 62 |
 | In Progress | 0 |
 | Fixed | 589 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 10 |
 | Superseded | 7 |
-| **Total** | **754** |
+| **Total** | **755** |
 
 ## All Bugs
 
@@ -113,6 +113,7 @@
 | [BG0752](BG0752-per-commit-test-selection-skips-hooks-test-infrastructure.md) | Per-commit test selection skips hooks, test infrastructure and code reached through another script | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0753](BG0753-the-test-suite-leaks-temporary-directories-into-tmp.md) | The test suite leaks temporary directories into /tmp | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0754](BG0754-a-commit-touching-a-widely-imported-script-runs.md) | A commit touching a widely imported script runs well over the 90-second budget | Open | Medium | 2026-09-24 | 2026-09-24 |
+| [BG0755](BG0755-artifact-py-batch-ignores-a-story-s-role.md) | artifact.py batch ignores a story's role, capability and benefit, and its default template leaves a page of placeholders | Open | Medium | 2026-09-24 | 2026-09-24 |
 
 ## Archived Releases
 
