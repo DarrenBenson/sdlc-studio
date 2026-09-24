@@ -159,11 +159,8 @@ class OneReportPerRunTests(unittest.TestCase):
         self.root = Path(self.tmp.name)
 
     def _file(self) -> str:
-        out, err = io.StringIO(), io.StringIO()
-        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            rc = sr.main(["--root", str(self.root), "build", "--format", "json", "--write"])
-        self.assertEqual(0, rc, err.getvalue())
-        return json.loads(out.getvalue())["report_id"]
+        """File the run's report the way the close does; `build --write` refuses (US0884)."""
+        return sr.file_report(self.root, sr.build_report(self.root, lean.RETRO))
 
     def test_refiling_a_runs_report_reuses_its_id(self) -> None:
         """AC4. MUTANT: allocate a fresh id on every filing - a close run twice leaves two

@@ -1,9 +1,10 @@
 # BG0744: the close refuses to file a report but a direct build --write files one anyway, skipping the token stamp and the gate verdicts the refusal protects
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_integrity.py
+> **Verification depth:** functional (both criteria drive `sprint_report.py build --write` and the close over a fixture run; the refusal and the close's own filing are each pinned, and the reviewer's mutants against the refusal were killed)
 > **Evidence:** Reproduced on RUN-01M33WJ3, 2026-09-23. The close refused with `terminal-gate: 4 batch unit(s) whose terminal gate is UNMET`. `sprint_report.py build --write` then filed RPT0004 with fingerprint 4e7acdbb098b6b01, Tokens 0, Per point 0, estimate accuracy NOT MEASURED, and every unit's Gate column reading `PREPARE recorded no gate verdict`. The operator asked why there were no token counts. Standing the coverage gate down through the config lane, as D0214 did for RPT0002, let the close file RPT0005 itself: 9,807,942 tokens, 272,443 per point, forecast ratio 0.49.
 > **Created:** 2026-09-23
 > **Created-by:** sdlc-studio file
@@ -27,8 +28,10 @@ Make `build --write` refuse when `_report_holds` is non-empty, naming the same h
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `sprint close` holds the report behind `_report_holds` - terminal-gate, unanswered-review, index-drift - on the stated ground that a run may end with work...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Make `build --write` refuse when `_report_holds` is non-empty, naming the same holds and the same remedy the close names, with an explicit flag for the...
+- [x] **AC1** The behaviour described is corrected: `sprint close` holds the report behind `_report_holds` - terminal-gate, unanswered-review, index-drift - on the stated ground that a run may end with work...
+- [x] **AC2** The proposed fix lands, pinned by a test: Make `build --write` refuse when `_report_holds` is non-empty, naming the same holds and the same remedy the close names, with an explicit flag for the...
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_integrity.py::FiledByCloseTests
+  - **Verified:** yes (2026-09-24)
 
 ## Impact
 
@@ -39,3 +42,4 @@ A deliberate refusal has an unguarded route past it, and the route silently degr
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-23 | sdlc-studio | Filed |
+| 2026-09-24 | Claude Opus 5.5 | Fixed by US0884 (RUN-01M3891F): the story's criteria are this bug's proposed fix, and its selectors verify it here |

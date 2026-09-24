@@ -10,9 +10,9 @@
 | Draft | 143 |
 | Ready | 15 |
 | Planned | 0 |
-| In Progress | 5 |
+| In Progress | 3 |
 | Review | 0 |
-| Done | 697 |
+| Done | 699 |
 | Won't Implement | 8 |
 | Deferred | 0 |
 | Superseded | 13 |
@@ -242,8 +242,8 @@
 | [US0881](US0881-a-push-runs-the-full-suite-once-and.md) | A push runs the full suite once, and CI runs it once | Draft | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0882](US0882-mutation-evidence-that-is-switched-off-stops-blocking.md) | Mutation evidence that is switched off stops blocking commits | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0883](US0883-a-signed-report-cannot-be-edited-unnoticed.md) | A signed report cannot be edited unnoticed | Done | EP0261 | 2026-09-24 | 2026-09-24 |
-| [US0884](US0884-a-sprint-report-is-filed-only-by-the.md) | A sprint report is filed only by the close | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |
-| [US0885](US0885-a-report-s-time-window-does-not-race.md) | A report's time window does not race its own paperwork | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0884](US0884-a-sprint-report-is-filed-only-by-the.md) | A sprint report is filed only by the close | Done | EP0261 | 2026-09-24 | 2026-09-24 |
+| [US0885](US0885-a-report-s-time-window-does-not-race.md) | A report's time window does not race its own paperwork | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0886](US0886-criteria-that-sprint-1-superseded-are-retired-not.md) | Criteria that Sprint 1 superseded are retired, not left red | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0887](US0887-a-lesson-is-a-failure-class-that-counts.md) | A lesson is a failure class that counts its repeats | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0888](US0888-a-lesson-that-recurs-graduates-into-a-check.md) | A lesson that recurs graduates into a check | In Progress | EP0261 | 2026-09-24 | 2026-09-24 |

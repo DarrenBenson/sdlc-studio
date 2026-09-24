@@ -262,8 +262,10 @@ lists every script with a one-line summary; open the linked page for the full en
   verb with no checklist row fails it. Read-only.
   Three further verbs compose the REPORT OF RECORD - the page an operator signs, which `sprint close`
   files for them as it PREPARES the run, so these are for inspecting one rather than producing one.
-  `build --id RETROxxxx [--format text|json] [--write]` derives every figure with its source and
-  refuses a run it cannot report honestly; `render --report RPTxxxx [--to markdown|html] [--out
+  `build --id RETROxxxx [--format text|json]` derives every figure with its source, prints the page
+  and files nothing, and refuses a run it cannot report honestly; `--write` is refused, naming
+  `sprint close`, because only the close stamps the tokens and records the gate verdicts first, and
+  a sealed run's signed report is re-filed only after `sprint.py reopen`; `render --report RPTxxxx [--to markdown|html] [--out
   PATH]` renders a filed report from its stored JSON - `--to`, not `--format`, because it chooses
   a RENDERING rather than a serialisation, and `--format` is spelled one way family-wide;
   `check --report RPTxxxx` re-derives the figures and compares the fingerprint, which is how a signed

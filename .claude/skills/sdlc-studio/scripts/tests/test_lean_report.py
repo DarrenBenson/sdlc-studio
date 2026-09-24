@@ -315,8 +315,7 @@ class OnePageTests(unittest.TestCase):
         self.assertEqual(sr.NOT_MEASURED, est["Tokens"]["est_actual"]["value"])
         delivered = _sections(rep)["delivered"]["figures"]
         self.assertEqual(sr.NOT_MEASURED, delivered["planned_points"]["value"])
-        rid = json.loads(self._cli("build", "--run", RUN, "--format", "json",
-                                   "--write"))["report_id"]
+        rid = sr.file_report(self.root, rep)   # the close's route; `build --write` refuses
         md = self._cli("render", "--report", rid)
         html = self._cli("render", "--report", rid, "--to", "html")
         self.assertEqual(FRONT, _html_h2(html)[:5], "the HTML front page differs")

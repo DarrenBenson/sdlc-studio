@@ -70,23 +70,14 @@ evidence re-measured by hand for one line moving in a shared file.
 The open findings are on [the disclosure page](known-issues.md), which is generated from the
 bug corpus rather than maintained by hand.
 
-**v5.1.0 discloses 61 open defects: 61 Medium, 0 Low.**
+**v5.1.0 discloses 60 open defects: 60 Medium, 0 Low.**
 
-**Two High-severity findings are open against the tag: BG0744 and BG0745.** It was raised on 2026-09-23 by
-RUN-01M33WJ3's own close, and it is a defect in the close ceremony rather than in the tool's
-output. `sprint close` holds the report of record behind three checks - a run may end with work
-outstanding, but a report may not, because it is the page a signature freezes. `sprint_report.py
-build --write` files one with none of those checks applied, and because the closing token stamp and
-the per-unit gate verdicts are written by the lane it skips, the resulting page reads `Tokens: 0`
-and `NOT MEASURED` for every unit's gate. A report that looks complete while two of its most
-important figures are absent is worse than a refusal, and the route is disclosed here rather than
-counted quietly because the bar names ids and so must the prose.
-
-**BG0745**, raised on 2026-09-23 by RUN-01M36R3D's review, is the audit half of the same page:
-`sprint_report.py check` re-derives a report from the tree and never compares the filed page's
-own figures with its recorded fingerprint, so a report hand-edited after it was signed still
-checks VALID. `sprint sign` now refuses an edit made before the seal; a signed page's later
-edit is what this finding leaves open.
+**Zero Critical, zero High.** Two High-severity findings were raised after the tag, and both
+are now Fixed on main by RUN-01M3891F. **BG0744**: `sprint_report.py build --write` filed a report
+of record with none of the close's checks applied, so the page read `Tokens: 0`; it now refuses and
+names the close (US0884). **BG0745**: `sprint_report.py check` never compared a filed page's own
+figures with its recorded fingerprint, so a page hand-edited after signing read VALID; it now
+digests the filed figures and its Markdown twin and names each edited figure (US0883).
 
 BG0715, BG0718, BG0719, BG0722, BG0730 and BG0733 were all open
 against this tag and are now Fixed. Five of the six were closed by RUN-01M33WJ3, which took the

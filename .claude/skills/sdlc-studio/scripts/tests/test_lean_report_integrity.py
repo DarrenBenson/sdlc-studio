@@ -15,6 +15,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
@@ -330,6 +331,204 @@ class OwnRunTests(unittest.TestCase):
                                         "sprint_goal": "the next run"}), encoding="utf-8")
             check = sr.revalidate(root, rid)
         self.assertTrue(check["valid"], check["changes"])
+
+
+class FiledByCloseTests(unittest.TestCase):
+    """US0884: a report of record is filed only by `sprint close` (BG0744).
+
+    `build --write` filed a page with none of the close's holds applied and without the closing
+    token stamp or the per-unit gate verdicts the close writes first, so RPT0004 read Tokens 0.
+    Each test drives the close fixture of `test_lean_close` through the shipped entry points.
+    """
+
+    def setUp(self) -> None:
+        import test_lean_close  # noqa: PLC0415 - loads `sprint` on import; only when run
+        self.fx = test_lean_close
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.fx._fixture(self.root)
+        self.reports = self.root / "sdlc-studio" / "reports"
+
+    def _build(self, *extra: str) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = sr.main(["--root", str(self.root), "build", "--id", "RETRO0001", *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _state(self) -> dict:
+        return json.loads((self.root / "sdlc-studio" / ".local" / "run-state.json")
+                          .read_text(encoding="utf-8"))
+
+    def test_build_write_refuses_while_the_run_is_open(self) -> None:
+        """AC1. MUTANT: file on `--write` as before - the page lands with no closing stamp and
+        no gate verdicts, which is RPT0004. The preview is the positive control."""
+        self.assertEqual("running", self._state()["outcome"])
+        rc, out, err = self._build()
+        self.assertEqual(0, rc, err)
+        self.assertIn("# Sprint Report: RUN-LEAN0001", out, "the preview printed no page")
+        self.assertFalse(self.reports.exists(), "a preview wrote a report")
+        for fmt in ("text", "json"):
+            with self.subTest(format=fmt):
+                before = self._state()
+                rc, out, err = self._build("--format", fmt, "--write")
+                self.assertEqual(2, rc, out + err)
+                self.assertIn("RUN-LEAN0001 is open", err)
+                self.assertIn("sprint.py close --retro RETRO0001", err)
+                self.assertEqual("", out, "a refused build printed a page as if it were filed")
+                self.assertFalse(self.reports.exists(), "the refused build wrote a report")
+                self.assertEqual(before, self._state(), "the refused build moved the run state")
+
+    def test_build_write_refuses_a_sealed_run(self) -> None:
+        """AC1, the engineering seat's ruling: a SEALED run's report is a signed record, and
+        the close owns filing it too - re-filing by hand would mint a page beside the one
+        signed. MUTANT: refuse only while the outcome is `running`."""
+        self.fx._state(self.root, outcome="goal-reached", ended_at="2026-09-24T00:00:00Z")
+        rc, out, err = self._build("--write")
+        self.assertEqual(2, rc, out + err)
+        self.assertIn("RUN-LEAN0001 is sealed (goal-reached)", err)
+        self.assertIn("sprint.py reopen", err)
+        self.assertIn("sprint.py close --retro RETRO0001", err)
+        self.assertFalse(self.reports.exists(), "the refused build wrote a report")
+
+    def test_the_close_still_files_the_report(self) -> None:
+        """AC2. MUTANT: put the refusal in `file_report`, which the close calls - the close
+        then files nothing. The close must not reach `build --write` at all: that verb is
+        stubbed to fail here, so a close routed through it cannot file."""
+        self.assertEqual(2, self._build("--write")[0], "the same run is not refused first")
+        live = self.fx._live("sprint_report")
+
+        def no_build(_args):
+            raise AssertionError("the close went through `sprint_report.py build`")
+
+        with unittest.mock.patch.object(live, "cmd_build", no_build):
+            rc, out, err = self.fx._close(self.root)
+        self.assertEqual(0, rc, err)
+        state = self._state()
+        rid = state.get("report")
+        self.assertTrue(rid, f"the close filed no report\n{out}\n{err}")
+        self.assertIn(f"report filed: {rid}", out)
+        report = sr.read_report(self.root, rid)
+        self.assertEqual(("RUN-LEAN0001", "RETRO0001"), (report["run_id"], report["retro_id"]))
+        self.assertEqual(state["report_fingerprint"], report["fingerprint"])
+        self.assertIn("report_gate_clear", state, "the close wrote no gate verdicts first")
+        self.assertNotIn("PREPARE recorded no gate verdict",
+                         next(self.reports.glob(f"{rid}-*.md")).read_text(encoding="utf-8"))
+        # The run is still open until it is signed, so a hand re-file is still refused and the
+        # page the close filed is left as it was.
+        self.assertEqual(2, self._build("--write")[0])
+        self.assertEqual(report, sr.read_report(self.root, rid))
+
+
+class WindowRaceTests(unittest.TestCase):
+    """US0885: a report's DORA window does not race its own paperwork (BG0748).
+
+    The window is second-resolution and ends at the page's generation instant, so a commit or a
+    push-triggered CI run stamped in that same second is paperwork that came after the page -
+    and with the end inclusive it entered the re-derivation alone and `check` read INVALID for
+    any outcome. A real git repository, because in a bare directory `_git_commits` returns
+    nothing and the commit half of the window cannot be observed; the forge is the cached
+    `.local/ci-runs.json`, so nothing reaches the network.
+    """
+
+    GENERATED = "2026-09-20T14:00:37Z"     # the page's generation instant, second t, off a
+    # minute boundary so an end floored to the minute or hour cannot pass
+    INSIDE = "2026-09-20T14:00:36Z"        # one second earlier: strictly inside the window
+
+    def setUp(self) -> None:
+        import gitutil  # noqa: PLC0415 - the confined git environment every fixture uses
+        self.git = gitutil.git
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        lean.lean_run(self.root)
+        # The close's shape: the page is filed while the run is still open, then sealed. The
+        # review base is what a real run records at each unit's first review; without it the
+        # rounds are counted by two different rules either side of the seal.
+        self._state(ended_at=None, outcome="running",
+                    review_base={"US0001": 0, "US0002": 0, "US0004": 0, "US0005": 0})
+        self._runs([self._run(1, "2026-09-20T10:00:00Z"), self._run(2, self.INSIDE),
+                    self._run(3, "2026-09-20T11:00:00Z", event="workflow_dispatch")])
+        self.git(["init", "-q", "."], self.root)
+        self._commit("the first unit", "2026-09-20T09:00:00Z")
+        self._commit("the last unit", self.INSIDE)
+
+    def _state(self, **fields) -> None:
+        p = self.root / "sdlc-studio" / ".local" / "run-state.json"
+        p.write_text(json.dumps({**json.loads(p.read_text(encoding="utf-8")), **fields}),
+                     encoding="utf-8")
+
+    @staticmethod
+    def _run(rid: int, at: str, event: str = "push") -> dict:
+        return {"databaseId": rid, "event": event, "conclusion": "success",
+                "headBranch": "main", "workflowName": "Lint", "createdAt": at}
+
+    def _runs(self, rows: list[dict]) -> None:
+        (self.root / sr.CI_RUNS_REL).write_text(json.dumps(rows), encoding="utf-8")
+
+    def _commit(self, message: str, at: str) -> None:
+        (self.root / "work.txt").write_text(message + "\n", encoding="utf-8")
+        self.git(["add", "-A"], self.root)
+        self.git(["-c", "commit.gpgsign=false", "commit", "-qm", message, "--date", at],
+                 self.root, env_extra={"GIT_COMMITTER_DATE": at})
+
+    def _dora(self, report: dict) -> dict:
+        rows = next(s for s in report["sections"] if s["key"] == "dora")["rows"]
+        return {r["dora_key"]["value"]: r["dora_value"]["value"] for r in rows}
+
+    def _check(self, rid: str) -> tuple[int, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = sr.main(["--root", str(self.root), "check", "--report", rid])
+        return rc, out.getvalue() + err.getvalue()
+
+    def test_a_same_second_commit_leaves_the_report_valid(self) -> None:
+        """AC1. MUTANT: keep the window's end inclusive (`at <= end`) - the paperwork's push
+        run, then its commit, each stamped in the generation second, enter only the
+        re-derivation, and the page reads INVALID. Each is checked alone, so a mutant that
+        keeps either half inclusive is caught by its own step."""
+        rid = sr.file_report(self.root, sr.build_report(self.root, lean.RETRO,
+                                                        as_of=self.GENERATED))
+        filed = sr.read_report(self.root, rid)
+        self.assertEqual(self.GENERATED, filed["window_end"], "the window is not bounded at t")
+        self.assertEqual({"Deployment frequency": 2, "Lead time for changes": "5h 0m"},
+                         {k: v for k, v in self._dora(filed).items()
+                          if k in ("Deployment frequency", "Lead time for changes")})
+        rc, out = self._check(rid)
+        self.assertEqual(0, rc, out)                       # the positive control
+
+        runs = json.loads((self.root / sr.CI_RUNS_REL).read_text(encoding="utf-8"))
+        self._runs(runs + [self._run(4, self.GENERATED)])
+        rc, out = self._check(rid)
+        self.assertEqual(0, rc, f"a push run in the generation second moved the page\n{out}")
+
+        self._commit("the close's paperwork", self.GENERATED)
+        rc, out = self._check(rid)
+        self.assertEqual(0, rc, f"a commit in the generation second moved the page\n{out}")
+
+        self._state(ended_at=self.GENERATED, outcome="goal-reached")
+        rc, out = self._check(rid)
+        self.assertEqual(0, rc, out)
+        self.assertIn(f"VALID: {rid}", out)
+
+    def test_a_run_inside_the_window_still_counts(self) -> None:
+        """AC2. MUTANT: close the race by pulling the end back a second (`at < end - 1s`) - the
+        push run and the commit one second before the page fall out, Deployment frequency reads
+        1 and the lead time shrinks. Or by ignoring the forge - the count then falls back to the
+        commits, and the source no longer names the runs. A run and a commit AT the generation
+        second, and a dispatch run inside, are present and not counted."""
+        self._runs(json.loads((self.root / sr.CI_RUNS_REL).read_text(encoding="utf-8"))
+                   + [self._run(4, self.GENERATED)])
+        self._commit("the close's paperwork", self.GENERATED)
+        report = sr.build_report(self.root, lean.RETRO, as_of=self.GENERATED)
+        dora = self._dora(report)
+        rows = next(s for s in report["sections"] if s["key"] == "dora")["rows"]
+        self.assertEqual("forge runs 1/2 - 2 push-triggered run(s) on main in the run window",
+                         rows[0]["dora_source"]["value"])
+        self.assertEqual(2, dora["Deployment frequency"],
+                         "the push runs at 10:00:00 and 14:00:36 are the two inside the window")
+        self.assertEqual("5h 0m", dora["Lead time for changes"],
+                         "the commits at 09:00:00 and 14:00:36 bound the lead time")
 
 
 if __name__ == "__main__":

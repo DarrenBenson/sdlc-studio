@@ -3556,7 +3556,7 @@ class ReportIsDerivedTests(ReportOfRecordBase):
         with mock.patch.object(sr, "fig", sourceless), \
                 contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             rc = sr.main(["--root", str(self.root), "build", "--run", FIX_RUN,
-                          "--format", "json", "--write"])
+                          "--format", "json"])
         self.assertEqual(rc, 2, "a sourceless figure did not refuse")
         msg = err.getvalue() + out.getvalue()
         self.assertIn("points_delivered", msg, "the refusal does not name the figure")
@@ -3884,7 +3884,7 @@ class TheGoalLeadsTests(ReportOfRecordBase):
         out2, err2 = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out2), contextlib.redirect_stderr(err2):
             rc = sr.main(["--root", str(second), "build", "--run", FIX_RUN,
-                          "--format", "json", "--write"])
+                          "--format", "json"])
         self.assertEqual(rc, 2, "a run with no sprint goal did not refuse")
         self.assertIn("sprint goal", (err2.getvalue() + out2.getvalue()).lower())
         self.assertFalse((second / "sdlc-studio" / "reports").exists(),

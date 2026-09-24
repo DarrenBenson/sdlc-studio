@@ -3014,10 +3014,19 @@ def _at(value) -> "datetime | None":
 
 
 def _in_window(stamp, start, end) -> bool:
+    """Is `stamp` inside the run window `[start, end)`?
+
+    HALF-OPEN. The end is the page's generation instant (or the run's end, when that came
+    first), and both it and every commit or CI stamp are read to the second. Anything stamped
+    in the end's own second is therefore at or after the moment the page was derived - the
+    commit that files the page, the CI run its push triggers - and with the end inclusive it
+    entered the re-derivation alone, so `check` read INVALID on a page nobody touched.
+    Excluding that second at derivation and re-derivation alike keeps the two the same.
+    """
     at = _at(stamp)
     if at is None or start is None:
         return False
-    return at >= start and (end is None or at <= end)
+    return at >= start and (end is None or at < end)
 
 
 def _git_commits(root: Path, start, end) -> list[tuple[str, "datetime"]]:
@@ -3032,9 +3041,8 @@ def _git_commits(root: Path, start, end) -> list[tuple[str, "datetime"]]:
     out = []
     for line in (proc.stdout or "").splitlines():
         sha, _, stamp = line.partition("\t")
-        at = _at(stamp)
-        if at is not None and start is not None and at >= start and (end is None or at <= end):
-            out.append((sha, at))
+        if _in_window(stamp, start, end):
+            out.append((sha, _at(stamp)))
     return sorted(out, key=lambda r: r[1])
 
 
@@ -4450,19 +4458,45 @@ def status_line(state: dict | None) -> str | None:
                 f"from version control, or `sprint_report.py check --report {rid}` for detail")
     moved = ", ".join(state.get("moved") or []) or "an unnamed figure"
     return (f"Report:       {rid} INVALIDATED - re-deriving it now moves {moved}; "
-            f"re-prepare it with `sprint_report.py build --write`")
+            f"{_refile_remedy(state)}")
 
 
 # --- the verbs ---------------------------------------------------------------------------------
+
+def _filed_by_close_only(state: dict, retro_id: str) -> str:
+    """Why `build --write` files nothing: a report of record is filed ONLY by `sprint close`.
+
+    The close takes the closing token stamp and records each unit's gate verdict before it
+    derives the page, and holds the page behind its checks; a report filed here skipped all
+    three and read Tokens 0. An open run is re-filed by re-running the close. A sealed
+    run's report is a signed record, so it too is refused: a new page needs the run reopened.
+    """
+    run_id, outcome = state.get("run_id"), state.get("outcome")
+    close = f"`sprint.py close --retro {retro_id}`"
+    if outcome == run_state.RUNNING:
+        return (f"refused: {run_id} is open, and a report of record is filed only by the close, "
+                f"which stamps the tokens and records the gate verdicts first - run {close}. "
+                f"Without --write, build previews the page and files nothing")
+    return (f"refused: {run_id} is sealed ({outcome}) and its report is a signed record - "
+            f"`sprint.py reopen --reason ...` then {close} to file a new one")
+
+
+def _refile_remedy(state: dict) -> str:
+    """The route that re-files an invalidated report: the close, after a reopen once signed."""
+    if (state.get("signature") or {}).get("principal"):
+        return "reopen the run with `sprint.py reopen --reason ...`, then re-run `sprint.py close`"
+    return "re-run `sprint.py close`, which re-files it under the same id"
+
 
 def cmd_build(args: argparse.Namespace) -> int:
     root = Path(args.root)
     try:
         state, _rel_ = _run_state_for(root, getattr(args, "run", None))
-        retro_id = args.id or _retro_for_run(root, state)
-        report = build_report(root, retro_id)
         if args.write:
-            report["report_id"] = file_report(root, report)
+            print(f"error: {_filed_by_close_only(state, args.id or 'RETROxxxx')}",
+                  file=sys.stderr)
+            return 2
+        report = build_report(root, args.id or _retro_for_run(root, state))
     except ReportError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -4540,7 +4574,7 @@ def cmd_check(args: argparse.Namespace) -> int:
           f"it from the tree now yields {state['fingerprint']}")
     for change in state["changes"]:
         print(f"  {change['key']}: signed {change['signed']!r}, now {change['current']!r}")
-    print("re-prepare the report with `sprint_report.py build --write`")
+    print(f"to re-file it, {_refile_remedy(state)}")
     return 1
 
 
@@ -4579,8 +4613,8 @@ def build_parser() -> argparse.ArgumentParser:
     # `text` here IS the Markdown rendering - it is what a reader reads.
     b.add_argument("--format", choices=["text", "json"], default="text")
     b.add_argument("--write", action="store_true",
-                   help="file the JSON of record and the Markdown twin under "
-                        "sdlc-studio/reports/")
+                   help="refused: a report of record is filed only by `sprint.py close`, "
+                        "which names the command to run")
     b.set_defaults(func=cmd_build)
     r = sub.add_parser("render", help="Render a filed report. The HTML is generated on demand "
                                       "and never written into the tree (D2a).")

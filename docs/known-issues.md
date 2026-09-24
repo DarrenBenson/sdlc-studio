@@ -89,10 +89,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0743` | Medium | a signed report's digest covers prose that is edited in place, so an unrelated amendment to a decision rationale invalidates a signature over an un... |
 | `BG0746` | Medium | The spec-claims timing claim deadlocks every fresh worktree under parallel load |
 | `BG0747` | Medium | The evidence-drift lane still enforces mutation evidence that D0255 switched off, and re-registration drops other rows |
-| `BG0748` | Medium | The report's DORA window is second-resolution, so a same-second commit reads the report INVALID |
 | `BG0749` | Medium | Thirty stamped criteria on older units point at tests this sprint made skipped stubs |
 
-61 findings: 61 Medium, 0 Low.
+60 findings: 60 Medium, 0 Low.
 
 ## Not carried
 

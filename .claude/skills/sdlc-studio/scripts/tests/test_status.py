@@ -1581,8 +1581,8 @@ class InvalidatedReportInStatusTests(unittest.TestCase):
             if kind == "figure-moved":
                 self.assertIn("INVALIDATED", printed,
                               f"{kind}: status does not name the report as invalidated")
-                self.assertIn("sprint_report.py build", printed,
-                              f"{kind}: status gives no re-prepare command")
+                self.assertIn("sprint.py close", printed,
+                              f"{kind}: status gives no re-file command")
             else:
                 self.assertNotIn("INVALIDATED", printed,
                                  f"{kind}: a valid report was named invalidated")
