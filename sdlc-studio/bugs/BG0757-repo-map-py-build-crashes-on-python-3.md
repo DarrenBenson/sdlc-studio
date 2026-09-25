@@ -1,6 +1,7 @@
 # BG0757: repo_map.py build crashes on Python 3.10 when a source file holds a null byte
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional (a real null byte under python3.10: repo_map.py build exits 1 at HEAD and 0 with the fix, both files indexed; three mutants killed by the QA reviewer)
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/repo_map.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_repo_map_null_byte.py, changelog.d/BG0757.md
@@ -30,8 +31,10 @@ Catch ValueError beside SyntaxError where the source is parsed, and treat it as 
 
 - [ ] **AC1** Given `parse_python` over source for which `ast.parse` raises ValueError (patched in the test, so it fails the same way on every interpreter, as 3.10 does for a null byte), when it runs, then it returns the regex fallback's symbols and imports for that source rather than raising. Fails on: HEAD's `except SyntaxError` alone; catching ValueError but returning no symbols, which drops the file from the map.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_repo_map_null_byte.py::NullByteTests::test_a_valueerror_from_the_parser_falls_back_to_the_regex_index
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given a fixture repository holding one .py file with a null byte and one clean file, when `repo_map.py build --root <fixture>` runs through its CLI with `ast.parse` raising ValueError for the null-byte source, then it exits 0 and indexes both files. Fails on: HEAD, which exits 1 (measured under python3.10); a guard that skips any file containing a null byte before parsing, which exits 0 but indexes only the clean file.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_repo_map_null_byte.py::NullByteTests::test_the_build_cli_exits_zero_over_a_null_byte_file
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

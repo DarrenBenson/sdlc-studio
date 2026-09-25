@@ -1198,6 +1198,7 @@ One row has been removed since adoption.
 | US0905 | REJECT | qa-rev-US0905 | US0905-fix | 2026-09-24 | 79eb74fea820 unmatched | full | [new] MOVED: the AC2 anti-pin test hard-codes 11 lane names in its controls and the AC1 helpers anchor on links, so dropping budgets or versions fails only the cap's own test and the one-lane-pin claim stays false [LC-002]; [new] non-blocking: US0372 AC2 reads every lane still runs but its now-derived test passes with a lane deleted [LC-002]; [new] non-blocking: narrowing the pin scan to tools/tests survives [LC-002] |
 | US0904 | REJECT | qa-rev-US0904 | US0904-fix | 2026-09-24 | fd573ce917c1 | full | [new] classify\_refusals joins by committer time strictly after the refusal, but git stamps a commit when it starts, so a same-second retry reads pending: fix is when >= at plus a same-second fixture row [LC-002]; [new] non-blocking: git log --raw without -z quotes non-ASCII paths so they misclassify; [new] non-blocking: commit-msg blob recording unpinned [LC-002]; [new] non-blocking: AC2 text still says any code change is a catch while the pinned rule is blob-based; [new] non-blocking: AC1 Verify line omits the message-refusal test [LC-002]; [new] non-blocking: a missing log means both no-refusal-yet and consuming project [LC-006] |
 | BG0762 | APPROVE | qa-rev-BG0762 | BG0762-build | 2026-09-25 | a0201e5560cd unmatched | full | - |
+| BG0757 | APPROVE | qa-rev-BG0757 | BG0757-build | 2026-09-25 | e03956346c52 | full | [pre-existing] the regex fallback tags a class as kind function, non-blocking |
 
 ## Supersessions
 

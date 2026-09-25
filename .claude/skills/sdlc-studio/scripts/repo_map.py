@@ -177,7 +177,8 @@ def parse_python(text: str) -> tuple[list[dict], list[str]]:
     """Extract symbols and imports from Python source via the ast module."""
     try:
         tree = ast.parse(text)
-    except SyntaxError:
+    except (SyntaxError, ValueError):
+        # 3.10 raises ValueError, not SyntaxError, for source holding a null byte.
         return _parse_python_regex(text)
 
     symbols: list[dict] = []
@@ -200,7 +201,7 @@ def parse_python(text: str) -> tuple[list[dict], list[str]]:
 
 
 def _parse_python_regex(text: str) -> tuple[list[dict], list[str]]:
-    """Regex fallback when Python syntax fails (e.g., incomplete files)."""
+    """Regex fallback when `ast.parse` rejects the source (incomplete files, null bytes)."""
     sym_re = re.compile(
         r"^(?:\s*)(?:async\s+)?(?:def|class)\s+([A-Za-z_][\w]*)",
         re.M,
