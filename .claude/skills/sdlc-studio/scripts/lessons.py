@@ -1821,7 +1821,7 @@ def _graduation_cr(row: dict, run: str) -> tuple[str, dict]:
                f"path it fails on fixed, not another reading and not one more check. This CR "
                f"carries the class and its evidence, not a design.\n\n"
                f"Rule: {row.get('rule')}\n\nBehaviour asked of the agent: {row.get('behaviour')}"
-               f"\n\nHits:\n" + "\n".join(f"- {h}" for h in hits))
+               f"\n\nHits:\n\n" + "\n".join(f"- {h}" for h in hits))
     return (f"Prevent or retire lesson {row['id']} ({row.get('class')})", {
         "summary": summary, "priority": "Medium", "ctype": "Improvement", "size": "M",
         # The row moves to `graduated` when the fix lands. Where the fix lands is a grooming

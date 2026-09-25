@@ -1762,9 +1762,11 @@ def write_accuracy(root, res: dict) -> Path:
         new = head + block + tail
     elif (m := ACCURACY_HEADING_RE.search(text)):
         # The section exists but was written by hand: keep the heading and the prose, and
-        # insert the generated block directly under the heading.
+        # insert the generated block directly under the heading. One blank line parts it
+        # from what follows, and at the foot of the file it ends on a single newline.
         at = m.end()
-        new = text[:at] + "\n\n" + block + "\n\n" + text[at:].lstrip("\n")
+        tail = text[at:].lstrip("\n")
+        new = text[:at] + "\n\n" + block + ("\n\n" + tail if tail else "\n")
     else:
         heading = f"\n## {ACCURACY_SECTION}\n\n{block}\n"
         anchor = re.search(r"(?m)^##\s+Actions raised\s*$", text)
