@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 42 |
+| Draft | 41 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 9 |
 | Review | 0 |
-| Done | 725 |
+| Done | 726 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 72 |
@@ -278,7 +278,7 @@
 | [US0917](US0917-the-operator-s-signature-seals-the-run-without.md) | The operator's signature seals the run without a per-unit sign-off row | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0918](US0918-one-verdict-ledger-decides-whether-a-unit-was.md) | One verdict ledger decides whether a unit was reviewed | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0919](US0919-sign-off-is-the-operator-s-one-signature.md) | Sign-off is the operator's one signature and the per-unit sign-off verbs are gone | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
-| [US0920](US0920-a-repair-reaches-fixed-without-registered-mutation-evidence.md) | The gate runs no evidence-drift lane and the close names no mutation-evidence mode | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0920](US0920-a-repair-reaches-fixed-without-registered-mutation-evidence.md) | The gate runs no evidence-drift lane and the close names no mutation-evidence mode | In Progress | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0921](US0921-mutation-testing-is-an-opt-in-run-with.md) | The gate carries no mutation lane | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0922](US0922-line-coverage-is-measured-only-when-a-project.md) | Line coverage is measured only when a project opts in | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0923](US0923-a-review-verdict-records-without-brief-provenance.md) | A review verdict records without brief provenance | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
@@ -289,7 +289,7 @@
 | [US0928](US0928-the-seat-reviewing-a-sprint-goal-is-shown.md) | The seat reviewing a Sprint Goal is shown the PRD outcomes and the personas' End goals | Done | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0929](US0929-the-prd-describes-the-lean-product-and-lists.md) | The PRD describes the lean product and lists the outcomes a Sprint Goal can serve | Done | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0930](US0930-a-reviewer-s-brief-lists-the-recent-done.md) | A reviewer's brief lists the recent Done units that changed each file the unit touches, with the defects their reviews found | Done | EP0264 | 2026-09-25 | 2026-09-25 |
-| [US0931](US0931-a-build-lane-s-brief-carries-the-same.md) | A build lane's brief carries the same file history, and tells the author that history outranks an artefact's account | In Progress | EP0264 | 2026-09-25 | 2026-09-25 |
+| [US0931](US0931-a-build-lane-s-brief-carries-the-same.md) | A build lane's brief carries the same file history, and tells the author that history outranks an artefact's account | Done | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0932](US0932-a-build-lane-s-brief-carries-the-trd.md) | A build lane's brief carries the TRD constraints of the components its unit touches | In Progress | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0933](US0933-the-trd-and-tsd-stop-restating-lists-and.md) | The TRD and TSD stop restating lists and counts the code derives, and the tests that pinned the restatements are deleted | Done | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0934](US0934-a-bug-reaches-fixed-without-a-depth-gate.md) | A bug reaches Fixed without a depth gate, and the retired --depth flags are refused | Done | EP0263 | 2026-09-25 | 2026-09-25 |

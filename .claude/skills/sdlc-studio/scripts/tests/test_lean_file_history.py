@@ -265,6 +265,44 @@ class FileHistoryTests(unittest.TestCase):
                          encoding="utf-8")
             self.assertEqual(f"{fp} {critic.UNMATCHED_MARK}", record())
 
+    def test_a_criterion_line_starting_with_the_heading_is_not_stripped(self) -> None:
+        """US0931 hardening. The strip matches the rendered section, not the first line anywhere
+        that starts with the heading text. MUTANTS: the unanchored pattern (strips a criterion
+        line, or a later line quoting the heading); the first match rather than the last (strips
+        a criterion that quotes the whole `none recorded` line). Either way the history is
+        digested, so a sibling landing unmatches the verdict, and an edit to the stripped
+        criterion no longer moves the fingerprint."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _workspace(d)
+            _unit(root, "US0001", "Done", ["src/a.py"], "2026-03-01")
+            _unit(root, "US0010", "In Progress", ["src/a.py"])
+            p = root / "sdlc-studio" / "stories" / "US0010-x.md"
+            criterion = f"{HEADING} is listed in every brief"
+            p.write_text(p.read_text(encoding="utf-8").replace(
+                "then y\n", f"then y\n  - {criterion}\n{criterion}: none recorded\n\n"
+                            f"{HEADING}: none recorded\n"), encoding="utf-8")
+            _ledger(root)
+            before = critic.brief(root, "US0010", "qa")
+            stripped = reconcile.strip_file_history(before)
+            self.assertIn(f"\n{criterion}: none recorded\n\n{HEADING}: none recorded\n",
+                          stripped, "a criterion was stripped")
+            self.assertNotIn("- US0001 ", stripped, "the rendered section was left in")
+            # Text after the section that quotes the heading (a lesson, say) is not the section.
+            section = reconcile.file_history_section(root, "US0010", ["src/a.py"])
+            quoted = f"{HEADING} is quoted by a lesson\n"
+            self.assertEqual(f"a\n\n\n{quoted}",
+                             reconcile.strip_file_history(f"a\n\n{section}\n{quoted}"))
+            # A sibling sharing the file lands: the history moves, the fingerprint does not.
+            _unit(root, "US0020", "Done", ["src/a.py"], "2026-03-02")
+            after = critic.brief(root, "US0010", "qa")
+            self.assertIn("- US0020 ", after)
+            self.assertEqual(critic.brief_fingerprint(before), critic.brief_fingerprint(after))
+            # Positive control: editing the criterion line still moves it.
+            p.write_text(p.read_text(encoding="utf-8").replace(
+                f"{criterion}: none", f"{criterion}: nothing"), encoding="utf-8")
+            self.assertNotEqual(critic.brief_fingerprint(after),
+                                critic.brief_fingerprint(critic.brief(root, "US0010", "qa")))
+
     def test_the_already_delivered_advisory_is_unchanged(self) -> None:
         """AC5. MUTANTS: drop the advisory, or let the history's Done-only filter narrow the
         advisory's delivered set (a Won't Implement unit then stops being reported)."""

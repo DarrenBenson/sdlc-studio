@@ -2504,6 +2504,15 @@ LANE_OBLIGATIONS = (
     "could not discharge and why.",
 )
 
+#: Opens the brief's file-history section. The lane meets the prior work and the defects its
+#: reviews found before writing a line rather than in a REJECT, and reads the history the brief
+#: already selected rather than the whole artefact corpus.
+LANE_PRIOR_ART = (
+    "Prior art: run `git log -S <symbol>` before changing a symbol you did not write; where an "
+    "artefact and the history disagree, the history wins; do not read the artefact corpus in "
+    "bulk - the units below are the ones that changed your files."
+)
+
 
 def _lane_ac_blocks(text: str) -> list[dict]:
     """The unit's acceptance criteria as `{ac, title, verifier}`, parsed by the SAME parser the
@@ -2613,7 +2622,16 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
                        "obligations": list(LANE_OBLIGATIONS),
                        "proof": lane_proof(root, contract["id"]),
                        "seams": [s for s in seams if contract["id"] in s["units"]],
-                       "lessons": injected})
+                       "lessons": injected,
+                       "affects": sdlc_md.affects_files(contract["text"])})
+    # THE FILES' HISTORY, the section the unit's reviewer will read (`critic.py brief`), from the
+    # same renderer under the same bounds. One corpus cache around every unit, so the Done-unit
+    # corpus is walked once per dispatch rather than once per lane; opened here and nowhere
+    # wider, because nothing else in the dispatch was written to read a memoised tree.
+    import reconcile  # noqa: PLC0415 - sibling; the corpus walk is the already-delivered lane's
+    with sdlc_md.corpus_cache():
+        for b in briefs:
+            b["history"] = reconcile.file_history_section(root, b["id"], b.pop("affects"))
     return {"briefs": briefs, "refused": refused, "seams": seams, "lessons": injected,
             "scope_note": scope_note}
 
@@ -2630,8 +2648,8 @@ def _batch_seams(root: Path, unit_ids: list[str]) -> list[dict]:
 
 def lane_brief_text(brief: dict) -> str:
     """One lane's brief as the text handed to whoever (or whatever) picks the unit up: the
-    criteria it is held to, the proof its unit owes, the standing obligations, and the lessons
-    injected at build. Composed purely from the brief record, so the same dispatch renders
+    criteria it is held to, the history of the files it touches, the proof its unit owes, the
+    standing obligations, and the lessons injected at build. Composed purely from the brief record, so the same dispatch renders
     identically."""
     lines = [f"Unit: {brief['id']} ({brief.get('path') or 'path unknown'})",
              f"Acceptance criteria ({len(brief['criteria'])}) - these are the contract:"]
@@ -2650,6 +2668,8 @@ def lane_brief_text(brief: dict) -> str:
                       "actor who can")
         lines.append(f"Seam with {', '.join(other)}: you both touch "
                      f"{', '.join(seam['shared'])}. {owned}.")
+    if brief.get("history"):
+        lines += ["", LANE_PRIOR_ART, *brief["history"].splitlines(), ""]
     proof = brief.get("proof") or {}
     if not proof.get("available"):
         lines.append(f"Proof obligations: UNDERIVABLE - {proof.get('why') or 'unknown'}")
@@ -12107,8 +12127,8 @@ def build_parser() -> argparse.ArgumentParser:
     ln = sub.add_parser(
         "lane",
         help="Dispatch and close ONE delegated unit of delivery. `brief` prints what each lane "
-             "is held to (its acceptance criteria, the proof its unit owes, the standing "
-             "obligations and the carried lessons) and REFUSES a unit whose criteria are absent "
+             "is held to (its acceptance criteria, the history of its files, the proof its unit "
+             "owes, the standing obligations and the carried lessons) and REFUSES a unit whose criteria are absent "
              "or a placeholder. `return` runs the unit's own criteria and reports blocked on a "
              "red, unresolved or unspecified one, carrying the verifier's own output.")
     ln.add_argument("action", choices=("brief", "return"))

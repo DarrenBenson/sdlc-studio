@@ -2004,6 +2004,9 @@ HISTORY_PER_FILE = 3
 HISTORY_MAX_FINDINGS = 3
 HISTORY_FINDING_CHARS = 200
 HISTORY_HEADING = "History of the files this unit touches"
+_HISTORY_NONE = f"{HISTORY_HEADING}: none recorded"
+_HISTORY_LEAD = (f"{HISTORY_HEADING} (the most recent delivered units that changed them, and the "
+                 f"blocking defects their reviews found - look first for a repeat):")
 #: Only these changed code. The terminal set is wider: the 2026-09-24 sweep alone closed 197
 #: items without building them.
 _CHANGED_CODE = {"story": {"Done"}, "bug": {"Fixed", "Verified"}}
@@ -2092,15 +2095,14 @@ def file_history_section(repo_root: Path | str, unit_id: str, affects: list[str]
     no review record to read, so it reads `none recorded` without walking the corpus."""
     import critic  # noqa: PLC0415 - lazy: critic owns the verdict ledger's reader
     root = Path(repo_root)
-    none = f"{HISTORY_HEADING}: none recorded\n"
+    none = f"{_HISTORY_NONE}\n"
     if not critic.verdicts_path(root).is_file():
         return none
     units = file_history(root, unit_id, affects, corpus=corpus)
     if not units:
         return none
     rows = critic.read_verdicts(root)
-    lines = [f"{HISTORY_HEADING} (the most recent delivered units that changed them, and the "
-             f"blocking defects their reviews found - look first for a repeat):"]
+    lines = [_HISTORY_LEAD]
     for u in units:
         title = re.sub(rf"^{re.escape(u['id'])}:\s*", "", u["title"])
         lines.append(f"- {u['id']} ({u['status']}, {u['date'] or 'undated'}) {title}; "
@@ -2110,8 +2112,12 @@ def file_history_section(repo_root: Path | str, unit_id: str, affects: list[str]
     return "\n".join(lines) + "\n"
 
 
+#: The section as rendered: one of its two exact heading lines, its entry lines, then a blank
+#: line or the end of the text. Anchored to all three, so a criterion line that merely starts
+#: with the heading text is never taken for the section.
 _HISTORY_SECTION_RE = re.compile(
-    rf"(?m)^{re.escape(HISTORY_HEADING)}[^\n]*\n(?:(?:- |  - )[^\n]*\n)*")
+    rf"(?m)^(?:{re.escape(_HISTORY_NONE)}|{re.escape(_HISTORY_LEAD)})\n"
+    rf"(?:(?:- |  - )[^\n]*\n)*(?=\n|\Z)")
 
 
 def strip_file_history(text: str) -> str:
@@ -2119,8 +2125,13 @@ def strip_file_history(text: str) -> str:
 
     For a digest of a brief: the section moves whenever a unit sharing a file lands or a
     verdict is recorded, so a fingerprint over it would stop matching between briefing and
-    recording for reasons that are not the unit's own."""
-    return _HISTORY_SECTION_RE.sub("", text, count=1)
+    recording for reasons that are not the unit's own. The LAST match is the section: both
+    briefs render it after the unit's own criteria, the one place author text could echo it."""
+    matches = list(_HISTORY_SECTION_RE.finditer(text))
+    if not matches:
+        return text
+    m = matches[-1]
+    return text[:m.start()] + text[m.end():]
 
 
 # The already-delivered lane's bars. Titles alone are not enough and a shared file alone is not

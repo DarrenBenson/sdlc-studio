@@ -1,6 +1,6 @@
 # US0920: The gate runs no evidence-drift lane and the close names no mutation-evidence mode
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

@@ -18,7 +18,7 @@ Decomposed from CR0594. Delivers the work CR0594 requested.
 - [x] [US0928: The seat reviewing a Sprint Goal is shown the PRD outcomes and the personas' End goals](../stories/US0928-the-seat-reviewing-a-sprint-goal-is-shown.md)
 - [x] [US0929: The PRD describes the lean product and lists the outcomes a Sprint Goal can serve](../stories/US0929-the-prd-describes-the-lean-product-and-lists.md)
 - [x] [US0930: A reviewer's brief lists the recent Done units that changed each file the unit touches, with the defects their reviews found](../stories/US0930-a-reviewer-s-brief-lists-the-recent-done.md)
-- [ ] [US0931: A build lane's brief carries the same file history, and tells the author that history outranks an artefact's account](../stories/US0931-a-build-lane-s-brief-carries-the-same.md)
+- [x] [US0931: A build lane's brief carries the same file history, and tells the author that history outranks an artefact's account](../stories/US0931-a-build-lane-s-brief-carries-the-same.md)
 - [ ] [US0932: A build lane's brief carries the TRD constraints of the components its unit touches](../stories/US0932-a-build-lane-s-brief-carries-the-trd.md)
 - [x] [US0933: The TRD and TSD stop restating lists and counts the code derives, and the tests that pinned the restatements are deleted](../stories/US0933-the-trd-and-tsd-stop-restating-lists-and.md)
 

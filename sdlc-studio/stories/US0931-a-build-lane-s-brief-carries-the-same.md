@@ -1,6 +1,6 @@
 # US0931: A build lane's brief carries the same file history, and tells the author that history outranks an artefact's account
 
-> **Status:** In Progress
+> **Status:** Done
 > **Depends on:** US0930 - reuses the file-history walk (CR0594 refinement)
 > **Delivers:** CR0594
 > **Created:** 2026-09-25
@@ -21,10 +21,13 @@
 
 - **AC1:** Given S4's fixture, when `sprint.py lane brief --units <unit>` runs, then the brief carries a history section identical to the one `critic.py brief` renders for that unit, produced by the same function under the same bound; a second implementation that lists different units fails it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_history.py::LaneHistoryTests::test_the_lane_and_review_briefs_carry_the_same_history
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given that brief, then its history section opens with the prior-art instruction: run `git log -S <symbol>` before changing a symbol you did not write; where an artefact and the history disagree, the history wins; and do not read the artefact corpus in bulk; a brief without the instruction fails it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_history.py::LaneHistoryTests::test_the_history_section_carries_the_prior_art_instruction
+  - **Verified:** yes (2026-09-25)
 - **AC3:** Given a lane dispatch of three units, then the Done-unit corpus is walked once for the dispatch, not once per unit (a walk costs about 1.3 s on this repository); an implementation that walks per unit fails it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_history.py::LaneHistoryTests::test_the_corpus_is_walked_once_per_dispatch
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 
