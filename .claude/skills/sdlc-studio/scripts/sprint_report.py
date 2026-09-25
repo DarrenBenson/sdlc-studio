@@ -1387,7 +1387,13 @@ _VERIFIED_RE = re.compile(r"^\s*[-*]\s+\*\*Verified:\*\*\s*(yes|true)\b", re.I)
 
 
 def _ticked_criteria(text: str) -> list[str]:
-    """The criteria this unit's own body claims are done, named, in BOTH conventions.
+    """The criteria this unit's own body claims are done, named, in every convention.
+
+    A `- **ACn:**` bullet (or an unticked `- [ ] **ACn**`) stands where a `### ACn` heading
+    stands: the `Verified: yes` stamp under it is the claim, and the bullet alone is not. The
+    lean story shape is written that way, and reading only headings and boxes examined none of
+    a batch written in it. Each bullet closes the one before it, so a stamp is never credited to
+    an earlier, unstamped criterion.
 
     Returns the criterion ids, so a caller reporting them names `AC2` rather than a line index.
     """
@@ -1398,8 +1404,14 @@ def _ticked_criteria(text: str) -> list[str]:
             heading = h.group(1)
             continue
         m = _TICKED_RE.match(line)
+        bullet = sdlc_md.AC_BULLET_RE.match(line)
         if m:
             out.append(m.group(1) or heading or "an unnamed criterion")
+            if bullet:
+                heading = None      # a ticked bullet is its own claim; its stamp adds nothing
+            continue
+        if bullet:
+            heading = bullet.group(1)
             continue
         if heading and _VERIFIED_RE.match(line):
             out.append(heading)

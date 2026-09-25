@@ -1443,6 +1443,120 @@ class TickVerificationTests(ChecklistBase):
         self.assertIn("unjudged", row["detail"])
 
 
+def _lean_unit(uid: str, affects: str, verdicts: list[str]) -> str:
+    """A unit in the lean criterion shape every Sprint 4 unit uses: a bold `ACn:` bullet with a
+    `Verify:` and a `Verified:` sub-bullet. An empty verdict leaves the stamp off entirely."""
+    lines = [f"# {uid}: s", "", "> **Status:** Done", f"> **Affects:** {affects}",
+             "> **Points:** 2", "", "## Acceptance Criteria", ""]
+    for n, verdict in enumerate(verdicts, 1):
+        lines += [f"- **AC{n}:** Given a thing, then it happens. Fails on: HEAD",
+                  f"  - **Verify:** pytest tests/test_x.py::T::test_{n}"]
+        if verdict:
+            lines.append(f"  - **Verified:** {verdict}")
+    return "\n".join(lines) + "\n"
+
+
+class TickVerificationReadsTheLeanShapeTests(ChecklistBase):
+    """BG0771: the row read a criterion as done only under a `### ACn` heading or a `- [x]` box.
+
+    The lean shape - a `- **ACn:**` bullet with `Verify:` and `Verified: yes` sub-bullets - is
+    what every Sprint 4 unit is written in, so RUN-01M3BK9Y's close examined none of its 35 units
+    and refused `no ticked criteria found`. The bullet is read through the shared
+    `sdlc_md.AC_BULLET_RE` and stands where the heading stood: the `Verified: yes` that follows
+    it is the tick, and the bullet alone is not.
+    """
+
+    def test_a_lean_bullet_criterion_is_read(self) -> None:
+        """AC1. MUTANTS: HEAD (reads none); ticking every `**ACn**` bullet without its Verified
+        line; a private copy of the bullet pattern instead of the shared one."""
+        lean = _lean_unit("US0001", "src/a.py",
+                          ["yes (2026-09-25)", "no", "manual (2026-09-25) - retired, superseded "
+                           "by US0915", "", "yes (2026-09-25)"])
+        lean = lean.replace("**AC5:**", "**AC5a:**")
+        self.assertEqual(["AC1", "AC5a"], sr._ticked_criteria(lean),
+                         "a lean criterion was misread: `yes` is a tick, and `no`, a retired "
+                         "`manual` stamp and a missing stamp are not")
+
+        bug = ("# BG0001: b\n\n## Acceptance Criteria\n\n"
+               "- [ ] **AC1** a thing\n  - **Verify:** pytest t.py::T::a\n"
+               "  - **Verified:** yes (2026-09-25)\n"
+               "- [ ] **AC2** never stamped\n  - **Verify:** pytest t.py::T::b\n"
+               "- [x] **AC3** ticked by hand\n  - **Verified:** yes (2026-09-25)\n"
+               "- [ ] **AC4** stamped no\n  - **Verified:** no\n")
+        # AC3's stamp must not be credited to AC2, the unstamped bullet before it: a bullet
+        # read as the heading is closed by the next bullet, ticked or not.
+        self.assertEqual(["AC1", "AC3"], sr._ticked_criteria(bug))
+
+        # The two readings that existed before are unchanged.
+        heading = ("## Acceptance Criteria\n\n### AC1: a\n\n- **Verified:** yes (2026-08-07)\n\n"
+                   "### AC2: b\n\n- **Verified:** no\n")
+        self.assertEqual(["AC1"], sr._ticked_criteria(heading))
+        boxes = "## Acceptance Criteria\n\n- [x] **AC1** the thing\n- [x] an unnamed one\n"
+        self.assertEqual(["AC1", "an unnamed criterion"], sr._ticked_criteria(boxes))
+
+        # The bullet is read through the SHARED pattern, not a copy: with it matching nothing,
+        # the lean reading goes with it.
+        with mock.patch.object(sr.sdlc_md, "AC_BULLET_RE", re.compile(r"(?!)")):
+            self.assertEqual([], sr._ticked_criteria(lean),
+                             "the bullet was read by a pattern other than sdlc_md.AC_BULLET_RE")
+
+    def _git(self, *args: str) -> str:
+        return gitutil.git(list(args), self.root, text=True).stdout.strip()
+
+    def _commit(self, message: str) -> None:
+        self._git("add", "-A")
+        self._git("-c", "commit.gpgsign=false", "commit", "-qm", message)
+
+    def _checklist_row(self) -> dict:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            sr.main(["--root", str(self.root), "checklist", "--id", "RETRO9100",
+                     "--format", "json"])
+        return self._row(json.loads(buf.getvalue()), "tick-verification")
+
+    def test_the_close_row_judges_lean_units(self) -> None:
+        """AC2. Through the shipped `checklist` command over a real git diff, on a CLOSED run at
+        the build rung. MUTANTS: HEAD (`no ticked criteria found`); fixing a copy of the reader
+        the row does not call."""
+        stories = self.root / "sdlc-studio" / "stories"
+        (stories / "US0001-s.md").write_text(
+            _lean_unit("US0001", "src/one.py", ["yes (2026-09-25)", "yes (2026-09-25)", "no"]),
+            encoding="utf-8")
+        (stories / "US0002-s.md").write_text(
+            _lean_unit("US0002", "src/two.py", ["yes (2026-09-25)", "yes (2026-09-25)"]),
+            encoding="utf-8")
+        src = self.root / "src"
+        src.mkdir()
+        (src / "one.py").write_text("one = 1\n", encoding="utf-8")
+        (src / "two.py").write_text("two = 2\n", encoding="utf-8")
+        self._git("init", "-q", "-b", "main")
+        self._commit("the base")
+        base = self._git("rev-parse", "HEAD")
+        self._run(base_ref=base, outcome=run_state.PARTIAL, ended_at="2026-09-25T12:00:00Z")
+        import sprint  # noqa: PLC0415 - the rung's one reader, as the row calls it
+        self.assertEqual("done", sprint.run_rung(run_state.read(self.root)),
+                         "the fixture must sit on the build rung")
+
+        # Only US0001's declared surface changed: US0002's two ticks are unsupported, by name.
+        (src / "one.py").write_text("one = 11\n", encoding="utf-8")
+        self._commit("US0001's work")
+        row = self._checklist_row()
+        self.assertEqual(sr.NOT_RUN, row["state"], row)
+        self.assertIn("2 ticked criterion/criteria unsupported", row["value"])
+        self.assertIn("US0002 AC1", row["detail"])
+        self.assertIn("US0002 AC2", row["detail"])
+        self.assertNotIn("US0001", row["detail"], "a supported tick was reported unsupported")
+
+        # Both surfaces changed: every tick is supported and counted - 2 on US0001 (its AC3 is
+        # stamped `no`) and 2 on US0002.
+        (src / "two.py").write_text("two = 22\n", encoding="utf-8")
+        self._commit("US0002's work")
+        row = self._checklist_row()
+        self.assertEqual(sr.RAN, row["state"], row)
+        self.assertIn(f"4 ticked criterion/criteria supported by the diff since {base}",
+                      row["value"])
+
+
 class TickVerificationReadsTheRungTests(ChecklistBase):
     """BG0584: the row asked the BUILD rung's question of every run.
 

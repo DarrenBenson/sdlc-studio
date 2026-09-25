@@ -1,6 +1,6 @@
 # BG0771: The close's tick-verification row cannot read the lean criterion shape
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG0771.md
@@ -25,8 +25,10 @@ Treat a '- **ACn:**' bullet as the heading for the Verified line that follows it
 
 - [ ] **AC1** Given a unit in the lean criterion shape (bold `ACn:` bullets, each with a `Verify:` sub-bullet and a `Verified: yes` sub-bullet), `sprint_report._ticked_criteria` names each verified criterion; a bug-shape `- [ ] **ACn**` criterion with a `Verified: yes` sub-bullet is read the same way; a `Verified: no` stamp or a retired `manual` stamp is not a tick; and the existing `### ACn` and `- [x]` readings are unchanged. Reads the bullet through the shared `sdlc_md.AC_BULLET_RE`, not a new pattern. Fails on: HEAD, which reads none (measured: 0 ticks across Sprint 4's 27 lean-shape units); treating every `**ACn**` bullet as ticked without its Verified line
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TickVerificationReadsTheLeanShapeTests::test_a_lean_bullet_criterion_is_read
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given a closed fixture run on a build rung whose units are in the lean shape, when `sprint_report.py checklist` runs, then the tick-verification row reads RAN with the count of ticked criteria supported by the diff when the declared Affects changed, and names the unsupported criteria when they did not. Fails on: HEAD's `no ticked criteria found`; fixing a copy of the reader that the row does not call
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::TickVerificationReadsTheLeanShapeTests::test_the_close_row_judges_lean_units
+  - **Verified:** yes (2026-09-25)
 
 ## Notes
 
