@@ -6,8 +6,8 @@ Maya's units are reviewed once against their files' history, and the review pape
 
 **Verdict: Judged partial** - History-aware review landed in full: every lane brief carries its files' history and prior art, and goals trace to PRD outcomes (CR0594, EP0264). Eleven of twelve review-paperwork deletions landed; the repair ledger (US0914) is still read, cut under D0269 because deleting it strips critiqued from 35 historical units. 35 of 36 batch units, 111 points.
 
-> **Run:** 2026-09-25T06:21:29Z to open (6.6h)
-> **Verified on:** 88c4607f032890475300d0c9105506e399d467b2   **Fingerprint:** c06ae7f85b759d7c
+> **Run:** 2026-09-25T06:21:29Z to open (7.0h)
+> **Verified on:** 88c4607f032890475300d0c9105506e399d467b2   **Fingerprint:** a1b0bc85adaffbb3
 
 ## Estimates
 
@@ -18,8 +18,8 @@ over forecast.
 | Measure | Forecast | Actual | Ratio | Over |
 | --- | --- | --- | --- | --- |
 | Points | 111 | 111 | 1.0x | 35 of 35 delivered unit(s) |
-| Minutes | 710.4 | 394.1 | 0.55x | the whole run: forecast over 35 of 35 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
-| Tokens | 39,272,910 | 19,874,339 | 0.51x | the whole run: forecast over 35 of 35 unit(s) planned or added and not dropped; actual is the main-thread meter plus 113 delegated agent(s)' reported totals, split in the appendix |
+| Minutes | 710.4 | 418.5 | 0.59x | the whole run: forecast over 35 of 35 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
+| Tokens | 39,272,910 | 19,935,438 | 0.51x | the whole run: forecast over 35 of 35 unit(s) planned or added and not dropped; actual is the main-thread meter plus 113 delegated agent(s)' reported totals, split in the appendix |
 
 Each unit's minutes and tokens are measured over its own open span. Units open at the same time
 share hours and tokens, so these spans may overlap and are never added up into the run's figures
@@ -121,11 +121,12 @@ size, plan and added together: 111.
 
 ## Known issues handed over
 
-2 open finding(s) raised in the run, 1 close gap(s), 0 carried unit(s)
+3 open finding(s) raised in the run, 1 close gap(s), 0 carried unit(s)
 
 | Issue | Priority | Detail |
 | --- | --- | --- |
 | BG0771 | Medium | The close's tick-verification row cannot read the lean criterion shape |
+| BG0772 | Medium | A held backlog item cannot close when its closing story ships |
 | CR0598 | Medium | Prevent or retire lesson LC-003 (mechanism reaches no caller) |
 | checklist | close gap | tick-verification: Ticked criteria the tree supports - no ticked criteria found |
 
@@ -143,17 +144,17 @@ Signing records the principal, the date and this report's fingerprint against RU
 
 | Model | Tokens |
 | --- | --- |
-| mixed | 2,907,868 |
+| mixed | 2,968,967 |
 
-Total 19,874,339, of which delegated 16,966,471. Coverage: 1 session(s);
+Total 19,935,438, of which delegated 16,966,471. Coverage: 1 session(s);
 read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp.
 
 ### DORA
 
 | Key | This run | Mapping | Elite band | Derived from |
 | --- | --- | --- | --- | --- |
-| Deployment frequency | 43 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window | on demand | git history - 43 commit(s) on main inside the run window |
-| Lead time for changes | 6h 24m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 43 commit(s) |
+| Deployment frequency | 45 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window | on demand | git history - 45 commit(s) on main inside the run window |
+| Lead time for changes | 6h 48m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 45 commit(s) |
 | Change failure rate | NOT MEASURED - no forge run data | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that did not conclude success | 0-15% | no push-triggered CI run is readable for this run window |
 | Time to restore | NOT MEASURED - no forge run data | the span from a push-triggered run concluding failure on main to the next push-triggered run concluding success | under an hour | no push-triggered CI run is readable for this run window |
 

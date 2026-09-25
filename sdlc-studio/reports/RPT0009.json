@@ -3,8 +3,8 @@
   "report_id": "RPT0009",
   "run_id": "RUN-01M3BK9Y",
   "retro_id": "RETRO0124",
-  "generated_at": "2026-09-25T12:55:32Z",
-  "window_end": "2026-09-25T12:55:32Z",
+  "generated_at": "2026-09-25T13:19:58Z",
+  "window_end": "2026-09-25T13:19:58Z",
   "signature": null,
   "sections": [
     {
@@ -43,7 +43,7 @@
         },
         "duration_hours": {
           "key": "duration_hours",
-          "value": "6.6h",
+          "value": "7.0h",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "verified_sha": {
@@ -100,12 +100,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 394.1,
+            "value": 418.5,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "0.55x",
+            "value": "0.59x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -127,7 +127,7 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 19874339,
+            "value": 19935438,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
@@ -2202,7 +2202,7 @@
       "figures": {
         "findings_scan": {
           "key": "findings_scan",
-          "value": "2 open finding(s) raised in the run, 1 close gap(s), 0 carried unit(s)",
+          "value": "3 open finding(s) raised in the run, 1 close gap(s), 0 carried unit(s)",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -2222,6 +2222,23 @@
             "key": "issue_detail",
             "value": "The close's tick-verification row cannot read the lean criterion shape",
             "source": "sdlc-studio/bugs/BG0771-the-close-s-tick-verification-row-cannot-read.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG0772",
+            "source": "sdlc-studio/bugs/BG0772-a-held-backlog-item-cannot-close-when-its.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG0772-a-held-backlog-item-cannot-close-when-its.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "A held backlog item cannot close when its closing story ships",
+            "source": "sdlc-studio/bugs/BG0772-a-held-backlog-item-cannot-close-when-its.md"
           }
         },
         {
@@ -2295,7 +2312,7 @@
         },
         "tokens_total": {
           "key": "tokens_total",
-          "value": 19874339,
+          "value": 19935438,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "token_coverage": {
@@ -2318,7 +2335,7 @@
           },
           "model_tokens": {
             "key": "model_tokens",
-            "value": 2907868,
+            "value": 2968967,
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -2338,7 +2355,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": 43,
+            "value": 45,
             "source": "git log"
           },
           "dora_mapping": {
@@ -2353,7 +2370,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - 43 commit(s) on main inside the run window",
+            "value": "git history - 45 commit(s) on main inside the run window",
             "source": "git log"
           }
         },
@@ -2365,7 +2382,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "6h 24m",
+            "value": "6h 48m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -2380,7 +2397,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 43 commit(s)",
+            "value": "git history - first to last of 45 commit(s)",
             "source": "git log"
           }
         },
@@ -2865,5 +2882,5 @@
       "not_measured": null
     }
   ],
-  "fingerprint": "c06ae7f85b759d7c"
+  "fingerprint": "a1b0bc85adaffbb3"
 }
