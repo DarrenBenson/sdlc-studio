@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 import tempfile
@@ -1666,6 +1667,20 @@ def _detector_for_lens_line(f: dict) -> str:
     return f"> **Detector-for-lens:** {lens}\n" if lens else ""
 
 
+#: Overrides where the lens-pack lookup below reads `templates/audit-profiles/` from - this
+#: directory instead of the skill's own. A test proving a stub or duplicate pack (an expected,
+#: half-written state per `reference-audit.md#audit-extend`) points this at a per-test temporary
+#: copy instead of writing into the shipped folder, which under pytest-xdist made a sibling
+#: worker's pack ambiguous for every other worker's lens lookup.
+AUDIT_PACKS_SKILL_DIR_ENV = "SDLC_AUDIT_PACKS_SKILL_DIR"
+
+
+def _audit_packs_skill_dir() -> Path | None:
+    """The override `AUDIT_PACKS_SKILL_DIR_ENV` names, or `None` for the shipped default."""
+    override = os.environ.get(AUDIT_PACKS_SKILL_DIR_ENV, "").strip()
+    return Path(override) if override else None
+
+
 def check_audit_attribution(repo_root: Path | str, fields: dict) -> dict:
     """Resolve a lens / profile / audit-run attribution before anything is minted, or refuse.
 
@@ -1685,7 +1700,8 @@ def check_audit_attribution(repo_root: Path | str, fields: dict) -> dict:
     if not (lens or profile or run):
         return fields
     import readiness  # noqa: PLC0415 - local: the filer reads the packs, it does not own them
-    packs = sorted(set(readiness.profile_names()) - set(readiness.REFERENCE_PROFILES))
+    skill_dir = _audit_packs_skill_dir()
+    packs = sorted(set(readiness.profile_names(skill_dir)) - set(readiness.REFERENCE_PROFILES))
     # A profile no pack declares is refused FIRST and by name, listing what the resolver does
     # declare. It used to fall through to the "lens required" branch, which named `--audit-run` -
     # a flag the operator had not supplied - and named neither the profile nor the packs.
@@ -1712,7 +1728,7 @@ def check_audit_attribution(repo_root: Path | str, fields: dict) -> dict:
         # project and named a file the operator had never mentioned. Same shape as
         # `readiness.cmd_validate_profiles`, forty lines away.
         try:
-            lenses = readiness.resolve_profile(p)["lenses"]
+            lenses = readiness.resolve_profile(p, skill_dir)["lenses"]
         except readiness.UnknownProfile:
             unreadable.append(p)
             continue

@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 40 |
 | In Progress | 2 |
-| Fixed | 603 |
+| Fixed | 604 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
 | Superseded | 14 |
-| **Total** | **765** |
+| **Total** | **766** |
 
 ## All Bugs
 
@@ -121,9 +121,10 @@
 | [BG0760](BG0760-us0905-did-not-converge-in-review-round-2.md) | US0905 did not converge in review: round 2 REJECT findings | In Progress | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0761](BG0761-us0904-did-not-converge-in-review-round-2.md) | US0904 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0762](BG0762-ci-s-bandit-scan-fails-on-the-sha1.md) | CI's bandit scan fails on the SHA1 fingerprint US0899 added to reconcile settle | Fixed | Medium | 2026-09-24 | 2026-09-24 |
-| [BG0763](BG0763-two-file-finding-tests-write-stub-packs-into.md) | Two file_finding tests write stub packs into the shipped audit-profiles folder, so parallel runs race | In Progress | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0763](BG0763-two-file-finding-tests-write-stub-packs-into.md) | Two file_finding tests write stub packs into the shipped audit-profiles folder, so parallel runs race | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0764](BG0764-bg0762-s-settle-fingerprint-test-calls-git-outside.md) | BG0762's settle-fingerprint test calls git outside a confined environment, so the unconfined-git sweep is red | Fixed | High | 2026-09-25 | 2026-09-25 |
 | [BG0765](BG0765-goal-trace-drops-a-serves-value-silently-and.md) | goal_trace drops a --serves value silently, and reads unfilled template placeholders as real outcomes | Fixed | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0766](BG0766-the-test-census-is-red-on-main-a.md) | The test census is red on main: a Sprint 4 test module holds a hand-copied script list and another has no census home | In Progress | High | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 

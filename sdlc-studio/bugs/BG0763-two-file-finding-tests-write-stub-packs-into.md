@@ -1,6 +1,7 @@
 # BG0763: Two file_finding tests write stub packs into the shipped audit-profiles folder, so parallel runs race
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional (the race reproduced at the base under -n 8 and eight patched runs were green; the shipped packs folder stayed byte-identical over five runs; two mutants killed)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_audit_pack_isolation.py, changelog.d/BG0763.md
@@ -25,8 +26,10 @@ Point `file_finding`'s pack lookup at a per-test temporary copy of the packs fol
 
 - [ ] **AC1** Given the audit-attribution tests that need a stub or duplicate pack, when they run, then they write it into a per-test temporary copy of the packs folder and nothing is written under the shipped `templates/audit-profiles/`; a fix that only reorders or serialises the tests, leaving the writes in the shipped folder, fails it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_audit_pack_isolation.py::AuditPackIsolationTests::test_no_test_writes_into_the_shipped_packs_folder
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given the stub and duplicate pack tests run concurrently under pytest-xdist, then each still proves its own case (a stub pack elsewhere does not break an unrelated filing; an ambiguous lens is refused) with no cross-test interference; a lookup that ignores the override and reads the shipped folder fails it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_audit_pack_isolation.py::AuditPackIsolationTests::test_the_pack_lookup_reads_the_override_not_the_shipped_folder
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

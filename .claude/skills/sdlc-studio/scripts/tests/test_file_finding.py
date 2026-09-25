@@ -9,6 +9,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import os
 import re
 import shutil
 import sys
@@ -2322,6 +2323,25 @@ class AuditAttributionUnheldInvariantsTests(unittest.TestCase):
             _affect(d, rel.strip())
         return d
 
+    def _isolated_packs(self) -> Path:
+        """A per-test copy of `templates/audit-profiles/`, with `check_audit_attribution`'s
+        pack lookup pointed at it for the life of the test via `AUDIT_PACKS_SKILL_DIR_ENV`.
+
+        A stub or half-written pack is an expected state (`reference-audit.md#audit-extend`
+        invites a project to add one), so a test proving it must plant one somewhere - but
+        the shipped folder is shared with every other worker under pytest-xdist, and a
+        sibling's stub or duplicate there made `LIVE_LENS` ambiguous at random (BG0763).
+        """
+        shipped = Path(ff.__file__).resolve().parent.parent / "templates" / "audit-profiles"
+        skill_dir = Path(tempfile.mkdtemp(prefix="packs_"))
+        self.addCleanup(shutil.rmtree, skill_dir, ignore_errors=True)
+        shutil.copytree(shipped, skill_dir / "templates" / "audit-profiles")
+        patcher = unittest.mock.patch.dict(
+            os.environ, {ff.AUDIT_PACKS_SKILL_DIR_ENV: str(skill_dir)})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        return skill_dir / "templates" / "audit-profiles"
+
     def test_a_refusal_does_not_ADVANCE_THE_ID_SEQUENCE(self) -> None:
         """MUTANT: relocate `check_audit_attribution` into `_file_finding_locked`, after the id is
         allocated. The refusal still fires with an identical message and exit code, and an id is
@@ -2425,10 +2445,9 @@ class AuditAttributionUnheldInvariantsTests(unittest.TestCase):
         """
         root = self._root()
         rid = _register(root)
-        packs = Path(ff.__file__).resolve().parent.parent / "templates" / "audit-profiles"
+        packs = self._isolated_packs()
         stub = packs / "zz-review-stub.md"
         stub.write_text("# A pack a project started\n\nTBD.\n", encoding="utf-8")
-        self.addCleanup(stub.unlink, missing_ok=True)
         res = ff.file_finding(root, "bug", "filed while a stub pack sits beside the real ones",
                               {**BUG, "lens": LIVE_LENS, "audit_run": rid})
         body = Path(res["path"]).read_text(encoding="utf-8")
@@ -2444,11 +2463,10 @@ class AuditAttributionUnheldInvariantsTests(unittest.TestCase):
         """
         root = self._root()
         rid = _register(root)
-        packs = Path(ff.__file__).resolve().parent.parent / "templates" / "audit-profiles"
+        packs = self._isolated_packs()
         dupe = packs / "zz-review-dupe.md"
         dupe.write_text((packs / f"{LIVE_PROFILE}.md").read_text(encoding="utf-8"),
                         encoding="utf-8")
-        self.addCleanup(dupe.unlink, missing_ok=True)
         with self.assertRaises(ValueError) as ctx:
             ff.file_finding(root, "bug", "x", {**BUG, "lens": LIVE_LENS, "audit_run": rid})
         self.assertIn("more than one pack", str(ctx.exception))
