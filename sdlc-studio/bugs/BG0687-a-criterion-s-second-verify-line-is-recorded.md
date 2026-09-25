@@ -1,6 +1,6 @@
 # BG0687: A criterion's second Verify line is recorded but never run, so a both-states requirement cannot be enforced by its selectors
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_verify_every_line.py, changelog.d/BG0687.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -27,10 +27,13 @@ Run every Verify line under a criterion and pass it only when all pass; or refus
 
 - [ ] **AC1** Given a criterion carrying two `Verify:` lines, the first passing and the second failing, when `verify_ac.py run --id` runs, then the criterion is reported failed and the output names the failing line. Fails on: HEAD, which runs only the first line and reports `pass=1` (reproduced in a fixture: `shell test -d /` then `shell test -d /nonexistent`)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_verify_every_line.py::VerifyEveryLineTests::test_a_failing_second_line_fails_the_criterion
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given a criterion whose first `Verify:` line fails and second passes, then the criterion is reported failed. Fails on: running only the last line
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_verify_every_line.py::VerifyEveryLineTests::test_a_failing_first_line_fails_the_criterion
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC3** Given a criterion whose two `Verify:` lines both pass, then it is reported passed and stamped once. Fails on: refusing every second Verify line, which turns a both-environments criterion (BG0667 AC5) into one nobody can satisfy
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_verify_every_line.py::VerifyEveryLineTests::test_two_passing_lines_pass_once
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

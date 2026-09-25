@@ -98,16 +98,20 @@ class ACBlock:
     # Defaults to just after the Verify line, or just after the last bullet
     # of the AC block.
     insert_after: int | None = None
-    #: Verify expressions after the first in this block. The runner executes ONLY the
-    #: first, so these are read as ordinary bullets and never run. Captured rather than
-    #: discarded, so the fact can be reported instead of being invisible: six such
-    #: verifiers were found sitting unexecuted in one workspace, four of them on stories
-    #: already marked Done and two counted inside a published claim of verified criteria.
+    #: Verify expressions after the first in this block. The runner executes every one of
+    #: them (`verifiers`) and passes the criterion only when all pass; once only the
+    #: first ran, so a second line that failed was a false green. The stamp, conformance and
+    #: selector tools still read `verifier` alone, which is why `lint` refuses the shape.
     extra_verifiers: list[str] = field(default_factory=list)
     #: The `## ` heading this block sits under, or "" above the first one. A criterion written
     #: under `## Impact` or `## Revision History` parses like any other, and the runner used to
     #: execute it while the seat brief, which reads the section alone, never showed it.
     section: str = ""
+
+    @property
+    def verifiers(self) -> list[str]:
+        """Every Verify expression in the block, in order; empty when it carries none."""
+        return [self.verifier, *self.extra_verifiers] if self.verifier is not None else []
 
 
 def ac_fingerprint(text: str) -> str:
@@ -123,8 +127,8 @@ def ac_fingerprint(text: str) -> str:
     the verifier executes.
     """
     import hashlib
-    parts = [
-        f"{b.ac_id}\x1f{b.title.strip()}\x1f{(b.verifier or '').strip()}"
+    parts = [   # one verifier joins to itself, so a single-line block hashes as it always has
+        f"{b.ac_id}\x1f{b.title.strip()}\x1f{chr(0x1d).join(v.strip() for v in b.verifiers)}"
         for b in criteria_blocks(text)     # what the run judged, never a block it skipped
     ]
     return hashlib.sha256("\x1e".join(parts).encode("utf-8")).hexdigest()
@@ -772,23 +776,19 @@ def lint_markdown_evidence(expr: str, cwd=None) -> str | None:
 def lint_stacked_verifiers(block: "ACBlock") -> str | None:
     """REFUSAL: an AC block carrying more than one `Verify:` line.
 
-    `parse_story` executes the FIRST and reads the rest as ordinary bullets, so a second
-    verifier is not a second check - it is a sentence that looks like one. Seven sat in this
-    workspace having never run, four on stories at Done, and two of those were counted inside
-    a sprint's published claim of 84 criteria verified.
-
-    Refused rather than warned, for the same reason the pseudo-verify refusal is: the author
-    sees their verifier on disk and the report counts the criterion as verified, so nothing
-    downstream will ever contradict them. A criterion that genuinely needs two checks is two
-    criteria, and saying so at author time costs one heading.
+    `run` executes every line and passes the criterion only when all pass, so a stacked
+    block is judged honestly. Everything else keyed on a criterion's selector - the stamp check,
+    conformance, selector resolution, coverage, duplicate grouping - reads the FIRST line alone,
+    so the later lines are evidence those tools never see. A criterion that needs two checks is
+    two criteria while it is being authored, and saying so costs one heading.
     """
     if not block.extra_verifiers:
         return None
     n = len(block.extra_verifiers)
-    return (f"{n} further `Verify:` line(s) in this block will NEVER RUN - only the first is "
-            f"executed, and the rest parse as ordinary bullets. Dropped: "
-            f"{'; '.join(repr(v) for v in block.extra_verifiers)}. A criterion needing two "
-            f"checks is two criteria - split the block")
+    return (f"{n} further `Verify:` line(s) in this block: "
+            f"{'; '.join(repr(v) for v in block.extra_verifiers)}. `run` executes them, but the "
+            f"stamp, conformance and selector checks read only the first line. A criterion "
+            f"needing two checks is two criteria - split the block")
 
 
 #: Verbs whose selector can be resolved by COLLECTION - asking the runner what a selector
@@ -1646,13 +1646,14 @@ def pytest_verifier_files(paths: list[Path]) -> list[str]:
     files: dict[str, None] = {}
     for path in paths:
         for block in criteria_blocks(_read_body(path)):
-            head, _, tail = (block.verifier or "").strip().partition(" ")
-            if head.lower() != "pytest" or not tail:
-                continue
-            target = tail.strip()
-            if target.startswith("-") or " " in target:
-                continue
-            files.setdefault(target.split("::", 1)[0], None)
+            for verifier in block.verifiers:
+                head, _, tail = verifier.strip().partition(" ")
+                if head.lower() != "pytest" or not tail:
+                    continue
+                target = tail.strip()
+                if target.startswith("-") or " " in target:
+                    continue
+                files.setdefault(target.split("::", 1)[0], None)
     return list(files)
 
 
@@ -1846,14 +1847,20 @@ def verify_story(
             report.manual += 1
             continue
 
-        result = None
-        if jest_cache is not None:
-            result = resolve_jest_from_cache(block.verifier, jest_cache)
-        if result is None and pytest_cache is not None:
-            result = resolve_pytest_from_cache(block.verifier, pytest_cache, pytest_collected)
-        if result is None:
-            result = run_verifier(block.verifier, timeout, repo_root,
-                                  allow_shell=story_allow_shell, allow_fallback=allow_fallback)
+        # EVERY line runs, in order, and the first red one is the criterion's verdict and the
+        # line its failure names. Once only the first ran, so a criterion that must hold
+        # in two environments was green while its second line failed.
+        for verifier in block.verifiers:
+            result = None
+            if jest_cache is not None:
+                result = resolve_jest_from_cache(verifier, jest_cache)
+            if result is None and pytest_cache is not None:
+                result = resolve_pytest_from_cache(verifier, pytest_cache, pytest_collected)
+            if result is None:
+                result = run_verifier(verifier, timeout, repo_root,
+                                      allow_shell=story_allow_shell, allow_fallback=allow_fallback)
+            if not result.ok:
+                break
 
         if result.ok:
             recorded = (block.verified_state or "").strip().lower()
@@ -1910,7 +1917,7 @@ def verify_story(
             report.failures.append(
                 {
                     "ac": block.ac_id,
-                    "verifier": block.verifier,
+                    "verifier": verifier,     # the red line, not necessarily the first
                     "kind": result.kind,
                     "exit_code": result.exit_code,
                     "stderr": result.stderr.strip()[:500],

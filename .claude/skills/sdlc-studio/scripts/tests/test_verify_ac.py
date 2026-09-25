@@ -3034,7 +3034,8 @@ class MarkdownEvidenceLintTests(unittest.TestCase):
 
 
 class StackedVerifierTests(unittest.TestCase):
-    """BG0265: only the FIRST Verify line in an AC block is executed."""
+    """BG0265: a stacked Verify line is refused while authoring. `run` executes every line
+    (BG0687), but the stamp, conformance and selector tools read only the first."""
 
     def test_a_second_verify_line_in_one_block_is_refused(self) -> None:
         root = FixtureRoot()
@@ -3195,9 +3196,10 @@ class StackedVerifierTests(unittest.TestCase):
         self.assertEqual(blocks[0].extra_verifiers, ["pytest a::t2", "pytest a::t3"])
 
     def test_no_ac_block_in_the_workspace_stacks_verifiers(self) -> None:
-        """The census, over the live tree. Seven verifiers sat here unexecuted - four on
-        stories at Done, two of them counted inside a published claim of 84 criteria
-        verified. This goes red again the moment another one is added."""
+        """The census, over the live tree. Seven verifiers once sat here unexecuted - four on
+        stories at Done, two of them counted inside a published claim of 84 criteria verified.
+        `run` now executes them (BG0687), but a stamp or conformance check still reads the first
+        line alone, so this workspace keeps one check per criterion."""
         if not workspace.in_dev_repo():
             self.skipTest("census applies to the dev repo's own workspace")
         root = Path(__file__).resolve().parents[5]
@@ -3210,7 +3212,7 @@ class StackedVerifierTests(unittest.TestCase):
                 for b in verify_ac.parse_story(sdlc_md.read_text_safe(f)):
                     if b.extra_verifiers:
                         offenders.append(f"{f.name} {b.ac_id} (+{len(b.extra_verifiers)})")
-        self.assertEqual(offenders, [], "AC blocks stacking verifiers that will never run")
+        self.assertEqual(offenders, [], "AC blocks stacking verifiers the stamp and conformance checks never read")
 
 
 class StampResolutionTests(unittest.TestCase):

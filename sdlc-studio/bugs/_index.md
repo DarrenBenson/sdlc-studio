@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 32 |
 | In Progress | 0 |
-| Fixed | 616 |
+| Fixed | 617 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
 | Superseded | 22 |
-| **Total** | **776** |
+| **Total** | **777** |
 
 ## All Bugs
 
@@ -45,7 +45,7 @@
 | [BG0684](BG0684-transition-s-two-role-gate-ignores-a-definition.md) | transition's two-role gate ignores a Definition of Done that stands the review.two-role tag down | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0685](BG0685-project-upgrade-reads-plan-review-verdicts-with-no.md) | project_upgrade reads plan-review verdicts with no kind, so a repair-plan APPROVE counts as a repair story's spec review | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0686](BG0686-bg0493-ac2-s-test-reads-a-fixture-hook.md) | BG0493 AC2's test reads a fixture hook, so deleting the real pre-commit hook's lane-check block survives | Superseded | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0687](BG0687-a-criterion-s-second-verify-line-is-recorded.md) | A criterion's second Verify line is recorded but never run, so a both-states requirement cannot be enforced by its selectors | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0687](BG0687-a-criterion-s-second-verify-line-is-recorded.md) | A criterion's second Verify line is recorded but never run, so a both-states requirement cannot be enforced by its selectors | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0688](BG0688-gate-require-close-still-counts-close-owed-s.md) | gate --require-close still counts close-owed's raw owed rows, refusing an override the tag guard and the detector now honour | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0689](BG0689-the-release-tag-guard-never-reads-close-owed.md) | The release tag guard never reads close_owed's velocity half, so a retro owing its velocity row does not refuse the tag | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0690](BG0690-critic-py-repair-re-judges-stored-findings-through.md) | critic.py repair re-judges stored findings through the code-span guard, and its typed closure scanner unescapes any backslash before a greater-than sign | Open | Medium | 2026-09-15 | 2026-09-15 |
@@ -135,6 +135,7 @@
 | [BG0774](BG0774-install-sh-exits-1-after-a-successful-install.md) | install.sh exits 1 after a successful install when the gemini target is chosen without the gemini CLI | Open | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0775](BG0775-us0941-did-not-converge-in-review-round-2.md) | US0941 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0776](BG0776-sprint-sign-principal-seals-the-run-with-an.md) | sprint sign --principal - seals the run with an empty principal | Open | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0777](BG0777-the-sprint-lane-runner-and-the-revert-check.md) | The sprint lane runner and the revert check run only a criterion's first Verify line | Open | Medium | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 
