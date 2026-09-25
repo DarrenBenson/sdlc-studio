@@ -175,9 +175,6 @@ a unit whose commits already do the work, and `pinned` is a finding carrying a l
 A `shell`, `eval` or `http` verifier is named `not-probed` and NOTHING is executed for it: a
 plan-time check must not run shell somebody else authored into an artefact.
 
-`sprint plan` runs the same probe over a whole batch - see `review.plan_falsifiability` in the
-[configuration reference](../reference-config.md#plan-falsifiability).
-
 ### testplan rule / testplan withdraw
 
 Record the decision to plan over a criterion the probe named, so the exemption is on the record

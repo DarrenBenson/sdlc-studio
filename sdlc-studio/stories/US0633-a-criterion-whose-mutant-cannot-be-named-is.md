@@ -24,22 +24,22 @@
 - **Given** a batch in which one unit's test plan carries a row marked `unnameable`
 - **When** `sprint.py breakdown` reports and `sprint.py plan --write` runs over that batch
 - **Then** `breakdown` names the unit and the criterion read-only, and `plan --write` refuses, on the same terms it already refuses a unit lacking `Affects` or `Points`
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnnameableMutantTests::test_an_unnameable_mutant_refuses_the_plan
+- **Verify:** manual - retired by US0911: `sprint plan` no longer reads the Test Plan, so an `unnameable` row is refused nowhere
 - **Caller:** `sprint.py plan --write` (the command that opens a run)
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - reducing the refusal to a warning must turn this test red
-- **Verified:** yes (2026-08-06)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0911
 
 ### AC2: `unnameable` must carry its reason, so the state cannot be used as a silent exit
 
 - **Given** a row marked `unnameable` with no reason recorded
 - **When** the batch is read
 - **Then** it is refused as malformed rather than accepted as a declared exemption, because a state that costs nothing to enter is the state every awkward criterion ends up in
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnnameableMutantTests::test_unnameable_without_a_reason_is_malformed
+- **Verify:** manual - retired by US0911: `sprint plan` no longer reads the Test Plan, so an `unnameable` row is refused nowhere
 - **Caller:** `sprint.py breakdown` and `sprint.py plan --write`
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - accepting a reasonless `unnameable` must turn this test red
-- **Verified:** yes (2026-08-06)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0911
 
 ## Revision History
 
@@ -48,3 +48,4 @@
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-03 | sdlc-studio | Groomed: criteria authored against the `sprint.py` grooming refusal slice |
 | 2026-08-06 | sdlc-studio | Declared `Depends on:` at plan time - the planner reported all six units parallel because no dependency was stated, which is false: the plan is derived (US0629) before it can be reviewed, gated, executed or measured |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2 retired by US0911 (D0259 pattern): `sprint plan` no longer reads the Test Plan, so an `unnameable` row is refused nowhere |

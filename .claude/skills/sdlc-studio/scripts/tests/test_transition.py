@@ -537,13 +537,11 @@ class RepairScopeTests(unittest.TestCase):
 
 
 def _lane_repo(d, *, mode=None, record="none", exemption=None, affects="src/thing.py",
-               cutoff=True, mutants=None, py_change=True) -> Path:
+               mutants=None, py_change=True) -> Path:
     """A real git repo carrying one repair bug, for the mutation-evidence lane's CLI tests.
 
     `record`: "none" | "current" (a hash matching the file as it stands) | "stale".
     `mode`: what `review.mutation_evidence` says, or None to leave it unset.
-    `cutoff`: whether `review.test_plan_after` is set, which governs a DIFFERENT gate - the
-    lane must not inherit it, which is AC5.
     `py_change`: whether the commit AFTER the base ref touches Python. False gives a
     markdown-only diff, which is the only shape a genuine no-surface exemption can hold in -
     the surface is derived from the diff alone, so a docs repair sharing a diff with Python
@@ -562,9 +560,6 @@ def _lane_repo(d, *, mode=None, record="none", exemption=None, affects="src/thin
     cfg = []
     if mode is not None:
         cfg.append(f"review:\n  mutation_evidence: {mode}\n")
-    if cutoff:
-        cfg.append("  test_plan_after: '2020-01-01'\n" if mode is not None
-                   else "review:\n  test_plan_after: '2020-01-01'\n")
     if cfg:
         (root / "sdlc-studio" / ".config.yaml").write_text("".join(cfg), encoding="utf-8")
     (root / "sdlc-studio" / "bugs" / "BG0001-x.md").write_text(
@@ -648,18 +643,21 @@ class MutationEvidenceLaneCLITests(unittest.TestCase):
                           "consuming project has to infer which mode it is getting")
 
     def test_the_lane_runs_with_no_test_plan_cutoff_set(self) -> None:
-        """AC5. Mutant: nest the lane call inside `_plan_gate_active` - it would then be inert
-        in every project that never set `review.test_plan_after`, while a fixture setting both
-        went green. That is this bug's own defect, one level in."""
+        """AC5. `review.test_plan_after` gated a different gate, the planned-mutant gate, which
+        US0911 deletes outright - so there is no longer another gate for this lane to inherit a
+        stood-down condition from. Retained as regression coverage: the lane refuses on stale
+        evidence with no such key present at all, which is what a project on defaults looks
+        like. Mutant: delete the lane call from `_pre_write_gates` - the state of the tree
+        BG0541 was filed against, where the CLI exited 0 on a ledger the library called STALE."""
         with tempfile.TemporaryDirectory() as d:
-            root = _lane_repo(d, mode="block", record="stale", cutoff=False)
+            root = _lane_repo(d, mode="block", record="stale")
             self.assertNotIn(
                 "test_plan_after",
                 (root / "sdlc-studio" / ".config.yaml").read_text(encoding="utf-8"),
-                "the fixture sets the cutoff, so it cannot show the lane runs without it")
+                "the retired key is not written by any fixture")
             code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
-            self.assertNotEqual(0, code, "the lane stood down with no test-plan cutoff set, so "
-                                         "it inherited a condition governing a different gate")
+            self.assertNotEqual(0, code, "the lane did not fire with no test-plan cutoff key "
+                                         "present at all")
             self.assertIn("STALE", out)
 
     def test_sound_evidence_passes_and_off_refuses_nothing(self) -> None:
@@ -1314,19 +1312,6 @@ class SurvivorFilingCLITests(unittest.TestCase):
             self.assertTrue(tr._survivor_records(str(root), cid),
                             "the child has no survivor recorded, so this test cannot see the "
                             "guard at all")
-            # The child is MACHINE-FILED and carries no `## Test Plan`, and the test-plan gate
-            # now fires on the terminal transition by whatever route reached it - so without
-            # these two lines the close is refused by that gate and never reaches the guard this
-            # test is about. Neither is forceable, which is the point of both.
-            cpath = root / "sdlc-studio" / "bugs" / child
-            cpath.write_text(cpath.read_text(encoding="utf-8") +
-                             "\n## Test Plan\n\n| Criterion | Mutant | Title |\n"
-                             "| --- | --- | --- |\n| AC1 | in src/a.py, drop the guard | it "
-                             "holds |\n", encoding="utf-8")
-            sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-            import critic  # noqa: PLC0415
-            critic.record_verdict(root, cid, "approve", reviewer="qa", author="dev",
-                                  phase="plan-review", kind="test-plan", brief="d" * 12)
             code, out = _cli(root, "set", "--id", cid, "--status", "Fixed", "--force")
             self.assertEqual(0, code, f"the child close did not reach the guard:\n{out}")
             self.assertEqual([child], self._bugs(root),
@@ -1609,438 +1594,6 @@ class NoSurfaceExemptionCLITests(unittest.TestCase):
                               py_change=False)
             code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
             self.assertEqual(0, code, f"a genuine markdown-only repair was refused:\n{out}")
-
-
-class TestPlanGateTests(unittest.TestCase):
-    """US0630: a unit reaching delivery without a REVIEWED test plan is refused by the command
-    that starts the work, not reported at the close.
-
-    The demand has to arrive before any code is written, or it is a tax on finished work rather
-    than a gate on starting it - which is how a gate stops being satisfied and starts being
-    forced.
-    """
-
-    PLAN = ("\n## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
-            "| AC1 | in thing.py, delete the guard | it refuses |\n")
-
-    def _repo(self, root: Path, *, plan: bool, created="2026-08-06", cutoff=True) -> None:
-        (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
-        (root / "src").mkdir(parents=True, exist_ok=True)
-        (root / "src" / "thing.py").write_text("x = 1\n", encoding="utf-8")
-        if cutoff:
-            (root / "sdlc-studio" / ".config.yaml").write_text(
-                'review:\n  test_plan_after: "2026-01-01"\n', encoding="utf-8")
-        (root / "sdlc-studio" / "bugs" / "BG0001-x.md").write_text(
-            f"# BG0001: a bug\n\n> **Status:** Open\n> **Severity:** Medium\n"
-            f"> **Verification depth:** functional\n> **Created:** {created}\n"
-            f"> **Affects:** src/thing.py\n> **Points:** 3\n\n"
-            f"## Acceptance Criteria\n\n### AC1: it refuses\n\n- **Then** it refuses\n"
-            f"- **Verify:** pytest x\n" + (self.PLAN if plan else ""), encoding="utf-8")
-
-    def _start(self, root: Path):
-        out, err = io.StringIO(), io.StringIO()
-        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            code = tr.main(["set", "--id", "BG0001", "--status", "In Progress",
-                            "--root", str(root)])
-        return code, out.getvalue() + err.getvalue()
-
-    def test_starting_work_without_a_plan_is_refused(self) -> None:
-        """Mutant: gate only at Done - the plan is demanded of finished work, which is a tax
-        rather than a gate and is exactly what gets forced. THE POSITIVE CONTROL is below: with
-        a reviewed plan the same transition succeeds."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._repo(root, plan=False)
-            code, text = self._start(root)
-            self.assertNotEqual(code, 0, "work started with no test plan")
-            self.assertIn("no `## Test Plan`", text)
-            self.assertIn("testplan derive", text,
-                          "the refusal does not print the command that produces one")
-
-    def test_an_unreviewed_plan_is_refused_distinctly(self) -> None:
-        """The two refusals have DIFFERENT fixes, so one message for both sends the reader to
-        the wrong command - and being sent to the wrong one of "write a plan" and "get it
-        reviewed" is not a small error when the whole claim is that reviewing the test is cheap.
-
-        Mutant: return the missing-plan message for both - this reddens on the distinction.
-        A spec-kind approval must not discharge it either: that reviewer never saw a test plan.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._repo(root, plan=True)
-            code, text = self._start(root)
-            self.assertNotEqual(code, 0, "work started on an unreviewed plan")
-            self.assertIn("no independent seat has approved", text)
-            self.assertNotIn("no `## Test Plan`", text,
-                             "an unreviewed plan was reported as a missing one")
-
-            # A SPEC approval does not clear the TEST-PLAN gate - BG0510's whole point.
-            import critic
-            critic.record_verdict(root, "BG0001", "approve", reviewer="qa", author="dev",
-                                  phase="plan-review", kind="spec", brief="a" * 12)
-            code, text = self._start(root)
-            self.assertNotEqual(code, 0,
-                                "a spec-review approval discharged the test-plan gate")
-
-            # A SELF test-plan review does not clear it either.
-            critic.record_verdict(root, "BG0001", "approve", reviewer="dev", author="dev",
-                                  phase="plan-review", kind="test-plan", brief="b" * 12)
-            code, text = self._start(root)
-            self.assertNotEqual(code, 0, "a self-review cleared the test-plan gate")
-            self.assertIn("self-review", text)
-
-            # THE POSITIVE CONTROL: an independent test-plan APPROVE opens it.
-            critic.record_verdict(root, "BG0001", "approve", reviewer="qa", author="dev",
-                                  phase="plan-review", kind="test-plan", brief="c" * 12)
-            code, text = self._start(root)
-            self.assertEqual(code, 0, f"a reviewed plan was still refused: {text}")
-
-    def test_requirements_states_the_test_plan_demand(self) -> None:
-        """Asked BEFORE the work. Derived by running the real gate rather than restating it, so
-        there is no second copy to go stale.
-
-        Mutant: hand-maintain the requirement list - it drifts from the gate silently, which is
-        the failure `requirements` exists to remove, reintroduced one layer up.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._repo(root, plan=False)
-            unmet = tr.requirements(str(root), "BG0001", "In Progress")
-            self.assertTrue(any("Test Plan" in u for u in unmet),
-                            f"the demand is not stated before the work: {unmet}")
-
-    def test_an_unreadable_ledger_refuses_rather_than_passes(self) -> None:
-        """`return None` is PASS, so swallowing every exception made the one condition under
-        which the gate was least able to judge the one under which it approved everything. A seat
-        chmod-ed the verdict ledger and watched a refusal become exit 0 with nothing on either
-        stream. Two sibling gates in this same file already fail loud; this one was written past
-        both.
-
-        Mutant: swallow and return None - an unreadable bar reads as a passed one.
-        """
-        import os
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._repo(root, plan=True)
-            led = root / "sdlc-studio" / "reviews" / "plan-review-verdicts.md"
-            led.parent.mkdir(parents=True, exist_ok=True)
-            led.write_text("# Plan review verdicts\n\n| Unit | Verdict |\n| --- | --- |\n",
-                           encoding="utf-8")
-            os.chmod(led, 0o000)
-            try:
-                if os.access(led, os.R_OK):      # running as root - the probe cannot be made
-                    self.skipTest("cannot make a file unreadable in this environment")
-                code, text = self._start(root)
-            finally:
-                # Restored HERE, not via addCleanup: the temp directory is gone by then, so the
-                # cleanup would raise FileNotFoundError and mask the result it is protecting.
-                os.chmod(led, 0o644)
-            self.assertNotEqual(code, 0, "an unreadable ledger was treated as a passed gate")
-            self.assertIn("could not be established", text)
-            self.assertIn("not a passed one", text)
-
-    def test_an_unreadable_config_does_not_switch_the_gate_off(self) -> None:
-        """An unreadable `.config.yaml` is not an ABSENT cutoff. `project_override` swallows every
-        config fault and returns the default, so `not after` read a malformed, non-UTF-8,
-        unreadable or directory-shaped config as "this project set no cutoff" and stood BOTH new
-        gates down entirely. A seat reproduced it four ways.
-
-        The sibling `_two_role_gate` already solved this with `_config_unparseable`, and its
-        comment enumerates the same four shapes: "silence read as a pass, reproduced one layer up
-        in the gate written to close it". This repair reached parity with that gate's LEDGER half
-        and skipped its CONFIG half.
-
-        Mutant: read an unparseable config as no cutoff - a project that DECLARES the rule and
-        then cannot be read has silently waived it.
-        """
-        import os
-        shapes = {
-            "malformed yaml": lambda c: c.write_text("review:\n\ttest_plan_after: x\n",
-                                                     encoding="utf-8"),
-            "non-utf8": lambda c: c.write_bytes(b"review:\n  test_plan_after: \xff\xfe\n"),
-            "a directory": lambda c: c.mkdir(),
-        }
-        for why, make in shapes.items():
-            with self.subTest(why=why), tempfile.TemporaryDirectory() as d:
-                root = Path(d)
-                self._repo(root, plan=False, cutoff=False)
-                make(root / "sdlc-studio" / ".config.yaml")
-                code, text = self._start(root)
-                self.assertNotEqual(code, 0,
-                                    f"an unreadable config ({why}) switched the gate off")
-
-    def test_the_planned_mutant_gate_also_fails_loud(self) -> None:
-        """The sibling half of the fail-loud repair, which a seat found pinned by NOTHING: the
-        `return None` mutant survived 2,137 tests across eight suite files, and this unit's own
-        Mutation-checked field claimed it had been killed. Both are corrected.
-
-        Mutant: swallow and return None - a corrupt mutation ledger grants the terminal
-        transition at exit 0.
-        """
-        import unittest.mock
-        import mutation
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._repo(root, plan=True)
-            # The FIRST version of this test wrote a corrupt ledger and passed for the wrong
-            # reason: `_load_ledger` catches that one layer down, so the except branch never ran
-            # and the swallow mutant survived it. The failure has to be forced at the boundary
-            # the gate actually guards.
-            with unittest.mock.patch.object(
-                    mutation, "plan_execution",
-                    side_effect=RuntimeError("ledger unreadable")):
-                unmet = tr.requirements(str(root), "BG0001", "Fixed")
-            self.assertTrue(any("could not be established" in u for u in unmet),
-                            f"a failing planned-mutant gate granted the transition: {unmet}")
-            self.assertTrue(any("not a passed one" in u for u in unmet), unmet)
-
-    def test_a_unit_before_the_cutoff_is_not_held(self) -> None:
-        """A gate that refuses every unit in an existing backlog is one that gets switched off
-        wholesale rather than satisfied.
-
-        Mutant: gate unconditionally, or ignore the unit's Created date - every historical unit
-        in every consuming project is held by a plan nobody was ever asked for.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._repo(root, plan=False, created="2025-01-01")
-            code, text = self._start(root)
-            self.assertEqual(code, 0, f"a pre-cutoff unit was retro-refused: {text}")
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._repo(root, plan=False, cutoff=False)
-            code, text = self._start(root)
-            self.assertEqual(code, 0, f"the gate fired with no cutoff recorded: {text}")
-
-
-class TestPlanGateEntryTests(unittest.TestCase):
-    """BG0630: the test-plan gate is consulted at the transition that makes the work PERMANENT,
-    not only at the one that starts it.
-
-    The entry firing is idempotent for a forward walk, and that idempotence made the gate
-    ORDER-DEPENDENT rather than strict: a rejection recorded AFTER a unit entered In Progress was
-    consulted by nothing, because every transition left to it was one the entry guard skipped.
-    Measured at the base of this change on a fixture carrying a standing test-plan rejection:
-    `Open -> In Progress` is refused (exit 1) while both `In Progress -> Fixed` and a DIRECT
-    `Open -> Fixed` exit 0.
-
-    Driven as a PROCESS, through `transition.py set`. The defect is about which gate fires on
-    which route through the shipped ladder, and an in-process call to one gate cannot see that.
-
-    Terminal transitions are driven with `--force`, deliberately. A bug reaching `Fixed` also
-    meets the depth gate, the planned-mutant gate and the mutation-evidence lane, each of which
-    refuses this fixture for its own reason and would mask the verdict under test - measured at
-    the base of this change, `In Progress -> Fixed` without `--force` is refused by the
-    planned-mutant gate whatever the plan review said. `--force` waives those (it is what the
-    "Override with --force" on each of them means) and it does NOT waive the test-plan gate,
-    which is not forceable at either call site. So under `--force` the gate under test is the
-    only thing that can still refuse, and at the base of this change both terminal routes exited
-    0 with a standing REJECT on record.
-    """
-
-    _PLAN = ("\n## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
-             "| AC1 | in src/thing.py, delete the guard | it refuses |\n")
-
-    _HISTORY = ("\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
-                "| 2026-08-04 | sdlc-studio | Filed |\n"
-                "| 2026-08-06 | sdlc-studio | Fixed |\n")
-
-    def _bug(self, unit, status, created):
-        return (f"# {unit}: a bug\n\n> **Status:** {status}\n> **Severity:** Medium\n"
-                f"> **Verification depth:** functional (checked by hand)\n"
-                f"> **Created:** {created}\n> **Affects:** src/thing.py\n> **Points:** 3\n\n"
-                f"## Summary\n\ns\n\n"
-                f"## Acceptance Criteria\n\n### AC1: it refuses\n\n- **Then** it refuses\n"
-                f"- **Verify:** shell true\n" + self._PLAN)
-
-    def _story(self, unit, status, created):
-        return (f"# {unit}: a story\n\n> **Status:** {status}\n> **Epic:** EP0001\n"
-                f"> **Created:** {created}\n> **Affects:** src/thing.py\n> **Points:** 3\n\n"
-                f"## Acceptance Criteria\n\n### AC1: it refuses\n\n- **Given** x\n"
-                f"- **When** y\n- **Then** it refuses\n- **Verify:** shell true\n" + self._PLAN)
-
-    def _proj(self, d, *, unit="BG0001", status="Open", verdict="reject", cutoff=True,
-              created="2026-08-06", history="", kind="bug") -> Path:
-        """A workspace holding ONE unit, with a plan-review verdict of kind `test-plan` on
-        record. `verdict=None` records none at all."""
-        root = Path(d)
-        (root / "src").mkdir(parents=True, exist_ok=True)
-        (root / "src" / "thing.py").write_text("x = 1\n", encoding="utf-8")
-        (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
-        if cutoff:
-            (root / "sdlc-studio" / ".config.yaml").write_text(
-                'review:\n  test_plan_after: "2026-01-01"\n', encoding="utf-8")
-        body = (self._bug(unit, status, created) if kind == "bug"
-                else self._story(unit, status, created)) + history
-        folder = "bugs" if kind == "bug" else "stories"
-        (root / "sdlc-studio" / folder / f"{unit}-x.md").write_text(body, encoding="utf-8")
-        if verdict:
-            sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-            import critic  # noqa: PLC0415
-            critic.record_verdict(root, unit, verdict, reviewer="qa", author="dev",
-                                  phase="plan-review", kind="test-plan", brief="c" * 12)
-        return root
-
-    def _set(self, root, status, *extra, unit="BG0001"):
-        import subprocess  # noqa: PLC0415
-        scripts = Path(__file__).resolve().parents[1]
-        r = subprocess.run(
-            [sys.executable, str(scripts / "transition.py"), "--root", str(root),
-             "set", "--id", unit, "--status", status, *extra],
-            capture_output=True, text=True, timeout=300, check=False)
-        return r.returncode, r.stdout + r.stderr
-
-    #: What the refusal says when the standing rejection is the reason. Asserted rather than a
-    #: bare non-zero exit, because every other terminal gate can also produce a non-zero exit and
-    #: a test that only reads the status cannot tell which gate answered.
-    _REJECTED = "an independent seat REJECTED"
-
-    def test_the_gate_applies_on_the_in_progress_to_terminal_route(self) -> None:
-        """AC1. MUTANT: reinstate the `from_canon not in _IMPL_TARGETS` early return at the
-        gate's second call site - the unit that entered before its rejection was recorded walks
-        to terminal with the verdict never consulted."""
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d, status="In Progress")
-            code, text = self._set(root, "Fixed", "--force")
-        self.assertNotEqual(0, code,
-                            f"a bug entered In Progress before its REJECT reached Fixed: {text}")
-        self.assertIn(self._REJECTED, text, text)
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d, unit="US0001", kind="story", status="In Progress")
-            code, text = self._set(root, "Done", "--force", unit="US0001")
-        self.assertNotEqual(0, code,
-                            f"a story took the same route to Done unchecked: {text}")
-        self.assertIn(self._REJECTED, text, text)
-
-    def test_one_absent_test_plan_is_one_requirement_not_two(self) -> None:
-        """AC6. MUTANTS: dedupe on the exact refusal STRING again, so two wordings of the same
-        fact both stand; delete the deduplication entirely.
-
-        `_planned_mutant_gate` and `_test_plan_gate` both say a unit has no test plan and the
-        cutoff puts it in scope, in different words with different remedies. Deduped on the
-        string, both survived: a unit with no plan was refused TWICE for not having one, and
-        the count `transition.py requirements` derives was inflated with it. Measured on one
-        fixture: 2 requirements at the base of this change, 3 with the new firing added, 1 here.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d, status="Open", verdict=None)
-            art = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
-            art.write_text(art.read_text(encoding="utf-8").replace(self._PLAN, "\n"),
-                           encoding="utf-8")
-            code, text = self._set(root, "Fixed")
-            self.assertNotEqual(0, code, f"a unit with no test plan reached Fixed: {text}")
-            self.assertEqual(1, text.count("has no `## Test Plan`"),
-                             f"the same absence is stated more than once:\n{text}")
-            import re as _re  # noqa: PLC0415
-            m = _re.search(r"blocked \((\d+) requirement", text)
-            self.assertIsNotNone(m, text)
-            self.assertEqual("1", m.group(1),
-                             f"the requirement count double-counts one absence:\n{text}")
-
-        # THE GATE'S OTHER MESSAGE, on the ONE route where both firings reach it. `Done` is in
-        # `_IMPL_TARGETS` and `Ready` is not, so a story taken straight from Ready meets the
-        # entry firing AND the terminal one - and the un-approved-plan sentence does
-        # not contain the absent-plan key, so a suppression keyed on that fact alone let the
-        # same sentence land twice. Measured on US0822 at its own transition: 3 requirements,
-        # two of them one sentence. The bug route above cannot show this, because `Fixed` is
-        # outside `_IMPL_TARGETS` and the entry firing never runs on it.
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d, status="Ready", verdict=None, kind="story", unit="US0001")
-            code, text = self._set(root, "Done", unit="US0001")
-            self.assertNotEqual(0, code, f"an unreviewed plan reached Done: {text}")
-            self.assertEqual(1, text.count("no independent seat has approved"),
-                             f"the un-approved plan is refused more than once:\n{text}")
-
-    def test_a_direct_route_to_a_terminal_status_is_refused_too(self) -> None:
-        """AC2. MUTANT: narrow the new firing to transitions whose source status is In Progress.
-
-        `Fixed` is not in `_IMPL_TARGETS`, so at the base of this change the entry guard fired on
-        NO transition to `Fixed` at all: a fix that adds only the In Progress route leaves the
-        direct one wide open, and every unit this bug is about is a bug.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d, status="Open")
-            code, text = self._set(root, "Fixed", "--force")
-        self.assertNotEqual(0, code, f"a direct Open -> Fixed skipped the gate: {text}")
-        self.assertIn(self._REJECTED, text, text)
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d, unit="US0001", kind="story", status="Ready")
-            code, text = self._set(root, "Done", "--force", unit="US0001")
-        self.assertNotEqual(0, code, f"a direct Ready -> Done skipped the gate: {text}")
-        self.assertIn(self._REJECTED, text, text)
-
-    def test_an_approved_plan_review_passes_on_both_routes(self) -> None:
-        """AC3, the positive control. MUTANT: delete the `critic.is_independent` branch that
-        returns None on an independent APPROVE - the gate then refuses a properly reviewed unit
-        on the route it has just started firing on, which is how a gate stops being satisfied and
-        starts being forced.
-
-        Both routes exit 0 at the base of this change, so each discriminates only through its
-        mutant. Stated rather than left implied.
-        """
-        for start in ("In Progress", "Open"):
-            with self.subTest(start=start), tempfile.TemporaryDirectory() as d:
-                root = self._proj(d, status=start, verdict="approve")
-                code, text = self._set(root, "Fixed", "--force")
-                self.assertEqual(0, code,
-                                 f"a reviewed unit was walled on the {start} route: {text}")
-
-    def test_the_new_firing_sits_inside_the_dated_cutoff(self) -> None:
-        """AC4. MUTANT: delete the `_plan_gate_active` call at the terminal-route site, leaving
-        the gate unconditional - every historical unit in every consuming project is then held to
-        a plan nobody was ever asked for, which is a gate that gets switched off wholesale rather
-        than satisfied.
-
-        Both halves of the cutoff: no `review.test_plan_after` at all, and a unit created before
-        the one that is set.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d, status="In Progress", cutoff=False)
-            code, text = self._set(root, "Fixed", "--force")
-        self.assertEqual(0, code, f"the gate fired with no cutoff recorded: {text}")
-        self.assertNotIn(self._REJECTED, text, text)
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d, status="In Progress", created="2025-01-01")
-            code, text = self._set(root, "Fixed", "--force")
-        self.assertEqual(0, code, f"a pre-cutoff unit was retro-refused: {text}")
-        self.assertNotIn(self._REJECTED, text, text)
-
-    def test_a_reopened_and_refixed_bug_must_answer_its_rejection_first(self) -> None:
-        """AC5. MUTANT: skip the gate for any unit whose artefact already records a terminal
-        status in its revision history - the sixteen bugs this criterion is about are then exempt
-        for good, which is the one population the change was written for.
-
-        The fixture is built on one of the sixteen. Measured through the gate's own reading
-        (`critic.verdict_for(..., phase="plan-review", kind="test-plan")` then
-        `critic.plan_review_repair_clears`) over this repository's bugs: 48 carry a standing
-        test-plan REJECT, 34 of those are at Fixed, and 16 of THOSE have no repair clearing it -
-        BG0516 first among them, whose id, created date and Fixed revision-history row this
-        fixture wears.
-
-        Two halves, and the first is what makes the change safe to land: the gate fires on a
-        TRANSITION and never retrospectively, so a refused attempt leaves the artefact byte for
-        byte as it was rather than reopening it.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d, unit="BG0516", status="Fixed", created="2026-08-04",
-                              history=self._HISTORY)
-            art = root / "sdlc-studio" / "bugs" / "BG0516-x.md"
-            before = art.read_bytes()
-            code, text = self._set(root, "Fixed", "--force", unit="BG0516")
-            self.assertNotEqual(0, code, f"the walled bug's re-fix was granted: {text}")
-            self.assertIn(self._REJECTED, text, text)
-            self.assertEqual(before, art.read_bytes(),
-                             "a refused transition rewrote the artefact - the gate reached back "
-                             "over a unit already at rest instead of judging a transition")
-
-            reopen, text = self._set(root, "Open", "--force", unit="BG0516")
-            self.assertEqual(0, reopen, f"the bug could not be reopened at all: {text}")
-            self.assertIn("**Status:** Open", art.read_text(encoding="utf-8"))
-
-            code, text = self._set(root, "Fixed", "--force", unit="BG0516")
-            self.assertNotEqual(0, code, f"the re-fix escaped the standing rejection: {text}")
-            self.assertIn(self._REJECTED, text, text)
 
 
 class DoneGateTests(unittest.TestCase):
@@ -4765,13 +4318,13 @@ class UpgradeBaselineTests(unittest.TestCase):
 class EpicBreakdownGateTests(unittest.TestCase):
     """BG0568: an epic's completion is derived from its breakdown, and something must CHECK it.
 
-    The test-plan gate was accidentally standing in for this and could not be forced, so every
-    epic `refine` minted was permanently un-closable. These drive `transition.py set` through the
+    The test-plan gate (since deleted) was accidentally standing in for this and could not be
+    forced, so every epic `refine` minted was permanently un-closable. These drive `transition.py set` through the
     shipped CLI - the defect lives in which gate fires on which entry, and no in-process call to
     a single gate can see that.
     """
 
-    _CFG = "schema_version: 3\nreview:\n  test_plan_after: 2020-01-01\n"
+    _CFG = "schema_version: 3\n"
 
     def _proj(self, d):
         root = Path(d)
@@ -4805,9 +4358,7 @@ class EpicBreakdownGateTests(unittest.TestCase):
             capture_output=True, text=True, timeout=300, check=False)
 
     def test_an_epic_with_a_terminal_breakdown_closes(self) -> None:
-        # AC1. The cutoff is SET, the epic is created after it, and it carries no `## Test Plan` -
-        # all three pinned, because `_plan_gate_active` is False without them and the mutant would
-        # then survive on a fixture that never armed the gate it restores.
+        # AC1. The epic carries no `## Test Plan`, and nothing may ask it for one.
         with tempfile.TemporaryDirectory() as d:
             root = self._proj(d)
             self._story(root, "US0001", "Done")
@@ -4851,37 +4402,6 @@ class EpicBreakdownGateTests(unittest.TestCase):
             r = self._run(root, "set", "--id", "EP0001", "--status", "Done")
             self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
             self.assertIn("US0009", r.stdout + r.stderr)
-
-    def test_only_the_epic_is_released_from_the_test_plan_gate(self) -> None:
-        # AC4. The story and the bug enter `In Progress` - a bug routed to `Fixed` never reaches
-        # this gate at all, so that phrasing would be vacuous on its bug half.
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d)
-            self._story(root, "US0001", "Ready")
-            r = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
-            self.assertNotEqual(0, r.returncode, "a story was released from the test-plan gate")
-            self.assertIn("Test Plan", r.stdout + r.stderr)
-            (root / "sdlc-studio" / "bugs" / "BG0001-x.md").write_text(
-                "# BG0001: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
-                "> **Created:** 2026-08-10\n\n## Acceptance Criteria\n\n### AC1: a\n\n"
-                "- **Given** x\n- **When** y\n- **Then** z\n- **Verify:** shell true\n",
-                encoding="utf-8")
-            r = self._run(root, "set", "--id", "BG0001", "--status", "In Progress")
-            self.assertNotEqual(0, r.returncode, "a bug was released from the test-plan gate")
-            # The four OTHER types the gate holds today. Without these the criterion cannot tell
-            # `type_ != "epic"` from `type_ in ("story","bug")` - both refuse a story and a bug,
-            # and the second silently releases these four. Mutation found that exact gap.
-            (root / "sdlc-studio" / "change-requests").mkdir(parents=True, exist_ok=True)
-            (root / "sdlc-studio" / "change-requests" / "CR0001-x.md").write_text(
-                "# CR-0001: c\n\n> **Status:** Proposed\n> **Priority:** Medium\n"
-                "> **Created:** 2026-08-10\n\n## Acceptance Criteria\n\n### AC1: a\n\n"
-                "- **Given** x\n- **When** y\n- **Then** z\n- **Verify:** shell true\n",
-                encoding="utf-8")
-            r = self._run(root, "set", "--id", "CR0001", "--status", "In Progress")
-            self.assertNotEqual(0, r.returncode,
-                                "a CR was released from the test-plan gate - the change was "
-                                "scoped to code-carrying types rather than to the epic alone")
-            self.assertIn("Test Plan", r.stdout + r.stderr)
 
     def test_the_gate_and_the_drift_detector_read_one_breakdown(self) -> None:
         # AC5, as a CLI OUTCOME rather than a claim about which function is called. The declared
@@ -5186,50 +4706,6 @@ class TheAppetiteBreakerIsPulledOnTheShippedPath(unittest.TestCase):
         self.assertNotIn("Traceback", proc.stderr)
 
 
-class PlannedMutantGateNamesTheRowTests(unittest.TestCase):
-    """BG0596 AC4: the done-gate must say WHICH row is unaccounted for."""
-
-    def _fixture(self, root):
-        (root / "x.py").write_text("def a():\n    return 1\n", encoding="utf-8")
-        d = root / "sdlc-studio" / "bugs"
-        d.mkdir(parents=True, exist_ok=True)
-        f = d / "BG9001-x.md"
-        f.write_text(
-            "# BG9001: a unit\n\n> **Status:** Open\n> **Severity:** Medium\n"
-            "> **Points:** 2\n> **Affects:** x.py\n> **Created:** 2026-08-19\n\n"
-            "## Summary\n\nA thing.\n\n## Acceptance Criteria\n\n"
-            "- [ ] **AC1** Given two rows on one criterion, when the gate reads them, then it "
-            "names the one that is owed\n\n"
-            "## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
-            "| AC1 | in `x.py`, delete the first branch | first |\n"
-            "| AC1 | in `x.py`, delete the second branch | second |\n\n"
-            "## Revision History\n", encoding="utf-8")
-        return f
-
-    def test_the_refusal_names_the_row_and_quotes_its_mutant(self) -> None:
-        """MUTANT: in `transition.py`, drop the row identity from the refusal and emit one line
-        per criterion.
-
-        Two unexecuted rows on one AC used to produce the same sentence twice, with the mutant
-        text dropped - the reader was told something was owed and not which thing.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root)
-            _m = _load("mutation", "mutation.py")
-            _m.register_mutant(root, "x.py", "in `x.py`, delete the first branch",
-                               "pytest t", "killed", unit="BG9001", criterion="AC1",
-                               line=1, row=0)
-            out = transition._planned_mutant_gate(root, "BG9001") or ""
-            self.assertIn("AC1 row 1", out,
-                          f"the refusal did not identify which row is owed:\n{out}")
-            self.assertIn("delete the second branch", out,
-                          f"the refusal dropped the mutant text, so the reader cannot tell "
-                          f"which mutant is owed:\n{out}")
-            self.assertNotIn("AC1 row 0", out,
-                             f"a row that WAS executed is reported as outstanding:\n{out}")
-
-
 class AnnotateFieldsFileTests(unittest.TestCase):
     """BG0609 - `annotate` had only `--value`, so a backticked value was executed by the shell."""
 
@@ -5305,170 +4781,6 @@ class AnnotateFieldsFileTests(unittest.TestCase):
                                           str(doc), "--root", str(root)]))
 
 
-
-
-class PlanReviewRepairGateTests(unittest.TestCase):
-    """BG0629: a plan-review REJECT answered by a complete repair must stop blocking.
-
-    Before this, retirement demanded a later APPROVE carrying the rejection's own brief
-    fingerprint - and the fingerprint hashes the criteria, so repairing what the reviewer
-    rejected necessarily changed it. 44 of 44 rejected units stood REJECTed and not one had
-    ever been cleared.
-
-    Every fixture here is ISOLATED. None reads the live ledger and none names this run's own
-    units: a test asserting `BG0622 no longer stands` becomes unfalsifiable the moment the
-    dispositions land, and this unit repairs the gate that was refusing its own run.
-    """
-
-    _CFG = "schema_version: 3\nreview:\n  test_plan_after: 2020-01-01\n"
-
-    _VERDICT_HEAD = (
-        "# Plan-Review Verdicts\n\n"
-        "| Unit | Verdict | Reviewer | Author | Date | Brief | Kind | Issues |\n"
-        "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
-    _REPAIR_HEAD = (
-        "# Repair Record\n\n"
-        "| Unit | Verdict date | Author | Date | Closed | Outstanding |\n"
-        "| --- | --- | --- | --- | --- | --- |\n")
-
-    def _run(self, root, *args):
-        import subprocess  # noqa: PLC0415
-        scripts = Path(__file__).resolve().parents[1]
-        return subprocess.run(
-            [sys.executable, str(scripts / "transition.py"), "--root", str(root), *args],
-            capture_output=True, text=True, timeout=300, check=False)
-
-    def _proj(self, d, *, cfg=None):
-        root = Path(d)
-        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
-        (root / "sdlc-studio" / "reviews").mkdir(parents=True)
-        (root / "sdlc-studio" / ".config.yaml").write_text(
-            self._CFG if cfg is None else cfg, encoding="utf-8")
-        return root
-
-    def _bug(self, root, bid="BG0001"):
-        (root / "sdlc-studio" / "bugs" / f"{bid}-x.md").write_text(
-            f"# {bid}: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
-            f"> **Created:** 2026-08-10\n\n## Acceptance Criteria\n\n### AC1: a\n\n"
-            f"- **Given** x\n- **When** y\n- **Then** z\n- **Verify:** shell true\n\n"
-            f"## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
-            f"| AC1 | delete the guard | a |\n", encoding="utf-8")
-
-    def _verdicts(self, root, rows, *, name="plan-review-verdicts.md"):
-        (root / "sdlc-studio" / "reviews" / name).write_text(
-            self._VERDICT_HEAD + "".join(rows), encoding="utf-8")
-
-    def _row(self, unit, verdict, issues, *, date="2026-08-27", brief="aaaaaaaaaaaa",
-             reviewer="qa; independent", author="engineering; session", kind="test-plan"):
-        return (f"| {unit} | {verdict} | {reviewer} | {author} | {date} | {brief} | {kind} "
-                f"| {issues} |\n")
-
-    def _repairs(self, root, rows):
-        (root / "sdlc-studio" / "reviews" / "repair-record.md").write_text(
-            self._REPAIR_HEAD + "".join(rows), encoding="utf-8")
-
-    def _repair_row(self, unit, closed, *, verdict_date="2026-08-27", date="2026-08-27"):
-        return (f"| {unit} | {verdict_date} | engineering; session | {date} | {closed} "
-                f"| none |\n")
-
-    def test_a_complete_repair_clears_the_test_plan_gate(self) -> None:
-        # AC1. Fixture holds PLAN-REVIEW rows of kind test-plan only: `repair_state` filters by
-        # neither phase nor kind, while the gate's `verdict_for` filters by both, so a fixture
-        # that mixed them would not say which of the two answered.
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d)
-            self._bug(root)
-            self._verdicts(root, [self._row("BG0001", "REJECT", "the oracle cannot fail")])
-            self._repairs(root, [self._repair_row(
-                "BG0001", "the oracle cannot fail -> rewritten to assert the text")])
-            r = self._run(root, "set", "--id", "BG0001", "--status", "In Progress")
-            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
-
-    def test_a_partial_repair_still_blocks_and_names_what_is_outstanding(self) -> None:
-        # AC2. The BLOCK alone passes on pre-existing behaviour - a partial repair was refused
-        # before this change too, by the plain REJECT path. Naming the outstanding finding is
-        # computable only through the new consultation, so that is what is asserted.
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d)
-            self._bug(root)
-            self._verdicts(root, [self._row(
-                "BG0001", "REJECT", "the oracle cannot fail; the control is vacuous")])
-            self._repairs(root, [self._repair_row(
-                "BG0001", "the oracle cannot fail -> rewritten to assert the text")])
-            r = self._run(root, "set", "--id", "BG0001", "--status", "In Progress")
-            self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
-            self.assertIn("the control is vacuous", r.stdout + r.stderr)
-
-    def test_the_cli_admits_a_repaired_unit_and_refuses_an_unrepaired_one(self) -> None:
-        # AC3. BOTH halves, through the shipped command. A success asserted alone goes green on
-        # a gate that never fired, and the gate stands down entirely when `test_plan_after` is
-        # unset - which is the default.
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d)
-            self._bug(root, "BG0001")
-            self._bug(root, "BG0002")
-            self._verdicts(root, [
-                self._row("BG0001", "REJECT", "the oracle cannot fail"),
-                self._row("BG0002", "REJECT", "the oracle cannot fail")])
-            self._repairs(root, [self._repair_row(
-                "BG0001", "the oracle cannot fail -> rewritten to assert the text")])
-            ok = self._run(root, "set", "--id", "BG0001", "--status", "In Progress")
-            self.assertEqual(0, ok.returncode, ok.stdout + ok.stderr)
-            no = self._run(root, "set", "--id", "BG0002", "--status", "In Progress")
-            self.assertNotEqual(0, no.returncode, no.stdout + no.stderr)
-            self.assertIn("no repair is recorded", no.stdout + no.stderr)
-
-    def test_a_delivery_repair_does_not_answer_a_plan_review_rejection(self) -> None:
-        # AC4. Closures are named by TEXT, never by ordinal: an ordinal is positional, so `#1`
-        # checked against the other phase's list resolves to that list's first finding and
-        # silently answers it.
-        #
-        # BG0631 has since CLOSED the leak this comment used to say survived. A repair row now
-        # names the phase it answers, so a delivery repair does not enter the plan-review
-        # computation at all - the state is `none` rather than `partial`, and the gate refuses
-        # one step earlier with "no repair is recorded against it". The assertion below follows
-        # that: the refusal is what this row pins, and the finding text was only ever visible
-        # because the delivery repair was wrongly being counted as a partial answer to it.
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d)
-            self._bug(root)
-            self._verdicts(root, [self._row("BG0001", "REJECT", "the plan oracle cannot fail")])
-            self._verdicts(root, [self._row("BG0001", "REJECT", "the code leaks a handle")],
-                           name="critic-verdicts.md")
-            self._repairs(root, [self._repair_row(
-                "BG0001", "the code leaks a handle -> closed with a context manager")])
-            r = self._run(root, "set", "--id", "BG0001", "--status", "In Progress")
-            page = r.stdout + r.stderr
-            self.assertNotEqual(0, r.returncode, page)
-            self.assertIn("test plan an independent seat REJECTED", page, page)
-            self.assertIn("no repair is recorded against it", page, page)
-            # The delivery repair must not appear as an answer in any form.
-            self.assertNotIn("the code leaks a handle", page,
-                             "the DELIVERY repair was cited against a PLAN-REVIEW rejection")
-
-    def test_a_repair_does_not_discharge_a_rejection_it_did_not_answer(self) -> None:
-        # AC5. Two unanswered rejections raising DIFFERENT findings, and a repair answering only
-        # one. `repair_state` computes `outstanding` PER REJECTION, so the unanswered sibling
-        # keeps the gate closed and is named.
-        #
-        # An earlier version counted repair ROWS against rejections per date as a proxy for the
-        # same property. Once `record_repair` began dispatching each closure to the rejection it
-        # answers, that count refused a genuinely COMPLETE repair whenever one row legitimately
-        # closed two same-date rejections - the ordinary shape - so the proxy was removed and
-        # the real computation is asserted instead.
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d)
-            self._bug(root)
-            self._verdicts(root, [
-                self._row("BG0001", "REJECT", "finding alpha here",
-                          reviewer="qa; independent; r1", brief="aaaaaaaaaaaa"),
-                self._row("BG0001", "REJECT", "finding beta here",
-                          reviewer="qa; independent; r2", brief="bbbbbbbbbbbb")])
-            self._repairs(root, [self._repair_row(
-                "BG0001", "finding alpha here -> answered")])
-            r = self._run(root, "set", "--id", "BG0001", "--status", "In Progress")
-            self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
-            self.assertIn("finding beta here", r.stdout + r.stderr)
 
 
 class MisplacedCriterionGateTests(unittest.TestCase):
@@ -6283,8 +5595,8 @@ class RejectNeedsAnAnswerTests(unittest.TestCase):
     Every fixture records its REJECT through `critic.record_verdict` in the DELIVERY phase -
     reviewer `qa`, author `dev`, a brief fingerprint, two findings - BACK-DATED to a fixed day,
     so a guard printing today's date cannot pass for one naming the verdict's. Each otherwise
-    clears every other gate: no config, so neither `review.two_role_after` nor
-    `review.test_plan_after` applies, and each criterion is verified. A refusal is asserted on
+    clears every other gate: no config, so `review.two_role_after` does not apply, and each
+    criterion is verified. A refusal is asserted on
     `unanswered delivery REJECT`, text no other gate emits, and every case runs WITHOUT
     `--force` except AC13, which pins what `--force` does."""
 

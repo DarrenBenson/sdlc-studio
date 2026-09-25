@@ -1232,6 +1232,7 @@ One row has been removed since adoption.
 | US0916 | APPROVE | qa-rev-US0916 | US0916-fix | 2026-09-25 | 05b6ad2123cf | full | [new] non-blocking: the derived AC5 test skips on a shallow clone and CI's ci job fetches depth 1; [new] non-blocking: stale comments name deleted functions in test\_sprint.py, critic.py, sdlc\_md.py and test\_transition.py; [pre-existing] sign accepts a self-APPROVE or evidence-only unit |
 | US0920 | APPROVE | qa-rev-US0920 | US0920-fix | 2026-09-25 | 8d03f68ee9c9 | full | [new] non-blocking: the story's AC3 prose still enumerates US0882 (3) (fixed at landing) |
 | BG0763 | APPROVE | qa-rev-BG0763 | BG0763-build | 2026-09-25 | 9077bab39647 | full | [new] non-blocking: the pack override pointed at a missing directory degrades silently [LC-006] |
+| US0911 | APPROVE | qa-rev-US0911 | US0911-fix | 2026-09-25 | ca552e47d82c | full | [new] non-blocking: BG0651 AC4's narrowed note says nothing blocks a terminal transition on a stale row, false under mutation\_evidence block |
 
 ## Supersessions
 

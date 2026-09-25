@@ -18,11 +18,11 @@
 ## Acceptance Criteria
 
 - [x] **AC1** Given each of the ten units this bug names, when `mutation.py run --story <id> --from-plan` is asked, then every planned mutant is executed and killed - a plan whose rows are optional measures nothing.
-  - **Verify:** shell test $(for u in BG0488 BG0497 BG0522 BG0523 BG0528 BG0536 BG0542 BG0543 BG0557 BG0569; do python3 .claude/skills/sdlc-studio/scripts/mutation.py run --root . --story $u --from-plan 2>&1 | grep -c "never executed" || true; done | paste -sd+ | bc) -eq 0
-  - **Verified:** yes (2026-08-15)
+  - **Verify:** manual - retired by US0911: `mutation.py run --from-plan` is retired and exits 2 naming the flag gone, so the shell verifier's `grep -c "never executed"` finds nothing and the criterion would pass vacuously on any tree
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0911
 - [x] **AC2** Given the same ten units, when `sprint close --dry-run` runs, then none of them raises a done-gate stop.
-  - **Verify:** shell test $(for u in BG0488 BG0497 BG0522 BG0523 BG0528 BG0536 BG0542 BG0543 BG0557 BG0569; do python3 .claude/skills/sdlc-studio/scripts/transition.py requirements --id $u --status Fixed 2>&1 | grep -c "unaccounted for" || true; done | paste -sd+ | bc) -eq 0
-  - **Verified:** yes (2026-08-15)
+  - **Verify:** manual - retired by US0911: the planned-mutant gate that printed `unaccounted for` is deleted from `transition.py requirements`, so the shell verifier's `grep -c "unaccounted for"` finds nothing and the criterion would pass vacuously on any tree
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0911
 
 ## Steps to Reproduce
 
@@ -67,3 +67,4 @@ errors or one inert gate. Carried as its own question.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-15 | sdlc-studio | Filed |
+| 2026-09-25 | Claude Sonnet 5 | AC1, AC2 retired by US0911 (D0259 pattern): the planned-mutant gate and `mutation.py run --from-plan` both go, so each shell verifier now greps text nothing prints and passes vacuously |

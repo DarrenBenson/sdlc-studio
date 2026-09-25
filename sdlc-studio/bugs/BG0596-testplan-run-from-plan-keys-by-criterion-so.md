@@ -34,8 +34,8 @@ Key the join by (criterion, mutant) or by row index, so every declared row is a 
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RowKeyedJoinTests::test_the_record_carries_a_row_identity
   - **Verified:** yes (2026-08-19)
 - [x] **AC4** Given a plan carrying two rows on a criterion of which only one was executed, when `transition._planned_mutant_gate` reads the join, then it refuses and NAMES the unexecuted row - today it appends one sentence per CRITERION and drops the mutant text, so two rows on AC13 print the same sentence twice and identify neither
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::PlannedMutantGateNamesTheRowTests::test_the_refusal_names_the_row_and_quotes_its_mutant
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0911: the planned-mutant gate whose refusal named the row is deleted
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0911
 - [x] **AC5** Given BG0592's artefact, when `--from-plan` runs against it end to end, then the planned count it prints equals the criterion-row count scanned directly from that file - the same production mutant as AC2, declared here as its instance over a real artefact rather than counted as a second mutant
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RowKeyedJoinTests::test_the_corpus_artefact_agrees_with_a_plain_scan
   - **Verified:** yes (2026-08-19)
@@ -77,3 +77,4 @@ The done-gate reads this join to decide whether a unit's planned mutants were ex
 | 2026-08-19 | sdlc-studio | Plan review F22: the helper has exactly TWO callers, not three. The caller named is right; the count was taken from a review and restated without checking |
 | 2026-08-19 | sdlc-studio | Plan review REJECT: AC4 needs `transition.py`, AC8 added for the brief and help page that still teach one-row-per-criterion, AC6's mutant replaced (adding the criterion to the key is EQUIVALENT on a single-row plan), AC2 given a fixture that produces output to assert on. Re-pointed 3 -> 5 |
 | 2026-08-20 | sdlc-studio | AC5's declared mutant SURVIVED its own test: the verifier pointed at a SYNTHETIC fixture where the criterion names BG0592's real artefact. It now scans the corpus artefact and asserts agreement rather than the literal 18 |
+| 2026-09-25 | Claude Opus 5.5 | AC4 retired by US0911 (D0259 pattern): the planned-mutant gate whose refusal named the row is deleted |

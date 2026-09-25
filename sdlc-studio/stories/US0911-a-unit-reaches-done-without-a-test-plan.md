@@ -1,6 +1,6 @@
 # US0911: A unit reaches Done without a test plan or a falsifiability probe
 
-> **Status:** In Progress
+> **Status:** Done
 > **Depends on:** US0934 - shares _pre_write_gates; the depth gate shapes its fixtures (EP0263 readiness)
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
@@ -20,14 +20,19 @@
 
 - **AC1:** Given a fixture story and a fixture bug with no `## Test Plan`, created after the `review.test_plan_after` date the fixture sets, with green criteria and an independent delivery APPROVE, the bug carrying `> **Verification depth:** functional` and the config setting `review.mutation_evidence: off` (so only this gate can refuse, whether or not US0934 or US0935 has landed), when each is moved to Done or Fixed through the CLI, then neither is refused and no output names a test plan or a planned mutant. Fails on: removing the Done-side gate and leaving the Fixed-side planned-mutant gate
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_test_plan_gate.py::TestPlanGateGoneTests::test_a_unit_without_a_test_plan_closes
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given a batch unit whose `## Test Plan` holds one bare `unnameable` row and one `unnameable: <reason>` row, and a fixture config setting `review.plan_falsifiability: block`, when `sprint.py plan` runs, then it is refused for neither row and no falsifiability probe runs; the same batch with a unit lacking Points is still refused naming Points, so the grooming gate survives. Fails on: deleting only the malformed-row branch (HEAD refuses both rows), and on a deletion that takes the Points refusal with it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_test_plan_gate.py::TestPlanGateGoneTests::test_plan_neither_probes_nor_refuses_unnameable_rows
+  - **Verified:** yes (2026-09-25)
 - **AC3:** Given `mutation.py run --from-plan`, when invoked, then it exits 2 with a message that the flag is retired naming `mutation.py run`, and `mutation.py run --help` no longer offers `--from-plan`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_test_plan_gate.py::TestPlanGateGoneTests::test_from_plan_is_retired
+  - **Verified:** yes (2026-09-25)
 - **AC4:** Given config-defaults.yaml, then it carries neither `review.test_plan_after` nor `review.plan_falsifiability`, and no shipped script reads either key (`_plan_gate_active`, `_planned_mutant_gate` and `_test_plan_gate` are gone). Fails on: deleting the keys from the defaults while `transition.py` still reads them with a fallback
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_test_plan_gate.py::TestPlanGateGoneTests::test_no_test_plan_keys_are_read
+  - **Verified:** yes (2026-09-25)
 - **AC5:** Given the criteria whose stamped Verify selector names a test this story deletes (TestPlanGateTests, TestPlanGateEntryTests, PlannedMutantGateNamesTheRowTests, PlanReviewRepairGateTests, UnnameableMutantTests and PlanFalsifiabilityGateTests): BG0596 (1), BG0629 (5), BG0630 (6), US0630 (4), US0633 (2) and US0820 (6), then each is retired in the D0259 pattern (`Verify: manual - retired by US0911: <why>`, `Verified: manual (<date>) - retired, superseded by US0911`), and no `Verified: yes` selector under sdlc-studio/ names a deleted test node
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_test_plan_gate.py::TestPlanGateGoneTests::test_no_stamp_names_a_deleted_test
+  - **Verified:** yes (2026-09-25)
 
 ## Notes
 

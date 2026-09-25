@@ -295,11 +295,11 @@ class DoctrineTests(unittest.TestCase):
         """
         transition = (ROOT / ".claude/skills/sdlc-studio/scripts/transition.py").read_text(
             encoding="utf-8")
-        self.assertIn("_plan_gate_active", transition,
-                      "transition.py carries no repair/test-plan gate, so the doctrine names a "
+        self.assertIn("def mutation_evidence_lane(", transition,
+                      "transition.py carries no repair-evidence gate, so the doctrine names a "
                       "mechanism that does not exist")
-        self.assertIn("review.test_plan_after", transition,
-                      "the gate the doctrine names is not the one transition.py reads")
+        self.assertIn("mutation_evidence_lane", _slice_rule(DOCTRINE.read_text(encoding="utf-8")),
+                      "the gate the doctrine names is not the one transition.py defines")
 
     def test_removing_any_lane_the_doctrine_names_reddens_the_guard(self) -> None:
         """Every mechanism rule 21 NAMES must be reachable from the gate ladder, not merely

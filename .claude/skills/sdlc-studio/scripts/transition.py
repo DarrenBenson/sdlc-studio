@@ -1031,28 +1031,10 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
         block = _bug_verify_gate(root, path, target_canon)
         if block:
             blocks.append(f"{block}. Override with --force")
-    # US0632: a PLANNED mutant that was never executed, or that SURVIVED, refuses the terminal
-    # transition. Every type, not stories: a bug's test plan is a test plan. Opt-in behind a
-    # dated cutoff on the same terms as the two-role gate, so an existing backlog carrying no
-    # plans is not retro-refused - a gate that refuses everything is a gate that gets switched
-    # off wholesale.
-    if not force and target_canon in _TERMINAL_FOR_PLAN and _plan_gate_active(root, text):
-        # SCOPED TO REPAIRS. Feature work is already held by a test written before
-        # anyone knew which way the implementation would go; only a repair's test is authored
-        # with the answer in hand. A blanket demand on all work is the one that gets switched
-        # off wholesale, and then it holds nothing.
-        repair, why = is_repair_unit(type_, text)
-        if repair:
-            block = _planned_mutant_gate(root, sdlc_md.norm_id(artifact_id))
-            if block:
-                blocks.append(f"{block} ({why}). Override with --force")
     # THE MUTATION-EVIDENCE LANE, and it is deliberately NOT nested inside the condition above.
-    # The two ask different questions - "was every PLANNED row executed" against "does this
-    # repair's changed surface carry evidence" - and they are governed by different settings.
-    # Hanging this inside `_plan_gate_active` would make `review.mutation_evidence: block` inert
-    # in every project that never set `review.test_plan_after`, while a fixture setting both went
-    # green: BG0541's own defect, recreated one level in. Sequential, so the exemption arm also
-    # stops silently waiving the planned-mutant gate beside it.
+    # It asks whether this repair's changed surface carries evidence, under its own setting, so
+    # hanging it inside another gate's condition would make `review.mutation_evidence: block`
+    # inert wherever that condition is false: BG0541's own defect, recreated one level in.
     if not force and target_canon in _TERMINAL_FOR_PLAN:
         lane = mutation_evidence_lane(root, sdlc_md.norm_id(artifact_id), text, type_)
         for block in lane["blocks"]:
@@ -1163,58 +1145,6 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             # advisory depending on statement order.
             warn = f"plan-review advisory: {pr_res['reason']}"
             gate_warn = f"{gate_warn}; {warn}" if gate_warn else warn
-    # TEST-PLAN gate. A SECOND pre-code gate, beside the spec one above and keyed to a
-    # different `Kind`, so neither discharges the other - that separation is BG0510's whole
-    # point, and without it one approval clears both while neither reviewer read the other's
-    # artefact. Fires on the same entry so a direct Ready->Done cannot smuggle an unreviewed
-    # plan into the terminal state, and on EVERY type: a bug's test plan is a test plan.
-    # EPIC is excluded, and ONLY the epic. Its completion is derived from its breakdown, so the
-    # evidence lives in children each held to this gate on its own; asking the container to name
-    # the production change its own test must fail on has no honest answer. The exclusion is
-    # written as `!= "epic"` rather than a story/bug allow-list on purpose - the latter would
-    # silently release cr, plan, test-spec and workflow, four types nothing in BG0568's evidence
-    # covers and 370 of whose CRs here carry an `Affects`.
-    if (type_ != "epic" and target_canon in _IMPL_TARGETS
-            and from_canon not in _IMPL_TARGETS and _plan_gate_active(root, text)):
-        block = _test_plan_gate(root, sdlc_md.norm_id(artifact_id), text)
-        if block:
-            blocks.append(block)
-    # ...and AGAIN at the TERMINAL transition, by whatever route reached it. The entry firing
-    # above is idempotent for a forward walk, and that idempotence makes the gate ORDER-DEPENDENT
-    # rather than strict: a rejection recorded AFTER a unit entered In Progress is consulted by
-    # nothing, because every transition it has left is one the entry guard skips. Measured on a
-    # fixture carrying a standing rejection: `Open -> In Progress` is refused while both
-    # `In Progress -> Fixed` and a direct `Open -> Fixed` exit 0.
-    #
-    # Same gate, same dated cutoff. INSIDE `_plan_gate_active` deliberately - a gate that refuses
-    # a whole existing backlog is one that gets switched off wholesale rather than satisfied, and
-    # a lane placed outside the cutoff it belonged in is a mistake this repository has already
-    # made once. It fires on a transition and never retrospectively, so a unit already sitting at
-    # a terminal status is untouched until something moves it again.
-    #
-    # Deduplicated against the entry firing, which also reaches a direct `Ready -> Done`: the
-    # same refusal printed twice reads as two requirements. Deduplicated by the ABSENT-PLAN
-    # FACT rather than by the exact string - `_planned_mutant_gate` states the same fact in
-    # different words with its own remedy, so a string comparison let a unit with no test plan
-    # be refused twice for not having one and inflated the count `transition.py requirements`
-    # derives. Found by an independent seat, measured: 2 requirements at the base ref, 3 here.
-    #
-    # NOT `not force`, and the asymmetry is deliberate rather than an oversight: the ENTRY call
-    # site above carries no `force` guard either, so this gate has never been waivable at any
-    # call site since it was written. A seat read the change as removing `--force` from the
-    # terminal route; what it removes is the route that reached NO test-plan gate at all, which
-    # is this unit's whole point. Making one firing forceable while its twin is not would let the
-    # same fact be waived or refused depending on which transition a caller happened to take.
-    if (type_ != "epic" and target_canon in _TERMINAL_FOR_PLAN
-            and _plan_gate_active(root, text)):
-        block = _test_plan_gate(root, sdlc_md.norm_id(artifact_id), text)
-        # BOTH tests. The FACT catches `_planned_mutant_gate` saying the same absence in its own
-        # words; the exact-message test catches this gate's OTHER message - a plan no independent
-        # seat approved - which the entry firing states verbatim and the fact key does not match.
-        # Dropping the second one traded one doubled requirement for another, measured on US0822.
-        already = block in blocks or any(_TESTPLAN_FACT in b for b in blocks)
-        if block and not already:
-            blocks.append(block)
     # ...and in its place, the gate an epic SHOULD have had. NOT entry-triggered: `In Progress` is
     # in an epic's own vocabulary, so a gate guarded by `from_canon not in _IMPL_TARGETS` is
     # skipped entirely on the `In Progress -> Done` route, which is the ordinary one.
@@ -2167,73 +2097,8 @@ def _epic_breakdown_gate(root: Path, artifact_id: str, text: str) -> str | None:
 #: The epic statuses that assert a completion, and so the ones the breakdown gate holds.
 _EPIC_TERMINAL = ("Done",)
 
-#: Terminal statuses a test plan has to have been executed for.
+#: The delivered terminals a repair's evidence is asked for at.
 _TERMINAL_FOR_PLAN = ("Done", "Fixed")
-
-
-def _plan_gate_active(root, text: str) -> bool:
-    """Is the planned-mutant gate in force for this unit?
-
-    Dated cutoff, exactly like the two-role rule: `review.test_plan_after` names the creation
-    date on or after which units are held. Absent, the gate stands down entirely - an existing
-    backlog carrying no plans must not be retro-refused, because a gate that refuses every unit
-    in a backlog is one that gets switched off wholesale rather than satisfied.
-    """
-    # AN UNREADABLE CONFIG IS NOT AN ABSENT CUTOFF. `project_override` swallows every config
-    # fault and returns the default, so `not after` read a malformed, non-UTF-8, unreadable or
-    # directory-shaped `.config.yaml` as "this project set no cutoff" and switched BOTH new gates
-    # off entirely. A seat reproduced it four ways; the helper below is the one that reads all
-    # four as unparseable.
-    cfg = Path(root) / "sdlc-studio" / ".config.yaml"
-    if cfg.exists() and sdlc_md.config_unparseable(cfg):
-        return True          # in scope, and `_test_plan_gate` will report why it cannot judge
-    after = sdlc_md.project_override(root, "review.test_plan_after", None)
-    if not after:
-        return False
-    created = (sdlc_md.extract_field(text, "Created") or "").strip()
-    return bool(created) and created >= str(after).strip()
-
-
-def _planned_mutant_gate(root, unit: str) -> str | None:
-    """Refuse a terminal transition while a planned mutant is unexecuted or alive.
-
-    The finding is about the TEST, so the message points at the criterion rather than at the
-    mutant: a survivor means the test that criterion names did not notice a change to the code
-    it claims to pin. `not-run` is refused on the same terms - a plan whose rows are optional
-    measures nothing, and an unexecuted plan must not read like a passed one.
-    """
-    try:
-        import mutation  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
-        res = mutation.plan_execution(root, unit)
-    except Exception as exc:  # noqa: BLE001 - report it, never swallow it
-        # Same rule as `_test_plan_gate` above. Latent here only because `_load_ledger` happens
-        # to catch OSError one layer down - a defence that depends on somebody else's accident
-        # is not a defence.
-        return (f"the planned-mutant gate could not be established ({type(exc).__name__}: "
-                f"{exc}) - an unreadable bar is not a passed one")
-    if res.get("errors"):
-        return (f"{unit} has no `## Test Plan`, and `review.test_plan_after` puts it in scope - "
-                f"derive one with `verify_ac.py testplan derive --unit {unit}`")
-    outstanding = res.get("outstanding") or []
-    if not outstanding:
-        return None
-    # NAME THE ROW, and quote its mutant. A criterion may declare several, and this printed one
-    # sentence per criterion with the mutant text dropped - so two unexecuted rows on one AC
-    # produced the same sentence twice and identified neither. The reader was told something was
-    # owed and not which thing.
-    rows = res.get("rows") or []
-    multi = {ac for ac in {r["ac"] for r in rows}
-             if sum(1 for x in rows if x["ac"] == ac) > 1}
-    parts = []
-    for r in outstanding:
-        where = f"{r['ac']} row {r.get('row', 0)}" if r["ac"] in multi else r["ac"]
-        if r["verdict"] == mutation.NOT_RUN:
-            parts.append(f"{where} was planned and never executed - `{r['mutant'][:60]}`")
-        else:
-            parts.append(f"{where}'s mutant SURVIVED on {r.get('target')} - the test that "
-                         f"criterion names did not notice `{r['mutant'][:60]}`")
-    return (f"{unit}: {len(outstanding)} planned mutant(s) unaccounted for - " + "; ".join(parts)
-            + f". Check them with `mutation.py run --story {unit} --from-plan`")
 
 
 #: The provenance fields that mark a unit as REPAIR work. Read from the artefact's own metadata,
@@ -2717,71 +2582,6 @@ def repair_mutation_gate(root, unit: str, text: str, base_ref: str | None = None
                 f"earlier surface cannot be spent on this one - re-run it over the current "
                 f"changed lines")
     return None
-
-
-#: The FACT two different gates state in two different sentences: this unit has no test
-#: plan and the dated cutoff puts it in scope. `_planned_mutant_gate` and `_test_plan_gate`
-#: both say it, with their own remedies, so the deduplication has to key on the fact
-#: rather than on either wording - a string comparison refused one unit twice for the
-#: same absence and inflated the requirement count the CLI derives.
-_TESTPLAN_FACT = "has no `## Test Plan`"
-
-
-def _test_plan_gate(root, unit: str, text: str) -> str | None:
-    """Refuse entry to implementation while the unit's test plan is missing or unreviewed.
-
-    The two refusals are DISTINCT, and that is the criterion rather than a nicety: "no plan" and
-    "plan not reviewed" have different fixes, and one message for both sends the reader to the
-    wrong command. Reviewing the test costs a fraction of reviewing the code, so being sent to
-    the wrong one of those two is not a small error.
-
-    The review is looked up under the `test-plan` KIND. A spec-review approval must not discharge
-    this gate: its reviewer never saw a test plan, and BG0510 exists because the ledger's shape
-    made exactly that substitution the default.
-    """
-    if "## Test Plan" not in text:
-        return (f"{unit} has no `## Test Plan`, and `review.test_plan_after` puts it in scope - "
-                f"name, per criterion, the production change its test must fail on. Derive it: "
-                f"`verify_ac.py testplan derive --unit {unit}`")
-    try:
-        import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
-        v = critic.verdict_for(root, unit, phase="plan-review", kind="test-plan")
-    except Exception as exc:  # noqa: BLE001 - report it, never swallow it
-        # Fail LOUD, on the same terms as the two sibling gates in this file. `return None` is
-        # PASS, so the one condition under which this gate was least able to judge - an
-        # unreadable ledger, broken tooling - was the one under which it approved everything.
-        # An independent seat chmod-ed the verdict ledger and watched a refusal become exit 0
-        # with nothing on either stream. An unreadable bar is not a passed one.
-        return (f"the test-plan gate could not be established ({type(exc).__name__}: {exc}) - "
-                f"an unreadable bar is not a passed one")
-    if v and v.get("verdict") == critic.APPROVE and critic.is_independent(v):
-        return None
-    # A rejection ANSWERED by a complete repair is not held against the unit - the reading
-    # `conformance.py` already applies to the delivery phase, applied in the one place it never
-    # was. Without it a plan-review REJECT could not be retired at all: retirement wants a later
-    # APPROVE carrying the rejection's brief fingerprint, and the fingerprint hashes the criteria,
-    # so repairing what the reviewer rejected necessarily changes it.
-    if v and str(v.get("verdict") or "").upper().startswith(critic.REJECT):
-        try:
-            cleared, why_not = critic.plan_review_repair_clears(root, unit)
-        except Exception as exc:  # noqa: BLE001 - same terms as the lookup above: never swallow
-            return (f"the test-plan repair check could not be established "
-                    f"({type(exc).__name__}: {exc}) - an unreadable bar is not a passed one")
-        if cleared:
-            return None
-        return (f"{unit} has a test plan an independent seat REJECTED, and {why_not}. A "
-                f"rejection is answered by a repair that disposes of every finding it raised: "
-                f"`critic.py repair --unit {unit} --phase plan-review --closed-file <doc>`")
-    why = ("no plan-review verdict of kind `test-plan` is on record"
-           if not v else
-           f"the plan-review verdict on record is {v.get('verdict')} by "
-           f"{v.get('reviewer') or '-'} against author {v.get('author') or '-'}"
-           + (" - a self-review never clears the gate" if not critic.is_independent(v) else ""))
-    return (f"{unit} has a test plan that no independent seat has approved - {why}. Reviewing "
-            f"the test costs a fraction of reviewing the code, which is the whole reason this "
-            f"gate is here. Brief one: `critic.py brief --unit {unit} --seat qa "
-            f"--phase plan-review`, then record it with `critic.py record --unit {unit} "
-            f"--phase plan-review --kind test-plan --verdict APPROVE --brief <fingerprint>`")
 
 
 def requirements(root, artifact_id: str, target: str) -> list[str]:

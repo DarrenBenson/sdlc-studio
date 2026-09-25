@@ -35,11 +35,11 @@
 - **Given** a planned mutant that is applied and whose criterion's `Verify:` line still passes
 - **When** the terminal transition is attempted
 - **Then** it is refused, naming the mutant, its file and its line, and naming the criterion whose test failed to notice - the finding is about the test, so the message must point at the test
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::FromPlanTests::test_a_survivor_refuses_the_transition_and_names_the_criterion
+- **Verify:** manual - retired by US0911: the terminal-transition half of this test went with the planned-mutant gate, now deleted; the surviving half of `test_a_survivor_refuses_the_transition_and_names_the_criterion` checks only `mutation.plan_execution`'s own outstanding/survived reporting, not a refused transition
 - **Caller:** `transition.py set`
 - **Verification target:** functional
 - **Mutation-checked:** yes (2026-08-06). Downgrading the gate's block to a warning KILLED; reporting `not-run` but not survivors KILLED. CORRECTED at review: the earlier entry also claimed "swallowing the gate's own errors KILLED", which a seat showed false - that mutant survived 2,137 tests, and the gate's fail-loud behaviour was pinned by nothing; gating unconditionally (no `review.test_plan_after`) KILLED, which is the over-correction that would retro-refuse every existing backlog
-- **Verified:** yes (2026-08-06)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0911
 
 ### AC3: execution is sound against the two ways a mutation run lies
 
@@ -101,3 +101,4 @@
 | 2026-08-03 | sdlc-studio | Groomed: criteria authored against the `mutation.py --from-plan` slice; AC3 pins the two recorded false-survival scars |
 | 2026-08-06 | sdlc-studio | Declared `Depends on:` at plan time - the planner reported all six units parallel because no dependency was stated, which is false: the plan is derived (US0629) before it can be reviewed, gated, executed or measured |
 | 2026-08-06 | sdlc-studio | DELIVERED NARROWED at the close: AC4 descoped on a recorded decision and carried by BG0533; three criteria delivered, not four |
+| 2026-09-25 | Claude Sonnet 5 | AC2 retired by US0911 (D0259 pattern): the planned-mutant gate that refused the terminal transition is deleted; its test's transition half was cut, leaving only `plan_execution`'s own reporting checked |

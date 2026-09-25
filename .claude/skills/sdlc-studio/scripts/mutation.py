@@ -121,8 +121,7 @@ def evidence_mode(root) -> str:
         would otherwise get the reporting default, so a typo would quietly switch its bar off -
         the one outcome no reading of CR0537 asks for.
       * an UNPARSEABLE config resolves to `block`, never to the default. The config is the only
-        thing that could have said `off`, and a file nobody can read has not said it. This is
-        `_plan_gate_active`'s rule, applied to the same class of fault for the same reason.
+        thing that could have said `off`, and a file nobody can read has not said it.
     """
     cfg = Path(root) / "sdlc-studio" / ".config.yaml"
     if cfg.exists() and sdlc_md.config_unparseable(cfg):
@@ -2118,7 +2117,7 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     entries = [e for e in state["entries"] if isinstance(e, dict)]
     record = {"mutant": mutant, "test": test or None, "verdict": verdict,
               "reason": reason or None, "run": run, "line": line,
-              # THE JOIN KEY for `run --from-plan` (US0632). Recorded explicitly rather than
+              # THE JOIN KEY for `plan_execution` (US0632). Recorded explicitly rather than
               # matched out of the mutant's prose: a matching rule that is convenient is a gate
               # that is optional, and a substring join would silently credit one criterion's
               # execution to another's row.
@@ -2613,11 +2612,6 @@ def _pct(part: int, whole: int) -> str:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    if getattr(args, "from_plan", False):
-        if not getattr(args, "story", None):
-            print("run --from-plan needs --story: the plan belongs to a unit", file=sys.stderr)
-            return 2
-        return cmd_from_plan(args)
     root = Path(args.root)
     try:
         files = select_files(root, files=args.files, since=args.since, story=args.story)
@@ -2854,7 +2848,10 @@ def plan_execution(root: Path | str, unit: str) -> dict:
 
 
 def cmd_from_plan(args: argparse.Namespace) -> int:
-    """`mutation.py run --story <id> --from-plan` - was every planned mutant executed?"""
+    """Report `plan_execution` for `args.story`: was every planned mutant executed?
+
+    No command reaches it: `run --from-plan` is retired. It goes with `plan_execution`, whose
+    report it prints."""
     res = plan_execution(args.root, args.story)
     for e in res.get("errors", []):
         print(f"from-plan refused: {e}", file=sys.stderr)
@@ -3204,7 +3201,7 @@ def cmd_register(args: argparse.Namespace) -> int:
               f"target's earlier bytes. They are kept and marked stale, and read as NOT-RUN "
               f"until re-registered - re-apply each row's mutant with the working copy equal "
               f"to what is staged and `mutation.py register --anchor '<the text it replaced>'` "
-              f"it, then check with `mutation.py run --story <id> --from-plan`")
+              f"it")
     if res["verdict"] == "survived":
         print(f"  FINDING: the mutant SURVIVED, so {args.test} does not pin the behaviour it "
               f"was applied to. The gate's coverage lane counts this - fix the test or file it")
@@ -3338,10 +3335,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="the unit this run's evidence belongs to. Recorded on every per-mutant "
                         "row, because the repair gate and the plan-execution join both select "
                         "on it - a measured row nobody can attribute answers neither question")
-    r.add_argument("--from-plan", action="store_true", dest="from_plan",
-                   help="do not mutate: join --story's TEST PLAN rows to the ledger and report "
-                        "which planned mutants were executed. A row never applied is `not-run`, "
-                        "which is not a pass")
+    sdlc_md.retire_flag(r, "--from-plan", "no gate joins a test plan to the ledger any more; "
+                        "measure the unit's changed surface with `mutation.py run --story <id>`")
     r.set_defaults(func=cmd_run)
     g = sub.add_parser("register",
                        help="Record a mutant applied BY HAND - self-reported, never measured.")
@@ -3351,8 +3346,8 @@ def build_parser() -> argparse.ArgumentParser:
                         "refusal quotes `target:line`, and an optional line never joins a "
                         "measured one, so the contradiction check would silently never fire")
     g.add_argument("--criterion", metavar="ACn",
-                   help="the criterion whose planned mutant this is - the JOIN KEY "
-                        "`run --from-plan` reads, recorded rather than matched out of prose")
+                   help="the criterion whose planned mutant this is, recorded rather than "
+                        "matched out of prose")
     g.add_argument("--row", type=int, default=None, metavar="N",
                    help="which of that criterion's declared mutants this is, 0-based in file "
                         "order. Omit for a criterion carrying one row; REQUIRED to tell two "

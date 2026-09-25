@@ -111,19 +111,20 @@ itself is worse than none.
 ## Acceptance Criteria
 
 - [x] **AC1** Given an ISOLATED FIXTURE holding PLAN-REVIEW rows only, in which a unit's REJECT is answered by a repair `repair_state` reports COMPLETE, when the test-plan gate runs, then it does NOT block - the reading `conformance.py`:355 already applies in the delivery phase, applied in the one place it never was. The call passes `phase="plan-review"` explicitly, because `repair_state` defaults to delivery
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::PlanReviewRepairGateTests::test_a_complete_repair_clears_the_test_plan_gate
-  - **Verified:** yes (2026-08-27)
+  - **Verify:** manual - retired by US0911: the test-plan gate a plan-review repair had to clear is deleted
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0911
 - [x] **AC2** Given the same fixture with a PARTIAL repair, when the gate runs, then it still blocks AND its refusal names the outstanding findings. The message matters: a partial repair was blocked before this change too, by the plain REJECT path, so a criterion asserting only the block passes on pre-existing behaviour - naming what is still outstanding is computable only through the new consultation
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::PlanReviewRepairGateTests::test_a_partial_repair_still_blocks_and_names_what_is_outstanding
-  - **Verified:** yes (2026-08-27)
+  - **Verify:** manual - retired by US0911: the test-plan gate a plan-review repair had to clear is deleted
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0911
 - [x] **AC3** Given a fixture whose `.config.yaml` sets `review.test_plan_after` so the gate is ACTIVE, when `transition.py set <unit> 'In Progress'` is run through the shipped CLI, then it SUCCEEDS for the repaired unit and REFUSES for an unrepaired one. Both halves are required: the gate stands down entirely when the cutoff is unset, which is the default, so a success asserted alone goes green on a gate that never fired
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::PlanReviewRepairGateTests::test_the_cli_admits_a_repaired_unit_and_refuses_an_unrepaired_one
-  - **Verified:** yes (2026-08-27)
+  - **Verify:** manual - retired by US0911: the test-plan gate a plan-review repair had to clear is deleted
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0911
 - [x] **AC4** Given a fixture in which a unit carries a DELIVERY repair and a PLAN-REVIEW rejection recorded on the SAME DATE, when the plan-review gate runs, then it still blocks. `repairs_for` takes no phase and the ledger has no phase column, so without this the gate this unit adds is opened by a repair from another phase entirely
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::PlanReviewRepairGateTests::test_a_delivery_repair_does_not_answer_a_plan_review_rejection
-  - **Verified:** yes (2026-08-27)
+  - **Verify:** manual - retired by US0911: the test-plan gate a plan-review repair had to clear is deleted
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0911
 - [x] **AC5** Given a unit carrying TWO unanswered rejections that raise DIFFERENT findings, when a repair answers only one of them, then the gate still BLOCKS and names the other. This is `repair_state`'s own per-rejection computation rather than a count of repair rows: an earlier version counted rows per date as a proxy, and once each closure is dispatched to the rejection it answers, that count refused a genuinely complete repair whenever ONE row legitimately closed two same-date rejections - the ordinary shape
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::PlanReviewRepairGateTests::test_a_repair_does_not_discharge_a_rejection_it_did_not_answer
+  - **Verify:** manual - retired by US0911: the test-plan gate a plan-review repair had to clear is deleted
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0911
 - [x] **AC6** Given an isolated fixture holding a DELIVERY rejection whose repair is complete but whose tier depth is NOT covered, when `critic.verdict_for` is read, then it still returns REJECT and conformance reaches its answer through `conformance.py`:355. This is the placement guard, stated as a property rather than as a before-and-after snapshot: relocating the consultation into `verdict_for` makes `per_unit_ok` true, runs `tier_covers`, and flips the answer
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairPlacementTests::test_the_delivery_lane_still_answers_through_the_conformance_branch
   - **Verified:** yes (2026-08-27)
@@ -152,3 +153,4 @@ It blocks delivery outright. Three units of the currently open run cannot enter 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Filed |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3, AC4, AC5 retired by US0911 (D0259 pattern): the test-plan gate a plan-review repair had to clear is deleted |

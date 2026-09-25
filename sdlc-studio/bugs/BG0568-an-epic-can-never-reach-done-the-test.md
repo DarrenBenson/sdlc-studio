@@ -114,8 +114,8 @@ Scope the test-plan gate to units that CARRY code - stories and bugs - and let a
   `Fixed` it never reaches this gate at all. And the four other types make `type_ != "epic"`
   distinguishable from `type_ in ("story", "bug")`, which would silently release them.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k only_the_epic_is_released_from_the_test_plan_gate
-- **Verified:** yes (2026-08-10)
+- **Verify:** manual - retired by US0911: the test-plan gate the epic alone was released from is deleted, so no type is held to it
+- **Verified:** manual (2026-09-25) - retired, superseded by US0911
 - **Mutant:** in `transition.py`, replace the epic exclusion with a scope of story and bug.
 
 ### AC6
@@ -166,3 +166,4 @@ Scope the test-plan gate to units that CARRY code - stories and bugs - and let a
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-10 | sdlc-studio | Filed |
+| 2026-09-25 | Claude Opus 5.5 | AC4 retired by US0911 (D0259 pattern): the test-plan gate the epic alone was released from is deleted, so no type is held to it |

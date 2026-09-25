@@ -3470,8 +3470,9 @@ class FromPlanTests(unittest.TestCase):
             self.assertEqual(res["outstanding"], [])
 
     def test_a_survivor_refuses_the_transition_and_names_the_criterion(self) -> None:
-        """The finding is about the TEST, so the message must point at the criterion whose test
-        failed to notice - not merely at the mutant.
+        """The finding is about the TEST, so the join must point at the criterion whose test
+        failed to notice - not merely at the mutant. (Its transition half went with the
+        planned-mutant gate, now deleted.)
 
         Mutant: downgrade a survivor to a warning, or let a later kill on the same criterion
         cancel it - silence about a survivor is exactly what this gate exists to catch.
@@ -3488,18 +3489,6 @@ class FromPlanTests(unittest.TestCase):
             self._register(m, root, "AC1", "killed")
             self.assertEqual(m.plan_execution(root, "BG0001")["outstanding"][0]["verdict"],
                              "survived", "a survivor was cancelled by a later kill")
-
-            # ...and it reaches the shipped transition verb, naming the criterion.
-            import importlib.util
-            spec = importlib.util.spec_from_file_location(
-                "transition_mod",
-                Path(__file__).resolve().parents[1] / "transition.py")
-            tr = importlib.util.module_from_spec(spec)
-            sys.modules["transition_mod"] = tr
-            spec.loader.exec_module(tr)
-            unmet = tr.requirements(str(root), "BG0001", "Fixed")
-            self.assertTrue(any("AC1" in u and "SURVIVED" in u for u in unmet),
-                            f"the transition does not name the criterion: {unmet}")
 
     def test_a_withdrawn_row_stops_contradicting_the_one_beside_it(self) -> None:
         """BG0553, through the shipped transition verb. The self-contradiction check refuses in
@@ -5047,21 +5036,9 @@ class RegisterKeepsOtherUnitsRowsTests(unittest.TestCase):
         kept = [e for e in state["entries"] if any(m.get("unit") == "BG0001" for m in e.get("mutants", []))]
         self.assertEqual(1, len(kept), "BG0001's rows were deleted by BG0002's register")
         self.assertEqual("BG0002", kept[0]["stale"]["by"])
-        # the stale row reads as NOT-RUN to the plan join, so BG0001 cannot reach Fixed on it -
-        # and to the DONE-GATE that consumes the join, with no commit lane involved at all
-        # (hooks off, --no-verify): the transition itself is what refuses
+        # the stale row reads as NOT-RUN to the plan join
         after = mut.plan_execution(root, "BG0001")
         self.assertFalse(after["ok"], "a stale row still read as killed:\n" + str(after))
-        import subprocess, json as _json  # noqa: PLC0415
-        # the planned-mutant requirement is judged for the OPEN run's batch, so the fixture opens one
-        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(_json.dumps({
-            "schema": "1", "run_id": "RUN-FIXTURE", "started_at": "2026-01-01T00:00:00Z", "ended_at": None,
-            "outcome": "running", "goal": "done", "batch": ["BG0001", "BG0002"], "sprint_goal": "fixture",
-            "base_ref": "0" * 40}), encoding="utf-8")
-        gate = subprocess.run([sys.executable, str(SCRIPT.parent / "transition.py"), "--root", str(root),
-                               "set", "BG0001", "Fixed", "--dry-run"], capture_output=True, text=True, timeout=120)
-        self.assertIn("never executed", gate.stdout + gate.stderr,
-                      "the done-gate passed a unit whose rows went stale:\n" + gate.stdout + gate.stderr)
         # the same unit re-registering its own rows replaces them, as before
         fp.write_text("x = 3\n", encoding="utf-8")
         res2 = mut.register_mutant(root, fp, "flip it once more", "pytest t", "killed", unit="BG0002", criterion="AC1", line=1, anchor="x = 3", row=0)

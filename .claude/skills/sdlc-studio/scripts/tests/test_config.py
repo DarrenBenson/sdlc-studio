@@ -232,7 +232,9 @@ class ReviewKeysAreDeclaredTests(unittest.TestCase):
         DERIVED from the scripts rather than from a list here: an inventory nobody updates
         exempts whichever key is added next, which is the shape this repository keeps meeting."""
         keys = self._keys_the_code_reads()
-        self.assertGreater(len(keys), 8,
+        # A floor against an empty scan, not a count to keep: EP0263 deletes review keys, so the
+        # number falls by design. Four still proves the scan found the review block.
+        self.assertGreater(len(keys), 3,
                            f"only {len(keys)} review keys were found - the scan is looking in the "
                            f"wrong place and would pass on an empty defaults file")
         declared = DEFAULTS.read_text(encoding="utf-8")
@@ -242,28 +244,6 @@ class ReviewKeysAreDeclaredTests(unittest.TestCase):
         self.assertEqual([], missing,
                          f"the code reads these `review.*` settings and the file that calls "
                          f"itself the single source of truth declares none of them: {missing}")
-
-    def test_the_two_cutoffs_document_the_kind_of_value_each_takes(self) -> None:
-        """AC2. MUTANT: drop the DATE wording from a cutoff's documentation.
-
-        `test_plan_after` and `line_coverage_after` each take a DATE compared against `Created`.
-        The ID cutoff this criterion once paired them with, `two_role_after`, is retired
-        (US0916), so its documentation must say retired rather than teach a value to set."""
-        for doc in (DEFAULTS, REF_DOC):
-            body = doc.read_text(encoding="utf-8")
-            with self.subTest(doc=doc.name):
-                for key in ("test_plan_after", "line_coverage_after"):
-                    live = re.search(rf"^\s*{key}\s*:", body, re.M)   # the declaration's note
-                    at = live.start() if live else body.find(key)
-                    self.assertGreaterEqual(at, 0, f"{key} is not documented")
-                    self.assertIn("DATE", body[max(0, at - 400):at + 400],
-                                  f"{key} is documented without saying it takes a date")
-                self.assertIsNone(re.search(r"^\s*two_role_after\s*:", body, re.M),
-                                  "two_role_after is still declared as a live key")
-                at = body.find("two_role_after")
-                if at >= 0:
-                    self.assertIn("retired", body[at:at + 200],
-                                  "two_role_after is named without saying it is retired")
 
     #: The readers each deliberately absent key's note must name. The reason the absence is
     #: deliberate IS that more than one consumer reads the key, so a note naming neither is a bare
