@@ -29,12 +29,15 @@ from lib import sdlc_md  # noqa: E402
 WRITERS = 8
 
 
-def _bug(root: Path) -> Path:
+def _bug(root: Path, refused: bool = False) -> Path:
+    """A bug that reaches Fixed; with `refused`, its one criterion is unticked and carries no
+    `Verify:`, so nothing speaks for the fix and the gated transition refuses it."""
     bugs = root / "sdlc-studio" / "bugs"
     bugs.mkdir(parents=True)
     path = bugs / "BG0001-x.md"
+    box = " " if refused else "x"
     path.write_text("# BG0001: a\n\n> **Status:** In Progress\n\n\n## Acceptance Criteria\n\n"
-                    "- [x] the unit behaves\n", encoding="utf-8")
+                    f"- [{box}] the unit behaves\n", encoding="utf-8")
     (bugs / "_index.md").write_text("# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
                                     "| [BG0001](BG0001-x.md) | a | In Progress |\n",
                                     encoding="utf-8")
@@ -87,15 +90,14 @@ class VerdictVocabularyTests(unittest.TestCase):
             path = _bug(root)
             for argv in (("--reviewer", "rev", "--author", "dev"), ()):
                 with self.subTest(argv=argv):
-                    rc, out = _set(root, "--status", "Fixed", "--depth", "functional",
-                                   "--verdict", "lgtm", *argv)
+                    rc, out = _set(root, "--status", "Fixed", "--verdict", "lgtm", *argv)
                     self.assertEqual(rc, 2, out)
                     self.assertIn("APPROVE", out)
                     self.assertIn("REJECT", out)
                     self.assertFalse(critic.verdicts_path(root).exists(), "a row was written")
                     self.assertIn("> **Status:** In Progress", path.read_text(encoding="utf-8"))
-            rc, out = _set(root, "--status", "Fixed", "--depth", "functional",
-                           "--verdict", "approve", "--reviewer", "rev", "--author", "dev")
+            rc, out = _set(root, "--status", "Fixed", "--verdict", "approve",
+                           "--reviewer", "rev", "--author", "dev")
             self.assertEqual(rc, 0, out)
             self.assertEqual([r["verdict"] for r in critic.read_verdicts(root)], ["APPROVE"])
 
@@ -105,8 +107,8 @@ class VerdictVocabularyTests(unittest.TestCase):
         verdict created is removed, and a ledger that held other rows is left byte-identical."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            path = _bug(root)
-            # Fixed with no `Verification depth` is refused by the bug-depth gate
+            path = _bug(root, refused=True)
+            # nothing speaks for the fix, so the criteria floor refuses Fixed
             rc, out = _set(root, "--status", "Fixed", "--verdict", "APPROVE",
                            "--reviewer", "rev", "--author", "dev")
             self.assertNotEqual(rc, 0, out)
@@ -126,7 +128,7 @@ class VerdictVocabularyTests(unittest.TestCase):
         the close ran, and a supersession section written below the table, are lost with it."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            path = _bug(root)
+            path = _bug(root, refused=True)
             real = transition.transition
 
             def interleaved(*args, **kwargs):
@@ -159,9 +161,8 @@ class VerdictVocabularyTests(unittest.TestCase):
                 with mock.patch.object(transition, "_file_surviving_mutants",
                                        side_effect=raised):
                     try:
-                        rc, out = _set(root, "--status", "Fixed", "--depth", "functional",
-                                       "--verdict", "APPROVE", "--reviewer", "rev",
-                                       "--author", "dev")
+                        rc, out = _set(root, "--status", "Fixed", "--verdict", "APPROVE",
+                                       "--reviewer", "rev", "--author", "dev")
                         self.assertNotEqual(rc, 0, out)
                     except KeyboardInterrupt:
                         self.assertIsInstance(raised, KeyboardInterrupt)
@@ -173,7 +174,7 @@ class VerdictVocabularyTests(unittest.TestCase):
     def test_the_artifact_close_refuses_an_unknown_verdict_word(self) -> None:
         """Every writer holds the vocabulary. MUTANT: drop the check in
         `critic._write_verdict`, so `artifact.py close --verdict lgtm` writes a row no gate
-        matches. Nothing is written: no ledger, no depth stamp, no status change. The control:
+        matches. Nothing is written: no ledger, no status change. The control:
         APPROVE through the same close is recorded."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -183,7 +184,7 @@ class VerdictVocabularyTests(unittest.TestCase):
             def close(word: str) -> tuple[int, str]:
                 buf = io.StringIO()
                 with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
-                    rc = artifact.main(["close", "--id", "BG0001", "--depth", "functional",
+                    rc = artifact.main(["close", "--id", "BG0001",
                                         "--verdict", word, "--reviewer", "rev",
                                         "--author", "dev", "--root", str(root)])
                 return rc, buf.getvalue()

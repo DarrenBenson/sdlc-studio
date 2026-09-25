@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 46 |
-| In Progress | 1 |
+| Open | 44 |
+| In Progress | 3 |
 | Fixed | 598 |
 | Verified | 0 |
 | Closed | 87 |
@@ -108,13 +108,13 @@
 | [BG0747](BG0747-the-evidence-drift-lane-still-enforces-mutation-evidence.md) | The evidence-drift lane still enforces mutation evidence that D0255 switched off, and re-registration drops other rows | Fixed | Medium | 2026-09-23 | 2026-09-23 |
 | [BG0748](BG0748-the-report-s-dora-window-is-second-resolution.md) | The report's DORA window is second-resolution, so a same-second commit reads the report INVALID | Fixed | Medium | 2026-09-23 | 2026-09-23 |
 | [BG0749](BG0749-thirty-stamped-criteria-on-older-units-point-at.md) | Thirty stamped criteria on older units point at tests this sprint made skipped stubs | Fixed | Medium | 2026-09-23 | 2026-09-23 |
-| [BG0750](BG0750-a-same-day-waiver-flips-a-filed-sprint.md) | A same-day waiver flips a filed sprint report INVALID | Open | Medium | 2026-09-24 | 2026-09-24 |
+| [BG0750](BG0750-a-same-day-waiver-flips-a-filed-sprint.md) | A same-day waiver flips a filed sprint report INVALID | In Progress | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0751](BG0751-open-findings-in-a-sprint-report-use-an.md) | Open findings in a sprint report use an inclusive window end | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0752](BG0752-per-commit-test-selection-skips-hooks-test-infrastructure.md) | Per-commit test selection skips hooks, test infrastructure and code reached through another script | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0753](BG0753-the-test-suite-leaks-temporary-directories-into-tmp.md) | The test suite leaks temporary directories into /tmp | Fixed | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0754](BG0754-a-commit-touching-a-widely-imported-script-runs.md) | A commit touching a widely imported script runs well over the 90-second budget | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0755](BG0755-artifact-py-batch-ignores-a-story-s-role.md) | artifact.py batch ignores a story's role, capability and benefit, and its default template leaves a page of placeholders | Open | Medium | 2026-09-24 | 2026-09-24 |
-| [BG0756](BG0756-us0900-did-not-converge-in-review-round-2.md) | US0900 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-24 | 2026-09-24 |
+| [BG0756](BG0756-us0900-did-not-converge-in-review-round-2.md) | US0900 did not converge in review: round 2 REJECT findings | In Progress | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0757](BG0757-repo-map-py-build-crashes-on-python-3.md) | repo_map.py build crashes on Python 3.10 when a source file holds a null byte | Fixed | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0758](BG0758-command-audit-surface-module-reuses-whatever-surface-module.md) | command_audit._surface_module reuses whatever surface module the process already imported | Fixed | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0759](BG0759-us0891-did-not-converge-in-review-round-2.md) | US0891 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-24 | 2026-09-24 |

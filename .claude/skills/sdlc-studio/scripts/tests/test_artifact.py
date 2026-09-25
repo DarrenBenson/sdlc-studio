@@ -446,33 +446,6 @@ class NewTests(unittest.TestCase):
             self.assertIn("never verified", str(dry.exception))
             self.assertEqual(p.read_text(), before)   # and the preview still wrote nothing
 
-    def test_orchestrated_close_dry_run_accounts_for_the_annotation_it_would_write(self) -> None:
-        """The other direction of the same divergence, introduced by the BG0214 fix.
-
-        `cmd_close` annotates `Verification depth` and only THEN transitions, but guards the
-        annotation with `if not args.dry_run`. So the preview judged the un-annotated file and
-        REFUSED what the real command accepts - preview and run disagreeing again, opposite way
-        round. The first version of this suite hid it: a test called `transition.annotate` by
-        hand before the dry run, so the workaround shipped and the defect went unnoticed.
-
-        Driven through `main`, because the defect is in the CLI's ordering, not in `close`.
-        """
-        import io as _io                                   # noqa: PLC0415 - imported below in
-        import contextlib as _ctx                          # noqa: PLC0415 - this module
-        with tempfile.TemporaryDirectory() as d:
-            repo = Path(d)
-            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
-            _v3(repo)
-            r = artifact.new(repo, "bug", "depth probe", dict(GROOM))
-            _tick_criteria(repo, r["id"])   # the close ladder needs an oracle to read
-            argv = ["close", "--id", r["id"], "--depth", "functional",
-                    "--triaged-by", "T; agent; v1", "--root", str(repo)]
-            with _ctx.redirect_stdout(_io.StringIO()), _ctx.redirect_stderr(_io.StringIO()):
-                dry = artifact.main([*argv, "--dry-run"])
-                real = artifact.main(argv)
-            self.assertEqual((dry, real), (0, 0),
-                             "the preview and the real orchestrated close disagree")
-
     def test_close_dry_run_still_previews_what_the_gates_allow(self) -> None:
         """The counterpart: the fix must not turn every preview into a refusal."""
         with tempfile.TemporaryDirectory() as d:
@@ -944,9 +917,7 @@ class CloseUlidTests(unittest.TestCase):
             r = artifact.new(repo, "bug", "ulid close probe", dict(GROOM))
             self.assertTrue(sdlc_md.is_v3_id(r["id"]), r["id"])
             # Since BG0214 the preview runs the real gate ladder, so the bug close needs what a
-            # real one needs: a recorded verification depth and a structured triaging seat.
-            import transition  # noqa: PLC0415 - local, as the sibling scripts are imported here
-            transition.annotate(repo, r["id"], "Verification depth", "functional")
+            # real one needs: a criterion that speaks for the fix and a structured triaging seat.
             _tick_criteria(repo, r["id"])
             res = artifact.close(repo, r["id"], dry_run=True,
                                  triaged_by="Tester; agent; v1")
@@ -1043,22 +1014,20 @@ class ProvenanceStampTests(unittest.TestCase):
 
 
 class OrchestratedCloseTests(unittest.TestCase):
-    """CR0209/US0116 AC3: one close call = depth stamp + critic verdict + terminal transition."""
+    """CR0209/US0116 AC3: one close call = critic verdict + terminal transition."""
 
-    def test_orchestrated_close_stamps_records_and_closes(self) -> None:
+    def test_orchestrated_close_records_and_closes(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
             r = artifact.new(repo, "bug", "orchestrated close probe", {**GROOM, "severity": "Medium"})
             _tick_criteria(repo, r["id"])   # the close ladder needs an oracle to read
             rc = artifact.main(["close", "--id", r["id"],
-                                "--depth", "functional (probe suite green)",
                                 "--verdict", "APPROVE",
                                 "--reviewer", "Sam (QA)", "--author", "Author (build)",
                                 "--root", str(repo)])
             self.assertEqual(rc, 0)
             body = Path(r["path"]).read_text(encoding="utf-8")
-            self.assertIn("> **Verification depth:** functional (probe suite green)", body)
             self.assertIn("> **Status:** Fixed", body)
             verdicts = (repo / "sdlc-studio" / "reviews" / "critic-verdicts.md")
             self.assertTrue(verdicts.exists())
@@ -1077,7 +1046,7 @@ class OrchestratedCloseTests(unittest.TestCase):
             buf = _io.StringIO()
             with _ctx.redirect_stdout(buf), _ctx.redirect_stderr(buf):
                 rc = artifact.main(["close", "--id", r["id"],
-                                    "--depth", "functional", "--verdict", "APPROVE",
+                                    "--verdict", "APPROVE",
                                     "--reviewer", "Same One", "--author", "Same One",
                                     "--root", str(repo)])
             self.assertNotEqual(rc, 0)

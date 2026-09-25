@@ -124,9 +124,8 @@ TARGET_TIERS = ("functional", "conversational", "soak", "live")
 def _target_of(f: dict) -> str:
     """The Verification target tier for supplied ACs, validated - or "" when none is given.
 
-    An unknown tier is REFUSED, never written: `transition`'s depth-parity gate matches the
-    tier against its own table and ignores what it does not recognise, so a typo'd target
-    would quietly drop the story out of the gate it was meant to opt into."""
+    An unknown tier is REFUSED, never written. No gate reads the target any longer; it is a
+    note to the reader, and a typo'd one would be a note nobody could interpret."""
     val = str(f.get("target") or "").strip()
     if not val:
         return ""
@@ -1318,7 +1317,7 @@ def infer_type_from_id(artifact_id: str) -> str | None:
 
 def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
           metrics: dict | None = None, dry_run: bool = False, force: bool = False,
-          triaged_by: str | None = None, pending_fields: dict | None = None) -> dict:
+          triaged_by: str | None = None) -> dict:
     """Terminal-transition an artifact and cascade (reuse transition), then record a
     telemetry event. Telemetry is advisory - it never affects the
     close result (the recorder swallows its own failures). `force` bypasses the story->Done
@@ -1336,12 +1335,8 @@ def close(repo_root: Path | str, artifact_id: str, status: str | None = None,
         # previews is worse than none, because it is consulted precisely to avoid the surprise.
         # `transition` fires its gates on a dry run for exactly this reason and writes nothing;
         # a refusal raises here and `main` reports it, as on the real path.
-        # `pending_fields`: the annotations the ORCHESTRATED close writes before it transitions
-        # (a `Verification depth`, say). The real run does them first, so a preview that ignored
-        # them judged a state the real run never gates on, and refused what it accepts.
         r = transition.transition(repo_root, artifact_id, st, force=force,
-                                  metrics=metrics, triaged_by=triaged_by, dry_run=True,
-                                  pending_fields=pending_fields)
+                                  metrics=metrics, triaged_by=triaged_by, dry_run=True)
         return {**r, "dry_run": True}
     # transition records one telemetry event on entering the terminal set (and none on an
     # idempotent re-close); pass the metrics through so close does not double-record.
@@ -1557,12 +1552,11 @@ def cmd_batch(args: argparse.Namespace) -> int:
 
 
 def cmd_close(args: argparse.Namespace) -> int:
-    # Orchestrated close (one call = stamp + verdict + transition): every step is durable,
-    # so a refusal at the transition leaves the stamp/verdict recorded and a re-run
-    # completes. NOTE a re-run appends a fresh verdict row (append-only audit log,
-    # latest-wins for gates) - clear the refusal before retrying to keep the log tight.
+    # Orchestrated close (one call = verdict + transition): every step is durable, so a
+    # refusal at the transition leaves the verdict recorded and a re-run completes. NOTE a
+    # re-run appends a fresh verdict row (append-only audit log, latest-wins for gates) - clear
+    # the refusal before retrying to keep the log tight.
     # Self-review refuses BEFORE any write.
-    depth = getattr(args, "depth", None)
     reviewer = getattr(args, "reviewer", None)
     author = getattr(args, "author", None)
     if reviewer or author:
@@ -1578,15 +1572,13 @@ def cmd_close(args: argparse.Namespace) -> int:
             return 2
     if reviewer and not args.dry_run:
         # FIRST, so a verdict `critic.record_verdict` refuses (its vocabulary, the review
-        # rounds) leaves nothing written - not even the depth stamp.
+        # rounds) leaves nothing written.
         try:
             critic.record_verdict(args.root, args.id, args.verdict, reviewer, author,
                                   issues=getattr(args, "issues", "") or "")
         except ValueError as exc:
             print(f"error: {exc} - nothing was written", file=sys.stderr)
             return 2
-    if depth and not args.dry_run:
-        transition.annotate(args.root, args.id, "Verification depth", depth)
     metrics = {}
     if args.iterations is not None:
         metrics["iterations"] = int(args.iterations)
@@ -1596,14 +1588,9 @@ def cmd_close(args: argparse.Namespace) -> int:
         metrics["wall_time_s"] = int(args.wall_time_s)
     if args.stages:
         metrics["stages"] = args.stages
-    # The dry run must judge the state the REAL command produces, and the real command annotates
-    # before it transitions. Passing the pending annotation keeps the two answers identical;
-    # without it `close --depth functional --dry-run` refused what `close --depth functional`
-    # accepted, which is the preview/run divergence this command was just fixed for.
     r = close(args.root, args.id, args.status, metrics or None, dry_run=args.dry_run,
               force=getattr(args, "force", False),
-              triaged_by=getattr(args, "triaged_by", None),
-              pending_fields={"Verification depth": depth} if depth else None)
+              triaged_by=getattr(args, "triaged_by", None))
     verb = "would close" if r.get("dry_run") else "closed"
     print(json.dumps(r, indent=2) if args.format == "json" else f"{verb} {args.id}")
     return 0
@@ -1738,8 +1725,8 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--verdict", help="run metric: critic verdict (telemetry)")
     c.add_argument("--wall-time-s", dest="wall_time_s", help="run metric: wall time (telemetry)")
     c.add_argument("--stages", help="run metric: stages passed (telemetry)")
-    c.add_argument("--depth", help="orchestrated close: stamp '> **Verification depth:**' "
-                                   "before transitioning (no more hand edits)")
+    sdlc_md.retire_flag(c, "--depth", "no depth tier is stamped any more; a bug's "
+                        "criteria and its `Verify:` run are its evidence - drop the flag")
     c.add_argument("--reviewer", help="orchestrated close: record the critic verdict under "
                                       "this reviewer (must differ from --author)")
     c.add_argument("--author", help="orchestrated close: the authoring seat the verdict "

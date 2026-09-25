@@ -535,12 +535,6 @@ quality:
   # to matrix-bearing specs needs. Only true/false are honoured; any other value warns on
   # stderr and keeps enforcing.
   epic_requires_test_spec: true
-  # depth_parity_gate (default false): the story->Done depth-parity check (an AC's declared
-  # `Verification target` above `functional` must not out-run the recorded depth) is advisory
-  # by default; true upgrades it to a refusal. The BUG depth tiers (Fixed needs functional+,
-  # production-affecting Closed needs soak) are always enforced by `transition.py` - --force
-  # overrides per call.
-  depth_parity_gate: false
   # mutation_max (default 25): the mutation-check gate's cost ceiling per run
   # (scripts/mutation.py); enumerations beyond it are counted as truncated -
   # un-checked coverage, never silently clean.

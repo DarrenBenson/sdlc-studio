@@ -1,6 +1,6 @@
 # BG0756: US0900 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** In Progress
 > **Carried work:** the round-2 work is saved at sdlc-studio/.local/US0900-carried-r2.patch (13 files, applies cleanly to 65cdf1ca); groomed criteria below say what remains
 > **Severity:** Medium
 > **Points:** 3

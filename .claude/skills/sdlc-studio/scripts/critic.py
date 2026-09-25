@@ -4999,21 +4999,15 @@ def _is_awaiting_signoff(status: str) -> bool:
 def _signoff_withheld(root, unit: str) -> str | None:
     """Why this unit must not take a sign-off row, or None when it may.
 
-    Withheld only for a WITHDRAWN delivery, never for one merely unfinished-looking:
-
-    * a RETRACTED verification depth - a reopen withdrew the evidence, so the unit delivered
-      nothing whatever its status now reads; and
-    * a status that is neither terminal nor awaiting sign-off, which means the work has not been
-      delivered at all.
+    Withheld only for an undelivered unit, never for one merely unfinished-looking: a status
+    that is neither terminal nor awaiting sign-off means the work has not been delivered. A
+    reopen moves the status off terminal, so it is caught here too.
 
     `Review` is explicitly eligible. That is the whole point of the gate.
     """
     state = _unit_status(root, unit)
     if state is None:
         return None                     # cannot say is not the same as not delivered
-    if state.get("retracted"):
-        return ("its delivery evidence was RETRACTED by a reopen, so it delivered nothing - a "
-                "sign-off row would read as approval of work that does not exist")
     if state["terminal"] or _is_awaiting_signoff(state["status"]):
         return None
     return (f"its status is {state['status']!r}, which is neither terminal nor awaiting "
@@ -5035,8 +5029,7 @@ def _unit_status(root, unit: str) -> dict | None:
         status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
         if not status:
             return None
-        return {"status": status, "terminal": sdlc_md.is_terminal_status(type_, status),
-                "retracted": sdlc_md.depth_retracted(text)}
+        return {"status": status, "terminal": sdlc_md.is_terminal_status(type_, status)}
     except Exception as exc:  # noqa: BLE001 - cannot say is not the same as not terminal
         sdlc_md.debug("critic._unit_status", exc)
         return None

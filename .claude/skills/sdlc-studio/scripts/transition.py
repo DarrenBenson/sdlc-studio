@@ -28,69 +28,8 @@ import reconcile  # noqa: E402  (sibling - reuse the tested index-row + count sy
 # Statuses that mean "complete" for the epic-breakdown checkbox (a story is ticked).
 _STORY_TICKED = {"Done", "Won't Implement", "Deferred", "Superseded"}
 _REPORT_REL = "sdlc-studio/.local/verify-report.json"
-
-# Verification-depth tiers, weakest first (reference-test-best-practices.md).
-_TIERS = {"smoke": 0, "functional": 1, "conversational": 2, "soak": 3, "live": 4}
-_TARGET_RE = re.compile(r"^\s*-\s*\*\*Verification target:\*\*\s*`?(\w+)`?", re.M)
-
-
-def _depth_token(text: str) -> str | None:
-    """The leading tier token of the `Verification depth` field (decorations like
-    `functional (unit)` are fine), or None when the field is absent/unparseable."""
-    raw = (sdlc_md.extract_field(text, "Verification depth") or "").strip()
-    token = raw.split()[0].lower().strip("`") if raw else ""
-    return token if token in _TIERS else None
-
-
-def _bug_depth_gate(text: str, target_canon: str | None) -> str | None:
-    """Block reason when a bug transition under-shoots its verification-depth tier.
-
-    Fixed requires `functional`+; Verified claims the higher-tier proof landed,
-    so it requires a tier ABOVE functional (conversational/soak/live); Closed
-    on a production-affecting bug requires `soak`+. A missing/unparseable depth
-    on a gated transition is refused, never treated as satisfied (fail loud).
-    The non-production Close path is unchanged, and a project that never
-    promotes to Verified is unaffected."""
-    if target_canon not in ("Fixed", "Verified", "Closed"):
-        return None
-    if target_canon == "Closed":
-        prod_raw = (sdlc_md.extract_field(text, "Production-affecting") or "").strip()
-        # leading-token match, mirroring the depth field: `yes (checkout path)` is
-        # still yes - a decorated flag must never silently switch the soak gate OFF.
-        prod_tok = prod_raw.split()[0].rstrip(":,;-").lower() if prod_raw else ""
-        if prod_tok not in ("yes", "true"):
-            return None
-    required = {"Fixed": "functional", "Verified": "conversational",
-                "Closed": "soak"}[target_canon]
-    token = _depth_token(text)
-    if token is None:
-        return (f"no parseable `Verification depth` field; {target_canon} requires "
-                f"`{required}`+ - record the verified tier "
-                f"(see reference-test-best-practices.md#verification-depth-tiers)")
-    if _TIERS[token] < _TIERS[required]:
-        if target_canon == "Verified":
-            return (f"depth is `{token}`; Verified claims a proof ABOVE the "
-                    f"functional tier (conversational/soak/live) - run that "
-                    f"verification, then set the depth, or stay at Fixed")
-        return (f"depth is `{token}`; {target_canon} requires `{required}`+ - run the "
-                f"verification that tier demands, then set the depth")
-    return None
-
-
-def _story_target_parity(text: str) -> str | None:
-    """Advisory: Done should not out-run a declared AC `Verification target` above
-    `functional` unless a story-level depth at/above it is recorded."""
-    targets = [t.lower() for t in _TARGET_RE.findall(text) if t.lower() in _TIERS]
-    if not targets:
-        return None
-    top = max(targets, key=lambda t: _TIERS[t])
-    if _TIERS[top] <= _TIERS["functional"]:
-        return None
-    token = _depth_token(text)
-    if token and _TIERS[token] >= _TIERS[top]:
-        return None
-    return (f"an AC declares Verification target `{top}` but the recorded depth is "
-            f"`{token or 'unrecorded'}` - Done should not out-run the target")
+#: The bug statuses that claim the fix is delivered, and so are held to its green Verify run.
+_BUG_FIX_CLAIMS = ("Fixed", "Verified")
 
 
 def _iso_to_epoch(value) -> float | None:
@@ -288,6 +227,26 @@ def _two_role_gate(root: Path, rid: str) -> str | None:
             f"bar are unmet - " + "; and ".join(f"{h}: {remedy.get(h, 'unmet')}" for h in unmet))
 
 
+def _red_acs(entry: dict) -> str | None:
+    """The criteria a verify-report entry records red (failed or stale), named; None when green."""
+    if not (entry.get("failed", 0) or entry.get("stale", 0)):
+        return None
+    return ", ".join(f.get("ac", "?") for f in entry.get("failures", [])) or "stale AC(s)"
+
+
+def _bug_verify_gate(root: Path, path: Path, target: str) -> str | None:
+    """A bug claiming its fix while its own recorded `Verify:` run is red. A block reason, or None.
+
+    The bug's bar is its criteria alone: a red criterion refuses and is named, and no depth tier
+    is stamped beside it. Only a recorded RED refuses; a bug whose selectors were never run is
+    left to the criteria floor, which already asks that something speak for the fix."""
+    data = sdlc_md.read_json(root / _REPORT_REL, {})
+    stories = data.get("stories") if isinstance(data, dict) else None
+    entry = stories.get(path.stem) if isinstance(stories, dict) else None
+    red = _red_acs(entry) if isinstance(entry, dict) else None
+    return f"AC verification is red ({red}) - fix or re-verify before {target}" if red else None
+
+
 def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
     """Definition-of-Done safety net on the hand-driven path. A story may not reach
     Done with executable ACs that are red or never run - the 0/7 a hand-driving agent shipped.
@@ -350,9 +309,9 @@ def _done_verify_gate(root: Path, path: Path, text: str) -> str | None:
         entry = None
     if entry is None:
         return "this story is not in the verify-report - run `verify_ac` before Done"
-    if entry.get("failed", 0) or entry.get("stale", 0):
-        fails = ", ".join(f.get("ac", "?") for f in entry.get("failures", [])) or "stale AC(s)"
-        return f"AC verification is red ({fails}) - fix or re-verify before Done"
+    red = _red_acs(entry)
+    if red:
+        return f"AC verification is red ({red}) - fix or re-verify before Done"
     # A green entry can still be STALE: the story may have been edited since it was verified
     # (a changed Verify line, or a new AC). A merged report carries the old green forever, so
     # the entry alone is not proof the CURRENT story passes.
@@ -700,7 +659,7 @@ _ANNOTATE_REMEDY = {
 
 def annotate(repo_root: Path | str, artifact_id: str, field: str, value: str) -> dict:
     """Deterministically set/update one metadata field on an artifact (the stamp verb the
-    unit-close ceremony was missing - depth, evidence and similar fields no longer need a
+    unit-close ceremony was missing - evidence and similar fields no longer need a
     hand edit). Index-untouched: metadata fields are not index columns. Fails loud on an
     unresolvable id, a gate-protected field, an injection-shaped value, or a file with no
     metadata block to anchor to."""
@@ -1080,9 +1039,9 @@ def _unanswered_delivery_reject(root, uid: str) -> str | None:
 def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
                      target_canon, from_canon, force, dry_run, triaged_by,
                      coverage_opts: dict | None = None) -> str | None:
-    """Run the ordered pre-write gates (bug-depth, depth-parity, done-verify, triage,
-    plan-review). Raise ValueError on a hard block; else return the accumulated advisory
-    warning (or None). Behaviour-preserving extraction of the interleaved gate ladder."""
+    """Run the ordered pre-write gates (bug-verify, done-verify, triage, plan-review). Raise
+    ValueError on a hard block; else return the accumulated advisory warning (or None).
+    Behaviour-preserving extraction of the interleaved gate ladder."""
     gate_warn = None
     # Every unmet gate is COLLECTED and reported in one refusal - refusing one requirement
     # per attempt cost an agent a round-trip per gate (three attempts to close a v3 finding).
@@ -1163,8 +1122,10 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
                 f"artefact and cite its id on the item. A tick with no destination is refused, "
                 f"because that is how a question stops being visible without being answered. "
                 f"Override with --force")
-    if type_ == "bug" and not force:
-        block = _bug_depth_gate(text, target_canon)
+    # A bug claiming its fix is refused while its own recorded Verify run is red, and on
+    # nothing else: no depth tier is stamped.
+    if type_ == "bug" and not force and target_canon in _BUG_FIX_CLAIMS:
+        block = _bug_verify_gate(root, path, target_canon)
         if block:
             blocks.append(f"{block}. Override with --force")
     # US0632: a PLANNED mutant that was never executed, or that SURVIVED, refuses the terminal
@@ -1248,23 +1209,6 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             warn = (f"{standing} - it stays unanswered on the record, and closing the unit "
                     f"{target_canon} over it is the operator's call")
             gate_warn = f"{gate_warn}; {warn}" if gate_warn else warn
-    if type_ == "story" and target_canon == "Done":
-        parity = _story_target_parity(text)
-        if parity:
-            # advisory by default (existing projects unaffected); a project opts
-            # into refusal via `quality.depth_parity_gate: true`. Read via the
-            # gracefully-degrading project_override so a PyYAML-less machine gets the
-            # gate decision, not a config-loading crash.
-            if sdlc_md.project_override(root, "quality.depth_parity_gate", False) and not force:
-                blocks.append(f"{parity}. Override with --force")
-            else:
-                # ACCUMULATED, as this function's docstring says and as the AC-verify arm below
-                # already does. It was a plain assignment, so whichever advisory fired first was
-                # silently discarded and which survived depended on statement order.
-                # Found while wiring the mutation lane above, whose only reporting path this
-                # would have thrown away.
-                warn = f"depth-parity advisory: {parity}"
-                gate_warn = f"{gate_warn}; {warn}" if gate_warn else warn
     if type_ == "story" and not force and target_canon == "Done":
         # Asked HERE, by the verb that writes the status, rather than only by a lane that runs
         # afterwards. `--force` still overrides and is still recorded, on the same terms as
@@ -1535,23 +1479,6 @@ def _findings_filed_to(root, uid: str) -> list[str]:
     return out
 
 
-RETRACTED = sdlc_md.RETRACTED_DEPTH
-
-
-def _retract_depth(text: str) -> str:
-    """Rewrite a live `Verification depth` into a stated retraction, keeping what it claimed.
-
-    Never INVENTS the field: a unit that claimed no depth has nothing to retract, and writing
-    one would manufacture a record of a claim nobody made. Idempotent - retracting a retraction
-    would nest the old value inside itself on every subsequent reopen."""
-    current = (sdlc_md.extract_field(text, "Verification depth") or "").strip()
-    if not current or sdlc_md.depth_retracted(text):
-        return text
-    return _upsert_field(text, "Verification depth",
-                         f"{RETRACTED} on reopen (was: {current}) - re-verify before a "
-                         f"terminal status; the previous evidence was withdrawn, not lost")
-
-
 def _invalidate_verify_report(root: Path, uid: str) -> None:
     """Drop the unit's entry from the verify-report so its overturned green cannot be read
     as current. Best-effort: an absent or unparseable report means there is no stale green to
@@ -1646,7 +1573,6 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
                dry_run: bool = False, force: bool = False,
                metrics: dict | None = None, triaged_by: str | None = None,
                triage_severity: str | None = None,
-               pending_fields: dict | None = None,
                coverage_opts: dict | None = None) -> dict:
     """Set `artifact_id`'s status to `new_status`, sync its index, and cascade the epic
     breakdown for a story. Returns {id, type, from, to, index_synced, epic}.
@@ -1655,15 +1581,9 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
     executable ACs block the transition unless `force=True`. A manual criterion needs a passing
     `**Verified:**` marker, and a criterion carrying NO `Verify:` line is refused the same way -
     the release lane counts it unspecified whatever markers sit beneath it, so exempting it here
-    would put the two gates on different answers. Scoped to stories - CR/epic/bug
-    closures are unaffected. Manual-only / AC-less stories are never blocked.
-
-    `pending_fields` is a DRY-RUN-ONLY preview of writes the caller performs BEFORE the real
-    transition, applied to the in-memory text so the gates judge the state the real run will
-    actually see. An orchestrated close annotates `Verification depth` and only then transitions;
-    without this the preview evaluated the un-annotated file and refused what the real run
-    accepts - the same preview/run divergence in the opposite direction. IGNORED unless
-    `dry_run`, so it can never introduce a write of its own.
+    would put the two gates on different answers. Manual-only / AC-less stories are never
+    blocked. A bug reaching Fixed or Verified is refused only while its recorded `Verify:`
+    run is red.
     """
     root = Path(repo_root)
     if re.match(r"^(RETRO|RV|HO)-?\d+", artifact_id.strip(), re.IGNORECASE):
@@ -1687,9 +1607,6 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
     if sdlc_md.canonical_status(new_status, vocab) is None:
         raise ValueError(f"{new_status!r} is not a valid {type_} status ({', '.join(vocab)})")
     text = path.read_text(encoding="utf-8")
-    if dry_run and pending_fields:
-        for _fname, _fval in pending_fields.items():
-            text = _upsert_field(text, _fname, _fval)
     target_canon = sdlc_md.canonical_status(new_status, vocab)
     current = sdlc_md.extract_field(text, "Status")
     from_canon = sdlc_md.canonical_status(current, vocab)
@@ -1707,19 +1624,16 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
         new_text = _upsert_field(new_text, fname, fval)
     reopened = (sdlc_md.is_terminal_status(type_, from_canon or "")
                 and not sdlc_md.is_terminal_status(type_, target_canon or ""))
-    if reopened:
-        new_text = _retract_depth(new_text)
     result = {"id": sdlc_md.extract_record_id(path.stem), "type": type_,
               "from": current, "to": new_status, "index_synced": False, "epic": None,
               "warning": gate_warn}
     if dry_run:
         return result
     if reopened:
-        # A reopen is a human overturning a machine verdict. Retracting the depth (above) is
-        # only half: `_built_not_closed` and every other reader of "are this unit's ACs green"
-        # consult the verify-report, and the vacuous tests that earned the withdrawn green
-        # still pass. Invalidating the entry forces a re-run rather than leaving the overturned
-        # verdict readable as current.
+        # A reopen is a human overturning a machine verdict. `_built_not_closed` and every other
+        # reader of "are this unit's ACs green" consult the verify-report, and the vacuous tests
+        # that earned the withdrawn green still pass. Invalidating the entry forces a re-run
+        # rather than leaving the overturned verdict readable as current.
         _invalidate_verify_report(root, result["id"])
     # A unit closed over a REJECT names, in its OWN record, where the findings went. The verdict
     # and repair ledgers already hold it, but a later reader of the closed artefact does not open
@@ -2078,24 +1992,6 @@ def _num(v):
     return int(f) if f == int(f) else f
 
 
-def _static_depth_refusal(root, aid: str, depth_value: str, status: str) -> str | None:
-    """The depth-gate refusal a one-call close would hit AFTER stamping `depth_value`,
-    computed BEFORE any write. Simulates the post-stamp metadata (the flag value wins;
-    Production-affecting read from the file, since the Closed gate depends on it) and runs
-    the same `_bug_depth_gate` the transition enforces. None when nothing would refuse -
-    an unknown id or non-bug type is left to the transition's own reporting."""
-    hit = sdlc_md.find_by_id(Path(root), aid)
-    if not hit or hit[1] != "bug":
-        return None
-    vocab = sdlc_md.status_vocab("bug", root)
-    canon = sdlc_md.canonical_status(status, vocab)
-    prod = sdlc_md.extract_field(hit[0].read_text(encoding="utf-8"), "Production-affecting") or ""
-    sim = f"> **Verification depth:** {depth_value}\n"
-    if prod:
-        sim += f"> **Production-affecting:** {prod}\n"
-    return _bug_depth_gate(sim, canon)
-
-
 def _report_appetite(args) -> None:
     """Print the run's appetite verdict at a unit boundary, or nothing at all.
 
@@ -2158,11 +2054,10 @@ def cmd_set(args: argparse.Namespace) -> int:
         print("specify the target status: `set <ID> <STATUS>` (positional), or --status",
               file=sys.stderr)
         return 2
-    # One-call close (the three-verb ceremony was easy to half-do): --depth stamps
-    # `Verification depth`, --reviewer/--author record the independent verdict, then the
-    # gated transition runs. A verdict is held to `critic record`'s rules - its vocabulary,
-    # independence and the review rounds - before anything is written, and is withdrawn if
-    # the transition is refused.
+    # One-call close (the three-verb ceremony was easy to half-do): --reviewer/--author record
+    # the independent verdict, then the gated transition runs. A verdict is held to `critic
+    # record`'s rules - its vocabulary, independence and the review rounds - before anything is
+    # written, and is withdrawn if the transition is refused.
     import critic  # noqa: PLC0415 - the verdict rules, and CarryFailed below
     reviewer, author = getattr(args, "reviewer", None), getattr(args, "author", None)
     if args.verdict is not None:
@@ -2194,25 +2089,11 @@ def cmd_set(args: argparse.Namespace) -> int:
         return 2
     results = []
     refused = 0
-    # The pre-writes this close performs BEFORE the gated transition, as the dry-run preview
-    # they must be judged against. `pending_fields` is ignored unless dry_run, so passing it
-    # on the real call is inert - and passing it on the user-facing --dry-run is what stops the
-    # preview judging an un-stamped file and refusing what the identical real command accepts.
-    pending = {"Verification depth": args.depth} if getattr(args, "depth", None) else None
-    pre_writes = bool(pending) or bool(reviewer)
-    # built ONCE, so the pre-flight ladder and the real transition are given the same options
+    # built ONCE, so every id in a batch is given the same options
     coverage_opts = {"base": getattr(args, "base", None),
                      "report": getattr(args, "coverage_report", None)}
     for aid in ids:
         try:
-            if getattr(args, "depth", None):
-                # Pre-flight the depth gate against the WOULD-BE stamped text: an
-                # undershoot (e.g. --depth smoke --status Verified) is a pure function
-                # of the flags, so it must refuse BEFORE the stamp or verdict land -
-                # the same gate the transition runs, just simulated pre-write.
-                reason = _static_depth_refusal(args.root, aid, args.depth, args.status)
-                if reason:
-                    raise ValueError(f"pre-write: {reason}")
             # The round rules are `critic.record_verdict`'s, applied as the verdict is written:
             # a refusal raises before anything else is. The verdict is withdrawn only while the
             # unit is still at its from-status - a raise after the status write keeps it.
@@ -2222,18 +2103,6 @@ def cmd_set(args: argparse.Namespace) -> int:
                 pending=lambda a=aid, s=start: _status_on_disk(args.root, a) == s)
                 if reviewer and not args.dry_run else contextlib.nullcontext())
             with verdict:
-                if pre_writes and not args.dry_run:
-                    # The whole ladder as a dry-run BEFORE the depth stamp, against the text
-                    # the real run will see, so a refusal leaves no stamp. The verdict is
-                    # already written, so a gate that reads it judges the real state, and it
-                    # is withdrawn with the refusal. The coverage options travel with the
-                    # pre-flight, or `--depth` silently drops `--base` and `--coverage-report`.
-                    transition(args.root, aid, args.status, dry_run=True, force=args.force,
-                               triaged_by=args.triaged_by,
-                               triage_severity=args.triage_severity,
-                               pending_fields=pending, coverage_opts=coverage_opts)
-                if getattr(args, "depth", None) and not args.dry_run:
-                    annotate(args.root, aid, "Verification depth", args.depth)
                 metrics = {k: v for k, v in {"iterations": _num(args.iterations),
                                              "wall_time_s": _num(args.wall_time_s),
                                              "tokens": _num(getattr(args, "tokens", None)),
@@ -2245,7 +2114,7 @@ def cmd_set(args: argparse.Namespace) -> int:
                                  force=args.force, metrics=metrics,
                                  triaged_by=args.triaged_by,
                                  triage_severity=args.triage_severity,
-                                 pending_fields=pending, coverage_opts=coverage_opts)
+                                 coverage_opts=coverage_opts)
             results.append(res)
             if args.format != "json":
                 _print_result(res, args.dry_run)
@@ -3041,8 +2910,8 @@ def requirements(root, artifact_id: str, target: str) -> list[str]:
     """The unmet requirements standing between `artifact_id` and `target`. Writes nothing.
 
     Asked BEFORE the work, so the requirement is met as part of it rather than discovered as
-    a refusal afterwards. Five `Verification depth` refusals in one session, each after the
-    unit was otherwise finished, is what this exists to stop.
+    a refusal afterwards. Five close refusals in one session, each after the unit was otherwise
+    finished, is what this exists to stop.
 
     Derived, never restated. This RUNS the real gate ladder via the dry-run path and reports
     what it refuses, so there is no second copy of a requirement to drift from the guard that
@@ -3123,14 +2992,14 @@ def build_parser() -> argparse.ArgumentParser:
                         "form of --attempt for a caller that already holds the list")
     s.add_argument("--verdict", help="critic verdict recorded on the telemetry event (and, with "
                                      "--reviewer/--author, in the critic log)")
-    s.add_argument("--depth", help="one-call close: stamp `Verification depth` with this value "
-                                   "before the gated transition (replaces a separate annotate)")
+    sdlc_md.retire_flag(s, "--depth", "no depth tier is stamped any more; a bug's "
+                        "criteria and its `Verify:` run are its evidence - drop the flag")
     s.add_argument("--reviewer", help="one-call close: record the critic verdict under this "
                                       "reviewer (must differ from --author)")
     s.add_argument("--author", help="one-call close: the authoring seat the reviewer judged "
                                     "(reviewer != author enforced before any write)")
     s.add_argument("--force", action="store_true",
-                   help="bypass the forceable close gates (story->Done AC-verify, bug depth, "
+                   help="bypass the forceable close gates (story->Done AC-verify, bug Verify, "
                         "request-terminal). Every gate it actually waives is named in a "
                         "`Forced-override` field on the artefact and in its Revision History; "
                         "gates whose sanctioned skip is a recorded reason (RFC decisions, "
@@ -3160,7 +3029,7 @@ def build_parser() -> argparse.ArgumentParser:
     a = sub.add_parser("annotate", help="Set/update one metadata field on an artifact "
                                         "(deterministic stamp; index untouched).")
     a.add_argument("--id", required=True, help="Artifact id, e.g. BG0042 / US0023")
-    a.add_argument("--field", help="Field name, e.g. 'Verification depth'")
+    a.add_argument("--field", help="Field name, e.g. 'Severity'")
     a.add_argument("--value")
     a.add_argument("--fields-file", metavar="FIELDS.json",
                    help="THE RECOMMENDED PATH for prose carrying backticks or `$(`. A JSON "

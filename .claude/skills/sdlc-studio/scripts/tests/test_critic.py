@@ -4368,20 +4368,6 @@ class ASignoffSkipsAUnitThatDeliveredNothingTests(unittest.TestCase):
             self.assertIsNotNone(why, f"{status!r} took a sign-off row")
             self.assertIn("not been delivered", why)
 
-    def test_a_retracted_delivery_is_withheld_whatever_its_status(self) -> None:
-        """The original defect, and the real signal for it: a reopen RETRACTS the evidence, so
-        the unit delivered nothing however its status now reads."""
-        mod = _load()
-        root = self._repo("Fixed")
-        p = root / "sdlc-studio" / "bugs" / "BG0001-a-bug.md"
-        p.write_text(p.read_text(encoding="utf-8").replace(
-            "> **Severity:** Medium",
-            "> **Severity:** Medium\n> **Verification depth:** RETRACTED on reopen (was: "
-            "functional) - re-verify"), encoding="utf-8")
-        why = mod._signoff_withheld(root, "BG0001")
-        self.assertIsNotNone(why, "a retracted delivery took a sign-off row")
-        self.assertIn("RETRACTED", why)
-
     def test_a_non_terminal_unit_is_skipped_and_named(self) -> None:
         root = self._repo("Open")
         state = _load()._unit_status(root, "BG0001")

@@ -1181,10 +1181,7 @@ class SurvivorFilingCLITests(unittest.TestCase):
         """
         with tempfile.TemporaryDirectory() as d:
             root = self._survivor_repo(d)
-            # `--reviewer` alone is refused; the point of this arm is only that the ladder
-            # runs more than once per `set`, which the preflight already forces.
-            code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed",
-                             "--depth", "functional (unit: the repaired branch, both ways)")
+            code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
             self.assertEqual(0, code, out)
             self.assertEqual(1, len(self._bugs(root)),
                              f"one command minted {self._bugs(root)} - the gate ladder runs "
@@ -1216,12 +1213,8 @@ class SurvivorFilingCLITests(unittest.TestCase):
             for f in local.iterdir():
                 if f.is_file() and f.name not in keep:
                     f.unlink()
-            # A reopen RETRACTS the depth, so restore it before closing again - otherwise the
-            # second close is refused by the depth gate and mints nothing for a reason that has
-            # nothing to do with idempotence.
             _cli(root, "set", "--id", "BG0001", "--status", "Open")
-            code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed",
-                             "--depth", "functional (unit: the repaired branch, both ways)")
+            code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
             self.assertEqual(0, code, out)
             self.assertEqual(first, self._bugs(root),
                              "the same survivor minted a second bug once the filer's own "
@@ -1290,8 +1283,7 @@ class SurvivorFilingCLITests(unittest.TestCase):
             archive.mkdir(parents=True)
             filed.rename(archive / filed.name)
             _cli(root, "set", "--id", "BG0001", "--status", "Open")
-            code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed",
-                             "--depth", "functional (unit: the repaired branch, both ways)")
+            code, out = _cli(root, "set", "--id", "BG0001", "--status", "Fixed")
             self.assertEqual(0, code, out)
             self.assertEqual([], self._bugs(root),
                              "archiving the finding re-minted it, so a decided survivor comes "
@@ -1335,8 +1327,7 @@ class SurvivorFilingCLITests(unittest.TestCase):
             import critic  # noqa: PLC0415
             critic.record_verdict(root, cid, "approve", reviewer="qa", author="dev",
                                   phase="plan-review", kind="test-plan", brief="d" * 12)
-            code, out = _cli(root, "set", "--id", cid, "--status", "Fixed", "--force",
-                             "--depth", "functional (unit: the survivor's own repair)")
+            code, out = _cli(root, "set", "--id", cid, "--status", "Fixed", "--force")
             self.assertEqual(0, code, f"the child close did not reach the guard:\n{out}")
             self.assertEqual([child], self._bugs(root),
                              "a survivor bug filed a survivor of its own")
@@ -2290,18 +2281,12 @@ class ManualEvidenceGateFailsLoudTests(unittest.TestCase):
                 self.assertEqual(res["to"], "Done")
 
 
-def _bug_repo(root: Path, depth: str | None, prod: bool = False) -> Path:
+def _bug_repo(root: Path, status: str = "In Progress") -> Path:
     bd = root / "sdlc-studio" / "bugs"
     bd.mkdir(parents=True)
-    header = "# BG0001: b\n\n> **Status:** In Progress\n> **Severity:** medium\n"
-    if prod:
-        header += "> **Production-affecting:** yes\n"
-    if depth is not None:
-        header += f"> **Verification depth:** {depth}\n"
+    header = f"# BG0001: b\n\n> **Status:** {status}\n> **Severity:** medium\n"
     # A criterion, because BG0378 made the criteria floor fire at the VERB: a bug reaching a
-    # delivered-terminal status with nothing stating what fixed looks like is refused. These
-    # fixtures are about the depth tiers, so they carry the minimum that lets the unit under
-    # test be the one that decides the verdict.
+    # delivered-terminal status with nothing stating what fixed looks like is refused.
     (bd / "BG0001-x.md").write_text(
         header + "\n## Summary\n\nx\n\n## Steps to Reproduce\n\n1. x\n\n## Proposed Fix\n\ny\n"
         "\n## Acceptance Criteria\n\n- [x] the defect no longer reproduces\n",
@@ -2523,122 +2508,6 @@ class PositionalSetFormTests(unittest.TestCase):
             self.assertIn("EITHER positionally", err.getvalue())
 
 
-class DepthTierGateTests(unittest.TestCase):
-    """Verification-depth tiers are enforced on bug transitions, not decorative."""
-
-    def test_smoke_to_fixed_refused(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _bug_repo(Path(d), "smoke")
-            with self.assertRaises(ValueError) as cm:
-                _quiet(tr.transition, root, "BG0001", "Fixed")
-            self.assertIn("smoke", str(cm.exception))
-            self.assertIn("functional", str(cm.exception))  # names required tier
-
-    def test_functional_to_fixed_allowed(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _bug_repo(Path(d), "functional (unit + regression)")
-            res = _quiet(tr.transition, root, "BG0001", "Fixed")
-            self.assertEqual(res["to"], "Fixed")
-
-    def test_missing_depth_refused_not_passed(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _bug_repo(Path(d), None)
-            with self.assertRaises(ValueError) as cm:
-                _quiet(tr.transition, root, "BG0001", "Fixed")
-            self.assertIn("Verification depth", str(cm.exception))
-
-    def test_functional_to_verified_refused(self) -> None:
-        # Verified claims the higher-tier proof landed; functional alone is
-        # exactly the false assurance the status exists to prevent
-        with tempfile.TemporaryDirectory() as d:
-            root = _bug_repo(Path(d), "functional (unit + component)")
-            with self.assertRaises(ValueError) as cm:
-                tr.transition(root, "BG0001", "Verified")
-            self.assertIn("functional", str(cm.exception))
-
-    def test_soak_to_verified_allowed(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _bug_repo(Path(d), "soak (24h in staging)")
-            res = tr.transition(root, "BG0001", "Verified")
-            self.assertEqual(res["to"], "Verified")
-
-    def test_missing_depth_to_verified_refused(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _bug_repo(Path(d), None)
-            with self.assertRaises(ValueError) as cm:
-                tr.transition(root, "BG0001", "Verified")
-            self.assertIn("Verification depth", str(cm.exception))
-
-    def test_prod_bug_smoke_to_closed_refused(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _bug_repo(Path(d), "functional", prod=True)
-            with self.assertRaises(ValueError) as cm:
-                tr.transition(root, "BG0001", "Closed")
-            self.assertIn("soak", str(cm.exception))
-
-    def test_prod_bug_soak_to_closed_allowed(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _bug_repo(Path(d), "soak (7 days)", prod=True)
-            res = tr.transition(root, "BG0001", "Closed")
-            self.assertEqual(res["to"], "Closed")
-
-    def test_non_prod_close_path_unchanged(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _bug_repo(Path(d), None)  # no depth, not production-affecting
-            res = tr.transition(root, "BG0001", "Closed")
-            self.assertEqual(res["to"], "Closed")
-
-    def test_decorated_prod_flag_still_gates(self) -> None:
-        # 'yes (checkout path)' must not silently switch the soak gate OFF.
-        with tempfile.TemporaryDirectory() as d:
-            root = _bug_repo(Path(d), "functional")
-            p = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
-            p.write_text(p.read_text(encoding="utf-8").replace(
-                "> **Severity:** medium\n",
-                "> **Severity:** medium\n> **Production-affecting:** yes (checkout path)\n"),
-                encoding="utf-8")
-            with self.assertRaises(ValueError) as cm:
-                tr.transition(root, "BG0001", "Closed")
-            self.assertIn("soak", str(cm.exception))
-
-    def test_force_overrides_depth_gate(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _bug_repo(Path(d), "smoke")
-            res = tr.transition(root, "BG0001", "Fixed", force=True)
-            self.assertEqual(res["to"], "Fixed")
-
-
-class StoryTargetParityTests(unittest.TestCase):
-    """Story Done should not out-run a declared AC Verification target - advisory
-    by default, gateable via quality.depth_parity_gate."""
-
-    def _story_with_target(self, root: Path, target: str) -> Path:
-        sd = root / "sdlc-studio" / "stories"
-        sd.mkdir(parents=True)
-        (sd / "US0001-x.md").write_text(
-            "# US0001: s\n\n> **Status:** Ready\n\n## Acceptance Criteria\n\n"
-            f"### AC1\n- **Verify:** manual check\n- **Verified:** yes (2026-07-27)\n"
-            f"- **Verification target:** {target}\n",
-            encoding="utf-8")
-        (sd / "_index.md").write_text(
-            "# Stories\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
-            "| [US0001](US0001-x.md) | s | Ready |\n", encoding="utf-8")
-        return root
-
-    def test_target_above_functional_warns_but_allows(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = self._story_with_target(Path(d), "soak")
-            res = tr.transition(root, "US0001", "Done")
-            self.assertEqual(res["to"], "Done")
-            self.assertIn("soak", res["warning"] or "")
-
-    def test_functional_target_no_warning(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = self._story_with_target(Path(d), "functional")
-            res = tr.transition(root, "US0001", "Done")
-            self.assertIsNone(res["warning"])
-
-
 class BatchIdsTests(unittest.TestCase):
     """CR0143: --ids batches same-target transitions; each id individually gated,
     one refusal never aborts the rest."""
@@ -2647,11 +2516,12 @@ class BatchIdsTests(unittest.TestCase):
         bd = root / "sdlc-studio" / "bugs"
         bd.mkdir(parents=True)
         (bd / "BG0001-x.md").write_text(
-            "# BG0001: a\n\n> **Status:** In Progress\n"
-            "> **Verification depth:** functional\n\n\n## Acceptance Criteria\n\n- [x] the unit behaves\n", encoding="utf-8")
+            "# BG0001: a\n\n> **Status:** In Progress\n\n\n## Acceptance Criteria\n\n"
+            "- [x] the unit behaves\n", encoding="utf-8")
+        # nothing speaks for BG0002's fix (an unticked criterion, no `Verify:`), so it is refused
         (bd / "BG0002-y.md").write_text(
-            "# BG0002: b\n\n> **Status:** In Progress\n"
-            "> **Verification depth:** smoke\n\n\n## Acceptance Criteria\n\n- [x] the unit behaves\n", encoding="utf-8")
+            "# BG0002: b\n\n> **Status:** In Progress\n\n\n## Acceptance Criteria\n\n"
+            "- [ ] the unit behaves\n", encoding="utf-8")
         (bd / "_index.md").write_text(
             "# Bugs\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
             "| [BG0001](BG0001-x.md) | a | In Progress |\n"
@@ -3194,7 +3064,7 @@ class AnnotateVerbTests(unittest.TestCase):
 class AllGatesInOneRefusalTests(unittest.TestCase):
     """CR0209/US0116 AC2: a blocked transition names EVERY unmet gate."""
 
-    def test_v3_finding_refusal_names_depth_and_triage_together(self) -> None:
+    def test_v3_finding_refusal_names_the_criteria_floor_and_triage_together(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             (root / "sdlc-studio").mkdir(parents=True)
@@ -3203,12 +3073,12 @@ class AllGatesInOneRefusalTests(unittest.TestCase):
             bd = root / "sdlc-studio" / "bugs"
             bd.mkdir()
             (bd / "BG0001-x.md").write_text(
-                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [x] the unit behaves\n",
+                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n",
                 encoding="utf-8")
             with self.assertRaises(ValueError) as ctx:
                 _quiet(tr.transition, root, "BG0001", "Fixed")
             msg = str(ctx.exception)
-            self.assertIn("Verification depth", msg)
+            self.assertIn("unticked", msg)
             self.assertIn("triage", msg.lower())
 
 
@@ -3228,16 +3098,18 @@ class DryRunHonestyTests(unittest.TestCase):
     One that reports success where the real run blocks is worse than none: the requirement
     is still met as a refusal afterwards, and the agent has been told the opposite in the
     meantime. The tier gate already fires on dry-run for exactly this reason, in a comment
-    stating that an honest preflight surfaces the refusal a real run would hit; the bug-depth,
-    depth-parity and AC-verify gates simply did not follow it.
+    stating that an honest preflight surfaces the refusal a real run would hit; the other bug
+    and story close gates simply did not follow it.
     """
 
-    def _bug_without_depth(self, root: Path) -> None:
+    def _bug_nothing_speaks_for(self, root: Path) -> None:
+        """A bug whose one criterion is unticked and carries no `Verify:`, so the criteria
+        floor refuses Fixed."""
         d = root / "sdlc-studio" / "bugs"
         d.mkdir(parents=True)
         (d / "BG0001-x.md").write_text(
             "# BG0001: x\n\n> **Status:** Open\n> **Severity:** Low\n> **Points:** 2\n\n"
-            "## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [x] the unit behaves\n", encoding="utf-8")
+            "## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n", encoding="utf-8")
         (d / "_index.md").write_text(
             "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
             "| [BG0001](BG0001-x.md) | x | Open |\n", encoding="utf-8")
@@ -3245,16 +3117,16 @@ class DryRunHonestyTests(unittest.TestCase):
     def test_a_dry_run_reports_the_refusal_the_real_run_gives(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._bug_without_depth(root)
+            self._bug_nothing_speaks_for(root)
             with self.assertRaises(ValueError) as ctx:
                 _quiet(tr.transition, root, "BG0001", "Fixed", dry_run=True)
-            self.assertIn("Verification depth", str(ctx.exception))
+            self.assertIn("unticked", str(ctx.exception))
 
     def test_the_dry_run_and_the_real_run_agree(self) -> None:
         # The two paths must differ only in whether the write happens.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._bug_without_depth(root)
+            self._bug_nothing_speaks_for(root)
             dry = real = None
             try:
                 _quiet(tr.transition, root, "BG0001", "Fixed", dry_run=True)
@@ -3270,7 +3142,7 @@ class DryRunHonestyTests(unittest.TestCase):
     def test_a_refused_dry_run_writes_nothing(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._bug_without_depth(root)
+            self._bug_nothing_speaks_for(root)
             before = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
             with self.assertRaises(ValueError):
                 _quiet(tr.transition, root, "BG0001", "Fixed", dry_run=True)
@@ -3282,12 +3154,10 @@ class DryRunHonestyTests(unittest.TestCase):
         # refuse, or the honesty fix would just be a different lie.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._bug_without_depth(root)
+            self._bug_nothing_speaks_for(root)
             p = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
             p.write_text(p.read_text(encoding="utf-8").replace(
-                "> **Severity:** Low",
-                "> **Verification depth:** functional (reproduced)\n> **Severity:** Low"),
-                encoding="utf-8")
+                "- [ ] the unit behaves", "- [x] the unit behaves"), encoding="utf-8")
             res = _quiet(tr.transition, root, "BG0001", "Fixed", dry_run=True)
             self.assertEqual(res["to"], "Fixed")
             self.assertIn("> **Status:** Open", p.read_text(encoding="utf-8"))
@@ -3306,36 +3176,13 @@ class DryRunHonestyTests(unittest.TestCase):
             self.assertIn("never verified", str(ctx.exception))
             self.assertIn("> **Status:** Ready", _read(root, "stories", "US0001-x.md"))
 
-    def test_a_story_dry_run_reports_the_depth_parity_refusal(self) -> None:
-        """The THIRD gate the BG0213 fix changed, which had no test at all.
-
-        Restoring `not dry_run` on this branch left the entire suite green, while the commit
-        claimed the fix covered all three gates it touched. It is advisory by default, so the
-        project must opt in via `quality.depth_parity_gate` for it to refuse - which is why
-        the other story tests never reach it.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = _repo(Path(d))
-            (root / "sdlc-studio" / ".config.yaml").write_text(
-                "quality:\n  depth_parity_gate: true\n  done_requires_verified: false\n",
-                encoding="utf-8")
-            sp = root / "sdlc-studio" / "stories" / "US0001-x.md"
-            sp.write_text(sp.read_text(encoding="utf-8").replace(
-                "- **Verify:** shell echo ok",
-                "- **Verification target:** soak\n- **Verify:** shell echo ok"),
-                encoding="utf-8")
-            with self.assertRaises(ValueError) as ctx:
-                _quiet(tr.transition, root, "US0001", "Done", dry_run=True)
-            self.assertIn("Verification target", str(ctx.exception))
-            self.assertIn("> **Status:** Ready", sp.read_text(encoding="utf-8"))
-
     def test_force_still_waives_the_gate_on_a_dry_run(self) -> None:
         # `--force` is a legitimate override, so a forced dry-run must report what a forced
         # real run would do - not refuse. Dropping `not dry_run` without keeping `not force`
         # would break this.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._bug_without_depth(root)
+            self._bug_nothing_speaks_for(root)
             res = _quiet(tr.transition, root, "BG0001", "Fixed", dry_run=True, force=True)
             self.assertEqual(res["to"], "Fixed")
 
@@ -3343,13 +3190,14 @@ class DryRunHonestyTests(unittest.TestCase):
 class RequirementsPreflightTests(unittest.TestCase):
     """US0267: ask what a transition needs BEFORE doing the work."""
 
-    def _bug(self, root: Path, depth: str = "") -> Path:
+    def _bug(self, root: Path, ticked: bool = False) -> Path:
         d = root / "sdlc-studio" / "bugs"
         d.mkdir(parents=True)
-        line = f"> **Verification depth:** {depth}\n" if depth else ""
+        box = "x" if ticked else " "
         p = d / "BG0001-x.md"
-        p.write_text(f"# BG0001: x\n\n> **Status:** Open\n{line}"
-                     "> **Severity:** Low\n> **Points:** 2\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [x] the unit behaves\n",
+        p.write_text("# BG0001: x\n\n> **Status:** Open\n"
+                     "> **Severity:** Low\n> **Points:** 2\n\n## Summary\n\ns\n\n\n"
+                     f"## Acceptance Criteria\n\n- [{box}] the unit behaves\n",
                      encoding="utf-8")
         (d / "_index.md").write_text(
             "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
@@ -3362,14 +3210,14 @@ class RequirementsPreflightTests(unittest.TestCase):
             self._bug(root)
             unmet = _quiet(tr.requirements, root, "BG0001", "Fixed")
             self.assertEqual(len(unmet), 1)
-            self.assertIn("Verification depth", unmet[0])
+            self.assertIn("unticked", unmet[0])
 
     def test_a_satisfied_transition_reports_nothing_unmet(self) -> None:
         # The negative branch: a command that always found a requirement would be useless
         # and would still pass the assertion above.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._bug(root, depth="functional (reproduced)")
+            self._bug(root, ticked=True)
             self.assertEqual(_quiet(tr.requirements, root, "BG0001", "Fixed"), [])
 
     def test_asking_writes_nothing(self) -> None:
@@ -3388,17 +3236,17 @@ class RequirementsPreflightTests(unittest.TestCase):
         every other test in this class.
         """
         sentinel = "SENTINEL-GATE-WORDING"
-        original = tr._bug_depth_gate
+        original = tr._bug_verify_gate
         try:
-            tr._bug_depth_gate = lambda text, target: sentinel
+            tr._bug_verify_gate = lambda root, path, target: sentinel
             with tempfile.TemporaryDirectory() as d:
                 root = Path(d)
-                self._bug(root)
+                self._bug(root, ticked=True)
                 unmet = _quiet(tr.requirements, root, "BG0001", "Fixed")
             self.assertTrue(any(sentinel in u for u in unmet),
                             "the reporter restates requirements instead of deriving them")
         finally:
-            tr._bug_depth_gate = original
+            tr._bug_verify_gate = original
 
     def test_an_unknown_id_raises_rather_than_reporting_a_bogus_requirement(self) -> None:
         """A lookup failure must never masquerade as a requirement.
@@ -3493,7 +3341,7 @@ class RequirementsPreflightTests(unittest.TestCase):
             bd = root / "sdlc-studio" / "bugs"
             bd.mkdir()
             (bd / "BG0001-x.md").write_text(
-                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [x] the unit behaves\n",
+                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n",
                 encoding="utf-8")
             unmet = _quiet(tr.requirements, root, "BG0001", "Fixed")
         self.assertGreaterEqual(len(unmet), 2)
@@ -3531,12 +3379,12 @@ class RequirementsPreflightTests(unittest.TestCase):
             bd = root / "sdlc-studio" / "bugs"
             bd.mkdir()
             (bd / "BG0001-x.md").write_text(
-                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [x] the unit behaves\n",
+                "# BG0001: x\n\n> **Status:** inbox\n> **Severity:** Low\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [ ] the unit behaves\n",
                 encoding="utf-8")
             unmet = _quiet(tr.requirements, root, "BG0001", "Fixed")
             self.assertGreaterEqual(len(unmet), 2, f"expected several requirements, got {unmet}")
             joined = " ".join(unmet)
-            self.assertIn("Verification depth", joined)
+            self.assertIn("unticked", joined)
             self.assertIn("triage", joined.lower())
 
 
@@ -3617,8 +3465,8 @@ class AnnotateCannotBypassGatesTests(unittest.TestCase):
 
 
 class OneCallCloseTests(unittest.TestCase):
-    """CR0213: the three-verb bug close (annotate depth, record verdict, gated set) collapses
-    to one call - and every predictable refusal happens BEFORE any write."""
+    """CR0213: the bug close (record verdict, gated set) is one call - and every predictable
+    refusal happens BEFORE any write."""
 
     def _bug(self, root: Path) -> Path:
         bd = root / "sdlc-studio" / "bugs"
@@ -3630,20 +3478,18 @@ class OneCallCloseTests(unittest.TestCase):
             "| [BG0001](BG0001-x.md) | a | In Progress |\n", encoding="utf-8")
         return root
 
-    def test_one_call_stamps_records_and_transitions(self) -> None:
+    def test_one_call_records_and_transitions(self) -> None:
         import io
         from contextlib import redirect_stdout
         with tempfile.TemporaryDirectory() as d:
             root = self._bug(Path(d))
             with redirect_stdout(io.StringIO()):
                 rc = tr.main(["set", "--id", "BG0001", "--status", "Fixed",
-                              "--depth", "functional (one-call test)",
                               "--verdict", "approve", "--reviewer", "Blake", "--author", "Alex",
                               "--root", str(root)])
             self.assertEqual(rc, 0)
             text = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
             self.assertIn("> **Status:** Fixed", text)
-            self.assertIn("Verification depth:** functional (one-call test)", text)
             log = (root / "sdlc-studio" / "reviews" / "critic-verdicts.md").read_text(encoding="utf-8")
             self.assertIn("BG0001", log)
             self.assertIn("Blake", log)
@@ -3651,13 +3497,11 @@ class OneCallCloseTests(unittest.TestCase):
     def test_self_review_refused_before_any_write(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = self._bug(Path(d))
-            rc = tr.main(["set", "--id", "BG0001", "--status", "Fixed",
-                          "--depth", "functional", "--verdict", "approve",
+            rc = tr.main(["set", "--id", "BG0001", "--status", "Fixed", "--verdict", "approve",
                           "--reviewer", "Alex", "--author", "Alex", "--root", str(root)])
             self.assertEqual(rc, 2)
             text = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
             self.assertIn("> **Status:** In Progress", text)           # no transition
-            self.assertNotIn("Verification depth", text)               # no depth stamp either
             self.assertFalse((root / "sdlc-studio" / "reviews" / "critic-verdicts.md").exists())
 
     def test_reviewer_without_author_is_a_usage_error(self) -> None:
@@ -3666,33 +3510,6 @@ class OneCallCloseTests(unittest.TestCase):
             rc = tr.main(["set", "--id", "BG0001", "--status", "Fixed",
                           "--verdict", "approve", "--reviewer", "Blake", "--root", str(root)])
             self.assertEqual(rc, 2)
-
-    def test_statically_undershooting_depth_refuses_before_any_write(self) -> None:
-        # Critic repro: --depth smoke --status Verified is a pure function of the flags -
-        # it must refuse with NO stamp and NO verdict row, not stamp-then-block.
-        with tempfile.TemporaryDirectory() as d:
-            root = self._bug(Path(d))
-            before = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
-            rc = tr.main(["set", "--id", "BG0001", "--status", "Verified",
-                          "--depth", "smoke", "--verdict", "approve",
-                          "--reviewer", "r1", "--author", "a1", "--root", str(root)])
-            self.assertNotEqual(rc, 0)
-            after = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
-            self.assertEqual(before, after)  # byte-identical: no stamp landed
-            self.assertFalse((root / "sdlc-studio" / "reviews" / "critic-verdicts.md").exists())
-
-    def test_depth_alone_still_gates_normally(self) -> None:
-        # --depth without reviewer/author: stamp + gated transition, no verdict recording
-        import io
-        from contextlib import redirect_stdout
-        with tempfile.TemporaryDirectory() as d:
-            root = self._bug(Path(d))
-            with redirect_stdout(io.StringIO()):
-                rc = tr.main(["set", "--id", "BG0001", "--status", "Fixed",
-                              "--depth", "functional (stamp only)", "--root", str(root)])
-            self.assertEqual(rc, 0)
-            text = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
-            self.assertIn("> **Status:** Fixed", text)
 
 
 class MetadataLineInjectionTests(unittest.TestCase):
@@ -4279,8 +4096,8 @@ class ForcedOverrideRecordTests(unittest.TestCase):
 
 
 class OneCallPreflightTests(unittest.TestCase):
-    """BG0315: `cmd_set`'s one-call close must pre-flight the WHOLE gate ladder before it
-    writes anything, and its `--dry-run` must judge the same text the real run will."""
+    """BG0315: `cmd_set`'s one-call close leaves nothing written when the gate ladder refuses,
+    and its `--dry-run` writes nothing."""
 
     def _story(self, root: Path) -> Path:
         sd = root / "sdlc-studio" / "stories"
@@ -4304,43 +4121,25 @@ class OneCallPreflightTests(unittest.TestCase):
         return p
 
     def test_a_refused_close_leaves_no_stamp_and_no_verdict_row(self) -> None:
-        # The AC-verify gate refuses this close, but the depth stamp and the critic verdict
-        # were already on disk by the time it ran - a persistent record of a close that
-        # never happened.
+        # The AC-verify gate refuses this close, but the critic verdict was already on disk by
+        # the time it ran - a persistent record of a close that never happened.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             p = self._story(root)
             before = p.read_text(encoding="utf-8")
-            rc_val = _quiet(tr.main, ["set", "US0001", "Done", "--depth", "functional",
+            rc_val = _quiet(tr.main, ["set", "US0001", "Done",
                                       "--verdict", "approve", "--reviewer", "Blake",
                                       "--author", "Alex", "--root", str(root)])
             self.assertNotEqual(rc_val, 0)
             self.assertEqual(before, p.read_text(encoding="utf-8"))   # byte-identical
             self.assertFalse((root / "sdlc-studio" / "reviews" / "critic-verdicts.md").exists())
 
-    def test_depth_dry_run_agrees_with_the_real_run(self) -> None:
-        # `--depth functional --dry-run` judged the UN-stamped file and refused what the
-        # identical real command accepts: the preview/run divergence `pending_fields` exists
-        # to close, on the one path that never passed it.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._bug(root)
-            dry = _quiet(tr.main, ["set", "BG0001", "Fixed", "--depth", "functional",
-                                   "--dry-run", "--root", str(root)])
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._bug(root)
-            real = _quiet(tr.main, ["set", "BG0001", "Fixed", "--depth", "functional",
-                                    "--root", str(root)])
-        self.assertEqual((dry, real), (0, 0), "dry-run and real run disagree")
-
     def test_the_dry_run_still_writes_nothing(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             p = self._bug(root)
             before = p.read_text(encoding="utf-8")
-            _quiet(tr.main, ["set", "BG0001", "Fixed", "--depth", "functional",
-                             "--dry-run", "--root", str(root)])
+            _quiet(tr.main, ["set", "BG0001", "Fixed", "--dry-run", "--root", str(root)])
             self.assertEqual(before, p.read_text(encoding="utf-8"))
 
 
@@ -4412,11 +4211,11 @@ class AReopenRetractsTheGreenItOverturnsTests(unittest.TestCase):
     the planner still priced it as BUILT-NOT-CLOSED at zero points. The reopen must reach the
     evidence, not only the status."""
 
-    def _reopened(self, depth: str | None = "functional (tests red-first)"):
+    def _reopened(self):
         td = tempfile.TemporaryDirectory()
         self.addCleanup(td.cleanup)
         root = Path(td.name)
-        _bug_repo(root, depth)
+        _bug_repo(root)
         p = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
         p.write_text(p.read_text(encoding="utf-8").replace(
             "> **Status:** In Progress", "> **Status:** Fixed"), encoding="utf-8")
@@ -4425,14 +4224,6 @@ class AReopenRetractsTheGreenItOverturnsTests(unittest.TestCase):
         (local / "verify-report.json").write_text(json.dumps(
             {"stories": {"BG0001-x": {"verified": 3, "failed": 0, "stale": 0}}}), encoding="utf-8")
         return root, p, local / "verify-report.json"
-
-    def test_reopening_retracts_the_verification_depth(self) -> None:
-        root, p, _ = self._reopened()
-        transition.transition(root, "BG0001", "Open")
-        depth = sdlc_md.extract_field(p.read_text(encoding="utf-8"), "Verification depth") or ""
-        self.assertTrue(depth.upper().startswith("RETRACTED"),
-                        f"the withdrawn claim survived the reopen: {depth!r}")
-        self.assertIn("functional", depth, "the retraction dropped what was being retracted")
 
     def test_the_invalidation_reaches_a_v3_id(self) -> None:
         """`split("-")[0]` on a v3 stem `US-01KYQ84R-v3-unit` yields `US`, so the entry never
@@ -4468,52 +4259,38 @@ class AReopenRetractsTheGreenItOverturnsTests(unittest.TestCase):
             sprint._built_not_closed(root, "BG0001", p.read_text(encoding="utf-8")),
             "a reopened unit is still excluded from the build forecast")
 
-    def test_a_retracted_depth_alone_defeats_a_green_verify_report(self) -> None:
-        """The two mechanisms must not be able to disagree: even with the report left green,
-        a retracted depth is enough. Without this the fix rests on the invalidation alone."""
-        root, p, report = self._reopened()
-        transition.transition(root, "BG0001", "Open")
-        report.write_text(json.dumps(
+    def _green_at(self, status: str) -> Path:
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        _bug_repo(root, status)
+        local = root / "sdlc-studio" / ".local"
+        local.mkdir(parents=True)
+        (local / "verify-report.json").write_text(json.dumps(
             {"stories": {"BG0001-x": {"verified": 3, "failed": 0, "stale": 0}}}), encoding="utf-8")
-        self.assertFalse(
-            sprint._built_not_closed(root, "BG0001", p.read_text(encoding="utf-8")),
-            "a re-greened report outvoted the retraction")
+        return root
 
-    def test_a_unit_with_no_depth_claim_is_not_given_one(self) -> None:
-        """A reopen retracts what was claimed; it never invents a claim that was never made."""
-        root, p, _ = self._reopened(depth=None)
-        transition.transition(root, "BG0001", "Open")
-        self.assertIsNone(
-            sdlc_md.extract_field(p.read_text(encoding="utf-8"), "Verification depth"),
-            "the reopen invented a verification-depth field")
+    def _still_green(self, root: Path) -> bool:
+        report = root / "sdlc-studio" / ".local" / "verify-report.json"
+        entry = json.loads(report.read_text(encoding="utf-8"))["stories"]["BG0001-x"]
+        return entry["verified"] == 3 and not entry.get("stale")
 
     def test_moving_between_two_non_terminal_statuses_retracts_nothing(self) -> None:
         """The predicate is LEAVING a terminal status, not ARRIVING at a non-terminal one.
         Caught by mutation: the sibling negative control moved to Fixed, which is terminal, so
         a predicate reading only the target passed it. Reading only the target would wipe the
         evidence on every ordinary move through a working status."""
-        td = tempfile.TemporaryDirectory()
-        self.addCleanup(td.cleanup)
-        root = Path(td.name)
-        _bug_repo(root, "functional (tests red-first)")   # starts at In Progress
+        root = self._green_at("In Progress")
         transition.transition(root, "BG0001", "Open")     # non-terminal -> non-terminal
-        p = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
-        depth = sdlc_md.extract_field(p.read_text(encoding="utf-8"), "Verification depth") or ""
-        self.assertFalse(depth.upper().startswith("RETRACTED"),
-                         "a move between two open statuses retracted a live claim")
+        self.assertTrue(self._still_green(root),
+                        "a move between two open statuses invalidated a live green")
 
     def test_an_ordinary_forward_transition_retracts_nothing(self) -> None:
         """In Progress -> Fixed is not a reopen. The guard must fire on leaving a terminal
-        status, not on touching a unit that has a depth."""
-        td = tempfile.TemporaryDirectory()
-        self.addCleanup(td.cleanup)
-        root = Path(td.name)
-        _bug_repo(root, "functional (tests red-first)")
+        status, not on touching a unit that has evidence."""
+        root = self._green_at("In Progress")
         transition.transition(root, "BG0001", "Fixed")
-        p = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
-        depth = sdlc_md.extract_field(p.read_text(encoding="utf-8"), "Verification depth") or ""
-        self.assertFalse(depth.upper().startswith("RETRACTED"),
-                         "a forward transition retracted a live claim")
+        self.assertTrue(self._still_green(root), "a forward transition invalidated a live green")
 
 
 class OpenQuestionsGateTests(unittest.TestCase):
@@ -6219,12 +5996,13 @@ class CoverageGateTests(unittest.TestCase):
             self.assertEqual(rc, 0, out + err)
             self.assertIn("uncovered added line(s)", out + err, "an explicit --base is measured even with no run state: " + out + err)
         with tempfile.TemporaryDirectory() as d:
-            # the canonical one-call close (`--depth`) carries the coverage options into its
-            # own pre-flight ladder: dropping them refused for want of a base ref the caller gave
+            # the one-call close (a verdict recorded with it) carries the coverage options into
+            # its ladder: dropping them refused for want of a base ref the caller gave
             root = self._repo(Path(d), uncovered=False, batch=["BG0099"])
-            rc, out, err = self._set(root, "--base", "HEAD~1", "--depth", "functional")
+            rc, out, err = self._set(root, "--base", "HEAD~1", "--verdict", "approve",
+                                     "--reviewer", "rev", "--author", "dev")
             self.assertEqual(rc, 0, out + err)
-            self.assertNotIn("--base <ref>", out + err, "the pre-flight was given the same options as the transition: " + out + err)
+            self.assertNotIn("--base <ref>", out + err, "the one-call close was given the same options as the transition: " + out + err)
         with tempfile.TemporaryDirectory() as d:
             # an UNREADABLE run state names no unit: block refuses naming --base rather than
             # crashing or inventing a ref, and --base still answers

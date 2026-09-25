@@ -1603,19 +1603,12 @@ def _built_not_closed(root: Path, uid: str, text: str) -> bool:
     status = (sdlc_md.extract_field(text, "Status") or "").strip()
     if status in _CLOSED_STATUSES:
         return False
-    if sdlc_md.depth_retracted(text):
-        # A reopen withdrew this unit's evidence. The verify-report may still read green -
-        # BG0372's vacuous tests kept passing after the review judged them meaningless - so the
-        # retraction has to outrank it, or the two mechanisms disagree and the louder one is
-        # the stale one.
-        return False
     if _rejected_unanswered(root, uid):
         # A unit no reviewer has approved is not built work awaiting a close. The exclusion
         # sentence tells the reader to `close them`, and it was saying that about BG0592 - four
         # REJECTs, unanswered - while removing its points from the forecast, so the unit with the
         # worst convergence record in the batch was the one priced at nothing. Its own
-        # verifiers read green throughout; that is exactly the state `depth_retracted` is
-        # consulted for one branch above, and an unanswered REJECT is the same shape.
+        # verifiers read green throughout, which is why this is asked before them.
         return False
     return _verifiers_all_green(root, uid)
 
@@ -9539,7 +9532,7 @@ def _report_holds(root, state) -> list:
             "hold": "terminal-gate",
             "detail": f"{len(unmet)} batch unit(s) whose terminal gate is UNMET - {named}",
             "remedy": "clear each gate this names (commonly `verify_ac.py run --story <id>`, "
-                      "or a bug's `Verification depth`), then re-run the close"})
+                      "for a story or a bug), then re-run the close"})
     # The one predicate the rest of the close already reads (US0823), never a second opinion
     # about what an unanswered review is: D0193, D0194.
     try:

@@ -7425,13 +7425,14 @@ def _quiet_brief(root, units):
 class GateBriefingTests(unittest.TestCase):
     """US0266: the plan briefs the gates instead of leaving them to be met as refusals."""
 
-    def _bug(self, root: Path, depth: str = "") -> None:
+    def _bug(self, root: Path, ticked: bool = False) -> None:
         d = root / "sdlc-studio" / "bugs"
         d.mkdir(parents=True, exist_ok=True)
-        line = f"> **Verification depth:** {depth}\n" if depth else ""
+        box = "x" if ticked else " "
         (d / "BG0001-x.md").write_text(
-            f"# BG0001: x\n\n> **Status:** Open\n{line}> **Severity:** Low\n"
-            "> **Points:** 2\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n- [x] the defect no longer reproduces\n", encoding="utf-8")
+            "# BG0001: x\n\n> **Status:** Open\n> **Severity:** Low\n"
+            "> **Points:** 2\n\n## Summary\n\ns\n\n\n## Acceptance Criteria\n\n"
+            f"- [{box}] the defect no longer reproduces\n", encoding="utf-8")
         (d / "_index.md").write_text(
             "# Bugs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
             "| [BG0001](BG0001-x.md) | x | Open |\n", encoding="utf-8")
@@ -7442,7 +7443,7 @@ class GateBriefingTests(unittest.TestCase):
             self._bug(root)
             brief = _quiet_brief(root, [{"id": "BG0001", "type": "bug"}])
             self.assertEqual(len(brief["units"]), 1)
-            self.assertIn("Verification depth", brief["units"][0]["unmet"][0])
+            self.assertIn("unticked", brief["units"][0]["unmet"][0])
             self.assertEqual(brief["units"][0]["target"], "Fixed")
 
     def test_a_satisfied_unit_carries_no_requirement(self) -> None:
@@ -7450,7 +7451,7 @@ class GateBriefingTests(unittest.TestCase):
         # and would still satisfy the assertion above.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._bug(root, depth="functional (reproduced)")
+            self._bug(root, ticked=True)
             brief = _quiet_brief(root, [{"id": "BG0001", "type": "bug"}])
             self.assertEqual(brief["units"], [])
 
@@ -9502,11 +9503,11 @@ class ApplySignoffBatchCoverageTests(unittest.TestCase):
         # story-scoped. This assertion previously pinned that defect.
         #
         # What must hold instead is that the bug is carried to its OWN terminal (`Fixed`, not
-        # `Done`) and refused there on its own terms - the verification-depth floor and the
-        # criteria oracle - rather than waved through or quietly dropped.
+        # `Done`) and refused there on its own terms - the criteria oracle - rather than waved
+        # through or quietly dropped.
         self.assertIn("BG0001 -> Fixed", printed,
                       "a bug in the batch must be carried to its own terminal status")
-        self.assertIn("Verification depth", printed,
+        self.assertIn("nothing speaks for this fix", printed,
                       "the refusal must be the bug's own gate, not a story-shaped one")
 
     def test_an_unknown_id_is_not_silently_counted_as_delivered(self) -> None:

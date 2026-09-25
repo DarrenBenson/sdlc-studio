@@ -1,6 +1,6 @@
 # US0934: A bug reaches Fixed without a depth gate, and the retired --depth flags are refused
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,12 +19,16 @@
 
 - **AC1:** Given a fixture bug with green executable criteria, an independent delivery APPROVE and no `Verification depth` field, when `transition.py set <id> Fixed` runs, then it succeeds; the same bug with a red criterion is still refused naming that criterion. Fails on: HEAD's depth gate refusing the missing field, and on a deletion that takes the verify gate with it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_depth_gate.py::DepthGateGoneTests::test_a_bug_without_a_depth_reaches_fixed
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given `artifact.py close <id> --depth <v>` and `transition.py set <id> <status> --depth <v>`, when invoked, then each exits 2 naming the retired flag; `artifact.py close <id>` without it still closes a green fixture story. Fails on: removing only the `close` flag and leaving `set --depth` accepted
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_depth_gate.py::DepthGateGoneTests::test_both_depth_flags_are_retired_and_close_still_works
+  - **Verified:** yes (2026-09-25)
 - **AC3:** Given a fixture project setting `quality.depth_parity_gate: block` and a story whose `Verification target` names a tier its criteria do not reach, when it is moved to Done, then no parity refusal fires; and when a Fixed bug carrying a `Verification depth` line is reopened, the line is left as written with no retraction, and no shipped script calls `sdlc_md.depth_retracted`. Fails on: deleting the parity check but leaving the reopen retraction and `critic.py`'s `depth_retracted` read
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_depth_gate.py::DepthGateGoneTests::test_no_parity_refusal_or_reopen_retraction
+  - **Verified:** yes (2026-09-25)
 - **AC4:** Given `artifact.py new bug` in a fixture, then the created bug and `templates/core/bug.md` carry no `Verification depth` field. Fails on: dropping the field from the template while `artifact.py` still writes it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_depth_gate.py::DepthGateGoneTests::test_a_new_bug_carries_no_depth_field
+  - **Verified:** yes (2026-09-25)
 
 ## Notes
 

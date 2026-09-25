@@ -196,14 +196,14 @@ class RoundRulesHoldForEveryWriterTests(_NoTranscripts):
     def test_the_other_writers_refuse_a_round_two_from_another_reviewer(self) -> None:
         """MUTANT: enforce the round rules only in `critic.py record` (their old home), so the
         one-call closes write round 2 for a reviewer who did not reject. Nothing is written by
-        a refused close: no row, no depth stamp, no status change."""
+        a refused close: no row, no status change."""
         import artifact  # noqa: PLC0415
         with tempfile.TemporaryDirectory() as d:
             root = _workspace(d)
             _record(root, "REJECT", "rev-a", "[new] the parser drops a row")
             story = root / "sdlc-studio" / "stories" / f"{UNIT}-a-unit.md"
             before = story.read_bytes()
-            rc, out = _run(artifact, ["close", "--id", UNIT, "--depth", "functional",
+            rc, out = _run(artifact, ["close", "--id", UNIT,
                                       "--verdict", "APPROVE", "--reviewer", "rev-b",
                                       "--author", "builder", "--root", str(root)])
             self.assertEqual(rc, 2, out)

@@ -1492,7 +1492,7 @@ def executes_verifiers(type_: str) -> bool:
 #: A terminal status reached by DECIDING rather than by delivering. The terminal set mixes the
 #: two - `Done`/`Fixed` are earned by building, `Won't Fix`/`Superseded`/`Rejected`/`Withdrawn`
 #: are rulings - and callers that care about DELIVERY must not treat a ruling as one. A unit
-#: nobody built owes no acceptance criteria, no verification depth and no sprint close.
+#: nobody built owes no acceptance criteria and no sprint close.
 #:
 #: Recognised by the WORDING rather than by a per-type list, so a status added to any type's
 #: vocabulary lands on the correct side without an edit here. `Superseded` is the one that has
@@ -1966,17 +1966,18 @@ def document_bullet(text: str, default: str = "-") -> str:
     return default
 
 
-RETRACTED_DEPTH = "RETRACTED"
+def retire_flag(parser: argparse.ArgumentParser, flag: str, why: str) -> None:
+    """Keep a removed flag parseable only so it is refused BY NAME: exit 2 before anything runs.
 
+    Dropping it from the parser would meet an old invocation with a bare usage error that does
+    not say the flag is gone or what replaced it. Hidden from `--help`, and it takes an optional
+    value so `--flag <v>` is refused whole rather than leaving `<v>` as a stray positional."""
 
-def depth_retracted(text: str) -> bool:
-    """True when a unit's `Verification depth` was withdrawn by a reopen.
+    class _Retired(argparse.Action):
+        def __call__(self, p, namespace, values, option_string=None):
+            p.exit(2, f"error: {option_string} is retired - {why}. Nothing was written.\n")
 
-    Lives here because THREE copies of this predicate existed - one public and callerless in
-    `transition`, one inlined inside `_retract_depth`, one in `sprint` justified by a
-    no-sibling-import rule. Both modules already import this library, so the rule costs nothing
-    and there is one place for it to be wrong."""
-    return (extract_field(text, "Verification depth") or "").strip().upper().startswith(RETRACTED_DEPTH)
+    parser.add_argument(flag, nargs="?", action=_Retired, help=argparse.SUPPRESS)
 
 
 #: The heading an artefact records its open questions under, and the heading a RULING moves
