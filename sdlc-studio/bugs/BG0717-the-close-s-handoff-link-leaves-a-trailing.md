@@ -1,6 +1,6 @@
 # BG0717: the close's handoff link leaves a trailing blank line in the retro, so every close fails this project's own markdownlint
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/handoff.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_handoff.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
@@ -27,6 +27,7 @@ Normalise the trailing whitespace where the section is written, not at each call
 
 - [ ] **AC1** Given a retro whose `## Handoff` section is the last in the file, when `handoff._link_from_retro` writes the handoff link, then the file ends with exactly one newline (fixed by US0877, 6729b4f3, handoff.py:759)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_retro.py::RetroTailTests::test_linking_the_handoff_leaves_exactly_one_newline
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

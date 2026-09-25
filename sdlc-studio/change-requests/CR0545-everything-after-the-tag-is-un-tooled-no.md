@@ -1,6 +1,7 @@
 # CR-0545: Everything after the tag is un-tooled: no command publishes a release, so the runbook has no row for the step and the assets the install path verifies against have never been produced
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0273 v6 triage (Sprint 5, US0937), SUPERSEDED: `.github/workflows/release.yml` publishes the release on tag, and v5.1.0 carries its tar.gz, zip and both `.sha256` sidecars (`tools/release_assets.py check --tag v5.1.0`: 4 of 4); EP0236 stays Draft for US0774
 > **Decomposed-into:** EP0236
 > **Created:** 2026-08-12
 > **Created-by:** sdlc-studio new

@@ -84,3 +84,14 @@
 {"id": "EP0242", "type": "epic", "project": "sdlc-studio"}
 {"id": "CR0554", "type": "cr", "project": "sdlc-studio"}
 {"id": "CR0556", "type": "cr", "project": "sdlc-studio"}
+{"id": "US0891", "type": "story", "project": "sdlc-studio"}
+{"id": "US0900", "type": "story", "project": "sdlc-studio"}
+{"id": "US0904", "type": "story", "project": "sdlc-studio"}
+{"id": "EP0262", "type": "epic", "project": "sdlc-studio"}
+{"id": "BG0717", "type": "bug", "project": "sdlc-studio"}
+{"id": "BG0720", "type": "bug", "project": "sdlc-studio"}
+{"id": "CR0545", "type": "cr", "project": "sdlc-studio"}
+{"id": "US0808", "type": "story", "project": "sdlc-studio"}
+{"id": "CR0560", "type": "cr", "project": "sdlc-studio"}
+{"id": "EP0245", "type": "epic", "project": "sdlc-studio"}
+{"id": "US0937", "type": "story", "project": "sdlc-studio"}

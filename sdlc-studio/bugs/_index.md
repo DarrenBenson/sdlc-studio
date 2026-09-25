@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 33 |
+| Open | 31 |
 | In Progress | 0 |
-| Fixed | 615 |
+| Fixed | 616 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
-| Superseded | 21 |
+| Superseded | 22 |
 | **Total** | **775** |
 
 ## All Bugs
@@ -75,10 +75,10 @@
 | [BG0714](BG0714-284-added-lines-of-run-01m2spns-are-executed.md) | 284 added lines of RUN-01M2SPNS are executed by no verifier in the run, and BG0706's proposed fix inherits most of the false charge | Open | Medium | 2026-09-18 | 2026-09-18 |
 | [BG0715](BG0715-the-close-attributes-every-finding-raised-outside-a.md) | the close attributes every finding raised outside a delivery batch to whichever run is open, because it dates them by the last word of a prose stamp | Fixed | High | 2026-09-18 | 2026-09-18 |
 | [BG0716](BG0716-prepare-mints-a-new-report-id-on-every.md) | PREPARE mints a new report id on every re-file, so a run that prepares twice has two reports of record | Fixed | Medium | 2026-09-18 | 2026-09-18 |
-| [BG0717](BG0717-the-close-s-handoff-link-leaves-a-trailing.md) | the close's handoff link leaves a trailing blank line in the retro, so every close fails this project's own markdownlint | Open | Medium | 2026-09-18 | 2026-09-18 |
+| [BG0717](BG0717-the-close-s-handoff-link-leaves-a-trailing.md) | the close's handoff link leaves a trailing blank line in the retro, so every close fails this project's own markdownlint | Fixed | Medium | 2026-09-18 | 2026-09-18 |
 | [BG0718](BG0718-the-seal-widens-the-dora-window-it-is.md) | the seal widens the DORA window it is sealing, so a signed report reads INVALIDATED one second after the signature lands | Fixed | High | 2026-09-19 | 2026-09-19 |
 | [BG0719](BG0719-the-report-of-record-does-not-disclose-the.md) | the report of record does not disclose the waivers that permitted the seal, so an operator signs without being told which gate stood down | Fixed | High | 2026-09-19 | 2026-09-19 |
-| [BG0720](BG0720-the-report-s-filed-this-run-figure-names.md) | the report's Filed this run figure names the batch's delivered units as findings and omits a finding that was filed | Open | Medium | 2026-09-19 | 2026-09-19 |
+| [BG0720](BG0720-the-report-s-filed-this-run-figure-names.md) | the report's Filed this run figure names the batch's delivered units as findings and omits a finding that was filed | Superseded | Medium | 2026-09-19 | 2026-09-19 |
 | [BG0721](BG0721-the-duplicate-lens-cannot-tell-one-change-filed.md) | the duplicate lens cannot tell one change filed twice from one method applied to several disjoint scopes | Won't Fix | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0722](BG0722-the-unruled-lens-catches-a-request-nobody-closed.md) | the unruled lens catches a request nobody closed, not the request everybody abandoned - the dominant accumulation path is still unguarded | Fixed | High | 2026-09-21 | 2026-09-21 |
 | [BG0723](BG0723-a-stated-count-in-source-or-test-prose.md) | a stated count in source or test prose is never checked against the tree it counts | Won't Fix | Medium | 2026-09-21 | 2026-09-21 |

@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 18 |
+| Draft | 16 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 227 |
-| Superseded | 21 |
+| Done | 228 |
+| Superseded | 22 |
 | **Total** | **266** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -57,7 +57,7 @@
 | [EP0242](EP0242-a-bug-s-plan-or-evidence-gets-an.md) | A bug's plan or evidence gets an independent judgement, and the asymmetry is stated | Superseded | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0243](EP0243-the-derived-depth-lane-re-derives-rather-than.md) | The derived-depth lane re-derives, rather than trusting each span's own seal | Superseded | 3 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0244](EP0244-one-concept-one-name-across-every-verb-and.md) | One concept, one name, across every verb and every document key | Draft | 4 | -- | 2026-08-27 | 2026-08-27 |
-| [EP0245](EP0245-filing-a-finding-leaves-the-disclosure-true.md) | Filing a finding leaves the disclosure true | Draft | 3 | -- | 2026-08-27 | 2026-08-27 |
+| [EP0245](EP0245-filing-a-finding-leaves-the-disclosure-true.md) | Filing a finding leaves the disclosure true | Superseded | 3 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0246](EP0246-the-declared-python-floor-is-a-gate-not.md) | The declared Python floor is a gate, not a sentence in six documents | Done | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0248](EP0248-a-change-to-a-gate-lane-or-a.md) | A change to a gate lane or a hook is run where the hook runs it before it can reach Fixed | Superseded | 4 | -- | 2026-09-07 | 2026-09-07 |
 | [EP0253](EP0253-the-push-boundary-runs-the-modules-the-push.md) | The push boundary runs the modules the push changed, and says which | Superseded | 5 | -- | 2026-09-16 | 2026-09-16 |
@@ -69,7 +69,7 @@
 | [EP0259](EP0259-ws2-the-sprint-records-the-boundary-it-may.md) | WS2: the sprint records the boundary it may decide inside, and the plan refuses a goal that reaches past it | Draft | 2 | -- | 2026-09-21 | 2026-09-21 |
 | [EP0260](EP0260-the-lean-loop-a-sprint-that-runs-on.md) | The lean loop: a sprint that runs on its own, learns from itself and hands over one page | Done | 11 | -- | 2026-09-23 | 2026-09-23 |
 | [EP0261](EP0261-fast-gates-and-lessons-that-graduate-the-lean.md) | Fast gates and lessons that graduate: the lean loop's second sprint | Done | 11 | -- | 2026-09-24 | 2026-09-24 |
-| [EP0262](EP0262-commits-clear-in-ninety-seconds-and-every-constraint.md) | Commits clear in ninety seconds, and every constraint earns its place | Draft | 19 | -- | 2026-09-24 | 2026-09-24 |
+| [EP0262](EP0262-commits-clear-in-ninety-seconds-and-every-constraint.md) | Commits clear in ninety seconds, and every constraint earns its place | Done | 19 | -- | 2026-09-24 | 2026-09-24 |
 | [EP0263](EP0263-review-is-one-reviewer-and-a-green-test.md) | Review is one reviewer and a green test: the review and evidence surface is deleted | Draft | 21 | -- | 2026-09-24 | 2026-09-24 |
 | [EP0264](EP0264-the-record-informs-the-work-goals-trace-to.md) | The record informs the work: goals trace to the PRD, and briefs carry the history and constraints of the files they touch | Done | 7 | -- | 2026-09-25 | 2026-09-25 |
 | [EP0265](EP0265-v6-0-0-the-lean-loop-works-on.md) | v6.0.0: the lean loop works on a fresh project, and the release cuts clean | Draft | 15 | -- | 2026-09-25 | 2026-09-25 |

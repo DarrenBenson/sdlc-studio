@@ -1,6 +1,7 @@
 # US0808: A filed Medium or Low finding is already disclosed on `docs/known-issues.md` when the filer returns
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Closed with findings in:** D0273 v6 triage (Sprint 5, US0937), SUPERSEDED: US0898 (297562b0) cuts `docs/known-issues.md` at release and checks it only at the tag, so no page needs refreshing when a finding is filed
 > **Merged from:** US0809, US0810 (backlog sweep 2026-09-24, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0560
 > **Created:** 2026-08-27

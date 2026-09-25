@@ -1,6 +1,7 @@
 # US0900: A change request can be filed before it is sized
 
-> **Status:** In Progress
+> **Status:** Done
+> **Findings-filed-to:** BG0756
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,8 +20,10 @@
 
 - **AC1:** Given `file_finding.py file --type cr` with a title, summary and priority but no `--size` and no `--affects`, when it runs, then the CR is written and indexed and it exits 0; `artifact.py new --type cr` with the same fields behaves the same
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_cr_filing.py::CrFilingTests::test_an_unsized_cr_is_filed_by_both_creators
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given a bug with no `--points` or no `--affects`, then both creators still refuse it before an id is allocated - bugs keep the refusal
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_cr_filing.py::CrFilingTests::test_an_unsized_bug_is_still_refused
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

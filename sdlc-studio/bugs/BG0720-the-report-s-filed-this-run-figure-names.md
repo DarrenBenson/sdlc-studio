@@ -1,6 +1,7 @@
 # BG0720: the report's Filed this run figure names the batch's delivered units as findings and omits a finding that was filed
 
-> **Status:** Open
+> **Status:** Superseded
+> **Closed with findings in:** D0273 v6 triage (Sprint 5, US0937), SUPERSEDED: US0875 (31ffb8fc) deleted `_carried_section`, so the report's filed-this-run figure now comes from the run record and the defective path no longer exists
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py

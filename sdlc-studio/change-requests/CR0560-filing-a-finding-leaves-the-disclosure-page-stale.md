@@ -1,6 +1,7 @@
 # CR-0560: filing a finding leaves the disclosure page stale, so the tree is red until somebody separately remembers to regenerate it
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0273 v6 triage (Sprint 5, US0937), SUPERSEDED: US0898 (297562b0) cuts `docs/known-issues.md` at release and checks it only at the tag, so filing a finding no longer leaves a page to go stale
 > **Decomposed-into:** EP0245
 > **Priority:** Medium
 > **Type:** enhancement

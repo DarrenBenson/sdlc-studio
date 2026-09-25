@@ -11,7 +11,7 @@ Sprint 5 of the v6 release (D0272): finish EP0263's deletions with their histori
 
 ## Story Breakdown
 
-- [ ] [US0937: Work that already shipped reads Done, so the repair ledger can go and the release cut ships no notes for open stories](../stories/US0937-work-that-already-shipped-reads-done-so-the.md)
+- [x] [US0937: Work that already shipped reads Done, so the repair ledger can go and the release cut ships no notes for open stories](../stories/US0937-work-that-already-shipped-reads-done-so-the.md)
 - [ ] [US0938: The release rehearsal walks a v5.1 project across to v6, and every known gap it tolerates has an open owner](../stories/US0938-the-release-rehearsal-walks-a-v5-1-project.md)
 - [x] [US0939: CI and the push gate give one verdict on tools/tests, because both run it the same way](../stories/US0939-ci-and-the-push-gate-give-one-verdict.md)
 - [ ] [US0940: Every criterion on a Done story passes when the release gate runs it, or is retired with its reason](../stories/US0940-every-criterion-on-a-done-story-passes-when.md)

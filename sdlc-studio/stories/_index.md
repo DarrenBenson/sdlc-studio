@@ -7,15 +7,15 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 42 |
+| Draft | 39 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 2 |
+| In Progress | 0 |
 | Review | 0 |
-| Done | 744 |
+| Done | 748 |
 | Won't Implement | 81 |
 | Deferred | 0 |
-| Superseded | 89 |
+| Superseded | 90 |
 | Blocked | 0 |
 | **Total** | **958** |
 
@@ -173,7 +173,7 @@
 | [US0805](US0805-a-fields-file-document-whose-keys-are-spelled.md) | A `--fields-file` document whose keys are spelled as the verb's own flags is accepted | Draft | EP0244 | 2026-08-27 | 2026-08-27 |
 | [US0806](US0806-a-deprecated-alias-still-works-and-says-once.md) | A deprecated alias still works and says once that it is deprecated | Superseded | EP0244 | 2026-08-27 | 2026-08-27 |
 | [US0807](US0807-the-surface-reference-names-the-accepted-flags-and.md) | The surface reference names the accepted flags and document keys per verb | Superseded | EP0244 | 2026-08-27 | 2026-08-27 |
-| [US0808](US0808-a-filed-medium-or-low-finding-is-already.md) | A filed Medium or Low finding is already disclosed on `docs/known-issues.md` when the filer returns | Draft | EP0245 | 2026-08-27 | 2026-08-27 |
+| [US0808](US0808-a-filed-medium-or-low-finding-is-already.md) | A filed Medium or Low finding is already disclosed on `docs/known-issues.md` when the filer returns | Superseded | EP0245 | 2026-08-27 | 2026-08-27 |
 | [US0809](US0809-a-finding-filed-at-a-barred-severity-leaves.md) | A finding filed at a BARRED severity leaves the page and the count unchanged - the paired control | Superseded | EP0245 | 2026-08-27 | 2026-08-27 |
 | [US0810](US0810-the-release-notes-disclosed-count-is-derived-rather.md) | The release notes' disclosed count is DERIVED rather than hand-edited | Superseded | EP0245 | 2026-08-27 | 2026-08-27 |
 | [US0811](US0811-a-tracked-script-using-syntax-newer-than-the.md) | A tracked script using syntax newer than the declared floor is REFUSED, with its file and line named | Superseded | EP0246 | 2026-08-27 | 2026-08-27 |
@@ -249,7 +249,7 @@
 | [US0888](US0888-a-lesson-that-recurs-graduates-into-a-check.md) | A lesson that recurs graduates into a check | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0889](US0889-the-close-forward-ports-the-skill-and-keeps.md) | The close forward-ports the skill and keeps one handover per run | Done | EP0261 | 2026-09-24 | 2026-09-24 |
 | [US0890](US0890-recording-a-waiver-no-longer-re-reads-every.md) | Recording a waiver no longer re-reads every script | Done | EP0262 | 2026-09-24 | 2026-09-24 |
-| [US0891](US0891-a-commit-s-pre-commit-lanes-run-side.md) | A commit's pre-commit lanes run side by side | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0891](US0891-a-commit-s-pre-commit-lanes-run-side.md) | A commit's pre-commit lanes run side by side | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0892](US0892-a-commit-s-selected-tests-are-handed-out.md) | A commit's selected tests are handed out one at a time across every worker | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0893](US0893-a-commit-leaves-the-live-repository-tests-to.md) | A commit leaves the live-repository tests to the push | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0894](US0894-the-close-owed-report-walks-the-corpus-once.md) | The close-owed report walks the corpus once, not once per epic | Done | EP0262 | 2026-09-24 | 2026-09-24 |
@@ -258,11 +258,11 @@
 | [US0897](US0897-a-shared-verify-selector-is-an-advisory-note.md) | A shared Verify selector is an advisory note within one artefact, never a commit refusal | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0898](US0898-a-shipped-release-s-notes-stay-as-shipped.md) | A shipped release's notes stay as shipped, and the defect count is written at the cut | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0899](US0899-mechanical-index-and-epic-drift-is-fixed-at.md) | Mechanical index and epic drift is fixed at commit, not refused | Done | EP0262 | 2026-09-24 | 2026-09-24 |
-| [US0900](US0900-a-change-request-can-be-filed-before-it.md) | A change request can be filed before it is sized | In Progress | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0900](US0900-a-change-request-can-be-filed-before-it.md) | A change request can be filed before it is sized | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0901](US0901-the-hooks-list-their-own-lanes-and-agents.md) | The hooks list their own lanes, and AGENTS.md stops restating them | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0902](US0902-adding-a-script-no-longer-needs-a-matching.md) | Adding a script no longer needs a matching TSD sentence to commit | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0903](US0903-a-recurring-lesson-asks-for-a-fix-or.md) | A recurring lesson asks for a fix or a retirement, not another check | Done | EP0262 | 2026-09-24 | 2026-09-24 |
-| [US0904](US0904-each-lane-s-refusals-are-counted-against-the.md) | Each lane's refusals are counted against the defects they caught | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0904](US0904-each-lane-s-refusals-are-counted-against-the.md) | Each lane's refusals are counted against the defects they caught | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0905](US0905-adding-a-commit-lane-means-removing-one.md) | Adding a commit lane means removing one | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0906](US0906-the-review-seats-push-back-on-a-check.md) | The review seats push back on a check that earns nothing | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0907](US0907-the-backlog-holds-only-the-work-the-lean.md) | The backlog holds only the work the lean direction still wants | Done | EP0262 | 2026-09-24 | 2026-09-24 |
@@ -295,7 +295,7 @@
 | [US0934](US0934-a-bug-reaches-fixed-without-a-depth-gate.md) | A bug reaches Fixed without a depth gate, and the retired --depth flags are refused | Done | EP0263 | 2026-09-25 | 2026-09-25 |
 | [US0935](US0935-a-repair-reaches-fixed-without-the-mutation-evidence.md) | A repair reaches Fixed without the mutation-evidence gate, survivor filing or evidence mode | Done | EP0263 | 2026-09-25 | 2026-09-25 |
 | [US0936](US0936-the-mutation-ledger-verbs-are-retired-and-a.md) | The mutation ledger verbs are retired and a mutation run reports its yield only | Done | EP0263 | 2026-09-25 | 2026-09-25 |
-| [US0937](US0937-work-that-already-shipped-reads-done-so-the.md) | Work that already shipped reads Done, so the repair ledger can go and the release cut ships no notes for open stories | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0937](US0937-work-that-already-shipped-reads-done-so-the.md) | Work that already shipped reads Done, so the repair ledger can go and the release cut ships no notes for open stories | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0938](US0938-the-release-rehearsal-walks-a-v5-1-project.md) | The release rehearsal walks a v5.1 project across to v6, and every known gap it tolerates has an open owner | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0939](US0939-ci-and-the-push-gate-give-one-verdict.md) | CI and the push gate give one verdict on tools/tests, because both run it the same way | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0940](US0940-every-criterion-on-a-done-story-passes-when.md) | Every criterion on a Done story passes when the release gate runs it, or is retired with its reason | Draft | EP0265 | 2026-09-25 | 2026-09-25 |

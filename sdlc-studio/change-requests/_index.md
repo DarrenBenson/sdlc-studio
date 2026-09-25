@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 20 |
+| Proposed | 18 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 507 |
 | Rejected | 21 |
 | Deferred | 0 |
-| Superseded | 50 |
+| Superseded | 52 |
 | Blocked | 0 |
 | **Total** | **598** |
 
@@ -47,7 +47,7 @@
 | [CR-0540](CR0540-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | Superseded | Low | Improvement | 2026-08-09 | -- |
 | [CR-0543](CR0543-plan-review-has-no-adoption-cutoff-so-the.md) | plan_review has no adoption cutoff, so the one hard risk-proportional plan gate in the codebase cannot be turned on by any project with history - including this one | Superseded | High | enhancement | 2026-08-11 | -- |
 | [CR-0544](CR0544-nothing-reviews-a-repair-s-approach-or-a.md) | Nothing reviews a REPAIR's approach or a PROCEDURE's plan before it is executed, and that is where this session's most expensive findings were | Rejected | High | enhancement | 2026-08-11 | -- |
-| [CR-0545](CR0545-everything-after-the-tag-is-un-tooled-no.md) | Everything after the tag is un-tooled: no command publishes a release, so the runbook has no row for the step and the assets the install path verifies against have never been produced | Proposed | P1 | Improvement | 2026-08-12 | EP0236 |
+| [CR-0545](CR0545-everything-after-the-tag-is-un-tooled-no.md) | Everything after the tag is un-tooled: no command publishes a release, so the runbook has no row for the step and the assets the install path verifies against have never been produced | Superseded | P1 | Improvement | 2026-08-12 | EP0236 |
 | [CR-0546](CR0546-the-run-should-notice-work-it-delivered-that.md) | the run should notice work it delivered that its batch never named | Proposed | High | Improvement | 2026-08-17 | EP0237 |
 | [CR-0547](CR0547-verify-ac-revert-check-revert-a-unit-s.md) | verify_ac revert-check: revert a unit's production files and REQUIRE its own verifiers to go red | Complete | High | enhancement | 2026-08-19 | EP0217 |
 | [CR-0548](CR0548-derive-verification-depth-from-the-ledger-instead-of.md) | derive `Verification depth` from the ledger instead of authoring it - the field has been wrong on 5 of 6 units in one batch | Complete | High | enhancement | 2026-08-19 | EP0217 |
@@ -61,7 +61,7 @@
 | [CR-0557](CR0557-bg0463-s-twenty-batch-boundary-findings-need-re.md) | BG0463's twenty batch-boundary findings need re-triage against HEAD before any of them is engineered | Complete | Medium | Improvement | 2026-08-25 | EP0257 |
 | [CR-0558](CR0558-the-derived-depth-lane-checks-each-span-against.md) | the derived-depth lane checks each span against its own seal rather than re-deriving it, so a unit whose ledger evidence was evicted still passes | Superseded | High | enhancement | 2026-08-25 | EP0243 |
 | [CR-0559](CR0559-the-same-concept-is-named-three-ways-across.md) | the same concept is named three ways across the toolchain and twice inside one script, so every invocation is a guess the caller pays for in a refusal | Proposed | Medium | enhancement | 2026-08-26 | EP0244 |
-| [CR-0560](CR0560-filing-a-finding-leaves-the-disclosure-page-stale.md) | filing a finding leaves the disclosure page stale, so the tree is red until somebody separately remembers to regenerate it | Proposed | Medium | enhancement | 2026-08-26 | EP0245 |
+| [CR-0560](CR0560-filing-a-finding-leaves-the-disclosure-page-stale.md) | filing a finding leaves the disclosure page stale, so the tree is red until somebody separately remembers to regenerate it | Superseded | Medium | enhancement | 2026-08-26 | EP0245 |
 | [CR-0561](CR0561-the-declared-python-3-10-floor-is-stated.md) | the declared Python 3.10 floor is stated in six shipped places and guarded nowhere, and one shipped script already violates it | Complete | High | enhancement | 2026-08-26 | EP0246 |
 | [CR-0562](CR0562-no-shipped-command-ticks-a-delivered-unit-s.md) | no shipped command ticks a delivered unit's acceptance criteria, so the close's tick-verification row can only be satisfied by hand-editing the artefact | Superseded | Medium | enhancement | 2026-08-28 | -- |
 | [CR-0563](CR0563-verify-ac-run-prints-the-near-miss-hint.md) | verify_ac run prints the near-miss hint when a collected file's node is absent, so the RED first run of a mistyped selector names what was meant | Proposed | Medium | Improvement | 2026-09-04 | -- |
