@@ -18,7 +18,7 @@ Sprint 5 of the v6 release (D0272): finish EP0263's deletions with their histori
 - [ ] [US0941: A report Maya signed still validates after the tree moves on](../stories/US0941-a-report-maya-signed-still-validates-after-the.md)
 - [ ] [US0942: The release tag is refused only for what a release needs, not for close-owed debt](../stories/US0942-the-release-tag-is-refused-only-for-what.md)
 - [x] [US0943: `sprint plan` in a consuming project prints the skill's toolchain runbook](../stories/US0943-sprint-plan-in-a-consuming-project-prints-the.md)
-- [ ] [US0944: `verify_ac stamps` never reports green on nothing, and no stale stamp ships in v6](../stories/US0944-verify-ac-stamps-never-reports-green-on-nothing.md)
+- [x] [US0944: `verify_ac stamps` never reports green on nothing, and no stale stamp ships in v6](../stories/US0944-verify-ac-stamps-never-reports-green-on-nothing.md)
 - [ ] [US0945: Changing a stamped test lists the criteria that stamp it before the commit lands](../stories/US0945-changing-a-stamped-test-lists-the-criteria-that.md)
 - [x] [US0946: The known-issues page names the release being cut](../stories/US0946-the-known-issues-page-names-the-release-being.md)
 - [ ] [US0947: The files the close writes pass markdownlint without a hand fix](../stories/US0947-the-files-the-close-writes-pass-markdownlint-without.md)

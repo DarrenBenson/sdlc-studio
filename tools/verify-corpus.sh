@@ -166,7 +166,9 @@ rehearse_stamps() {
   n="$(echo "$out" | sed -n 's/^verify-stamps: \([0-9]*\) stamped AC(s).*/\1/p' | head -1)"
   if [ -z "$n" ]; then
     # No total line: either it found none (the clean path prints its own wording) or it broke.
-    if echo "$out" | grep -qi "no stale\|0 stamped\|clean"; then n=0; else
+    # The wording is the tool's own clean line; the lane once read three phrases it never
+    # printed, which went unseen until the corpus first reached zero (US0944).
+    if echo "$out" | grep -q "^verify-stamps: [0-9]* file(s) checked, every stamped verifier still resolves"; then n=0; else
       echo "$out" >&2
       fail "the stamp sweep printed no total - it did not complete, and 0 is not the same fact"
     fi

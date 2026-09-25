@@ -29,11 +29,12 @@
 - **Given** each rule
 - **When** its fixture runs
 - **Then** the failure message names the rule and the fix (a reference implementation for the crew linter)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_audit_check.py
-- **Verified:** yes (2026-07-10)
+- **Verify:** manual - retired by US0944: no live test proves it. `test_audit_check.py` went with the US0345-US0346 rename, and its successor `test_schema_check.py` exercises two of the seven rules and asserts rule-id membership only, never the message or a fix hint
+- **Verified:** manual (2026-09-25) - retired, superseded by US0944
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-06 | sdlc | Created via `new` (deterministic) |
+| 2026-09-25 | US0944 | AC2 retired in the D0259 pattern: its stamp named `test_audit_check.py`, gone since the US0345-US0346 rename, and `test_schema_check.py` does not prove each rule's message names the rule and the fix |

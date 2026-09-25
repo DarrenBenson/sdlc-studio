@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 50 |
+| Draft | 49 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 2 |
 | Review | 0 |
-| Done | 742 |
+| Done | 743 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 83 |
@@ -302,7 +302,7 @@
 | [US0941](US0941-a-report-maya-signed-still-validates-after-the.md) | A report Maya signed still validates after the tree moves on | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0942](US0942-the-release-tag-is-refused-only-for-what.md) | The release tag is refused only for what a release needs, not for close-owed debt | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0943](US0943-sprint-plan-in-a-consuming-project-prints-the.md) | `sprint plan` in a consuming project prints the skill's toolchain runbook | Done | EP0265 | 2026-09-25 | 2026-09-25 |
-| [US0944](US0944-verify-ac-stamps-never-reports-green-on-nothing.md) | `verify_ac stamps` never reports green on nothing, and no stale stamp ships in v6 | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0944](US0944-verify-ac-stamps-never-reports-green-on-nothing.md) | `verify_ac stamps` never reports green on nothing, and no stale stamp ships in v6 | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0945](US0945-changing-a-stamped-test-lists-the-criteria-that.md) | Changing a stamped test lists the criteria that stamp it before the commit lands | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0946](US0946-the-known-issues-page-names-the-release-being.md) | The known-issues page names the release being cut | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0947](US0947-the-files-the-close-writes-pass-markdownlint-without.md) | The files the close writes pass markdownlint without a hand fix | Draft | EP0265 | 2026-09-25 | 2026-09-25 |

@@ -3565,16 +3565,28 @@ def cmd_stamps(args: argparse.Namespace) -> int:
             print(line)
         print(lines[-1], file=sys.stderr if rc else sys.stdout)
         return rc
-    paths = ([Path(args.story)] if args.story
-             else list(walk_stories(under_root(repo_root, args.dir))))
+    if args.story:
+        # A value that names no file was skipped, so a typo'd id read nothing and reported
+        # every verifier resolving. An id resolves to its story or bug; anything else refuses.
+        paths = [Path(args.story)]
+        if not paths[0].exists():
+            rec = sdlc_md.extract_record_id(args.story)
+            target = sdlc_md.norm_id(rec) if rec and rec == args.story else None
+            paths = [p for p in walk_units(unit_dirs(repo_root, under_root(repo_root, args.dir)))
+                     if target and sdlc_md.norm_id(sdlc_md.extract_record_id(p.stem) or "")
+                     == target][:1]
+            if not paths:
+                print(f"verify-stamps: no story or bug file at {args.story}, and no unit with "
+                      f"that id under {args.dir} or its sibling bugs/", file=sys.stderr)
+                return 2
+    else:
+        paths = list(walk_stories(under_root(repo_root, args.dir)))
     if args.bugs:
         bugs = under_root(repo_root, "sdlc-studio/bugs")
         if bugs.is_dir():
             paths += sorted(p for p in bugs.glob("*.md") if not p.name.startswith("_"))
     dead = 0
     for p in paths:
-        if not p.exists():
-            continue
         for row in unresolvable_stamps(p, repo_root):
             dead += 1
             print(f"{row['record']} {row['ac']}: stamped verified, but its verifier selects "
@@ -4194,7 +4206,8 @@ def build_parser() -> argparse.ArgumentParser:
     st = sub.add_parser("stamps", help="Flag stamped-green ACs whose verifier selects nothing")
     st.add_argument("--root", default=".", help="Repo root --dir is resolved under")
     st.add_argument("--dir", default="sdlc-studio/stories", help="Stories directory")
-    st.add_argument("--story", "--file", dest="story", help="Single story or bug file")
+    st.add_argument("--story", "--file", dest="story",
+                    help="Single story or bug file, or its id (US0001, BG0001)")
     st.add_argument("--bugs", action="store_true",
                     help="also check sdlc-studio/bugs, which walk_stories does not reach")
     st.add_argument("--staged", action="store_true",

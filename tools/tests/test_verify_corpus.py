@@ -145,6 +145,30 @@ class CorpusVerifyBaselineTests(unittest.TestCase):
         self.assertNotEqual(0, r.returncode)
         self.assertIn("did not complete", r.stdout + r.stderr)
 
+    def test_a_clean_sweep_is_read_as_zero(self) -> None:
+        """US0944: the lane read the clean path through wording `verify_ac.py stamps` never
+        prints, so the first corpus with no dead stamp was refused as a sweep that did not
+        complete. The REAL runner, not a stub, so the clean wording is the tool's own.
+        MUTANT: HEAD's `no stale|0 stamped|clean` grep - refused, exit 1."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "corpus"
+            (root / "tests").mkdir(parents=True)
+            (root / "tests" / "test_x.py").write_text(
+                "class TestT:\n    def test_a(self):\n        pass\n", encoding="utf-8")
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
+                "# US0001: s\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n### AC1: a\n\n"
+                "- **Verify:** pytest tests/test_x.py::TestT::test_a\n- **Verified:** yes\n",
+                encoding="utf-8")
+            bfile = Path(d) / "baseline.txt"
+            bfile.write_text(_row("dead-stamps", 0, ""))
+            env = {**os.environ, "PYTHON": sys.executable,
+                   "VERIFY_CORPUS_BASELINE": str(bfile), "VERIFY_CORPUS_ROOT": str(root)}
+            r = subprocess.run(["bash", str(LANE), "stamps"], capture_output=True, text=True,
+                               env=env, cwd=str(REPO), check=False, timeout=300)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertIn("dead-stamps: 0 (baseline 0) OK", r.stdout)
+
     def test_a_baseline_row_that_is_missing_is_refused(self) -> None:
         """A metric with no row must not silently pass - that is how a lane ends up tolerating
         everything it forgot to record."""
@@ -300,8 +324,7 @@ def _red_corpus(root: Path, reds: int, *, dead_stamp: bool = False) -> Path:
             encoding="utf-8")
     if dead_stamp:
         # A stamped-green criterion whose selector selects nothing: the file exists, the node
-        # does not. Without one the stamp sweep prints its clean-path wording, which carries no
-        # total, and the lane refuses before the red half is ever reached.
+        # does not, so the stamps half has a real total and identity to compare.
         (root / "tests").mkdir(parents=True, exist_ok=True)
         (root / "tests" / "test_x.py").write_text(
             "class T:\n    def test_a(self):\n        pass\n", encoding="utf-8")

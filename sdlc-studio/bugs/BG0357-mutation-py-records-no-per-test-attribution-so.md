@@ -52,19 +52,20 @@ Have mutation.py record which test killed each mutant - run the suite per test, 
 - **Given** the run loop
 - **When** it is read
 - **Then** it attaches the killing test on a kill, because a parser nothing calls would leave the consumer refusing exactly as before
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::KilledMutantsCarryTheirKillerTests::test_the_run_loop_records_the_key_on_a_kill
-- **Verified:** yes (2026-07-29)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::KilledMutantsCarryTheirKillerTests::test_the_producer_emits_the_killer_not_only_the_consumer_reading_it
+- **Verified:** yes (2026-09-25)
 
 ### AC5: the runner's output is captured
 
 - **Given** `_run_tests`
 - **When** it is read
-- **Then** it pipes rather than discarding to DEVNULL - the precondition, without which the attribution could only ever be absent
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::KilledMutantsCarryTheirKillerTests::test_the_runner_output_is_captured_not_discarded
-- **Verified:** yes (2026-07-29)
+- **Then** it captures the runner's output (to a temp file) rather than discarding it to DEVNULL - the precondition, without which the attribution could only ever be absent
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::KilledMutantsCarryTheirKillerTests::test_a_kill_carries_its_killer_end_to_end
+- **Verified:** yes (2026-09-25)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-28 | Claude Fable 5 (RUN-01KYJZGZ closing review) | Filed |
+| 2026-09-25 | US0944 | AC4 and AC5 re-pointed to the behavioural tests that replaced their deleted source-greps: `test_the_producer_emits_the_killer_not_only_the_consumer_reading_it` (6efcb8d4) reads the killer off the row `run_gate` emits, `test_a_kill_carries_its_killer_end_to_end` (06c806d7) fails if `_run_tests` discards the runner's output. AC5's Then says captured, not piped: `_run_tests` writes to a temp file |

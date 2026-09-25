@@ -125,6 +125,12 @@
 # two environments was the whole defect.
 # re-measured from CI run 35072360410
 #
+# BANKED BY US0944, 2026-09-25, and neither move is a reading. US0063 AC2 is retired in the D0259
+# pattern (its test file went with a rename and nothing live proves its claim), so it is no longer
+# an executable criterion and leaves red-criteria, 19 -> 18. The other two dead stamps, BG0357 AC4
+# and AC5, are re-pointed to the live tests that replaced their deleted source-greps, so
+# `verify_ac.py stamps --root . --bugs` reports none and dead-stamps goes 3 -> 0.
+#
 # metric|count|what it counts|identities
-red-criteria|19|executable acceptance criteria that FAIL when run, across stories already at Done|US0021::AC1 US0040::AC3 US0042::AC2 US0047::AC1 US0052::AC4 US0063::AC1 US0063::AC2 US0070::AC1 US0070::AC2 US0080::AC2 US0165::AC2 US0202::AC3 US0207::AC3 US0268::AC1 US0284::AC4 US0289::AC2 US0347::AC1 US0512::AC4 US0666::AC1
-dead-stamps|3|criteria stamped `Verified: yes` whose selector now selects nothing|US0063::AC2 BG0357::AC4 BG0357::AC5
+red-criteria|18|executable acceptance criteria that FAIL when run, across stories already at Done|US0021::AC1 US0040::AC3 US0042::AC2 US0047::AC1 US0052::AC4 US0063::AC1 US0070::AC1 US0070::AC2 US0080::AC2 US0165::AC2 US0202::AC3 US0207::AC3 US0268::AC1 US0284::AC4 US0289::AC2 US0347::AC1 US0512::AC4 US0666::AC1
+dead-stamps|0|criteria stamped `Verified: yes` whose selector now selects nothing|
