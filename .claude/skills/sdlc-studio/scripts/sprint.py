@@ -9907,7 +9907,7 @@ def prd_outcomes(root: Path | str) -> dict[str, str]:
             inside = bool(re.match(r"^##\s+(?:[\d.]+\s+)?Outcomes\s*$", line, re.I))
             continue
         m = _OUTCOME_ITEM_RE.match(line) if inside else None
-        if m:
+        if m and "{{" not in m.group(2):   # an unfilled template item is not an outcome
             out.setdefault(m.group(1), m.group(2))
     return out
 
@@ -9922,7 +9922,7 @@ def _end_goals(text: str) -> list[tuple[str, str]]:
             inside = bool(re.match(r"^##\s+End Goals\b", line, re.I))
             continue
         m = re.match(r"^\s*(\d+)[.)]\s+(.+?)\s*$", line) if inside else None
-        if m:
+        if m and "{{" not in m.group(2):   # an unfilled template End goal is not one
             goals.append((m.group(1), m.group(2)))
     return goals
 
@@ -9940,7 +9940,7 @@ def persona_cards(root: Path | str) -> list[dict]:
             continue
         text = sdlc_md.read_text_safe(p)
         m = re.search(r"^#\s+(.+?)\s*$", text, re.M)
-        if m:
+        if m and "{{" not in m.group(1):   # an unfilled template card names nobody
             cards.append({"name": m.group(1), "role": _persona_cast_role(text),
                           "end_goals": _end_goals(text)})
     return cards
@@ -9955,12 +9955,12 @@ def _names_persona(text: str, name: str) -> bool:
 def goal_trace(root: Path | str, goal: str | None, serves: list[str] | None = None
                ) -> dict | None:
     """Which PRD outcome or persona the goal serves: named by `--serves` values or as a whole
-    word in the goal. None when there is nothing to trace (no goal, or no outcomes and no
-    persona cards). `flagged` when it serves none, or only a Negative persona; `unknown` holds
+    word in the goal. None when there is nothing to trace: no goal and no `--serves`, or no
+    outcomes, no persona cards and no `--serves`. `flagged` when it serves none, or only a Negative persona; `unknown` holds
     the `--serves` values nothing on disk names."""
     wanted = [s.strip() for v in (serves or []) for s in v.split(",") if s.strip()]
     outcomes, cards = prd_outcomes(root), persona_cards(root)
-    if not ((goal or "").strip() or wanted) or not (outcomes or cards):
+    if not ((goal or "").strip() or wanted) or not (outcomes or cards or wanted):
         return None
     goal = goal or ""
     served: list[dict] = []

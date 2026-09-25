@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 43 |
-| In Progress | 4 |
-| Fixed | 598 |
+| In Progress | 3 |
+| Fixed | 599 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
@@ -123,7 +123,7 @@
 | [BG0762](BG0762-ci-s-bandit-scan-fails-on-the-sha1.md) | CI's bandit scan fails on the SHA1 fingerprint US0899 added to reconcile settle | Fixed | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0763](BG0763-two-file-finding-tests-write-stub-packs-into.md) | Two file_finding tests write stub packs into the shipped audit-profiles folder, so parallel runs race | Open | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0764](BG0764-bg0762-s-settle-fingerprint-test-calls-git-outside.md) | BG0762's settle-fingerprint test calls git outside a confined environment, so the unconfined-git sweep is red | Fixed | High | 2026-09-25 | 2026-09-25 |
-| [BG0765](BG0765-goal-trace-drops-a-serves-value-silently-and.md) | goal_trace drops a --serves value silently, and reads unfilled template placeholders as real outcomes | In Progress | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0765](BG0765-goal-trace-drops-a-serves-value-silently-and.md) | goal_trace drops a --serves value silently, and reads unfilled template placeholders as real outcomes | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 

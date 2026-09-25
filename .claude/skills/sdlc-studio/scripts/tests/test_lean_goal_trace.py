@@ -8,6 +8,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -181,9 +182,11 @@ class GoalTraceTests(unittest.TestCase):
             written = json.loads((root / "sdlc-studio" / ".local" / "sprint-plan.json")
                                  .read_text(encoding="utf-8"))
             self.assertNotIn("goal_trace", written)
-        # the shipped PRD template carries the section in the grammar the trace parses
+        # the shipped PRD template carries the section in the grammar the trace parses, once
+        # filled: its unfilled `{{...}}` items are not outcomes (BG0765)
         template = (Path(sprint.__file__).resolve().parent.parent / "templates" / "core"
                     / "prd.md").read_text(encoding="utf-8")
+        template = re.sub(r"\{\{[^}]*\}\}", "filled", template)
         with tempfile.TemporaryDirectory() as d:
             (Path(d) / "sdlc-studio").mkdir()
             (Path(d) / "sdlc-studio" / "prd.md").write_text(template, encoding="utf-8")

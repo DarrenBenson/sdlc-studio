@@ -1,6 +1,7 @@
 # BG0765: goal_trace drops a --serves value silently, and reads unfilled template placeholders as real outcomes
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional (--serves is named with nothing on disk; unfilled and partly filled placeholders are neither outcomes, personas nor End goals; five mutants killed, the partial-fill one after round 2)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_trace.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_trace_followups.py, changelog.d/BG0765.md
@@ -25,10 +26,13 @@ Skip the early return when --serves is given and name each value as unknown; ski
 
 - [ ] **AC1** Given a project with no PRD Outcomes section and no persona cards, when `sprint.py plan --serves O1,Maya` runs, then each value is named as unknown on its own line and the plan exits 0 with its batch unchanged; returning early before reading `--serves` (today's code) fails it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_trace_followups.py::GoalTraceFollowupTests::test_serves_is_reported_with_nothing_to_trace_against
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given the shipped PRD and persona templates left unfilled, then no outcome whose text holds `{{`, no persona whose heading holds `{{` and no End goal whose text holds `{{` (`sprint._end_goals`, added by US0928) is traced, offered or shown in the goal-review brief; reading placeholders as answers fails it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_trace_followups.py::GoalTraceFollowupTests::test_unfilled_placeholders_are_not_outcomes_or_personas
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC3** Given an `- **O7:**` item outside the `## Outcomes` section, then it is not an outcome; a parser that ignores section bounds fails it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_trace_followups.py::GoalTraceFollowupTests::test_an_outcome_outside_the_section_is_ignored
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

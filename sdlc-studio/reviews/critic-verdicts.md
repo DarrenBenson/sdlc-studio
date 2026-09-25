@@ -1212,6 +1212,7 @@ One row has been removed since adoption.
 | US0933 | APPROVE | qa-rev-US0933 | US0933-fix | 2026-09-25 | a55a0a1cb7e9 unmatched | full | [new] non-blocking: AC1's pointer check is document-wide, left by argued decision; [new] non-blocking: plain-word enumerations are not caught; [new] non-blocking: US0458 AC4's reason reads as if US0933 removed the caveat |
 | BG0765 | REJECT | qa-rev-BG0765 | BG0765-build | 2026-09-25 | 516a430fd0e3 | full | [new] AC2 is pinned only at the fully-unfilled and fully-filled extremes, so a filter that checks only a leading placeholder survives on a partly filled outcome (fix about 10-15 lines, one test file) [LC-002]; [new] non-blocking: Affects names test\_sprint.py which the patch does not touch |
 | US0929 | APPROVE | qa-rev-US0929 | US0929-build | 2026-09-25 | 254e6e95d022 | full | [pre-existing] the PRD's Mutation gate, Quality gate, Independence gate rows, a business rule and Known Limitations still describe the deleted mutation lane and depth gate (fixed at landing); [new] non-blocking: the Mission's close in one pass omits four preconditions (fixed at landing); [new] non-blocking: a malformed Outcomes bullet is dropped silently [LC-006]; [new] non-blocking: O5's End-goal citation is a loose match for the operator to judge; [new] non-blocking: the loop markers pin PRD wording [LC-008] |
+| BG0765 | APPROVE | qa-rev-BG0765 | BG0765-fix | 2026-09-25 | 516a430fd0e3 unmatched | full | - |
 
 ## Supersessions
 
