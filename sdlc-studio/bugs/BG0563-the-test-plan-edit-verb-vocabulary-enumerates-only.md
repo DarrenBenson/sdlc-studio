@@ -32,9 +32,11 @@ Extend the vocabulary with the additive verbs - add, insert, introduce, append, 
 ## Acceptance Criteria
 
 - [x] **AC1** Given a test-plan mutant phrased as an ADDITIVE or POSITIONAL edit - `add a second call`, `move the check below the write` - when `testplan_row_faults` reads it, then it is accepted, because the vocabulary must not decide which edits an author is allowed to make.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k an_additive_or_positional_edit_verb_is_accepted
+  - **Verify:** manual - retired by US0912: the edit-verb limb of `verify_ac.py testplan derive` was deleted with the test plan; a unit's criteria and their Verify selectors are its test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC2** Given a mutant phrased as an OUTCOME rather than an edit - `the suite goes red` - when the same check reads it, then it is still refused, so widening the vocabulary did not widen it to nothing.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k an_outcome_phrased_mutant_is_still_refused
+  - **Verify:** manual - retired by US0912: the edit-verb limb of `verify_ac.py testplan derive` was deleted with the test plan; a unit's criteria and their Verify selectors are its test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 
 ## Test Plan
 
@@ -48,3 +50,4 @@ Extend the vocabulary with the additive verbs - add, insert, introduce, append, 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-10 | sdlc-studio | Filed |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2 retired by US0912 (D0259 pattern): the edit-verb limb of `testplan derive` was deleted |

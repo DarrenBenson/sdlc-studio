@@ -30,8 +30,8 @@ Add `mutation.py retract --unit X --criterion ACn --target F --line N --mutant M
 ## Acceptance Criteria
 
 - [x] **AC1** Given a mutant registered `survived` by mistake and the correct `killed` beside it, when the mistake is retracted, then the plan reads the surviving evidence and the criterion is satisfied.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k withdrawn_verdict_stops_holding
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0912: `mutation.plan_execution`, the plan reader this criterion names, was deleted with the test plan; that a retraction marks the row withdrawn and keeps it is still pinned by AC2
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC2** Given a retraction, when the ledger is read, then the row is still there marked withdrawn - carrying the reason and the verdict it withdrew - and the summary counts the retraction rather than losing it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k withdrawal_is_recorded_and_not_deleted
   - **Verified:** yes (2026-08-14)
@@ -50,7 +50,7 @@ Add `mutation.py retract --unit X --criterion ACn --target F --line N --mutant M
 - [x] **AC7** Given a ledger corrected by retraction, when the shipped transition verb runs, then it no longer reports the ledger as contradicting itself and no longer holds the transition.
   - **Verify:** manual - retired by US0935: the ledger contradiction check was deleted with the repair lane, so no transition compares registered and measured rows
   - **Verified:** manual (2026-09-25) - retired, superseded by US0935
-- [x] **AC8** Given a withdrawn verdict, when a reader who is not the author looks - the retractions verb, the plan join, or the seat brief a reviewer is handed - then each shows that a verdict was withdrawn and the reason given, so the correction reaches the person it was made for.
+- [x] **AC8** Given a withdrawn verdict, when a reader who is not the author looks - the retractions verb or the seat brief a reviewer is handed - then each shows that a verdict was withdrawn and the reason given, so the correction reaches the person it was made for. NARROWED by US0912: the plan join, the third reader this named, was deleted with the test plan.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k withdrawal_is_visible_to_a_reader
   - **Verified:** yes (2026-08-14)
 
@@ -89,3 +89,4 @@ The claims are now true rather than deleted. `mutation.py retractions` prints ev
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-07 | sdlc-studio | Filed |
+| 2026-09-25 | Claude Opus 5.5 | AC1 retired by US0912 (D0259 pattern): `plan_execution`, the plan reader it named, was deleted; AC8 narrowed to the retractions verb and the seat brief |

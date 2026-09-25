@@ -24,11 +24,11 @@
 - **Given** a unit whose reviewed test plan carries four mutant rows, of which one is never applied
 - **When** `mutation.py run --story <id> --from-plan` runs
 - **Then** the unexecuted row is reported as `not-run` and the unit does not read as evidenced, because a plan whose rows are optional is a plan that measures nothing
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::FromPlanTests::test_an_unexecuted_planned_mutant_is_not_a_pass
+- **Verify:** manual - retired by US0912: `mutation.plan_execution`, the plan-to-ledger join, was deleted with the test plan
 - **Caller:** `mutation.py run --from-plan`, reached by `transition.py set --status Done|Fixed` via US0564's gate
 - **Verification target:** functional
 - **Mutation-checked:** yes (2026-08-06). Treating `not-run` as killed KILLED; letting a later kill cancel an earlier survivor KILLED. The criterion-guard mutant (join on unit alone) is EQUIVALENT, not uncovered: an unkeyed registration then keys on `None` and no lookup ever asks for `None`
-- **Verified:** yes (2026-08-06)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0912
 
 ### AC2: a surviving planned mutant refuses the terminal transition, naming the mutant and its line
 
@@ -67,11 +67,11 @@
 - **Given** a mutant whose replacement is the same length as the original, and an anchor string occurring more than once in the target file
 - **When** the run applies it
 - **Then** bytecode is purged and the child runs with bytecode writing disabled so a cached module cannot report a false survival, and the source is restored byte-identical afterwards with that restoration asserted
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::FromPlanTests::test_a_cached_module_and_an_ambiguous_anchor_are_both_refused
+- **Verify:** manual - retired by US0912: `mutation.plan_execution`, the plan-to-ledger join, was deleted with the test plan
 - **Caller:** `mutation.py run --from-plan`
 - **Verification target:** functional
 - **Mutation-checked:** partial (2026-08-06). Dropping `PYTHONDONTWRITEBYTECODE` from the suite env KILLED; not purging the stale `.pyc` KILLED; a non-idempotent restore KILLED. The anchor limb is NOT delivered and NOT verified - see the retraction above. The earlier claim that "this engine selects mutants by AST node rather than by string anchor" was FALSE and is withdrawn in full.
-- **Verified:** yes (2026-08-06)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0912
 
 > **DELIVERED NARROWED.** AC4 - "the mutant is applied where it was enumerated" - was DESCOPED
 > from this story at the close, on a recorded operator decision (`sprint decision list`, choice
@@ -102,3 +102,4 @@
 | 2026-08-06 | sdlc-studio | Declared `Depends on:` at plan time - the planner reported all six units parallel because no dependency was stated, which is false: the plan is derived (US0629) before it can be reviewed, gated, executed or measured |
 | 2026-08-06 | sdlc-studio | DELIVERED NARROWED at the close: AC4 descoped on a recorded decision and carried by BG0533; three criteria delivered, not four |
 | 2026-09-25 | Claude Sonnet 5 | AC2 retired by US0911 (D0259 pattern): the planned-mutant gate that refused the terminal transition is deleted; its test's transition half was cut, leaving only `plan_execution`'s own reporting checked |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC3 retired by US0912 (D0259 pattern): `mutation.plan_execution` was deleted with the test plan |

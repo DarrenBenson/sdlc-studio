@@ -13,7 +13,7 @@ caller that wants only the working ones filters them out itself, visibly.
 Two shapes of verb exist and both are walked:
 
   * a SUBPARSER choice - `sprint.py plan`, the common case;
-  * a positional argument's `choices` - which is how `verify_ac.py testplan derive` exists. A
+  * a positional argument's `choices` - which is how `verify_ac.py coverage rule` exists. A
     subparser-only walk misses it, and a verb the enumeration cannot see is a verb no coverage
     number can count as missing, which is the direction that flatters the total.
 
@@ -99,7 +99,7 @@ def verbs_of(parser: argparse.ArgumentParser, prefix: str = "") -> list[str]:
                 found.extend(verbs_of(sub, f"{prefix}{name} "))
         elif not action.option_strings and getattr(action, "choices", None):
             # A POSITIONAL with `choices` is a verb by any reading a user would give it:
-            # `verify_ac.py testplan derive` is typed exactly like a subcommand.
+            # `verify_ac.py coverage rule` is typed exactly like a subcommand.
             found.extend(prefix + c for c in action.choices if isinstance(c, str))
     return found
 

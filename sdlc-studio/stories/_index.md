@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 37 |
+| Draft | 36 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 2 |
 | Review | 0 |
-| Done | 737 |
+| Done | 738 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 72 |
@@ -270,7 +270,7 @@
 | [US0909](US0909-a-story-reaches-in-progress-and-done-without.md) | A story reaches In Progress and Done without a plan review | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0910](US0910-a-bug-reaches-fixed-without-a-verification-depth.md) | Verification depth is no longer derived, and the gate runs no depth lane | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0911](US0911-a-unit-reaches-done-without-a-test-plan.md) | A unit reaches Done without a test plan or a falsifiability probe | Done | EP0263 | 2026-09-24 | 2026-09-24 |
-| [US0912](US0912-the-test-plan-tooling-is-gone-and-an.md) | The test-plan tooling is gone and an old Test Plan section is inert | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0912](US0912-the-test-plan-tooling-is-gone-and-an.md) | The test-plan tooling is gone and an old Test Plan section is inert | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0913](US0913-a-repair-closes-without-a-reviewed-repair-plan.md) | A repair closes without a reviewed repair plan | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0914](US0914-a-standing-reject-clears-only-by-a-round.md) | A standing REJECT clears only by a round-2 APPROVE or by carrying the unit | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0915](US0915-a-review-verdict-has-one-phase-delivery.md) | A review verdict has one phase: delivery | Done | EP0263 | 2026-09-24 | 2026-09-24 |

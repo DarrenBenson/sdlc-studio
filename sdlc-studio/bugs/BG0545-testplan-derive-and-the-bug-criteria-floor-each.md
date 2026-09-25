@@ -36,11 +36,11 @@ Both directions need a test carrying the house bug template verbatim, or the two
 ## Acceptance Criteria
 
 - [x] **AC1** Given a unit whose criteria section is followed by a `## Test Plan`, when its plan is re-derived, then the last criterion's `Then` clause stops at the next heading and the final row is not refused as restating itself.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k last_criterion_does_not_read
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan derive` and the plan-row readers were deleted; a unit's criteria and their Verify selectors are its test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC2** Given a mutant whose substance is entirely path tokens, when it is judged, then it is refused for carrying no edit verb and NOT for restating a clause it shares nothing with - a ratio over nothing is not a restatement.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k no_substance_is_not_called_a_restatement
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan derive` and the plan-row readers were deleted; a unit's criteria and their Verify selectors are its test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 
 ## Resolution
 
@@ -66,3 +66,4 @@ The empty-set half of the proposed fix was real but smaller than filed: `_overla
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-07 | sdlc-studio | Filed |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2 retired by US0912 (D0259 pattern): `testplan derive` and its row rules were deleted |

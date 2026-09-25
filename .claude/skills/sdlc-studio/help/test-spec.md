@@ -10,6 +10,9 @@ Related: reference-test-spec.md (deep workflow), reference-test-best-practices.m
 
 Generates consolidated test specifications that combine test plans, suites, cases, and fixtures into a single document per Epic.
 
+This is the epic-level spec. A single story or bug carries no test plan of its own: its criteria
+and their `Verify:` selectors are the plan.
+
 ## You can just ask
 
 SDLC Studio is model-invoked - say it in plain language:

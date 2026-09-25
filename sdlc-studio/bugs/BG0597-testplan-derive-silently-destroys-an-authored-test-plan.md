@@ -27,20 +27,20 @@ Key the existing-plan read by (criterion, mutant) or by row index, matching the 
 ## Acceptance Criteria
 
 - [x] **AC1** Given a Test Plan carrying two rows on one criterion, when `verify_ac.py testplan derive` re-derives that unit as a SUBPROCESS against a root asserted to be under `tempfile`, then both rows are present afterwards in file order, the command EXITS 0, the Test Plan section is rewritten and the repository's own artefacts are untouched - a derive that refuses every multi-row plan loses no rows and is not the fix, because it makes the format BG0596 requires unmaintainable through the shipped command
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MultiRowTestPlanTests::test_a_re_derive_preserves_every_row_and_exits_zero
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan derive` and the plan-row readers were deleted; a unit's criteria and their Verify selectors are its test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC2** Given a plan row whose criterion id is no longer among the unit's criteria - an ORPHAN row, which is what an AC renumbering produces - when derive runs, then it REFUSES with a non-zero exit and PRINTS the row it would have dropped: measured 2026-08-19, a two-row plan (AC1 and AC7) against a one-criterion unit silently became one row at exit 0
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MultiRowTestPlanTests::test_an_orphan_row_is_refused_and_named
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan derive` and the plan-row readers were deleted; a unit's criteria and their Verify selectors are its test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC3** Given the evidence for AC1 and AC2, when it is taken, then it comes through a subprocess invocation of the shipped `verify_ac.py` against a root asserted to be under `tempfile` - never through an in-process call, because the defect is in a command and a library test cannot see a command's wiring
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MultiRowTestPlanTests::test_the_shipped_command_preserves_rows_through_a_subprocess
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan derive` and the plan-row readers were deleted; a unit's criteria and their Verify selectors are its test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC4** Given a Test Plan with exactly one row per criterion, when derive runs, then the Criterion and Mutant columns round-trip unchanged and the exit is 0 - the Title column is regenerated from the criterion by design, so a byte-identical assertion over the whole row would fail for a reason unrelated to this fix
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MultiRowTestPlanTests::test_a_single_row_plan_round_trips_unchanged
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan derive` and the plan-row readers were deleted; a unit's criteria and their Verify selectors are its test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC5** Given `_testplan_rows` with its changed return shape, when `mutation.plan_execution` reads it - the second of the helper's two callers, in another file, consuming the return as a dict via `sorted(planned.items())` - then `--from-plan` still reports correctly for a single-row plan and the ledger join is unchanged
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RowKeyedJoinTests::test_the_changed_return_shape_still_serves_its_other_caller
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0912: `mutation.plan_execution`, the plan-to-ledger join, was deleted with the test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 
 ## Impact
 
@@ -65,3 +65,4 @@ This is the command the delivery gate instructs every in-scope unit to run - 29 
 | 2026-08-19 | sdlc-studio | Scope widened: `mutation.plan_execution` is the SECOND caller of `_testplan_rows` and was undeclared, so the repair could relocate into a file the review may not read |
 | 2026-08-19 | sdlc-studio | Criteria hardened by the QA seat: AC1 gained the exit-0 clause a refuse-everything fix would otherwise satisfy, AC2 names the ORPHAN row as its reachable case (a second silent-loss path, reproduced), AC4 excludes the regenerated Title column, and AC5 re-points at `mutation.plan_execution` - the caller that actually breaks |
 | 2026-08-19 | sdlc-studio | Plan review F22: the helper has exactly TWO callers, not three. The caller named is right; the count was taken from a review and restated without checking |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3, AC4, AC5 retired by US0912 (D0259 pattern): `testplan derive` and `plan_execution` were deleted |

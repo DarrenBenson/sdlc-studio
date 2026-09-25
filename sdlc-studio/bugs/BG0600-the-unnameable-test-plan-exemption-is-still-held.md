@@ -26,11 +26,14 @@ Ask `testplan_unnameable`'s question before the fault rules: a row whose cell be
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a row whose cell begins `unnameable` and carries a reason with substance, when the row rules run, then it is judged by the `unnameable` contract and NOT by the four mutant rules - a declaration that no production change can falsify the criterion cannot also be required to name one
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::UnnameableRowTests::test_an_unnameable_row_is_not_held_to_the_mutant_rules
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan derive` and the plan-row readers were deleted; a unit's criteria and their Verify selectors are its test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [ ] **AC2** Given a row beginning `unnameable` whose reason is empty or junk, when the row rules run, then it is REFUSED - the marker costs a written declaration, and a free pass is what it exists to prevent
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::UnnameableRowTests::test_an_unnameable_row_with_no_reason_is_refused
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan derive` and the plan-row readers were deleted; a unit's criteria and their Verify selectors are its test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [ ] **AC3** Given an ordinary row that does NOT begin `unnameable`, when the row rules run, then all four mutant rules still apply to it exactly as today - the paired control, so the exemption is shown to be narrow
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::UnnameableRowTests::test_an_ordinary_row_is_unaffected
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan derive` and the plan-row readers were deleted; a unit's criteria and their Verify selectors are its test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 
 ## Impact
 
@@ -49,3 +52,4 @@ The one escape valve the test-plan gate ships is unusable as documented, so the 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-19 | sdlc-studio | Filed |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3 retired by US0912 (D0259 pattern): `testplan derive`'s row rules, and the `unnameable` marker with them, were deleted |

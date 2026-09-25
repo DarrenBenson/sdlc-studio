@@ -28,14 +28,14 @@ Re-point each row at a mutant its own criterion's verifier can die on, or promot
 ## Acceptance Criteria
 
 - [x] **AC1** Given each of the six named rows after re-binding, when the test its criterion's `Verify:` line names is run, then that test passes and is the node the ledger records the kill against - the rows were re-filed onto criteria whose tests reach them, and every row in all three units was applied to the tree and executed
-  - **Verify:** pytest tools/tests/test_batch_plan_shape.py::BatchPlanShapeTests::test_no_criterion_carries_a_row_its_own_verifier_cannot_reach
-  - **Verified:** yes (2026-08-24)
+  - **Verify:** manual - retired by US0912: `tools/batch_plan_shape.py` and its test were deleted with `testplan derive`, whose shape it checked
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC2** Given US0676's plan after re-binding, when its rows are counted, then each states its OWN criterion's claim and the stripped-seal row sits beside the criterion that makes the refusal claim, rather than three rows all claiming AC4's
-  - **Verify:** pytest tools/tests/test_batch_plan_shape.py::BatchPlanShapeTests::test_no_row_states_a_criterion_other_than_its_own
-  - **Verified:** yes (2026-08-24)
+  - **Verify:** manual - retired by US0912: `tools/batch_plan_shape.py` and its test were deleted with `testplan derive`, whose shape it checked
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC3** Given the three units after repair, when `verify_ac.py testplan derive` is run against each, then it reports UNCHANGED - the tables are the derived shape rather than a hand-edited one, which is what let a fused row and three wrong Title cells stand
-  - **Verify:** pytest tools/tests/test_batch_plan_shape.py::BatchPlanShapeTests::test_the_check_can_fail
-  - **Verified:** yes (2026-08-24)
+  - **Verify:** manual - retired by US0912: `tools/batch_plan_shape.py` and its test were deleted with `testplan derive`, whose shape it checked
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 
 ## Test Plan
 
@@ -50,3 +50,4 @@ Re-point each row at a mutant its own criterion's verifier can die on, or promot
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-24 | sdlc-studio | Filed |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3 retired by US0912 (D0259 pattern): `tools/batch_plan_shape.py` was deleted with `testplan derive` |

@@ -26,7 +26,7 @@
 - [x] **AC2** Given a unit whose verifiers genuinely exercise the shipped path, when the same revert-and-run happens, then the unit PASSES - the paired control, so the gate is shown to discriminate rather than to refuse everything put in front of it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RevertCheckTests::test_a_unit_whose_verifiers_go_red_passes
   - **Verified:** yes (2026-08-21)
-- [x] **AC3** Given a unit whose only green criteria are DECLARED EXEMPTIONS - a declared control, a well-formed `unnameable` row, or a criterion whose subject is a test file rather than production code - when the check runs, then it does NOT refuse the unit. RUN-01M0CT8P measured five criteria in this class across one batch, so a check without this taxonomy refuses correct work, and refusing correct work is how a gate gets switched off
+- [x] **AC3** Given a unit whose only green criteria are DECLARED EXEMPTIONS - controls named in a reasoned `Revert-check-exempt` field - when the check runs, then it does NOT refuse the unit. NARROWED by US0912: the `unnameable` plan-row and test-code plan-row classes went with the test plan, and a legacy `## Test Plan` row exempts nothing. RUN-01M0CT8P measured five criteria in this class across one batch, so a check without this taxonomy refuses correct work, and refusing correct work is how a gate gets switched off
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RevertCheckTests::test_declared_exemptions_do_not_trigger_a_refusal
   - **Verified:** yes (2026-08-21)
 - [x] **AC4** Given a FIXTURE reproducing the pre-repair working-tree state of BG0593 - the production change present, and its tests rebuilding the scratch in a private helper so the change is unexercised - when the check runs, then it REFUSES. Stated as a fixture and not as a commit BY NECESSITY: that state was never committed, it existed between 788e0c3f and its repair at 20de1d1c, and the mutation ledger it would otherwise be read from lives in gitignored `sdlc-studio/.local/`. A criterion claiming to pin a commit that does not hold the defect is a fabricated regression case, which is the defect class this very check exists to refuse
@@ -39,11 +39,11 @@
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RevertCheckTests::test_a_verifier_that_reaches_production_goes_red
   - **Verified:** yes (2026-08-24)
 - [x] **AC7** Given a plan row naming a PRODUCTION file whose extension is not a source-code one - a path carrying a directory, or a bare filename in a config or markup family - when the exemption taxonomy reads it, then the criterion is NOT exempted as test-code-only, because the same module's `revert_targets` would revert that file
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RevertCheckTests::test_a_plan_row_naming_a_non_source_production_file_does_not_exempt
-  - **Verified:** yes (2026-08-24)
+  - **Verify:** manual - retired by US0912: a legacy `## Test Plan` row no longer exempts a criterion from revert-check; only a reasoned `Revert-check-exempt` field does
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC8** Given a plan row all of whose named paths really are test code, when the taxonomy reads it, then the exemption still FIRES - the paired control, because a pattern that saw production everywhere would refuse correct work, and refusing correct work is how a gate gets switched off
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RevertCheckTests::test_a_plan_row_naming_only_test_code_still_exempts
-  - **Verified:** yes (2026-08-24)
+  - **Verify:** manual - retired by US0912: a legacy `## Test Plan` row no longer exempts a criterion from revert-check; only a reasoned `Revert-check-exempt` field does
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC9** Given a unit EVERY criterion of which is exempt, when the check runs, then it is REPORTED rather than passed - nothing was measured, and a unit that measured nothing must not come back green from the one check that exists to ask whether its verifiers reach anything
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RevertCheckTests::test_a_wholly_exempt_unit_is_reported_and_not_refused
   - **Verified:** yes (2026-08-24)
@@ -51,8 +51,8 @@
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RevertCheckTests::test_a_verifier_that_never_ran_is_not_counted_as_evidence
   - **Verified:** yes (2026-08-24)
 - [x] **AC11** Given a criterion carrying a well-formed `unnameable` row BESIDE a nameable production mutant, when the exemption taxonomy reads it, then the criterion is NOT exempted - every row on it must be unnameable, or the second row costs nothing and covers the first
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RevertCheckTests::test_an_unnameable_row_beside_a_nameable_one_does_not_exempt
-  - **Verified:** yes (2026-08-24)
+  - **Verify:** manual - retired by US0912: a legacy `## Test Plan` row no longer exempts a criterion from revert-check; only a reasoned `Revert-check-exempt` field does
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC12** Given the revert-and-run, when the check restores the tree, then it purges the cached bytecode for every file it touched - a stale `.pyc` makes the reverted module never load, and every criterion then comes back green from a check that measured nothing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::RevertCheckTests::test_the_revert_purges_cached_bytecode_for_every_file_it_touches
   - **Verified:** yes (2026-08-24)
@@ -92,3 +92,4 @@
 | 2026-08-21 | sdlc-studio | `Affects` extended with the generated verb catalogue: `command_audit --coverage` reads it, and the new verbs are absent from it until `docgen surface` runs |
 | 2026-08-21 | sdlc-studio | The full suite refused twice on guards this work tripped: `git -C` does not override an inherited repo-locating variable, and this check WRITES what git hands it, so the scrub carries the full list and is registered where every other copy is pinned. `Affects` extended to the registry that pins it |
 | 2026-08-21 | sdlc-studio | Delivery review round 1 REJECTED this unit on six blocking findings. `Revert-check-exempt` gates the check and existed in no schema, so the versioned contract now carries it and `Affects` names the file |
+| 2026-09-25 | Claude Opus 5.5 | AC7, AC8, AC11 retired by US0912 (D0259 pattern): a legacy Test Plan row no longer exempts a criterion from revert-check; AC3 narrowed to the `Revert-check-exempt` field |

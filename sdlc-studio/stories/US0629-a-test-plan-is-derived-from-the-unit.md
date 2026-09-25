@@ -23,11 +23,11 @@
 - **Given** a unit carrying N acceptance criteria
 - **When** `verify_ac.py testplan derive --unit <id>` runs
 - **Then** it emits exactly N rows keyed by criterion id, and refuses to write a plan whose row count differs from the criteria it read, because a plan assembled by hand is exactly where a criterion goes missing
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanDeriveTests::test_every_criterion_gets_exactly_one_row
+- **Verify:** manual - retired by US0912: `verify_ac.py testplan derive` and the plan-row readers were deleted; a unit's criteria and their Verify selectors are its test plan
 - **Caller:** `verify_ac.py testplan derive` (the CLI verb), reached by `transition.py set --status "In Progress"` via US0630
 - **Verification target:** functional
 - **Mutation-checked:** yes (2026-08-06). Deleting the equality KILLED; making the count tautological (`declared = len(parse_story(text))`) KILLED - the mutant revision 1 would have missed. Collapsing rows into a dict by `ac_id` is EQUIVALENT rather than uncovered: the duplicate-id refusal added here reads `ids`, computed before any collapse, so the collapse can no longer reach an outcome
-- **Verified:** yes (2026-08-06)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0912
 
 ### AC2: each row names a concrete production edit, and a row that merely restates its criterion is refused
 
@@ -46,22 +46,22 @@
 - **The discriminating pair, stated here rather than left to the implementer.** REFUSE: `in verify_ac.py, make it so the plan does not have exactly one row per criterion` - a real path, a real edit verb, and 71% token overlap with its criterion. ACCEPT: `in verify_ac.py, delete the len(rows) == len(criteria) equality` - the same path and verb, 24% overlap. The two differ in ONE property, which is what makes the threshold the thing under test rather than the example
 - **The near-miss ACCEPT is required, not optional.** A legitimate mutant that happens to share the criterion's vocabulary must still be accepted, or `derive` becomes a guard that refuses honest work while its refusal test passes for exactly that reason
 - **The 60% ceiling is a stated number with a stated basis**, following `_reason_substance` in `verify_ac.py:2264` - measure substance after filler and punctuation come off, never raw text. That helper carries the scar of a one-character `-` passing a non-blank check, which is the same failure a raw-text comparison would repeat here
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanDeriveTests::test_a_restated_criterion_is_not_a_mutant
+- **Verify:** manual - retired by US0912: `verify_ac.py testplan derive` and the plan-row readers were deleted; a unit's criteria and their Verify selectors are its test plan
 - **Caller:** `verify_ac.py testplan derive`
 - **Verification target:** functional
 - **Mutation-checked:** yes (2026-08-06). Accepting a blank field KILLED; accepting the restatement KILLED; checking path SHAPE rather than `Affects` MEMBERSHIP KILLED, once a path-shaped non-member was added to the fixtures. The measured pair is 67%/40%, not the 71%/24% on the criterion: the path tokens are EXCLUDED from the overlap, because naming a file is separately required and counting it as novel substance lets a restatement buy headroom with obliged words. Counting them again KILLED
-- **Verified:** yes (2026-08-06)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0912
 
 ### AC3: the plan lives in the unit's own file, so it travels with the unit and files stay truth
 
 - **Given** a unit with no `## Test Plan` section
 - **When** `derive` runs, and then runs a second time over its own result
 - **Then** the section is written into the unit's own markdown, the second run is a no-op that says so, and an existing hand-authored mutant is preserved rather than overwritten, because naming the mutant is the judgement and only the row set is derived
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TestPlanDeriveTests::test_derive_is_idempotent_and_preserves_authored_mutants
+- **Verify:** manual - retired by US0912: `verify_ac.py testplan derive` and the plan-row readers were deleted; a unit's criteria and their Verify selectors are its test plan
 - **Caller:** `verify_ac.py testplan derive`
 - **Verification target:** functional
 - **Mutation-checked:** yes (2026-08-06). Overwriting an authored mutant KILLED; regenerate-and-append KILLED; printing the no-op unconditionally KILLED; folding the plan into `ac_fingerprint` KILLED
-- **Verified:** yes (2026-08-06)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0912
 
 ## Test Plan
 
@@ -176,3 +176,4 @@ non-blocking; naming it now costs nothing and it is otherwise found at review.
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-03 | sdlc-studio | Groomed: criteria authored against the `verify_ac.py testplan` slice |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3 retired by US0912 (D0259 pattern): `testplan derive` was deleted; the criteria and their Verify selectors are the plan |

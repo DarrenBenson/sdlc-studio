@@ -105,7 +105,7 @@ class SurfaceEnumerationTests(unittest.TestCase):
             self.assertTrue(recs["broken_thing.py"].has_build_parser)
 
     def test_a_positional_choice_is_enumerated_like_a_subcommand(self) -> None:
-        """AC3. `verify_ac.py testplan derive` exists as a positional `choices` value, not a
+        """AC3. `verify_ac.py coverage rule` exists as a positional `choices` value, not a
         subparser, and a subparser-only walk misses it - a verb the enumeration cannot see is
         one no coverage number can count as missing.
 
@@ -129,7 +129,7 @@ class SurfaceEnumerationTests(unittest.TestCase):
             self.assertIn("testplan check", verbs)
 
         # ...and on the real tree, where the case actually lives.
-        self.assertIn("testplan derive", surface.verbs().get("verify_ac.py", []))
+        self.assertIn("coverage rule", surface.verbs().get("verify_ac.py", []))
 
     def test_the_grammar_tests_read_the_shared_library(self) -> None:
         """AC4, asserted STRUCTURALLY. A whole-module selector passes today and would pass with

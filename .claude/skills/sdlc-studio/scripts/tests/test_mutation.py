@@ -5,7 +5,6 @@ nothing beyond python3. Test titles are pinned by TS0002's AC Coverage Matrix.
 """
 from __future__ import annotations
 
-import argparse
 import ast
 import contextlib
 import importlib.util
@@ -3413,198 +3412,6 @@ class AppliedWhereEnumeratedTests(unittest.TestCase):
             self.assertNotEqual(out, before, "an ordinary mutant on a docstringed file was refused")
 
 
-class FromPlanTests(unittest.TestCase):
-    """US0632: a planned mutant is EXECUTED and its death recorded.
-
-    A plan written and never checked is the same paperwork problem one level up - the whole
-    point of naming the mutant before the code is that somebody afterwards confirms the test
-    dies on it. So an unexecuted row is its own state, never folded into a pass.
-    """
-
-    def _unit(self, root, rows, created="2026-08-06", cutoff=True):
-        m = _load()
-        (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
-        (root / "src").mkdir(parents=True, exist_ok=True)
-        (root / "src" / "thing.py").write_text("x = 1\n", encoding="utf-8")
-        if cutoff:
-            (root / "sdlc-studio" / ".config.yaml").write_text(
-                'review:\n  test_plan_after: "2026-01-01"\n', encoding="utf-8")
-        acs = "".join(f"### {ac}: c{n}\n\n- **Then** it behaves\n- **Verify:** pytest x\n\n"
-                      for n, (ac, _mut) in enumerate(rows))
-        plan = "".join(f"| {ac} | {mut} | t |\n" for ac, mut in rows)
-        (root / "sdlc-studio" / "bugs" / "BG0001-x.md").write_text(
-            f"# BG0001: a bug\n\n> **Status:** Open\n> **Severity:** Medium\n"
-            f"> **Verification depth:** functional\n> **Created:** {created}\n"
-            f"> **Affects:** src/thing.py\n> **Points:** 3\n\n"
-            f"## Acceptance Criteria\n\n{acs}"
-            f"## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n{plan}",
-            encoding="utf-8")
-        return m
-
-    def _register(self, m, root, criterion, verdict):
-        _register_or_legacy_append(m, root, "src/thing.py", f"mutant for {criterion}", "pytest x",
-                                   verdict, line=2, unit="BG0001", criterion=criterion)
-
-    def test_an_unexecuted_planned_mutant_is_not_a_pass(self) -> None:
-        """Mutant: treat `not-run` as killed, or omit unexecuted rows from `outstanding` - a plan
-        nobody executed reads exactly like one that passed, which is the paperwork problem this
-        unit exists to end. THE POSITIVE CONTROL is in the same test: once both are executed and
-        killed, the same call reports ok."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            m = self._unit(root, [("AC1", "in thing.py, delete the guard"),
-                                  ("AC2", "in thing.py, return True always")])
-            res = m.plan_execution(root, "BG0001")
-            self.assertFalse(res["ok"])
-            self.assertEqual({r["ac"] for r in res["outstanding"]}, {"AC1", "AC2"})
-            self.assertTrue(all(r["verdict"] == m.NOT_RUN for r in res["rows"]))
-
-            self._register(m, root, "AC1", "killed")
-            res = m.plan_execution(root, "BG0001")
-            self.assertFalse(res["ok"], "one executed row made the whole plan read as done")
-            self.assertEqual({r["ac"] for r in res["outstanding"]}, {"AC2"})
-
-            self._register(m, root, "AC2", "killed")
-            res = m.plan_execution(root, "BG0001")
-            self.assertTrue(res["ok"], res)
-            self.assertEqual(res["outstanding"], [])
-
-    def test_a_survivor_refuses_the_transition_and_names_the_criterion(self) -> None:
-        """The finding is about the TEST, so the join must point at the criterion whose test
-        failed to notice - not merely at the mutant. (Its transition half went with the
-        planned-mutant gate, now deleted.)
-
-        Mutant: downgrade a survivor to a warning, or let a later kill on the same criterion
-        cancel it - silence about a survivor is exactly what this gate exists to catch.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            m = self._unit(root, [("AC1", "in thing.py, delete the guard")])
-            self._register(m, root, "AC1", "survived")
-            res = m.plan_execution(root, "BG0001")
-            self.assertFalse(res["ok"])
-            self.assertEqual(res["outstanding"][0]["verdict"], "survived")
-
-            # A later KILL must not cancel the survivor: the worst verdict per criterion wins.
-            self._register(m, root, "AC1", "killed")
-            self.assertEqual(m.plan_execution(root, "BG0001")["outstanding"][0]["verdict"],
-                             "survived", "a survivor was cancelled by a later kill")
-
-    def test_a_malformed_unnameable_does_not_exempt_a_row(self) -> None:
-        """US0633 makes `unnameable` cost something at grooming, and exempting a bare one HERE
-        refunds that cost one lane later - the marker becomes a free pass at the gate it matters
-        most at. A seat drove a plan whose only row read `| AC1 | unnameable |` straight through
-        the terminal transition.
-
-        Mutant: exempt every unnameable row - a reason-less marker clears the delivery gate, and
-        nothing in the tree objects.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            m = self._unit(root, [("AC1", "unnameable")])
-            res = m.plan_execution(root, "BG0001")
-            self.assertFalse(res["ok"], "a bare `unnameable` cleared the delivery gate")
-            self.assertEqual([r["ac"] for r in res["outstanding"]], ["AC1"])
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            reason = ("unnameable: the criterion is about operator judgement and no code edit "
-                      "can falsify it")
-            m = self._unit(root, [("AC1", reason)])
-            self.assertTrue(m.plan_execution(root, "BG0001")["ok"],
-                            "a REASONED unnameable was refused - the exemption must still exist")
-
-    def test_the_gate_stands_down_without_a_cutoff(self) -> None:
-        """An existing backlog carrying no plans must not be retro-refused: a gate that refuses
-        every unit is one that gets switched off wholesale rather than satisfied.
-
-        Mutant: gate unconditionally - every historical unit in every consuming project is held
-        at its terminal transition by a plan nobody was ever asked for.
-        """
-        import importlib.util
-        spec = importlib.util.spec_from_file_location(
-            "transition_mod2", Path(__file__).resolve().parents[1] / "transition.py")
-        tr = importlib.util.module_from_spec(spec)
-        sys.modules["transition_mod2"] = tr
-        spec.loader.exec_module(tr)
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._unit(root, [("AC1", "in thing.py, delete the guard")], cutoff=False)
-            self.assertFalse(
-                any("planned mutant" in u for u in tr.requirements(str(root), "BG0001", "Fixed")),
-                "the gate fired with no `review.test_plan_after` recorded")
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            # ...and a unit created BEFORE the cutoff is out of scope even when one is set.
-            self._unit(root, [("AC1", "in thing.py, delete the guard")], created="2025-01-01")
-            self.assertFalse(
-                any("planned mutant" in u for u in tr.requirements(str(root), "BG0001", "Fixed")),
-                "a unit created before the cutoff was retro-refused")
-
-    def test_the_join_is_on_a_recorded_criterion_not_on_prose(self) -> None:
-        """A matching rule that is convenient is a gate that is optional: joining on the mutant's
-        prose would credit one criterion's execution to another's row.
-
-        Mutant: fall back to a substring match on the mutant text when no criterion is recorded -
-        a registration for AC1 silently discharges AC2 whenever their wording overlaps.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            m = self._unit(root, [("AC1", "in thing.py, delete the guard"),
-                                  ("AC2", "in thing.py, delete the guard")])
-            # Same prose, recorded against AC1 only.
-            self._register(m, root, "AC1", "killed")
-            res = m.plan_execution(root, "BG0001")
-            self.assertEqual({r["ac"] for r in res["outstanding"]}, {"AC2"},
-                             "an identically-worded row was discharged by another's execution")
-            # A registration with NO criterion discharges nothing at all.
-            m.register_mutant(root, "src/thing.py", "in thing.py, delete the guard",
-                              "pytest x", "killed", line=2, unit="BG0001")
-            self.assertEqual({r["ac"] for r in m.plan_execution(root, "BG0001")["outstanding"]},
-                             {"AC2"}, "an unkeyed registration discharged a planned row")
-
-    def test_a_cached_module_and_an_ambiguous_anchor_are_both_refused(self) -> None:
-        """AC3: the two ways a mutation run LIES.
-
-        A same-length mutant written inside one mtime second reuses the cached `.pyc` and is
-        recorded as survived; and a mutant restored imprecisely leaves the tree dirty. Both are
-        asserted on the shipped helpers rather than on a comment describing them.
-
-        Mutants: drop `PYTHONDONTWRITEBYTECODE` from the suite env - a same-length mutant runs
-        the ORIGINAL bytecode and every such mutant reads as survived; or stop purging the
-        cache - the previous mutant's bytecode is inherited by the next.
-        """
-        m = _load()
-        env = m._suite_env()
-        self.assertEqual(env.get("PYTHONDONTWRITEBYTECODE"), "1",
-                         "the child may write bytecode, so a same-length mutant can run the "
-                         "original module and be recorded as survived")
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            src = root / "thing.py"
-            src.write_text("x = 1\n", encoding="utf-8")
-            cache = root / "__pycache__"
-            cache.mkdir()
-            stale = cache / "thing.cpython-311.pyc"
-            stale.write_bytes(b"stale bytecode")
-            m._purge_bytecode(src)
-            self.assertFalse(stale.exists(), "a stale .pyc survived the purge")
-
-    def test_the_source_is_restored_byte_identical(self) -> None:
-        """Mutant: restore from a re-read rather than the captured bytes, or skip the restore -
-        a killed run strands a mutant on the working tree, which is how a review agent's mutant
-        once reached `main`."""
-        m = _load()
-        with tempfile.TemporaryDirectory() as d:
-            f = Path(d) / "thing.py"
-            original = b"def g():\n    return 1\n"
-            f.write_bytes(original)
-            m._APPLIED[str(f)] = original
-            f.write_bytes(b"def g():\n    return 2\n")
-            m._restore_applied()
-            self.assertEqual(f.read_bytes(), original, "the restore was not byte-identical")
-            self.assertNotIn(str(f), m._APPLIED, "the restore is not idempotent")
-
-
 class TheRunLeavesNothingBehindTests(unittest.TestCase):
     """BG0410. Replacing the pipe with a temp-file sink cured the hang and moved the defect.
 
@@ -4416,14 +4223,9 @@ class FaultClassFieldTests(unittest.TestCase):
 
 
 class RetractWithdrawsAVerdictOnTheRecord(unittest.TestCase):
-    """BG0553. `plan_execution` holds the WORST verdict per criterion, so a mutant registered
-    `survived` by mistake could not be corrected by registering it `killed` - and the
-    self-contradiction check then refused the transition in EVERY mode, `off` included, with no
-    escape but `--force`. An author who mistyped was left worse off than one who left it wrong.
-
-    A review round proposed superseding the earlier row; that was implemented and reverted,
-    because a supersede is invisible and reopens the escape the worst-verdict rule closes. So the
-    correction is made VISIBLE instead: withdrawn, never deleted, with a reason on the record.
+    """BG0553. A mutant registered `survived` by mistake is corrected by `retract`: the row is
+    marked withdrawn, never deleted and never superseded, with its reason on the record, so the
+    correction stays visible to every reader of the ledger.
     """
 
     REASON = "the verdict was mistyped as survived; the test did go red when the mutant ran"
@@ -4454,18 +4256,6 @@ class RetractWithdrawsAVerdictOnTheRecord(unittest.TestCase):
                   mutant="inverted the a == b guard", verdict="survived", reason=self.REASON)
         kw.update(over)
         return self.mut.retract_mutant(self.d, **kw)
-
-    def test_a_withdrawn_verdict_stops_holding_the_plan(self) -> None:
-        """AC1. The whole point: the mistyped survivor no longer stands, so the correction
-        works. MUTANT: drop the `withdrawn` skip in `plan_execution`."""
-        self._register("survived")
-        self._register("killed")
-        self.assertEqual("survived",
-                         self.mut.plan_execution(self.d, "BG9001")["rows"][0]["verdict"])
-        self._retract()
-        res = self.mut.plan_execution(self.d, "BG9001")
-        self.assertEqual("killed", res["rows"][0]["verdict"])
-        self.assertTrue(res["ok"], res.get("outstanding"))
 
     def test_the_withdrawal_is_recorded_and_not_deleted(self) -> None:
         """AC2. A correction nobody can see IS the escape hatch. The row stays, carrying the
@@ -4502,9 +4292,6 @@ class RetractWithdrawsAVerdictOnTheRecord(unittest.TestCase):
         self.assertEqual(1, len(rows), "the withdrawal is not readable at all")
         self.assertEqual("survived", rows[0]["verdict"])
         self.assertEqual(self.REASON, rows[0]["reason"])
-        # ...and it reaches the join the author sees...
-        self.assertTrue(self.mut.plan_execution(self.d, "BG9001").get("retracted"),
-                        "the plan join does not surface the withdrawal that changed it")
         # ...and the seat brief, which is the artefact a REVIEWER reads.
         import importlib.util
         spec = importlib.util.spec_from_file_location(
@@ -4571,279 +4358,14 @@ class RetractWithdrawsAVerdictOnTheRecord(unittest.TestCase):
         self.assertIn("re-measure it instead", str(ctx.exception))
 
 
-class RowKeyedJoinTests(unittest.TestCase):
-    """BG0596: the ledger join is keyed by (criterion, row), so two mutants on one criterion are
-    two claims rather than one."""
-
-    BODY = ("## Acceptance Criteria\n\n"
-            "- [ ] **AC1** Given two rows on one criterion, when the join runs, then both count\n"
-            "- [ ] **AC2** Given one row, when the join runs, then the count is unchanged\n\n")
-    PLAN = ("## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
-            "| AC1 | in `x.py`, delete the first branch | first |\n"
-            "| AC1 | in `x.py`, delete the second branch | second |\n"
-            "| AC2 | in `x.py`, delete the single path | only |\n")
-
-    def _fixture(self, root):
-        # The ledger keys an entry on its target's content hash, so the target must exist.
-        (root / "x.py").write_text("def a():\n    return 1\n", encoding="utf-8")
-        d = root / "sdlc-studio" / "bugs"
-        d.mkdir(parents=True, exist_ok=True)
-        f = d / "BG9001-x.md"
-        f.write_text(f"# BG9001: a unit\n\n> **Status:** Open\n> **Severity:** Medium\n"
-                     f"> **Points:** 2\n> **Affects:** x.py\n> **Created:** 2026-08-19\n\n"
-                     f"## Summary\n\nA thing.\n\n{self.BODY}{self.PLAN}\n"
-                     f"## Revision History\n", encoding="utf-8")
-        return f
-
-    @staticmethod
-    def _scan(path) -> int:
-        return sum(1 for ln in path.read_text(encoding="utf-8").splitlines()
-                   if re.match(r"^\|\s*AC\d+\s*\|", ln))
-
-    def test_the_planned_count_is_rows_not_criteria(self) -> None:
-        """MUTANT: in `mutation.py`, replace the row tally with a set of criterion ids.
-
-        Asserted against a plain scan of the artefact, not against the literal 3 - a criterion
-        count and a row count were the same number by construction until now, so a test pinning
-        one literal could not show them diverging.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mutation = _load()
-            f = self._fixture(root)
-            for i, mut in enumerate(("in `x.py`, delete the first branch",
-                                     "in `x.py`, delete the second branch")):
-                mutation.register_mutant(root, "x.py", mut, "pytest t", "killed",
-                                         unit="BG9001", criterion="AC1", line=1, row=i)
-            mutation.register_mutant(root, "x.py", "in `x.py`, delete the single path",
-                                     "pytest t", "killed", unit="BG9001", criterion="AC2",
-                                     line=2, row=0)
-            res = mutation.plan_execution(root, "BG9001")
-            self.assertEqual(self._scan(f), res["planned"],
-                             "the planned figure and a plain scan of the file disagree")
-            self.assertTrue(res["ok"], res)
-
-    def test_the_record_carries_a_row_identity(self) -> None:
-        """MUTANT: in `mutation.py`, revert the ledger record to two keys.
-
-        AC3's OWN test. Its first verifier was the back-compat one, which deliberately STRIPS
-        the row key - so removing that key from the record could not fail it, and the mutant
-        survived. This reads the ledger back and requires the two rows on one criterion to be
-        distinguishable ON THE RECORD, which is the claim.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mutation = _load()
-            self._fixture(root)
-            for i in (0, 1):
-                mutation.register_mutant(root, "x.py", f"in `x.py`, delete branch {i}",
-                                         "pytest t", "killed", unit="BG9001",
-                                         criterion="AC1", line=1, row=i)
-            state, _ = mutation._load_ledger(mutation.ledger_path(root))
-            rows = [m.get("row") for e in state.get("entries", [])
-                    for m in (e.get("mutants") or [])
-                    if m.get("unit") == "BG9001" and m.get("criterion") == "AC1"]
-            self.assertEqual([0, 1], sorted(r for r in rows if r is not None),
-                             f"the two mutants on AC1 are not distinguishable on the record, so "
-                             f"one execution stands for both: {rows}")
-
-    def test_a_single_row_plan_counts_the_same_as_before(self) -> None:
-        """MUTANT: in `verify_ac.py`, duplicate every row entry under its criterion id as well.
-
-        BG0596 AC6's OWN control, and it must be its own test: sharing AC2's verifier meant one
-        assertion stood for both "counts rows, not criteria" and "does not inflate the ordinary
-        case", and a fix that double-counted would have satisfied the first while breaking the
-        second with nothing to say so.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mutation = _load()
-            (root / "x.py").write_text("def a():\n    return 1\n", encoding="utf-8")
-            b = root / "sdlc-studio" / "bugs"
-            b.mkdir(parents=True, exist_ok=True)
-            (b / "BG9010-x.md").write_text(
-                "# BG9010: a unit\n\n> **Status:** Open\n> **Severity:** Medium\n"
-                "> **Points:** 2\n> **Affects:** x.py\n> **Created:** 2026-08-19\n\n"
-                "## Summary\n\nA thing.\n\n## Acceptance Criteria\n\n"
-                "- [ ] **AC1** Given one row, when it runs, then it counts once\n"
-                "- [ ] **AC2** Given one row, when it runs, then it counts once\n\n"
-                "## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
-                "| AC1 | in `x.py`, delete a | one |\n"
-                "| AC2 | in `x.py`, delete b | two |\n\n## Revision History\n",
-                encoding="utf-8")
-            for ac in ("AC1", "AC2"):
-                mutation.register_mutant(root, "x.py", f"in `x.py`, delete {ac}", "pytest t",
-                                         "killed", unit="BG9010", criterion=ac, line=1, row=0)
-            res = mutation.plan_execution(root, "BG9010")
-            self.assertEqual(2, res["planned"],
-                             f"a one-row-per-criterion plan no longer counts one per criterion: "
-                             f"{res}")
-            self.assertEqual([0, 0], [r["row"] for r in res["rows"]],
-                             "a single-row criterion was given a row index above 0")
-            self.assertTrue(res["ok"], res)
-
-    def test_the_corpus_artefact_agrees_with_a_plain_scan(self) -> None:
-        """MUTANT: in `mutation.py`, replace the row tally with a set of criterion ids.
-
-        BG0596 AC5's own test, and the CORPUS instance the criterion names - the first cut used
-        a synthetic fixture, which is the same shape as AC2's and could not show the join works
-        on a real artefact. Asserted as AGREEMENT with a plain scan rather than as the literal
-        18, so a legitimate edit to BG0592's plan does not turn this red for a reason that has
-        nothing to do with the join.
-        """
-        repo = Path(__file__).resolve().parents[5]
-        hits = sorted((repo / "sdlc-studio" / "bugs").glob("BG0592-*.md"))
-        if not hits:
-            self.skipTest("BG0592 is not in this corpus")
-        text = hits[0].read_text(encoding="utf-8")
-        scanned = sum(1 for ln in text.splitlines()
-                      if re.match(r"^\|\s*AC\d+\s*\|", ln))
-        self.assertGreater(scanned, len(set(re.findall(r"^\|\s*(AC\d+)\s*\|", text, re.M))),
-                           "BG0592 no longer carries more rows than criteria, so this artefact "
-                           "can no longer show the difference the join is about")
-        mutation = _load()
-        res = mutation.plan_execution(repo, "BG0592")
-        self.assertEqual(scanned, res["planned"],
-                         f"`--from-plan` and a plain scan of BG0592 disagree about how many "
-                         f"rows it declares: {res['planned']} vs {scanned}")
-
-    def test_the_changed_return_shape_still_serves_its_other_caller(self) -> None:
-        """MUTANT: in `mutation.py`, delete the shape adapter.
-
-        BG0597 AC5's OWN test. `_testplan_rows` has two callers and this is the one in another
-        file; it consumed the return as a dict. Sharing AC2's verifier hid the question of
-        whether THIS caller survived the shape change.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mutation = _load()
-            self._fixture(root)
-            for i, ac in ((0, "AC1"), (1, "AC1"), (0, "AC2")):
-                mutation.register_mutant(root, "x.py", f"in `x.py`, delete {ac} row {i}",
-                                         "pytest t", "killed", unit="BG9001",
-                                         criterion=ac, line=1, row=i)
-            res = mutation.plan_execution(root, "BG9001")
-            self.assertTrue(res["ok"], f"the other caller of the changed shape reports an "
-                                       f"unaccounted row on a fully executed plan: {res}")
-            self.assertEqual(sorted([("AC1", 0), ("AC1", 1), ("AC2", 0)]),
-                             sorted((r["ac"], r["row"]) for r in res["rows"]),
-                             "the consumer lost or reordered rows reading the changed shape")
-
-    def test_one_kill_does_not_satisfy_a_criterion_second_row(self) -> None:
-        """MUTANT: in `mutation.py`, widen the gate to accept one execution per criterion.
-
-        The defect end to end: with the join keyed by criterion, registering AC1 row 0 alone
-        reported `every one executed and killed` over a mutant nobody had run.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mutation = _load()
-            self._fixture(root)
-            mutation.register_mutant(root, "x.py", "in `x.py`, delete the first branch",
-                                     "pytest t", "killed", unit="BG9001", criterion="AC1",
-                                     line=1, row=0)
-            mutation.register_mutant(root, "x.py", "in `x.py`, delete the single path",
-                                     "pytest t", "killed", unit="BG9001", criterion="AC2",
-                                     line=2, row=0)
-            res = mutation.plan_execution(root, "BG9001")
-            self.assertFalse(res["ok"], "a second declared row on AC1 was reported as executed")
-            owed = [r for r in res["outstanding"] if r["ac"] == "AC1"]
-            self.assertEqual(1, len(owed), res["outstanding"])
-            self.assertEqual(1, owed[0]["row"],
-                             "the refusal did not identify WHICH row is unaccounted for")
-
-    def test_an_entry_with_no_row_key_still_reads_back(self) -> None:
-        """MUTANT: in `mutation.py`, revert the ledger record to two keys.
-
-        Back-compat, and it is the half a schema change usually forgets: every mutant registered
-        before this shipped carries no `row`, and must keep joining as row 0 rather than being
-        orphaned into `not-run`.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mutation = _load()
-            self._fixture(root)
-            mutation.register_mutant(root, "x.py", "in `x.py`, delete the first branch",
-                                     "pytest t", "killed", unit="BG9001", criterion="AC1", line=1)
-            path = mutation.ledger_path(root)
-            state, reset = mutation._load_ledger(path)
-            entries = state.get("entries", [])
-            for e in entries:
-                for m in e.get("mutants", []):
-                    m.pop("row", None)          # an entry written by the previous schema
-            mutation._store_ledger(path, state, entries, reset)
-            res = mutation.plan_execution(root, "BG9001")
-            ac1 = [r for r in res["rows"] if r["ac"] == "AC1" and r["row"] == 0]
-            self.assertEqual("killed", ac1[0]["verdict"],
-                             "an entry carrying no row key was orphaned rather than read as row 0")
-
-    def test_the_report_states_both_figures(self) -> None:
-        """MUTANT: in `mutation.py`, delete the print on the refusal path.
-
-        Both counts, on both branches. The refusal branch printed neither, so a plan whose row
-        count and criterion count had diverged said nothing about it at the moment it mattered.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mutation = _load()
-            self._fixture(root)
-            mutation.register_mutant(root, "x.py", "in `x.py`, delete the first branch",
-                                     "pytest t", "killed", unit="BG9001", criterion="AC1",
-                                     line=1, row=0)
-            buf_out, buf_err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
-                rc = mutation.cmd_from_plan(argparse.Namespace(root=str(root), story="BG9001"))
-            self.assertEqual(2, rc)
-            printed = buf_out.getvalue() + buf_err.getvalue()
-            self.assertIn("AC1#0", printed,
-                          "a multi-row criterion printed without its row index, so two rows on "
-                          f"one AC are indistinguishable in the report:\n{printed}")
-            # `AC1 row 1`, not the bare substring `row 1` - the remedy line also prints
-            # `--row 1`, so a loose match was satisfied by the flag whether or not the refusal
-            # named the row. The mutant SURVIVED against that first assertion, which is what
-            # caught it: the test asserted a string the message happened to contain elsewhere.
-            self.assertIn("AC1 row 1", printed,
-                          f"the refusal did not name the unexecuted row:\n{printed}")
-            self.assertIn("3 planned mutant(s) across 2 criterion/criteria", printed,
-                          f"the REFUSAL branch states neither figure, so a plan whose row count "
-                          f"and criterion count have diverged says nothing about it at the one "
-                          f"moment something is owed:\n{printed}")
-            self.assertNotIn("AC1 row 0", printed,
-                             f"a row that WAS executed is reported as outstanding:\n{printed}")
-
-    def test_the_success_line_states_rows_and_criteria_separately(self) -> None:
-        """The other half of AC7: on the branch that PASSES, both figures are printed.
-
-        `N planned mutant(s)` alone cannot show a divergence, because the row count and the
-        criterion count were the same number by construction until this shipped.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mutation = _load()
-            self._fixture(root)
-            for i in (0, 1):
-                mutation.register_mutant(root, "x.py", f"in `x.py`, delete branch {i}",
-                                         "pytest t", "killed", unit="BG9001",
-                                         criterion="AC1", line=1, row=i)
-            mutation.register_mutant(root, "x.py", "in `x.py`, delete the single path",
-                                     "pytest t", "killed", unit="BG9001", criterion="AC2",
-                                     line=2, row=0)
-            buf = io.StringIO()
-            with contextlib.redirect_stdout(buf):
-                rc = mutation.cmd_from_plan(argparse.Namespace(root=str(root), story="BG9001"))
-            self.assertEqual(0, rc, buf.getvalue())
-            self.assertIn("3 planned mutant(s) across 2 criterion/criteria", buf.getvalue(),
-                          f"the success line does not state both figures:\n{buf.getvalue()}")
-
-
 class RegisterKeepsOtherUnitsRowsTests(unittest.TestCase):
     """BG0651 AC4: a later unit's `register` on a file with different bytes KEEPS the earlier
-    unit's rows, marks them stale and names the earlier unit; the plan join reads a stale row
-    as not-run; a same-unit re-register replaces as before.
+    unit's rows, marks them stale and names the earlier unit; `row_staleness` reads a stale
+    row as no evidence of a run; a same-unit re-register replaces as before.
 
     MUTANTS: keep deleting another unit's rows on a changed file (today's code); keep the rows
-    but name no unit; keep another unit's rows even when the SAME unit re-registers; keep the
-    `--from-plan` join hash-blind so a stale row still reads killed.
+    but name no unit; keep another unit's rows even when the SAME unit re-registers; make
+    `row_staleness` hash-blind so a stale row still reads live.
     """
 
     def _root(self):
@@ -4860,14 +4382,21 @@ class RegisterKeepsOtherUnitsRowsTests(unittest.TestCase):
                 f"| --- | --- | --- |\n| AC1 | flip it | Given a, when b, then c |\n", encoding="utf-8")
         return d
 
+    @staticmethod
+    def _executed(mut, root, uid) -> bool:
+        """Does `uid` hold a live, unwithdrawn row - evidence of a run on today's bytes?"""
+        state, _ = mut._load_ledger(mut.ledger_path(root))
+        return any(m.get("unit") == uid and not m.get("withdrawn")
+                   and mut.row_staleness(root, e, m) not in ("stale", "missing")
+                   for e in state["entries"] for m in e.get("mutants") or [])
+
     def test_a_later_unit_register_marks_the_earlier_rows_stale_and_names_it(self) -> None:
         mut = _load()
         import shutil  # noqa: PLC0415
         root = self._root(); fp = root / "src" / "x.py"
         fp.write_text("x = 1\n", encoding="utf-8")
         mut.register_mutant(root, fp, "flip it", "pytest t", "killed", unit="BG0001", criterion="AC1", line=1, anchor="x = 1", row=0)
-        before = mut.plan_execution(root, "BG0001")
-        self.assertTrue(before["ok"], before)
+        self.assertTrue(self._executed(mut, root, "BG0001"))
         fp.write_text("x = 2\n", encoding="utf-8")
         res = mut.register_mutant(root, fp, "flip it again", "pytest t", "killed", unit="BG0002", criterion="AC1", line=1, anchor="x = 2", row=0)
         self.assertEqual(["BG0001"], res.get("kept_stale_units"), res)
@@ -4876,9 +4405,8 @@ class RegisterKeepsOtherUnitsRowsTests(unittest.TestCase):
         kept = [e for e in state["entries"] if any(m.get("unit") == "BG0001" for m in e.get("mutants", []))]
         self.assertEqual(1, len(kept), "BG0001's rows were deleted by BG0002's register")
         self.assertEqual("BG0002", kept[0]["stale"]["by"])
-        # the stale row reads as NOT-RUN to the plan join
-        after = mut.plan_execution(root, "BG0001")
-        self.assertFalse(after["ok"], "a stale row still read as killed:\n" + str(after))
+        # the stale row is no evidence of a run
+        self.assertFalse(self._executed(mut, root, "BG0001"), "a stale row still read live")
         # the same unit re-registering its own rows replaces them, as before
         fp.write_text("x = 3\n", encoding="utf-8")
         res2 = mut.register_mutant(root, fp, "flip it once more", "pytest t", "killed", unit="BG0002", criterion="AC1", line=1, anchor="x = 3", row=0)
@@ -4887,7 +4415,7 @@ class RegisterKeepsOtherUnitsRowsTests(unittest.TestCase):
         # unit re-registers it, and only the registering unit's own rows are replaced
         self.assertEqual(["BG0001"], res2.get("kept_stale_units"), res2)
         # a row whose hash matches HEAD's blob but not the working file (an unstaged edit) is
-        # the commit lane's business, not the join's: it still reads as executed
+        # the commit lane's business, not staleness: it still reads as executed
         import subprocess  # noqa: PLC0415
         env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
         env.update({"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"})
@@ -4896,17 +4424,17 @@ class RegisterKeepsOtherUnitsRowsTests(unittest.TestCase):
         subprocess.run(["git", "-C", str(root), "commit", "-q", "-m", "seed"], check=True, env=env)
         head = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], capture_output=True, text=True, env=env).stdout.strip()
         fp.write_text("x = 3 # unstaged\n", encoding="utf-8")
-        self.assertTrue(mut.plan_execution(root, "BG0002")["ok"], "a row matching HEAD but not the working file read as not-run")
+        self.assertTrue(self._executed(mut, root, "BG0002"), "a row matching HEAD but not the working file read as not-run")
         fp.write_text("x = 3\n", encoding="utf-8")
         # a drift that arrives through a COMMIT, with no register and so no mark, reads not-run
         # too: the rule is the hash comparison, whichever way the bytes moved (the hooks-off,
         # --no-verify half of AC4)
         fp.write_text("x = 9 # committed drift\n", encoding="utf-8")
         subprocess.run(["git", "-C", str(root), "commit", "-q", "-am", "drift"], check=True, env=env)
-        self.assertFalse(mut.plan_execution(root, "BG0002")["ok"], "a committed drift with no register mark still read as killed")
+        self.assertFalse(self._executed(mut, root, "BG0002"), "a committed drift with no register mark still read as killed")
         # and the mark is a record, not a rule: a file restored to the recorded bytes reads live
         fp.write_text("x = 1\n", encoding="utf-8")
-        self.assertTrue(mut.plan_execution(root, "BG0001")["ok"], "rows restored to their recorded bytes still read as stale from the mark")
+        self.assertTrue(self._executed(mut, root, "BG0001"), "rows restored to their recorded bytes still read as stale from the mark")
         fp.write_text("x = 3\n", encoding="utf-8")
         # a SHARED entry (two units registered on the same bytes) gives up only the registering
         # unit's own rows: the other unit's rows stay on it, marked stale
@@ -5325,54 +4853,6 @@ class AnchoredStalenessTests(unittest.TestCase):
             self.assertEqual("live", mut.row_staleness(root, entry, row),
                              "an edit elsewhere in the target staled a row whose own site is "
                              "untouched")
-
-    def test_the_join_the_terminal_gate_reads_judges_a_row_by_its_own_site(self) -> None:
-        """AC9. MUTANTS: judge the whole ENTRY in `plan_execution`, as it did before; skip a
-        row whose anchor is still present.
-
-        `plan_execution` is the join `--from-plan`, the Fixed/Done gate and the depth deriver
-        all consume, and it keyed on the entry's content hash - so an anchored row was exonerated
-        by the commit lane and still demanded a re-measure at the transition. That is the whole
-        cost this unit exists to remove, left in place at the one reader where it is paid.
-        Measured on this repository at delivery: 26 rows across three units read `not-run` under
-        the entry rule and `live` under the row rule, on files nobody had touched at their sites.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            mut = _load()
-            root = self._root(d)
-            (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
-            (root / "sdlc-studio" / "bugs" / "BG9701-x.md").write_text(
-                "# BG9701: x\n\n> **Status:** Open\n> **Severity:** Medium\n> **Points:** 2\n\n"
-                "## Summary\n\nA thing.\n\n## Acceptance Criteria\n\n"
-                "- [ ] **AC1** Given a, when b, then c\n  - **Verify:** shell true\n\n"
-                "## Test Plan\n\n| Criterion | Mutant - the production change this test must "
-                "fail on | Title |\n| --- | --- | --- |\n"
-                "| AC1 | in src/thing.py, flip the value BETA is bound to | a title |\n\n"
-                "## Revision History\n", encoding="utf-8")
-            self._reg(mut, root, unit="BG9701", criterion="AC1")
-            self.assertTrue(mut.plan_execution(root, "BG9701")["ok"],
-                            "the row did not read as executed before any edit")
-            (root / "src" / "thing.py").write_text(
-                self.SRC.replace("GAMMA = 3", "GAMMA = 30  # unrelated"), encoding="utf-8")
-            state, _ = mut._load_ledger(mut.ledger_path(root))
-            entry = next(e for e in state["entries"] if e.get("target") == "src/thing.py")
-            self.assertEqual("stale", mut.entry_staleness(root, entry),
-                             "the file-wide judgement must still call this stale, or this row "
-                             "cannot show which rule the join is using")
-            res = mut.plan_execution(root, "BG9701")
-            self.assertTrue(res["ok"],
-                            f"an edit ELSEWHERE in the target made the terminal gate demand a "
-                            f"re-measure of a row whose own site is untouched: {res['rows']}")
-            self.assertEqual(["killed"], [r["verdict"] for r in res["rows"]])
-
-            # THE PAIRED CONTROL: edit the row's OWN site and the join must read it not-run
-            # again, or a rule that never stales anything satisfies the row above.
-            (root / "src" / "thing.py").write_text(
-                self.SRC.replace("BETA = 2", "DELTA = 9"), encoding="utf-8")
-            after = mut.plan_execution(root, "BG9701")
-            self.assertFalse(after["ok"], "the row's own site was edited and the gate still "
-                                          "read its verdict as evidence")
-            self.assertEqual(["not-run"], [r["verdict"] for r in after["rows"]])
 
     def test_editing_the_anchored_text_stales_that_row(self) -> None:
         """AC2. MUTANT: invert the zero-occurrence branch so a vanished site reads live."""

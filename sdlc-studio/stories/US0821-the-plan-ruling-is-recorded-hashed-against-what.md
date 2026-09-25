@@ -19,31 +19,31 @@
 ## Acceptance Criteria
 
 - [x] **AC1** Given a criterion the probe classifies as a finding, when `verify_ac.py testplan rule` records a ruling for it, then the row carries the criterion, the reason, the author and the date; and a reason shorter than the floor the sibling writers share is REFUSED. A one-character reason is not a decision anybody can review
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlanRulingTests::test_a_ruling_records_who_when_and_why_and_refuses_a_thin_reason
-  - **Verified:** yes (2026-09-10)
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan rule` and `withdraw` were deleted; `sdlc-studio/reviews/plan-rulings.md` is kept as frozen history
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC2** Given a criterion that already carries a live ruling, when a second is recorded for it, then it is REFUSED; a reason opening with the withdrawal sentinel is refused too; and given a criterion whose only rulings are WITHDRAWN or STALE, a new one IS accepted. Without that last half a lookup over every row rather than the live ones ships a permanent, un-re-pinnable withdrawal and passes every other row here. Two live rulings on one criterion make the join ambiguous, and a reason shaped like a withdrawal makes a live row read as a retracted one
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlanRulingTests::test_a_second_live_ruling_and_a_sentinel_reason_are_both_refused
-  - **Verified:** yes (2026-09-10)
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan rule` and `withdraw` were deleted; `sdlc-studio/reviews/plan-rulings.md` is kept as frozen history
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC3** Given a ruling recorded against a criterion, when that criterion's `Verify:` SELECTOR is re-pointed while its title is unchanged, then the ruling no longer satisfies it. The hash covers the title AND the selector, because the selector is what actually runs - a pin surviving a re-pointed verifier is exactly a ruling outliving the criterion it excused
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlanRulingTests::test_re_pointing_the_selector_staleens_the_ruling
-  - **Verified:** yes (2026-09-10)
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan rule` and `withdraw` were deleted; `sdlc-studio/reviews/plan-rulings.md` is kept as frozen history
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC4** Given a stale ruling, when the probe reports, then it NAMES it as stale rather than dropping it silently. A pin that vanishes without a word is indistinguishable from one that was never written, and the reader cannot tell a repaired criterion from a lost exemption
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlanRulingTests::test_a_stale_ruling_is_named_rather_than_dropped
-  - **Verified:** yes (2026-09-10)
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan rule` and `withdraw` were deleted; `sdlc-studio/reviews/plan-rulings.md` is kept as frozen history
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC5** Given a live ruling, when `verify_ac.py testplan withdraw` runs against it, then the row is marked in place with the withdrawal's own reason rather than deleted, and the criterion is a finding again. The withdrawal's reason is held to the same floor as the ruling's; the row it marks is the one NAMED rather than one matched on reason text; and a withdrawal naming no live row is REFUSED rather than exiting 0, which would leave the author believing a pin was lifted that is still standing. A retraction that erases its own row leaves no record that the exemption was ever taken
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlanRulingTests::test_a_withdrawal_marks_the_row_in_place_and_restores_the_finding
-  - **Verified:** yes (2026-09-10)
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan rule` and `withdraw` were deleted; `sdlc-studio/reviews/plan-rulings.md` is kept as frozen history
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC6** Given a finding criterion carrying a live, non-stale ruling, when the probe runs, then it is `pinned` and does not fail the command. The paired control: without it, a ruling mechanism that satisfies nothing passes every row above
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlanRulingTests::test_a_live_ruling_pins_the_criterion_and_the_probe_passes
-  - **Verified:** yes (2026-09-10)
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan rule` and `withdraw` were deleted; `sdlc-studio/reviews/plan-rulings.md` is kept as frozen history
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 
 - [x] **AC7** Given a criterion title or a ruling reason carrying a PIPE, a BACKTICK or a NEWLINE, when the ruling is written and read back, then the row still parses and the values round-trip. Measured on the live parsers: an unescaped pipe leaves the row unmatched by the row pattern, so it is read by nothing while the writer reports success, and ONE raw newline carrying a heading marker truncates the section lookahead and drops EVERY live row in the table. The sibling rulings writer defends both, and this repository is currently carrying five separate reproductions of the same class in its review ledgers
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlanRulingTests::test_a_hostile_title_or_reason_round_trips_and_the_table_still_parses
-  - **Verified:** yes (2026-09-10)
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan rule` and `withdraw` were deleted; `sdlc-studio/reviews/plan-rulings.md` is kept as frozen history
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 
 - [x] **AC8** Given `verify_ac.py testplan rule` and `verify_ac.py testplan withdraw` run as SUBPROCESSES, when each is invoked, then the ruling is recorded or marked and the artefact is left BYTE-IDENTICAL; and a ruling with no `--author` is refused with a non-zero exit. Every other criterion here calls the library in process, and the wiring is the part a library test does not exercise: measured, with the two-line dispatch deleted all seven of the others stayed green while `testplan rule` fell through to `testplan derive`, WROTE a test plan into the artefact, recorded no ruling and exited 0
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::PlanRulingTests::test_both_verbs_are_reached_through_the_shipped_command
-  - **Verified:** yes (2026-09-10)
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan rule` and `withdraw` were deleted; `sdlc-studio/reviews/plan-rulings.md` is kept as frozen history
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 
 ## Test Plan
 
@@ -241,3 +241,4 @@
 | 2026-09-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-10 | Claude Opus 5 | Delivered. Fourteen mutants, fourteen killed, and the whole cycle driven at the shipped command in a throwaway fixture before any test was written: probe green, thin reason refused, ruling recorded, probe pinned and exit 0, a second live ruling refused, the selector re-pointed and the ruling reported STALE with its reason, withdrawal marking the row in place with the record still one row long. The ruling record lives in `sdlc-studio/reviews/` rather than gitignored `.local/`, because a ruling is evidence and evidence nobody else can read is evidence only its author has |
 | 2026-09-10 | Claude Opus 5 | Delivery review, three seats per commit group: 33 verdicts, 18 REJECTs, every finding answered on the record. The class the round found is one shape - a criterion whose words go further than its fixture. Repaired here: AC1's edit-verb check now drives the shipped reader instead of re-typing the predicate; the probe's untrusted branch counts a runner-error exit, so a grep selector that is a typo stops classifying as the healthy class; the probe's delivered-detection reads the Refs trailers of delivery commits as well as subjects, after a census showed every one of its 25 findings was a unit the same commit had delivered; the two ruling verbs and the anchored-row rule are executed through the shipped command rather than in process; the boundary scan sees this repository's own subprocess idiom; the terminal test-plan gate states one absence once; and plan_execution judges a mutation row by its own site, which is where the anchors were never reaching. Two findings were refuted by execution and recorded as OVER-CLAIMED rather than repaired |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3, AC4, AC5, AC6, AC7, AC8 retired by US0912 (D0259 pattern): `testplan rule` and `withdraw` were deleted; plan-rulings.md is frozen history |

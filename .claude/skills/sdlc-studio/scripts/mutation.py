@@ -1922,8 +1922,8 @@ def entry_staleness(root: Path | str, entry: dict) -> str:
 
     `live`: the recorded hash matches the working file. `head`: it matches HEAD's blob but not
     the working file - an uncommitted edit, the commit lane's business. `stale`: it matches
-    neither, so the evidence is about bytes that exist nowhere - `plan_execution` reads such a
-    row as not-run. `missing`: the target exists neither on disk nor at HEAD, which is stale by
+    neither, so the evidence is about bytes that exist nowhere and is no evidence of a
+    run. `missing`: the target exists neither on disk nor at HEAD, which is stale by
     construction and never a crash.
     """
     root = Path(root)
@@ -2058,7 +2058,7 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     entries = [e for e in state["entries"] if isinstance(e, dict)]
     record = {"mutant": mutant, "test": test or None, "verdict": verdict,
               "reason": reason or None, "run": run, "line": line,
-              # THE JOIN KEY for `plan_execution` (US0632). Recorded explicitly rather than
+              # THE JOIN KEY for a unit's rows (US0632). Recorded explicitly rather than
               # matched out of the mutant's prose: a matching rule that is convenient is a gate
               # that is optional, and a substring join would silently credit one criterion's
               # execution to another's row.
@@ -2103,16 +2103,15 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
     # Only THIS unit's own stale rows are replaced. Another unit's rows on the old bytes
     # are KEPT and marked stale with this unit named, because deleting them here emptied a
     # Fixed unit's evidence before any commit - the path every later unit takes over a shared
-    # file - and left the commit-time lane nothing to refuse. A stale row reads as not-run to
-    # every reader (`entry_staleness`), so the earlier unit cannot reach Fixed on it; it is
+    # file - and left the commit-time lane nothing to refuse. A stale row is kept, marked and
     # named, and its remedy is the same re-register.
     #
     # A row whose ANCHOR still occurs exactly once in the new bytes is not stale at all: its
-    # site did not move, which is the rule every reader judges a row by (`row_staleness`).
+    # site did not move, which is the rule `row_staleness` states.
     # This unit's own such rows are CARRIED onto the current entry - dropping them cost BG0719
     # twelve good rows when one of its thirteen was re-registered - and the row being
     # re-registered never is, since the new record replaces it. Other units' rows are not
-    # moved: they stay on their own entry, where `row_staleness` already reads them live, and
+    # moved: they stay on their own entry, where `row_staleness` reads them live, and
     # carrying them all onto one entry ran it past MUTANT_LIMIT and evicted live rows. Nor is
     # the cap allowed to evict for a carry: a row with no room left stays where it is.
     me = sdlc_md.norm_id(unit) if unit else None
@@ -2178,8 +2177,7 @@ def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: s
         entry["summary"]["applied"] += 1
         entry["summary"][m["verdict"]] = entry["summary"].get(m["verdict"], 0) + 1
     # NOT superseded by a later registration for the same mutant, though a review round asked
-    # for it. `plan_execution` holds the opposite rule deliberately - the WORST verdict per
-    # criterion wins, so a later kill cannot cancel an earlier survivor - and that rule exists
+    # for it: both rows stay, so a later kill never silently erases an earlier survivor,
     # because a genuine correction and an author registering their way out of a survivor are
     # byte-identical here. Making the correction cheap would make the escape cheap with it.
     # The cost is real and recorded rather than traded away: see the bug filed on it.
@@ -2691,161 +2689,6 @@ def cmd_run(args: argparse.Namespace) -> int:
     return 1 if s["survived"] or s["errors"] else 0
 
 
-NOT_RUN = "not-run"
-
-
-def plan_execution(root: Path | str, unit: str) -> dict:
-    """Join a unit's test-plan rows to the mutation ledger: what was executed, and what was not.
-
-    A plan is paperwork until its rows are EXECUTED. The join is on an explicit `criterion` field
-    recorded at registration, never on the mutant's prose: a substring match would credit one
-    criterion's execution to another's row, and a matching rule that is convenient is a gate that
-    is optional.
-
-    A row with no execution is `not-run` - reported as its own state, never folded into "killed"
-    and never silently omitted. An unexecuted plan and a passed one must not read alike, because
-    the whole point of the plan is that somebody checks.
-    """
-    root = Path(root)
-    import verify_ac as _va  # noqa: PLC0415 - deferred; the module that owns the plan format
-    found = sdlc_md.find_by_id(root, unit)
-    if not found:
-        return {"ok": False, "unit": unit, "rows": [],
-                "errors": [f"{unit}: no artefact with that id"]}
-    text = sdlc_md.read_text_safe(found[0])
-    planned = _va._testplan_rows(text)          # one entry per declared ROW, in file order
-    # Only a WELL-FORMED `unnameable` - one carrying its reason - exempts a row. A bare one is
-    # malformed, and US0633 refuses it at grooming precisely so it costs something; exempting it
-    # here too would refund that cost one lane later and make the marker a free pass at the gate
-    # it matters most at. Found by an independent seat.
-    unnameable = {r["ac"] for r in _va.testplan_unnameable(text) if not r["malformed"]}
-    uid = sdlc_md.norm_id(unit)
-
-    executed: dict = {}
-    state, _reset = _load_ledger(ledger_path(root))
-    for entry in state.get("entries", []):
-        if not isinstance(entry, dict):
-            continue
-        for m in entry.get("mutants", []) or []:
-            if not isinstance(m, dict) or m.get("unit") != uid or not m.get("criterion"):
-                continue
-            # STALE evidence is evidence about bytes that exist nowhere, and it reads as NOT-RUN
-            # here - the one join `--from-plan`, the done-gate and the depth deriver all consume
-            # - so a unit whose rows went stale cannot reach Fixed on them.
-            #
-            # Judged per ROW (`row_staleness`), which is the grain the evidence is at. Judging
-            # the whole ENTRY re-imposed the exact cost US0822 removed: an edit anywhere in a
-            # shared target read every unit's rows as not-run, so the anchors reached the commit
-            # lane and never reached the gate that blocks a transition - the reader that made
-            # the cost hurt. `row_staleness` falls back to the entry's hash for a row carrying
-            # no anchor, which is every row written before that, so nothing is promoted silently.
-            # The `stale` mark a later register leaves is a RECORD of who and when; the rule is
-            # the computed comparison, so a file restored to the recorded bytes reads live again
-            # and the mark never contradicts the definition (one meaning, AC4).
-            if row_staleness(root, entry, m) in ("stale", "missing"):
-                continue
-            # A WITHDRAWN row is skipped, not counted: `retract` marks a registered verdict as
-            # corrected and leaves it visible in the ledger, so the correction has to reach the
-            # reader that made it costly. Removal would have been the escape hatch.
-            if m.get("withdrawn"):
-                continue
-            # The WORST verdict wins per criterion: a survivor is not cancelled by a later kill
-            # of some other mutant on the same row. Silence about a survivor is the failure this
-            # gate exists to catch.
-            # KEYED BY (criterion, row), not by criterion alone. A criterion carrying two
-            # mutants used to collapse to one execution record, so a second declared row was
-            # satisfied by the first row's kill and `--from-plan` reported `every one executed
-            # and killed` over a mutant nobody had run. `row` is absent on every entry
-            # registered before this shipped, and those fall back to row 0 rather than being
-            # orphaned - an existing ledger must keep reading back.
-            key = (m["criterion"].upper(), int(m.get("row") or 0))
-            prev = executed.get(key)
-            if prev is None or prev["verdict"] != "survived":
-                executed[key] = {"verdict": m.get("verdict"),
-                                 "target": entry.get("target"),
-                                 "mutant": m.get("mutant"), "test": m.get("test")}
-    rows = []
-    for entry_row in planned:
-        ac, mutant, idx = entry_row["ac"], entry_row["mutant"], entry_row["row"]
-        if ac in unnameable:
-            rows.append({"ac": ac, "verdict": "unnameable", "mutant": mutant, "row": idx})
-            continue
-        hit = executed.get((ac.upper(), idx))
-        rows.append({"ac": ac, "mutant": mutant, "row": idx,
-                     "verdict": (hit or {}).get("verdict") or NOT_RUN,
-                     "target": (hit or {}).get("target"),
-                     "test": (hit or {}).get("test")})
-    outstanding = [r for r in rows
-                   if r["verdict"] in (NOT_RUN, "survived")]
-    # Surfaced, not merely skipped. A withdrawn verdict changes what this join reports, so the
-    # join has to say that it was withdrawn - otherwise the correction is invisible exactly where
-    # its effect is felt.
-    withdrawn = retractions(root, uid)
-    return {"ok": not outstanding and bool(rows), "unit": uid, "rows": rows,
-            "outstanding": outstanding, "planned": len(rows), "retracted": withdrawn,
-            "errors": ([] if rows else
-                       [f"{uid}: no `## Test Plan` rows - derive one first: "
-                        f"`verify_ac.py testplan derive --unit {uid}`"])}
-
-
-def cmd_from_plan(args: argparse.Namespace) -> int:
-    """Report `plan_execution` for `args.story`: was every planned mutant executed?
-
-    No command reaches it: `run --from-plan` is retired. It goes with `plan_execution`, whose
-    report it prints."""
-    res = plan_execution(args.root, args.story)
-    for e in res.get("errors", []):
-        print(f"from-plan refused: {e}", file=sys.stderr)
-    if res.get("errors"):
-        return 2
-    for r in res["rows"]:
-        # The row index is printed only where a criterion carries more than one, so an ordinary
-        # single-row plan reads exactly as it always did and the marker means something when it
-        # appears.
-        multi = sum(1 for x in res["rows"] if x["ac"] == r["ac"]) > 1
-        label = f"{r['ac']}#{r.get('row', 0)}" if multi else r["ac"]
-        print(f"  {label}: {r['verdict']}"
-              + (f" [{r.get('target')}]" if r.get("target") else "")
-              + f" - {r['mutant'][:90]}")
-    for r in res.get("retracted") or []:
-        print(f"  RETRACTED {r['criterion'] or '?'} on {r['target']}:{r['line']} - a "
-              f"{r['verdict']!r} verdict was withdrawn: {r['reason']}", file=sys.stderr)
-    if res["ok"]:
-        # BOTH FIGURES, always. The row count and the criterion count used to be the same number
-        # by construction, so nothing could show them diverging - and the join silently reported
-        # the smaller one while claiming to have covered the plan.
-        criteria = len({r["ac"] for r in res["rows"]})
-        print(f"from-plan: {res['planned']} planned mutant(s) across {criteria} criterion/criteria, "
-              f"every one executed and killed")
-        return 0
-    # BOTH FIGURES ON THE REFUSAL BRANCH TOO. They were printed only on the branch that passes,
-    # so a plan whose row count and criterion count had diverged said nothing about it at the one
-    # moment the divergence matters - the moment something is owed. An independent review found
-    # that the criterion said "including on the REFUSAL branch" while the code changed only the
-    # success branch.
-    criteria = len({r["ac"] for r in res["rows"]})
-    print(f"from-plan: {res['unit']} - {res['planned']} planned mutant(s) across {criteria} "
-          f"criterion/criteria, {len(res['outstanding'])} unaccounted for:", file=sys.stderr)
-    for r in res["outstanding"]:
-        if r["verdict"] == NOT_RUN:
-            # NAME THE ROW, not just the criterion. With four mutants on one AC the old message
-            # printed the same sentence four times and identified none of them, so the reader
-            # could not tell which mutant was owed.
-            multi = sum(1 for x in res["rows"] if x["ac"] == r["ac"]) > 1
-            where = f"{r['ac']} row {r.get('row', 0)}" if multi else r["ac"]
-            row_flag = f" --row {r.get('row', 0)}" if multi else ""
-            print(f"from-plan: {res['unit']} {where} was PLANNED and never executed - "
-                  f"`{r['mutant'][:80]}` - a plan whose rows are optional measures nothing. "
-                  f"Apply it, then record it with `mutation.py register --unit {res['unit']} "
-                  f"--criterion {r['ac']}{row_flag} --anchor '<the text it replaced>' ...`",
-                  file=sys.stderr)
-        else:
-            print(f"from-plan: {res['unit']} {r['ac']} mutant SURVIVED on {r.get('target')} - "
-                  f"the test named by that criterion did not notice `{r['mutant'][:80]}`. The "
-                  f"finding is about the TEST, not the mutant.", file=sys.stderr)
-    return 2
-
-
 #: The shortest reason that can be audited. A retraction withdraws recorded evidence, so "typo"
 #: or "wrong" names nothing a reader can check; the length is a floor on effort, not on honesty,
 #: and it is deliberately low because the real control is that the withdrawal is PUBLISHED.
@@ -2856,19 +2699,19 @@ def retract_mutant(root: Path | str, target, unit: str, criterion: str, line: in
                    mutant: str, verdict: str, reason: str) -> dict:
     """Withdraw a REGISTERED verdict, leaving the withdrawal on the record.
 
-    The problem this solves, and the trap it must not become. `plan_execution` holds the WORST
-    verdict per criterion, so a mutant registered `survived` by mistake cannot be corrected by
-    registering it `killed` - the survivor stands. That rule is right: to the tool, a genuine
-    correction and an author registering their way out of a survivor are byte-identical. Then the
-    self-contradiction check made the cost sharper still, refusing the transition in every mode
-    including `off`, so an author who mistyped was left worse off than one who left it wrong.
+    The problem this solves, and the trap it must not become. A later registration never
+    replaces an earlier one, so a mutant registered `survived` by mistake cannot be corrected by
+    registering it `killed` - the survivor stays on the record. That rule is right: to the tool, a
+    genuine correction and an author registering their way out of a survivor are byte-identical.
+    Then the self-contradiction check made the cost sharper still, refusing the transition in
+    every mode including `off`, so an author who mistyped was left worse off than one who left it wrong.
 
     A review round proposed SUPERSEDING the earlier row. That was implemented and reverted: it
-    reopens exactly the escape the worst-verdict rule closes, because a supersede is invisible.
+    reopens exactly the escape that keeping both rows closes, because a supersede is invisible.
 
     So the answer is not to make correction cheap - it is to make it VISIBLE. The row is marked
-    withdrawn rather than removed, carrying who withdrew it, when, and why. `plan_execution` and
-    the contradiction check skip withdrawn rows, so the correction works; every reader still sees
+    withdrawn rather than removed, carrying who withdrew it, when, and why. Every reader of a
+    unit's live rows skips withdrawn ones, so the correction works; every reader still sees
     that a verdict was withdrawn and can judge the reason. An author retracting their way out of
     a survivor now leaves a trail that says so, in the artefact a reviewer already reads.
 
@@ -2977,8 +2820,8 @@ def retractions(root: Path | str, unit: str | None = None) -> list:
 def audit_duplicates(root: Path | str) -> dict:
     """Every `(unit, criterion, row)` key the ledger holds more than one LIVE row for.
 
-    A row is live when it is not withdrawn, whether or not its entry is stale: `plan_execution`
-    skips a stale entry, but a reader cannot tell two rows apart from the join, and that is the
+    A row is live when it is not withdrawn, whether or not its entry is stale: a stale entry
+    is no evidence, but a reader cannot tell two rows apart from the join, and that is the
     harm this audit exists to name. Each row carries its target and hash, so a same-row pair on
     two entries can be told from a pair inside one; a row whose entry `entry_staleness` reports
     `stale` or `missing` is tagged. `row` None and `row` 0 read as one slot: `register` writes 0

@@ -25,26 +25,26 @@ Key the join by (criterion, mutant) or by row index, so every declared row is a 
 ## Acceptance Criteria
 
 - [x] **AC1** Given a Test Plan declaring two mutants for one criterion, when `verify_ac._testplan_rows` builds the join, then the number of entries it returns equals the criterion-row count a plain text scan of the same file reports - asserted against that independent reader, never against the repaired function's own idea of what it holds
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MultiRowTestPlanTests::test_the_parser_returns_one_entry_per_declared_row
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0912: `verify_ac.py testplan derive` and the plan-row readers were deleted; a unit's criteria and their Verify selectors are its test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC2** Given that plan with a kill registered for EVERY declared row - `cmd_from_plan` prints its planned figure only on the all-executed branch, so a partly-executed fixture asserts against absent output - when `mutation.py run --from-plan` reports, then the planned count equals the number of declared ROWS, not the number of distinct criteria
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RowKeyedJoinTests::test_the_planned_count_is_rows_not_criteria
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0912: `mutation.plan_execution`, the plan-to-ledger join, was deleted with the test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC3** Given the mutation ledger, when a mutant is registered against a unit, then the record carries a ROW identity and not only `unit` plus `criterion`, so two mutants on one criterion are distinguishable on the record - and an existing entry with no row key still reads back rather than being orphaned
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RowKeyedJoinTests::test_the_record_carries_a_row_identity
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0912: `mutation.plan_execution`, the plan-to-ledger join, was deleted with the test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC4** Given a plan carrying two rows on a criterion of which only one was executed, when `transition._planned_mutant_gate` reads the join, then it refuses and NAMES the unexecuted row - today it appends one sentence per CRITERION and drops the mutant text, so two rows on AC13 print the same sentence twice and identify neither
   - **Verify:** manual - retired by US0911: the planned-mutant gate whose refusal named the row is deleted
   - **Verified:** manual (2026-09-25) - retired, superseded by US0911
 - [x] **AC5** Given BG0592's artefact, when `--from-plan` runs against it end to end, then the planned count it prints equals the criterion-row count scanned directly from that file - the same production mutant as AC2, declared here as its instance over a real artefact rather than counted as a second mutant
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RowKeyedJoinTests::test_the_corpus_artefact_agrees_with_a_plain_scan
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0912: `mutation.plan_execution`, the plan-to-ledger join, was deleted with the test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC6** Given a plan with exactly one row per criterion, when `--from-plan` runs, then its planned count is unchanged from today's - and the control must survive a join that double-counts, which is why adding the criterion back into the row key cannot be this row's mutant: on a single-row plan that leaves the count identical, so it is equivalent by construction
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RowKeyedJoinTests::test_a_single_row_plan_counts_the_same_as_before
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0912: `mutation.plan_execution`, the plan-to-ledger join, was deleted with the test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC7** Given a Test Plan whose row count and criterion count differ, when `mutation.py`'s report prints - including on the REFUSAL branch, which prints neither figure today - then it states both, so a future divergence is visible rather than silent
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RowKeyedJoinTests::test_the_report_states_both_figures
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0912: `mutation.plan_execution`, the plan-to-ledger join, was deleted with the test plan
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC8** Given the plan-review brief and the mutation help page, when a multi-row plan becomes legal, then both say so: `critic._plan_review_brief` hard-codes "one row per criterion" into the brief handed to every future plan reviewer, and `help/mutation.md` documents the worst verdict as held per criterion - a format change the shipped guidance contradicts is one nobody will use
   - **Verify:** manual - retired by US0915: the plan-review brief whose one-row-per-criterion sentence this pinned was deleted with plan review
   - **Verified:** manual (2026-09-25) - retired, superseded by US0915
@@ -79,3 +79,4 @@ The done-gate reads this join to decide whether a unit's planned mutants were ex
 | 2026-08-20 | sdlc-studio | AC5's declared mutant SURVIVED its own test: the verifier pointed at a SYNTHETIC fixture where the criterion names BG0592's real artefact. It now scans the corpus artefact and asserts agreement rather than the literal 18 |
 | 2026-09-25 | Claude Opus 5.5 | AC4 retired by US0911 (D0259 pattern): the planned-mutant gate whose refusal named the row is deleted |
 | 2026-09-25 | Claude Opus 5.5 | AC8 retired by US0915 (D0259 pattern): the plan-review brief it pinned was deleted |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3, AC5, AC6, AC7 retired by US0912 (D0259 pattern): the multi-row plan parser and `plan_execution`, the plan-to-ledger join, were deleted |
