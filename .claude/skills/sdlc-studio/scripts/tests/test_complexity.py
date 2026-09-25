@@ -9,10 +9,11 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import contextmanager, redirect_stdout
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parent.parent / "complexity.py"
@@ -36,6 +37,23 @@ def _cog(src: str, name: str) -> int:
 
 def _cyc(src: str, name: str) -> int:
     return next(f["cyclomatic"] for f in cx.analyse_source(src) if f["name"] == name)
+
+
+@contextmanager
+def _git_repo():
+    """A throwaway git repository and a `run` for git commands in it.
+
+    BG0711: every `git commit` starts a detached `git maintenance run --auto`, which from git
+    2.55 outlives the commit and still works in `.git` while the directory is being removed.
+    Automatic maintenance is off, so nothing else writes there, and a cleanup error cannot fail
+    a test whose subject is churn, not directory removal."""
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d:
+        env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+               "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t", "HOME": d}
+        run = lambda *a: subprocess.run(["git", "-C", d, *a], env=env, capture_output=True)
+        run("init")
+        run("config", "maintenance.auto", "false")
+        yield Path(d), run
 
 
 class CognitiveTests(unittest.TestCase):
@@ -262,14 +280,7 @@ class CompositeRiskTests(unittest.TestCase):
         self.assertEqual(band, "low")
 
     def test_churn_from_git_history(self) -> None:
-        import subprocess
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
-                   "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t", "HOME": d}
-            run = lambda *a: subprocess.run(["git", "-C", str(root), *a], env={**env},
-                                            capture_output=True)
-            run("init")
+        with _git_repo() as (root, run):
             for i in range(3):
                 (root / "hot.py").write_text(f"x = {i}\n", encoding="utf-8")
                 run("add", "hot.py")
@@ -291,14 +302,7 @@ class CompositeRiskTests(unittest.TestCase):
     def test_assess_finds_churn_for_absolute_path(self) -> None:
         # The HIGH bug: churn keys are repo-relative; assess must resolve an ABSOLUTE
         # path (what sprint passes) back to the repo-relative key, not miss to 0.
-        import subprocess
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
-                   "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t", "HOME": d}
-            run = lambda *a: subprocess.run(["git", "-C", str(root), *a], env={**env},
-                                            capture_output=True)
-            run("init")
+        with _git_repo() as (root, run):
             f = root / "hot.py"
             for i in range(20):  # lots of churn -> should drive a high band
                 f.write_text(f"def s(a):\n    return a + {i}\n", encoding="utf-8")
@@ -315,14 +319,7 @@ class CompositeRiskTests(unittest.TestCase):
         # BG0145: a docs file produces no scored function, so code difficulty is `unknown` - but
         # its CHURN is still derivable and must drive the risk band. Code and risk were wrongly
         # made to go missing together for a non-code change.
-        import subprocess
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
-                   "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t", "HOME": d}
-            run = lambda *a: subprocess.run(["git", "-C", str(root), *a], env={**env},
-                                            capture_output=True)
-            run("init")
+        with _git_repo() as (root, run):
             f = root / "hot.md"
             for i in range(20):   # a constantly-churning doc
                 f.write_text(f"# Doc\n\nrev {i}\n", encoding="utf-8")

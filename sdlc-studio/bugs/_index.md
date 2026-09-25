@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 24 |
 | In Progress | 0 |
-| Fixed | 623 |
+| Fixed | 624 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
 | Superseded | 28 |
-| **Total** | **781** |
+| **Total** | **782** |
 
 ## All Bugs
 
@@ -69,7 +69,7 @@
 | [BG0708](BG0708-gate-py-reads-sdlc-verify-timeout-per-call.md) | gate.py reads SDLC_VERIFY_TIMEOUT per call, so a previously hermetic suite now inherits whatever the environment sets | Open | Medium | 2026-09-16 | 2026-09-16 |
 | [BG0709](BG0709-the-pre-push-red-main-check-trusts-the.md) | the pre-push red-main check trusts the forge's ordering, so a stale first row demands acknowledgement of a two-month-old red | Fixed | Medium | 2026-09-16 | 2026-09-16 |
 | [BG0710](BG0710-the-close-prints-the-run-s-cost-before.md) | the close prints the run's cost before the step that captures it, so every close reports the sprint as not attributable | Superseded | Medium | 2026-09-16 | 2026-09-16 |
-| [BG0711](BG0711-test-complexity-s-temporary-git-fixture-races-its.md) | test_complexity's temporary git fixture races its own cleanup on CI, reddening main on a teardown rather than a failure | Open | Medium | 2026-09-17 | 2026-09-17 |
+| [BG0711](BG0711-test-complexity-s-temporary-git-fixture-races-its.md) | test_complexity's temporary git fixture races its own cleanup on CI, reddening main on a teardown rather than a failure | Fixed | Medium | 2026-09-17 | 2026-09-17 |
 | [BG0712](BG0712-a-local-guard-that-tolerates-what-a-criterion.md) | a local guard that tolerates what a criterion refuses lets a breach pass the commit and redden CI | Open | Medium | 2026-09-17 | 2026-09-17 |
 | [BG0713](BG0713-the-per-unit-coverage-gate-charges-a-unit.md) | the per-unit coverage gate charges a unit for its batch siblings' added lines in a shared file | Won't Fix | High | 2026-09-18 | 2026-09-18 |
 | [BG0714](BG0714-284-added-lines-of-run-01m2spns-are-executed.md) | 284 added lines of RUN-01M2SPNS are executed by no verifier in the run, and BG0706's proposed fix inherits most of the false charge | Open | Medium | 2026-09-18 | 2026-09-18 |
@@ -140,6 +140,7 @@
 | [BG0779](BG0779-the-pre-commit-hook-hides-the-stamped-test.md) | The pre-commit hook hides the stamped-test re-read list on a passing commit | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0780](BG0780-the-allocation-lock-fails-closed-on-a-non.md) | The allocation lock fails closed on a non-busy flock error, and three callers mishandle its timeout | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0781](BG0781-a-busy-lock-reported-as-eacces-fails-at.md) | A busy lock reported as EACCES fails at once, and two lock warnings advise a retry that duplicates | Fixed | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0782](BG0782-about-57-test-modules-commit-in-a-temporary.md) | About 57 test modules commit in a temporary git repo with auto-maintenance on, the race BG0711 fixed in one | Open | Medium | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 

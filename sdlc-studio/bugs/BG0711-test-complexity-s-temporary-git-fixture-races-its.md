@@ -1,6 +1,6 @@
 # BG0711: test_complexity's temporary git fixture races its own cleanup on CI, reddening main on a teardown rather than a failure
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_complexity.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_complexity_teardown.py, changelog.d/BG0711.md
@@ -26,8 +26,10 @@ Remove the tree with an ignore-errors sweep after the assertions rather than lea
 
 - [ ] **AC1** Given `CompositeRiskTests.test_assess_finds_churn_for_absolute_path` run with the temporary directory's cleanup patched to raise `OSError(39, 'Directory not empty')`, when the test runs under unittest, then it reports success. Fails on: HEAD, whose `tempfile.TemporaryDirectory()` context manager (test_complexity.py:295) raises in teardown and the run reads errors=1
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_complexity_teardown.py::ComplexityTeardownTests::test_a_cleanup_race_does_not_fail_the_churn_test
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given the same test run with `complexity`'s churn lookup patched to return 0 for the hot file, then it fails. Fails on: a fix that skips the test on CI or wraps its body in a broad except, so its assertion no longer bites
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_complexity_teardown.py::ComplexityTeardownTests::test_the_churn_assertion_still_fails_on_a_miss
+  - **Verified:** yes (2026-09-25)
 
 ## Notes
 
