@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 25 |
+| Open | 24 |
 | In Progress | 0 |
-| Fixed | 622 |
+| Fixed | 623 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
@@ -139,7 +139,7 @@
 | [BG0778](BG0778-the-retro-reads-only-four-digit-ids-in.md) | The retro reads only four-digit ids in dispositions and carried rows, so a v3 project's ULID ids are dropped | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0779](BG0779-the-pre-commit-hook-hides-the-stamped-test.md) | The pre-commit hook hides the stamped-test re-read list on a passing commit | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0780](BG0780-the-allocation-lock-fails-closed-on-a-non.md) | The allocation lock fails closed on a non-busy flock error, and three callers mishandle its timeout | Fixed | Medium | 2026-09-25 | 2026-09-25 |
-| [BG0781](BG0781-a-busy-lock-reported-as-eacces-fails-at.md) | A busy lock reported as EACCES fails at once, and two lock warnings advise a retry that duplicates | Open | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0781](BG0781-a-busy-lock-reported-as-eacces-fails-at.md) | A busy lock reported as EACCES fails at once, and two lock warnings advise a retry that duplicates | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 

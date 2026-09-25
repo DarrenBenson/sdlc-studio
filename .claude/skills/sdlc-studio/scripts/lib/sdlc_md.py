@@ -2342,7 +2342,17 @@ def atomic_write(path, text: str, encoding: str = "utf-8") -> None:
 
 class AllocationLockTimeout(TimeoutError):
     """The allocation lock could not be taken in time, so the writer wrote nothing. An OSError,
-    so every CLI that already reports an OSError reports this one with its non-zero exit."""
+    so every CLI that already reports an OSError reports this one with its non-zero exit.
+    `reason` is the message without its remedy, for a caller whose primary write already
+    landed, where a retry would duplicate it."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(f"{reason}, so nothing was written; retry once it finishes")
+        self.reason = reason
+
+
+class AllocationLockError(OSError):
+    """A flock error no wait can clear (ENOLCK on NFS with no lock daemon); carries its errno."""
 
 
 @contextlib.contextmanager
@@ -2353,7 +2363,9 @@ def allocation_lock(repo_root, timeout: float = 10.0):
     never runs, because proceeding without the lock loses concurrent rows. A killed holder
     cannot wedge the next writer: the kernel releases a flock when its holder dies. Only a busy
     lock is waited on; any other flock error (ENOLCK on NFS with no lock daemon) is raised at
-    once with its errno. A no-op where `flock` is unavailable (Windows) or the lock directory
+    once with its errno. EACCES from flock counts as busy (SMB reports a held lock so): flock
+    needs only the descriptor `open` already gave, so a real permission error surfaces at the
+    `open`, before any wait. A no-op where `flock` is unavailable (Windows) or the lock directory
     is unwritable."""
     import time
     lockdir = Path(repo_root) / "sdlc-studio" / ".local"
@@ -2371,17 +2383,18 @@ def allocation_lock(repo_root, timeout: float = 10.0):
             try:
                 fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                 break
-            except BlockingIOError:        # busy: another writer holds it, so wait
-                if time.monotonic() > deadline:
-                    raise AllocationLockTimeout(
-                        f"could not take the allocation lock {lock_file} after waiting "
-                        f"{timeout:g}s: another writer still holds it, so nothing was written; "
-                        f"retry once it finishes") from None
-                time.sleep(0.02)
-            except OSError as exc:         # ENOLCK and kin: no wait can take this lock
-                raise OSError(exc.errno, f"could not take the allocation lock {lock_file}: "
-                              f"{errno.errorcode.get(exc.errno, exc.errno)} "
-                              f"({exc.strerror}), so nothing was written") from exc
+            except OSError as exc:
+                if isinstance(exc, BlockingIOError) or exc.errno == errno.EACCES:  # busy: wait
+                    if time.monotonic() > deadline:
+                        raise AllocationLockTimeout(
+                            f"could not take the allocation lock {lock_file} after waiting "
+                            f"{timeout:g}s: another writer still holds it") from None
+                    time.sleep(0.02)
+                    continue
+                raise AllocationLockError(          # ENOLCK and kin: no wait can take it
+                    exc.errno, f"could not take the allocation lock {lock_file}: "
+                    f"{errno.errorcode.get(exc.errno, exc.errno)} ({exc.strerror}), "
+                    f"so nothing was written") from exc
         yield
     finally:
         try:

@@ -1846,8 +1846,8 @@ def _attribute_to_open_batch(root, finding_id: str) -> str | None:
         from lib import run_state  # noqa: PLC0415 - deferred sibling, as elsewhere here
         return run_state.note_finding(root, finding_id)
     except sdlc_md.AllocationLockTimeout as exc:  # the filing stands; the gap is said aloud
-        print(f"warning: {finding_id} is filed but not attributed to the open batch - {exc}",
-              file=sys.stderr)
+        print(f"warning: {finding_id} is filed but not attributed to the open batch - "
+              f"{exc.reason}", file=sys.stderr)
         return None
     except Exception as exc:  # noqa: BLE001 - attribution must never block a filing
         sdlc_md.debug("file_finding._attribute_to_open_batch", exc)

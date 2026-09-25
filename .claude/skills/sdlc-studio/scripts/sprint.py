@@ -9106,7 +9106,8 @@ def _file_the_report(root, retro_id):
     try:
         run_state.stamp_tokens(root, "report")
     except sdlc_md.AllocationLockTimeout as exc:   # the close goes on; the missing stamp is said
-        print(f"warning: the report-time token stamp was not recorded - {exc}", file=sys.stderr)
+        print(f"warning: the report-time token stamp was not recorded - {exc.reason}",
+              file=sys.stderr)
     except Exception as exc:               # noqa: BLE001 - an unreadable meter is not a failed close
         sdlc_md.debug("sprint.file_the_report.stamp", exc)
     try:
@@ -11569,7 +11570,7 @@ def main(argv: list[str] | None = None) -> int:
     args.root = str(sdlc_md.resolve_root(args))
     try:
         return args.func(args)
-    except sdlc_md.AllocationLockTimeout as exc:   # a writer that waited in vain wrote nothing
+    except (sdlc_md.AllocationLockTimeout, sdlc_md.AllocationLockError) as exc:  # wrote nothing
         print(f"error: {exc}", file=sys.stderr)
         return 1
 

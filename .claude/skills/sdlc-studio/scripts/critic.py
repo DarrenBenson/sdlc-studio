@@ -457,7 +457,8 @@ def provisional_verdict(repo_root: Path | str, unit: str, verdict: str, reviewer
         except sdlc_md.AllocationLockTimeout as exc:
             # the refusal below is the reason; the row it leaves behind is the damage to name
             print(f"error: the provisional {verdict.upper()} row for {sdlc_md.norm_id(unit)} "
-                  f"could not be withdrawn from {path} and still stands - {exc}",
+                  f"could not be withdrawn and still stands; remove that row from {path} "
+                  f"once the lock is free - {exc.reason}",
                   file=sys.stderr)
         raise
     if bug := _carry_if_capped(repo_root, unit, verdict, path):
