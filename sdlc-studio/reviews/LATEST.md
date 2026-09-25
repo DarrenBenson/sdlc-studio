@@ -1,5 +1,5 @@
 <!-- close-status:begin -->
-> **RUN-01M39MC0 closed running.** 16 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
+> **RUN-01M3BK9Y closed running.** 35 unit(s) in the batch. **The run signature is OWED and is the operator's** - `sprint sign` seals the batch in one signature.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 > **RUN-01M3BK9Y, Sprint 4 of back to basics: history-aware review, and the review paperwork

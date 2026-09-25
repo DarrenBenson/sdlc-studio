@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-09-24
+**Last Updated:** 2026-09-25
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 20 |
+| Proposed | 21 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 507 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 48 |
 | Blocked | 0 |
-| **Total** | **597** |
+| **Total** | **598** |
 
 ## All Changes
 
@@ -95,6 +95,7 @@
 | [CR-0595](CR0595-prevent-or-retire-lesson-lc-002-criterion-words.md) | Prevent or retire lesson LC-002 (criterion words outrun the fixture) | Proposed | Medium | Improvement | 2026-09-24 | -- |
 | [CR-0596](CR0596-prevent-or-retire-lesson-lc-006-absence-read.md) | Prevent or retire lesson LC-006 (absence read as an answer) | Proposed | Medium | Improvement | 2026-09-24 | -- |
 | [CR-0597](CR0597-prevent-or-retire-lesson-lc-008-constraint-added.md) | Prevent or retire lesson LC-008 (constraint added without retirement) | Proposed | Medium | Improvement | 2026-09-24 | -- |
+| [CR-0598](CR0598-prevent-or-retire-lesson-lc-003-mechanism-reaches.md) | Prevent or retire lesson LC-003 (mechanism reaches no caller) | Proposed | Medium | Improvement | 2026-09-25 | -- |
 
 ## Archived Releases
 
