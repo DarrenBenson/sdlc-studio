@@ -2304,13 +2304,19 @@ def atomic_write(path, text: str, encoding: str = "utf-8") -> None:
         raise
 
 
+class AllocationLockTimeout(TimeoutError):
+    """The allocation lock could not be taken in time, so the writer wrote nothing. An OSError,
+    so every CLI that already reports an OSError reports this one with its non-zero exit."""
+
+
 @contextlib.contextmanager
 def allocation_lock(repo_root, timeout: float = 10.0):
     """Advisory cross-process lock around id allocation + write, so two concurrent writers do
-    not mint the same sequential id or clobber a shared index. Best-effort: a no-op where
-    `flock` is unavailable (Windows), and it proceeds rather than hang if the lock cannot be
-    taken within `timeout` (a stale lock must never wedge an agent wave). v3 ULID allocation
-    is already collision-free, so this most matters for the v2 sequential path."""
+    not mint the same sequential id or clobber a shared index. Fails closed: when the lock
+    cannot be taken within `timeout` it raises `AllocationLockTimeout` and the writer's block
+    never runs, because proceeding without the lock loses concurrent rows. A killed holder
+    cannot wedge the next writer: the kernel releases a flock when its holder dies. A no-op
+    where `flock` is unavailable (Windows) or the lock directory is unwritable."""
     import time
     lockdir = Path(repo_root) / "sdlc-studio" / ".local"
     try:
@@ -2319,16 +2325,20 @@ def allocation_lock(repo_root, timeout: float = 10.0):
     except (OSError, ImportError):
         yield  # non-POSIX or unwritable: degrade to no lock
         return
-    fh = open(lockdir / "allocation.lock", "w")  # noqa: SIM115 - released in finally
+    lock_file = lockdir / "allocation.lock"
+    fh = open(lock_file, "w")  # noqa: SIM115 - released in finally
     try:
-        deadline = time.time() + timeout
+        deadline = time.monotonic() + timeout
         while True:
             try:
                 fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                 break
             except OSError:
-                if time.time() > deadline:
-                    break  # contended past the timeout: proceed rather than wedge the wave
+                if time.monotonic() > deadline:
+                    raise AllocationLockTimeout(
+                        f"could not take the allocation lock {lock_file} after waiting "
+                        f"{timeout:g}s: another writer still holds it, so nothing was written; "
+                        f"retry once it finishes") from None
                 time.sleep(0.02)
         yield
     finally:
