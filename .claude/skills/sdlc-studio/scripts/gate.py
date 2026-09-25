@@ -517,7 +517,7 @@ BLOCKING_ON_ERROR = {
     "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
     "lessons-summary", "lessons-validity", "handoff", "review-legs",
     "engagement-floor", "review-current", "close-owed", "window",
-    "changelog-fragments", "derived-depth", "evidence-drift", "module-alone", "full-suite",
+    "changelog-fragments", "evidence-drift", "module-alone", "full-suite",
 }
 
 def _changelog(root: str) -> dict:
@@ -807,28 +807,6 @@ def _release_rehearsal(root: str) -> dict:
 #: refused. Under `.local/`, which is gitignored: the first version of the claim-drift
 #: accumulator wrote to a TRACKED path and dirtied the working tree on every commit.
 _REVERT_YIELD_REL = "sdlc-studio/.local/revert-check-yield.json"
-
-
-def _derived_depth(root: str) -> dict:
-    """BLOCKING lane: a hand-edit inside the derived half of a `Verification depth`.
-
-    The counted half is derived output and is refused the way a hand-edited `_index.md` is.
-    Judged against the span's OWN seal rather than by re-deriving it: re-derivation needs the
-    mutation ledger, which is gitignored, so it would refuse every unit in a fresh clone.
-
-    Scoped to fields that CARRY a derived span. Most of this corpus holds a hand-authored depth
-    field with no derived half, and those are the pre-existing state rather than a fault.
-    """
-    import verify_ac as _va  # noqa: PLC0415 - deferred; it owns the field's format
-    root = Path(root)
-    units = _va.walk_units(_va.unit_dirs(root, root / "sdlc-studio" / "stories"))
-    faults = _va.depth_edit_faults(units)
-    if not faults:
-        return {"count": 0, "blocking": True,
-                "detail": f"{len(units)} unit(s), every derived half matches its own seal"}
-    return {"count": len(faults), "blocking": True,
-            "detail": "; ".join(f["why"] for f in faults[:3])
-                      + (f" (+{len(faults) - 3} more)" if len(faults) > 3 else "")}
 
 
 def _clip_reason(text: str, limit: int = 300) -> str:
@@ -1196,9 +1174,8 @@ def _revert_check(root: str) -> dict:
 def _first_three(items: list) -> str:
     """The first three, and a count of what was dropped.
 
-    A silent truncation reads as "that was all of them". The sibling `_derived_depth` in this
-    same file already prints its remainder; this one did not, so a batch with four or more
-    refused units quietly under-delivered the lane's own promise to name each one.
+    A silent truncation reads as "that was all of them", so a batch with four or more refused
+    units would quietly under-deliver the lane's own promise to name each one.
     """
     head = "; ".join(items[:3])
     return head + (f" (+{len(items) - 3} more)" if len(items) > 3 else "")
@@ -1235,7 +1212,6 @@ DEFAULT_CHECKS = {
     # Structure + hand-edit are COMMITTED faults, so the changelog lane runs in the standard
     # gate too; --release swaps in the superset that also refuses a stray fragment at the cut.
     "changelog-fragments": _changelog,
-    "derived-depth": _derived_depth,
     "evidence-drift": _evidence_drift,
 }
 

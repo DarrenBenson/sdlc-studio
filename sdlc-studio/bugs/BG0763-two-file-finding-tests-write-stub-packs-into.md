@@ -1,9 +1,9 @@
 # BG0763: Two file_finding tests write stub packs into the shipped audit-profiles folder, so parallel runs race
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_audit_pack_isolation.py, changelog.d/BG0763.md
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,12 +23,14 @@ Point `file_finding`'s pack lookup at a per-test temporary copy of the packs fol
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `test_file_finding.py`'s AuditAttributionUnheldInvariantsTests write zz-review-stub.md and zz-review-dupe.md into the real templates/audit-profiles/ directory.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Run the commit hook's selected suites under load with `test_file_finding.py` selected; about one run in several fails...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Point `file_finding`'s pack lookup at a per-test temporary copy of the packs folder (a parameter or environment override the tests set), so no test writes into...
+- [ ] **AC1** Given the audit-attribution tests that need a stub or duplicate pack, when they run, then they write it into a per-test temporary copy of the packs folder and nothing is written under the shipped `templates/audit-profiles/`; a fix that only reorders or serialises the tests, leaving the writes in the shipped folder, fails it
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_audit_pack_isolation.py::AuditPackIsolationTests::test_no_test_writes_into_the_shipped_packs_folder
+- [ ] **AC2** Given the stub and duplicate pack tests run concurrently under pytest-xdist, then each still proves its own case (a stub pack elsewhere does not break an unrelated filing; an ambiguous lens is refused) with no cross-test interference; a lookup that ignores the override and reads the shipped folder fails it
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_audit_pack_isolation.py::AuditPackIsolationTests::test_the_pack_lookup_reads_the_override_not_the_shipped_folder
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-25 | sdlc-studio | Filed |
+| 2026-09-25 | Claude Opus 5.5 | Criteria authored with Verify lines; joined the Sprint 4 batch after the race refused three commits |

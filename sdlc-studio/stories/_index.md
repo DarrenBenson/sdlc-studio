@@ -10,9 +10,9 @@
 | Draft | 41 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 7 |
+| In Progress | 6 |
 | Review | 0 |
-| Done | 728 |
+| Done | 729 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 72 |
@@ -268,7 +268,7 @@
 | [US0907](US0907-the-backlog-holds-only-the-work-the-lean.md) | The backlog holds only the work the lean direction still wants | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0908](US0908-the-skill-s-scripts-run-on-the-python.md) | The skill's scripts run on the Python 3.10 it declares | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0909](US0909-a-story-reaches-in-progress-and-done-without.md) | A story reaches In Progress and Done without a plan review | In Progress | EP0263 | 2026-09-24 | 2026-09-24 |
-| [US0910](US0910-a-bug-reaches-fixed-without-a-verification-depth.md) | Verification depth is no longer derived, and the gate runs no depth lane | In Progress | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0910](US0910-a-bug-reaches-fixed-without-a-verification-depth.md) | Verification depth is no longer derived, and the gate runs no depth lane | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0911](US0911-a-unit-reaches-done-without-a-test-plan.md) | A unit reaches Done without a test plan or a falsifiability probe | In Progress | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0912](US0912-the-test-plan-tooling-is-gone-and-an.md) | The test-plan tooling is gone and an old Test Plan section is inert | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0913](US0913-a-repair-closes-without-a-reviewed-repair-plan.md) | A repair closes without a reviewed repair plan | Done | EP0263 | 2026-09-24 | 2026-09-24 |

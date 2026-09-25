@@ -15,7 +15,7 @@ Groomed for Sprint 4 on 2026-09-25 from the engineering-seat readiness review: 2
 ## Story Breakdown
 
 - [ ] [US0909: A story reaches In Progress and Done without a plan review](../stories/US0909-a-story-reaches-in-progress-and-done-without.md)
-- [ ] [US0910: A bug reaches Fixed without a verification depth tier](../stories/US0910-a-bug-reaches-fixed-without-a-verification-depth.md)
+- [x] [US0910: A bug reaches Fixed without a verification depth tier](../stories/US0910-a-bug-reaches-fixed-without-a-verification-depth.md)
 - [ ] [US0911: A unit reaches Done without a test plan or a falsifiability probe](../stories/US0911-a-unit-reaches-done-without-a-test-plan.md)
 - [ ] [US0912: The test-plan tooling is gone and an old Test Plan section is inert](../stories/US0912-the-test-plan-tooling-is-gone-and-an.md)
 - [x] [US0913: A repair closes without a reviewed repair plan](../stories/US0913-a-repair-closes-without-a-reviewed-repair-plan.md)

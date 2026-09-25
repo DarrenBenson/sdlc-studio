@@ -5677,8 +5677,9 @@ class MisplacedCriterionGateTests(unittest.TestCase):
 class CoverageGateTests(unittest.TestCase):
     """US0816: the Fixed and Done gates refuse a unit whose own verifiers never executed a line
     it added, under `review.line_coverage: block`; report and off are the other modes; a ruled
-    line is subtracted and counted in the depth field; a ruling on stale bytes counts for
-    nothing; the base ref belongs to the run whose batch names the unit, open or closed."""
+    line is subtracted from uncovered and live at the bytes the gate reads; a ruling on stale
+    bytes counts for nothing; the base ref belongs to the run whose batch names the unit, open
+    or closed."""
 
     UNIT = "BG0001"
     PROD = "src/thing.py"
@@ -5783,9 +5784,9 @@ class CoverageGateTests(unittest.TestCase):
             self.assertIn("## Coverage Rulings", self._status(root))
             rc, out, err = self._set(root)
             self.assertEqual(rc, 0, out + err); self.assertIn("> **Status:** Fixed", self._status(root))
-            facts = verify_ac.write_depth(root, self.UNIT)
-            self.assertTrue(facts.get("ok"), facts)
-            self.assertIn("lines ruled 1", self._status(root))
+            # the ruling is live at the bytes the gate reads: the reader the gate subtracts with
+            live, stale = verify_ac.live_rulings(root, self._status(root))
+            self.assertEqual((1, 0), (len(live), len(stale)), (live, stale))
             # The recommended path: the reason read off disk, so a backtick in it is stored,
             # not executed - and a second ruling appends to the table the first one made.
             (root / "ruling.json").write_text(json.dumps({"file": self.PROD, "line": 1, "reason": "a `$(second)` reason long enough to pass the floor"}), encoding="utf-8")

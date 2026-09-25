@@ -2536,8 +2536,8 @@ def add_coverage_ruling(root, unit_path: Path, rel: str, line: int, reason: str,
     for r in coverage_rulings(text if (text := sdlc_md.read_text_safe(unit_path)) else ""):
         if r["file"] == rel and int(r["line"]) == int(line) and r["hash"] == digest[:len(r["hash"])]:
             raise ValueError(f"coverage rule refused: {rel}:{line} already carries a live ruling on "
-                             f"these bytes - a second row for one line inflates `lines ruled` and "
-                             f"says nothing the first does not")
+                             f"these bytes - a second row for one line double-counts it in the "
+                             f"report's live rulings and says nothing the first does not")
     text = sdlc_md.read_text_safe(unit_path)
     # A markdown cell cannot hold a raw `|` or a newline: interpolated, the first splits the row
     # into more cells than the header has and the second splits it across two lines, and the row
@@ -2650,7 +2650,8 @@ def cmd_coverage(args: argparse.Namespace) -> int:
               f"- the row stays in the table with its reason, and counts for nothing from here")
         return 0
     print(f"coverage rule: {sdlc_md.norm_id(args.id)} {res['file']}:{res['line']} ruled equivalent "
-          f"on hash {res['hash']} - counted in the depth field, void when the file's bytes change")
+          f"on hash {res['hash']} - subtracted from uncovered in the coverage report, void when "
+          f"the file's bytes change")
     return 0
 
 
@@ -5079,349 +5080,26 @@ def cmd_revert_check(args: argparse.Namespace) -> int:
     return 0 if res["ok"] else 1
 
 
-# -----------------------------------------------------------------------------
-# Derived `Verification depth`
-# -----------------------------------------------------------------------------
-
-#: The delimiters around the DERIVED half of `Verification depth`. Visible rather than an HTML
-#: comment: a fact a reader cannot see is one nobody checks, and this is the field a reviewer
-#: reads first to decide how hard to look.
-DERIVED_OPEN = "[[derived:"
-DERIVED_CLOSE = "]]"
-_DERIVED_RE = re.compile(r"\s*\[\[derived:.*?\]\]", re.S)
-_DEPTH_LINE_RE = re.compile(r"^(>\s*\*\*Verification depth:\*\*[ \t]*)(.*)$", re.M)
-#: The start of ANY blockquote field, used to tell a wrapped continuation line from the next
-#: field. `_DEPTH_LINE_RE` is line-anchored, so without this a field that wraps keeps its
-#: hand-typed counts on line two beside a derived span that contradicts them.
-_FIELD_START_RE = re.compile(r"^>\s*\*\*[^*]+:\*\*")
-#: The span's own contents, split into the facts and the fingerprint that seals them.
-_DERIVED_SPAN_RE = re.compile(
-    r"\[\[derived:(?P<facts>.*?)(?:\|\s*fp\s*(?P<fp>[0-9a-f]{6,}))?\s*\]\]", re.S)
-#: How the derived half is regenerated. Named in the refusal, because a refusal with no stated
-#: escape would leave a batch's own depth fields uncorrectable and its tree uncommittable.
-DEPTH_REGEN_CMD = "verify_ac.py depth --unit {unit} --write"
+#: Verbs removed from the parser, each refused BY NAME. Kept out of the parser itself so neither
+#: `--help` nor the derived command surface lists them.
+RETIRED_VERBS = {
+    "depth": "no `Verification depth` is derived any more",
+    "depth-check": "no `Verification depth` is derived or checked any more",
+}
 
 
-def depth_fingerprint(facts: str) -> str:
-    """The seal over a derived span's facts.
-
-    A FINGERPRINT rather than a re-derivation, and that is the load-bearing choice. Re-deriving
-    would need the mutation ledger, which lives in gitignored `sdlc-studio/.local/` - so the
-    guard would report every unit as unsupported in a fresh clone and refuse the whole corpus.
-    This repository has already shipped a repair with exactly that shape once. The seal travels
-    in the artefact, so the check needs nothing but the file in front of it.
-    """
-    import hashlib  # noqa: PLC0415 - local: only the seal needs it
-    return hashlib.sha256(" ".join(facts.split()).encode("utf-8")).hexdigest()[:12]
-
-
-def depth_edit_faults(paths) -> list[dict]:
-    """Units whose DERIVED span no longer matches its own seal.
-
-    Scoped to fields that CARRY a span. A hand-authored `Verification depth` with no derived
-    half is the pre-existing state of most of this corpus and is left alone - a guard that
-    refused those would refuse 600 artefacts on the commit that shipped it, and a guard like
-    that gets switched off rather than satisfied.
-    """
-    out: list[dict] = []
-    for path in paths:
-        path = Path(path)
-        text = sdlc_md.read_text_safe(path)
-        if not text:
-            continue
-        match = _DEPTH_LINE_RE.search(text)
-        if not match:
-            continue
-        spans = list(_DERIVED_SPAN_RE.finditer(match.group(2)))
-        if not spans:
-            continue  # no derived half: nothing was sealed, so nothing can have been broken
-        unit = sdlc_md.extract_record_id(path.stem) or path.stem
-        # EVERY span is judged, not the first. A field carries exactly ONE derived half, so a
-        # second one is an edit inside the delimiters by construction - and judging only
-        # `search()`'s first hit made the verdict depend on WHERE the forged span was placed.
-        if len(spans) > 1:
-            why = (f"its field carries {len(spans)} derived halves and a field has exactly one, "
-                   f"so all but the first are hand-added")
-            actual = depth_fingerprint(spans[0].group("facts") or "")
-            claimed = spans[0].group("fp") or ""
-        else:
-            span = spans[0]
-            actual = depth_fingerprint(span.group("facts") or "")
-            claimed = span.group("fp")
-            if claimed == actual:
-                continue
-            why = ("its derived half carries no fingerprint" if not claimed
-                   else f"its derived half was edited by hand (seal {claimed}, contents hash {actual})")
-        out.append({"unit": unit, "path": str(path), "claimed": claimed or "", "actual": actual,
-                    "why": f"{unit}: {why}. The counted half is DERIVED output - regenerate it "
-                           f"with `{DEPTH_REGEN_CMD.format(unit=unit)}`, do not retype it. "
-                           f"Run it in the workspace whose mutation ledger holds this unit's "
-                           f"verdicts: the ledger is gitignored, so regenerating without it "
-                           f"is refused rather than allowed to erase what is recorded here"})
-    return out
-
-
-def _entry_point_split(root, text: str) -> dict:
-    """How many of a unit's criteria enter the SHIPPED entry point, and how many run in-process.
-
-    Derived by the detector `lane-check` already uses, per criterion and scoped to the node the
-    selector names. CR0548's motivating defect was a `Verification depth` claiming shipped-CLI
-    coverage that did not exist, and that claim is PROSE: deriving only the mutation counts
-    would leave it standing in the half no tool touches.
-    """
-    root = Path(root)
-    through = in_process = undetermined = unlocatable = 0
-    for block in criteria_blocks(text):
-        expr = (block.verifier or "").strip()
-        if not expr or _is_manual(expr):
-            continue
-        node = next((tok.rsplit("::", 1)[-1] for tok in expr.split() if "::" in tok), "")
-        targets = [root / t for t in _lane_test_paths(expr)]
-        targets = [t for t in targets if t.exists()]
-        if not targets:
-            unlocatable += 1
-            continue
-        # NODE-SCOPED ONLY. `_enters_the_lane` falls back to reading the WHOLE FILE when the
-        # named node cannot be isolated, and that fallback is right for `lane_check`, which is
-        # per-unit and report-only. Here it would be a per-criterion COUNT presented as derived
-        # fact: measured over this corpus, 185 of 311 through-CLI counts came from the fallback
-        # rather than from the criterion's own test. CR0548 was raised on a prose claim of
-        # shipped-CLI coverage that did not exist, and deriving the same claim from a detector
-        # that never read the criterion's node would re-manufacture it with the authority of
-        # derivation. What cannot be determined is REPORTED as undetermined.
-        scoped = [_node_source(sdlc_md.read_text_safe(t), node) for t in targets] if node else []
-        if not node or not any(s is not None for s in scoped):
-            undetermined += 1
-        elif any(_enters_the_lane(t, node) for t in targets):
-            through += 1
-        else:
-            in_process += 1
-    return {"located": through + in_process + undetermined, "through_cli": through,
-            "in_process": in_process, "undetermined": undetermined,
-            "unlocatable": unlocatable}
-
-
-def _unit_ledger_rows(root, uid: str) -> list[dict]:
-    """Every LIVE ledger mutant recorded against `uid`, whether or not a plan row claims it.
-
-    Read independently of the plan join, because the two answer different questions and the
-    field was asserting one from the other: a unit with no `## Test Plan` joined to nothing and
-    was rendered `EVIDENCE ABSENT - the ledger holds no executed row`, which is a claim about
-    the LEDGER derived from the absence of a PLAN. Measured over this corpus, 484 of the 561
-    units carrying a depth field have no test plan, so that was the majority case - and it hid
-    registered SURVIVORS, which is the one thing the gate exists to surface.
-    """
-    import mutation as _mut  # noqa: PLC0415 - deferred; mutation imports verify_ac back
-    out: list[dict] = []
+def _retired_verb(argv: list[str] | None) -> str | None:
+    """The retired verb `argv` invokes, or None. Tokenised by argparse with the global `--root`
+    declared, so `--root X depth` and `depth --root X` both resolve to the verb; a malformed
+    line is left for the real parser to refuse."""
+    pre = argparse.ArgumentParser(add_help=False, exit_on_error=False)
+    pre.add_argument("--root")
+    pre.add_argument("verb", nargs="?")
     try:
-        entries = _mut.ledger_entries(root)
-    except Exception:  # noqa: BLE001 - an unreadable ledger is reported, never raised here
-        return out
-    for entry in entries or []:
-        if not isinstance(entry, dict):
-            continue
-        for m in entry.get("mutants", []) or []:
-            if isinstance(m, dict) and m.get("unit") == uid and not m.get("withdrawn"):
-                out.append({"criterion": m.get("criterion"), "row": m.get("row"),
-                            "verdict": m.get("verdict"), "target": entry.get("target")})
-    return out
-
-
-def depth_facts(root, unit: str) -> dict:
-    """Every COUNT that belongs in a `Verification depth`, read from the artefact and the ledger.
-
-    A field nobody types cannot lie, and this one lied on five of six units in a single batch
-    while being the field a reviewer reads first. Counts come from `mutation.plan_execution`,
-    which joins the plan's rows to the ledger on the criterion and row recorded at
-    registration - never on the mutant's prose.
-
-    An ABSENT ledger and a ledger of noughts are different facts and are reported differently:
-    a reader who cannot tell them apart cannot judge the unit.
-    """
-    import mutation as _mut  # noqa: PLC0415 - deferred; mutation imports verify_ac back
-    root = Path(root)
-    found = sdlc_md.find_by_id(root, unit)
-    if not found:
-        return {"ok": False, "unit": unit, "errors": [f"{unit}: no artefact with that id"]}
-    path, _kind = found
-    text = sdlc_md.read_text_safe(path)
-    join = _mut.plan_execution(root, unit)
-    rows = join.get("rows", []) or []
-    verdicts = [str(r.get("verdict") or "") for r in rows]
-    uid = sdlc_md.norm_id(unit)
-    facts = {
-        "ok": True,
-        "unit": uid,
-        "path": str(path),
-        "criteria": sdlc_md.count_acs(text),
-        "rows": len(rows),
-        "killed": verdicts.count("killed"),
-        "survived": verdicts.count("survived"),
-        "equivalent": verdicts.count(_mut.EQUIVALENT_VERDICT),
-        "unnameable": verdicts.count("unnameable"),
-        "not_run": [{"ac": r["ac"], "row": r.get("row", 0)} for r in rows
-                    if r.get("verdict") == _mut.NOT_RUN],
-        "retracted": len(join.get("retracted") or []),
-        # THREE DIFFERENT FACTS, and conflating any two of them is the defect this field
-        # exists to remove. `ledger_absent` once meant "nothing executed", which made a unit
-        # whose every row was declared-but-unrun read as one with no ledger at all - and that
-        # is the single case where a reader most needs the unrun rows NAMED.
-        "plan_absent": not rows,
-        "ledger_absent": not _unit_ledger_rows(root, uid),
-        "ledger_rows": _unit_ledger_rows(root, uid),
-        "entry_point": _entry_point_split(root, text),
-        "lines_ruled": len(live_rulings(root, text)[0]),
-        "errors": join.get("errors", []) or [],
-    }
-    facts["executed"] = facts["killed"] + facts["survived"] + facts["equivalent"]
-    return facts
-
-
-def render_depth(facts: dict) -> str:
-    """The derived half, as one line of readable prose. Never a claim the ledger does not hold.
-
-    THE ROW ARITHMETIC CLOSES: killed + survived + equivalent + unnameable + not-run equals the
-    declared row count, always. An earlier cut counted only killed and survived as executed, so
-    a plan whose second row was ruled `equivalent` rendered `plan rows 2; executed 1` with
-    nothing saying where the other row went - a reader cannot audit a sum that does not add up.
-    """
-    ep = facts["entry_point"]
-    parts = [f"criteria {facts['criteria']}"]
-    if facts["plan_absent"]:
-        parts.append("NO TEST PLAN - no row was declared, so nothing was declared to execute")
-    else:
-        parts.append(f"plan rows {facts['rows']}")
-    if facts["ledger_absent"]:
-        parts.append("EVIDENCE ABSENT - the mutation ledger holds no entry for this unit, "
-                     "which is not the same fact as nought killed")
-    else:
-        parts += [f"executed {facts['executed']}", f"killed {facts['killed']}",
-                  f"survived {facts['survived']}"]
-        if facts["equivalent"]:
-            parts.append(f"ruled equivalent {facts['equivalent']}")
-    if facts.get("lines_ruled"):
-        parts.append(f"lines ruled {facts['lines_ruled']}")
-    # NAMED WHATEVER THE LEDGER HOLDS. This sat inside the `else` above, so a unit whose every
-    # declared row was unrun - the single case where a reader most needs the row ids - was the
-    # single case that printed EVIDENCE ABSENT and named none of them.
-    if facts["not_run"]:
-        named = ", ".join(f"{r['ac']} row {r['row']}" for r in facts["not_run"])
-        parts.append(f"NOT RUN {len(facts['not_run'])} ({named})")
-    elif not facts["plan_absent"]:
-        parts.append("not-run 0")
-    if not facts["ledger_absent"]:
-        if facts["plan_absent"]:
-            # A ledger holding rows no plan claims. Reported rather than folded into the counts
-            # above, because those counts are per PLAN ROW and there are none.
-            live = facts["ledger_rows"]
-            surv = sum(1 for r in live if r.get("verdict") == "survived")
-            parts.append(f"ledger holds {len(live)} registered mutant(s) joined to no plan row"
-                         + (f", {surv} SURVIVED" if surv else ""))
-    if facts["unnameable"]:
-        parts.append(f"declared unnameable {facts['unnameable']}")
-    if facts["retracted"]:
-        parts.append(f"retracted {facts['retracted']}")
-    parts.append(f"entry point {ep['through_cli']} of {ep['located']} criteria through the "
-                 f"shipped CLI, {ep['in_process']} in-process")
-    if ep["undetermined"]:
-        parts.append(f"{ep['undetermined']} undetermined (the named node could not be isolated)")
-    if ep["unlocatable"]:
-        parts.append(f"{ep['unlocatable']} with no locatable test file")
-    facts_line = "; ".join(parts)
-    return f"{DERIVED_OPEN} {facts_line} | fp {depth_fingerprint(facts_line)} {DERIVED_CLOSE}"
-
-
-def depth_field_value(current: str, derived: str) -> str:
-    """Rebuild the field's value with a fresh derived half.
-
-    The author's judgement - the tier, and the honest statement of what was deliberately not
-    covered - is the part no tool can supply, so it is carried through BYTE FOR BYTE rather
-    than re-rendered. Only the delimited span is replaced.
-    """
-    stripped = _DERIVED_RE.sub("", current).strip()
-    tier, sep, rest = stripped.partition(" ")
-    tail = f" {rest.strip()}" if sep and rest.strip() else ""
-    return f"{tier} {derived}{tail}" if tier else derived
-
-
-def write_depth(root, unit: str) -> dict:
-    """Derive the field and write it back, or report why it cannot be written."""
-    facts = depth_facts(root, unit)
-    if not facts.get("ok"):
-        return facts
-    path = Path(facts["path"])
-    text = sdlc_md.read_text_safe(path)
-    derived = render_depth(facts)
-    match = _DEPTH_LINE_RE.search(text)
-    if not match:
-        facts["ok"] = False
-        facts["errors"] = list(facts["errors"]) + [
-            f"{facts['unit']}: no `> **Verification depth:**` field to derive into - the tier "
-            f"and the judgement half are the author's, so this command amends a field rather "
-            f"than inventing one"]
-        return facts
-    if not _DERIVED_RE.sub("", match.group(2)).strip():
-        facts["ok"] = False
-        facts["errors"] = list(facts["errors"]) + [
-            f"{facts['unit']}: the `Verification depth` field carries no tier, so there is "
-            f"nothing to derive INTO. Writing the derived span alone would leave `{DERIVED_OPEN}` "
-            f"standing where the tier belongs - a field that parses as a tier while naming none, "
-            f"which is worse than the unparseable field it replaced"]
-        return facts
-    tail = text[match.end():].lstrip("\n").splitlines()
-    if tail and tail[0].lstrip().startswith(">") and not _FIELD_START_RE.match(tail[0]):
-        facts["ok"] = False
-        facts["errors"] = list(facts["errors"]) + [
-            f"{facts['unit']}: the `Verification depth` field WRAPS onto a second line, and "
-            f"only its first line would be rewritten - the continuation's hand-typed counts "
-            f"would stand beside a derived span contradicting them. Join the field onto one "
-            f"line, then regenerate"]
-        return facts
-    prior = _DERIVED_SPAN_RE.search(match.group(2))
-    if facts["ledger_absent"] and prior and "EVIDENCE ABSENT" not in (prior.group("facts") or ""):
-        # REFUSE rather than overwrite. The ledger lives in gitignored `sdlc-studio/.local/`,
-        # so a fresh clone, a CI runner and every review worktree have none - and rewriting a
-        # recorded set of counts as EVIDENCE ABSENT there, at exit 0 and in silence, destroys
-        # the evidence rather than reporting its absence. The one thing this command must never
-        # do is make a unit's record LESS true than it found it.
-        facts["ok"] = False
-        facts["errors"] = list(facts["errors"]) + [
-            f"{facts['unit']}: this workspace has no mutation ledger, and the field already "
-            f"carries derived counts. Writing here would replace them with EVIDENCE ABSENT - "
-            f"that is the ledger missing HERE, not the evidence being missing. Run this where "
-            f"the ledger lives, or run the mutants first"]
-        return facts
-    new_value = depth_field_value(match.group(2), derived)
-    text = text[:match.start()] + match.group(1) + new_value + text[match.end():]
-    path.write_text(text, encoding="utf-8")
-    facts["derived"] = derived
-    facts["written"] = True
-    return facts
-
-
-def cmd_depth_check(args: argparse.Namespace) -> int:
-    root = Path(args.root)
-    units = walk_units(unit_dirs(root, root / "sdlc-studio" / "stories"))
-    faults = depth_edit_faults(units)
-    for f in faults:
-        print(f"depth-check: {f['why']}", file=sys.stderr)
-    if not faults:
-        print(f"depth-check: {len(units)} unit(s), every derived half matches its own seal")
-    return 1 if faults else 0
-
-
-def cmd_depth(args: argparse.Namespace) -> int:
-    facts = write_depth(args.root, args.unit) if args.write else depth_facts(args.root, args.unit)
-    if facts.get("ok") and not args.write:
-        facts["derived"] = render_depth(facts)
-    if args.format == "json":
-        print(json.dumps(facts, indent=2))
-    else:
-        for line in facts.get("errors", []):
-            print(f"depth: {line}")
-        if facts.get("derived"):
-            print(facts["derived"])
-    return 0 if facts.get("ok") else 1
+        known, _rest = pre.parse_known_args(sys.argv[1:] if argv is None else argv)
+    except argparse.ArgumentError:
+        return None
+    return known.verb if known.verb in RETIRED_VERBS else None
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -5581,22 +5259,6 @@ def build_parser() -> argparse.ArgumentParser:
     rc.add_argument("--root", default=".")
     rc.set_defaults(func=cmd_revert_check)
 
-    dp = sub.add_parser("depth",
-                        help="Derive the counted half of a unit's `Verification depth` from "
-                             "the mutation ledger")
-    dp.add_argument("--unit", required=True)
-    dp.add_argument("--write", action="store_true",
-                    help="amend the field in place, keeping the author's judgement half")
-    dp.add_argument("--format", choices=("text", "json"), default="text")
-    dp.add_argument("--root", default=".")
-    dp.set_defaults(func=cmd_depth)
-
-    dc = sub.add_parser("depth-check",
-                        help="Refuse a hand-edit inside the derived half of a "
-                             "`Verification depth`")
-    dc.add_argument("--root", default=".")
-    dc.set_defaults(func=cmd_depth_check)
-
     rep = sub.add_parser("report", help="Print the latest verification report")
     rep.add_argument(
         "--report",
@@ -5612,6 +5274,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     """Parse arguments and dispatch to the chosen subcommand."""
+    retired = _retired_verb(argv)
+    if retired:
+        print(f"error: `verify_ac.py {retired}` is retired - {RETIRED_VERBS[retired]}; a unit's "
+              f"Verify selectors are its evidence. Nothing was written.", file=sys.stderr)
+        return 2
     parser = build_parser()
     args = parser.parse_args(argv)
     # Resolve the root ONCE and write it back, so every verb below anchors on the tree the

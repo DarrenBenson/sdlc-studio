@@ -1,11 +1,11 @@
 # US0910: Verification depth is no longer derived, and the gate runs no depth lane
 
-> **Status:** In Progress
+> **Status:** Done
 > **Depends on:** US0934 - both retire stamps in US0675 and US0676, so they land apart (EP0263 readiness)
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_depth.py, changelog.d/US0910.md, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, sdlc-studio/stories/US0675-every-count-in-verification-depth-is-read-from.md, sdlc-studio/stories/US0676-the-derived-half-of-verification-depth-is-delimited.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_depth.py, changelog.d/US0910.md, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, sdlc-studio/stories/US0675-every-count-in-verification-depth-is-read-from.md, sdlc-studio/stories/US0676-the-derived-half-of-verification-depth-is-delimited.md, sdlc-studio/bugs/BG0648-a-criterion-written-outside-the-acceptance-criteria-section.md, sdlc-studio/stories/US0816-the-fixed-and-done-gates-refuse-a-unit.md
 > **Epic:** EP0263
 > **Points:** 3
 > **Persona:** Maya Okafor
@@ -20,12 +20,16 @@
 
 - **AC1:** Given `verify_ac.py depth` or `verify_ac.py depth-check`, when invoked, then each exits 2 with a message that it is retired and that a unit's Verify selectors are its evidence, and `verify_ac.py --help` lists neither. Fails on: deleting the parsers so argparse exits 2 with an unhelpful usage error instead of the retirement message
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_depth.py::DepthGoneTests::test_the_depth_verbs_are_retired
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given a fixture story whose `Verification depth` line was hand-edited inside its derived half, when `gate.py --root <fixture>` runs the standard gate, then it passes, and `derived-depth` is in neither `DEFAULT_CHECKS` nor `BLOCKING_ON_ERROR`. Fails on: dropping the lane from `DEFAULT_CHECKS` while `_derived_depth` still runs from `BLOCKING_ON_ERROR`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_depth.py::DepthGoneTests::test_the_gate_runs_no_derived_depth_lane
+  - **Verified:** yes (2026-09-25)
 - **AC3:** Given `docgen.py surface` rerun in the same commit, then reference-scripts-surface.md names neither `verify_ac.py depth` nor `verify_ac.py depth-check`, and `docgen.py surface --check` reports 0 drift
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_depth.py::DepthGoneTests::test_the_surface_names_no_retired_verb
+  - **Verified:** yes (2026-09-25)
 - **AC4:** Given the criteria whose stamped Verify selector names a test this story deletes (DerivedDepthTests and DerivedDepthLaneTests): US0675 (5) and US0676 (9), then each is retired in the D0259 pattern (`Verify: manual - retired by US0910: <why>`, `Verified: manual (<date>) - retired, superseded by US0910`), and no `Verified: yes` selector under sdlc-studio/ names a deleted test node. `CriteriaSectionTests` (BG0648) is edited, not deleted, and keeps its test names so its stamps survive
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_depth.py::DepthGoneTests::test_no_stamp_names_a_deleted_test
+  - **Verified:** yes (2026-09-25)
 
 ## Notes
 

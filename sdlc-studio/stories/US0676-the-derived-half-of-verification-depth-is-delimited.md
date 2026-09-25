@@ -22,32 +22,32 @@
 ## Acceptance Criteria
 
 - [x] **AC1** Given a rendered `Verification depth`, when it is written, then the DERIVED half sits inside explicit delimiters and the author's judgement half - the tier, and what was deliberately not covered - sits outside them and survives regeneration verbatim, byte for byte
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DerivedDepthTests::test_the_judgement_half_survives_regeneration_verbatim
-  - **Verified:** yes (2026-08-21)
+  - **Verify:** manual - retired by US0910: the derived depth span, its seal and the derived-depth gate lane were deleted; a unit's Verify selectors are its evidence
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0910
 - [x] **AC2** Given a hand-edit INSIDE the derived delimiters, when the gate runs, then it is REFUSED and the edited field is named - a derived surface nobody may hand-edit is only derived if something refuses the edit
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DerivedDepthLaneTests::test_a_hand_edit_inside_the_derived_half_is_refused
-  - **Verified:** yes (2026-08-21)
+  - **Verify:** manual - retired by US0910: the derived depth span, its seal and the derived-depth gate lane were deleted; a unit's Verify selectors are its evidence
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0910
 - [x] **AC3** Given that refusal, when it is printed, then it NAMES the command that regenerates the field, and running that command CLEARS the refusal - a refusal with no stated escape would make this batch's own depth fields uncorrectable and the tree uncommittable, which is a defect this repository has already shipped once
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DerivedDepthLaneTests::test_the_refusal_names_the_regenerate_command_and_it_clears_the_refusal
-  - **Verified:** yes (2026-08-21)
+  - **Verify:** manual - retired by US0910: the derived depth span, its seal and the derived-depth gate lane were deleted; a unit's Verify selectors are its evidence
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0910
 - [x] **AC4** Given an edit OUTSIDE the delimiters, in the judgement half, when the gate runs, then it PASSES - the paired control, because a guard that refuses every edit to the field has not distinguished the two halves it exists to distinguish
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DerivedDepthLaneTests::test_an_edit_to_the_judgement_half_passes
-  - **Verified:** yes (2026-08-21)
+  - **Verify:** manual - retired by US0910: the derived depth span, its seal and the derived-depth gate lane were deleted; a unit's Verify selectors are its evidence
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0910
 - [x] **AC5** Given a `Verification depth` carrying NO derived half at all, when the gate runs, then it is left alone - most of this corpus is hand-authored, and a guard that refused 600 artefacts on the commit that shipped it is one that gets switched off rather than satisfied
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DerivedDepthLaneTests::test_a_field_with_no_derived_half_is_left_alone
-  - **Verified:** yes (2026-08-24)
+  - **Verify:** manual - retired by US0910: the derived depth span, its seal and the derived-depth gate lane were deleted; a unit's Verify selectors are its evidence
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0910
 - [x] **AC6** Given a derived span whose fingerprint has been DELETED rather than edited, when the gate runs, then it is still REFUSED - otherwise removing the seal is a free bypass for the author who edited the counts
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DerivedDepthLaneTests::test_a_span_stripped_of_its_seal_is_still_refused
-  - **Verified:** yes (2026-08-24)
+  - **Verify:** manual - retired by US0910: the derived depth span, its seal and the derived-depth gate lane were deleted; a unit's Verify selectors are its evidence
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0910
 - [x] **AC7** Given a SECOND derived span appended to a field that already carries a sealed one, when the gate runs, then it is REFUSED wherever the second span sits - a field carries exactly one derived half, so a second is a hand-edit by construction, and judging only the first made the verdict depend on position
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::DerivedDepthLaneTests::test_a_second_derived_span_appended_to_the_field_is_refused
-  - **Verified:** yes (2026-08-24)
+  - **Verify:** manual - retired by US0910: the derived depth span, its seal and the derived-depth gate lane were deleted; a unit's Verify selectors are its evidence
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0910
 - [x] **AC8** Given a `Verification depth` that WRAPS onto a second line, when a regeneration is attempted, then it is REFUSED rather than rewritten - the line-anchored match would rewrite line one and strand the rest, which is the one live shape in which AC1's byte-for-byte guarantee is false, and five tracked units carry it
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DerivedDepthTests::test_a_field_wrapping_onto_a_second_line_is_refused
-  - **Verified:** yes (2026-08-24)
+  - **Verify:** manual - retired by US0910: the derived depth span, its seal and the derived-depth gate lane were deleted; a unit's Verify selectors are its evidence
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0910
 - [x] **AC9** Given a `Verification depth` carrying no tier at all, when a regeneration is attempted, then it is REFUSED rather than written - splicing a derived span into an empty value leaves `[[derived:` parsing as the tier, which is the judgement half AC1 exists to protect
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::DerivedDepthTests::test_a_tier_less_field_is_refused_rather_than_written
-  - **Verified:** yes (2026-08-24)
+  - **Verify:** manual - retired by US0910: the derived depth span, its seal and the derived-depth gate lane were deleted; a unit's Verify selectors are its evidence
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0910
 
 ## Test Plan
 
