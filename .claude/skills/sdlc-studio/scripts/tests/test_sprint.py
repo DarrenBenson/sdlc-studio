@@ -13269,30 +13269,6 @@ class EscalationReachesBothRecordingCommandsTests(unittest.TestCase):
                          "a unit with ONE rejection escalated on another unit's rounds:\n"
                          f"{innocent.getvalue()}")
 
-    def test_a_plan_review_round_does_not_inherit_delivery_batch_rounds(self) -> None:
-        """MUTANT: `if phase == "delivery":` -> `if True:`.
-
-        REVIEW FINDING: also uncovered. Batch rows are delivery-phase records, so folding them
-        into a `plan-review` count would let two delivery REJECTs escalate a plan review that
-        has been round only once.
-        """
-        critic, sprint = _load_critic(), _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            with contextlib.redirect_stdout(io.StringIO()):
-                for _ in range(2):
-                    sprint.main(["review-batch", "--units", "US0017", "--verdict", "REJECT",
-                                 *self.ARGS, "--root", str(root)])
-            plan = io.StringIO()
-            with contextlib.redirect_stdout(plan):
-                critic.main(["record", "--unit", "US0017", "--verdict", "reject",
-                             "--phase", "plan-review", "--reviewer", "qa-seat",
-                             "--author", "builder", "--brief", "abcdef123456",
-                             "--root", str(root)])
-        self.assertNotIn("ESCALATED", plan.getvalue(),
-                         "a first plan-review round inherited two delivery rounds:\n"
-                         f"{plan.getvalue()}")
-
     def test_a_refused_record_escalates_nothing(self) -> None:
         """MUTANT: run the escalation loop regardless of the exit code.
 

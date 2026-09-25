@@ -2908,8 +2908,9 @@ def _table_rows(text: str, header: str) -> list[list[str]]:
     return []
 
 
-def _verdict_rows(root: Path, phase: str, units=None) -> tuple[list[list[str]], str]:
-    """The verdict ledger's rows for THIS run's units, and the file they came from.
+def _verdict_rows(root: Path, units=None) -> tuple[list[list[str]], str]:
+    """The delivery verdict ledger's rows for THIS run's units, and the file they came from.
+    Every verdict is a delivery verdict: a historical plan-review ledger is never read.
 
     The ledgers are PROJECT-WIDE and append-only: read whole they carry a year of other runs'
     verdicts. Unscoped, this repository's own report read 185 rejected units out of a batch of
@@ -2917,8 +2918,7 @@ def _verdict_rows(root: Path, phase: str, units=None) -> tuple[list[list[str]], 
     real tree. `units` is the run's batch; None keeps every row, for a caller that wants the
     whole file and says so.
     """
-    name = "critic-verdicts.md" if phase == "delivery" else "plan-review-verdicts.md"
-    p = root / "sdlc-studio" / "reviews" / name
+    p = root / "sdlc-studio" / "reviews" / "critic-verdicts.md"
     rel = _rel(root, p)
     if not p.is_file():
         return [], rel
@@ -3225,7 +3225,7 @@ def _unit_ledger(root: Path, state: dict, state_rel: str) -> list[dict]:
                                + [sdlc_md.norm_id(u) for u in state.get("batch") or []]))
     gate_clear = state.get("report_gate_clear")
     cleared = {sdlc_md.norm_id(u) for u in gate_clear or []}
-    ledger, ledger_rel = _verdict_rows(root, "delivery", order)
+    ledger, ledger_rel = _verdict_rows(root, order)
     ledger_found = (root / ledger_rel).is_file()
     out = []
     for uid in order:

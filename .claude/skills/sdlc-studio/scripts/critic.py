@@ -33,14 +33,14 @@ VERDICTS = (APPROVE, REJECT)
 # (under the prior risk-scaled policy that permitted light-tier self-review). Stamped
 # once by the migration; never produced by the sprint loop. See is_pre_gate.
 PRE_GATE = "pre-gate"
-# Two verdict phases, each in its own log so a plan-review verdict never satisfies the
-# delivery critique gate (and vice versa): `delivery` is the post-implementation critic the
-# conformance `critiqued` stage reads; `plan-review` is the pre-implementation AC-vs-spec
-# check. Same schema, same independence rule, distinct files.
+# Every verdict is a DELIVERY verdict: the post-implementation critic the conformance
+# `critiqued` stage reads. Plan review is retired, and no command records or briefs one; the
+# `plan-review` phase survives only as an internal parameter, so the historical plan ledger
+# stays readable to the repair ledger that still joins against it.
 PHASES = ("delivery", "plan-review")
 _FILE = {"delivery": "critic-verdicts.md", "plan-review": "plan-review-verdicts.md"}
 # Delivery header is byte-identical to the original (a freshly created delivery log must not
-# change); plan-review has its own title/prose. Both share the row schema.
+# change); the historical plan-review log has its own title and eighth column.
 _TABLE = ("| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Issues |\n"
           "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
 #: The review depths. `full` is the adversarial pass - mutations, boundaries, silent-failure
@@ -59,21 +59,11 @@ BAND_TIER = {"trivial": "light", "low": "light",
 #: An unresolvable band tiers FULL. Unknown risk fails towards the deeper review, because the
 #: cost of a needless full pass is tokens and the cost of a needless light one is a defect.
 UNKNOWN_BAND_TIER = "full"
-#: The plan-review table carries one more column: WHICH pre-code artefact was judged. Without
-#: it a verdict is keyed by unit and phase alone, so the moment a second pre-code gate exists
-#: one approval discharges both and neither reviewer read the other's artefact. Nothing in the
-#: tree is wrong today - there is only one kind - but the ledger's shape makes that mistake the
-#: default for the next author, and two independent seats found it only by reading the source.
+#: The historical plan-review table's shape. Its eighth cell named the pre-code artefact a plan
+#: review judged; nothing writes a kind or reads one now, so the cell is kept only because the
+#: file on disk has it.
 _PLAN_TABLE = ("| Unit | Verdict | Reviewer | Author | Date | Brief | Kind | Issues |\n"
                "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
-#: The artefacts a plan review can judge. An unknown value is REFUSED at write time: a misspelt
-#: kind creates a row no gate will ever match, which is a gate that can never be satisfied. A
-#: `repair-plan` row written before the repair-plan gate was deleted falls outside it, so the
-#: repair ledger, which reads these kinds only, never counts its plan tokens as findings.
-PLAN_REVIEW_KINDS = ("spec", "test-plan")
-#: What a row written before the column existed means. Only one kind was ever reviewed, so this
-#: is a fact about those rows rather than an assumption about them.
-DEFAULT_PLAN_KIND = "spec"
 _HEADERS = {
     "delivery": (
         "# Critic Verdicts\n\n"
@@ -85,8 +75,7 @@ _HEADERS = {
         "# Plan-Review Verdicts\n\n"
         "> Append-only. The independent non-author plan reviewer's verdict per unit -\n"
         "> the pre-implementation AC-vs-spec check. Latest row per unit wins.\n"
-        "> Reviewer must differ from the plan author - a self-review never clears the gate.\n"
-        "> Kind names WHICH pre-code artefact was judged; a gate asks for its own kind.\n\n"
+        "> Reviewer must differ from the plan author - a self-review never clears the gate.\n\n"
         + _PLAN_TABLE),
 }
 
@@ -133,7 +122,7 @@ def rejoinder_fingerprint(text: str, phase: str = "delivery") -> str:
 
 
 def _seats_whose_brief_matches(repo_root, unit: str, fingerprint: str,
-                               phase: str = "delivery", tier: str | None = None):
+                               tier: str | None = None):
     """Seats whose CURRENT brief for `unit` - first-round or rejoinder - fingerprints to
     `fingerprint`.
 
@@ -167,16 +156,13 @@ def _seats_whose_brief_matches(repo_root, unit: str, fingerprint: str,
     for seat in seats:
         for tier in tiers:
             try:
-                # THE PHASE THE VERDICT IS BEING RECORDED FOR. Asking for a delivery brief
-                # while checking a plan-review fingerprint can never match, so every honest plan
-                # verdict carried the same suspicion note as a fabricated one - which is how the
-                # note stops being read at all. And the REJOINDER's identity beside the first
-                # round's: a re-review's footer used to print a value nothing could reproduce.
-                text = brief(repo_root, unit, seat, tier, phase=phase)
+                # The REJOINDER's identity beside the first round's: a re-review's footer used
+                # to print a value nothing could reproduce.
+                text = brief(repo_root, unit, seat, tier)
             except (OSError, ValueError):
                 continue
             asked = True
-            if fingerprint in (brief_fingerprint(text), rejoinder_fingerprint(text, phase)):
+            if fingerprint in (brief_fingerprint(text), rejoinder_fingerprint(text)):
                 if seat not in matched:
                     matched.append(seat)
     return matched if asked else None
@@ -352,47 +338,39 @@ def _clean(value: str) -> str:
 def record_verdict(repo_root: Path | str, unit: str, verdict: str,
                    reviewer: str = "independent-critic", author: str = "",
                    issues: str = "", phase: str = "delivery", brief: str = "",
-                   kind: str | None = None, tier: str | None = None,
-                   tier_explicit: bool = False) -> Path:
+                   tier: str | None = None, tier_explicit: bool = False) -> Path:
     """Append a critic verdict for a unit (creating the table if absent).
 
     `author` is the authoring seat / delegation instance id that produced the diff
     and tests. It is recorded alongside the reviewer so the conformance gate can prove
     reviewer != author - independence you cannot verify is independence you do not have.
-    `phase` routes the verdict to its own log (delivery vs plan-review) so neither
-    satisfies the other's gate.
-
-    `kind` names WHICH pre-code artefact a plan review judged, and belongs to that phase alone.
-    Without it a plan-review verdict is keyed by unit and phase only, so the moment a second
-    pre-code gate exists one approval discharges both and neither reviewer read the other's
-    artefact. An unknown kind is REFUSED here rather than recorded: a misspelt value creates a
-    row no gate will ever match, which is a gate nobody can satisfy and nobody can see.
+    `phase` is internal and defaults to `delivery`, the only phase any command records.
 
     A DELIVERY verdict is held to the review rounds here, so every writer is: `round_refusal`
     refuses it with nothing written, and a REJECT at the cap carries the unit (`carry_at_cap`).
     A carry that fails raises `CarryFailed`, whose message says the REJECT row WAS written.
     """
     path, _round, bug = _record(repo_root, unit, verdict, reviewer, author, issues, phase,
-                                brief, kind, tier, tier_explicit)
+                                brief, tier, tier_explicit)
     if bug:
         print(carried_notice(unit, bug), file=sys.stderr)
     return path
 
 
 def _record(repo_root, unit, verdict, reviewer, author, issues="", phase="delivery", brief="",
-            kind=None, tier=None, tier_explicit=False) -> tuple[Path, int | None, str | None]:
+            tier=None, tier_explicit=False) -> tuple[Path, int | None, str | None]:
     """Write the verdict, then carry the unit if it is a REJECT at the cap: the ledger path,
     the row's round in its delivery (None off the delivery phase) and the carried bug's id
     (None when nothing was carried)."""
     path, _row = _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase,
-                                brief, kind, tier, tier_explicit)
+                                brief, tier, tier_explicit)
     if phase != "delivery":
         return path, None, None
     rounds = delivery_rounds(repo_root, unit)
     return path, len(rounds), _carry_if_capped(repo_root, unit, verdict, path, rounds)
 
 
-def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, brief, kind,
+def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, brief,
                    tier, tier_explicit) -> tuple[Path, str]:
     """Check and write one verdict row, returning the ledger path AND the row it wrote. A
     delivery verdict's round is checked under the ledger lock, so two writers cannot both take
@@ -401,22 +379,6 @@ def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, br
         raise ValueError(f"{verdict!r} is not a verdict - expected one of {', '.join(VERDICTS)}")
     if phase not in PHASES:
         raise ValueError(f"unknown critic phase {phase!r} - expected one of {PHASES}")
-    if phase == "plan-review":
-        kind = kind or DEFAULT_PLAN_KIND
-        if kind not in PLAN_REVIEW_KINDS:
-            raise ValueError(
-                f"unknown plan-review kind {kind!r} - expected one of "
-                f"{', '.join(PLAN_REVIEW_KINDS)}. A kind names the artefact the review judged; "
-                f"a value outside the vocabulary would record a row no gate can ever match.")
-        if tier is not None:
-            raise ValueError(
-                "`tier` is the DELIVERY review's depth and has no meaning on a plan review, "
-                "which judges an artefact rather than a diff.")
-    elif kind is not None:
-        raise ValueError(
-            f"`kind` names which PRE-CODE artefact a plan review judged and has no meaning on "
-            f"the {phase!r} phase - a delivery verdict judges the diff. Drop it, or record the "
-            f"verdict with phase='plan-review'.")
     path = verdicts_path(repo_root, phase)
     # BOTH ids floored to `-`, not just the author. The reviewer had no floor, which is what let
     # an empty value reach the ledger; `is_independent` then read `"" != "alice"` as True and the
@@ -425,15 +387,13 @@ def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, br
     # meeting a row that merely looks unremarkable.
     if phase == "delivery" and tier is not None and tier not in TIERS:
         raise ValueError(f"unknown review tier {tier!r} - expected one of {', '.join(TIERS)}")
-    if phase == "plan-review":
-        extra_cell = f"{_clean(kind)} | "
-    else:
-        # ABSENT is `-`, not a defaulted `full`. A verdict recorded without a tier genuinely
-        # cannot say at what depth it was taken, and reading absence as `full` would let every
-        # historical row claim a depth nobody recorded - the exact over-claim the Brief column
-        # was added to stop.
-        recorded = f"{tier}{EXPLICIT_SUFFIX if tier_explicit else ''}" if tier else "-"
-        extra_cell = f"{_clean(recorded)} | "
+    # ABSENT is `-`, not a defaulted `full`. A verdict recorded without a tier genuinely cannot
+    # say at what depth it was taken, and reading absence as `full` would let every historical
+    # row claim a depth nobody recorded - the exact over-claim the Brief column was added to
+    # stop. The historical plan ledger's eighth cell (its Kind) takes `-` the same way.
+    recorded = (f"{tier}{EXPLICIT_SUFFIX if tier_explicit else ''}"
+                if tier and phase == "delivery" else "-")
+    extra_cell = f"{_clean(recorded)} | "
     row = (f"| {sdlc_md.norm_id(unit)} | {verdict.upper()} | {_clean(reviewer) or '-'} | "
            f"{_clean(author) or '-'} | "
            f"{sdlc_md.now_date()} | {_clean(brief) or '-'} | {extra_cell}"
@@ -446,8 +406,7 @@ def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, br
         if not path.exists():
             sdlc_md.atomic_write(path, _header(phase))
         _ensure_brief_column(path)
-        _ensure_eighth_column(path, "Kind" if phase == "plan-review" else "Tier",
-                              DEFAULT_PLAN_KIND if phase == "plan-review" else "-")
+        _ensure_eighth_column(path, "Kind" if phase == "plan-review" else "Tier")
         _write_verdict_row(path, row)
     return path, row
 
@@ -473,7 +432,7 @@ def provisional_verdict(repo_root: Path | str, unit: str, verdict: str, reviewer
     path = verdicts_path(repo_root)
     existed = path.exists()
     path, row = _write_verdict(repo_root, unit, verdict, reviewer, author, issues, "delivery",
-                               "", None, None, False)
+                               "", None, False)
     try:
         yield path
     except BaseException:
@@ -567,14 +526,13 @@ def _ensure_trailing_column(path: Path, first_cell: str, name: str, pad: str) ->
         return
 
 
-def _ensure_eighth_column(path: Path, name: str, pad: str) -> None:
-    """Widen a seven-column verdict table in place, padding existing rows with `pad`.
+def _ensure_eighth_column(path: Path, name: str) -> None:
+    """Widen a seven-column verdict table in place, padding existing rows with `-`.
 
     ONE migration for both logs, because they grew their eighth column for the same reason and
-    would otherwise carry two copies of this loop (LL0016). `name` is `Kind` on the plan-review
-    log and `Tier` on the delivery one; `pad` is what a row written before the column honestly
-    means - `spec` for a kind, because only one kind was ever reviewed, and `-` for a tier,
-    because a verdict taken before the column genuinely cannot say at what depth it was taken.
+    would otherwise carry two copies of this loop (LL0016). `name` is `Kind` on the historical
+    plan-review log and `Tier` on the delivery one; `-` is what a row written before the column
+    honestly means, because a verdict taken then cannot say what the column records.
 
     The header is written once, when a log is created, so a log that predates the column keeps a
     seven-column header while new rows carry eight - not a valid markdown table, and markdownlint
@@ -602,7 +560,7 @@ def _ensure_eighth_column(path: Path, name: str, pad: str) -> None:
             body = lines[j].rstrip("\n").rstrip()
             body = body[:-1].rstrip() if body.endswith("|") else body
             head, _, last = body.rpartition("|")
-            lines[j] = f"{head}| {pad} |{last.rstrip()} |\n"
+            lines[j] = f"{head}| - |{last.rstrip()} |\n"
         sdlc_md.atomic_write(path, "".join(lines))
         return
 
@@ -655,13 +613,7 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
             out.append(dict(zip(_COLS_BY_PHASE[phase], cells)))
         elif len(cells) == 7:
             row = dict(zip(_COLS, cells))
-            if phase == "plan-review":
-                # A row written before the Kind column existed. Only one kind was ever
-                # reviewed, so `spec` is a fact about these rows rather than an assumption -
-                # and reading them as UNKNOWN would stop every historical approval counting
-                # and make `transition` refuse units it passes today.
-                row["kind"] = DEFAULT_PLAN_KIND
-            else:
+            if phase == "delivery":
                 # A tier is UNKNOWN on such a row, never `full`. Absent and full are different
                 # facts, and only absent is true of a verdict taken before the column existed.
                 row["tier"] = ""
@@ -674,17 +626,13 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
             # those rows cannot distinguish about themselves.
             older = dict(zip(("unit", "verdict", "reviewer", "author", "date", "issues"), cells))
             older["brief"] = ""
-            if phase == "plan-review":
-                older["kind"] = DEFAULT_PLAN_KIND
-            else:
+            if phase == "delivery":
                 older["tier"] = ""
             out.append(older)
         elif len(cells) == 5:  # legacy: Unit, Verdict, Reviewer, Date, Issues
             legacy = dict(zip(("unit", "verdict", "reviewer", "date", "issues"), cells))
             legacy["author"] = ""
-            if phase == "plan-review":
-                legacy["kind"] = DEFAULT_PLAN_KIND
-            else:
+            if phase == "delivery":
                 legacy["tier"] = ""
             out.append(legacy)
         else:
@@ -784,13 +732,9 @@ def seat_verdicts(repo_root: Path | str, unit: str, phase: str = "delivery") -> 
     return out
 
 
-def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery",
-                kind: str | tuple[str, ...] | None = None):
+def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery"):
     """The latest LIVE recorded verdict for a unit in `phase`, or None. Defaults to the
     delivery log, so the conformance `critiqued` gate is unaffected by plan-review rows.
-
-    `kind` narrows a plan-review lookup to one artefact, or to a tuple of them for a reader that
-    answers several (the repair ledger reads every kind but the repair plan's own).
 
     A superseded row is skipped: it records an event that a named authoriser has ruled did
     not happen, so acting on it would be acting on a known-false fact. A unit whose only row
@@ -808,7 +752,7 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery",
     gates enforced different independence rules, and the weaker one was the one guarding the
     honesty check.
     """
-    seen = _live_verdict_rows(repo_root, unit, phase, kind)
+    seen = _live_verdict_rows(repo_root, unit, phase)
     latest = seen[-1] if seen else None
     unanswered = _unanswered_rejects(seen)
     # THE LATEST unanswered REJECT, and the tie-break is load-bearing rather than incidental:
@@ -818,8 +762,7 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery",
     return unanswered[-1] if unanswered else latest
 
 
-def _live_verdict_rows(repo_root: Path | str, unit: str, phase: str = "delivery",
-                       kind: str | tuple[str, ...] | None = None) -> list[dict]:
+def _live_verdict_rows(repo_root: Path | str, unit: str, phase: str = "delivery") -> list[dict]:
     """The unit's verdict rows a reader may act on, oldest first - THE supersession rule.
 
     A superseded row is dropped, except a REJECT whose supersession is not principal-grade
@@ -830,15 +773,9 @@ def _live_verdict_rows(repo_root: Path | str, unit: str, phase: str = "delivery"
     while `coverage_state` read the unit unreviewed.
     """
     target = sdlc_md.norm_id(unit)
-    kinds = (kind,) if isinstance(kind, str) else kind
     out: list[dict] = []
     for v in read_verdicts(repo_root, phase):
         if sdlc_md.norm_id(v["unit"]) != target:
-            continue
-        # THE DISCRIMINATION. A gate asks for an approval of the artefact it cares about, so a
-        # `spec` approval cannot discharge a `test-plan` gate. Asked only when a kind is named:
-        # a caller that does not care sees every row, exactly as it did before the column.
-        if kinds is not None and (v.get("kind") or DEFAULT_PLAN_KIND) not in kinds:
             continue
         if v.get("superseded") and ((v.get("verdict") or "").upper() != REJECT
                                     or _is_principal_superseded(repo_root, unit, v)):
@@ -1544,18 +1481,6 @@ def _cut_at_own_arrow(closed: str, every: list[str]) -> list[tuple[str, str]]:
     return out
 
 
-def _repair_kinds(phase: str) -> tuple[str, ...] | None:
-    """The plan-review kinds a repair in `phase` answers, or None - every row - for delivery,
-    whose verdicts carry no kind."""
-    return PLAN_REVIEW_KINDS if phase == "plan-review" else None
-
-
-def _of_kind(row: dict, kinds: tuple[str, ...] | None) -> bool:
-    """Is this verdict row of one of `kinds`? A row predating the Kind column reads as the
-    default kind, exactly as `verdict_for` reads it."""
-    return kinds is None or (row.get("kind") or DEFAULT_PLAN_KIND) in kinds
-
-
 def record_repair(repo_root: Path | str, unit: str, author: str, closed: str | list,
                   phase: str = "delivery") -> Path:
     """Append a REPAIR answering this unit's live REJECT.
@@ -1575,8 +1500,7 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str | l
     if not (author or "").strip():
         raise ValueError("a repair needs --author - it is a claim about work somebody did, "
                          "and an unattributed claim cannot be questioned")
-    kinds = _repair_kinds(phase)
-    row = verdict_for(repo_root, unit, phase, kind=kinds)
+    row = verdict_for(repo_root, unit, phase)
     if not row or str(row.get("verdict") or "").upper() != REJECT:
         raise ValueError(f"{sdlc_md.norm_id(unit)} carries no live REJECT to answer - a repair "
                          f"records what was done about a rejection, so there has to be one")
@@ -1604,7 +1528,7 @@ def record_repair(repo_root: Path | str, unit: str, author: str, closed: str | l
     # `repair_state` avoids by matching per rejection. Text identifies a finding wherever it was
     # raised; an ordinal only means something relative to one list.
     live = [r for r in read_verdicts(repo_root, phase)
-            if sdlc_md.norm_id(r["unit"]) == sdlc_md.norm_id(unit) and _of_kind(r, kinds)]
+            if sdlc_md.norm_id(r["unit"]) == sdlc_md.norm_id(unit)]
     standing = [f["text"] for f in parse_findings(row.get("issues", ""))]
     every: list[str] = list(standing)
     for rejection in _unanswered_rejects(live):
@@ -1944,14 +1868,9 @@ def repair_state(repo_root: Path | str, unit: str, phase: str = "delivery") -> d
     # deriving `outstanding` from the standing row alone left 118 findings invisible to this
     # function, to the conformance lane that calls it and to every checker built on either. A
     # gate that cannot see most of what it is meant to check is not a gate.
-    #
-    # Every rejection THIS LEDGER ANSWERS, which excludes a repair plan's: its REJECT is met by
-    # a revised plan, never by a row here, so counting it would hold the unit PARTIAL on two
-    # plan tokens no closure can name.
-    kinds = _repair_kinds(phase)
     live = [r for r in read_verdicts(repo_root, phase)
-            if sdlc_md.norm_id(r["unit"]) == sdlc_md.norm_id(unit) and _of_kind(r, kinds)]
-    standing = verdict_for(repo_root, unit, phase, kind=kinds)
+            if sdlc_md.norm_id(r["unit"]) == sdlc_md.norm_id(unit)]
+    standing = verdict_for(repo_root, unit, phase)
     rejections = _unanswered_rejects(live) or ([standing] if standing else [])
     rejections = [r for r in rejections
                   if str(r.get("verdict") or "").upper().startswith(REJECT)]
@@ -3713,74 +3632,6 @@ def tier_for(repo_root: Path | str, unit: str) -> str:
     return BAND_TIER.get(band or "", UNKNOWN_BAND_TIER)
 
 
-_PLAN_RETURN_CONTRACT = """Return EXACTLY:
-VERDICT: APPROVE or REJECT
-ISSUES: <semicolon-separated, each naming the criterion it is about, or 'none'>
-BLOCKING: <the subset that must change before code is written, or 'none'>"""
-
-
-def _plan_review_brief(root, card, seat, unit_id, title, path, text, acs) -> str:
-    """The PRE-CODE brief: the criteria as law and the test plan as the object of review.
-
-    It carries NO diff scope, and that absence is the point rather than an omission. There is no
-    diff yet - that is the whole premise of reviewing the plan first - and a brief that asks for
-    one teaches the reviewer to wait for code, which is the habit this gate exists to break. The
-    claim-inventory pass is likewise absent: it rules on prose in a diff, and there is none.
-    """
-    m = re.search(r"^## Test Plan\n(.*?)(?=^## |\Z)", text, re.M | re.S)
-    plan = (m.group(1).strip() if m else
-            "(NO `## Test Plan` section - derive one first: "
-            "`verify_ac.py testplan derive --unit " + unit_id + "`)")
-    # The table renders a placeholder row exactly like a written one, so the seat is told which
-    # criteria are still unauthored - by derive's own helper and sentence, so the two surfaces
-    # a plan is read on before review cannot disagree about it.
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    import verify_ac  # noqa: PLC0415 - sibling; the note is derive's own
-    note = verify_ac.testplan_unauthored_note(
-        verify_ac.testplan_unauthored(verify_ac.testplan_rows_by_criterion(text)))
-    unauthored = f"\n{note}\n" if note else ""
-    return f"""You are the {seat} review seat, reviewing a TEST PLAN before any code exists.
-Read and adopt the charter at
-{card} (the review render). You did NOT author this plan; your job is independent
-judgement of it against the criteria below - they are law, your stance never overrides them.
-
-Repo root: {root.resolve()}
-
-Unit under review: {unit_id} - {title}
-Artefact: {path}
-
-There is NO diff scope and no code to read. That is the premise: reviewing the test is
-cheaper than reviewing the code, and a plan judged against an implementation is judged
-against the thing it was supposed to constrain.
-
-Acceptance criteria (canonical - the plan is judged against THESE, not a paraphrase):
-{acs}
-
-The test plan under review. A criterion may declare SEVERAL rows, and each is a separate
-claim: a criterion that can be wrong in several distinct ways is exactly the one worth
-pinning several times. Every row names the production change that criterion's test must
-FAIL on, and every row is executed and accounted for on its own:
-{plan}
-{unauthored}
-Ask of each row, in this order:
-
-1. **Is the mutant a change to production code?** "The feature does not work" is a
-   prediction about behaviour, not an edit anybody can make. Name the file and the edit.
-2. **Would the named test actually die on it?** A mutant nothing asserts against is a
-   plan that measures nothing. Say which assertion catches it.
-3. **Is it the mutant a careless implementer would produce**, or one written backwards
-   from an implementation that does not exist yet? The second is the failure mode here:
-   a mutant derived from the code is the mutant the test was built to catch.
-4. **What is MISSING?** A criterion whose row is present and weak is more dangerous than
-   one absent, because the absent one is visible. Name the case no row covers.
-5. **Is a positive control named** beside each refusal? A guard tested only by what it
-   refuses passes for the wrong reason when it refuses everything.
-
-{_lessons_block(root)}
-
-{_PLAN_RETURN_CONTRACT}"""
-
-
 def _lessons_block(root: Path) -> str:
     """The failure classes injected at review (rule plus behaviour, at most five), and how a
     finding that repeats one cites it. The class store is the only lesson source a review brief
@@ -3861,8 +3712,7 @@ def _criteria_from_whole_file(text: str) -> str:
     return "\n\n".join(out)
 
 
-def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full",
-          phase: str = "delivery") -> str:
+def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> str:
     """The seat-review prompt, assembled deterministically.
 
     The judgement stays with the seat; this is only the scaffolding every review
@@ -3910,8 +3760,6 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full",
     shared = _shared_selector_block(path)
     unit_id = sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or unit)
     title = sdlc_md.extract_h1_title(text) or unit_id
-    if phase == "plan-review":
-        return _plan_review_brief(root, card, seat, unit_id, title, path, text, acs)
     # THE FILES' HISTORY: the delivered units that changed them and what their reviews caught,
     # so the seat looks first for a repeat the record already holds.
     import reconcile  # noqa: PLC0415 - sibling; the corpus walk is the already-delivered lane's
@@ -3943,35 +3791,15 @@ Review depth: {depth}
 
 
 def rejoinder_brief(repo_root: Path | str, unit: str, seat: str,
-                    prior_verdict_text: str, tier: str = "full",
-                    phase: str = "delivery") -> str:
+                    prior_verdict_text: str, tier: str = "full") -> str:
     """The re-review brief after a REJECT's repairs: the prior VERDICT/ISSUES/BLOCKING
-    quoted verbatim, the base brief refreshed IN THE SAME PHASE (via the standard brief),
-    the structural demand to re-examine what the prior verdict named, and that phase's own
-    return contract. A plan-review rejoinder keeps the plan-review shape - no diff scope,
-    the current Test Plan table, the plan contract - because there is still no diff, and a
-    rejoinder that rendered the delivery brief handed the seat a scope that did not exist
-    and no footer at all, so its verdict could only be recorded by hand. A malformed prior-verdict
-    block is refused loudly - a rejoinder against a verdict that cannot be parsed would
-    re-review against a paraphrase. Validation is well-formedness only: an APPROVE prior
+    quoted verbatim, the base brief refreshed (via the standard brief), the structural demand
+    to re-examine what the prior verdict named, and the return contract. A malformed
+    prior-verdict block is refused loudly - a rejoinder against a verdict that cannot be parsed
+    would re-review against a paraphrase. Validation is well-formedness only: an APPROVE prior
     verdict is accepted too (a legitimate post-approval re-review)."""
     parse_verdict_block(prior_verdict_text)  # validation only; ValueError on malformed
-    base = brief(repo_root, unit, seat, tier, phase=phase)
-    if phase == "plan-review":
-        demand = """The author's repairs summary (if any) accompanies this brief separately. It is a CLAIM,
-not evidence: before you may approve, re-read the CURRENT Test Plan table above against each
-finding your prior verdict named, and rule each one CLOSED, OVER-CLAIMED or MOVED. A row
-re-worded is not a row repaired: ask again whether the named mutant would be killed by the
-test the row describes, and whether the fixture as written can reach it. There is still no
-diff to read."""
-        contract = _PLAN_RETURN_CONTRACT
-    else:
-        demand = """The author's repairs summary (if any) accompanies this brief separately. It is a CLAIM,
-not evidence: before you may approve, RE-EXECUTE the probes and mutants your prior
-verdict named - re-apply each mutant and watch its killing test FAIL, re-run each live
-probe - and confirm the tree is byte-identical after your mutations. A repair whose
-killing test cannot fail is vacuous; two such tests have shipped before."""
-        contract = _RETURN_CONTRACT
+    base = brief(repo_root, unit, seat, tier)
     return f"""{base}
 
 --- RE-REVIEW (rejoinder) ---
@@ -3980,11 +3808,15 @@ This is a RE-REVIEW after repairs to your prior verdict. Your prior verdict, ver
 
 {prior_verdict_text.strip()}
 
-{demand}
+The author's repairs summary (if any) accompanies this brief separately. It is a CLAIM,
+not evidence: before you may approve, RE-EXECUTE the probes and mutants your prior
+verdict named - re-apply each mutant and watch its killing test FAIL, re-run each live
+probe - and confirm the tree is byte-identical after your mutations. A repair whose
+killing test cannot fail is vacuous; two such tests have shipped before.
 
 Then return the SAME contract as before:
 
-{contract}"""
+{_RETURN_CONTRACT}"""
 
 
 _VERDICT_LINE = re.compile(r"^\s*VERDICT:\s*(\S+)\s*$", re.M | re.I)
@@ -4451,42 +4283,13 @@ def cmd_caller_check(args: argparse.Namespace) -> int:
     return 1 if findings else 0
 
 
-_TIER_ON_PLAN = ("brief refused: --tier is the DELIVERY review's depth and has no meaning on a plan "
-                 "review, which judges an artefact rather than a diff.")
-
-
-def _print_plan_footer(unit: str, fp: str) -> None:
-    """The plan-review footer, on stderr: the fingerprint `record --brief` consumes and the record
-    command that runs as printed. One function for the first-round brief and the rejoinder - the
-    two paths drifted once, which is the whole of BG0645."""
-    print(f"\nreview phase: plan-review (no tier - a plan review judges an "
-          f"artefact, not a diff)\n"
-          f"brief fingerprint: {fp}\n"
-          f"  record the verdict with:  critic.py record --unit "
-          f"{sdlc_md.norm_id(unit)} --phase plan-review --kind test-plan "
-          f"--verdict <APPROVE|REJECT> --brief {fp} "
-          f"--reviewer <seat> --author <who>",
-          file=sys.stderr)
-
-
 def cmd_brief(args: argparse.Namespace) -> int:
     try:
         if getattr(args, "rejoinder", None):
             src = args.rejoinder
             prior = (sys.stdin.read() if src == "-"
                      else Path(src).read_text(encoding="utf-8"))
-            phase = getattr(args, "phase", "delivery")
             explicit = args.tier is not None
-            if phase == "plan-review":
-                if explicit:
-                    print(_TIER_ON_PLAN, file=sys.stderr)
-                    return 2
-                text = rejoinder_brief(args.root, args.unit, args.seat, prior, phase=phase)
-                print(text)
-                # the PLAN-REVIEW footer, the same one the plain plan brief prints, so the
-                # re-review's verdict is recorded into the plan ledger and never the delivery one
-                _print_plan_footer(args.unit, rejoinder_fingerprint(text, phase))
-                return 0
             tier = args.tier or tier_for(args.root, args.unit)
             text = rejoinder_brief(args.root, args.unit, args.seat, prior, tier)
             # The re-review brief carries the same blocks as the first one, so it is refused on
@@ -4497,7 +4300,7 @@ def cmd_brief(args: argparse.Namespace) -> int:
             print(text)
             # the footer the delivery rejoinder never printed: a re-review's verdict needs the
             # same provenance as the first one, and a fingerprint the matcher can reproduce
-            fp = rejoinder_fingerprint(text, "delivery")
+            fp = rejoinder_fingerprint(text)
             how = "chosen" if explicit else "derived from the unit's risk band"
             print(f"\nreview tier: {tier} ({how})\n"
                   f"brief fingerprint: {fp}\n"
@@ -4510,29 +4313,13 @@ def cmd_brief(args: argparse.Namespace) -> int:
             # in the parser: a default there is indistinguishable from a choice, and the
             # record has to be able to tell them apart to judge whether the derivation works.
             explicit = args.tier is not None
-            phase = getattr(args, "phase", "delivery")
-            if phase == "plan-review":
-                # A plan review judges an artefact, not a diff, so it has no depth to derive
-                # and `record_verdict` refuses a tier on this phase. Naming one here would
-                # promise a depth the ledger cannot record.
-                if explicit:
-                    print(_TIER_ON_PLAN, file=sys.stderr)
-                    return 2
-                text = brief(args.root, args.unit, args.seat, phase=phase)
-                print(text)
-                # The fingerprint, on the SAME terms as the delivery path. Returning before
-                # this block meant `record --phase plan-review` demanded a fingerprint the
-                # shipped command had never printed - verbatim the scar AGENTS.md cites, in
-                # the phase added to prevent it.
-                _print_plan_footer(args.unit, brief_fingerprint(text))
-                return 0
             tier = args.tier or tier_for(args.root, args.unit)
             text = brief(args.root, args.unit, args.seat, tier)
             # The checks run here, in the verb, and never inside `brief()`, which the fingerprint
             # matcher also renders through. The practices block reaches every delivery tier; the
-            # claim inventory only the full one, so a light brief is not asked for it. A plan
-            # review carries neither and returned above. Refused before printing, so a deficient
-            # brief never reaches a reviewer and never earns a fingerprint.
+            # claim inventory only the full one, so a light brief is not asked for it. Refused
+            # before printing, so a deficient brief never reaches a reviewer and never earns a
+            # fingerprint.
             assert_brief_practices(text)
             if tier == "full":
                 assert_brief_claim_pass(text)
@@ -4691,7 +4478,6 @@ def cmd_record(args: argparse.Namespace) -> int:
               "reviewer's returned block", file=sys.stderr)
         return 2
 
-    phase = (getattr(args, "phase", None) or "delivery").strip().lower()
     brief = (getattr(args, "brief", "") or "").strip()
     if not brief and getattr(args, "brief_file", None):
         try:
@@ -4703,15 +4489,11 @@ def cmd_record(args: argparse.Namespace) -> int:
         # base brief plus the phase, never the prior verdict quoted beneath, so hashing the
         # whole file recorded a value no footer printed. A first-round brief is hashed whole,
         # as its footer is.
-        brief = (rejoinder_fingerprint(saved, phase) if _REJOINDER_MARK in saved
+        brief = (rejoinder_fingerprint(saved) if _REJOINDER_MARK in saved
                  else brief_fingerprint(saved))
     # The origin axis asks what THIS UNIT'S DIFF did - regression, new, or already true of the
-    # tree. A PLAN review happens before any diff exists, so there is nothing to classify
-    # against and the question is unanswerable rather than merely unanswered. Demanding a tag
-    # there trains the reviewer to pick one at random to get past the refusal, which is worse
-    # than no axis at all: an invented `[new]` on a plan finding is a false statement about a
-    # diff nobody has written. Applied to delivery reviews only, where the base ref exists.
-    if phase != "plan-review" and (unclassified := unclassified_findings(args.issues)):
+    # tree, decided against the base ref.
+    if unclassified := unclassified_findings(args.issues):
         listed = "; ".join(f"  - {f[:90]}" for f in unclassified)
         print("record refused: these findings carry no origin, and an unsorted finding is the "
               "one a close cannot price against the batch that caused it:\n"
@@ -4768,7 +4550,7 @@ def cmd_record(args: argparse.Namespace) -> int:
         recorded = brief
         if brief:
             with sdlc_md.corpus_cache():   # every seat and tier rendered shares one corpus walk
-                seats = _seats_whose_brief_matches(args.root, unit, brief, args.phase,
+                seats = _seats_whose_brief_matches(args.root, unit, brief,
                                                    tier=getattr(args, "tier", None))
             if seats is not None and not seats:
                 print(f"NOTE: {brief} matches no brief this repo can currently produce for "
@@ -4781,8 +4563,7 @@ def cmd_record(args: argparse.Namespace) -> int:
                 else "  (WARNING: self-review - blocked at the gate)")
         try:
             path, n, bug = _record(args.root, unit, args.verdict, args.reviewer, args.author,
-                                   args.issues, args.phase, recorded,
-                                   kind=getattr(args, "kind", None),
+                                   args.issues, brief=recorded,
                                    tier=getattr(args, "tier", None),
                                    tier_explicit=getattr(args, "tier_explicit", False))
         except CarryFailed as exc:
@@ -4791,7 +4572,7 @@ def cmd_record(args: argparse.Namespace) -> int:
             return
         at = f" round {n}" if n is not None else ""
         print(f"recorded {sdlc_md.norm_id(unit)} {args.verdict.upper()} "
-              f"[{args.phase}]{at} -> {path}{note}")
+              f"[delivery]{at} -> {path}{note}")
         if bug:
             print(carried_notice(unit, bug))
 
@@ -4804,7 +4585,7 @@ def cmd_record(args: argparse.Namespace) -> int:
     except BatchRefused:
         recorded = []
     for unit in recorded:
-        if notice := escalation_notice(args.root, unit, args.phase):
+        if notice := escalation_notice(args.root, unit):
             print(notice)
     if drift := _seat_drift_warning(args.root, args.reviewer):
         print(f"WARNING: {drift}", file=sys.stderr)
@@ -5052,18 +4833,18 @@ def cmd_show(args: argparse.Namespace) -> int:
     if getattr(args, "format", "text") == "json":
         if args.unit:
             print(json.dumps({"unit": args.unit, "verdict": verdict_for(
-                args.root, args.unit, args.phase)}, indent=2))
+                args.root, args.unit)}, indent=2))
         else:
-            print(json.dumps(read_verdicts(args.root, args.phase), indent=2))
+            print(json.dumps(read_verdicts(args.root), indent=2))
         return 0
     if args.unit:
-        v = verdict_for(args.root, args.unit, args.phase)
+        v = verdict_for(args.root, args.unit)
         print(v if v else f"no verdict for {args.unit}")
         # The REPAIR beside the verdict. The whole value of recording it here rather than in a
         # ledger of its own is that a reader of the verdict sees the disposition without knowing
         # a second command exists - so the verdict's own reader has to print it.
         if v and str(v.get("verdict") or "").upper() == REJECT:
-            st = repair_state(args.root, args.unit, args.phase)
+            st = repair_state(args.root, args.unit)
             if st["state"] == "none":
                 print("  repair: none recorded - this REJECT is unanswered")
             else:
@@ -5072,7 +4853,7 @@ def cmd_show(args: argparse.Namespace) -> int:
                 for item in st["outstanding"]:
                     print(f"    still outstanding: {item}")
     else:
-        for v in read_verdicts(args.root, args.phase):
+        for v in read_verdicts(args.root):
             print(f"{v['unit']} {v['verdict']} ({v['date']}){_superseded_suffix(v)}")
     return 0
 
@@ -5091,11 +4872,11 @@ def cmd_supersede(args: argparse.Namespace) -> int:
     try:
         path = record_supersession(args.root, args.unit, args.date, args.reason,
                                    args.authorised_by, args.boundary, reviewer=args.reviewer,
-                                   verdict=args.verdict, phase=args.phase)
+                                   verdict=args.verdict)
     except (OSError, ValueError) as exc:
         print(f"supersede refused: {exc}", file=sys.stderr)
         return 2
-    print(f"superseded the {args.phase} verdict row for {sdlc_md.norm_id(args.unit)} "
+    print(f"superseded the delivery verdict row for {sdlc_md.norm_id(args.unit)} "
           f"dated {args.date} -> {path}")
     return 0
 
@@ -5125,21 +4906,13 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--brief-file", metavar="PATH",
                    help="read the brief TEXT from a file and fingerprint it here, for a "
                         "reviewer who saved the brief rather than its fingerprint")
-    r.add_argument("--phase", choices=PHASES, default="delivery",
-                   help="delivery (default, the conformance critique gate) or plan-review "
-                        "(the pre-implementation AC-vs-spec check); each has its own log")
     r.add_argument("--tier", choices=TIERS, default=None,
-                   help="DELIVERY ONLY: the depth this review was taken at, as `critic.py "
+                   help="the depth this review was taken at, as `critic.py "
                         "brief` reported it. A light verdict does not cover a unit the risk "
                         "band tiers full; an absent tier is UNKNOWN and covers, so no "
                         "historical verdict is retrospectively downgraded")
     r.add_argument("--tier-explicit", action="store_true",
                    help="mark the tier as an operator's choice rather than a derived one")
-    r.add_argument("--kind", choices=PLAN_REVIEW_KINDS, default=None,
-                   help="PLAN-REVIEW ONLY: which pre-code artefact was judged (default "
-                        f"{DEFAULT_PLAN_KIND}). A gate asks for an approval of ITS artefact, so "
-                        "a spec approval cannot discharge a test-plan gate. Refused on the "
-                        "delivery phase, where a verdict judges the diff")
     r.add_argument("--root", default=".")
     r.set_defaults(func=cmd_record)
     b = sub.add_parser("brief", help="Print the assembled seat-review prompt for a unit "
@@ -5151,20 +4924,12 @@ def build_parser() -> argparse.ArgumentParser:
                         "band decides: a low-band unit gets a bounded brief, a medium-or-worse "
                         "one gets the full adversarial pass. An explicit choice is recorded as "
                         "one, so the derivation can be judged against the reviews it produced")
-    b.add_argument("--phase", choices=PHASES, default="delivery",
-                   help="`plan-review` briefs the PRE-CODE pass: the criteria as law and the "
-                        "unit's test plan as the object of review, with NO diff scope, because "
-                        "there is no diff yet and a brief that asks for one teaches the reviewer "
-                        "to wait for code")
     b.add_argument("--rejoinder", metavar="FILE|-", default=None,
                    help="emit the RE-REVIEW brief from the prior verdict file (or stdin "
-                        "with -), in --phase's shape: delivery re-renders the diff scope, "
-                        "demands the named probes and mutants be re-executed and closes with "
-                        "the delivery contract; plan-review re-renders the plan brief - no "
-                        "diff scope, the CURRENT Test Plan table - asks for each finding to be "
-                        "ruled against it and closes with the plan contract (--tier refused). "
-                        "The prior verdict is quoted verbatim, a fingerprint footer is printed "
-                        "on stderr in both phases; a malformed block is refused")
+                        "with -): the diff scope re-rendered, the named probes and mutants "
+                        "demanded re-executed, and the delivery contract. The prior verdict is "
+                        "quoted verbatim, a fingerprint footer is printed on stderr; a "
+                        "malformed block is refused")
     b.add_argument("--root", default=".")
     b.set_defaults(func=cmd_brief)
     cc = sub.add_parser("caller-check",
@@ -5278,12 +5043,10 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--reviewer", default=None,
                     help="narrow the match when the unit has several rows that date")
     sp.add_argument("--verdict", default=None, help="narrow the match by the row's verdict")
-    sp.add_argument("--phase", choices=PHASES, default="delivery")
     sp.add_argument("--root", default=".")
     sp.set_defaults(func=cmd_supersede)
     s = sub.add_parser("show", help="Show the latest verdict for a unit (or all).")
     s.add_argument("--unit", default=None)
-    s.add_argument("--phase", choices=PHASES, default="delivery")
     s.add_argument("--root", default=".")
     sdlc_md.add_format_arg(s)
     s.set_defaults(func=cmd_show)
@@ -5291,7 +5054,29 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+#: The verbs that once took `--phase`; `repair` keeps its own until the repair ledger goes.
+_PHASELESS_VERBS = ("record", "brief", "supersede", "correct", "show")
+
+
+def _plan_phase_retired(argv: list[str]) -> str | None:
+    """The refusal for a `--phase` handed to a verdict verb, or None. Plan review is retired, so
+    every verdict is a delivery verdict and the flag has nothing left to choose. Named rather
+    than left to argparse, whose "unrecognized arguments" would not say why."""
+    # the subcommand: the first bare word that is not the value of a leading `--root`
+    verb = next((a for i, a in enumerate(argv) if not a.startswith("-")
+                 and (i == 0 or argv[i - 1] != "--root")), "")
+    if verb in _PHASELESS_VERBS and any(a == "--phase" or a.startswith("--phase=")
+                                        for a in argv):
+        return (f"{verb} refused: plan review is retired - every verdict is a delivery "
+                f"verdict, so `--phase` is gone. Drop the flag; nothing was written.")
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else list(argv)
+    if why := _plan_phase_retired(argv):
+        print(why, file=sys.stderr)
+        return 2
     args = build_parser().parse_args(argv)
     # Resolve the root ONCE and write it back, so every verb below anchors on the tree the
     # run belongs to. The family default `.` means "work it out from here", not "the cwd

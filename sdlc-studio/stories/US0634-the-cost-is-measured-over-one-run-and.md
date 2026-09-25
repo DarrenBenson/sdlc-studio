@@ -24,22 +24,22 @@
 - **Given** a closed run whose units carry rows in both `plan-review-verdicts.md` and `critic-verdicts.md`
 - **When** `retro.py accuracy --id <retro> --write` runs
 - **Then** it writes the pass count for each phase and the rejection count within each, read from the ledgers for that run's units, so the figure cannot be typed in and cannot drift from the record it describes
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::PlanVersusCodeReviewCostTests::test_the_split_is_read_from_both_ledgers
+- **Verify:** manual - retired by US0915: the retro's review split has no plan-review arm now plan review is retired
 - **Caller:** `retro.py accuracy --write`, whose output the close report renders
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - reading the count from the retro's prose must turn this test red
-- **Verified:** yes (2026-08-06)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0915
 
 ### AC2: a run with no plan reviews reports that state rather than a zero that reads as free
 
 - **Given** a run predating the test-plan cutoff, so no unit has a plan-review row
 - **When** the same command runs
 - **Then** it reports the phase as not-in-force for that run, distinguished from a run that held plan reviews and spent nothing on them, because a bare 0 in a cost column reads as evidence the ceremony is free
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::PlanVersusCodeReviewCostTests::test_a_run_without_the_phase_is_not_reported_as_zero
+- **Verify:** manual - retired by US0915: the retro's review split has no plan-review arm now plan review is retired
 - **Caller:** `retro.py accuracy --write`
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - emitting 0 for an absent phase must turn this test red
-- **Verified:** yes (2026-08-06)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0915
 
 ## Revision History
 
@@ -48,3 +48,4 @@
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-03 | sdlc-studio | Groomed: criteria authored against the `retro.py accuracy` slice |
 | 2026-08-06 | sdlc-studio | Declared `Depends on:` at plan time - the planner reported all six units parallel because no dependency was stated, which is false: the plan is derived (US0629) before it can be reviewed, gated, executed or measured |
+| 2026-09-25 | Claude Opus 5.5 | AC1-AC2 retired by US0915 (D0259 pattern): the retro's review split has no plan-review arm |

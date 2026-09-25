@@ -24,33 +24,33 @@
 - **Given** a unit with a derived test plan and no code written
 - **When** `critic.py brief --unit <id> --seat qa --phase plan-review` runs
 - **Then** the printed brief carries the seat charter, the unit's criteria as law and the test-plan rows as the object of review, and it does NOT carry a diff scope, because there is no diff yet and a brief that asks for one teaches the reviewer to wait for code
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PlanReviewBriefTests::test_the_plan_brief_scopes_to_the_plan_not_a_diff
+- **Verify:** manual - retired by US0915: the plan-review brief was deleted with plan review, so no command renders it
 - **Caller:** `critic.py brief --phase plan-review` (the CLI verb a review subagent is spawned with)
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - restoring the diff-scope block must turn this test red
-- **Verified:** yes (2026-08-06)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0915
 
 ### AC2: the verdict records through the existing plan-review phase, and a self-review is refused
 
 - **Given** a plan-review verdict whose reviewer equals the plan's author
 - **When** `critic.py record --unit <id> --phase plan-review --verdict APPROVE` runs
 - **Then** it is refused by the same independence rule the delivery phase already enforces, and an independent verdict lands in `plan-review-verdicts.md` rather than in the delivery log, so a plan review can never satisfy the conformance `critiqued` gate
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PlanReviewBriefTests::test_a_self_plan_review_is_refused_and_phases_stay_separate
+- **Verify:** manual - retired by US0915: plan review is retired and no command records or briefs a plan-review verdict
 - **Caller:** `critic.py record --phase plan-review`
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - routing a plan-review row into the delivery log must turn this test red
-- **Verified:** yes (2026-08-06)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0915
 
 ### AC3: a plan verdict carries brief provenance on the same terms as a delivery verdict
 
 - **Given** a plan-review verdict recorded with no `--brief` fingerprint
 - **When** `critic.py record --phase plan-review` runs
 - **Then** it is refused unless stood down by a recorded config decision, matching the delivery phase exactly, because a hand-written plan-review prompt substitutes an unbounded surface just as a hand-written code-review prompt does
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PlanReviewBriefTests::test_a_plan_verdict_without_brief_provenance_is_refused
+- **Verify:** manual - retired by US0915: plan review is retired and no command records or briefs a plan-review verdict
 - **Caller:** `critic.py record --phase plan-review`
 - **Verification target:** functional
 - **Mutation-checked:** to be recorded at delivery - exempting the plan-review phase from the provenance demand must turn this test red
-- **Verified:** yes (2026-08-06)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0915
 
 ## Revision History
 
@@ -59,3 +59,4 @@
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-03 | sdlc-studio | Groomed: criteria authored against the existing `--phase plan-review` route |
 | 2026-08-06 | sdlc-studio | Declared `Depends on:` at plan time - the planner reported all six units parallel because no dependency was stated, which is false: the plan is derived (US0629) before it can be reviewed, gated, executed or measured |
+| 2026-09-25 | Claude Opus 5.5 | AC1-AC3 retired by US0915 (D0259 pattern): plan review is retired, with its brief and record phase |

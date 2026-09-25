@@ -114,518 +114,6 @@ class RecordTests(unittest.TestCase):
             self.assertIn("US0003", units)
 
 
-class PlanReviewBriefTests(unittest.TestCase):
-    """US0631: the test plan is reviewed by an independent seat BEFORE the code.
-
-    The pass is the point: reviewing the test costs a fraction of reviewing the code, and this
-    repo has an accidental measurement of that (L-0301). What makes it a review rather than a
-    formality is that the brief is produced by the shipped tool, carries the criteria as law,
-    and carries NO diff scope - because there is no diff, and asking for one teaches the
-    reviewer to wait for code.
-    """
-
-    def _unit(self, root: Path, plan: bool = True) -> Path:
-        for sub in ("stories", "personas/seats", "reviews"):
-            (root / "sdlc-studio" / sub).mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / "personas" / "seats" / "qa.md").write_text(
-            "# Sam - QA amigo\n\nthe charter text\n", encoding="utf-8")
-        body = ("# US0001: a unit\n\n> **Status:** Ready\n> **Points:** 3\n"
-                "> **Affects:** scripts/thing.py\n\n"
-                "## Acceptance Criteria\n\n### AC1: it refuses an empty batch\n\n"
-                "- **Then** it refuses\n")
-        if plan:
-            body += ("\n## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
-                     "| AC1 | in thing.py, delete the emptiness guard | it refuses |\n")
-        f = root / "sdlc-studio" / "stories" / "US0001-x.md"
-        f.write_text(body + "\n## Revision History\n", encoding="utf-8")
-        return f
-
-    def test_the_plan_brief_scopes_to_the_plan_not_a_diff(self) -> None:
-        """Mutant: fall through to the delivery brief - the reviewer is handed a diff scope and
-        a claim-inventory pass over code that does not exist, and is taught to wait for it."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            self._unit(root)
-            text = mod.brief(root, "US0001", "qa", phase="plan-review")
-            # The charter is REFERENCED by path, exactly as the delivery brief references it -
-            # asserted the same way here so the two cannot drift into different contracts.
-            self.assertIn("personas/seats/qa.md", text, "the seat charter is not pointed at")
-            self.assertIn("adopt the charter", text)
-            self.assertIn("AC1: it refuses an empty batch", text, "the criteria are missing")
-            self.assertIn("delete the emptiness guard", text, "the plan rows are missing")
-            self.assertNotIn("Diff scope", text, "a plan review was handed a diff scope")
-            self.assertNotIn("scripts/thing.py", text,
-                             "the unit's Affects reached a brief that has no diff to bound")
-            # ...and the DELIVERY brief for the same unit still carries both, or the assertions
-            # above pass for a brief that simply lost its scope.
-            delivery = mod.brief(root, "US0001", "qa", tier="full")
-            self.assertIn("Diff scope", delivery)
-            self.assertIn("scripts/thing.py", delivery)
-
-    def test_the_plan_brief_says_so_when_no_plan_exists(self) -> None:
-        """An absence is not an answer. Mutant: render an empty plan section - the reviewer
-        approves a plan that was never derived, and cannot tell that from an empty one."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            self._unit(root, plan=False)
-            text = mod.brief(root, "US0001", "qa", phase="plan-review")
-            self.assertIn("NO `## Test Plan`", text)
-            self.assertIn("testplan derive", text, "the brief does not say how to produce one")
-
-    def test_a_self_plan_review_is_refused_and_phases_stay_separate(self) -> None:
-        """The independence rule the delivery phase already enforces: a self-review is recorded
-        with a warning and NEVER clears the gate. Asserted at the gate rather than at the write,
-        because that is where the delivery phase enforces it and two phases with two different
-        rules is the drift this criterion exists to prevent.
-
-        Mutant: drop `is_independent` from the plan-review gate - a plan an author approved for
-        themselves clears it; or write the row into the delivery log - a plan review then
-        satisfies the conformance `critiqued` gate, which judges a diff nobody read.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            f = self._unit(root)
-            mod.record_verdict(root, "US0001", "approve", reviewer="dev", author="dev",
-                               phase="plan-review", kind="spec", brief="a" * 12)
-            self.assertFalse(mod.is_independent(
-                mod.verdict_for(root, "US0001", phase="plan-review", kind="spec")),
-                "a self plan-review read as independent")
-            # It lands in the PLAN ledger and nowhere near the delivery one.
-            self.assertTrue(mod.verdicts_path(root, "plan-review").exists())
-            self.assertFalse(mod.verdicts_path(root, "delivery").exists(),
-                             "a plan review wrote into the delivery log, where it would satisfy "
-                             "the conformance `critiqued` gate for a diff nobody read")
-            self.assertIsNone(mod.verdict_for(root, "US0001", phase="delivery"))
-            # THE POSITIVE CONTROL: an independent one does read as independent.
-            mod.record_verdict(root, "US0001", "approve", reviewer="qa", author="dev",
-                               phase="plan-review", kind="spec", brief="b" * 12)
-            self.assertTrue(mod.is_independent(
-                mod.verdict_for(root, "US0001", phase="plan-review", kind="spec")))
-            self.assertTrue(f.exists())
-
-    def test_a_plan_verdict_without_brief_provenance_is_refused(self) -> None:
-        """The same terms as a delivery verdict: a hand-written plan-review prompt substitutes an
-        unbounded surface exactly as a hand-written code-review prompt does.
-
-        Mutant: exempt the plan-review phase from the provenance gate - a plan verdict with no
-        evidence of the prompt that produced it is accepted, and the cheaper review becomes the
-        one with weaker provenance.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            self._unit(root)
-            err = io.StringIO()
-            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
-                rc = mod.main(["record", "--unit", "US0001", "--verdict", "APPROVE",
-                               "--phase", "plan-review", "--reviewer", "qa", "--author", "dev",
-                               "--root", str(root)])
-            self.assertEqual(rc, 2, "a plan verdict with no brief provenance was accepted")
-            self.assertIn("brief provenance", err.getvalue())
-            self.assertFalse(mod.verdicts_path(root, "plan-review").exists(),
-                             "the refused verdict was written anyway")
-
-    def test_the_plan_brief_prints_a_fingerprint_that_records(self) -> None:
-        """THE LOOP, end to end through the shipped verbs. The plan path returned before the
-        fingerprint block, so `record --phase plan-review` demanded a fingerprint the command
-        had never printed - verbatim the scar AGENTS.md cites, appearing in the phase added to
-        prevent it. Both seats found it independently.
-
-        Mutants: return before printing the fingerprint (the CLI prints none and recording is
-        impossible); or match the fingerprint against a DELIVERY brief (an honest plan verdict
-        is flagged as unrecognised while a delivery fingerprint is accepted as provenance for a
-        plan review - the mechanism certifies the wrong artefact).
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            self._unit(root)
-            out, err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["brief", "--unit", "US0001", "--seat", "qa",
-                               "--phase", "plan-review", "--root", str(root)])
-            self.assertEqual(rc, 0)
-            m = re.search(r"brief fingerprint: ([0-9a-f]+)", err.getvalue())
-            self.assertIsNotNone(m, "the plan-review brief printed no fingerprint")
-            fp = m.group(1)
-            self.assertIn("--phase plan-review", err.getvalue(),
-                          "the record command it prints omits the phase")
-
-            out2, err2 = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(out2), contextlib.redirect_stderr(err2):
-                rc = mod.main(["record", "--unit", "US0001", "--phase", "plan-review",
-                               "--kind", "test-plan", "--verdict", "APPROVE",
-                               "--reviewer", "qa", "--author", "dev", "--brief", fp,
-                               "--root", str(root)])
-            self.assertEqual(rc, 0, err2.getvalue())
-            self.assertNotIn("matches no brief", err2.getvalue(),
-                             "the tool's own fingerprint was reported as unrecognised, so every "
-                             "honest plan verdict carries a fabricated one's suspicion marker")
-
-    def test_a_delivery_fingerprint_is_not_provenance_for_a_plan_review(self) -> None:
-        """The other half, and the more dangerous one: the matcher asked for a DELIVERY brief
-        whatever phase was being recorded, so a delivery fingerprint was accepted as provenance
-        for a plan review while the correct one was not.
-
-        Mutant: drop the phase from `_seats_whose_brief_matches` - the two swap places.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            self._unit(root)
-            plan_fp = mod.brief_fingerprint(mod.brief(root, "US0001", "qa",
-                                                      phase="plan-review"))
-            deliv_fp = mod.brief_fingerprint(mod.brief(root, "US0001", "qa", tier="full"))
-            self.assertNotEqual(plan_fp, deliv_fp)
-            self.assertEqual(
-                mod._seats_whose_brief_matches(root, "US0001", plan_fp, "plan-review"), ["qa"],
-                "the plan brief's own fingerprint is not recognised on its own phase")
-            self.assertEqual(
-                mod._seats_whose_brief_matches(root, "US0001", deliv_fp, "plan-review"), [],
-                "a delivery fingerprint was accepted as provenance for a plan review")
-
-    def _record_prior(self, root: Path, phase: str) -> Path:
-        """Brief the seat through the CLI, record a REJECT against that brief's fingerprint in
-        the given phase, and return the prior-verdict file the rejoinder takes."""
-        import subprocess  # noqa: PLC0415
-        args = ["--phase", "plan-review"] if phase == "plan-review" else []
-        b = subprocess.run([sys.executable, "-B", str(SCRIPT), "brief", "--unit", "US0001",
-                            "--seat", "qa", "--root", str(root), *args],
-                           capture_output=True, text=True, check=False)
-        self.assertEqual(0, b.returncode, b.stderr)
-        fp = re.search(r"brief fingerprint: ([0-9a-f]+)", b.stderr).group(1)
-        prior = root / "prior.txt"
-        # a delivery verdict's findings carry origin tags, which the delivery ledger demands
-        tag = "" if phase == "plan-review" else "[new] "
-        prior.write_text(f"VERDICT: REJECT\nISSUES: {tag}AC1 the row's mutant is not reached by its fixture\n"
-                         f"BLOCKING: {tag}AC1 the row's mutant is not reached by its fixture\n", encoding="utf-8")
-        kind = ["--phase", "plan-review", "--kind", "test-plan"] if phase == "plan-review" else ["--tier", "full"]
-        r = subprocess.run([sys.executable, "-B", str(SCRIPT), "record", "--unit", "US0001",
-                            "--from-verdict", str(prior), "--brief", fp, "--reviewer", "qa seat",
-                            "--author", "author", "--root", str(root), *kind],
-                           capture_output=True, text=True, check=False)
-        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
-        return prior
-
-    def test_a_plan_review_rejoinder_keeps_the_plan_review_shape_through_the_cli(self) -> None:
-        """BG0645. MUTANTS: resolve the phase from the rejoinder flag (delivery whenever a
-        rejoinder is given); keep the `Diff scope (` block under the plan charter; drop the Test
-        Plan table; print no footer; copy the delivery footer; append the delivery return block."""
-        import subprocess  # noqa: PLC0415
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._unit(root)
-            prior = self._record_prior(root, "plan-review")
-            r = subprocess.run([sys.executable, "-B", str(SCRIPT), "brief", "--unit", "US0001",
-                                "--seat", "qa", "--phase", "plan-review", "--rejoinder", str(prior),
-                                "--root", str(root)], capture_output=True, text=True, check=False)
-            self.assertEqual(0, r.returncode, r.stderr)
-            out = r.stdout
-            self.assertIn("There is NO diff scope", out, "the plan-review charter is missing")
-            self.assertFalse(re.search(r"^Diff scope \(", out, re.M), "a diff-scope block header on a plan re-review")
-            self.assertIn("### AC1: it refuses an empty batch", out, "the criteria as law are missing")
-            self.assertIn("| AC1 | in thing.py, delete the emptiness guard | it refuses |", out,
-                          "the CURRENT Test Plan table is missing - the object a plan re-review judges")
-            self.assertIn("--- RE-REVIEW (rejoinder) ---", out)
-            self.assertIn(prior.read_text(encoding="utf-8").strip(), out, "the prior verdict is not quoted verbatim - all three lines")
-            # the plan re-review asks for a ruling against the table, never for mutants to re-run
-            re_review = out[out.index("--- RE-REVIEW (rejoinder) ---"):]
-            self.assertIn("rule each one CLOSED, OVER-CLAIMED or MOVED", re_review)
-            self.assertNotIn("RE-EXECUTE", re_review, "the delivery demand on a plan re-review")
-            # it CLOSES with the plan-review contract, never the delivery block
-            tail = out[out.index("--- RE-REVIEW (rejoinder) ---"):]
-            self.assertIn("BLOCKING: <the subset that must change before code is written, or 'none'>", tail)
-            self.assertNotIn("[regression]", tail, "the delivery return block, with its origin tags, closes a plan re-review")
-            self.assertNotIn("git log -S", tail)
-            self.assertTrue(out.rstrip().endswith("or 'none'>"), "the plan contract is not the last thing the seat reads")
-            # and the footer records into the PLAN ledger
-            self.assertRegex(r.stderr, r"brief fingerprint: [0-9a-f]+")
-            self.assertIn("record --unit US0001 --phase plan-review --kind test-plan", r.stderr)
-            self.assertNotIn("--tier", r.stderr, "the plan footer names a tier the plan ledger refuses")
-            self.assertIn("--reviewer <seat> --author <who>", r.stderr, "the printed record command does not run as printed - record needs both")
-            # the flag's own help describes the shape it now renders
-            h = subprocess.run([sys.executable, "-B", str(SCRIPT), "brief", "--help"], capture_output=True, text=True, check=False)
-            self.assertIn("plan-review re-renders the plan brief", h.stdout, "brief --help still describes the delivery shape only")
-            # and `record --brief` CONSUMES that fingerprint into the plan ledger - the same value
-            # on both lines of the footer, and RECOGNISED, never the unrecognised-brief note
-            fp = re.search(r"brief fingerprint: ([0-9a-f]+)", r.stderr).group(1)
-            self.assertEqual(fp, re.search(r"--brief ([0-9a-f]+)", r.stderr).group(1), "the footer's two fingerprints differ")
-            rec = subprocess.run([sys.executable, "-B", str(SCRIPT), "record", "--unit", "US0001",
-                                  "--phase", "plan-review", "--kind", "test-plan", "--verdict", "APPROVE",
-                                  "--reviewer", "qa seat", "--author", "author", "--brief", fp, "--root", str(root)],
-                                 capture_output=True, text=True, check=False)
-            self.assertEqual(0, rec.returncode, rec.stdout + rec.stderr)
-            self.assertIn("[plan-review]", rec.stdout + rec.stderr, "the re-review's verdict did not land in the plan ledger")
-            self.assertNotIn("matches no brief", rec.stdout + rec.stderr,
-                             "an honest re-review's fingerprint was reported as unrecognised - the matcher cannot reproduce it")
-            # a tier on the plan-review rejoinder is refused, as on the plain plan brief
-            t = subprocess.run([sys.executable, "-B", str(SCRIPT), "brief", "--unit", "US0001",
-                                "--seat", "qa", "--phase", "plan-review", "--rejoinder", str(prior),
-                                "--tier", "full", "--root", str(root)], capture_output=True, text=True, check=False)
-            self.assertEqual(2, t.returncode)
-            self.assertIn("--tier is the DELIVERY review's depth", t.stderr)
-
-    def test_a_delivery_rejoinder_still_carries_the_diff_scope_and_a_footer(self) -> None:
-        """BG0645 AC2, the control. MUTANTS: drop the `Diff scope (` block from every rejoinder
-        whatever the phase; print the footer on the plan-review rejoinder only."""
-        import subprocess  # noqa: PLC0415
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._unit(root)
-            prior = self._record_prior(root, "delivery")
-            r = subprocess.run([sys.executable, "-B", str(SCRIPT), "brief", "--unit", "US0001",
-                                "--seat", "qa", "--rejoinder", str(prior), "--root", str(root)],
-                               capture_output=True, text=True, check=False)
-            self.assertEqual(0, r.returncode, r.stderr)
-            self.assertTrue(re.search(r"^Diff scope \(", r.stdout, re.M), "the delivery rejoinder lost its diff scope")
-            self.assertIn("--- RE-REVIEW (rejoinder) ---", r.stdout)
-            self.assertIn("ISSUES: [new] AC1 the row's mutant is not reached by its fixture", r.stdout)
-            self.assertIn("[regression]", r.stdout[r.stdout.index("--- RE-REVIEW"):], "the delivery contract does not close the delivery re-review")
-            self.assertRegex(r.stderr, r"brief fingerprint: [0-9a-f]+")
-            self.assertIn("--tier full", r.stderr, "the delivery footer carries no tier")
-            self.assertNotIn("--phase plan-review", r.stderr)
-            # the fingerprint records WITHOUT the unrecognised-brief note, and a chosen tier is
-            # carried as such
-            fp = re.search(r"brief fingerprint: ([0-9a-f]+)", r.stderr).group(1)
-            rec = subprocess.run([sys.executable, "-B", str(SCRIPT), "record", "--unit", "US0001", "--verdict", "APPROVE",
-                                  "--brief", fp, "--tier", "full", "--reviewer", "qa seat", "--author", "author", "--root", str(root)],
-                                 capture_output=True, text=True, check=False)
-            self.assertEqual(0, rec.returncode, rec.stdout + rec.stderr)
-            self.assertNotIn("matches no brief", rec.stdout + rec.stderr, "the delivery rejoinder's fingerprint was not recognised")
-            t = subprocess.run([sys.executable, "-B", str(SCRIPT), "brief", "--unit", "US0001", "--seat", "qa",
-                                "--rejoinder", str(prior), "--tier", "full", "--root", str(root)], capture_output=True, text=True, check=False)
-            self.assertIn("--tier-explicit", t.stderr, "a chosen tier is not carried into the record command")
-
-    def test_the_plan_brief_refuses_a_tier(self) -> None:
-        """`record_verdict` refuses a tier on this phase, so a brief that accepted one would
-        promise a depth the ledger cannot record. Mutant: accept and ignore it - the two halves
-        disagree and the operator is told a light plan review happened."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            self._unit(root)
-            err = io.StringIO()
-            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
-                rc = mod.main(["brief", "--unit", "US0001", "--seat", "qa",
-                               "--phase", "plan-review", "--tier", "light", "--root", str(root)])
-            self.assertEqual(rc, 2)
-            self.assertIn("no meaning on a plan review", err.getvalue())
-
-
-class PlanReviewBriefUnauthoredNoteTests(unittest.TestCase):
-    """BG0666 AC2: the plan-review brief renders a placeholder row exactly like a written one,
-    and a reviewer handed that judged a plan that named nothing. The brief now carries the note
-    `testplan derive` prints, from derive's own helper and sentence.
-
-    The expected note is built from the imported template with LITERAL ids and count, never by
-    calling the helper, and "not AC1" is read on the note line alone: the criteria list and the
-    table beside it name AC1 to AC4 whatever the note says.
-    """
-
-    PLACEHOLDER = "{{name the production change this test must fail on}}"
-    VERIFY_AC = SCRIPT.parent / "verify_ac.py"
-
-    def _fixture(self, root: Path) -> None:
-        (root / "sdlc-studio" / "personas" / "seats").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / "personas" / "seats" / "qa.md").write_text(
-            "# Sam - QA amigo\n\nthe charter text\n", encoding="utf-8")
-        (root / "sdlc-studio" / "bugs").mkdir(parents=True, exist_ok=True)
-        ph = self.PLACEHOLDER
-        (root / "sdlc-studio" / "bugs" / "BG9001-x.md").write_text(
-            "# BG9001: a unit\n\n> **Status:** Open\n> **Severity:** Medium\n"
-            "> **Points:** 2\n> **Affects:** scripts/verify_ac.py\n"
-            "> **Created:** 2026-09-15\n\n## Summary\n\nA thing.\n\n"
-            "## Acceptance Criteria\n\n"
-            "- [ ] **AC1** Given an empty batch, when the planner runs, then it refuses the batch\n"
-            "- [ ] **AC2** Given a full batch, when the planner runs, then it accepts every unit\n"
-            "- [ ] **AC3** Given a batch of one, when the planner runs, then it prints that unit\n"
-            "- [ ] **AC4** Given a duplicated unit, when the planner runs, then it names both "
-            "copies\n\n"
-            "## Test Plan\n\n| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
-            "| AC1 | in verify_ac.py, delete the emptiness guard | stale |\n"
-            "| AC1 | in verify_ac.py, invert the sort order of the queue | stale |\n"
-            "| AC1 | in verify_ac.py, hard-code the exit status to zero | stale |\n"
-            f"| AC2 | {ph} | stale |\n| AC2 | {ph} | stale |\n"
-            "| AC3 | in verify_ac.py, drop the trailing newline from the report | stale |\n"
-            f"| AC3 | {ph} | stale |\n\n## Revision History\n", encoding="utf-8")
-
-    def _brief(self, root: Path):
-        import subprocess  # noqa: PLC0415
-        return subprocess.run([sys.executable, "-B", str(SCRIPT), "brief", "--unit", "BG9001",
-                               "--seat", "qa", "--phase", "plan-review", "--root", str(root)],
-                              capture_output=True, text=True, check=False)
-
-    def test_the_brief_names_only_the_criteria_whose_mutant_is_unauthored(self) -> None:
-        """MUTANTS (critic.py `_plan_review_brief`): the note line dropped; the shared helper
-        replaced by a local count of placeholder cells in its own wording; the note wrapped in an
-        `all(...)` over every table row, so a partly authored plan gets none."""
-        import subprocess  # noqa: PLC0415
-        import verify_ac  # noqa: PLC0415 - scripts/ is on the path; the template is derive's own
-        template = verify_ac.TESTPLAN_UNAUTHORED_NOTE
-        head = template.split("{")[0]
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root)
-            # The stated rule, pinned: the note judges the ROWS the file holds, so before derive
-            # AC4 - which has no row yet - is not named, and the count is 2.
-            before = self._brief(root)
-            self.assertEqual(0, before.returncode, before.stderr)
-            self.assertEqual([template.format(count=2, ids="AC2, AC3")],
-                             [ln for ln in before.stdout.splitlines() if ln.startswith(head)],
-                             "a criterion with no row is judged by the brief's note")
-            dv = subprocess.run([sys.executable, "-B", str(self.VERIFY_AC), "testplan", "derive",
-                                 "--unit", "BG9001", "--root", str(root)],
-                                capture_output=True, text=True, check=False)
-            self.assertEqual(0, dv.returncode, dv.stdout + dv.stderr)
-            r = self._brief(root)
-            self.assertEqual(0, r.returncode, r.stderr)
-            self.assertIn(f"| AC4 | {self.PLACEHOLDER} |", r.stdout,
-                          "the brief is not reading the plan as the first derive left it")
-            notes = [ln for ln in r.stdout.splitlines() if ln.startswith(head)]
-            self.assertEqual([template.format(count=3, ids="AC2, AC3, AC4")], notes,
-                             f"the brief does not carry the shared note naming AC2, AC3 and AC4: "
-                             f"{r.stdout!r}")
-            self.assertNotIn("AC1", notes[0], "the brief's note names the authored AC1")
-
-
-class PlanReviewKindTests(unittest.TestCase):
-    """BG0510: a plan-review verdict was keyed by unit and phase only.
-
-    Today only one kind of plan review exists - the US0090 AC-vs-spec check - so nothing in the
-    tree is wrong. What is wrong is that the ledger's shape makes the mistake the DEFAULT for
-    the next author: the moment a second pre-code artefact is reviewed through the same phase,
-    one approval discharges both gates and neither reviewer read the other's artefact. Found
-    while planning EP0207, whose US0630 proposed exactly that second gate; the criterion as
-    drafted read "an APPROVE row in plan-review-verdicts.md", which a design-plan approval
-    satisfies with no test plan ever written. Two independent seats found it by reading the
-    source, and the criterion was withdrawn rather than shipped.
-    """
-
-    def test_a_plan_review_row_records_its_kind(self) -> None:
-        """Mutant: keep the seven-column schema - the field is absent on read-back."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            mod.record_verdict(root, "US0017", "approve", reviewer="qa", author="dev",
-                               phase="plan-review", kind="test-plan")
-            v = mod.verdict_for(root, "US0017", phase="plan-review")
-            self.assertEqual(v["kind"], "test-plan")
-            self.assertIn("| Kind |",
-                          mod.verdicts_path(root, "plan-review").read_text(encoding="utf-8"))
-
-    def test_a_spec_approval_does_not_satisfy_a_test_plan_lookup(self) -> None:
-        """THE defect. Mutant: ignore the kind in the lookup - one approval discharges both
-        gates and neither reviewer read the other's artefact."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            mod.record_verdict(root, "US0017", "approve", reviewer="qa", author="dev",
-                               phase="plan-review", kind="spec")
-            self.assertIsNone(mod.verdict_for(root, "US0017", phase="plan-review",
-                                              kind="test-plan"))
-            self.assertIsNotNone(mod.verdict_for(root, "US0017", phase="plan-review",
-                                                 kind="spec"))
-            # ...and each query returns its OWN row once both exist
-            mod.record_verdict(root, "US0017", "reject", reviewer="qa", author="dev",
-                               phase="plan-review", kind="test-plan")
-            self.assertEqual(
-                mod.verdict_for(root, "US0017", phase="plan-review", kind="spec")["verdict"],
-                "APPROVE")
-            self.assertEqual(
-                mod.verdict_for(root, "US0017", phase="plan-review",
-                                kind="test-plan")["verdict"], "REJECT")
-
-    def test_a_caller_that_names_no_kind_still_sees_every_row(self) -> None:
-        """The back-compatibility control: a caller that does not care must behave exactly as it
-        did before the column. Mutant: filter on the default when no kind is named - a
-        test-plan verdict becomes invisible to every existing reader."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            mod.record_verdict(root, "US0017", "reject", reviewer="qa", author="dev",
-                               phase="plan-review", kind="test-plan")
-            self.assertEqual(
-                mod.verdict_for(root, "US0017", phase="plan-review")["verdict"], "REJECT")
-
-    def test_an_existing_row_defaults_to_spec(self) -> None:
-        """Mutant: read an absent kind as unknown - every historical approval stops counting and
-        `transition` refuses units it passes today. The pad is `spec` because only one kind was
-        ever reviewed, which makes it a fact about those rows, not an assumption."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            path = mod.verdicts_path(root, "plan-review")
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(
-                "# Plan-Review Verdicts\n\n"
-                "| Unit | Verdict | Reviewer | Author | Date | Brief | Issues |\n"
-                "| --- | --- | --- | --- | --- | --- | --- |\n"
-                "| US0017 | APPROVE | qa | dev | 2026-07-01 | abc123abc123 | - |\n",
-                encoding="utf-8")
-            v = mod.verdict_for(root, "US0017", phase="plan-review", kind="spec")
-            self.assertIsNotNone(v, "a historical approval stopped counting")
-            self.assertEqual(v["kind"], "spec")
-
-    def test_the_legacy_table_is_widened_and_its_cells_keep_their_values(self) -> None:
-        """LL0028: the migration is ATTACKED, not re-read. Mutant: rewrite the table instead of
-        padding it - a recorded judgement moves column, exactly as adding a column to
-        VELOCITY.md shifted every historical row in this same sprint."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            path = mod.verdicts_path(root, "plan-review")
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(
-                "# Plan-Review Verdicts\n\n"
-                "| Unit | Verdict | Reviewer | Author | Date | Brief | Issues |\n"
-                "| --- | --- | --- | --- | --- | --- | --- |\n"
-                "| US0017 | APPROVE | qa | dev | 2026-07-01 | abc123abc123 | it read fine |\n",
-                encoding="utf-8")
-            mod.record_verdict(root, "US0018", "approve", reviewer="qa", author="dev",
-                               phase="plan-review", kind="test-plan")
-            rows = {r["unit"]: r for r in mod.read_verdicts(root, "plan-review")}
-            self.assertEqual(rows["US0017"]["reviewer"], "qa")
-            self.assertEqual(rows["US0017"]["brief"], "abc123abc123")
-            self.assertEqual(rows["US0017"]["issues"], "it read fine")
-            self.assertEqual(rows["US0017"]["kind"], "spec")
-            self.assertEqual(rows["US0018"]["kind"], "test-plan")
-            # the table is still one valid markdown table: every row has the header's width
-            lines = [ln for ln in path.read_text(encoding="utf-8").splitlines()
-                     if ln.startswith("|")]
-            widths = {len(mod.sdlc_md.table_cells(ln)) for ln in lines
-                      if not set(ln.strip()) <= set("|-: ")}
-            self.assertEqual(widths, {8}, lines)
-
-    def test_an_unknown_kind_is_refused_at_write_time(self) -> None:
-        """Mutant: accept any string - a misspelt kind silently creates a row no gate will ever
-        match, which is a gate nobody can satisfy and nobody can see."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            with self.assertRaises(ValueError) as ctx:
-                mod.record_verdict(root, "US0017", "approve", reviewer="qa", author="dev",
-                                   phase="plan-review", kind="testplan")
-            self.assertIn("unknown plan-review kind", str(ctx.exception))
-            self.assertIn("test-plan", str(ctx.exception))
-            self.assertFalse(mod.verdicts_path(root, "plan-review").exists())
-
-    def test_a_kind_on_the_delivery_phase_is_refused(self) -> None:
-        """A delivery verdict judges the diff; a kind has no meaning there. Mutant: accept and
-        ignore it - a caller believes it recorded a distinction the record does not hold."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            with self.assertRaises(ValueError) as ctx:
-                mod.record_verdict(root, "US0017", "approve", reviewer="qa", author="dev",
-                                   phase="delivery", kind="spec")
-            self.assertIn("no meaning on", str(ctx.exception))
-
-    def test_the_shipped_verb_records_the_kind(self) -> None:
-        """THE LANE TEST (LL0040). The flag has to reach `record_verdict` from the parser, and
-        a library test never exercises that wiring. Mutant: add the argument and forget to pass
-        it - every case above still passes and this reddens."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            out, err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["record", "--unit", "US0017", "--verdict", "APPROVE",
-                               "--reviewer", "qa", "--author", "dev",
-                               "--phase", "plan-review", "--kind", "test-plan",
-                               "--brief", "abc123abc123", "--root", str(root)])
-            self.assertEqual(rc, 0, out.getvalue() + err.getvalue())
-            self.assertEqual(
-                mod.verdict_for(root, "US0017", phase="plan-review")["kind"], "test-plan")
-
-
 class CliTests(unittest.TestCase):
     def test_cli_record(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -1305,8 +793,8 @@ class BriefTierTests(unittest.TestCase):
         nothing reddening anywhere.
 
         The inconsistency is what makes it a finding rather than an oversight: the identical lane
-        IS tested for `--kind` and for `brief --tier`. This is the third of three and it was the
-        one omitted.
+        IS tested for `brief --tier`, and was for the plan-review `--kind` while that existed. This
+        was the one omitted.
 
         Mutant: drop either kwarg from the `record_verdict` call in `cmd_record` - this reddens
         and nothing else does.
@@ -5886,59 +5374,6 @@ class RoundVersusSplitTests(unittest.TestCase):
                          "a REJECT in round 1 and an APPROVE in round 2 is convergence")
 
 
-class PlanReviewOriginTests(unittest.TestCase):
-    """BG0546: the origin axis asks what a DIFF did, and a plan review has no diff."""
-
-    def test_a_plan_review_finding_needs_no_origin(self) -> None:
-        """MUTANT: drop the `phase != "plan-review"` guard from cmd_record."""
-        import inspect
-        src = inspect.getsource(_load().cmd_record)
-        self.assertIn('phase != "plan-review"', src,
-                      "the origin guard must be scoped to delivery reviews")
-
-    def test_a_delivery_finding_still_needs_an_origin(self) -> None:
-        """The control - the guard was scoped, not removed."""
-        mod = _load()
-        self.assertEqual(["a finding"], mod.unclassified_findings("a finding"))
-        self.assertEqual([], mod.unclassified_findings("[new] a finding"))
-
-
-class PlanReviewBriefTeachesMultiRowTests(unittest.TestCase):
-    """BG0596 AC8: the shipped guidance must not forbid the format the tool now accepts.
-
-    A format change the shipped brief contradicts is one nobody will use - the brief is what
-    every future plan reviewer reads before judging a plan, so it is the guidance that decides
-    whether a second row on a criterion is written at all.
-    """
-
-    def test_the_plan_review_brief_does_not_teach_one_row_per_criterion(self) -> None:
-        """MUTANT: in `critic.py`, restore the hard-coded sentence at `_plan_review_brief`."""
-        script = REPO_ROOT / ".claude" / "skills" / "sdlc-studio" / "scripts" / "critic.py"
-        self.assertTrue(script.is_file(), f"{script} is not on disk - this measured nothing")
-        src = script.read_text(encoding="utf-8")
-        # CASE-INSENSITIVE, and the positive claim asserted too. A case-sensitive substring test
-        # dies on the exact declared sentence and survives a paraphrase - "One row per
-        # criterion" restores the defect and passes - so it pins the wording rather than the
-        # instruction.
-        self.assertNotIn("one row per criterion", src.lower(),
-                         "the plan-review brief still tells every reviewer a criterion carries "
-                         "exactly one row, which is the format BG0596 makes legal")
-        self.assertIn("may declare several rows", src.lower(),
-                      "the brief does not tell a reviewer that a criterion MAY carry several "
-                      "rows, so a multi-row plan reads as a mistake to whoever reviews it next")
-
-    def test_the_mutation_help_page_states_the_row_join(self) -> None:
-        """The other half of the same claim: `help/mutation.md` documented the worst verdict as
-        held per CRITERION, which is the rule that changed."""
-        page = (REPO_ROOT / ".claude" / "skills" / "sdlc-studio" / "help" / "mutation.md")
-        self.assertTrue(page.is_file(), f"{page} is not on disk - this test measured nothing")
-        body = page.read_text(encoding="utf-8")
-        self.assertIn("(criterion, row)", body,
-                      "the help page does not document the join key, so an author has no way "
-                      "to learn that --row exists")
-        self.assertIn("--row", body, "the help page does not name the flag it requires")
-
-
 class LedgerRollupTests(unittest.TestCase):
     """BG0611, BG0605, BG0607, BG0604 - what the ledger says when it is read as a whole."""
 
@@ -6386,22 +5821,6 @@ class RepairPhaseJoinTests(unittest.TestCase):
         repairs = (f"| BG0001 | {day} | a | {day} | {self._FINDING} -> rewritten | none | "
                    f"{repair_phase} | aaaaaaaaaaaa |\n")
         return self._proj(d, delivery=delivery, plan=plan, repairs=repairs)
-
-    def test_a_delivery_repair_does_not_answer_a_same_text_plan_review_rejection(self) -> None:
-        # AC1. THE defect, reproduced: identical finding text, one date, two phases.
-        critic = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = self._collision(d, repair_phase="delivery")
-            state = critic.repair_state(root, "BG0001", "plan-review")
-            self.assertNotEqual(
-                "complete", state["state"],
-                "a DELIVERY repair discharged a PLAN-REVIEW rejection carrying the same finding "
-                "text on the same date - which since BG0629 opens the test-plan gate")
-            # `none` is the correct answer here and is what the fix produces: no repair row
-            # answers this phase. `partial` would also be correct. The assertion is that it is
-            # NOT discharged - asserting a non-empty `outstanding` would be wrong, because a
-            # state of `none` legitimately carries none.
-            self.assertIn(state["state"], ("none", "partial"), state)
 
     def test_the_delivery_phase_still_reads_its_own_repair(self) -> None:
         # AC2. The paired control: refusing to join a repair to anything satisfies AC1 alone,
@@ -6982,22 +6401,17 @@ class UnmatchedBriefFingerprintTests(unittest.TestCase):
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)
         return r
 
-    def _last(self, root: Path, phase: str = "delivery") -> dict:
-        return _load().read_verdicts(root, phase)[-1]
+    def _last(self, root: Path) -> dict:
+        return _load().read_verdicts(root)[-1]
 
     def test_an_invented_fingerprint_is_marked_on_the_row(self) -> None:
-        """MUTANTS: guard the marker with `seats is None` rather than `seats is not None and not
-        seats`, so an invented value in a seat-carded workspace is written unmarked; skip the
-        marker on plan-review, so the plan ledger's row is written unmarked."""
+        """MUTANT: guard the marker with `seats is None` rather than `seats is not None and not
+        seats`, so an invented value in a seat-carded workspace is written unmarked."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._workspace(root)
             self._record(root, "US0002", "--brief", self.INVENTED)
             self.assertEqual(f"{self.INVENTED} unmatched", self._last(root)["brief"])
-            self._record(root, "US0002", "--phase", "plan-review", "--kind", "test-plan",
-                         "--brief", self.INVENTED)
-            self.assertEqual(f"{self.INVENTED} unmatched",
-                             self._last(root, "plan-review")["brief"])
 
     def test_a_batch_marks_each_unit_on_its_own_match(self) -> None:
         """MUTANT: ask the matcher once, for the first unit, before the write loop and apply its
@@ -7118,19 +6532,6 @@ class UnmatchedBriefFingerprintTests(unittest.TestCase):
             saved.write_text(text, encoding="utf-8")
             self._record(root, "US0002", "--brief-file", str(saved))
             self.assertEqual(fp, self._last(root)["brief"], "saved delivery rejoinder")
-
-            # --brief-file of a saved plan-review rejoinder, recorded into the plan ledger
-            prior = root / "plan-prior.txt"
-            prior.write_text("VERDICT: REJECT\nISSUES: AC1 is not reached\n"
-                             "BLOCKING: AC1 is not reached\n", encoding="utf-8")
-            text, fp = self._brief(root, "US0002", "--phase", "plan-review",
-                                   "--rejoinder", str(prior))
-            saved = root / "plan-rejoinder.txt"
-            saved.write_text(text, encoding="utf-8")
-            self._record(root, "US0002", "--phase", "plan-review", "--kind", "test-plan",
-                         "--brief-file", str(saved))
-            self.assertEqual(fp, self._last(root, "plan-review")["brief"],
-                             "saved plan-review rejoinder")
 
             # the positive control: an invented value in the same workspace IS marked
             self._record(root, "US0002", "--brief", self.INVENTED)
@@ -7299,10 +6700,10 @@ class BriefRefusesMissingPracticeTests(unittest.TestCase):
 
     def test_the_shipped_brief_prints(self) -> None:
         """THE PAIRED CONTROLS, from the shipped blocks. MUTANTS: run the claim pass at every
-        tier, so a light brief is refused; hoist the checks onto the plan-review branch; return
-        straight after the checked brief is printed, dropping the footer; run the claim pass on
-        the rejoinder whatever the tier; run it on the prior verdict text rather than the
-        rendered rejoinder, so every full-tier re-review is refused."""
+        tier, so a light brief is refused; return straight after the checked brief is printed,
+        dropping the footer; run the claim pass on the rejoinder whatever the tier; run it on the
+        prior verdict text rather than the rendered rejoinder, so every full-tier re-review is
+        refused."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod, prior = self._fixture(root)
@@ -7311,13 +6712,9 @@ class BriefRefusesMissingPracticeTests(unittest.TestCase):
             cases = (
                 (("--tier", "full"), full),
                 (("--tier", "light"), mod.brief(root, "US0001", "qa", "light")),
-                (("--phase", "plan-review"),
-                 mod.brief(root, "US0001", "qa", phase="plan-review")),
                 (("--rejoinder", prior, "--tier", "light"),
                  mod.rejoinder_brief(root, "US0001", "qa", self.PRIOR, "light")),
                 (("--rejoinder", prior, "--tier", "full"), full_rejoinder),
-                (("--phase", "plan-review", "--rejoinder", prior),
-                 mod.rejoinder_brief(root, "US0001", "qa", self.PRIOR, phase="plan-review")),
             )
             footers = {}
             for argv, render in cases:

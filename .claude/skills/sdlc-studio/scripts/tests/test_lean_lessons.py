@@ -243,12 +243,10 @@ class LessonStoreTests(unittest.TestCase):
             "plan": run("plan", "--worklist", str(worklist), "--no-fetch"),
             "build": run("lane", "brief", "--units", "BG0001"),
             "review": run("goal-review", "brief", "--brief-worklist", str(worklist)),
-            # the review brief the runbook names, in both of its phases
+            # the review brief the runbook names
             "critic": critic.brief(self.root, "BG0001", "qa"),
-            "critic-plan": critic.brief(self.root, "BG0001", "qa", phase="plan-review"),
         }
         expect = {"plan": ["LC-007"], "review": ["LC-008"], "critic": ["LC-008"],
-                  "critic-plan": ["LC-008"],
                   # the five most-hit build lessons; LC-001 is the sixth, and the cap drops it
                   "build": ["LC-006", "LC-005", "LC-004", "LC-003", "LC-002"]}
         for phase, text in rendered.items():
@@ -266,8 +264,7 @@ class LessonStoreTests(unittest.TestCase):
                 self.assertNotIn("A prose digest title", text)
                 self.assertNotRegex(text, r"\bLL\d{4}\b")
         self.assertIn("+1 more", rendered["build"], "the cap dropped a lesson silently")
-        for phase in ("critic", "critic-plan"):
-            self.assertIn("cites its class code", rendered[phase])
+        self.assertIn("cites its class code", rendered["critic"])
 
 
 class OneRepeatCountsOnceTests(unittest.TestCase):

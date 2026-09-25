@@ -32,7 +32,8 @@ Backfill deliberately does NOT guess. A row that cannot be attributed to one rej
 ## Acceptance Criteria
 
 - [x] **AC1** Given a unit carrying the SAME finding text raised in BOTH phases on ONE date, and a DELIVERY repair closing it, when the PLAN-REVIEW repair state is read, then the plan-review rejection is NOT answered. This is the criterion the unit was missing: the two shapes originally filed - two same-date delivery rejections, and a delivery repair against a plan-review rejection with DIFFERENT text - both already pass on HEAD, because `repair_state`loops per rejection and`resolve_finding` separates distinct texts. What still fails is text COLLISION, which is the ordinary shape rather than an exotic one: a plan-review finding surviving into delivery is what a review round normally produces
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairPhaseJoinTests::test_a_delivery_repair_does_not_answer_a_same_text_plan_review_rejection
+  - **Verify:** manual - retired by US0915: plan review is retired, so no plan-review rejection is recorded for a delivery repair to answer
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0915
 - [x] **AC2** Given the same fixture with the DELIVERY phase read instead, when the repair state is read, then it IS complete. The paired control: refusing to join a repair to anything satisfies AC1 on its own, and would break every repair record in the corpus
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairPhaseJoinTests::test_the_delivery_phase_still_reads_its_own_repair
 - [x] **AC3** Given a repair row written after this lands, when it is read back, then it names the PHASE and the rejection it answers, and `repairs_for`is asked for a phase rather than returning every row for the unit.`_REPAIR_COLS`carries neither today, so the join is`verdict_date` equality alone
@@ -65,3 +66,4 @@ It decides whether a gate can be opened by a repair that answered something else
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Filed |
+| 2026-09-25 | Claude Opus 5.5 | AC1 retired by US0915 (D0259 pattern): plan review is retired, so no plan-review rejection exists to join |

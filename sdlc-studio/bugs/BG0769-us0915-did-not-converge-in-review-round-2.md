@@ -1,9 +1,9 @@
 # BG0769: US0915 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py, changelog.d/US0915.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, sdlc-studio/bugs/BG0510-the-plan-review-ledger-has-no-kind-column.md, sdlc-studio/bugs/BG0596-testplan-run-from-plan-keys-by-criterion-so.md, sdlc-studio/bugs/BG0631-a-repair-row-names-neither-the-rejection-nor.md, sdlc-studio/bugs/BG0645-critic-py-brief-rejoinder-ignores-phase-plan-review.md, sdlc-studio/bugs/BG0666-an-unauthored-test-plan-row-is-exempt-from.md, sdlc-studio/stories/US0631-the-test-plan-is-reviewed-by-an-independent.md, sdlc-studio/stories/US0634-the-cost-is-measured-over-one-run-and.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py, changelog.d/US0915.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, sdlc-studio/bugs/BG0510-the-plan-review-ledger-has-no-kind-column.md, sdlc-studio/bugs/BG0596-testplan-run-from-plan-keys-by-criterion-so.md, sdlc-studio/bugs/BG0631-a-repair-row-names-neither-the-rejection-nor.md, sdlc-studio/bugs/BG0645-critic-py-brief-rejoinder-ignores-phase-plan-review.md, sdlc-studio/bugs/BG0666-an-unauthored-test-plan-row-is-exempt-from.md, sdlc-studio/stories/US0631-the-test-plan-is-reviewed-by-an-independent.md, sdlc-studio/stories/US0634-the-cost-is-measured-over-one-run-and.md, changelog.d/BG0769.md, sdlc-studio/bugs/BG0671-critic-py-s-brief-practice-and-claim-pass.md, sdlc-studio/bugs/BG0672-critic-record-accepts-a-brief-fingerprint-no-brief.md
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -25,8 +25,10 @@ Fix each finding above, then deliver US0915 again in a later run.
 
 - [ ] **AC1** Given US0915's carried work applied onto main and its own criteria stamped `Verified: yes` (as Done writes them), then `test_lean_no_plan_phase.py` passes: the over-claim guard does not flag US0915 AC1, which asserts the refusal. Fails on: the round-2 guard, which lists `US0915 AC1` twice
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py
-- [ ] **AC2** Given a yes-stamped criterion that claims `--phase plan-review` still runs (BG0672 AC1's removed clause restored), then the guard still flags it. Fails on: an exemption wide enough to pass every criterion that names the flag
+  - **Verified:** yes (2026-09-25)
+- [ ] **AC2** Given a yes-stamped criterion that claims the retired plan-review phase flag still runs (BG0672 AC1's removed clause restored), then the guard still flags it. Fails on: an exemption wide enough to pass every criterion that names the flag
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py::PlanPhaseGoneTests::test_no_stamp_names_a_deleted_test
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

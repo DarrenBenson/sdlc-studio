@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 38 |
+| Draft | 37 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 2 |
 | Review | 0 |
-| Done | 736 |
+| Done | 737 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 72 |
@@ -273,7 +273,7 @@
 | [US0912](US0912-the-test-plan-tooling-is-gone-and-an.md) | The test-plan tooling is gone and an old Test Plan section is inert | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0913](US0913-a-repair-closes-without-a-reviewed-repair-plan.md) | A repair closes without a reviewed repair plan | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0914](US0914-a-standing-reject-clears-only-by-a-round.md) | A standing REJECT clears only by a round-2 APPROVE or by carrying the unit | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
-| [US0915](US0915-a-review-verdict-has-one-phase-delivery.md) | A review verdict has one phase: delivery | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0915](US0915-a-review-verdict-has-one-phase-delivery.md) | A review verdict has one phase: delivery | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0916](US0916-a-story-reaches-done-without-a-per-unit.md) | A story reaches Done without a per-unit reviewer-of-record sign-off | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0917](US0917-the-operator-s-signature-seals-the-run-without.md) | The operator's signature seals the run without a per-unit sign-off row | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0918](US0918-one-verdict-ledger-decides-whether-a-unit-was.md) | One verdict ledger decides whether a unit was reviewed | Draft | EP0263 | 2026-09-24 | 2026-09-24 |

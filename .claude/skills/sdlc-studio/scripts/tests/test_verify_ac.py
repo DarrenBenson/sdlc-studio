@@ -6641,7 +6641,8 @@ class PlaceholderRowsAreReportedTests(unittest.TestCase):
     """BG0666: a plan row still holding the placeholder was exempt from the guard an authored row
     must pass, and `derive` said nothing about it - so leaving the placeholder bought a clean
     derive. Both surfaces a plan is read on before review now print ONE shared note naming the
-    criteria whose mutant nobody has written.
+    criteria whose mutant nobody has written. The plan-review brief was deleted with plan review
+    (US0915), so `derive` is the surface left.
 
     Every expected note is built here from the imported template with LITERAL ids and a LITERAL
     count, never by calling the helper: a count mutant inside the helper would move the expected
@@ -6701,11 +6702,6 @@ class PlaceholderRowsAreReportedTests(unittest.TestCase):
                                "testplan", "derive", "--unit", "BG9001", "--root", str(root)],
                               capture_output=True, text=True, check=False)
 
-    def _brief(self, root: Path) -> subprocess.CompletedProcess:
-        return subprocess.run([sys.executable, "-B", str(self.SCRIPTS / "critic.py"), "brief",
-                               "--unit", "BG9001", "--seat", "qa", "--phase", "plan-review",
-                               "--root", str(root)], capture_output=True, text=True, check=False)
-
     @staticmethod
     def _note_lines(out: str) -> list:
         """The lines that ARE the note - read by its fixed opening, so a check on one of them
@@ -6761,41 +6757,35 @@ class PlaceholderRowsAreReportedTests(unittest.TestCase):
                                   f"the {run} run named a criterion on stderr: {r.stderr!r}")
 
     def test_an_authored_plan_is_reported_by_neither_surface(self) -> None:
-        """AC3. MUTANTS (verify_ac.py): the empty-list guard dropped (a note with no ids on
-        both surfaces); an `unnameable` row counted as unauthored; every `unnameable` row
-        refused by `testplan_row_faults` (exit 2, nothing on stdout). The absence is checked
-        on the note's FIXED wording, so an empty-list note cannot slip past it; the mixed plan
-        is the positive control, so the silence is not a surface that never prints."""
+        """AC3, on its surviving surface. The plan-review brief was the second surface and was
+        deleted with plan review (US0915), so `derive` is the one left. MUTANTS (verify_ac.py):
+        the empty-list guard dropped (a note with no ids); an `unnameable` row counted as
+        unauthored; every `unnameable` row refused by `testplan_row_faults` (exit 2, nothing on
+        stdout). The absence is checked on the note's FIXED wording, so an empty-list note
+        cannot slip past it; the mixed plan is the positive control, so the silence is not a
+        surface that never prints."""
         fixed = self._fixed_wording()
         self.assertTrue(fixed and all(len(p) > 8 for p in fixed), fixed)
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._fixture(root, self.AUTHORED)
-            dv, br = self._derive(root), self._brief(root)
+            dv = self._derive(root)
             self.assertEqual(0, dv.returncode, f"derive refused a fully authored plan: "
                                                f"{dv.stdout}{dv.stderr}")
             self.assertIn("BG9001 -> 4 row(s) for 4 criteria", dv.stdout)
-            self.assertEqual(0, br.returncode, br.stderr)
-            self.assertIn("unnameable: acceptance of a full batch", br.stdout,
-                          "the brief did not render the authored plan it is judged silent on")
-            for surface, out in (("derive", dv.stdout + dv.stderr), ("brief", br.stdout)):
-                for part in fixed:
-                    self.assertNotIn(part, out, f"{surface} printed the note's wording for a "
-                                                f"fully authored plan")
-        # Positive control: the same two commands on the mixed plan DO print it.
+            for part in fixed:
+                self.assertNotIn(part, dv.stdout + dv.stderr,
+                                 "derive printed the note's wording for a fully authored plan")
+        # Positive control: the same command on the mixed plan DOES print it.
         expected = verify_ac.TESTPLAN_UNAUTHORED_NOTE.format(count=3, ids="AC2, AC3, AC4")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._fixture(root, self.MIXED)
             dv = self._derive(root)
-            br = self._brief(root)
             self.assertEqual(0, dv.returncode, dv.stderr)
-            self.assertEqual(0, br.returncode, br.stderr)
             self.assertEqual([expected], self._note_lines(dv.stdout))
-            self.assertEqual([expected], self._note_lines(br.stdout))
             for part in fixed:
                 self.assertIn(part, dv.stdout)
-                self.assertIn(part, br.stdout)
 
 
 class VerifiedFieldIsReadTests(unittest.TestCase):

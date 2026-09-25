@@ -46,8 +46,8 @@ Key the join by (criterion, mutant) or by row index, so every declared row is a 
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RowKeyedJoinTests::test_the_report_states_both_figures
   - **Verified:** yes (2026-08-19)
 - [x] **AC8** Given the plan-review brief and the mutation help page, when a multi-row plan becomes legal, then both say so: `critic._plan_review_brief` hard-codes "one row per criterion" into the brief handed to every future plan reviewer, and `help/mutation.md` documents the worst verdict as held per criterion - a format change the shipped guidance contradicts is one nobody will use
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PlanReviewBriefTeachesMultiRowTests::test_the_plan_review_brief_does_not_teach_one_row_per_criterion
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0915: the plan-review brief whose one-row-per-criterion sentence this pinned was deleted with plan review
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0915
 
 ## Impact
 
@@ -78,3 +78,4 @@ The done-gate reads this join to decide whether a unit's planned mutants were ex
 | 2026-08-19 | sdlc-studio | Plan review REJECT: AC4 needs `transition.py`, AC8 added for the brief and help page that still teach one-row-per-criterion, AC6's mutant replaced (adding the criterion to the key is EQUIVALENT on a single-row plan), AC2 given a fixture that produces output to assert on. Re-pointed 3 -> 5 |
 | 2026-08-20 | sdlc-studio | AC5's declared mutant SURVIVED its own test: the verifier pointed at a SYNTHETIC fixture where the criterion names BG0592's real artefact. It now scans the corpus artefact and asserts agreement rather than the literal 18 |
 | 2026-09-25 | Claude Opus 5.5 | AC4 retired by US0911 (D0259 pattern): the planned-mutant gate whose refusal named the row is deleted |
+| 2026-09-25 | Claude Opus 5.5 | AC8 retired by US0915 (D0259 pattern): the plan-review brief it pinned was deleted |
