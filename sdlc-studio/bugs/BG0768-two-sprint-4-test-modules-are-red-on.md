@@ -3,7 +3,7 @@
 > **Status:** In Progress
 > **Severity:** High
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_no_two_role.py, tools/tests/test_lean_spec_restatements.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_no_two_role.py, tools/tests/test_lean_spec_restatements.py, changelog.d/BG0768.md
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

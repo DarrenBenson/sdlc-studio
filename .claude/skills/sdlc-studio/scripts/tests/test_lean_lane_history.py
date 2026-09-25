@@ -52,8 +52,8 @@ def _workspace(d: str) -> Path:
     seats.mkdir(parents=True)
     (seats / "qa.md").write_text("# QA seat\n", encoding="utf-8")
     (root / "src").mkdir()
-    for name in ("a.py", "b.py", "c.py"):
-        (root / "src" / name).write_text("x = 1\n", encoding="utf-8")
+    for letter in ("a", "b", "c"):
+        (root / "src" / f"{letter}.py").write_text("x = 1\n", encoding="utf-8")
     # Four Done units on src/a.py: the per-file bound lists the newest three, so a second
     # implementation without it lists four.
     for uid, date in (("US0001", "2026-03-01"), ("US0002", "2026-03-02"),

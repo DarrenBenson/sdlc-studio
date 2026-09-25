@@ -8,6 +8,7 @@ drives the shipped entry point against a copy of it in a throwaway tree.
 Run from the repo root:
     python3 -m unittest discover -s tools/tests
 """
+# test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
 
 import contextlib

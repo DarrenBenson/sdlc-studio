@@ -1,9 +1,10 @@
 # BG0766: The test census is red on main: a Sprint 4 test module holds a hand-copied script list and another has no census home
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional (the census failed at the base on the hand-listed tuple and three unattributed modules; patched, test_test_census 45 passed and the lane-history module 3 passed; unattributed count 31 against the unchanged baseline of 33)
 > **Severity:** High
 > **Points:** 1
-> **Affects:** tools/tests/test_test_census.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_history.py
+> **Affects:** tools/tests/test_test_census.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_history.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_two_role.py, changelog.d/BG0766.md, tools/tests/test_lean_prd_refresh.py, tools/tests/test_lean_trd_constraints_repo.py
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -25,8 +26,10 @@ Derive `test_lean_lane_history.py`'s script names instead of listing them (or ma
 
 - [ ] **AC1** Given main after this fix, then `test_test_census.py` passes whole: no test module holds an unmarked literal list of three or more script names, and the unattributed count is at or below the declared baseline, which is not raised; raising the baseline or deleting the mirror scan to go green fails it
   - **Verify:** pytest tools/tests/test_test_census.py
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given `test_lean_lane_history.py` still proves what US0931's criteria say, then its three Verify selectors still pass
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_history.py
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

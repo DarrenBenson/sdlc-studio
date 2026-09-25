@@ -10,6 +10,7 @@ Every fixture that must fail at the pre-deletion code sets `review.two_role_afte
 the one configuration where the deleted gate acted. Each workspace is a temporary directory; the
 last test reads this repository's own artefacts, because its criterion names them.
 """
+# test-census-subject: .claude/skills/sdlc-studio/scripts/conformance.py
 from __future__ import annotations
 
 import ast

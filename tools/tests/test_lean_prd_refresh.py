@@ -6,6 +6,7 @@ persona or End goal by hand: a card that gains, loses or renumbers an End goal m
 outcome may cite. Every `<script>.py <subcommand>` the loop sections name is checked against
 that script's own `--help`, so a retired subcommand cannot stay described as current.
 """
+# test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 import re
 import shutil
 import subprocess
