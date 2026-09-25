@@ -3426,23 +3426,26 @@ def _blob_text(root, rel: str, ref: str = ":"):
 
 
 def _ast_nodes(text: str):
-    """Every selector-addressable node in a test module's source, by AST: `name` for a
-    module-level function or class, `Class::method` for a method, async or not. None when the
-    text does not parse. Parsing rather than collecting, because collection needs the module's
-    imports and a blob at a flat path has none of them."""
+    """Every selector-addressable node in a test module's source, by AST, mapped to the dump of
+    its parsed body: `name` for a module-level function or class, `Class::method` for a method,
+    async or not. None when the text does not parse. Parsing rather than collecting, because
+    collection needs the module's imports and a blob at a flat path has none of them. The dump
+    is the node's own parsed body with no line numbers and no comments: whitespace, comments
+    and moved lines leave it equal, a docstring edit changes it, and a change to a helper or
+    `setUp` the node calls does not."""
     try:
         tree = ast.parse(text)
     except SyntaxError:
         return None
-    names: set = set()
+    names: dict = {}
     for node in tree.body:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            names.add(node.name)
+            names[node.name] = ast.dump(node)
         elif isinstance(node, ast.ClassDef):
-            names.add(node.name)
+            names[node.name] = ast.dump(node)
             for sub in node.body:
                 if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    names.add(f"{node.name}::{sub.name}")
+                    names[f"{node.name}::{sub.name}"] = ast.dump(sub)
     return names
 
 
@@ -3474,6 +3477,37 @@ def _selector_live(test_file: str, node, kpat, names) -> bool:
     return True  # a bare path selects whatever the file holds, while the file is there
 
 
+#: The marker a criterion's heading line opens with: `### `, `- `, `- [x] `, then the bold id.
+_CRITERION_LEAD_RE = re.compile(r"^\s*(?:#+\s+|[-*]\s+(?:\[[ xX]\]\s+)?)?(?:AC\d+[a-z]?)?[\s:.-]*")
+
+
+def _criterion_words(block: "ACBlock", text: str) -> str:
+    """The words a criterion carries, on one line. The parsed title when there is one; else the
+    text inside its heading line (`- [x] **AC1: words.**` parses with an empty title); else the
+    Given/When/Then lines between its heading and its first Verify line (`### AC1` over bullets)."""
+    if block.title.strip():
+        return " ".join(block.title.split())
+    lines = text.splitlines()
+    end = block.verify_line if block.verify_line is not None else block.heading_line + 1
+    body = [_CRITERION_LEAD_RE.sub("", ln.replace("**", ""), count=1)
+            for ln in lines[block.heading_line:end]]
+    return " ".join(body[0].split()) or " ".join(" ".join(body[1:]).split())
+
+
+def _selector_changed(verifier: str, root, statuses, index_nodes, head_nodes) -> bool:
+    """Does `verifier` select a node that is in both HEAD and the index with a different parsed
+    body? A node the index no longer holds is not changed but gone, which the orphan check
+    judges; a file new in the index has nothing to compare against."""
+    test_file, node, kpat = _selector_parts(verifier, root)
+    if test_file is None or statuses.get(test_file, "D") == "D":
+        return False
+    before, after = head_nodes.get(test_file), index_nodes[test_file]
+    if not before:
+        return False
+    changed = {n for n, body in after.items() if n in before and before[n] != body}
+    return bool(changed) and _selector_live(test_file, node, kpat, changed)
+
+
 def staged_stamps(root) -> tuple:
     """`(exit code, output lines)` for `stamps --staged`: every stamped criterion whose selector
     names a STAGED test file, judged against the index blob.
@@ -3485,6 +3519,10 @@ def staged_stamps(root) -> tuple:
     HEAD is reported and never refused, because a pre-existing finding does not hold the gate -
     the scheduled corpus lane counts it against its baseline. A staged deletion or rename makes
     every selector naming the old path dead, named as such with the new path when there is one.
+
+    A selector still live whose node's parsed body differs from HEAD's lists its criterion's id
+    and words under a `re-read` heading: the test changed, so the words it stamps may no longer
+    hold. Advisory - it never changes the exit code.
     """
     root = Path(root)
     statuses, renamed = _staged_test_files(root)
@@ -3505,13 +3543,14 @@ def staged_stamps(root) -> tuple:
             head_text = _blob_text(root, rel, "HEAD:")
         except StagedGitError:
             head_text = None   # unreadable at HEAD: nothing there was live, so nothing is pre-existing
-        head_nodes[rel] = None if head_text is None else (_ast_nodes(head_text) or set())
+        head_nodes[rel] = None if head_text is None else (_ast_nodes(head_text) or {})
     paths = list(walk_stories(under_root(root, "sdlc-studio/stories")))
     bugs = under_root(root, "sdlc-studio/bugs")
     if bugs.is_dir():
         paths += sorted(p for p in bugs.glob("*.md") if not p.name.startswith("_"))
     lines: list = []
     reported: list = []
+    reread: list = []
     dead = checked = 0
     for p in paths:
         text = sdlc_md.read_text_safe(p)
@@ -3519,6 +3558,11 @@ def staged_stamps(root) -> tuple:
         for block in criteria_blocks(text):
             if (block.verified_state or "").strip().lower() != "yes" or not block.verifier:
                 continue
+            changed = [v for v in block.verifiers if _selector_changed(v, root, statuses,
+                                                                        index_nodes, head_nodes)]
+            if changed:
+                reread.append(f"  {rec} {block.ac_id}: {_criterion_words(block, text)}"
+                              + "".join(f"\n      {v}" for v in changed))
             test_file, node, kpat = _selector_parts(block.verifier, root)
             if test_file is None or test_file not in statuses:
                 continue
@@ -3543,15 +3587,22 @@ def staged_stamps(root) -> tuple:
                 lines.append(f"{rec} {block.ac_id}: stamped verified, but its verifier selects "
                              f"nothing in the staged {test_file}\n    {block.verifier}")
     lines += reported
+    if reread:
+        lines.append(f"verify-stamps: staged: re-read - {len(reread)} stamped criterion(s) whose "
+                     "test this commit changes; check each still says what its test now checks:")
+        lines += reread
+    tail = f"; {len(reread)} to re-read above" if reread else ""
     if dead:
         lines.append(f"verify-stamps: staged: {dead} stamped selector(s) orphaned by this commit "
                      f"over {len(statuses)} staged test file(s) - repoint each at the renamed "
                      "node, or restore the test"
-                     + (f"; {len(reported)} already dead at HEAD, reported" if reported else ""))
+                     + (f"; {len(reported)} already dead at HEAD, reported" if reported else "")
+                     + tail)
         return 1, lines
     lines.append(f"verify-stamps: staged: {checked} stamped selector(s) over {len(statuses)} "
                  "staged test file(s), every one still resolves"
-                 + (f" or was already dead at HEAD ({len(reported)} reported)" if reported else ""))
+                 + (f" or was already dead at HEAD ({len(reported)} reported)" if reported else "")
+                 + tail)
     return 0, lines
 
 

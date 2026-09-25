@@ -1,6 +1,6 @@
 # CR-0595: Prevent or retire lesson LC-002 (criterion words outrun the fixture)
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
@@ -9,6 +9,7 @@
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
 > **Raised-in-batch:** RUN-01M39MC0 close, 2026-09-24T18:56:20Z
+> **Decomposed-into:** US0945
 
 ## Summary
 
