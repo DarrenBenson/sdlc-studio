@@ -1,6 +1,6 @@
 # BG0765: goal_trace drops a --serves value silently, and reads unfilled template placeholders as real outcomes
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_trace.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_trace_followups.py, changelog.d/BG0765.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

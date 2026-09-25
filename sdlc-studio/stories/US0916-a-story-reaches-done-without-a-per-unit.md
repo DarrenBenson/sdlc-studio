@@ -1,6 +1,6 @@
 # US0916: A story reaches Done without a per-unit reviewer-of-record sign-off
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

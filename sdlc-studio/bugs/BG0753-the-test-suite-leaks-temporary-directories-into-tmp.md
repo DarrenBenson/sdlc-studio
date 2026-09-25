@@ -1,6 +1,7 @@
 # BG0753: The test suite leaks temporary directories into /tmp
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional (the push full suite left 225 entries and 1,927 inodes at base and 0 with the fix; the commit hook 30 to 0; skill-tests.sh 11 to 0 with its exit status kept)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** tools/tests/conftest.py, .claude/skills/sdlc-studio/scripts/tests/conftest.py, tools/skill-tests.sh, tools/tests/test_lean_tmp_hygiene.py, changelog.d/BG0753.md, conftest.py
@@ -30,8 +31,10 @@ Give each test run its own temporary directory and remove it when the run ends, 
 
 - [ ] **AC1** Given a probe test module holding a test that leaks a `tempfile.mkdtemp()` directory, a test whose subprocess leaks one, and a failing test, when it runs under pytest in each test tree, serially and under `-n 2`, with TMPDIR at an empty directory, then that directory is empty after the session. Fails on: setting only `os.environ["TMPDIR"]` after `tempfile` has cached its directory; covering only `tools/tests`, the one tree with a conftest today; cleanup that runs only when the session is green.
   - **Verify:** pytest tools/tests/test_lean_tmp_hygiene.py::TmpHygieneTests::test_a_pytest_session_in_either_tree_leaves_no_temp_dir_behind
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given the same probe module, when `tools/skill-tests.sh`'s unittest path runs it with TMPDIR at an empty directory, then that directory is empty afterwards and the script's exit status still reports the failing test. Fails on: a conftest-only fix, which unittest never loads; a trap that removes the directory but replaces the suite's exit status with its own.
   - **Verify:** pytest tools/tests/test_lean_tmp_hygiene.py::TmpHygieneTests::test_the_unittest_runner_leaves_no_temp_dir_behind_and_keeps_its_verdict
+  - **Verified:** yes (2026-09-25)
 
 ## Impact
 

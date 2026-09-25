@@ -54,6 +54,16 @@ unset -v GIT_DIR GIT_COMMON_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_INDEX_VERSION \
   GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_NAMESPACE \
   GIT_CEILING_DIRECTORIES GIT_DISCOVERY_ACROSS_FILESYSTEM GIT_PREFIX
 
+# The run's temporary files go in a private directory removed when this script exits, pass or
+# fail (BG0753). Tests call `tempfile.mkdtemp()` and never remove what they made, and so do their
+# subprocesses: one run of both suites left about 1,900 inodes behind, and a sprint of runs used
+# up /tmp's. The pytest runners get the same from the repository-root conftest.py, which unittest
+# never loads. SDLC_TEST_TMPDIR tells a pytest run nested in this one that the directory is owned.
+# The trap only removes: the script's exit status stays the suite's.
+run_tmp="$(mktemp -d "${TMPDIR:-/tmp}/sdlc-tests.XXXXXXXXXX")" || exit 1
+trap 'rm -rf "$run_tmp"' EXIT
+export TMPDIR="$run_tmp" SDLC_TEST_TMPDIR="$run_tmp"
+
 skill="${1:-.claude/skills/sdlc-studio/scripts}"
 shift 2>/dev/null || true
 

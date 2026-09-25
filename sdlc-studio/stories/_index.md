@@ -7,10 +7,10 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 50 |
+| Draft | 48 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 5 |
+| In Progress | 7 |
 | Review | 0 |
 | Done | 721 |
 | Won't Implement | 81 |
@@ -274,7 +274,7 @@
 | [US0913](US0913-a-repair-closes-without-a-reviewed-repair-plan.md) | A repair closes without a reviewed repair plan | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0914](US0914-a-standing-reject-clears-only-by-a-round.md) | A standing REJECT clears only by a round-2 APPROVE or by carrying the unit | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0915](US0915-a-review-verdict-has-one-phase-delivery.md) | A review verdict has one phase: delivery | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
-| [US0916](US0916-a-story-reaches-done-without-a-per-unit.md) | A story reaches Done without a per-unit reviewer-of-record sign-off | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0916](US0916-a-story-reaches-done-without-a-per-unit.md) | A story reaches Done without a per-unit reviewer-of-record sign-off | In Progress | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0917](US0917-the-operator-s-signature-seals-the-run-without.md) | The operator's signature seals the run without a per-unit sign-off row | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0918](US0918-one-verdict-ledger-decides-whether-a-unit-was.md) | One verdict ledger decides whether a unit was reviewed | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0919](US0919-sign-off-is-the-operator-s-one-signature.md) | Sign-off is the operator's one signature and the per-unit sign-off verbs are gone | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
@@ -287,7 +287,7 @@
 | [US0926](US0926-this-repository-runs-on-the-shipped-defaults-with.md) | This repository runs on the shipped defaults with no stand-down keys | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0927](US0927-a-sprint-plan-names-the-prd-outcome-or.md) | A sprint plan names the PRD outcome or persona its goal serves, and flags a goal that serves none | Done | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0928](US0928-the-seat-reviewing-a-sprint-goal-is-shown.md) | The seat reviewing a Sprint Goal is shown the PRD outcomes and the personas' End goals | Done | EP0264 | 2026-09-25 | 2026-09-25 |
-| [US0929](US0929-the-prd-describes-the-lean-product-and-lists.md) | The PRD describes the lean product and lists the outcomes a Sprint Goal can serve | Draft | EP0264 | 2026-09-25 | 2026-09-25 |
+| [US0929](US0929-the-prd-describes-the-lean-product-and-lists.md) | The PRD describes the lean product and lists the outcomes a Sprint Goal can serve | In Progress | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0930](US0930-a-reviewer-s-brief-lists-the-recent-done.md) | A reviewer's brief lists the recent Done units that changed each file the unit touches, with the defects their reviews found | In Progress | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0931](US0931-a-build-lane-s-brief-carries-the-same.md) | A build lane's brief carries the same file history, and tells the author that history outranks an artefact's account | Draft | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0932](US0932-a-build-lane-s-brief-carries-the-trd.md) | A build lane's brief carries the TRD constraints of the components its unit touches | Draft | EP0264 | 2026-09-25 | 2026-09-25 |

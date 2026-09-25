@@ -1,6 +1,6 @@
 # US0929: The PRD describes the lean product and lists the outcomes a Sprint Goal can serve
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Depends on:** US0927 - the PRD Outcomes section the trace reads (CR0594 refinement)
 > **Delivers:** CR0594
 > **Created:** 2026-09-25
