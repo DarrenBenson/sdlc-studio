@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 29 |
 | In Progress | 0 |
-| Fixed | 620 |
+| Fixed | 621 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
 | Superseded | 25 |
-| **Total** | **780** |
+| **Total** | **781** |
 
 ## All Bugs
 
@@ -138,7 +138,8 @@
 | [BG0777](BG0777-the-sprint-lane-runner-and-the-revert-check.md) | The sprint lane runner and the revert check run only a criterion's first Verify line | Open | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0778](BG0778-the-retro-reads-only-four-digit-ids-in.md) | The retro reads only four-digit ids in dispositions and carried rows, so a v3 project's ULID ids are dropped | Open | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0779](BG0779-the-pre-commit-hook-hides-the-stamped-test.md) | The pre-commit hook hides the stamped-test re-read list on a passing commit | Fixed | Medium | 2026-09-25 | 2026-09-25 |
-| [BG0780](BG0780-the-allocation-lock-fails-closed-on-a-non.md) | The allocation lock fails closed on a non-busy flock error, and three callers mishandle its timeout | Open | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0780](BG0780-the-allocation-lock-fails-closed-on-a-non.md) | The allocation lock fails closed on a non-busy flock error, and three callers mishandle its timeout | Fixed | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0781](BG0781-a-busy-lock-reported-as-eacces-fails-at.md) | A busy lock reported as EACCES fails at once, and two lock warnings advise a retry that duplicates | Open | Medium | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import errno
 import json
 import os
 import re
@@ -2315,8 +2316,10 @@ def allocation_lock(repo_root, timeout: float = 10.0):
     not mint the same sequential id or clobber a shared index. Fails closed: when the lock
     cannot be taken within `timeout` it raises `AllocationLockTimeout` and the writer's block
     never runs, because proceeding without the lock loses concurrent rows. A killed holder
-    cannot wedge the next writer: the kernel releases a flock when its holder dies. A no-op
-    where `flock` is unavailable (Windows) or the lock directory is unwritable."""
+    cannot wedge the next writer: the kernel releases a flock when its holder dies. Only a busy
+    lock is waited on; any other flock error (ENOLCK on NFS with no lock daemon) is raised at
+    once with its errno. A no-op where `flock` is unavailable (Windows) or the lock directory
+    is unwritable."""
     import time
     lockdir = Path(repo_root) / "sdlc-studio" / ".local"
     try:
@@ -2333,13 +2336,17 @@ def allocation_lock(repo_root, timeout: float = 10.0):
             try:
                 fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                 break
-            except OSError:
+            except BlockingIOError:        # busy: another writer holds it, so wait
                 if time.monotonic() > deadline:
                     raise AllocationLockTimeout(
                         f"could not take the allocation lock {lock_file} after waiting "
                         f"{timeout:g}s: another writer still holds it, so nothing was written; "
                         f"retry once it finishes") from None
                 time.sleep(0.02)
+            except OSError as exc:         # ENOLCK and kin: no wait can take this lock
+                raise OSError(exc.errno, f"could not take the allocation lock {lock_file}: "
+                              f"{errno.errorcode.get(exc.errno, exc.errno)} "
+                              f"({exc.strerror}), so nothing was written") from exc
         yield
     finally:
         try:

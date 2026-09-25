@@ -426,7 +426,8 @@ def provisional_verdict(repo_root: Path | str, unit: str, verdict: str, reviewer
     `transition set --verdict` writes the verdict before the gated transition, because a gate
     may read it. When the block raises while `pending()` is still true - the unit still at its
     from-status, so the transition was refused - the row is withdrawn, and a ledger the row
-    created is removed, so a refused close leaves no verdict behind. A raise after the status
+    created is removed, so a refused close leaves no verdict behind; a withdrawal the lock
+    times out names the row it leaves and lets the refusal through. A raise after the status
     write landed keeps the row: the unit's new status stands on it. A REJECT at the cap is
     carried once the row stands, as `record_verdict` carries it."""
     path = verdicts_path(repo_root)
@@ -443,15 +444,21 @@ def provisional_verdict(repo_root: Path | str, unit: str, verdict: str, reviewer
             except CarryFailed as exc:
                 print(f"error: {exc}", file=sys.stderr)
             raise
-        with _ledger_lock(path):
-            text = path.read_text(encoding="utf-8")
-            at = text.rfind(row)
-            if at >= 0:
-                text = text[:at] + text[at + len(row):]
-            if not existed and text == _header("delivery"):
-                path.unlink()
-            else:
-                sdlc_md.atomic_write(path, text)
+        try:
+            with _ledger_lock(path):
+                text = path.read_text(encoding="utf-8")
+                at = text.rfind(row)
+                if at >= 0:
+                    text = text[:at] + text[at + len(row):]
+                if not existed and text == _header("delivery"):
+                    path.unlink()
+                else:
+                    sdlc_md.atomic_write(path, text)
+        except sdlc_md.AllocationLockTimeout as exc:
+            # the refusal below is the reason; the row it leaves behind is the damage to name
+            print(f"error: the provisional {verdict.upper()} row for {sdlc_md.norm_id(unit)} "
+                  f"could not be withdrawn from {path} and still stands - {exc}",
+                  file=sys.stderr)
         raise
     if bug := _carry_if_capped(repo_root, unit, verdict, path):
         print(carried_notice(unit, bug), file=sys.stderr)
