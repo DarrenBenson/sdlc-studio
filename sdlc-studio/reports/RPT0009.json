@@ -3,8 +3,8 @@
   "report_id": "RPT0009",
   "run_id": "RUN-01M3BK9Y",
   "retro_id": "RETRO0124",
-  "generated_at": "2026-09-25T12:37:29Z",
-  "window_end": "2026-09-25T12:37:29Z",
+  "generated_at": "2026-09-25T12:55:32Z",
+  "window_end": "2026-09-25T12:55:32Z",
   "signature": null,
   "sections": [
     {
@@ -43,7 +43,7 @@
         },
         "duration_hours": {
           "key": "duration_hours",
-          "value": "6.3h",
+          "value": "6.6h",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "verified_sha": {
@@ -100,12 +100,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 376.0,
+            "value": 394.1,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "0.53x",
+            "value": "0.55x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -127,12 +127,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 19815091,
+            "value": 19874339,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "0.5x",
+            "value": "0.51x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -2202,7 +2202,7 @@
       "figures": {
         "findings_scan": {
           "key": "findings_scan",
-          "value": "2 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)",
+          "value": "2 open finding(s) raised in the run, 1 close gap(s), 0 carried unit(s)",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -2239,6 +2239,23 @@
             "key": "issue_detail",
             "value": "Prevent or retire lesson LC-003 (mechanism reaches no caller)",
             "source": "sdlc-studio/change-requests/CR0598-prevent-or-retire-lesson-lc-003-mechanism-reaches.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "checklist",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "tick-verification: Ticked criteria the tree supports - no ticked criteria found",
+            "source": "sdlc-studio/.local/run-state.json"
           }
         }
       ],
@@ -2278,7 +2295,7 @@
         },
         "tokens_total": {
           "key": "tokens_total",
-          "value": 19815091,
+          "value": 19874339,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "token_coverage": {
@@ -2301,7 +2318,7 @@
           },
           "model_tokens": {
             "key": "model_tokens",
-            "value": 2848620,
+            "value": 2907868,
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -2321,7 +2338,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": 41,
+            "value": 43,
             "source": "git log"
           },
           "dora_mapping": {
@@ -2336,7 +2353,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - 41 commit(s) on main inside the run window",
+            "value": "git history - 43 commit(s) on main inside the run window",
             "source": "git log"
           }
         },
@@ -2348,7 +2365,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "6h 5m",
+            "value": "6h 24m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -2363,7 +2380,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 41 commit(s)",
+            "value": "git history - first to last of 43 commit(s)",
             "source": "git log"
           }
         },
@@ -2460,7 +2477,7 @@
       "figures": {
         "persona_rulings": {
           "key": "persona_rulings",
-          "value": 3,
+          "value": 4,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "cited_rulings": {
@@ -2483,39 +2500,16 @@
       "figures": {
         "waivers_note": {
           "key": "waivers_note",
-          "value": "1 gate(s) were not holding when this page was derived",
+          "value": "no gate stood down for this seal - the log was read and carries no accepted waiver dated inside this report's window",
           "source": "sdlc-studio/decisions.md"
         },
         "waivers_count": {
           "key": "waivers_count",
-          "value": 1,
+          "value": 0,
           "source": "sdlc-studio/decisions.md"
         }
       },
-      "rows": [
-        {
-          "waiver_id": {
-            "key": "waiver_id",
-            "value": "D0270",
-            "source": "sdlc-studio/decisions.md"
-          },
-          "waiver_subject": {
-            "key": "waiver_subject",
-            "value": "rule:sprint-checklist:tick-verification",
-            "source": "sdlc-studio/decisions.md"
-          },
-          "waiver_reason": {
-            "key": "waiver_reason",
-            "value": "RUN-01M3BK9Y: the row cannot read the lean criterion shape every batch unit uses ('- **ACn:**' bullets with a '- **Verified:** yes' sub-bullet), so it examined none of 35 units - a reader defect filed as BG0771, not a gap in the run. The same question is answered by verify_ac: every delivered unit's criteria were run at landing and stamped Verified yes, and each unit's code landed in a commit touching its declared Affects. [authorised by: QA seat (persona ruling, D0232)]",
-            "source": "sdlc-studio/decisions.md"
-          },
-          "waiver_date": {
-            "key": "waiver_date",
-            "value": "2026-09-25T13:08:08+01:00",
-            "source": "sdlc-studio/decisions.md"
-          }
-        }
-      ],
+      "rows": [],
       "not_measured": null
     },
     {
@@ -2871,5 +2865,5 @@
       "not_measured": null
     }
   ],
-  "fingerprint": "11185bd86314060b"
+  "fingerprint": "c06ae7f85b759d7c"
 }
