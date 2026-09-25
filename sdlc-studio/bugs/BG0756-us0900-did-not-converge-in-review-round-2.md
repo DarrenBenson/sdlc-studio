@@ -1,6 +1,7 @@
 # BG0756: US0900 did not converge in review: round 2 REJECT findings
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional (a minimal CR filed by both creators on a schema v3 fixture validates at inbox, Approved, In Progress and Rejected; a bug with no evidence still fails; GROOMED_TYPES mutants killed; two review rounds)
 > **Carried work:** the round-2 work is saved at sdlc-studio/.local/US0900-carried-r2.patch (13 files, applies cleanly to 65cdf1ca); groomed criteria below say what remains
 > **Severity:** Medium
 > **Points:** 3
@@ -28,10 +29,13 @@ Land the round-2 work, then retire the Size and Impact demand the filer cannot m
 
 - [ ] **AC1** Given `file_finding.py file --type cr` and `artifact.py new --type cr` with a title, summary and priority but no size, impact or Affects, when each runs, then the CR is written and indexed and exits 0; a bug missing points or Affects is still refused before an id is allocated. Fails on: HEAD, whose filer refuses the CR (measured).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_cr_filing.py::CrFilingTests
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given a minimal CR filed on a schema v3 fixture, when `transition.py set` moves it to Approved, then In Progress, and a second one to Rejected, then `validate.py check` reports zero errors at each status, while a bug with no evidence still fails `evidence-present`. Fails on: the round-2 patch's opening-status exemption, which errors from Approved on (measured); deleting the evidence rule for every type, which the bug control catches.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_cr_filing.py::CrValidatesOnSchemaV3Tests::test_a_minimal_cr_validates_at_every_status_the_shipped_tools_move_it_to
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC3** Given `help/cr.md`, `changelog.d/US0900.md`, `reference-scripts-create.md` and `file_finding.py`, when they are read, then none says `refine` sizes or gives a size to the CR itself; where they name who sizes the work, they name the epic `refine` writes. Fails on: the round-2 wording, "refine sizes it later" and "`refine` gives it a size", both measured in the worktree diff.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_cr_filing.py::CrDocTruthTests::test_no_shipped_text_says_refine_sizes_the_cr
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

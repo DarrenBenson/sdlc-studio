@@ -16,7 +16,9 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import sys
 import tempfile
 import unittest
@@ -103,8 +105,11 @@ class EnforcementGateTests(unittest.TestCase):
 
     def test_unenforced_cr_creation_keeps_the_legacy_points_flow(self) -> None:
         # US0128: an unenforced project creates a CR with legacy --points (grooms on points);
-        # an enforced project holds the strict Size demand and refuses it.
-        for enforce, expect_created in ((False, True), (True, False)):
+        # an enforced project holds the strict Size rule and writes no Points onto the request.
+        # Since US0900 an unsized CR is written rather than refused: refine sizes the epic it
+        # writes, never the CR. Sprint plan demands a CR's size only when the CR itself is
+        # planned directly.
+        for enforce, legacy_points in ((False, True), (True, False)):
             with self.subTest(enforce=enforce), tempfile.TemporaryDirectory() as d:
                 root = Path(d)
                 (root / "sdlc-studio").mkdir(parents=True)
@@ -113,12 +118,15 @@ class EnforcementGateTests(unittest.TestCase):
                 if enforce:
                     _enforce(root)
                 fields = {"affects": "src/x.py", "points": 5, "impact": "i"}
-                if expect_created:
-                    r = artifact.new(root, "cr", "legacy cr", fields)
-                    self.assertEqual(sdlc_md.read_points(Path(r["path"]).read_text()), 5)
+                with contextlib.redirect_stderr(io.StringIO()) as err:
+                    r = artifact.new(root, "cr", "a cr", fields)
+                text = Path(r["path"]).read_text()
+                if legacy_points:
+                    self.assertEqual(sdlc_md.read_points(text), 5)
                 else:
-                    with self.assertRaises(ValueError):
-                        artifact.new(root, "cr", "strict cr", fields)
+                    self.assertIsNone(sdlc_md.read_points(text))
+                    self.assertIsNone(sdlc_md.read_size(text))
+                    self.assertIn("--points was ignored", err.getvalue())
 
     def test_batch_create_reads_the_target_enforcement_not_the_cwd(self) -> None:
         # US0128 (review finding): new_batch must thread the TARGET root into the renderer, so a

@@ -1,6 +1,6 @@
 # BG0760: US0905 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** In Progress
 > **Depends on:** BG0761 - its carried patch applies only after BG0761's (QA grooming)
 > **Carried work:** the round-2 patch is kept at sdlc-studio/.local/US0905-carried-r2.patch (tests) and US0905-carried-r2-retire.patch (US0268 AC4 and BG0420 AC2 retirements), both complete against 25cbd375. Remaining fix: draw the AC2 test's pin-scan controls and the AC1 helpers' anchor from the keys `--list` prints rather than from named lanes, so dropping any one lane leaves the suite green; then amend US0372 AC2 in the D0259 pattern
 > **Severity:** Medium

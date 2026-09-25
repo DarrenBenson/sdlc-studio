@@ -4,7 +4,7 @@
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_off.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_mutation_gates.py, changelog.d/US0920.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_off.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_mutation_gates.py, changelog.d/US0920.md, .claude/skills/sdlc-studio/reference-scripts-verify.md, sdlc-studio/bugs/BG0651-a-later-commit-that-changes-a-target-file.md, sdlc-studio/bugs/BG0747-the-evidence-drift-lane-still-enforces-mutation-evidence.md, sdlc-studio/stories/US0660-a-surviving-mutant-becomes-a-severity-rated-bug.md, sdlc-studio/stories/US0822-a-ledger-row-records-the-anchor-it-was.md, sdlc-studio/stories/US0882-mutation-evidence-that-is-switched-off-stops-blocking.md
 > **Epic:** EP0263
 > **Points:** 3
 > **Persona:** Maya Okafor

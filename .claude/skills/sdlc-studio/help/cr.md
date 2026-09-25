@@ -25,19 +25,18 @@ SDLC Studio is model-invoked - say it in plain language:
 
 ```bash
 python3 <skill>/scripts/artifact.py new --type cr --title "Add search to the catalogue" \
-  --impact "who this affects and what breaks" --points 5 --affects "src/catalogue/search.py"
+  --summary "..." --priority High   # enough to capture the request
 python3 <skill>/scripts/file_finding.py file --type cr --title "..." --summary "..." \
-  --priority High --ctype Improvement --impact "..." --points 5 \
+  --priority High --ctype Improvement --impact "..." --size M \
   --affects "src/catalogue/search.py, src/api/routes.py" \
-  --ac "- [ ] ..."                   # when you already have criteria
+  --ac "- [ ] ..."                   # when you already know them
 ```
 
-Every CR carries an impact statement and a size in `--points` (modified Fibonacci: 1, 2, 3, 5,
-8, 13, 20) - the validator demands both, so the filer demands them of you rather than minting a
-CR that fails its own check. It carries `--affects` for the same reason: `sprint plan` refuses to
-plan a unit that names no files (it cannot be sized, and two units colliding on one file are
-invisible), so both creators refuse to write one. A project that has recorded
-`sprint.breakdown: judgement` gets a warning instead of a refusal, at both ends.
+A CR needs only `--title`, `--summary` and `--priority` to be filed: it is a request. `refine`
+decomposes it into an epic and stories; the epic carries the size and the stories their points
+and files, and nothing writes a size back onto the CR. Supply `--impact`, `--size` (S, M, L, XL),
+`--affects` and `--ac` when you already know them. The validator demands no impact or size of a
+CR at any status; `sprint plan` refuses to plan a CR that names no files or no size.
 `--author "Name; type; version"` stamps the authorship of record; absent, the invoking agent
 is stamped.
 

@@ -161,15 +161,6 @@ class ACrIsSizedByATshirt(unittest.TestCase):
             self.assertEqual(bd["ungroomed"], [])
             self.assertTrue(bd["ok"])
 
-    def test_a_cr_with_no_size_and_no_points_is_refused_naming_the_size_flag(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _seed_index(root, "cr")
-            rc, msg = _file_cr(root)               # neither --size nor --points
-            self.assertEqual(rc, 1)
-            self.assertEqual(_artifacts(root, "cr"), [])
-            self.assertIn("--size", msg)           # the refusal names the flag that fills it
-
     def test_a_value_off_the_tshirt_scale_is_refused(self) -> None:
         for bad in ("XXL", "5", "medium", "S/M/L", ""):
             with self.subTest(size=bad), tempfile.TemporaryDirectory() as d:

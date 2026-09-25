@@ -37,8 +37,8 @@ every artefact. The same resolved authorship names the artefact's opening Revisi
 row and its index Author column - the name alone there, since the typed triple is
 `Raised-by`'s job. Content the validator demands of a filled artefact can be supplied at
 creation and the artefact is born clean: `--persona` and `--ac` (repeatable) for a story,
-`--summary --steps --fix` for a bug, `--ac --impact --points` for a CR,
-`--summary --option --recommendation` for an RFC. A bug and a CR also carry their
+`--summary --steps --fix` for a bug, `--ac` for a CR (`--impact --size` when known),
+`--summary --option --recommendation` for an RFC. A bug also carries its
 GROOMING - `--affects "a.py, b.py"` (the files the unit will touch) and `--points N`
 (the job size on the modified Fibonacci scale, not its urgency) - and both creators REFUSE one without them,
 because `sprint plan` refuses to plan such a unit: it cannot be sized, and two units
@@ -47,10 +47,11 @@ rule: the body about to be written is handed to the planner's own breakdown pred
 value it cannot read back as a path list (a bare word, a prose phrase) counts as no
 `Affects` at all. A project that records `sprint.breakdown: judgement` gets a warning
 instead of a refusal, exactly as its plan reports instead of blocking; omission is not an
-opt-out. An RFC is exempt: it is not a unit of sprint work, and the files it touches are the
-OUTPUT of the design it exists to settle - it records an `--affects` when the author has
-one. Batch items take the same keys in the
-spec JSON. Omit them and you get a scaffold: the `{{placeholder}}` slots stay for the
+opt-out. A CR and an RFC are exempt: a CR is a request, and `refine` decomposes it into an epic
+and stories that carry the size and the files, and the files an RFC touches are the OUTPUT of
+the design it exists to settle - each records an `--affects` and a `--size` when the author has
+them. Batch items take the same keys in the spec JSON. A CR filed with no `--ac` states its
+criteria as not yet written rather than scaffolding a slot. Omit the others and you get a scaffold: the `{{placeholder}}` slots stay for the
 agent to fill, and `validate.py check` reports them as unfilled until it does - a scaffold
 is not yet a specified artefact, and the creator does not pretend otherwise. This is by
 design: a freshly created content-less scaffold is meant to fail validation until filled -
@@ -299,10 +300,10 @@ near-miss is common and only the author can tell them apart.
 Required fields per type are the ones the validator demands of a filed artefact, plus the
 grooming the PLANNER demands of a unit: a bug carries its evidence
 (`--severity --summary --steps --fix`) and its grooming (`--affects --points`), a CR
-its criteria, impact and size (`--priority --ctype --summary --ac --impact --points`)
-and its `--affects`, an RFC its options (`--summary --option`) and no grooming at all (it is
-not a sprint unit). The filer refuses an ungroomed bug or CR for the same reason it refuses a
-hollow one: `sprint plan` would refuse to plan it, and an artefact one end of the pipeline
+the request itself (`--priority --summary`; `--ctype --ac --impact --size --affects` are
+written when supplied, and never invented), an RFC its options (`--summary --option`)
+and no grooming at all (it is not a sprint unit). The filer refuses an ungroomed bug for the
+same reason it refuses a hollow one: `sprint plan` would refuse to plan it, and an artefact one end of the pipeline
 writes and the other rejects is a repair handed to an operator who has less context than the
 author had. `--author "Name; type; version"` (type is
 `human|persona|agent`) is stamped as `Raised-by` and names the Revision History row it

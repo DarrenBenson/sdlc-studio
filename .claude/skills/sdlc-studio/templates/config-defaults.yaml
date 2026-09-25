@@ -158,8 +158,9 @@ require_ac_verification: false
 # its old flow (plan a CR, complete it whole, size with points) until it opts in, so the release
 # does not break it. Set enforce: true to turn on the HARD gates - `plan` refuses a request as a
 # sprint unit, a request's terminal status is derived from its children, reconcile flags an
-# accepted childless request as undecomposed, and creating a CR demands a T-shirt Size. This repo
-# dogfoods it on via its own .config.yaml override. See reference-config.md#two-backlog.
+# accepted childless request as undecomposed, and a CR may carry a T-shirt Size but filing one
+# no longer demands it (refine sizes the epic it decomposes the CR into). This repo dogfoods it
+# on via its own .config.yaml override. See reference-config.md#two-backlog.
 two_backlog:
   enforce: false
 

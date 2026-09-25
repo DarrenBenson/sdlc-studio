@@ -166,7 +166,7 @@ class TheScaleIsTheEstimate(unittest.TestCase):
 
 
 class PointsAreDemanded(unittest.TestCase):
-    """An unsized unit is refused at BOTH creation paths - `sprint plan` refuses to plan one."""
+    """An unsized bug is refused at BOTH creation paths - `sprint plan` refuses to plan one."""
 
     def test_a_bug_filed_with_no_points_is_refused(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -177,18 +177,11 @@ class PointsAreDemanded(unittest.TestCase):
             self.assertEqual(_artifacts(root, "bug"), [])
             self.assertIn("--points", msg)          # the refusal names the flag that supplies it
 
-    def test_a_cr_filed_with_no_points_is_refused(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _seed_index(root, "cr")
-            rc, _ = _file_cr(root)
-            self.assertEqual(rc, 1)
-            self.assertEqual(_artifacts(root, "cr"), [])
-
     def test_artifact_new_demands_the_right_size_field_per_type(self) -> None:
         # The two creation paths answer to ONE definition of a sized artefact - but a DELIVERY
-        # unit (a bug) is sized in Points and a REQUEST (a cr) in a T-shirt Size (BG0148). Neither
-        # may be born unsized; each demands its OWN sizing field, on its own scale.
+        # unit (a bug) is sized in Points and a REQUEST (a cr) in a T-shirt Size (BG0148). A bug
+        # may not be born unsized; a CR may (US0900, `test_lean_cr_filing`), but a size it is
+        # given is checked on its own scale.
         # bug: Points on the Fibonacci scale
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -203,8 +196,6 @@ class PointsAreDemanded(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seed_index(root, "cr")
-            self.assertEqual(_new(root, "cr")[0], 1)                     # unsized: refused
-            self.assertEqual(_artifacts(root, "cr"), [])
             self.assertEqual(_new(root, "cr", "--size", "XXL")[0], 1)    # off-scale: refused
             self.assertEqual(_artifacts(root, "cr"), [])
             self.assertEqual(_new(root, "cr", "--size", "M")[0], 0)

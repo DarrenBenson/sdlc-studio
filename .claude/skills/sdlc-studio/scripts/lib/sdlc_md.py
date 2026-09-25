@@ -1350,8 +1350,9 @@ def two_backlog_enforced(repo_root) -> bool:
     """True when this project ENFORCES the two-backlog workflow - the HARD gates that change an
     existing project's habits: `plan` refuses a request (G1), a request's terminal status is
     derived from its children (G2), `reconcile` flags an accepted childless request as
-    undecomposed, and creating a CR demands a T-shirt Size. Read from `two_backlog.enforce` in the
-    project's own `.config.yaml`, default False.
+    undecomposed, and a CR may carry a T-shirt Size but filing one no longer demands it (`refine`
+    sizes the epic it decomposes the CR into). Read from `two_backlog.enforce` in the project's
+    own `.config.yaml`, default False.
 
     Default OFF is deliberate and load-bearing for UPGRADES: an existing project pulling a newer
     skill keeps its old flow (plan a CR, complete it whole, size with points) until it opts in, so

@@ -1265,12 +1265,9 @@ class SeparationOfDutiesTests(unittest.TestCase):
 
 
 class EvidenceSchemaTests(unittest.TestCase):
-    """US0062/CR0171: v3 bugs need evidence; v3 CRs need impact + a size. v2 exempt.
-
-    The size is `Points` on the modified Fibonacci scale. The retired `Effort` S/M/L still
-    passes HERE, and only here: this is a read over artefacts already on disk, and turning
-    every CR filed before the vocabulary changed into an error would report a fact about
-    history rather than a defect anyone can fix. Nothing writes an Effort any more."""
+    """US0062: v3 bugs need evidence. v2 exempt. A CR owes none (BG0756): nothing writes an
+    impact or a size onto a CR filed without one, so that demand is pinned retired in
+    test_lean_cr_filing."""
 
     def _v3(self, root: Path) -> None:
         (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
@@ -1297,45 +1294,6 @@ class EvidenceSchemaTests(unittest.TestCase):
                        "## Evidence\n\n`scripts/foo.py:42` returns the wrong value\n")
             self.assertNotIn("evidence-present",
                              [v["rule"] for v in validate.validate_file(p, "bug", root)])
-
-    def _cr(self, root: Path, tail: str) -> Path:
-        return _write(root, "sdlc-studio/change-requests/CR0001-x.md",
-                      f"# CR-0001: x\n\n> **Status:** Proposed\n> **Priority:** Low\n"
-                      f"> **Type:** X\n{self._AUTH}\n{tail}")
-
-    def test_cr_without_a_size_fails(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d); self._v3(root)
-            p = self._cr(root, "## Impact\n\nusers are affected\n")
-            self.assertIn("evidence-present",
-                          [v["rule"] for v in validate.validate_file(p, "cr", root)])
-
-    def test_cr_with_impact_and_points_passes(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d); self._v3(root)
-            p = self._cr(root, "## Impact\n\nusers are affected and blocked\n\n**Points:** 5\n")
-            self.assertNotIn("evidence-present",
-                             [v["rule"] for v in validate.validate_file(p, "cr", root)])
-
-    def test_a_cr_sized_off_the_scale_is_not_sized_at_all(self) -> None:
-        # A 7 is not a size the tool will write, and it is not one it will accept as a size on
-        # read either - otherwise a hand-edited artefact re-admits the precision the scale exists
-        # to refuse, and the validator becomes the hole in the gate.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d); self._v3(root)
-            p = self._cr(root, "## Impact\n\nusers are affected and blocked\n\n**Points:** 7\n")
-            self.assertIn("evidence-present",
-                          [v["rule"] for v in validate.validate_file(p, "cr", root)])
-
-    def test_a_legacy_effort_cr_already_on_disk_still_passes(self) -> None:
-        # The backlog carries hundreds of these. They are re-estimated by a planning pass, not
-        # by a validator turning red on history nobody can change.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d); self._v3(root)
-            p = self._cr(root, "## Impact\n\nusers are affected and blocked\n\n"
-                               "## Effort\n\n**M.** moderate\n")
-            self.assertNotIn("evidence-present",
-                             [v["rule"] for v in validate.validate_file(p, "cr", root)])
 
     def test_v2_bug_exempt(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -2592,15 +2550,16 @@ class FreshArtefactPlaceholderTests(unittest.TestCase):
         spec.loader.exec_module(artifact)
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            (root / "sdlc-studio" / "change-requests").mkdir(parents=True)
-            (root / "src").mkdir()
-            (root / "src" / "a.py").write_text("x = 1\n", encoding="utf-8")
+            # A story: a CR minted with no criteria now states them owed rather than
+            # scaffolding a slot (BG0756), so the scaffold this pins is a story's.
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            epic = root / "sdlc-studio" / "epics" / "EP0001-e.md"
+            epic.parent.mkdir(parents=True)
+            epic.write_text("# EP0001: e\n\n> **Status:** Draft\n", encoding="utf-8")
             buf = io.StringIO()
             with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
-                rc = artifact.main(["new", "--type", "cr", "--title", "a fresh request",
-                                    "--summary", "a summary", "--impact", "an impact",
-                                    "--priority", "High", "--size", "S",
-                                    "--affects", "src/a.py", "--root", str(root)])
+                rc = artifact.main(["new", "--type", "story", "--title", "a fresh story",
+                                    "--epic", "EP0001", "--root", str(root)])
             out = buf.getvalue()
         self.assertEqual(0, rc, f"artifact.py new did not run:\n{out}")
         self.assertIn("NOT FINISHED", out,

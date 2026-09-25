@@ -499,17 +499,14 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None,
                 "tranche reference present but empty - give it a value or remove the field "
                 "(sdlc-studio reads a tranche reference, never allocates it)")
 
-        # Evidence-or-it-did-not-happen, per type. Presence only (truth stays with reviewers
-        # and verify_ac); a placeholder counts as absent.
+        # Evidence-or-it-did-not-happen for a bug. Presence only (truth stays with reviewers
+        # and verify_ac); a placeholder counts as absent. A CR owes none: it is a request, and
+        # nothing writes a Size or an Impact onto a CR filed without one (`refine` sizes the epic
+        # it writes), so a demand for them could only fail a CR the shipped tools had moved on.
         if type_ == "bug" and not _bug_has_evidence(text):
             add("error", "evidence-present",
                 "bug has no evidence - cite a file:line reference, command output, or "
                 "reproduction steps")
-        elif type_ == "cr" and not _cr_has_evidence(text):
-            add("error", "evidence-present",
-                "CR needs both an impact statement and a size - `> **Size:** <"
-                + "|".join(sdlc_md.SIZE_SCALE) + ">` (a T-shirt size: a CR is a request, "
-                "sized before it is decomposed; story points belong on the delivery unit)")
 
     # An ungroomed (pre-Ready) story's AC placeholders are a WARNING, not an error: refine seeds
     # them and validate must not block the refine commit that creates the Draft backlog. What
@@ -532,7 +529,8 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None,
     # induced by it. A request at its opening status is "not written yet" for exactly the same
     # reason a Draft story is; once it moves past that, the placeholder is real debt and errors.
     _opening_status = {"story": ("Proposed", "Draft"), "bug": ("Open",),
-                       "cr": ("Proposed",), "rfc": ("Draft",)}.get(type_, ())
+                       "cr": ("Proposed",),
+                       "rfc": ("Draft",)}.get(type_, ())
     _not_yet_written = _canon in _opening_status
     _ac_sev = SEVERITY_WARNING if _not_yet_written else SEVERITY_ERROR
     # A widened check must not block on the backlog it reveals. When the sweep was extended from
@@ -604,28 +602,6 @@ def _bug_has_evidence(text: str) -> bool:
     if _FILE_LINE.search(text) or "```" in text:
         return True
     return _section_has_content(text, "Steps to Reproduce", "Reproduction", "Evidence")
-
-
-def _cr_has_evidence(text: str) -> bool:
-    """A CR carries an impact statement AND a size.
-
-    A CR is sized by a T-shirt `Size` (S/M/L/XL) - a CR is a REQUEST, sized coarsely before it is
-    decomposed, and story points belong on the delivery unit it becomes. TWO legacy shapes are
-    still ACCEPTED here, and only here: a `Points` value (CRs filed under the earlier gate that
-    forced points onto the request) and an `Effort` S/M/L (older still). This is a read over
-    artefacts already on disk, and a validator that turned every CR filed before a vocabulary
-    change into an error would be reporting a fact about history, not a defect anyone can fix.
-    Nothing WRITES a Points or an Effort onto a CR any more, so the tolerance drains as the
-    backlog is re-estimated rather than living on as a second vocabulary.
-    """
-    has_impact = _section_has_content(text, "Impact", "Impact Assessment", "Motivation")
-    legacy_effort = bool(re.search(r"effort", text, re.I)) and bool(
-        re.search(r"\b[SML]\b|small|medium|large", text, re.I))
-    has_size = (sdlc_md.read_size(text) is not None            # the current shape: a T-shirt Size
-                or sdlc_md.read_points(text) is not None       # legacy: points on a request
-                or legacy_effort)                              # legacy: Effort S/M/L
-    return has_impact and has_size
-
 
 
 #: Findings that already existed when the body sweep was widened, as `ID:{{token}}` - the FINDING,

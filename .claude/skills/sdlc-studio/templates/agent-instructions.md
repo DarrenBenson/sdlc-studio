@@ -112,10 +112,10 @@ benchmarks). Operators may opt out with `engagement_floor: judgement` in
    - **Create every artifact with the non-interactive script - it is the canonical path:**
      `python3 <skill>/scripts/artifact.py new --type bug --title "..."
      --affects "a.py, b.py" --points 3` (same for cr / story / epic / rfc; a finding with
-     repro + fix travels better through `scripts/file_finding.py file`). A bug or a CR must
-     name the files it touches and its size - both creators refuse one that cannot be
-     planned. It allocates a collision-free id, writes the file,
-     appends the index row, and wires a story into its parent epic. The interactive
+     repro + fix travels better through `scripts/file_finding.py file`). A bug must name
+     the files it touches and its size - both creators refuse one that cannot be planned;
+     a CR is a request, and the epic `refine` writes from it is sized. It allocates a
+     collision-free id, writes the file, appends the index row, and wires a story into its parent epic. The interactive
      `/sdlc-studio bug create` is a convenience wrapper that delegates to the same
      allocation - headless agents call the script. **Never hand-allocate ids or hand-author
      `_index.md`** - the file is truth, the index is derived. For many at once use

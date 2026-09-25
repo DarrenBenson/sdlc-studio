@@ -374,7 +374,7 @@ def _story_acs(f: dict) -> str:
 
 
 # The unfilled size slot, in the scale's own words - so a scaffold the caller never sized names
-# the vocabulary rather than an empty line. A bug or a CR never reaches it (the grooming gate
+# the vocabulary rather than an empty line. A bug never reaches it (the grooming gate
 # refuses an unsized one before any render); it is the honest placeholder for every other path.
 _POINTS_SLOT = "{{" + "|".join(str(p) for p in sdlc_md.POINTS_SCALE) + "}}"
 
@@ -457,7 +457,7 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
         head += f"> **Tranche:** {str(f['tranche']).strip()}\n"
     # The files this unit will touch, in the ONE shape the planner parses - rendered by the same
     # writer the finding filer uses, so the two creation paths cannot disagree about what the
-    # field looks like. Accepted for every type; DEMANDED of a bug and a CR (`check_groomed`).
+    # field looks like. Accepted for every type; DEMANDED of a bug (`check_groomed`).
     head += file_finding._affects_line(f)
     # The Author cell names the same authorship of record stamped above - never a literal, and
     # a name rather than the typed triple (which is `Raised-by`'s job). One shared row writer
@@ -494,11 +494,13 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
                 "\n\n## Story Breakdown\n\n_No stories yet._\n" + ac_body + rev)
     if type_ == "cr":
         acs = _list(f, "acs")
-        ac_body = "".join(f"- [ ] {a}\n" for a in acs) if acs else "- [ ] {{criterion}}\n"
+        ac_body = ("".join(f"- [ ] {a}\n" for a in acs) if acs
+                   else file_finding.NO_CR_CRITERIA + "\n")
         return (head + f"> **Priority:** {f.get('priority', 'Medium')}\n"
                 f"> **Type:** {f.get('ctype', 'Feature')}\n" + _sizing_line("cr", f) + "\n"
                 "## Summary\n\n" + _text(f, "summary", "{{what changes and why}}") +
-                "\n\n## Impact\n\n" + _text(f, "impact", "{{who this affects and what breaks}}") +
+                ("\n\n## Impact\n\n" + _text(f, "impact", "")
+                 if str(f.get("impact") or "").strip() else "") +
                 "\n\n## Acceptance Criteria\n\n" + ac_body + rev)
     if type_ == "rfc":
         options = _list(f, "options")
@@ -1051,7 +1053,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
                   file=sys.stderr)
     f["date"] = f.get("date") or date.today().isoformat()
     f["_root"] = str(root)   # so the renderer can read the project's enforcement
-    # A bug or a CR created here is a unit `sprint plan` will be asked to plan, and this is a
+    # A bug created here is a unit `sprint plan` will be asked to plan, and this is a
     # documented create path - not a side door. So it answers to the SAME grooming demand as the
     # finding filer, from the same authority: the body about to be written is judged by the
     # planner's own `breakdown` predicate, and refused here if the planner would refuse it there.
@@ -1206,7 +1208,7 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             # so a bad path in ANY item aborts the whole batch here, before an id is reserved.
             file_finding.check_affects_resolvable(root, it.get("affects"), type_,
                                                   label=str(it.get("title") or f"item {i}"))
-            if groom_preview is not None:  # ... as does a bug/CR the planner would refuse to plan
+            if groom_preview is not None:  # ... as does a bug the planner would refuse to plan
                 file_finding.check_groomed(root, type_, groom_preview(
                     type_, "PREVIEW", str(it.get("title") or ""), today,
                     {**it, "date": today, "_root": str(root)}))
@@ -1681,7 +1683,7 @@ def build_parser() -> argparse.ArgumentParser:
                         "bug takes --points, not --size")
     n.add_argument("--affects",
                    help="comma-separated files this unit will touch, written as the `Affects` "
-                        "metadata line the planner reads. Required for a bug and a cr: "
+                        "metadata line the planner reads. Required for a bug: "
                         "`sprint plan` refuses a unit that names no files - it cannot size one, "
                         "nor see two units colliding on the same file")
     n.add_argument("--ac", action="append", help="story/cr acceptance criterion (repeatable)")
