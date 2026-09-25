@@ -29,7 +29,8 @@ one; `--template full` grafts the rich `templates/core/` body onto the determini
 `batch --type <t> --spec <items.json>` creates many artifacts of one type in a single
 atomic pass: a reserved contiguous id block, every index row, and every story-to-
 epic link wired in one go; a missing epic or id collision aborts before any write;
-`--dry-run` previews the id map. Batch defaults to `--template full` (the fan-out case).
+`--dry-run` previews the id map. Batch writes the lean shape `new` writes by default;
+`--template planning` or `full` on request.
 
 Every created artefact carries `> **Raised-by:** Name; type; version` (from `--author`,
 or the invoking agent when absent - `SDLC_AUTHOR` when set), which schema v3 requires of
@@ -37,6 +38,7 @@ every artefact. The same resolved authorship names the artefact's opening Revisi
 row and its index Author column - the name alone there, since the typed triple is
 `Raised-by`'s job. Content the validator demands of a filled artefact can be supplied at
 creation and the artefact is born clean: `--persona` and `--ac` (repeatable) for a story,
+with `role`, `capability` and `benefit` (text, story only) in a `--fields-file` document,
 `--summary --steps --fix` for a bug, `--ac` for a CR (`--impact --size` when known),
 `--summary --option --recommendation` for an RFC. A bug also carries its
 GROOMING - `--affects "a.py, b.py"` (the files the unit will touch) and `--points N`
@@ -50,7 +52,7 @@ instead of a refusal, exactly as its plan reports instead of blocking; omission 
 opt-out. A CR and an RFC are exempt: a CR is a request, and `refine` decomposes it into an epic
 and stories that carry the size and the files, and the files an RFC touches are the OUTPUT of
 the design it exists to settle - each records an `--affects` and a `--size` when the author has
-them. Batch items take the same keys in the spec JSON. A CR filed with no `--ac` states its
+them. Batch items take the same keys in the spec JSON, and an unknown key is refused. A CR filed with no `--ac` states its
 criteria as not yet written rather than scaffolding a slot. Omit the others and you get a scaffold: the `{{placeholder}}` slots stay for the
 agent to fill, and `validate.py check` reports them as unfilled until it does - a scaffold
 is not yet a specified artefact, and the creator does not pretend otherwise. This is by
@@ -102,7 +104,7 @@ the caller asked it to say. Detail that needs more than a line belongs in a body
 #### Template tiers
 
 `--template` chooses scaffold richness: `minimal` (the default bare stub), `planning`, or
-`full` (the whole `templates/core/<type>.md` body; `batch` defaults to it, the fan-out case).
+`full` (the whole `templates/core/<type>.md` body). `batch` has the same default.
 
 **`planning`** is the lean pre-implementation tier for a story or epic. The full story
 template has a structural floor near 170 lines once every mandated heading survives (an epic

@@ -4,7 +4,7 @@
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .github/workflows/lint.yml, package.json, tools/run-suite.sh, .claude/skills/sdlc-studio/scripts/gate.py, tools/tests/test_lean_python_floor.py, tools/tests/test_lean_one_runner.py, changelog.d/US0939.md
+> **Affects:** .github/workflows/lint.yml, package.json, tools/run-suite.sh, .claude/skills/sdlc-studio/scripts/gate.py, tools/tests/test_lean_python_floor.py, tools/tests/test_lean_one_runner.py, changelog.d/US0939.md, .claude/skills/sdlc-studio/help/gate.md
 > **Epic:** EP0265
 > **Points:** 2
 > **Persona:** Maya Okafor

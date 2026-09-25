@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 34 |
+| Open | 32 |
 | In Progress | 0 |
-| Fixed | 613 |
+| Fixed | 615 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
@@ -113,7 +113,7 @@
 | [BG0752](BG0752-per-commit-test-selection-skips-hooks-test-infrastructure.md) | Per-commit test selection skips hooks, test infrastructure and code reached through another script | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0753](BG0753-the-test-suite-leaks-temporary-directories-into-tmp.md) | The test suite leaks temporary directories into /tmp | Fixed | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0754](BG0754-a-commit-touching-a-widely-imported-script-runs.md) | A commit touching a widely imported script runs well over the 90-second budget | Open | Medium | 2026-09-24 | 2026-09-24 |
-| [BG0755](BG0755-artifact-py-batch-ignores-a-story-s-role.md) | artifact.py batch ignores a story's role, capability and benefit, and its default template leaves a page of placeholders | Open | Medium | 2026-09-24 | 2026-09-24 |
+| [BG0755](BG0755-artifact-py-batch-ignores-a-story-s-role.md) | artifact.py batch ignores a story's role, capability and benefit, and its default template leaves a page of placeholders | Fixed | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0756](BG0756-us0900-did-not-converge-in-review-round-2.md) | US0900 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0757](BG0757-repo-map-py-build-crashes-on-python-3.md) | repo_map.py build crashes on Python 3.10 when a source file holds a null byte | Fixed | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0758](BG0758-command-audit-surface-module-reuses-whatever-surface-module.md) | command_audit._surface_module reuses whatever surface module the process already imported | Fixed | Medium | 2026-09-24 | 2026-09-24 |
@@ -131,7 +131,7 @@
 | [BG0770](BG0770-ci-s-unittest-run-of-tools-tests-is.md) | CI's unittest run of tools/tests is red on main | Fixed | High | 2026-09-25 | 2026-09-25 |
 | [BG0771](BG0771-the-close-s-tick-verification-row-cannot-read.md) | The close's tick-verification row cannot read the lean criterion shape | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0772](BG0772-a-held-backlog-item-cannot-close-when-its.md) | A held backlog item cannot close when its closing story ships | Fixed | Medium | 2026-09-25 | 2026-09-25 |
-| [BG0773](BG0773-bg0755-did-not-converge-in-review-round-2.md) | BG0755 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0773](BG0773-bg0755-did-not-converge-in-review-round-2.md) | BG0755 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0774](BG0774-install-sh-exits-1-after-a-successful-install.md) | install.sh exits 1 after a successful install when the gemini target is chosen without the gemini CLI | Open | Medium | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases

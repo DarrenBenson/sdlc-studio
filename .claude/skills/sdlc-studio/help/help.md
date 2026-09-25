@@ -240,7 +240,7 @@ The tooling sprint uses to create and close artifacts the same way every time (t
 | `scripts/artifact.py new --template full` | Scaffold the full template (all sections) instead of the minimal stub |
 | `scripts/artifact.py new --template planning` | The lean pre-implementation tier (story/epic): ACs with `Verify:` + `Verification target:`, scope, technical notes - under 60 lines, no implementation furniture. Promote before implementation |
 | `scripts/artifact.py promote --id <ID>` | Promote a planning-tier artifact to the full template (adds the deferred sections; idempotent) |
-| `scripts/artifact.py batch --type <type> --count N` | Reserve an id range and write N pre-wired scaffolds atomically (fan-out authoring); implies `--template full` |
+| `scripts/artifact.py batch --type <type> --spec <items.json>` | Reserve an id range and write one pre-wired artefact per spec item atomically (fan-out authoring); the lean shape by default, `--template planning` or `full` on request; an unknown item key is refused |
 | `scripts/next_id.py allocate --type <type>` | The next collision-free id for a type (what `new`/`batch`/`file_finding` call internally; `--remote` also considers `origin/main`) |
 | `scripts/artifact.py close --id <ID> --verdict approve` | Terminal-transition an artifact and record run telemetry |
 | `scripts/provenance.py check` / `remake` | Flag artifacts that were not created by the tool (advisory; `provenance.enforce` to gate); backfill the stamp |

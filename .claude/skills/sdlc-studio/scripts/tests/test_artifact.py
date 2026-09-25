@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 import tempfile
 import unittest
@@ -577,22 +578,34 @@ class BatchTests(unittest.TestCase):
             items = [{"title": "rest conventions", "epic": "EP0001"},
                      {"title": "auth middleware", "epic": "EP0001"},
                      {"title": "persistence", "epic": "EP0001"}]
-            r = artifact.new_batch(repo, "story", items)
+            # US0081 AC1 names the FULL template's story header; batch's default is the lean
+            # shape, so the full body is asked for here.
+            r = artifact.new_batch(repo, "story", items, template="full")
             self.assertEqual(r["count"], 3)
             ids = [c["id"] for c in r["created"]]
             self.assertEqual(ids, ["US0001", "US0002", "US0003"])  # contiguous block
+            core = (SCR.parent / "templates" / "core" / "story.md").read_text(encoding="utf-8")
+            want = re.findall(r"^## .+$", core, re.M)
+            self.assertGreater(len(want), 5)
+            for c in r["created"]:                                 # the template's sections, in order
+                got = re.findall(r"^## .+$", Path(c["path"]).read_text(encoding="utf-8"), re.M)
+                self.assertEqual(got, want, c["id"])
             ep = (repo / "sdlc-studio" / "epics" / "EP0001-x.md").read_text()
             for i in ids:
                 self.assertIn(i, ep)                               # each wired to the epic
             self.assertEqual(reconcile.detect_type("story", repo)["drift"], [])  # counts in sync
 
-    def test_batch_defaults_to_full_template(self) -> None:
+    def test_batch_defaults_to_the_lean_template(self) -> None:
+        # BG0755: the full body is opt-in; the default is the lean shape `new` writes.
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
             _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
             _epic(repo)
             r = artifact.new_batch(repo, "story", [{"title": "x", "epic": "EP0001"}])
-            self.assertEqual(r["template"], "full")
+            self.assertEqual(r["template"], "minimal")
+            self.assertNotIn("## Context", Path(r["created"][0]["path"]).read_text())
+            r = artifact.new_batch(repo, "story", [{"title": "y", "epic": "EP0001"}],
+                                   template="full")
             self.assertIn("## Context", Path(r["created"][0]["path"]).read_text())  # rich body
 
     def test_batch_is_atomic_on_bad_epic(self) -> None:

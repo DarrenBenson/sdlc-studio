@@ -1,6 +1,6 @@
 # BG0773: BG0755 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_batch_story_fields.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/help/artifact.md, changelog.d/BG0755.md, .claude/skills/sdlc-studio/help/help.md, .claude/skills/sdlc-studio/reference-scripts-create.md, .claude/skills/sdlc-studio/help/arguments.md, changelog.d/BG0773.md
@@ -25,8 +25,10 @@ Fix each finding above, then deliver BG0755 again in a later run.
 
 - [ ] **AC1** Given BG0755's carried work (sdlc-studio/.local/BG0755-carried-r2.patch) applied onto main, then BG0755's four criteria pass through their own Verify selectors. Fails on: a landing that drops the carried refusal of non-text user-story values or the lean batch default
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_batch_story_fields.py
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given the carried work, when US0081's stamped selector runs, then at least one selected test renders a story from the FULL template and asserts its header against templates/core/story.md. Fails on: the carried patch as it stood, where `test_batch_creates_wires_and_keeps_drift_zero` moved to the minimal default and the renamed `batch_defaults_to_full_template` term matches nothing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::BatchTests::test_batch_creates_wires_and_keeps_drift_zero
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

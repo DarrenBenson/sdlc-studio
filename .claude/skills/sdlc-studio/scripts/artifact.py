@@ -373,6 +373,49 @@ def _story_acs(f: dict) -> str:
     return "".join(out)
 
 
+#: The User Story block's three lines and the field each is written from.
+_USER_STORY_LINES = (("As a", "role"), ("I want", "capability"), ("So that", "benefit"))
+
+
+def check_user_story_fields(f: dict) -> None:
+    """Refuse a user-story field that is not text, before anything is written: a list or number
+    has no line to go on, and writing the placeholder in its place would drop it at exit 0."""
+    for _label, key in _USER_STORY_LINES:
+        if f.get(key) is not None and not isinstance(f[key], str):
+            raise ValueError(f"'{key}' must be text, not {type(f[key]).__name__}")
+
+
+def _story_line(f: dict, key: str) -> str:
+    """One user-story field as the single line it is written on, or "" when not supplied.
+    Whitespace is collapsed: a break inside the value would split the line it belongs to."""
+    val = f.get(key)
+    return file_finding._prose_safe(" ".join(val.split())) \
+        if isinstance(val, str) and val.strip() else ""
+
+
+def _user_story(f: dict) -> str:
+    """The User Story block: each supplied field on its line, a `{{placeholder}}` otherwise."""
+    return "".join(f"**{label}** {_story_line(f, key) or '{{' + key + '}}'}\n"
+                   for label, key in _USER_STORY_LINES)
+
+
+def _fill_user_story(body: str, type_: str, f: dict) -> str:
+    """Write a story's supplied role, capability and benefit over a grafted template's lines.
+    A template with no such line gets the whole block under `## User Story`, so a supplied
+    value is never dropped."""
+    if type_ != "story":
+        return body
+    for label, key in _USER_STORY_LINES:
+        val = _story_line(f, key)
+        if not val:
+            continue
+        line = re.compile(rf"^\*\*{re.escape(label)}\*\* .*$", re.M)
+        if not line.search(body):
+            return _put_section(body, ("User Story",), _user_story(f))
+        body = line.sub(lambda _m, v=val, lb=label: f"**{lb}** {v}", body, count=1)
+    return body
+
+
 # The unfilled size slot, in the scale's own words - so a scaffold the caller never sized names
 # the vocabulary rather than an empty line. A bug never reaches it (the grooming gate
 # refuses an unsized one before any render); it is the honest placeholder for every other path.
@@ -469,8 +512,8 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
         # honestly absent, never an unresolved placeholder in the metadata block.
         persona = f"> **Persona:** {f['persona']}\n" if str(f.get("persona") or "").strip() else ""
         return (head + f"> **Epic:** {f.get('epic') or '-'}\n" + _sizing_line("story", f) + persona +
-                "\n## User Story\n\n**As a** {{role}}\n**I want** {{capability}}\n"
-                "**So that** {{benefit}}\n\n## Acceptance Criteria\n\n" + _story_acs(f) + rev)
+                "\n## User Story\n\n" + _user_story(f) +
+                "\n## Acceptance Criteria\n\n" + _story_acs(f) + rev)
     if type_ == "charter":
         # A charter is the SHAPE of a run that has not happened. It deliberately carries no
         # acceptance criteria: it delivers nothing itself, and the units it materialises carry
@@ -563,7 +606,10 @@ class ContentDropped(Exception):
 #: the next type added, which is exactly how a bug's criteria came to be discarded in silence.
 #: The check below asks the RENDERED DOCUMENT whether the caller's words are in it, so a type
 #: nobody thought about is covered on the day it is written.
-_MUST_LAND = ("summary", "steps", "fix", "impact", "acs", "options", "recommendation")
+#: The user-story fields are landed by the story renderers, not `_land_supplied`, so on any other
+#: type this check is what refuses them rather than dropping them.
+_MUST_LAND = ("summary", "steps", "fix", "impact", "acs", "options", "recommendation",
+              *(key for _label, key in _USER_STORY_LINES))
 
 
 def _probe(value) -> str:
@@ -724,7 +770,7 @@ def _fill_content(body: str, type_: str, f: dict) -> str:
         content = _rendered(key, f)
         if content:
             body = _put_section(body, names, content)
-    return _fill_impact(_fill_acs(body, type_, f), type_, f)
+    return _fill_user_story(_fill_impact(_fill_acs(body, type_, f), type_, f), type_, f)
 
 
 def _graft(minimal: str, core_path: Path, type_: str = "", f: dict | None = None) -> str:
@@ -1028,6 +1074,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     # anything is allocated or written - a half-created artefact carrying injected lines is
     # worse than no artefact. One guard, every field, at the top of the one create path.
     sdlc_md.check_creator_fields({**f, "title": title})
+    check_user_story_fields(f)
     # A CR/bug criterion is prose: refuse a command-shaped `Verify:` written into it, from the
     # SAME authority the filer uses, so the two creation paths cannot disagree about what a
     # CR/bug acceptance criterion means (nothing executes it - only a story's Verify line runs).
@@ -1181,12 +1228,12 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
 
 
 def new_batch(repo_root: Path | str, type_: str, items: list[dict],
-              template: str = "full", dry_run: bool = False) -> dict:
+              template: str = MINIMAL, dry_run: bool = False) -> dict:
     """Create many artifacts of one type in a single atomic pass.
 
     Reserve a contiguous id block up front (LL0002: reserve before writing), render each
-    file (full template by default - batch is the fan-out case where structure must be
-    guaranteed), append every index row, and wire each story into its parent epic - one pass.
+    file (the lean shape `new` writes by default; `planning` and `full` on request), append
+    every index row, and wire each story into its parent epic - one pass.
     All-or-nothing: a missing epic or a file collision aborts before any write. `--dry-run`
     returns the full id map and planned wiring."""
     if type_ not in SPEC:
@@ -1202,6 +1249,15 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
                      if type_ in file_finding.GROOMED_TYPES else None)
     for i, it in enumerate(items, 1):
         try:  # an injected line in item N aborts the batch here, before any id is reserved
+            # ... as does a key nobody reads, on the terms `--fields-file` refuses one: a
+            # misspelt key otherwise mints an artefact with that field silently missing.
+            unknown = sorted(k for k in it if k not in BATCH_ITEM_KEYS)
+            if unknown:
+                raise ValueError(
+                    f"unknown field(s): {', '.join(unknown)} - known fields are "
+                    f"{', '.join(BATCH_ITEM_KEYS)}. A key nobody reads is a field that silently "
+                    f"went missing, so it is refused rather than ignored")
+            check_user_story_fields(it)
             sdlc_md.check_creator_fields(it)
             file_finding.check_prose_acs(type_, it)  # ... as does a pseudo-`Verify:` criterion
             # ... as does a declared `Affects` that resolves to nothing, from the shared seam -
@@ -1447,11 +1503,16 @@ def cmd_promote(args: argparse.Namespace) -> int:
 #: the ones only `artifact new` writes. Its own list, not the filer's: a key nobody here reads
 #: is a field that silently went missing, which is the class the file exists to end.
 FIELDS_FILE_KEYS: tuple[str, ...] = (*file_finding.COMMON_FIELDS_FILE_KEYS,
-                                     "epic", "persona", "verify", "target", "template",
+                                     "epic", "persona", "target", "template",
                                      "provenance",
+                                     # A story's User Story block.
+                                     *(key for _label, key in _USER_STORY_LINES),
                                      # A charter's own three: what the run drives to, the rule
                                      # that selects its batch, and how much of a run it is worth.
                                      "goal", "scope", "appetite", "scope_query")
+#: The keys a `batch` spec item may carry: the `--fields-file` document's, plus the
+#: orchestrator's `tranche` the renderer writes.
+BATCH_ITEM_KEYS: tuple[str, ...] = (*FIELDS_FILE_KEYS, "tranche")
 
 
 def cmd_new(args: argparse.Namespace) -> int:
@@ -1711,9 +1772,9 @@ def build_parser() -> argparse.ArgumentParser:
     b = sub.add_parser("batch", help="Create many artifacts of one type in one atomic pass.")
     b.add_argument("--type", required=True, choices=tuple(SPEC))
     b.add_argument("--spec", required=True, help="JSON file: a list of {title, epic?, ...} items")
-    b.add_argument("--template", choices=TEMPLATE_TIERS, default=FULL,
-                   help="batch defaults to full (the fan-out case); --template planning is the "
-                        "lean pre-implementation tier for a decomposition; minimal opts out")
+    b.add_argument("--template", choices=TEMPLATE_TIERS, default=MINIMAL,
+                   help="scaffold richness, as for `new`: minimal (default, the lean shape); "
+                        "planning (the pre-implementation tier); or the full templates/core body")
     b.add_argument("--root", default=".")
     b.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview the id map; write nothing")
     b.add_argument("--format", choices=("text", "json"), default="text")

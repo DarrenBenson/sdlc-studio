@@ -60,7 +60,7 @@ Full command-line argument reference. For the common subset, see `help/help.md`
 
 | Flag | Description |
 | --- | --- |
-| `new --template minimal\|planning\|full` | Scaffold richness. `minimal` (default) is the bare stub; `planning` is the lean pre-implementation tier for a story/epic (under 60 lines: ACs with `Verify:` and `Verification target:`, scope, technical notes - and no constraint chain, edge cases, test scenarios or rollback envelope); `full` is the whole `templates/core/` body. `batch` defaults to `full` |
+| `new --template minimal\|planning\|full` | Scaffold richness. `minimal` (default) is the bare stub; `planning` is the lean pre-implementation tier for a story/epic (under 60 lines: ACs with `Verify:` and `Verification target:`, scope, technical notes - and no constraint chain, edge cases, test scenarios or rollback envelope); `full` is the whole `templates/core/` body. `batch` takes the same flag and the same `minimal` default |
 | `new --ac "<criterion>"` | Acceptance criterion (repeatable; story/CR/epic) |
 | `new --verify "<command>"` | The executable check for the AC in the same position (repeatable; pairs with `--ac`). Written verbatim - it is a command the verifier runs |
 | `new --target functional\|conversational\|soak\|live` | The `Verification target` tier written on each supplied AC |
