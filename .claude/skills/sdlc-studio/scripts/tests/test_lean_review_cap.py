@@ -101,7 +101,6 @@ class ReviewRoundTests(unittest.TestCase):
                           transition._unanswered_delivery_reject(root, UNIT) or "")
             rc, _out, err = _record(root, "APPROVE", "rev-a")
             self.assertEqual(rc, 0, err)
-            self.assertEqual(critic.repairs_for(root, UNIT), [], "premise: no repair record")
             self.assertEqual(critic.verdict_for(root, UNIT)["verdict"], "APPROVE")
             self.assertIsNone(transition._unanswered_delivery_reject(root, UNIT))
             try:

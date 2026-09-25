@@ -44,11 +44,11 @@ Report the panel as its members - `US0675 REJECT (qa, engineering) / APPROVE (pr
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_the_latest_unanswered_reject_is_the_one_reported
   - **Verified:** yes (2026-08-26)
 - [x] **AC4** Given a unit carrying SEVERAL unanswered rejections, when its repair state is computed, then every one of them contributes its findings to `outstanding` - this roll-up creates multi-reject units for the first time, and deriving outstanding from the standing row alone left 118 findings invisible to this function, to the conformance lane that calls it and to every checker built on either
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_every_unanswered_rejection_contributes_its_findings
-  - **Verified:** yes (2026-08-26)
+  - **Verify:** manual - retired by US0914: the repair state went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0914
 - [x] **AC5** Given a repair recorded against an EARLIER rejection, when a later rejection is raised, then the earlier repair does not answer it - the paired control, and sharper than it looks: a closure may name its finding by ORDINAL, and an ordinal is positional, so pooling closures across rejections makes an ordinal silently answer another round's first finding
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ClosureResolutionTests::test_a_repair_does_not_answer_a_LATER_rejection
-  - **Verified:** yes (2026-08-26)
+  - **Verify:** manual - retired by US0914: resolving a closure against the findings went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0914
 - [x] **AC6** Given the nineteen units this roll-up leaves carrying a rejection no seat ever answered, when the shipped whole-workspace conformance lane runs, then it is GREEN at 608/690 with none non-conformant - reached by a recorded WAIVER naming each unit, because those rejections cannot be closed retroactively without fabricating evidence, and a backfill attempting exactly that was rejected at review for citing the cross-seat approval this rule exists to refuse
   - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/conformance.py check
   - **Verified:** yes (2026-08-26)
@@ -73,3 +73,4 @@ Report the panel as its members - `US0675 REJECT (qa, engineering) / APPROVE (pr
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-24 | sdlc-studio | Filed |
+| 2026-09-25 | Claude Opus 5.5 | AC4, AC5 retired by US0914 (D0259 pattern): `critic.py repair` and its ledger were deleted, so a REJECT is answered only by a round-2 APPROVE or carried at the cap |

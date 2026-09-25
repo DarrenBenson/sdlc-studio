@@ -44,8 +44,8 @@ this same batch is what happens when two ledgers hold halves of one answer.
 - **Then** it names each finding it closes and the evidence closing it - a re-applied mutant, a
   test that now reddens, or a filed artefact id - and a repair naming a finding the verdict never
   raised is refused, because a disposition that matches nothing is not a disposition
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairRecordTests::test_a_repair_names_each_finding_it_closes_with_its_evidence
-- **Verified:** yes (2026-08-03)
+- **Verify:** manual - retired by US0914: recording a repair went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC2: the REJECT survives the repair, verbatim
 
@@ -54,8 +54,8 @@ this same batch is what happens when two ledgers hold halves of one answer.
 - **Then** the verdict, its reviewer, its brief provenance and its findings are byte-identical
   afterwards, and the repair reads as a separate appended record - what the reviewer found stays
   true, and no repair route can quietly become an edit route
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairRecordTests::test_the_reject_survives_the_repair_byte_identically
-- **Verified:** yes (2026-08-03)
+- **Verify:** manual - retired by US0914: recording a repair went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC3: the record carries its own author and is refused without one
 
@@ -63,8 +63,8 @@ this same batch is what happens when two ledgers hold halves of one answer.
 - **When** no author is supplied
 - **Then** it is refused - a repair is a claim about work somebody did, and an unattributed claim
   cannot be questioned, which is the same rule the verdict already holds
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairRecordTests::test_an_unattributed_repair_is_refused
-- **Verified:** yes (2026-08-03)
+- **Verify:** manual - retired by US0914: recording a repair went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC4: the repair is visible from the verdict, through the shipped command
 
@@ -73,8 +73,8 @@ this same batch is what happens when two ledgers hold halves of one answer.
 - **Then** the output carries both, so a reader of the verdict sees the disposition without
   knowing a second command exists - asserted through the CLI, because a library-only check cannot
   see a record the shipped reader never prints
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairRecordTests::test_show_prints_the_repair_beside_the_verdict
-- **Verified:** yes (2026-08-03)
+- **Verify:** manual - retired by US0914: recording a repair went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ## Revision History
 
@@ -82,3 +82,4 @@ this same batch is what happens when two ledgers hold halves of one answer.
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-03 | Claude Opus 5 | Groomed against CR0506 criterion 1, with AC4 driving the shipped CLI rather than the library after LL0040 |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3, AC4 retired by US0914 (D0259 pattern): `critic.py repair` and its ledger were deleted, so a REJECT is answered only by a round-2 APPROVE or carried at the cap |

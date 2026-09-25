@@ -1,6 +1,6 @@
 # US0914: A standing REJECT clears only by a round-2 APPROVE or by carrying the unit
 
-> **Status:** Draft
+> **Status:** Done
 > **Depends on:** US0937 (US0891, US0900 and US0904 reach Done first)
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
@@ -20,18 +20,25 @@
 
 - **AC1:** Given `critic.py repair`, when invoked, then it exits 2 with a message that it is retired naming the two exits (a round-2 APPROVE from the reviewer who rejected, or carrying the unit at the review cap), and `critic.py --help` does not list it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_repair_ledger.py::RepairLedgerGoneTests::test_the_repair_verb_is_retired
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given a fixture unit whose standing delivery REJECT has every finding closed by a row in a pre-existing `repair-record.md`, when it is moved to Done, then it is refused as an unanswered REJECT and the refusal names the two exits, not `critic.py repair`; the same REJECT answered by a round-2 independent APPROVE from the rejecting reviewer reaches Done with critiqued met, and a round-2 REJECT instead carries the unit (dropped from the batch with a filed bug). Fails on: HEAD, where the closure rows answer the REJECT, and on a deletion that also breaks either exit
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_repair_ledger.py::RepairLedgerGoneTests::test_a_repair_row_no_longer_answers_a_reject
+  - **Verified:** yes (2026-09-25)
 - **AC3:** Given a fixture unit whose standing delivery REJECT has every finding closed by rows in `repair-record.md`, when conformance, the close and the sprint report run, then each output is identical with the file removed, and its bytes are unchanged. Fails on: removing the Done-side read while `sprint.py` or `sprint_report.py` still counts closures
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_repair_ledger.py::RepairLedgerGoneTests::test_the_repair_ledger_is_frozen_and_unread
+  - **Verified:** yes (2026-09-25)
 - **AC4:** Given a standing REJECT from one reviewer and a later APPROVE from a different reviewer whose `--brief` fingerprint matches the REJECT's, both recorded after the same-reviewer round rule (`round_refusal`) shipped, when `_unanswered_rejects` runs, then the REJECT stands unanswered; a historical pair recorded before that rule still matches by fingerprint, so the 23 historical units it pairs in this repository stay answered. Fails on: HEAD's unscoped fingerprint second key (critic.py 867-870), which lets an invented `--brief` retire a REJECT once US0923 stops marking unmatched briefs
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_repair_ledger.py::RepairLedgerGoneTests::test_the_fingerprint_key_answers_only_historic_rows
+  - **Verified:** yes (2026-09-25)
 - **AC5:** Given `docgen.py surface` rerun in the same commit, then reference-scripts-surface.md names none of `critic.py repair` and `docgen.py surface --check` reports 0 drift
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_repair_ledger.py::RepairLedgerGoneTests::test_the_surface_names_no_retired_verb
+  - **Verified:** yes (2026-09-25)
 - **AC6:** Given the criteria whose stamped Verify selector names a test this story deletes (ClosureChannelTests and LedgerRollupTests less the eight tests that pin surviving behaviour, RepairRecordTests, ClosureResolutionTests, ClosureArrowTests, PartialRepairTests, FiledDispositionTests, RepairPlacementTests, RepairPhaseJoinTests and RepairStateResolvesFiledIdsTests), measured from the built retire patch: BG0605 (2), BG0607 (2), BG0618 (6), BG0629 (2), BG0631 (4), BG0637 (1), BG0677 (7), BG0704 (3), US0620 (4), US0621 (3), US0622 (3), US0623 (3), US0624 (1), US0627 (6) and US0628 (4), 51 criteria, then each is retired in the D0259 pattern (`Verify: manual - retired by US0914: <why>`, `Verified: manual (<date>) - retired, superseded by US0914`), US0626 AC4/AC5 and US0628 AC5/AC6 are narrowed to what survives, and no `Verified: yes` selector under sdlc-studio/ names a deleted test node. `RejectNeedsAnAnswerTests` and `ClosedOverRejectNamesTheBugTests` are edited, not deleted
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_repair_ledger.py::RepairLedgerGoneTests::test_no_stamp_names_a_deleted_test
+  - **Verified:** yes (2026-09-25)
 - **AC7:** Given a fixture story at Done whose standing delivery REJECT is dated before `critic.REPAIR_VERB_RETIRED` (the day this story lands, after the last repair row of 2026-09-25), with no round-2 APPROVE and no `repair-record.md`, when `conformance.py check` runs, then critiqued is met and the summary counts the story as passed on the repair-ledger licence; the same story with its REJECT dated on the constant reads `missing critiqued`; and an In Progress copy of the pre-constant story moved to Done by `transition.py set` is still refused as an unanswered REJECT. Fails on: no licence (in this repository 38 Done stories answered only by repair rows lose critiqued, 854 to 814 of 936, measured on HEAD plus the built patch); a licence with no date (the on-constant REJECT reads met); the licence placed in `critic._unanswered_rejects` or the transition guard (the In Progress copy reaches Done unanswered)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_repair_ledger.py::RepairLedgerGoneTests::test_a_unit_done_under_the_frozen_ledger_stays_critiqued
+  - **Verified:** yes (2026-09-25)
 
 ## Notes
 

@@ -39,8 +39,8 @@ was in what the operator was shown, and only a check driving the shipped preflig
 - **Then** its coverage line states the three counts separately with the states named, driven
   through the shipped command rather than through the predicate - the defect was in what the
   operator was shown
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PreflightCoverageCountsTests::test_the_shipped_preflight_stops_calling_a_repaired_unit_uncovered
-- **Verified:** yes (2026-08-03)
+- **Verify:** manual - retired by US0914: the preflight's repaired count went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC2: the three counts sum to the batch, and the sum is asserted
 
@@ -66,3 +66,4 @@ was in what the operator was shown, and only a check driving the shipped preflig
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-03 | Claude Opus 5 | Groomed against CR0506 criterion 5, driven through the shipped preflight after LL0040, with the partition asserted so no unit escapes classification |
+| 2026-09-25 | Claude Opus 5.5 | AC1 retired by US0914 (D0259 pattern): `critic.py repair` and its ledger were deleted, so a REJECT is answered only by a round-2 APPROVE or carried at the cap |

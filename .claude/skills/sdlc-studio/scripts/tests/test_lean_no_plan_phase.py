@@ -44,9 +44,9 @@ CHECKLIST_RETIRED = {"BG0510": 8}
 DELETED = {
     "test_critic.py": ("PlanReviewBriefTests", "PlanReviewBriefUnauthoredNoteTests",
                        "PlanReviewKindTests", "PlanReviewOriginTests",
-                       "PlanReviewBriefTeachesMultiRowTests",
-                       "RepairPhaseJoinTests::test_a_delivery_repair_does_not_answer_a_same_text"
-                       "_plan_review_rejection"),
+                       # RepairPhaseJoinTests, whose plan-review test this story deleted, went
+                       # whole with the repair ledger (US0914), which checks it
+                       "PlanReviewBriefTeachesMultiRowTests"),
     "test_retro.py": ("PlanVersusCodeReviewCostTests",),
     "test_sprint.py": ("EscalationReachesBothRecordingCommandsTests::test_a_plan_review_round_"
                        "does_not_inherit_delivery_batch_rounds",),

@@ -26,9 +26,11 @@ Compute the outstanding set as the verdict's findings MINUS the union of closure
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a unit whose REJECT raised two findings and whose closures were recorded across TWO `repair` invocations covering both, when the repair state is read, then it reads COMPLETE - not two rows each stamped PARTIAL, each naming as outstanding what the other closed
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_a_repair_recorded_across_two_calls_reads_complete
+  - **Verify:** manual - retired by US0914: the repair state went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0914
 - [ ] **AC2** Given a unit whose repair closes a strict SUBSET of its findings, when the state is read, then it still reads PARTIAL - the paired control, because reading every row must not turn an unanswered finding into an answered one
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::LedgerRollupTests::test_a_genuinely_partial_repair_still_reads_partial
+  - **Verify:** manual - retired by US0914: the repair state went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ## Test Plan
 
@@ -42,3 +44,4 @@ Compute the outstanding set as the verdict's findings MINUS the union of closure
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-24 | sdlc-studio | Filed |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2 retired by US0914 (D0259 pattern): `critic.py repair` and its ledger were deleted, so a REJECT is answered only by a round-2 APPROVE or carried at the cap |

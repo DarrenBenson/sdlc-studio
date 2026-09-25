@@ -102,7 +102,11 @@ def _record_verdict(root, unit, verdict="approve", reviewer="independent-critic"
     spec.loader.exec_module(m)
     # Independence floor (CR0117): the critic stage needs author != reviewer, so the helper
     # records distinct ids by default; self-review/missing-author cases are covered in test_critic.
-    m.record_verdict(root, unit, verdict, reviewer=reviewer, author=author)
+    # Dated on `REPAIR_VERB_RETIRED`, never today: the census reads a REJECT dated before it as
+    # critiqued on the repair-ledger licence (US0914), and these tests judge current work.
+    from unittest import mock  # noqa: PLC0415
+    with mock.patch.object(m.sdlc_md, "now_date", return_value=m.REPAIR_VERB_RETIRED):
+        m.record_verdict(root, unit, verdict, reviewer=reviewer, author=author)
 
 
 class SpecifiedStageTests(unittest.TestCase):
@@ -286,7 +290,9 @@ class CliTests(unittest.TestCase):
                               # A waiver no judged unit carries is still in force. This lane
                               # judges STORIES, so one scoped to a bug or a change request
                               # produced no line at all and sat silent.
-                              "waived_unattributed"})
+                              "waived_unattributed",
+                              # Done stories passed on the repair-ledger licence (US0914).
+                              "licensed"})
 
 
 class WaiverInForceIsAlwaysReportedTests(unittest.TestCase):
@@ -1130,47 +1136,6 @@ class WaiverTests(unittest.TestCase):
             self.assertEqual(u["waived"], d_unit["waived"])      # identical in both
             self.assertEqual(dirty["summary"]["nonconformant"], 0)
 
-
-class ThreeStateCoverageTests(unittest.TestCase):
-    """US0621 / CR0506: conformance names the REPAIRED state instead of "missing critiqued".
-
-    It used those words for all eighteen repaired units of RUN-01KYZKY5 AND for units nobody had
-    opened - the same phrase for two different facts - which is what sent that close to a waiver
-    sweep over work whose findings were already fixed and mutation-verified.
-    """
-
-    def _mods(self):
-        import importlib.util as u
-        here = Path(__file__).resolve().parent.parent
-        out = []
-        for name in ("critic", "conformance"):
-            spec = u.spec_from_file_location(name, here / f"{name}.py")
-            mod = u.module_from_spec(spec)
-            sys.modules[name] = mod
-            spec.loader.exec_module(mod)
-            out.append(mod)
-        return out
-
-    def test_conformance_names_the_repaired_state_not_missing_critiqued(self) -> None:
-        """MUTANT: leave `critiqued_unmet` reading only the APPROVE verdict.
-
-        Both directions are asserted: an unrepaired REJECT still wants the verdict half, and a
-        completely repaired one no longer does.
-        """
-        critic, conf = self._mods()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            critic.record_verdict(root, "US9101", "REJECT", "qa-seat", "builder",
-                                  "[new] alpha broke", "delivery", "abcdef123456")
-            unrepaired = conf.critiqued_unmet(root, "US9101")
-            self.assertIn(conf.HALF_VERDICT, unrepaired,
-                          "an unrepaired REJECT was treated as covered")
-            critic.record_repair(root, "US9101", "builder", "alpha broke -> mutant killed")
-            repaired = conf.critiqued_unmet(root, "US9101")
-        self.assertNotIn(conf.HALF_VERDICT, repaired,
-                         "a repaired unit still reports `missing critiqued "
-                         "(independent APPROVE verdict)` - the same words used for a unit "
-                         "nobody opened")
 
 class TierCoverageTests(unittest.TestCase):
     """US0641: the third step, and the only one that makes the other two worth anything.

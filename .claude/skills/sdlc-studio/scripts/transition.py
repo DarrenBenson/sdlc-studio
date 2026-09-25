@@ -867,58 +867,45 @@ def line_coverage_lane(root, unit: str, text: str, type_: str, path, *,
 UNANSWERED_REJECT = "unanswered delivery REJECT"
 #: The units a delivery REJECT is recorded against and that reach a delivered terminal.
 _REJECT_GUARDED_TYPES = ("story", "bug")
-#: The ways out, named in the refusal: a gate that says only "no" costs a round-trip to learn
-#: what yes looks like, and the likeliest wrong move - ruling the unit in the retro's carried
-#: table - is named as not being one.
-_REJECT_EXITS = (
-    "Answer it with `critic.py repair` closing each finding (`filed:` to an artefact that "
-    "exists, or `fixed:` with the evidence), or with a round-2 APPROVE from the reviewer who "
-    "rejected; a ruling in a retro's `Known issues carried` table does not discharge it, "
-    "and a `--force` waiver is recorded in the artefact's `Forced-override` field")
+
+
+def _reject_exits() -> str:
+    """The ways out, named in the refusal: a gate that says only "no" costs a round-trip to
+    learn what yes looks like, and the likeliest wrong move - ruling the unit in the retro's
+    carried table - is named as not being one."""
+    import critic  # noqa: PLC0415 - deferred sibling; only a refused terminal pays for it
+    return (f"A REJECT has two exits: {critic.REJECT_EXITS}. A ruling in a retro's `Known "
+            "issues carried` table does not discharge it, and a `--force` waiver is recorded in "
+            "the artefact's `Forced-override` field")
 
 
 def _unanswered_delivery_reject(root, uid: str) -> str | None:
     """What stands against this unit's delivered close: its unanswered delivery REJECT, named by
-    reviewer and date with the findings still outstanding - or None when it carries none, or
-    carries one that is answered.
+    reviewer and date with its findings - or None when it carries none, or carries one that is
+    answered.
 
-    ANSWERED is `critic.coverage_state` reading `approved` (a later independent APPROVE from the
-    reviewer who rejected) or `repaired` (a complete repair whose `filed:` closures still resolve) - the one
-    reader review-coverage and conformance already use, so a unit this passes is one they count
-    as reviewed, and a unit that passes the close cannot then stop at its own Done inside
-    apply-signoff. The DELIVERY phase only: a plan-review rejection holds no transition.
-    Nothing in a retro's carried table is read, because a ruling rules on the close, not on the
-    reviewer's findings.
+    ANSWERED is `critic.coverage_state` reading `approved`: a later independent APPROVE from the
+    reviewer who rejected - the one reader review-coverage and conformance already use, so a
+    unit this passes is one they count as reviewed. The DELIVERY phase only. Nothing in a
+    retro's carried table is read, because a ruling rules on the close, not on the reviewer's
+    findings.
     """
     import critic  # noqa: PLC0415 - deferred sibling; only a terminal transition pays for it
     standing = critic.standing_rejects(root, uid, "delivery")
     if not standing:
         return None
-    state = critic.coverage_state(root, uid, "delivery")
-    if state in (critic.COVERAGE_APPROVED, critic.COVERAGE_REPAIRED):
+    if critic.coverage_state(root, uid, "delivery") == critic.COVERAGE_APPROVED:
         return None
     who = "; ".join(f"{r.get('reviewer') or '(no reviewer)'}'s REJECT of "
                     f"{r.get('date') or '(undated)'}" for r in standing)
-    repair = critic.repair_state(root, uid, "delivery")
-    if repair["state"] == "partial":
-        outstanding = repair["outstanding"]
-    elif repair["state"] == "none":
-        outstanding = [f["text"] for r in standing
-                       for f in critic.parse_findings(r.get("issues", ""))]
-    else:
-        outstanding = []
+    outstanding = [f["text"] for r in standing
+                   for f in critic.parse_findings(r.get("issues", ""))]
     if outstanding:
         listed = "; ".join(outstanding[:4]) + (" ..." if len(outstanding) > 4 else "")
         detail = f"{len(outstanding)} finding(s) outstanding - {listed}"
-    elif repair["state"] == "complete":
-        detail = ("every finding carries a closure, yet the latest verdict is not an "
-                  "independent APPROVE")
     else:
-        # No repair, and a REJECT that itemises nothing: there is no finding to name and no
-        # closure to count, so saying "every finding carries a closure" would state a repair
-        # that was never recorded.
-        detail = ("the REJECT itemises no findings, no repair is recorded against it, and its "
-                  "reviewer has not approved a later round")
+        detail = ("the REJECT itemises no findings, and its reviewer has not approved a later "
+                  "round")
     return f"{uid} carries an {UNANSWERED_REJECT} ({who}): {detail}"
 
 
@@ -1043,7 +1030,7 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
         standing = (_unanswered_delivery_reject(root, sdlc_md.norm_id(artifact_id))
                     if delivered or abandoned else None)
         if standing and delivered and not force:
-            blocks.append(f"{standing}. {_REJECT_EXITS}. Override with --force")
+            blocks.append(f"{standing}. {_reject_exits()}. Override with --force")
         elif standing and abandoned:
             warn = (f"{standing} - it stays unanswered on the record, and closing the unit "
                     f"{target_canon} over it is the operator's call")
@@ -1213,30 +1200,6 @@ def _post_write_sync_and_record(root, type_, path, new_text, result, current, ne
     return result
 
 
-#: The metadata line naming the artefacts a closed unit's review findings were filed to.
-FINDINGS_FILED_FIELD = "Findings-filed-to"
-
-
-def _findings_filed_to(root, uid: str) -> list[str]:
-    """The artefact ids this unit's delivery repair FILED its findings to, first seen first.
-
-    Read from every repair row the unit carries, not through `critic.repair_state`, which stops
-    reading a repair once a later round's APPROVE has answered its REJECT: the one-call close
-    appends that APPROVE before the transition runs, and a filing still stands after it. Only a
-    `filed:` closure's `artefact` counts, and only while it resolves. A `fixed:` closure whose
-    evidence happens to name an id is a fix, not a filing, and the other ids a filed closure's
-    evidence mentions are context, not destinations.
-    """
-    import critic  # noqa: PLC0415 - deferred sibling; only a delivered-terminal close pays for it
-    out: list[str] = []
-    for row in critic.repairs_for(root, uid, "delivery"):
-        for closure in critic.parse_closures(row.get("closed", "")):
-            artefact = closure.get("artefact") if closure["disposition"] == "filed" else ""
-            if artefact and artefact not in out and sdlc_md.find_by_id(root, artefact):
-                out.append(artefact)
-    return out
-
-
 def _invalidate_verify_report(root: Path, uid: str) -> None:
     """Drop the unit's entry from the verify-report so its overturned green cannot be read
     as current. Best-effort: an absent or unparseable report means there is no stale green to
@@ -1393,16 +1356,6 @@ def transition(repo_root: Path | str, artifact_id: str, new_status: str,
         # that earned the withdrawn green still pass. Invalidating the entry forces a re-run
         # rather than leaving the overturned verdict readable as current.
         _invalidate_verify_report(root, result["id"])
-    # A unit closed over a REJECT names, in its OWN record, where the findings went. The verdict
-    # and repair ledgers already hold it, but a later reader of the closed artefact does not open
-    # them, so a discharge visible only there reads as no discharge at all. Written here, past
-    # every gate, so a close the ladder refuses leaves no line; upserted, so a terminal walk
-    # (Fixed -> Verified -> Closed) keeps one line rather than one per step.
-    if sdlc_md.is_delivered_terminal(type_, target_canon or ""):
-        filed_to = _findings_filed_to(root, sdlc_md.norm_id(artifact_id))
-        if filed_to:
-            new_text = _upsert_field(new_text, FINDINGS_FILED_FIELD, ", ".join(filed_to))
-            result["findings_filed_to"] = filed_to
     if force:
         # `--force` advertised the bypass as recorded and recorded nothing, so a forced close of
         # a red-AC story was byte-indistinguishable from a verified one. A force that waived

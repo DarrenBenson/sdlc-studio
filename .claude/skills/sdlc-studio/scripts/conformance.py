@@ -361,29 +361,39 @@ HALF_VERDICT = "independent APPROVE verdict"
 HALF_TIER = "a review at the depth this unit's risk band demands"
 
 
-def verdict_half_ok(root, rid, sprint_covers: bool) -> bool:
+#: How the census names a unit met on the repair-ledger licence (`verdict_half_ok`).
+LICENCE = "the repair-ledger licence"
+_DATED = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def verdict_half_ok(root, rid, sprint_covers: bool, licensed: set | None = None) -> bool:
     """Whether the VERDICT half of `critiqued` is satisfied - THE one definition.
 
-    Three ways, and they are the same three everywhere this question is asked:
+    Two ways, the same everywhere this question is asked: an independent (or grandfathered
+    pre-gate) APPROVE, or no per-unit verdict at all but a batch review covering the unit. A
+    standing REJECT satisfies neither: it is answered only by the rejecting reviewer's round-2
+    APPROVE, which `verdict_for` then returns.
 
-      * an independent (or grandfathered pre-gate) APPROVE;
-      * a REJECT whose every raised finding carries a recorded closure - the rejection was
-        answered, which is what the gate is actually asking;
-      * no per-unit verdict at all, but a batch review covering the unit.
+    A third way is history's alone. The census passes `licensed`, and a standing delivery REJECT
+    dated before `critic.REPAIR_VERB_RETIRED` then meets the half, its unit added to the set: a
+    repair row could still answer it, so a unit that reached Done over it passed the gate of its
+    day. Keyed on the REJECT row's own date, never on the frozen repair ledger. The seal and the
+    close pass nothing, so current work keeps the two exits (`critic.REJECT_EXITS`).
 
     Extracted because this file computed it TWICE - once in `critiqued_unmet` and once in the
-    detailed form below - and teaching only the first about repaired rejections left nine Done
-    units reporting `missing critiqued` while the other answer said they were fine. That is the
-    drift `critiqued_unmet`'s own docstring exists to warn about, reproduced inside the file
-    that warns about it.
+    detailed form below - and the two answers drifted apart.
     """
     verdict = critic.verdict_for(root, rid)
     per_unit_ok = (bool(verdict) and verdict["verdict"] == critic.APPROVE
                    and (critic.is_independent(verdict) or critic.is_pre_gate(verdict)))
     if per_unit_ok:
         return tier_covers(root, rid, verdict)
-    if verdict and str(verdict.get("verdict") or "").upper() == critic.REJECT:
-        return critic.repair_state(root, rid)["state"] == "complete"
+    if (licensed is not None and verdict
+            and str(verdict.get("verdict") or "").upper() == critic.REJECT
+            and (dated := _DATED.match(str(verdict.get("date") or "").strip()))
+            and dated.group(0) < critic.REPAIR_VERB_RETIRED):
+        licensed.add(sdlc_md.norm_id(rid))
+        return True
     return verdict is None and sprint_covers
 
 
@@ -440,11 +450,11 @@ def critiqued_unmet(root, rid, critic_required: bool = True) -> list[str]:
 
 
 def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
-                 critic_required=True, dead_stamps=0) -> tuple:
+                 critic_required=True, dead_stamps=0, licensed: set | None = None) -> tuple:
     """The four Done-only conformance stages (verified, reconciled, critiqued, documented),
     plus what `critiqued` still owes. `critiqued` is the independent APPROVE while
     `critic_required`; a story DoD without `review.critic-approve` downgrades it to human
-    judgement.
+    judgement. `licensed` is `verdict_half_ok`'s, passed by the census.
     """
     # A stamp is evidence only while the thing it points at still exists. `dead_stamps`
     # counts ACs recorded green whose verifier now selects NOTHING - a `-k` pattern matching
@@ -457,7 +467,7 @@ def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
     reconciled = (not no_index) and sdlc_md.norm_id(rid) not in drift_ids
     # A sprint-level adversarial full-diff review covers every unit in its range at once. It
     # satisfies `critiqued` for a unit that had no INDIVIDUAL verdict - but never overrides a
-    # per-unit REJECT, which still repairs per unit.
+    # per-unit REJECT, which is answered per unit.
     sprint_rev = critic.sprint_review_for(root, rid)
     sprint_covers = critic.sprint_covers_independently(root, rid, sprint_rev)
     # The verdict half: an APPROVE AND proven author != reviewer independence - a
@@ -465,8 +475,9 @@ def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
     # holds for generic workers too. Units closed before the gate (the visible PRE_GATE marker,
     # under the prior risk-scaled policy) are grandfathered; the gate applies to all new work.
     # THE shared definition - see `verdict_half_ok`. A batch-level APPROVE never papers over a
-    # per-unit REJECT; only a recorded, complete REPAIR answers one.
-    critiqued = verdict_half_ok(root, rid, sprint_covers) if critic_required else True
+    # per-unit REJECT; only the rejecting reviewer's round-2 APPROVE answers one.
+    critiqued = (verdict_half_ok(root, rid, sprint_covers, licensed)
+                 if critic_required else True)
     unmet = [] if critiqued else [HALF_VERDICT]
     return verified, reconciled, critiqued, doc_ok, unmet
 
@@ -584,6 +595,8 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
     retired = retired_story_statuses()
     units: list[dict] = []
     ok = 0
+    #: Done units whose `critiqued` stage was met on the repair-ledger licence (`verdict_half_ok`).
+    licensed: set[str] = set()
     #: Units whose stamped verifiers name files this tree does not hold - reported in
     #: their own bucket rather than counted as debt, because the remedies are opposite.
     unevaluable: list[dict] = []
@@ -621,7 +634,12 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
                                     "missing": sorted({u["missing"] for u in unevaluable_here})})
             verified, reconciled, critiqued, documented, critiqued_missing = _done_stages(
                 root, rid, verified_states, _no_index, drift_ids, _doc_ok,
-                critic_required=critic_required, dead_stamps=dead)
+                critic_required=critic_required, dead_stamps=dead, licensed=licensed)
+            if sdlc_md.norm_id(rid) in licensed and waived_stages(waivers, rid, ["critiqued"]):
+                # A recorded waiver is the older, named answer and keeps its attribution: the
+                # licence answers only what nothing else does.
+                licensed.discard(sdlc_md.norm_id(rid))
+                critiqued = False
         if status == "Done":
             # The backstop to the transition gate. That gate guards the tool path; a
             # hand-edited `Status: Done` walks round it, and the story is then Done without
@@ -699,6 +717,9 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
             # The stages a recorded decision waived, each naming the decision that waived it -
             # so waived debt reads as waived-and-attributable, never as silently absent.
             "waived": waived,
+            # `critiqued` met on the repair-ledger licence rather than on a verdict: history,
+            # counted apart like a waiver so it is never read as a review.
+            "licensed": sdlc_md.norm_id(rid) in licensed,
             # What `critiqued` owes. Empty when the stage is satisfied, not required, or not
             # judged - so a reader never has to infer it from the composite.
             "critiqued_missing": critiqued_missing if "critiqued" in missing else [],
@@ -763,6 +784,8 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
                     "ungroomed": ungroomed_n,
                     # Debt this lane passed on a recorded decision rather than on evidence.
                     "waived": waived_n,
+                    # ...and debt it passed on the repair-ledger licence (`verdict_half_ok`).
+                    "licensed": sum(1 for u in units if u["licensed"]),
                     "waived_unattributed": len(waivers_unattributed),
                     "global_failures": len(globals_)},
     }
@@ -922,6 +945,11 @@ def cmd_check(args: argparse.Namespace) -> int:
         for (stage, did), ids in sorted(waived_groups.items()):
             print(f"  WAIVED {stage}: {len(ids)} unit(s) by {did} "
                   f"({_elide(ids)}) - see sdlc-studio/decisions.md")
+        lic = [u["id"] for u in result["units"] if u.get("licensed")]
+        if lic:
+            print(f"  LICENSED critiqued: {len(lic)} unit(s) passed on {LICENCE}, a delivery "
+                  f"REJECT dated before {critic.REPAIR_VERB_RETIRED} (`critic.py repair` could "
+                  f"still answer it) ({_elide(lic)})")
         # A waiver this lane's units do not carry is still IN FORCE. The per-unit report above
         # is built from stories, so a waiver scoped to a bug or a change request - or one whose
         # scope resolves to nothing at all - produced no line, and a rule the project waived sat

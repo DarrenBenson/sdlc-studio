@@ -1557,7 +1557,7 @@ def _verifiers_all_green(root: Path, uid: str) -> bool:
 
 
 def _rejected_unanswered(root: Path, uid: str) -> bool:
-    """Does this unit carry a REJECT no repair has answered, in EITHER ledger?
+    """Is this unit's latest review round a REJECT, in EITHER ledger?
 
     Two ledgers, and the question spans them: `critic record` appends to `critic-verdicts.md`
     while `sprint review-batch` appends a batch row to `sprint-review-record.md`. Reading only
@@ -1583,17 +1583,8 @@ def _rejected_unanswered(root: Path, uid: str) -> bool:
         return True
     if not rounds:
         return False
-    last = rounds[-1]
-    if str(last.get("verdict") or "").upper() != critic.REJECT:
-        return False
-    try:
-        # `complete` is the only state that answers a REJECT. `partial` leaves findings
-        # outstanding and `none` is no repair at all - read from the vocabulary the function
-        # documents rather than from a boolean it does not return.
-        return (critic.repair_state(root, uid) or {}).get("state") != "complete"
-    except Exception as exc:  # noqa: BLE001
-        sdlc_md.debug("sprint._rejected_unanswered.repair", exc)
-        return True
+    # A later round's APPROVE is the only answer, and it would be the last round.
+    return str(rounds[-1].get("verdict") or "").upper() == critic.REJECT
 
 
 def _built_not_closed(root: Path, uid: str, text: str) -> bool:
@@ -5123,18 +5114,7 @@ def _no_negative_verdict(root, uid: str, critic) -> bool:
         return True
     if not rec:
         return True
-    if str(rec.get("verdict") or "").strip().upper() == "APPROVE":
-        return True
-    # A REJECT whose every raised finding carries a recorded closure is ANSWERED, and an
-    # answered rejection is not a negative verdict standing over the unit. Without this the
-    # preflight - the command an operator actually runs before a close - still reported a
-    # repaired unit as "covered by no independent review", which is the whole defect CR0506
-    # was filed for, surviving in the operator-facing half while the checklist row was fixed.
-    try:
-        return critic.repair_state(root, uid)["state"] == "complete"
-    except Exception as exc:  # noqa: BLE001 - an unreadable repair ledger is "not repaired"
-        sdlc_md.debug("sprint._no_negative_verdict", exc)
-        return False
+    return str(rec.get("verdict") or "").strip().upper() == "APPROVE"
 
 
 def review_coverage(root, units: list[str]) -> dict:
@@ -5198,18 +5178,6 @@ def review_coverage(root, units: list[str]) -> dict:
             # and forgetting the verdict half let a recorded REJECT clear this gate while the
             # tool printed "it clears no unit's gate" - the exact drift a second copy of a rule
             # produces, in the function whose docstring claimed to avoid it.
-            # A REJECT ANSWERED by a complete repair covers the unit as surely as an APPROVE:
-            # the rejection was independent, the findings were closed one by one, and the
-            # evidence closing each is recorded. Checked HERE as well as in
-            # `_no_negative_verdict`, because that guard only lets the unit reach the lanes -
-            # the lane still has to accept it, and without this the preflight passed a repaired
-            # unit through the gate and then found no lane willing to cover it.
-            if (label == "per-unit verdict"
-                    and str(rec.get("verdict") or "").upper() == critic.REJECT
-                    and critic.repair_state(root, uid)["state"] == "complete"
-                    and critic.is_independent(rec)):
-                by = "repaired rejection"
-                break
             if not critic.sprint_covers_independently(root, uid, rec):
                 continue
             # ...and the grandfather marker is not independence. `critic.is_independent`
@@ -5402,14 +5370,15 @@ def unanswered_units(root, state, retro_id=None) -> dict:
 
     A stop-ship ruling holds its unit whatever its status, abandoned included. A unit carrying
     a standing delivery REJECT is held at every non-abandoned status, whatever else would answer
-    it - evidence, a drop, a park or a ruling - unless `critic.coverage_state` reads it approved
-    or repaired. Otherwise a unit is answered by its status: delivered-terminal or abandoned (a
-    terminal reached by a ruling, derived and never listed), at Review owing nothing but the
-    run's signature (`seal_bar_unmet`, the bar `sprint sign` stops on), at its run's rung-end
-    status off the build rung, dropped, parked on a pending decision or depending on one
-    (`_parked_units`, the closure `blocked_by_pending` reads), or ruled not-stop-ship,
-    accepted-risk or deferred in the carried table. `filed` names where its findings went, from
-    every `filed:` closure.
+    it - evidence, a hand drop, a park or a ruling - unless `critic.coverage_state` reads it
+    approved or it was carried at the review cap (a drop `critic.carried_to` accepts): the
+    REJECT's two exits (`critic.REJECT_EXITS`). Otherwise a unit is answered by its status:
+    delivered-terminal or abandoned (a terminal reached by a ruling, derived and never listed),
+    at Review owing nothing but the run's signature (`seal_bar_unmet`, the bar `sprint sign`
+    stops on), at its run's rung-end status off the build rung, dropped, parked on a pending
+    decision or depending on one (`_parked_units`, the closure `blocked_by_pending` reads), or
+    ruled not-stop-ship, accepted-risk or deferred in the carried table. `filed` names the bug a
+    carry filed its findings to.
     """
     import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     import retro as retro_mod  # noqa: PLC0415
@@ -5420,6 +5389,15 @@ def unanswered_units(root, state, retro_id=None) -> dict:
                if isinstance(c, dict) and c.get("action") == "drop" and c.get("id")]
     dropped = [u for u in dropped if u and u not in live]
     walked = list(dict.fromkeys(live + dropped))
+    # The carry at the cap drops the unit naming the bug that holds its findings; a hand drop
+    # worded like one is not a carry (`critic.carried_to`).
+    carried: dict[str, str] = {}
+    for c in state.get("batch_changes") or []:
+        if not isinstance(c, dict) or c.get("action") != "drop":
+            continue
+        uid = sdlc_md.norm_id(str(c.get("id")))
+        if uid in dropped and (bug := critic.carried_to(root, uid, c.get("reason"), state)):
+            carried[uid] = bug
     rid, rows, unreadable = _carried_rulings(root, state, retro_id)
     ruled: dict[str, set] = {}
     discharged: set[str] = set()
@@ -5466,10 +5444,9 @@ def unanswered_units(root, state, retro_id=None) -> dict:
         if abandoned and not stop_ship:
             continue                      # abandoned by a ruling: nothing left to answer
         row = critic.verdict_for(root, uid)
-        rejected = (not abandoned and bool(row)
+        rejected = (not abandoned and uid not in carried and bool(row)
                     and str(row.get("verdict") or "").upper() == critic.REJECT
-                    and critic.coverage_state(root, uid) not in (critic.COVERAGE_APPROVED,
-                                                                 critic.COVERAGE_REPAIRED))
+                    and critic.coverage_state(root, uid) != critic.COVERAGE_APPROVED)
         why = [WHY_REJECT] if rejected else []
         review_why = ""
         awaits_signature = False
@@ -5500,10 +5477,8 @@ def unanswered_units(root, state, retro_id=None) -> dict:
                 why.append(f"unfinished and not ruled in {rid}'s carried table")
         if not why:
             continue
-        filed = [c["artefact"] for c in critic.repair_state(root, uid)["closed"]
-                 if c.get("disposition") == "filed" and c.get("artefact")]
         out.append({"unit": uid, "status": status or "no artefact on disk",
-                    "why": " + ".join(why), "filed": list(dict.fromkeys(filed))})
+                    "why": " + ".join(why), "filed": [carried[uid]] if uid in carried else []})
     return {"unanswered": out, "rulings_from": rid}
 
 
@@ -5541,9 +5516,9 @@ def unanswered_ways_out(held: list[dict], rulings_from: str | None,
              else "the run's retro (`## Known issues carried`)")
     ways = []
     if WHY_REJECT in whys:
-        ways.append("close each finding of a REJECT with `critic.py repair --unit <id> --closed "
-                    "'<finding> -> filed: <artefact>'` or a same-brief independent re-review - "
-                    "no ruling or drop answers a standing REJECT")
+        import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+        ways.append(f"a standing REJECT has two exits: {critic.REJECT_EXITS} - no ruling or "
+                    f"hand drop answers it")
     if WHY_PASS_OWED in whys:
         ways.append("dispatch the owed adversarial pass (`critic.py brief --unit <id> "
                     "--seat qa`)")

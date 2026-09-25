@@ -1,6 +1,6 @@
 # BG0690: critic.py repair re-judges stored findings through the code-span guard, and its typed closure scanner unescapes any backslash before a greater-than sign
 
-> **Status:** Open
+> **Status:** Superseded
 > **Closes with:** US0914 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 5
@@ -34,3 +34,4 @@ Pass text copied from a stored cell through the non-judging path that `_supersed
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0914 ships - planning: SUPERSEDED - critic.py repair re-judging: repair ledger deleted in batch 2; superseded only once US0914 ships (D0264) |
+| 2026-09-25 | sdlc | Superseded under D0273: US0914 is Done and retired critic.py repair and the repair ledger this bug describes |

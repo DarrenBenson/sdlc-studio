@@ -126,11 +126,11 @@ itself is worse than none.
   - **Verify:** manual - retired by US0911: the test-plan gate a plan-review repair had to clear is deleted
   - **Verified:** manual (2026-09-25) - retired, superseded by US0911
 - [x] **AC6** Given an isolated fixture holding a DELIVERY rejection whose repair is complete but whose tier depth is NOT covered, when `critic.verdict_for` is read, then it still returns REJECT and conformance reaches its answer through `conformance.py`:355. This is the placement guard, stated as a property rather than as a before-and-after snapshot: relocating the consultation into `verdict_for` makes `per_unit_ok` true, runs `tier_covers`, and flips the answer
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairPlacementTests::test_the_delivery_lane_still_answers_through_the_conformance_branch
-  - **Verified:** yes (2026-08-27)
+  - **Verify:** manual - retired by US0914: placing a repair against a rejection went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0914
 - [x] **AC7** Given a unit carrying TWO unanswered rejections, when a repair is recorded naming a finding the EARLIER one raised, then it is accepted and counted. `cmd_repair` resolves closures against the standing verdict alone while `repair_state` computes outstanding across every unanswered rejection, so a finding from an earlier rejection can be counted against you and never closed. Without this the rule this unit ships is unusable: a twice-rejected unit can never reach COMPLETE, so its gate can never clear
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairPlacementTests::test_a_closure_can_answer_an_earlier_rejection_not_only_the_standing_one
-  - **Verified:** yes (2026-08-27)
+  - **Verify:** manual - retired by US0914: placing a repair against a rejection went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ## Impact
 
@@ -154,3 +154,4 @@ It blocks delivery outright. Three units of the currently open run cannot enter 
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Filed |
 | 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3, AC4, AC5 retired by US0911 (D0259 pattern): the test-plan gate a plan-review repair had to clear is deleted |
+| 2026-09-25 | Claude Opus 5.5 | AC6, AC7 retired by US0914 (D0259 pattern): `critic.py repair` and its ledger were deleted, so a REJECT is answered only by a round-2 APPROVE or carried at the cap |

@@ -1,6 +1,6 @@
 # BG0704: The Done guard reads a filed closure naming the unit itself as a repair, and lists repaired findings as outstanding when the only APPROVE is the author's own
 
-> **Status:** Open
+> **Status:** Superseded
 > **Closes with:** US0914 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 3
@@ -41,7 +41,8 @@ only at read time is already in an append-only ledger by the time anybody sees i
   written, `repair_state` counts the finding closed, `coverage_state` reads `repaired` and the
   delivered-terminal guard passes: the one-command route to Done the ledger already holds for
   BG0558 filed to BG0558
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::FiledDispositionTests::test_a_closure_filed_to_the_unit_itself_is_refused
+- **Verify:** manual - retired by US0914: the `filed:` disposition went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC2: a `filed:` closure must name an artefact that can carry a finding
 
@@ -54,7 +55,8 @@ only at read time is already in an append-only ledger by the time anybody sees i
 - **Mutant:** refuse only AC1's self-naming case, so every other resolving id still discharges the
   finding - a Done epic, an RFC or a retro, none of which can be worked, closes a review finding and
   the finding is never seen again
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::FiledDispositionTests::test_a_closure_filed_to_a_type_that_carries_no_finding_is_refused
+- **Verify:** manual - retired by US0914: the `filed:` disposition went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC3: when every finding carries a closure, the refusal says an independent APPROVE is what is missing
 
@@ -84,7 +86,8 @@ only at read time is already in an append-only ledger by the time anybody sees i
 - **Mutant:** open the window inside `coverage_state` per unit, which builds and discards the memo
   once per unit and reproduces the measured cost the summary records (19.8 s to 28.6 s over 743
   units), or leave both sweeps uncached as they are today
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairStateResolvesFiledIdsTests::test_the_sweeps_resolve_filed_ids_inside_one_corpus_window
+- **Verify:** manual - retired by US0914: resolving a filed closure's id went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ## Revision History
 
@@ -93,3 +96,5 @@ only at read time is already in an append-only ledger by the time anybody sees i
 | 2026-09-15 | sdlc-studio | Filed |
 | 2026-09-17 | sdlc-studio | Groomed for `sprint plan`: the two derived criteria are replaced by four authored ones - the self-naming filed closure, a closure filed to a type that carries no finding, the refusal that misdescribes a self-authored APPROVE as outstanding findings, and one corpus window per sweep. The three round-two observations the summary records (the close tail's epic derivation over abandoned units, the stale `_batch_unfanned_units` docstring, and step-1 review coverage listing an abandoned unit) are not covered by these criteria and remain unfiled work. AC4's second sweep lives in `conformance.py`, which `Affects` does not yet name - add it before delivery, or the review's bounded scope will not reach the change. |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0914 ships - planning: SUPERSEDED - Done guard reading repair closures: repair ledger deleted in batch 2; superseded only once US0914 ships (D0264) |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC4 retired by US0914 (D0259 pattern): `critic.py repair` and its ledger were deleted, so a REJECT is answered only by a round-2 APPROVE or carried at the cap |
+| 2026-09-25 | sdlc | Superseded under D0273: US0914 is Done and retired critic.py repair and the repair ledger this bug describes |

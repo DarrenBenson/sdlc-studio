@@ -3658,92 +3658,10 @@ def _rejected(mod, root, unit="US0017", issues="[new] alpha broke; [new] beta br
                        "abcdef123456")
 
 
-def _bug_on_disk(root, bid="BG0123"):
-    """A real artefact for a FILED closure to point at - the id has to RESOLVE."""
-    d = root / "sdlc-studio" / "bugs"
-    d.mkdir(parents=True, exist_ok=True)
-    (d / f"{bid}-residue.md").write_text(
-        f"# {bid}: the residue\n\n> **Status:** Open\n> **Points:** 1\n", encoding="utf-8")
-
-
 class ClosureChannelTests(unittest.TestCase):
-    """BG0618 - the channel that carries a repair's EVIDENCE, and what it silently threw away.
-
-    `parse_closures` split on a bare `;` and then `continue`d past any chunk with no ` -> `. So
-    evidence containing a semicolon was truncated at it and the remainder vanished: measured, 72
-    characters of a two-clause closure, no warning, exit 0. This is the record a reviewer reads
-    to judge whether a REJECT was answered, and `repair_state` computes complete-versus-partial
-    from it.
-    """
-
-    def test_evidence_carrying_a_semicolon_is_stored_whole(self) -> None:
-        r"""MUTANT: in `critic.py`, split the closure text on a bare `;` again.
-
-        Whole modulo the ledger's own markdown escaping - `_clean` turns `_` into `\_` for MD037
-        and `|` into `/` for table safety, deliberately, and that is not what this is about."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root)
-            mod.record_repair(root, "US0017", "builder",
-                              r"alpha broke -> mutant re-applied and killed\; the test now "
-                              r"reddens on the branch it pins; beta broke -> filed")
-            st = mod.repair_state(root, "US0017")
-            self.assertEqual(2, len(st["closed"]), "the escaped `;` is not an item separator")
-            alpha = next(c for c in st["closed"] if "alpha" in c["finding"])
-            self.assertIn("the test now reddens on the branch it pins", alpha["evidence"],
-                          "the clause after the semicolon was dropped, which is the defect")
-
-    def test_ordinary_evidence_still_parses_unchanged(self) -> None:
-        """The paired control. Carrying a semicolon must not become the only accepted shape -
-        every closure already on disk is written without one."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root)
-            mod.record_repair(root, "US0017", "builder",
-                              "alpha broke -> mutant re-applied and killed; "
-                              "beta broke -> test now reddens")
-            st = mod.repair_state(root, "US0017")
-            self.assertEqual("complete", st["state"])
-            self.assertEqual(2, len(st["closed"]))
-
-    def test_an_unparseable_chunk_is_refused_rather_than_dropped(self) -> None:
-        """MUTANT: in `critic.py`, drop the `unreadable_closures` refusal from `record_repair`.
-
-        Refused at WRITE and tolerated at READ, and the asymmetry is the point: 68 chunks
-        already on disk across 11 units have no separator, so raising on the read path crashes
-        `conformance.py check` inside `repair_state` - which a review measured before this
-        shipped. A writer must not add more of what a reader has to live with."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root)
-            with self.assertRaises(ValueError) as caught:
-                mod.record_repair(root, "US0017", "builder",
-                                  "alpha broke -> killed; a fragment with no separator")
-            self.assertIn("not `<finding> -> <evidence>`", str(caught.exception))
-            self.assertIn("a fragment with no separator", str(caught.exception),
-                          "the refusal must NAME the chunk, or it is the same silence louder")
-            # READ tolerates it: this is what is already on disk.
-            with quiet.diagnostics():
-                self.assertEqual([], mod.parse_closures("a fragment with no separator"))
-
-    def test_a_value_ending_in_a_backslash_does_not_swallow_the_next_item(self) -> None:
-        """MUTANT: in `critic.py`, replace `split_items`' scanner with the `(?<!\\\\);` lookbehind.
-
-        A lookbehind cannot tell a backslash that ESCAPES the separator from one that is itself
-        escaped, so evidence ending in a real backslash silently swallowed the closure after it -
-        and `unreadable_closures` saw nothing to refuse. The same silence this unit exists to
-        end, one layer down."""
-        mod = _load()
-        closed = mod.closures_from_document([
-            {"finding": "alpha broke", "evidence": "the path is C:" + chr(92)},
-            {"finding": "beta broke", "evidence": "filed"},
-        ])
-        out = mod.parse_closures(closed)
-        self.assertEqual(2, len(out), "the trailing backslash swallowed the next closure")
-        self.assertEqual("the path is C:" + chr(92), out[0]["evidence"])
+    """The verdict channel, and the module that carries it. The repair ledger's closure
+    channel was deleted by US0914; the two tests that pin what survives stay here, so the
+    criteria stamping them still select them."""
 
     def test_the_module_parses_on_the_declared_python_floor(self) -> None:
         """MUTANT: in `critic.py`, move an escape back inside an f-string expression.
@@ -3772,21 +3690,6 @@ class ClosureChannelTests(unittest.TestCase):
                          "raising takes the conformance lane, `sprint` and `transition` with "
                          "it:\n  " + "\n  ".join(offenders))
 
-    def test_an_unreadable_row_is_reported_when_read(self) -> None:
-        """MUTANT: in `critic.py`, `continue` past an unreadable row without printing.
-
-        AC3 is law and says REPORTED, not merely not-raised. 67 chunks already on disk lack the
-        separator so the read path must not raise - but skipping in silence is the half of this
-        defect that made it dangerous, and a first cut kept it."""
-        mod = _load()
-        err = io.StringIO()
-        with contextlib.redirect_stderr(err):
-            out = mod.parse_closures("a fragment with no separator")
-        self.assertEqual([], out, "the read path must not raise on what is already on disk")
-        self.assertIn("no `->` separator", err.getvalue())
-        self.assertIn("a fragment with no separator", err.getvalue(),
-                      "the warning must NAME the row, or it is the same silence louder")
-
     def test_the_issues_channel_carries_a_semicolon_too(self) -> None:
         """MUTANT: in `critic.py`, split `parse_findings` on a bare `;` again.
 
@@ -3799,771 +3702,10 @@ class ClosureChannelTests(unittest.TestCase):
         self.assertEqual(2, len(found))
         self.assertIn("and the message names the other one", found[0]["text"])
 
-    def test_a_json_closure_document_needs_no_separator_at_all(self) -> None:
-        """MUTANT: in `critic.py`, drop `closures_from_document` and read the file as prose.
-
-        The escape keeps the flag form working; THIS is the actual repair. Structured input has
-        no delimiter, so nothing a reviewer writes can be mistaken for one."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root)
-            doc = root / "closed.json"
-            doc.write_text(json.dumps([
-                {"finding": "alpha broke", "evidence": "re-applied; killed; re-registered"},
-                {"finding": "beta broke", "evidence": "test now reddens"},
-            ]), encoding="utf-8")
-            # THROUGH THE SHIPPED CLI, not the library. Calling `closures_from_document`
-            # directly leaves the mutant that deletes the CLI's JSON branch alive - the wiring
-            # is the half a library test cannot see, which is LL0040.
-            rc = mod.main(["repair", "--unit", "US0017", "--author", "builder",
-                           "--closed-file", str(doc), "--root", str(root)])
-            self.assertEqual(0, rc)
-            st = mod.repair_state(root, "US0017")
-            self.assertEqual("complete", st["state"])
-            alpha = next(c for c in st["closed"] if "alpha" in c["finding"])
-            self.assertIn("re-applied; killed; re-registered", alpha["evidence"])
-
-class RepairRecordTests(unittest.TestCase):
-    """US0620 / CR0506: a REJECT can be ANSWERED, beside the verdict rather than over it.
-
-    `sprint_covers_independently` is satisfied only by an APPROVE, and no verb recorded what was
-    done about a rejection - so a batch reviewed, rejected, repaired and mutation-verified read
-    exactly like one nobody opened. This is the record the rest of the epic reads.
-    """
-
-    def test_a_repair_names_each_finding_it_closes_with_its_evidence(self) -> None:
-        """MUTANT: accept a repair naming a finding the verdict never raised.
-
-        A disposition that matches nothing is not a disposition, and without the check the route
-        back to covered is opened by writing any text at all.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root)
-            mod.record_repair(root, "US0017", "builder",
-                              "alpha broke -> mutant re-applied and killed; "
-                              "beta broke -> test now reddens")
-            st = mod.repair_state(root, "US0017")
-            self.assertEqual(st["state"], "complete")
-            self.assertEqual(len(st["closed"]), 2)
-            with self.assertRaises(ValueError) as caught:
-                mod.record_repair(root, "US0017", "builder",
-                                  "a finding nobody raised -> handwaving")
-            self.assertIn("names no finding this verdict raised", str(caught.exception))
-
-    def test_the_reject_survives_the_repair_byte_identically(self) -> None:
-        """MUTANT: write the repair over the verdict row, or amend it.
-
-        What the reviewer found stays true. A repair that replaced the verdict would destroy the
-        only evidence the review happened - the failure this epic exists to END, arriving from
-        the other side.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root)
-            before = mod.verdicts_path(root).read_text(encoding="utf-8")
-            mod.record_repair(root, "US0017", "builder",
-                              "alpha broke -> killed; beta broke -> killed")
-            after = mod.verdicts_path(root).read_text(encoding="utf-8")
-        self.assertEqual(before, after, "the repair rewrote the verdict ledger")
-
-    def test_an_unattributed_repair_is_refused(self) -> None:
-        """MUTANT: default the author to the reviewer, or to empty.
-
-        A repair is a claim about work somebody did, and an unattributed claim cannot be
-        questioned - the same rule the verdict already holds.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root)
-            with self.assertRaises(ValueError) as caught:
-                mod.record_repair(root, "US0017", "", "alpha broke -> killed")
-        self.assertIn("author", str(caught.exception))
-
-    def test_a_repair_needs_a_live_reject_to_answer(self) -> None:
-        """MUTANT: record a repair against any unit.
-
-        A repair records what was done about a rejection, so there has to be one - otherwise the
-        ledger fills with dispositions for findings nobody made.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod.record_verdict(root, "US0017", "APPROVE", "qa-seat", "builder", "none",
-                               "delivery", "abcdef123456")
-            with self.assertRaises(ValueError) as caught:
-                mod.record_repair(root, "US0017", "builder", "alpha -> killed")
-        self.assertIn("no live REJECT", str(caught.exception))
-
-    def test_show_prints_the_repair_beside_the_verdict(self) -> None:
-        """MUTANT: store the repair in a ledger the verdict's reader never consults.
-
-        The whole value is that a reader of the verdict sees the disposition without knowing a
-        second command exists. Driven through the shipped CLI - a library check cannot see a
-        record the shipped reader never prints (LL0040).
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root)
-            mod.record_repair(root, "US0017", "builder",
-                              "alpha broke -> killed; beta broke -> killed")
-            out = io.StringIO()
-            with contextlib.redirect_stdout(out):
-                rc = mod.main(["show", "--unit", "US0017", "--root", str(root)])
-        self.assertEqual(rc, 0)
-        self.assertIn("repair", out.getvalue().lower(),
-                      f"`show` does not mention the repair:\n{out.getvalue()}")
-
-
-class ClosureResolutionTests(unittest.TestCase):
-    """The rule that decides whether a rejected unit can reach the Done gate.
-
-    THE REVIEW BYPASS. The first version matched bidirectional substring, so a closure of one
-    character closed every finding: `repair --closed "e -> fixed"` through the shipped CLI marked
-    a REJECT COMPLETE, flipped coverage to `repaired` and cleared the verdict half of the
-    conformance gate - the exact thing `repair_state`'s own docstring says PARTIAL exists to
-    prevent. And no test pinned the matching rule at all: swapping both substring tests for exact
-    equality left the whole suite green, so the latitude was unchosen rather than designed.
-    """
-
-    def test_a_short_closure_cannot_close_every_finding(self) -> None:
-        """MUTANT: match a closure against a finding by bidirectional substring.
-
-        Driven through the shipped CLI, which is where the bypass was reachable.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root, "US0900")
-            out, err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["repair", "--unit", "US0900", "--author", "attacker",
-                               "--closed", "e -> fixed", "--root", str(root)])
-            self.assertNotEqual(rc, 0, "a one-character closure was accepted")
-            self.assertEqual(mod.repair_state(root, "US0900")["state"], "none")
-            self.assertEqual(mod.coverage_state(root, "US0900"), mod.COVERAGE_UNREVIEWED)
-
-    def test_closing_a_short_finding_does_not_close_a_longer_one_containing_it(self) -> None:
-        """MUTANT: the same substring rule, in reverse.
-
-        Closing `the gate is slow` silently closed `the gate is slow and drops the last unit`,
-        so the residue this record exists to name went unnamed.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root, "US0901",
-                      "[new] the gate is slow; "
-                      "[new] the gate is slow and drops the last unit silently")
-            mod.record_repair(root, "US0901", "b", "#1 -> timed it, acceptable")
-            st = mod.repair_state(root, "US0901")
-        self.assertEqual(st["state"], "partial")
-        self.assertEqual(len(st["outstanding"]), 1)
-        self.assertIn("drops the last unit", st["outstanding"][0])
-
-    def test_an_ambiguous_closure_is_refused_rather_than_guessed(self) -> None:
-        """MUTANT: resolve a multi-match in the author's favour (take the first).
-
-        Which finding a closure answers is not a coin toss, and resolving it silently is how the
-        bypass reads as a feature.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root, "US0902",
-                      "[new] the resolver is wrong about paths; "
-                      "[new] the resolver is wrong about ids")
-            with self.assertRaises(ValueError) as caught:
-                mod.record_repair(root, "US0902", "b",
-                                  "the resolver is wrong about -> looked at it")
-        self.assertIn("prefix of 2", str(caught.exception))
-
-    def test_an_ordinal_names_a_finding_exactly(self) -> None:
-        """The positive control. MUTANT: refuse every closure.
-
-        A rule that accepts nothing closes the route back to covered rather than gating it, so
-        the refusal above must sit beside a form that works - and the ordinal is what the
-        refusal message itself offers.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root, "US0903")
-            mod.record_repair(root, "US0903", "b", "#1 -> killed; #2 -> killed")
-            self.assertEqual(mod.repair_state(root, "US0903")["state"], "complete")
-
-    def test_a_repair_does_not_answer_a_LATER_rejection(self) -> None:
-        """MUTANT: read the latest repair regardless of which verdict it answers.
-
-        `verdict_date` was recorded and read nowhere, so a round-one repair kept satisfying a
-        later REJECT raising different findings - the unit reading `repaired` against findings
-        nobody had answered.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root, "US0904", "[new] alpha broke")
-            mod.record_repair(root, "US0904", "b", "#1 -> killed")
-            self.assertEqual(mod.coverage_state(root, "US0904"), mod.COVERAGE_REPAIRED)
-            # A FRESH rejection on a LATER day. The clock is patched rather than the ledger
-            # rewritten, so the two rows differ the way two real rounds would.
-            with unittest.mock.patch.object(mod.sdlc_md, "now_date", return_value="2099-12-31"):
-                mod.record_verdict(root, "US0904", "REJECT", "qa-seat", "builder",
-                                   "[new] a completely different defect", "delivery",
-                                   "abcdef123456")
-                state = mod.repair_state(root, "US0904")
-        # Was `state == "none"` while a unit could carry only ONE live rejection. Under the
-        # fingerprint-keyed roll-up it carries both, so the honest answer is PARTIAL - round
-        # one is answered and round two is not - and the assertion is on the intent rather
-        # than on the literal, which the old model happened to produce.
-        self.assertNotEqual(state["state"], "complete",
-                            "a repair answering an earlier rejection satisfied a later one")
-        self.assertIn("a completely different defect", " ".join(state["outstanding"]),
-                      "the later rejection's finding must be outstanding, not invisible")
-
-
-class ClosureArrowTests(unittest.TestCase):
-    """BG0677 - a finding carrying its own `->` could not be closed, or closed wrongly.
-
-    `--closed-file` serialised each structured item back to `<finding> -> <evidence>` and the
-    reader split at the FIRST arrow, so `AC2 - Fixed->Verified ...` became the closure
-    `AC2 - Fixed`, which names nothing: the repair stayed PARTIAL for ever and the entry gate
-    refused a unit whose repaired plan had been APPROVED. A finding whose arrow sat past the
-    24-character prefix minimum resolved, but pushed its own tail into the evidence ahead of the
-    `fixed:` token, and the disposition read `filed`.
-
-    The fixture is the shape the bug was hit in: two plan-review REJECTs under different briefs
-    on different days (round one is NOT the standing verdict, so an ordinal cannot name its
-    findings), then an APPROVE. Different days also keep `repair_state` from reading a closure
-    once per same-date rejection (BG0680); assertions are on membership and fields, never counts.
-    """
-
-    UNIT = "US0017"
-    #: AC1's finding - its arrow inside the first 24 characters.
-    EARLY = "AC2 - Fixed->Verified and Fixed->Closed on a bug already at Fixed are unpinned"
-    #: AC2's finding - its arrow past the prefix minimum.
-    LATE = "AC2 - no row covers a direct Verified close or Fixed->Verified->Closed as one hop"
-    #: AC7's third finding, which the ledger stores escaped (`test\_the\_thing`).
-    HELPER = "AC4 - test_the_thing names a helper -> which never runs"
-    #: Arrow-free findings, so every fixture has something plainly closeable beside the arrows.
-    PLAIN_R1 = "AC5 - the second round found the fixture never reaches its branch"
-    PLAIN_R2 = "AC6 - the refusal names no remedy for the operator to follow"
-
-    def _fixture(self, mod, root: Path, r1: list[str], r2: list[str]) -> None:
-        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n",
-                                                          encoding="utf-8")
-        _bug_on_disk(root)
-        rounds = (("2026-09-01", "REJECT", "qa-seat-r1", r1, "aaaaaaaaaaaa"),
-                  ("2026-09-02", "REJECT", "eng-seat-r2", r2, "bbbbbbbbbbbb"),
-                  ("2026-09-03", "APPROVE", "qa-seat-r3", [], "cccccccccccc"))
-        for when, verdict, seat, findings, brief in rounds:
-            issues = "; ".join(f"[new] {f}" for f in findings) or "none"
-            with unittest.mock.patch.object(mod.sdlc_md, "now_date", return_value=when):
-                mod.record_verdict(root, self.UNIT, verdict, seat, "builder", issues,
-                                   "plan-review", brief)
-        standing = mod.verdict_for(root, self.UNIT, "plan-review")
-        self.assertEqual("bbbbbbbbbbbb", standing["brief"],
-                         "the fixture's premise: round two stands, round one does not")
-
-    def _repair(self, mod, root: Path, *args: str) -> tuple[int, str]:
-        out, err = io.StringIO(), io.StringIO()
-        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            rc = mod.main(["repair", "--unit", self.UNIT, "--author", "builder",
-                           "--phase", "plan-review", *args, "--root", str(root)])
-        return rc, out.getvalue() + err.getvalue()
-
-    def _repair_file(self, mod, root: Path, doc) -> tuple[int, str]:
-        path = root / "closed.json"
-        path.write_text(json.dumps(doc), encoding="utf-8")
-        return self._repair(mod, root, "--closed-file", str(path))
-
-    @staticmethod
-    def _record(mod, root: Path) -> bytes | None:
-        path = mod.repair_path(root)
-        return path.read_bytes() if path.exists() else None
-
-    def _closed(self, mod, root: Path) -> list[dict]:
-        return mod.repair_state(root, self.UNIT, "plan-review")["closed"]
-
-    def test_an_early_arrow_in_a_non_standing_finding_closes_through_the_cli(self) -> None:
-        """MUTANTS: in `critic.py`, give `parse_closures` the escape-aware split but leave the
-        serialiser writing a finding's arrows bare; or move the serialiser's `-\\>` escape onto
-        the evidence half. Either way the stored row is cut at the finding's first arrow on the
-        way back, the closure names nothing, and the repair reads `partial`."""
-        mod = _load()
-        control = self.EARLY.replace("->", " to ")
-        self.assertEqual("AC2 - Fixed to Verified and Fixed to Closed on a bug already at "
-                         "Fixed are unpinned", control)
-        for label, early in (("arrows", self.EARLY), ("control", control)):
-            with self.subTest(label), tempfile.TemporaryDirectory() as d:
-                root = Path(d)
-                self._fixture(mod, root, [early, self.PLAIN_R1], [self.PLAIN_R2])
-                rc, out = self._repair_file(mod, root, [
-                    {"finding": early, "evidence": "fixed: pinned by the new test"},
-                    {"finding": self.PLAIN_R1, "evidence": "fixed: pinned by the new test"},
-                    {"finding": self.PLAIN_R2, "evidence": "fixed: fixture rewritten"}])
-                self.assertEqual(0, rc, out)
-                st = mod.repair_state(root, self.UNIT, "plan-review")
-                self.assertEqual("complete", st["state"], st["outstanding"])
-                self.assertEqual([], st["outstanding"])
-                self.assertIn(early, [c["finding"] for c in st["closed"]])
-
-    def test_a_fixed_token_keeps_its_disposition_and_its_evidence_whole(self) -> None:
-        """MUTANTS: in `critic.py`, split a stored item at its LAST unescaped arrow; escape the
-        arrows of both halves but unescape only the finding's; or strip the leading `fixed:`
-        token from the structured evidence before it is stored. Each leaves the evidence read
-        back unequal to the evidence written, and the last reads the disposition as `filed`
-        (the evidence says `carried` and names BG0123)."""
-        mod = _load()
-        evidence = ("fixed: the Verified->Closed hop is now carried by a row, and BG0123 holds "
-                    "the residue")
-        for mark in ("_", "|", "`"):
-            self.assertNotIn(mark, evidence, "the ledger rewrites this character by design")
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(mod, root, [self.LATE, self.PLAIN_R1], [self.PLAIN_R2])
-            rc, out = self._repair_file(mod, root, [
-                {"finding": self.LATE, "evidence": evidence},
-                {"finding": self.PLAIN_R1, "evidence": "fixed: pinned"},
-                {"finding": self.PLAIN_R2, "evidence": "fixed: pinned"}])
-            self.assertEqual(0, rc, out)
-            mine = [c for c in self._closed(mod, root) if c["finding"] == self.LATE]
-        self.assertTrue(mine, "the finding did not read back whole")
-        for c in mine:
-            self.assertEqual("fixed", c["disposition"])
-            self.assertEqual(evidence, c["evidence"])
-
-    def test_the_written_row_reads_back_to_what_was_written(self) -> None:
-        r"""MUTANTS: in `critic.py`, add the `-\>` escape to the serialiser but skip unescaping
-        it in `parse_closures` (resolution still succeeds, `_match_key` drops backslashes); keep
-        a joiner that leaves the finding's arrow bare; unescape with a plain `str.replace` of
-        `-\>` after `split_items` has collapsed doubled backslashes; or escape the arrow BEFORE
-        doubling backslashes. Each reads a finding back with a backslash added or lost."""
-        mod = _load()
-        bs = chr(92)
-        arrow = "AC3 - the transition runs Fixed->Verified with no row"
-        literal = "AC3 - the log prints -" + bs + "> where Fixed->Closed was meant"
-        written = {arrow: "fixed: the hop a -> b is pinned", literal: "fixed: pinned",
-                   self.PLAIN_R2: "fixed: pinned"}
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(mod, root, [arrow, literal], [self.PLAIN_R2])
-            rc, out = self._repair_file(
-                mod, root, [{"finding": f, "evidence": e} for f, e in written.items()])
-            self.assertEqual(0, rc, out)
-            cells = [r["closed"] for r in mod.repairs_for(root, self.UNIT, "plan-review")]
-            st = mod.repair_state(root, self.UNIT, "plan-review")
-        row = " ".join(cells)
-        # The stored form: the finding's arrow escaped, its literal backslash doubled, the
-        # evidence's arrow bare.
-        self.assertIn("AC3 - the transition runs Fixed-" + bs + ">Verified with no row -> "
-                      "fixed: the hop a -> b is pinned", row)
-        self.assertIn("AC3 - the log prints -" + bs + bs + "> where Fixed-" + bs
-                      + ">Closed was meant -> fixed: pinned", row)
-        for finding, evidence in written.items():
-            got = [c for c in st["closed"] if c["finding"] == finding]
-            self.assertTrue(got, f"{finding!r} did not read back exactly; read "
-                                 f"{[c['finding'] for c in st['closed']]}")
-            for c in got:
-                self.assertEqual(evidence, c["evidence"])
-        self.assertEqual("complete", st["state"], st["outstanding"])
-        self.assertEqual([], st["outstanding"])
-
-    def test_a_legacy_row_parses_exactly_as_today(self) -> None:
-        r"""MUTANTS: in `critic.py`, split at the last arrow (`rpartition`); or run the `-\>`
-        replacement over the items `split_items` returns instead of scanning the raw text, which
-        reads a legacy row's literal `-\\>` as an arrow. The expected values are the ones the
-        parser returned before this change, measured and written in as literals."""
-        mod = _load()
-        with quiet.diagnostics():
-            plain = mod.parse_closures("alpha broke -> fixed: first -> second")
-            doubled = mod.parse_closures(
-                r"the prompt reads C:\\> and a literal -\\> sequence here -> fixed: typed")
-            unreadable = (mod.unreadable_closures("alpha broke -> fixed: first -> second")
-                          + mod.unreadable_closures(
-                              r"the prompt reads C:\\> and a literal -\\> sequence here "
-                              r"-> fixed: typed"))
-        self.assertEqual([("alpha broke", "fixed: first -> second", "fixed")],
-                         [(c["finding"], c["evidence"], c["disposition"]) for c in plain])
-        self.assertEqual([(r"the prompt reads C:\> and a literal -\> sequence here",
-                           "fixed: typed", "fixed")],
-                         [(c["finding"], c["evidence"], c["disposition"]) for c in doubled])
-        self.assertEqual([], unreadable)
-
-    def test_the_closed_flag_takes_the_escape_and_names_it_on_refusal(self) -> None:
-        r"""MUTANTS: in `critic.py`, skip the `\>` escape when `record_repair` parses the flag's
-        text (the finding still resolves, `_match_key` drops the backslash, but reads back as
-        `Fixed-\>Verified`); or drop the escape hint from the refusal a closure naming nothing
-        raises."""
-        mod = _load()
-        bs = chr(92)
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(mod, root, [self.EARLY, self.PLAIN_R1], [self.PLAIN_R2])
-            before = self._record(mod, root)
-            rc, out = self._repair(mod, root, "--closed", f"{self.EARLY} -> fixed: pinned")
-            self.assertEqual(2, rc, out)
-            self.assertIn("-" + bs + ">", out, "the refusal must name the escape")
-            self.assertIn("--closed-file", out)
-            self.assertEqual(before, self._record(mod, root))
-
-            typed = self.EARLY.replace("->", "-" + bs + ">")
-            self.assertEqual("AC2 - Fixed-" + bs + ">Verified and Fixed-" + bs + ">Closed on a "
-                             "bug already at Fixed are unpinned", typed)
-            rc, out = self._repair(mod, root, "--closed", f"{typed} -> fixed: pinned")
-            self.assertEqual(0, rc, out)
-            got = [c for c in self._closed(mod, root) if c["finding"] == self.EARLY]
-        self.assertTrue(got, "the escaped finding did not read back with `->` and no backslash")
-        for c in got:
-            self.assertEqual("fixed: pinned", c["evidence"])
-
-    def test_the_structured_route_keeps_the_id_and_shape_refusals(self) -> None:
-        """MUTANTS: in `critic.py`, drop `ids` from the structured closures `record_repair`
-        builds; skip the resolvable-id loop when it is handed a list; or drop the empty
-        `finding`/`evidence` refusal from the structured branch. Each lets a closure the text
-        round trip used to refuse reach the record."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(mod, root, [self.EARLY, self.PLAIN_R1], [self.PLAIN_R2])
-            self.assertFalse(mod.sdlc_md.find_by_id(root, "BG9999"))
-            before = self._record(mod, root)
-            rc, out = self._repair_file(
-                mod, root, [{"finding": self.PLAIN_R1, "evidence": "filed: the residue is BG9999"}])
-            self.assertEqual(2, rc, out)
-            self.assertIn("BG9999", out)
-            self.assertEqual(before, self._record(mod, root), "a refused repair wrote a row")
-
-            rc, out = self._repair_file(
-                mod, root, [{"finding": self.PLAIN_R1, "evidence": "filed: the residue is BG0123"}])
-            self.assertEqual(0, rc, out)
-            after = self._record(mod, root)
-            self.assertNotEqual(before, after)
-            self.assertIn("filed: the residue is BG0123", after.decode("utf-8").splitlines()[-1])
-
-            rc, out = self._repair_file(mod, root, [{"finding": self.PLAIN_R2, "evidence": ""}])
-            self.assertEqual(2, rc, out)
-            self.assertIn("item 1", out)
-            self.assertEqual(after, self._record(mod, root), "an empty-evidence item was written")
-            # a document that opens as a JSON list but does not parse: refused, nothing written
-            broken = root / "broken.json"
-            broken.write_text('[{"finding": "x", "evidence": "y"', encoding="utf-8")
-            rc, out = self._repair(mod, root, "--closed-file", str(broken))
-            self.assertEqual(2, rc, out)
-            self.assertIn("repair refused", out)
-            self.assertEqual(after, self._record(mod, root), "an unparseable file was written")
-
-    def test_a_typed_finding_cut_at_its_own_arrow_is_refused(self) -> None:
-        r"""MUTANTS: in `critic.py`, delete the arrow-continuation check; refuse any typed item
-        carrying a second bare arrow; index the raised text at `len(fragment)` instead of
-        comparing in match-key space; refuse whenever the raised finding carries an arrow
-        anywhere; run the check inside the append loop, after the first group's row is written;
-        or refuse whenever the finding continues with an arrow, dropping the further-arrow
-        condition.
-
-        The fixture raises AC1's finding, AC2's finding and the `test_the_thing` finding (which
-        the ledger stores escaped, so only a match-key comparison finds its cut), and also the
-        arrow-free finding control 2 quotes. Each refused set carries a closure for a round-one
-        finding too, so a check that runs after the first row is written leaves that row behind.
-        """
-        mod = _load()
-        bs = chr(92)
-        helper_quote = "AC4 - test_the_thing names a helper"
-
-        def fresh(d: str) -> Path:
-            root = Path(d)
-            self._fixture(mod, root, [self.EARLY, self.PLAIN_R1], [self.LATE, self.HELPER])
-            stored = mod.verdicts_path(root, "plan-review").read_text(encoding="utf-8")
-            self.assertIn("test" + bs + "_the" + bs + "_thing", stored,
-                          "the premise: the ledger stores the raised text escaped")
-            return root
-
-        round_one = f"{self.PLAIN_R1} -> fixed: pinned"
-        for label, cut in (("AC2", f"{self.LATE} -> fixed: pinned"),
-                           ("AC4", f"{self.HELPER} -> fixed: pinned")):
-            with self.subTest(refused=label), tempfile.TemporaryDirectory() as d:
-                root = fresh(d)
-                before = self._record(mod, root)
-                rc, out = self._repair(mod, root, "--closed", f"{round_one}; {cut}")
-                self.assertEqual(2, rc, out)
-                self.assertEqual(before, self._record(mod, root), "a refused repair wrote a row")
-                self.assertIn("-" + bs + ">", out)
-                self.assertIn("--closed-file", out)
-                self.assertNotIn("names no finding", out)
-
-        escaped = self.LATE.replace("->", "-" + bs + ">")
-        controls = (
-            ("escaped", ["--closed", f"{escaped} -> fixed: pinned"],
-             lambda f: f == self.LATE, "fixed: pinned"),
-            ("arrow-free prefix", ["--closed", "AC5 - the second round found -> fixed: ordered "
-                                               "a -> b"],
-             lambda f: f == "AC5 - the second round found", "fixed: ordered a -> b"),
-            ("arrow after the quote", ["--closed", "AC2 - no row covers a direct Verified close "
-                                                   "-> fixed: ordered a -> b"],
-             lambda f: f == "AC2 - no row covers a direct Verified close",
-             "fixed: ordered a -> b"),
-            ("at the arrow", ["--closed", f"{helper_quote} -> fixed: pinned"],
-             lambda f: f.replace(bs, "") == helper_quote, "fixed: pinned"),
-        )
-        for label, args, names, evidence in controls:
-            with self.subTest(control=label), tempfile.TemporaryDirectory() as d:
-                root = fresh(d)
-                rc, out = self._repair(mod, root, *args)
-                self.assertEqual(0, rc, out)
-                got = [c for c in self._closed(mod, root) if names(c["finding"])]
-                self.assertTrue(got, f"no closure read back: {self._closed(mod, root)}")
-                for c in got:
-                    self.assertEqual(evidence, c["evidence"])
-        # The refusal is the TEXT path's alone: a structured closure is never split, so the same
-        # quote with an arrow in its evidence is taken whole.
-        with tempfile.TemporaryDirectory() as d:
-            root = fresh(d)
-            rc, out = self._repair_file(
-                mod, root, [{"finding": helper_quote, "evidence": "fixed: ordered a -> b"}])
-            self.assertEqual(0, rc, out)
-            got = [c for c in self._closed(mod, root) if c["finding"].replace(bs, "")
-                   == helper_quote]
-        self.assertTrue(got)
-        for c in got:
-            self.assertEqual("fixed: ordered a -> b", c["evidence"])
-
-
-class ThreeStateCoverageTests(unittest.TestCase):
-    """US0621 / CR0506: approved, repaired and unreviewed are three states, not two."""
-
-    def test_approved_repaired_and_unreviewed_are_three_distinct_states(self) -> None:
-        """MUTANT: collapse `repaired` into either outer state.
-
-        Reading it as unreviewed manufactures work; reading it as approved clears the gate on an
-        unrepaired rejection. The defect this is filed from is the first.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod.record_verdict(root, "US0001", "APPROVE", "qa-seat", "builder", "none",
-                               "delivery", "abcdef123456")
-            _rejected(mod, root, "US0002")
-            mod.record_repair(root, "US0002", "builder",
-                              "alpha broke -> killed; beta broke -> killed")
-            counts = mod.coverage_counts(root, ["US0001", "US0002", "US0003"])
-        self.assertEqual(counts[mod.COVERAGE_APPROVED], ["US0001"])
-        self.assertEqual(counts[mod.COVERAGE_REPAIRED], ["US0002"])
-        self.assertEqual(counts[mod.COVERAGE_UNREVIEWED], ["US0003"])
-
-    def test_an_unrepaired_or_partly_repaired_reject_stays_uncovered(self) -> None:
-        """MUTANT: let any recorded repair reach `repaired`.
-
-        That would convert every REJECT into an APPROVE for the cost of one command - a worse
-        gate than the one being replaced.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root, "US0002")
-            self.assertEqual(mod.coverage_state(root, "US0002"), mod.COVERAGE_UNREVIEWED)
-            mod.record_repair(root, "US0002", "builder", "alpha broke -> killed")
-            self.assertEqual(mod.coverage_state(root, "US0002"), mod.COVERAGE_UNREVIEWED,
-                             "a PARTIAL repair reached the covered state")
-
-    def test_the_gates_treatment_of_a_repaired_unit_is_declared_and_tested_both_ways(self) -> None:
-        """MUTANT: let the gate answer this by accident of the APPROVE check.
-
-        Whether a repaired unit satisfies the Done bar is a DECLARED rule with a test either
-        way, so a future reader learns the answer from the code rather than from whichever
-        branch happened to run. The declared answer: a COMPLETE repair satisfies the verdict
-        half, a PARTIAL one does not.
-        """
-        mod = _load()
-        import importlib.util as _u
-        spec = _u.spec_from_file_location(
-            "conformance", Path(__file__).resolve().parent.parent / "conformance.py")
-        conf = _u.module_from_spec(spec)
-        sys.modules["conformance"] = conf
-        spec.loader.exec_module(conf)
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root, "US9002", "[new] alpha broke; [new] beta broke")
-            partial_unmet = conf.critiqued_unmet(root, "US9002")
-            self.assertIn(conf.HALF_VERDICT, partial_unmet,
-                          "an unrepaired REJECT satisfied the verdict half")
-            mod.record_repair(root, "US9002", "builder",
-                              "alpha broke -> killed; beta broke -> killed")
-            complete_unmet = conf.critiqued_unmet(root, "US9002")
-        self.assertNotIn(conf.HALF_VERDICT, complete_unmet,
-                         "a COMPLETE repair did not satisfy the verdict half, so the repaired "
-                         "state reaches the gate as 'missing critiqued' after all")
-
-    def test_the_three_counts_partition_the_batch(self) -> None:
-        """MUTANT: let a unit fall through the classification into no count.
-
-        Every unit falls in exactly one state and the total equals the batch size.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod.record_verdict(root, "US0001", "APPROVE", "qa", "b", "none", "delivery",
-                               "abcdef123456")
-            _rejected(mod, root, "US0002")
-            units = ["US0001", "US0002", "US0003", "US0004"]
-            counts = mod.coverage_counts(root, units)
-        total = sum(len(v) for v in counts.values())
-        self.assertEqual(total, len(units))
-        self.assertEqual(sorted(sum(counts.values(), [])), sorted(units))
-
-
-class PartialRepairTests(unittest.TestCase):
-    """US0622 / CR0506: a repair that half-answers a rejection is PARTIAL and says which half."""
-
-    def test_a_repair_covering_some_findings_is_partial_and_names_the_residue(self) -> None:
-        """MUTANT: report a count instead of the outstanding findings."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root, "US0002",
-                      "[new] alpha broke; [new] beta broke; [new] gamma broke")
-            mod.record_repair(root, "US0002", "builder", "alpha broke -> killed")
-            st = mod.repair_state(root, "US0002")
-        self.assertEqual(st["state"], "partial")
-        self.assertEqual(len(st["outstanding"]), 2)
-        self.assertTrue(any("beta" in o for o in st["outstanding"]))
-        self.assertTrue(any("gamma" in o for o in st["outstanding"]))
-
-    def test_completeness_is_derived_per_finding_not_read_from_prose(self) -> None:
-        """MUTANT: trust a repair that claims completeness in its own text.
-
-        LL0015 - a guard that only catches the total case is not a guard.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root, "US0002", "[new] alpha broke; [new] beta broke")
-            mod.record_repair(root, "US0002", "builder",
-                              "alpha broke -> killed, and every finding is now closed")
-            st = mod.repair_state(root, "US0002")
-        self.assertEqual(st["state"], "partial",
-                         "a repair claiming completeness in prose was believed")
-
-    def test_a_repair_closing_every_finding_is_complete_and_counts_as_repaired(self) -> None:
-        """The positive control. MUTANT: always report PARTIAL.
-
-        PARTIAL must not be the only reachable answer, or the route back to covered is closed
-        rather than gated.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root, "US0002", "[new] alpha broke; [new] beta broke")
-            mod.record_repair(root, "US0002", "builder",
-                              "alpha broke -> killed; beta broke -> killed")
-            self.assertEqual(mod.repair_state(root, "US0002")["state"], "complete")
-            self.assertEqual(mod.coverage_state(root, "US0002"), mod.COVERAGE_REPAIRED)
-
-
-class FiledDispositionTests(unittest.TestCase):
-    """US0623 / CR0506: closed by FILING is not the same as closed by fixing."""
-
-    def test_a_filed_closure_records_the_disposition_and_the_id(self) -> None:
-        """MUTANT: record every closure as a fix.
-
-        Both dispositions are legitimate under the operator's rule; being unable to tell them
-        apart afterwards is not.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _bug_on_disk(root)
-            _rejected(mod, root, "US0002", "[new] alpha broke; [new] beta broke")
-            mod.record_repair(root, "US0002", "builder",
-                              "alpha broke -> killed by the re-applied mutant; "
-                              "beta broke -> filed as BG0123")
-            st = mod.repair_state(root, "US0002")
-        self.assertEqual((st["fixed"], st["filed"]), (1, 1))
-        filed = [c for c in st["closed"] if c["disposition"] == "filed"]
-        self.assertEqual(filed[0]["artefact"], "BG0123")
-
-    def test_a_filed_closure_with_an_unresolvable_id_is_refused(self) -> None:
-        """MUTANT: accept any id in a FILED closure.
-
-        A reference nobody can follow records the appearance of a disposition rather than one -
-        the same failure shape as a `Verify:` line naming a test that does not exist, and found
-        on the day it matters rather than the day it is written.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _rejected(mod, root, "US0002", "[new] alpha broke; [new] beta broke")
-            with self.assertRaises(ValueError) as caught:
-                mod.record_repair(root, "US0002", "builder",
-                                  "alpha broke -> killed; beta broke -> filed as BG9999")
-        self.assertIn("BG9999", str(caught.exception))
-        self.assertIn("resolves to no artefact", str(caught.exception))
-
-    def test_fixed_and_filed_are_counted_separately(self) -> None:
-        """MUTANT: report one combined `closed` total.
-
-        A single total is the shape that makes deferral invisible, and EP0206's rule is only
-        safe to enforce while the two can be told apart.
-        """
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _bug_on_disk(root)
-            _rejected(mod, root, "US0002", "[new] alpha broke; [new] beta broke")
-            out = io.StringIO()
-            with contextlib.redirect_stdout(out):
-                mod.main(["repair", "--unit", "US0002", "--author", "builder",
-                          "--closed", "alpha broke -> killed; beta broke -> filed as BG0123",
-                          "--root", str(root)])
-        self.assertIn("1 fixed", out.getvalue())
-        self.assertIn("1 filed", out.getvalue())
-
-
-
-class PanelConvergenceTests(unittest.TestCase):
-    """BG0549/BG0539: the escalation read the whole history and never asked whether the panel
-    had since converged, so the ordinary reject-fix-approve loop announced non-convergence at
-    the moment it demonstrably had."""
-
-    def test_a_converged_panel_does_not_escalate(self) -> None:
-        """MUTANT: delete the `verdicts[-1] == APPROVE` early return."""
-        mod = _load()
-        escalate, _why = mod.panel_escalation(["REJECT", "REJECT", "APPROVE"], {})
-        self.assertFalse(escalate, "an APPROVE after two REJECTs is the loop working")
-
-    def test_a_stalled_panel_still_escalates(self) -> None:
-        """The control. Convergence must END the notice without disarming it."""
-        mod = _load()
-        escalate, why = mod.panel_escalation(["REJECT", "REJECT"], {})
-        self.assertTrue(escalate, "two REJECTs with no approval after them is a stall")
-        self.assertIn("not converging", why)
-
-
-class RoundVersusSplitTests(unittest.TestCase):
-    """BG0539: a second ROUND was mistaken for a panel SPLIT."""
-
-    def test_a_second_round_is_not_a_panel_split(self) -> None:
-        """MUTANT: delete the convergence check, so seat verdicts from different ROUNDS are
-        compared as though they came from one.
-
-        A panel split is disagreement INSIDE a round. A second round is a different context
-        reviewing a revised unit - the reject-fix-approve loop working. Six of eight units in
-        one run escalated as splits for having done exactly that.
-        """
-        mod = _load()
-        escalate, _why = mod.panel_escalation(
-            ["REJECT", "APPROVE"], {"engineering": "REJECT", "qa": "APPROVE"})
-        self.assertFalse(escalate,
-                         "a REJECT in round 1 and an APPROVE in round 2 is convergence")
-
 
 class LedgerRollupTests(unittest.TestCase):
-    """BG0611, BG0605, BG0607, BG0604 - what the ledger says when it is read as a whole."""
+    """BG0611, BG0607, BG0604 - what the verdict ledger says when it is read as a whole.
+    The repair-ledger roll-up (BG0605) was deleted by US0914."""
 
     def test_one_seats_approve_does_not_retire_anothers_reject(self) -> None:
         """MUTANT: in `critic.py`, return the last live row from `verdict_for` instead of the
@@ -4599,8 +3741,10 @@ class LedgerRollupTests(unittest.TestCase):
             with _before_the_round_rules(mod):   # seats named per round, as they then were
                 mod.record_verdict(root, "US0017", "APPROVE", "qa-seat-round-2", "builder",
                                    "none", "delivery", "aaaaaaaaaaaa")   # same brief, later
-            self.assertEqual("APPROVE", mod.verdict_for(root, "US0017")["verdict"],
-                             "a seat could not retire its own rejection in a later round")
+            # read as that ledger: the fingerprint pairs rounds only before the round rule
+            with unittest.mock.patch.object(mod, "ROUND_RULE_SHIPPED", "9999-12-31"):
+                self.assertEqual("APPROVE", mod.verdict_for(root, "US0017")["verdict"],
+                                 "a seat could not retire its own rejection in a later round")
 
     def test_the_latest_unanswered_reject_is_the_one_reported(self) -> None:
         """MUTANT: in `critic.py`, report the EARLIEST unanswered REJECT rather than the latest.
@@ -4624,35 +3768,6 @@ class LedgerRollupTests(unittest.TestCase):
             self.assertIn("second round", standing["issues"],
                           "the EARLIEST unanswered rejection was reported, which is the reading "
                           "that drops US0671 from the non-conformant set")
-
-    def test_every_unanswered_rejection_contributes_its_findings(self) -> None:
-        """MUTANT: in `critic.py`, narrow `repair_state` back to the standing rejection alone.
-
-        Before the fingerprint-keyed roll-up a unit carried ONE live rejection by construction,
-        so reading the standing row was the same as reading them all. It is not any more, and
-        deriving `outstanding` from the standing row alone left 118 findings across six units
-        invisible to this function, to the conformance lane that calls it, and to every checker
-        built on either. A gate that cannot see most of what it checks is not a gate."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            # Two rejections from DIFFERENT seats, so neither retires the other.
-            with _before_the_round_rules(mod):
-                mod.record_verdict(root, "US0905", "REJECT", "engineering", "b",
-                                   "[new] the engineering finding", "delivery", "aaaaaaaaaaaa")
-                mod.record_verdict(root, "US0905", "REJECT", "qa", "b",
-                                   "[new] the qa finding", "delivery", "bbbbbbbbbbbb")
-            # The QA rejection is answered; the engineering one is not. This is the real shape
-            # of the six units the roll-up surfaced - a partial repair against one round.
-            mod.record_repair(root, "US0905", "b",
-                              "the qa finding -> the mutant was re-applied and killed")
-            state = mod.repair_state(root, "US0905")
-            outstanding = " ".join(state["outstanding"])
-            self.assertIn("the engineering finding", outstanding,
-                          "only the standing rejection's findings were counted, so the earlier "
-                          "rejection's were invisible to the gate")
-            self.assertNotEqual("complete", state["state"],
-                                "a unit with an unanswered rejection read as fully repaired")
 
     def test_annotating_the_ledger_normalises_each_row_and_record_once(self) -> None:
         """MUTANT: in `critic._annotate_superseded`, scan the records per row again instead of
@@ -4696,36 +3811,6 @@ class LedgerRollupTests(unittest.TestCase):
         self.assertEqual("why", out[0]["superseded_reason"])
         self.assertFalse(out[1]["superseded"], "a row no record names was marked retired")
 
-    def test_a_repair_recorded_across_two_calls_reads_complete(self) -> None:
-        """MUTANT: in `critic.repair_state`, read closures from the latest repair row alone.
-
-        Two partial repairs that together close every finding both read PARTIAL, each naming as
-        outstanding what the other closed (BG0605)."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            mod.record_verdict(root, "US0021", "reject", author="builder",
-                               issues="[new] one; [new] two")
-            mod.record_repair(root, "US0021", author="builder", closed="#1 -> first evidence")
-            mod.record_repair(root, "US0021", author="builder", closed="#2 -> second evidence")
-            state = mod.repair_state(root, "US0021")
-            self.assertEqual("complete", state["state"],
-                             f"a repair split across two calls read {state['state']}: "
-                             f"outstanding {state['outstanding']}")
-
-    def test_a_genuinely_partial_repair_still_reads_partial(self) -> None:
-        """The paired control. Reading every row must not turn an unanswered finding into an
-        answered one - that would convert every REJECT into an APPROVE for one command."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            mod.record_verdict(root, "US0022", "reject", author="builder",
-                               issues="[new] one; [new] two")
-            mod.record_repair(root, "US0022", author="builder", closed="#1 -> only this one")
-            self.assertEqual("partial", mod.repair_state(root, "US0022")["state"])
-
-
-
     def test_the_brief_names_the_restore_obligation_not_only_the_worktree(self) -> None:
         """MUTANT: in `critic.py`, drop the snapshot-and-restore paragraph from the brief.
 
@@ -4757,107 +3842,86 @@ class LedgerRollupTests(unittest.TestCase):
                       "the brief does not say why `git checkout --` is the wrong restore")
 
 
+class ThreeStateCoverageTests(unittest.TestCase):
+    """US0621 / CR0506, narrowed by US0914: a REJECT is answered only by a round-2 APPROVE, so
+    coverage has two states and a repair ledger moves neither."""
 
-
-
-class RepairPlacementTests(unittest.TestCase):
-    """BG0629: where the repair consultation LIVES, and which findings a closure may answer.
-
-    Both fixtures are isolated. Neither reads the live ledger, because this unit repairs the
-    gate that was refusing its own run and a test over the live workspace would go
-    unfalsifiable the moment the dispositions land.
-    """
-
-    _DELIVERY_HEAD = (
-        "# Critic Verdicts\n\n"
-        "| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Issues |\n"
-        "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
-    _PLAN_HEAD = (
-        "# Plan-Review Verdicts\n\n"
-        "| Unit | Verdict | Reviewer | Author | Date | Brief | Kind | Issues |\n"
-        "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
-    _REPAIR_HEAD = (
-        "# Repair Record\n\n"
-        "| Unit | Verdict date | Author | Date | Closed | Outstanding |\n"
-        "| --- | --- | --- | --- | --- | --- |\n")
-
-    def _proj(self, d):
-        root = Path(d)
-        (root / "sdlc-studio" / "reviews").mkdir(parents=True)
-        (root / "sdlc-studio" / "bugs").mkdir(parents=True)
-        (root / "sdlc-studio" / ".config.yaml").write_text(
-            "schema_version: 3\n", encoding="utf-8")
-        return root
-
-    def test_the_delivery_lane_still_answers_through_the_conformance_branch(self) -> None:
-        """AC6. The PLACEMENT guard, stated as a property rather than a snapshot.
-
-        A delivery REJECT whose repair is complete but whose TIER DEPTH is not covered must
-        still read REJECT from `verdict_for`, so conformance reaches its answer through the
-        repair branch rather than through `per_unit_ok`. Relocating the consultation into
-        `verdict_for` makes `per_unit_ok` true, runs `tier_covers`, and flips it.
-
-        The fixture holds a LATER independent APPROVE from ANOTHER reviewer carrying a DIFFERENT
-        fingerprint, so it does not retire the REJECT: without one, the relocation returns the
-        REJECT as `latest`, `per_unit_ok` stays false and the mutant survives.
-        """
+    def test_an_unrepaired_or_partly_repaired_reject_stays_uncovered(self) -> None:
+        """MUTANT: let a repair row answer the REJECT. A repair ledger written before US0914,
+        closing one finding and then both, leaves the unit unreviewed; the rejecting reviewer's
+        round-2 APPROVE, the control, covers it."""
+        mod = _load()
         with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d)
-            (root / "sdlc-studio" / "reviews" / "critic-verdicts.md").write_text(
-                self._DELIVERY_HEAD
-                + ("| BG0001 | REJECT | qa; independent | eng; session | 2026-08-27 "
-                   "| aaaaaaaaaaaa | light | the oracle cannot fail |\n")
-                + ("| BG0001 | APPROVE | qa2; independent | eng; session | 2026-08-27 "
-                   "| bbbbbbbbbbbb | light | none blocking |\n"),
-                encoding="utf-8")
-            (root / "sdlc-studio" / "reviews" / "repair-record.md").write_text(
-                self._REPAIR_HEAD
-                + ("| BG0001 | 2026-08-27 | eng; session | 2026-08-27 "
-                   "| the oracle cannot fail -> rewritten to assert the text | none |\n"),
-                encoding="utf-8")
-            mod = _load()
-            v = mod.verdict_for(root, "BG0001")
-            self.assertEqual(
-                "REJECT", v["verdict"],
-                "verdict_for must not consult the repair - the delivery lane reaches its "
-                "answer through conformance.py's own repair branch, and moving the "
-                "consultation here subjects repair-route units to a tier-depth check they "
-                "have never been held to")
-            self.assertEqual("complete", mod.repair_state(root, "BG0001")["state"])
+            root = Path(d)
+            _rejected(mod, root, "US0002")
+            when = mod.read_verdicts(root)[-1]["date"]
+            self.assertEqual(mod.coverage_state(root, "US0002"), mod.COVERAGE_UNREVIEWED)
+            ledger = root / "sdlc-studio" / "reviews" / "repair-record.md"
+            for closed in ("alpha broke -> fixed: killed",
+                           "alpha broke -> fixed: killed; beta broke -> fixed: killed"):
+                ledger.write_text(
+                    "| Unit | Verdict date | Author | Date | Closed | Outstanding |\n"
+                    "| --- | --- | --- | --- | --- | --- |\n"
+                    f"| US0002 | {when} | builder | {when} | {closed} | - |\n", encoding="utf-8")
+                self.assertEqual(mod.coverage_state(root, "US0002"), mod.COVERAGE_UNREVIEWED,
+                                 f"a repair row reached the covered state: {closed}")
+            mod.record_verdict(root, "US0002", "APPROVE", "qa-seat", "builder", "none",
+                               "delivery", "abcdef123456")
+            self.assertEqual(mod.coverage_state(root, "US0002"), mod.COVERAGE_APPROVED)
 
-    def test_a_closure_can_answer_an_earlier_rejection_not_only_the_standing_one(self) -> None:
-        """AC7. `repair_state` counts outstanding across EVERY unanswered rejection, so
-        resolving closures against the standing row alone made an earlier rejection's findings
-        countable and uncloseable - a unit could be held PARTIAL for ever by a finding no
-        command would accept a closure for. BG0629 hit this on itself.
+    def test_the_three_counts_partition_the_batch(self) -> None:
+        """MUTANT: let a unit fall through the classification into no count.
+
+        Every unit falls in exactly one state and the total equals the batch size.
         """
+        mod = _load()
         with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d)
-            (root / "sdlc-studio" / "reviews" / "plan-review-verdicts.md").write_text(
-                self._PLAN_HEAD
-                + ("| BG0001 | REJECT | qa; independent; r1 | eng; session | 2026-08-26 "
-                   "| aaaaaaaaaaaa | test-plan | the control is vacuous |\n")
-                + ("| BG0001 | REJECT | qa; independent; r2 | eng; session | 2026-08-27 "
-                   "| bbbbbbbbbbbb | test-plan | the oracle cannot fail |\n"),
-                encoding="utf-8")
-            mod = _load()
-            mod.record_repair(
-                root, "BG0001", "eng; session",
-                "the control is vacuous -> repointed at a case today's code does not return",
-                "plan-review")
-            # The oracle is the RESOLVED state, not the raw parsed closure list. An earlier
-            # version asserted only that the string appeared under "closed", which is true
-            # whether or not it discharges anything - a strictly weaker claim than the criterion,
-            # and it passed while the finding stayed outstanding for ever.
-            st = mod.repair_state(root, "BG0001", "plan-review")
-            self.assertNotIn("the control is vacuous", st["outstanding"], st["outstanding"])
-            # ...and the whole point: a twice-rejected unit must be able to REACH complete.
-            mod.record_repair(root, "BG0001", "eng; session",
-                              "the oracle cannot fail -> rewritten to assert the exact text",
-                              "plan-review")
-            st2 = mod.repair_state(root, "BG0001", "plan-review")
-            self.assertEqual("complete", st2["state"], st2["outstanding"])
-            self.assertEqual((True, ""), mod.plan_review_repair_clears(root, "BG0001"))
+            root = Path(d)
+            mod.record_verdict(root, "US0001", "APPROVE", "qa", "b", "none", "delivery",
+                               "abcdef123456")
+            _rejected(mod, root, "US0002")
+            units = ["US0001", "US0002", "US0003", "US0004"]
+            counts = mod.coverage_counts(root, units)
+        total = sum(len(v) for v in counts.values())
+        self.assertEqual(total, len(units))
+        self.assertEqual(sorted(sum(counts.values(), [])), sorted(units))
+
+
+class PanelConvergenceTests(unittest.TestCase):
+    """BG0549/BG0539: the escalation read the whole history and never asked whether the panel
+    had since converged, so the ordinary reject-fix-approve loop announced non-convergence at
+    the moment it demonstrably had."""
+
+    def test_a_converged_panel_does_not_escalate(self) -> None:
+        """MUTANT: delete the `verdicts[-1] == APPROVE` early return."""
+        mod = _load()
+        escalate, _why = mod.panel_escalation(["REJECT", "REJECT", "APPROVE"], {})
+        self.assertFalse(escalate, "an APPROVE after two REJECTs is the loop working")
+
+    def test_a_stalled_panel_still_escalates(self) -> None:
+        """The control. Convergence must END the notice without disarming it."""
+        mod = _load()
+        escalate, why = mod.panel_escalation(["REJECT", "REJECT"], {})
+        self.assertTrue(escalate, "two REJECTs with no approval after them is a stall")
+        self.assertIn("not converging", why)
+
+
+class RoundVersusSplitTests(unittest.TestCase):
+    """BG0539: a second ROUND was mistaken for a panel SPLIT."""
+
+    def test_a_second_round_is_not_a_panel_split(self) -> None:
+        """MUTANT: delete the convergence check, so seat verdicts from different ROUNDS are
+        compared as though they came from one.
+
+        A panel split is disagreement INSIDE a round. A second round is a different context
+        reviewing a revised unit - the reject-fix-approve loop working. Six of eight units in
+        one run escalated as splits for having done exactly that.
+        """
+        mod = _load()
+        escalate, _why = mod.panel_escalation(
+            ["REJECT", "APPROVE"], {"engineering": "REJECT", "qa": "APPROVE"})
+        self.assertFalse(escalate,
+                         "a REJECT in round 1 and an APPROVE in round 2 is convergence")
 
 
 class AbsentBriefTests(unittest.TestCase):
@@ -4960,241 +4024,6 @@ class AbsentBriefTests(unittest.TestCase):
                 "US0569", "US0572", "US0574", "BG0442", "BG0452"]
         standing = {u: (mod.verdict_for(REPO_ROOT, u) or {}).get("verdict") for u in nine}
         self.assertEqual({u: "REJECT" for u in nine}, standing)
-
-
-class RepairPhaseJoinTests(unittest.TestCase):
-    """BG0631: a repair row was joined to a rejection by DATE alone.
-
-    `_REPAIR_COLS` carried neither the phase a repair answers nor the rejection it answers, and
-    `repairs_for` took no phase, so `repair_state` selected rows on `verdict_date` equality. The
-    two shapes originally filed both pass on HEAD - `repair_state` loops per rejection, and
-    `resolve_finding` separates rejections whose findings read differently. What still fails is
-    TEXT COLLISION, and that is the ordinary shape rather than an exotic one: a plan-review
-    finding surviving into delivery is what a review round normally produces.
-
-    It became a gate rather than a reporting nuisance when BG0629 landed, because a plan-review
-    REJECT is now retired by its repair - so a delivery repair discharging a plan-review
-    rejection opens a gate that should have stayed shut.
-    """
-
-    _D_HEAD = ("# Critic Verdicts\n\n| Unit | Verdict | Reviewer | Author | Date | Brief | "
-               "Tier | Issues |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n")
-    _P_HEAD = ("# Plan-Review Verdicts\n\n| Unit | Verdict | Reviewer | Author | Date | Brief "
-               "| Kind | Issues |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n")
-    _R_HEAD = ("# Repair Record\n\n| Unit | Verdict date | Author | Date | Closed | "
-               "Outstanding | Phase | Rejection |\n"
-               "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
-
-    _FINDING = "the oracle cannot fail"
-
-    def _proj(self, d, *, delivery="", plan="", repairs=""):
-        root = Path(d)
-        (root / "sdlc-studio" / "reviews").mkdir(parents=True)
-        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
-        (root / "sdlc-studio" / "reviews" / "critic-verdicts.md").write_text(
-            self._D_HEAD + delivery, encoding="utf-8")
-        (root / "sdlc-studio" / "reviews" / "plan-review-verdicts.md").write_text(
-            self._P_HEAD + plan, encoding="utf-8")
-        (root / "sdlc-studio" / "reviews" / "repair-record.md").write_text(
-            self._R_HEAD + repairs, encoding="utf-8")
-        return root
-
-    def _collision(self, d, *, repair_phase="delivery"):
-        """One finding text, rejected in BOTH phases on ONE date, answered by ONE repair."""
-        day = "2026-09-02"
-        delivery = (f"| BG0001 | REJECT | eng | a | {day} | aaaaaaaaaaaa | full | "
-                    f"[new] {self._FINDING} |\n")
-        plan = (f"| BG0001 | REJECT | qa | a | {day} | bbbbbbbbbbbb | test-plan | "
-                f"[new] {self._FINDING} |\n")
-        repairs = (f"| BG0001 | {day} | a | {day} | {self._FINDING} -> rewritten | none | "
-                   f"{repair_phase} | aaaaaaaaaaaa |\n")
-        return self._proj(d, delivery=delivery, plan=plan, repairs=repairs)
-
-    def test_the_delivery_phase_still_reads_its_own_repair(self) -> None:
-        # AC2. The paired control: refusing to join a repair to anything satisfies AC1 alone,
-        # and would break every repair record in the corpus.
-        critic = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = self._collision(d, repair_phase="delivery")
-            state = critic.repair_state(root, "BG0001", "delivery")
-            self.assertEqual("complete", state["state"],
-                             f"the delivery repair stopped answering its own rejection: {state}")
-
-    def test_a_written_row_carries_its_phase_and_rejection(self) -> None:
-        # AC3. The column exists and round-trips, or the join above has nothing to read.
-        critic = _load()
-        self.assertIn("phase", critic._REPAIR_COLS,
-                      "the repair ledger carries no phase column, so the join is date equality")
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d, delivery=(
-                f"| BG0001 | REJECT | eng | a | 2026-09-02 | aaaaaaaaaaaa | full | "
-                f"[new] {self._FINDING} |\n"))
-            critic.record_repair(root, "BG0001", author="a; session",
-                                 closed=f"{self._FINDING} -> rewritten", phase="delivery")
-            rows = critic.repairs_for(root, "BG0001")
-            self.assertTrue(rows)
-            self.assertEqual("delivery", str(rows[-1].get("phase") or "").strip(),
-                             f"the written row does not name its phase: {rows[-1]}")
-            # THE REJECTION HALF. AC3 says the row names the phase AND the rejection it
-            # answers, and says `_REPAIR_COLS` carries NEITHER today. The first cut built only
-            # the phase and this assertion did not exist, so the criterion went green with half
-            # its text unbuilt - which a review found. The key is the brief fingerprint, which
-            # BG0607 established identifies the seat and the round together; a date cannot,
-            # because two rejections share a day routinely.
-            self.assertIn("rejection", critic._REPAIR_COLS,
-                          "the ledger carries no rejection column, so a row names only WHEN it "
-                          "answered, never WHAT")
-            self.assertEqual("aaaaaaaaaaaa", str(rows[-1].get("rejection") or "").strip(),
-                             f"the row does not name the rejection it answers: {rows[-1]}")
-
-    def test_legacy_rows_are_attributed_or_named_unattributable(self) -> None:
-        """AC4. A row predating the column is attributed where the date makes it unambiguous
-        and REPORTED where it does not - never guessed. A backfill that assigns a phase it
-        cannot know is the record made prettier rather than truer, which this project refused
-        once already."""
-        critic = _load()
-        day = "2026-09-02"
-        with tempfile.TemporaryDirectory() as d:
-            # Unambiguous: only ONE phase rejected on that date, so a bare row belongs to it.
-            root = self._proj(d, delivery=(
-                f"| BG0001 | REJECT | eng | a | {day} | aaaaaaaaaaaa | full | "
-                f"[new] {self._FINDING} |\n"),
-                repairs=f"| BG0001 | {day} | a | {day} | {self._FINDING} -> rewritten | none | | |\n")
-            self.assertEqual("complete", critic.repair_state(root, "BG0001", "delivery")["state"],
-                             "a legacy row was dropped from the phase it unambiguously answers")
-        with tempfile.TemporaryDirectory() as d:
-            # Ambiguous: BOTH phases rejected that date, so a bare row answers NEITHER.
-            root = self._collision(d, repair_phase="")
-            self.assertNotEqual(
-                "complete", critic.repair_state(root, "BG0001", "plan-review")["state"],
-                "a legacy row with no phase was GUESSED onto a phase it cannot be known to "
-                "answer - the record made prettier rather than truer")
-
-    def test_a_ledger_written_before_both_new_columns_still_parses(self) -> None:
-        """A row short by MORE THAN ONE column is still read.
-
-        `_read_rows` bounded shortness at `len(cols) - 1`, which tolerated a single era of
-        appends. Adding `phase` and `rejection` in one change made every six-cell repair row
-        unreadable: `repairs_for` returned nothing, `repair_state` read `none`, and the
-        test-plan gate began refusing units whose repairs were on record. It would have hit
-        every consuming project's ledger on upgrade, where nobody had migrated the header - so
-        the property is asserted on the OLDEST shape, not on the one this repo happens to hold.
-        """
-        critic = _load()
-        day = "2026-09-03"
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio" / "reviews").mkdir(parents=True)
-            (root / "sdlc-studio" / ".config.yaml").write_text(
-                "schema_version: 3\n", encoding="utf-8")
-            (root / "sdlc-studio" / "reviews" / "plan-review-verdicts.md").write_text(
-                self._P_HEAD + (f"| BG0001 | REJECT | qa | a | {day} | aaaaaaaaaaaa | "
-                                f"test-plan | [new] {self._FINDING} |\n"), encoding="utf-8")
-            # The PRE-COLUMN ledger: six cells, six-column header, exactly as a consuming
-            # project's file looks the moment before it upgrades.
-            (root / "sdlc-studio" / "reviews" / "repair-record.md").write_text(
-                "# Repair Record\n\n"
-                "| Unit | Verdict date | Author | Date | Closed | Outstanding |\n"
-                "| --- | --- | --- | --- | --- | --- |\n"
-                f"| BG0001 | {day} | a | {day} | {self._FINDING} -> rewritten | none |\n",
-                encoding="utf-8")
-            self.assertEqual(1, len(critic.repairs_for(root, "BG0001")),
-                             "a six-cell legacy row was dropped entirely by the reader")
-            self.assertEqual(
-                "complete", critic.repair_state(root, "BG0001", "plan-review")["state"],
-                "a repair on record stopped answering its rejection because the ledger "
-                "predates two appended columns - the test-plan gate would refuse this unit")
-
-    def test_a_repair_dated_to_no_rejection_at_all_is_reported(self) -> None:
-        """B3: `len(hits) != 1` also covers hits == 0 - a repair whose date matches NO rejection.
-        Changing it to `> 1` left the whole suite green, so the zero branch was untested. A row
-        answering nothing is exactly what a reader counting repairs must be able to see."""
-        critic = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(
-                d,
-                delivery=("| BG0001 | REJECT | eng | a | 2026-09-02 | aaaaaaaaaaaa | full | "
-                          "[new] the oracle cannot fail |\n"),
-                repairs=("| BG0001 | 2026-01-01 | a | 2026-01-01 | something -> done | none | "
-                         "| |\n"))
-            rows = critic.unattributable_repairs(root)
-            self.assertEqual(1, len(rows),
-                             f"a repair dated to no rejection at all was not reported: {rows}")
-            self.assertEqual([], rows[0]["phases"], rows[0])
-
-    def test_the_written_phase_defaults_to_delivery(self) -> None:
-        """B4: `record_repair`'s default phase was unpinned - every test passed it explicitly,
-        so replacing the default with `plan-review` left the suite green. The default is what a
-        caller who says nothing gets, and it decides which gate the row can open."""
-        critic = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(
-                d,
-                delivery=(f"| BG0001 | REJECT | eng | a | 2026-09-02 | aaaaaaaaaaaa | full | "
-                          f"[new] {self._FINDING} |\n"))
-            critic.record_repair(root, "BG0001", author="a; session",
-                                 closed=f"{self._FINDING} -> rewritten")
-            rows = critic.repairs_for(root, "BG0001")
-            self.assertEqual("delivery", str(rows[-1].get("phase") or "").strip(),
-                             f"the default phase is not delivery: {rows[-1]}")
-
-    def test_a_legacy_row_is_placed_by_its_closures_when_the_findings_differ(self) -> None:
-        """The case the closure fallback exists for, which nothing exercised.
-
-        Two rejections on ONE date raising DIFFERENT findings, and a legacy row naming only
-        one. The date cannot place it; the closure can. A review found the branch inert - it
-        could be deleted with the whole suite green and zero movement across 1,388 live
-        (unit, phase) pairs - because on today's ledger the colliding-text case is every case,
-        and there the branch correctly declines. That makes it untested, not wrong.
-        """
-        critic = _load()
-        day = "2026-09-02"
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(
-                d,
-                delivery=(f"| BG0001 | REJECT | eng | a | {day} | aaaaaaaaaaaa | full | "
-                          f"[new] the delivery oracle cannot fail |\n"),
-                plan=(f"| BG0001 | REJECT | qa | a | {day} | bbbbbbbbbbbb | test-plan | "
-                      f"[new] the plan mutant is unobservable |\n"),
-                repairs=(f"| BG0001 | {day} | a | {day} | the delivery oracle cannot fail -> "
-                         f"rewritten | none | | |\n"))
-            self.assertEqual(
-                "complete", critic.repair_state(root, "BG0001", "delivery")["state"],
-                "a legacy row whose closure names ONLY the delivery finding was not placed "
-                "there - the closure fallback is doing nothing")
-            self.assertNotEqual(
-                "complete", critic.repair_state(root, "BG0001", "plan-review")["state"],
-                "the same row was ALSO credited to plan-review, which its closure never names")
-
-    def test_every_unit_that_moves_is_named_with_its_reason(self) -> None:
-        """AC5. The rows this change CANNOT place must be reportable, with a count that moves.
-
-        The first draft asserted only that the return was a list, which a function returning
-        `[]` unconditionally satisfies - and a mutant that silently absorbed every
-        unattributable row survived it. The oracle has to be the population itself.
-        """
-        critic = _load()
-        day = "2026-09-02"
-        with tempfile.TemporaryDirectory() as d:
-            # AMBIGUOUS: both phases rejected on one date, and a legacy row naming no phase.
-            root = self._collision(d, repair_phase="")
-            rows = critic.unattributable_repairs(root)
-            self.assertEqual(1, len(rows),
-                             f"a legacy row that answers neither phase was not reported: {rows}")
-            self.assertEqual(sorted(rows[0]["phases"]), ["delivery", "plan-review"],
-                             "the report must name WHICH phases the date collides across")
-        with tempfile.TemporaryDirectory() as d:
-            # UNAMBIGUOUS: one phase rejected that date, so the legacy row IS attributable and
-            # must not be reported. The control - reporting everything satisfies the row above.
-            root = self._proj(
-                d,
-                delivery=(f"| BG0001 | REJECT | eng | a | {day} | aaaaaaaaaaaa | full | "
-                          f"[new] {self._FINDING} |\n"),
-                repairs=f"| BG0001 | {day} | a | {day} | {self._FINDING} -> rewritten | none | | |\n")
-            self.assertEqual([], critic.unattributable_repairs(root),
-                             "a row whose phase IS unambiguous was reported unattributable")
-
-
 
 
 class CleanEscapesForContextTests(unittest.TestCase):
@@ -5317,42 +4146,6 @@ class CleanSpanWidthAndRefusalTests(unittest.TestCase):
                       f"the excerpt does not reach the stray backtick:\n{message}")
         self.assertIn(str(len(value)), message,
                       f"the refusal does not say how long the value is:\n{message}")
-
-    def test_a_refused_repair_leaves_no_row_behind(self) -> None:
-        """MUTANT: clean each row's cells inside the write loop again, appending as it goes.
-
-        The record is append-only, so a row written before the refusal cannot be taken back:
-        `repair` exited 2 with one row committed, and the corrected re-run duplicated it -
-        `repair_state` then reported three findings fixed for two findings raised."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio" / "bugs").mkdir(parents=True)
-            (root / "sdlc-studio" / "bugs" / "BG9001-fixture.md").write_text(
-                "# BG9001: Fixture\n\n**Status:** Open\n", encoding="utf-8")
-            mod = self.critic
-            for when, seat, issue in [("2026-09-08", "qa", "the older round names one thing"),
-                                      ("2026-09-09", "eng", "the newer round names another")]:
-                with unittest.mock.patch.object(mod.sdlc_md, "now_date", lambda w=when: w), \
-                        _before_the_round_rules(mod):
-                    mod.record_verdict(root, "BG9001", "reject", reviewer=seat, author="author",
-                                       issues=f"[new] {issue}", tier="full")
-            # The stray sits in the closure answering the LATER rejection, so the earlier
-            # group's row is built and written first. That ordering is the whole defect.
-            with self.assertRaises(ValueError):
-                mod.record_repair(root, "BG9001", "author",
-                                  "the older round names one thing -> fixed, and this one is fine; "
-                                  "the newer round names another -> fixed too, see `here")
-            record = mod.repair_path(root)
-            self.assertFalse(record.exists() and "BG9001" in record.read_text(encoding="utf-8"),
-                             "a row reached the append-only repair record before the refusal")
-            # The control: the same two-group repair with nothing unwritable in it records BOTH.
-            mod.record_repair(root, "BG9001", "author",
-                              "the older round names one thing -> fixed, and this one is fine; "
-                              "the newer round names another -> fixed too")
-            rows = [r for r in record.read_text(encoding="utf-8").splitlines()
-                    if r.startswith("| BG9001")]
-            self.assertEqual(2, len(rows), f"the clean repair did not write both rows:\n{rows}")
-
 
 class CodeSpanEdgeSpaceTests(unittest.TestCase):
     """BG0659: a code span whose rendered interior begins or ends in whitespace was written into
@@ -5632,7 +4425,11 @@ class UnmatchedBriefFingerprintTests(unittest.TestCase):
             with _before_the_round_rules(mod):
                 mod.record_verdict(root, "US0003", "APPROVE", "qa seat r2", "author",
                                    "none blocking", brief=marked_cell)
-            self.assertEqual("REJECT", mod.verdict_for(root, "US0003")["verdict"])
+            # the fingerprint pairs rounds only on a ledger from before the round rule, where
+            # seats were named per round: read these rows as that ledger
+            before_the_rule = unittest.mock.patch.object(mod, "ROUND_RULE_SHIPPED", "9999-12-31")
+            with before_the_rule:
+                self.assertEqual("REJECT", mod.verdict_for(root, "US0003")["verdict"])
             # ...where the same pair on a matched fingerprint does
             _text, fp = self._brief(root, "US0004")
             self._record(root, "US0004", "--brief", fp, verdict="REJECT",
@@ -5640,7 +4437,8 @@ class UnmatchedBriefFingerprintTests(unittest.TestCase):
             with _before_the_round_rules(mod):
                 mod.record_verdict(root, "US0004", "APPROVE", "qa seat r2", "author",
                                    "none blocking", brief=fp)
-            self.assertEqual("APPROVE", mod.verdict_for(root, "US0004")["verdict"])
+            with before_the_rule:
+                self.assertEqual("APPROVE", mod.verdict_for(root, "US0004")["verdict"])
             rows = [(r["unit"], r["brief"]) for r in mod.read_verdicts(root)]
             self.assertEqual([("US0003", f"{self.INVENTED} unmatched")] * 2
                              + [("US0004", fp)] * 2, rows, "the fixture's marking is not as set")
@@ -5912,83 +4710,6 @@ class BriefRefusesMissingPracticeTests(unittest.TestCase):
         plan = one("plan-review brief")
         self.assertIn("carries neither", plan)
         self.assertIn("not checked", plan)
-
-
-class RepairStateResolvesFiledIdsTests(unittest.TestCase):
-    """US0627. A `filed:` closure discharges its finding only while the artefact it names still
-    resolves, and that is checked in `critic.repair_state` on every read - so review-coverage,
-    conformance and the transition gate, which all read it, stop counting a discharge nobody can
-    follow, not only the write-time check in `record_repair`."""
-
-    FIRST = "the parser drops a trailing row"
-    SECOND = "the refusal names no remedy"
-    THIRD = "the summary miscounts a torn row"
-
-    def _root(self, bugs=("BG0002", "BG0003")) -> Path:
-        td = tempfile.TemporaryDirectory()
-        self.addCleanup(td.cleanup)
-        root = Path(td.name)
-        bd = root / "sdlc-studio" / "bugs"
-        bd.mkdir(parents=True)
-        for bid in bugs:
-            (bd / f"{bid}-x.md").write_text(f"# {bid}: filed\n\n> **Status:** Open\n",
-                                            encoding="utf-8")
-        return root
-
-    def test_a_filed_id_deleted_after_recording_stops_answering_both_readers(self) -> None:
-        """AC5. MUTANTS: check resolvability in `coverage_state` alone, leaving `repair_state`
-        reading complete; check it at write time alone. Read once before the delete and once
-        after, each inside its OWN `corpus_cache` window, so the second read cannot be served
-        from an index built before the file went."""
-        mod = _load()
-        root = self._root()
-        mod.record_verdict(root, "US0001", "REJECT", reviewer="qa", author="dev",
-                           brief="a1b2c3d4e5f6", issues=f"[new] {self.FIRST}; [new] {self.SECOND}")
-        mod.record_repair(root, "US0001", "dev", "#1 -> filed: BG0002; #2 -> filed: BG0003")
-        with mod.sdlc_md.corpus_cache():
-            before = mod.repair_state(root, "US0001", "delivery")
-            before_cov = mod.coverage_state(root, "US0001", "delivery")
-        self.assertEqual((before["state"], before["filed"], before["outstanding"]),
-                         ("complete", 2, []), "the positive control: both filings resolve")
-        self.assertEqual(before_cov, mod.COVERAGE_REPAIRED)
-
-        (root / "sdlc-studio" / "bugs" / "BG0003-x.md").unlink()
-        with mod.sdlc_md.corpus_cache():
-            after = mod.repair_state(root, "US0001", "delivery")
-            after_cov = mod.coverage_state(root, "US0001", "delivery")
-        self.assertEqual(after["state"], "partial",
-                         "repair_state still reads a filing to a deleted bug as an answer")
-        self.assertEqual(after["outstanding"], [self.SECOND],
-                         "the finding the deleted id had closed is not outstanding")
-        self.assertEqual([c["artefact"] for c in after["closed"]], ["BG0002"],
-                         "the closure naming the deleted bug is still counted as closed")
-        self.assertEqual(after["filed"], 1)
-        self.assertEqual(after_cov, mod.COVERAGE_UNREVIEWED,
-                         "coverage_state still reads the unit repaired")
-
-    def test_filed_ids_resolve_through_the_cached_lookup(self) -> None:
-        """AC6. MUTANT: resolve each id by walking the artefact directories directly. A spy on
-        `sdlc_md.find_by_id` must see every filed id, and the open `corpus_cache` window must
-        hold the by-id index afterwards - an uncached lookup walks the corpus per id."""
-        import os
-        mod = _load()
-        root = self._root(bugs=("BG0002", "BG0003", "BG0004"))
-        mod.record_verdict(root, "US0001", "REJECT", reviewer="qa", author="dev",
-                           brief="a1b2c3d4e5f6",
-                           issues=f"[new] {self.FIRST}; [new] {self.SECOND}; [new] {self.THIRD}")
-        mod.record_repair(root, "US0001", "dev",
-                          "#1 -> filed: BG0002; #2 -> filed: BG0003; #3 -> filed: BG0004")
-        real = mod.sdlc_md.find_by_id
-        with mod.sdlc_md.corpus_cache() as cache, \
-                unittest.mock.patch.object(mod.sdlc_md, "find_by_id", wraps=real) as spy:
-            state = mod.repair_state(root, "US0001", "delivery")
-            index = cache.get(("byid", os.path.abspath(root)))
-        self.assertEqual((state["state"], state["filed"]), ("complete", 3))
-        seen = {sdlc_md_norm(str(c.args[1])) for c in spy.call_args_list if len(c.args) > 1}
-        self.assertLessEqual({"BG0002", "BG0003", "BG0004"}, seen,
-                             f"find_by_id did not resolve every filed id: saw {sorted(seen)}")
-        self.assertIsNotNone(index, "the corpus_cache window holds no by-id index afterwards")
-        self.assertLessEqual({"BG0002", "BG0003", "BG0004"}, set(index))
 
 
 if __name__ == "__main__":

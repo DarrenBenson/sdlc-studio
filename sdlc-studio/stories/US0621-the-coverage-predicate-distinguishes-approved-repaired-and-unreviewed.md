@@ -43,8 +43,8 @@ gate on an unrepaired rejection. A REJECT with no repair record must stay uncove
 - **Then** it reports three distinct states, and the repaired unit is reported as neither
   approved nor unreviewed - a result that collapses the middle into either outer state is the
   defect this is filed from
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ThreeStateCoverageTests::test_approved_repaired_and_unreviewed_are_three_distinct_states
-- **Verified:** yes (2026-08-03)
+- **Verify:** manual - retired by US0914: the repaired coverage state went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC2: an unrepaired REJECT stays uncovered
 
@@ -63,8 +63,8 @@ gate on an unrepaired rejection. A REJECT with no repair record must stay uncove
 - **Then** it names the repaired state instead of `missing critiqued (independent APPROVE
   verdict)` - the words it used for all eighteen units of RUN-01KYZKY5 and for units nobody
   opened alike, which is what sent that close to a waiver sweep
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::ThreeStateCoverageTests::test_conformance_names_the_repaired_state_not_missing_critiqued
-- **Verified:** yes (2026-08-03)
+- **Verify:** manual - retired by US0914: the repaired coverage state went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC4: the gate's verdict on a repaired unit is stated, not inferred
 
@@ -73,8 +73,8 @@ gate on an unrepaired rejection. A REJECT with no repair record must stay uncove
 - **Then** whether that satisfies the gate is a single declared rule with a test either way, so
   a future reader learns the answer from the code rather than from whichever branch happened to
   run - `sprint_covers_independently` today answers this by accident of the APPROVE check
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ThreeStateCoverageTests::test_the_gates_treatment_of_a_repaired_unit_is_declared_and_tested_both_ways
-- **Verified:** yes (2026-08-03)
+- **Verify:** manual - retired by US0914: the repaired coverage state went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ## Revision History
 
@@ -82,3 +82,4 @@ gate on an unrepaired rejection. A REJECT with no repair record must stay uncove
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-03 | Claude Opus 5 | Groomed against CR0506 criterion 2; both failure directions made separate criteria, and `Affects` widened to the critic test module the predicate's own tests land in |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC3, AC4 retired by US0914 (D0259 pattern): `critic.py repair` and its ledger were deleted, so a REJECT is answered only by a round-2 APPROVE or carried at the cap |

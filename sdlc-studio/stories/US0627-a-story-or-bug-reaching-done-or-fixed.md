@@ -45,8 +45,8 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **When** `transition.py set --status Done` runs WITHOUT `--force`
 - **Then** it exits 0 at Done and prints no `unanswered delivery REJECT` - the finding survives as its own tracked artefact (CR0506's disposition, not a new store)
 - **Mutant:** refuse every filed id
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RejectNeedsAnAnswerTests::test_a_filed_artefact_id_discharges_the_reject
-- **Verified:** yes (2026-09-16)
+- **Verify:** manual - retired by US0914: a repair answering the Done guard went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC4: a filed id that stops resolving after it was recorded no longer answers the transition
 
@@ -54,8 +54,8 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **When** `transition.py set --status Done` runs WITHOUT `--force`
 - **Then** it is refused with `unanswered delivery REJECT`, naming as outstanding the finding the deleted id had closed - a discharge nobody can follow is not one
 - **Mutant:** accept any filed id that was accepted at write time
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RejectNeedsAnAnswerTests::test_an_id_naming_no_artefact_is_refused
-- **Verified:** yes (2026-09-16)
+- **Verify:** manual - retired by US0914: a repair answering the Done guard went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC5: and no longer answers review-coverage either - the check lives in `critic.repair_state`
 
@@ -63,8 +63,8 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **When** `critic.repair_state` and `critic.coverage_state` read the unit's delivery phase
 - **Then** before the delete they read `complete` and `repaired` (the positive control); after it `partial`, with the deleted id's finding in `outstanding`, and `unreviewed` - so review-coverage and conformance, which read the same pair, stop counting it too, not only the write-time check in `record_repair`
 - **Mutant:** check resolvability in coverage_state alone, or at write time alone
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairStateResolvesFiledIdsTests::test_a_filed_id_deleted_after_recording_stops_answering_both_readers
-- **Verified:** yes (2026-09-16)
+- **Verify:** manual - retired by US0914: resolving a filed closure's id went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC6: a filed id resolves through `sdlc_md.find_by_id`, which `corpus_cache` memoises
 
@@ -72,8 +72,8 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **When** `critic.repair_state` reads it inside `sdlc_md.corpus_cache()`
 - **Then** a spy on `sdlc_md.find_by_id` sees all three ids and the cache holds its by-id index afterwards - an uncached lookup costs ~33 ms an id, and the corpus's 670 ids cost 22 s on every sweep
 - **Mutant:** resolve each id by walking the artefact directories directly
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairStateResolvesFiledIdsTests::test_filed_ids_resolve_through_the_cached_lookup
-- **Verified:** yes (2026-09-16)
+- **Verify:** manual - retired by US0914: resolving a filed closure's id went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC7: a complete repair answers it with no re-review
 
@@ -81,8 +81,8 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **When** `transition.py set --status Done` runs WITHOUT `--force`
 - **Then** it exits 0 at Done, read through `critic.coverage_state` (on this corpus it agrees with review-coverage and conformance on all 163 REJECT-carrying units - one reader, L-0408) - otherwise the unit passes the close and then stops at its own Done inside apply-signoff, after the run has closed
 - **Mutant:** require a re-review APPROVE as well, or accept only filed closures
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RejectNeedsAnAnswerTests::test_a_complete_repair_answers_the_reject_as_review_coverage_does
-- **Verified:** yes (2026-09-16)
+- **Verify:** manual - retired by US0914: a repair answering the Done guard went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC8: a partly filed REJECT is refused
 
@@ -90,8 +90,8 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 - **When** `transition.py set --status Done` runs WITHOUT `--force`
 - **Then** it is refused with `unanswered delivery REJECT`, naming the one outstanding finding
 - **Mutant:** count any filed closure as an answer
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RejectNeedsAnAnswerTests::test_a_partly_filed_reject_is_refused
-- **Verified:** yes (2026-09-16)
+- **Verify:** manual - retired by US0914: a repair answering the Done guard went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC9: a REJECT retired by a later same-brief APPROVE is answered, and only by the same brief
 
@@ -180,3 +180,4 @@ Every fixture below records its REJECT through `critic.record_verdict` in the DE
 | 2026-09-15 | sprint plan repair 2026-09-15 | Re-sized 5 -> 8 points (the split ceiling) after the plan repair grew it from 7 criteria to 13 and 22 mutant rows. |
 | 2026-09-15 | sprint plan repair 2026-09-15 | Plan round 2 repair: AC9 adds a third fixture - a same-brief APPROVE the REJECT's author recorded, read unreviewed by coverage_state and refused - with the mutant that keys the guard on critic.verdict_for instead. |
 | 2026-09-15 | delivery repair 2026-09-15 | Delivery review r1 (QA and engineering REJECT) repairs. critic.standing_rejects no longer hand-copies verdict_for's supersession rule: both read one filter, critic._live_verdict_rows, pinned through transition.py set by an author-superseded REJECT (refused) beside a principal-superseded one (lands). The refusal names every unanswered REJECT and no answered one, and a REJECT itemising no findings no longer claims every finding carries a closure. Affects widens to sprint.py and tests/test_sprint.py: the close pre-flight and the apply-signoff fan-out moved every batch story and bug to Done, abandoned units included, so an abandoned unit with an unanswered delivery REJECT stopped the close at the new guard. They now skip a unit already at an abandonment terminal (read through sdlc_md.is_terminal_status and is_delivered_terminal) and apply-signoff names each one it skips. |
+| 2026-09-25 | Claude Opus 5.5 | AC3, AC4, AC5, AC6, AC7, AC8 retired by US0914 (D0259 pattern): `critic.py repair` and its ledger were deleted, so a REJECT is answered only by a round-2 APPROVE or carried at the cap |

@@ -50,7 +50,7 @@ Read this at plan time. `sprint plan` prints it.
 | Record the adversarial pass | `critic.py evidence --unit <id> --findings ...` | leaving the pass in a transcript |
 | Record the verdict | `critic.py record --unit <id> --verdict ... --brief <fingerprint>` | a verdict with no provenance |
 | Record a batch pass | `sprint.py review-batch --units ... --fields-file <doc>` | findings mangled by the shell |
-| Answer a REJECT once its findings are repaired | `critic.py repair --unit <id> --author <who> --closed-file <doc>` | a repaired batch that still reads as unreviewed |
+| Answer a REJECT once its findings are fixed | `critic.py brief --unit <id> --seat <seat> --rejoinder <verdict>`, then the rejecting reviewer's round 2 through `critic.py record`: an APPROVE answers it, a REJECT at the cap carries the unit to a bug | a hand drop, a ruling or a different reviewer's APPROVE, none of which answers it |
 | Find library-only verifiers | `verify_ac.py lane-check` | discovering it in review |
 
 ## 5. Close

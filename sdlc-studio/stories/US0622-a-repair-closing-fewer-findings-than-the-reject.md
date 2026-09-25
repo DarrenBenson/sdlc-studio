@@ -38,8 +38,8 @@ somebody writes "all findings repaired" in its own text.
 - **When** the repair is read
 - **Then** it is reported PARTIAL and names the two outstanding findings individually, so the
   reader learns which are still open rather than that some are
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PartialRepairTests::test_a_repair_covering_some_findings_is_partial_and_names_the_residue
-- **Verified:** yes (2026-08-03)
+- **Verify:** manual - retired by US0914: the complete and partial repair states went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC2: completeness is derived per finding, never taken from prose
 
@@ -47,8 +47,8 @@ somebody writes "all findings repaired" in its own text.
 - **When** the completeness is computed
 - **Then** it is still PARTIAL, because the verdict is derived by matching each recorded closure
   against each raised finding - a claim in the repair's prose carries no weight
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PartialRepairTests::test_completeness_is_derived_per_finding_not_read_from_prose
-- **Verified:** yes (2026-08-03)
+- **Verify:** manual - retired by US0914: the complete and partial repair states went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC3: a repair closing every finding is COMPLETE, and that is what US0621 reads
 
@@ -57,8 +57,8 @@ somebody writes "all findings repaired" in its own text.
 - **Then** it is COMPLETE, and that is the state the three-way coverage predicate accepts as
   repaired - so the positive control sits beside the refusal and PARTIAL cannot be the only
   reachable answer
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PartialRepairTests::test_a_repair_closing_every_finding_is_complete_and_counts_as_repaired
-- **Verified:** yes (2026-08-03)
+- **Verify:** manual - retired by US0914: the complete and partial repair states went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ## Revision History
 
@@ -66,3 +66,4 @@ somebody writes "all findings repaired" in its own text.
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-03 | Claude Opus 5 | Groomed against CR0506 criterion 3, with the positive control made its own criterion so PARTIAL is not the only reachable verdict |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3 retired by US0914 (D0259 pattern): `critic.py repair` and its ledger were deleted, so a REJECT is answered only by a round-2 APPROVE or carried at the cap |

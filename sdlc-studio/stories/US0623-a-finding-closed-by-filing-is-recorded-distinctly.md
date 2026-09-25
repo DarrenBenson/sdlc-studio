@@ -39,8 +39,8 @@ naming a test that does not exist - a reference nobody follows until the day it 
 - **Then** the closure carries the disposition FILED and the artefact id, distinct from a closure
   carrying evidence of a fix, and both appear in the record rather than one being inferred from
   the other's absence
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::FiledDispositionTests::test_a_filed_closure_records_the_disposition_and_the_id
-- **Verified:** yes (2026-08-03)
+- **Verify:** manual - retired by US0914: the `filed:` disposition went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC2: a filed closure naming an unresolvable id is refused
 
@@ -48,8 +48,8 @@ naming a test that does not exist - a reference nobody follows until the day it 
 - **When** it is recorded
 - **Then** it is refused, naming the id - a reference nobody can follow records the appearance of
   a disposition rather than one
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::FiledDispositionTests::test_a_filed_closure_with_an_unresolvable_id_is_refused
-- **Verified:** yes (2026-08-03)
+- **Verify:** manual - retired by US0914: the `filed:` disposition went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC3: the two dispositions are counted separately where the residue is read
 
@@ -58,8 +58,8 @@ naming a test that does not exist - a reference nobody follows until the day it 
 - **Then** the counts are stated separately, so a reader sees how much of a rejection was
   repaired and how much was deferred - a single "closed" total is the shape that makes deferral
   invisible
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::FiledDispositionTests::test_fixed_and_filed_are_counted_separately
-- **Verified:** yes (2026-08-03)
+- **Verify:** manual - retired by US0914: the `filed:` disposition went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ## Revision History
 
@@ -67,3 +67,4 @@ naming a test that does not exist - a reference nobody follows until the day it 
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-03 | Claude Opus 5 | Groomed against CR0506 criterion 4, with the unresolvable-id refusal made a criterion after the same failure shape in Verify lines |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3 retired by US0914 (D0259 pattern): `critic.py repair` and its ledger were deleted, so a REJECT is answered only by a round-2 APPROVE or carried at the cap |

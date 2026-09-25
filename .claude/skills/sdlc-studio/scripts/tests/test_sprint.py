@@ -4957,6 +4957,26 @@ def _ua_reject(root: Path, uid: str) -> None:
                           "[new] alpha broke; [new] beta broke", "delivery", "abcdef123456")
 
 
+def _ua_round_two_approve(root: Path, uid: str) -> None:
+    """The rejecting reviewer's round-2 APPROVE, which answers `_ua_reject`'s REJECT."""
+    import critic
+    critic.record_verdict(root, uid, "APPROVE", "qa-seat", _UA_AUTHOR, "none", "delivery",
+                          "abcdef123456")
+
+
+def _ua_frozen_repair(root: Path, uid: str, closed: str) -> None:
+    """A repair row as `critic.py repair` wrote it before US0914, against `uid`'s latest REJECT:
+    the ledger is frozen and unread, so the row answers nothing."""
+    import critic
+    when = [r for r in critic.read_verdicts(root) if r["unit"] == uid][-1]["date"]
+    path = root / "sdlc-studio" / "reviews" / "repair-record.md"
+    head = "" if path.exists() else (
+        "| Unit | Verdict date | Author | Date | Closed | Outstanding | Phase | Rejection |\n"
+        "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(f"{head}| {uid} | {when} | {_UA_AUTHOR} | {when} | {closed} | - | delivery | - |\n")
+
+
 def _ua_bug_on_disk(root: Path, bid: str, raised: str = "") -> None:
     """An artefact a `filed:` closure can resolve to; `raised` stamps `Raised-in-batch`."""
     d = root / "sdlc-studio" / "bugs"
@@ -5074,12 +5094,11 @@ def _ua_ac5_run(root: Path, mod, only: tuple | None = None) -> dict:
                     "BG0102", "US0113", "US0114", "US0117"):
         _ua_reject(root, uid)
     if ours("US0104"):
-        critic.record_repair(root, "US0104", _UA_AUTHOR,
-                             "alpha broke -> fixed: the mutant is killed; "
-                             "beta broke -> fixed: the test now reddens")
+        _ua_round_two_approve(root, "US0104")
     if ours("US0110"):
+        # a pre-US0914 repair row filing one finding: it answers nothing now
         _ua_bug_on_disk(root, "BG0903")
-        critic.record_repair(root, "US0110", _UA_AUTHOR, "alpha broke -> filed: BG0903")
+        _ua_frozen_repair(root, "US0110", "alpha broke -> filed: BG0903")
     if ours("US0116"):
         critic.record_sprint_review(root, ["US0116"], reviewer="an independent seat",
                                     author=_UA_AUTHOR, verdict="APPROVE",
@@ -5146,10 +5165,10 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
                          "the hold is part of the stop-ship step, not a new chain step")
 
     def test_done_fixed_and_rung_end_units_do_not_hold_the_close(self) -> None:
-        """MUTANT: hold every unit not approved/repaired, skipping the REJECT check; hard-code
-        Ready as answering whatever the rung; read delivered-terminal as Done. Replaces the
-        Review half of US0626 AC2: with the per-unit sign-off retired (US0916) a Review unit is
-        remaining work, and a reviewed unit stands at Done."""
+        """MUTANT: hold every unit not approved, skipping the REJECT check; hard-code Ready as
+        answering whatever the rung; read delivered-terminal as Done. Replaces the Review half of
+        US0626 AC2: with the per-unit sign-off retired (US0916) a Review unit is remaining work,
+        and a reviewed unit stands at Done. US0102's REJECT is answered by its round-2 APPROVE."""
         mod = _load()
 
         def harness(root: Path, extra: tuple = ()) -> None:
@@ -5160,10 +5179,7 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
             _ua_retro(root, batch=units)
             _ua_waive_all(root)
             _ua_reject(root, "US0102")
-            import critic
-            critic.record_repair(root, "US0102", _UA_AUTHOR,
-                                 "alpha broke -> fixed: the mutant is killed; "
-                                 "beta broke -> fixed: the test now reddens")
+            _ua_round_two_approve(root, "US0102")
 
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -5223,9 +5239,10 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
                                      re.compile(r"US0101 \([^)]*\) - [^;]*stop-ship"))
 
     def test_the_refusal_names_where_the_findings_went(self) -> None:
-        """MUTANT: print the unit id alone; print only the first `filed` closure; collect
-        `filed` only for a unit whose REJECT is unanswered, so a unit held by its status alone
-        prints none."""
+        """MUTANT: print the unit id alone; take `filed` from anything but the carry's drop
+        reason, so the carried unit prints none. US0101 was carried at the review cap, its
+        findings filed as BG0901, and is held by a stop-ship ruling; US0102 carries an
+        unanswered REJECT and nothing filed."""
         mod = _load()
         import critic
         import re
@@ -5233,23 +5250,24 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
             root = Path(d)
             _ua_unit(root, "US0101", "In Progress")
             _ua_unit(root, "US0102", "In Progress")
-            state = _close_state(root, batch=["US0101", "US0102"], run_id=_UA_RUN)
-            _ua_retro(root, batch=("US0101", "US0102"))
-            _ua_bug_on_disk(root, "BG0901")
-            _ua_bug_on_disk(root, "BG0902")
+            # US0101's two rounds are both REJECTs, so it stands at the cap: a carry is read
+            # only there (`critic.carried_to`). Recorded before the run opens, so the record
+            # does not file a bug of its own.
             _ua_reject(root, "US0101")
-            critic.record_repair(root, "US0101", _UA_AUTHOR,
-                                 "alpha broke -> filed: BG0901; beta broke -> filed: BG0902")
-            self.assertEqual("repaired", critic.coverage_state(root, "US0101"),
-                             "US0101 must be held by its status alone")
+            _ua_reject(root, "US0101")
+            _close_state(root, batch=["US0101", "US0102"], run_id=_UA_RUN)
+            _ua_retro(root, rulings=(("US0101", "stop-ship"),), batch=("US0101", "US0102"))
+            _ua_bug_on_disk(root, "BG0901")
+            mod.run_state.drop_from_batch(root, "US0101", f"{critic.CARRIED_REASON}: BG0901")
             _ua_reject(root, "US0102")
+            state = mod.run_state.read(root)
             ok, detail, _remedy = mod._close_checklist(root, "RETRO0001", state)
         self.assertFalse(ok)
-        line = next(ln for ln in _ua_known_issues_lines(detail) if "US0101" in ln)
+        line = next(ln for ln in _ua_known_issues_lines(detail) if "cannot end over" in ln)
         first = re.search(r"US0101 \([^)]*\)[^;]*", line).group(0)
         second = re.search(r"US0102 \([^)]*\)[^;]*", line).group(0)
-        self.assertIn("BG0901", first, line)
-        self.assertIn("BG0902", first, line)
+        self.assertIn("stop-ship", first, line)
+        self.assertIn("filed to BG0901", first, line)
         self.assertIn("NONE filed", second, line)
 
     def test_close_and_stop_name_the_same_unanswered_set(self) -> None:
@@ -5844,7 +5862,7 @@ class EveryRunEndReadsThePredicateTests(unittest.TestCase):
         for uid, entry in held.items():
             self.assertEqual({"unit", "status", "why", "filed"}, set(entry), uid)
         self.assertIn("adversarial pass owed", held["US0115"]["why"])
-        self.assertEqual(["BG0903"], held["US0110"]["filed"])
+        self.assertEqual([], held["US0110"]["filed"], "a repair row still names a filing")
         self.assertNotIn("unanswered", record["stop"],
                          "a top-level field of THE RECORD, not a field inside `stop`")
 
@@ -13607,15 +13625,10 @@ class CloseIdempotenceTests(unittest.TestCase):
 
 
 class PreflightCoverageCountsTests(unittest.TestCase):
-    """US0624 / CR0506: the coverage line states three counts, and names the real gap.
-
-    The line this replaces said "28 of 44 unit(s) are covered by no independent review". It was
-    wrong by 18 out of 19, AND THE REASON IT WAS WRONG IS THAT ONE NUMBER CANNOT CARRY THREE
-    STATES. So the fix is not a better number - it is three.
-
-    US0620 records the repair and US0621 computes the states; without this they change a
-    predicate nobody reads. Driven through the shipped report builder, because the defect was
-    never in the arithmetic - it was in what the operator was shown (LL0040).
+    """US0624 / CR0506, narrowed by US0914: the coverage line states approved, rejected and
+    unreviewed separately, and names the real gap. A REJECT is answered only by a round-2
+    APPROVE, so there is no repaired state. Driven through the shipped report builder, because
+    the defect was in what the operator was shown (LL0040).
     """
 
     def _ctx(self, root: Path, units: list) -> dict:
@@ -13628,46 +13641,9 @@ class PreflightCoverageCountsTests(unittest.TestCase):
         import sprint_report  # noqa: PLC0415
         return sprint_report._ck_review_attribution(self._ctx(root, units))
 
-    def test_the_shipped_preflight_stops_calling_a_repaired_unit_uncovered(self) -> None:
-        """MUTANT: fix only the checklist row and leave `review_coverage` untouched.
-
-        REVIEW FINDING, and the sharpest on this unit: the first repair changed
-        `sprint_report._ck_review_attribution` - a checklist row - while the operator-facing
-        preflight builds its coverage line through `coverage_blockers` -> `uncovered_units` ->
-        `review_coverage`, which the diff never touched. On the live repository it still printed
-        "12 of 13 unit(s) are covered by no independent review". The epic's headline defect
-        survived in the command an operator actually runs.
-
-        Drives the SHIPPED path, not the private checklist resolver the first verifier called -
-        which was the LL0040 shape this criterion's own text forbids.
-        """
-        sprint, critic = _load(), _load_critic()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            critic.record_verdict(root, "US0002", "REJECT", "qa-seat", "b",
-                                  "[new] alpha broke", "delivery", "abcdef123456")
-            self.assertEqual(sprint.uncovered_units(root, ["US0002"]), ["US0002"],
-                             "an unrepaired REJECT should still read uncovered")
-            critic.record_repair(root, "US0002", "b", "#1 -> mutant re-applied and killed")
-            self.assertEqual(sprint.uncovered_units(root, ["US0002"]), [],
-                             "the shipped preflight still calls a repaired unit uncovered")
-
-    def test_a_partly_repaired_unit_is_still_uncovered_in_the_preflight(self) -> None:
-        """The other direction. MUTANT: treat any repair as coverage in `review_coverage`.
-
-        The preflight must not become the loose end the predicate is strict about.
-        """
-        sprint, critic = _load(), _load_critic()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            critic.record_verdict(root, "US0003", "REJECT", "qa-seat", "b",
-                                  "[new] alpha broke; [new] beta broke", "delivery",
-                                  "abcdef123456")
-            critic.record_repair(root, "US0003", "b", "#1 -> killed")
-            self.assertEqual(sprint.uncovered_units(root, ["US0003"]), ["US0003"])
-
     def test_the_preflight_prints_three_named_counts(self) -> None:
-        """MUTANT: report `covered / rejected / uncovered` as before."""
+        """MUTANT: report `covered / uncovered` as one number; count a pre-US0914 repair row
+        as an answer."""
         critic = _load_critic()
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -13675,13 +13651,12 @@ class PreflightCoverageCountsTests(unittest.TestCase):
                                   "delivery", "abcdef123456")
             critic.record_verdict(root, "US0002", "REJECT", "qa-seat", "b",
                                   "[new] alpha broke", "delivery", "abcdef123456")
-            critic.record_repair(root, "US0002", "b", "alpha broke -> killed")
+            _ua_frozen_repair(root, "US0002", "alpha broke -> fixed: killed")
             _status, value, _detail = self._row(root, ["US0001", "US0002", "US0003"])
-        for word in ("approved", "repaired", "unreviewed"):
-            self.assertIn(word, value.lower(), f"the coverage line does not name {word}: {value}")
         self.assertIn("1 approved", value)
-        self.assertIn("1 repaired", value)
+        self.assertIn("1 rejected", value)
         self.assertIn("1 unreviewed", value)
+        self.assertNotIn("repaired", value)
 
     def test_the_three_counts_partition_the_batch(self) -> None:
         """MUTANT: let a unit fall into no count at all.
@@ -13702,8 +13677,8 @@ class PreflightCoverageCountsTests(unittest.TestCase):
         """MUTANT: report the unreviewed count without naming the units.
 
         The failure being repaired is a real gap hidden inside a crowd of false ones. A count
-        alone leaves the operator to find it, which is what sent one close to a waiver sweep
-        over eighteen units whose findings were already fixed.
+        alone leaves the operator to find it. Five rejected units whose findings all carry a
+        pre-US0914 repair row (rejected, not unreviewed), and one nobody reviewed.
         """
         critic = _load_critic()
         with tempfile.TemporaryDirectory() as d:
@@ -13714,9 +13689,10 @@ class PreflightCoverageCountsTests(unittest.TestCase):
                 units.append(uid)
                 critic.record_verdict(root, uid, "REJECT", "qa-seat", "b",
                                       "[new] alpha broke", "delivery", "abcdef123456")
-                critic.record_repair(root, uid, "b", "alpha broke -> killed")
+                _ua_frozen_repair(root, uid, "alpha broke -> fixed: killed")
             units.append("US0009")          # the one nobody reviewed
             _status, value, detail = self._row(root, units)
+        self.assertIn("5 rejected", value)
         self.assertIn("1 unreviewed", value)
         self.assertIn("US0009", detail,
                       f"the single genuinely unreviewed unit is not named:\n{detail}")

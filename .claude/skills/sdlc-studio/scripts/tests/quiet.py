@@ -4,11 +4,10 @@
 whose output contains `warning:` trains every reader to skim past the word - and skimming
 past `warning:` is the reflex that lets a real one through.
 
-Two shipped warnings fire from deep inside library calls that most fixtures make in
-passing. `file_finding.file_finding()` warns for every finding whose criteria carry no
-verifier (BG0636), and `critic.repair_state()` warns for each legacy closure chunk with no
-`->` separator (BG0631). Both are correct and both must keep reaching a real operator; they
-are noise only in a fixture that is about indexing, escaping or attribution instead.
+A shipped warning fires from deep inside a library call that most fixtures make in passing:
+`file_finding.file_finding()` warns for every finding whose criteria carry no verifier
+(BG0636). It is correct and must keep reaching a real operator; it is noise only in a fixture
+that is about indexing, escaping or attribution instead.
 
     import quiet
 

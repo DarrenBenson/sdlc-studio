@@ -1,6 +1,6 @@
 # BG0680: repair_state counts a repair row once per rejection sharing its date, so closed and fixed counts are doubled
 
-> **Status:** Open
+> **Status:** Superseded
 > **Closes with:** US0914 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 2
@@ -36,3 +36,4 @@ Attribute each repair row to exactly one rejection (by brief fingerprint, not da
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0914 ships - planning: SUPERSEDED - repair_state counting: repair ledger deleted in batch 2; superseded only once US0914 ships (D0264) |
+| 2026-09-25 | sdlc | Superseded under D0273: US0914 is Done and retired critic.py repair and the repair ledger this bug describes |

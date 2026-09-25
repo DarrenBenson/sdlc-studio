@@ -33,8 +33,8 @@ so US0627's gate passes it; the discharge is read through `critic.repair_state`.
 - **When** `transition.py set --status Done` runs
 - **Then** it exits 0, the story reads `Done`, and the detector's line in the story's own file names both BG0002 and BG0003
 - **Mutant:** the filed ids stay in the repair ledger alone
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::ClosedOverRejectNamesTheBugTests::test_the_story_names_every_filed_artefact
-- **Verified:** yes (2026-09-15)
+- **Verify:** manual - retired by US0914: the `Findings-filed-to` line, read from filed closures, went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC2: the one-call close names them too
 
@@ -42,8 +42,8 @@ so US0627's gate passes it; the discharge is read through `critic.repair_state`.
 - **When** the transition lands
 - **Then** the detector's line still names BG0002 and BG0003 - an APPROVE with no brief fingerprint retires no REJECT (`critic._unanswered_rejects`), so `repair_state` still reads the filed closures while the ledger's LAST row is an APPROVE
 - **Mutant:** key the write on the latest ledger row being a REJECT
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::ClosedOverRejectNamesTheBugTests::test_the_one_call_close_names_the_filed_artefacts
-- **Verified:** yes (2026-09-15)
+- **Verify:** manual - retired by US0914: the `Findings-filed-to` line, read from filed closures, went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC3: a bug names it at every delivered terminal
 
@@ -51,8 +51,8 @@ so US0627's gate passes it; the discharge is read through `critic.repair_state`.
 - **When** one copy is set to `Fixed` and the other directly to `Verified` (a bug reaches Verified without passing Fixed)
 - **Then** both land, and each copy's detector line names the CR
 - **Mutant:** write the line for stories only
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::ClosedOverRejectNamesTheBugTests::test_a_bug_names_the_filed_artefact_at_every_delivered_terminal
-- **Verified:** yes (2026-09-15)
+- **Verify:** manual - retired by US0914: the `Findings-filed-to` line, read from filed closures, went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC4: a terminal walk writes the line once
 
@@ -60,14 +60,14 @@ so US0627's gate passes it; the discharge is read through `critic.repair_state`.
 - **When** it is walked `Fixed` -> `Verified` -> `Closed`, each step through `transition.py set`
 - **Then** every step lands and the file carries exactly ONE `Findings-filed-to` line (counted over the whole file), naming the CR
 - **Mutant:** insert a new line on every terminal step
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::ClosedOverRejectNamesTheBugTests::test_a_terminal_walk_writes_the_line_once
-- **Verified:** yes (2026-09-15)
+- **Verify:** manual - retired by US0914: the `Findings-filed-to` line, read from filed closures, went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+- **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ### AC5: a refused close writes no line
 
 - **Given** the AC1 fixture carrying, in addition, one unresolved Open Question; and beside it the positive control, the same fixture with that question moved under `## Resolved Questions`
 - **When** `transition.py set --status Done` runs on each
-- **Then** the first is refused with a message naming the Open Question and not the REJECT (so US0627's gate passed it), its status is unchanged and the detector returns `None`; the control lands at `Done` with the line naming both bugs
+- **Then** the first is refused with a message naming the Open Question and not the REJECT (answered by its reviewer's round-2 APPROVE), its status is unchanged and the detector returns `None`; the control lands at `Done`, and it too carries no line: the repair ledger the line was read from is unread since US0914
 - **Mutant:** stamp the field before the gated transition
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::ClosedOverRejectNamesTheBugTests::test_a_refused_close_writes_no_line
 - **Verified:** yes (2026-09-15)
@@ -76,7 +76,7 @@ so US0627's gate passes it; the discharge is read through `critic.repair_state`.
 
 - **Given** three copies of one story fixture: (a) a REJECT closed `filed:` to BG0002; (b) no REJECT recorded at all; (c) a REJECT closed only by `fixed:` closures whose evidence names an existing id (`fixed: pinned by the regression test BG0004 asked for`); and (d) a MIXED repair - finding 1 closed `filed:` to BG0002 and finding 2 closed `fixed:` with evidence naming BG0004
 - **When** each is set to `Done` through `transition.py set`
-- **Then** all three land at `Done`; the detector finds the line naming BG0002 on (a), and returns `None` on (b) and (c); on (d) the detector's line names BG0002 and does NOT name BG0004 - the check scoped to that line alone, since the fixture's prose names both ids - a marker on every close is one no reader looks at, and a fix is not a filing
+- **Then** all four land at `Done` (each REJECT answered by its reviewer's round-2 APPROVE) and the detector returns `None` on every one: the repair ledger the line was read from is unread since US0914, so no close writes it
 - **Mutant:** write the field even when nothing was filed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::ClosedOverRejectNamesTheBugTests::test_an_ordinary_close_writes_no_discharge_line
 - **Verified:** yes (2026-09-15)
@@ -106,3 +106,5 @@ so US0627's gate passes it; the discharge is read through `critic.repair_state`.
 | 2026-09-15 | sprint plan repair 2026-09-15 | Plan review r1 repairs (QA REJECT). The discharge is one metadata line, `Findings-filed-to`, read in the closing unit's own file by one shared detector that matches the line whatever its value; fixtures name their filed ids in prose too, so a whole-file id search cannot pass. AC1 files two findings to two bugs (kills a closed[0]-only build and a write into the filed artefact). AC2 pins the one-call close, whose APPROVE lands before the transition, against a latest-row reader. AC3 adds Verified reached directly (kills a _TERMINAL_FOR_PLAN condition); AC4 pins exactly one line over Fixed -> Verified -> Closed; AC5 pins that a close refused by another gate leaves no line, with its landed control. AC6 is the paired control the review asked for: one fixture closed with a filed REJECT, with none, and with a fixed-only repair naming an id, all asserted landed. The old AC3 row (drop the REJECT condition) was equivalent under a write that loops over filed ids; it is replaced by an empty-value upsert and an ids-for-artefact swap, both killable. |
 | 2026-09-15 | sprint plan repair 2026-09-15 | Re-sized 2 -> 3 points after the plan repair grew it from 3 criteria to 6. |
 | 2026-09-15 | sprint plan repair 2026-09-15 | Plan round 2 repair: AC6 adds a mixed repair (one finding filed to BG0002, one fixed with evidence naming BG0004) whose line names BG0002 and not BG0004, so the artefact/ids swap mutant can be killed. |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3, AC4 retired by US0914 (D0259 pattern): `critic.py repair` and its ledger were deleted, so a REJECT is answered only by a round-2 APPROVE or carried at the cap |
+| 2026-09-25 | Claude Opus 5.5 | AC5 and AC6 narrowed by US0914: no close writes the `Findings-filed-to` line, whose repair-ledger source is unread |

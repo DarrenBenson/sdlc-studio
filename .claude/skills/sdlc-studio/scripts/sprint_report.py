@@ -1215,7 +1215,7 @@ def _ck_coverage_consistency(ctx: dict) -> tuple:
     try:
         import critic  # noqa: PLC0415
         states = critic.coverage_counts(ctx["root"], units)
-        other = len(states[critic.COVERAGE_APPROVED]) + len(states[critic.COVERAGE_REPAIRED])
+        other = len(states[critic.COVERAGE_APPROVED])
     except Exception as exc:  # noqa: BLE001
         sdlc_md.debug("sprint_report._ck_coverage_consistency", exc)
         return (UNANSWERED, "unreadable", f"the verdict ledger could not be read ({exc})")
@@ -1795,11 +1795,8 @@ def _ck_review_attribution(ctx: dict) -> tuple:
         seat = critic.seat_for(ctx["root"], who) if who else None
         return f"seat:{seat}" if seat else f"who:{who}"
 
-    # THREE states, not two. `verdict_for` alone cannot tell "rejected and repaired" from
-    # "nobody looked", and one number cannot carry three states: the figure this replaces said
-    # "28 of 44 covered by no independent review" when 18 of those 28 carried a REJECT whose
-    # every finding had been repaired in-run. Wrong by 18 out of 19, and wrong in the direction
-    # that hides the one real gap inside a crowd of false ones.
+    # Approved, rejected and never opened are three different facts, so the unreviewed bucket
+    # is split below by whether a verdict exists.
     states = critic.coverage_counts(ctx["root"], units)
     covered, rejected, uncovered, reviewers = [], [], [], set()
     # UNCOVERED comes from the shared reading, not from a second walk of the verdict ledger.
@@ -1836,7 +1833,6 @@ def _ck_review_attribution(ctx: dict) -> tuple:
                   for r in ctx["sprint_reviews"] + ctx["review_rounds"]}
     lenses = len({_lens(r) for r in reviewers if r})
     under = lenses < MIN_LENSES
-    repaired = states[critic.COVERAGE_REPAIRED]
     # The uncovered bucket holds two DIFFERENT facts and the operator needs both: a rejection
     # nobody has answered, and a unit nobody has opened. Calling the first "unreviewed" would be
     # the same collapse this row exists to undo, one level down - it WAS reviewed, and rejected.
@@ -1849,7 +1845,7 @@ def _ck_review_attribution(ctx: dict) -> tuple:
                   if critic.verdict_for(ctx["root"], u)]
     never = [u for u in states[critic.COVERAGE_UNREVIEWED]
              if not critic.verdict_for(ctx["root"], u) and u not in lane_ids]
-    value = (f"{len(states[critic.COVERAGE_APPROVED])} approved, {len(repaired)} repaired, "
+    value = (f"{len(states[critic.COVERAGE_APPROVED])} approved, "
              f"{len(unanswered)} rejected, {len(never)} unreviewed"
              + (f", {len(by_lane)} by a non-verdict lane" if by_lane else "")
              + f"; {lenses} lens(es)"
@@ -2454,12 +2450,12 @@ def operator_summary(root: Path, retro_id: str, rep: dict | None = None) -> dict
         v = critic.verdict_for(root, uid)
         verdict = str((v or {}).get("verdict") or "").upper()
         if verdict == critic.REJECT:
-            rejected.append({"unit": uid, "state": critic.repair_state(root, uid)["state"]})
-            # A REJECT that was repaired is the single likeliest thing an operator would rule
-            # differently: somebody said this was wrong, and somebody else then said the repair
-            # answered it. Naming it is what makes leading a bounded act.
-            reversal.append({"unit": uid, "why": "rejected, then repaired - the repair was "
-                                                 "judged to answer the finding"})
+            rejected.append({"unit": uid})
+            # A standing REJECT is the likeliest thing an operator would rule differently:
+            # somebody said this was wrong and no round-2 APPROVE says otherwise. Naming it is
+            # what makes leading a bounded act.
+            reversal.append({"unit": uid, "why": "rejected, and no round-2 APPROVE from its "
+                                                 "reviewer answers it"})
         elif verdict == critic.APPROVE:
             shipped.append({"unit": uid})
 
@@ -2515,7 +2511,7 @@ def render_operator_summary(s: dict) -> str:
     lines.append(f"Shipped ({len(s['shipped'])}): " + (", ".join(
         r["unit"] for r in s["shipped"]) or "none"))
     lines.append(f"Rejected ({len(s['rejected'])}): " + (", ".join(
-        f"{r['unit']} [{r['state']}]" for r in s["rejected"]) or "none"))
+        r["unit"] for r in s["rejected"]) or "none"))
     lines.append(f"Carried, still open: " + (", ".join(s["carried"]) or "none"))
     # FILED was computed, returned and never printed, while the verb's own --help and the
     # changelog both promised "what is carried and where it is filed". A finding raised and

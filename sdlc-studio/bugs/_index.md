@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 28 |
+| Open | 25 |
 | In Progress | 0 |
 | Fixed | 622 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
-| Superseded | 25 |
+| Superseded | 28 |
 | **Total** | **781** |
 
 ## All Bugs
@@ -38,7 +38,7 @@
 | [BG0677](BG0677-critic-py-repair-cannot-close-a-finding-whose.md) | critic.py repair cannot close a finding whose text carries the closure separator early, so the rejection raising it can never be retired | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0678](BG0678-a-wired-repair-plan-gate-keeps-no-rounds.md) | A wired repair-plan gate keeps no rounds, no brief and no approval pin, so a rejected plan can never be retired and a re-recorded plan keeps its approval | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0679](BG0679-with-review-repair-plan-gate-on-a-repair.md) | With review.repair_plan_gate on, a repair bug set straight to Closed or Verified skips the gate | Superseded | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0680](BG0680-repair-state-counts-a-repair-row-once-per.md) | repair_state counts a repair row once per rejection sharing its date, so closed and fixed counts are doubled | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0680](BG0680-repair-state-counts-a-repair-row-once-per.md) | repair_state counts a repair row once per rejection sharing its date, so closed and fixed counts are doubled | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0681](BG0681-config-py-show-key-crashes-on-a-key.md) | config.py show --key crashes on a key whose value holds an unquoted YAML date, the path BG0670 left | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0682](BG0682-artifact-py-revision-writes-a-bare-identifier-into.md) | artifact.py revision writes a bare _identifier into the Revision History, which markdownlint refuses as MD037 | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0683](BG0683-repair-gate-s-review-before-repair-ordering-check.md) | repair_gate's review-before-repair ordering check (US0312 AC4) is dead on the wired path | Superseded | Medium | 2026-09-15 | 2026-09-15 |
@@ -48,7 +48,7 @@
 | [BG0687](BG0687-a-criterion-s-second-verify-line-is-recorded.md) | A criterion's second Verify line is recorded but never run, so a both-states requirement cannot be enforced by its selectors | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0688](BG0688-gate-require-close-still-counts-close-owed-s.md) | gate --require-close still counts close-owed's raw owed rows, refusing an override the tag guard and the detector now honour | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0689](BG0689-the-release-tag-guard-never-reads-close-owed.md) | The release tag guard never reads close_owed's velocity half, so a retro owing its velocity row does not refuse the tag | Superseded | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0690](BG0690-critic-py-repair-re-judges-stored-findings-through.md) | critic.py repair re-judges stored findings through the code-span guard, and its typed closure scanner unescapes any backslash before a greater-than sign | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0690](BG0690-critic-py-repair-re-judges-stored-findings-through.md) | critic.py repair re-judges stored findings through the code-span guard, and its typed closure scanner unescapes any backslash before a greater-than sign | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0691](BG0691-changelog-py-shape-judges-unreadable-and-symlinked-fragments.md) | changelog.py shape judges unreadable and symlinked fragments differently in its two modes, and its git-failure refusals are unpinned | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0692](BG0692-gate-py-never-sets-the-boundary-suite-marker.md) | gate.py never sets the boundary-suite marker itself, so SDLC_GATE_BOUNDARY=push reads [PASS] module-alone over a red boundary-only test | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0693](BG0693-testplan-derive-and-the-plan-review-brief-still.md) | testplan derive and the plan-review brief still name different unauthored sets: blank cells, table order and a criterion with no row | Superseded | Medium | 2026-09-15 | 2026-09-15 |
@@ -62,7 +62,7 @@
 | [BG0701](BG0701-run-ending-routes-still-read-different-sets-stop.md) | Run-ending routes still read different sets: stop records from the parked derivation, the boundary stop ignores --retro, and stop cannot see the retro the close names | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0702](BG0702-the-unanswered-set-s-ways-out-are-picked.md) | The unanswered set's ways out are picked by substring and offer dead ends for a stop-ship ruling, and the set is rendered and recorded in drifting copies | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0703](BG0703-the-unanswered-set-predicate-s-fail-closed-handlers.md) | The unanswered-set predicate's fail-closed handlers and the handoff behaviours around it survive mutants no test kills | Won't Fix | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0704](BG0704-the-done-guard-reads-a-filed-closure-naming.md) | The Done guard reads a filed closure naming the unit itself as a repair, and lists repaired findings as outstanding when the only APPROVE is the author's own | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0704](BG0704-the-done-guard-reads-a-filed-closure-naming.md) | The Done guard reads a filed closure naming the unit itself as a repair, and lists repaired findings as outstanding when the only APPROVE is the author's own | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0705](BG0705-the-findings-filed-to-line-survives-a-reopen.md) | The Findings-filed-to line survives a reopen, is not reported in text output, and names only the filed subset of a partial repair | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0706](BG0706-the-coverage-gate-charges-another-unit-s-added.md) | The coverage gate charges another unit's added lines to a unit sharing its file, and a coverage ruling is voided by any edit to that file | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0707](BG0707-the-corpus-baseline-s-ci-run-line-is.md) | the corpus baseline's CI-run line is judged by shape alone, so a hand-typed run id reads as a re-measure | Won't Fix | Medium | 2026-09-16 | 2026-09-16 |

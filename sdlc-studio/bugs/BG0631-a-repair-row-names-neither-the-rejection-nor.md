@@ -35,13 +35,17 @@ Backfill deliberately does NOT guess. A row that cannot be attributed to one rej
   - **Verify:** manual - retired by US0915: plan review is retired, so no plan-review rejection is recorded for a delivery repair to answer
   - **Verified:** manual (2026-09-25) - retired, superseded by US0915
 - [x] **AC2** Given the same fixture with the DELIVERY phase read instead, when the repair state is read, then it IS complete. The paired control: refusing to join a repair to anything satisfies AC1 on its own, and would break every repair record in the corpus
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairPhaseJoinTests::test_the_delivery_phase_still_reads_its_own_repair
+  - **Verify:** manual - retired by US0914: joining a repair row to a phase went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0914
 - [x] **AC3** Given a repair row written after this lands, when it is read back, then it names the PHASE and the rejection it answers, and `repairs_for`is asked for a phase rather than returning every row for the unit.`_REPAIR_COLS`carries neither today, so the join is`verdict_date` equality alone
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairPhaseJoinTests::test_a_written_row_carries_its_phase_and_rejection
+  - **Verify:** manual - retired by US0914: joining a repair row to a phase went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0914
 - [x] **AC4** Given the repair rows that predate the new columns, when they are read, then each is attributed where the date makes it unambiguous and REPORTED as un-attributable where it does not - never guessed. A backfill that assigns a phase it cannot know is the record made prettier rather than truer, which this project has already refused once
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairPhaseJoinTests::test_legacy_rows_are_attributed_or_named_unattributable
+  - **Verify:** manual - retired by US0914: joining a repair row to a phase went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0914
 - [x] **AC5** Given the delivery conformance population before and after the change, when the two are compared, then every unit that moves is NAMED with the reason. The comparison is taken with `conformance.py` AFTER BG0628 lands in this same batch: today that lane reports 304, 671 or 732 for one corpus depending only on which directories were copied, so a before-and-after taken with it would be arithmetic on a number nobody can reproduce
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairPhaseJoinTests::test_every_unit_that_moves_is_named_with_its_reason
+  - **Verify:** manual - retired by US0914: joining a repair row to a phase went with `critic.py repair` and its ledger; a REJECT is answered only by a round-2 APPROVE from the reviewer who rejected, or carried at the review cap
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0914
 
 ## Impact
 
@@ -67,3 +71,4 @@ It decides whether a gate can be opened by a repair that answered something else
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Filed |
 | 2026-09-25 | Claude Opus 5.5 | AC1 retired by US0915 (D0259 pattern): plan review is retired, so no plan-review rejection exists to join |
+| 2026-09-25 | Claude Opus 5.5 | AC2, AC3, AC4, AC5 retired by US0914 (D0259 pattern): `critic.py repair` and its ledger were deleted, so a REJECT is answered only by a round-2 APPROVE or carried at the cap |

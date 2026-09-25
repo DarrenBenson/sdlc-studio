@@ -3374,20 +3374,15 @@ def _findings_filed_line(path) -> str | None:
     return m.group(0) if m else None
 
 
-def _ids_on(line: str) -> set[str]:
-    """The artefact ids a detector line names, read from its value alone."""
-    value = line.split(":**", 1)[1]
-    return {m.group(0).upper() for m in sdlc_md.ID_SEARCH_RE.finditer(value)}
-
-
 class ClosedOverRejectNamesTheBugTests(unittest.TestCase):
-    """US0628. A story or bug closed over a delivery REJECT names, in its OWN record, the
-    artefact its findings were filed to - so the discharge is visible on the artefact rather than
-    only in a verdict ledger nobody opens.
+    """US0628, narrowed by US0914. The `Findings-filed-to` line was read from the repair
+    ledger's `filed:` closures, and no reader consults that ledger now: a unit closes over a
+    REJECT only on its reviewer's round-2 APPROVE, and a carried unit's findings are named by
+    the bug the carry filed, not by a line on a closed unit. So no close writes the line.
 
-    Every close goes through `transition.py set`, the command that writes the status. Every
-    discharge is a `filed:` closure recorded through `critic.record_repair` against the REJECT and
-    naming an artefact that exists, and is read back through `critic.repair_state`."""
+    Every close goes through `transition.py set`. Every fixture's REJECT is answered by the
+    rejecting reviewer's round-2 APPROVE, beside a repair ledger written before US0914 whose
+    `filed:` closures name artefacts that exist - the rows the line used to be read from."""
 
     #: Prose naming every id the fixtures file, fix or cite, so no assertion can be answered by
     #: a whole-file search: only the detector's line is evidence of the write.
@@ -3400,7 +3395,7 @@ class ClosedOverRejectNamesTheBugTests(unittest.TestCase):
 
     def _workspace(self) -> Path:
         """A fresh root holding the artefacts the closures file to or cite: BG0002, BG0003 and
-        BG0004 (bugs) and CR0001 (a change request), so `record_repair` accepts every id."""
+        BG0004 (bugs) and CR0001 (a change request), so every filed id resolves."""
         td = tempfile.TemporaryDirectory()
         self.addCleanup(td.cleanup)
         root = Path(td.name)
@@ -3438,121 +3433,28 @@ class ClosedOverRejectNamesTheBugTests(unittest.TestCase):
             "| [US0001](US0001-x.md) | s | Review |\n", encoding="utf-8")
         return root, path
 
-    def _bug(self) -> tuple[Path, Path]:
-        """BG0001 In Progress at `conversational` depth (so Verified passes the depth gate) and
-        not production-affecting (so Closed needs no soak), its one finding filed to CR0001."""
-        root = self._workspace()
-        bd = root / "sdlc-studio" / "bugs"
-        path = bd / "BG0001-x.md"
-        path.write_text(
-            "# BG0001: b\n\n> **Status:** In Progress\n> **Severity:** medium\n"
-            "> **Verification depth:** conversational (walked through by hand)\n\n"
-            + self.PROSE + "## Acceptance Criteria\n\n- [x] the defect no longer reproduces\n",
-            encoding="utf-8")
-        idx = bd / "_index.md"
-        idx.write_text(idx.read_text(encoding="utf-8").replace("| Open | 3 |", "| Open | 3 |\n"
-                       "| In Progress | 1 |") + "| [BG0001](BG0001-x.md) | b | In Progress |\n",
-                       encoding="utf-8")
-        import critic
-        critic.record_verdict(root, "BG0001", "REJECT", reviewer="qa", author="dev",
-                              brief=self.BRIEF, issues="[new] the fix leaves the residue unowned")
-        critic.record_repair(root, "BG0001", "dev", "#1 -> filed: CR0001")
-        return root, path
-
     def _reject_and_repair(self, root: Path, closed: str, issues: str | None = None) -> None:
+        """The REJECT, a pre-US0914 repair row closing it with `closed`, and the rejecting
+        reviewer's round-2 APPROVE, which is what answers it."""
         import critic
         critic.record_verdict(root, "US0001", "REJECT", reviewer="qa", author="dev",
                               brief=self.BRIEF, issues=issues or self.TWO_FINDINGS)
-        critic.record_repair(root, "US0001", "dev", closed)
+        when = critic.read_verdicts(root)[-1]["date"]
+        (root / "sdlc-studio" / "reviews" / "repair-record.md").write_text(
+            "| Unit | Verdict date | Author | Date | Closed | Outstanding | Phase | Rejection |\n"
+            "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
+            f"| US0001 | {when} | dev | {when} | {closed} | - | delivery | {self.BRIEF} |\n",
+            encoding="utf-8")
+        critic.record_verdict(root, "US0001", "APPROVE", reviewer="qa", author="dev",
+                              brief=self.BRIEF)
 
     def _status(self, path: Path) -> str:
         return sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status") or ""
 
-    def test_the_story_names_every_filed_artefact(self) -> None:
-        """AC1. MUTANTS: drop the write, so the filed ids stay in the repair ledger alone; take
-        only the first closure's artefact (`closed[0]`); write into each filed artefact's file
-        instead of the closing unit's. Each leaves the detector's line on the STORY missing or
-        short of BG0003."""
-        import critic
-        root, path = self._story()
-        self._reject_and_repair(root, "#1 -> filed: BG0002; #2 -> filed: BG0003")
-        state = critic.repair_state(root, "US0001", "delivery")
-        self.assertEqual((state["state"], state["filed"]), ("complete", 2),
-                         "the fixture's premise: two findings, each closed filed:")
-        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
-        self.assertEqual(code, 0, out)
-        self.assertEqual(self._status(path), "Done")
-        line = _findings_filed_line(path)
-        self.assertIsNotNone(line, "the story closed over a REJECT carries no Findings-filed-to "
-                                   "line - the discharge is visible only in the repair ledger")
-        self.assertEqual(_ids_on(line), {"BG0002", "BG0003"},
-                         f"the line does not name exactly the two filed bugs: {line!r}")
-
-    def test_the_one_call_close_names_the_filed_artefacts(self) -> None:
-        """AC2. MUTANT: key the write on the unit's latest ledger row being a REJECT. The one-call
-        close appends its APPROVE BEFORE the transition runs, so that reading sees an APPROVE and
-        writes nothing. And read the filings through `repair_state`, which stops reading a repair
-        once the REJECT is answered. The APPROVE is the rejecting reviewer's own round 2, the only
-        reviewer the one-call close accepts there."""
-        import critic
-        root, path = self._story()
-        self._reject_and_repair(root, "#1 -> filed: BG0002; #2 -> filed: BG0003")
-        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done",
-                         "--verdict", "APPROVE", "--reviewer", "qa", "--author", "dev")
-        self.assertEqual(code, 0, out)
-        self.assertEqual(self._status(path), "Done")
-        rows = [r for r in critic.read_verdicts(root, "delivery")
-                if sdlc_md.norm_id(r["unit"]) == "US0001"]
-        self.assertEqual(rows[-1]["verdict"].upper(), "APPROVE",
-                         "the premise: the ledger's LAST row is the one-call close's APPROVE")
-        self.assertEqual(critic.repair_state(root, "US0001", "delivery")["state"], "none",
-                         "the premise: the round-2 APPROVE answered the REJECT, so repair_state "
-                         "no longer reads the repair")
-        line = _findings_filed_line(path)
-        self.assertIsNotNone(line, "the one-call close wrote no Findings-filed-to line")
-        self.assertEqual(_ids_on(line), {"BG0002", "BG0003"}, line)
-
-    def test_a_bug_names_the_filed_artefact_at_every_delivered_terminal(self) -> None:
-        """AC3. MUTANTS: write the line for stories only; key it on `_TERMINAL_FOR_PLAN` (Done,
-        Fixed), so a bug set straight to Verified - a route that never passes Fixed - gets
-        nothing."""
-        for target in ("Fixed", "Verified"):
-            with self.subTest(target=target):
-                root, path = self._bug()
-                code, out = _cli(root, "set", "--id", "BG0001", "--status", target)
-                self.assertEqual(code, 0, out)
-                self.assertEqual(self._status(path), target)
-                line = _findings_filed_line(path)
-                self.assertIsNotNone(line, f"a bug set to {target} carries no line")
-                self.assertEqual(_ids_on(line), {"CR0001"}, line)
-
-    def test_a_terminal_walk_writes_the_line_once(self) -> None:
-        """AC4. MUTANT: insert a new line on every terminal step (`_insert_after_status` in place
-        of the upsert), so Fixed -> Verified -> Closed leaves three. A second copy is set straight
-        to Closed, so a condition naming only Done, Fixed and Verified - which the walk alone
-        cannot see, having written its line at Fixed - fails here too."""
-        root, path = self._bug()
-        for step in ("Fixed", "Verified", "Closed"):
-            code, out = _cli(root, "set", "--id", "BG0001", "--status", step)
-            self.assertEqual(code, 0, f"{step}: {out}")
-            self.assertEqual(self._status(path), step)
-        body = path.read_text(encoding="utf-8")
-        count = sum(1 for ln in body.splitlines() if "Findings-filed-to" in ln)
-        self.assertEqual(count, 1, f"the walk left {count} Findings-filed-to lines:\n{body}")
-        self.assertEqual(_ids_on(_findings_filed_line(path)), {"CR0001"})
-
-        direct_root, direct = self._bug()
-        code, out = _cli(direct_root, "set", "--id", "BG0001", "--status", "Closed")
-        self.assertEqual(code, 0, out)
-        self.assertEqual(self._status(direct), "Closed")
-        line = _findings_filed_line(direct)
-        self.assertIsNotNone(line, "a bug set straight to Closed carries no line")
-        self.assertEqual(_ids_on(line), {"CR0001"}, line)
-
     def test_a_refused_close_writes_no_line(self) -> None:
-        """AC5. MUTANT: stamp the field in `cmd_set` before `transition()` runs, mirroring the
-        `--depth` stamp, so a close the ladder refuses keeps the line. The control lands, and its
-        `--dry-run` first writes nothing - a close that did not happen names no discharge."""
+        """AC5. MUTANTS: stamp the field in `cmd_set` before `transition()` runs, so a close the
+        ladder refuses keeps a line; restore the ledger read, so the landed control writes one.
+        The control lands, and its `--dry-run` first writes nothing."""
         question = "should the parser keep the trailing row?"
         root, path = self._story(f"## Open Questions\n\n- [ ] {question}\n\n")
         self._reject_and_repair(root, "#1 -> filed: BG0002; #2 -> filed: BG0003")
@@ -3577,16 +3479,13 @@ class ClosedOverRejectNamesTheBugTests(unittest.TestCase):
         code, out = _cli(ctl_root, "set", "--id", "US0001", "--status", "Done")
         self.assertEqual(code, 0, out)
         self.assertEqual(self._status(ctl), "Done")
-        line = _findings_filed_line(ctl)
-        self.assertIsNotNone(line, "the landed control carries no line")
-        self.assertEqual(_ids_on(line), {"BG0002", "BG0003"}, line)
+        self.assertIsNone(_findings_filed_line(ctl),
+                          "the landed control wrote a line read from the retired repair ledger")
 
     def test_an_ordinary_close_writes_no_discharge_line(self) -> None:
-        """AC6. MUTANTS: stamp the field (empty) on every delivered-terminal close; take each
-        closure's `ids` for its `artefact`, so a fix naming an id - or a filing's evidence naming
-        a second id - is written as a filing. (d) files BG0002 with evidence naming US0001 too,
-        and fixes a finding under BG0004, so its line must name BG0002 and nothing else."""
-        import critic
+        """AC6. MUTANTS: stamp the field (empty) on every delivered-terminal close; restore the
+        read of the repair ledger's `filed:` closures, so (a) and (d) write a line. (b) carries
+        no REJECT; (c) only `fixed:` closures naming ids; (d) a mixed repair."""
         fixed = "fixed: pinned by the regression test BG0004 asked for"
         copies = {
             "a": "#1 -> filed: BG0002",
@@ -3601,29 +3500,19 @@ class ClosedOverRejectNamesTheBugTests(unittest.TestCase):
                 self._reject_and_repair(root, closed,
                                         issues="[new] the parser drops a trailing row"
                                         if name == "a" else None)
-                self.assertEqual(critic.repair_state(root, "US0001", "delivery")["state"],
-                                 "complete", f"({name}) the premise: a complete repair")
             code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
             self.assertEqual(code, 0, f"({name}) {out}")
             self.assertEqual(self._status(path), "Done", f"({name}) did not land at Done")
             lines[name] = _findings_filed_line(path)
-        self.assertIsNotNone(lines["a"], "(a) a filed REJECT closed with no line")
-        self.assertEqual(_ids_on(lines["a"]), {"BG0002"}, lines["a"])
-        self.assertIsNone(lines["b"], "(b) a close with no REJECT at all carries a line")
-        self.assertIsNone(lines["c"], "(c) a fix naming an id was written as a filing")
-        self.assertIsNotNone(lines["d"], "(d) a mixed repair's filing wrote no line")
-        self.assertNotIn("BG0004", _ids_on(lines["d"]),
-                         f"(d) the fixed closure's id was written as a filing: {lines['d']!r}")
-        self.assertNotIn("US0001", _ids_on(lines["d"]),
-                         f"(d) a filing's second id was written as a destination: {lines['d']!r}")
-        self.assertEqual(_ids_on(lines["d"]), {"BG0002"}, lines["d"])
+        self.assertEqual({name: None for name in copies}, lines,
+                         "a close wrote a discharge line")
 
 
 class RejectNeedsAnAnswerTests(unittest.TestCase):
-    """US0627. A story or bug reaching a delivered terminal over an unanswered delivery REJECT is
-    refused until the REJECT is answered, as `critic.coverage_state` reads it: `approved` (a
-    later independent APPROVE on the same brief) or `repaired` (a complete repair whose `filed:`
-    closures name artefacts that still resolve).
+    """US0627, narrowed by US0914. A story or bug reaching a delivered terminal over an
+    unanswered delivery REJECT is refused until the REJECT is answered, as
+    `critic.coverage_state` reads it `approved`: a later independent APPROVE from the reviewer
+    who rejected. A repair row answers nothing (`test_lean_no_repair_ledger`).
 
     Every fixture records its REJECT through `critic.record_verdict` in the DELIVERY phase -
     reviewer `qa`, author `dev`, a brief fingerprint, two findings - BACK-DATED to a fixed day,
@@ -3701,16 +3590,6 @@ class RejectNeedsAnAnswerTests(unittest.TestCase):
             critic.record_verdict(root, uid, "REJECT", reviewer="qa", author="dev",
                                   brief=self.BRIEF, issues=self.FINDINGS, phase=phase)
 
-    def _repair(self, root: Path, uid: str, closed: str) -> None:
-        """A repair written through the SHIPPED `critic.py repair`, whose write-time check
-        refuses an id that resolves to nothing."""
-        import critic
-        buf = io.StringIO()
-        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
-            code = critic.main(["repair", "--root", str(root), "--unit", uid,
-                                "--author", "dev", "--closed", closed])
-        self.assertEqual(code, 0, f"the fixture's repair was refused: {buf.getvalue()}")
-
     def _status(self, path: Path) -> str:
         return sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status") or ""
 
@@ -3763,86 +3642,13 @@ class RejectNeedsAnAnswerTests(unittest.TestCase):
                 self.assertEqual(code, 0, f"control {start} -> {target} did not land: {out}")
                 self.assertEqual(self._status(self._bug_path(ctl_root)), target)
 
-    def test_a_filed_artefact_id_discharges_the_reject(self) -> None:
-        """AC3. MUTANT (in critic.repair_state): count every `filed:` closure as outstanding even
-        when its id resolves. Both findings are filed through `critic.py repair` to bugs that
-        exist, so the unit reads `repaired` and lands."""
-        import critic
-        root = self._root()
-        path = self._story(root)
-        self._reject(root, "US0001")
-        self._repair(root, "US0001", "#1 -> filed: BG0002; #2 -> filed: BG0003")
-        self.assertEqual(critic.coverage_state(root, "US0001", "delivery"),
-                         critic.COVERAGE_REPAIRED, "the premise: a complete filed repair")
-        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
-        self.assertEqual(code, 0, out)
-        self.assertEqual(self._status(path), "Done")
-        self.assertNotIn(self.UNANSWERED, out)
-
-    def test_an_id_naming_no_artefact_is_refused(self) -> None:
-        """AC4. MUTANT: accept any filed id `record_repair` accepted at write time. The repair is
-        written through `critic.py repair` while both bugs exist; BG0003 is then deleted, so the
-        finding it closed - the second - is outstanding again and named, and the first is not."""
-        root = self._root()
-        path = self._story(root)
-        self._reject(root, "US0001")
-        self._repair(root, "US0001", "#1 -> filed: BG0002; #2 -> filed: BG0003")
-        (root / "sdlc-studio" / "bugs" / "BG0003-x.md").unlink()
-        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
-        self.assertNotEqual(code, 0, out)
-        self.assertEqual(self._status(path), "Review")
-        said = self._refusal(out)
-        self.assertTrue(said, f"nothing names the {self.UNANSWERED}:\n{out}")
-        self.assertIn(self.SECOND, said,
-                      "the finding the deleted id had closed is not named as outstanding")
-        self.assertNotIn(self.FIRST, said,
-                         "the finding a still-resolving filing closed is named as outstanding")
-
-    def test_a_complete_repair_answers_the_reject_as_review_coverage_does(self) -> None:
-        """AC7. MUTANTS: demand a re-review APPROVE beside the complete repair; count only
-        `filed:` closures as answers. One finding is fixed, one filed, and nobody re-reviewed:
-        review-coverage reads it `repaired`, so the transition must too."""
-        import critic
-        root = self._root()
-        path = self._story(root)
-        self._reject(root, "US0001")
-        self._repair(root, "US0001",
-                     "#1 -> fixed: the trailing row is kept and a test pins it; "
-                     "#2 -> filed: BG0002")
-        state = critic.repair_state(root, "US0001", "delivery")
-        self.assertEqual((state["state"], state["fixed"], state["filed"]), ("complete", 1, 1))
-        self.assertEqual(critic.coverage_counts(root, ["US0001"])[critic.COVERAGE_REPAIRED],
-                         ["US0001"], "the premise: review-coverage counts it repaired")
-        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
-        self.assertEqual(code, 0, out)
-        self.assertEqual(self._status(path), "Done")
-        self.assertNotIn(self.UNANSWERED, out)
-
-    def test_a_partly_filed_reject_is_refused(self) -> None:
-        """AC8. MUTANT: count any filed closure as an answer. One of two findings is filed, so
-        repair_state reads `partial` with one filed closure, and the other finding is named."""
-        import critic
-        root = self._root()
-        path = self._story(root)
-        self._reject(root, "US0001")
-        self._repair(root, "US0001", "#1 -> filed: BG0002")
-        state = critic.repair_state(root, "US0001", "delivery")
-        self.assertEqual((state["state"], state["filed"]), ("partial", 1))
-        code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
-        self.assertNotEqual(code, 0, out)
-        self.assertEqual(self._status(path), "Review")
-        said = self._refusal(out)
-        self.assertIn(self.SECOND, said, f"the outstanding finding is not named: {said}")
-        self.assertNotIn(self.FIRST, said, f"the filed finding is named as outstanding: {said}")
-
     def test_a_same_brief_approve_answers_the_reject(self) -> None:
-        """AC9. MUTANTS: read the REJECT rows directly and refuse any without a complete repair;
-        accept any later APPROVE whatever its brief; key the guard on `critic.verdict_for`
-        returning a REJECT. Three copies: an independent APPROVE on the REJECT's own brief
-        (lands); one on a different brief (refused - another seat's approval does not retire
+        """AC9. MUTANTS: accept any later APPROVE whatever its brief or reviewer; answer a
+        REJECT by another reviewer's same-brief APPROVE recorded after the round rule. Three
+        copies: the rejecting reviewer's independent APPROVE on the REJECT's own brief (lands);
+        another seat's on a different brief (refused - another seat's approval does not retire
         this seat's rejection); and one on the same brief recorded by the REJECT's author, `dev`
-        as both reviewer and author (refused - `verdict_for` returns that APPROVE, while
-        `coverage_state` reads it `unreviewed`, so the refusal must name `qa`'s REJECT)."""
+        as both reviewer and author (refused, naming `qa`'s REJECT)."""
         import critic
         approvals = {"same": ("qa", "dev", self.BRIEF),
                      "different": ("product", "dev", self.OTHER_BRIEF),
@@ -3860,8 +3666,9 @@ class RejectNeedsAnAnswerTests(unittest.TestCase):
         self.assertEqual(results["same"][2], critic.COVERAGE_APPROVED)
         self.assertEqual(results["different"][2], critic.COVERAGE_UNREVIEWED)
         self.assertEqual(results["self"][2], critic.COVERAGE_UNREVIEWED)
-        self.assertEqual(critic.verdict_for(results["self"][0], "US0001")["verdict"], "APPROVE",
-                         "the premise: verdict_for reads the self-approval as the standing row")
+        self.assertEqual(critic.verdict_for(results["self"][0], "US0001")["verdict"], "REJECT",
+                         "the premise: a self-approval recorded after the round rule does not "
+                         "answer the REJECT")
 
         root, path, _ = results["same"]
         code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
@@ -4071,13 +3878,11 @@ class RejectNeedsAnAnswerTests(unittest.TestCase):
 
     def test_a_reject_itemising_no_findings_claims_no_closure(self) -> None:
         """US0627 repair. MUTANT: the refusal's fallback says "every finding carries a closure"
-        for a REJECT that itemises no findings and has no repair, stating a repair nobody
-        recorded. AC4 and AC8 are the controls: an itemised REJECT names its findings."""
-        import critic
+        for a REJECT that itemises no findings, stating a repair nobody recorded.
+        `test_lean_no_repair_ledger` is the control: an itemised REJECT names its findings."""
         root = self._root()
         path = self._story(root)
         self._verdict(root, "REJECT", "qa", "dev", self.BRIEF, self.REJECTED_ON, "none")
-        self.assertEqual(critic.repair_state(root, "US0001", "delivery")["state"], "none")
         code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
         self.assertNotEqual(code, 0, out)
         self.assertEqual(self._status(path), "Review")

@@ -166,7 +166,8 @@ fi
 # Lowered to match rather than raised to accommodate, as the entries above.
 # 119 -> 106 (BG0631/BG0636 wave): two shipped warnings started firing from inside library
 # calls that most fixtures make in passing - the unverifiable-criteria report in
-# `file_finding.file_finding()` and the unreadable-closure report in `critic.repair_state()`.
+# `file_finding.file_finding()` and the unreadable-closure report in the repair ledger's reader
+# (both the reader and its warning went with the ledger in US0914).
 # They leaked 37 lines across 24 uncaptured call sites in ten modules, took a full run to 145,
 # and turned CI red on main. Every one of the commits that added them passed this gate, because
 # the hook runs a SELECTED subset and the check is an absolute `count <= baseline` - filed as
