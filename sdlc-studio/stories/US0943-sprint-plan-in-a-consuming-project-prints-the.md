@@ -4,7 +4,7 @@
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_runbook_path.py, changelog.d/US0943.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_runbook_path.py, changelog.d/US0943.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Epic:** EP0265
 > **Points:** 1
 > **Persona:** Maya Okafor

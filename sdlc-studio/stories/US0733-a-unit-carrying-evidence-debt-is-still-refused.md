@@ -1,6 +1,6 @@
 # US0733: A unit carrying evidence debt is still refused a terminal status until it is cleared or deferred with a reason
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Closes with:** US0920 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0524
 > **Created:** 2026-08-27
@@ -27,3 +27,4 @@
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0920 ships - planning: SUPERSEDED - [+constraint] terminal refused while evidence debt open: batch 2 deletes the evidence surface; superseded only once US0920 ships (D0264) |
+| 2026-09-25 | sdlc-studio BG0772 | Superseded under D0264: its closing story US0920 is Done (BG0772) |

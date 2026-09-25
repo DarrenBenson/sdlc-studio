@@ -1,7 +1,7 @@
 # EP0242: A bug's plan or evidence gets an independent judgement, and the asymmetry is stated
 
 > **Status:** Draft
-> **Closes with:** US0921 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
+> **Closes with:** US0936 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Derived Point Total:** 11
 > **Parent:** CR0556
 > **Created:** 2026-08-27
@@ -37,3 +37,4 @@ Decomposed from CR0556. Delivers the work CR0556 requested.
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0921 ships - planning: SUPERSEDED - independent judgement for bugs: US0872 one reviewer per unit; two-role sign-off deleted in batch 2; superseded only once US0921 ships (D0264) |
+| 2026-09-25 | sdlc-studio BG0772 | Closes with re-pointed from US0921 to US0936 (D0264): US0921 was split and US0936 carries the ledger deletion this item waits on |

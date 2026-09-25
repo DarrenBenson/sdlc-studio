@@ -1,6 +1,6 @@
 # BG0693: testplan derive and the plan-review brief still name different unauthored sets: blank cells, table order and a criterion with no row
 
-> **Status:** Open
+> **Status:** Superseded
 > **Closes with:** US0912 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 2
@@ -34,3 +34,4 @@ Give derive and the brief one helper that decides blankness as `testplan_row_fau
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0912 ships - planning: SUPERSEDED - testplan derive vs plan-review brief: both deleted in batch 2; superseded only once US0912 ships (D0264) |
+| 2026-09-25 | sdlc-studio BG0772 | Superseded under D0264: its closing story US0912 is Done (BG0772) |

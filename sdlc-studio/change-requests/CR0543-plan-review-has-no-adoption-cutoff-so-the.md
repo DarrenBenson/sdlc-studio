@@ -1,6 +1,6 @@
 # CR-0543: plan_review has no adoption cutoff, so the one hard risk-proportional plan gate in the codebase cannot be turned on by any project with history - including this one
 
-> **Status:** Proposed
+> **Status:** Superseded
 > **Closes with:** US0909 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Created:** 2026-08-11
 > **Created-by:** sdlc-studio new
@@ -40,3 +40,4 @@ The test that matters is the one that would have caught this: enabling the gate 
 | --- | --- | --- |
 | 2026-08-11 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0909 ships - planning: SUPERSEDED - plan_review adoption cutoff: plan review deleted in batch 2; superseded only once US0909 ships (D0264) |
+| 2026-09-25 | sdlc-studio BG0772 | Superseded under D0264: its closing story US0909 is Done (BG0772) |

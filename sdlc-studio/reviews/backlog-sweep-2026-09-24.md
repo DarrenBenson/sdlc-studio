@@ -110,9 +110,9 @@ Planning is the verdict the planning review gave. Action is `swept` (closed by t
 | US0727 | story | SUPERSEDED | SUPERSEDED | swept | Superseded | - | sprint status open span: follows US0725 |
 | US0728 | story | SUPERSEDED | SUPERSEDED | swept | Superseded | - | advisory-until-yield for span report: follows US0725 |
 | US0729 | story | SUPERSEDED | SUPERSEDED | swept | Superseded | - | silence control for span report: follows US0725 |
-| EP0227 | epic | HELD | SUPERSEDED | OPEN - closes with US0918, US0920, US0921 (D0264) | Draft | - | planning: SUPERSEDED - broken vs under-evidenced verdicts / evidence debt: evidence ledger and mutation register deleted in batch 2; superseded only once US0918, US0920, US0921 ships (D0264) |
+| EP0227 | epic | HELD | SUPERSEDED | OPEN - closes with US0918, US0920, US0936 (D0264) | Draft | - | planning: SUPERSEDED - broken vs under-evidenced verdicts / evidence debt: evidence ledger and mutation register deleted in batch 2; superseded only once US0918, US0920, US0921 ships (D0264) |
 | US0730 | story | HELD | SUPERSEDED | OPEN - closes with US0918 (D0264) | Draft | - | planning: SUPERSEDED - evidence-cannot-fail verdict class: evidence ledger deleted in batch 2; superseded only once US0918 ships (D0264) |
-| US0731 | story | HELD | SUPERSEDED | OPEN - closes with US0921 (D0264) | Draft | - | planning: SUPERSEDED - [+constraint] evidence debt per criterion naming surviving mutant: mutation register deleted in batch 2; superseded only once US0921 ships (D0264) |
+| US0731 | story | HELD | SUPERSEDED | OPEN - closes with US0936 (D0264) | Draft | - | planning: SUPERSEDED - [+constraint] evidence debt per criterion naming surviving mutant: mutation register deleted in batch 2; superseded only once US0921 ships (D0264) |
 | US0732 | story | HELD | SUPERSEDED | OPEN - closes with US0918 (D0264) | Draft | - | planning: SUPERSEDED - batch summary split counts: follows US0730; superseded only once US0918 ships (D0264) |
 | US0733 | story | HELD | SUPERSEDED | OPEN - closes with US0920 (D0264) | Draft | - | planning: SUPERSEDED - [+constraint] terminal refused while evidence debt open: batch 2 deletes the evidence surface; superseded only once US0920 ships (D0264) |
 | US0734 | story | SUPERSEDED | SUPERSEDED | swept | Superseded | - | seat brief verdict calibration: single reviewer US0872 plus batch 2 brief deletions |
@@ -187,14 +187,14 @@ Planning is the verdict the planning review gave. Action is `swept` (closed by t
 | US0790 | story | RETIRE | RETIRE | swept | Won't Implement | - | [+constraint] new refusal on restated reasons |
 | US0791 | story | RETIRE | RETIRE | swept | Won't Implement | - | [+constraint] new refusal on repeated reasons |
 | US0792 | story | RETIRE | RETIRE | swept | Won't Implement | - | adoption report for the retired refusal |
-| EP0241 | epic | HELD | SUPERSEDED | OPEN - closes with US0921 (D0264) | Draft | - | planning: SUPERSEDED - killed-elsewhere mutation rows: mutation register/ledger deleted in batch 2; superseded only once US0921 ships (D0264) |
-| US0793 | story | HELD | SUPERSEDED | OPEN - closes with US0921 (D0264) | Draft | - | planning: SUPERSEDED - mutation ledger deleted in batch 2 (triage also flags US0793/US0794 duplicate); superseded only once US0921 ships (D0264) |
-| US0794 | story | HELD | SUPERSEDED | OPEN - closes with US0921 (D0264) | Draft | - | planning: SUPERSEDED - mutation ledger deleted in batch 2; superseded only once US0921 ships (D0264) |
-| US0795 | story | HELD | SUPERSEDED | OPEN - closes with US0921 (D0264) | Draft | - | planning: SUPERSEDED - mutation ledger deleted in batch 2; superseded only once US0921 ships (D0264) |
-| US0796 | story | HELD | SUPERSEDED | OPEN - closes with US0921 (D0264) | Draft | - | planning: SUPERSEDED - [+constraint] baseline-then-block: mutation ledger deleted in batch 2; superseded only once US0921 ships (D0264) |
-| EP0242 | epic | HELD | SUPERSEDED | OPEN - closes with US0921 (D0264) | Draft | - | planning: SUPERSEDED - independent judgement for bugs: US0872 one reviewer per unit; two-role sign-off deleted in batch 2; superseded only once US0921 ships (D0264) |
+| EP0241 | epic | HELD | SUPERSEDED | OPEN - closes with US0936 (D0264) | Draft | - | planning: SUPERSEDED - killed-elsewhere mutation rows: mutation register/ledger deleted in batch 2; superseded only once US0921 ships (D0264) |
+| US0793 | story | HELD | SUPERSEDED | OPEN - closes with US0936 (D0264) | Draft | - | planning: SUPERSEDED - mutation ledger deleted in batch 2 (triage also flags US0793/US0794 duplicate); superseded only once US0921 ships (D0264) |
+| US0794 | story | HELD | SUPERSEDED | OPEN - closes with US0936 (D0264) | Draft | - | planning: SUPERSEDED - mutation ledger deleted in batch 2; superseded only once US0921 ships (D0264) |
+| US0795 | story | HELD | SUPERSEDED | OPEN - closes with US0936 (D0264) | Draft | - | planning: SUPERSEDED - mutation ledger deleted in batch 2; superseded only once US0921 ships (D0264) |
+| US0796 | story | HELD | SUPERSEDED | OPEN - closes with US0936 (D0264) | Draft | - | planning: SUPERSEDED - [+constraint] baseline-then-block: mutation ledger deleted in batch 2; superseded only once US0921 ships (D0264) |
+| EP0242 | epic | HELD | SUPERSEDED | OPEN - closes with US0936 (D0264) | Draft | - | planning: SUPERSEDED - independent judgement for bugs: US0872 one reviewer per unit; two-role sign-off deleted in batch 2; superseded only once US0921 ships (D0264) |
 | US0799 | story | SUPERSEDED | SUPERSEDED | swept | Superseded | - | doctrine of which types are judged: US0872 reviews every unit |
-| US0800 | story | HELD | SUPERSEDED | OPEN - closes with US0921 (D0264) | Draft | - | planning: SUPERSEDED - mutant killed by unnamed test: mutation ledger deleted in batch 2; superseded only once US0921 ships (D0264) |
+| US0800 | story | HELD | SUPERSEDED | OPEN - closes with US0936 (D0264) | Draft | - | planning: SUPERSEDED - mutant killed by unnamed test: mutation ledger deleted in batch 2; superseded only once US0921 ships (D0264) |
 | EP0243 | epic | HELD | SUPERSEDED | OPEN - closes with US0910 (D0264) | Draft | - | planning: SUPERSEDED - derived-depth re-derivation: verification depth tiers deleted in batch 2; superseded only once US0910 ships (D0264) |
 | US0801 | story | HELD | SUPERSEDED | OPEN - closes with US0910 (D0264) | Draft | - | planning: SUPERSEDED - depth tiers deleted in batch 2; superseded only once US0910 ships (D0264) |
 | US0802 | story | HELD | SUPERSEDED | OPEN - closes with US0910 (D0264) | Draft | - | planning: SUPERSEDED - depth tiers deleted in batch 2; superseded only once US0910 ships (D0264) |
@@ -328,9 +328,9 @@ Planning is the verdict the planning review gave. Action is `swept` (closed by t
 | CR0551 | cr | KEEP-LEAN | KEEP-LEAN | untouched | Proposed | - | appetite on working time (EP0238, trimmed to US0783) |
 | CR0552 | cr | UNSURE | UNSURE | untouched | Proposed | - | revert-check isolation: decided by revert-check's survival in batch 2 |
 | CR0553 | cr | RETIRE | RETIRE | swept | Rejected | - | tighter exemption-reason refusals (EP0240) |
-| CR0554 | cr | HELD | SUPERSEDED | OPEN - closes with US0921 (D0264) | Proposed | - | planning: SUPERSEDED - killed-elsewhere rows: mutation ledger deleted in batch 2; superseded only once US0921 ships (D0264) |
+| CR0554 | cr | HELD | SUPERSEDED | OPEN - closes with US0936 (D0264) | Proposed | - | planning: SUPERSEDED - killed-elsewhere rows: mutation ledger deleted in batch 2; superseded only once US0921 ships (D0264) |
 | CR0555 | cr | HELD | SUPERSEDED | OPEN - closes with US0911 (D0264) | In Progress | - | planning: SUPERSEDED - test-plan gate relocation: gate deleted in batch 2; superseded only once US0911 ships (D0264) |
-| CR0556 | cr | HELD | SUPERSEDED | OPEN - closes with US0921 (D0264) | In Progress | - | planning: SUPERSEDED - bug independent judgement: US0872 plus two-role deletion in batch 2; superseded only once US0921 ships (D0264) |
+| CR0556 | cr | HELD | SUPERSEDED | OPEN - closes with US0936 (D0264) | In Progress | - | planning: SUPERSEDED - bug independent judgement: US0872 plus two-role deletion in batch 2; superseded only once US0921 ships (D0264) |
 | CR0558 | cr | HELD | SUPERSEDED | OPEN - closes with US0910 (D0264) | Proposed | - | planning: SUPERSEDED - derived-depth re-derivation: depth tiers deleted in batch 2; superseded only once US0910 ships (D0264) |
 | CR0559 | cr | KEEP-VALUE | KEEP-VALUE | untouched | Proposed | - | one concept one flag name (EP0244) |
 | CR0560 | cr | KEEP-LEAN | KEEP-LEAN | untouched | Proposed | - | known-issues page left stale by filing (EP0245) |
@@ -363,3 +363,5 @@ Planning is the verdict the planning review gave. Action is `swept` (closed by t
 | CR0593 | cr | SUPERSEDED | SUPERSEDED | swept | Superseded | - | [+constraint] refuse unit no goal clause covers: no clauses under D0253 |
 | CR0594 | cr | KEEP-VALUE | KEEP-VALUE | untouched | Proposed | - | the record informs the work: leads the sprint after batch 2 |
 | RFC0058 | rfc | KEEP-VALUE | KEEP-VALUE | untouched | In Review | - | stakeholder feedback: rule it down to one advisory consult at refine (US0838); retire trigger/gates/yield |
+
+Amended 2026-09-25 (BG0772): the Action cells of CR0554, CR0556, EP0241, EP0242, US0731, US0793, US0794, US0795, US0796, US0800 and EP0227 name US0936 in place of US0921. US0921 was split: it shipped the gate's mutation lane, and the ledger verbs these items describe moved to US0936, so they close with US0936. Their Reason cells keep the ruling's wording.

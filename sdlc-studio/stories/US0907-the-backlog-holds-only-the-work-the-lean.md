@@ -26,9 +26,12 @@
 - **AC3:** Given BG0709, then it reads Fixed or a later terminal status, citing US0881 AC4 (`tools/tests/test_lean_push.py::PushBoundaryTests::test_a_stale_red_answer_is_re_read`) as the verification of its fix
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_backlog_sweep.py::BacklogSweepTests::test_bg0709_reads_fixed_by_us0881
   - **Verified:** yes (2026-09-24)
-- **AC4:** Given an item the record HOLDS under D0264 (superseded only by work that has not shipped), then it reads a non-terminal status and carries a `Closes with:` field naming the EP0263 story whose delivery closes it, the same story the record names
+- **AC4:** Given an item the record HOLDS under D0264 (superseded only by work that has shipped), then it carries a `Closes with:` field naming the EP0263 stories whose delivery closes it, the same stories the record names
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_backlog_sweep.py::BacklogSweepTests::test_held_items_stay_open_naming_their_closing_story
   - **Verified:** yes (2026-09-24)
+- **AC5:** Given an item the record HOLDS under D0264, then it reads a non-terminal status until every story its `Closes with:` field names is Done (BG0772)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_backlog_sweep.py::BacklogSweepTests::test_a_hold_closes_only_after_its_story_ships
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 
@@ -36,3 +39,4 @@
 | --- | --- | --- |
 | 2026-09-24 | sdlc-studio | Created via `batch` (deterministic); body trimmed to the lean story shape |
 | 2026-09-24 | Claude Opus 5.5 | Review round 1: AC1 reworded from 'Superseded for an epic' to the close derived from an epic's children (EP0171 is Done because it delivered four stories), and names DELIVERED items and a MERGE survivor's Merged-from line; AC4 added for the items D0264 holds open until their EP0263 story ships |
+| 2026-09-25 | sdlc-studio BG0772 | BG0772: AC4's non-terminal clause split out as AC5, the conditional hold rule (a held item reads non-terminal until every story its Closes with field names is Done), verified by its own selector because a second Verify line under one criterion is never run (BG0687); AC4 keeps the field checks, its selector and its stamp |

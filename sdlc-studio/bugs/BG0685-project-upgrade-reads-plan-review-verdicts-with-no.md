@@ -1,6 +1,6 @@
 # BG0685: project_upgrade reads plan-review verdicts with no kind, so a repair-plan APPROVE counts as a repair story's spec review
 
-> **Status:** Open
+> **Status:** Superseded
 > **Closes with:** US0909 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 1
@@ -35,3 +35,4 @@ Pass kind='spec' (or the kinds the rebaseline means) explicitly.
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0909 ships - planning: SUPERSEDED - plan-review verdict kinds in project_upgrade: plan review deleted in batch 2; superseded only once US0909 ships (D0264) |
+| 2026-09-25 | sdlc-studio BG0772 | Superseded under D0264: its closing story US0909 is Done (BG0772) |

@@ -1,6 +1,6 @@
 # US0685: The entry gate keeps the demand that a test plan EXISTS and drops the demand that a seat has approved it
 
-> **Status:** Blocked
+> **Status:** Superseded
 > **Closes with:** US0911 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0555
 > **Created:** 2026-08-25
@@ -35,3 +35,4 @@
 | --- | --- | --- |
 | 2026-08-25 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0911 ships - planning: SUPERSEDED - test-plan entry gate: deleted in batch 2; superseded only once US0911 ships (D0264) |
+| 2026-09-25 | sdlc-studio BG0772 | Superseded under D0264: its closing story US0911 is Done (BG0772) |

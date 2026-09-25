@@ -1,6 +1,6 @@
 # EP0243: The derived-depth lane re-derives, rather than trusting each span's own seal
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Closes with:** US0910 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Derived Point Total:** 8
 > **Parent:** CR0558
@@ -15,9 +15,9 @@ Decomposed from CR0558. Delivers the work CR0558 requested.
 
 ## Story Breakdown
 
-- [ ] [US0801: A unit whose stamped derived half no longer matches a fresh derivation is REPORTED with both fingerprints](../stories/US0801-a-unit-whose-stamped-derived-half-no-longer.md)
-- [ ] [US0802: A unit whose span matches a fresh derivation is passed silently - the paired control](../stories/US0802-a-unit-whose-span-matches-a-fresh-derivation.md)
-- [ ] [US0803: An eviction of a unit's ledger rows is visible from the lane's output alone](../stories/US0803-an-eviction-of-a-unit-s-ledger-rows.md)
+- [x] [US0801: A unit whose stamped derived half no longer matches a fresh derivation is REPORTED with both fingerprints](../stories/US0801-a-unit-whose-stamped-derived-half-no-longer.md)
+- [x] [US0802: A unit whose span matches a fresh derivation is passed silently - the paired control](../stories/US0802-a-unit-whose-span-matches-a-fresh-derivation.md)
+- [x] [US0803: An eviction of a unit's ledger rows is visible from the lane's output alone](../stories/US0803-an-eviction-of-a-unit-s-ledger-rows.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -35,3 +35,4 @@ Decomposed from CR0558. Delivers the work CR0558 requested.
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0910 ships - planning: SUPERSEDED - derived-depth re-derivation: verification depth tiers deleted in batch 2; superseded only once US0910 ships (D0264) |
+| 2026-09-25 | sdlc-studio BG0772 | Superseded under D0264: its closing story US0910 is Done (BG0772) |

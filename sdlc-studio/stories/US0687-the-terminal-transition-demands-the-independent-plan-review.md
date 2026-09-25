@@ -1,6 +1,6 @@
 # US0687: The terminal transition demands the independent plan-review approval and refuses without one exactly as entry does today
 
-> **Status:** Blocked
+> **Status:** Superseded
 > **Closes with:** US0909 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0555
 > **Created:** 2026-08-25
@@ -36,3 +36,4 @@
 | 2026-08-25 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: checked for supersession and kept open - BG0630 fires the test-plan gate at Done/Fixed (AC1-AC4 hold via the shared _test_plan_gate), but the approval-staleness pin is undelivered: an approval of an earlier test plan still clears the gate after the criteria and plan are rewritten - at entry as well as at terminal. |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0909 ships - planning: SUPERSEDED - plan-review approval at terminal: plan review deleted in batch 2; superseded only once US0909 ships (D0264) |
+| 2026-09-25 | sdlc-studio BG0772 | Superseded under D0264: its closing story US0909 is Done (BG0772) |

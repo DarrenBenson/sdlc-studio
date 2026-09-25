@@ -1,6 +1,6 @@
 # US0683: The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each
 
-> **Status:** Blocked
+> **Status:** Superseded
 > **Closes with:** US0911 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0555
 > **Created:** 2026-08-21
@@ -39,3 +39,4 @@
 | 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: checked for supersession and kept open - the band half is gone under D0150, but recording the gate's decision at transition, reading that record at the close and naming UNRECORDED units are not carried by US0690. |
 | 2026-09-21 | audit ruling | RUN-01M306PY sweep: re-parented from EP0217 to CR0555's EP0218, which the audit found already carries this work as its AC4/AC6. It stays Blocked and wanted - only its parent changes, because CR0550 is retracted and EP0217 had to derive Done so CR0547 and CR0548 could close. |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0911 ships - planning: SUPERSEDED - report of test-plan gate application: gate deleted in batch 2; superseded only once US0911 ships (D0264) |
+| 2026-09-25 | sdlc-studio BG0772 | Superseded under D0264: its closing story US0911 is Done (BG0772) |

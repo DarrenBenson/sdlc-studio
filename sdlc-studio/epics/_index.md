@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 22 |
+| Draft | 20 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 227 |
-| Superseded | 17 |
+| Superseded | 19 |
 | **Total** | **266** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -30,7 +30,7 @@
 | [EP0206](EP0206-a-sprint-ends-with-nothing-open-a-non.md) | A sprint ends with nothing open: a non-stop-ship finding becomes a bug and its story closes pointing at it | Done | 5 | -- | 2026-08-02 | 2026-08-02 |
 | [EP0210](EP0210-a-refusing-verb-can-be-asked-what-it.md) | A refusing verb can be asked what it demands, before it refuses | Superseded | 6 | -- | 2026-08-07 | 2026-08-07 |
 | [EP0217](EP0217-the-instruments-that-judge-a-unit-are-measured.md) | The instruments that judge a unit are measured from the change, not asserted about the file | Done | 12 | -- | 2026-08-21 | 2026-08-21 |
-| [EP0218](EP0218-the-plan-review-binds-where-the-code-is.md) | The plan review binds where the code is, so a unit takes one review round instead of two | Draft | 8 | -- | 2026-08-25 | 2026-08-25 |
+| [EP0218](EP0218-the-plan-review-binds-where-the-code-is.md) | The plan review binds where the code is, so a unit takes one review round instead of two | Superseded | 8 | -- | 2026-08-25 | 2026-08-25 |
 | [EP0219](EP0219-an-exemption-states-what-would-discharge-it-and.md) | An exemption states what would discharge it, and the mirror states what it did not compare | Superseded | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0220](EP0220-an-upgrade-proposes-its-grandfathering-records-each-grant.md) | An upgrade proposes its grandfathering, records each grant, and can still answer for it a year later | Superseded | 5 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0221](EP0221-a-tag-cannot-be-cut-without-asking-whether.md) | A tag cannot be cut without asking whether the increment is shippable | Superseded | 7 | -- | 2026-08-27 | 2026-08-27 |
@@ -55,7 +55,7 @@
 | [EP0240](EP0240-an-exemption-reason-is-judged-on-meaning-not.md) | An exemption reason is judged on meaning, not on character count | Superseded | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0241](EP0241-a-kill-recorded-against-a-node-the-criterion.md) | A kill recorded against a node the criterion does not name is reported, not counted | Draft | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0242](EP0242-a-bug-s-plan-or-evidence-gets-an.md) | A bug's plan or evidence gets an independent judgement, and the asymmetry is stated | Draft | 4 | -- | 2026-08-27 | 2026-08-27 |
-| [EP0243](EP0243-the-derived-depth-lane-re-derives-rather-than.md) | The derived-depth lane re-derives, rather than trusting each span's own seal | Draft | 3 | -- | 2026-08-27 | 2026-08-27 |
+| [EP0243](EP0243-the-derived-depth-lane-re-derives-rather-than.md) | The derived-depth lane re-derives, rather than trusting each span's own seal | Superseded | 3 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0244](EP0244-one-concept-one-name-across-every-verb-and.md) | One concept, one name, across every verb and every document key | Draft | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0245](EP0245-filing-a-finding-leaves-the-disclosure-true.md) | Filing a finding leaves the disclosure true | Draft | 3 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0246](EP0246-the-declared-python-floor-is-a-gate-not.md) | The declared Python floor is a gate, not a sentence in six documents | Done | 4 | -- | 2026-08-27 | 2026-08-27 |

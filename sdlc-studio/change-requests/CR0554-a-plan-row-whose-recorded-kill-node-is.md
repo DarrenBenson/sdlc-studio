@@ -1,7 +1,7 @@
 # CR-0554: A plan row whose recorded kill node is not the criterion's own verifier is undetectable, though the ledger already holds both facts
 
 > **Status:** Proposed
-> **Closes with:** US0921 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
+> **Closes with:** US0936 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Decomposed-into:** EP0241
 > **Priority:** High
 > **Type:** Improvement
@@ -39,3 +39,4 @@ Option 1 first, then option 2 once the yield is known. This repository's own pre
 | 2026-08-24 | sdlc-studio | Raised |
 | 2026-09-21 | audit ruling | still wanted, never started - returned to Proposed. `plan_execution` carries the killing node forward as the row's `test` but never compares it to the criterion's own `Verify:` selector, and `killed-elsewhere` appears nowhere in the skill or tools. Both facts needed are already in the ledger, so the detector is a comparison rather than new data collection. BG0606 is Fixed but it repaired the six instances, not the detector that would find the seventh. Note: US0800 under CR0556 duplicates this outright and one of the two should be dropped. |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0921 ships - planning: SUPERSEDED - killed-elsewhere rows: mutation ledger deleted in batch 2; superseded only once US0921 ships (D0264) |
+| 2026-09-25 | sdlc-studio BG0772 | Closes with re-pointed from US0921 to US0936 (D0264): US0921 was split and US0936 carries the ledger deletion this item waits on |

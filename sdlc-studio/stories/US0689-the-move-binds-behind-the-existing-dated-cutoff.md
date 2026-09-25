@@ -1,6 +1,6 @@
 # US0689: The move binds behind the existing dated cutoff, so a project that has not adopted it is unchanged and no backlog is retro-refused
 
-> **Status:** Blocked
+> **Status:** Superseded
 > **Closes with:** US0909 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0555
 > **Created:** 2026-08-25
@@ -33,3 +33,4 @@
 | --- | --- | --- |
 | 2026-08-25 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0909 ships - planning: SUPERSEDED - dated cutoff for the move: moot once the gate is deleted (batch 2); superseded only once US0909 ships (D0264) |
+| 2026-09-25 | sdlc-studio BG0772 | Superseded under D0264: its closing story US0909 is Done (BG0772) |
