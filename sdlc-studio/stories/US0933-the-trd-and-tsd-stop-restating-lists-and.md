@@ -1,6 +1,6 @@
 # US0933: The TRD and TSD stop restating lists and counts the code derives, and the tests that pinned the restatements are deleted
 
-> **Status:** In Progress
+> **Status:** Done
 > **Delivers:** CR0594
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
@@ -20,12 +20,16 @@
 
 - **AC1:** Given the refreshed `sdlc-studio/trd.md`, then no passage outside the Revision History enumerates the gate's default lanes (at most two names from `gate.DEFAULT_CHECKS` appear in any one paragraph or table row), the router's type list or reconcile's drift kinds, and each such passage names the code that holds the list instead; the check reads the lists from the code, and is red against today's TRD, which names twelve lanes in one paragraph
   - **Verify:** pytest tools/tests/test_lean_spec_restatements.py::SpecRestatementTests::test_the_trd_enumerates_no_list_the_code_derives
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given the refreshed `trd.md` and `tsd.md`, then neither states a count of scripts, modules, files or tests outside its Revision History, its ADRs and the claims a shipped reader checks (`doc_freshness`'s census claims, which D0266 keeps because a non-test reader holds them), counting forms with up to two words between the number and the noun ("(40+ help files)", "70+ shipped Python scripts"); today's "(6 modules)", "well over 2,500 tests" and the TSD's "90+ modules" are cut, and neither file carries a `<!-- measured: ... -->` timing marker, whose only reader (`check_spec_claims.py`) US0879 deleted; red against today's TRD and TSD
   - **Verify:** pytest tools/tests/test_lean_spec_restatements.py::SpecRestatementTests::test_no_spec_states_a_component_count
+  - **Verified:** yes (2026-09-25)
 - **AC3:** Given `tools/tests/test_trd_surface_derivation.py`, `test_trd_freshness.py` and `test_spec_counts_are_not_pinned.py` are deleted, then every criterion whose stamped `Verify:` selector names one of their tests (on US0059, US0458, BG0332, BG0457 and BG0571) reads `Verify: manual - retired by <this story>` with a matching `Verified: manual` line, and no `Verified: yes` selector under `sdlc-studio/` names a deleted test node, so the stamps-staged lane has nothing to refuse
   - **Verify:** pytest tools/tests/test_lean_spec_restatements.py::SpecRestatementTests::test_no_stamp_names_a_deleted_pin
+  - **Verified:** yes (2026-09-25)
 - **AC4:** Given the refreshed `tsd.md`, then its `## Test Levels` section, the only part the runner reads, still parses: `sprint.tsd_levels` returns at least one level carrying a path, and `sprint.test_strategy` for a unit affecting `.claude/skills/sdlc-studio/scripts/sprint.py` assigns it a proof band; a cut that removed or reshaped the section fails it
   - **Verify:** pytest tools/tests/test_lean_spec_restatements.py::SpecRestatementTests::test_the_tsd_test_levels_still_drive_the_strategy
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

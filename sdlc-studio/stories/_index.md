@@ -10,9 +10,9 @@
 | Draft | 46 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 7 |
+| In Progress | 6 |
 | Review | 0 |
-| Done | 723 |
+| Done | 724 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 72 |
@@ -291,7 +291,7 @@
 | [US0930](US0930-a-reviewer-s-brief-lists-the-recent-done.md) | A reviewer's brief lists the recent Done units that changed each file the unit touches, with the defects their reviews found | Done | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0931](US0931-a-build-lane-s-brief-carries-the-same.md) | A build lane's brief carries the same file history, and tells the author that history outranks an artefact's account | Draft | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0932](US0932-a-build-lane-s-brief-carries-the-trd.md) | A build lane's brief carries the TRD constraints of the components its unit touches | Draft | EP0264 | 2026-09-25 | 2026-09-25 |
-| [US0933](US0933-the-trd-and-tsd-stop-restating-lists-and.md) | The TRD and TSD stop restating lists and counts the code derives, and the tests that pinned the restatements are deleted | In Progress | EP0264 | 2026-09-25 | 2026-09-25 |
+| [US0933](US0933-the-trd-and-tsd-stop-restating-lists-and.md) | The TRD and TSD stop restating lists and counts the code derives, and the tests that pinned the restatements are deleted | Done | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0934](US0934-a-bug-reaches-fixed-without-a-depth-gate.md) | A bug reaches Fixed without a depth gate, and the retired --depth flags are refused | Done | EP0263 | 2026-09-25 | 2026-09-25 |
 | [US0935](US0935-a-repair-reaches-fixed-without-the-mutation-evidence.md) | A repair reaches Fixed without the mutation-evidence gate, survivor filing or evidence mode | Draft | EP0263 | 2026-09-25 | 2026-09-25 |
 | [US0936](US0936-the-mutation-ledger-verbs-are-retired-and-a.md) | The mutation ledger verbs are retired and a mutation run reports its yield only | Draft | EP0263 | 2026-09-25 | 2026-09-25 |

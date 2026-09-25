@@ -53,8 +53,8 @@ For the wiring check: assert the call is REACHED, not that its name appears in t
   - **Given** a passage that enumerates names and a shipped registry to hold it to
   - **When** the comparison runs
   - **Then** it refuses a name the registry does not carry, a registry name the passage omits, and a name smuggled into the passage's prose outside the enumeration. **The mutants:** adding `telepathy-lane` to the TRD's gate-tier list, and adding it to the sentences around the list, must each redden - under the shipped `named = _backticked(block) & types` both were unrepresentable, because the intersection made the compared set a subset of the registry by construction
-  - **Verify:** pytest tools/tests/test_trd_surface_derivation.py::TheSurfaceComparisonFailsInBothDirections::test_the_comparison_fails_in_both_directions_and_outside_the_enumeration
-  - **Verified:** yes (2026-08-11)
+  - **Verify:** manual - retired by US0933: the TRD no longer restates the gate lanes, the router types or the drift kinds, it names the code that holds them, and the pin that held its copies was deleted (D0266)
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0933
 
 - [x] **AC2: the lower-bound claim is read from the passages that state it, not from the file that describes it.**
   - **Given** a document whose stating passage has been emptied and whose Revision History still carries the row describing this change - the exact state three surviving mutants left `trd.md` in

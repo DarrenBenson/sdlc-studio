@@ -121,14 +121,14 @@ ADR-002.
 | Component | Responsibility | Technology |
 | --- | --- | --- |
 | `SKILL.md` router | Always-loaded entry point: philosophy gates, type table, Progressive Loading Guide, the Deterministic Entry Points card, pointers. held under its 500-line ceiling by `tools/check_budgets.py`, the only file paid for every invocation. | Markdown + YAML frontmatter |
-| `help/*.md` (40+ files) | Type-specific command help, prerequisites, output, examples; loaded on demand per `[type]`. | Markdown |
-| `reference-*.md` (50+ files) | Step-by-step workflow detail per domain; loaded only for multi-step workflows. Each is line-budgeted. | Markdown |
-| `templates/` (80+ files) | Document and code templates with `{{placeholder}}` syntax; loaded only when creating artifacts. Includes the persona/seat and stakeholder card schemas. | Markdown / text |
-| `best-practices/` (~20 files) | Quality guidelines consulted before producing artifacts. | Markdown |
+| `help/*.md` | Type-specific command help, prerequisites, output, examples; loaded on demand per `[type]`. | Markdown |
+| `reference-*.md` | Step-by-step workflow detail per domain; loaded only for multi-step workflows. Each is line-budgeted. | Markdown |
+| `templates/` | Document and code templates with `{{placeholder}}` syntax; loaded only when creating artifacts. Includes the persona/seat and stakeholder card schemas. | Markdown / text |
+| `best-practices/` | Quality guidelines consulted before producing artifacts. | Markdown |
 | `lessons/` | Cross-project lessons registry (`_index.md`, `LL{NNNN}-*.md`), ranked and printed into every sprint plan (ADR-010). | Markdown |
 | `scripts/` (60+ scripts) | Deterministic Python helpers emitting JSON. The read path is read-only; a bounded, tested set writes artefacts, indexes and gate state (see §5 rule 5). | Python 3.10+ stdlib |
-| `scripts/lib/` (6 modules) | Shared library. `sdlc_md.py` is the parsing core and the single source of truth for markdown conventions; `conventions.py`, `xrepo.py` and the rest carry per-domain shared logic. | Python 3.10+ stdlib |
-| `scripts/tests/` (90+ modules) | Unit tests for the script layer; well over 2,500 tests at the time of writing. Exact figures are counted, not pinned here; the freshness guard checks the enumerated count only in `reviews/LATEST.md`. The repo-only `tools/` checkers have their own suite under `tools/tests/`. | `unittest` |
+| `scripts/lib/` | Shared library. `sdlc_md.py` is the parsing core and the single source of truth for markdown conventions; `conventions.py`, `xrepo.py` and the rest carry per-domain shared logic. | Python 3.10+ stdlib |
+| `scripts/tests/` | Unit tests for the script layer; `python3 -m unittest discover` gives the live count. The repo-only `tools/` checkers have their own suite under `tools/tests/`. | `unittest` |
 | `tools/` | Repo CI guards (style, links, skill frontmatter, versions, budgets, neutrality, action pins) plus the eval runner. Not part of the shipped payload. | Python / Bash |
 | `install.sh` / `install.ps1` | Cross-harness installers for six targets. | Bash / PowerShell |
 
@@ -167,9 +167,8 @@ with the agent's built-in tools.
 
 A third architectural element sits over both: `gate.py` composes the deterministic
 checks into **lanes**, each returning PASS / warn / FAIL, and the whole into one
-exit code. The default sweep runs `changelog-fragments`, `conformance`, `derived-depth`, `doc-coverage`, `duplicate-id`, `engagement-floor`, `evidence-drift`, `index-derived`, `integrity`, `reconcile`, `validate` and `window`
-(the registry is `gate.DEFAULT_CHECKS`; this list is held to it by
-`tools/tests/test_trd_surface_derivation.py`). Eight advisory lanes that never refuse a
+exit code. The default sweep runs the lanes registered in `gate.DEFAULT_CHECKS`, and
+a gate run prints each lane it runs. The advisory lanes that never refuse a
 commit (`gate.ON_DEMAND_CHECKS`) run only when named with `--only`; doc-freshness also runs
 at the sprint close, where it reports and never blocks, and constitution and provenance stay
 in the default sweep for a project that sets them to block. Bound lanes attach to a
@@ -221,8 +220,8 @@ and the script CLI surface.
 
 `/sdlc-studio [type] [action] [flags]`. The router parses `type` and `action`,
 loads `help/{type}.md`, and follows the matching `reference-{domain}.md` workflow.
-Types are the router's own Type Reference table in `SKILL.md`, held to it by
-`tools/tests/test_trd_surface_derivation.py` rather than restated here: `audit`, `bug`, `chat`, `code`, `consult`, `cr`, `decisions`, `deploy`, `epic`, `gate`, `handoff`, `help`, `hint`, `init`, `issue`, `lessons`, `migrate`, `mutation`, `persona`, `plan`, `prd`, `project`, `pvd`, `reconcile`, `refine`, `repo`, `retro`, `review`, `rfc`, `skill-update`, `sprint`, `status`, `story`, `test-automation`, `test-env`, `test-spec`, `trd`, `triage`, `tsd`. (`sprint` was named
+The types are the router's own Type Reference table in `SKILL.md`, not restated
+here. (`sprint` was named
 `autosprint` before v4.0; the old name is retired.) The error-handling contract
 (missing prerequisites, existing files, id collision, open questions, unknown
 language) is in `SKILL.md`.
@@ -278,11 +277,9 @@ between installed copies.
 ### Error / report format
 
 Scripts that emit machine-readable output use JSON. The verifier writes a report to
-`.local/verify-report.json`; reconcile emits a drift report whose drift kinds are
-`reconcile.DRIFT_KINDS` - `missing-index`, `index-status-column`, `missing-row`, `status-mismatch`, `orphan-row`, `dead-row-link`, `count-mismatch`, `breakdown-unticked`, `epic-status-stale`, `breakdown-ticked-early`, `epic-points-stale`, `link-asymmetry`, `undecomposed`, `request-derivable`, `linked-epics`, `stale-index-stamp`, `index-field`, `spawned-column`, `supersession-asymmetry`, `epic-index-derivable` -
-held to that tuple by `tools/tests/test_trd_surface_derivation.py`;
-status emits the four-pillar census. There is no single canonical error envelope;
-failures surface as a non-zero exit plus a stderr message. [MEDIUM]
+`.local/verify-report.json`; reconcile emits a drift report whose drift kinds are the tuple
+`reconcile.DRIFT_KINDS`; status emits the four-pillar census. There is no single
+canonical error envelope; failures surface as a non-zero exit plus a stderr message. [MEDIUM]
 
 **Findings carry an actionable fix (CR0025), and it must name the cause.** Each
 drift item carries a `fix` string; per CR0025 a check emits remediation guidance,
@@ -567,8 +564,8 @@ Scaling is about context tokens, not machines. Progressive disclosure keeps the
 always-loaded footprint near-constant (`SKILL.md` under its 500-line ceiling, enforced by `tools/check_budgets.py`)
 however large the corpus grows. Agentic waves bound concurrency and the appetite
 breaker bounds an unattended run. Read-only scripts run in well under a second; the
-script suite runs several thousand tests in minutes, not seconds (the recorded runs sit
-around 215-265s). The one deliberate exception is
+script suite runs in minutes, not seconds (`tools/gate_timing.py estimate` prints the
+current figure). The one deliberate exception is
 `mutation.py`, which re-runs the suite once per mutant and is measured in minutes -
 which is why its gate lane reads stored evidence rather than executing, and reports a
 file whose bytes changed since its mutant ran as STALE rather than passing.
@@ -699,8 +696,8 @@ views stale and inconsistent.
 
 **Decision:** Treat the artifact files on disk as the sole source of truth. Indexes
 and statuses are derived. `reconcile.py` builds a census from disk and reports drift
-(`reconcile.DRIFT_KINDS`: `missing-index`, `index-status-column`, `missing-row`, `status-mismatch`, `orphan-row`, `dead-row-link`, `count-mismatch`, `breakdown-unticked`, `epic-status-stale`, `breakdown-ticked-early`, `epic-points-stale`, `link-asymmetry`, `undecomposed`, `request-derivable`, `linked-epics`, `stale-index-stamp`, `index-field`, `spawned-column`, `supersession-asymmetry`, `epic-index-derivable`);
-the agent applies fixes and the judgement-call transitions. Doctrine adds
+of the kinds in `reconcile.DRIFT_KINDS`; the agent applies fixes and the judgement-call
+transitions. Doctrine adds
 "ship the paperwork in the same commit as the code".
 
 **Consequences:**
@@ -1104,6 +1101,7 @@ name that appears somewhere in the prose:
 | 2026-07-24 | 4.1.0 | Spec-truth reconcile (mutation): added the `mutation-runs.json` per-target ledger to the state-file inventory and corrected the `mutation-report.json` row, which claimed a freshness guarantee the report now only provides as the ledger's fallback. Corrected the performance section's superseded whole-blob STALE rule. Findings table in US0385 |
 | 2026-07-24 | 4.1.0 | Doc-drift residuals (CR0365). §6 Migrations claimed `SKILL.md`'s type table points an `upgrade` type at `reference-upgrade.md`; there is no such row, so the sentence now names the `migrate` and `skill-update` types it does carry and the Progressive Loading Guide row that actually reaches the file. The two remaining exact component counts (§1 "58 scripts", ADR-001 "52 reference files, 41 help files" - actual 69, 54 and 44) are restated as growth-tolerant bands, matching §3's existing convention. This section was headed `## Changelog`, which no tooling reads - `artifact.py revision` and `flow.py` both look for `## Revision History`, as tsd.md already uses - so it is renamed and the TRD's history becomes machine-readable. Dispositions for all twelve residuals in US0369 |
 | 2026-07-29 | 5.0.0 | Spec-truth pass (US0457, US0458, US0459, US0460). ADR-011 records its D0062 amendment (2026-07-24): the breakdown gate is GOAL-AWARE and `design` is the only exemption, with an absent, empty or unknown goal BLOCKING - the ADR previously read as an unconditional refusal while the code already exempted one rung. The counterweight the close really emits (`grooming_report` rendered on the design rung) is named in the Consequences. Four enumerations - the router type list, the default sweep lanes and both drift-kind passages - now cite their shipped definitions and are held to them; the `count-mismatch`/CR0132 caveat goes, justified by CR0132 resolving Complete. The falsified 'a script cannot observe token spend' premise is replaced everywhere it was asserted by the measured one: transcript-measured but a LOWER BOUND, because delegated spend is supplied rather than observed. The porting doctrine is corrected to the direction `tools/forward-port.sh` implements - this repo is the source, the installed copy is the derived mirror - and the bare router line counts are replaced by the budgeted ceiling and its checker. Each claim is now held by a guard in `tools/tests/`. |
+| 2026-09-25 | 5.1.0 | Restatements cut (US0933, D0266). §3 and §5 name `gate.DEFAULT_CHECKS`, the `SKILL.md` Type Reference table and `reconcile.DRIFT_KINDS` rather than copying them, ADR-003 keeps its decision without the drift-kind copy, and the Component Overview and Scaling Strategy drop their counts except the `60+ scripts` claim that `doc_freshness`'s census checks; ADR-001's sizes stay as the decision's record. The three tests that pinned the copies are deleted. |
 
 ---
 

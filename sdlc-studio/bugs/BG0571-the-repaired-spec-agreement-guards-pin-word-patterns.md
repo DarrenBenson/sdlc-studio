@@ -41,11 +41,11 @@ Assert the RULE rather than its vocabulary. For the fail-safe sentence and the l
   - **Verify:** pytest tools/tests/test_token_premise.py -k passage_denying_the_claim
   - **Verified:** yes (2026-08-15)
 - [x] **AC3** Given a name in bold or capitalised inside backticks, when the stray-name check reads the passage, then the name is seen - markup is house style, the name is the claim.
-  - **Verify:** pytest tools/tests/test_trd_surface_derivation.py -k bold_and_mixed_case_names
-  - **Verified:** yes (2026-08-15)
+  - **Verify:** manual - retired by US0933: the TRD no longer restates the gate lanes, the router types or the drift kinds, it names the code that holds them, and the pin that held its copies was deleted (D0266)
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0933
 - [x] **AC4** Given an enumeration one of whose members is bold, when the run pattern reads it, then it is still recognised as an enumeration.
-  - **Verify:** pytest tools/tests/test_trd_surface_derivation.py -k run_survives_a_bold_member
-  - **Verified:** yes (2026-08-15)
+  - **Verify:** manual - retired by US0933: the TRD no longer restates the gate lanes, the router types or the drift kinds, it names the code that holds them, and the pin that held its copies was deleted (D0266)
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0933
 
 ## Impact
 

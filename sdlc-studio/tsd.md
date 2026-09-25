@@ -190,11 +190,11 @@ overstating coverage.
 | Coverage Target | 80% statement, blocking CI gate (`coverage report --fail-under=80`); ~90% aspiration [HIGH] |
 | Framework | Python `unittest` (stdlib) |
 | Execution | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` (shipped scripts) and `-s tools/tests` (repo-only checkers); `npm test` runs both |
-| Suite size | Several thousand tests across 90+ modules, and MINUTES rather than seconds - the recorded runs sit around 750-1150s for the skill suite (RUN-01M2JA6J added several hundred tests and ran its commits beside many parallel agents; its median settled near 840s) and 9-12s for the tools suite <!-- measured: skill-tests <= 950s --> <!-- measured: tool-tests <= 250s -->. Run the discover command for the live count and `tools/gate_timing.py estimate` for the live duration rather than trusting a pinned number: both drift every sprint, and the cost is why the hook skips the suites for a commit that cannot reach them |
+| Suite size | MINUTES rather than seconds for the skill suite, seconds for the tools suite. Run the discover command for the live count and `tools/gate_timing.py estimate` for the live duration rather than trusting a pinned number: both drift every sprint, and the cost is why the hook skips the suites for a commit that cannot reach them |
 | Location | `.claude/skills/sdlc-studio/scripts/tests/test_<script>.py`; `tools/tests/` for the repo-only checkers |
 
 The suite operates on small temporary fixture trees, which is what keeps a
-2000-plus-test run cheap enough to sit in a pre-commit hook.
+full run cheap enough to sit in a pre-commit hook.
 
 **A passing suite is silent.** Tests that feed a validator a deliberately-broken
 fixture capture and assert on its diagnostics rather than letting them escape to the
@@ -667,6 +667,7 @@ package.json                # lint and test entry points
 | 2026-07-14 | Generate mode (v4 refresh) | Added the mutation gate (assertion integrity), the eval scenarios (flow conformance), the artefact and release gates with their bound lanes, the story-only rule for executable verifiers, verification depth on a terminal bug status, and the enforced pre-commit hook. Corrected the lint chain (six checks was stale; it is eight), the suite size (181 was stale; it is 2151), the script count (10 was stale; it is 58), and the link-check scope |
 | 2026-07-17 | Spec-truth alignment | Recorded the blocking 80% CI coverage gate (`coverage report --fail-under=80`) and reconciled it with the ~90% aspiration - correcting the stale "coverage is not wired into CI" claim in Coverage Targets and Coverage Measurement. Recorded the blocking bandit security scan (`bandit -r ... -ll -x '*/tests/*' -q`) in Security Testing, the NFR mapping, the tools table, and both quality-gate tables - correcting the stale "no dedicated security scanner is wired" claim |
 | 2026-07-24 | Spec-truth reconcile (mutation) | Reconciled the mutation entries against `mutation.py` and `gate.py`: the Output row now names the per-target ledger beside the report, the Gate row and the gate-lane table carry the per-file covered / STALE / uncovered verdict in place of the superseded whole-blob rev-or-edit rule, and the test-tier map names the ledger's bound and provenance. Corrected the pre-commit blockquote's "executably enforced" over an advisory lane. The findings table, including the claims checked and left unchanged, is recorded in US0385 |
+| 2026-09-25 | Restatements cut (US0933, D0266) | In `## Test Levels`, the Unit Testing suite-size row and the paragraph under its table state no test or module count, and the row drops its two `measured:` markers, whose only reader US0879 deleted. The level headings and backticked paths the runner reads are unchanged. |
 
 ---
 

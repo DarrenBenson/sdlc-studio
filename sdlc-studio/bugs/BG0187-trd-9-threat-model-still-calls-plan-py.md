@@ -3,7 +3,7 @@
 > **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
-> **Verification depth:** functional (a guard in tools/tests/test_trd_freshness.py asserts the Threat Model row claims no sole exception and points at rule 5, and that rule 5 still enumerates a writer SET; two mutants executed and killed)
+> **Verification depth:** functional (at the fix, a guard in tools/tests/test_trd_freshness.py held the Threat Model row to rule 5's writer SET and two mutants were killed; US0933 deleted that module under D0266, so no test holds the row now)
 > **Affects:** sdlc-studio/trd.md
 > **Created:** 2026-07-17
 > **Created-by:** sdlc-studio file
@@ -27,3 +27,4 @@ Restate the 9 row to point at the 5 rule 5 writer set, or drop the 'sole excepti
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Filed |
 | 2026-07-18 | sdlc-studio | Fixed: the 9 Threat Model row now points at the 5 rule 5 writer SET rather than naming `plan.py archive` a sole exception |
+| 2026-09-25 | Claude Opus 5.5 (US0933) | Verification depth corrected: its guard in `tools/tests/test_trd_freshness.py` was deleted with the TRD's pinning tests (D0266) |

@@ -29,8 +29,8 @@
 - **Given** a future TRD scale/contract claim that drifts from code
 - **When** the guard runs
 - **Then** it flags the stale claim (as LATEST.md claims are guarded)
-- **Verify:** pytest tools/tests/test_trd_freshness.py
-- **Verified:** yes (2026-07-10)
+- **Verify:** manual - retired by US0933: the TRD freshness guard was deleted with the stale-claim denylist and script-count pin it held; D0266 cuts a spec restatement with its pin
+- **Verified:** manual (2026-09-25) - retired, superseded by US0933
 
 ## Revision History
 

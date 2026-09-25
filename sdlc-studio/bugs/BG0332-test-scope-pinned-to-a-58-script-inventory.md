@@ -30,16 +30,16 @@ Replace the pinned 58 with the current count or unpinned wording ('the shipped h
 - **Given** the TSD and TRD live prose (the revision history is a record, not a live claim)
 - **When** the guard runs
 - **Then** no pinned component count disagrees with the census, so the only inventory bounding the unit-test scope cannot silently go a fifth short
-- **Verify:** pytest tools/tests/test_spec_counts_are_not_pinned.py::SpecCountsTests::test_no_spec_pins_a_component_count_it_does_not_match
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0933: the specs state no component count, and the census pin that held their counts was deleted (D0266)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0933
 
 ### AC2: the guard compares against the census, not a second written number
 
 - **Given** the census of scripts and lib modules
 - **When** the guard runs
 - **Then** it is read from the tree and asserted non-trivial, because a guard carrying its own copy of the count is the defect it exists to catch
-- **Verify:** pytest tools/tests/test_spec_counts_are_not_pinned.py::SpecCountsTests::test_the_census_is_readable
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0933: the specs state no component count, and the census pin that held their counts was deleted (D0266)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0933
 
 ## Revision History
 
