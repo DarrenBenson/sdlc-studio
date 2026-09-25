@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_every_line.py, changelog.d/BG0777.md
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,11 +23,14 @@ Route both through ACBlock.verifiers so every line runs, as `verify_story` does,
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: After BG0687, `verify_ac` run executes every Verify line under a criterion, but `sprint.lane_verify` and `lane_return` (sprint.py ~2503, ~2774) and...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Route both through ACBlock.verifiers so every line runs, as `verify_story` does, with a stacked-block test each.
+- [ ] **AC1** Given a unit whose criterion carries two Verify lines, the first green and the second red, when `sprint.py lane return` records its outcome, then the outcome is not `fixed` and the red line is named, as `verify_ac run` reports it. Fails on: `lane_verify`/`lane_return` running only `block.verifier`
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_every_line.py::LaneEveryLineTests::test_a_red_second_line_is_not_fixed_on_lane_return
+- [ ] **AC2** Given the same stacked criterion, when `verify_ac`'s revert check runs it against the base, then every Verify line is run on both sides, so a second line that passes at base as well is caught. Fails on: the revert check reading only the first line
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_every_line.py::LaneEveryLineTests::test_the_revert_check_runs_every_line
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-25 | sdlc-studio | Filed |
+| 2026-09-25 | sdlc | Groomed for Sprint 5: criteria and Verify selectors written |
