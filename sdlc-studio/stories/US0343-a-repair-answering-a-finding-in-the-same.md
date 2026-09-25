@@ -26,8 +26,8 @@ wrong with this attempt
 - **When** the plan is recorded
 - **Then** it carries an explicit statement that the design is RETAINED or CHANGED with the
   reason, and a plan carrying neither is refused rather than stored
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::DesignDecisionTests::test_a_repeat_class_plan_without_a_retain_or_change_statement_is_refused
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ### AC2: past the threshold a plan describing only a better instance is refused
 
@@ -35,8 +35,8 @@ wrong with this attempt
 - **When** a plan proposes another instance of the same approach, declaring the design RETAINED
 - **Then** it is refused and names the rounds the class has already failed, so the refusal
   carries the evidence rather than a bare count
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::DesignDecisionTests::test_past_the_threshold_a_retained_design_is_refused_and_names_the_failed_rounds
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ### AC3: RETAIN is a first-class answer below the threshold, and its reason is kept
 
@@ -44,8 +44,8 @@ wrong with this attempt
 - **When** it is recorded
 - **Then** it is accepted and the reason is stored with it, so a deliberate decision to keep an
   approach is distinguishable from nobody having asked
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::DesignDecisionTests::test_a_reasoned_retain_below_the_threshold_is_accepted_and_its_reason_stored
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ### AC4: the threshold is configurable and its default states the evidence it rests on
 
@@ -53,8 +53,8 @@ wrong with this attempt
 - **When** the default is resolved
 - **Then** the value is accompanied by the evidence it was chosen from rather than presented as
   a bare number, and a project-declared value overrides it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::DesignDecisionTests::test_the_default_threshold_carries_its_basis_and_a_project_value_overrides_it
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ## Revision History
 

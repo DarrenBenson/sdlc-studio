@@ -27,26 +27,26 @@ Wire it (operator ruling, 2026-09-15 sprint planning): add record and review ver
 ## Acceptance Criteria
 
 - [ ] **AC1** With `review.repair_plan_gate: on`, `transition.py set` taking a bug that has no repair plan to Fixed exits non-zero, its refusal names `review.repair_plan_gate` (other gates also refuse a bug going to Fixed, so the assertion is on this gate's own key, not on a refusal), and the bug file still reads its prior status
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairGateIsReachableTests::test_the_gate_refuses_at_the_terminal_transition
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0913
 - [ ] **AC2** A repair plan keyed to the unit it repairs, and its verdict, record through `repair_plan.py record` and `repair_plan.py review`; `review` run with the plan's recorded author as reviewer exits non-zero naming independence and writes no plan-review row, beside the positive case where a different reviewer's verdict is written
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairGateIsReachableTests::test_a_plan_and_verdict_record_through_the_cli
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0913
 - [ ] **AC3** With the setting off, the AC1 fixture (a bug with no repair plan) reaches Fixed and no output names `review.repair_plan_gate` - the paired control, beside AC1's refusal of the same fixture with the setting on
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairGateIsReachableTests::test_the_gate_off_changes_nothing
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0913
 - [ ] **AC4** A repair-plan verdict written by `repair_plan.py review` carries the kind `repair-plan`, a member of `critic.PLAN_REVIEW_KINDS`, and is invisible to the spec and test-plan verdict lookups: `critic.verdict_for(root, unit, phase="plan-review", kind=...)` returns None for `spec` and for `test-plan`, beside the positive control that `kind="repair-plan"` returns the APPROVE (the repair ledger's reading of the same row is AC6's)
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairGateIsReachableTests::test_a_repair_plan_approval_is_not_a_spec_plan_review
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0913
 - [ ] **AC5** With `review.repair_plan_gate: on` and no plan recorded, a story whose `Parent` names a BG id and one whose `Delivers` names an RV id are each refused at Done naming the gate, while a bug set to `Won't Fix` and a story whose Parent names an epic produce no output naming `review.repair_plan_gate`. Each story fixture otherwise passes every other Done gate (its executable criteria stamped passed, below `review.two_role_after`, `review.test_plan_after` unset), shown in the same test by the same two repair stories reaching Done with the setting off, so a correct build cannot be refused for a reason other than this gate
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairGateIsReachableTests::test_the_gate_holds_repair_stories_and_spares_decision_terminals
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0913
 - [ ] **AC6** A repair-plan REJECT holds nothing in the plan-review repair ledger, whatever `review.repair_plan_gate` reads: a unit whose `critic.py record --kind test-plan` REJECT was answered by a complete `critic.py repair --phase plan-review` reads `critic.plan_review_repair_clears` as (True, "") before and after `repair_plan.py review --verdict REJECT` records a repair-plan REJECT on the same unit id; and on a unit whose only plan-review REJECT is a repair-plan one, `critic.py repair --phase plan-review` exits non-zero naming no live REJECT and appends no repair row, beside the same command on a unit carrying a test-plan REJECT, which exits 0
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairGateIsReachableTests::test_a_repair_plan_reject_does_not_hold_the_test_plan_repair_clause
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0913
 - [ ] **AC7** With `review.repair_plan_gate: on` and `review.test_plan_after` unset, AC3's bug gets a repair plan recorded by `repair_plan.py record` under the bug's own id by one author, and a DIFFERENT reviewer APPROVEs it with `repair_plan.py review`; `transition.py set` taking the bug to Fixed then exits 0, the bug file reads Fixed, and no output names `review.repair_plan_gate`. The gate-on positive control beside AC1's refusal: without it a transition that asks `repair_gate` about the wrong plan id, or a `plan_reviewed` that reads a kind `review` never writes, passes AC1-AC6 while no gated repair unit can ever close. This fixture needs nothing from BG0678: one round, one plan, one approval
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairGateIsReachableTests::test_the_gate_on_lets_an_independently_approved_plan_reach_fixed
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ## Test Plan
 

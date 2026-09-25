@@ -25,8 +25,8 @@ how `wsjf-inputs.json` once read as current judgement for weeks
 - **When** the verdict is stored
 - **Then** it carries a fingerprint derived from those findings, following the precedent
   `ac_fingerprint` already sets for pinning a story plan to its acceptance criteria
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairPlanPinTests::test_a_verdict_stores_a_fingerprint_of_the_findings_it_answered
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ### AC2: a later finding invalidates the verdict
 
@@ -34,8 +34,8 @@ how `wsjf-inputs.json` once read as current judgement for weeks
 - **When** the gate is asked whether the plan is reviewed
 - **Then** it answers no and names the finding the verdict does not cover, rather than
   reporting the plan as approved because a verdict exists
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairPlanPinTests::test_a_finding_added_after_the_verdict_invalidates_it
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ### AC3: an unchanged finding set leaves the verdict standing
 
@@ -44,8 +44,8 @@ how `wsjf-inputs.json` once read as current judgement for weeks
 - **When** the gate re-checks it
 - **Then** the verdict still holds, so the pin discriminates a changed question from a
   re-serialised one and does not force a re-review on every read
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairPlanPinTests::test_reordering_and_whitespace_do_not_invalidate_a_verdict
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ## Revision History
 

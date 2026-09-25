@@ -28,14 +28,16 @@ Decide the untokened case deliberately in `plan_reviewed`: either treat a verdic
 - **Given** a plan-review APPROVE recorded with no `findings-hash=` token in its issues field
 - **When** `repair_plan.plan_reviewed` evaluates it
 - **Then** the untokened case takes an explicit branch with a stated decision, rather than passing because the match guard short-circuited
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::UntokenedVerdictPinTests::test_an_untokened_verdict_is_not_treated_as_pinned
+- **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ### AC2: a tokened verdict pinned to the current findings still passes, unregressed
 
 - **Given** a plan-review APPROVE carrying a `findings-hash=` token equal to the plan's current findings
 - **When** `plan_reviewed` evaluates it
 - **Then** it passes exactly as before, so the fix narrows only the untokened hole
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::UntokenedVerdictPinTests::test_a_correctly_pinned_verdict_still_passes
+- **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ## Revision History
 

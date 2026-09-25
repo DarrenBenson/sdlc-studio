@@ -26,8 +26,8 @@ premise as the one it replaced
 - **When** it is parsed
 - **Then** it carries the approach question alongside the four existing ones, and a brief
   missing it is refused rather than issued
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::ApproachQuestionBriefTests::test_a_repeat_class_brief_missing_the_approach_question_is_refused
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ### AC2: the brief shows the reviewer what the class has already tried
 
@@ -35,8 +35,8 @@ premise as the one it replaced
 - **When** the brief is generated
 - **Then** it enumerates the previous approaches and why each failed, because a reviewer asked
   whether an approach is exhausted cannot answer from the current plan alone
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::ApproachQuestionBriefTests::test_the_brief_enumerates_the_previous_approaches_and_their_failures
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ## Revision History
 

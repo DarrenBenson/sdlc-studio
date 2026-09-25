@@ -25,8 +25,8 @@ the sprint from its artefacts
 - **When** the sprint's review round is written to the run state
 - **Then** the round carries the plan id the repair executed, and the close can report which
   rounds were planned and which were not
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairProvenanceTests::test_a_recorded_repair_carries_the_plan_it_executed
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by US0913: the repair provenance tokens named a repair plan, and the repair-plan gate was deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ### AC2: an unplanned repair is recorded as unplanned, never as absent
 
@@ -35,8 +35,8 @@ the sprint from its artefacts
 - **Then** it records that no plan was executed, explicitly, rather than leaving the field
   empty - an absent field reads as missing data, and a reader cannot tell it apart from a
   planned repair whose id was dropped
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RepairProvenanceTests::test_an_unplanned_repair_is_recorded_as_unplanned_not_blank
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by US0913: the repair provenance tokens named a repair plan, and the repair-plan gate was deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ## Revision History
 

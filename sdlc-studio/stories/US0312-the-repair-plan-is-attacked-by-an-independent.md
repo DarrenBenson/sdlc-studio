@@ -24,8 +24,8 @@ after it has been built and reviewed
 - **Given** a repair plan carrying no independent verdict
 - **When** the repair is recorded against the sprint
 - **Then** it is refused, naming the plan and the review it lacks
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairPlanReviewTests::test_a_repair_without_a_plan_verdict_is_refused
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ### AC2: the author of a plan cannot record its verdict
 
@@ -33,8 +33,8 @@ after it has been built and reviewed
 - **When** the verdict is recorded
 - **Then** it is refused on the same self-approval rule the story-plan gate already applies,
   so the independence is mechanical rather than a convention the author is asked to honour
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairPlanReviewTests::test_the_plan_author_cannot_record_its_own_verdict
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ### AC3: the brief puts the four questions this loop kept failing
 
@@ -44,8 +44,8 @@ after it has been built and reviewed
   it repairs; is it a restatement of a rule living in code elsewhere, and could it be
   DERIVED; what did the previous attempt believe that turned out false; what does this change
   make it harder to notice - and a brief missing any of them is refused rather than issued
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairPlanReviewTests::test_a_brief_missing_any_of_the_four_questions_is_refused
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ### AC4: the review happens before the diff, not beside it
 
@@ -53,8 +53,8 @@ after it has been built and reviewed
 - **When** the gate checks it
 - **Then** the verdict does not satisfy the gate, because a review that followed the work is
   a description of it rather than an attack on it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repair_plan.py::RepairPlanReviewTests::test_a_verdict_recorded_after_the_repair_does_not_satisfy_the_gate
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by US0913: the repair-plan gate and repair_plan.py were deleted; a repair closes on green criteria and a round-2 APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0913
 
 ## Revision History
 

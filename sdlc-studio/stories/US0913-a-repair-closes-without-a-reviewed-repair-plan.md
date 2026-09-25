@@ -1,6 +1,6 @@
 # US0913: A repair closes without a reviewed repair plan
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,14 +19,19 @@
 
 - **AC1:** Given a fixture repair bug in a project setting `review.repair_plan_gate: on`, with green criteria, a round-2 independent APPROVE and no repair plan on record, when `transition.py set <id> Fixed` runs, then it succeeds. Fails on: HEAD's repair-plan gate refusing the missing plan
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_repair_plan.py::RepairPlanGoneTests::test_a_repair_without_a_plan_reaches_fixed
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given the scripts tree, then `repair_plan.py` does not exist, no shipped script imports it, and `critic.py` defines no `REPAIR_PLAN_KIND`. Fails on: deleting the module while `critic.py` keeps the kind constant and its brief branch
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_repair_plan.py::RepairPlanGoneTests::test_nothing_imports_repair_plan
+  - **Verified:** yes (2026-09-25)
 - **AC3:** Given config-defaults.yaml, then it carries neither `review.repair_plan_gate` nor `review.repair_design_threshold`, and no shipped script reads either key
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_repair_plan.py::RepairPlanGoneTests::test_no_repair_plan_keys_are_read
+  - **Verified:** yes (2026-09-25)
 - **AC4:** Given `docgen.py surface` rerun in the same commit, then reference-scripts-surface.md names none of `repair_plan.py brief`, `record`, `review` or `gate` and `docgen.py surface --check` reports 0 drift
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_repair_plan.py::RepairPlanGoneTests::test_the_surface_names_no_retired_verb
+  - **Verified:** yes (2026-09-25)
 - **AC5:** Given the criteria whose stamped Verify selector names a test this story deletes (`test_repair_plan.py` and RepairProvenanceTests): BG0267 (2), BG0673 (7), BG0678 (6), US0311 (3), US0312 (4), US0313 (3), US0314 (2), US0315 (3), US0343 (4) and US0344 (2), then each is retired in the D0259 pattern (`Verify: manual - retired by US0913: <why>`, `Verified: manual (<date>) - retired, superseded by US0913`), and no `Verified: yes` selector under sdlc-studio/ names a deleted test node
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_repair_plan.py::RepairPlanGoneTests::test_no_stamp_names_a_deleted_test
+  - **Verified:** yes (2026-09-25)
 
 ## Notes
 
