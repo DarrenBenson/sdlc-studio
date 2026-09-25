@@ -308,7 +308,9 @@ independent critic plus the gate - the check's output states this scoping.
    a handoff - it says the run was not opened rather than inventing a start time.
 
 9. **The compulsory checklist (a gate, not doctrine).** Every stage above is a ROW of the sprint
-   report, stating `ran`, `not-run` or `waived`; the figures a close otherwise re-derives by hand
+   report, stating `ran`, `not-run` or `waived` (a row with nothing to measure reads `not measured`
+   in the report's appendix, and a row that does not apply is omitted); the figures a close
+   otherwise re-derives by hand
    (planned against delivered, dropped / held / carried over with reasons, scope creep as a ratio,
    who reviewed what under which seat over how many lenses, impediments, carried known issues, cost)
    are rows beside them. The checklist IS the report - one document, not two to keep in step - and

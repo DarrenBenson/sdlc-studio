@@ -227,17 +227,13 @@ def _mutation_summary(root: Path, unit_ids: list[str]) -> dict:
 
 
 def _sprint_goal(root: Path, unit_ids: list[str]) -> tuple[str | None, dict | None]:
-    """The run state's Sprint Goal + verdict - ONLY when its batch names this sprint's
-    units. A run state from a different run says nothing about this report (the same
-    stale-confounder guard the elapsed read learned the hard way)."""
-    try:
-        state = run_state.read(root) or {}
-    except run_state.RunStateError:
-        return None, None  # the report stays renderable; the close gate owns that failure
+    """The Sprint Goal + verdict of the run that delivered THIS sprint, live or archived.
+
+    Read through `_run_record`, the one rule for which run was this sprint's, so a run from a
+    different batch says nothing about this report. Reading the live record alone lost a
+    recorded verdict the moment the next run opened and archived this one."""
+    state = _run_record(root, unit_ids) or {}
     if not state.get("sprint_goal"):
-        return None, None
-    batch = {sdlc_md.norm_id(u) for u in (state.get("batch") or [])}
-    if not batch & {sdlc_md.norm_id(u) for u in unit_ids}:
         return None, None
     return state["sprint_goal"], state.get("sprint_goal_verdict")
 import telemetry  # noqa: E402
@@ -891,6 +887,14 @@ EXPIRED = "expired"
 CLOSE_WINDOW = "sprint close"
 #: A FIGURE row is answered when its value could be derived, unanswered when it could not.
 ANSWERED, UNANSWERED = "answered", "unanswered"
+#: A row whose figure this run gives nothing to measure - no cost meter, no run record to join.
+#: Neither answered nor outstanding: nothing is known to be wrong, so it is no known issue, and
+#: nothing is known to be right, so it is never read as ok. The report's appendix lists it as
+#: `not measured`, with the reason.
+UNMEASURABLE = "not-measured"
+#: A row whose question does not arise for this project at all. Omitted from the checklist
+#: rather than reported: a row that cannot apply is not a gap and not a measurement.
+NOT_APPLICABLE = "not-applicable"
 
 STAGE, FIGURE = "stage", "figure"
 DERIVED, RECORDED = "derived", "recorded"
@@ -985,9 +989,6 @@ CHECKLIST = (
     {"id": "doc-surface", "kind": FIGURE, "authority": DERIVED,
      "title": "Verbs the tooling ships that the documentation does not name",
      "command": "sprint report", "resolver": "_ck_doc_surface"},
-    {"id": "mutation-survivors", "kind": FIGURE, "authority": DERIVED,
-     "title": "Surviving mutants this run let through, by severity",
-     "command": "sprint report", "resolver": "_ck_mutation_survivors"},
     {"id": "review-attribution", "kind": FIGURE, "authority": DERIVED,
      "title": "Who reviewed what, under which seat, over how many lenses",
      "command": "critic record", "resolver": "_ck_review_attribution"},
@@ -1237,10 +1238,6 @@ def _ck_closing_review(ctx: dict) -> tuple:
     of the work.
     """
     entries = _verdict_entries(ctx)
-    if not entries:
-        return (NOT_RUN, "none recorded",
-                "no full-diff pass over this batch is recorded; the close certifies that a "
-                "review happened, it does not perform one")
     latest: dict[str, str] = {}
     for _key, verdict, units in entries:
         for unit in units:
@@ -1249,7 +1246,13 @@ def _ck_closing_review(ctx: dict) -> tuple:
     # WHETHER a unit is covered comes from the shared reading; the verdict fold only says WHY,
     # because `review_coverage` reports a rejection and an absence identically and the operator
     # needs those apart. One computation decides, the other explains - never two deciding.
-    cov = _coverage(ctx)
+    # Consulted even when neither batch ledger holds a row: the lean loop reviews each unit
+    # once, with `critic record`, and that per-unit verdict is what the shared reading counts.
+    cov = _coverage(ctx) if (entries or units) else None
+    if not entries and not any((cov or {}).get(u, {}).get("covered") for u in units):
+        return (NOT_RUN, "none recorded",
+                "no full-diff pass over this batch is recorded; the close certifies that a "
+                "review happened, it does not perform one")
     if cov is None:
         return (NOT_RUN, "coverage unreadable",
                 "the coverage reading could not be taken, so this row cannot say whether the "
@@ -1643,7 +1646,7 @@ def _ck_handoff(ctx: dict) -> tuple:
 def _ck_planned_vs_delivered(ctx: dict) -> tuple:
     planned = ctx["planned"]
     if not planned:
-        return (UNANSWERED, "unknown",
+        return (UNMEASURABLE, "unknown",
                 "no run record names this sprint's units, so what it COMMITTED to cannot be "
                 "recovered - only what it happened to finish")
     delivered = [u for u in ctx["units"] if _terminal(ctx["root"], u)[1]]
@@ -1678,7 +1681,7 @@ def _planned_points(root: Path, planned: list) -> int | None:
 def _ck_not_delivered(ctx: dict) -> tuple:
     run = ctx["run"] or {}
     if not run.get("run_id"):
-        return (UNANSWERED, "unknown", "no run record, so no batch-change ledger to read")
+        return (UNMEASURABLE, "unknown", "no run record, so no batch-change ledger to read")
     dropped = [c for c in (run.get("batch_changes") or []) if c.get("action") == "drop"]
     dropped_ids = {sdlc_md.norm_id(c.get("id") or "") for c in dropped}
     # HELD is a live state, not a log entry. `deferred_units` is append-only and `decision
@@ -1733,7 +1736,7 @@ def _ck_scope_creep(ctx: dict) -> tuple:
     planned = ctx["planned"]
     filed = ctx["filed_in_run"]
     if not planned:
-        return (UNANSWERED, "unknown",
+        return (UNMEASURABLE, "unknown",
                 "the planned set is unknown, so a ratio against it would be arithmetic on a "
                 "number nobody can check")
     ratio = round(len(filed) / len(planned), 2)
@@ -1755,7 +1758,7 @@ def _ck_doc_surface(ctx: dict) -> tuple:
     """
     import doc_coverage  # noqa: PLC0415 - the ONE applicability reader, shared with the gate lane
     if not doc_coverage.is_skill_repo(str(read_root(ctx))):
-        return (NOT_RUN, "not applicable",
+        return (NOT_APPLICABLE, "not applicable",
                 "the verb surface is the skill's own documentation, which this project does not "
                 "have - the row is undefined here rather than unmeasurable")
     try:
@@ -1768,61 +1771,6 @@ def _ck_doc_surface(ctx: dict) -> tuple:
                  f"{r['undocumented']} not",
             "a verb with no invocable form in the documentation is one a reader cannot find as "
             "something they could type - reported, never blocking")
-
-
-def _ck_mutation_survivors(ctx: dict) -> tuple:
-    """The survivors this run FILED rather than blocked on, counted by severity.
-
-    THIS RUN's, scoped by the run id stamped on each filed artefact, and derived by reading
-    those artefacts rather than a tally the filer kept alongside them.
-    A tally is what a hurried implementation writes and it is invisible to any fixture whose
-    artefacts all arrive through the filer - so the count would be right for exactly as long as
-    nothing else ever wrote one.
-
-    This row exists because reporting rather than blocking is a trade the operator only gets to
-    make if the thing traded away is visible. A survivor filed and never counted is a survivor
-    silently dropped, which is the outcome blocking was rejected to avoid, not the one chosen.
-    """
-    root = Path(ctx["root"])
-    bugs = root / "sdlc-studio" / "bugs"
-    if not bugs.is_dir():
-        return (NOT_RUN, "no backlog", "there is no bugs directory to count from")
-    # SCOPED TO THIS RUN. The first cut globbed every survivor bug ever filed, so the row's own
-    # title - and the criterion, and the changelog - claimed a scope the resolver did not have,
-    # and the number only ever grew. The run id is stamped on the artefact at filing.
-    run_id = ((ctx.get("run") or {}).get("run_id") or "").strip()
-    if not run_id:
-        return (NOT_RUN, "no run", "no run is recorded, so survivors cannot be scoped to one")
-    counts: dict = {}
-    orphans: list = []
-    for f in sorted(bugs.rglob("BG*.md")):
-        try:
-            body = f.read_text(encoding="utf-8")
-        except OSError:
-            continue
-        if not (sdlc_md.extract_field(body, "Mutation-survivor") or "").strip():
-            continue
-        stamped = (sdlc_md.extract_field(body, "Mutation-survivor-run") or "").strip()
-        sev = (sdlc_md.extract_field(body, "Severity") or "unstated").strip() or "unstated"
-        if stamped == run_id:
-            counts[sev] = counts.get(sev, 0) + 1
-        elif stamped in ("", "none"):
-            # Filed with no run open, so no close will ever claim it. Reported rather than
-            # dropped: a survivor nobody counts is the silent loss this row exists to prevent,
-            # and scoping to a run must not become a new way of losing one.
-            orphans.append(sev)
-    total = sum(counts.values())
-    unattributed = (f"; {len(orphans)} filed with no run open, counted by no close"
-                    if orphans else "")
-    if not total:
-        return (RAN, f"0 survivors filed{unattributed}",
-                "a survivor filed outside a run is counted by nobody" if orphans else "")
-    order = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
-    split = ", ".join(f"{sev} {n}" for sev, n in
-                      sorted(counts.items(), key=lambda kv: (order.get(kv[0], 9), kv[0])))
-    return (RAN, f"{total} survivor(s) filed - {split}{unattributed}",
-            "these are mutants a repair let through, filed rather than blocked on. Fix them "
-            "or decide to live with them, but decide")
 
 
 def _ck_review_attribution(ctx: dict) -> tuple:
@@ -1921,7 +1869,7 @@ def _ck_review_attribution(ctx: dict) -> tuple:
 def _ck_impediments(ctx: dict) -> tuple:
     run = ctx["run"]
     if run is None:
-        return (UNANSWERED, "unreadable",
+        return (UNMEASURABLE, "unreadable",
                 "no run record could be read, so whether anything was blocked is unknown - "
                 "which is not the same as nothing having been blocked")
     pending = [d for d in (run.get("pending_decisions") or []) if not d.get("resolution")]
@@ -2011,7 +1959,7 @@ def _ck_known_issues(ctx: dict) -> tuple:
 def _ck_cost(ctx: dict) -> tuple:
     spend = ctx.get("spend") or {}
     if not spend.get("measured_units") and not ctx.get("sprint_actual_tokens"):
-        return (UNANSWERED, "unattributed",
+        return (UNMEASURABLE, "unattributed",
                 "no per-unit telemetry and no harness-tracked sprint total, so what this "
                 "sprint cost is not attributable - which is not zero")
     return (ANSWERED, f"{spend.get('tokens', 0):,} token(s) over "
@@ -2209,11 +2157,13 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
     }
     rows = []
     for item in CHECKLIST:
-        rows.append({**{k: v for k, v in item.items() if k != "resolver"},
-                     **_resolve_item(item, ctx)})
+        row = {**{k: v for k, v in item.items() if k != "resolver"}, **_resolve_item(item, ctx)}
+        if row["state"] != NOT_APPLICABLE:
+            rows.append(row)
     unmet = [r for r in rows if r["state"] in _OUTSTANDING]
     return {"ok": True, "id": retro_id, "items": rows,
             "expired": [r["id"] for r in rows if r["state"] == EXPIRED],
+            "not_measured": [r["id"] for r in rows if r["state"] == UNMEASURABLE],
             "outstanding": [r["id"] for r in unmet if not r.get("discharged_by")],
             "pending_in_close": [r["id"] for r in unmet if r.get("discharged_by") == "close"],
             **_known_issue_rulings(ctx)}
@@ -2432,7 +2382,8 @@ def render_checklist(ck: dict) -> str:
     lines = ["", "## Sprint checklist", ""]
     for row in ck["items"]:
         mark = {RAN: "ran", ANSWERED: "ok", WAIVED: "WAIVED", EXPIRED: "EXPIRED",
-                NOT_RUN: "NOT RUN", UNANSWERED: "UNANSWERED"}[row["state"]]
+                NOT_RUN: "NOT RUN", UNANSWERED: "UNANSWERED",
+                UNMEASURABLE: "not measured"}[row["state"]]
         line = f"[{mark}] {row['title']}: {row['value']}"
         if row.get("waiver"):
             line += f" (waived by {row['waiver']})"
@@ -3677,6 +3628,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         _waivers_section(root, _iso(end), _iso(start), readings["waivers"]),
         _lane_yield_section(root, state, start, end),
         _lessons_section(root, state.get("run_id")),
+        _unmeasured_section(state, state_rel),
     ]
     # Absent, not NOT MEASURED, where no refusal log exists: its only writer is this repository's
     # own commit hooks, so in a consuming project the section could never fill.
@@ -4058,6 +4010,27 @@ def _lane_yield_section(root: Path, state: dict, start, end) -> dict | None:
                                                                         note, src)}, rows)
 
 
+#: The run-state key the close records its unmeasurable checklist rows under, for the appendix.
+CLOSE_NOT_MEASURED = "close_not_measured"
+
+
+def _unmeasured_section(state: dict, state_rel: str) -> dict | None:
+    """The checklist rows the close could not measure, each `not measured` with its reason.
+
+    In the appendix, never under known issues: nothing is known to be wrong. Absent when the
+    close recorded none, so a page filed before this section existed re-derives unchanged."""
+    recorded = [r for r in state.get(CLOSE_NOT_MEASURED) or [] if isinstance(r, dict)]
+    if not recorded:
+        return None
+    return _section("unmeasured", "Not measured", rows=[
+        {"unmeasured_item": fig("unmeasured_item", f"{r.get('id')}: {r.get('title')}",
+                                state_rel),
+         "unmeasured_state": fig("unmeasured_state", "not measured", state_rel),
+         "unmeasured_reason": fig("unmeasured_reason",
+                                  str(r.get("detail") or "no reason recorded"), state_rel)}
+        for r in recorded])
+
+
 def _signoff_section(state_rel: str) -> dict:
     """The block a signature LANDS in. Unsigned it says so; it is never blanked, because an
     empty cell reads as a signature nobody can find rather than one nobody has given."""
@@ -4193,7 +4166,7 @@ def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict
 #: templates so a section can be renamed without editing two files.
 _ROW_LISTS = {"estimates": "estimates", "delivered": "plan_units", "known_issues": "issues",
               "cost": "models", "dora": "dora", "waivers": "waivers", "lessons": "lessons",
-              "lane_yield": "lane_yield"}
+              "lane_yield": "lane_yield", "unmeasured": "unmeasured"}
 
 
 def _render(report: dict, template: str, revalidation: dict | None) -> str:

@@ -3394,8 +3394,11 @@ class CloseReportsExpiredRowsTests(unittest.TestCase):
         with unittest.mock.patch.object(mod, "sprint_report", create=True):
             pass
         import sprint_report
-        with unittest.mock.patch.object(sprint_report, "checklist", return_value=ck):
-            ok, msg, _ = mod._close_checklist(Path("."), "RETRO9100", {})
+        # A throwaway root: the step records its not-measured rows in the run state, and "."
+        # is this repository when the suite runs from it.
+        with tempfile.TemporaryDirectory() as tmp, \
+                unittest.mock.patch.object(sprint_report, "checklist", return_value=ck):
+            ok, msg, _ = mod._close_checklist(Path(tmp), "RETRO9100", {})
         return msg
 
     def test_the_clean_branch_names_the_expired_row(self) -> None:

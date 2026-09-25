@@ -4830,9 +4830,12 @@ def close_review_currency(root, state) -> dict:
     own = close_own_output(root, state)
     anchor = rr / ANCHOR_REL
     if not anchor.is_file():
-        return {"stale": [], "own_stale": [], "own": sorted(own), "self_caused": False,
-                "why": "there is no reviews/LATEST.md at all, which is not something this "
-                       "close created"}
+        # A project's FIRST close: the anchor is this close's own output, written by its
+        # review-anchor step, so its absence is too. Refusing on it handed every fresh project
+        # a known issue that the same command then cleared.
+        return {"stale": [], "own_stale": [], "own": sorted(own), "self_caused": True,
+                "why": "there is no reviews/LATEST.md yet, and writing it is this close's own "
+                       "last step"}
     stamps = [review_prep._parse_dt(review_prep._modified_iso(anchor, rr)[0]),
               review_prep._parse_dt(
                   datetime.fromtimestamp(anchor.stat().st_mtime, timezone.utc).isoformat())]
@@ -5006,7 +5009,7 @@ def _close_gate(root, retro_id, state):
                       f"not invalidate it, so the ceremony continues"), ""
     work = ", ".join(n for n, _ in split["work"])
     mine = (f"; {len(split['self'])} further lane(s) name only this close's own output and are "
-            f"not counted" if split["self"] else "")
+            f"not counted: {', '.join(n for n, _ in split['self'])}" if split["self"] else "")
     return False, (f"{out}\nclose gate: {len(split['work'])} blocker(s) are in the WORK "
                    f"({work}) and must be cleared{mine}"), \
         ("address each failing lane the gate names (reconcile drift -> `reconcile.py apply`; "
@@ -5575,6 +5578,11 @@ def _close_checklist(root, retro, state, read_root=None):
         return (False, f"the sprint checklist could not be composed: {type(exc).__name__}: {exc}",
                 "fix the error above, or run `sprint_report.py checklist --id "
                 f"{retro}` to see it directly")
+    # A row this run gave nothing to measure is no known issue: recorded for the report's
+    # appendix, where it reads `not measured` with its reason, and never outstanding here.
+    unmeasured = [{"id": r["id"], "title": r["title"], "detail": r["detail"]}
+                  for r in ck["items"] if r.get("state") == sprint_report.UNMEASURABLE]
+    run_state.update(root, **{sprint_report.CLOSE_NOT_MEASURED: unmeasured})
     # EXPIRED rows are reported on EVERY exit from this step. They do not HOLD the close - their
     # enforcer ran hours ago and a waiver would be the only exit - but the close's report is
     # where an operator learns what went unsatisfied, and naming them only in `render_checklist`
@@ -5625,8 +5633,10 @@ def _close_checklist(root, retro, state, read_root=None):
                            f"\n{held_line}", held_way)
         pending = (f"; {len(ck['pending_in_close'])} item(s) this close discharges itself"
                    if ck.get("pending_in_close") else "")
+        nm = (f"; {len(unmeasured)} not measured, listed in the report's appendix"
+              if unmeasured else "")
         return (True,
-                f"{len(ck['items'])} compulsory item(s), none outstanding{pending}{past}", "")
+                f"{len(ck['items'])} compulsory item(s), none outstanding{pending}{nm}{past}", "")
     return _with_hold(
         f"{len(named)} compulsory checklist item(s) unanswered{past}:"
         f"\n{detail}",
@@ -7525,6 +7535,9 @@ def _record_close_attempt(root, pre: dict) -> None:
 _CHECKLIST_ROW_RE = re.compile(r"^  (?! )(\S+): (.+)$", re.MULTILINE)
 #: The checklist step's stop-ship line, as `_close_checklist` writes it.
 _STOP_SHIP_RE = re.compile(r"^known-issues: (.+?) (?:is|are) ruled STOP-SHIP", re.MULTILINE)
+#: The gate step's note naming the lanes it attributed to this close's own output, as
+#: `_close_gate` writes it. Those lanes are the close's paperwork, never a known issue.
+_SELF_LANES_RE = re.compile(r"own output and are not counted: ([\w, -]+)$", re.MULTILINE)
 
 
 def close_known_issues_from(step: str, detail: str) -> list[dict]:
@@ -7532,7 +7545,9 @@ def close_known_issues_from(step: str, detail: str) -> list[dict]:
     one per stop-ship ruling (marked `stop_ship`), one per unanswered checklist item, else one
     per non-empty detail line - a step's last line alone can name no unit."""
     if step == "gate":
-        lanes = gate_failed_lanes(detail)
+        own = {n.strip() for m in _SELF_LANES_RE.finditer(detail or "")
+               for n in m.group(1).split(",")}
+        lanes = [(name, why) for name, why in gate_failed_lanes(detail) if name not in own]
         if lanes:
             return [{"source": "gate", "detail": f"{name}: {why}"} for name, why in lanes]
     if step == "checklist":

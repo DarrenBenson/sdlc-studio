@@ -2130,7 +2130,8 @@ class SprintChecklistImpedimentTests(ChecklistBase):
         # No run record at all: whether anything was blocked is UNKNOWN, not "nothing was".
         (self.root / "sdlc-studio" / ".local" / "run-state.json").unlink()
         blind = self._row(sr.checklist(self.root, "RETRO9100"), "impediments")
-        self.assertEqual(blind["state"], sr.UNANSWERED)
+        # US0951: a row with nothing to measure reads `not measured`, never `none`.
+        self.assertEqual(blind["state"], sr.UNMEASURABLE)
         self.assertNotEqual(blind["value"], clean["value"])
 
 
@@ -2198,7 +2199,8 @@ class SprintChecklistDerivedFiguresTests(ChecklistBase):
         ck = sr.checklist(self.root, "RETRO9100")
         for item_id in ("planned-vs-delivered", "scope-creep"):
             row = self._row(ck, item_id)
-            self.assertEqual(row["state"], sr.UNANSWERED)
+            # US0951: not measured, which is neither a known issue nor an answer.
+            self.assertEqual(row["state"], sr.UNMEASURABLE)
             self.assertIn("unknown", row["value"])
             self.assertNotIn("0 filed against 0", row["value"])
 
@@ -2209,10 +2211,13 @@ class SprintChecklistDerivedFiguresTests(ChecklistBase):
         rep = sr.report(self.root, "RETRO9100")
         self.assertIn("checklist", rep)
         ids = {r["id"] for r in rep["checklist"]["items"]}
-        self.assertEqual(ids, {i["id"] for i in sr.CHECKLIST})
+        # US0951 AC2: a row that does not apply here is omitted - this fixture is not the
+        # skill's own repository, so the verb-surface row has no question to answer.
+        applicable = [i for i in sr.CHECKLIST if i["id"] != "doc-surface"]
+        self.assertEqual(ids, {i["id"] for i in applicable})
         text = sr.render(rep)
         self.assertIn("## Sprint checklist", text)
-        for item in sr.CHECKLIST:
+        for item in applicable:
             self.assertIn(item["title"], text, f"{item['id']} is not on the rendered page")
 
 
@@ -2444,15 +2449,17 @@ class SprintChecklistAuthorityTests(ChecklistBase):
     def test_waiving_a_compulsory_item_is_recorded_with_a_reason(self) -> None:
         import decisions
         state = self._run()
+        # An OUTSTANDING item: since US0951 an unmetered cost is not measured, not owed.
         before = sr.checklist(self.root, "RETRO9100")["outstanding"]
-        self.assertIn("cost", before)
-        decisions.record_waiver(self.root, f"{sr.WAIVER_SUBJECT}:cost",
-                                "interactive sprint: no per-unit telemetry exists to read",
+        self.assertIn("tick-verification", before)
+        decisions.record_waiver(self.root, f"{sr.WAIVER_SUBJECT}:tick-verification",
+                                "no criterion in this batch was ticked by hand",
                                 authorised_by="the operator")
-        row = self._row(sr.checklist(self.root, "RETRO9100"), "cost")
+        row = self._row(sr.checklist(self.root, "RETRO9100"), "tick-verification")
         self.assertEqual(row["state"], sr.WAIVED)
         self.assertTrue(row["waiver"], "the waiver's decision id is not recorded on the row")
-        self.assertNotIn("cost", sr.checklist(self.root, "RETRO9100")["outstanding"])
+        self.assertNotIn("tick-verification",
+                         sr.checklist(self.root, "RETRO9100")["outstanding"])
         self.assertIsNone(decisions.waiver_for(self.root, f"{sr.WAIVER_SUBJECT}:known-issues"),
                           "a waiver of one item must not cover its neighbours")
 
@@ -3094,7 +3101,8 @@ class DocSurfaceReportRowTests(unittest.TestCase):
         import sprint_report as sr  # noqa: PLC0415
         with tempfile.TemporaryDirectory() as d:
             state, value, _detail = sr._ck_doc_surface({"root": d})
-            self.assertEqual(sr.NOT_RUN, state)
+            # US0951 AC2: not applicable, so the checklist omits the row.
+            self.assertEqual(sr.NOT_APPLICABLE, state)
             self.assertIn("not applicable", value)
             self.assertNotIn("unreadable", value)
 
@@ -3161,7 +3169,7 @@ class ChecklistRosterTests(unittest.TestCase):
         "reconciled-before-plan", "goal-seat-reviewed", "batch-groomed", "run-opened",
         "batch-boundary-review", "closing-review", "tick-verification", "goal-judged",
         "retro", "lessons", "handoff", "planned-vs-delivered", "not-delivered",
-        "scope-creep", "coverage-consistency", "doc-surface", "mutation-survivors",
+        "scope-creep", "coverage-consistency", "doc-surface",
         "review-attribution", "impediments", "known-issues", "cost",
     )
 

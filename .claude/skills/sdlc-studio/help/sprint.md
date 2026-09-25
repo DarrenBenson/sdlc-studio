@@ -84,7 +84,10 @@ prints each one before it seals.
 
 `sprint close` runs once and finishes. An unanswered item, an uncovered unit, a failing gate lane or
 a report hold is recorded in run state `close_known_issues`, one row each, and handed over on the
-report; the close does not refuse over it. To answer an item instead, record a waiver -
+report; the close does not refuse over it. A checklist row the run gives nothing to measure (no
+cost meter, no run record to join) is not a known issue: the report's appendix lists it as `not
+measured` with its reason. A row that does not apply to the project is omitted. To answer an item
+instead, record a waiver -
 `decisions.py waive --subject rule:sprint-checklist:<item> --rationale "<why>"` - so closing without
 an item and forgetting it are different events in the record. What still stops it: no sprint goal,
 no goal verdict, no retro, and an uncommitted change to a file a batch unit declares.

@@ -4535,7 +4535,7 @@ class DocSurfaceApplicabilityTests(unittest.TestCase):
             self.assertIn("N/A", g._doc_surface(repo)["detail"])
             self.assertIn("N/A", g._doc_coverage(repo)["detail"])
             state, _value, _detail = sr._ck_doc_surface({"root": repo})
-            self.assertEqual(sr.NOT_RUN, state)
+            self.assertEqual(sr.NOT_APPLICABLE, state)   # US0951: omitted, not a gap
         finally:
             dc.is_skill_repo = real
         with tempfile.TemporaryDirectory() as d:

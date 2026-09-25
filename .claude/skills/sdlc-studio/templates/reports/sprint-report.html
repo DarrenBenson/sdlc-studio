@@ -281,6 +281,19 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
   <p class="unmeasured"><b>NOT MEASURED</b> - {{lessons_reason}}</p>
 <!-- end -->
 <!-- end -->
+<!-- when: unmeasured_present -->
+
+  <h3>Not measured</h3>
+  <p>Close checklist rows this run gave nothing to measure. Nothing is known to be wrong, so none is a known issue; nothing is known to be right, so none reads as done.</p>
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Row</th><th scope="col">State</th><th scope="col">Why</th></tr></thead>
+    <tbody>
+<!-- repeat: unmeasured -->
+      <tr><th scope="row" class="mono">{{unmeasured_item}}</th><td>{{unmeasured_state}}</td><td class="note">{{unmeasured_reason}}</td></tr>
+<!-- end -->
+    </tbody>
+  </table></div>
+<!-- end -->
 </section>
 
 <footer>Every figure is derived from {{run_id}}'s own artefacts by <span class="mono">sprint_report.py</span>, and each carries its source in the JSON of record. Nothing here was typed by hand.</footer>

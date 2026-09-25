@@ -170,6 +170,11 @@ PLACEHOLDER_RE = re.compile(r"\{\{.*?\}\}")
 # decline, which loses the lesson, or toward a make-work CR, which is the noise the decline path
 # exists to prevent. It is no cheaper to game than declining, which is already free.
 ARTEFACT_ID_RE = re.compile(r"\b((?:CR|BG|US|RFC|EP|LL)-?\d{4})\b", re.IGNORECASE)
+# A Batch line names delivery units in either id era: the v2 `US0101`, or the v3 ULID form
+# (`US-01M3CVPV`), which a run's batch carries normalised (`US01M3CVPV`). The v2-only grammar
+# read a fresh v3 project's whole batch as empty, so its report measured nothing.
+BATCH_ID_RE = re.compile(
+    r"\b((?:CR|BG|US|RFC|EP|LL)(?:(?-i:-?[0-9A-HJKMNP-TV-Z]{8,})|-?\d{4}))\b", re.IGNORECASE)
 DECLINED_RE = re.compile(r"^\s*declined\s*:\s*(.+\S)\s*$", re.IGNORECASE)
 
 # The third disposition: a finding FIXED within the sprint, carrying the commit or unit that
@@ -920,7 +925,7 @@ def batch_ids(text: str) -> list[str]:
     # is unaffected.
     line = re.sub(r"\([^)]*\)", "", line)
     out: list[str] = []
-    for hit in ARTEFACT_ID_RE.finditer(line):
+    for hit in BATCH_ID_RE.finditer(line):
         rid = sdlc_md.norm_id(hit.group(1))
         if rid.startswith("LL"):  # a lesson is not a unit of delivery
             continue

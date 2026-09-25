@@ -184,3 +184,16 @@ NOT MEASURED - {{lane_yield_reason}}
 NOT MEASURED - {{lessons_reason}}
 <!-- end -->
 <!-- end -->
+
+<!-- when: unmeasured_present -->
+### Not measured
+
+Close checklist rows this run gave nothing to measure. Nothing is known to be wrong, so none is
+a known issue; nothing is known to be right, so none reads as done.
+
+| Row | State | Why |
+| --- | --- | --- |
+<!-- repeat: unmeasured -->
+| {{unmeasured_item}} | {{unmeasured_state}} | {{unmeasured_reason}} |
+<!-- end -->
+<!-- end -->
