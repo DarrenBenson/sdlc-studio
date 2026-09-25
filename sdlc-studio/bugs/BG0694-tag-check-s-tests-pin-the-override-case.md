@@ -1,6 +1,6 @@
 # BG0694: tag-check's tests pin the override case, not the blocking predicate, so a later-day close-time repair can be refused again with the suite green
 
-> **Status:** Open
+> **Status:** Superseded
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py
@@ -32,3 +32,4 @@ Add the later-day, no-override fixture beside the override case and assert that 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
+| 2026-09-25 | sdlc | Superseded by US0942: the require-close lane and the tag's close-owed half it describes are retired (US0942 Done) |

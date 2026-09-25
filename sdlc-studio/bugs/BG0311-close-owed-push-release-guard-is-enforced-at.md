@@ -30,27 +30,28 @@ Bind the close-owed lane into --release (or add a pre-push hook / CI step runnin
 - **Given** `gate.py --release`
 - **When** it is read
 - **Then** `tag_check` REFUSES, naming the units - a release shipping work no sprint closed asserts a record that was never written, and this is the moment the specs promised enforcement and got none
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagRefusesAnOwedCloseTests::test_a_tag_is_refused_while_a_close_is_owed
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0942: tag-check no longer asks whether a close is owed; `sprint sign` seals each run
+- **Verified:** manual (2026-09-25) - retired, superseded by US0942
 
 ### AC2: the ordinary gate does not
 
 - **Given** a mid-sprint commit on a trunk-based repo
 - **When** it is read
 - **Then** a tag with nothing owed is allowed - a gate that always refuses is not a gate, and neither `--release` nor an ordinary push binds the lane, because blocking every push on a trunk-based repo would train the bypass the guard exists to prevent
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagRefusesAnOwedCloseTests::test_a_tag_with_nothing_owed_is_allowed
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0942: the close-owed half of tag-check was deleted, so there is no owed state for a tag to be allowed over
+- **Verified:** manual (2026-09-25) - retired, superseded by US0942
 
 ### AC3: the lane is bound, so it cannot be deselected
 
 - **Given** `--release --skip close-owed`
 - **When** it is read
 - **Then** the run is refused, because a release verdict printed over a deselected lane is the false assurance this gate exists to refuse
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::CloseOwedLaneIsOptInTests::test_the_lane_is_bound_so_the_flag_cannot_be_deselected
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0942: the `close-owed` lane and `--require-close` were deleted, so there is no bound lane to deselect
+- **Verified:** manual (2026-09-25) - retired, superseded by US0942
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-27 | Claude Fable 5 (adversarial audit wf_804ef18d) | Filed |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3 retired by US0942 (D0259 pattern): the tag no longer refuses on close-owed debt and `gate --require-close` is retired; the owed close is reported by the `status`/`hint` advisory |

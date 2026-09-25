@@ -39,11 +39,12 @@
 - **Given** the close-down doctrine
 - **When** `reference-retro.md` and `help/gate.md` are read
 - **Then** both state the Definition-of-Done close clause and the `--require-close` / Stop-hook enforcement
-- **Verify:** shell cd .claude/skills/sdlc-studio && grep -q 'never at .deployed' help/gate.md && grep -q 'never at .deployed' reference-retro.md && grep -q 'require-close' help/gate.md && grep -q 'require-close' reference-retro.md
-- **Verified:** yes (2026-07-16)
+- **Verify:** manual - retired by US0942: the gate's close flag was retired, so neither doc teaches it as enforcement; the close clause half is still checked by US0226 AC1
+- **Verified:** manual (2026-09-25) - retired, superseded by US0942
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-16 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-25 | Claude Opus 5.5 | AC3 retired by US0942 (D0259 pattern): the docs no longer teach `--require-close` as the close enforcement; `sprint sign` seals each run |

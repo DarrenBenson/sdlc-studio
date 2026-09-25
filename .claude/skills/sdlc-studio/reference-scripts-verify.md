@@ -42,13 +42,8 @@ summarise" could be defeated with one `rm`. The summary is the tracked half and 
 claim, so the contradiction is refused (restore the log, or run `lessons summary` to clear the
 digest).
 
-`--require-close` is the **push/release close guard**: it binds a blocking `close-owed` lane that
-fails when any delivery unit reached a terminal state since the close-owed baseline with no retro
-accounting for it - a skipped close-down. Unlike the standard checks it is **not** in the plain
-gate: a normal gate makes no claim about close-ownership, so it never wears one. The soft,
-discoverable half of the same signal is on `status`/`hint` (an advisory line); this is the hard
-half that lands where shipping happens. Deselecting the bound `close-owed` lane under it is refused,
-as every bound lane is. Backed by `close_owed.py`.
+`--require-close` is retired and exits 2 naming its retirement: `sprint sign` seals each run, and
+an owed close is reported by the `status`/`hint` advisory rather than refused by a gate lane.
 
 Deselecting a **bound** lane (`--skip lessons-summary`, or an `--only` that omits it) is refused,
 not honoured, in every mode: no verdict is printed over the lane that defines it.
@@ -90,10 +85,11 @@ lane, and `--allow-external` runs it once the content is trusted.
 ### `close_owed.py`
 
 The deterministic answer to "is a sprint close owed right now?" - the detector behind the
-`status`/`hint` nudge and the gate's `--require-close` lane. A delivery unit (epic / story / bug)
-that is terminal is **covered** when some retro's `> **Batch:**` names it; an uncovered terminal
-unit is a candidate for an owed close. Because a project that adopts this mid-life carries a large
-tail of historically-closed units that predate story-level retro batches, the detector
+`status`/`hint` advisory and the optional `hooks/close_guard.py` Stop hook. A delivery unit
+(epic / story / bug) that is terminal is **covered** when some retro's `> **Batch:**` names it; an
+uncovered terminal unit is a candidate for an owed close. Because a project that adopts this
+mid-life carries a large tail of historically-closed units that predate story-level retro
+batches, the detector
 **baselines**: `close_owed.py baseline` snapshots the exact **set** of ids terminal at adoption into
 a committed `.close-owed-baseline.json`, and from then on only a unit that reaches terminal **later**
 (one not in that set) can owe a close. A set, not a per-prefix id cutoff: a highest-id cutoff would

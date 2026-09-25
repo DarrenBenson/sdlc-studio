@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 32 |
+| Open | 29 |
 | In Progress | 0 |
 | Fixed | 617 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
-| Superseded | 22 |
+| Superseded | 25 |
 | **Total** | **777** |
 
 ## All Bugs
@@ -46,13 +46,13 @@
 | [BG0685](BG0685-project-upgrade-reads-plan-review-verdicts-with-no.md) | project_upgrade reads plan-review verdicts with no kind, so a repair-plan APPROVE counts as a repair story's spec review | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0686](BG0686-bg0493-ac2-s-test-reads-a-fixture-hook.md) | BG0493 AC2's test reads a fixture hook, so deleting the real pre-commit hook's lane-check block survives | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0687](BG0687-a-criterion-s-second-verify-line-is-recorded.md) | A criterion's second Verify line is recorded but never run, so a both-states requirement cannot be enforced by its selectors | Fixed | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0688](BG0688-gate-require-close-still-counts-close-owed-s.md) | gate --require-close still counts close-owed's raw owed rows, refusing an override the tag guard and the detector now honour | Open | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0689](BG0689-the-release-tag-guard-never-reads-close-owed.md) | The release tag guard never reads close_owed's velocity half, so a retro owing its velocity row does not refuse the tag | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0688](BG0688-gate-require-close-still-counts-close-owed-s.md) | gate --require-close still counts close-owed's raw owed rows, refusing an override the tag guard and the detector now honour | Superseded | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0689](BG0689-the-release-tag-guard-never-reads-close-owed.md) | The release tag guard never reads close_owed's velocity half, so a retro owing its velocity row does not refuse the tag | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0690](BG0690-critic-py-repair-re-judges-stored-findings-through.md) | critic.py repair re-judges stored findings through the code-span guard, and its typed closure scanner unescapes any backslash before a greater-than sign | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0691](BG0691-changelog-py-shape-judges-unreadable-and-symlinked-fragments.md) | changelog.py shape judges unreadable and symlinked fragments differently in its two modes, and its git-failure refusals are unpinned | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0692](BG0692-gate-py-never-sets-the-boundary-suite-marker.md) | gate.py never sets the boundary-suite marker itself, so SDLC_GATE_BOUNDARY=push reads [PASS] module-alone over a red boundary-only test | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0693](BG0693-testplan-derive-and-the-plan-review-brief-still.md) | testplan derive and the plan-review brief still name different unauthored sets: blank cells, table order and a criterion with no row | Superseded | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0694](BG0694-tag-check-s-tests-pin-the-override-case.md) | tag-check's tests pin the override case, not the blocking predicate, so a later-day close-time repair can be refused again with the suite green | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0694](BG0694-tag-check-s-tests-pin-the-override-case.md) | tag-check's tests pin the override case, not the blocking predicate, so a later-day close-time repair can be refused again with the suite green | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0695](BG0695-conformance-s-ungroomed-nudge-counts-retired-skeletons-and.md) | conformance's ungroomed nudge counts retired skeletons and tells the user to groom Superseded and Won't Implement stories before planning them to Done | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0696](BG0696-critic-py-s-brief-checks-search-the-whole.md) | critic.py's brief checks search the whole brief, so a unit's own text hides a dropped surface, and a REJECT marked as matching no brief can never be retired | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0697](BG0697-the-repair-plan-gate-fails-open-on-a.md) | The repair-plan gate fails open on a zero-finding plan, an unparseable config and an unreadable round file, and its refusals name no remedy or crash on malformed input | Superseded | Medium | 2026-09-15 | 2026-09-15 |

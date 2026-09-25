@@ -2018,7 +2018,6 @@ class BoundLaneRegistryTests(unittest.TestCase):
         ("require_lessons", ["lessons-summary", "lessons-validity"]),
         ("require_handoff", ["handoff"]),
         ("release", ["verify", "review-legs"]),
-        ("require_close", ["close-owed"]),
     ]
 
     def test_every_bound_lane_names_its_subject(self) -> None:
@@ -2042,7 +2041,7 @@ class BoundLaneRegistryTests(unittest.TestCase):
         for mode, lanes in self.MODES:
             for lane in lanes:
                 with self.subTest(mode=mode, lane=lane):
-                    kw = {mode: True if mode in ("release", "require_lessons", "require_close")
+                    kw = {mode: True if mode in ("release", "require_lessons")
                           else ("RETRO0001" if mode == "require_retro" else "HO0001")}
                     r = gate.run_gate(".", checks={"a": _fake(0)}, skip=[lane], **kw)
                     self.assertFalse(r["ok"])
@@ -2098,67 +2097,6 @@ class ReviewCurrencyGateTests(unittest.TestCase):
             os.utime(lat, (time.time() + 100, time.time() + 100))   # LATEST newest
             leg = self._leg(root)
             self.assertEqual(leg["status"], "pass", leg["detail"])
-
-
-class CloseOwedGateLaneTests(unittest.TestCase):
-    """The --require-close guard (US0165): a bound, blocking lane that refuses a push/release
-    while a sprint close is owed. The soft nudge is on status/hint; this is the hard half."""
-
-    def _story(self, root: Path, sid: str, st: str) -> None:
-        d = root / "sdlc-studio" / "stories"
-        d.mkdir(parents=True, exist_ok=True)
-        (d / f"{sid}-s.md").write_text(f"# {sid}: s\n\n> **Status:** {st}\n> **Points:** 2\n",
-                                       encoding="utf-8")
-
-    def _owed_project(self, root: Path) -> None:
-        import close_owed
-        (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
-        self._story(root, "US0001", "Done")
-        close_owed.stamp_baseline(root, date="2026-01-01")
-        self._story(root, "US0005", "Done")  # later work, no retro -> owed
-
-    def test_require_close_fails_when_a_close_is_owed(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._owed_project(root)
-            report = gate.run_gate(str(root), only=["close-owed"], require_close=True)
-            self.assertFalse(report["ok"])
-
-    def test_require_close_passes_once_a_retro_accounts_for_it(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._owed_project(root)
-            (root / "sdlc-studio" / "retros" / "RETRO0002-r.md").write_text(
-                "# RETRO-0002: s\n\n> **Batch:** US0005\n\n## Delivered\n- shipped\n",
-                encoding="utf-8")
-            report = gate.run_gate(str(root), only=["close-owed"], require_close=True)
-            self.assertTrue(report["ok"])
-
-    def test_close_owed_absent_from_the_plain_gate(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._owed_project(root)
-            report = gate.run_gate(str(root))  # no --require-close
-            self.assertNotIn("close-owed", [c["check"] for c in report["checks"]])
-
-    def test_require_close_help_does_not_claim_a_default_warning(self) -> None:
-        # BG0171: the plain gate never runs close-owed, so the help must not say it "WARNS on
-        # every gate by default" - that invites the operator to trust a nudge that never fires.
-        parser = gate.build_parser()
-        action = next(a for a in parser._actions if "--require-close" in a.option_strings)
-        self.assertNotIn("WARNS on every gate", action.help)
-        self.assertIn("plain gate never runs it", action.help)
-
-    def test_require_close_fails_on_a_corrupt_baseline(self) -> None:
-        # BG0155: a corrupt baseline must BLOCK the close gate, not pass as 'no baseline stamped'.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
-            self._story(root, "US0005", "Done")
-            (root / "sdlc-studio" / ".close-owed-baseline.json").write_text(
-                '["US0005"]', encoding="utf-8")
-            report = gate.run_gate(str(root), only=["close-owed"], require_close=True)
-            self.assertFalse(report["ok"])
 
 
 import json as _json  # noqa: E402
@@ -3772,43 +3710,6 @@ class CloseCarveOutIsTypeGeneralTests(unittest.TestCase):
             with self.subTest(type=type_):
                 self.assertFalse(
                     gate._close_recorded_transition(type_, terminal, other, str(REPO)))
-
-
-class CloseOwedLaneIsOptInTests(unittest.TestCase):
-    """BG0311. The specs documented `--require-close` as a blocking push-or-release guard and
-    it ran at NEITHER moment: the lane bound only when the flag was passed, `--release` did not
-    imply it, no pre-push hook exists and CI ran the plain gate.
-
-    The enforcement point chosen is the TAG (`release_cut.tag_allowed`), not `--release` and not
-    every push. `--release` is a documented contract consuming projects depend on, and quietly
-    adding a blocking lane to it changes their gate as well as this one; blocking every push on
-    a trunk-based repo that commits straight to main in small green units would train the
-    bypass the guard exists to prevent."""
-
-    def test_the_explicit_flag_binds_it(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            (Path(d) / "sdlc-studio").mkdir()
-            report = gate.run_gate(d, require_close=True, checks=dict(gate.DEFAULT_CHECKS))
-        self.assertIn("close-owed", {c["check"] for c in report["checks"]})
-
-    def test_neither_release_nor_the_ordinary_gate_binds_it(self) -> None:
-        """Asserted so the decision is visible: this is where the rule is NOT enforced, and a
-        later change to either would be a change to a consuming project's gate."""
-        with tempfile.TemporaryDirectory() as d:
-            (Path(d) / "sdlc-studio").mkdir()
-            for kwargs in ({}, {"release": True}):
-                with self.subTest(**kwargs):
-                    report = gate.run_gate(d, checks=dict(gate.DEFAULT_CHECKS), **kwargs)
-                    self.assertNotIn("close-owed", {c["check"] for c in report["checks"]})
-
-    def test_the_lane_is_bound_so_the_flag_cannot_be_deselected(self) -> None:
-        """A verdict printed over a deselected lane is the false assurance this gate refuses."""
-        with tempfile.TemporaryDirectory() as d:
-            (Path(d) / "sdlc-studio").mkdir()
-            report = gate.run_gate(d, require_close=True, skip=["close-owed"],
-                                   checks=dict(gate.DEFAULT_CHECKS))
-        self.assertFalse(report["ok"])
-        self.assertEqual("selection", report["checks"][0]["check"])
 
 
 class ScopedRunIsNotABaselineTests(unittest.TestCase):

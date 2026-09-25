@@ -17,9 +17,9 @@
 
 ## Acceptance Criteria
 
-### AC1: AC3's verifier checks both files it names
+### AC1: both files US0166 AC3 named still state the close clause
 
-- **Given** AC3 claims that `reference-retro.md` and `help/gate.md` both state the close clause
+- **Given** US0166 AC3 claimed that `reference-retro.md` and `help/gate.md` both state the close clause (AC3 itself was retired by US0942)
 - **When** its Verify line runs
 - **Then** both files are checked and the AC fails if either stops stating it, because a criterion that names two files and inspects one is only half a criterion.
 - **Verify:** shell cd .claude/skills/sdlc-studio && grep -q 'never at .deployed' help/gate.md && grep -q 'never at .deployed' reference-retro.md
@@ -30,16 +30,16 @@
 - **Given** the same AC also claims both state the `--require-close` / Stop-hook enforcement
 - **When** the verifier runs
 - **Then** that half is checked too, so neither half of a two-part claim rests on the other being green.
-- **Verify:** shell cd .claude/skills/sdlc-studio && grep -q 'require-close' help/gate.md && grep -q 'require-close' reference-retro.md
-- **Verified:** yes (2026-07-18)
+- **Verify:** manual - retired by US0942: `--require-close` was retired and reference-retro.md no longer names it
+- **Verified:** manual (2026-09-25) - retired, superseded by US0942
 
 ### AC3: The rewritten line uses the shell verb and no longer passes on a misparse
 
 - **Given** the previous line was `grep -q "..." <one file>`, where the `grep` verb takes no flags
 - **When** the story is read back
 - **Then** AC3 carries an explicit `shell` prefix (a compound check is not the single-pattern `grep` verb) and no bare `grep -q` form remains, so the flag can never again be consumed as the search pattern.
-- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -B -m unittest tests.test_verify_ac.US0166Ac3Tests
-- **Verified:** yes (2026-07-18)
+- **Verify:** manual - retired by US0942: US0166 AC3 is itself retired, so it carries no `shell` line to check and the tests that pinned the prefix were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0942
 
 ## Notes
 
@@ -55,3 +55,5 @@ its own claim - and the claim happens to be true, which is why nothing ever surf
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-18 | sdlc-studio | Groomed: ACs and executable Verify lines authored; the seeded AC3 about hardening the `grep` verb moved to its owning story US0228 |
+| 2026-09-25 | Claude Opus 5.5 | AC2 retired by US0942 (D0259 pattern): the docs no longer teach `--require-close` as the close enforcement |
+| 2026-09-25 | Claude Opus 5.5 | AC3 retired by US0942 (D0259 pattern): US0166 AC3 is retired, so its `shell` prefix no longer exists to pin; AC1 reworded to the claim its unchanged verifier checks (both files state the close clause) |

@@ -12,7 +12,7 @@ SDLC Studio is model-invoked - say it in plain language:
 | "Run the quality checks before I push" | `/sdlc-studio gate` |
 | "Are we clear to tag?" | `/sdlc-studio gate --release` |
 | "Can we close this sprint?" | `/sdlc-studio gate --require-retro RETRO0021` |
-| "Is a sprint close still owed before I push?" | `/sdlc-studio gate --require-close` |
+| "Is a sprint close still owed?" | `/sdlc-studio status` (the close-owed advisory) |
 | "Just check the index and drift, nothing else" | `/sdlc-studio gate --only reconcile,duplicate-id` |
 | "Skip the principles check this time" | `/sdlc-studio gate --skip constitution` |
 | "Give me the gate result as JSON for the pipeline" | `/sdlc-studio gate --format json` |
@@ -232,26 +232,17 @@ and prose gets skipped under effort pressure. Now the close **fails loud** witho
 two lessons lanes alone (a close with no retro due). Deselecting a bound lane
 (`--skip lessons-summary`) is refused, not honoured.
 
-## `--require-close`: the guard against a silently-skipped close-down
+## Owed closes: an advisory, not a gate
 
-The close-down (retro + lessons + close gate) is mandated, but `--require-retro` only fires when
-someone remembers to run it. A ceremony with no detector is a **silent control** - it lapses under
-delivery pressure, and the lessons quietly stop compounding. `--require-close` is the detector made
-a gate:
+A delivery unit (epic / story / bug) that reached a terminal state since the close-owed baseline
+with no retro's `Batch` naming it is an **owed close**. It is reported, never refused: `status`
+and `hint` print an `advisory:` line naming the owed units, so a skipped close is seen where
+operators look rather than discovered sprints later.
 
-```bash
-python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --root . --require-close || exit 1   # before you push
-```
-
-It binds one blocking lane, `close-owed`: it **fails** when any delivery unit (epic / story / bug)
-reached a terminal state since the close-owed baseline with no retro's `Batch` accounting for it.
-A unit is **covered** the moment a retro names it. Put this on your push or release step; the plain
-gate deliberately does **not** carry it, so a normal `gate` never claims to have checked
-close-ownership.
-
-The soft, discoverable half of the same signal is already on `status` and `hint` (an `advisory:`
-line naming the owed units) - so a skipped close is seen where operators look, not discovered
-sprints later.
+`--require-close` is retired. `sprint sign` seals each run, and the release tag asks only whether
+the gate was green on the tagged commit and CI passed on the forge (`release_cut.py tag-check`).
+The detector could not read a unit delivered through a carry bug or closed by a ruling, so as a
+gate it refused work that had been closed. Passing the flag exits 2 and names its retirement.
 
 **The baseline (run once, at adoption).** A project that adopts this after many sprints carries a
 tail of historically-closed units that predate story-level retro batches. Stamp a one-time baseline -
@@ -270,7 +261,7 @@ baseline first, rather than inventing a cutoff.
 `.claude/settings.json` under `hooks.Stop`, so the agent is reminded of an owed close at the moment a
 turn would end - the harness enforcing the Definition of Done's close clause rather than the agent's
 recall. It is default-allow on any doubt and never hard-locks; a project that finds a per-turn
-reminder too eager simply does not wire it and relies on `--require-close` at the push/release moment.
+reminder too eager simply does not wire it and reads the `status` advisory instead.
 A sprint is complete only when the close gate is green and shown, **never at "deployed"**.
 
 ### The checks
@@ -286,7 +277,6 @@ A sprint is complete only when the close gate is green and shown, **never at "de
 | **Executable ACs (`--release` only)** | `verify` (executes every story's `Verify:` expression) | yes |
 | **Required legs (`--release` only)** | `review-legs` (every required document leg present or waived; CODE out of scope) | yes |
 | **Sprint close (`--require-retro` / `--require-lessons` only)** | `retro` (the batch retro exists), `lessons-summary` (LESSONS-SUMMARY.md is current), `lessons-validity` (no expired or horizon-less open lesson) | yes |
-| **Close-owed guard (`--require-close` only)** | `close-owed` (no delivery unit reached terminal since the baseline with no covering retro) | yes |
 
 The **artifact-quality** checks are the ones that police every artifact; the rest guard the
 index and the skill's own docs. `--only` / `--skip` select a subset. A lane that can only advise

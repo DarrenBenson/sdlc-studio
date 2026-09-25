@@ -2457,6 +2457,11 @@ class GrepDashPatternTests(unittest.TestCase):
 class US0166Ac3Tests(unittest.TestCase):
     """US0166 AC3's own verifier must check its claim, not misparse into a green (US0226).
 
+    Half of that claim - that both docs teach `--require-close` - was retired with the flag by
+    US0942, so AC3 is now retired in the D0259 pattern rather than left grepping for text the
+    docs no longer carry. The half that stands, the "never at deployed" close clause, is still
+    checked against both files here.
+
     Reads the dogfooded workspace by path, so it is dev-repo-only: from an installed copy
     the story is not there and these would raise FileNotFoundError, which says nothing
     about the consuming project's own install (BG0209).
@@ -2475,28 +2480,21 @@ class US0166Ac3Tests(unittest.TestCase):
         self.assertIsNotNone(ac3, "US0166 AC3 not found")
         return ac3
 
-    def test_ac3_uses_the_shell_verb(self):
-        # A compound, multi-file check is not the single-pattern `grep` verb.
-        self.assertTrue(self._ac3().verifier.startswith("shell "))
+    def test_ac3_is_retired_rather_than_grepping_for_the_retired_flag(self):
+        v = self._ac3().verifier
+        self.assertTrue(v.startswith("manual - retired by US0942"), v)
+        self.assertNotIn("require-close", v)
 
     def test_ac3_no_longer_carries_a_bare_grep_verb_with_a_flag(self):
         # `grep -q ...` as a DSL verb parses the flag as the PATTERN - the original defect.
         v = self._ac3().verifier
         self.assertFalse(v.startswith("grep -"))
 
-    def test_ac3_names_both_files_it_claims(self):
-        v = self._ac3().verifier
-        self.assertIn("help/gate.md", v)
-        self.assertIn("reference-retro.md", v)
-
-    def test_ac3_checks_both_halves_of_its_claim(self):
-        v = self._ac3().verifier
-        self.assertIn("never at .deployed", v)
-        self.assertIn("require-close", v)
-
-    def test_ac3_actually_passes_against_the_live_tree(self):
+    def test_the_close_clause_still_stands_in_both_files(self):
         repo_root = self.STORY.resolve().parents[2]
-        r = verify_ac.run_verifier(self._ac3().verifier, 60, repo_root)
+        r = verify_ac.run_verifier(
+            "shell cd .claude/skills/sdlc-studio && grep -q 'never at .deployed' help/gate.md "
+            "&& grep -q 'never at .deployed' reference-retro.md", 60, repo_root)
         self.assertTrue(r.ok, f"exit={r.exit_code} stderr={r.stderr[:300]}")
         self.assertFalse(r.vacuous)
 

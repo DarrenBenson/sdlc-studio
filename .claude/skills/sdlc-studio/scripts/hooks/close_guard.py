@@ -8,7 +8,7 @@ once, feeding the reminder back to the model so the close-down is surfaced at th
 agent would otherwise walk away from it. This is the harness enforcing the Definition of Done's close
 clause, not the agent's recall: the same reasoning that put the quality gate in a pre-commit hook
 rather than a checklist. Opt-in - a project that finds a per-turn reminder too eager simply does not
-wire it, and `gate --require-close` still guards the push/release moment.
+wire it, and the `status`/`hint` advisory still reports the owed close.
 
 It never HARD-locks. It surfaces the obligation and lets the agent act (run the retro) or continue;
 loop prevention keeps it from re-blocking a turn it already blocked. Default-allow on any doubt: a

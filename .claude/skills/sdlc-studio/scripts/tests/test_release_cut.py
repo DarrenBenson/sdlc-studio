@@ -4,7 +4,6 @@ empties [Unreleased], and a tag is refused unless the gate was recorded green on
 from __future__ import annotations
 
 import importlib.util
-import os
 import sys
 import tempfile
 import unittest
@@ -92,220 +91,6 @@ class ChangelogCutTests(unittest.TestCase):
             allowed, reason = mod.tag_check(Path(d), "aaaaaaa")
             self.assertFalse(allowed)
             self.assertIn("no release gate", reason)
-
-
-class TagRefusesAnOwedCloseTests(unittest.TestCase):
-    """A tag is refused while any delivery unit owes a close, and the guard FAILS CLOSED.
-
-    The first version of these tests replaced `_close_owed_units` with a lambda, so the
-    function under test never ran and its exception-swallowing `return []` was invisible: the
-    closing review showed that deleting or truncating one tracked baseline file turned the
-    release guard off and made the tag report "no close is owed". These tests now drive the
-    REAL function against a real workspace, and each of the three states it must tell apart is
-    asserted separately."""
-
-    def setUp(self) -> None:
-        self.mod = _load()
-
-    def _root(self, *, terminal: bool = True, baseline: str | None = "stamp") -> Path:
-        """A workspace with one terminal, retro-less story and a baseline in a chosen state."""
-        d = Path(tempfile.mkdtemp(prefix="tagcheck_"))
-        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
-        ws = d / "sdlc-studio"
-        (ws / "stories").mkdir(parents=True)
-        (ws / ".local").mkdir(parents=True)
-        # Written non-terminal when a baseline will be stamped, so the stamp cannot
-        # grandfather the unit this fixture exists to catch.
-        status = "In Progress" if (baseline == "stamp" or not terminal) else "Done"
-        (ws / "stories" / "US0001-a-story.md").write_text(
-            f"# US0001: a story\n\n> **Status:** {status}\n> **Epic:** EP0001\n",
-            encoding="utf-8")
-        (ws / "stories" / "_index.md").write_text(
-            "# Story Index\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
-            f"| [US0001](US0001-a-story.md) | a story | {status} |\n", encoding="utf-8")
-        marker = ws / ".close-owed-baseline.json"
-        if baseline == "stamp":
-            # Stamped while the unit is NOT yet terminal, then flipped - otherwise the baseline
-            # grandfathers the very unit under test and the fixture asserts nothing. The
-            # baseline forgives what was terminal at adoption; work that closes AFTER is owed.
-            import close_owed
-            close_owed.stamp_baseline(d)
-            if terminal:
-                for f in ((ws / "stories" / "US0001-a-story.md"),
-                          (ws / "stories" / "_index.md")):
-                    f.write_text(f.read_text(encoding="utf-8").replace("In Progress", "Done"),
-                                 encoding="utf-8")
-        elif baseline == "corrupt":
-            marker.write_text("{ not json", encoding="utf-8")
-        self.mod.record_green(d, "abc123")
-        return d
-
-    def test_a_tag_is_refused_while_a_close_is_owed(self) -> None:
-        units, unknown = self.mod._close_owed_units(self._root())
-        self.assertIsNone(unknown)
-        self.assertIn("US0001", units, "a terminal unit with no retro is not owed?")
-        allowed, reason = self.mod.tag_check(self._root(), "abc123")
-        self.assertFalse(allowed)
-        self.assertIn("no retro", reason)
-
-    def test_a_corrupt_baseline_refuses_rather_than_reporting_clean(self) -> None:
-        """THE finding. `gate._close_owed` calls this state a loud blocking refusal; the tag
-        path read it as clean, so `git rm` on one tracked file disarmed the release guard."""
-        root = self._root(baseline="corrupt")
-        units, unknown = self.mod._close_owed_units(root)
-        self.assertEqual([], units)
-        self.assertIsNotNone(unknown, "an unreadable baseline read as clean")
-        self.assertIn("unreadable", unknown)
-        allowed, reason = self.mod.tag_check(root, "abc123")
-        self.assertFalse(allowed, "a tag was allowed over an unreadable close-owed baseline")
-        self.assertIn("refusing the tag", reason)
-
-    def test_a_raising_helper_refuses_rather_than_reporting_clean(self) -> None:
-        """The other swallowed state: nothing was judged, reported as though all was well.
-
-        The helper is made to RAISE, not merely pointed at a path hoped to raise. The first
-        version of this test called the real function against `/nonexistent/...`, which does not
-        raise - it returns `{'baselined': False, ...}` - so the test exercised the no-baseline
-        branch, never asserted `unknown`, and the mutant restoring `except: return [], None`
-        survived the full suite."""
-        import close_owed
-        real_owed = close_owed.owed
-        self.addCleanup(setattr, close_owed, "owed", real_owed)
-
-        def boom(_root):
-            raise RuntimeError("the report could not be produced")
-
-        close_owed.owed = boom
-        units, unknown = self.mod._close_owed_units(self._root())
-        self.assertEqual([], units)
-        self.assertIsNotNone(unknown, "a raising helper reported a clean close-owed answer")
-        self.assertIn("UNKNOWN", unknown)
-        self.assertIn("could not be produced", unknown)
-
-    def test_an_unreadable_delivery_tree_refuses_rather_than_reporting_clean(self) -> None:
-        """The fourth state, and the one the previous repair missed.
-
-        `read_text_safe` and `walk_glob` swallow their own I/O errors, so `owed()` never raised
-        and the new `except` never fired: an unreadable tree returned an empty unit list, which
-        is indistinguishable from a clean one. `chmod 000 sdlc-studio/stories` turned a correct
-        refusal into "no close is owed" - the same fail-open, one frame down the stack."""
-        root = self._root()
-        units, unknown = self.mod._close_owed_units(root)
-        self.assertIn("US0001", units, "the fixture is not owed a close - nothing is asserted")
-
-        stories = root / "sdlc-studio" / "stories"
-        os.chmod(stories, 0o000)
-        self.addCleanup(os.chmod, stories, 0o755)
-        if os.access(stories, os.R_OK):        # running as root: the mode cannot be enforced
-            self.skipTest("cannot make a directory unreadable for this user")
-
-        units, unknown = self.mod._close_owed_units(root)
-        self.assertEqual([], units)
-        self.assertIsNotNone(unknown, "an unreadable delivery tree read as a clean one")
-        self.assertIn("could not be read", unknown)
-        allowed, reason = self.mod.tag_check(root, "abc123")
-        self.assertFalse(allowed, "a tag was allowed over a delivery tree nobody could scan")
-        self.assertIn("refusing the tag", reason)
-
-    def test_an_unbaselined_project_is_not_refused_on_its_history(self) -> None:
-        """The one state that legitimately passes, and the reason `corrupt` had to be told
-        apart from it: without a baseline there is no adopted rule to hold this project to."""
-        root = self._root(baseline=None)
-        units, unknown = self.mod._close_owed_units(root)
-        self.assertEqual(([], None), (units, unknown))
-
-    def test_a_tag_with_nothing_owed_is_allowed(self) -> None:
-        """A gate that always refuses is not a gate."""
-        allowed, reason = self.mod.tag_check(self._root(terminal=False, baseline=None), "abc123")
-        self.assertTrue(allowed, reason)
-        self.assertIn("no close is owed", reason)
-
-    def test_the_commit_mismatch_still_refuses_first(self) -> None:
-        allowed, reason = self.mod.tag_check(self._root(baseline=None), "different")
-        self.assertFalse(allowed)
-        self.assertIn("not the commit being tagged", reason)
-
-
-class TagCheckReadsTheBlockingPredicateTests(unittest.TestCase):
-    """BG0668. The tag guard read `close_owed`'s raw `owed` list, which keeps a close-time repair
-    a recorded override accounts for, so a tag was refused on a unit `close_owed.is_owed` called
-    not owed, and recording the override the refusal asked for could not clear it."""
-
-    def setUp(self) -> None:
-        self.mod = _load()
-
-    def _root(self, *, override: bool) -> Path:
-        """BG0005 goes terminal on the SAME day as the only retro, after a closed run, and no
-        retro's Batch names it. A later-day terminal would be a repair with no override at all,
-        so only the same-day case turns on the override line."""
-        import close_owed
-        d = Path(tempfile.mkdtemp(prefix="tagpredicate_"))
-        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
-        ws = d / "sdlc-studio"
-        (ws / "bugs").mkdir(parents=True)
-        (ws / "retros" / "evidence").mkdir(parents=True)
-        (ws / ".local").mkdir(parents=True)
-        bug = ws / "bugs" / "BG0005-x.md"
-        bug.write_text("# BG0005: x\n\n> **Status:** In Progress\n> **Severity:** Medium\n"
-                       "> **Points:** 2\n", encoding="utf-8")
-        # Stamped while BG0005 is in flight, so the baseline cannot grandfather it.
-        close_owed.stamp_baseline(d, date="2026-01-01")
-        bug.write_text(bug.read_text(encoding="utf-8").replace("In Progress", "Fixed"),
-                       encoding="utf-8")
-        body = ("# RETRO0001: x\n\n> **Date:** 2026-02-01\n> **Batch:** BG0001\n> **Run:** RUN-A\n"
-                "> **Velocity-override:** the fixture records no velocity row\n")
-        if override:
-            body += ("\n**Close-repair-override:** BG0005 - found and fixed during this "
-                     "ceremony, after the account was written\n")
-        (ws / "retros" / "RETRO0001-x.md").write_text(body, encoding="utf-8")
-        (ws / "retros" / "evidence" / "actuals-2026-02-01.jsonl").write_text(
-            '{"id": "BG0005", "status": "Fixed"}\n', encoding="utf-8")
-        (ws / ".local" / "run-state.json").write_text(
-            '{"schema": 1, "run_id": "RUN-A", "started_at": "2026-02-01T00:00:00Z", '
-            '"ended_at": "2026-02-01T10:00:00Z", "outcome": "goal-reached", "goal": "x", '
-            '"batch": ["BG0001"], "plan": {}}', encoding="utf-8")
-        self.mod.record_green(d, "abc123")
-        return d
-
-    def test_an_overridden_close_repair_does_not_refuse_the_tag(self) -> None:
-        import close_owed
-        root = self._root(override=True)
-        report = close_owed.owed(root)
-        # The precondition the defect needs: the unit is still in the raw `owed` list, while the
-        # predicate the detector's exit code reads says nothing is owed.
-        self.assertIn("BG0005", [str(r[0]) for r in report["owed"]],
-                      "the fixture does not reach the defect - nothing is asserted")
-        self.assertFalse(close_owed.is_owed(report), report)
-        units, unknown = self.mod._close_owed_units(root)
-        self.assertEqual(([], None), (units, unknown))
-        allowed, reason = self.mod.tag_check(root, "abc123")
-        self.assertTrue(allowed, reason)
-        self.assertIn("no close is owed", reason)
-
-    def test_a_unit_no_retro_or_override_covers_still_refuses(self) -> None:
-        import close_owed
-        root = self._root(override=False)
-        self.assertTrue(close_owed.is_owed(close_owed.owed(root)))
-        units, unknown = self.mod._close_owed_units(root)
-        self.assertIsNone(unknown)
-        self.assertEqual(["BG0005"], units)
-        allowed, reason = self.mod.tag_check(root, "abc123")
-        self.assertFalse(allowed, reason)
-        self.assertIn("BG0005", reason)
-        self.assertIn("no retro behind them", reason)
-
-    def test_a_report_without_unaccounted_falls_back_to_owed(self) -> None:
-        import close_owed
-        real_owed = close_owed.owed
-        self.addCleanup(setattr, close_owed, "owed", real_owed)
-        close_owed.owed = lambda _root: {"baselined": True, "corrupt": False,
-                                         "owed": [("US0001", "story")], "unreadable": []}
-        root = self._root(override=True)
-        units, unknown = self.mod._close_owed_units(root)
-        self.assertEqual((["US0001"], None), (units, unknown))
-        allowed, reason = self.mod.tag_check(root, "abc123")
-        self.assertFalse(allowed, reason)
-        self.assertIn("US0001", reason)
 
 
 class ForgeCiTests(unittest.TestCase):
@@ -549,6 +334,22 @@ class ForgeCiTests(unittest.TestCase):
         allowed, reason = mod.tag_check(d, "abc123")
         self.assertTrue(allowed, reason)
         self.assertIn("CI green on the forge", reason)
+
+    def test_tag_check_refuses_every_forge_state_that_is_not_an_answer(self) -> None:
+        """No run, an unfinished run and an unaskable forge are refusals at the TAG, not only in
+        the helper. MUTANT: add any of the three to the states `tag_check` lets through."""
+        mod = self.mod
+        d = Path(tempfile.mkdtemp(prefix="forgetag_"))
+        self.addCleanup(lambda: __import__("shutil").rmtree(d, ignore_errors=True))
+        mod.record_green(d, "abc123")
+        self.addCleanup(setattr, mod, "forge_ci_state", mod.forge_ci_state)
+        for state in ("none", "pending", "unknown"):
+            with self.subTest(state):
+                detail = f"the forge said {state}"
+                mod.forge_ci_state = lambda root, commit, _s=state, _d=detail: (_s, _d)
+                allowed, reason = mod.tag_check(d, "abc123")
+                self.assertFalse(allowed, f"a tag was allowed over a forge state of {state}")
+                self.assertIn(detail, reason)
 
 
 if __name__ == "__main__":

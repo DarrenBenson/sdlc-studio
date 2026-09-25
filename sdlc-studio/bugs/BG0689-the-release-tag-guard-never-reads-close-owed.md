@@ -1,6 +1,6 @@
 # BG0689: The release tag guard never reads close_owed's velocity half, so a retro owing its velocity row does not refuse the tag
 
-> **Status:** Open
+> **Status:** Superseded
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py
@@ -33,3 +33,4 @@ Refuse the tag on blocking()['velocity'] too, naming the retro, or read `is_owed
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
+| 2026-09-25 | sdlc | Superseded by US0942: the require-close lane and the tag's close-owed half it describes are retired (US0942 Done) |

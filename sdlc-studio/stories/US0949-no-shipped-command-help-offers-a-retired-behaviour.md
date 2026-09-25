@@ -4,7 +4,7 @@
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_retired_help.py, changelog.d/US0949.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_retired_help.py, changelog.d/US0949.md, .claude/skills/sdlc-studio/scripts/tests/test_create_validate_roundtrip.py, .claude/skills/sdlc-studio/scripts/tests/test_planning_tier.py, .claude/skills/sdlc-studio/help/sprint.md
 > **Epic:** EP0265
 > **Points:** 2
 > **Persona:** Maya Okafor

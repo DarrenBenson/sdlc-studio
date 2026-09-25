@@ -475,37 +475,6 @@ def _hook_enabled(root: str) -> dict:
             "detail": gap or "hook enabled (or no tracked hook in this tree)"}
 
 
-def _close_owed(root: str) -> dict:
-    """The push/release close-owed guard (bound only, under --require-close): delivery units that
-    reached terminal since the baseline with no retro accounting for them - a skipped close-down.
-    Like every close/release lane it is a BOUND lane, added by its mode and never part of the plain
-    gate: a standard gate makes no claim about close-ownership, so it cannot wear one. The SOFT nudge
-    (discoverability) lives on status/hint; this is the blocking half that lands where shipping
-    happens. An unbaselined project reports zero - stamping the baseline is the operator's one-time
-    acknowledgement of the pre-adoption tail, not a gate's job.
-
-    This is the machine half of RFC0042: a mandated ceremony with no mechanical detector is a silent
-    control that fires only when someone remembers. Now the release gate can see a skipped close."""
-    import close_owed  # crash contained by BLOCKING_ON_ERROR: an unproven bound guard must fail loud
-    report = close_owed.owed(Path(root))
-    if report.get("corrupt"):
-        return {"count": 1, "blocking": True,
-                "detail": (f"close-owed baseline is CORRUPT ({report.get('error', 'unreadable')}) - "
-                           f"refusing to pass a close gate over an unreadable baseline that silently "
-                           f"disarms the close-down; repair .close-owed-baseline.json (restore from "
-                           f"git), do NOT re-stamp it")}
-    owed = report["owed"]
-    if not owed:
-        state = "no baseline stamped yet" if not report["baselined"] else "none owed"
-        return {"count": 0, "blocking": True,
-                "detail": f"no sprint close owed ({state}; {report['covered']} accounted for)"}
-    ids = ", ".join(cid for cid, _ in owed[:8]) + (f", +{len(owed) - 8} more" if len(owed) > 8 else "")
-    return {"count": len(owed), "blocking": True,
-            "detail": (f"a sprint close is owed - {len(owed)} delivery unit(s) reached terminal "
-                       f"with no retro ({ids}); run the retro then "
-                       f"`gate --require-retro RETROxxxx` before you push/release")}
-
-
 # Lanes whose FAILURES block must also block when they CRASH: a raised exception in
 # (say) validate or reconcile means the gate proved nothing about that lane, and a
 # green gate over an unproven blocking lane is the false-assurance class (LL0008).
@@ -515,7 +484,7 @@ BLOCKING_ON_ERROR = {
     "conformance", "reconcile", "index-derived", "validate",
     "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
     "lessons-summary", "lessons-validity", "handoff", "review-legs",
-    "engagement-floor", "review-current", "close-owed", "window",
+    "engagement-floor", "review-current", "window",
     "changelog-fragments", "module-alone", "full-suite",
 }
 
@@ -1914,7 +1883,6 @@ BOUND_LANE_SUBJECT = {
     "lessons-validity": "the sprint close's learning loop",
     "handoff": "the remaining-work handoff",
     "review-current": "the sprint close's review currency",
-    "close-owed": "whether a sprint close is owed",
 }
 
 
@@ -2025,7 +1993,7 @@ def run_gate(root: str = ".", only: list[str] | None = None,
              require_retro: str | None = None, release: bool = False,
              allow_external: bool = False,
              require_lessons: bool = False, require_handoff: str | None = None,
-             require_review: bool = False, require_close: bool = False,
+             require_review: bool = False,
              conformance_scope: "set[str] | None" = None,
              record_cost: bool = False, boundary: str | None = None) -> dict:
     """Run the selected checks and report. `ok` is False only when a BLOCKING check
@@ -2085,15 +2053,6 @@ def run_gate(root: str = ".", only: list[str] | None = None,
             bound.append("review-current")
         else:
             downgraded.append("close.review")
-    # NOT implied by `--release`. The lane is right and it ran nowhere, but `--release` is a
-    # documented contract consuming projects depend on, and quietly adding a blocking lane to it
-    # changes their gate as well as this one. The enforcement point is the TAG - see
-    # `release_cut.tag_check`, which refuses a tag while any delivery unit owes a close. A tag,
-    # not every push: this project commits straight to main in small green units, so a
-    # mid-sprint push owing a close is normal and blocking it would train the bypass.
-    if require_close:
-        registry["close-owed"] = _close_owed
-        bound.append("close-owed")
     if release:  # pre-tag: the diff-scoped lanes go back to the WHOLE workspace...
         # A commit is judged on what it changed; a TAG is judged on everything, so the debt a
         # pre-commit run reported as advisory blocks here. Swapped by identity against the
@@ -2746,7 +2705,6 @@ def cmd_gate(args: argparse.Namespace) -> int:
                       require_lessons=getattr(args, "require_lessons", False),
                       require_handoff=getattr(args, "require_handoff", None),
                       require_review=getattr(args, "require_review", False),
-                      require_close=getattr(args, "require_close", False),
                       record_cost=True)
     if args.format == "json":
         print(json.dumps(report, indent=2))
@@ -2802,12 +2760,10 @@ def build_parser() -> argparse.ArgumentParser:
                    help="The review half of the sprint close: fail unless reviews/LATEST.md is at "
                         "least as new as every artefact (run `review` to refresh it). Currency, "
                         "not presence - a stale review anchor is a fresh session's first read")
-    p.add_argument("--require-close", dest="require_close", action="store_true",
-                   help="Push/release guard: fail if any delivery unit reached terminal since the "
-                        "close-owed baseline with no retro accounting for it (a skipped close-down). "
-                        "The `close-owed` lane is bound to this flag only - the plain gate never "
-                        "runs it; the soft nudge lives on `status`/`hint`. "
-                        "Deselecting the bound `close-owed` lane under it is refused")
+    sdlc_md.retire_flag(p, "--require-close",
+                        "`sprint sign` seals each run, and the tag asks only whether the gate "
+                        "was green on the tagged commit and CI passed on the forge; "
+                        "`status` still reports an owed close as an advisory")
     p.add_argument("--release", action="store_true",
                    help="Pre-tag gate: also EXECUTE every story's Verify: expression and fail "
                         "on any red or unproven AC (read-only - no Verified: back-annotation, "

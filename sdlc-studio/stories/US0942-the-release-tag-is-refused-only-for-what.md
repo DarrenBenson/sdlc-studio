@@ -1,6 +1,6 @@
 # US0942: The release tag is refused only for what a release needs, not for close-owed debt
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,14 +19,19 @@
 
 - **AC1:** Given a fixture where the gate is recorded green on the tagged commit, forge CI is green and three delivery units are terminal with no retro naming them, when `release_cut.py tag-check --commit <sha>` runs, then it allows the tag. Fails on: HEAD, which refuses naming the three units (`close_owed.py detect` exits 1 on 17 units in this repository at 013a46d0)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tag_no_close_owed.py::TagNoCloseOwedTests::test_uncovered_units_do_not_refuse_the_tag
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given the same fixture with the gate recorded green on a different commit, then `tag-check` still refuses and names both commits. Fails on: deleting the whole tag guard rather than its close-owed half
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tag_no_close_owed.py::TagNoCloseOwedTests::test_a_green_on_another_commit_still_refuses
+  - **Verified:** yes (2026-09-25)
 - **AC3:** Given `gate.py --require-close`, then it exits 2 with a message that the flag is retired and that `sprint sign` seals each run. Fails on: removing the flag so argparse exits with a usage error that names nothing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tag_no_close_owed.py::TagNoCloseOwedTests::test_require_close_is_retired
+  - **Verified:** yes (2026-09-25)
 - **AC4:** Given a fixture with an owed unit, when `status.py hint` runs, then it still prints the close-owed advisory. Fails on: deleting `close_owed.py` with the bindings, which N2 does not ask for (the advisory and `hooks/close_guard.py` stay)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tag_no_close_owed.py::TagNoCloseOwedTests::test_the_status_advisory_stays
+  - **Verified:** yes (2026-09-25)
 - **AC5:** Given US0166 AC3, whose shell verifier greps help/gate.md and reference-retro.md for `require-close`, then it is retired in the D0259 pattern and `test_verify_ac.py`'s US0166 pins are updated, and `docgen.py surface --check` reports 0 drift. Fails on: removing the doc lines while US0166 AC3 stays `Verified: yes` over text that no longer exists
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tag_no_close_owed.py::TagNoCloseOwedTests::test_no_stamp_names_the_retired_flag
+  - **Verified:** yes (2026-09-25)
 
 ## Notes
 

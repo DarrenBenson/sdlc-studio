@@ -30,14 +30,14 @@ In `_close_owed_units`, return the blocking predicate rather than the raw list: 
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a corpus whose only uncovered terminal unit is a SAME-DAY close-time repair carrying a recorded Close-repair-override (close_owed never counts a repair made on a later day than the retro as unaccounted, so a later-day fixture would test nothing), when `tag_check` runs on the recorded green commit, then it does not refuse on that unit - the same corpus `close_owed.is_owed` reports False for
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckReadsTheBlockingPredicateTests::test_an_overridden_close_repair_does_not_refuse_the_tag
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0942: tag-check no longer reads the close-owed report at all
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0942
 - [ ] **AC2** Given a corpus holding a terminal unit no retro covers and no override names - same-day, so it is genuinely unaccounted - when `tag_check` runs, then it still refuses and names that unit - the guard is narrowed to the predicate, not switched off
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckReadsTheBlockingPredicateTests::test_a_unit_no_retro_or_override_covers_still_refuses
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0942: tag-check no longer refuses on an uncovered unit; `sprint sign` seals each run
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0942
 - [ ] **AC3** Given a close-owed report carrying no `unaccounted` key at all, when `_close_owed_units` reads it, then it falls back to `owed` and refuses exactly as it does today, so a report written by an older `close_owed` is judged no more leniently
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckReadsTheBlockingPredicateTests::test_a_report_without_unaccounted_falls_back_to_owed
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0942: `release_cut._close_owed_units` was deleted with the close-owed half of tag-check
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0942
 
 ## Test Plan
 
@@ -52,3 +52,4 @@ In `_close_owed_units`, return the blocking predicate rather than the raw list: 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-11 | sdlc-studio | Filed |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3 retired by US0942 (D0259 pattern): `release_cut._close_owed_units` and the close-owed half of tag-check were deleted |

@@ -274,7 +274,13 @@ def forge_ci_state(root: Path | str, commit: str) -> tuple[str, str]:
 
 def tag_check(root: Path | str, commit: str) -> tuple[bool, str]:
     """(allowed, reason). A tag of `commit` is allowed ONLY when the recorded gate-green commit is
-    the same commit - so a tag can never assert a green measured on a different tree."""
+    the same commit - so a tag can never assert a green measured on a different tree - and the
+    forge reports CI green on it.
+
+    Those are the two things a release needs. Whether every delivery unit was named in a retro
+    is not asked here: `sprint sign` seals each run, and the close-owed detector could not read
+    a carry bug or a ruled closure, so it refused tags over work that was closed (US0942). Its
+    answer stays on the `status`/`hint` advisory."""
     commit = (commit or "").strip()
     green = green_commit(root)
     if not green:
@@ -284,21 +290,6 @@ def tag_check(root: Path | str, commit: str) -> tuple[bool, str]:
         return False, (f"the gate was recorded green on {green}, not the commit being tagged "
                        f"({commit}) - a tag asserting a green measured on a different tree is "
                        f"refused; re-run the gate on {commit}")
-    # No delivery unit may owe a close at a TAG. The specs documented this as enforced "at the
-    # push/release moment" and it ran at neither: the gate lane bound only when a flag nobody
-    # passed was given, no pre-push hook exists and CI ran the plain gate - a ceremony with no
-    # detector, which is the exact failure the lane was built to close. The tag is where the
-    # rule is unambiguously right; blocking every mid-sprint push on a trunk-based repo would
-    # train the bypass instead.
-    owed, unknown = _close_owed_units(root)
-    if unknown:
-        return False, f"refusing the tag: {unknown}"
-    if owed:
-        return False, (f"{len(owed)} delivery unit(s) reached a terminal status with no retro "
-                       f"behind them ({', '.join(owed[:8])}"
-                       f"{', +more' if len(owed) > 8 else ''}) - a release that ships work no "
-                       f"sprint closed asserts a record that was never written. Close the "
-                       f"sprint, or record the deferral deliberately")
     # Everything above this line is a claim about the LOCAL tree, answered from a local file. That
     # was the whole guard until BG0576, and it is why v5.0.0 and v5.0.1 were both tagged over a CI
     # that had been red for two days: the gate ran green on a developer machine, the runner
@@ -313,63 +304,7 @@ def tag_check(root: Path | str, commit: str) -> tuple[bool, str]:
                   "unsupported": "this clone's forge cannot be queried from here, so its CI was "
                                  "NOT consulted",
                   "success": "CI green on the forge"}[state]
-    return True, (f"gate green on {commit} matches the tagged commit, no close is owed, "
-                  f"and {forge_note}")
-
-
-def _close_owed_units(root: Path | str) -> "tuple[list[str], str | None]":
-    """`(units owing a close, refusal reason)` - and it FAILS CLOSED.
-
-    The original version returned `[]` on every failure, justified as "a crash in a reporting
-    helper must not become a refusal nobody can clear" and as being "a second, narrower net"
-    behind a blocking gate lane. Both halves were wrong. There is no gate lane above: the
-    `close-owed` lane binds only under `--require-close`, which nothing passes, so this IS the
-    only enforcement point. And `[]` collapsed three different states into "clean":
-
-    * no baseline stamped - genuinely nothing to judge, the one case that may pass;
-    * baseline UNREADABLE - `gate._close_owed` treats this as a loud blocking refusal, in terms
-      ("refusing to pass a close gate over an unreadable baseline that silently disarms the
-      close-down"), and here it read as clean;
-    * the helper raised - nothing was judged, reported as though everything had been.
-
-    So deleting or truncating one tracked file (`sdlc-studio/.close-owed-baseline.json`) turned
-    the release guard off and made the tag assert a positive falsehood. A guard whose failure
-    mode is silence is the class this project files bugs about; this one is the guard on the
-    release."""
-    try:
-        import close_owed  # noqa: PLC0415 - deferred; only the tag path pays for it
-        report = close_owed.owed(Path(root))
-    except Exception as exc:  # noqa: BLE001 - reported, never swallowed
-        return [], (f"the close-owed report could not be produced ({exc!r}), so whether any "
-                    f"delivery unit owes a close is UNKNOWN - refusing rather than tagging on "
-                    f"an unanswered question")
-    if report.get("corrupt"):
-        return [], ("the close-owed baseline is unreadable, which silently disarms the "
-                    "close-down check - restore `sdlc-studio/.close-owed-baseline.json` from "
-                    "git; do NOT re-stamp it, which would forgive whatever it was hiding")
-    # The scan itself degraded. `read_text_safe` and `walk_glob` swallow by design - one bad
-    # artefact must not abort a walk over a thousand - and that silence reached here as an EMPTY
-    # tree, which reads identically to a clean one. `chmod 000 sdlc-studio/stories` turned a
-    # correct refusal into "no close is owed": the same fail-open this function was rewritten to
-    # close, one frame down the stack, because the fix caught only what `owed()` RAISED.
-    unreadable = report.get("unreadable") or []
-    if unreadable:
-        shown = ", ".join(str(d.get("path")) for d in unreadable[:5])
-        return [], (f"{len(unreadable)} path(s) in the delivery tree could not be read "
-                    f"({shown}{', +more' if len(unreadable) > 5 else ''}), so whether any unit "
-                    f"owes a close is UNKNOWN - an unreadable tree is indistinguishable from an "
-                    f"empty one, and tagging on it would assert a clean record nobody scanned")
-    # No baseline is the one honest pass: the rule was never adopted here, so there is no
-    # history to hold this project to. Distinguished from unreadable, which is the whole point.
-    if not report.get("baselined"):
-        return [], None
-    # The blocking predicate, not the raw `owed` list. `owed` keeps every uncovered terminal unit,
-    # including a close-time repair a recorded Close-repair-override accounts for, so reading it
-    # refused a tag on a unit `close_owed` itself reports as not owed - and the remedy the
-    # refusal names could never clear it. `blocking` falls back to `owed` when a report carries
-    # no `unaccounted` key, so an older report is judged no more leniently.
-    import close_owed  # noqa: PLC0415 - already imported above; bound here for the reader
-    return [str(row[0]) for row in (close_owed.blocking(report)["units"] or [])], None
+    return True, f"gate green on {commit} matches the tagged commit, and {forge_note}"
 
 
 def _cmd_cut(args: argparse.Namespace) -> int:
