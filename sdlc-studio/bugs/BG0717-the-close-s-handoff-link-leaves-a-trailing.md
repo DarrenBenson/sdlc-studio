@@ -25,11 +25,12 @@ Normalise the trailing whitespace where the section is written, not at each call
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `handoff._link_from_retro` writes the handoff bullet through `artifact._put_section(text, ('Handoff',), body)`.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Normalise the trailing whitespace where the section is written, not at each call site: have `_put_section` (or `_link_from_retro` before its `atomic_write`)...
+- [ ] **AC1** Given a retro whose `## Handoff` section is the last in the file, when `handoff._link_from_retro` writes the handoff link, then the file ends with exactly one newline (fixed by US0877, 6729b4f3, handoff.py:759)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_retro.py::RetroTailTests::test_linking_the_handoff_leaves_exactly_one_newline
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-18 | sdlc-studio | Filed |
+| 2026-09-25 | sdlc-studio v6 planning | QA seat: criteria point at the test US0877 added, so the fix it already landed can reach Fixed through transition.py (triage ruling, Sprint 5) |

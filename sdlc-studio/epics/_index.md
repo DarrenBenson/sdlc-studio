@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 20 |
+| Draft | 22 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 227 |
 | Superseded | 17 |
-| **Total** | **264** |
+| **Total** | **266** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -72,6 +72,8 @@
 | [EP0262](EP0262-commits-clear-in-ninety-seconds-and-every-constraint.md) | Commits clear in ninety seconds, and every constraint earns its place | Draft | 19 | -- | 2026-09-24 | 2026-09-24 |
 | [EP0263](EP0263-review-is-one-reviewer-and-a-green-test.md) | Review is one reviewer and a green test: the review and evidence surface is deleted | Draft | 21 | -- | 2026-09-24 | 2026-09-24 |
 | [EP0264](EP0264-the-record-informs-the-work-goals-trace-to.md) | The record informs the work: goals trace to the PRD, and briefs carry the history and constraints of the files they touch | Done | 7 | -- | 2026-09-25 | 2026-09-25 |
+| [EP0265](EP0265-v6-0-0-the-lean-loop-works-on.md) | v6.0.0: the lean loop works on a fresh project, and the release cuts clean | Draft | 15 | -- | 2026-09-25 | 2026-09-25 |
+| [EP0266](EP0266-v6-0-0-every-doc-page-and-release.md) | v6.0.0: every doc, page and release note describes the lean product | Draft | 7 | -- | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 

@@ -38,6 +38,7 @@
 - Engineering call: all seven of US0643's stamps retire here (PanelSignoffCliTests and SignoffPanelAssignmentTests), not split with US0917.
 - Lands after US0917, and before US0923 (the panel interlock at critic.py 2231).
 - The shared prose edits to `reference-scripts-review.md` and `reference-workflow-personas.md` moved to US0924.
+- - Line numbers re-measured at 013a46d0: `critic.signoff_refusal` 2071, `record_signoff` 2097 (panel interlock near 2135), `signoff_brief` 3243, `cmd_signoff` 4668, `cmd_signoff_brief` 4818, parsers 4982 and 5023; `persona_resolve.signoff_panel` 197 and `--ceremony signoff` 391; `sprint._principal_refusals` 9256 still calls `critic.signoff_refusal` at 9275; the plan panel refusal is 9821-9828; `sprint_report` delegated rows 869-883 and 2646; `review.signoff: operator` at config-defaults.yaml 82. No historical status reads sign-off any more, so no licence is needed.
 
 ## Revision History
 
@@ -45,3 +46,4 @@
 | --- | --- | --- |
 | 2026-09-24 | sdlc-studio | Created via `batch` (deterministic); body trimmed to the lean story shape |
 | 2026-09-25 | Engineering seat | Groomed for Sprint 4 from the readiness review: 3 -> 5 points; AC1 keeps the principal-independence refusal as its control; AC2 names `--ceremony signoff` retired, with refine and triage as controls; AC4 is the delegated-row check only (the other report reads went to US0917); stamps named (10 units, 32 criteria); Affects adds test_prose_writer_hazard.py, test_sprint_report.py and the changelog fragment, and moves reference-scripts-review.md and reference-workflow-personas.md to US0924 |
+| 2026-09-25 | sdlc-studio v6 planning | Sprint 5 (engineering seat): line numbers refreshed against 013a46d0; premises stand |

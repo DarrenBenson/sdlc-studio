@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 36 |
+| Draft | 58 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 2 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 72 |
 | Blocked | 7 |
-| **Total** | **936** |
+| **Total** | **958** |
 
 ## All Stories
 
@@ -295,6 +295,28 @@
 | [US0934](US0934-a-bug-reaches-fixed-without-a-depth-gate.md) | A bug reaches Fixed without a depth gate, and the retired --depth flags are refused | Done | EP0263 | 2026-09-25 | 2026-09-25 |
 | [US0935](US0935-a-repair-reaches-fixed-without-the-mutation-evidence.md) | A repair reaches Fixed without the mutation-evidence gate, survivor filing or evidence mode | Done | EP0263 | 2026-09-25 | 2026-09-25 |
 | [US0936](US0936-the-mutation-ledger-verbs-are-retired-and-a.md) | The mutation ledger verbs are retired and a mutation run reports its yield only | Draft | EP0263 | 2026-09-25 | 2026-09-25 |
+| [US0937](US0937-work-that-already-shipped-reads-done-so-the.md) | Work that already shipped reads Done, so the repair ledger can go and the release cut ships no notes for open stories | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0938](US0938-the-release-rehearsal-walks-a-v5-1-project.md) | The release rehearsal walks a v5.1 project across to v6, and every known gap it tolerates has an open owner | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0939](US0939-ci-and-the-push-gate-give-one-verdict.md) | CI and the push gate give one verdict on tools/tests, because both run it the same way | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0940](US0940-every-criterion-on-a-done-story-passes-when.md) | Every criterion on a Done story passes when the release gate runs it, or is retired with its reason | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0941](US0941-a-report-maya-signed-still-validates-after-the.md) | A report Maya signed still validates after the tree moves on | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0942](US0942-the-release-tag-is-refused-only-for-what.md) | The release tag is refused only for what a release needs, not for close-owed debt | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0943](US0943-sprint-plan-in-a-consuming-project-prints-the.md) | `sprint plan` in a consuming project prints the skill's toolchain runbook | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0944](US0944-verify-ac-stamps-never-reports-green-on-nothing.md) | `verify_ac stamps` never reports green on nothing, and no stale stamp ships in v6 | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0945](US0945-changing-a-stamped-test-lists-the-criteria-that.md) | Changing a stamped test lists the criteria that stamp it before the commit lands | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0946](US0946-the-known-issues-page-names-the-release-being.md) | The known-issues page names the release being cut | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0947](US0947-the-files-the-close-writes-pass-markdownlint-without.md) | The files the close writes pass markdownlint without a hand fix | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0948](US0948-a-writer-that-cannot-take-the-allocation-lock.md) | A writer that cannot take the allocation lock writes nothing instead of losing rows | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0949](US0949-no-shipped-command-help-offers-a-retired-behaviour.md) | No shipped command help offers a retired behaviour | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0950](US0950-a-fresh-project-can-brief-and-record-its.md) | A fresh project can brief and record its one review with the shipped defaults | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0951](US0951-a-clean-run-s-report-hands-over-no.md) | A clean run's report hands over no false known issues | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0952](US0952-an-upgrader-reads-every-v6-breaking-change-first.md) | An upgrader reads every v6 breaking change first | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
+| [US0953](US0953-the-v6-release-notes-lead-with-what-changed.md) | The v6 release notes lead with what changed for the person using it | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
+| [US0954](US0954-the-repository-s-front-door-describes-v6-and.md) | The repository's front door describes v6 and teaches no retired surface | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
+| [US0955](US0955-an-upgrading-project-follows-one-page-from-v5.md) | An upgrading project follows one page from v5 to v6 | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
+| [US0956](US0956-the-shipped-docs-teach-the-lean-loop-in.md) | The shipped docs teach the lean loop in one place | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
+| [US0957](US0957-the-white-paper-and-the-value-argument-describe.md) | The white paper and the value argument describe the v6 operating model | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
+| [US0958](US0958-the-last-skill-docs-outside-us0924-name-no.md) | The last skill docs outside US0924 name no command or setting v6 dropped | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 

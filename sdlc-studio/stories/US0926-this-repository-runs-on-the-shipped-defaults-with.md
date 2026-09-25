@@ -4,7 +4,7 @@
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** sdlc-studio/.config.yaml, sdlc-studio/definition-of-done.md, AGENTS.md, README.md, docs/existing-users.md, .claude/skills/sdlc-studio/scripts/tests/test_existing_users_page.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_repo_defaults.py, changelog.d/US0926.md
+> **Affects:** sdlc-studio/.config.yaml, sdlc-studio/definition-of-done.md, AGENTS.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_repo_defaults.py, changelog.d/US0926.md
 > **Epic:** EP0263
 > **Points:** 3
 > **Persona:** Maya Okafor
@@ -21,10 +21,8 @@
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_repo_defaults.py::RepoDefaultsTests::test_the_repo_config_holds_no_retired_key
 - **AC2:** Given a mirror of this repository on the stripped config, when a story and a bug, each with green criteria and an independent delivery APPROVE and the bug with no `Verification depth`, are moved to Done and Fixed, then each succeeds with no plan review, test plan, sign-off, depth or mutation evidence asked for; and the same story with no verdict reads critiqued unmet in `conformance.py check`. Fails on: HEAD's config, under which the bug is refused for its missing depth tier
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_repo_defaults.py::RepoDefaultsTests::test_the_lean_path_holds_on_the_real_config
-- **AC3:** Given AGENTS.md and README.md, then AGENTS.md's refusal table names no retired gate (brief provenance on `critic record`, `critic signoff`, `Verification depth` on `transition -> Fixed`, the two-role rule on `transition -> Done`), its lane roster names no deleted lane (`derived-depth`, `evidence-drift`), and the README's mermaid diagram has no `two-role review + sign-off` edge
+- **AC3:** Given AGENTS.md, then its refusal table names no retired gate (brief provenance on `critic record`, `critic signoff`, `Verification depth` on `transition -> Fixed`, the two-role rule on `transition -> Done`), its lane roster names no deleted lane (`derived-depth`, `evidence-drift`), its review rule points at no retired sign-off panel (`persona_resolve.py panel` for review), and its soft-dependency table does not describe `review.line_coverage` as a gate. Fails on: HEAD (AGENTS.md 50, 51, 87-96, 217)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_repo_defaults.py::RepoDefaultsTests::test_agents_md_names_no_retired_gate
-- **AC4:** Given docs/existing-users.md, then its upgrade table names no retired key and points an upgrading project at `migrate`
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_repo_defaults.py::RepoDefaultsTests::test_the_existing_users_page_names_no_retired_key
 
 ## Notes
 
@@ -33,6 +31,7 @@
 - The orphaned comment lines in `.config.yaml` are pruned by hand here: US0925 keeps every comment byte-identical, which is right for a consuming project.
 - `README.md` line 209 carries the mermaid `two-role review + sign-off` edge.
 - Lands last, after US0924 and US0925.
+- - 2026-09-25 (product seat census): the README half of AC3 (the mermaid `two-role review + sign-off` edge, README 209) moves to U3, which owns README.md whole; AC4 (docs/existing-users.md) moves to U4, which owns that page and its pinned test `test_existing_users_page.py`. README.md, docs/existing-users.md and test_existing_users_page.py leave this unit's Affects, so no two units edit one file. AC3 gains AGENTS.md 87-96 (the sign-off panel, retired by US0919) and 217 (`review.line_coverage` as a gate, opt-in under US0922).
 
 ## Revision History
 
@@ -40,3 +39,4 @@
 | --- | --- | --- |
 | 2026-09-24 | sdlc-studio | Created via `batch` (deterministic); body trimmed to the lean story shape |
 | 2026-09-25 | Engineering seat | Groomed for Sprint 4 from the readiness review: 2 -> 3 points; AC1 has `review.line_coverage` absent as redundant and prunes comments on retired keys; AC2 drops the false premise that Done refuses a missing verdict (the bar is read in conformance) and adds a bug so it fails at HEAD; AC3 covers the README's mermaid edge; Affects adds README.md and the changelog fragment |
+| 2026-09-25 | sdlc-studio v6 planning | Product seat, Sprint 5/6 planning: README.md and docs/existing-users.md move to U3 and U4 (they own those files whole); AC4 removed and AC3 narrowed to AGENTS.md, adding its sign-off-panel and line-coverage lines; points stay 3 |

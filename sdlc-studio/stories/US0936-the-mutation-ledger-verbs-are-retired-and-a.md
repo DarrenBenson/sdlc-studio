@@ -38,6 +38,8 @@
 - Engineering call: Affects adds `test_sprint.py` (it calls `sprint.claimed_proof_gaps`) and `test_sprint_report.py` (it writes `mutation-runs.json` fixtures), found by grep beyond the readiness file list.
 - Lands after US0920, US0935, US0921, US0912 and US0934: all read the ledger or `plan_execution`.
 - Closes CR0556, EP0242 and US0800 together with US0911 (product seat ruling).
+- - Line numbers re-measured at 013a46d0: `mutation.py --help` still lists register, retract, retractions and audit; `_RETRACT_REASON_MIN` at 2695, read by `verify_ac.py` 2520 and 2588; `critic._withdrawn_block` 3651 calls `mutation.retractions` (3659); `sprint.claimed_proof_gaps` 5910 reads `mutation._load_ledger` at 5927; `sprint_report.py` 187 reads `series_rows`, which stays; `MutationSurvivorCountTests` at `test_sprint_report.py` 2929. `verify_ac._purge_mutated_bytecode` (about 3828) calls `mutation._purge_bytecode`, which stays with `run`.
+- Deleting about 2,300 lines of `test_mutation.py` also shortens the commit selection for a gate.py change (BG0754: `test_mutation` measured 15s of it).
 
 ## Revision History
 
@@ -45,3 +47,4 @@
 | --- | --- | --- |
 | 2026-09-25 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-25 | Engineering seat | Groomed for Sprint 4 from the readiness review: the US0921b half (8 points); user story written; takes the old AC1, AC2, AC4 (fixture holds a retraction and a mutation-band batch so HEAD reads the ledger), AC5 and AC6 (class list named, stranded-mutant and BG0357 dropped); new AC5 relocates the retraction floor; stamps measured (25 criteria); Affects adds test_sprint.py, test_sprint_report.py, the bg0614 fixture, the surface, the new module and the changelog fragment |
+| 2026-09-25 | sdlc-studio v6 planning | Sprint 5 (engineering seat): line numbers refreshed against 013a46d0; premises stand |

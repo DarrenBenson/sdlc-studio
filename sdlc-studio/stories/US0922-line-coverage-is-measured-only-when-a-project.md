@@ -31,6 +31,7 @@
 - `LineCoverageTests` has no cutoff test, so US0815 retires nothing here.
 - Lands after US0910, which shares `CoverageGateTests`.
 - `verify_ac.py`, `test_verify_ac.py`, `help/verify.md`, `help/test-automation.md` and `help/test-spec.md` left Affects: none of them names the key.
+- - Line numbers re-measured at 013a46d0: `line_coverage: report` at config-defaults.yaml 70 and `line_coverage_after: null` at 77; readers `transition.line_coverage_mode` 744 and `line_coverage_cutoff` 763; `CoverageGateTests` at `test_transition.py` 2939, with the two retiring nodes at 3174 and 3222.
 
 ## Revision History
 
@@ -38,3 +39,4 @@
 | --- | --- | --- |
 | 2026-09-24 | sdlc-studio | Created via `batch` (deterministic); body trimmed to the lean story shape |
 | 2026-09-25 | Engineering seat | Groomed for Sprint 4 from the readiness review: 2 points held; AC1 needs an open run or `--base` so coverage would run at HEAD; AC2 carries a leftover cutoff dated after the story; AC4 names the two CoverageGateTests nodes (US0816); Affects drops verify_ac.py, test_verify_ac.py and three help pages, and adds the changelog fragment |
+| 2026-09-25 | sdlc-studio v6 planning | Sprint 5 (engineering seat): line numbers refreshed against 013a46d0; premises stand |
