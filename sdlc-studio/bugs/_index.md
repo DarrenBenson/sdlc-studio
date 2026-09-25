@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 33 |
+| Open | 34 |
 | In Progress | 0 |
 | Fixed | 610 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
 | Superseded | 21 |
-| **Total** | **770** |
+| **Total** | **771** |
 
 ## All Bugs
 
@@ -129,6 +129,7 @@
 | [BG0768](BG0768-two-sprint-4-test-modules-are-red-on.md) | Two Sprint 4 test modules are red on main: an unconfined git call and a gate-lane floor the deletions tripped | Fixed | High | 2026-09-25 | 2026-09-25 |
 | [BG0769](BG0769-us0915-did-not-converge-in-review-round-2.md) | US0915 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0770](BG0770-ci-s-unittest-run-of-tools-tests-is.md) | CI's unittest run of tools/tests is red on main | Fixed | High | 2026-09-25 | 2026-09-25 |
+| [BG0771](BG0771-the-close-s-tick-verification-row-cannot-read.md) | The close's tick-verification row cannot read the lean criterion shape | Open | Medium | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 
