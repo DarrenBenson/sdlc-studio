@@ -66,8 +66,8 @@ mean something.
   `equivalent` asserts that no test could have killed the mutant and so proves nothing about
   the tests; the exclusion is named in the line rather than reading as "nobody registered
   anything"
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_gate.py -k EquivalentIsNotCoverageTests
-- **Verified:** yes (2026-07-22)
+- **Verify:** manual - retired by US0921: the gate lane that read ledger coverage was deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0921
 
 ## Repair round (independent review of RUN-01KY3MFX)
 
@@ -101,3 +101,4 @@ clause naming why - so the builder is not told to redo work they already did.
 | 2026-07-22 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-22 | sdlc-studio | Groomed: user story and acceptance criteria authored |
 | 2026-07-22 | sdlc-studio | Repair round: an equivalent registration no longer counts as mutation coverage (AC4); 2 hand-applied mutants, both killed |
+| 2026-09-25 | Claude Opus 5.5 | AC4 retired by US0921 (D0259 pattern): the gate lane that read ledger coverage was deleted |

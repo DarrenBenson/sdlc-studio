@@ -685,7 +685,7 @@ _TEST_NAMES = {
 
 def is_test_path(path: str) -> bool:
     """Test-shaped by the conventions this family's suites use: `test_x.py`, `x_test.go`,
-    `x.test.ts`, `x.spec.ts`. Matches `gate._is_test_path`, so 'is a test' means one thing."""
+    `x.test.ts`, `x.spec.ts`."""
     stem = PurePosixPath(str(path).replace("\\", "/")).stem
     return (stem.startswith("test_") or stem.endswith("_test")
             or stem.endswith(".test") or stem.endswith(".spec"))

@@ -428,8 +428,7 @@ back-dated rows are invented for events that happened before it.
      `skill_version` (exclusive) and the installed version (inclusive),
      grouped Added-first and capped per group with a "+N more" tail. New
      **advisory-when-absent gate lanes** in the gap are named individually
-     with their baseline pointer (e.g. the mutation lane reports not-run
-     until you run `scripts/mutation.py`) - a new integrity check must be a
+     with their baseline pointer - a new integrity check must be a
      directed next step, not an accidental discovery. Degrades honestly: no
      shipped CHANGELOG or an unparseable range prints an explicit
      "capability delta unavailable" line, never silence.

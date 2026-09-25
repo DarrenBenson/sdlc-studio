@@ -1,6 +1,6 @@
 # US0921: The gate carries no mutation lane
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,14 +19,16 @@
 
 - **AC1:** Given `gate.py --only mutation`, when invoked, then it is refused as no gate lane; `ON_DEMAND_CHECKS` and `ADVISORY_WHEN_ABSENT` hold no `mutation` and `_mutation_coverage` is gone; an open rewrite window claiming a staged path is still refused by the `window` lane, which stays. Fails on: HEAD, where `mutation` is an on-demand lane, and on a deletion that takes the `window` lane with it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_opt_in.py::MutationOptInTests::test_no_mutation_lane_and_the_window_still_guards
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given `project_upgrade.new_advisory_lanes("2.5.0", "3.4.0")`, the version gap in which the mutation lane arrived, then it names no `mutation` lane and directs no one to create a mutation report. Fails on: removing the lane from the gate while `ADVISORY_WHEN_ABSENT` still lists it for the upgrade digest
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_opt_in.py::MutationOptInTests::test_an_upgrade_announces_no_mutation_lane
+  - **Verified:** yes (2026-09-25)
 
 ## Notes
 
 - Split from the original US0921 (5 points) as its "a" half: the old AC3 as amended. The ledger verbs, `run` without a ledger, the brief and close reads and the stamps moved to US0936.
 - The old AC3 as first written already passed at HEAD: `mutation` has been an on-demand lane since US0895. The amended form fails at HEAD.
-- Stamps: none measured. MutationLaneTests, MutationCoverageTests, MutationProvenanceTests, MutationRefusedLaneTests and `AdvisoryLaneTests::test_mutation_lane_named_in_gap` carry no stamped selector.
+- Stamps: eight stamped criteria named tests this unit deletes (US0054 AC1, AC2, AC4; US0216 AC1-AC3; US0302 AC4; US0379 AC2); they are retired in the D0259 pattern in the same commit.
 - Engineering call: this half keeps the original module `test_lean_mutation_opt_in.py` and its AC3 selector. US0936 gets a new module.
 - `gate.py` lines 380-640. Lands before US0936.
 

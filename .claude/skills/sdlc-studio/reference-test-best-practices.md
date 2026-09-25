@@ -172,8 +172,8 @@ Before trusting a new test (especially e2e), **break the feature on purpose and 
 
 **This discipline is executable, not only prose:** `scripts/mutation.py run` applies the
 declared fault classes to the changed surface and re-runs the mapped tests per mutation -
-a mutation the tests do not kill is reported as a **survivor** finding, and the gate's
-`mutation` lane surfaces the report (advisory). See `reference-scripts.md` and
+a mutation the tests do not kill is reported as a **survivor** finding in the run's own
+report; no gate lane reads it. See `reference-scripts.md` and
 `help/mutation.md`.
 
 See `best-practices/testing.md#name-the-mutant-first` for the habit that makes this pass first time.

@@ -30,11 +30,12 @@
 - **Given** a mutation report recording an empty surface
 - **When** the gate's mutation lane reads it
 - **Then** the gate's mutation lane reads that report as 'nothing to mutate' - distinct from not-run and from PASS - so a docs-only close is green with the reason on the record
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::EmptySurfaceIsFirstClassTests::test_the_gate_lane_reads_empty_surface_distinct_from_not_run_and_pass
-- **Verified:** yes (2026-07-24)
+- **Verify:** manual - retired by US0921: no gate lane reads the mutation report
+- **Verified:** manual (2026-09-25) - retired, superseded by US0921
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-25 | Claude Opus 5.5 | AC2 retired by US0921 (D0259 pattern): no gate lane reads the mutation report |

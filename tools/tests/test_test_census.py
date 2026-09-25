@@ -735,7 +735,7 @@ class HandCopiedMirrorTests(unittest.TestCase):
     #: this set, never join it. Failing on six pre-existing files would get the guard switched
     #: off, and a switched-off guard catches nothing; refusing the SEVENTH is what it is for.
     _KNOWN_MIRRORS = frozenset({
-        "test_artifact.py", "test_confinement.py", "test_gate.py", "test_refine.py",
+        "test_artifact.py", "test_confinement.py", "test_refine.py",
         "test_repo_hygiene.py", "test_repo_map.py",
     })
 

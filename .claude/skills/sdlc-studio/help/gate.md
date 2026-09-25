@@ -280,7 +280,7 @@ A sprint is complete only when the close gate is green and shown, **never at "de
 | **Index consistency** | `reconcile` (file-census drift), `duplicate-id` | yes |
 | **Skill docs (skill repo only)** | `doc-coverage` (every command/script documented) | yes |
 | **Enforced by the project** | `constitution` (project principles), `provenance` (tool-created stamps) | yes, and in the plain gate, when `constitution.enforce` / `provenance.enforce` is set; otherwise on demand and advisory |
-| **On demand (`--only <lane>`)** | `doc-surface`, `disclosure` (progressive-disclosure hygiene), `doc-freshness` (LATEST.md vs reality), `mutation`, `hook-enabled`, `batch-size` | never |
+| **On demand (`--only <lane>`)** | `doc-surface`, `disclosure` (progressive-disclosure hygiene), `doc-freshness` (LATEST.md vs reality), `hook-enabled`, `batch-size` | never |
 | **Executable ACs (`--release` only)** | `verify` (executes every story's `Verify:` expression) | yes |
 | **Required legs (`--release` only)** | `review-legs` (every required document leg present or waived; CODE out of scope) | yes |
 | **Sprint close (`--require-retro` / `--require-lessons` only)** | `retro` (the batch retro exists), `lessons-summary` (LESSONS-SUMMARY.md is current), `lessons-validity` (no expired or horizon-less open lesson) | yes |
@@ -295,6 +295,9 @@ reports and never blocks. A lane the project set to block stays in the plain gat
 finding fails the gate. The `verify`
 lane only joins the registry under `--release` (it runs test suites; the standard gate stays fast
 and read-only for a pre-commit hook).
+
+Mutation testing is not a gate lane, on demand or otherwise: run `mutation.py run` when you want to
+probe a suite (see [mutation](mutation.md)). `--only mutation` is refused as an unknown lane.
 
 ## CI wiring (the gate is the mechanism; these are just examples)
 

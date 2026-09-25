@@ -21,24 +21,24 @@
 - **Given** a `mutation-report.json` carrying `refused: true` and `baseline: "fail"`, whose summary is all zeros because no mutant was applied
 - **When** the gate's mutation lane renders that report
 - **Then** the detail names the refusal and the baseline state (`REFUSED - baseline fail`) instead of `0/0 mutations killed`, so a refusal is never readable as a clean sweep.
-- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_gate.MutationRefusedLaneTests.test_refused_report_names_the_refusal
-- **Verified:** yes (2026-07-18)
+- **Verify:** manual - retired by US0921: the gate's mutation lane was deleted; mutation testing is `mutation.py run`, not a gate lane
+- **Verified:** manual (2026-09-25) - retired, superseded by US0921
 
 ### AC2: The refusal carries the report's own remedy
 
 - **Given** a refused report whose `remedy` names what to do (clean the tree, or fix the failing suite)
 - **When** the lane renders it
 - **Then** that remedy is surfaced in the detail, so the reader learns the fix from the lane rather than having to open the report.
-- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_gate.MutationRefusedLaneTests.test_refused_report_carries_the_remedy
-- **Verified:** yes (2026-07-18)
+- **Verify:** manual - retired by US0921: the gate's mutation lane was deleted; mutation testing is `mutation.py run`, not a gate lane
+- **Verified:** manual (2026-09-25) - retired, superseded by US0921
 
 ### AC3: A refused lane counts as un-met, and a clean run is unaffected
 
 - **Given** a refused report, and separately a normal report with mutants applied
 - **When** each is rendered
 - **Then** the refused report yields a non-zero count (it is not silently zero-as-clean) while a normal report's count and detail are unchanged from current behaviour.
-- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_gate.MutationRefusedLaneTests
-- **Verified:** yes (2026-07-18)
+- **Verify:** manual - retired by US0921: the gate's mutation lane was deleted; mutation testing is `mutation.py run`, not a gate lane
+- **Verified:** manual (2026-09-25) - retired, superseded by US0921
 
 ## Revision History
 
@@ -46,3 +46,4 @@
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-18 | sdlc-studio | Groomed: ACs and executable Verify lines authored |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3 retired by US0921 (D0259 pattern): the gate's mutation lane was deleted; mutation testing is `mutation.py run`, not a gate lane |

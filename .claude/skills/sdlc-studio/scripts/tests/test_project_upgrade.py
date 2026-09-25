@@ -747,23 +747,6 @@ class ChangelogDigestTests(unittest.TestCase):
             self.assertFalse(dig["available"])
 
 
-class AdvisoryLaneTests(unittest.TestCase):
-    """A gate lane that reads not-run when absent must be NAMED at upgrade time
-    when it arrived in the version gap - a new integrity check must not land
-    silently as a benign-looking warn."""
-
-    def test_mutation_lane_named_in_gap(self):
-        lanes = pu.new_advisory_lanes("2.5.0", "3.4.0")
-        names = [x["lane"] for x in lanes]
-        self.assertIn("mutation", names)
-        mut = next(x for x in lanes if x["lane"] == "mutation")
-        self.assertIn("mutation.py", mut["baseline"])   # the directed next step
-
-    def test_lane_outside_gap_not_named(self):
-        self.assertEqual([x["lane"] for x in pu.new_advisory_lanes("3.4.0", "3.5.0")
-                          if x["lane"] == "mutation"], [])
-
-
 class DigestKindHandlingTests(unittest.TestCase):
     """Non-standard change kinds must be printed, and a qualified kind heading
     (### Added (project upgrade)) resets the kind rather than leaking bullets

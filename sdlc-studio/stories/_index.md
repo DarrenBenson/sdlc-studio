@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 51 |
+| Draft | 50 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 6 |
 | Review | 0 |
-| Done | 719 |
+| Done | 720 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 72 |
@@ -279,14 +279,14 @@
 | [US0918](US0918-one-verdict-ledger-decides-whether-a-unit-was.md) | One verdict ledger decides whether a unit was reviewed | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0919](US0919-sign-off-is-the-operator-s-one-signature.md) | Sign-off is the operator's one signature and the per-unit sign-off verbs are gone | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0920](US0920-a-repair-reaches-fixed-without-registered-mutation-evidence.md) | The gate runs no evidence-drift lane and the close names no mutation-evidence mode | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
-| [US0921](US0921-mutation-testing-is-an-opt-in-run-with.md) | The gate carries no mutation lane | In Progress | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0921](US0921-mutation-testing-is-an-opt-in-run-with.md) | The gate carries no mutation lane | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0922](US0922-line-coverage-is-measured-only-when-a-project.md) | Line coverage is measured only when a project opts in | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0923](US0923-a-review-verdict-records-without-brief-provenance.md) | A review verdict records without brief provenance | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0924](US0924-the-shipped-docs-teach-only-the-surviving-review.md) | The shipped docs teach only the surviving review path | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0925](US0925-an-upgrading-project-s-config-carries-forward-without.md) | An upgrading project's config carries forward without the retired review keys | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0926](US0926-this-repository-runs-on-the-shipped-defaults-with.md) | This repository runs on the shipped defaults with no stand-down keys | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0927](US0927-a-sprint-plan-names-the-prd-outcome-or.md) | A sprint plan names the PRD outcome or persona its goal serves, and flags a goal that serves none | Done | EP0264 | 2026-09-25 | 2026-09-25 |
-| [US0928](US0928-the-seat-reviewing-a-sprint-goal-is-shown.md) | The seat reviewing a Sprint Goal is shown the PRD outcomes and the personas' End goals | Draft | EP0264 | 2026-09-25 | 2026-09-25 |
+| [US0928](US0928-the-seat-reviewing-a-sprint-goal-is-shown.md) | The seat reviewing a Sprint Goal is shown the PRD outcomes and the personas' End goals | In Progress | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0929](US0929-the-prd-describes-the-lean-product-and-lists.md) | The PRD describes the lean product and lists the outcomes a Sprint Goal can serve | Draft | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0930](US0930-a-reviewer-s-brief-lists-the-recent-done.md) | A reviewer's brief lists the recent Done units that changed each file the unit touches, with the defects their reviews found | In Progress | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0931](US0931-a-build-lane-s-brief-carries-the-same.md) | A build lane's brief carries the same file history, and tells the author that history outranks an artefact's account | Draft | EP0264 | 2026-09-25 | 2026-09-25 |

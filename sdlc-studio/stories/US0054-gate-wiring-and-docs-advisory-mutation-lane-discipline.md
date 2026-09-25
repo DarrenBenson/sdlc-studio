@@ -30,16 +30,16 @@
 - **Given** a mutation-report with one survivor
 - **When** gate runs
 - **Then** the mutation lane warns naming the survivor count and the gate result is unchanged (advisory)
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_gate.py' -k test_survivors_warn_advisory
-- **Verified:** yes (2026-07-04)
+- **Verify:** manual - retired by US0921: the gate's mutation lane was deleted; mutation testing is `mutation.py run`, not a gate lane
+- **Verified:** manual (2026-09-25) - retired, superseded by US0921
 
 ### AC2: no report reads as not-run, not as pass
 
 - **Given** no mutation-report on disk
 - **When** gate runs
 - **Then** the lane reports not-run (advisory), never PASS
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_gate.py' -k test_absent_report_is_not_run
-- **Verified:** yes (2026-07-04)
+- **Verify:** manual - retired by US0921: the gate's mutation lane was deleted; mutation testing is `mutation.py run`, not a gate lane
+- **Verified:** manual (2026-09-25) - retired, superseded by US0921
 
 ### AC3: the discipline prose links to the executable gate
 
@@ -54,8 +54,8 @@
 - **Given** a mutation-report recorded at another git rev
 - **When** gate runs
 - **Then** the lane reports STALE (advisory), never PASS for the current tree
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_gate.py' -k test_stale_report_never_reads_pass
-- **Verified:** yes (2026-07-04)
+- **Verify:** manual - retired by US0921: the gate's mutation lane was deleted; mutation testing is `mutation.py run`, not a gate lane
+- **Verified:** manual (2026-09-25) - retired, superseded by US0921
 
 ## Revision History
 
@@ -64,3 +64,4 @@
 | 2026-07-04 | sdlc | Created via `new` (deterministic) |
 | 2026-07-04 | claude | Authored at design: advisory-in-v1 gate lane per accepted RFC-0022; points + ACs + Verify lines |
 | 2026-07-04 | claude | AC4 added from the critic's staleness finding: the report records git_rev and the lane compares it |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC4 retired by US0921 (D0259 pattern): the gate's mutation lane was deleted; mutation testing is `mutation.py run`, not a gate lane |

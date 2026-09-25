@@ -4,9 +4,9 @@
 advisory lanes that can never refuse one: doc-freshness, constitution, doc-surface, disclosure,
 provenance, mutation, hook-enabled and batch-size. They leave the per-commit gate. doc-freshness
 runs at the sprint close, where it reports and never blocks; the other seven run when named with
-`--only`.
+`--only`. US0921 later took the mutation lane out of the gate altogether, leaving seven.
 
-AC1 and AC2 drive the gate over throwaway git workspaces, with each of the eight lanes patched to
+AC1 and AC2 drive the gate over throwaway git workspaces, with each of the seven lanes patched to
 raise wherever the gate module holds it, so a lane that runs cannot pass unnoticed. AC3 reads the
 live artefacts, because its criterion is about this repository's stamped criteria.
 """
@@ -33,11 +33,11 @@ import gate  # noqa: E402
 
 REPO = workspace.REPO
 
-#: The eight advisory lanes, by the gate function each runs.
+#: The seven advisory lanes, by the gate function each runs.
 ADVISORY_LANES = {
     "doc-freshness": "_doc_freshness", "constitution": "_constitution",
     "doc-surface": "_doc_surface", "disclosure": "_disclosure", "provenance": "_provenance",
-    "mutation": "_mutation", "hook-enabled": "_hook_enabled", "batch-size": "_batch_size",
+    "hook-enabled": "_hook_enabled", "batch-size": "_batch_size",
 }
 
 #: The lanes that refuse a commit, each of which the defect fixture below trips.
@@ -138,7 +138,7 @@ def _passing(root):
 class PerCommitLaneTests(unittest.TestCase):
 
     def test_the_advisory_lanes_leave_the_commit_gate(self) -> None:
-        """AC1. MUTANTS: leave any one of the eight in DEFAULT_CHECKS; drop a refusing lane
+        """AC1. MUTANTS: leave any one of the seven in DEFAULT_CHECKS; drop a refusing lane
         from it; make the plain gate select nothing it did not select before."""
         with tempfile.TemporaryDirectory() as t:
             root = _workspace(t)
@@ -193,7 +193,7 @@ class PerCommitLaneTests(unittest.TestCase):
         """AC2. The gate exactly as `sprint close` calls it, with the close's own lanes (retro,
         lessons, review currency) and the standard lanes stubbed green, so the verdict turns on
         doc-freshness alone. MUTANTS: leave doc-freshness out of the close; make it blocking;
-        run any of the other seven at the close; refuse `--only <lane>` for one of them."""
+        run any of the other six at the close; refuse `--only <lane>` for one of them."""
         others = [n for n in ADVISORY_LANES if n != "doc-freshness"]
         green = {n: _passing for n in gate.DEFAULT_CHECKS if n not in ADVISORY_LANES}
         green.update({n: _passing for n in gate.LESSONS_CLOSE_CHECKS})
@@ -219,7 +219,7 @@ class PerCommitLaneTests(unittest.TestCase):
             failing = [r for r in close["checks"] if r["blocking"] and r["status"] != "pass"]
             self.assertTrue(close["ok"], f"the close failed on {failing}")
 
-            # The other seven: on demand, each when named with --only.
+            # The other six: on demand, each when named with --only.
             for name in others:
                 with self.subTest(lane=name), _Lanes([name], raising=False).patched() as one:
                     rc, report = _main("--root", str(root), "--only", name)

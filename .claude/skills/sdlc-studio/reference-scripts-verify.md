@@ -178,14 +178,8 @@ It is bounded at 200 entries, oldest out first, with a cumulative `dropped` coun
 truncation is never silent; a repeated `register` accumulates into one entry, whose own mutant
 list is bounded at 100 while its tallies stay exact.
 
-**The gate's `mutation` lane is advisory in v1** - it reports and never changes the exit code,
-and runs only when named (`gate.py --only mutation`).
-It reads the ledger, not the report, for coverage, judging each file of the changed surface
-(or, when git cannot name one, the files the ledger holds) against that file's content hash
-now: a matching `measured` entry is **covered**; a matching `registered` one is covered and
-named as a self-report, unless it carries only `equivalent`, which asserts no test could have
-killed the mutant and so proves nothing about the suite; an entry whose hash no longer matches
-is **stale** - that file was edited since its mutant ran; no entry at all is **uncovered**.
+**No gate lane reads the mutation report or ledger.** Mutation testing is `mutation.py run`, run
+when you want its yield; `gate.py --only mutation` is refused as an unknown lane.
 
 **Staleness is judged per ROW where a row has an anchor.** A row registered with `--anchor` is
 live while that text occurs exactly once in the target and stale otherwise, whatever else in the

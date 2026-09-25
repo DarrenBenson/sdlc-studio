@@ -1,6 +1,6 @@
 # US0928: The seat reviewing a Sprint Goal is shown the PRD outcomes and the personas' End goals
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Depends on:** US0927 - reuses the goal-trace function (CR0594 refinement)
 > **Delivers:** CR0594
 > **Created:** 2026-09-25

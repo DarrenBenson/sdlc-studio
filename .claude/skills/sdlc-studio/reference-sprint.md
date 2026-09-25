@@ -194,9 +194,8 @@ independent critic plus the gate - the check's output states this scoping.
    **Mutation evidence first (mechanical, `--goal done` only):** before the retro gate, run
    a bounded `mutation.py run --since <sprint base ref> --test "<the suite>"` (ceiling from
    `quality.mutation_max`) so `sdlc-studio/.local/mutation-report.json` exists for THIS
-   diff and the gate's mutation lane (`gate.py --only mutation`) reads evidence instead of warning "not run" - a lane
-   that always warns trains agents to skim warns. Survivors are findings for the critic
-   pass below, not an automatic block (the lane stays advisory in v1). For `--goal design` it reviews the produced
+   diff. Survivors are findings for the critic pass below, not an automatic block; no gate
+   lane reads the report. For `--goal design` it reviews the produced
    backlog; for `--goal done` the delivered increment.
    The CODE leg of a `--goal done` close is the **adversarial full-diff critic pass** -
    a sharpening of the per-unit critic step already in the loop, never a second

@@ -1,6 +1,6 @@
 # BG0764: BG0762's settle-fingerprint test calls git outside a confined environment, so the unconfined-git sweep is red
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** High
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_settle_fingerprint.py

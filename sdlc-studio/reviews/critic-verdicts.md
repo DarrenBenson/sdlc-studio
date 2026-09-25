@@ -1200,6 +1200,7 @@ One row has been removed since adoption.
 | BG0762 | APPROVE | qa-rev-BG0762 | BG0762-build | 2026-09-25 | a0201e5560cd unmatched | full | - |
 | BG0757 | APPROVE | qa-rev-BG0757 | BG0757-build | 2026-09-25 | e03956346c52 | full | [pre-existing] the regex fallback tags a class as kind function, non-blocking |
 | US0927 | APPROVE | qa-rev-US0927 | US0927-build | 2026-09-25 | d91990edbd69 | full | [new] non-blocking: a --serves value is dropped silently when the project has no Outcomes and no persona cards [LC-006]; [new] non-blocking: unfilled template placeholders read as real outcomes and personas [LC-006]; [new] non-blocking: the fixture's out-of-section O7 bait is never asserted, so ignoring section bounds survives [LC-002]; [new] non-blocking: first names that are ordinary words over-trace; [pre-existing] test\_gitutil's unconfined-git sweep fails on test\_lean\_settle\_fingerprint from BG0762 |
+| US0921 | APPROVE | qa-rev-US0921 | US0921-build | 2026-09-25 | 005fa7d350f1 | full | [new] non-blocking: five shipped docs still describe the deleted lane and name gate.py --only mutation (fixed at landing); [new] non-blocking: tsd.md and TS0002 still describe the lane and its deleted tests; [new] non-blocking: the story Notes claim no stamps though eight were retired (fixed at landing); [pre-existing] the unconfined-git sweep is red at the base from BG0762, filed BG0764 |
 
 ## Supersessions
 

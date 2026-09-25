@@ -3,7 +3,7 @@
 > **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_surface_module.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_surface_module.py, .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py, changelog.d/BG0758.md
 > **Evidence:** US0895 review, RUN-01M39MC0: scratchpad u895r_leak.py and u895r_diag.jsonl
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio file
