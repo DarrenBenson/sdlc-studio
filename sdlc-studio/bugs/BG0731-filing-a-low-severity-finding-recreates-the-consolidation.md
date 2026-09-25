@@ -4,7 +4,7 @@
 > **Merged from:** BG0738 (backlog sweep 2026-09-24, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_low_finding_is_a_bug.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py, changelog.d/BG0731.md
+> **Affects:** .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_low_finding_is_a_bug.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py, changelog.d/BG0731.md, .claude/skills/sdlc-studio/scripts/tests/test_create_validate_roundtrip.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_issue_triage.py
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
