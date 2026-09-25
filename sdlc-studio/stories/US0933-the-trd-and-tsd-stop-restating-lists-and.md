@@ -1,6 +1,6 @@
 # US0933: The TRD and TSD stop restating lists and counts the code derives, and the tests that pinned the restatements are deleted
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Delivers:** CR0594
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new

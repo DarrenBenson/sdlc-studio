@@ -4526,6 +4526,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     src = f"worklist {worklist}" if worklist else " + ".join(f"{k}s {s}" for k, s in queries)
     print(f"batch: {data['count']} unit(s) ({src}){scope}, order={args.order}")
     _render_goal_review(data)
+    _render_goal_trace(data)
     _render_reachable_end_state(data)
     _render_seat_provenance(data)
     _render_waves(data)
@@ -9890,6 +9891,126 @@ def goal_length_refusal(goal: str | None) -> str | None:
             f"run is opened.")
 
 
+# ---------------------------------------------------------------------------
+# The goal trace: which PRD outcome or persona the Sprint Goal serves (D0266).
+# ---------------------------------------------------------------------------
+# ADVICE, NEVER A REFUSAL (LC-008). A goal serving none, or only the Negative persona, is flagged
+# on the plan the operator approves; the exit code and the batch are identical either way.
+
+_OUTCOME_ITEM_RE = re.compile(r"^\s*[-*]\s+\*\*(O\d+):?\*\*:?\s*(.+?)\s*$")
+
+
+def prd_outcomes(root: Path | str) -> dict[str, str]:
+    """`{O-id: text}` from the `## Outcomes` section of `sdlc-studio/prd.md` (items shaped
+    `- **O1:** text`); empty when the PRD or the section is absent."""
+    try:
+        text = (Path(root) / "sdlc-studio" / "prd.md").read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    out: dict[str, str] = {}
+    inside = False
+    for line in text.splitlines():
+        if re.match(r"^#{1,2}\s", line):
+            inside = bool(re.match(r"^##\s+(?:[\d.]+\s+)?Outcomes\s*$", line, re.I))
+            continue
+        m = _OUTCOME_ITEM_RE.match(line) if inside else None
+        if m:
+            out.setdefault(m.group(1), m.group(2))
+    return out
+
+
+def persona_cards(root: Path | str) -> list[dict]:
+    """`[{name, role}]` for each persona card in `sdlc-studio/personas/` - the name from its
+    `# ` heading, the role from its Quick Reference `Cast role` (None when undeclared)."""
+    from validate import _persona_cast_role  # noqa: PLC0415 - the one cast-role reader
+    pdir = Path(root) / "sdlc-studio" / "personas"
+    cards = []
+    for p in sorted(pdir.glob("*.md")) if pdir.is_dir() else ():
+        if p.name.lower() in {"index.md", "readme.md", "consult-guide.md"} \
+                or p.name.startswith("_"):
+            continue
+        text = sdlc_md.read_text_safe(p)
+        m = re.search(r"^#\s+(.+?)\s*$", text, re.M)
+        if m:
+            cards.append({"name": m.group(1), "role": _persona_cast_role(text)})
+    return cards
+
+
+def _names_persona(text: str, name: str) -> bool:
+    """True when `text` names the persona by full or first name, as a whole word."""
+    return any(re.search(rf"(?<!\w){re.escape(n)}(?!\w)", text)
+               for n in dict.fromkeys((name, name.split()[0])))
+
+
+def goal_trace(root: Path | str, goal: str | None, serves: list[str] | None = None
+               ) -> dict | None:
+    """Which PRD outcome or persona the goal serves: named by `--serves` values or as a whole
+    word in the goal. None when there is nothing to trace (no goal, or no outcomes and no
+    persona cards). `flagged` when it serves none, or only a Negative persona; `unknown` holds
+    the `--serves` values nothing on disk names."""
+    wanted = [s.strip() for v in (serves or []) for s in v.split(",") if s.strip()]
+    outcomes, cards = prd_outcomes(root), persona_cards(root)
+    if not ((goal or "").strip() or wanted) or not (outcomes or cards):
+        return None
+    goal = goal or ""
+    served: list[dict] = []
+    unknown: list[str] = []
+
+    def _add(item: dict) -> None:
+        if item not in served:
+            served.append(item)
+
+    for value in wanted:
+        oid = value.upper()
+        card = next((c for c in cards if value.lower()
+                     in (c["name"].lower(), c["name"].split()[0].lower())), None)
+        if oid in outcomes:
+            _add({"kind": "outcome", "id": oid, "text": outcomes[oid]})
+        elif card:
+            _add({"kind": "persona", "name": card["name"], "role": card["role"]})
+        else:
+            unknown.append(value)
+    for oid, text in outcomes.items():
+        if re.search(rf"(?<!\w){oid}(?!\w)", goal):
+            _add({"kind": "outcome", "id": oid, "text": text})
+    for card in cards:
+        if _names_persona(goal, card["name"]):
+            _add({"kind": "persona", "name": card["name"], "role": card["role"]})
+    designed_for = [s for s in served if s.get("role") != "negative"]
+    return {"goal": goal or None, "serves": served, "unknown": unknown,
+            "flagged": not designed_for,
+            "could_serve": {"outcomes": list(outcomes),
+                            "personas": [c["name"] for c in cards if c["role"] != "negative"]}}
+
+
+def _render_goal_trace(data: dict) -> None:
+    """`goal serves:` lines on the text plan; nothing when no trace was recorded."""
+    trace = data.get("goal_trace")
+    if not trace:
+        return
+
+    def _label(s: dict) -> str:
+        if s["kind"] == "outcome":
+            return f"{s['id']} - {s['text']}"
+        return f"{s['name']} ({(s.get('role') or 'no cast role').capitalize()})"
+
+    if not trace["flagged"]:
+        for s in trace["serves"]:
+            print(f"goal serves: {_label(s)}")
+    else:
+        could = trace["could_serve"]
+        options = ", ".join([*could["outcomes"], *could["personas"]]) or "nothing on disk"
+        negative = [_label(s) for s in trace["serves"]]
+        why = (f"only {', '.join(negative)}, a persona the product declines to design for"
+               if negative else "the goal names no PRD outcome or persona")
+        print(f"goal serves: NONE - {why}; it could serve {options}. Name one with "
+              f"--serves <O-id|persona> or in the goal (advice: the plan is not refused)")
+    for value in trace["unknown"]:
+        what = (f"the PRD lists no outcome {value.upper()}" if re.fullmatch(r"[Oo]\d+", value)
+                else f"no persona card is named {value}")
+        print(f"  --serves {value}: {what}")
+
+
 def _resolve_sprint_goal(args: argparse.Namespace) -> str | None:
     """The goal from `--sprint-goal`, else a prompt on an interactive `--write`, else none.
     An explicit empty value means none and never prompts."""
@@ -10049,6 +10170,11 @@ def cmd_plan(args: argparse.Namespace) -> int:
     # plan; an objection is advice for the operator approving the plan, never a refusal.
     data["goal_review"] = goal_review_status(args.root, sprint_goal,
                                              skip_personas=getattr(args, "skip_personas", False))
+    # THE GOAL TRACE ADVISES too: which outcome or persona the goal serves, flagged when none.
+    # Absent when there is nothing to trace against, so it never becomes a line nobody reads.
+    trace = goal_trace(args.root, sprint_goal, getattr(args, "serves", None))
+    if trace is not None:
+        data["goal_trace"] = trace
     # THE ONE-RUN-SLOT GATE. A --write plan against an open run holding a DISJOINT batch is
     # refused: a project holds one run slot, and folding an unrelated batch into the open run
     # strands its goal verdict. Checked here, ahead of the forecast record and the sprint-plan
@@ -11539,6 +11665,10 @@ def build_parser() -> argparse.ArgumentParser:
                         "(what the increment is judged against at the closing review), 20 words "
                         "or fewer. Distinct from --goal, which is a pipeline rung. Optional: "
                         "prompted when interactive; absent is recorded as none, never invented")
+    p.add_argument("--serves", action="append", metavar="O-ID|PERSONA",
+                   help="the PRD outcome (O1) or persona the Sprint Goal serves (repeatable, or "
+                        "comma-separated). Naming one in the goal traces it too; a goal serving "
+                        "none, or only a Negative persona, is flagged on the plan, never refused")
     p.add_argument("--charter", default="",
                    help="The charter this batch was materialised from. With --write, opening the "
                         "run marks it Spent - the queue's only exit.")

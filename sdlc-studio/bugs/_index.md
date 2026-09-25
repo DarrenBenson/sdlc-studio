@@ -7,13 +7,13 @@
 | Status | Count |
 | --- | --- |
 | Open | 48 |
-| In Progress | 1 |
+| In Progress | 3 |
 | Fixed | 594 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
 | Superseded | 14 |
-| **Total** | **763** |
+| **Total** | **765** |
 
 ## All Bugs
 
@@ -111,17 +111,19 @@
 | [BG0750](BG0750-a-same-day-waiver-flips-a-filed-sprint.md) | A same-day waiver flips a filed sprint report INVALID | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0751](BG0751-open-findings-in-a-sprint-report-use-an.md) | Open findings in a sprint report use an inclusive window end | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0752](BG0752-per-commit-test-selection-skips-hooks-test-infrastructure.md) | Per-commit test selection skips hooks, test infrastructure and code reached through another script | Open | Medium | 2026-09-24 | 2026-09-24 |
-| [BG0753](BG0753-the-test-suite-leaks-temporary-directories-into-tmp.md) | The test suite leaks temporary directories into /tmp | Open | Medium | 2026-09-24 | 2026-09-24 |
+| [BG0753](BG0753-the-test-suite-leaks-temporary-directories-into-tmp.md) | The test suite leaks temporary directories into /tmp | In Progress | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0754](BG0754-a-commit-touching-a-widely-imported-script-runs.md) | A commit touching a widely imported script runs well over the 90-second budget | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0755](BG0755-artifact-py-batch-ignores-a-story-s-role.md) | artifact.py batch ignores a story's role, capability and benefit, and its default template leaves a page of placeholders | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0756](BG0756-us0900-did-not-converge-in-review-round-2.md) | US0900 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0757](BG0757-repo-map-py-build-crashes-on-python-3.md) | repo_map.py build crashes on Python 3.10 when a source file holds a null byte | Fixed | Medium | 2026-09-24 | 2026-09-24 |
-| [BG0758](BG0758-command-audit-surface-module-reuses-whatever-surface-module.md) | command_audit._surface_module reuses whatever surface module the process already imported | Open | Medium | 2026-09-24 | 2026-09-24 |
+| [BG0758](BG0758-command-audit-surface-module-reuses-whatever-surface-module.md) | command_audit._surface_module reuses whatever surface module the process already imported | In Progress | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0759](BG0759-us0891-did-not-converge-in-review-round-2.md) | US0891 did not converge in review: round 2 REJECT findings | In Progress | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0760](BG0760-us0905-did-not-converge-in-review-round-2.md) | US0905 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0761](BG0761-us0904-did-not-converge-in-review-round-2.md) | US0904 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0762](BG0762-ci-s-bandit-scan-fails-on-the-sha1.md) | CI's bandit scan fails on the SHA1 fingerprint US0899 added to reconcile settle | Fixed | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0763](BG0763-two-file-finding-tests-write-stub-packs-into.md) | Two file_finding tests write stub packs into the shipped audit-profiles folder, so parallel runs race | Open | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0764](BG0764-bg0762-s-settle-fingerprint-test-calls-git-outside.md) | BG0762's settle-fingerprint test calls git outside a confined environment, so the unconfined-git sweep is red | Open | High | 2026-09-25 | 2026-09-25 |
+| [BG0765](BG0765-goal-trace-drops-a-serves-value-silently-and.md) | goal_trace drops a --serves value silently, and reads unfilled template placeholders as real outcomes | Open | Medium | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 

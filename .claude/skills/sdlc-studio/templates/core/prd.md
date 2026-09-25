@@ -49,6 +49,16 @@ Related: help/prd.md, reference-prd.md
 
 ---
 
+## Outcomes
+
+<!-- Numbered product outcomes, each citing the persona End goal it advances. A Sprint Goal
+traces to one by `sprint plan --serves O1` or by naming it; the plan flags a goal serving none. -->
+
+- **O1:** {{outcome_1}} ({{persona_name}}, End goal {{end_goal_number}})
+- **O2:** {{outcome_2}} ({{persona_name}}, End goal {{end_goal_number}})
+
+---
+
 ## 3. Feature Inventory
 
 | Feature | Description | Status | Priority | Location |

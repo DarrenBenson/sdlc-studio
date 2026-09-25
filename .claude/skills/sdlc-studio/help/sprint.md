@@ -123,6 +123,7 @@ next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
 | `<batch>` | status queries (`--bugs`/`--crs`/`--stories <status>` - **combinable** into one mixed tranche), `--worklist <file>` (ids one per line), `--epic EPxxxx`, or a **PRD path** (greenfield authoring) | required |
 | `--goal` | `triage` (plan) / `plan` (sprint plan) / `design` (Ready, estimated backlog) / `done` (delivered) | `done` |
 | `--sprint-goal TEXT` | the Sprint Goal - one sentence of user value, 20 words or fewer (a longer goal is refused at plan; a run already open is never refused over its goal), judged at the closing review (`sprint goal-verdict --verdict achieved\|partial\|missed --note "..."`) and shown on the sprint report. Prompted interactively when absent; never invented | none |
+| `--serves O-ID\|PERSONA` | (with `plan`, repeatable) the PRD outcome (from the PRD's `## Outcomes` section, `- **O1:** ...`) or persona card the Sprint Goal serves; naming one as a whole word in the goal traces it too. The plan prints `goal serves: ...`, or `goal serves: NONE` naming what the goal could serve when it serves none or only a Negative persona - advice, never a refusal. Nothing is printed when the project has no outcomes and no persona cards | none |
 | `--order` | `priority` / `wsjf` (priority over complexity) / `manual` | `priority` |
 | `--epic EPxxxx` | (with `--stories`, repeatable) scope a story plan to one or more epics, not the whole status class | all epics |
 | `--write` | (with `plan`) persist the sprint plan to `.local/sprint-plan.json` | off |

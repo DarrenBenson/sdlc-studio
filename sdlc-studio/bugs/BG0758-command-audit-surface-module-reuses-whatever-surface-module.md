@@ -1,6 +1,6 @@
 # BG0758: command_audit._surface_module reuses whatever surface module the process already imported
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_surface_module.py

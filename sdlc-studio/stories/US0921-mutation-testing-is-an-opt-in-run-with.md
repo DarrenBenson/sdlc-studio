@@ -4,7 +4,7 @@
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, .claude/skills/sdlc-studio/help/gate.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_opt_in.py, changelog.d/US0921.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, .claude/skills/sdlc-studio/help/gate.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_opt_in.py, changelog.d/US0921.md, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_gate_lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, tools/tests/test_test_census.py, sdlc-studio/stories/US0054-gate-wiring-and-docs-advisory-mutation-lane-discipline.md, sdlc-studio/stories/US0216-gate-mutation-lane-surfaces-the-refused-red-baseline.md, sdlc-studio/stories/US0302-artefacts-filed-from-survivors-link-back-so-yield.md, sdlc-studio/stories/US0379-mutation-py-records-an-empty-surface-as-a.md
 > **Epic:** EP0263
 > **Points:** 3
 > **Persona:** Maya Okafor

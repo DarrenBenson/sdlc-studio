@@ -1,6 +1,6 @@
 # US0930: A reviewer's brief lists the recent Done units that changed each file the unit touches, with the defects their reviews found
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Delivers:** CR0594
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new

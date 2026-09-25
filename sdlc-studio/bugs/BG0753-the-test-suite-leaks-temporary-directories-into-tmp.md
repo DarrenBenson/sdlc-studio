@@ -1,6 +1,6 @@
 # BG0753: The test suite leaks temporary directories into /tmp
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** tools/tests/conftest.py, .claude/skills/sdlc-studio/scripts/tests/conftest.py, tools/skill-tests.sh, tools/tests/test_lean_tmp_hygiene.py

@@ -14,7 +14,7 @@ Decomposed from CR0594. Delivers the work CR0594 requested.
 
 ## Story Breakdown
 
-- [ ] [US0927: A sprint plan names the PRD outcome or persona its goal serves, and flags a goal that serves none](../stories/US0927-a-sprint-plan-names-the-prd-outcome-or.md)
+- [x] [US0927: A sprint plan names the PRD outcome or persona its goal serves, and flags a goal that serves none](../stories/US0927-a-sprint-plan-names-the-prd-outcome-or.md)
 - [ ] [US0928: The seat reviewing a Sprint Goal is shown the PRD outcomes and the personas' End goals](../stories/US0928-the-seat-reviewing-a-sprint-goal-is-shown.md)
 - [ ] [US0929: The PRD describes the lean product and lists the outcomes a Sprint Goal can serve](../stories/US0929-the-prd-describes-the-lean-product-and-lists.md)
 - [ ] [US0930: A reviewer's brief lists the recent Done units that changed each file the unit touches, with the defects their reviews found](../stories/US0930-a-reviewer-s-brief-lists-the-recent-done.md)
