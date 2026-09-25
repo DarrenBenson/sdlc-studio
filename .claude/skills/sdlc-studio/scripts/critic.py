@@ -200,9 +200,13 @@ def brief_fingerprint(brief_text: str) -> str:
 
     Content-addressed and stable, never clock- or random-seeded: a fingerprint that differs
     between two identical briefs can never be compared, which would make the field decorative.
+
+    The file-history section is left out: it moves when another unit sharing a file lands, so
+    digesting it would mark an honest verdict unmatched between briefing and recording.
     """
     import hashlib  # noqa: PLC0415 - local; only this path needs it
-    normalised = " ".join((brief_text or "").split())
+    import reconcile  # noqa: PLC0415 - sibling; the section's renderer owns its shape
+    normalised = " ".join(reconcile.strip_file_history(brief_text or "").split())
     if not normalised:
         return ""
     return hashlib.sha256(normalised.encode("utf-8")).hexdigest()[:12]
@@ -3954,6 +3958,10 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full",
     title = sdlc_md.extract_h1_title(text) or unit_id
     if phase == "plan-review":
         return _plan_review_brief(root, card, seat, unit_id, title, path, text, acs)
+    # THE FILES' HISTORY: the delivered units that changed them and what their reviews caught,
+    # so the seat looks first for a repeat the record already holds.
+    import reconcile  # noqa: PLC0415 - sibling; the corpus walk is the already-delivered lane's
+    history = reconcile.file_history_section(root, unit_id, affects)
     return f"""You are the {seat} review seat. Read and adopt the charter at
 {card} (the review render). You did NOT author this diff; your job is
 independent judgement of it against the ACs below - they are law, your stance never
@@ -3970,6 +3978,7 @@ Diff scope (the unit's declared Affects - inspect with git diff/status on these 
 Acceptance criteria (canonical - judge against THESE, not a paraphrase):
 {acs}
 {shared}{withdrawn}
+{history}
 Review depth: {depth}
 
 {inventory}{_REVIEW_PRACTICES_BLOCK}
@@ -4804,8 +4813,9 @@ def cmd_record(args: argparse.Namespace) -> int:
         # cards to ask) is not unmatched, so it is never marked.
         recorded = brief
         if brief:
-            seats = _seats_whose_brief_matches(args.root, unit, brief, args.phase,
-                                               tier=getattr(args, "tier", None))
+            with sdlc_md.corpus_cache():   # every seat and tier rendered shares one corpus walk
+                seats = _seats_whose_brief_matches(args.root, unit, brief, args.phase,
+                                                   tier=getattr(args, "tier", None))
             if seats is not None and not seats:
                 print(f"NOTE: {brief} matches no brief this repo can currently produce for "
                       f"{sdlc_md.norm_id(unit)}. Either the unit changed after the seat was "

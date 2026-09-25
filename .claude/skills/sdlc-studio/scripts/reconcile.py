@@ -1946,6 +1946,183 @@ def apply_derivable_requests(repo_root: Path | str, dry_run: bool = False) -> di
     return {"synced": done, "unapplied": unapplied}
 
 
+def unit_corpus(repo_root: Path | str) -> list[dict]:
+    """Every triage-type unit with a status, as the dicts the corpus readers share.
+
+    ONE walk for the already-delivered advisory and the review brief's file history, so the two
+    cannot disagree about which units exist, what they declare or when they last moved. Each
+    dict: id, type, status, terminal, title, tokens, linked (ids it is wired to), affects
+    (repo-relative keys) and date (the last date it carries, or None).
+
+    The walk reads every artefact, seconds on a large workspace, so inside an open `corpus_cache`
+    it is memoised with the file reads it rests on: a caller rendering several briefs pays once.
+    """
+    import backlog_triage as bt  # noqa: PLC0415 - lazy: only the corpus readers need it
+    from datetime import date  # noqa: PLC0415 - only the walk reads the clock
+    root = Path(repo_root)
+    with sdlc_md.corpus_cache() as cache:
+        key = ("reconcile.unit_corpus", str(root.resolve()))
+        if key in cache:
+            return cache[key]
+        today = date.today().isoformat()   # a future deadline is not a last-touched date
+        units: list[dict] = []
+        for type_ in bt.TRIAGE_TYPES:
+            vocab = sdlc_md.status_vocab(type_, root)
+            for p in sdlc_md.artifact_files(type_, root):
+                rid = sdlc_md.extract_record_id(p.stem)
+                if not rid:
+                    continue
+                text = sdlc_md.read_text_safe(p)
+                status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
+                if not status:
+                    continue
+                # Every id this unit is already WIRED to. A unit and the request it was
+                # decomposed from share a title by construction; reporting that pairing as
+                # overlap would bury the cases nobody has connected, which are the whole point.
+                wiring = " ".join(v for v in (sdlc_md.extract_field(text, f)
+                                              for f in ("Delivers", "Epic", "Supersedes")) if v)
+                linked = {_norm_id(x) for x in
+                          (*sdlc_md.parent_refs(text), *sdlc_md.decomposed_ids(text),
+                           *sdlc_md.ID_SEARCH_RE.findall(wiring))}
+                title = sdlc_md.extract_h1_title(text) or ""
+                units.append({
+                    "id": rid, "type": type_, "status": status,
+                    "terminal": sdlc_md.is_terminal_status(type_, status),
+                    "title": title, "tokens": bt._tokens(title), "linked": linked,
+                    "affects": {a for a in (bt._affect_key(root, x)
+                                            for x in sdlc_md.affects_files(text)) if a},
+                    "date": bt._last_date(text, today=today),
+                })
+        cache[key] = units
+        return units
+
+
+# The file-history bounds. Unbounded, the widest Sprint 3 units listed 26-29 prior units
+# and the median findings cell ran to 1,139 characters: a section nobody would read.
+HISTORY_MAX_UNITS = 5
+HISTORY_PER_FILE = 3
+HISTORY_MAX_FINDINGS = 3
+HISTORY_FINDING_CHARS = 200
+HISTORY_HEADING = "History of the files this unit touches"
+#: Only these changed code. The terminal set is wider: the 2026-09-24 sweep alone closed 197
+#: items without building them.
+_CHANGED_CODE = {"story": {"Done"}, "bug": {"Fixed", "Verified"}}
+_LC_CODE_RE = re.compile(r"\s*\[LC-\d+\]")
+
+
+def _history_files(root: Path, affects: list[str]) -> set[str]:
+    """The unit's files the history matches on: its declared Affects, keyed as the corpus keys
+    them, less test modules and `changelog.d/` fragments - every unit touches those, so matching
+    on them lists the newest units of all whatever they changed."""
+    import backlog_triage as bt  # noqa: PLC0415 - lazy, as in unit_corpus
+    import verify_ac  # noqa: PLC0415 - lazy: the one test-path predicate
+    keys = {bt._affect_key(root, a) for a in affects}
+    return {k for k in keys if k and not verify_ac.is_test_path(k)
+            and "changelog.d/" not in f"/{k}"}
+
+
+def file_history(repo_root: Path | str, unit_id: str, affects: list[str], *,
+                 corpus: list[dict] | None = None) -> list[dict]:
+    """The prior units that changed `affects`, bounded and ranked for a brief.
+
+    The three most recent Done stories and Fixed or Verified bugs per file, then at most five of
+    those, ranked by how many of the unit's files each changed and then by recency. Each dict is
+    a corpus unit plus `shared`, the unit's files it changed. Pass `corpus` (from `unit_corpus`)
+    to share one walk across several units."""
+    root = Path(repo_root)
+    files = _history_files(root, affects)
+    if not files:
+        return []
+    corpus = unit_corpus(root) if corpus is None else corpus
+    me = sdlc_md.norm_id(unit_id)
+    changed = [u for u in corpus
+               if u["status"] in _CHANGED_CODE.get(u["type"], ())
+               and sdlc_md.norm_id(u["id"]) != me and u["affects"] & files]
+
+    def recency(u: dict) -> tuple:
+        return (u["date"] or "", sdlc_md.norm_id(u["id"]))
+
+    picked: dict[str, dict] = {}
+    for f in files:
+        for u in sorted((u for u in changed if f in u["affects"]), key=recency,
+                        reverse=True)[:HISTORY_PER_FILE]:
+            picked[u["id"]] = {**u, "shared": sorted(u["affects"] & files)}
+    ranked = sorted(picked.values(), key=lambda u: (len(u["shared"]), *recency(u)),
+                    reverse=True)
+    return ranked[:HISTORY_MAX_UNITS]
+
+
+def _cut_finding(item: str) -> str:
+    """One finding at most HISTORY_FINDING_CHARS long, its lesson class codes kept at the end."""
+    codes = " ".join(dict.fromkeys(c.strip() for c in _LC_CODE_RE.findall(item)))
+    body = _LC_CODE_RE.sub("", item).strip()
+    tail = f" {codes}" if codes else ""
+    room = HISTORY_FINDING_CHARS - len(tail)
+    if len(body) > room:
+        body = body[:room - 3].rstrip() + "..."
+    return body + tail
+
+
+def blocking_findings(rows: list[dict], unit_id: str) -> list[str]:
+    """The first blocking findings the unit's REJECT verdicts recorded, cut for a brief.
+
+    An Issues cell is `; `-separated; an item marked non-blocking or `[pre-existing]` did not
+    hold the unit, so it is not a defect the unit's work introduced."""
+    me = sdlc_md.norm_id(unit_id)
+    found: dict[str, None] = {}
+    for r in rows:
+        if (sdlc_md.norm_id(r.get("unit", "")) != me or r.get("superseded")
+                or r.get("verdict", "").upper() != "REJECT"):
+            continue
+        for item in re.split(r";\s+", re.sub(r"\\(.)", r"\1", r.get("issues", ""))):
+            item = item.strip()
+            if (not item or item == "-" or "[pre-existing]" in item
+                    or "non-blocking" in item.lower()):
+                continue
+            found[_cut_finding(item)] = None
+            if len(found) == HISTORY_MAX_FINDINGS:
+                return list(found)
+    return list(found)
+
+
+def file_history_section(repo_root: Path | str, unit_id: str, affects: list[str], *,
+                         corpus: list[dict] | None = None) -> str:
+    """The brief's history section: the prior units that changed the unit's files and the blocking
+    findings their reviews recorded, or one `none recorded` line. With no verdict ledger there is
+    no review record to read, so it reads `none recorded` without walking the corpus."""
+    import critic  # noqa: PLC0415 - lazy: critic owns the verdict ledger's reader
+    root = Path(repo_root)
+    none = f"{HISTORY_HEADING}: none recorded\n"
+    if not critic.verdicts_path(root).is_file():
+        return none
+    units = file_history(root, unit_id, affects, corpus=corpus)
+    if not units:
+        return none
+    rows = critic.read_verdicts(root)
+    lines = [f"{HISTORY_HEADING} (the most recent delivered units that changed them, and the "
+             f"blocking defects their reviews found - look first for a repeat):"]
+    for u in units:
+        title = re.sub(rf"^{re.escape(u['id'])}:\s*", "", u["title"])
+        lines.append(f"- {u['id']} ({u['status']}, {u['date'] or 'undated'}) {title}; "
+                     f"changed {', '.join(u['shared'])}")
+        lines += [f"  - {f}" for f in blocking_findings(rows, u["id"])
+                  or ["no review findings recorded"]]
+    return "\n".join(lines) + "\n"
+
+
+_HISTORY_SECTION_RE = re.compile(
+    rf"(?m)^{re.escape(HISTORY_HEADING)}[^\n]*\n(?:(?:- |  - )[^\n]*\n)*")
+
+
+def strip_file_history(text: str) -> str:
+    """`text` without the history section `file_history_section` rendered into it.
+
+    For a digest of a brief: the section moves whenever a unit sharing a file lands or a
+    verdict is recorded, so a fingerprint over it would stop matching between briefing and
+    recording for reasons that are not the unit's own."""
+    return _HISTORY_SECTION_RE.sub("", text, count=1)
+
+
 # The already-delivered lane's bars. Titles alone are not enough and a shared file alone is not
 # enough: this lane reports only where BOTH signals are present, because a shared `Affects` is
 # already the planner's clustering signal and recycling it as a duplicate claim would bury the
@@ -1982,38 +2159,9 @@ def already_delivered_advisory(repo_root: Path | str) -> list[dict]:
     settle it. It never changes an exit code and `apply` never acts on it.
     """
     try:
-        import backlog_triage as bt  # noqa: PLC0415 - lazy: only this lane needs it
-        root = Path(repo_root)
-        open_units: list[dict] = []
-        delivered: list[dict] = []
-        for type_ in bt.TRIAGE_TYPES:
-            vocab = sdlc_md.status_vocab(type_, root)
-            for p in sdlc_md.artifact_files(type_, root):
-                rid = sdlc_md.extract_record_id(p.stem)
-                if not rid:
-                    continue
-                text = sdlc_md.read_text_safe(p)
-                status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
-                if not status:
-                    continue
-                # Every id this unit is already WIRED to. A unit and the request it was
-                # decomposed from share a title by construction; reporting that pairing as
-                # overlap would bury the cases nobody has connected, which are the whole point.
-                wiring = " ".join(v for v in (sdlc_md.extract_field(text, f)
-                                              for f in ("Delivers", "Epic", "Supersedes")) if v)
-                linked = {_norm_id(x) for x in
-                          (*sdlc_md.parent_refs(text), *sdlc_md.decomposed_ids(text),
-                           *sdlc_md.ID_SEARCH_RE.findall(wiring))}
-                unit = {
-                    "id": rid, "type": type_, "status": status,
-                    "title": sdlc_md.extract_h1_title(text) or "",
-                    "tokens": bt._tokens(sdlc_md.extract_h1_title(text) or ""),
-                    "linked": linked,
-                    "affects": {a for a in (bt._affect_key(root, x)
-                                            for x in sdlc_md.affects_files(text)) if a},
-                }
-                (delivered if sdlc_md.is_terminal_status(type_, status)
-                 else open_units).append(unit)
+        corpus = unit_corpus(repo_root)
+        open_units = [u for u in corpus if not u["terminal"]]
+        delivered = [u for u in corpus if u["terminal"]]
         out: list[dict] = []
         for u in open_units:
             if not u["affects"] or not u["tokens"]:

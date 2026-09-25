@@ -10,9 +10,9 @@
 | Draft | 46 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 8 |
+| In Progress | 7 |
 | Review | 0 |
-| Done | 722 |
+| Done | 723 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 72 |
@@ -288,7 +288,7 @@
 | [US0927](US0927-a-sprint-plan-names-the-prd-outcome-or.md) | A sprint plan names the PRD outcome or persona its goal serves, and flags a goal that serves none | Done | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0928](US0928-the-seat-reviewing-a-sprint-goal-is-shown.md) | The seat reviewing a Sprint Goal is shown the PRD outcomes and the personas' End goals | Done | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0929](US0929-the-prd-describes-the-lean-product-and-lists.md) | The PRD describes the lean product and lists the outcomes a Sprint Goal can serve | In Progress | EP0264 | 2026-09-25 | 2026-09-25 |
-| [US0930](US0930-a-reviewer-s-brief-lists-the-recent-done.md) | A reviewer's brief lists the recent Done units that changed each file the unit touches, with the defects their reviews found | In Progress | EP0264 | 2026-09-25 | 2026-09-25 |
+| [US0930](US0930-a-reviewer-s-brief-lists-the-recent-done.md) | A reviewer's brief lists the recent Done units that changed each file the unit touches, with the defects their reviews found | Done | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0931](US0931-a-build-lane-s-brief-carries-the-same.md) | A build lane's brief carries the same file history, and tells the author that history outranks an artefact's account | Draft | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0932](US0932-a-build-lane-s-brief-carries-the-trd.md) | A build lane's brief carries the TRD constraints of the components its unit touches | Draft | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0933](US0933-the-trd-and-tsd-stop-restating-lists-and.md) | The TRD and TSD stop restating lists and counts the code derives, and the tests that pinned the restatements are deleted | In Progress | EP0264 | 2026-09-25 | 2026-09-25 |
