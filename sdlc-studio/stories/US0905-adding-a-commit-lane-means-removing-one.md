@@ -1,6 +1,7 @@
 # US0905: Adding a commit lane means removing one
 
-> **Status:** Draft
+> **Status:** Done
+> **Findings-filed-to:** BG0760, CR0592
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,8 +20,10 @@
 
 - **AC1:** Given the lanes a commit runs (both hooks' `--list` output plus the gate's per-commit lanes), when their count exceeds the cap written in `test_lean_commit_lanes.py` (the count once this sprint's deletions land), then the test fails naming every lane and saying one must go for one to come in; at or under the cap it passes - both shown on a fixture hook with one lane added
   - **Verify:** pytest tools/tests/test_lean_commit_lanes.py::LaneCapTests::test_a_lane_over_the_cap_fails_naming_the_trade
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given the cap, then it replaces the hand-maintained exact lane sets (`EXPECTED_LANES`, `MSG_HOOK_LANES`) in `test_precommit_lane_order.py` that every lane change had to edit: `LaneOrderTests::test_no_lane_is_lost_in_the_reorder` is deleted and US0268's criterion naming it is retired in the D0259 pattern, so the suite holds one lane pin rather than two
   - **Verify:** pytest tools/tests/test_lean_commit_lanes.py::LaneCapTests::test_the_cap_retires_the_exact_lane_pins
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

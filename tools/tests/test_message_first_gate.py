@@ -32,6 +32,8 @@ import unittest
 from collections import Counter
 from pathlib import Path
 
+from test_lean_commit_lanes import LISTING_HOOKS, _list, _listed_keys
+
 REPO = Path(__file__).resolve().parents[2]
 PRE_COMMIT = REPO / ".githooks" / "pre-commit"
 COMMIT_MSG = REPO / ".githooks" / "commit-msg"
@@ -45,27 +47,14 @@ _GIT_ENV_VARS = (
     "GIT_CEILING_DIRECTORIES", "GIT_DISCOVERY_ACROSS_FILESYSTEM", "GIT_PREFIX",
 )
 
-#: Every lane the hook PAIR is expected to execute for a code commit, each exactly once.
-#: This is the anti-loss and anti-duplication guard of AC2: the move must neither drop a
-#: check nor run one twice. Since US0901 every refusal in both hooks is a `run` lane, the
-#: gate, the suite handover, the message rule and the collapse check included.
-#: The lanes the hook pair runs, in order. DELIBERATELY hand-maintained, unlike the tool-file
-#: list below: this tuple IS the record of what the gate does, so adding a lane should require
-#: saying so here. A derived version of this would assert only that the hook agrees with
-#: itself.
-EXPECTED_LANES = (
-    "style", "links", "skill-spec", "versions",
-    "stamps-staged", "changelog-shape",
-    # US0879 deleted runbook, lens-signatures, spec-claims and practice-rules from BOTH lane
-    # rosters: two inventories of one hook is how a lane comes to exist in one list only.
-    # US0902 deleted script-tests from both, for the same reason, US0896 warning-ratchet and
-    # US0897 verify-ratchet.
-    "budgets",
-    "neutrality",
-    "action-pins", "dead-flags", "floor-pending", "gate", "markdown", "markdown-payload",
-    "suite-handover", "message-refs",
-    "skill-tests", "tool-tests", "repo-writes", "suite-collapse",
-)
+#: The lanes a green code commit executes are READ from the hooks' own `--list`, never
+#: hand-listed (US0905): a lane dropped from a hook drops out of both sides here, and adding one
+#: is judged by the one lane cap in `test_lean_commit_lanes.py`. What this module pins is not
+#: which lanes exist but the two properties only execution shows - every declared lane runs,
+#: and runs exactly once across the pair.
+#: `unit-tests` runs only a selection gate.py hands over (US0880); this fixture's stubbed gate
+#: hands over none, so the unittest lanes run instead. test_lean_test_selection.py drives it.
+NOT_EXECUTED_HERE = "unit-tests"
 
 #: The hooks' verdict lines: `  ok   <key>` / `  FAIL <key>` (no colour when captured).
 _VERDICT = re.compile(r"^ {2}(ok|FAIL)\s+(\S+)", re.M)
@@ -113,6 +102,17 @@ def _clean_env() -> dict:
 def _git(cwd: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(["git", "-C", str(cwd), *args],
                           capture_output=True, text=True, env=_clean_env())
+
+
+def _listed_lanes(root: Path) -> list[str]:
+    """Every lane the fixture's hook pair declares, as each hook's `--list` prints it."""
+    keys = []
+    for name in LISTING_HOOKS:
+        rc, out, err = _list(root / ".githooks" / name, root)
+        if rc != 0:
+            raise AssertionError(f"{name} --list exited {rc}:\n{out}{err}")
+        keys += _listed_keys(out)
+    return keys
 
 
 def _lanes(out: str) -> list[str]:
@@ -354,8 +354,15 @@ class LaneInventoryTests(_GateFixture):
         self._stage_code()
         rc, out, _ = self._commit("chore: touch a tool")
         self.assertEqual(rc, 0, f"a clean commit was refused:\n{out}")
-        self.assertEqual(Counter(_lanes(out)), Counter(EXPECTED_LANES),
-                         f"the lane inventory changed:\n{out}")
+        expected = [k for k in _listed_lanes(self.root) if k != NOT_EXECUTED_HERE]
+        self.assertTrue(expected, "the hooks' --list names no lanes")
+        ran = Counter(_lanes(out))
+        self.assertEqual(ran, Counter(expected),
+                         f"a declared lane did not run exactly once:\n{out}")
+        # Derived from the hooks, both sides above agree on a lane declared twice; once is
+        # judged on its own.
+        self.assertEqual([], [k for k, n in ran.items() if n > 1],
+                         f"a lane ran twice across the pair:\n{out}")
         self.assertEqual(_failed_lanes(out), [])
         self.assertEqual(sorted(self._ran()), ["skill-tests", "tool-tests"])
 
@@ -385,15 +392,17 @@ class LaneInventoryTests(_GateFixture):
                          "an expensive lane executed more than once")
 
     def test_the_declared_lanes_and_the_executed_lanes_agree(self) -> None:
-        """Closes the loop between the static inventory AC3 pins and the executed one above:
-        without this, both could drift together to a smaller set and stay green."""
+        """Closes the loop between the `run` calls the shipped hooks carry and what a commit
+        executes, read without `--list`: a lane `--list` stopped naming, or a commit stopped
+        running, fails here even when the two drift together."""
         declared = set()
         for hook in (PRE_COMMIT, COMMIT_MSG):
             declared |= set(re.findall(r'^\s*run\s+"([^"]+)"', hook.read_text(encoding="utf-8"),
                                        re.M))
-        # `unit-tests` runs only a selection gate.py hands over (US0880); this fixture's stubbed
-        # gate hands over none, so the unittest lanes run. test_lean_test_selection.py drives it.
-        self.assertEqual(declared, set(EXPECTED_LANES) | {"unit-tests"})
+        self._stage_code()
+        rc, out, _ = self._commit("chore: touch a tool")
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(declared, set(_lanes(out)) | {NOT_EXECUTED_HERE})
 
 
 class HandoffTests(_GateFixture):

@@ -1,6 +1,6 @@
 # BG0760: US0905 did not converge in review: round 2 REJECT findings
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Depends on:** BG0761 - its carried patch applies only after BG0761's (QA grooming)
 > **Carried work:** the round-2 patch is kept at sdlc-studio/.local/US0905-carried-r2.patch (tests) and US0905-carried-r2-retire.patch (US0268 AC4 and BG0420 AC2 retirements), both complete against 25cbd375. Remaining fix: draw the AC2 test's pin-scan controls and the AC1 helpers' anchor from the keys `--list` prints rather than from named lanes, so dropping any one lane leaves the suite green; then amend US0372 AC2 in the D0259 pattern
 > **Severity:** Medium
@@ -29,8 +29,10 @@ Apply both carried patches; derive the pin-scan controls and `_add_lanes`/`_drop
 
 - [ ] **AC1** Given the carried patches applied and a copy of the hooks with any one lane that `pre-commit --list` prints deleted, when the US0905 cap tests' controls and fixture helpers run against that copy, then each still passes for every lane in turn: the cap count is the only lane pin. Fails on: the carried patch's control tuples that name `budgets` and `versions`, and `_add_lanes` anchored on `run "links"`.
   - **Verify:** pytest tools/tests/test_lean_commit_lanes.py::LaneCapTests::test_dropping_any_one_listed_lane_leaves_the_cap_tests_green
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given US0372 AC2 ("every lane that ran before the move still runs"), when its criteria are read with `verify_ac.criteria_blocks`, then its Verify line reads `manual - retired by US0905: ...` and its Verified line says `retired, superseded by US0905`, as US0268 AC4 does, and `verify_ac.py stamps --story US0372` exits 0. Fails on: leaving AC2 stamped against the now-derived inventory test, which passes with a lane deleted.
   - **Verify:** pytest tools/tests/test_lean_commit_lanes.py::LaneCapTests::test_us0372_ac2_is_retired_rather_than_green_over_a_deleted_lane
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

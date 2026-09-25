@@ -50,8 +50,8 @@ This run converted the six mirrors and left the two inventories hand-maintained,
 - **Given** `EXPECTED_LANES`, a list that IS the assertion rather than a mirror of one
 - **When** the guard runs
 - **Then** it is exempt by DECLARATION and the file states why - derived from the hook it checks, it would agree with any hook including one that lost a lane, and without the note the next reader derives it and deletes the assertion
-- **Verify:** pytest tools/tests/test_test_census.py::HandCopiedMirrorTests::test_the_declared_inventory_is_still_recognised
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0905: `EXPECTED_LANES` in `tools/tests/test_precommit_lane_order.py` (and its twin in `tools/tests/test_message_first_gate.py`) is deleted, replaced by one cap on the commit lane count; the declared inventories left keep their exemption through the mirror scan itself
+- **Verified:** manual (2026-09-24) - retired, superseded by US0905
 
 > **Verified adversarially.** A seventh copy was written into the suite on purpose and the
 > guard KILLED it, then removed. The one pre-existing hit it found - a probe set in
@@ -64,3 +64,4 @@ This run converted the six mirrors and left the two inventories hand-maintained,
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-29 | sdlc-studio | Filed |
+| 2026-09-24 | sdlc-studio | AC2 retired, superseded by US0905: `EXPECTED_LANES` in `tools/tests/test_precommit_lane_order.py` is deleted, so the control naming it is too (D0259 pattern) |

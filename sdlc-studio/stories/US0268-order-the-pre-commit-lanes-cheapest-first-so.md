@@ -62,8 +62,8 @@ Note `CR0361` names `tools/pre-commit.sh`, which does not exist; the hook is
 - **Given** the hook before and after the change
 - **When** the set of lane names is compared
 - **Then** it is identical - this story changes ORDER only, never coverage
-- **Verify:** pytest tools/tests/test_precommit_lane_order.py::LaneOrderTests::test_no_lane_is_lost_in_the_reorder
-- **Verified:** yes (2026-07-19)
+- **Verify:** manual - retired by US0905: the exact lane sets are deleted, and one cap on the commit lane count (COMMIT_LANE_CAP in tools/tests/test_lean_commit_lanes.py) replaces them
+- **Verified:** manual (2026-09-24) - retired, superseded by US0905
 
 ## Revision History
 
@@ -71,3 +71,4 @@ Note `CR0361` names `tools/pre-commit.sh`, which does not exist; the hook is
 | --- | --- | --- |
 | 2026-07-19 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-19 | sdlc-studio | Groomed: ACs written from the measured lane order and two real refusals |
+| 2026-09-24 | sdlc-studio | AC4 retired, superseded by US0905: the lane cap replaced the exact lane sets its test pinned (D0259 pattern) |

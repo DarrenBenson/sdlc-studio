@@ -27,7 +27,7 @@ Sprint 3 of the back-to-basics programme, part one. Makes a code commit clear in
 - [x] [US0902: Adding a script no longer needs a matching TSD sentence to commit](../stories/US0902-adding-a-script-no-longer-needs-a-matching.md)
 - [x] [US0903: A recurring lesson asks for a fix or a retirement, not another check](../stories/US0903-a-recurring-lesson-asks-for-a-fix-or.md)
 - [ ] [US0904: Each lane's refusals are counted against the defects they caught](../stories/US0904-each-lane-s-refusals-are-counted-against-the.md)
-- [ ] [US0905: Adding a commit lane means removing one](../stories/US0905-adding-a-commit-lane-means-removing-one.md)
+- [x] [US0905: Adding a commit lane means removing one](../stories/US0905-adding-a-commit-lane-means-removing-one.md)
 - [x] [US0906: The review seats push back on a check that earns nothing](../stories/US0906-the-review-seats-push-back-on-a-check.md)
 - [x] [US0907: The backlog holds only the work the lean direction still wants](../stories/US0907-the-backlog-holds-only-the-work-the-lean.md)
 - [x] [US0908: The skill's scripts run on the Python 3.10 it declares](../stories/US0908-the-skill-s-scripts-run-on-the-python.md)

@@ -18,9 +18,12 @@ behind the commit-message check in `commit-msg`: git runs `pre-commit` before th
 exists, so no ordering inside one hook could ever put the message rules first. The order
 is therefore pinned across the PAIR, and `MessageCheckOrderTests` holds it.
 
-These tests read the shipped hooks, so a change to either has to come here first. What
-they cannot show is that a lane ran at all - `tools/tests/test_message_first_gate.py`
-executes the pair over a real `git commit` for that.
+These tests read the shipped hooks and pin ORDER only. Which cheap lanes exist is not pinned
+here: a cheap lane is judged only where it runs, never required to exist, since US0905 replaced
+the exact lane sets with one cap on the count in `test_lean_commit_lanes.py`. The lanes the order
+is built around - the suites, `repo-writes` and the message check - must exist for there to be
+an order. What these tests cannot show is that a lane ran at all -
+`tools/tests/test_message_first_gate.py` executes the pair over a real `git commit` for that.
 """
 # test-census-subject: .githooks/pre-commit
 from __future__ import annotations
@@ -69,76 +72,32 @@ def _lane_helpers() -> str:
     return m.group(1)
 
 
-#: Every lane each hook is expected to declare. This is the anti-loss guard: a reorder
-#: that drops a lane would otherwise pass every ordering assertion below while silently
-#: reducing coverage.
-#: `gate` is a `run` lane since US0901, so `--list` names it like every other.
-#: US0901 kept this list: it is the one hand record that fails when a lane is DROPPED, which
-#: `--list` (derived from the hook) cannot, since it agrees with any hook. US0905's lane cap is
-#: the candidate to replace it; until then adding a lane means a line here.
-#:
-#: HAND-MAINTAINED ON PURPOSE - do not "fix" this by deriving it from the hook. This list IS
-#: the assertion: derived from the thing it checks, it would agree with any hook including one
-#: that lost a lane, which is the exact failure it exists to catch. Every OTHER mirror of a
-#: production list in this suite should be derived (see `hookutil.py`); this one is the
-#: deliberate exception, and the guard below refuses a new hand-copied list so the distinction
-#: stays a decision rather than a habit.
-EXPECTED_LANES = {
-    "style", "links", "skill-spec", "versions",
-    "stamps-staged",
-    # US0879 deleted runbook, lens-signatures, spec-claims and practice-rules: four lanes that
-    # checked documents against documents and caught nothing.
-    # BG0662: nothing opened a changelog fragment until the release cut, where compose refused
-    # the whole fold; 59 of 119 had drifted past a green gate.
-    "changelog-shape",
-    # US0902 deleted script-tests: it held the TSD's prose map to the scripts tree.
-    # US0896 deleted warning-ratchet: every entry it refused was a file deleted by design.
-    # US0897 deleted verify-ratchet: it refused a bug sharing its fixing story's selector.
-    "budgets",
-    "neutrality",
-    "action-pins", "dead-flags", "floor-pending", "gate", "markdown", "markdown-payload",
-    # US0901: the handover refusal became a `run` lane so `--list` names it.
-    "suite-handover",
-}
-
 #: The lanes that cost real wall-clock, and that therefore may not run until every cheap
 #: refusal - including the commit-message rules - has had its chance.
 #: `unit-tests` runs a selection in parallel; `skill-tests` and `tool-tests` are the unittest
 #: path, taken with no selection or no pytest (US0880).
 EXPENSIVE_LANES = {"unit-tests", "skill-tests", "tool-tests"}
 
-#: Every lane `commit-msg` declares, on the same hand-maintained terms as EXPECTED_LANES above.
-#: `repo-writes` is cheap and still lives here rather than in `pre-commit`, because what it
-#: checks is what the SUITES did: it compares the tree against the snapshot `pre-commit` took
-#: when it selected them, so it cannot run until they have.
-MSG_HOOK_LANES = EXPENSIVE_LANES | {"repo-writes",
-                                     # US0901: the message rule and the collapse check (BG0413)
-                                     # became `run` lanes so `--list` names them.
-                                     "message-refs", "suite-collapse"}
-
 
 class LaneOrderTests(unittest.TestCase):
     def test_markdown_lanes_run_before_the_unit_suites(self) -> None:
         # Across the pair: the cheap lanes live in `pre-commit`, which git runs first in
-        # its entirety, so every one of them precedes the suites in `commit-msg`.
+        # its entirety, so every one of them precedes the suites in `commit-msg`. A lane that
+        # exists is judged; one deleted is the lane cap's business, not this test's.
         for cheap in ("markdown", "markdown-payload"):
-            self.assertIn(cheap, _lane_keys(HOOK),
-                          f'the "{cheap}" lane must stay in pre-commit, ahead of the suites - a '
-                          "markdown error must not cost a full unit-suite run first")
+            self.assertNotIn(cheap, _lane_keys(MSG_HOOK),
+                             f'the "{cheap}" lane must stay in pre-commit, ahead of the suites - '
+                             "a markdown error must not cost a full unit-suite run first")
         for suite in EXPENSIVE_LANES:
             self.assertIn(suite, _lane_keys(MSG_HOOK))
 
     def test_the_cheap_static_guards_all_precede_the_suites(self) -> None:
         for cheap in ("style", "links", "budgets", "neutrality", "versions", "floor-pending"):
-            self.assertIn(cheap, _lane_keys(HOOK))
+            self.assertNotIn(cheap, _lane_keys(MSG_HOOK),
+                             f'the "{cheap}" lane moved behind the suites into commit-msg')
         self.assertEqual(EXPENSIVE_LANES & set(_lane_keys(HOOK)), set(),
                          "an expensive lane is back in pre-commit, which runs before the "
                          "commit message exists")
-
-    def test_no_lane_is_lost_in_the_reorder(self) -> None:
-        # A dropped lane is a silent coverage cut.
-        self.assertEqual(set(_lane_keys(HOOK)), EXPECTED_LANES)
-        self.assertEqual(set(_lane_keys(MSG_HOOK)), MSG_HOOK_LANES)
 
     def test_the_repo_writes_lane_runs_after_the_suites_it_judges(self) -> None:
         """It compares the tree against a snapshot taken before the suites ran, so a lane

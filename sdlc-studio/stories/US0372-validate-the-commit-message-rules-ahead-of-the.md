@@ -30,8 +30,8 @@
 - **Given** the same staged change with a message the rules accept
 - **When** the commit runs
 - **Then** every lane that ran before the move still runs, exactly once across the hook pair, and a failure in any of them still blocks the commit - the move adds no refusal and removes no check
-- **Verify:** pytest tools/tests/test_message_first_gate.py::LaneInventoryTests::test_every_lane_runs_exactly_once_across_the_hook_pair
-- **Verified:** yes (2026-07-24)
+- **Verify:** manual - retired by US0905: the lanes that test expects are read from the hooks' own `--list`, so it passes with a lane deleted; one cap on the commit lane count (COMMIT_LANE_CAP in tools/tests/test_lean_commit_lanes.py) replaces the exact lane inventory
+- **Verified:** manual (2026-09-25) - retired, superseded by US0905
 
 ### AC3: The order is pinned so it cannot silently revert
 
@@ -48,3 +48,4 @@
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-24 | sdlc-studio | Groomed: real ACs + Affects authored |
 | 2026-07-24 | sdlc-studio | Built: suites and their timing moved into `commit-msg` behind the message check, `pre-commit` hands the selection over in a one-shot git-directory record. Measured refusal cost 212s -> 33s; 9 mutants killed, 1 of them (an unwritable handover passing quietly) found by the campaign. |
+| 2026-09-25 | sdlc-studio | AC2 retired, superseded by US0905: its test reads the lanes from the hooks' `--list`, so it passes with a lane deleted, and the lane cap replaced the exact inventory it pinned (D0259 pattern) |

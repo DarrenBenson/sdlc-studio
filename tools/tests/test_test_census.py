@@ -712,9 +712,9 @@ class HandCopiedMirrorTests(unittest.TestCase):
     silently, and in the direction that makes the tests pass while covering less. Seven such
     mirrors were found in one suite; `hookutil.py` derives them from the thing that owns them.
 
-    ONE deliberate exception stays hand-maintained: an INVENTORY that is itself the assertion.
-    Derived from what it checks, it would agree with any hook including one that lost a lane.
-    It is exempt by DECLARATION, so the distinction stays a decision rather than a habit.
+    A deliberate exception stays hand-maintained: an INVENTORY that is itself the assertion,
+    such as the record of deleted commands in `test_lean_commit_lanes.py`. It is exempt by
+    DECLARATION, so the distinction stays a decision rather than a habit.
     """
 
     #: What a production-owned set looks like when it has been copied into a test: a literal
@@ -775,19 +775,6 @@ class HandCopiedMirrorTests(unittest.TestCase):
             [], stale,
             f"these files are no longer hand-copied mirrors, so they must leave the baseline - "
             f"a set that only ever grows exempts what it forgot: {stale}")
-
-    def test_the_declared_inventory_is_still_recognised(self) -> None:
-        """The control. MUTANT: drop the exemption, or the marker.
-
-        Without the exemption the deliberate inventory reads as an offender and somebody
-        'fixes' it by deriving it - which deletes the assertion.
-        """
-        inventory = TESTS_DIR / "test_precommit_lane_order.py"
-        self.assertIn(self._INVENTORY_MARKER,
-                      inventory.read_text(encoding="utf-8"),
-                      "the deliberate inventory no longer says why it is not derived, so the "
-                      "next reader will derive it and delete the assertion")
-
 
 
 class DuplicateTestClassTests(unittest.TestCase):

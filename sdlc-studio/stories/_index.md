@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 40 |
+| Draft | 39 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 2 |
 | Review | 0 |
-| Done | 734 |
+| Done | 735 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 72 |
@@ -263,7 +263,7 @@
 | [US0902](US0902-adding-a-script-no-longer-needs-a-matching.md) | Adding a script no longer needs a matching TSD sentence to commit | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0903](US0903-a-recurring-lesson-asks-for-a-fix-or.md) | A recurring lesson asks for a fix or a retirement, not another check | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0904](US0904-each-lane-s-refusals-are-counted-against-the.md) | Each lane's refusals are counted against the defects they caught | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
-| [US0905](US0905-adding-a-commit-lane-means-removing-one.md) | Adding a commit lane means removing one | Draft | EP0262 | 2026-09-24 | 2026-09-24 |
+| [US0905](US0905-adding-a-commit-lane-means-removing-one.md) | Adding a commit lane means removing one | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0906](US0906-the-review-seats-push-back-on-a-check.md) | The review seats push back on a check that earns nothing | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0907](US0907-the-backlog-holds-only-the-work-the-lean.md) | The backlog holds only the work the lean direction still wants | Done | EP0262 | 2026-09-24 | 2026-09-24 |
 | [US0908](US0908-the-skill-s-scripts-run-on-the-python.md) | The skill's scripts run on the Python 3.10 it declares | Done | EP0262 | 2026-09-24 | 2026-09-24 |

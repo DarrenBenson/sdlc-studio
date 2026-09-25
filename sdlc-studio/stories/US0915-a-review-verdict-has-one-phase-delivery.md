@@ -5,7 +5,7 @@
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py, changelog.d/US0915.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py, changelog.d/US0915.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, sdlc-studio/bugs/BG0510-the-plan-review-ledger-has-no-kind-column.md, sdlc-studio/bugs/BG0596-testplan-run-from-plan-keys-by-criterion-so.md, sdlc-studio/bugs/BG0631-a-repair-row-names-neither-the-rejection-nor.md, sdlc-studio/bugs/BG0645-critic-py-brief-rejoinder-ignores-phase-plan-review.md, sdlc-studio/bugs/BG0666-an-unauthored-test-plan-row-is-exempt-from.md, sdlc-studio/stories/US0631-the-test-plan-is-reviewed-by-an-independent.md, sdlc-studio/stories/US0634-the-cost-is-measured-over-one-run-and.md
 > **Epic:** EP0263
 > **Points:** 5
 > **Persona:** Maya Okafor

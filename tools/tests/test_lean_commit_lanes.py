@@ -10,6 +10,10 @@ pre-commit hook's inline copy of the concurrent-write window guard is gone with 
 These tests DRIVE THE REAL HOOKS in the hermetic fixture `test_precommit_window_guard.py` builds
 (every hook-invoked script stubbed to pass), so what they pin is what a commit runs, not what the
 hook text happens to say.
+
+US0905 caps the lanes a commit runs (`COMMIT_LANE_CAP`), so a new lane has to displace one. The
+cap is the suite's one lane pin: it replaced the exact lane sets every lane change had to edit,
+and `LaneCapTests` refuses one coming back under any name.
 """
 # test-census-subject: .githooks/pre-commit
 from __future__ import annotations
@@ -23,6 +27,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 # Imported as a MODULE so unittest does not collect and re-run its cases here.
@@ -30,7 +35,6 @@ import test_precommit_window_guard as _wg
 
 REPO = Path(__file__).resolve().parents[2]
 HOOKS = REPO / ".githooks"
-GATE = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts" / "gate.py"
 
 #: The lanes the audit deleted, by the key each ran under.
 DELETED_LANES = ("runbook", "lens-signatures", "spec-claims", "practice-rules",
@@ -93,6 +97,11 @@ DELETED_SELECTORS = ("tools/tests/test_boundary_roster.py",
 
 SKILL_SCRIPTS = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts"
 
+#: US0905: the most lanes a commit may run - both hooks' `--list` lines plus the lanes the
+#: pre-commit hook's plain `gate.py` run carries. ONE INTEGER, and the suite's one lane pin: a
+#: change that adds a lane deletes one in the same change. Deleting a lane needs no edit here.
+COMMIT_LANE_CAP = 31
+
 
 def _code(hook: str) -> str:
     """The hook's executable lines: comments say what a lane USED to do, and may."""
@@ -104,11 +113,18 @@ def _run_keys(hook: str) -> set:
     return set(re.findall(r'^\s*run\s+"([^"]+)"', _code(hook), re.M))
 
 
-def _gate_lanes() -> set:
-    """The standard gate's lane names, read from its DEFAULT_CHECKS table."""
-    block = re.search(r"^DEFAULT_CHECKS = \{(.*?)^\}", GATE.read_text(encoding="utf-8"),
-                      re.M | re.S)
-    return set(re.findall(r'^\s*"([a-z-]+)":', block.group(1), re.M))
+def _gate_lanes(root: Path = REPO) -> list[str]:
+    """The lanes a plain `gate.py --root .` runs, which is what the pre-commit `gate` lane
+    invokes. Read from the gate's own tables the way its plain run reads them: the standard
+    lanes, plus any on-demand lane the project set to block. The close-only advisory lanes
+    (`CLOSE_ADVISORY_CHECKS`) never run on a commit."""
+    sys.path.insert(0, str(SKILL_SCRIPTS))
+    try:
+        import gate
+        enforced = gate._enforced_lanes(str(root))
+    finally:
+        sys.path.remove(str(SKILL_SCRIPTS))
+    return sorted(set(gate.DEFAULT_CHECKS) | (set(gate.ON_DEMAND_CHECKS) & enforced))
 
 
 def _fixture(tmp: Path) -> Path:
@@ -447,20 +463,19 @@ class LaneListTests(unittest.TestCase):
         # A lane added to a hook is listed with no other file edited.
         with tempfile.TemporaryDirectory() as d:
             root = _fixture(Path(d))
-            for name, anchor in (("pre-commit", 'run "links" \\\n'),
-                                 ("commit-msg", '  run "repo-writes" \\\n')):
+            for name in LISTING_HOOKS:
                 with self.subTest(added_to=name):
                     hook = root / ".githooks" / name
-                    text = hook.read_text(encoding="utf-8")
-                    self.assertEqual(1, text.count(anchor), f"the anchor moved in {name}")
                     before = _listed_keys(_list(hook, root)[1])
+                    # Above the first lane the hook lists, so the anchor names no lane (BG0760).
+                    lines = hook.read_text(encoding="utf-8").splitlines(keepends=True)
+                    at = _run_start(lines, before[0])
                     # One lane in the usual four-line shape, one written on a single line.
-                    hook.write_text(text.replace(anchor, 'run "added-lane" \\\n'
-                                                 '  "the rule the added lane enforces" \\\n'
-                                                 '  "the fix" \\\n  -- true\n'
-                                                 'run "one-line-lane" "the one-line rule" '
-                                                 '"its fix" -- true\n' + anchor),
-                                    encoding="utf-8")
+                    hook.write_text("".join(lines[:at] + [
+                        'run "added-lane" \\\n  "the rule the added lane enforces" \\\n'
+                        '  "the fix" \\\n  -- true\n',
+                        'run "one-line-lane" "the one-line rule" "its fix" -- true\n',
+                        *lines[at:]]), encoding="utf-8")
                     rc, out, err = _list(hook, root)
                     self.assertEqual(0, rc, out + err)
                     self.assertIn("added-lane\tthe rule the added lane enforces",
@@ -550,6 +565,250 @@ class LaneListTests(unittest.TestCase):
                 if "**Verify:**" in line:
                     for selector in DELETED_SELECTORS:
                         self.assertNotIn(selector, line, f"{path.name} still stamps it")
+
+
+def _hook_keys(hook: Path) -> list[str]:
+    """The lane keys `<hook> --list` prints, in declared order."""
+    rc, out, err = _list(hook, hook.parent.parent)
+    if rc != 0:
+        raise AssertionError(f"{hook.name} --list exited {rc}:\n{out}{err}")
+    return _listed_keys(out)
+
+
+def _commit_lanes(hooks: Path) -> dict[str, list[str]]:
+    """Every lane a commit runs, by where it runs: each hook's `--list` keys, then the gate's."""
+    lanes = {name: _hook_keys(hooks / name) for name in LISTING_HOOKS}
+    lanes["gate.py"] = _gate_lanes()
+    return lanes
+
+
+def _cap_breach(lanes: dict[str, list[str]], cap: int = COMMIT_LANE_CAP) -> str | None:
+    """None at or under the cap; over it, the refusal naming every lane and the trade."""
+    count = sum(map(len, lanes.values()))
+    if count <= cap:
+        return None
+    listing = "\n".join(f"  {where} ({len(keys)}): {', '.join(keys)}"
+                        for where, keys in lanes.items())
+    return (f"a commit runs {count} lanes, over the cap of {cap} (COMMIT_LANE_CAP in "
+            f"tools/tests/test_lean_commit_lanes.py): one must go for one to come in - delete "
+            f"a lane in the change that adds one. The lanes:\n{listing}")
+
+
+def _copy_hooks(src: Path, root: Path) -> Path:
+    """Both listing hooks copied from `src` into `root/.githooks`, which is returned."""
+    hooks = root / ".githooks"
+    hooks.mkdir()
+    for name in LISTING_HOOKS:
+        shutil.copy2(src / name, hooks / name)
+    return hooks
+
+
+def _run_start(lines: list[str], key: str) -> int:
+    """The index of the one line that starts the `run "<key>"` lane."""
+    start = [i for i, ln in enumerate(lines) if re.match(rf'\s*run "{re.escape(key)}"', ln)]
+    assert len(start) == 1, f"{key}: {start}"
+    return start[0]
+
+
+def _add_lanes(hook: Path, keys: list[str]) -> None:
+    """One-line `run` lanes inserted above the first lane the hook's `--list` prints, so the
+    anchor names no lane and survives any one being deleted."""
+    lines = hook.read_text(encoding="utf-8").splitlines(keepends=True)
+    at = _run_start(lines, _hook_keys(hook)[0])
+    added = [f'run "{k}" "the rule {k} enforces" "its fix" -- true\n' for k in keys]
+    hook.write_text("".join(lines[:at] + added + lines[at:]), encoding="utf-8")
+
+
+def _drop_lane(hook: Path, key: str) -> None:
+    """Replace the `run "<key>"` block, from its first line through its `--` command line, with
+    `:`, so a lane that was alone in a branch leaves the hook valid bash."""
+    lines = hook.read_text(encoding="utf-8").splitlines(keepends=True)
+    start = _run_start(lines, key)
+    end = next(i for i in range(start, len(lines)) if re.search(r"(^|\s)-- ", lines[i]))
+    indent = re.match(r"\s*", lines[start]).group(0)
+    hook.write_text("".join(lines[:start] + [f"{indent}:\n"] + lines[end + 1:]),
+                    encoding="utf-8")
+
+
+#: A module- or class-level name holding this many of today's hook lane keys is an exact lane
+#: set, whatever it is called: the three US0905 deleted held 15, 6 and 20, and the cheap-first
+#: set that stays holds 3.
+LANE_PIN_KEYS = 5
+
+
+def _lane_pins(source: str, keys: set) -> dict[str, list[str]]:
+    """Every module- or class-level name in `source` whose assigned value holds at least
+    LANE_PIN_KEYS of `keys`, counting what a name it references holds (`A | {...}`)."""
+    tree = ast.parse(source)
+    held: dict[str, set] = {}
+    pins = {}
+    for body in [tree.body, *(n.body for n in ast.walk(tree) if isinstance(n, ast.ClassDef))]:
+        for node in body:
+            if not isinstance(node, (ast.Assign, ast.AnnAssign)) or node.value is None:
+                continue
+            found = set()
+            for sub in ast.walk(node.value):
+                if isinstance(sub, ast.Constant) and sub.value in keys:
+                    found.add(sub.value)
+                elif isinstance(sub, ast.Name):
+                    found |= held.get(sub.id, set())
+            for target in (node.targets if isinstance(node, ast.Assign) else [node.target]):
+                if isinstance(target, ast.Name):
+                    held[target.id] = found
+                    if len(found) >= LANE_PIN_KEYS:
+                        pins[target.id] = sorted(found)
+    return pins
+
+
+def _tree_pins(keys: set) -> dict[str, list[str]]:
+    """Every exact lane set of `keys` held by a module in either test tree, by `path::name`."""
+    trees = (REPO / "tools" / "tests", SKILL_SCRIPTS / "tests")
+    return {f"{p.relative_to(REPO)}::{name}": held
+            for tree in trees for p in sorted(tree.glob("*.py"))
+            for name, held in _lane_pins(p.read_text(encoding="utf-8"), keys).items()}
+
+
+def _assert_the_cap_trades(tc: unittest.TestCase, src: Path) -> None:
+    """The cap's fixture over a copy of the hooks in `src`: lanes added to reach the cap and one
+    past it, then one lane traded out. How many fillers reach the cap is derived from the
+    copy's own count: none while the cap is the count at landing, one per lane deleted since."""
+    with tempfile.TemporaryDirectory() as d:
+        hooks = _copy_hooks(src, Path(d))
+        pre = hooks / "pre-commit"
+        base = _commit_lanes(hooks)
+        spare = COMMIT_LANE_CAP - sum(map(len, base.values()))
+        _add_lanes(pre, [f"filler-lane-{i}" for i in range(spare)])
+        tc.assertIsNone(_cap_breach(_commit_lanes(hooks)), "at the cap is refused")
+
+        _add_lanes(pre, ["added-lane"])
+        breach = _cap_breach(_commit_lanes(hooks))
+        tc.assertIsNotNone(breach, "a lane over the cap passed")
+        tc.assertIn("one must go for one to come in", breach)
+        tc.assertIn(f"{COMMIT_LANE_CAP + 1} lanes, over the cap of {COMMIT_LANE_CAP}", breach)
+        # Every lane named, each read independently of the count: the hooks' own lists and the
+        # gate's tables.
+        gate = _gate_lanes()
+        tc.assertTrue(gate, "the gate's tables gave no lanes")
+        named = [*_hook_keys(pre), *_hook_keys(hooks / "commit-msg"), *gate]
+        tc.assertIn("added-lane", named)
+        tc.assertEqual(COMMIT_LANE_CAP + 1, len(named), named)
+        listing = breach.split("The lanes:", 1)[1]
+        for key in named:
+            tc.assertRegex(listing, rf"(?<![\w.-]){re.escape(key)}(?![\w.-])",
+                           f"the refusal does not name `{key}`")
+
+        # The trade: one existing lane deleted beside the added one, and it passes again. The
+        # lane is whichever the copy listed first before anything was added, never a name.
+        _drop_lane(pre, base["pre-commit"][0])
+        traded = _commit_lanes(hooks)
+        tc.assertNotIn(base["pre-commit"][0], traded["pre-commit"], "the trade did not apply")
+        tc.assertIsNone(_cap_breach(traded), "one lane out for one in is still refused")
+
+
+def _assert_the_pin_scan_discriminates(tc: unittest.TestCase, keys: set) -> None:
+    """The scan's controls: it flags an exact lane set by any name, reached through a name it
+    references or held on a class, and passes one key short of the threshold. The sets are
+    drawn from `keys`, what the hooks list, so the controls name no lane themselves."""
+    k = sorted(keys)
+    n = LANE_PIN_KEYS
+    tc.assertGreaterEqual(len(k), n, f"too few listed lanes to build a pin: {k}")
+    tc.assertEqual(["RENAMED"], list(_lane_pins(f"RENAMED = {tuple(k[:n])!r}\n", keys)))
+    tc.assertEqual(["MSG"], list(_lane_pins(
+        f"E = {set(k[:n - 2])!r}\nMSG = E | {set(k[n - 2:n])!r}\n", keys)))
+    tc.assertEqual(["X"], list(_lane_pins(
+        f"class C:\n    X = frozenset({list(k[:n])!r})\n", keys)))
+    tc.assertEqual({}, _lane_pins(f"UNDER = {set(k[:n - 1])!r}\n", keys))
+
+
+def _assert_retired_by_us0905(tc: unittest.TestCase, unit: str, ac: str) -> None:
+    """`unit`'s `ac` is retired in the D0259 pattern: a manual Verify line naming US0905, a
+    Verified line saying so, and `verify_ac.py stamps` clean over the artefact."""
+    sys.path.insert(0, str(SKILL_SCRIPTS))
+    try:
+        import verify_ac
+    finally:
+        sys.path.remove(str(SKILL_SCRIPTS))
+    story = next((REPO / "sdlc-studio").glob(f"*/{unit}-*.md"))
+    block = {b.ac_id: b for b in
+             verify_ac.criteria_blocks(story.read_text(encoding="utf-8"))}[ac]
+    tc.assertRegex(block.verifier or "", r"^manual - retired by US0905: \S",
+                   f"{unit} {ac} is not retired: {block.verifier}")
+    tc.assertEqual("manual", (block.verified_state or "").lower())
+    tc.assertIn("retired, superseded by US0905", block.verified_reason or "")
+    r = subprocess.run([sys.executable, str(SKILL_SCRIPTS / "verify_ac.py"), "stamps",
+                        "--story", str(story)], cwd=REPO, capture_output=True, text=True,
+                       timeout=120)
+    tc.assertEqual(0, r.returncode, r.stdout + r.stderr)
+
+
+class LaneCapTests(unittest.TestCase):
+    """US0905: a commit runs at most COMMIT_LANE_CAP lanes, so one must go for one to come in."""
+
+    def test_a_lane_over_the_cap_fails_naming_the_trade(self) -> None:
+        """AC1. MUTANTS: compare with `<` (the at-cap fixture then fails); leave either hook or
+        the gate out of the count; name only the count, or only the added lane; drop the
+        trade from the refusal."""
+        # This repository first: the guard itself.
+        breach = _cap_breach(_commit_lanes(HOOKS))
+        if breach:
+            self.fail(breach)
+        _assert_the_cap_trades(self, HOOKS)
+
+    def test_the_cap_retires_the_exact_lane_pins(self) -> None:
+        """AC2. MUTANTS: restore `EXPECTED_LANES`, `MSG_HOOK_LANES` or the no-lane-lost test;
+        restore `test_message_first_gate.py`'s hand-kept `EXPECTED_LANES` tuple, or any exact
+        lane set under another name in either test tree; leave US0268 AC4's Verify line naming
+        the deleted test, or its Verified at `yes`."""
+        # No test module holds an exact lane set, by any name: the cap is the one lane pin.
+        keys = {k for name in LISTING_HOOKS for k in _hook_keys(HOOKS / name)}
+        self.assertEqual({}, _tree_pins(keys), "an exact lane set is back beside the cap")
+        _assert_the_pin_scan_discriminates(self, keys)
+
+        order = ast.parse((REPO / "tools" / "tests" / "test_precommit_lane_order.py")
+                          .read_text(encoding="utf-8"))
+        assigned = {t.id for n in order.body if isinstance(n, (ast.Assign, ast.AnnAssign))
+                    for t in (n.targets if isinstance(n, ast.Assign) else [n.target])
+                    if isinstance(t, ast.Name)}
+        defined = {n.name for n in ast.walk(order) if isinstance(n, ast.FunctionDef)}
+        self.assertEqual(set(), assigned & {"EXPECTED_LANES", "MSG_HOOK_LANES"},
+                         "an exact lane set is back beside the cap")
+        self.assertNotIn("test_no_lane_is_lost_in_the_reorder", defined)
+        # The control: the parse reads the module's names, so their absence above is real.
+        self.assertIn("EXPENSIVE_LANES", assigned)
+        self.assertIn("test_every_lane_key_is_unique", defined)
+        self.assertIsInstance(COMMIT_LANE_CAP, int)
+        _assert_retired_by_us0905(self, "US0268", "AC4")
+
+    def test_dropping_any_one_listed_lane_leaves_the_cap_tests_green(self) -> None:
+        """BG0760 AC1: the cap count is the only lane pin. Every lane either hook's `--list`
+        prints is deleted in turn from a copy of the hooks, and every other test in this class
+        runs whole with the module's HOOKS pointed at that copy, so a lane named anywhere in a
+        cap test - a helper, a control or the test body - fails here. MUTANTS: a control, a
+        fixture anchor or a test-body tuple that names a lane (`budgets`, `versions`,
+        `run "links"`); a drop that never applied."""
+        me = self._testMethodName
+        names = [n for n in unittest.TestLoader().getTestCaseNames(type(self)) if n != me]
+        self.assertIn("test_a_lane_over_the_cap_fails_naming_the_trade", names)
+        self.assertIn("test_the_cap_retires_the_exact_lane_pins", names)
+        lanes = [(name, key) for name in LISTING_HOOKS for key in _hook_keys(HOOKS / name)]
+        total = sum(map(len, _commit_lanes(HOOKS).values()))
+        self.assertGreater(len(lanes), LANE_PIN_KEYS, "the hooks' --list names too few lanes")
+        for name, key in lanes:
+            with self.subTest(lane=key), tempfile.TemporaryDirectory() as d:
+                hooks = _copy_hooks(HOOKS, Path(d))
+                _drop_lane(hooks / name, key)
+                left = _commit_lanes(hooks)
+                self.assertNotIn(key, left[name], "the drop did not apply")
+                self.assertEqual(total - 1, sum(map(len, left.values())))
+                with mock.patch.object(sys.modules[__name__], "HOOKS", hooks):
+                    for test in names:
+                        getattr(type(self)(test), test)()
+
+    def test_us0372_ac2_is_retired_rather_than_green_over_a_deleted_lane(self) -> None:
+        """BG0760 AC2: US0372 AC2 ("every lane that ran before the move still runs") is
+        retired, since its test now reads the lanes from `--list` and passes with one deleted.
+        MUTANT: leave it stamped against that test, or its Verified at `yes`."""
+        _assert_retired_by_us0905(self, "US0372", "AC2")
 
 
 if __name__ == "__main__":
