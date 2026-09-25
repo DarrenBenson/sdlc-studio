@@ -100,8 +100,8 @@
   Reporting rather than blocking is a trade the operator only gets to make if the thing traded
   away is visible: a survivor filed and never counted is a survivor silently dropped, which is
   the outcome blocking was rejected to avoid, not the one that was chosen
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::MutationSurvivorCountTests::test_the_close_counts_survivors_by_severity
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0936: the survivor count's test is deleted: the row it pinned reads a `Mutation-survivor` field nothing writes any more
+- **Verified:** manual (2026-09-25) - retired, superseded by US0936
 
 ## Test Plan
 

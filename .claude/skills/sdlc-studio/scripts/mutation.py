@@ -17,19 +17,11 @@ over broken code - a finding). Honest by construction:
 Subcommands:
   run        apply the mutation set to a surface (--files / --since REF / --story)
              and re-run the test command per mutation; writes
-             sdlc-studio/.local/mutation-report.json (the latest run), appends this
-             run's per-target evidence to sdlc-studio/.local/mutation-runs.json (the
-             bounded ledger the gate lane reads as coverage) and appends ONE row to
-             sdlc-studio/.local/mutation-series.jsonl (the per-run cost/yield series);
-             non-zero on survivors.
-  register   record a mutant a builder ALREADY applied by hand, so the per-unit
-             practice (apply a mutant to the code a new test pins, see RED, restore)
-             leaves a trace in the same ledger. SELF-REPORTED: nothing here re-runs
-             anything, so the entry is marked `registered` and the gate lane reports
-             it as a claim, never as a measured run.
+             sdlc-studio/.local/mutation-report.json (the latest run) and appends ONE
+             row to sdlc-studio/.local/mutation-series.jsonl (the per-run cost/yield
+             series); non-zero on survivors. No per-target ledger is kept.
   yield      what one run COST (wall-clock) against what was FILED from it - the
-             artefacts attributed to the run, never its raw survivor count, with any
-             mutant judged `equivalent` quoted as excluded rather than decremented.
+             artefacts attributed to the run, never its raw survivor count.
   window     declare (or clear) that a process is rewriting source files in place.
              A file, so it survives the SIGKILL that in-memory state does not; the
              gate refuses while one is open, so a concurrent commit is told rather
@@ -37,16 +29,17 @@ Subcommands:
   prefilter  list test files with no recognisable assertion - the cheap static
              signal for which tests to mutate first (advisory).
 
-Pure stdlib. The v1 gate lane in gate.py is advisory.
+`register`, `retract`, `retractions` and `audit` are retired and refused by name: they wrote
+and read a per-target ledger nothing reads any more.
+
+Pure stdlib. No gate lane reads a mutation run: it is an instrument, run when you want it.
 """
 from __future__ import annotations
 
 import argparse
 import contextlib
-import hashlib
 import json
 import re
-import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -56,57 +49,7 @@ from lib import sdlc_md  # noqa: E402
 
 FAULT_CLASSES = ("invert-guard", "stub-return-null", "unset-delivered-field", "no-op-mapper")
 DEFAULT_MAX_MUTATIONS = 25
-#: Ledger bound: the most recent LEDGER_LIMIT per-target entries are kept, oldest first out.
-#: Entries are one per target (a later run on the same file supersedes the earlier), so the
-#: ledger grows with the number of distinct files ever mutated, not with the number of runs.
-LEDGER_LIMIT = 200
-#: The OTHER bound, on the other axis. `register` accumulates into one entry per (target,
-#: content), so a builder registering every mutant they apply across a sprint grows that one
-#: entry's `mutants` list while the entry count stays at 1 - LEDGER_LIMIT never fires on it.
-#: The newest are kept, oldest first out, as everywhere else here; the entry's `summary`
-#: counts are never truncated, so what was dropped is the description, never the tally.
-MUTANT_LIMIT = 100
 _RUN_TIMEOUT = 600  # seconds per test run - a hung mutant must not hang the gate
-
-# WHERE a ledger entry's evidence came from. A `measured` entry is the record of a run that
-# applied the mutant and observed the suite's answer. A `registered` entry is a builder's report
-# that they applied one by hand: nothing in this file re-ran anything, so it is a CLAIM, and the
-# ledger holding both would be silently downgraded to the weaker of the two if the entries did
-# not say which they are. Every reader must be able to weight them differently.
-PROVENANCE_MEASURED = "measured"
-PROVENANCE_REGISTERED = "registered"
-#: The verdicts a hand-applied mutant can carry. `error` and `unviable` are things the RUNNER
-#: observes about a mutant it tried to execute; a builder reporting one would be reporting on a
-#: run that did not happen here.
-#:
-#: `equivalent` is the judgement verdict: a survivor that changed no observable behaviour, so no
-#: test could have killed it. It exists in the VOCABULARY rather than in a side-file because an
-#: exclusion recorded away from the verdict is applied by memory and lost - and a silent
-#: exclusion is indistinguishable from a mutant nobody ran. It carries a mandatory reason and is
-#: excluded from yield while staying VISIBLE as excluded.
-EQUIVALENT_VERDICT = "equivalent"
-REGISTRABLE_VERDICTS = ("killed", "survived", EQUIVALENT_VERDICT)
-#: The counters a ledger entry's summary carries. One list, so a new verdict cannot be countable
-#: in one writer and absent in another. BOTH writers derive from it: `register_mutant` counts the
-#: verdict it was handed, and `append_ledger` maps a RUN's verdict onto its counter below.
-SUMMARY_VERDICTS = ("killed", "survived", "errors", "unviable", EQUIVALENT_VERDICT)
-#: A run's verdict word -> the summary counter it increments. `error` is pluralised in the
-#: summary and `equivalent` is never produced by a run, but it is listed so a counter cannot go
-#: missing from one writer while the constant above claims it cannot.
-RUN_VERDICT_COUNTER = {"killed": "killed", "survived": "survived", "error": "errors",
-                       "unviable": "unviable", EQUIVALENT_VERDICT: EQUIVALENT_VERDICT}
-#: The registered verdicts that are EVIDENCE ABOUT THE TESTS, and so count as mutation coverage
-#: of a file. `equivalent` is deliberately absent: it asserts that no test could have killed the
-#: mutant, which is a statement about the mutant, not about what the suite pins. A file carrying
-#: only equivalent registrations has had nothing proven about its tests.
-COVERING_VERDICTS = ("killed", "survived")
-
-
-def entry_provenance(entry: dict) -> str:
-    """A ledger entry's provenance. Absent means `measured`: before `register` existed only a
-    run could write an entry, so an unmarked entry is a run's, and treating it as a claim would
-    retro-actively weaken evidence that was really gathered."""
-    return str(entry.get("provenance") or PROVENANCE_MEASURED)
 
 
 # Language profiles: extension -> fault class -> (line regex, replacement builder).
@@ -165,6 +108,10 @@ class MutationAnchorError(RuntimeError):
 #: which of the two it is: a surface nobody tested is an omission, a surface carrying
 #: uncommitted work is a state the runner is right to refuse and the author can still resolve.
 UNCOMMITTED_SURFACE = "uncommitted-surface"
+#: The one route to a measured verdict over a surface carrying uncommitted work, said wherever
+#: that refusal is reported.
+UNCOMMITTED_ROUTE = ("Mutate an ISOLATED CHECKOUT instead (`git worktree add`), or commit or "
+                     "stash the work first.")
 
 
 def _multiline_string_spans(text: str) -> tuple[set, bool]:
@@ -1216,7 +1163,7 @@ def attribute_kill(row: dict, run_output: str) -> dict:
 def run_gate(repo_root: Path | str, files, test_cmd: str,
              max_mutations: int | None = None,
              classes: tuple = FAULT_CLASSES, write_report: bool = True,
-             changed: dict | None = None, unit: str | None = None) -> dict:
+             changed: dict | None = None) -> dict:
     """The gate: enumerate, apply one at a time, re-run tests, verdict each mutation.
 
     Baseline first: the tests must be green over UNMUTATED code. A red or broken baseline
@@ -1266,22 +1213,12 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     elif (dirty := dirty_targets(root, files)):
         baseline = "not-run"
         refusal_kind = UNCOMMITTED_SURFACE
-        # BOTH routes to a measured verdict, not one. `series_reason` has named both since
-        # US0573, but this is the message a person actually reads when the run refuses, and it
-        # named only the worktree - so the criterion's claim was true of a string nobody sees
-        # and false of the one they do. Found by re-verifying that criterion through the
-        # shipped verb rather than through the function.
+        # The route to a measured verdict, in the message a person actually reads when the run
+        # refuses - the same words `series_reason` records, so the two cannot disagree.
         remedy = (f"uncommitted changes on {', '.join(dirty)} - refusing to mutate a file "
                   f"carrying work that is not committed. A mutant applied over uncommitted work "
                   f"cannot be told apart from that work when the file is restored, so a run that "
-                  f"proceeded here could revert it silently. Two routes to a measured verdict: "
-                  f"mutate an ISOLATED CHECKOUT (`git worktree add`), or apply the mutant BY "
-                  f"HAND and record it with `mutation.py register --unit <id> --criterion ACn "
-                  f"--target <file> --line <n> --mutant '<the edit>' --anchor '<the text it "
-                  f"replaced>' --test '<the command>' --verdict killed` - the anchor is "
-                  f"REQUIRED and must occur exactly once, purging `__pycache__`, "
-                  f"running with `python3 -B`, and restoring the file byte-identically from a "
-                  f"saved copy. Committing or stashing the work also clears it.")
+                  f"proceeded here could revert it silently. {UNCOMMITTED_ROUTE}")
     else:
         try:
             recovered = _recover_stranded(root)
@@ -1353,23 +1290,10 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     # Advisory - computed even on a refused run, so a report is never read blind.
     selected = _selected_test_files(root, test_cmd)
     selection_warnings = _selection_warnings(root, files, selected)
-    # A FRESHNESS stamp over the surface this run was pointed at, and never evidence: it is
-    # computed from `files`, outside every verdict and refusal path, so it names a file the
-    # cost ceiling never reached and every target of a refused run. What was PROVEN is the
-    # ledger below, which enters a target only on a killed-or-survived verdict. A consumer
-    # that reads this field as coverage reports files no mutant ran on; that is what happened.
-    import hashlib
-    target_hashes = {}
-    for fp in files:
-        try:
-            target_hashes[str(Path(fp))] = hashlib.sha256(Path(fp).read_bytes()).hexdigest()
-        except OSError:
-            target_hashes[str(Path(fp))] = None
     report = {
         "run_id": run_id,
         "generated_at": sdlc_md.now_iso8601(),
         "git_rev": _git_rev(root),
-        "target_hashes": target_hashes,
         "test_cmd": test_cmd,
         "targets": [str(Path(f)) for f in files],
         "baseline": baseline,
@@ -1388,7 +1312,6 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     }
     report["elapsed_s"] = round(time.monotonic() - started, 3)
     if write_report:
-        report["ledger"] = append_ledger(root, report, records, unit=unit)
         # The per-run series, written whatever the outcome: a refused or all-errored run costs
         # wall-clock too, and a series that recorded only the runs that worked would flatter the
         # gate exactly where CR0379 wants it judged.
@@ -1399,18 +1322,13 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     return report
 
 
-def ledger_path(root: Path | str) -> Path:
-    """Where the accumulating per-target evidence lives, beside the latest-run report."""
-    return Path(root) / "sdlc-studio" / ".local" / "mutation-runs.json"
-
-
 # --- The per-run cost/yield series -----------------------------------------------------------
 #
-# The report is last-write-wins and the ledger supersedes a target's earlier numbers, so neither
-# answers "what has this gate cost and what has it found". The series is the third file and the
-# only per-RUN one: append-only, one JSON object per line, in the same shape `verify_ac.py` uses
-# for `verify-history.jsonl` - and bounded by the same shared roller, so it cannot grow without
-# limit while the trailing history stays long enough to read a trend from.
+# The report is last-write-wins, so it cannot answer "what has this gate cost and what has it
+# found". The series is the per-RUN file: append-only, one JSON object per line, in the same
+# shape `verify_ac.py` uses for `verify-history.jsonl` - and bounded by the same shared roller,
+# so it cannot grow without limit while the trailing history stays long enough to read a trend
+# from.
 
 
 def series_path(root: Path | str) -> Path:
@@ -1512,17 +1430,9 @@ def series_reason(report: dict) -> str | None:
         # NOT "no evidence". A surface the runner correctly refused to mutate and one nobody
         # ever tested are different facts, and only the second is the author's omission. An
         # advisory that says the same about both teaches an author to ignore it (US0573).
-        reason = (
-            "the changed surface carries UNCOMMITTED work, so the runner refused to mutate it - "
-            "this is not 'no evidence', it is evidence not yet obtainable here. Two routes give "
-            "a measured verdict: mutate an ISOLATED CHECKOUT (`git worktree add`), or apply the "
-            "mutant by hand and record it with `mutation.py register --unit <id> --criterion "
-            "ACn --target <file> --line <n> --mutant <the edit> --anchor <the text it replaced> "
-            "--test <the command> --verdict killed`. A hand run is only trustworthy with the "
-            "discipline that makes it so - the anchor is required and must occur exactly once "
-            "in the target, purge `__pycache__` and run the "
-            "child under `python3 -B` so a cached module cannot report a false survival, and "
-            "restore from captured bytes with the restoration asserted byte-identical.")
+        reason = ("the changed surface carries UNCOMMITTED work, so the runner refused to "
+                  "mutate it - this is not 'no evidence', it is evidence not yet obtainable "
+                  f"here. {UNCOMMITTED_ROUTE}")
     elif refused:
         reason = f"run refused - baseline {report.get('baseline')}, no mutant was applied"
     elif empty:
@@ -1622,31 +1532,13 @@ def _artefacts_filed_from(root: Path | str, run_id: str) -> list[str]:
     return sorted(found)
 
 
-def _equivalents_of(root: Path | str, run_id: str) -> list[dict]:
-    """Every mutant registered `equivalent` against this run, newest last. Read back out of the
-    ledger where the verdict lives, so the exclusion is visible wherever the verdicts are."""
-    state, _ = _load_ledger(ledger_path(root))
-    out: list[dict] = []
-    for entry in state["entries"]:
-        if not isinstance(entry, dict):
-            continue
-        for rec in entry.get("mutants") or []:
-            if (isinstance(rec, dict) and rec.get("verdict") == EQUIVALENT_VERDICT
-                    and rec.get("run") == run_id):
-                out.append({"mutant": rec.get("mutant"), "reason": rec.get("reason"),
-                            "verdict": EQUIVALENT_VERDICT, "target": entry.get("target"),
-                            "at": rec.get("at")})
-    return out
-
-
 def run_yield(root: Path | str, run_id: str) -> dict:
     """What one mutation run COST and what it FOUND, with the two kept apart.
 
     `survivors` is what the run raised; `yield` is what somebody then filed from it, and the two
     are never conflated - RUN-01KY03GS raised three survivors of which two became bugs, so
-    counting survivors would have overstated it by half. `equivalent` names the survivors judged
-    unkillable, excluded from both counts and quoted with their reasons so the exclusion is
-    auditable. `outstanding` is what is left: raised, not filed, not excused.
+    counting survivors would have overstated it by half. `outstanding` is what is left: raised and
+    not filed.
 
     An unknown run reports `found: False` with null counts rather than a tidy row of zeros - a
     run nobody recorded has no yield of zero, it has no yield at all.
@@ -1654,602 +1546,19 @@ def run_yield(root: Path | str, run_id: str) -> dict:
     row = series_row(root, run_id)
     if row is None:
         return {"run": run_id, "found": False, "survivors": None, "filed": [], "yield": 0,
-                "equivalent": [], "outstanding": None, "elapsed_s": None, "evidence": False}
+                "outstanding": None, "elapsed_s": None, "evidence": False}
     filed = _artefacts_filed_from(root, run_id)
-    equivalent = _equivalents_of(root, run_id)
     survivors = int(row.get("survived", 0))
     return {
         "run": run_id, "found": True,
         "survivors": survivors,
         "filed": filed,
         "yield": len(filed),
-        "equivalent": equivalent,
-        "outstanding": max(0, survivors - len(filed) - len(equivalent)),
+        "outstanding": max(0, survivors - len(filed)),
         "elapsed_s": row.get("elapsed_s"),
         "evidence": bool(row.get("evidence")),
         "row": row,
     }
-
-
-def _ledger_target(root: Path, fp) -> str:
-    """Repo-relative target path where possible, so the ledger survives a moved checkout."""
-    p = Path(fp)
-    try:
-        return str(p.resolve().relative_to(Path(root).resolve()))
-    except (ValueError, OSError):
-        return str(p)
-
-
-def _measured_mutant_rows(records: list[dict], fp, unit: str | None) -> list[dict]:
-    """This target's per-mutant rows, in the shape the gate SELECTS on and the refusal QUOTES.
-
-    A measured run used to be reduced here to a counter block and its per-mutant records thrown
-    away, while `register_mutant` - the hand-typed claim - wrote a `mutants[]` list. Both the
-    repair gate and the plan-execution join filter on `mutants[].unit`, so the strongest
-    evidence in the system read as NO evidence and the weakest read as proof. Recording the
-    rows is what makes the gate satisfiable by measurement at all.
-
-    The `unit` key is half the change and the easier half to forget: a row nobody can attribute
-    answers no question the gate asks, so a run that persisted the list without it would leave
-    the gate shut for a second reason nobody had measured.
-    """
-    out = []
-    for r in records:
-        if str(Path(r["file"])) != str(Path(fp)):
-            continue
-        verdict = RUN_VERDICT_COUNTER.get(r.get("verdict"))
-        if verdict not in COVERING_VERDICTS:
-            continue                    # unviable, errored: evidence of nothing
-        out.append({"unit": sdlc_md.norm_id(unit) if unit else None,
-                    "criterion": r.get("criterion"),
-                    "line": r.get("line"), "mutant": r.get("class"),
-                    # The class in a field of its OWN, not only in the prose slot. A registered
-                    # row's `mutant` is the author's words, so the two provenances share no
-                    # joinable value and a contradiction across them was undetectable - the
-                    # check had nothing but the line, and joining on that alone reads two
-                    # honest different mutants as the instrument lying.
-                    "class": r.get("class"),
-                    "test": r.get("test"), "verdict": verdict,
-                    "provenance": PROVENANCE_MEASURED})
-    return out
-
-
-def _entry_unit(entry: dict) -> str | None:
-    """The unit a ledger entry's rows are attributed to, or None when they carry none.
-
-    Entries are superseded per (target, unit), so this is the second half of that key. An entry
-    whose rows disagree about their unit is reported as None rather than picking one: a mixed
-    entry is not a statement about any single unit, and guessing which would be the silent
-    wrong answer.
-    """
-    units = {m.get("unit") for m in (entry.get("mutants") or []) if isinstance(m, dict)}
-    return units.pop() if len(units) == 1 else None
-
-
-def append_ledger(root: Path | str, report: dict, records: list[dict],
-                  unit: str | None = None) -> dict:
-    """Append this run's per-target evidence to the bounded ledger and return its state.
-
-    One report is last-write-wins: a per-unit run mid-sprint erases the previous unit's
-    evidence, and the whole blob goes stale as soon as any file is committed. The ledger is
-    the durable half - a per-target entry carrying that file's content hash AT RUN TIME, so
-    a later commit touching OTHER files leaves it readable.
-
-    ONE rule decides what is recorded, because recording more would claim evidence the run did
-    not gather: a target is entered only when the test command returned a killed or survived
-    verdict on it. A target whose mutants were all unviable, all errored, or fell beyond the
-    cost ceiling is therefore absent, and so is every target of a refused run - a refusal
-    applies no mutant at all, so no target has a verdict. A separate `refused` test here would
-    read as a second rule while being pinned by nothing: deleting it as a hand-applied
-    mutant survived the whole suite.
-
-    Bounded at LEDGER_LIMIT entries, oldest dropped first, with a cumulative `dropped` count
-    so the truncation is never silent. An unreadable ledger is replaced and says so (`reset`).
-    """
-    root = Path(root)
-    path = ledger_path(root)
-    state, reset = _load_ledger(path)
-    new: list[dict] = []
-    for fp in report.get("targets", []):
-        rs = [r for r in records if str(Path(r["file"])) == str(Path(fp))]
-        # Built from SUMMARY_VERDICTS, not from a hand-written list. The two writers of a
-        # ledger summary (here, and `register_mutant`) hard-coded their own counters, so a
-        # verdict added to the vocabulary was countable in one and absent from the other -
-        # exactly what the constant's comment says cannot happen. Now it cannot.
-        summary = {"applied": len(rs), **{k: 0 for k in SUMMARY_VERDICTS}}
-        for r in rs:
-            key = RUN_VERDICT_COUNTER.get(r["verdict"])
-            if key:
-                summary[key] += 1
-        if not summary["killed"] and not summary["survived"]:
-            continue
-        digest = (report.get("target_hashes") or {}).get(str(Path(fp)))
-        new.append({"target": _ledger_target(root, fp), "hash": digest,
-                    "provenance": PROVENANCE_MEASURED,
-                    "git_rev": report.get("git_rev"),
-                    "generated_at": report.get("generated_at"),
-                    "test_cmd": report.get("test_cmd"), "summary": summary,
-                    "mutants": _measured_mutant_rows(records, fp, unit)})
-    # A run supersedes its OWN kind AND ITS OWN UNIT only. A later run's numbers replace an
-    # earlier run's for the same target, but a hand-registered claim about that file is a
-    # different statement, not a stale copy of this one, and dropping it here would delete
-    # evidence this run never gathered.
-    #
-    # The UNIT half was missing and cost a whole batch's evidence. Two units declaring the same
-    # file - which is what a sprint touching one module looks like - meant the second unit's run
-    # erased the first unit's rows, and the first unit's gate then read as carrying NO evidence
-    # while the ledger said nothing about the loss. The docstring's own argument for keeping a
-    # registered entry applies unchanged to another unit's measured one: it is a different
-    # statement, not a stale copy of this one.
-    superseded = {(e["target"], _entry_unit(e)) for e in new}
-    entries = [e for e in state["entries"]
-               if isinstance(e, dict)
-               and not ((e.get("target"), _entry_unit(e)) in superseded
-                        and entry_provenance(e) == PROVENANCE_MEASURED)] + new
-    return _store_ledger(path, state, entries, reset)
-
-
-class LedgerUnreadable(RuntimeError):
-    """The mutation ledger existed and could not be parsed, so its contents are gone.
-
-    Raised rather than returned as an empty list: an unreadable bar is not a passed one, and
-    every gate here says so in its own except-arm. An empty history and a destroyed one look
-    identical to a caller, and only one of them means nothing was ever recorded.
-    """
-
-
-def ledger_entries(root: Path | str) -> list[dict]:
-    """Every entry in the mutation ledger. RAISES `LedgerUnreadable` on a malformed one."""
-    state, reset = _load_ledger(ledger_path(Path(root)))
-    if reset:
-        # A ledger that could not be PARSED is not an empty history. `_load_ledger` reports the
-        # replacement; a reader must not see an empty list in its place.
-        raise LedgerUnreadable(
-            f"{ledger_path(Path(root))} could not be parsed, so nothing can be checked against "
-            f"it. The file is left exactly as it is - a reader does not get to destroy the "
-            f"evidence it failed to read; the next WRITE replaces it and says so")
-    return [e for e in (state.get("entries") or []) if isinstance(e, dict)]
-
-
-def _load_ledger(path: Path) -> tuple[dict, bool]:
-    """(state, reset). An unreadable ledger yields a fresh state and `reset` True, so the
-    replacement is reported rather than looking like an empty history."""
-    state: dict = {"version": 1, "dropped": 0, "entries": []}
-    if not path.exists():
-        return state, False
-    try:
-        loaded = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(loaded, dict) or not isinstance(loaded.get("entries"), list):
-            raise ValueError("ledger is not a {entries: [...]} object")
-        return {"version": loaded.get("version", 1),
-                "dropped": int(loaded.get("dropped", 0) or 0),
-                "entries": loaded["entries"]}, False
-    except (ValueError, OSError, TypeError):
-        return state, True
-
-
-def _store_ledger(path: Path, state: dict, entries: list[dict], reset: bool) -> dict:
-    """Bound the ENTRY COUNT, write, and report. ONE truncation point for that axis, so every
-    writer meets the same limit however it arrived here.
-
-    It is not the only axis. A registration accumulates into an existing entry rather than
-    adding one, so this bound never fires on a repeated `register` against unchanged content -
-    `register_mutant` bounds that entry's own mutant list at MUTANT_LIMIT before calling here.
-
-    An empty result over a ledger that does not exist yet writes nothing."""
-    dropped_now = max(0, len(entries) - LEDGER_LIMIT)
-    state["entries"] = entries[dropped_now:]
-    state["dropped"] += dropped_now
-    state["limit"] = LEDGER_LIMIT
-    if reset:
-        state["reset"] = True
-    if not state["entries"] and not path.exists():
-        # nothing was proven and there is no ledger yet: do not create an empty one
-        return {"path": str(path), "entries": 0, "dropped_now": 0,
-                "dropped_total": state["dropped"], "written": False}
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(state, indent=2), encoding="utf-8")
-    return {"path": str(path), "entries": len(state["entries"]), "dropped_now": dropped_now,
-            "dropped_total": state["dropped"], "written": True}
-
-
-def blob_text(root: Path, rel: str, spec: str) -> str | None:
-    """The TEXT git holds for `rel` at `spec` (`HEAD:` or `:` for the index), or None.
-
-    An anchored row is judged by whether its site still occurs exactly once in the bytes under
-    question, and at commit time those bytes are the STAGED ones - not the working copy, which
-    the commit will not carry.
-    """
-    import subprocess  # noqa: PLC0415
-    try:
-        out = subprocess.run(["git", "-C", str(root), "show", f"{spec}{rel}"],
-                             capture_output=True, timeout=30)
-    except (OSError, subprocess.SubprocessError):
-        return None
-    if out.returncode != 0:
-        return None
-    return out.stdout.decode("utf-8", errors="replace")
-
-
-def _blob_sha256(root: Path, rel: str, spec: str) -> str | None:
-    """sha256 of the bytes git holds for `rel` at `spec` (`HEAD:` or `:` for the index), or
-    None when git has no such blob. The ledger keys evidence on a content hash, so the
-    question "did this commit change the bytes the evidence was about" is answered by hashing
-    the same way on both sides rather than by comparing git's own blob ids."""
-    import subprocess  # noqa: PLC0415
-    try:
-        out = subprocess.run(["git", "-C", str(root), "show", f"{spec}{rel}"],
-                             capture_output=True, timeout=30)
-    except (OSError, subprocess.SubprocessError):
-        return None
-    if out.returncode != 0:
-        return None
-    return hashlib.sha256(out.stdout).hexdigest()
-
-
-def row_staleness(root: Path | str, entry: dict, mutant: dict) -> str:
-    """One meaning of STALE for a single ROW, which is the grain the evidence is actually at.
-
-    A row registered WITH an anchor is judged by that anchor's presence in the working file:
-    `live` when it occurs exactly once, `stale` otherwise. It says nothing about the rest of
-    the file, and that is the point - a mutant's evidence is about the site it was applied to,
-    and 26 of this ledger's 74 targets carry rows from more than one unit. Judged by the file's
-    hash, an edit anywhere in `verify_ac.py` staled seven units' rows at once and every one had
-    to be re-measured by hand.
-
-    An anchor that occurs MORE THAN ONCE is stale too. It no longer identifies one site, so it
-    cannot say which site the verdict was about, and reading it as live would report a
-    measurement nobody made - the same reasoning that makes `register` refuse a non-unique
-    anchor in the first place.
-
-    A row with NO anchor falls back to the entry's hash, unchanged. That is every row written
-    before this shipped, and silently promoting them to live would turn a cost into a
-    correctness failure.
-    """
-    text = str(mutant.get("anchor") or "")
-    if not text:
-        return entry_staleness(root, entry)
-    fp = Path(root) / str(entry.get("target") or "")
-    if not fp.is_file():
-        # The target is gone from the working tree; the entry-wide judgement still distinguishes
-        # `missing` from `head`, and an anchor cannot be counted in a file that is not there.
-        return entry_staleness(root, entry)
-    return "live" if fp.read_text(encoding="utf-8", errors="replace").count(text) == 1 else "stale"
-
-
-def entry_staleness(root: Path | str, entry: dict) -> str:
-    """One meaning of STALE for every reader of the ledger.
-
-    `live`: the recorded hash matches the working file. `head`: it matches HEAD's blob but not
-    the working file - an uncommitted edit, the commit lane's business. `stale`: it matches
-    neither, so the evidence is about bytes that exist nowhere and is no evidence of a
-    run. `missing`: the target exists neither on disk nor at HEAD, which is stale by
-    construction and never a crash.
-    """
-    root = Path(root)
-    rel = str(entry.get("target") or "")
-    recorded = entry.get("hash")
-    fp = root / rel
-    working = hashlib.sha256(fp.read_bytes()).hexdigest() if fp.is_file() else None
-    head = _blob_sha256(root, rel, "HEAD:")
-    if working is None and head is None:
-        return "missing"
-    if recorded and recorded == working:
-        return "live"
-    if recorded and recorded == head:
-        return "head"
-    return "stale"
-
-
-def register_mutant(root: Path | str, target, mutant: str, test: str, verdict: str,
-                    reason: str | None = None, run: str | None = None,
-                    unit: str | None = None, criterion: str | None = None,
-                    line: int | None = None, anchor: str | None = None,
-                    fault_class: str | None = None, row: int | None = None) -> dict:
-    """Record a mutant that was ALREADY applied by hand, against the target's content NOW.
-
-    The practice this exists for: a builder writes a test, applies a mutant to the code it
-    pins, confirms the test goes RED, and restores. That is stronger per-unit evidence than a
-    blanket sampling run, and until now it left no trace at all - so a sprint that followed the
-    policy for 75 mutants closed with the coverage lane reading 0/4. Forcing the practice
-    through a full run instead would have changed the practice to suit the tool.
-
-    WHAT THIS IS NOT. Nothing here applies a mutant, runs a test, or checks the claim in any
-    way. The entry is a self-report, marked `registered` so no reader can mistake it for a run,
-    and it is deliberately kept in the SAME ledger as the measured entries so a lane cannot
-    accidentally read one file and miss the other.
-
-    Keyed on the target's content hash, exactly as a run's entry is: an edit to the target
-    starts the entry again, because the earlier claim was about bytes that no longer exist -
-    except the registering unit's own rows whose anchor still occurs exactly once, which are
-    carried onto the new entry while it has room.
-    Registrations on unchanged content ACCUMULATE, since a builder applies many mutants to one
-    file across a sprint and overwriting per call would leave the ledger permanently reading 1.
-    Accumulation is bounded at MUTANT_LIMIT descriptions per entry, oldest out - the entry
-    count never grows on this path, so the ledger's own bound cannot reach it.
-
-    A `survived` verdict is a FINDING, not a filing: the test named against it does not pin the
-    behaviour that was mutated. The gate's coverage lane reads it back out of the entry's
-    summary and counts it, so recording bad news is never quieter than recording nothing.
-
-    An `equivalent` verdict is the one EXCLUSION the vocabulary allows: the mutant changed no
-    observable behaviour, so no test could have killed it and counting it as an outstanding
-    survivor would overstate what the gate found. It demands a `reason` - an exclusion nobody
-    justified is a decrement nobody can audit - and takes no test, because there is no test to
-    name. `run` attributes it to the series row it discounts, so the exclusion applies to the
-    run that raised the survivor and to no other.
-
-    Raises ValueError on a target that cannot be read, an unknown verdict, an empty description,
-    an equivalent verdict with no reason, or a run id the series does not hold: an entry that
-    names neither what was mutated nor what judged it is unauditable, and one with no hash could
-    never go stale.
-    """
-    import hashlib
-    root = Path(root)
-    path = Path(target)
-    if not path.is_absolute():
-        path = root / path
-    if not path.is_file():
-        raise ValueError(f"no such target: {path} - a registered entry is keyed on the "
-                         "target's content hash, and a file that cannot be read has none")
-    if verdict not in REGISTRABLE_VERDICTS:
-        raise ValueError(f"verdict must be one of {', '.join(REGISTRABLE_VERDICTS)}, "
-                         f"not {verdict!r}")
-    fault_class = (fault_class or "").strip() or None
-    if fault_class is not None and fault_class not in FAULT_CLASSES:
-        # Drawn from the generator's OWN vocabulary or not at all. A free-text class would join
-        # nothing, which is the state this field exists to leave: the point is an EXACT join to
-        # a measured row, and a value the generator never emits can never match one.
-        raise ValueError(
-            f"--class must be one of the generator's fault classes "
-            f"({', '.join(FAULT_CLASSES)}), not {fault_class!r} - a class the generator never "
-            f"emits joins no measured row, so it would record a promise it cannot keep")
-    mutant, test = str(mutant or "").strip(), str(test or "").strip()
-    reason = str(reason or "").strip()
-    if verdict == EQUIVALENT_VERDICT:
-        if not mutant or not reason:
-            raise ValueError(
-                "an equivalent mutant must name WHAT was mutated and give a reason it could "
-                "not be killed - an exclusion nobody justified is a silent decrement, "
-                "indistinguishable from a mutant nobody ran")
-    elif not mutant or not test:
-        raise ValueError("a registered mutant must name WHAT was mutated and WHICH test "
-                         "returned the verdict - a bare count cannot be audited")
-    if verdict != EQUIVALENT_VERDICT and line is not None and int(line) < 1:
-        # `--line 0` passed the None check and then composed `target:?` through the
-        # `mu.get("line") or '?'` fallback - the exact string the refusal is supposed to have
-        # stopped printing. A line number below 1 names no line.
-        raise ValueError(f"--line must be 1 or greater, not {line} - a line number below one "
-                         "names no line, and the refusal that quotes it prints a question mark")
-    if verdict != EQUIVALENT_VERDICT and line is None:
-        # An OPTIONAL line is worse than none. The refusal composes `target:line` and would
-        # print `target:?`; worse, a registered `line: None` never joins a measured `line: 2`,
-        # so the contradiction check silently never fires while its own fixture - which always
-        # supplies a line - stays green. Required here, at the only verb that writes one.
-        raise ValueError(
-            "a registered mutant must name the LINE it was applied at (--line N). The refusal "
-            "quotes `target:line`, and a record with no line never joins a measured one - so "
-            "the check that catches a ledger contradicting itself would never fire, and its "
-            "own tests would pass on fixtures the tool could not produce")
-    run = str(run or "").strip() or None
-    if run is not None and series_row(root, run) is None:
-        raise ValueError(f"no mutation run {run} in the series - a verdict attributed to a run "
-                         "nobody recorded discounts nothing and can never be checked")
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    rel = _ledger_target(root, path)
-    # THE ANCHOR CHECK. A hand-applied mutant is located by a substring, and a substring that
-    # matches twice patches the site the author did not mean - the test then stays green for a
-    # reason nobody looked at, and the run reports SURVIVED against code that was never mutated.
-    # This repository has recorded that exact false verdict twice. The mutant is reverted by the
-    # time it is registered, so the ORIGINAL text must be present exactly once, and that is a
-    # fact this command can check rather than a discipline it has to hope for.
-    if anchor is not None:
-        occurrences = path.read_text(encoding="utf-8", errors="replace").count(anchor)
-        if occurrences != 1:
-            why = ("No occurrence means the mutant was never reverted, or this is not the text "
-                   "that was replaced" if occurrences == 0 else
-                   "More than one means the patch could have landed at the wrong site, and a "
-                   "green test there says nothing about the site you meant")
-            raise ValueError(
-                f"the anchor occurs {occurrences} time(s) in {rel}, not exactly once. {why}. "
-                f"Quote more surrounding context until the anchor is unique.")
-    lpath = ledger_path(root)
-    state, reset = _load_ledger(lpath)
-    entries = [e for e in state["entries"] if isinstance(e, dict)]
-    record = {"mutant": mutant, "test": test or None, "verdict": verdict,
-              "reason": reason or None, "run": run, "line": line,
-              # THE JOIN KEY for a unit's rows (US0632). Recorded explicitly rather than
-              # matched out of the mutant's prose: a matching rule that is convenient is a gate
-              # that is optional, and a substring join would silently credit one criterion's
-              # execution to another's row.
-              "unit": sdlc_md.norm_id(unit) if unit else None,
-              "criterion": (criterion or "").strip().upper() or None,
-              # THE ROW HALF OF THE JOIN KEY. A criterion may declare several mutants, and each
-              # is a separate claim: subtracting a subset, counting a manual criterion as green
-              # and emitting a clause unconditionally are three distinct ways for one criterion
-              # to be wrong, and BG0592's AC13 declares all three. Keyed by criterion alone, one
-              # kill satisfied all of them. Absent means row 0, so every entry registered before
-              # this shipped still reads back.
-              "row": int(row) if row is not None else 0,
-              # THE CROSS-PROVENANCE JOIN KEY. Optional, because a hand-applied mutant does not
-              # always belong to a class the generator can produce, and demanding one would make
-              # authors pick the nearest label - a join that is convenient is a join that lies.
-              # Absent, the row simply cannot be compared across provenances, and that is the
-              # honest state rather than a guessed one.
-              "class": fault_class,
-              # THE SITE THIS ROW'S EVIDENCE IS ABOUT, kept rather than validated and thrown
-              # away. Without it a row can only be judged by the WHOLE FILE's hash, so an edit
-              # anywhere in a target stales every unit's rows on it - measured on this ledger,
-              # 26 of 74 targets carry rows from more than one unit and `verify_ac.py` carries
-              # seven. Re-measuring seven units because one line moved in an eighth is a cost
-              # paid on every commit that touches a shared file.
-              "anchor": anchor or None,
-              "at": sdlc_md.now_iso8601()}
-    entry = next((e for e in entries if e.get("target") == rel
-                  and entry_provenance(e) == PROVENANCE_REGISTERED
-                  and e.get("hash") == digest), None)
-    # Any registered entry for this target on OTHER content is stale evidence: drop it rather
-    # than carry counts about bytes this file no longer has. That part is right.
-    #
-    # What was wrong is that it happened SILENTLY. A builder who registers five mutants, edits
-    # the file, then registers a sixth loses the first five and is told nothing - the ledger
-    # simply reads 1 and looks like a builder who did the work once. The count going DOWN is
-    # invisible, which is the direction that flatters. The dropped rows are counted here and
-    # returned so the caller can say so out loud.
-    stale = [e for e in entries
-             if e.get("target") == rel
-             and entry_provenance(e) == PROVENANCE_REGISTERED
-             and e is not entry]
-    # Only THIS unit's own stale rows are replaced. Another unit's rows on the old bytes
-    # are KEPT and marked stale with this unit named, because deleting them here emptied a
-    # Fixed unit's evidence before any commit - the path every later unit takes over a shared
-    # file - and left the commit-time lane nothing to refuse. A stale row is kept, marked and
-    # named, and its remedy is the same re-register.
-    #
-    # A row whose ANCHOR still occurs exactly once in the new bytes is not stale at all: its
-    # site did not move, which is the rule `row_staleness` states.
-    # This unit's own such rows are CARRIED onto the current entry - dropping them cost BG0719
-    # twelve good rows when one of its thirteen was re-registered - and the row being
-    # re-registered never is, since the new record replaces it. Other units' rows are not
-    # moved: they stay on their own entry, where `row_staleness` reads them live, and
-    # carrying them all onto one entry ran it past MUTANT_LIMIT and evicted live rows. Nor is
-    # the cap allowed to evict for a carry: a row with no room left stays where it is.
-    me = sdlc_md.norm_id(unit) if unit else None
-    text_now = path.read_text(encoding="utf-8", errors="replace")
-    def _own(m):
-        return not isinstance(m, dict) or not m.get("unit") or m.get("unit") == me
-    def _key(m):                           # None for a row no join can key
-        if not (m.get("unit") and m.get("criterion")):
-            return None
-        return (m.get("unit"), str(m["criterion"]).upper(), int(m.get("row") or 0))
-    def _site_live(m):
-        return (isinstance(m, dict) and bool(m.get("anchor"))
-                and text_now.count(str(m["anchor"])) == 1)
-    current = (entry or {}).get("mutants") or []
-    held = {_key(m) for m in current + [record] if isinstance(m, dict) and not m.get("withdrawn")}
-    held.discard(None)
-    room = max(0, MUTANT_LIMIT - 1 - len(current))
-    carried: list[dict] = []
-    staying: list[dict] = []
-    for e in reversed(stale):              # newest first, so a newer copy of a row wins
-        for m in e.get("mutants") or []:
-            if not (_own(m) and _site_live(m)) or m.get("withdrawn"):
-                continue
-            k = _key(m)
-            if k in held:
-                continue                   # a newer copy, or the new record, holds this key
-            if k is not None:
-                held.add(k)
-            (carried if len(carried) < room else staying).append(m)
-    moved = {id(m) for m in carried}
-    stays = {id(m) for m in staying}
-    dropped_mutants = 0
-    kept: list[dict] = []
-    mine: list[dict] = []
-    for e in stale:
-        rows = [m for m in e.get("mutants") or [] if id(m) not in moved]
-        own = [m for m in rows if _own(m) and id(m) not in stays]
-        others = [m for m in rows if not _own(m) or id(m) in stays]
-        dropped_mutants += len(own)
-        if others:
-            # a shared entry gives up only this unit's dropped rows; every other row stays
-            e["mutants"] = others
-            e["stale"] = {"at": record["at"], "by": me, "hash_now": digest}
-            kept.append(e)
-        else:
-            mine.append(e)
-    # named only for a row every reader now takes as not-run: an unmoved row stays live
-    kept_units = sorted({str(m.get("unit")) for e in kept for m in e["mutants"]
-                         if isinstance(m, dict) and m.get("unit") and not m.get("withdrawn")
-                         and not _site_live(m)})
-    entries = [e for e in entries if e not in mine]
-    if entry is None:
-        entry = {"target": rel, "hash": digest, "provenance": PROVENANCE_REGISTERED,
-                 "git_rev": _git_rev(root), "generated_at": record["at"], "test_cmd": None,
-                 "summary": {"applied": 0, **{k: 0 for k in SUMMARY_VERDICTS}},
-                 "mutants": []}
-    else:
-        entries.remove(entry)              # re-appended below, so the newest entry sorts last
-        entry["git_rev"] = _git_rev(root)
-        entry["generated_at"] = record["at"]
-    for m in carried:
-        entry["mutants"].append(m)
-        entry["summary"]["applied"] += 1
-        entry["summary"][m["verdict"]] = entry["summary"].get(m["verdict"], 0) + 1
-    # NOT superseded by a later registration for the same mutant, though a review round asked
-    # for it: both rows stay, so a later kill never silently erases an earlier survivor,
-    # because a genuine correction and an author registering their way out of a survivor are
-    # byte-identical here. Making the correction cheap would make the escape cheap with it.
-    # The cost is real and recorded rather than traded away: see the bug filed on it.
-    #
-    # What IS replaced: the IDENTICAL registration - same unit, criterion, row, target and hash
-    # (this entry), same verdict, same test - the idempotent re-run of a registration runner,
-    # which used to append a duplicate that inflated the executed count and left the join
-    # reading whichever row was iterated last. A same-key row whose verdict or test differs is
-    # REFUSED, naming `retract`: that is the correction the rule above keeps expensive.
-    replaced = False
-    if record.get("unit") and record.get("criterion"):
-        same_key = [m for m in (entry.get("mutants") or [])
-                    if isinstance(m, dict) and not m.get("withdrawn")
-                    and m.get("unit") == record["unit"]
-                    and str(m.get("criterion") or "").upper() == record["criterion"]
-                    and int(m.get("row") or 0) == record["row"]]
-        for m in same_key:
-            if m.get("verdict") != record["verdict"] or (m.get("test") or None) != record["test"]:
-                # The remedy is printed RUNNABLE: retract joins on six fields, and two of them
-                # (the live row's line and description) are the row's, not the caller's - a
-                # same-verdict registration with drifted prose replaced the row and kept its own.
-                # The description is SHELL-QUOTED: most of them name code, and a backtick or a
-                # `$(` in a pasted argument is command substitution, so the shell ran the
-                # description and passed retract a mangled one that matched nothing.
-                quoted = shlex.quote(str(m.get("mutant") or ""))
-                raise ValueError(
-                    f"refused: {record['unit']} {record['criterion']} r{record['row']} already "
-                    f"holds a live {m.get('verdict')} row against `{m.get('test')}` on these bytes "
-                    f"(line {m.get('line')}, mutant {quoted}); a registration "
-                    f"with a different verdict or test does not replace it - withdraw the row "
-                    f"first with `mutation.py retract --unit {record['unit']} --criterion "
-                    f"{record['criterion']} --target {shlex.quote(str(rel))} --line {m.get('line')} "
-                    f"--mutant {quoted} --verdict {m.get('verdict')} --reason <why> "
-                    f"--root {shlex.quote(str(root))}`, "
-                    f"so the correction stays on the record (worst-verdict-wins is not traded away)")
-        if same_key:
-            entry["mutants"] = [m for m in entry["mutants"] if m not in same_key] + [record]
-            replaced = True
-            # N identical rows collapse to one, and the tallies the gates read (`applied`, the
-            # verdict count) were advanced once per row when they were appended: take the
-            # N-1 back, or one row reads as N registrations forever.
-            extra = len(same_key) - 1
-            if extra:
-                entry["summary"]["applied"] = max(0, int(entry["summary"].get("applied") or 0) - extra)
-                entry["summary"][verdict] = max(0, int(entry["summary"].get(verdict) or 0) - extra)
-    if not replaced:
-        entry.setdefault("mutants", []).append(record)
-        entry["summary"]["applied"] += 1
-    # setdefault, not [verdict] += 1: an entry written before this verdict existed has no such
-    # counter, and a KeyError on an older ledger would make the vocabulary's growth a crash
-    if not replaced:
-        entry["summary"][verdict] = entry["summary"].get(verdict, 0) + 1
-    # The list is what grows here, and the ledger's entry bound cannot reach it: this entry is
-    # rewritten, never added. Bounded on its own axis, newest kept, and what was dropped is
-    # recorded - the summary tally below is never truncated, so the COUNT of what was
-    # registered stays exact even when the oldest descriptions have gone.
-    over = max(0, len(entry["mutants"]) - MUTANT_LIMIT)
-    if over:
-        entry["mutants"] = entry["mutants"][over:]
-        entry["dropped_mutants"] = int(entry.get("dropped_mutants") or 0) + over
-    entries.append(entry)
-    written = _store_ledger(lpath, state, entries, reset)
-    return {**written, "target": rel, "verdict": verdict, "replaced": replaced,
-            "registered": entry["summary"]["applied"],
-            "retained": len(entry["mutants"]),
-            # How many earlier registrations this call discarded because the target's bytes
-            # changed. Zero on the ordinary path; non-zero means evidence just disappeared and
-            # the caller must say so rather than print a reassuring count.
-            "dropped_stale": dropped_mutants,
-            # The OTHER units whose rows on this target's old bytes were kept and
-            # marked stale by this registration, so the caller can name them out loud.
-            "kept_stale_units": kept_units}
 
 
 def select_files(repo_root: Path | str, files=None, since: str | None = None,
@@ -2601,8 +1910,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     # code nobody touched (L-0086).
     changed = changed_lines(root, args.since) if args.since else None
     report = run_gate(root, files, args.test, max_mutations=ceiling, changed=changed,
-                      write_report=not getattr(args, "dry_run", False),
-                      unit=getattr(args, "unit", None))
+                      write_report=not getattr(args, "dry_run", False))
     s = report["summary"]
     ser = report.get("series") or {}
     if ser.get("reset") and args.format != "json":
@@ -2660,11 +1968,6 @@ def cmd_run(args: argparse.Namespace) -> int:
         else:
             print(f"  test selection: {len(sel)} file(s) - "
                   + ", ".join(Path(p).name for p in sel))
-        led = report.get("ledger") or {}
-        if led.get("dropped_now"):
-            print(f"  note: the mutation ledger dropped its {led['dropped_now']} oldest "
-                  f"entr(ies) at the {LEDGER_LIMIT}-entry bound "
-                  f"({led['dropped_total']} dropped in all)")
         for w in report.get("selection_warnings", []):
             print(f"  WARNING: {w['test_file']} references target `{w['references']}` but "
                   f"is OUTSIDE the test command's selection - a survivor may be "
@@ -2689,317 +1992,6 @@ def cmd_run(args: argparse.Namespace) -> int:
     return 1 if s["survived"] or s["errors"] else 0
 
 
-#: The shortest reason that can be audited. A retraction withdraws recorded evidence, so "typo"
-#: or "wrong" names nothing a reader can check; the length is a floor on effort, not on honesty,
-#: and it is deliberately low because the real control is that the withdrawal is PUBLISHED.
-_RETRACT_REASON_MIN = 20
-
-
-def retract_mutant(root: Path | str, target, unit: str, criterion: str, line: int,
-                   mutant: str, verdict: str, reason: str) -> dict:
-    """Withdraw a REGISTERED verdict, leaving the withdrawal on the record.
-
-    The problem this solves, and the trap it must not become. A later registration never
-    replaces an earlier one, so a mutant registered `survived` by mistake cannot be corrected by
-    registering it `killed` - the survivor stays on the record. That rule is right: to the tool, a
-    genuine correction and an author registering their way out of a survivor are byte-identical.
-    Then the self-contradiction check made the cost sharper still, refusing the transition in
-    every mode including `off`, so an author who mistyped was left worse off than one who left it wrong.
-
-    A review round proposed SUPERSEDING the earlier row. That was implemented and reverted: it
-    reopens exactly the escape that keeping both rows closes, because a supersede is invisible.
-
-    So the answer is not to make correction cheap - it is to make it VISIBLE. The row is marked
-    withdrawn rather than removed, carrying who withdrew it, when, and why. Every reader of a
-    unit's live rows skips withdrawn ones, so the correction works; every reader still sees
-    that a verdict was withdrawn and can judge the reason. An author retracting their way out of
-    a survivor now leaves a trail that says so, in the artefact a reviewer already reads.
-
-    Only REGISTERED rows can be retracted. A measured row is the output of a run that actually
-    applied the mutant and watched the suite answer; withdrawing that would be editing an
-    observation, and the way to correct a measurement is to measure again.
-
-    The VERDICT is part of the join, and that is not decoration. Without it a retraction names
-    every row for one mutant and withdraws them all - so an author correcting a mistyped
-    `survived` silently withdrew the `killed` beside it too and was left with no evidence at all
-    rather than the right evidence. Found by running the verb, not by reading it: the refusals
-    were all correct and the success case quietly did the wrong thing.
-
-    Raises ValueError when the reason is missing or too short to audit, when the verdict is not
-    one that can be registered, or when no matching un-withdrawn registered row exists - a retraction that matches nothing has silently done
-    nothing, which is the failure mode this whole verb exists to end.
-    """
-    root = Path(root)
-    reason = " ".join(str(reason or "").split())
-    if len(reason) < _RETRACT_REASON_MIN:
-        raise ValueError(
-            f"a retraction needs a reason of at least {_RETRACT_REASON_MIN} characters saying "
-            f"what was wrong with the withdrawn verdict. An unexplained retraction is the escape "
-            f"hatch the worst-verdict rule exists to close; a recorded one is an audit trail")
-    if verdict not in REGISTRABLE_VERDICTS:
-        raise ValueError(f"the verdict being withdrawn must be one of "
-                         f"{', '.join(REGISTRABLE_VERDICTS)}, not {verdict!r}")
-    path = Path(target)
-    if not path.is_absolute():
-        path = root / path
-    rel = _ledger_target(root, path)
-    uid = sdlc_md.norm_id(unit) if unit else None
-    crit = (criterion or "").strip().upper() or None
-    ident = " ".join(str(mutant or "").lower().split())
-    lpath = ledger_path(root)
-    state, reset = _load_ledger(lpath)
-    entries = [e for e in state["entries"] if isinstance(e, dict)]
-    hits = []
-    for e in entries:
-        if e.get("target") != rel or entry_provenance(e) != PROVENANCE_REGISTERED:
-            continue
-        for mu in (e.get("mutants") or []):
-            if not isinstance(mu, dict) or mu.get("withdrawn"):
-                continue
-            if (mu.get("unit") == uid and (mu.get("criterion") or None) == crit
-                    and mu.get("line") == line and mu.get("verdict") == verdict
-                    and " ".join(str(mu.get("mutant") or "").lower().split()) == ident):
-                hits.append((e, mu))
-    if not hits:
-        raise ValueError(
-            f"no un-withdrawn REGISTERED {verdict!r} mutant matches {rel}:{line} for {uid} "
-            f"{crit} with that description. A retraction matching nothing has done nothing, so it refuses rather "
-            f"than reporting success. Check the four join fields against `mutation.py show`, and "
-            f"note that a MEASURED row cannot be retracted - re-measure it instead")
-    at = sdlc_md.now_iso8601()
-    for e, mu in hits:
-        mu["withdrawn"] = {"reason": reason, "at": at, "verdict": mu.get("verdict")}
-        # The summary is what the coverage lane reads, so a withdrawn survivor has to leave it
-        # too - otherwise the correction works for the transition and not for the count, and the
-        # two disagree. `retracted` is added rather than the row simply vanishing: the tally of
-        # what was withdrawn is the visible part.
-        summary = e.setdefault("summary", {})
-        v = mu.get("verdict")
-        if v and summary.get(v):
-            summary[v] = summary[v] - 1
-        summary["retracted"] = int(summary.get("retracted") or 0) + 1
-        if summary.get("applied"):
-            summary["applied"] = summary["applied"] - 1
-    written = _store_ledger(lpath, state, entries, reset)
-    return {**written, "target": rel, "retracted": len(hits),
-            "verdict": hits[0][1].get("withdrawn", {}).get("verdict"), "reason": reason}
-
-
-def retractions(root: Path | str, unit: str | None = None) -> list:
-    """Every WITHDRAWN verdict, newest first - the reader that makes a retraction visible.
-
-    `retract` marked rows withdrawn and nothing ever read the field back. Both existing readers
-    skip withdrawn rows with a bare `continue`, no verb printed the ledger, nothing consumed the
-    `retracted` tally, and the ledger itself lives in gitignored `.local/`. So after a retraction
-    the observable state was indistinguishable from the row never having been registered - which
-    is precisely the objection that got the SUPERSEDE design rejected. An independent review made
-    the point by grepping: two readers, both `continue`.
-
-    Three shipped sentences claimed otherwise, so this exists to make them true rather than to be
-    deleted along with them. The correction has to reach the person the cost was imposed on.
-    """
-    uid = sdlc_md.norm_id(unit) if unit else None
-    out = []
-    for e in ledger_entries(root):
-        if not isinstance(e, dict):
-            continue
-        for mu in (e.get("mutants") or []):
-            if not isinstance(mu, dict) or not mu.get("withdrawn"):
-                continue
-            if uid and mu.get("unit") != uid:
-                continue
-            w = mu["withdrawn"]
-            out.append({"unit": mu.get("unit"), "criterion": mu.get("criterion"),
-                        "target": e.get("target"), "line": mu.get("line"),
-                        "mutant": mu.get("mutant"), "verdict": w.get("verdict"),
-                        "reason": w.get("reason"), "at": w.get("at"),
-                        "provenance": entry_provenance(e)})
-    return sorted(out, key=lambda r: str(r.get("at") or ""), reverse=True)
-
-
-def audit_duplicates(root: Path | str) -> dict:
-    """Every `(unit, criterion, row)` key the ledger holds more than one LIVE row for.
-
-    A row is live when it is not withdrawn, whether or not its entry is stale: a stale entry
-    is no evidence, but a reader cannot tell two rows apart from the join, and that is the
-    harm this audit exists to name. Each row carries its target and hash, so a same-row pair on
-    two entries can be told from a pair inside one; a row whose entry `entry_staleness` reports
-    `stale` or `missing` is tagged. `row` None and `row` 0 read as one slot: `register` writes 0
-    for a criterion carrying one row, and None marks a row registered before the row column
-    existed.
-
-    Returns `{"keys": [...], "duplicated": n, "different_tests": n, "disagreeing": n}` where each
-    key is `{"unit", "criterion", "row", "rows": [{target, hash, verdict, test, line, stale}],
-    "different_tests": bool, "disagreeing": bool}`. Nothing is printed here; the verb prints.
-    """
-    root = Path(root)
-    # `ledger_entries` refuses a ledger that cannot be parsed, so an audit over one raises
-    # rather than reading as clean - an unreadable instrument is not an empty history.
-    by_key: dict = {}
-    for entry in ledger_entries(root):
-        staleness = entry_staleness(root, entry)
-        stale = staleness in ("stale", "missing")
-        for mu in entry.get("mutants") or []:
-            if not isinstance(mu, dict) or not mu.get("unit") or mu.get("withdrawn"):
-                continue
-            key = (str(mu.get("unit")), str(mu.get("criterion") or "").upper(), int(mu.get("row") or 0))
-            by_key.setdefault(key, []).append({
-                "target": entry.get("target"), "hash": entry.get("hash"),
-                "verdict": mu.get("verdict"), "test": mu.get("test"), "line": mu.get("line"),
-                "mutant": mu.get("mutant"), "stale": stale})
-    keys = []
-    for (unit, criterion, row), rows in sorted(by_key.items()):
-        if len(rows) < 2:
-            continue
-        keys.append({"unit": unit, "criterion": criterion, "row": row, "rows": rows,
-                     "different_tests": len({r["test"] for r in rows}) > 1,
-                     "disagreeing": len({r["verdict"] for r in rows}) > 1})
-    return {"keys": keys, "duplicated": len(keys),
-            "different_tests": sum(1 for k in keys if k["different_tests"]),
-            "disagreeing": sum(1 for k in keys if k["disagreeing"])}
-
-
-def cmd_audit(args: argparse.Namespace) -> int:
-    """Name every duplicated live key; silent and 0 on a clean ledger, 1 with any duplicate or
-    with a ledger that cannot be parsed - refused and named, never read as clean."""
-    try:
-        report = audit_duplicates(args.root)
-    except LedgerUnreadable as exc:
-        print(f"audit: {exc}", file=sys.stderr)
-        return 1
-    if not report["keys"]:
-        return 0
-    for k in report["keys"]:
-        flags = []
-        if k["disagreeing"]:
-            flags.append("verdicts DISAGREE")
-        if k["different_tests"]:
-            flags.append("different tests")
-        print(f"audit: {k['unit']} {k['criterion']} r{k['row']} - {len(k['rows'])} live row(s)"
-              + (f" ({', '.join(flags)})" if flags else ""))
-        for r in k["rows"]:
-            print(f"    {r['verdict']}  test={r['test']}  target={r['target']}  "
-                  f"hash={str(r['hash'] or '')[:12]}  line={r['line']}  "
-                  f"mutant=\"{r['mutant'] or ''}\""
-                  + ("  [stale entry]" if r["stale"] else ""))
-    print(f"audit: {report['duplicated']} duplicated key(s), {report['different_tests']} naming "
-          f"different tests, {report['disagreeing']} disagreeing on verdict - the (criterion, row) "
-          "join reads whichever was iterated last. Rows that differ: withdraw the wrong one with "
-          "`mutation.py retract --reason` on the join fields printed above (unit, criterion, "
-          "target, line, verdict, mutant). Rows identical on those fields: `retract` withdraws "
-          "them together, so re-register the key once after", file=sys.stderr)
-    return 1
-
-
-def cmd_retractions(args: argparse.Namespace) -> int:
-    rows = retractions(args.root, getattr(args, "unit", None))
-    if getattr(args, "format", "text") == "json":
-        print(json.dumps(rows, indent=2))
-        return 0
-    if not rows:
-        print("no withdrawn verdicts recorded")
-        return 0
-    print(f"{len(rows)} withdrawn verdict(s) - each was recorded, then retracted with a reason:")
-    for r in rows:
-        print(f"  {r['unit'] or '?'} {r['criterion'] or '?'} {r['target']}:{r['line']} "
-              f"withdrew {r['verdict']!r} ({r['at']})")
-        print(f"      mutant: {str(r['mutant'])[:100]}")
-        print(f"      reason: {r['reason']}")
-    return 0
-
-
-def cmd_retract(args: argparse.Namespace) -> int:
-    try:
-        res = retract_mutant(args.root, args.target, args.unit, args.criterion,
-                             args.line, args.mutant, args.verdict, args.reason)
-    except (ValueError, OSError) as exc:
-        print(f"retract refused: {exc}", file=sys.stderr)
-        return 2
-    print(f"mutation: WITHDREW {res['retracted']} registered {res['verdict']!r} verdict(s) on "
-          f"{res['target']}:{args.line} for {args.unit} {args.criterion}. The row is marked "
-          f"withdrawn, NOT deleted - the ledger shows that a verdict was retracted and why, so "
-          f"a reviewer can judge the correction rather than take it on trust")
-    return 0
-
-
-def cmd_register(args: argparse.Namespace) -> int:
-    # REQUIRED AT THE COMMAND, which is where a self-reported row is written by a person or an
-    # agent. Validated-and-discarded is what left every row judgeable only by its whole file,
-    # so an edit anywhere in a shared target staled every unit's evidence on it - measured on
-    # this ledger, `verify_ac.py` carried seven units and one edit re-measured all seven.
-    #
-    # Required HERE and not in `register_mutant`, because the library function is also the
-    # fixtures' way of building a ledger to test the readers with, and those rows are not
-    # claims about a measurement anybody took. The migration is the same either way: a row
-    # gains its anchor at the moment somebody actually measures it, rather than by a backfill
-    # asserting a site for a measurement never taken there (US0822).
-    if not getattr(args, "anchor", None):
-        print("error: --anchor is required: pass the exact text your mutant REPLACED, quoted "
-              "with enough surrounding context to occur exactly once in the target. It is what "
-              "lets this row be judged on its own site rather than on the whole file's hash, so "
-              "an edit elsewhere in the target stops staling it", file=sys.stderr)
-        return 2
-    try:
-        res = register_mutant(args.root, args.target, args.mutant, args.test, args.verdict,
-                              reason=getattr(args, "reason", None),
-                              run=getattr(args, "run", None),
-                              unit=getattr(args, "unit", None),
-                              line=getattr(args, "line", None),
-                              criterion=getattr(args, "criterion", None),
-                              anchor=getattr(args, "anchor", None),
-                              row=getattr(args, "row", None),
-                              fault_class=getattr(args, "fault_class", None))
-    except (ValueError, OSError) as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return 2
-    if res["verdict"] == EQUIVALENT_VERDICT:
-        # excluded from yield, and said out loud: a silent exclusion is indistinguishable
-        # from a mutant nobody ran
-        print(f"mutation: recorded an EQUIVALENT mutant on {res['target']} - EXCLUDED from "
-              f"this run's yield and from its outstanding survivors, because "
-              f"{args.reason}. Self-reported: nothing here re-ran anything")
-        return 0
-    if res.get("replaced"):
-        print(f"mutation: replaced the identical live row for {args.unit} {(args.criterion or '').upper()} "
-              f"r{int(args.row or 0)} on {res['target']} ({res['verdict']}) - one live row per key; "
-              f"{res['registered']} registered mutant(s) on this content, unchanged")
-        return 0
-    print(f"mutation: registered a SELF-REPORTED mutant on {res['target']} "
-          f"({res['verdict']}) - {res['registered']} registered mutant(s) on this content. "
-          f"Nothing was re-run here, so the ledger holds this as a claim, not a measurement")
-    if res.get("dropped_stale"):
-        # Said OUT LOUD, because the count going down is the direction nobody checks. The rows
-        # were about bytes this file no longer has, so dropping them is right - but a builder
-        # who registers, edits, then registers again would otherwise see a reassuring "1
-        # registered" and never learn that four earlier claims had just gone.
-        print(f"  DROPPED {res['dropped_stale']} earlier registration(s) for this target: the "
-              f"file's bytes changed since they were recorded and their anchor no longer occurs "
-              f"exactly once (or they carried none), so they were evidence about code that no "
-              f"longer exists. Rows whose anchor still occurs once were kept. If the dropped "
-              f"mutants still matter, re-apply and re-register them against the current content "
-              f"- register AFTER the last edit, not before")
-    if res.get("kept_stale_units"):
-        # Said out loud and NAMED. The rows are kept, not deleted, and they now read
-        # as not-run to every reader of the ledger until their unit re-registers them.
-        print(f"  STALE: {', '.join(res['kept_stale_units'])} hold registered rows on this "
-              f"target's earlier bytes. They are kept and marked stale, and read as NOT-RUN "
-              f"until re-registered - re-apply each row's mutant with the working copy equal "
-              f"to what is staged and `mutation.py register --anchor '<the text it replaced>'` "
-              f"it")
-    if res["verdict"] == "survived":
-        print(f"  FINDING: the mutant SURVIVED, so {args.test} does not pin the behaviour it "
-              f"was applied to. The gate's coverage lane counts this - fix the test or file it")
-    if res["registered"] > res["retained"]:
-        print(f"  note: this entry keeps the {MUTANT_LIMIT} most recent mutant descriptions; "
-              f"{res['registered'] - res['retained']} older one(s) have been dropped (the "
-              f"counts are not truncated)")
-    if res.get("dropped_now"):
-        print(f"  note: the mutation ledger dropped its {res['dropped_now']} oldest "
-              f"entr(ies) at the {LEDGER_LIMIT}-entry bound "
-              f"({res['dropped_total']} dropped in all)")
-    return 0
-
-
 def cmd_yield(args: argparse.Namespace) -> int:
     y = run_yield(args.root, args.run)
     if args.format == "json":
@@ -3013,8 +2005,6 @@ def cmd_yield(args: argparse.Namespace) -> int:
           f"yield {y['yield']} filed artefact(s)"
           + (f" ({', '.join(y['filed'])})" if y["filed"] else "")
           + f", {y['outstanding']} outstanding")
-    for eq in y["equivalent"]:
-        print(f"  EXCLUDED (equivalent): {eq['mutant']} - {eq['reason']}")
     if not y["evidence"]:
         print(f"  note: this run recorded NO EVIDENCE "
               f"({y['row'].get('no_evidence_reason')}) - read its yield knowing that")
@@ -3112,83 +2102,13 @@ def build_parser() -> argparse.ArgumentParser:
                    help=f"cost ceiling (default quality.mutation_max, else {DEFAULT_MAX_MUTATIONS})")
     r.add_argument("--root", default=".")
     r.add_argument("--dry-run", action="store_true", dest="dry_run",
-                   help="run the mutants and print the verdicts, but write no report, no "
-                        "ledger entry and no series row - a rehearsal leaves no evidence")
+                   help="run the mutants and print the verdicts, but write no report and "
+                        "no series row - a rehearsal leaves no evidence")
     r.add_argument("--format", choices=("text", "json"), default="text")
-    r.add_argument("--unit", metavar="ID",
-                   help="the unit this run's evidence belongs to. Recorded on every per-mutant "
-                        "row, because the repair gate and the plan-execution join both select "
-                        "on it - a measured row nobody can attribute answers neither question")
-    sdlc_md.retire_flag(r, "--from-plan", "no gate joins a test plan to the ledger any more; "
-                        "measure the unit's changed surface with `mutation.py run --story <id>`")
+    sdlc_md.retire_flag(r, "--from-plan", "no gate joins a test plan to mutation evidence any "
+                        "more; measure the unit's changed surface with "
+                        "`mutation.py run --story <id>`")
     r.set_defaults(func=cmd_run)
-    g = sub.add_parser("register",
-                       help="Record a mutant applied BY HAND - self-reported, never measured.")
-    g.add_argument("--unit", help="the unit whose test plan this mutant belongs to")
-    g.add_argument("--line", type=int, metavar="N",
-                   help="the line the mutant was applied at. REQUIRED for killed/survived: the "
-                        "refusal quotes `target:line`, and an optional line never joins a "
-                        "measured one, so the contradiction check would silently never fire")
-    g.add_argument("--criterion", metavar="ACn",
-                   help="the criterion whose planned mutant this is, recorded rather than "
-                        "matched out of prose")
-    g.add_argument("--row", type=int, default=None, metavar="N",
-                   help="which of that criterion's declared mutants this is, 0-based in file "
-                        "order. Omit for a criterion carrying one row; REQUIRED to tell two "
-                        "mutants on the same criterion apart, or the second is credited to the "
-                        "first's execution")
-    g.add_argument("--target", required=True, help="the file the mutant was applied to")
-    g.add_argument("--mutant", required=True,
-                   help="what was mutated, in words a reviewer can check against the diff")
-    g.add_argument("--anchor", metavar="TEXT",
-                   help="the ORIGINAL text the mutant replaced, which must occur EXACTLY ONCE "
-                        "in the target now that the edit is reverted. Checked, not stored on "
-                        "trust: a substring matching twice patches the wrong site, and the run "
-                        "then reports a survivor for a mutant that was never applied where the "
-                        "author thought it was")
-    g.add_argument("--test", help="the test that returned the verdict (required for "
-                                  "killed/survived; an equivalent mutant has none)")
-    g.add_argument("--verdict", required=True, choices=REGISTRABLE_VERDICTS,
-                   help="killed (the test went red), survived (it stayed green - a finding), "
-                        "or equivalent (no behaviour changed, so no test could kill it - "
-                        "excluded from yield, and it needs --reason)")
-    g.add_argument("--reason", help="why an equivalent mutant could not be killed - mandatory "
-                                    "for --verdict equivalent, since an unjustified exclusion "
-                                    "is a silent decrement")
-    g.add_argument("--class", dest="fault_class", choices=FAULT_CLASSES, metavar="CLASS",
-                   help="the generator's fault class this hand-applied mutant belongs to "
-                        f"({', '.join(FAULT_CLASSES)}). Optional, and the ONLY thing that lets "
-                        "a registered verdict be compared against a measured one at the same "
-                        "line: the prose and the class share no value, so without it a "
-                        "hand-typed claim contradicting a measurement is undetectable")
-    g.add_argument("--run", metavar="MRUNxxx",
-                   help="the mutation run this verdict belongs to (must be in the series)")
-    g.add_argument("--root", default=".")
-    g.set_defaults(func=cmd_register)
-    rt = sub.add_parser("retract",
-                        help="Withdraw a REGISTERED verdict, on the record, with a reason.")
-    rt.add_argument("--unit", required=True, help="the unit whose row is being withdrawn")
-    rt.add_argument("--criterion", required=True, metavar="ACn")
-    rt.add_argument("--target", required=True, help="the file the mutant was applied to")
-    rt.add_argument("--line", required=True, type=int, metavar="N")
-    rt.add_argument("--mutant", required=True,
-                    help="the description recorded at registration - one of the four join "
-                         "fields, so a retraction cannot withdraw a row it did not name")
-    rt.add_argument("--verdict", required=True, choices=REGISTRABLE_VERDICTS,
-                    help="the verdict being WITHDRAWN. Part of the join: without it a "
-                         "retraction withdraws every row for the mutant, including the correct "
-                         "one beside the mistake, leaving no evidence rather than right evidence")
-    rt.add_argument("--reason", required=True,
-                    help="what was wrong with the withdrawn verdict. An unexplained retraction "
-                         "is the escape hatch the worst-verdict rule exists to close")
-    rt.add_argument("--root", default=".")
-    rt.set_defaults(func=cmd_retract)
-    rs = sub.add_parser("retractions",
-                        help="Every WITHDRAWN verdict, with the reason given for each.")
-    rs.add_argument("--unit", help="only this unit's withdrawn verdicts")
-    rs.add_argument("--format", choices=("text", "json"), default="text")
-    rs.add_argument("--root", default=".")
-    rs.set_defaults(func=cmd_retractions)
     y = sub.add_parser("yield", help="What one run COST and what was FILED from it.")
     y.add_argument("--run", required=True, metavar="MRUNxxx")
     y.add_argument("--root", default=".")
@@ -3208,10 +2128,6 @@ def build_parser() -> argparse.ArgumentParser:
     w.add_argument("--note", help="what is being done, for whoever the guard blocks")
     w.add_argument("--root", default=".")
     w.set_defaults(func=cmd_window)
-    a = sub.add_parser("audit", help="Name every (unit, criterion, row) key carrying more than "
-                                     "one live row; exit 1 when any, silent and 0 when none.")
-    a.add_argument("--root", default=".", help="Repo root")
-    a.set_defaults(func=cmd_audit)
     f = sub.add_parser("prefilter", help="List test files with no recognisable assertion.")
     f.add_argument("--tests", nargs="+", required=True)
     f.set_defaults(func=cmd_prefilter)
@@ -3219,8 +2135,38 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+#: Verbs removed from the parser, each refused BY NAME. Kept out of the parser itself so neither
+#: `--help` nor the derived command surface lists them.
+RETIRED_VERBS = {
+    "register": "a hand-applied mutant is no longer recorded, because no per-target ledger is kept",
+    "retract": "no per-target ledger is kept, so there is no recorded verdict to withdraw",
+    "retractions": "no per-target ledger is kept, so no withdrawn verdict is left to list",
+    "audit": "no per-target ledger is kept, so no duplicated row is left to name",
+}
+
+
+def _retired_verb(argv: list[str] | None) -> str | None:
+    """The retired verb `argv` invokes, or None. Tokenised with the global `--root` declared, so
+    `--root X audit` and `audit --root X` both resolve; a malformed line is left for the real
+    parser to refuse."""
+    pre = argparse.ArgumentParser(add_help=False, exit_on_error=False)
+    pre.add_argument("--root")
+    pre.add_argument("verb", nargs="?")
+    try:
+        known, _rest = pre.parse_known_args(sys.argv[1:] if argv is None else argv)
+    except argparse.ArgumentError:
+        return None
+    return known.verb if known.verb in RETIRED_VERBS else None
+
+
 def main(argv: list[str] | None = None) -> int:
     import os  # noqa: PLC0415 - local, as elsewhere in this module
+    retired = _retired_verb(argv)
+    if retired:
+        print(f"error: `mutation.py {retired}` is retired - {RETIRED_VERBS[retired]}. Measure a "
+              f"suite with `mutation.py run --files <file> --test '<command>'` and read what it "
+              f"found with `mutation.py yield --run <id>`. Nothing was written.", file=sys.stderr)
+        return 2
     # This process IS the mutation run, so it carries the exemption marker its suites carry:
     # a gate that refused to run because it had itself applied a mutant would be absurd, and
     # every child it spawns needs the same exemption.

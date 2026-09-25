@@ -55,8 +55,8 @@ mean something.
 - **When** the run's yield and its outstanding-survivor count are read
 - **Then** the equivalent survivor counts towards neither, and the record states it was judged
   equivalent so the exclusion is auditable rather than a silent decrement
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_mutation.py -k EquivalentMutantExclusionTests
-- **Verified:** yes (2026-07-22)
+- **Verify:** manual - retired by US0936: `mutation.py register` --verdict equivalent is deleted with the per-target ledger, so no equivalent is recorded and `yield` sets survivors against filed artefacts only
+- **Verified:** manual (2026-09-25) - retired, superseded by US0936
 
 ### AC4: an equivalent is excluded from COVERAGE too, not only from yield
 

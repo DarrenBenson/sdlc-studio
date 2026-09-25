@@ -1,6 +1,6 @@
 # US0796: The corpus count of `killed-elsewhere` rows is recorded as a baseline before the check blocks
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Closes with:** US0936 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0554
 > **Created:** 2026-08-27
@@ -28,3 +28,4 @@
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0921 ships - planning: SUPERSEDED - [+constraint] baseline-then-block: mutation ledger deleted in batch 2; superseded only once US0921 ships (D0264) |
 | 2026-09-25 | sdlc-studio BG0772 | Closes with re-pointed from US0921 to US0936 (D0264): US0921 was split and US0936 carries the ledger deletion this item waits on |
+| 2026-09-25 | sdlc-studio US0936 | Superseded under D0264: its closing story US0936 is Done (BG0772) |

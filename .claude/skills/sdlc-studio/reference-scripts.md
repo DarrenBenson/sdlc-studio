@@ -186,11 +186,8 @@ lists every script with a one-line summary; open the linked page for the full en
   happened last; a refused or all-errored run is recorded as producing no evidence and can never
   be read as a clean run. `yield --run MRUNxxx` reports the artefacts filed from a run beside its
   survivor count. A window (`window open` / `window close`) declares that a process is rewriting
-  source files in place, and the gate refuses to pass while one is open. `audit` names every
-  `(unit, criterion, row)` key the ledger holds more than one live row for, with each row's
-  verdict, test, target, hash and mutant description, tags rows whose entry is stale, counts
-  the keys whose rows name different tests or disagree on their verdict, exits 1 when any exist
-  or the ledger cannot be parsed, and is silent with exit 0 on a clean ledger.
+  source files in place, and the gate refuses to pass while one is open. No per-target ledger
+  is kept: `register`, `retract`, `retractions` and `audit` are retired and refused by name.
 - `reconcile.py` - Builds the artifact-file census and reports `_index.md` drift as JSON.
   `settle` applies the mechanical drift (indexes, and each epic whose units are all terminal,
   closed to its derived Done or Superseded) and restages exactly what it wrote; a commit hook

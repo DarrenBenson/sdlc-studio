@@ -3648,30 +3648,6 @@ def _lessons_block(root: Path) -> str:
     return "\n".join(lines)
 
 
-def _withdrawn_block(root: Path, unit: str) -> str:
-    """The unit's withdrawn mutation verdicts, rendered for the seat brief, or "" if none.
-
-    Empty by design when nothing was retracted: a heading with nothing under it trains a reader
-    to skip the section on the day it matters."""
-    try:
-        sys.path.insert(0, str(Path(__file__).resolve().parent))
-        import mutation  # noqa: PLC0415 - deferred; only briefs pay for it
-        rows = mutation.retractions(root, unit)
-    except Exception:  # noqa: BLE001 - a brief must render even if the ledger will not load
-        return ""
-    if not rows:
-        return ""
-    lines = ["", "WITHDRAWN mutation verdicts for this unit - the author recorded a verdict and",
-             "then retracted it. Judge the reason; a retraction is a correction on the record,",
-             "not a deletion, and an unconvincing one is a finding:"]
-    for r in rows:
-        lines.append(f"  - {r['criterion'] or '?'} {r['target']}:{r['line']} withdrew "
-                     f"{r['verdict']!r} ({r['at']})")
-        lines.append(f"      mutant: {str(r['mutant'])[:100]}")
-        lines.append(f"      reason: {r['reason']}")
-    return "\n".join(lines) + "\n"
-
-
 def _shared_selector_block(path: Path) -> str:
     """One advisory line per Verify selector two or more of this unit's criteria share, or "".
 
@@ -3751,12 +3727,6 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> st
     # announced a lighter pass while carrying the full claim inventory would be two decisions
     # where there is one, and they would disagree the first time either moved.
     inventory = f"{_CLAIM_INVENTORY_BLOCK}\n\n" if full_tier else ""
-    # WITHDRAWN VERDICTS, in the brief because this is the artefact a reviewer actually reads.
-    # `mutation.py retract` marked rows withdrawn and nothing read the field back, so a
-    # retraction was indistinguishable from the row never existing - the same invisibility that
-    # got the supersede design rejected. A correction the author paid for has to reach the seat
-    # judging the evidence, or the ledger's honesty is a claim about a file nobody opens.
-    withdrawn = _withdrawn_block(root, unit)
     shared = _shared_selector_block(path)
     unit_id = sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or unit)
     title = sdlc_md.extract_h1_title(text) or unit_id
@@ -3779,7 +3749,7 @@ Diff scope (the unit's declared Affects - inspect with git diff/status on these 
 
 Acceptance criteria (canonical - judge against THESE, not a paraphrase):
 {acs}
-{shared}{withdrawn}
+{shared}
 {history}
 Review depth: {depth}
 

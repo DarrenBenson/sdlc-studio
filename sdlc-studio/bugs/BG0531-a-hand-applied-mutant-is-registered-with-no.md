@@ -30,7 +30,8 @@ The same entry should record whether bytecode was purged, on the same reasoning:
 ## Acceptance Criteria
 
 - [x] **AC1** Given `--anchor` naming the original text a hand-applied mutant replaced, when it occurs anywhere other than exactly once in the target, then registration REFUSES - a substring matching twice patches the site the author did not mean, and the run then records a verdict about code that was never mutated.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k anchor_must_be_unique
+  - **Verify:** manual - retired by US0936: `mutation.py register`, whose anchor check this pinned, is deleted with the per-target ledger
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 
 ## Test Plan
 

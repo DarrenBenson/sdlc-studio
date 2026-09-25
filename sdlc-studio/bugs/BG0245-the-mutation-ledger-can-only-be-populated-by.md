@@ -16,13 +16,16 @@ BG0238 made mutation evidence accumulate in a ledger keyed on each target's cont
 ## Acceptance Criteria
 
 - [x] **AC1:** `mutation.py register` records an already-applied mutant against the target's content hash, so the per-unit hand-mutation practice leaves a trace without changing the practice.
-      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RegisterTests::test_a_registered_mutant_becomes_a_ledger_entry_marked_self_reported
+      **Verify:** manual - retired by US0936: `mutation.py register` and the per-target ledger it wrote are deleted, so no hand-applied mutant is recorded or read
+      **Verified:** manual (2026-09-25) - retired, superseded by US0936
 - [x] **AC2:** Every ledger entry carries its provenance, and a registered entry is reported as SELF-REPORTED by the gate lane rather than presented as a measured run.
       **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_gate.py
 - [x] **AC3:** A registered and a measured entry for the same target are separate records, so neither erases the other, and an edit to the target starts a fresh entry.
-      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RegisterTests::test_a_registration_never_overwrites_a_measured_entry
+      **Verify:** manual - retired by US0936: `mutation.py register` and the per-target ledger it wrote are deleted, so no hand-applied mutant is recorded or read
+      **Verified:** manual (2026-09-25) - retired, superseded by US0936
 - [x] **AC4:** Verdicts only a runner can observe (error, unviable) are REFUSED from a self-report, so a builder cannot claim what they did not measure.
-      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RegisterTests::test_a_verdict_the_runner_alone_can_observe_is_refused
+      **Verify:** manual - retired by US0936: `mutation.py register` and the per-target ledger it wrote are deleted, so no hand-applied mutant is recorded or read
+      **Verified:** manual (2026-09-25) - retired, superseded by US0936
 
 ## Steps to Reproduce
 

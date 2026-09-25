@@ -33,26 +33,26 @@ Add `mutation.py retract --unit X --criterion ACn --target F --line N --mutant M
   - **Verify:** manual - retired by US0912: `mutation.plan_execution`, the plan reader this criterion names, was deleted with the test plan; that a retraction marks the row withdrawn and keeps it is still pinned by AC2
   - **Verified:** manual (2026-09-25) - retired, superseded by US0912
 - [x] **AC2** Given a retraction, when the ledger is read, then the row is still there marked withdrawn - carrying the reason and the verdict it withdrew - and the summary counts the retraction rather than losing it.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k withdrawal_is_recorded_and_not_deleted
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0936: `mutation.py retract` and `retractions` are deleted with the per-target ledger, so no recorded verdict is left to withdraw
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 - [x] **AC3** Given two rows for one mutant with opposite verdicts, when one verdict is retracted, then only that row is withdrawn - the verdict is part of the join, so a correction cannot take the correct row with the mistake.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k verdict_is_part_of_the_join
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0936: `mutation.py retract` and `retractions` are deleted with the per-target ledger, so no recorded verdict is left to withdraw
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 - [x] **AC4** Given a reason too thin to audit, when a retraction is attempted, then it is refused - an unexplained retraction is the escape hatch the worst-verdict rule exists to close.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k reason_too_thin_to_audit
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0936: `mutation.py retract` and `retractions` are deleted with the per-target ledger, so no recorded verdict is left to withdraw
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 - [x] **AC5** Given join fields that match no live row, when a retraction is attempted, then it refuses rather than reporting a success that did nothing.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k matches_nothing_refuses
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0936: `mutation.py retract` and `retractions` are deleted with the per-target ledger, so no recorded verdict is left to withdraw
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 - [x] **AC6** Given a MEASURED row, when a retraction is attempted, then it is refused - withdrawing an observation is not correcting it, and the refusal says to measure again.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k measured_verdict_cannot_be_retracted
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0936: `mutation.py retract` and `retractions` are deleted with the per-target ledger, so no recorded verdict is left to withdraw
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 - [x] **AC7** Given a ledger corrected by retraction, when the shipped transition verb runs, then it no longer reports the ledger as contradicting itself and no longer holds the transition.
   - **Verify:** manual - retired by US0935: the ledger contradiction check was deleted with the repair lane, so no transition compares registered and measured rows
   - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 - [x] **AC8** Given a withdrawn verdict, when a reader who is not the author looks - the retractions verb or the seat brief a reviewer is handed - then each shows that a verdict was withdrawn and the reason given, so the correction reaches the person it was made for. NARROWED by US0912: the plan join, the third reader this named, was deleted with the test plan.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k withdrawal_is_visible_to_a_reader
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0936: `mutation.py retract` and `retractions` are deleted with the per-target ledger, so no recorded verdict is left to withdraw
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 
 ## Resolution
 

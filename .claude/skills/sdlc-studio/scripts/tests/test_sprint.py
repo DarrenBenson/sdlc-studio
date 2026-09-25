@@ -9205,6 +9205,21 @@ class ProofRequirementTests(unittest.TestCase):
         self.assertNotIn("US0002", gaps,
                          "a unit whose band demands no mutation cannot be in arrears for it")
 
+    def test_a_run_that_measured_the_unit_s_file_discharges_its_gap(self) -> None:
+        """US0936: the reader takes its evidence from the mutation series, since no per-target
+        ledger is kept. MUTANT: count every row whatever its `evidence` (the refused run then
+        discharges the gap), or read no row at all (the measured run then leaves it standing)."""
+        sprint = _load()
+        for evidence, want in ((True, []), (False, ["US0001"])):
+            with self.subTest(evidence=evidence), tempfile.TemporaryDirectory() as d:
+                root = TestStrategyTests()._repo(d, {"US0001": "gate.py"})
+                series = root / "sdlc-studio" / ".local" / "mutation-series.jsonl"
+                series.parent.mkdir(parents=True)
+                series.write_text(json.dumps({"run_id": "MRUN-x", "evidence": evidence,
+                                              "targets": [str(root / "gate.py")]}) + "\n",
+                                  encoding="utf-8")
+                self.assertEqual(sprint.claimed_proof_gaps(root, ["US0001"]), want)
+
     def test_a_band_nobody_can_check_is_not_reported_as_a_gap(self) -> None:
         """Claiming a unit failed a bar that cannot be measured is the false precision this
         project refuses. Only the mutation band is mechanically checkable today."""

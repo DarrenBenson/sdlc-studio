@@ -7,15 +7,15 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 49 |
+| Draft | 42 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 2 |
 | Review | 0 |
-| Done | 743 |
+| Done | 744 |
 | Won't Implement | 81 |
 | Deferred | 0 |
-| Superseded | 83 |
+| Superseded | 89 |
 | Blocked | 0 |
 | **Total** | **958** |
 
@@ -96,7 +96,7 @@
 | [US0728](US0728-the-report-is-advisory-until-its-yield-is.md) | The report is advisory until its yield is measured, on the terms claim-drift and lane-check shipped under | Superseded | EP0226 | 2026-08-27 | 2026-08-27 |
 | [US0729](US0729-a-run-with-every-unit-covered-stays-silent.md) | A run with every unit covered stays silent, so the signal does not become noise | Superseded | EP0226 | 2026-08-27 | 2026-08-27 |
 | [US0730](US0730-a-verdict-distinguishes-a-unit-that-does-not.md) | A verdict distinguishes a unit that does not work from one whose evidence cannot fail | Draft | EP0227 | 2026-08-27 | 2026-08-27 |
-| [US0731](US0731-evidence-debt-is-recorded-against-the-criterion-it.md) | Evidence debt is recorded against the CRITERION it attaches to, naming the surviving mutant | Draft | EP0227 | 2026-08-27 | 2026-08-27 |
+| [US0731](US0731-evidence-debt-is-recorded-against-the-criterion-it.md) | Evidence debt is recorded against the CRITERION it attaches to, naming the surviving mutant | Superseded | EP0227 | 2026-08-27 | 2026-08-27 |
 | [US0732](US0732-the-batch-summary-reports-the-two-counts-separately.md) | The batch summary reports the two counts separately | Draft | EP0227 | 2026-08-27 | 2026-08-27 |
 | [US0733](US0733-a-unit-carrying-evidence-debt-is-still-refused.md) | A unit carrying evidence debt is still refused a terminal status until it is cleared or deferred with a reason | Superseded | EP0227 | 2026-08-27 | 2026-08-27 |
 | [US0734](US0734-the-seat-briefs-tell-a-reviewer-which-verdict.md) | The seat briefs tell a reviewer which verdict fits which finding, calibrated on RUN-01KYZKY5 | Superseded | EP0227 | 2026-08-27 | 2026-08-27 |
@@ -158,14 +158,14 @@
 | [US0790](US0790-a-reason-that-is-mostly-the-criterion-s.md) | A reason that is mostly the criterion's own words returned to it is refused as a restatement | Won't Implement | EP0240 | 2026-08-27 | 2026-08-27 |
 | [US0791](US0791-one-reason-repeated-verbatim-across-several-criterion-ids.md) | One reason repeated verbatim across several criterion ids is refused | Won't Implement | EP0240 | 2026-08-27 | 2026-08-27 |
 | [US0792](US0792-the-number-of-existing-exemptions-the-tightened-floor.md) | The number of existing exemptions the tightened floor newly refuses is REPORTED before it blocks | Won't Implement | EP0240 | 2026-08-27 | 2026-08-27 |
-| [US0793](US0793-a-row-whose-ledger-kill-node-is-not.md) | A row whose ledger kill node is not named by its criterion's `Verify:` selector reads `killed-elsewhere` | Draft | EP0241 | 2026-08-27 | 2026-08-27 |
-| [US0794](US0794-a-row-whose-kill-node-is-named-reads.md) | A row whose kill node IS named reads `killed`, unchanged - the paired control | Draft | EP0241 | 2026-08-27 | 2026-08-27 |
-| [US0795](US0795-a-verify-line-naming-a-whole-file-is.md) | A `Verify:` line naming a whole file is compared at FILE granularity | Draft | EP0241 | 2026-08-27 | 2026-08-27 |
-| [US0796](US0796-the-corpus-count-of-killed-elsewhere-rows-is.md) | The corpus count of `killed-elsewhere` rows is recorded as a baseline before the check blocks | Draft | EP0241 | 2026-08-27 | 2026-08-27 |
+| [US0793](US0793-a-row-whose-ledger-kill-node-is-not.md) | A row whose ledger kill node is not named by its criterion's `Verify:` selector reads `killed-elsewhere` | Superseded | EP0241 | 2026-08-27 | 2026-08-27 |
+| [US0794](US0794-a-row-whose-kill-node-is-named-reads.md) | A row whose kill node IS named reads `killed`, unchanged - the paired control | Superseded | EP0241 | 2026-08-27 | 2026-08-27 |
+| [US0795](US0795-a-verify-line-naming-a-whole-file-is.md) | A `Verify:` line naming a whole file is compared at FILE granularity | Superseded | EP0241 | 2026-08-27 | 2026-08-27 |
+| [US0796](US0796-the-corpus-count-of-killed-elsewhere-rows-is.md) | The corpus count of `killed-elsewhere` rows is recorded as a baseline before the check blocks | Superseded | EP0241 | 2026-08-27 | 2026-08-27 |
 | [US0797](US0797-the-independent-element-the-gate-demands-is-stated.md) | The independent element the gate demands is STATED in the refusal when a bug reaches terminal | Superseded | EP0242 | 2026-08-27 | 2026-08-27 |
 | [US0798](US0798-a-project-that-has-not-adopted-the-change.md) | A project that has not adopted the change is unaffected, bound behind a dated cutoff | Superseded | EP0242 | 2026-08-27 | 2026-08-27 |
 | [US0799](US0799-the-doctrine-states-which-types-are-independently-judged.md) | The doctrine STATES which types are independently judged and at which transition | Superseded | EP0242 | 2026-08-27 | 2026-08-27 |
-| [US0800](US0800-a-bug-whose-declared-mutant-was-killed-by.md) | A bug whose declared mutant was killed by a test its criterion does not name is REPORTED | Draft | EP0242 | 2026-08-27 | 2026-08-27 |
+| [US0800](US0800-a-bug-whose-declared-mutant-was-killed-by.md) | A bug whose declared mutant was killed by a test its criterion does not name is REPORTED | Superseded | EP0242 | 2026-08-27 | 2026-08-27 |
 | [US0801](US0801-a-unit-whose-stamped-derived-half-no-longer.md) | A unit whose stamped derived half no longer matches a fresh derivation is REPORTED with both fingerprints | Superseded | EP0243 | 2026-08-27 | 2026-08-27 |
 | [US0802](US0802-a-unit-whose-span-matches-a-fresh-derivation.md) | A unit whose span matches a fresh derivation is passed silently - the paired control | Superseded | EP0243 | 2026-08-27 | 2026-08-27 |
 | [US0803](US0803-an-eviction-of-a-unit-s-ledger-rows.md) | An eviction of a unit's ledger rows is visible from the lane's output alone | Superseded | EP0243 | 2026-08-27 | 2026-08-27 |
@@ -294,7 +294,7 @@
 | [US0933](US0933-the-trd-and-tsd-stop-restating-lists-and.md) | The TRD and TSD stop restating lists and counts the code derives, and the tests that pinned the restatements are deleted | Done | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0934](US0934-a-bug-reaches-fixed-without-a-depth-gate.md) | A bug reaches Fixed without a depth gate, and the retired --depth flags are refused | Done | EP0263 | 2026-09-25 | 2026-09-25 |
 | [US0935](US0935-a-repair-reaches-fixed-without-the-mutation-evidence.md) | A repair reaches Fixed without the mutation-evidence gate, survivor filing or evidence mode | Done | EP0263 | 2026-09-25 | 2026-09-25 |
-| [US0936](US0936-the-mutation-ledger-verbs-are-retired-and-a.md) | The mutation ledger verbs are retired and a mutation run reports its yield only | Draft | EP0263 | 2026-09-25 | 2026-09-25 |
+| [US0936](US0936-the-mutation-ledger-verbs-are-retired-and-a.md) | The mutation ledger verbs are retired and a mutation run reports its yield only | Done | EP0263 | 2026-09-25 | 2026-09-25 |
 | [US0937](US0937-work-that-already-shipped-reads-done-so-the.md) | Work that already shipped reads Done, so the repair ledger can go and the release cut ships no notes for open stories | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0938](US0938-the-release-rehearsal-walks-a-v5-1-project.md) | The release rehearsal walks a v5.1 project across to v6, and every known gap it tolerates has an open owner | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0939](US0939-ci-and-the-push-gate-give-one-verdict.md) | CI and the push gate give one verdict on tools/tests, because both run it the same way | Done | EP0265 | 2026-09-25 | 2026-09-25 |

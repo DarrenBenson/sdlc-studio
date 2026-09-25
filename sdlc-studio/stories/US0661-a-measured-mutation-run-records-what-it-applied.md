@@ -58,8 +58,8 @@
   and the unit - the fields the gate selects and the refusal quotes. This is the record-shape half,
   asserted where the record is written rather than through the gate, so a failure says which of
   the two halves broke
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::MeasuredAttributionTests::test_a_measured_entry_records_the_shape_the_gate_selects_on
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0936: the per-target ledger a measured run wrote its rows to, and `mutation.py register`, are deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0936
 
 ### AC4: a ledger that contradicts itself refuses in every mode, `off` included
 
@@ -90,8 +90,8 @@
   one passes on a fixture the tool itself could never produce. And an optional line is worse than
   none: a registered `line: None` never joins a measured `line: 2`, so AC4's contradiction check
   silently never fires while its own fixture, which always supplies a line, stays green
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::RegisteredLineTests::test_register_records_a_line_and_refuses_a_missing_one
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0936: the per-target ledger a measured run wrote its rows to, and `mutation.py register`, are deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0936
 
 ### AC6: the refusal quotes the line rather than a question mark
 

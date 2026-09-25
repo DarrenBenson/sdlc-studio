@@ -27,8 +27,8 @@ Make evidence-drift honour `review.mutation_evidence` (off -> report only), and 
 - [x] **AC1** The behaviour described is corrected: D0255 set `review.mutation_evidence`: off, but gate.py's evidence-drift lane still blocks any commit that drifts a registered mutant row.
 - [x] **AC2** Following the recorded steps no longer reproduces the defect: Stage an edit to a file that holds unanchored registered mutant rows of a delivered unit, with `review.mutation_evidence`: off: the commit is refused by...
 - [x] **AC3** The proposed fix lands, pinned by a test: Make evidence-drift honour `review.mutation_evidence` (off -> report only), and stop `register` from dropping anchored rows whose site did not move; long term...
-  - **Verify:** manual - retired by US0920: the evidence-drift gate lane was deleted with gate._evidence_drift, so no commit is judged against registered mutant rows; the register carry it also pinned is still exercised by test_lean_mutation_off.py::RegisterKeepsUnmovedRowsTests
-  - **Verified:** manual (2026-09-25) - retired, superseded by US0920
+  - **Verify:** manual - retired by US0936: the evidence-drift gate lane was deleted by US0920, and the register carry it also pinned went with `mutation.py register`
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 
 ## Revision History
 

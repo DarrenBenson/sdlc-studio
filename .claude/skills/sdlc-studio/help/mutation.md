@@ -26,6 +26,7 @@ green over broken code).
 python3 <skill>/scripts/mutation.py run --files src/loader.py --test "python3 -m unittest discover"
 python3 <skill>/scripts/mutation.py run --since HEAD~1 --test "npm test"
 python3 <skill>/scripts/mutation.py run --story US0051 --test "pytest -q"
+python3 <skill>/scripts/mutation.py yield --run MRUN-20260925T090000-a1b2c3
 python3 <skill>/scripts/mutation.py prefilter --tests tests/test_*.py
 ```
 
@@ -46,12 +47,12 @@ python3 <skill>/scripts/mutation.py prefilter --tests tests/test_*.py
    restores from that sidecar first (reported as `recovered`), so a stranded mutant is
    never read back as the original. An unreadable sidecar refuses the run and names the
    git restore path.
-4. Writes two files. `sdlc-studio/.local/mutation-report.json` is the **latest run** - every
-   mutant's verdict, the git rev and a content hash per target - and is last-write-wins, so a
-   per-unit run mid-sprint replaces the previous unit's.
-   `sdlc-studio/.local/mutation-runs.json` is the **ledger**, the durable per-target half.
-   No gate lane reads either: mutation testing is this command, run when you want it, and
-   `gate.py --only mutation` is refused as an unknown lane.
+4. Writes `sdlc-studio/.local/mutation-report.json`, the **latest run** - every mutant's
+   verdict and the git rev - last-write-wins, and appends one row to
+   `sdlc-studio/.local/mutation-series.jsonl`, what the run cost and what it found.
+   `mutation.py yield --run <id>` reads that row back beside the artefacts filed from the run.
+   No per-target ledger is kept, and no gate lane reads either file: mutation testing is this
+   command, run when you want it, and `gate.py --only mutation` is refused as an unknown lane.
 5. Names what the survivors were measured against: the report and the text output carry
    the test files the command statically resolves to (`selected_tests`; UNRESOLVED when
    no file, directory or module token parses - never a guessed empty set), and a
@@ -76,109 +77,14 @@ python3 <skill>/scripts/mutation.py prefilter --tests tests/test_*.py
   false-survive on non-Python files; Python string interiors are excluded automatically.
 - **error** - the runner itself broke on a mutant (missing command, timeout); never counted
   as a kill. (A red baseline does not reach this state - it refuses the whole run up front.)
-- The report records the **git rev** and a **content hash per target**, but neither is
-  coverage: the hashes are written for every file *named* as a target, before any verdict
-  exists, so a refused run records one for a file no mutant ever reached. They are read as a
-  freshness stamp, and the rev attributes the survivor counts to the run that produced them.
-  Per-file evidence is the ledger's.
+- The report records the **git rev**, which attributes the survivor counts to the run that
+  produced them.
 
-## The ledger - what the gate lane reads
+## Retired verbs
 
-`sdlc-studio/.local/mutation-runs.json` accumulates evidence **per target**, so coverage is
-judged file by file rather than from one whole-blob stamp that goes stale the moment any file
-is committed.
-
-- **One entry per target, keyed on that file's content hash at run time.** A later commit
-  touching other files leaves the entry readable, which is what lets per-unit runs gathered
-  during a build survive to the close.
-- **A target is entered only when the test command returned a `killed` or `survived` verdict
-  on it.** A target whose mutants were all unviable, all errored, or fell beyond the cost
-  ceiling is absent, and so is every target of a refused run - a refusal applies no mutant, so
-  no target has a verdict.
-- **Bounded at 200 entries**, oldest out first, with a cumulative `dropped` total in the file
-  and a note on the run's output, so truncation is counted rather than silent. Entries are one
-  per (target, unit) for a measured run and one per (target, content) for registrations, so the
-  ledger grows with the distinct surfaces ever mutated rather than with the number of runs. A
-  run supersedes its own kind AND its own unit: two units declaring the same file - which is
-  what a sprint touching one module looks like - do not erase each other's evidence. An unreadable ledger is replaced and says so (`reset`).
-- **`measured` against `registered`.** A `measured` entry is a run that applied the mutant and
-  observed the suite's answer. `mutation.py register --target F --line N --mutant "..."
-  --anchor "..." --test "..." --verdict killed|survived|equivalent` records a mutant a builder
-  applied **by hand**, so the
-  per-unit practice (write a test, mutate the code it pins, see RED, restore) leaves a trace.
-  Nothing re-runs anything, so that entry is a self-report and is reported as a claim, never as
-  a measured run; a measured entry outranks a registered one on the same content. A run
-  supersedes only its own kind, so it never deletes a hand-registered claim about the same file.
-- **`--anchor` is required**, on every verdict including `equivalent`. Pass the exact text your
-  mutant REPLACED, quoted with enough surrounding context to occur exactly once in the target -
-  an anchor occurring zero times or more than once is refused, because it cannot say which site
-  the verdict was about. The anchor is what lets the row be judged on its OWN SITE rather than
-  on a hash of the whole file: an edit anywhere else in the target stops staling it, and the
-  target is usually shared - measured on one project's ledger, 26 of 74 targets carried rows
-  from more than one unit and a single file carried seven, so one edit forced seven units to
-  re-measure by hand. A row registered before this shipped carries no anchor and keeps the
-  whole-file rule, unchanged; there is no backfill, because deriving an anchor for a row nobody
-  re-measured would assert a site for a measurement never taken there. A row gains its anchor
-  the next time somebody actually measures it.
-- **`--line` is required** for a `killed` or `survived` verdict. The refusal a gate composes
-  quotes `target:line`, and a record with no line never joins a measured one - so the check
-  that catches a ledger contradicting itself would silently never fire. An `equivalent` verdict
-  needs none: it is a statement about the mutant, not about a place anything quotes.
-- **`run --unit <id>`** attributes a measured run's per-mutant rows to a unit, which is what the
-  repair gate and the plan-execution join select on. A row nobody can attribute answers neither.
-- Registrations accumulate into one entry per (target, content). That entry's `mutants` list is
-  bounded at 100 with a `dropped_mutants` count, while its `summary` tallies are never
-  truncated - what is dropped is the description, never the count.
-- **`--class` is what lets a hand-registered verdict be checked against a measured one.** A
-  measured row names the generator's fault class; a registered row names your prose. They share
-  no value, so without a class the two instruments cannot be compared at all and a claim
-  contradicting a measurement goes undetected. Pass `--class invert-guard|stub-return-null|
-  unset-delivered-field|no-op-mapper` when the mutant you applied by hand IS one of those. It is
-  optional on purpose: picking the nearest label to satisfy the flag would make the join lie, and
-  no comparison is better than a guessed one.
-- **A criterion may declare more than one mutant, and each is joined separately.** The join key
-  is `(criterion, row)`, `row` being 0-based in file order, so two mutants on one AC are two
-  claims rather than one. Pass `--row N` when registering the second and later ones; omit it for
-  a criterion carrying a single row. Keyed by criterion alone, one kill used to satisfy every
-  row on that criterion and `--from-plan` reported `every one executed and killed` over mutants
-  it had never joined. The report now prints the row count beside the criterion count so the two
-  cannot silently disagree, and an entry recorded before this shipped reads back as row 0.
-- **A mistyped verdict is corrected by `retract`, never by re-registering.** `plan_execution`
-  holds the WORST verdict per `(criterion, row)`, so registering `killed` over a mistaken `survived`
-  leaves the survivor standing - deliberately, because a genuine correction and an author
-  registering their way out of a survivor look identical to the tool. Use
-  `mutation.py retract --unit <id> --criterion ACn --target F --line N --mutant "..."
-  --verdict survived --reason "<what was wrong>"`. The row is marked **withdrawn, not deleted**:
-  the correction takes effect, and every reader still sees that a verdict was withdrawn and can
-  judge the reason. All six fields join, the verdict included - without it a retraction withdraws
-  every row for that mutant, taking the correct one with the mistake. A `measured` row cannot be
-  retracted; the way to correct a measurement is to measure again.
-- **`mutation.py retractions --unit <id>`** prints every withdrawn verdict with the reason given
-  for it, and the same rows reach `run --from-plan` and the seat brief a reviewer is handed. A
-  correction that no reader can see is the escape hatch the worst-verdict rule exists to close,
-  so the withdrawal travels to the person the cost was imposed on. An unconvincing reason is a
-  finding.
-
-### The per-file verdict
-
-The lane judges the **changed surface** (mutatable non-test files with staged, unstaged or
-untracked changes) when git can name it, and otherwise the files the ledger itself holds,
-saying which of the two it read.
-
-| Ledger state for the file | Verdict |
-| --- | --- |
-| A `measured` entry whose hash matches the file now | **covered** |
-| No measured match, but a `registered` entry matches carrying `killed` or `survived` | **covered**, and named as a self-report |
-| A `registered` entry matches carrying only `equivalent` | **uncovered**, named EQUIVALENT-ONLY: it says no test could have killed the mutant, which is a statement about the mutant, not about the suite |
-| An entry exists, but no hash matches the file now (or none was recorded) | **STALE** |
-| No entry for the file | **uncovered** |
-
-Staleness is therefore per file: the file's bytes changed since the entry that covers it. A
-self-reported **survivor** is reported as a finding - the builder's own test did not catch the
-mutant they applied. With nothing in the ledger to judge, the lane degrades to the whole-report
-checks, where a target the report hashed and edited since, or a report git rev that is not the
-tree's HEAD, reads STALE. Either way the lane is advisory: it reports gaps and never refuses a
-close.
+`register`, `retract`, `retractions` and `audit` recorded hand-applied mutants in a per-target
+ledger and read it back. Nothing reads a ledger any more, so each is refused by name and points
+at `mutation.py run`: to see whether a test can fail, run the mutants and read the verdicts.
 
 ## Honest degrade
 

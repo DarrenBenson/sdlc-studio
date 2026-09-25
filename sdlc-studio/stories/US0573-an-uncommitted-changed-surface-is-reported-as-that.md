@@ -31,8 +31,8 @@
 - **Given** the uncommitted-surface reason
 - **When** it is printed
 - **Then** it names the isolated checkout and `register` for a hand-applied mutant, with the discipline that makes a hand run trustworthy - a unique anchor asserted, bytecode purged, the patch proven to have changed the file
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::UncommittedSurfaceCLITests::test_the_reason_names_both_routes_to_measured_evidence
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0936: the hand-applied route recorded its verdict with `mutation.py register`, which is deleted; the refusal names the isolated checkout only
+- **Verified:** manual (2026-09-25) - retired, superseded by US0936
 
 ### AC3: a COMMITTED surface with no evidence still reports no evidence
 

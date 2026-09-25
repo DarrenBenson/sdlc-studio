@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 20 |
+| Draft | 18 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 227 |
-| Superseded | 19 |
+| Superseded | 21 |
 | **Total** | **266** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -53,8 +53,8 @@
 | [EP0238](EP0238-the-appetite-measures-working-time-and-says-what.md) | The appetite measures working time, and says what it excluded | Draft | 6 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0239](EP0239-revert-check-measures-in-an-isolated-copy-never.md) | revert-check measures in an isolated copy, never in the live working tree | Draft | 5 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0240](EP0240-an-exemption-reason-is-judged-on-meaning-not.md) | An exemption reason is judged on meaning, not on character count | Superseded | 4 | -- | 2026-08-27 | 2026-08-27 |
-| [EP0241](EP0241-a-kill-recorded-against-a-node-the-criterion.md) | A kill recorded against a node the criterion does not name is reported, not counted | Draft | 4 | -- | 2026-08-27 | 2026-08-27 |
-| [EP0242](EP0242-a-bug-s-plan-or-evidence-gets-an.md) | A bug's plan or evidence gets an independent judgement, and the asymmetry is stated | Draft | 4 | -- | 2026-08-27 | 2026-08-27 |
+| [EP0241](EP0241-a-kill-recorded-against-a-node-the-criterion.md) | A kill recorded against a node the criterion does not name is reported, not counted | Superseded | 4 | -- | 2026-08-27 | 2026-08-27 |
+| [EP0242](EP0242-a-bug-s-plan-or-evidence-gets-an.md) | A bug's plan or evidence gets an independent judgement, and the asymmetry is stated | Superseded | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0243](EP0243-the-derived-depth-lane-re-derives-rather-than.md) | The derived-depth lane re-derives, rather than trusting each span's own seal | Superseded | 3 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0244](EP0244-one-concept-one-name-across-every-verb-and.md) | One concept, one name, across every verb and every document key | Draft | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0245](EP0245-filing-a-finding-leaves-the-disclosure-true.md) | Filing a finding leaves the disclosure true | Draft | 3 | -- | 2026-08-27 | 2026-08-27 |

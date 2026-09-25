@@ -11,6 +11,7 @@ its criterion is about this repository's stamped criteria.
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import importlib
 import io
 import json
@@ -47,8 +48,8 @@ def _write(root: Path, rel: str, body: str) -> None:
 def _drifting_workspace(root: Path) -> None:
     """A repo whose delivered BG0001 holds a registered row on `src/x.py` at HEAD's bytes, under
     `review.mutation_evidence: block`, with a staged edit that moves the row's own site - the
-    commit HEAD's lane refused."""
-    import mutation  # noqa: PLC0415 - the ledger writer, used only to seed the fixture
+    commit HEAD's lane refused. The row is written in the ledger's own shape: `mutation.py
+    register`, which wrote it, is retired (US0936)."""
     _write(root, "src/x.py", "alpha = 1\n")
     _write(root, "sdlc-studio/bugs/BG0001-fixture.md", BUG)
     _write(root, "sdlc-studio/.config.yaml", "review:\n  mutation_evidence: block\n")
@@ -57,8 +58,14 @@ def _drifting_workspace(root: Path) -> None:
     gitutil.git(["init", "-q", "-b", "main"], cwd=root)
     gitutil.git(["add", "-A"], cwd=root)
     gitutil.git(["commit", "-qm", "seed"], cwd=root)
-    mutation.register_mutant(root, root / "src" / "x.py", "flip alpha", "pytest t", "killed",
-                             unit="BG0001", criterion="AC1", line=1, anchor="alpha = 1", row=0)
+    _write(root, "sdlc-studio/.local/mutation-runs.json", json.dumps({
+        "version": 1, "dropped": 0, "entries": [{
+            "target": "src/x.py", "provenance": "registered",
+            "hash": hashlib.sha256(b"alpha = 1\n").hexdigest(),
+            "summary": {"applied": 1, "killed": 1},
+            "mutants": [{"unit": "BG0001", "criterion": "AC1", "row": 0, "line": 1,
+                         "mutant": "flip alpha", "test": "pytest t", "verdict": "killed",
+                         "anchor": "alpha = 1"}]}]}))
     _write(root, "src/x.py", "alpha = 2\n")
     gitutil.git(["add", "src/x.py"], cwd=root)
 
@@ -111,9 +118,10 @@ DELETED_NODES = ("test_gate.py::EvidenceDriftTests",
                  "test_sprint.py::MutationEvidenceModeTests")
 
 #: The criteria that named a deleted node, by artefact, and how many each carried. BG0747's
-#: class-level selector named the deleted class too, so it is retired with US0882's two -
-#: US0882 AC3 re-points to its surviving test instead of retiring.
-RETIRED = {"BG0651": 2, "US0660": 1, "US0822": 1, "US0882": 2, "BG0747": 1}
+#: class-level selector named the deleted class too, and was retired with US0882's two; US0936
+#: then took that retirement over, because the register carry its prose still pointed at went
+#: with `mutation.py register`. US0882 AC3 re-pointed to its surviving test instead of retiring.
+RETIRED = {"BG0651": 2, "US0660": 1, "US0822": 1, "US0882": 2}
 
 #: The D0259 pattern, naming this story as the retirer.
 RETIRED_VERIFY = re.compile(r"\*\*Verify:\*\*\s*manual - retired by US0920: \S")
@@ -194,7 +202,8 @@ class MutationGatesGoneTests(unittest.TestCase):
         tests = SCRIPTS / "tests"
         for node in DELETED_NODES:
             module, cls = node.split("::")
-            self.assertFalse(f"class {cls}(" in (tests / module).read_text(encoding="utf-8"),
+            path = tests / module          # US0936 deleted test_lean_mutation_off.py whole
+            self.assertFalse(path.exists() and f"class {cls}(" in path.read_text(encoding="utf-8"),
                              f"{node} was not deleted")
         live, retired = [], {}
         for path in sorted((REPO / "sdlc-studio").rglob("*.md")):

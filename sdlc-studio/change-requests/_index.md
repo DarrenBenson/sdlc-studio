@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 21 |
+| Proposed | 20 |
 | Approved | 0 |
-| In Progress | 1 |
+| In Progress | 0 |
 | Complete | 507 |
 | Rejected | 21 |
 | Deferred | 0 |
-| Superseded | 48 |
+| Superseded | 50 |
 | Blocked | 0 |
 | **Total** | **598** |
 
@@ -55,9 +55,9 @@
 | [CR-0551](CR0551-the-appetite-ceiling-measures-wall-clock-since-the.md) | The appetite ceiling measures WALL-CLOCK since the run opened, so a run left open overnight reports spend it never incurred | Proposed | High | Improvement | 2026-08-21 | EP0238 |
 | [CR-0552](CR0552-revert-check-mutates-the-live-working-tree-so.md) | revert-check mutates the live working tree, so a boundary gate rewrites files underneath anything else reading the repo | Proposed | High | Improvement | 2026-08-21 | EP0239 |
 | [CR-0553](CR0553-the-exemption-reason-floor-counts-characters-so-twelve.md) | The exemption reason floor counts characters, so twelve junk characters buy a blanket revert-check exemption | Rejected | Medium | Improvement | 2026-08-21 | EP0240 |
-| [CR-0554](CR0554-a-plan-row-whose-recorded-kill-node-is.md) | A plan row whose recorded kill node is not the criterion's own verifier is undetectable, though the ledger already holds both facts | Proposed | High | Improvement | 2026-08-24 | EP0241 |
+| [CR-0554](CR0554-a-plan-row-whose-recorded-kill-node-is.md) | A plan row whose recorded kill node is not the criterion's own verifier is undetectable, though the ledger already holds both facts | Superseded | High | Improvement | 2026-08-24 | EP0241 |
 | [CR-0555](CR0555-the-expensive-half-of-the-test-plan-gate.md) | The expensive half of the test-plan gate fires before a diff exists, so move it to where one does instead of banding a signal that cannot discriminate | Superseded | High | Improvement | 2026-08-24 | EP0218 |
-| [CR-0556](CR0556-a-bug-reaches-a-terminal-status-with-no.md) | A bug reaches a terminal status with no independent judgement of its plan OR its code - the only gate is evidence it reports about itself | In Progress | High | Improvement | 2026-08-25 | EP0242 |
+| [CR-0556](CR0556-a-bug-reaches-a-terminal-status-with-no.md) | A bug reaches a terminal status with no independent judgement of its plan OR its code - the only gate is evidence it reports about itself | Superseded | High | Improvement | 2026-08-25 | EP0242 |
 | [CR-0557](CR0557-bg0463-s-twenty-batch-boundary-findings-need-re.md) | BG0463's twenty batch-boundary findings need re-triage against HEAD before any of them is engineered | Complete | Medium | Improvement | 2026-08-25 | EP0257 |
 | [CR-0558](CR0558-the-derived-depth-lane-checks-each-span-against.md) | the derived-depth lane checks each span against its own seal rather than re-deriving it, so a unit whose ledger evidence was evicted still passes | Superseded | High | enhancement | 2026-08-25 | EP0243 |
 | [CR-0559](CR0559-the-same-concept-is-named-three-ways-across.md) | the same concept is named three ways across the toolchain and twice inside one script, so every invocation is a guess the caller pays for in a refusal | Proposed | Medium | enhancement | 2026-08-26 | EP0244 |

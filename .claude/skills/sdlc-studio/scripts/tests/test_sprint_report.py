@@ -327,17 +327,6 @@ class MutationCostTests(ReportBase):
         self.assertIn("600.0s per finding", text)
         self.assertIn(prev["cost_per_finding_note"], text)
 
-    def test_an_equivalent_survivor_is_visible_in_the_report(self) -> None:
-        mut = _mutation()
-        rid = self._run(survived=2, elapsed=120.0)
-        target = self.root / "thing.py"
-        target.write_text("x = 1\n", encoding="utf-8")
-        mut.register_mutant(self.root, target, "a no-op swap", None, "equivalent",
-                            reason="unkillable by construction", run=rid)
-        rep = sr.report(self.root, "RETRO9100")
-        self.assertEqual(rep["mutation"]["current"]["equivalent"], 1)
-        self.assertIn("1 equivalent", sr.render(rep))
-
     def test_an_unreadable_series_does_not_break_the_report(self) -> None:
         p = self.root / "sdlc-studio" / ".local" / "mutation-series.jsonl"
         p.write_text("{not json\n", encoding="utf-8")
@@ -3038,94 +3027,6 @@ class OperatorSummaryTests(ReportBase):
         self.assertEqual(rc, 0, err.getvalue())
         self.assertIn("Operator summary", out.getvalue())
         self.assertIn("What to overturn", out.getvalue())
-
-
-class MutationSurvivorCountTests(unittest.TestCase):
-    """US0660 AC6: the close counts the survivors this run let through, by severity.
-
-    Reporting rather than blocking is a trade the operator only gets to make if the thing
-    traded away is visible. A survivor filed and never counted is a survivor silently dropped,
-    which is the outcome blocking was rejected to avoid, not the one that was chosen.
-    """
-
-    RUN = "RUN-TESTAAA"
-
-    def _bug(self, root, bid, severity, key, run=RUN):
-        d = root / "sdlc-studio" / "bugs"
-        d.mkdir(parents=True, exist_ok=True)
-        (d / f"{bid}-a-mutant-survives.md").write_text(
-            f"# {bid}: a mutant survives at src/thing.py:2\n\n"
-            f"> **Status:** Open\n> **Severity:** {severity}\n> **Points:** 2\n"
-            f"> **Mutation-survivor:** {key}\n> **Mutation-survivor-run:** {run}\n\n"
-            f"## Summary\n\ns\n", encoding="utf-8")
-
-    def test_the_close_counts_survivors_by_severity(self) -> None:
-        """The THIRD artefact is written straight into the backlog, carrying the same header
-        and `Mutation-survivor` attribution a filed one carries and differing only in never
-        having passed through the filer.
-
-        Mutant: count from a tally the filer wrote rather than from the filed artefacts. A
-        tally is what a hurried implementation writes, and it is invisible to any fixture whose
-        artefacts all arrive through the filer - so the count is right for exactly as long as
-        nothing else ever writes one.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._bug(root, "BG9001", "High", "BG0001@src/thing.py:2:inverted the guard")
-            self._bug(root, "BG9002", "Medium", "BG0001@src/thing.py:9:dropped the branch")
-            # Past the filer, and indistinguishable to a correct reader.
-            self._bug(root, "BG9003", "Low", "BG0002@src/other.py:4:off by one")
-            # A survivor from ANOTHER run, which must not be counted: the row says THIS run.
-            self._bug(root, "BG9004", "High", "BG0003@src/x.py:1:earlier", run="RUN-EARLIER")
-            ctx = {"root": str(root), "run": {"run_id": self.RUN}}
-            state, value, detail = sr._ck_mutation_survivors(ctx)
-            self.assertEqual(sr.RAN, state)
-            self.assertNotIn("4 survivor", value,
-                             "a survivor filed by an EARLIER run was counted, so the row's "
-                             "own title - this run - is false and the number only ever grows")
-            self.assertIn("3 survivor(s)", value,
-                          f"an artefact that did not pass through the filer was not counted, "
-                          f"so the count comes from a tally rather than the backlog: {value}")
-            self.assertIn("High 1", value)
-            self.assertIn("Medium 1", value)
-            self.assertIn("Low 1", value)
-            self.assertTrue(detail.strip(), "the row states no reason a reader can act on")
-
-    def test_a_survivor_filed_with_no_run_open_is_reported_not_dropped(self) -> None:
-        """Scoping the count to a run must not become a new way of losing one. A survivor filed
-        outside a run is stamped `none` and belongs to no close, so it is REPORTED separately
-        rather than skipped.
-
-        Mutant: skip the unstamped artefacts silently, as the first cut did.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._bug(root, "BG9001", "High", "BG0001@src/thing.py:2:x")
-            self._bug(root, "BG9002", "Low", "BG0002@src/other.py:4:y", run="none")
-            state, value, detail = sr._ck_mutation_survivors(
-                {"root": str(root), "run": {"run_id": self.RUN}})
-            self.assertEqual(sr.RAN, state)
-            self.assertIn("1 survivor(s)", value)
-            self.assertIn("no run open", value,
-                          f"a survivor belonging to no close was dropped rather than "
-                          f"reported: {value}")
-            self.assertTrue(detail.strip())
-
-    def test_a_backlog_with_no_survivors_reports_zero(self) -> None:
-        """The control. An ordinary bug carrying no survivor attribution must not be counted,
-        or the row reports the backlog's size and says nothing about this run."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            d2 = root / "sdlc-studio" / "bugs"
-            d2.mkdir(parents=True)
-            (d2 / "BG9001-ordinary.md").write_text(
-                "# BG9001: an ordinary bug\n\n> **Status:** Open\n> **Severity:** High\n",
-                encoding="utf-8")
-            state, value, _ = sr._ck_mutation_survivors(
-                {"root": str(root), "run": {"run_id": self.RUN}})
-            self.assertEqual(sr.RAN, state)
-            self.assertIn("0 survivors", value,
-                          "an ordinary bug was counted as a surviving mutant")
 
 
 class StaleMutantRowsAreNotEvidenceTests(unittest.TestCase):

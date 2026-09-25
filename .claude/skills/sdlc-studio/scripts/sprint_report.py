@@ -93,7 +93,6 @@ def _mutation_row(mut, root: Path, row: dict) -> dict:
             "outcome": row.get("outcome"),
             "no_evidence_reason": row.get("no_evidence_reason"),
             "filed": filed, "yield": len(filed),
-            "equivalent": len(y.get("equivalent") or []),
             "cost_per_finding_s": cost, "cost_per_finding_note": note}
 
 
@@ -412,7 +411,6 @@ def _mutation_lines(m: dict | None) -> list[str]:
     filed = ", ".join(cur["filed"]) if cur["filed"] else "nothing filed"
     per = (f" - {cur['cost_per_finding_s']}s per finding" if cur["cost_per_finding_s"]
            else f" - {cur['cost_per_finding_note']}")
-    equiv = f", {cur['equivalent']} equivalent (excluded)" if cur["equivalent"] else ""
     # The tree the counts were measured in, BESIDE them. A survivor measured in a tree another
     # reviewer was cleaning up in is not the same evidence as one measured in a checkout of its
     # own, and the close is exactly where that difference has to be legible: this is the page
@@ -425,7 +423,7 @@ def _mutation_lines(m: dict | None) -> list[str]:
         why = tree.get("why") or "no isolation evidence was recorded for this run"
         qualifier = f" TREE UNESTABLISHED: {why}"
     return [f"Mutation gate: {cur['elapsed_s']}s, {cur['applied']} applied, "
-            f"{cur['killed']} killed, {cur['survived']} survived{equiv}; "
+            f"{cur['killed']} killed, {cur['survived']} survived; "
             f"yield {cur['yield']} filed artefact(s) ({filed}){per}.{qualifier}", *trailing]
 
 

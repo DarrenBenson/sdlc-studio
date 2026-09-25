@@ -30,8 +30,8 @@ Add `--class` to `register`, validated against the generator's fault-class vocab
 ## Acceptance Criteria
 
 - [x] **AC1** Given a measured run, when its rows are written, then each carries the generator's fault class in a field of its own rather than only in the prose slot a registered row fills with words.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k measured_row_records_its_fault_class
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0936: the per-target ledger whose measured and registered rows this joined is deleted, and `register --class` with it
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 - [x] **AC2** Given a measured `killed` and a hand-registered `survived` for one fault class at one line under one content hash, when the ledger is checked, then the disagreement is REPORTED naming both instruments and the class - and refused only under `review.mutation_evidence: block`, because a join on the fault class can be wrong about two honest statements.
   - **Verify:** manual - retired by US0935: the ledger contradiction check was deleted with the repair lane, so no transition compares registered and measured rows
   - **Verified:** manual (2026-09-25) - retired, superseded by US0935
@@ -42,8 +42,8 @@ Add `--class` to `register`, validated against the generator's fault-class vocab
   - **Verify:** manual - retired by US0935: the ledger contradiction check was deleted with the repair lane, so no transition compares registered and measured rows
   - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 - [x] **AC5** Given a class the generator never emits, when it is registered, then it is refused - free text joins no measured row, so it records a promise it cannot keep.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k class_the_generator_never_emits
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0936: the per-target ledger whose measured and registered rows this joined is deleted, and `register --class` with it
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 - [x] **AC6** Given two DIFFERENT hand-applied mutants of one class at one line, when the ledger is checked, then no cross-provenance contradiction is claimed - the class is coarser than the prose, and this branch ignores the configured mode, so a false positive is not survivable.
   - **Verify:** manual - retired by US0935: the ledger contradiction check was deleted with the repair lane, so no transition compares registered and measured rows
   - **Verified:** manual (2026-09-25) - retired, superseded by US0935

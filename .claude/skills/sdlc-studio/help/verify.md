@@ -144,7 +144,7 @@ python3 <skill>/scripts/verify_ac.py coverage rule --id US0042 --file src/thing.
 
 The ruling is a row in the unit's own `## Coverage Rulings` table - file, line, the file's
 content hash, reason, author, date - tracked with the artefact, never in `.local/`. A reason
-shorter than the floor `mutation.py retract` holds a withdrawal to is refused. The terminal
+shorter than 20 characters is refused, for a ruling and for its withdrawal alike. The terminal
 transition subtracts live rulings from the uncovered lines; `verify_ac.py depth --write` is what
 writes `lines ruled N` into the derived half of `Verification depth`, and the transition never
 writes that field itself. A ruling made on bytes the file no longer has is STALE: it asserts

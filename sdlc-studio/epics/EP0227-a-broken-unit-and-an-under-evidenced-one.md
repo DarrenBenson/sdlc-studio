@@ -16,7 +16,7 @@ Decomposed from CR0524. Delivers the work CR0524 requested.
 ## Story Breakdown
 
 - [ ] [US0730: A verdict distinguishes a unit that does not work from one whose evidence cannot fail](../stories/US0730-a-verdict-distinguishes-a-unit-that-does-not.md)
-- [ ] [US0731: Evidence debt is recorded against the CRITERION it attaches to, naming the surviving mutant](../stories/US0731-evidence-debt-is-recorded-against-the-criterion-it.md)
+- [x] [US0731: Evidence debt is recorded against the CRITERION it attaches to, naming the surviving mutant](../stories/US0731-evidence-debt-is-recorded-against-the-criterion-it.md)
 - [ ] [US0732: The batch summary reports the two counts separately](../stories/US0732-the-batch-summary-reports-the-two-counts-separately.md)
 - [x] [US0733: A unit carrying evidence debt is still refused a terminal status until it is cleared or deferred with a reason](../stories/US0733-a-unit-carrying-evidence-debt-is-still-refused.md)
 - [x] [US0734: The seat briefs tell a reviewer which verdict fits which finding, calibrated on RUN-01KYZKY5](../stories/US0734-the-seat-briefs-tell-a-reviewer-which-verdict.md)

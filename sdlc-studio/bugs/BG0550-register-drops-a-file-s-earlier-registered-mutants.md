@@ -26,7 +26,8 @@ Print the count and the criteria dropped, in the shape the truncation note alrea
 ## Acceptance Criteria
 
 - [x] **AC1** Given registrations already recorded for a target, when the file's bytes change and a new mutant is registered, then the discarded rows are COUNTED and reported - the ledger must not read `1 registered` where five claims just vanished.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k dropped_stale_registrations_are_reported
+  - **Verify:** manual - retired by US0936: `mutation.py register`, whose report of dropped rows this pinned, is deleted with the per-target ledger
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 
 ## Test Plan
 

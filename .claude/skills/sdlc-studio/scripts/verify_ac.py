@@ -2488,8 +2488,8 @@ def coverage_rulings(text: str) -> list:
     out = []
     for line in m.group(1).splitlines():
         r = _RULING_ROW_RE.match(line.strip())
-        # A WITHDRAWN row stays in the table - the withdrawal is the audit trail, exactly as
-        # `mutation.py retract` leaves its row - and counts for nothing from here on.
+        # A WITHDRAWN row stays in the table - the withdrawal is the audit trail - and counts
+        # for nothing from here on.
         if (r and r.group("file").lower() != "file" and not r.group("file").startswith("-")
                 and not r.group("reason").strip().lower().startswith("withdrawn ")):
             out.append({"file": r.group("file"), "line": int(r.group("line")), "hash": r.group("hash"),
@@ -2511,17 +2511,20 @@ def live_rulings(root, text: str) -> tuple:
     return live, stale
 
 
+#: The shortest reason a coverage ruling or its withdrawal may carry. "typo" or "unreachable"
+#: names nothing a reader can check; the length is a floor on effort, not on honesty, and it is
+#: deliberately low because the real control is that the ruling is PUBLISHED in the artefact.
+COVERAGE_REASON_MIN = 20
+
+
 def add_coverage_ruling(root, unit_path: Path, rel: str, line: int, reason: str,
                         author: str = "sdlc-studio") -> dict:
-    """Write one ruling into the artefact, refusing a reason below the floor `retract` holds."""
-    import mutation as _mut  # noqa: PLC0415 - the floor is its constant, shared on purpose
-    # attribute access, never getattr with a default: a default silently reverts to a literal
-    # the day the constant is renamed, and the criterion says the SAME floor, not a copy of it
-    floor = _mut._RETRACT_REASON_MIN
+    """Write one ruling into the artefact, refusing a reason below `COVERAGE_REASON_MIN`."""
+    floor = COVERAGE_REASON_MIN
     if len((reason or "").strip()) < floor:
         raise ValueError(f"coverage rule refused: a reason of {len((reason or '').strip())} "
-                         f"character(s) is below the floor of {floor} that `mutation.py retract` "
-                         f"holds a withdrawal to - a ruling is not a free bypass of the gate")
+                         f"character(s) is below the floor of {floor} - a ruling is not a free "
+                         f"bypass of the gate")
     if " ".join(str(reason).split()).lower().startswith("withdrawn "):
         # `withdrawn ` opens the cell a withdrawal writes, and `coverage_rulings` reads a row
         # starting with it as retracted - so a reason that happens to open with the word would
@@ -2584,8 +2587,7 @@ def withdraw_coverage_ruling(root, unit_path: Path, rel: str, line: int, reason:
     a waiver was withdrawn is the part a reviewer reads. `coverage_rulings` skips a withdrawn
     row, so it counts for nothing afterwards - live or stale.
     """
-    import mutation as _mut  # noqa: PLC0415 - one floor, shared with retract
-    floor = _mut._RETRACT_REASON_MIN
+    floor = COVERAGE_REASON_MIN
     if len((reason or "").strip()) < floor:
         raise ValueError(f"coverage withdraw refused: a reason of {len((reason or '').strip())} "
                          f"character(s) is below the floor of {floor} - a withdrawal is recorded, "
@@ -4198,8 +4200,8 @@ def build_parser() -> argparse.ArgumentParser:
     cv.add_argument("--file", help="the Affects file, repo-relative")
     cv.add_argument("--line", type=int, help="the line number at its current bytes")
     cv.add_argument("--reason", help="why no test can execute it, or for `withdraw` why the "
-                                     "ruling no longer holds (floor: the same length "
-                                     "`mutation.py retract` demands)")
+                                     f"ruling no longer holds (at least "
+                                     f"{COVERAGE_REASON_MIN} characters)")
     cv.add_argument("--author", default=None)
     cv.add_argument("--root", default=".")
     cv.set_defaults(func=cmd_coverage)

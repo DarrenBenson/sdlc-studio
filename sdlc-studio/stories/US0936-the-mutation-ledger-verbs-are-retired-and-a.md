@@ -1,6 +1,6 @@
 # US0936: The mutation ledger verbs are retired and a mutation run reports its yield only
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,16 +19,22 @@
 
 - **AC1:** Given `mutation.py register`, `retract`, `retractions` or `audit`, when invoked, then each exits 2 with a message that it is retired naming `mutation.py run`, and `mutation.py --help` lists run, yield, window and prefilter only. Fails on: deleting the parsers so each verb exits with a usage error instead of the retirement message
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_ledger_retired.py::MutationLedgerRetiredTests::test_the_ledger_verbs_are_retired
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given a fixture target and a test that kills a mutant, when `mutation.py run` runs, then it reports the kill and appends a series row that `mutation.py yield --run <id>` reads back, and it writes no per-target ledger (`mutation-runs.json`). Fails on: HEAD's `run`, which writes the ledger
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_ledger_retired.py::MutationLedgerRetiredTests::test_run_and_yield_work_without_a_ledger
+  - **Verified:** yes (2026-09-25)
 - **AC3:** Given a fixture whose mutation ledger holds a retraction for the unit (so HEAD's `critic._withdrawn_block` renders) and a batch whose strategy carries the mutation band (so HEAD's `sprint.claimed_proof_gaps` reads the ledger), when `critic.py brief` runs on the unit and the sprint closes, then the brief carries no mutant-retraction section and the close's output is identical with the ledger removed. Fails on: removing the brief section while `claimed_proof_gaps` still reads the ledger
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_ledger_retired.py::MutationLedgerRetiredTests::test_brief_and_close_read_no_ledger
+  - **Verified:** yes (2026-09-25)
 - **AC4:** Given `docgen.py surface` rerun in the same commit, then reference-scripts-surface.md names none of `mutation.py register`, `retract`, `retractions` or `audit` and `docgen.py surface --check` reports 0 drift
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_ledger_retired.py::MutationLedgerRetiredTests::test_the_surface_names_no_retired_verb
+  - **Verified:** yes (2026-09-25)
 - **AC5:** Given `verify_ac.py coverage rule` with a reason one character under the floor, when invoked, then it is refused naming the floor, and `verify_ac.py` holds that floor itself rather than reading `mutation._RETRACT_REASON_MIN`. Fails on: deleting `retract` and its constant while `add_coverage_ruling` still reads `mutation._RETRACT_REASON_MIN`, which raises
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_ledger_retired.py::MutationLedgerRetiredTests::test_the_coverage_ruling_floor_survives_the_retract_verb
+  - **Verified:** yes (2026-09-25)
 - **AC6:** Given the criteria whose stamped Verify selector names a test this story deletes (LedgerTests, RegisterTests, StalenessHashTests, LedgerSummaryVocabularyTests, RegisterRunAttributionRefusalTests, MeasuredAttributionTests, RegisteredLineTests, UnreadableLedgerTests, RunUnitAttributionCLITests, RegisterEvidenceIntegrityTests, RetractWithdrawsAVerdictOnTheRecord, RegisterKeepsOtherUnitsRowsTests, DuplicateKeyTests, AuditRemedyTests, RegisterReplacesTests, AnchoredStalenessTests and AnchorIsRequiredTests in `test_mutation.py`, MutationSurvivorCountTests in `test_sprint_report.py`, and `test_lean_mutation_off.py`, which empties and is deleted): BG0245 (3), BG0614 (6), BG0651 (1), BG0747 (1), US0660 (1), US0661 (2), US0818 (3) and US0822 (8), then each is retired in the D0259 pattern (`Verify: manual - retired by US0936: <why>`, `Verified: manual (<date>) - retired, superseded by US0936`), and no `Verified: yes` selector under sdlc-studio/ names a deleted test node
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_ledger_retired.py::MutationLedgerRetiredTests::test_no_stamp_names_a_deleted_test
+  - **Verified:** yes (2026-09-25)
 
 ## Notes
 

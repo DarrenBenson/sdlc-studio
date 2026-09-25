@@ -2,7 +2,7 @@
 
 The repair lane is gone: no registered mutant is demanded at the terminal transition, no survivor
 bug is filed, and `review.mutation_evidence` is no longer a setting. The criteria gate stays, so a
-red criterion still refuses. `mutation.py run` and `register` remain as on-demand tools.
+red criterion still refuses. `mutation.py run` remains an on-demand tool.
 
 The first test drives the shipped entry points as subprocesses against throwaway git workspaces.
 The last reads this repository's own artefacts, because its criterion names them.

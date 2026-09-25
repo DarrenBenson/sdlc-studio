@@ -156,45 +156,17 @@ counted, never silent).
 - `run --test CMD` with a surface: `--files a.py ...`, `--since REF` (git diff),
   or `--story USxxxx` (the story's epic/CR `Affects`); `--max-mutations N`
   (default `quality.mutation_max`, else 25); writes the latest-run report
-  `sdlc-studio/.local/mutation-report.json` and appends this run's per-target evidence to
-  the bounded ledger `sdlc-studio/.local/mutation-runs.json`; exits non-zero on
-  survivors/errors
-- `register --target F --line N --mutant M --anchor A --test T --verdict killed|survived|equivalent`:
-  record a mutant a builder applied BY HAND, so the per-unit practice (write a test, mutate
-  the code it pins, see RED, restore) leaves a trace in the same ledger. Nothing here re-runs
-  anything, so the entry is marked `registered` and read as a claim, never as a measured run.
-  `--line` is required for `killed`/`survived`: a record with no line never joins a measured
-  one, and the refusal that quotes `target:line` would print a question mark. `--anchor` is
-  required on every verdict: it is the exact text the mutant REPLACED, and must occur exactly
-  once in the target
+  `sdlc-studio/.local/mutation-report.json` and appends one row to the per-run series
+  `sdlc-studio/.local/mutation-series.jsonl`; exits non-zero on survivors/errors
+- `yield --run MRUNxxx`: what one run cost against the artefacts filed from it, read back from
+  its series row
 - `prefilter --tests <paths>`: advisory list of test files with no recognisable
   assertion - the cheap static signal for which tests to mutate first
 
-**The ledger is one entry per mutated file**, carrying that file's content hash at run time,
-its provenance (`measured` from a run, `registered` from a hand-applied mutant) and the run's
-verdict tallies. A target is entered only when the test command returned a `killed` or
-`survived` verdict on it, so a refused run and a target beyond the cost ceiling record nothing.
-It is bounded at 200 entries, oldest out first, with a cumulative `dropped` count so the
-truncation is never silent; a repeated `register` accumulates into one entry, whose own mutant
-list is bounded at 100 while its tallies stay exact.
-
-**No gate lane reads the mutation report or ledger.** Mutation testing is `mutation.py run`, run
-when you want its yield; `gate.py --only mutation` is refused as an unknown lane.
-
-**Staleness is judged per ROW where a row has an anchor.** A row registered with `--anchor` is
-live while that text occurs exactly once in the target and stale otherwise, whatever else in the
-file changed - so an edit somewhere else in a shared target no longer stales every unit's
-evidence at once. A row with no anchor (every row written before this) keeps the whole-file
-rule. `register` applies it too: registering on changed bytes carries the registering unit's
-own earlier rows whose anchor still occurs once onto the current entry, and drops only the rest;
-another unit's rows stay on their own entry, where the per-row rule still reads them live. A
-carry never evicts a row: past the per-entry cap, a row stays where it is. The
-report's `target_hashes` is deliberately not read as coverage: it is written for every file
-named as a target before any verdict exists, so a refused run would report its targets covered.
-With nothing per-file to judge, the lane degrades to the whole-report checks - a target the
-report hashed and edited since, or a report git rev that is not HEAD, reads STALE, and an
-absent report reads not-run, never PASS. Survivor counts still come from the report, attributed
-to the rev that produced them. User-facing help: `help/mutation.md`.
+**No gate lane reads the mutation report or series, and no per-target ledger is kept.**
+Mutation testing is `mutation.py run`, run when you want its yield; `gate.py --only mutation` is
+refused as an unknown lane. `register`, `retract`, `retractions` and `audit` are retired and
+refused by name. User-facing help: `help/mutation.md`.
 
 ### `reconcile.py` (read-only)
 

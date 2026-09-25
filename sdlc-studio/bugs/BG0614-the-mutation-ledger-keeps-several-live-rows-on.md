@@ -50,23 +50,23 @@ bug is not the place to reverse it.
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a ledger holding two live rows on one `(unit, criterion, row)` key that DISAGREE on their verdict - one killed, one survived - when the audit runs, then it reports the key and both rows. A row is LIVE when it is not withdrawn, whether or not its entry is stale; a row in a stale entry is reported tagged `stale entry` (three of today's keys sit in one), and each row is printed with its target and hash so a same-row pair on different hashes can be told from a same-hash pair. The audit keys on `(unit, criterion, row)`; US0818's replace keys on `(unit, criterion, row, target, hash)`, so a same-row registration against a different target PATH appends there and is named here (a different hash of the same target cannot: `register_mutant` drops the unit's own rows on the old hash before it appends). A withdrawn row is NOT live: the AC4 fixture holds a withdrawn duplicate that the expected key list excludes, so a walk counting retracted rows names it and dies. The disagreeing pair is the case a reader most needs told about, and a detector that only fires when the rows agree would pass a fixture nobody looks at twice
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_the_audit_reports_a_key_whose_rows_disagree
-  - **Verified:** yes (2026-09-08)
+  - **Verify:** manual - retired by US0936: `mutation.py audit` and the per-target ledger whose duplicate keys it named are deleted
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 - [ ] **AC2** Given a ledger with no duplicate keys, when the audit runs, then it is SILENT - the paired control, so reporting cannot be satisfied by reporting everything
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_a_clean_ledger_produces_no_audit_output
-  - **Verified:** yes (2026-09-08)
+  - **Verify:** manual - retired by US0936: `mutation.py audit` and the per-target ledger whose duplicate keys it named are deleted
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 - [ ] **AC3** Given the shipped command, when the audit is run as a SUBPROCESS over a ledger holding a duplicate, then it names the key and exits non-zero. `mutation.py` has no audit verb today - its subcommands are run, register, retract, retractions, yield, window and prefilter - so this criterion is what makes the audit reachable at all rather than a library function nothing calls The audit exits 1 with a duplicate and 0 on a clean ledger, both asserted as exact codes through the CLI (argparse's 2 for a mis-typed verb satisfies neither), with the key in stdout on the duplicate.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_the_audit_verb_reports_a_duplicate_through_the_cli
-  - **Verified:** yes (2026-09-08)
+  - **Verify:** manual - retired by US0936: `mutation.py audit` and the per-target ledger whose duplicate keys it named are deleted
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 - [ ] **AC4** Given a COMMITTED ledger fixture under `scripts/tests/fixtures/` whose entries name target files that exist INSIDE the fixture (so `entry_staleness` can hash them), carrying the shapes this repository's ledger holds today - measured 2026-09-07 on `sdlc-studio/.local/mutation-runs.json` by a walk over `entries[].mutants` excluding withdrawn rows, keyed on `(unit, criterion, row)`: 19 live duplicate keys, 0 disagreeing on verdict, 5 naming different tests, every one on a single `(target, hash)` entry, 3 in entries `entry_staleness` reports stale (the fixture's `stale_target.py` is written with bytes that differ from its entry's hash, so the tag branch is entered) - two rows one test, three rows two tests, four rows one test, three keys in a stale entry, AND one criterion carrying two DISTINCT rows (row 0 and row 1, each once, no duplicate) so a key that drops the row collapses them - when the audit runs, then it names every duplicated key, and does not name the two-distinct-rows criterion; the stale tag and the different-tests count are AC5 and AC6. The live corpus figure is re-measured at delivery through `mutation.py audit` and recorded in the revision row with the command; the suite never reads `.local/`, which is gitignored and absent on CI.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_the_live_ledger_duplicates_are_all_reported
-  - **Verified:** yes (2026-09-08)
+  - **Verify:** manual - retired by US0936: `mutation.py audit` and the per-target ledger whose duplicate keys it named are deleted
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 - [ ] **AC5** Given the AC4 fixture, when the audit runs, then each row whose entry `entry_staleness` reports stale is printed with the exact tag `stale entry`, and rows in current entries carry no tag - asserted as exact expected lines.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_rows_in_a_stale_entry_are_tagged_and_current_rows_are_not
-  - **Verified:** yes (2026-09-08)
+  - **Verify:** manual - retired by US0936: `mutation.py audit` and the per-target ledger whose duplicate keys it named are deleted
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 - [ ] **AC6** Given the AC4 fixture, when the audit runs, then its summary counts exactly the duplicated keys whose rows name DIFFERENT tests (five shapes in the fixture, matching the corpus measurement), never every duplicated key - asserted as an exact expected line.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::DuplicateKeyTests::test_the_summary_counts_only_keys_whose_rows_name_different_tests
-  - **Verified:** yes (2026-09-08)
+  - **Verify:** manual - retired by US0936: `mutation.py audit` and the per-target ledger whose duplicate keys it named are deleted
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0936
 
 ## Impact
 

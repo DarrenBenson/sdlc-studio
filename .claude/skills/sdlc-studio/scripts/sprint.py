@@ -5916,21 +5916,21 @@ def claimed_proof_gaps(root, batch: list[str]) -> list[str]:
     requirement at plan time is being measured against it at the close, so this is the half that
     makes the other half worth having.
 
-    Only the `mutation` band is checkable mechanically today: mutation evidence is recorded per
-    file and can be looked up. A band nobody can check is not reported as a gap - claiming a
-    unit failed a bar that cannot be measured would be exactly the false precision this project
-    refuses.
+    Only the `mutation` band is checkable mechanically today: every mutation run appends a series
+    row naming its targets and whether it judged anything, so a file a run measured can be looked
+    up. A band nobody can check is not reported as a gap - claiming a unit failed a bar that
+    cannot be measured would be exactly the false precision this project refuses.
     """
     demanded = set(strategy_mutation_targets(root, batch))
     if not demanded:
         return []
     try:
         import mutation  # noqa: PLC0415
-        ledger, _reset = mutation._load_ledger(mutation.ledger_path(Path(root)))
-    except Exception as exc:  # noqa: BLE001 - a close must not die on a ledger read
+        rows = mutation.series_rows(Path(root))
+    except Exception as exc:  # noqa: BLE001 - a close must not die on a series read
         sdlc_md.debug("sprint.claimed_proof_gaps", exc)
         return sorted(demanded)
-    mutated_files = {str(k) for k in (ledger.get("entries") or ledger or {})}
+    mutated_files = {str(t) for r in rows if r.get("evidence") for t in (r.get("targets") or [])}
     gaps = []
     for uid in sorted(demanded):
         hit = sdlc_md.find_by_id(Path(root), uid)
