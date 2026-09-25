@@ -1,6 +1,6 @@
 # US0939: CI and the push gate give one verdict on tools/tests, because both run it the same way
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,12 +19,16 @@
 
 - **AC1:** Given `lint.yml`, `npm run test:tools` and `tools/run-suite.sh tools`, then each runs tools/tests through `gate.py --boundary push --run-tests tools/tests/test_*.py`, and no step runs `unittest discover -s tools/tests`. Fails on: HEAD (`lint.yml` suite step, `package.json` test:tools, `run-suite.sh` 216-217); changing CI alone, which leaves the local and CI commands different
   - **Verify:** pytest tools/tests/test_lean_one_runner.py::OneRunnerTests::test_ci_and_local_run_tools_tests_through_the_push_plan
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given a fixture tools/tests tree holding BG0770's pair (an importer whose `tearDownModule` deletes a directory a sibling module's global still points at), when CI's command read from `lint.yml` and the push's full-suite lane each run over it, then both return the same verdict. Fails on: HEAD, where CI's `unittest discover` reports red and the push's pytest reports green (BG0770, measured)
   - **Verify:** pytest tools/tests/test_lean_one_runner.py::OneRunnerTests::test_ci_and_push_agree_on_a_shared_global_fixture
+  - **Verified:** yes (2026-09-25)
 - **AC3:** Given `gate.py --run-tests` with `--boundary push`, then the `boundary_only` tests run, and without a boundary they are still left to the push. Fails on: routing CI through the commit's selection path, which silently drops every `boundary_only` test from CI
   - **Verify:** pytest tools/tests/test_lean_one_runner.py::OneRunnerTests::test_a_boundary_run_keeps_boundary_only_tests
+  - **Verified:** yes (2026-09-25)
 - **AC4:** Given CI's install step, then pytest-xdist is installed before the suite step, so `test_lean_tmp_hygiene`'s `-n 2` variants run in CI rather than skip. Fails on: switching the runner without installing xdist (the variants skip, measured by BG0770)
   - **Verify:** pytest tools/tests/test_lean_one_runner.py::OneRunnerTests::test_ci_installs_xdist_before_the_suite
+  - **Verified:** yes (2026-09-25)
 
 ## Notes
 

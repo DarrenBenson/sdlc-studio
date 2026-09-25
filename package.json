@@ -19,7 +19,7 @@
     "lint:fix": "npm run lint:style && bash tools/lint-md.sh --fix",
     "test": "npm run test:skill && npm run test:tools",
     "test:skill": "bash tools/skill-tests.sh",
-    "test:tools": "python3 -m unittest discover -s tools/tests",
+    "test:tools": "python3 .claude/skills/sdlc-studio/scripts/gate.py --boundary push --run-tests tools/tests/test_*.py",
     "verify:corpus": "bash tools/verify-corpus.sh full",
     "verify:stamps": "bash tools/verify-corpus.sh stamps"
   },

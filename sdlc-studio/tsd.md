@@ -189,7 +189,7 @@ overstating coverage.
 | --- | --- |
 | Coverage Target | 80% statement, blocking CI gate (`coverage report --fail-under=80`); ~90% aspiration [HIGH] |
 | Framework | Python `unittest` (stdlib) |
-| Execution | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` (shipped scripts) and `-s tools/tests` (repo-only checkers); `npm test` runs both |
+| Execution | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` (shipped scripts); the repo-only checkers under `tools/tests` run under pytest through the push's plan, `gate.py --boundary push --run-tests tools/tests/test_*.py`, in CI as at the push; `npm test` runs both |
 | Suite size | MINUTES rather than seconds for the skill suite, seconds for the tools suite. Run the discover command for the live count and `tools/gate_timing.py estimate` for the live duration rather than trusting a pinned number: both drift every sprint, and the cost is why the hook skips the suites for a commit that cannot reach them |
 | Location | `.claude/skills/sdlc-studio/scripts/tests/test_<script>.py`; `tools/tests/` for the repo-only checkers |
 

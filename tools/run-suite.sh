@@ -210,11 +210,15 @@ else
   SKILL_SUITE='python3 -B -m pytest .claude/skills/sdlc-studio/scripts/tests -q'
 fi
 
+# tools/tests run through the push's own plan, the command CI runs too, so the three agree. The
+# environment spelling of `-B`, because the gate spawns the pytest processes that import the tests.
+TOOLS_SUITE='PYTHONDONTWRITEBYTECODE=1 python3 .claude/skills/sdlc-studio/scripts/gate.py --boundary push --run-tests tools/tests/test_*.py'
+
 SUITE="${1:-}"
 case "$SUITE" in
     scripts) CMD="$SKILL_SUITE" ;;
-    tools)   CMD='PYTHONPATH=tools/tests python3 -B -m unittest discover -s tools/tests' ;;
-    all)     CMD="$SKILL_SUITE && PYTHONPATH=tools/tests python3 -B -m unittest discover -s tools/tests" ;;
+    tools)   CMD="$TOOLS_SUITE" ;;
+    all)     CMD="$SKILL_SUITE && $TOOLS_SUITE" ;;
     *)
         # REFUSED, never defaulted. Running a different suite and reporting it under the
         # requested name is a false green of exactly the kind this script exists to remove,

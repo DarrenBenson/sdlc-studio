@@ -2521,10 +2521,19 @@ def run_tests_plan(selectors: list[str], parallel: bool, root: str = ".", *,
 def cmd_run_tests(args: argparse.Namespace) -> int:
     """Run the selected test modules; exit non-zero when any test fails.
 
+    Without a boundary this is a commit's selection, which leaves the `boundary_only` tests to
+    the push. With one (`--boundary push`, as CI and `run-suite.sh` run tools/tests) it is the
+    push's own plan, so they run: CI and the push then give one verdict on the same tests.
+
     pytest's exit 5 (nothing collected) is a pass here: a module whose every test is
     `serial_only` leaves the parallel phase empty, and the serial phase then runs them."""
     import importlib.util
     import subprocess
+    try:
+        boundary = resolve_boundary(args)
+    except BoundaryError as exc:
+        print(f"unit-tests: refused - {exc}", file=sys.stderr)
+        return 2
     if importlib.util.find_spec("pytest") is None:
         print("unit-tests: pytest is not installed, so the selection cannot run here",
               file=sys.stderr)
@@ -2534,11 +2543,12 @@ def cmd_run_tests(args: argparse.Namespace) -> int:
     hand = ", one test at a time, two queued per worker" if xdist_takes_maxschedchunk() else ""
     how = (f"in parallel (pytest-xdist, -n auto{hand}), serial_only tests after" if parallel
            else "serially (pytest-xdist is not installed)")
-    print(f"unit-tests: {len(selectors)} selected module(s) {how}; "
-          "boundary_only tests run at push")
+    deferred = (f"boundary_only tests included ({boundary} boundary)" if boundary
+                else "boundary_only tests run at push")
+    print(f"unit-tests: {len(selectors)} selected module(s) {how}; {deferred}")
     started = time.monotonic()
     rc = 0
-    for argv in run_tests_plan(selectors, parallel, args.root, commit=True):
+    for argv in run_tests_plan(selectors, parallel, args.root, commit=boundary is None):
         code = subprocess.run(argv, cwd=args.root).returncode
         if code not in (0, 5):
             rc = code
@@ -2810,8 +2820,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--run-tests", dest="run_tests", nargs="+", metavar="PATH",
                    help="Run these test modules under pytest, in parallel when pytest-xdist is "
                         "installed (the `serial_only` tests after, the `boundary_only` tests "
-                        "left to the push), and exit non-zero on any failure. The commit hook "
-                        "runs its selection through this")
+                        "left to the push unless --boundary is given), and exit non-zero on any "
+                        "failure. The commit hook runs its selection through this; CI runs "
+                        "tools/tests through it with --boundary push")
     p.add_argument("--suite-decision", dest="suite_decision", action="store_true",
                    help="Answer whether the unit suites must run, and over which modules: "
                         "those that import, load or are named for a changed code file. Skips "

@@ -4,7 +4,7 @@
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_coverage_opt_in.py, changelog.d/US0922.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_coverage_opt_in.py, changelog.d/US0922.md, .claude/skills/sdlc-studio/reference-config.md, sdlc-studio/stories/US0816-the-fixed-and-done-gates-refuse-a-unit.md
 > **Epic:** EP0263
 > **Points:** 2
 > **Persona:** Maya Okafor

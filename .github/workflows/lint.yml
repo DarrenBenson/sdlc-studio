@@ -66,7 +66,9 @@ jobs:
         # US0815: `verify_ac run --coverage` measures a unit's own added lines under `coverage`,
         # and its subprocess patching needs 7.10+. Installed BEFORE the suite, or the push that
         # ships the lane turns main red on a runner that installs it only for the gate below.
-        run: python -m pip install --quiet pyyaml pytest 'coverage>=7.10'
+        # pytest-xdist: tools/tests run under the push's pytest plan below, which is parallel with
+        # it; without it the `-n 2` variants of test_lean_tmp_hygiene skip here (BG0770).
+        run: python -m pip install --quiet pyyaml pytest pytest-xdist 'coverage>=7.10'
 
       - name: Lint (markdown, style, links)
         run: npm run lint
@@ -75,9 +77,12 @@ jobs:
         # ONE run of the skill suite: tools/skill-tests.sh holds it to the noise gate and, with
         # SKILL_TESTS_COVERAGE=1, runs it under `coverage run`, so the coverage gate below reads
         # this run rather than paying for a second one.
+        # tools/tests run through the push's own plan (pytest, parallel, `serial_only` after,
+        # `boundary_only` included), the command the pre-push full-suite lane runs, so a push the
+        # gate passed is not red here for a runner difference (US0939, after BG0770).
         run: |
           SDLC_STUDIO_BOUNDARY_SUITE=1 SKILL_TESTS_COVERAGE=1 bash tools/skill-tests.sh
-          SDLC_STUDIO_BOUNDARY_SUITE=1 python3 -m unittest discover -s tools/tests
+          SDLC_STUDIO_BOUNDARY_SUITE=1 python3 .claude/skills/sdlc-studio/scripts/gate.py --boundary push --run-tests tools/tests/test_*.py
 
       - name: Portable artefact gate (same gate the pre-commit hook runs)
         run: |

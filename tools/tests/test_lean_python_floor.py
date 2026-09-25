@@ -36,8 +36,9 @@ WORKFLOW = REPO / ".github" / "workflows" / "lint.yml"
 HOOKS = REPO / ".githooks"
 FLOOR = (3, 10)
 THIS_MODULE = "tools/tests/test_lean_python_floor.py"
-#: The suite step's command, which collects this module - where the check runs in CI.
-SUITE_RUN = "unittest discover -s tools/tests"
+#: The suite step's command, which collects this module - where the check runs in CI. The push's
+#: own plan for tools/tests (US0939), so the glob names this module.
+SUITE_RUN = "gate.py --boundary push --run-tests tools/tests/test_*.py"
 
 #: Compiles every path on stdin, prints one line per failure, then the count it compiled.
 #: `compile` rather than `py_compile`: nothing is written into the tree.

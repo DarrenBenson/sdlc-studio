@@ -115,7 +115,9 @@ who asked for everything and silently got a selection would be wrong about their
 installed, with the tests marked `serial_only` after on their own. It leaves out the tests
 marked `boundary_only` - those that run the real gate, or a boundary lane, for 17-36s each - and the push's full suite runs them. The commit hook runs its selection through it and
 reports the commit's elapsed time against a 90-second budget - a
-report, never a refusal.
+report, never a refusal. Given a boundary (`--boundary push`), it runs the `boundary_only` tests
+too, as the push's `full-suite` lane does, so a CI step can run the push's own plan and the two
+give one verdict.
 
 How a commit's selection is made, and why it is safe to keep it narrow:
 
