@@ -2,40 +2,40 @@
 > **RUN-01M39MC0 closed running.** 16 unit(s) in the batch. **Sign-off is OWED and is the operator's** - the two-role gate holds Done.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
-> **RUN-01M39MC0, Sprint 3 of back to basics: commits under ninety seconds, lanes that show their
-> yield.** Goal: "A commit clears in ninety seconds, and every commit lane left standing shows what
-> it caught." 16 of 21 planned units delivered (32 of 45 points), each reviewed by one QA-seat
-> reviewer under the two-round cap; four were carried at the cap and BG0754 stays open. Verdict:
-> partial.
+> **RUN-01M3BK9Y, Sprint 4 of back to basics: history-aware review, and the review paperwork
+> deleted.** Goal: "Maya's units are reviewed once against their files' history, and the review
+> paperwork nobody reads is deleted." 35 of 36 batch units delivered (111 points against 110
+> planned), each reviewed by one QA-seat reviewer under the two-round cap; US0914 was cut under
+> the plan's cut order (D0269) and the repair ledger it deletes is still read. Verdict: partial.
 >
-> Closing review of record: RETRO0123.
+> Closing review of record: RETRO0124.
 
 ## What landed
 
-- **Lanes deleted, not tuned.** The warning ratchet and its baselines (US0896), the verify
-  ratchet (US0897), the boundary roster (US0901) and the hand-edited release-notes count, now
-  derived by `known_issues.py` (US0898), are gone. Eight advisory gate lanes left the commit and
-  run on demand or at the close (US0895, D0263).
-- **Commits got faster.** The decisions scan is memoised (US0890), xdist takes one test at a time
-  where supported (US0892), live-repository tests wait for the push (US0893), and `close_owed`
-  walks the corpus once, 58s to 0.4s (US0894). A one-line gate.py commit measured 93s end to end
-  at the close, against 229s at the start; its suites took 43s.
-- **Drift is fixed at commit, not refused.** Mechanical index and epic drift is settled by the
-  pre-commit hook itself (US0899). Each hook lists its own lanes with `--list` (US0901).
-- **The ratchet is watched.** Lesson class LC-008 and the PRD principle "Every gate earns its
-  place"; lesson graduation proposes retiring a check as readily as adding one (US0903), and the
-  seats push back on new pins (US0906). Python 3.10 works again, with a CI step (US0908).
-- **The backlog matches the lean direction.** D0265 closed 197 items and holds 47 open until the
-  deletion work they wait on ships (US0907, D0264). 121 of the 327 reviewed items stay open.
+- **The record informs the work (CR0594, EP0264).** A goal traces to a PRD outcome or persona
+  (`plan --serves`, US0927), the goal review shows the PRD's outcomes and persona End goals
+  (US0928), the PRD states outcomes O1-O8 (US0929), and every lane brief carries the history of
+  the files it touches, with a prior-art instruction (US0930, US0931). The TRD gains a
+  constraints column (US0932) and restatements of what the code derives are cut (US0933).
+- **The review paperwork is deleted (EP0263).** Plan review (US0909 via BG0767), the test-plan
+  gate and tooling (US0911, US0912), the repair plan (US0913), the two-role gate and per-unit
+  sign-off (US0916, US0917: `sign` seals the run once), depth tiers and derived depth (US0934,
+  US0910), the gate's mutation lane and evidence drift (US0921, US0920), the repair mutation
+  gate (US0935) and the plan-review phase (US0915 via BG0769). Each retired criterion is
+  recorded in the D0259 pattern; 25 held backlog items closed as superseded.
+- **Sprint 3's carries landed:** the lane cap (BG0760, US0905 Done), the lane-yield join
+  (BG0761), concurrent pre-commit lanes (BG0759), the CR evidence rule (BG0756), and the
+  report-window races (BG0750, BG0751). CI's bandit finding (BG0762) is fixed.
 
 ## What is owed
 
-- **Four units carried at the review cap, each with its fix filed:** US0891, concurrent
-  pre-commit lanes (BG0759, a one-line HUP trap); US0900 (BG0756); US0904, the lane-yield log
-  (BG0761, a one-character same-second join); US0905, the lane cap (BG0760, controls to derive
-  from `--list`). Carried patches are in `sdlc-studio/.local/`.
-- **A commit is 3s over budget.** BG0754 stays open until BG0759 lands: the sequential
-  pre-commit is the remaining cost.
-- Also open: BG0757 (repo map null byte under Python 3.10), BG0758 (a command-audit module leak),
-  BG0750-BG0753 from Sprint 2, and CR0592 for the Low findings.
-- **Next: Sprint 4, led by CR0594** (the record informs the work), then EP0263's deletions.
+- **US0914, the repair ledger, is cut (D0269).** Its build passes all six criteria and is kept
+  at `sdlc-studio/.local/US0914-built.patch`; landing it strips `critiqued` from 35 historical
+  Done units, so Sprint 5 first rules a date-scoped historical answer as a criterion.
+- **A commit is 7s over budget.** A one-line gate.py commit measured 97s at the close (load
+  0.65), against 93s at Sprint 3's close; BG0754 stays open.
+- **Main was red on CI's unittest run** for an afternoon (BG0770, fixed): the push gate runs
+  pytest and CI runs unittest discover. Pick one runner.
+- Also open: CR0592 (Low findings, several added this run), BG0752, and the prose US0924 owns.
+- **Next: Sprint 5** - US0914 with its historical ruling, then EP0263's remaining waves
+  (US0918, US0919, US0922-US0926, US0936).
