@@ -135,9 +135,10 @@ def _json_default(value):
 
 
 def cmd_show(args: argparse.Namespace) -> int:
-    """Print the resolved config, or a single dotted key."""
+    """Print the resolved config, or a single dotted key. Both paths take `_json_default`, so a
+    date prints whether it is the key's value or nested under it."""
     if args.key:
-        print(json.dumps(get(args.root, args.key)))
+        print(json.dumps(get(args.root, args.key), default=_json_default))
     else:
         print(json.dumps(load_config(args.root), indent=2, default=_json_default))
     return 0

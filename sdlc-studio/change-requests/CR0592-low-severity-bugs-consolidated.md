@@ -38,6 +38,7 @@ Each finding here is Low-severity on its own; the batch is triaged, then actione
 - **The lane pin scan survives being narrowed to one test tree**: US0905's pin scan (_tree_pins in tools/tests/test_lean_commit_lanes.py) reads both test trees, but narrowing it to tools/tests alone leaves every LaneCapTests test green, so an exact lane set added under the skill test tree would pass unseen. Raised non-blocking by the US0905 round-2 review [LC-002].
 - **The plan-phase over-claim guard is literal and block-wide**: test_lean_no_plan_phase.py's over-claim guard (landed by BG0769 for US0915) matches only the literal flag, so prose naming a plan-review rejoinder passes, and its exemption covers a whole criterion block, so an over-claim sharing a block with the refusal message passes; a criterion that names the flag in passing (BG0769's own AC2 wording) trips it. The Test Plan rows of BG0666, BG0671 and BG0672 still name mutants of deleted plan-review code. Raised non-blocking by the US0915 and BG0769 reviews [LC-002].
 - **The verdict ledger's delivery Tier pad has no test**: critic.py's _ensure_eighth_column pads a delivery row's Tier cell with '-'; changing it to 'full' survives the suite at base and after US0915 (US0915 round-1 review). Pre-existing.
+- **config.py show --key on an absent key prints null and exits 0**: config.py show --key nonexistent.key prints null and exits 0, so an absent key reads as an answer (config.py cmd_show via get() with default None). Found by BG0681's QA review, pre-existing [LC-006].
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # BG0681: config.py show --key crashes on a key whose value holds an unquoted YAML date, the path BG0670 left
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/config.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_config_show_dates.py, changelog.d/BG0681.md
@@ -27,8 +27,10 @@ Pass the same json default on the --key path; pin both a nested date under a dot
 
 - [ ] **AC1** Given a fixture config whose `gate_budget.baseline_date` is an unquoted YAML date, when `config.py show --key gate_budget` runs, then it exits 0 and prints JSON whose `baseline_date` is the ISO date string. Fails on: HEAD's `cmd_show`, whose `--key` branch calls `json.dumps` without `_json_default` and raises TypeError (reproduced on this repository's own config)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_show_dates.py::ConfigShowDateTests::test_a_nested_date_under_a_key_prints
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given the same fixture, when `config.py show --key gate_budget.baseline_date` runs, then it prints the quoted ISO date and exits 0. Fails on: a fix that converts dates only inside mappings, which leaves a scalar date key crashing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_show_dates.py::ConfigShowDateTests::test_a_scalar_date_key_prints
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 
