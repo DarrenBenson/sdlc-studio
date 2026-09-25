@@ -1,6 +1,6 @@
 # CR-0594: The record informs the work: goals trace to the PRD, and briefs carry the history of the files they touch
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0264
 > **Merged from:** EP0229, US0740, US0741, US0742, US0743, US0744, CR0529 (backlog sweep 2026-09-24, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Priority:** High

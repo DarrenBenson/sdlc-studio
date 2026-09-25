@@ -5,7 +5,7 @@
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_depth.py, changelog.d/US0910.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_depth.py, changelog.d/US0910.md, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, sdlc-studio/stories/US0675-every-count-in-verification-depth-is-read-from.md, sdlc-studio/stories/US0676-the-derived-half-of-verification-depth-is-delimited.md
 > **Epic:** EP0263
 > **Points:** 3
 > **Persona:** Maya Okafor

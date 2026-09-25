@@ -2619,6 +2619,7 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
             continue
         briefs.append({"id": contract["id"], "path": contract["path"],
                        "criteria": contract["criteria"],
+                       "trd_constraints": trd_constraints(root, contract["text"]),
                        "obligations": list(LANE_OBLIGATIONS),
                        "proof": lane_proof(root, contract["id"]),
                        "seams": [s for s in seams if contract["id"] in s["units"]],
@@ -2646,6 +2647,55 @@ def _batch_seams(root: Path, unit_ids: list[str]) -> list[dict]:
         return []
 
 
+# The TRD constraints a lane's files fall under. The TRD's Component Overview table carries a
+# Constraints column; a lane building a unit is handed the rows whose component names one of the
+# unit's files, so the TRD is read where it can prevent a defect rather than only kept.
+
+#: The brief's line when the TRD records nothing for the unit's files - no TRD, no Constraints
+#: column, or no matching row all read the same, and none of them refuses the dispatch.
+TRD_NO_CONSTRAINTS = "TRD constraints: the TRD records no constraints for these files."
+
+
+def trd_component_rows(text: str) -> list[dict]:
+    """The `{component, constraint}` rows of the first table headed by both a Component and a
+    Constraints column, skipping a row whose constraint is empty or `-`."""
+    for table in sdlc_md.iter_tables(text):
+        head = [c.lower() for c in table["header"] or ()]
+        if "component" in head and "constraints" in head:
+            ci, ki = head.index("component"), head.index("constraints")
+            return [{"component": cells[ci], "constraint": cells[ki]}
+                    for _n, cells in table["rows"]
+                    if len(cells) > max(ci, ki) and cells[ki] not in ("", "-")]
+    return []
+
+
+def _component_names(pattern: str, path: str) -> bool:
+    """Whether a component's path (`scripts/`, `SKILL.md`, `help/*.md`) names `path`, judged by
+    whole segments: a directory by its segments running anywhere above the file, a file by the
+    path's trailing segments. `scripts/` never names `tools/scripts_helper.py`."""
+    pat = [s for s in pattern.split("/") if s]
+    parts = [s for s in path.split("/") if s not in ("", ".")]
+    if not pat or len(pat) > len(parts):
+        return False
+
+    def at(i: int) -> bool:
+        return all(fnmatch.fnmatchcase(parts[i + k], seg) for k, seg in enumerate(pat))
+    if pattern.endswith("/"):
+        return any(at(i) for i in range(len(parts) - len(pat)))
+    return at(len(parts) - len(pat))
+
+
+def trd_constraints(root: Path, unit_text: str) -> list[dict]:
+    """The Component Overview rows whose backticked component path names a file in the unit's
+    `Affects`, or [] when there is no TRD, no Constraints column or no match."""
+    files = sdlc_md.affects_files(unit_text)
+    trd = Path(root) / "sdlc-studio" / "trd.md"  # absent is ordinary, not a degraded read
+    rows = trd_component_rows(sdlc_md.read_text_safe(trd)) if trd.is_file() else []
+    return [r for r in rows
+            if any(_component_names(p, f) for p in re.findall(r"`([^`]+)`", r["component"])
+                   for f in files)]
+
+
 def lane_brief_text(brief: dict) -> str:
     """One lane's brief as the text handed to whoever (or whatever) picks the unit up: the
     criteria it is held to, the history of the files it touches, the proof its unit owes, the
@@ -2661,6 +2711,10 @@ def lane_brief_text(brief: dict) -> str:
                                         "one is authored")
         lines.append(f"  {crit['ac']}: {crit['title']}")
         lines.append(f"    Verify: {declared}")
+    rules = brief.get("trd_constraints") or []
+    lines.append("TRD constraints on the components this unit touches:" if rules
+                 else TRD_NO_CONSTRAINTS)
+    lines.extend(f"  {r['component']}: {r['constraint']}" for r in rules)
     for seam in brief.get("seams") or []:
         other = [u for u in seam["units"] if u != brief["id"]]
         owned = (f"owned by {', '.join(seam['owners'])}" if seam.get("owners")

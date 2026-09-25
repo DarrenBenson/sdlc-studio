@@ -118,19 +118,19 @@ ADR-002.
 
 ### Component Overview
 
-| Component | Responsibility | Technology |
-| --- | --- | --- |
-| `SKILL.md` router | Always-loaded entry point: philosophy gates, type table, Progressive Loading Guide, the Deterministic Entry Points card, pointers. held under its 500-line ceiling by `tools/check_budgets.py`, the only file paid for every invocation. | Markdown + YAML frontmatter |
-| `help/*.md` | Type-specific command help, prerequisites, output, examples; loaded on demand per `[type]`. | Markdown |
-| `reference-*.md` | Step-by-step workflow detail per domain; loaded only for multi-step workflows. Each is line-budgeted. | Markdown |
-| `templates/` | Document and code templates with `{{placeholder}}` syntax; loaded only when creating artifacts. Includes the persona/seat and stakeholder card schemas. | Markdown / text |
-| `best-practices/` | Quality guidelines consulted before producing artifacts. | Markdown |
-| `lessons/` | Cross-project lessons registry (`_index.md`, `LL{NNNN}-*.md`), ranked and printed into every sprint plan (ADR-010). | Markdown |
-| `scripts/` (60+ scripts) | Deterministic Python helpers emitting JSON. The read path is read-only; a bounded, tested set writes artefacts, indexes and gate state (see §5 rule 5). | Python 3.10+ stdlib |
-| `scripts/lib/` | Shared library. `sdlc_md.py` is the parsing core and the single source of truth for markdown conventions; `conventions.py`, `xrepo.py` and the rest carry per-domain shared logic. | Python 3.10+ stdlib |
-| `scripts/tests/` | Unit tests for the script layer; `python3 -m unittest discover` gives the live count. The repo-only `tools/` checkers have their own suite under `tools/tests/`. | `unittest` |
-| `tools/` | Repo CI guards (style, links, skill frontmatter, versions, budgets, neutrality, action pins) plus the eval runner. Not part of the shipped payload. | Python / Bash |
-| `install.sh` / `install.ps1` | Cross-harness installers for six targets. | Bash / PowerShell |
+| Component | Responsibility | Technology | Constraints |
+| --- | --- | --- | --- |
+| `SKILL.md` router | Always-loaded entry point: philosophy gates, type table, Progressive Loading Guide, the Deterministic Entry Points card, pointers. held under its 500-line ceiling by `tools/check_budgets.py`, the only file paid for every invocation. | Markdown + YAML frontmatter | Stays lean: a router only; detail loads on demand. |
+| `help/*.md` | Type-specific command help, prerequisites, output, examples; loaded on demand per `[type]`. | Markdown | - |
+| `reference-*.md` | Step-by-step workflow detail per domain; loaded only for multi-step workflows. Each is line-budgeted. | Markdown | - |
+| `templates/` | Document and code templates with `{{placeholder}}` syntax; loaded only when creating artifacts. Includes the persona/seat and stakeholder card schemas. | Markdown / text | - |
+| `best-practices/` | Quality guidelines consulted before producing artifacts. | Markdown | - |
+| `lessons/` | Cross-project lessons registry (`_index.md`, `LL{NNNN}-*.md`), ranked and printed into every sprint plan (ADR-010). | Markdown | - |
+| `scripts/` (60+ scripts) | Deterministic Python helpers emitting JSON. The read path is read-only; a bounded, tested set writes artefacts, indexes and gate state (see §5 rule 5). | Python 3.10+ stdlib | Pure stdlib, Python 3.10+. Every workspace write is bounded and tested (§5 rule 5), going through `atomic_write` for shared files. Every script has unit tests. |
+| `scripts/lib/` | Shared library. `sdlc_md.py` is the parsing core and the single source of truth for markdown conventions; `conventions.py`, `xrepo.py` and the rest carry per-domain shared logic. | Python 3.10+ stdlib | `lib/sdlc_md.py` remains the single source of truth for markdown conventions; a second module re-hardcoding the status vocabulary or the id grammar is a defect, not a convenience. |
+| `scripts/tests/` | Unit tests for the script layer; `python3 -m unittest discover` gives the live count. The repo-only `tools/` checkers have their own suite under `tools/tests/`. | `unittest` | - |
+| `tools/` | Repo CI guards (style, links, skill frontmatter, versions, budgets, neutrality, action pins) plus the eval runner. Not part of the shipped payload. | Python / Bash | - |
+| `install.sh` / `install.ps1` | Cross-harness installers for six targets. | Bash / PowerShell | - |
 
 > **C4 Diagrams:** not generated for this brownfield extraction. Use
 > `trd create --with-diagrams` or see `modules/trd/c4-diagrams.md` if formal C4
@@ -1057,13 +1057,11 @@ name that appears somewhere in the prose:
 
 ### Must Have
 
-- `SKILL.md` stays lean (router only); detail loads on demand.
-- Scripts stay pure stdlib, Python 3.10+; every workspace write is bounded and tested
-  (§5 rule 5), going through `atomic_write` for shared files.
-- Every script has unit tests; `gate.py --release` passes before a release is tagged.
-- `lib/sdlc_md.py` remains the single source of truth for markdown conventions; a
-  second module re-hardcoding the status vocabulary or the id grammar is a defect, not
-  a convenience.
+A constraint that governs one component sits in that component's Constraints cell in the
+§3 Component Overview, where `sprint lane brief` hands it to the agent building a unit that
+touches the component. The constraints below span components.
+
+- `gate.py --release` passes before a release is tagged.
 - GitHub access only via `gh`; no token handling, no third-party client.
 - `AGENTS.md` canonical; tool-specific files point at it.
 - Every new gate obeys ADR-006: the fire/skip decision is computable from artefact
@@ -1102,6 +1100,7 @@ name that appears somewhere in the prose:
 | 2026-07-24 | 4.1.0 | Doc-drift residuals (CR0365). §6 Migrations claimed `SKILL.md`'s type table points an `upgrade` type at `reference-upgrade.md`; there is no such row, so the sentence now names the `migrate` and `skill-update` types it does carry and the Progressive Loading Guide row that actually reaches the file. The two remaining exact component counts (§1 "58 scripts", ADR-001 "52 reference files, 41 help files" - actual 69, 54 and 44) are restated as growth-tolerant bands, matching §3's existing convention. This section was headed `## Changelog`, which no tooling reads - `artifact.py revision` and `flow.py` both look for `## Revision History`, as tsd.md already uses - so it is renamed and the TRD's history becomes machine-readable. Dispositions for all twelve residuals in US0369 |
 | 2026-07-29 | 5.0.0 | Spec-truth pass (US0457, US0458, US0459, US0460). ADR-011 records its D0062 amendment (2026-07-24): the breakdown gate is GOAL-AWARE and `design` is the only exemption, with an absent, empty or unknown goal BLOCKING - the ADR previously read as an unconditional refusal while the code already exempted one rung. The counterweight the close really emits (`grooming_report` rendered on the design rung) is named in the Consequences. Four enumerations - the router type list, the default sweep lanes and both drift-kind passages - now cite their shipped definitions and are held to them; the `count-mismatch`/CR0132 caveat goes, justified by CR0132 resolving Complete. The falsified 'a script cannot observe token spend' premise is replaced everywhere it was asserted by the measured one: transcript-measured but a LOWER BOUND, because delegated spend is supplied rather than observed. The porting doctrine is corrected to the direction `tools/forward-port.sh` implements - this repo is the source, the installed copy is the derived mirror - and the bare router line counts are replaced by the budgeted ceiling and its checker. Each claim is now held by a guard in `tools/tests/`. |
 | 2026-09-25 | 5.1.0 | Restatements cut (US0933, D0266). §3 and §5 name `gate.DEFAULT_CHECKS`, the `SKILL.md` Type Reference table and `reconcile.DRIFT_KINDS` rather than copying them, ADR-003 keeps its decision without the drift-kind copy, and the Component Overview and Scaling Strategy drop their counts except the `60+ scripts` claim that `doc_freshness`'s census checks; ADR-001's sizes stay as the decision's record. The three tests that pinned the copies are deleted. |
+| 2026-09-25 | 5.1.0 | The Component Overview gains a Constraints column, which a lane brief reads for the components its unit touches. The Must Have constraints that govern one component (the router, the script layer, `lib/sdlc_md.py`) move into their cells; the ones that span components stay in §13. |
 
 ---
 

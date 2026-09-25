@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 24 |
 | Approved | 0 |
-| In Progress | 3 |
-| Complete | 506 |
+| In Progress | 2 |
+| Complete | 507 |
 | Rejected | 21 |
 | Deferred | 0 |
 | Superseded | 43 |
@@ -91,7 +91,7 @@
 | [CR-0591](CR0591-audit-the-41-in-progress-discovery-requests-against.md) | audit the 41 In-Progress discovery requests against HEAD and close what is dead | Complete | High | Improvement | 2026-09-20 | EP0257 |
 | [CR-0592](CR0592-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Proposed | Low | Improvement | 2026-09-21 | -- |
 | [CR-0593](CR0593-nothing-refuses-a-batch-unit-that-no-goal.md) | nothing refuses a batch unit that no goal clause covers, so a run can deliver work its own goal never tested | Superseded | Medium | Enhancement | 2026-09-22 | -- |
-| [CR-0594](CR0594-the-record-informs-the-work-goals-trace-to.md) | The record informs the work: goals trace to the PRD, and briefs carry the history of the files they touch | In Progress | High | Improvement | 2026-09-24 | EP0264 |
+| [CR-0594](CR0594-the-record-informs-the-work-goals-trace-to.md) | The record informs the work: goals trace to the PRD, and briefs carry the history of the files they touch | Complete | High | Improvement | 2026-09-24 | EP0264 |
 | [CR-0595](CR0595-prevent-or-retire-lesson-lc-002-criterion-words.md) | Prevent or retire lesson LC-002 (criterion words outrun the fixture) | Proposed | Medium | Improvement | 2026-09-24 | -- |
 | [CR-0596](CR0596-prevent-or-retire-lesson-lc-006-absence-read.md) | Prevent or retire lesson LC-006 (absence read as an answer) | Proposed | Medium | Improvement | 2026-09-24 | -- |
 | [CR-0597](CR0597-prevent-or-retire-lesson-lc-008-constraint-added.md) | Prevent or retire lesson LC-008 (constraint added without retirement) | Proposed | Medium | Improvement | 2026-09-24 | -- |

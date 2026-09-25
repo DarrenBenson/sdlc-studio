@@ -61,9 +61,9 @@ Related: help/trd.md, reference-trd.md
 
 ### Component Overview
 
-| Component | Responsibility | Technology |
-|-----------|---------------|------------|
-| {{component}} | {{what it does}} | {{stack}} |
+| Component | Responsibility | Technology | Constraints |
+|-----------|---------------|------------|-------------|
+| `{{path}}` {{component}} | {{what it does}} | {{stack}} | {{rule a change to it must keep, or -}} |
 
 > **C4 Diagrams:** Use `trd create --with-diagrams` or see `modules/trd/c4-diagrams.md`
 

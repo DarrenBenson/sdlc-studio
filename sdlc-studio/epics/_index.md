@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 21 |
+| Draft | 20 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 226 |
+| Done | 227 |
 | Superseded | 17 |
 | **Total** | **264** |
 
@@ -71,7 +71,7 @@
 | [EP0261](EP0261-fast-gates-and-lessons-that-graduate-the-lean.md) | Fast gates and lessons that graduate: the lean loop's second sprint | Done | 11 | -- | 2026-09-24 | 2026-09-24 |
 | [EP0262](EP0262-commits-clear-in-ninety-seconds-and-every-constraint.md) | Commits clear in ninety seconds, and every constraint earns its place | Draft | 19 | -- | 2026-09-24 | 2026-09-24 |
 | [EP0263](EP0263-review-is-one-reviewer-and-a-green-test.md) | Review is one reviewer and a green test: the review and evidence surface is deleted | Draft | 21 | -- | 2026-09-24 | 2026-09-24 |
-| [EP0264](EP0264-the-record-informs-the-work-goals-trace-to.md) | The record informs the work: goals trace to the PRD, and briefs carry the history and constraints of the files they touch | Draft | 7 | -- | 2026-09-25 | 2026-09-25 |
+| [EP0264](EP0264-the-record-informs-the-work-goals-trace-to.md) | The record informs the work: goals trace to the PRD, and briefs carry the history and constraints of the files they touch | Done | 7 | -- | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 
