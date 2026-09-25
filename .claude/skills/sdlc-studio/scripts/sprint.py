@@ -2442,20 +2442,22 @@ def export_lanes(repo_root: Path | str, batch: list[dict], out_dir: Path | str) 
 #: The step-ordered toolchain. Printed at plan time rather than left to be found, because the
 #: hand-rolling this project keeps catching is recall failure AT A STEP BOUNDARY - the agent
 #: knew the tool existed, just not at the moment the step arose. A catalogue ordered by script
-#: cannot fix a failure of step-to-command lookup.
-RUNBOOK_REL = ".claude/skills/sdlc-studio/reference-sprint-toolchain.md"
+#: cannot fix a failure of step-to-command lookup. It ships with the skill, so it is read from
+#: the skill's own directory: a consuming project installs the skill outside its tree.
+RUNBOOK_REL = "reference-sprint-toolchain.md"
+SKILL_ROOT = Path(__file__).resolve().parent.parent
 
 
-def render_runbook_pointer(root) -> list[str]:
+def render_runbook_pointer() -> list[str]:
     """The runbook's step headings and where to read it, or the reported absence."""
-    path = Path(root) / RUNBOOK_REL
-    text = sdlc_md.read_text_safe(path)
+    text = sdlc_md.read_text_safe(SKILL_ROOT / RUNBOOK_REL)
+    where = f"{RUNBOOK_REL} in the skill directory"
     if not text:
-        return [f"TOOLCHAIN RUNBOOK MISSING ({RUNBOOK_REL}) - reported rather than omitted: a "
+        return [f"TOOLCHAIN RUNBOOK MISSING ({where}) - reported rather than omitted: a "
                 f"plan that silently drops it cannot be told from one that never had it."]
     steps = [ln[3:].strip() for ln in text.splitlines() if ln.startswith("## ")]
     return [f"Toolchain, by step - read it before hand-doing anything mechanical "
-            f"({RUNBOOK_REL}):",
+            f"({where}):",
             *(f"  {s}" for s in steps if not s.startswith("When a"))]
 
 
@@ -4002,7 +4004,7 @@ def _render_phase_lessons(data: dict) -> None:
     # supposed to have read, and both get skipped unless the command that runs anyway prints
     # them.
     print("")
-    for line in render_runbook_pointer(data.get("root") or "."):
+    for line in render_runbook_pointer():
         print(f"  {line}")
 
 

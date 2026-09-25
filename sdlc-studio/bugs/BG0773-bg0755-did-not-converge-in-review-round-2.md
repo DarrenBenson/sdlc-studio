@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_batch_story_fields.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/help/artifact.md, changelog.d/BG0755.md, .claude/skills/sdlc-studio/help/help.md, .claude/skills/sdlc-studio/reference-scripts-create.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_batch_story_fields.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/help/artifact.md, changelog.d/BG0755.md, .claude/skills/sdlc-studio/help/help.md, .claude/skills/sdlc-studio/reference-scripts-create.md, .claude/skills/sdlc-studio/help/arguments.md, changelog.d/BG0773.md
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

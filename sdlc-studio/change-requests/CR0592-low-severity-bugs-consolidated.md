@@ -40,6 +40,7 @@ Each finding here is Low-severity on its own; the batch is triaged, then actione
 - **The verdict ledger's delivery Tier pad has no test**: critic.py's _ensure_eighth_column pads a delivery row's Tier cell with '-'; changing it to 'full' survives the suite at base and after US0915 (US0915 round-1 review). Pre-existing.
 - **config.py show --key on an absent key prints null and exits 0**: config.py show --key nonexistent.key prints null and exits 0, so an absent key reads as an answer (config.py cmd_show via get() with default None). Found by BG0681's QA review, pre-existing [LC-006].
 - **known_issues.py check crashes on a page naming a series older than every recorded bar**: After US0946, tools/known_issues.py check calls render(root, '4.1') for a page whose heading names a series older than the oldest recorded bar, and `_series` raises ValueError with no handler: exit 2 with a traceback instead of exit 1 'disagrees'. Fail-closed at the pre-push hook and unreachable from write or any tagged page; found by US0946's round-2 QA review.
+- **sprint.py tsd_staleness never judges staleness in a consuming project**: sprint.py tsd_staleness (~12254) compares the TSD against the last change to .claude/skills/sdlc-studio/scripts under the PROJECT root, so in a consuming project it always returns known=False ('staleness unknown'). It reports the unknown honestly, so the harm is limited. Found by US0943's QA review, pre-existing since e16fc332 (US0419-US0422).
 
 ## Revision History
 

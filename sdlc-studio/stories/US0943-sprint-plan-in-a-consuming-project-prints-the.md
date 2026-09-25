@@ -1,6 +1,6 @@
 # US0943: `sprint plan` in a consuming project prints the skill's toolchain runbook
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,8 +19,10 @@
 
 - **AC1:** Given a fresh project with the skill installed outside it, when `sprint.py plan` runs, then the output carries the runbook's step headings, resolved from the skill root, and no `TOOLCHAIN RUNBOOK MISSING` line. Fails on: HEAD, where `render_runbook_pointer` joins `RUNBOOK_REL` to the project root (sprint.py:2446-2451; reproduced in a fresh `init` fixture)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_runbook_path.py::RunbookTests::test_consuming_project_finds_runbook
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given a skill tree with no reference-sprint-toolchain.md, when the plan runs, then it still prints the MISSING line. Fails on: a fix that drops the absence report to make AC1 pass
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_runbook_path.py::RunbookTests::test_absent_runbook_still_reported
+  - **Verified:** yes (2026-09-25)
 
 ## Notes
 

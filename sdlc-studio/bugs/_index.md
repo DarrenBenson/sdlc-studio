@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 33 |
+| Open | 34 |
 | In Progress | 0 |
 | Fixed | 613 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
 | Superseded | 21 |
-| **Total** | **773** |
+| **Total** | **774** |
 
 ## All Bugs
 
@@ -132,6 +132,7 @@
 | [BG0771](BG0771-the-close-s-tick-verification-row-cannot-read.md) | The close's tick-verification row cannot read the lean criterion shape | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0772](BG0772-a-held-backlog-item-cannot-close-when-its.md) | A held backlog item cannot close when its closing story ships | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0773](BG0773-bg0755-did-not-converge-in-review-round-2.md) | BG0755 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0774](BG0774-install-sh-exits-1-after-a-successful-install.md) | install.sh exits 1 after a successful install when the gemini target is chosen without the gemini CLI | Open | Medium | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 

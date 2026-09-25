@@ -13490,8 +13490,9 @@ class RunbookTests(unittest.TestCase):
         absence-is-not-an-answer rule the carried lessons already follow.
         """
         sprint = _load()
-        with tempfile.TemporaryDirectory() as d:
-            lines = sprint.render_runbook_pointer(Path(d))
+        with tempfile.TemporaryDirectory() as d, \
+                unittest.mock.patch.object(sprint, "SKILL_ROOT", Path(d)):
+            lines = sprint.render_runbook_pointer()
         self.assertTrue(lines, "an absent runbook produced no output at all")
         self.assertIn("MISSING", " ".join(lines).upper(),
                       "the absence was not reported")
