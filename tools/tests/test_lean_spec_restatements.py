@@ -158,8 +158,12 @@ class SpecRestatementTests(unittest.TestCase):
         lists = {"gate.DEFAULT_CHECKS": (set(_mod("gate").DEFAULT_CHECKS), MAX_NAMED),
                  "reconcile.DRIFT_KINDS": (set(_mod("reconcile").DRIFT_KINDS), MAX_NAMED),
                  "SKILL.md Type Reference": (types, int(len(types) * TYPES_SHARE))}
+        # A floor against a broken or empty parse, not a count to keep: EP0263 cut
+        # gate.DEFAULT_CHECKS from twelve lanes to ten by design (US0910, US0920), and a floor
+        # pinned at the pre-deletion size would trip on every further deletion (BG0768, LC-008).
+        # Three only catches a reader that returned almost nothing.
         for label, (members, _) in lists.items():
-            self.assertGreater(len(members), 10, f"{label} parsed to almost nothing")
+            self.assertGreater(len(members), 3, f"{label} parsed to almost nothing")
         return lists
 
     def test_the_trd_enumerates_no_list_the_code_derives(self) -> None:

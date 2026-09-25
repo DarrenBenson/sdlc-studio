@@ -34,6 +34,10 @@ import transition  # noqa: E402
 import validate  # noqa: E402
 from lib import sdlc_md  # noqa: E402
 
+TESTS = Path(__file__).resolve().parent
+sys.path.insert(0, str(TESTS))
+import gitutil  # noqa: E402 - confined, hermetic git for the derived-deletion check
+
 SID = "US0002"
 #: The two per-unit halves the deletion retires, spelled as the old lane printed them.
 RETIRED_HALVES = ("adversarial-pass evidence", "reviewer-of-record sign-off")
@@ -102,10 +106,13 @@ def _string_reads(path: Path) -> list[str]:
 
 
 def _git(*args: str) -> str | None:
-    """`git <args>` in this repository: its stdout, or None when git cannot answer."""
+    """`git <args>` in this repository: its stdout, or None when git cannot answer.
+
+    Routed through `tests/gitutil` (confined, hermetic git), not a bare `subprocess.run` -
+    the same fix BG0764 made for `test_lean_settle_fingerprint.py`'s fixture helper.
+    """
     try:
-        proc = subprocess.run(["git", "-C", str(REPO), *args], capture_output=True, text=True,
-                              check=False, timeout=60)
+        proc = gitutil.git(list(args), REPO, check=False, timeout=60, text=True)
     except (OSError, subprocess.SubprocessError):
         return None
     return proc.stdout if proc.returncode == 0 else None

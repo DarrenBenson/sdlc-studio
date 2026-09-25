@@ -1235,6 +1235,7 @@ One row has been removed since adoption.
 | US0911 | APPROVE | qa-rev-US0911 | US0911-fix | 2026-09-25 | ca552e47d82c | full | [new] non-blocking: BG0651 AC4's narrowed note says nothing blocks a terminal transition on a stale row, false under mutation\_evidence block |
 | US0909 | REJECT | qa-rev-US0909 | US0909-fix | 2026-09-25 | eae0dfa215a9 | full | [regression] the patch built on 247e6148 double-merged the surface verb count with US0910, so reference-scripts-surface.md reads 274 against 272 and three surface tests fail (fix: regenerate docgen surface on the rebased tree, 1 line) [LC-006]; [new] non-blocking: the \_tier\_and\_breakdown\_gates docstring states as present fact what is true only once US0911 lands (1 clause) |
 | BG0766 | APPROVE | qa-rev-BG0766 | BG0766-build | 2026-09-25 | 36ba7994513c | full | [pre-existing] non-blocking: ImportabilityTests fails in a fresh clone without node\_modules (markdownlint absent) at base and patched |
+| BG0768 | APPROVE | qa-rev-BG0768 | BG0768-build | 2026-09-25 | 03dcfeccadb5 | full | [new] non-blocking: test\_lean\_no\_two\_role routes history queries through gitutil GIT\_CONFIG\_GLOBAL=/dev/null so the deleted-node test skips where safe.directory lives only in global config [LC-006]; [pre-existing] the skip-on-None path in \_base\_ref came in with US0916 [LC-006]; [pre-existing] BG0766: two test\_test\_census failures at base |
 
 ## Supersessions
 

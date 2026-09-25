@@ -1,6 +1,7 @@
 # BG0768: Two Sprint 4 test modules are red on main: an unconfined git call and a gate-lane floor the deletions tripped
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional (both selectors failed at the base, the unconfined-git sweep naming test_lean_no_two_role and the floor reading 10 not greater than 10; patched, 17 passed; four mutants killed including empty drift-kinds and a three-member gate parse)
 > **Severity:** High
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_no_two_role.py, tools/tests/test_lean_spec_restatements.py, changelog.d/BG0768.md
@@ -25,8 +26,10 @@ Route `test_lean_no_two_role.py`'s git calls through tests/gitutil; lower the sp
 
 - [ ] **AC1** Given main after this fix, then the unconfined-git sweep passes: `test_lean_no_two_role.py` runs git only through the confined helper; raising the frozen count fails it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py::UnconfinedRawGitCallSweepTests
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given the gate's lanes as EP0263 leaves them, then `test_lean_spec_restatements.py` passes, its floor guarding only an empty parse, not a lane count the deletions reduce by design
   - **Verify:** pytest tools/tests/test_lean_spec_restatements.py
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 
