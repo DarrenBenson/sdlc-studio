@@ -1,6 +1,6 @@
 # US0685: The entry gate keeps the demand that a test plan EXISTS and drops the demand that a seat has approved it
 
-> **Status:** Blocked
+> **Status:** Superseded
 > **Closes with:** US0911 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0555
 > **Created:** 2026-08-25

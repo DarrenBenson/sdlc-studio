@@ -1,6 +1,6 @@
 # BG0683: repair_gate's review-before-repair ordering check (US0312 AC4) is dead on the wired path
 
-> **Status:** Open
+> **Status:** Superseded
 > **Closes with:** US0913 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 2

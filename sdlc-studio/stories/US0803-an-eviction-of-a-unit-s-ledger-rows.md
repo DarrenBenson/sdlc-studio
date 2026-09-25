@@ -1,6 +1,6 @@
 # US0803: An eviction of a unit's ledger rows is visible from the lane's output alone
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Closes with:** US0910 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0558
 > **Created:** 2026-08-27

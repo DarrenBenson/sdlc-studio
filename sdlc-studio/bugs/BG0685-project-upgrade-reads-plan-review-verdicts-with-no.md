@@ -1,6 +1,6 @@
 # BG0685: project_upgrade reads plan-review verdicts with no kind, so a repair-plan APPROVE counts as a repair story's spec review
 
-> **Status:** Open
+> **Status:** Superseded
 > **Closes with:** US0909 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 1

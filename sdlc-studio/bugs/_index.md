@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 40 |
+| Open | 33 |
 | In Progress | 0 |
 | Fixed | 610 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
-| Superseded | 14 |
+| Superseded | 21 |
 | **Total** | **770** |
 
 ## All Bugs
@@ -37,13 +37,13 @@
 | [BG0676](BG0676-the-scheduled-corpus-verify-lane-is-red-on.md) | the scheduled corpus-verify lane is red on main - 40 red criteria against a baseline of 20 - and every one of the 21 new ones passes locally | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0677](BG0677-critic-py-repair-cannot-close-a-finding-whose.md) | critic.py repair cannot close a finding whose text carries the closure separator early, so the rejection raising it can never be retired | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0678](BG0678-a-wired-repair-plan-gate-keeps-no-rounds.md) | A wired repair-plan gate keeps no rounds, no brief and no approval pin, so a rejected plan can never be retired and a re-recorded plan keeps its approval | Fixed | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0679](BG0679-with-review-repair-plan-gate-on-a-repair.md) | With review.repair_plan_gate on, a repair bug set straight to Closed or Verified skips the gate | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0679](BG0679-with-review-repair-plan-gate-on-a-repair.md) | With review.repair_plan_gate on, a repair bug set straight to Closed or Verified skips the gate | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0680](BG0680-repair-state-counts-a-repair-row-once-per.md) | repair_state counts a repair row once per rejection sharing its date, so closed and fixed counts are doubled | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0681](BG0681-config-py-show-key-crashes-on-a-key.md) | config.py show --key crashes on a key whose value holds an unquoted YAML date, the path BG0670 left | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0682](BG0682-artifact-py-revision-writes-a-bare-identifier-into.md) | artifact.py revision writes a bare _identifier into the Revision History, which markdownlint refuses as MD037 | Open | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0683](BG0683-repair-gate-s-review-before-repair-ordering-check.md) | repair_gate's review-before-repair ordering check (US0312 AC4) is dead on the wired path | Open | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0684](BG0684-transition-s-two-role-gate-ignores-a-definition.md) | transition's two-role gate ignores a Definition of Done that stands the review.two-role tag down | Open | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0685](BG0685-project-upgrade-reads-plan-review-verdicts-with-no.md) | project_upgrade reads plan-review verdicts with no kind, so a repair-plan APPROVE counts as a repair story's spec review | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0683](BG0683-repair-gate-s-review-before-repair-ordering-check.md) | repair_gate's review-before-repair ordering check (US0312 AC4) is dead on the wired path | Superseded | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0684](BG0684-transition-s-two-role-gate-ignores-a-definition.md) | transition's two-role gate ignores a Definition of Done that stands the review.two-role tag down | Superseded | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0685](BG0685-project-upgrade-reads-plan-review-verdicts-with-no.md) | project_upgrade reads plan-review verdicts with no kind, so a repair-plan APPROVE counts as a repair story's spec review | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0686](BG0686-bg0493-ac2-s-test-reads-a-fixture-hook.md) | BG0493 AC2's test reads a fixture hook, so deleting the real pre-commit hook's lane-check block survives | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0687](BG0687-a-criterion-s-second-verify-line-is-recorded.md) | A criterion's second Verify line is recorded but never run, so a both-states requirement cannot be enforced by its selectors | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0688](BG0688-gate-require-close-still-counts-close-owed-s.md) | gate --require-close still counts close-owed's raw owed rows, refusing an override the tag guard and the detector now honour | Open | Medium | 2026-09-15 | 2026-09-15 |
@@ -51,12 +51,12 @@
 | [BG0690](BG0690-critic-py-repair-re-judges-stored-findings-through.md) | critic.py repair re-judges stored findings through the code-span guard, and its typed closure scanner unescapes any backslash before a greater-than sign | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0691](BG0691-changelog-py-shape-judges-unreadable-and-symlinked-fragments.md) | changelog.py shape judges unreadable and symlinked fragments differently in its two modes, and its git-failure refusals are unpinned | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0692](BG0692-gate-py-never-sets-the-boundary-suite-marker.md) | gate.py never sets the boundary-suite marker itself, so SDLC_GATE_BOUNDARY=push reads [PASS] module-alone over a red boundary-only test | Open | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0693](BG0693-testplan-derive-and-the-plan-review-brief-still.md) | testplan derive and the plan-review brief still name different unauthored sets: blank cells, table order and a criterion with no row | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0693](BG0693-testplan-derive-and-the-plan-review-brief-still.md) | testplan derive and the plan-review brief still name different unauthored sets: blank cells, table order and a criterion with no row | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0694](BG0694-tag-check-s-tests-pin-the-override-case.md) | tag-check's tests pin the override case, not the blocking predicate, so a later-day close-time repair can be refused again with the suite green | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0695](BG0695-conformance-s-ungroomed-nudge-counts-retired-skeletons-and.md) | conformance's ungroomed nudge counts retired skeletons and tells the user to groom Superseded and Won't Implement stories before planning them to Done | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0696](BG0696-critic-py-s-brief-checks-search-the-whole.md) | critic.py's brief checks search the whole brief, so a unit's own text hides a dropped surface, and a REJECT marked as matching no brief can never be retired | Open | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0697](BG0697-the-repair-plan-gate-fails-open-on-a.md) | The repair-plan gate fails open on a zero-finding plan, an unparseable config and an unreadable round file, and its refusals name no remedy or crash on malformed input | Open | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0698](BG0698-repair-plan-rounds-can-be-overwritten-by-concurrent.md) | Repair-plan rounds can be overwritten by concurrent records, a re-record after approval counts as a failed round, and the escalation notice counts a repair-plan REJECT | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0697](BG0697-the-repair-plan-gate-fails-open-on-a.md) | The repair-plan gate fails open on a zero-finding plan, an unparseable config and an unreadable round file, and its refusals name no remedy or crash on malformed input | Superseded | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0698](BG0698-repair-plan-rounds-can-be-overwritten-by-concurrent.md) | Repair-plan rounds can be overwritten by concurrent records, a re-record after approval counts as a failed round, and the escalation notice counts a repair-plan REJECT | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0699](BG0699-sprint-queue-show-s-not-materialised-line-is.md) | sprint queue show's not-materialised line is pinned by no test, and next, plan and queue show hold the discovery partition in separate copies | Won't Fix | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0700](BG0700-the-doctrine-stop-ship-guard-passes-inverted-sentences.md) | The doctrine stop-ship guard passes inverted sentences and a second rule under the same anchor | Won't Fix | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0701](BG0701-run-ending-routes-still-read-different-sets-stop.md) | Run-ending routes still read different sets: stop records from the parked derivation, the boundary stop ignores --retro, and stop cannot see the retro the close names | Open | Medium | 2026-09-15 | 2026-09-15 |

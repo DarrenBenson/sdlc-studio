@@ -1,6 +1,6 @@
 # BG0679: With review.repair_plan_gate on, a repair bug set straight to Closed or Verified skips the gate
 
-> **Status:** Open
+> **Status:** Superseded
 > **Closes with:** US0913 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 2

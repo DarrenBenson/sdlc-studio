@@ -1,6 +1,6 @@
 # CR-0582: No command closes a plan-review REJECT's findings from the independent re-review that approved the repaired plan
 
-> **Status:** Proposed
+> **Status:** Superseded
 > **Closes with:** US0909 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Priority:** Medium
 > **Type:** Improvement

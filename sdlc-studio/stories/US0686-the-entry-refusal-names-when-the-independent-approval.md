@@ -1,6 +1,6 @@
 # US0686: The entry refusal names WHEN the independent approval will be demanded, so the move is not a silent relaxation
 
-> **Status:** Blocked
+> **Status:** Superseded
 > **Closes with:** US0911 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0555
 > **Created:** 2026-08-25

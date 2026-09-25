@@ -1,6 +1,6 @@
 # EP0218: The plan review binds where the code is, so a unit takes one review round instead of two
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Closes with:** US0909, US0911 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Derived Point Total:** 32
 > **Parent:** CR0555
@@ -15,14 +15,14 @@ Decomposed from CR0555. Delivers the work CR0555 requested.
 
 ## Story Breakdown
 
-- [ ] [US0685: The entry gate keeps the demand that a test plan EXISTS and drops the demand that a seat has approved it](../stories/US0685-the-entry-gate-keeps-the-demand-that-a.md)
-- [ ] [US0686: The entry refusal names WHEN the independent approval will be demanded, so the move is not a silent relaxation](../stories/US0686-the-entry-refusal-names-when-the-independent-approval.md)
-- [ ] [US0687: The terminal transition demands the independent plan-review approval and refuses without one exactly as entry does today](../stories/US0687-the-terminal-transition-demands-the-independent-plan-review.md)
+- [x] [US0685: The entry gate keeps the demand that a test plan EXISTS and drops the demand that a seat has approved it](../stories/US0685-the-entry-gate-keeps-the-demand-that-a.md)
+- [x] [US0686: The entry refusal names WHEN the independent approval will be demanded, so the move is not a silent relaxation](../stories/US0686-the-entry-refusal-names-when-the-independent-approval.md)
+- [x] [US0687: The terminal transition demands the independent plan-review approval and refuses without one exactly as entry does today](../stories/US0687-the-terminal-transition-demands-the-independent-plan-review.md)
 - [x] [US0688: The plan review and the delivery review are carried in ONE brief, so a unit takes one round where it took two](../stories/US0688-the-plan-review-and-the-delivery-review-are.md)
-- [ ] [US0689: The move binds behind the existing dated cutoff, so a project that has not adopted it is unchanged and no backlog is retro-refused](../stories/US0689-the-move-binds-behind-the-existing-dated-cutoff.md)
-- [ ] [US0690: The close names which units had the approval demanded at terminal and which the cutoff exempted](../stories/US0690-the-close-names-which-units-had-the-approval.md)
-- [ ] [US0682: review.mutation_evidence stays independent of the test-plan scope, with a fixture setting both proving the two lanes stay sequential rather than nested](../stories/US0682-review-mutation-evidence-stays-independent-of-the-test.md)
-- [ ] [US0683: The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each](../stories/US0683-the-close-reports-which-units-the-test-plan.md)
+- [x] [US0689: The move binds behind the existing dated cutoff, so a project that has not adopted it is unchanged and no backlog is retro-refused](../stories/US0689-the-move-binds-behind-the-existing-dated-cutoff.md)
+- [x] [US0690: The close names which units had the approval demanded at terminal and which the cutoff exempted](../stories/US0690-the-close-names-which-units-had-the-approval.md)
+- [x] [US0682: review.mutation_evidence stays independent of the test-plan scope, with a fixture setting both proving the two lanes stay sequential rather than nested](../stories/US0682-review-mutation-evidence-stays-independent-of-the-test.md)
+- [x] [US0683: The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each](../stories/US0683-the-close-reports-which-units-the-test-plan.md)
 
 ## Acceptance Criteria (Epic Level)
 
