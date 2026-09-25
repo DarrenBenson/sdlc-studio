@@ -18,3 +18,4 @@
 {"id": "US0932", "type": "story", "project": "sdlc-studio"}
 {"id": "EP0264", "type": "epic", "project": "sdlc-studio"}
 {"id": "CR0594", "type": "cr", "project": "sdlc-studio"}
+{"id": "BG0761", "type": "bug", "project": "sdlc-studio"}

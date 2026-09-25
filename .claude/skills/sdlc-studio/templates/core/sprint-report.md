@@ -146,6 +146,26 @@ NOT MEASURED - {{rulings_reason}}
 NOT MEASURED - {{waivers_reason}}
 <!-- end -->
 
+<!-- when: lane_yield_present -->
+### Lane yield
+
+<!-- when: lane_yield_measured -->
+{{lane_yield_note}} A measure, not a gate: listing a lane for deletion refuses nothing and
+files nothing.
+
+<!-- when: lane_yield_rows -->
+| Lane | Refusals | Candidate catches | Paperwork | Last three runs |
+| --- | --- | --- | --- | --- |
+<!-- repeat: lane_yield -->
+| {{yield_lane}} | {{yield_refusals}} | {{yield_catches}} | {{yield_paperwork}} | {{yield_verdict}} |
+<!-- end -->
+<!-- end -->
+<!-- end -->
+<!-- unless: lane_yield_measured -->
+NOT MEASURED - {{lane_yield_reason}}
+<!-- end -->
+<!-- end -->
+
 <!-- when: lessons_present -->
 ### Lessons
 

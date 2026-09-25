@@ -68,6 +68,9 @@ git_dir="$(git rev-parse --absolute-git-dir 2>/dev/null)" || exit 0
 cd "$repo_root" || exit 0
 skill=".claude/skills/sdlc-studio/scripts"
 script="$repo_root/$skill/engagement_floor.py"
+# The repo-writes snapshot pre-commit took: checked by the lane below, dropped on a refusal.
+writes_snapshot="$(git rev-parse --git-path sdlc-repo-writes 2>/dev/null || true)"
+[ -n "$writes_snapshot" ] || writes_snapshot="$git_dir/sdlc-repo-writes"
 
 # Colour only when writing to a terminal.
 if [ -t 1 ]; then R=$'\033[31m'; G=$'\033[32m'; Y=$'\033[33m'; B=$'\033[1m'; N=$'\033[0m'; else R=; G=; Y=; B=; N=; fi
@@ -90,6 +93,7 @@ run() {
   fi
   last_run_out="$out"
   fail=1
+  refused+=("$key")
   printf '  %sFAIL%s %s%s%s\n' "$R" "$N" "$B" "$key" "$N"
   printf '       enforces: %s\n' "$what"
   if [ -n "$out" ]; then
@@ -97,6 +101,30 @@ run() {
     printf '%s\n' "$out" | sed 's/^/         /'
   fi
   printf '       %s→ fix:%s %s\n\n' "$B" "$N" "$fixhint"
+}
+
+# THE REFUSAL LOG. Each refusing lane is recorded as one JSON line - the lane, a UTC timestamp
+# and the staged paths with their blob ids - in gitignored sdlc-studio/.local/refusals.jsonl, and the close joins each
+# line to the commit that followed it: code or a test changed from what was refused there is a
+# candidate catch, anything else is paperwork. `run` only NOTES the lane; the line is written where the hook
+# closes on its refusal exit, after the repo-writes window has shut, so the log can never read as
+# a stray write into `.local/`. Best effort: it never refuses and never changes an exit code. The
+# same block is in the other hook, which cannot source this one.
+refused=()
+log_refusals() {
+  [ "${#refused[@]}" -gt 0 ] || return 0
+  mkdir -p sdlc-studio/.local 2>/dev/null
+  python3 -c '
+import json, subprocess, sys, time
+ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+out = subprocess.run(["git", "diff", "--cached", "--raw", "-z", "--no-abbrev", "--no-renames"],
+                     capture_output=True, text=True).stdout.split("\0")
+blobs = {path: meta.split()[3] for meta, path in zip(out[0::2], out[1::2]) if meta[:1] == ":"}
+with open("sdlc-studio/.local/refusals.jsonl", "a", encoding="utf-8") as log:
+    for lane in sys.argv[1:]:
+        log.write(json.dumps({"lane": lane, "ts": ts, "staged": list(blobs),
+                              "blobs": blobs}) + "\n")
+' "${refused[@]}" 2>/dev/null || true
 }
 
 # ---------------------------------------------------------------------------
@@ -169,8 +197,12 @@ fi
 if [ "$fail" -ne 0 ]; then
   printf '  The unit suites did NOT run: this refusal cost seconds, not a full gate.\n'
   printf '  Genuine emergency only: %sgit commit --no-verify%s\n' "$B" "$N"
-  # Left where it is: the retry runs pre-commit again, which rewrites the record from the
-  # index as it stands then.
+  # The suite handover is left where it is: the retry runs pre-commit again, which rewrites it
+  # from the index as it stands then. The repo-writes snapshot goes - no suite runs between it
+  # and a check now, and the retry takes a fresh one - so the refusal log below is written
+  # with no comparison window open.
+  rm -f "$writes_snapshot" 2>/dev/null
+  log_refusals
   exit 1
 fi
 
@@ -344,9 +376,8 @@ fi
 # evidence with this lane's output. And above the verdict record below, which is the last thing
 # a passing hook does - anything that can still set `fail` belongs before it.
 #
-# The record is one-shot, like the handover: read once, then gone.
-writes_snapshot="$(git rev-parse --git-path sdlc-repo-writes 2>/dev/null || true)"
-[ -n "$writes_snapshot" ] || writes_snapshot="$git_dir/sdlc-repo-writes"
+# The record (`writes_snapshot`, set at the top) is one-shot, like the handover: read once, then
+# gone.
 if [ -r "$writes_snapshot" ]; then
   run "repo-writes" \
     "running the unit suites leaves the working tree unchanged: no tracked file modified, no untracked file created, nothing written into gitignored sdlc-studio/.local/" \
@@ -424,6 +455,7 @@ fi
 if [ "$fail" -ne 0 ]; then
   printf '\n%sCommit blocked.%s Fix the failures above (each lists how), then commit again.\n' "$R" "$N"
   printf 'Genuine emergency only: %sgit commit --no-verify%s\n' "$B" "$N"
+  log_refusals   # below the repo-writes check, which has already consumed its snapshot
   exit 1
 fi
 printf '%sgate green.%s\n' "$G" "$N"

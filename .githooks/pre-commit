@@ -53,6 +53,7 @@ lanes=0
 shown=0
 lane_pids=""
 lane_keys=()
+refused=()
 
 # A Ctrl-C, a kill or a hangup must take the lanes down with the hook. A background job in a
 # script ignores SIGINT, and so does everything it starts, so each lane runs in a process group of
@@ -91,7 +92,9 @@ lane() {
 
 # collect: wait for every lane started, then print each slot in declared order. A slot with no
 # status - a lane killed before it could write one - is a failure, never a pass, and is named.
-# The lanes it waited for are gone, so none is left for `stop_lanes` to signal.
+# The lanes it waited for are gone, so none is left for `stop_lanes` to signal. Each failing
+# lane's key is noted in `refused` for the refusal log: a lane runs in a subshell, so only this
+# side of the slot can keep a note.
 collect() {
   local rc
   wait
@@ -103,7 +106,7 @@ collect() {
       printf '  %sFAIL%s %s%s%s - the lane ended without an exit status, so its verdict is unknown\n' \
         "$R" "$N" "$B" "${lane_keys[$shown]}" "$N"
     fi
-    [ "$rc" = "0" ] || fail=1
+    [ "$rc" = "0" ] || { fail=1; refused+=("${lane_keys[$shown]}"); }
     shown=$((shown + 1))
   done
 }
@@ -133,6 +136,29 @@ run() {
   lane "$key" verdict "$key" "$what" "$fixhint" "$@"
 }
 # <<< lane-helpers
+
+# THE REFUSAL LOG. Each refusing lane is recorded as one JSON line - the lane, a UTC timestamp
+# and the staged paths with their blob ids - in gitignored sdlc-studio/.local/refusals.jsonl, and
+# the close joins each line to the commit that followed it: code or a test changed from what was
+# refused there is a candidate catch, anything else is paperwork. `collect` only NOTES the lane;
+# the line is written where the hook closes on its refusal exit, after the repo-writes window has
+# shut, so the log can never read as a stray write into `.local/`. Best effort: it never refuses
+# and never changes an exit code. The same block is in the other hook, which cannot source this.
+log_refusals() {
+  [ "${#refused[@]}" -gt 0 ] || return 0
+  mkdir -p sdlc-studio/.local 2>/dev/null
+  python3 -c '
+import json, subprocess, sys, time
+ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+out = subprocess.run(["git", "diff", "--cached", "--raw", "-z", "--no-abbrev", "--no-renames"],
+                     capture_output=True, text=True).stdout.split("\0")
+blobs = {path: meta.split()[3] for meta, path in zip(out[0::2], out[1::2]) if meta[:1] == ":"}
+with open("sdlc-studio/.local/refusals.jsonl", "a", encoding="utf-8") as log:
+    for lane in sys.argv[1:]:
+        log.write(json.dumps({"lane": lane, "ts": ts, "staged": list(blobs),
+                              "blobs": blobs}) + "\n")
+' "${refused[@]}" 2>/dev/null || true
+}
 
 echo "${B}sdlc-studio pre-commit gate${N}"
 
@@ -434,6 +460,7 @@ if [ "$fail" -ne 0 ]; then
   # goes with the handover: a record left behind would describe a tree from a run that never
   # happened, and the next commit-msg-only operation would compare against it.
   rm -f "$handoff" "$writes_snapshot" 2>/dev/null
+  log_refusals
   exit 1
 fi
 # Honest about what is still owed: "green" over a gate whose expensive half has not run yet

@@ -1,6 +1,7 @@
 # BG0761: US0904 did not converge in review: round 2 REJECT findings
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional (a real same-second retry through the parallel hooks classes correctly; both commit-msg blob mutants, the > join and the ignore-blobs mutant are killed; eight of eight mutants killed at round 2)
 > **Depends on:** BG0759 - its carried patch applies only over the rebased pre-commit hook (QA grooming)
 > **Carried work:** the round-2 patch is kept at sdlc-studio/.local/US0904-carried-r2.patch, complete against 25cbd375 and passing every other probe. Remaining fix: in sprint_report.classify_refusals change `when > at` to `when >= at` (git stamps a commit when it starts, before its hooks) and add a fixture row whose retry carries the refusal's own second; then add the message-refusal test to AC1's Verify line and reword AC2 to the blob rule
 > **Severity:** Medium
@@ -29,10 +30,13 @@ Apply the carried patch, change `when > at` to `when >= at`, add the same-second
 
 - [ ] **AC1** Given the carried patch applied and a refusal stamped in the same second as the commit that followed it, when `sprint close` classes the refusal, then it is classed `catch` or `paperwork` by that commit, never `pending`. Fails on: the carried patch's `when > at`, which answers `pending`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_yield.py::LaneYieldTests::test_a_retry_in_the_refusals_own_second_is_classed_by_that_retry
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given a logged refusal and the next commit, when it is classed, then it is a candidate catch only when that commit writes a non-paperwork path to a blob other than the one the refused commit staged, and a retry carrying the refused blob unchanged is paperwork; US0904 AC2's text states this blob rule. Fails on: the rule US0904 AC2 still words, "any code or test change is a catch", under which a retry of the unchanged refused code counts as a catch.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_yield.py::LaneYieldTests::test_a_refusal_is_classed_by_the_commit_that_followed_it
-- [ ] **AC3** Given a commit refused by the commit-msg hook's message rules, when the hook exits, then one line naming the message lane and the staged blobs is appended to `sdlc-studio/.local/refusals.jsonl` and no repo-writes snapshot is left open; this is US0904 AC5. Fails on: dropping the commit-msg hook's logging call, or logging before the snapshot is released.
+  - **Verified:** yes (2026-09-25)
+- [ ] **AC3** Given a commit refused by the commit-msg hook's message rules, when the hook exits, then one line naming the message lane and the staged blobs is appended to `sdlc-studio/.local/refusals.jsonl` and no repo-writes snapshot is left open; this is US0904 AC5. Fails on: dropping the commit-msg hook's logging call, or recording a blob other than the one staged.
   - **Verify:** pytest tools/tests/test_lean_refusal_log.py::RefusalLogTests::test_a_refused_message_is_logged_and_leaves_no_snapshot_open
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

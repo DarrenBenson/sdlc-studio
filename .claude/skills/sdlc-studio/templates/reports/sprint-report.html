@@ -241,6 +241,26 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
 <!-- unless: waivers_measured -->
   <p class="unmeasured"><b>NOT MEASURED</b> - {{waivers_reason}}</p>
 <!-- end -->
+<!-- when: lane_yield_present -->
+
+  <h3>Lane yield</h3>
+<!-- when: lane_yield_measured -->
+  <p>{{lane_yield_note}} A measure, not a gate: listing a lane for deletion refuses nothing and files nothing.</p>
+<!-- when: lane_yield_rows -->
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Lane</th><th scope="col" class="num">Refusals</th><th scope="col" class="num">Candidate catches</th><th scope="col" class="num">Paperwork</th><th scope="col">Last three runs</th></tr></thead>
+    <tbody>
+<!-- repeat: lane_yield -->
+      <tr><th scope="row" class="mono">{{yield_lane}}</th><td class="num">{{yield_refusals}}</td><td class="num">{{yield_catches}}</td><td class="num">{{yield_paperwork}}</td><td class="note">{{yield_verdict}}</td></tr>
+<!-- end -->
+    </tbody>
+  </table></div>
+<!-- end -->
+<!-- end -->
+<!-- unless: lane_yield_measured -->
+  <p class="unmeasured"><b>NOT MEASURED</b> - {{lane_yield_reason}}</p>
+<!-- end -->
+<!-- end -->
 <!-- when: lessons_present -->
 
   <h3>Lessons</h3>

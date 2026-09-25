@@ -3,7 +3,7 @@
 > **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_findings_window.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_findings_window.py, changelog.d/BG0751.md
 > **Evidence:** US0885 review finding 4 (read, not executed), RUN-01M3891F
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio file

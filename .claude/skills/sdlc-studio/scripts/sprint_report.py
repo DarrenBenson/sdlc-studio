@@ -2840,8 +2840,10 @@ def _section(key: str, title: str, figures: dict | None = None, rows: list | Non
 OUTSIDE_THE_DIGEST = (("goal", "ended_at"), ("goal", "duration_hours"))
 #: Whole sections the digest does not cover. The lessons appendix reads the class store, which
 #: every later close moves; in the digest, the next run's close would invalidate this signed
-#: page. The page still shows the store as the close left it, from the JSON of record.
-SECTIONS_OUTSIDE_THE_DIGEST = ("lessons",)
+#: page. The page still shows the store as the close left it, from the JSON of record. The lane
+#: yield reads a per-clone log whose refusals are classed by commits that land later, so it
+#: moves for the same reason.
+SECTIONS_OUTSIDE_THE_DIGEST = ("lessons", "lane_yield")
 
 
 def in_the_digest(section: str, key: str) -> bool:
@@ -3213,7 +3215,7 @@ def _dora_rows(root: Path, start, end) -> list[dict]:
 SCHEMA = 2
 #: The front page, in order, and the appendix beneath it.
 FRONT_PAGE = ("goal", "estimates", "delivered", "known_issues", "signoff")
-APPENDIX = ("cost", "dora", "calibration", "rulings", "waivers", "lessons")
+APPENDIX = ("cost", "dora", "calibration", "rulings", "waivers", "lane_yield", "lessons")
 
 
 def _num(value) -> bool:
@@ -3677,8 +3679,12 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         # Bounded at both ends by the run's own window, like DORA, so a decision taken before
         # or after the run cannot move a signed page.
         _waivers_section(root, _iso(end), _iso(start)),
+        _lane_yield_section(root, state, start, end),
         _lessons_section(root, state.get("run_id")),
     ]
+    # Absent, not NOT MEASURED, where no refusal log exists: its only writer is this repository's
+    # own commit hooks, so in a consuming project the section could never fill.
+    sections = [s for s in sections if s is not None]
     report = {"schema": SCHEMA, "report_id": None, "run_id": state.get("run_id"),
               "retro_id": sdlc_md.norm_id(retro_id), "generated_at": generated_at,
               # An envelope field, never a figure: in the digest, recording the bound would
@@ -3885,6 +3891,162 @@ def _lessons_section(root: Path, run_id: str | None) -> dict:
     return _section("lessons", "Lessons", {"lessons_note": fig("lessons_note", note, rel)}, rows)
 
 
+#: One line per refusing commit lane, appended by the commit hooks:
+#: `{lane, ts, staged, blobs}`, `blobs` mapping each staged path to its blob.
+REFUSALS_REL = "sdlc-studio/.local/refusals.jsonl"
+#: Runs a lane is judged over before it is listed for deletion: this one and the two before it.
+YIELD_RUNS = 3
+
+
+def is_paperwork(path: str) -> bool:
+    """An artefact, baseline, index, changelog fragment or doc: a change that fixes no code."""
+    name = path.rsplit("/", 1)[-1]
+    return (path.startswith(("sdlc-studio/", "changelog.d/", "docs/"))
+            or name.endswith(".md") or "baseline" in name)
+
+
+def _aware(value) -> "datetime | None":
+    """A stamp with its zone, or None. A stamp with no zone cannot be placed against a run
+    window - comparing it raises - so it is read as unparseable."""
+    at = _at(value)
+    return at if at is not None and at.tzinfo is not None else None
+
+
+def _commits_after(root: Path, since) -> "list[tuple[datetime, dict[str, str]]] | str":
+    """`(committed at, {path: new blob})` for every commit with a path, committed at or after
+    `since`, oldest first, from one `git log`; or the reason git could not be read. `git log`
+    itself is newest first, so two commits stamped in the same whole second arrive with the
+    later one first: reversed before the (stable) sort, so a same-second tie keeps the OLDER
+    commit first, matching classify_refusals's `>=` join to the earliest same-second retry."""
+    try:
+        proc = subprocess.run(
+            ["git", "log", f"--since={since.isoformat()}", "--format=%x01%cI", "--raw",
+             "--no-abbrev", "--no-renames"],
+            capture_output=True, text=True, cwd=str(root), timeout=30)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return f"git log could not run: {exc}"
+    if proc.returncode != 0:
+        return f"git log failed: {(proc.stderr or '').strip()[:200] or proc.returncode}"
+    out = []
+    for block in (proc.stdout or "").split("\x01")[1:]:
+        stamp, *lines = [ln for ln in block.splitlines() if ln.strip()]
+        # `:<old mode> <new mode> <old blob> <new blob> <status>\t<path>`
+        blobs = {ln.split("\t", 1)[1]: ln.split()[3] for ln in lines
+                 if ln.startswith(":") and "\t" in ln}
+        if blobs and _aware(stamp):
+            out.append((_aware(stamp), blobs))
+    return sorted(reversed(out), key=lambda c: c[0])
+
+
+def classify_refusals(root: Path, refusals: list[dict]) -> "list[str] | str":
+    """Each refusal's class, by the first commit after it: `catch` when that commit changes a
+    path that is not paperwork to content other than the refused commit staged (its `blobs`),
+    `paperwork` when it does not - a retry carrying the refused code unchanged caught nothing -
+    and `pending` when no commit has followed yet. Or the reason the history could not be read.
+    Every refusal's `ts` must carry a zone.
+
+    "After" includes the refusal's own second: git stamps a commit when it starts, before its
+    hooks run, so a retry landing in that second carries it. Known limit: both stamps are whole
+    seconds, so a commit that landed in that second but before the refusal is read as its
+    retry."""
+    stamps = [_aware(r["ts"]) for r in refusals]
+    if not stamps:
+        return []
+    commits = _commits_after(root, min(stamps))
+    if isinstance(commits, str):
+        return commits
+    out = []
+    for rec, at in zip(refusals, stamps):
+        nxt = next((blobs for when, blobs in commits if when >= at), None)
+        refused = rec.get("blobs") if isinstance(rec.get("blobs"), dict) else {}
+        out.append("pending" if nxt is None else
+                   "catch" if any(not is_paperwork(p) and blob != refused.get(p)
+                                  for p, blob in nxt.items()) else "paperwork")
+    return out
+
+
+def _yield_windows(root: Path, state: dict, start, end) -> list[tuple]:
+    """`(start, end)` for this run and up to the two archived runs before it, newest first. An
+    archived run with no end is bounded by the start of the run after it."""
+    windows = [(start, end)]
+    prior = sorted(((_aware(r.get("started_at")), _aware(r.get("ended_at")))
+                    for r in run_state.archived(root)
+                    if r.get("run_id") != state.get("run_id") and _aware(r.get("started_at"))
+                    and _aware(r.get("started_at")) < start), key=lambda w: w[0])
+    for s, e in reversed(prior):
+        if len(windows) == YIELD_RUNS:
+            break
+        windows.append((s, e or windows[-1][0]))
+    return windows
+
+
+def _lane_yield_section(root: Path, state: dict, start, end) -> dict | None:
+    """Per commit lane: this run's refusals, candidate catches and paperwork, and whether the
+    lane refused across the last three runs without one candidate catch. A MEASURE, never a
+    gate: a lane is listed for deletion here and nothing refuses, files or exits on it, and no
+    fault in the log or the history can raise out of the close - it reads NOT MEASURED instead.
+    None when there is no log, so a clone without the hooks shows no section at all. Outside
+    the digest (SECTIONS_OUTSIDE_THE_DIGEST): the log is per clone and a refusal's class moves
+    when the next commit lands."""
+    path = root / REFUSALS_REL
+    if not path.is_file():
+        return None
+    src = f"{REFUSALS_REL}, git log"
+
+    def unread(why: str) -> dict:
+        return _section("lane_yield", "Lane yield",
+                        not_measured=unmeasured("lane_yield", REFUSALS_REL, why))
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        return unread(f"the refusal log could not be read: {exc}")
+    if start is None or start.tzinfo is None:
+        return unread("the run records no start time with a zone, so no refusal can be placed "
+                      "in it")
+    end = end if end is not None and end.tzinfo is not None else None
+    logged, bad = [], 0
+    for line in filter(str.strip, text.splitlines()):
+        try:
+            rec = json.loads(line)
+        except ValueError:
+            rec = None
+        if isinstance(rec, dict) and rec.get("lane") and _aware(rec.get("ts")):
+            logged.append(rec)
+        else:
+            bad += 1
+    windows = _yield_windows(root, state, start, end)
+    logged = [r for r in logged if any(_in_window(r["ts"], s, e) for s, e in windows)]
+    classes = classify_refusals(root, logged)
+    if isinstance(classes, str):
+        return unread(f"the refusals could not be joined to the commits after them: {classes}")
+    tally: dict[str, dict] = {}
+    for rec, cls in zip(logged, classes):
+        t = tally.setdefault(str(rec["lane"]), {"run": [], "all": []})
+        t["all"].append(cls)
+        if _in_window(rec["ts"], *windows[0]):
+            t["run"].append(cls)
+    rows = []
+    for lane, t in sorted(tally.items()):
+        caught, paper = t["all"].count("catch"), t["all"].count("paperwork")
+        verdict = (f"too few runs: {len(windows)} of {YIELD_RUNS} recorded"
+                   if len(windows) < YIELD_RUNS else
+                   f"delete candidate: {len(t['all'])} refusal(s) over {YIELD_RUNS} runs and no "
+                   f"candidate catch" if paper and not caught else
+                   f"{caught} candidate catch(es) over {YIELD_RUNS} runs")
+        rows.append({"yield_lane": fig("yield_lane", lane, src),
+                     "yield_refusals": fig("yield_refusals", len(t["run"]), src),
+                     "yield_catches": fig("yield_catches", t["run"].count("catch"), src),
+                     "yield_paperwork": fig("yield_paperwork", t["run"].count("paperwork"), src),
+                     "yield_verdict": fig("yield_verdict", verdict, src)})
+    note = (f"{sum(len(t['run']) for t in tally.values())} refusal(s) in this run. A refusal "
+            f"is a candidate catch when the next commit changed code or a test from what was "
+            f"refused, paperwork when it changed only artefacts, baselines, indexes or docs, and "
+            f"pending until a commit follows it."
+            + (f" {bad} unparseable line(s) in the log were skipped." if bad else ""))
+    return _section("lane_yield", "Lane yield", {"lane_yield_note": fig("lane_yield_note",
+                                                                        note, src)}, rows)
+
+
 def _signoff_section(state_rel: str) -> dict:
     """The block a signature LANDS in. Unsigned it says so; it is never blanked, because an
     empty cell reads as a signature nobody can find rather than one nobody has given."""
@@ -4019,7 +4181,8 @@ def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict
 #: Section key -> the row-list name the templates repeat over. Named here rather than in the
 #: templates so a section can be renamed without editing two files.
 _ROW_LISTS = {"estimates": "estimates", "delivered": "plan_units", "known_issues": "issues",
-              "cost": "models", "dora": "dora", "waivers": "waivers", "lessons": "lessons"}
+              "cost": "models", "dora": "dora", "waivers": "waivers", "lessons": "lessons",
+              "lane_yield": "lane_yield"}
 
 
 def _render(report: dict, template: str, revalidation: dict | None) -> str:
