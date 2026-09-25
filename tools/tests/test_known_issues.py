@@ -56,12 +56,13 @@ class GeneratorTests(unittest.TestCase):
         """Low sorts first. One Low among 37 Mediums, sorted by id, would land unfindable in the
         middle of the table - present, and disclosed in the same sense a footnote is."""
         root = self._corpus(("BG0001", "Open", "Medium", "m"), ("BG0009", "Open", "Low", "l"))
-        rows = [ln for ln in ki.render(root).splitlines() if ln.startswith("| `BG")]
+        rows = [ln for ln in ki.render(root, "6.0.0").splitlines() if ln.startswith("| `BG")]
         self.assertTrue(rows[0].startswith("| `BG0009` | Low |"), rows)
 
     def test_a_long_title_is_elided_rather_than_left_to_wrap(self):
         root = self._corpus(("BG0001", "Open", "Medium", "t" * 400))
-        row = next(ln for ln in ki.render(root).splitlines() if ln.startswith("| `BG0001`"))
+        row = next(ln for ln in ki.render(root, "6.0.0").splitlines()
+                   if ln.startswith("| `BG0001`"))
         self.assertIn("...", row)
         self.assertLess(len(row), ki.TITLE_MAX + 60)
 
@@ -84,7 +85,7 @@ class GeneratorTests(unittest.TestCase):
         above for entirely the wrong reason. The cut's own write is pinned in
         `test_lean_release_notes`, which needs a repository with tags for its refusal."""
         root = self._corpus(("BG0001", "Open", "Medium", "m"))
-        (root / ki.PAGE_REL).write_text(ki.render(root), encoding="utf-8")
+        (root / ki.PAGE_REL).write_text(ki.render(root, "6.0.0"), encoding="utf-8")
         self.assertEqual(0, ki.main(["check", "--root", str(root)]))
 
 
@@ -244,7 +245,8 @@ class BarPopulationTests(unittest.TestCase):
         people actually run."""
         root = self._corpus(("BG0001", "Open", "Medium"))
         (root / ki.BUGS_REL / "BG0002-x.md").write_text("nothing parseable\n", encoding="utf-8")
-        (root / "docs" / "known-issues.md").write_text(ki.render(root), encoding="utf-8")
+        (root / "docs" / "known-issues.md").write_text(ki.render(root, "6.0.0"),
+                                                        encoding="utf-8")
         err = io.StringIO()
         with contextlib.redirect_stderr(err):
             rc = ki.main(["check", "--root", str(root)])
@@ -473,12 +475,13 @@ class DisclosurePageTests(unittest.TestCase):
     def test_the_prose_is_true_at_a_count_and_at_zero(self) -> None:
         """MUTANT: hard-code the prose so it reads the same at any row count."""
         with tempfile.TemporaryDirectory() as d:
-            some = ki.render(self._corpus(Path(d) / "a", [("BG9001", "Medium"), ("BG9002", "Low")]))
+            some = ki.render(self._corpus(Path(d) / "a", [("BG9001", "Medium"), ("BG9002", "Low")]),
+                             "6.0.0")
             self.assertIn("ship open, listed here by id", some)
             self.assertIn("Each id below is a file", some)
             self.assertIn("2 findings: 1 Medium, 1 Low.", some)
         with tempfile.TemporaryDirectory() as d:
-            none = ki.render(self._corpus(Path(d) / "b", []))
+            none = ki.render(self._corpus(Path(d) / "b", []), "6.0.0")
             self.assertIn("No Medium or Low finding is open", none)
             self.assertNotIn("Each id below is a file", none,
                              "an empty table cannot promise a file per id")
@@ -486,14 +489,124 @@ class DisclosurePageTests(unittest.TestCase):
             self.assertIn("0 findings: 0 Medium, 0 Low.", none)
 
     def test_the_heading_names_the_bar_of_the_release_being_cut(self) -> None:
-        """MUTANT: revert the heading constant to naming only the previous release's bar."""
+        """MUTANT: revert the heading constant to naming only the previous release's bar.
+        US0946 derives the heading from the release being cut, so the fixture cuts 6.0.0."""
         with tempfile.TemporaryDirectory() as d:
-            page = ki.render(self._corpus(Path(d), [("BG9001", "Medium")]))
-        self.assertIn("## The bar v5.1 is held to", page)
+            page = ki.render(self._corpus(Path(d), [("BG9001", "Medium")]), "6.0.0")
+        self.assertIn("## The bar v6.0 is held to", page)
+        self.assertIn("## The bar v5.1 was held to, kept as history", page)
         self.assertIn("## The bar v5.0.0 was held to, kept as history", page)
-        self.assertLess(page.index("The bar v5.1 is held to"),
-                        page.index("The bar v5.0.0 was held to"),
+        self.assertLess(page.index("The bar v6.0 is held to"),
+                        page.index("The bar v5.1 was held to"),
                         "the bar in force comes first; the previous one is history below it")
+
+
+class ReleaseNamedTests(unittest.TestCase):
+    """US0946: the page names the release being cut, not the one v5.1 was. Every literal release
+    in the page text comes from `--release`, and `check` judges a page against the release the
+    page itself names, so a written page round-trips with no release pinned anywhere."""
+
+    def _repo(self, *releases: str) -> Path:
+        """A throwaway repository with one open Medium and a notes file for each release."""
+        import subprocess  # noqa: PLC0415
+        tmp = tempfile.TemporaryDirectory(prefix="release_named_")
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        subprocess.run(["git", "init", "-q", str(root)], check=True, capture_output=True)
+        (root / ki.BUGS_REL).mkdir(parents=True)
+        (root / ki.BUGS_REL / "BG0001-x.md").write_text(
+            "# BG0001: a residue\n\n> **Status:** Open\n> **Severity:** Medium\n",
+            encoding="utf-8")
+        (root / "docs").mkdir()
+        for release in releases:
+            (root / "docs" / f"release-notes-v{release}.md").write_text(
+                f"# v{release}\n\n**v{release} discloses 0 open defects: 0 Medium, 0 Low.**\n",
+                encoding="utf-8")
+        return root
+
+    def _cut(self, release: str, *decoys: str) -> tuple[Path, str]:
+        """`write --release` through `main`; `decoys` are notes of releases NOT being cut."""
+        root = self._repo(release, *decoys)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(0, ki.main(["write", "--release", release, "--root", str(root)]))
+        return root, (root / ki.PAGE_REL).read_text(encoding="utf-8")
+
+    def test_the_page_names_the_release_cut(self) -> None:
+        """MUTANT: HEAD's literals - the heading and the triage target still read v5.1."""
+        _root, page = self._cut("6.0.0")
+        self.assertIn("## The bar v6.0 is held to", page)
+        self.assertIn("Zero open Critical or High", page, "the bar sentence is v6.0's, not v5.1's")
+        self.assertIn("triaged to v6.1.", page)
+        self.assertIn("## Triaged to v6.1", page)
+        self.assertNotIn("triaged to v5.1", page.casefold())
+
+    def test_the_v5_history_survives(self) -> None:
+        """MUTANT: template the heading by deleting the history prose below it."""
+        _root, page = self._cut("6.0.0")
+        self.assertIn("## The bar v5.0.0 was held to, kept as history", page)
+        self.assertIn("Every High finding raised against v5 was\nfixed and closed", page)
+        self.assertLess(page.index("## The bar v6.0 is held to"),
+                        page.index("## The bar v5.0.0 was held to"),
+                        "the bar in force comes first; the earlier ones are history below it")
+
+    def test_check_round_trips_the_written_release(self) -> None:
+        """MUTANT: `check` re-renders for a release of its own rather than the page's, so it
+        disagrees with the page it was asked to judge. The second release defeats a check that
+        pins 6.0 by hand; the notes of an older and a newer release defeat one that takes the
+        release from `docs/release-notes-v*.md`; a heading naming another release is the
+        negative control."""
+        for release in ("6.0.0", "7.2.0"):
+            with self.subTest(release=release):
+                root, page = self._cut(release, "5.1.0", "9.9.0")
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(0, ki.main(["check", "--root", str(root)]))
+                series = release.rsplit(".", 1)[0]
+                (root / ki.PAGE_REL).write_text(
+                    page.replace(f"The bar v{series} is held to", "The bar v5.1 is held to"),
+                    encoding="utf-8")
+                with contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(1, ki.main(["check", "--root", str(root)]),
+                                     "a page whose heading names another release still agreed")
+
+
+    def test_a_cut_states_the_bar_in_force_for_its_own_series(self) -> None:
+        """MUTANTS: (1) one bar sentence for every series, so a 5.1.1 cut states v6.0's bar;
+        (2) the history filter widened from `<` to `<=`, so the bar in force is also listed as
+        history. A series between two bars states the older one, and a series older than every
+        recorded bar is refused rather than given a bar nobody recorded."""
+        _root, older = self._cut("5.1.1")
+        self.assertIn("## The bar v5.1 is held to", older)
+        self.assertIn("every Medium disposed of or ruled", older)
+        self.assertNotIn("Zero open Critical or High", older, "a 5.1 cut states v6.0's bar")
+        self.assertNotIn("The bar v5.1 was held to", older)
+        self.assertIn("## The bar v5.0.0 was held to, kept as history", older)
+        _root, current = self._cut("6.0.0")
+        self.assertNotIn("The bar v6.0 was held to", current, "the bar in force is not history")
+        _root, later = self._cut("6.1.0")
+        self.assertIn("## The bar v6.1 is held to", later)
+        self.assertIn("Zero open Critical or High", later)
+        self.assertNotIn("The bar v6.0 was held to", later)
+        root = self._repo("4.1.0")
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            self.assertEqual(1, ki.main(["write", "--release", "4.1.0", "--root", str(root)]))
+        self.assertIn("no bar is recorded for v4.1", err.getvalue())
+        self.assertFalse((root / ki.PAGE_REL).exists())
+
+    def test_a_release_that_is_not_a_version_is_refused(self) -> None:
+        """MUTANTS: (1) delete the cut's version guard; (2) drop the grammar's end anchor. Each
+        refused release has notes of its own, so the refusal is the grammar's and not a missing
+        file's. 6.0.0 and 6.0.0-rc.1 are the positive controls."""
+        for release in ("6.0.0", "6.0.0-rc.1"):
+            with self.subTest(accepted=release):
+                self._cut(release)
+        for release in ("6.0", "6.0.0junk", "banana"):
+            with self.subTest(refused=release):
+                root = self._repo(release)
+                with contextlib.redirect_stderr(io.StringIO()) as err:
+                    rc = ki.main(["write", "--release", release, "--root", str(root)])
+                self.assertEqual(1, rc)
+                self.assertIn("is not a release version", err.getvalue())
+                self.assertFalse((root / ki.PAGE_REL).exists(), "a refused cut wrote the page")
 
 
 if __name__ == "__main__":

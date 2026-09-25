@@ -122,7 +122,8 @@ class FrozenNotesTests(unittest.TestCase):
 
             r = _cli(root, "write", "--release", "9.1.0")
             self.assertEqual(0, r.returncode, r.stdout + r.stderr)
-            self.assertEqual(ki.render(root), (docs / "known-issues.md").read_text(encoding="utf-8"))
+            self.assertEqual(ki.render(root, "9.1.0"),
+                             (docs / "known-issues.md").read_text(encoding="utf-8"))
             self.assertEqual("# v9.1.0\n\nIntro.\n\n**v9.1.0 discloses 3 open defects: 2 Medium, "
                              "1 Low.**\n\nTail prose.\n", cut.read_text(encoding="utf-8"))
             self.assertEqual(0, _cli(root, "check").returncode, "the page just written disagrees")
@@ -205,7 +206,7 @@ class FrozenNotesTests(unittest.TestCase):
 
             # The reviewer's probe: the page is cut but left UNCOMMITTED, and the stale tag is
             # pushed again. The working tree agrees; the tag does not, and the tag is what ships.
-            (fx.clone / ki.PAGE_REL).write_text(ki.render(fx.clone), encoding="utf-8")
+            (fx.clone / ki.PAGE_REL).write_text(ki.render(fx.clone, "6.0.0"), encoding="utf-8")
             self.assertEqual(0, _cli(fx.clone, "check").returncode, "the working tree disagrees")
             uncommitted = fx.push("v0.0.1")
             self.assertNotEqual(0, uncommitted.returncode,

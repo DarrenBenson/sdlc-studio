@@ -61,15 +61,63 @@ _SEVERITY = re.compile(r"^> \*\*Severity:\*\* *(.+)$", re.M)
 #: does not leave the release bar because of a hyphen.
 _HEADING = re.compile(r"^# (BG-?\d+): (.+)$", re.M)
 
+#: Every bar a release has been held to, newest first, as `(series, heading version, prose)`. A
+#: page states the bar in force for the series being cut - the newest recorded at or below it -
+#: and keeps every older one below as history, because a reader needs to know which bar the list
+#: in front of them serves. A new bar is a new first row; the rows below it never change.
+BARS = (
+    ((6, 0), "v6.0", """\
+**Zero open Critical or High finding at the tag, and every open Medium ruled by one triage
+decision.** A finding either reaches a terminal status with its own verifiers passing, or it
+stays open under the triage target below, which one recorded decision rules for the whole list
+rather than a waiver per finding.
+"""),
+    ((5, 1), "v5.1", """\
+**Zero open High-severity bugs at the tag, and every Medium disposed of or ruled.** A
+finding either reaches a terminal status with its own verifiers passing, or it stays open
+carrying a dated ruling that says why it ships.
+"""),
+    ((5, 0), "v5.0.0", """\
+**Zero open High-severity bugs at the tag.** Every High finding raised against v5 was
+fixed and closed before the tag was cut. The bar was originally zero open bugs of any
+severity; it moved on 2026-08-11, because holding a release for findings that are real
+but not release-blocking had cost a month and was buying nothing a disclosure could not
+buy honestly.
+"""),
+)
+
+#: How `check` learns the release a page was cut for: from the page's own heading, so a page
+#: round-trips with no release pinned outside it.
+_BAR_HEADING = re.compile(r"^## The bar v(\d+)\.(\d+) is held to$", re.M)
+
+#: A release is `6.0.0` or `6.0.0-rc.1`; a page's heading names only its series, `6.0`.
+_VERSION = re.compile(r"v?(\d+)\.(\d+)(\.\d+(?:-[0-9A-Za-z.]+)?)?")
+
+
+def _series(release: str, *, cut: bool = False) -> tuple[int, int]:
+    """`(major, minor)` of `release`, which a cut must name in full. ValueError for anything that
+    is not a version, or for a series older than every recorded bar - a page cannot state a bar
+    nobody recorded."""
+    m = _VERSION.fullmatch(release)
+    if not m or (cut and not m[3]):
+        raise ValueError(f"{release!r} is not a release version such as 6.0.0 or 6.0.0-rc.1")
+    series = int(m[1]), int(m[2])
+    if series < BARS[-1][0]:
+        raise ValueError(f"no bar is recorded for v{series[0]}.{series[1]}; the oldest is "
+                         f"{BARS[-1][1]}")
+    return series
+
+
 #: The page's prose is DERIVED from the count it sits above, because a sentence that is true of
 #: fifteen findings is false of none: "they ship open, listed here by id" describes an empty
 #: table as a list of findings, and "each id below is a file" promises files nobody can open.
-#: The bar named is the one the release being cut is held to; the previous release's bar stays
-#: below it as history, because a reader needs to know which bar the list in front of them serves.
-def _head(count: int) -> str:
+def _head(count: int, release: str) -> str:
+    major, minor = _series(release)
+    target = f"v{major}.{minor + 1}"
     if count:
         body = (
-            "**Medium and Low findings ship open, listed here by id, triaged to v5.1.** Each is a real\n"
+            f"**Medium and Low findings ship open, listed here by id, triaged to {target}.** "
+            "Each is a real\n"
             "defect with a reproduction and, in most cases, a proposed fix. None of them stops the\n"
             "lifecycle running. They are listed rather than closed, because closing a bug to make a\n"
             "release look clean is the practice this tool exists to prevent.\n\n"
@@ -80,28 +128,20 @@ def _head(count: int) -> str:
             "**No Medium or Low finding is open.** The corpus carries none at this commit, so the\n"
             "table below is empty rather than omitted: an absent section and an empty one say\n"
             "different things, and only one of them is checkable.\n")
+    in_force = next(bar for bar in BARS if bar[0] <= (major, minor))
+    history = "".join(f"## The bar {name} was held to, kept as history\n\n{prose}\n"
+                      for series, name, prose in BARS if series < in_force[0])
     return f"""# Known issues
 
 The defects SDLC Studio knows about and has chosen to ship. This page is the disclosure
 half of the release bar: a project that hides its open findings is asking to be trusted
 rather than read.
 
-## The bar v5.1 is held to
+## The bar v{major}.{minor} is held to
 
-**Zero open High-severity bugs at the tag, and every Medium disposed of or ruled.** A
-finding either reaches a terminal status with its own verifiers passing, or it stays open
-carrying a dated ruling that says why it ships.
-
-## The bar v5.0.0 was held to, kept as history
-
-**Zero open High-severity bugs at the tag.** Every High finding raised against v5 was
-fixed and closed before the tag was cut. The bar was originally zero open bugs of any
-severity; it moved on 2026-08-11, because holding a release for findings that are real
-but not release-blocking had cost a month and was buying nothing a disclosure could not
-buy honestly.
-
-{body}
-## Triaged to v5.1
+{in_force[2]}
+{history}{body}
+## Triaged to {target}
 
 """
 
@@ -250,8 +290,9 @@ def _split(found: dict[str, tuple[str, str]]) -> tuple[int, int, int]:
     return len(sevs), sevs.count("Medium"), sevs.count("Low")
 
 
-def render(repo: Path | None = None) -> str:
-    """The page the corpus implies. Low sorts first so the one Low finding is not lost mid-table."""
+def render(repo: Path | None, release: str) -> str:
+    """The page the corpus implies for `release`. Low sorts first so the one Low finding is not
+    lost mid-table."""
     found = corpus(repo)
     rows = sorted(found.items(), key=lambda kv: (kv[1][0] != "Low", kv[0]))
     lines = ["| Id | Severity | Finding |", "| --- | --- | --- |"]
@@ -261,7 +302,7 @@ def render(repo: Path | None = None) -> str:
         lines.append(f"| `{bug_id}` | {sev} | {title} |")
     total, mediums, lows = _split(found)
     lines += ["", f"{total} findings: {mediums} Medium, {lows} Low."]
-    return _head(total) + "\n".join(lines) + "\n" + TAIL
+    return _head(total, release) + "\n".join(lines) + "\n" + TAIL
 
 
 def _git(root: Path, *args: str, text: bool = True) -> subprocess.CompletedProcess:
@@ -285,6 +326,11 @@ def _cut(root: Path, version: str) -> int:
     nothing. A tagged version is refused: its notes state what THAT release shipped with, and a
     count rewritten after the tag describes a release nobody cut."""
     tag = f"v{version}"
+    try:
+        _series(version, cut=True)
+    except ValueError as exc:
+        print(f"{exc} - refusing the cut", file=sys.stderr)
+        return 1
     tagged = _tagged(root, tag)
     if tagged is None:
         print(f"cannot tell whether {tag} is tagged: git could not read the tags at {root}",
@@ -307,7 +353,7 @@ def _cut(root: Path, version: str) -> int:
         return 1
     total, mediums, lows = _split(corpus(root))
     line = f"**{tag} discloses {total} open defects: {mediums} Medium, {lows} Low.**"
-    (root / PAGE_REL).write_text(render(root), encoding="utf-8")
+    (root / PAGE_REL).write_text(render(root, version), encoding="utf-8")
     notes.write_text(sentence.sub(lambda _m: line, text), encoding="utf-8")
     print(f"wrote {PAGE_REL} and {notes_rel}: {total} disclosed finding(s)")
     return 0
@@ -402,11 +448,13 @@ def _unreadable(rev: str, why: str) -> bool:
 
 
 def _check(root: Path) -> int:
-    """0 when the page is what the corpus implies, 1 when it is not."""
+    """0 when the page is what the corpus implies for the release the page names, 1 when not."""
     _warn_unparseable(root)     # every path that reads the corpus, not the bar alone
     _warn_unclassifiable(root)  # ...and the severities neither reader recognises
     page = root / PAGE_REL
-    if page.is_file() and page.read_text(encoding="utf-8") == render(root):
+    text = page.read_text(encoding="utf-8") if page.is_file() else ""
+    named = _BAR_HEADING.search(text)
+    if named and text == render(root, f"{named[1]}.{named[2]}"):
         print(f"{PAGE_REL} agrees with the corpus ({len(corpus(root))} disclosed finding(s))")
         return 0
     print(f"{PAGE_REL} disagrees with the bug corpus - cut it with "

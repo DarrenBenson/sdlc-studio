@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_batch_story_fields.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/help/artifact.md, changelog.d/BG0755.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_batch_story_fields.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/help/artifact.md, changelog.d/BG0755.md, .claude/skills/sdlc-studio/help/help.md, .claude/skills/sdlc-studio/reference-scripts-create.md
 > **Evidence:** Sprint 3 planning, 2026-09-24: US0890-US0926 were minted with placeholders and rewritten to the lean shape by hand from the authors' specs.
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio file

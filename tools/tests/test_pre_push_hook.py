@@ -117,7 +117,7 @@ class _Clone:
         # the checker and a page cut from its (empty) corpus.
         shutil.copy(REPO / "tools" / "known_issues.py", self.clone / "tools" / "known_issues.py")
         (self.clone / "docs").mkdir()
-        (self.clone / known_issues.PAGE_REL).write_text(known_issues.render(self.clone),
+        (self.clone / known_issues.PAGE_REL).write_text(known_issues.render(self.clone, "6.0.0"),
                                                         encoding="utf-8")
         local = self.clone / "sdlc-studio" / ".local"
         if not no_timings_file:

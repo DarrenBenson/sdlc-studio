@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 58 |
+| Draft | 57 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 2 |
 | Review | 0 |
-| Done | 738 |
+| Done | 739 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 72 |
@@ -304,7 +304,7 @@
 | [US0943](US0943-sprint-plan-in-a-consuming-project-prints-the.md) | `sprint plan` in a consuming project prints the skill's toolchain runbook | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0944](US0944-verify-ac-stamps-never-reports-green-on-nothing.md) | `verify_ac stamps` never reports green on nothing, and no stale stamp ships in v6 | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0945](US0945-changing-a-stamped-test-lists-the-criteria-that.md) | Changing a stamped test lists the criteria that stamp it before the commit lands | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
-| [US0946](US0946-the-known-issues-page-names-the-release-being.md) | The known-issues page names the release being cut | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0946](US0946-the-known-issues-page-names-the-release-being.md) | The known-issues page names the release being cut | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0947](US0947-the-files-the-close-writes-pass-markdownlint-without.md) | The files the close writes pass markdownlint without a hand fix | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0948](US0948-a-writer-that-cannot-take-the-allocation-lock.md) | A writer that cannot take the allocation lock writes nothing instead of losing rows | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0949](US0949-no-shipped-command-help-offers-a-retired-behaviour.md) | No shipped command help offers a retired behaviour | Draft | EP0265 | 2026-09-25 | 2026-09-25 |

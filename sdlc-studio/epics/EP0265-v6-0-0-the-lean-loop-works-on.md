@@ -20,7 +20,7 @@ Sprint 5 of the v6 release (D0272): finish EP0263's deletions with their histori
 - [ ] [US0943: `sprint plan` in a consuming project prints the skill's toolchain runbook](../stories/US0943-sprint-plan-in-a-consuming-project-prints-the.md)
 - [ ] [US0944: `verify_ac stamps` never reports green on nothing, and no stale stamp ships in v6](../stories/US0944-verify-ac-stamps-never-reports-green-on-nothing.md)
 - [ ] [US0945: Changing a stamped test lists the criteria that stamp it before the commit lands](../stories/US0945-changing-a-stamped-test-lists-the-criteria-that.md)
-- [ ] [US0946: The known-issues page names the release being cut](../stories/US0946-the-known-issues-page-names-the-release-being.md)
+- [x] [US0946: The known-issues page names the release being cut](../stories/US0946-the-known-issues-page-names-the-release-being.md)
 - [ ] [US0947: The files the close writes pass markdownlint without a hand fix](../stories/US0947-the-files-the-close-writes-pass-markdownlint-without.md)
 - [ ] [US0948: A writer that cannot take the allocation lock writes nothing instead of losing rows](../stories/US0948-a-writer-that-cannot-take-the-allocation-lock.md)
 - [ ] [US0949: No shipped command help offers a retired behaviour](../stories/US0949-no-shipped-command-help-offers-a-retired-behaviour.md)
