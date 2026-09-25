@@ -111,12 +111,18 @@ collect() {
   done
 }
 
-# verdict KEY "what it enforces" "how to fix" COMMAND...: one lane's ok or FAIL block.
+# verdict KEY "what it enforces" "how to fix" COMMAND...: one lane's ok or FAIL block. A passing
+# lane's output is shown only when it carries the stamps-staged re-read list: the criteria whose
+# stamped test this commit changes. That list is advisory and refuses nothing, so on a passing
+# commit this is the only place its author would see it.
 verdict() {
   local key="$1" what="$2" fixhint="$3"; shift 3
   local out
   if out="$("$@" 2>&1)"; then
     printf '  %sok%s   %s\n' "$G" "$N" "$key"
+    case "$out" in
+      *"verify-stamps: staged: re-read - "*) printf '%s\n' "$out" | sed 's/^/         /' ;;
+    esac
     return 0
   fi
   printf '  %sFAIL%s %s%s%s\n' "$R" "$N" "$B" "$key" "$N"
