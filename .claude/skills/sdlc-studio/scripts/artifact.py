@@ -55,7 +55,7 @@ _PREFIX_TYPE = {sdlc_md.ARTIFACT_TYPES[t][1].upper(): t for t in SPEC}
 # Scaffold richness, lean to rich - from lib.tiers, the one authority the creator, the
 # validator, the transition gate and the conformance backstop all share. `planning` is the
 # pre-implementation tier: the sections a story must settle to be planned and prioritised
-# (ACs with Verify + Verification target, scope, technical notes) and none of the
+# (ACs with Verify, scope, technical notes) and none of the
 # implementation furniture. Creation stamps ONLY `planning` (`> **Template:** planning`); a
 # `full` stamp is written by `promote` alone, and only after it has added the sections - which
 # is what lets the gate check a `full` claim instead of believing it.
@@ -118,21 +118,16 @@ def _list(f: dict, key: str) -> list[str]:
         if isinstance(items, (list, tuple)) else []
 
 
-TARGET_TIERS = ("functional", "conversational", "soak", "live")
+#: The refusal a retired `--target` (or a `target` field) meets. The tier was written on every
+#: supplied AC and read by nothing, so it is refused by name rather than silently dropped.
+TARGET_RETIRED = ("the verification-target tier is retired - no gate reads it, and an AC's "
+                  "`Verify:` line is its proof. Omit --target. Nothing was written.")
 
 
-def _target_of(f: dict) -> str:
-    """The Verification target tier for supplied ACs, validated - or "" when none is given.
-
-    An unknown tier is REFUSED, never written. No gate reads the target any longer; it is a
-    note to the reader, and a typo'd one would be a note nobody could interpret."""
-    val = str(f.get("target") or "").strip()
-    if not val:
-        return ""
-    if val.lower() not in TARGET_TIERS:
-        raise ValueError(f"unknown verification target {val!r} "
-                         f"(expected one of {', '.join(TARGET_TIERS)})")
-    return val.lower()
+def _refuse_target(f: dict) -> None:
+    """Refuse a story field that asks for the retired verification-target tier."""
+    if str(f.get("target") or "").strip():
+        raise ValueError(TARGET_RETIRED)
 
 
 def _verifiers_of(f: dict) -> list[str]:
@@ -352,9 +347,8 @@ def _story_acs(f: dict) -> str:
     supplied the scaffold keeps its `{{placeholder}}` slots, which the validator reports as
     unfilled - a scaffold is not yet a specified story, and the creator does not pretend it is.
 
-    A supplied criterion may carry its executable check (`--verify`, positional with `--ac`)
-    and its verification target. Both are written only when given: there is no honest default
-    for a Verify line - a placeholder would fail the validator, and `manual` would assert a
+    A supplied criterion may carry its executable check (`--verify`, positional with `--ac`),
+    written only when given: there is no honest default for a Verify line - a placeholder would fail the validator, and `manual` would assert a
     proof nobody ran. An AC with no Verify line is reported by conformance's `verifiable`
     stage, which is the system saying so out loud rather than papering over it."""
     acs = _list(f, "acs")
@@ -362,14 +356,11 @@ def _story_acs(f: dict) -> str:
         return ("### AC1: {{define}}\n\n- **Given** {{context}}\n- **When** {{action}}\n"
                 "- **Then** {{outcome}}\n- **Verify:** {{executable check}}\n")
     verifies = _verifiers_of(f)
-    target = _target_of(f)
     out: list[str] = []
     for i, a in enumerate(acs, 1):
         out.append(f"- **AC{i}:** {a}\n")
         if i <= len(verifies):
             out.append(f"  - **Verify:** {verifies[i - 1]}\n")
-        if target:
-            out.append(f"  - **Verification target:** {target}\n")
     return "".join(out)
 
 
@@ -1119,7 +1110,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
             # Fail fast before writing - a story wired to a non-existent epic is an orphan whose
             # dangling link only surfaces at the next integrity run.
             raise ValueError(f"epic {f['epic']} not found - create it first, or fix the id")
-        _target_of(f)      # refuse an unknown target / multi-line Verify BEFORE any write,
+        _refuse_target(f)  # refuse a retired target / multi-line Verify BEFORE any write,
         _verifiers_of(f)   # so a bad field never half-creates an artefact
         # Who the story is FOR, resolved against the design-persona registry rather than carried
         # as free text nothing downstream consumes. Resolved (and refused, under strict) here -
@@ -1286,8 +1277,7 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
                 raise ValueError("each story item needs an 'epic'")
             if _find_epic(root, it["epic"]) is None:
                 raise ValueError(f"epic {it['epic']} not found - create it first")
-            _target_of(it)      # a bad target or Verify in item N must abort the whole
-            _verifiers_of(it)   # batch here, not after items 1..N-1 are already on disk
+            _verifiers_of(it)   # a bad Verify in item N aborts the batch before any write
             # Same registry, same rules, same resolver as `new` - a story minted in bulk names
             # the same design target it would have named one at a time. Resolved BEFORE any id
             # is reserved, so the batch stays all-or-nothing.
@@ -1503,7 +1493,7 @@ def cmd_promote(args: argparse.Namespace) -> int:
 #: the ones only `artifact new` writes. Its own list, not the filer's: a key nobody here reads
 #: is a field that silently went missing, which is the class the file exists to end.
 FIELDS_FILE_KEYS: tuple[str, ...] = (*file_finding.COMMON_FIELDS_FILE_KEYS,
-                                     "epic", "persona", "target", "template",
+                                     "epic", "persona", "template",
                                      "provenance",
                                      # A story's User Story block.
                                      *(key for _label, key in _USER_STORY_LINES),
@@ -1516,6 +1506,9 @@ BATCH_ITEM_KEYS: tuple[str, ...] = (*FIELDS_FILE_KEYS, "tranche")
 
 
 def cmd_new(args: argparse.Namespace) -> int:
+    if args.target is not None:
+        print(f"refused: {TARGET_RETIRED}", file=sys.stderr)
+        return 2
     f = {k: v for k, v in {"epic": args.epic, "priority": args.priority, "ctype": args.ctype,
                            "severity": args.severity, "author": args.author,
                            "template": args.template, "persona": args.persona,
@@ -1523,7 +1516,7 @@ def cmd_new(args: argparse.Namespace) -> int:
                            "impact": args.impact, "points": args.points,
                            "size": args.size,
                            "affects": args.affects,
-                           "acs": args.ac, "verify": args.verify, "target": args.target,
+                           "acs": args.ac, "verify": args.verify,
                            "options": args.option,
                            "recommendation": args.recommendation,
                            "provenance": getattr(args, "provenance", None),
@@ -1752,13 +1745,13 @@ def build_parser() -> argparse.ArgumentParser:
                    help="story: the executable check for the AC in the same position "
                         "(repeatable; pairs with --ac). Omit it and the AC carries no Verify "
                         "line - which conformance reports, rather than inventing one")
-    n.add_argument("--target", choices=("functional", "conversational", "soak", "live"),
-                   help="story: the Verification target tier written on each supplied AC")
+    # RETIRED: kept only so a caller still passing it is refused by name (`cmd_new`).
+    n.add_argument("--target", help=argparse.SUPPRESS)
     n.add_argument("--option", action="append", help="rfc design option (repeatable)")
     n.add_argument("--recommendation", help="rfc: the recommended option")
     n.add_argument("--template", choices=TEMPLATE_TIERS, default=MINIMAL,
                    help="scaffold richness: minimal (default); planning (story/epic: ACs with "
-                        "Verify + Verification target, scope, technical notes - no "
+                        "Verify, scope, technical notes - no "
                         "implementation furniture, and `promote` is required before an "
                         "implementation status); or the full templates/core body")
     n.add_argument("--root", default=".")

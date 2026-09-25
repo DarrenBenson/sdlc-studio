@@ -11008,10 +11008,6 @@ def cmd_call(args: argparse.Namespace) -> int:
     argv = ["close", "--root", str(args.root)]
     if getattr(args, "retro", None):
         argv += ["--retro", args.retro]
-    if getattr(args, "apply_signoff", False):
-        argv.append("--apply-signoff")
-    if getattr(args, "principal", None):
-        argv += ["--principal", args.principal]
     if getattr(args, "goal_verdict", None):
         argv += ["--goal-verdict", args.goal_verdict,
                  "--note", getattr(args, "note", "") or ""]
@@ -11200,7 +11196,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     cl = sub.add_parser("close", help="Run the close ceremony as one deterministic chain "
                                       "(goal-verdict, retro, lessons, gate, handoff, reconcile), "
-                                      "then print the sign-off decision brief.")
+                                      "then file the report `sprint sign` seals.")
     cl.add_argument("--retro", default=None, metavar="RETROxxxx",
                     help="the batch retro this close validates and gates on. Omit it and close "
                          "SCAFFOLDS one (id + template + index row) via the deterministic path, "
@@ -11230,16 +11226,13 @@ def build_parser() -> argparse.ArgumentParser:
                          "and close with outcome `closed-outstanding` - stated plainly, "
                          "nothing waived. REFUSED while any hard correctness blocker (a red "
                          "gate lane, a refusing Done gate) is present")
+    # RETIRED: `--apply-signoff` signs nothing (`cmd_close` refuses it, naming `sprint sign`),
+    # and `--principal`/`--author` served only it. Kept so a caller still passing them meets
+    # that refusal rather than argparse's, and suppressed so the help offers none of them.
     cl.add_argument("--apply-signoff", dest="apply_signoff", action="store_true",
-                    help="fan a recorded operator approval into per-unit reviewer-of-record "
-                         "sign-offs + Done transitions + the velocity/reconcile tail (needs "
-                         "--principal). Story-scoped, idempotent, stops loud at the first refusal")
-    cl.add_argument("--principal", default=None,
-                    help="the reviewer of record whose approval --apply-signoff fans across the "
-                         "batch (a unit's author or a reviewer recorded on it is refused)")
-    cl.add_argument("--author", default=None,
-                    help="(with --apply-signoff) the author id to record independence against when "
-                         "a unit has no recorded critic author; normally read from the unit's verdict")
+                    help=argparse.SUPPRESS)
+    cl.add_argument("--principal", default=None, help=argparse.SUPPRESS)
+    cl.add_argument("--author", default=None, help=argparse.SUPPRESS)
     cl.add_argument("--root", default=".")
     cl.set_defaults(func=cmd_close)
     bo = sub.add_parser("boundary", help="Cross one sprint boundary of a rolling run: close "
@@ -11285,9 +11278,6 @@ def build_parser() -> argparse.ArgumentParser:
     cl.add_argument("--retro", metavar="RETROxxxx", default=None,
                     help="the batch retro the close validates against; without it the close "
                          "scaffolds one and stops, exactly as `sprint close` does")
-    cl.add_argument("--apply-signoff", action="store_true",
-                    help="fan a recorded reviewer-of-record approval into per-unit sign-offs")
-    cl.add_argument("--principal", default=None, help="the reviewer of record, for --apply-signoff")
     # Forwarded to the close, so its own messages do not name flags this verb rejects.
     cl.add_argument("--goal-verdict", choices=("achieved", "partial", "missed"), default=None,
                     help="judge the Sprint Goal in the same act, as `sprint close` accepts it")

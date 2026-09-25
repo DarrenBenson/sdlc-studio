@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 36 |
+| Draft | 35 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 751 |
+| Done | 752 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 90 |
@@ -307,7 +307,7 @@
 | [US0946](US0946-the-known-issues-page-names-the-release-being.md) | The known-issues page names the release being cut | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0947](US0947-the-files-the-close-writes-pass-markdownlint-without.md) | The files the close writes pass markdownlint without a hand fix | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0948](US0948-a-writer-that-cannot-take-the-allocation-lock.md) | A writer that cannot take the allocation lock writes nothing instead of losing rows | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
-| [US0949](US0949-no-shipped-command-help-offers-a-retired-behaviour.md) | No shipped command help offers a retired behaviour | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0949](US0949-no-shipped-command-help-offers-a-retired-behaviour.md) | No shipped command help offers a retired behaviour | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0950](US0950-a-fresh-project-can-brief-and-record-its.md) | A fresh project can brief and record its one review with the shipped defaults | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0951](US0951-a-clean-run-s-report-hands-over-no.md) | A clean run's report hands over no false known issues | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0952](US0952-an-upgrader-reads-every-v6-breaking-change-first.md) | An upgrader reads every v6 breaking change first | Draft | EP0266 | 2026-09-25 | 2026-09-25 |

@@ -68,8 +68,7 @@ CONTENT: dict[str, dict] = {
     "workflow": {"summary": "the search rollout run"},
     "story": {"persona": "Alex Rivera",
               "acs": ["the CLI exits 0 for a known id"],
-              "verify": ["pytest -k known_id"],
-              "target": "functional"},
+              "verify": ["pytest -k known_id"]},
     # A bug and a CR also carry their GROOMING - the files they touch and the job size - because
     # `sprint plan` refuses a unit that declares neither, so a creator that would mint one is
     # minting unplannable work. Both creation paths demand them (BG0136).
@@ -89,7 +88,7 @@ CONTENT: dict[str, dict] = {
 # The content keys whose value must appear verbatim in the rendered artefact. A creator that
 # accepts content and drops it is worse than one that never accepted it: the caller sees exit
 # 0 and a clean validator over an artefact its words never reached.
-PROSE_KEYS = ("persona", "summary", "steps", "fix", "impact", "recommendation", "target")
+PROSE_KEYS = ("persona", "summary", "steps", "fix", "impact", "recommendation")
 LIST_KEYS = ("acs", "options", "verify")
 
 

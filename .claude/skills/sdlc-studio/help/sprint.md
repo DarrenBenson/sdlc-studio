@@ -409,11 +409,10 @@ looks precise and is not.
 `call` and `stop` are different acts. `stop` ABANDONS a run - it did not reach its goal and
 says so. `call` FINISHES one: the units nobody started leave the batch, and the close chain then runs
 against the Sprint Goal - so `call` completes what it starts rather than telling you to. It takes
-the close's own flags - `--retro`, `--goal-verdict`, `--note`, `--apply-signoff`, `--principal` -
-and forwards them, so the close's messages never name a flag this verb rejects. `--apply-signoff`
-is forwarded to the close's refusal of it rather than dropped, so `call` gives the same answer the
-close does and points at `sign`; a verb that quietly swallowed the flag would leave the operator
-believing they had signed. Without a
+the close's own flags - `--retro`, `--goal-verdict`, `--note` - and forwards them, so the close's
+messages never name a flag this verb rejects. It signs nothing: signing is `sprint sign`, run on
+the report the close files, and `call` refuses `--apply-signoff` or `--principal` before it
+descopes anything. Without a
 `--retro` it scaffolds one and stops, exactly as `sprint close` does. The bounded exit
 (`--file-and-close`) is not among them: reach it with `sprint close` after the descope. The remainder returns to the
 BACKLOG, never forward to the next charter - attaching it forward would make the next run

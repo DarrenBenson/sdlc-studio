@@ -4,7 +4,7 @@ silently reach implementation.
 The full story template's structural floor is ~171 lines once every mandated heading
 survives, so a dense planning story cannot get under it however economically it is
 written. The `planning` tier sits between `minimal` and `full`: metadata, user story,
-ACs with Verify and Verification-target lines, scope, technical notes - and no
+ACs with Verify lines, scope, technical notes - and no
 inherited-constraint tables or module views until implementation.
 
 The contract that keeps the tier honest: a planning-tier story is STAMPED
@@ -51,8 +51,7 @@ def _project(root: Path) -> str:
 
 def _story(root: Path, template: str = "planning", **extra) -> Path:
     epic = extra.pop("epic", None) or _project(root)
-    fields = {"epic": epic, "template": template, "acs": ACS, "verify": VERIFIES,
-              "target": "functional", **extra}
+    fields = {"epic": epic, "template": template, "acs": ACS, "verify": VERIFIES, **extra}
     res = artifact.new(root, "story", "a planning story", fields)
     return Path(res["path"])
 
@@ -97,7 +96,6 @@ class PlanningStoryShapeTests(unittest.TestCase):
                 self.assertIn(ac, text, "the supplied ACs must land in the planning tier too")
             for v in VERIFIES:
                 self.assertIn(f"- **Verify:** {v}", text, "the executable check must land")
-            self.assertIn("- **Verification target:** functional", text)
             self.assertIn("## Scope", text)
 
     def test_a_supplied_ac_with_no_verify_gets_no_invented_one(self) -> None:
@@ -178,10 +176,12 @@ class SuppliedVerifyTests(unittest.TestCase):
             self.assertEqual([b.verifier for b in blocks], VERIFIES)
 
     def test_an_unknown_verification_target_is_refused(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            with self.assertRaises(ValueError):
-                _story(root, target="thorough")
+        """US0949 retired the tier: every target is refused, a formerly valid one included."""
+        for target in ("thorough", "functional"):
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                with self.assertRaises(ValueError):
+                    _story(root, target=target)
 
     def test_a_multiline_verify_is_refused(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -190,7 +190,8 @@ class SuppliedVerifyTests(unittest.TestCase):
                 _story(root, verify=["pytest -k x\n- **Verify:** true"])
 
     def test_a_bad_item_aborts_the_batch_before_any_write(self) -> None:
-        """new_batch is all-or-nothing: item 2's bad target must not leave item 1 on disk."""
+        """new_batch is all-or-nothing: item 2's retired target must not leave item 1 on
+        disk."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             epic = _project(root)
