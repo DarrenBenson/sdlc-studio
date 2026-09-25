@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 46 |
-| In Progress | 2 |
-| Fixed | 597 |
+| In Progress | 1 |
+| Fixed | 598 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
@@ -117,7 +117,7 @@
 | [BG0756](BG0756-us0900-did-not-converge-in-review-round-2.md) | US0900 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0757](BG0757-repo-map-py-build-crashes-on-python-3.md) | repo_map.py build crashes on Python 3.10 when a source file holds a null byte | Fixed | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0758](BG0758-command-audit-surface-module-reuses-whatever-surface-module.md) | command_audit._surface_module reuses whatever surface module the process already imported | Fixed | Medium | 2026-09-24 | 2026-09-24 |
-| [BG0759](BG0759-us0891-did-not-converge-in-review-round-2.md) | US0891 did not converge in review: round 2 REJECT findings | In Progress | Medium | 2026-09-24 | 2026-09-24 |
+| [BG0759](BG0759-us0891-did-not-converge-in-review-round-2.md) | US0891 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0760](BG0760-us0905-did-not-converge-in-review-round-2.md) | US0905 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0761](BG0761-us0904-did-not-converge-in-review-round-2.md) | US0904 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0762](BG0762-ci-s-bandit-scan-fails-on-the-sha1.md) | CI's bandit scan fails on the SHA1 fingerprint US0899 added to reconcile settle | Fixed | Medium | 2026-09-24 | 2026-09-24 |

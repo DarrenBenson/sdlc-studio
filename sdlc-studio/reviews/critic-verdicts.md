@@ -1206,6 +1206,7 @@ One row has been removed since adoption.
 | BG0758 | APPROVE | qa-rev-BG0758 | BG0758-build | 2026-09-25 | 830694730276 | full | [pre-existing] command\_audit.py --coverage on a tree with no surface module still exits with a traceback, as at HEAD |
 | US0928 | APPROVE | qa-rev-US0928 | US0928-build | 2026-09-25 | 4ab8d4f4a49a | full | [new] non-blocking: \_end\_goals renders unfilled template End goals as real ones (folded into BG0765 AC2) |
 | BG0753 | APPROVE | qa-rev-BG0753 | BG0753-build | 2026-09-25 | f4541011481a | full | [new] non-blocking: the claim each runner confines its run is false for the tool-tests lane, npm test:tools, CI unittest and module-alone (wording fixed at landing) [LC-003]; [new] non-blocking: the test module docstring says a conftest in each tree (fixed at landing); [new] non-blocking: the nested-session owner hand-off has no test and a mutant survives [LC-002] |
+| BG0759 | APPROVE | qa-rev-BG0759 | BG0759-build | 2026-09-25 | 5f1db2d0b673 | full | [new] non-blocking: collect clearing lane\_pids is unpinned [LC-002]; [new] non-blocking: the inline-refusal scan exempts the whole lane-helpers block; [pre-existing] a lane that hangs with no signal still hangs the hook; [pre-existing] the unwritable-handover write error leaks into the details |
 
 ## Supersessions
 

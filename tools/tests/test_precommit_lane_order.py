@@ -59,6 +59,16 @@ def _lane_keys(hook: Path = HOOK) -> list[str]:
     return re.findall(r'^\s*run\s+"([^"]+)"', _text(hook), re.M)
 
 
+def _lane_helpers() -> str:
+    """The hook's lane helpers, taken from the file and never retyped. `run` starts a lane in
+    the background (US0891), so it is useless without the `collect` that reads the verdict:
+    a script driving it calls `collect` before it reads `$fail`."""
+    m = re.search(r"^# >>> lane-helpers.*?\n(.*?)^# <<< lane-helpers", _text(), re.M | re.S)
+    if m is None:
+        raise AssertionError("the pre-commit hook lost its `# >>> lane-helpers` block")
+    return m.group(1)
+
+
 #: Every lane each hook is expected to declare. This is the anti-loss guard: a reorder
 #: that drops a lane would otherwise pass every ordering assertion below while silently
 #: reducing coverage.
@@ -418,12 +428,10 @@ class PracticeRulesLaneTests(unittest.TestCase):
         reach: a lane whose command refuses correctly still guards nothing if the helper that
         invokes it drops the exit. The hook's OWN definition is executed - extracted from the
         file, never retyped - against a command that fails and one that does not."""
-        text = self.HOOK.read_text(encoding="utf-8")
-        start = text.index("run() {")
-        helper = text[start:text.index("\n}\n", start) + 3]
+        helper = _lane_helpers()
         outcomes = {}
         for name, cmd in (("failing", "false"), ("passing", "true")):
-            script = f"{helper}\nfail=0\nrun 'x' 'what' 'fix' -- {cmd}\nexit $fail\n"
+            script = f"{helper}\nfail=0\nrun 'x' 'what' 'fix' -- {cmd}\ncollect\nexit $fail\n"
             outcomes[name] = subprocess.run(["bash", "-c", script], capture_output=True,
                                             text=True, check=False, timeout=60).returncode
         self.assertNotEqual(0, outcomes["failing"],
@@ -474,11 +482,8 @@ class ChangelogShapeLaneTests(unittest.TestCase):
         return "\n".join(lines[start:end + 1])
 
     def _run_lane(self, repo: Path) -> tuple[int, str]:
-        text = _text()
-        start = text.index("run() {")
-        helper = text[start:text.index("\n}\n", start) + 3]
-        script = (f"{helper}\nR= G= Y= B= N=\nskill='{self.SKILL}'\nfail=0\n"
-                  f"{self._lane_block()}\nexit $fail\n")
+        script = (f"{_lane_helpers()}\nR= G= Y= B= N=\nskill='{self.SKILL}'\nfail=0\n"
+                  f"{self._lane_block()}\ncollect\nexit $fail\n")
         r = subprocess.run(["bash", "-c", script], cwd=repo, capture_output=True, text=True,
                            check=False, timeout=120,
                            env=gitutil.git_env(PYTHONDONTWRITEBYTECODE="1"))

@@ -336,10 +336,12 @@ _EXIT = re.compile(r"\bexit\s+[1-9]")
 def _inline_refusals(text: str) -> list[str]:
     """Every refusal a hook makes OUTSIDE its `run` helper, which `--list` therefore cannot see.
 
-    Allowed: the helper's own body; the one closing `exit 1` under `if [ "$fail" -ne 0 ]`, which
-    only reports what the lanes already decided; and the start-up guards that exit when the hook
-    is not inside a repository at all (`rev-parse`, `cd`), which judge no commit."""
-    found, stack, in_run, heredoc = [], [], False, None
+    Allowed: the helper's own body - `run`, or in pre-commit the `lane-helpers` block `run`
+    starts its lanes through and `collect` reads their verdicts in; the one closing `exit 1`
+    under `if [ "$fail" -ne 0 ]`, which only reports what the lanes already decided; and the
+    start-up guards that exit when the hook is not inside a repository at all (`rev-parse`,
+    `cd`), which judge no commit."""
+    found, stack, helper_end, heredoc = [], [], None, None
     for raw in text.splitlines():
         line = raw.strip()
         if heredoc:                 # a heredoc body is data (the `--list` awk), not shell
@@ -348,11 +350,14 @@ def _inline_refusals(text: str) -> list[str]:
         tag = re.search(r"<<-?\s*'?(\w+)'?\s*$", line)
         if tag:
             heredoc = tag.group(1)
-        if in_run:
-            in_run = line != "}"
+        if helper_end:
+            helper_end = None if line == helper_end else helper_end
             continue
         if re.match(r"run\(\)\s*\{", line):
-            in_run = True
+            helper_end = "}"
+            continue
+        if line.startswith("# >>> lane-helpers"):
+            helper_end = "# <<< lane-helpers"
             continue
         if not line or line.startswith("#"):
             continue

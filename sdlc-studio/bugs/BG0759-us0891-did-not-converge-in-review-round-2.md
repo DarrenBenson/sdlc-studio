@@ -1,6 +1,7 @@
 # BG0759: US0891 did not converge in review: round 2 REJECT findings
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional (pre-commit on a code commit 55s at base to 18-20s patched at load 4; byte-identical output on green, refused and handover-refused commits; HUP, INT and TERM in a real pty leave no lane running)
 > **Carried work:** the round-2 patch is kept at sdlc-studio/.local/US0891-carried-r2.patch, written against 08b60ce7. It no longer applies to `.githooks/pre-commit`: US0899 and US0901 changed the hook since. Remaining fix: rebase onto US0901's `run "gate"` and `run "suite-handover"` lanes, add `trap 'stop_lanes 129' HUP`, and pin the TERM trap and `stop_lanes`' wait
 > **Severity:** Medium
 > **Points:** 3
@@ -34,10 +35,13 @@ Rebase the carried patch onto HEAD: keep the gate as `run "gate"`, read the lane
 
 - [ ] **AC1** Given the rebased hook in the patch's hermetic fixture with five lanes (the gate among them) stubbed to sleep 2s, when a commit runs, then all five are running at one moment and the hook's wall time is under 60% of their summed 10s, with the lanes read from `pre-commit --list`. Fails on: HEAD's sequential lanes, and on the naive rebase whose `_declared_lanes` cannot read `run "gate" -- gate_lane`.
   - **Verify:** pytest tools/tests/test_lean_precommit_parallel.py::ParallelLaneTests::test_the_lanes_run_concurrently
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given the rebased hook and a git directory where the suite handover cannot be written, when a commit whose lanes all pass runs, then it is refused naming `suite-handover`, and a writable handover still passes. Fails on: the naive rebase, measured, where `run "suite-handover"` backgrounds the lane and `$fail` is read before `collect`.
   - **Verify:** pytest tools/tests/test_lean_precommit_parallel.py::ParallelLaneTests::test_an_unwritable_handover_still_refuses_with_the_lanes_parallel
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC3** Given every lane running, when the hook's process group receives SIGHUP (a terminal hangup or dropped SSH) and, in a second case, SIGTERM, then no lane process survives, nothing writes after the hook exits, the hook exits 129 or 143, and no lane buffer is left under TMPDIR. Fails on: the carried patch, which has no HUP trap; dropping the TERM trap; dropping `stop_lanes`' `wait`, which lets the EXIT trap remove the buffers while lanes still write.
   - **Verify:** pytest tools/tests/test_lean_precommit_parallel.py::ParallelLaneTests::test_a_hangup_or_terminate_stops_every_lane_with_the_hook
+  - **Verified:** yes (2026-09-25)
 
 ## Where the work is
 

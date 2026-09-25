@@ -33,21 +33,89 @@ fail=0
 # Colour only when writing to a terminal.
 if [ -t 1 ]; then R=$'\033[31m'; G=$'\033[32m'; Y=$'\033[33m'; B=$'\033[1m'; N=$'\033[0m'; else R=; G=; Y=; B=; N=; fi
 
-# run KEY  "what it enforces"  "how to fix"  -- command...
-run() {
+# >>> lane-helpers (executed by tools/tests/test_precommit_lane_order.py)
+# The lanes run SIDE BY SIDE (US0891). `run` starts each in the background with its whole output
+# buffered in a slot of its own, and `collect` prints the slots in declared order once every lane
+# has finished. The hook reads exactly as it did when the lanes ran one after another, and costs
+# its slowest lane rather than the sum of them all. Anything that reads `$fail` calls `collect`
+# first: a verdict still in the background is not yet a verdict.
+#
+# No lane writes the index or the working tree - each reads the staged blobs or the tree - so
+# none can race another. The one write any of them makes is the gate's own cost record under
+# gitignored `.local/`, and the gate is its only writer.
+lane_dir="$(mktemp -d "${TMPDIR:-/tmp}/sdlc-pre-commit.XXXXXX")" || {
+  echo "pre-commit: cannot create a directory under ${TMPDIR:-/tmp} to buffer the lanes' output;"
+  echo "free space there (or point TMPDIR elsewhere) and commit again."
+  exit 1
+}
+trap 'rm -rf "$lane_dir"' EXIT
+lanes=0
+shown=0
+lane_pids=""
+lane_keys=()
+
+# A Ctrl-C, a kill or a hangup must take the lanes down with the hook. A background job in a
+# script ignores SIGINT, and so does everything it starts, so each lane runs in a process group of
+# its own (`set -m` while it starts) - which also puts it beyond the SIGHUP a closed terminal or a
+# dropped SSH session sends. This trap ends each group and waits until nothing in it is left, then
+# leaves the EXIT trap to remove the buffers - in that order, so no lane writes after the hook.
+# It waits on the whole GROUP, not with `wait`: a lane's own process outlives the subshell `wait`
+# would reap while it finishes a write. Whatever ignores TERM for 5s is killed.
+stop_lanes() {
+  trap '' HUP INT TERM
+  local p tries=50
+  for p in $lane_pids; do
+    kill -TERM -- "-$p" 2>/dev/null || kill -TERM "$p" 2>/dev/null
+  done
+  for p in $lane_pids; do
+    while kill -0 -- "-$p" 2>/dev/null && [ "$tries" -gt 0 ]; do sleep 0.1; tries=$((tries - 1)); done
+    kill -KILL -- "-$p" 2>/dev/null
+  done
+  exit "$1"
+}
+trap 'stop_lanes 129' HUP
+trap 'stop_lanes 130' INT
+trap 'stop_lanes 143' TERM
+
+# lane KEY COMMAND...: start COMMAND in the background in its own process group, its output
+# and exit status in the next slot, and KEY kept to name the slot if it ends with no status.
+lane() {
+  local slot="$lane_dir/$lanes"
+  lane_keys[$lanes]="$1"; shift
+  lanes=$((lanes + 1))
+  set -m
+  ( "$@" > "$slot.out" 2>&1; printf '%s\n' "$?" > "$slot.rc" ) < /dev/null &
+  lane_pids="$lane_pids $!"
+  set +m
+}
+
+# collect: wait for every lane started, then print each slot in declared order. A slot with no
+# status - a lane killed before it could write one - is a failure, never a pass, and is named.
+# The lanes it waited for are gone, so none is left for `stop_lanes` to signal.
+collect() {
+  local rc
+  wait
+  lane_pids=""
+  while [ "$shown" -lt "$lanes" ]; do
+    cat "$lane_dir/$shown.out" 2>/dev/null
+    rc="$(cat "$lane_dir/$shown.rc" 2>/dev/null)"
+    if [ -z "$rc" ]; then
+      printf '  %sFAIL%s %s%s%s - the lane ended without an exit status, so its verdict is unknown\n' \
+        "$R" "$N" "$B" "${lane_keys[$shown]}" "$N"
+    fi
+    [ "$rc" = "0" ] || fail=1
+    shown=$((shown + 1))
+  done
+}
+
+# verdict KEY "what it enforces" "how to fix" COMMAND...: one lane's ok or FAIL block.
+verdict() {
   local key="$1" what="$2" fixhint="$3"; shift 3
-  [ "$1" = "--" ] && shift
   local out
-  # Stashed for the caller on BOTH paths. A green run's output used to be discarded, but the
-  # budget lane needs to know how many tests actually ran, and that is only knowable from the
-  # output of a run that passed as well as one that failed (BG0239).
   if out="$("$@" 2>&1)"; then
-    last_run_out="$out"
     printf '  %sok%s   %s\n' "$G" "$N" "$key"
     return 0
   fi
-  last_run_out="$out"
-  fail=1
   printf '  %sFAIL%s %s%s%s\n' "$R" "$N" "$B" "$key" "$N"
   printf '       enforces: %s\n' "$what"
   if [ -n "$out" ]; then
@@ -55,7 +123,16 @@ run() {
     printf '%s\n' "$out" | sed 's/^/         /'
   fi
   printf '       %s→ fix:%s %s\n\n' "$B" "$N" "$fixhint"
+  return 1
 }
+
+# run KEY  "what it enforces"  "how to fix"  -- command...
+run() {
+  local key="$1" what="$2" fixhint="$3"; shift 3
+  [ "$1" = "--" ] && shift
+  lane "$key" verdict "$key" "$what" "$fixhint" "$@"
+}
+# <<< lane-helpers
 
 echo "${B}sdlc-studio pre-commit gate${N}"
 
@@ -222,7 +299,7 @@ if [ -n "$md_cmd" ]; then
       "auto-fix most with: npm run lint:fix" \
       -- $md_cmd "${md_root[@]}"
   else
-    printf '  %sSKIP%s markdown - no tracked markdown outside the payload.\n' "$Y" "$N"
+    lane markdown printf '  %sSKIP%s markdown - no tracked markdown outside the payload.\n' "$Y" "$N"
   fi
   if [ "${#md_payload[@]}" -gt 0 ]; then
     run "markdown-payload" \
@@ -230,14 +307,18 @@ if [ -n "$md_cmd" ]; then
       "auto-fix most with: npm run lint:fix" \
       -- $md_cmd --config .claude/skills/sdlc-studio/.markdownlint.json "${md_payload[@]}"
   else
-    printf '  %sSKIP%s markdown-payload - no tracked markdown under .claude/.\n' "$Y" "$N"
+    lane markdown-payload printf '  %sSKIP%s markdown-payload - no tracked markdown under .claude/.\n' "$Y" "$N"
   fi
 else
+  # No markdown lane starts, so every verdict above is printed before this note.
+  collect
   printf '  %sSKIP%s markdown - markdownlint not found. Run %snpm install%s to enable it locally.\n' "$Y" "$N" "$B" "$N"
   printf '       CI enforces most of it, so a markdown-mechanics error can pass here and fail on push -\n'
   printf '       but not all: `npm run lint:md` still globs, so it cannot see tracked dot-directory\n'
   printf '       markdown (.github/) that the lanes above do. For those files this SKIP is total.\n'
 fi
+# Every lane has been started; wait for them all and print their verdicts in declared order.
+collect
 
 # Unit tests: the commit runs the test modules its staged change reaches, and none when it
 # reaches none - a docs or artefact commit, or code no test module imports, loads or is named
@@ -302,6 +383,7 @@ if [ "$fail" -eq 0 ] && [ "$suites_needed" -eq 1 ]; then
     "the unit suites run in the commit-msg hook, and this hook hands the selection over in the git directory; a handover that cannot be written means the suites never run" \
     "make the git directory writable, then commit again" \
     -- write_handover
+  collect
   if [ "$fail" -eq 0 ]; then
     printf '  %snote%s unit suites selected - they run in the commit-msg hook, after the commit\n' "$Y" "$N"
     printf '       message rules, so a message defect is refused in seconds instead of after them.\n'
