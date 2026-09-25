@@ -1,6 +1,6 @@
 # US0910: Verification depth is no longer derived, and the gate runs no depth lane
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Depends on:** US0934 - both retire stamps in US0675 and US0676, so they land apart (EP0263 readiness)
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new

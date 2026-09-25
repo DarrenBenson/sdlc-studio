@@ -10,7 +10,7 @@ decisions every later artefact and delegated agent inherits. Driven by `scripts/
 | `decisions.py add --decision D --rationale R` | Append a decision (auto-numbered `D{NNNN}`, dated) |
 | `decisions.py list [--status S]` | Print the log, optionally filtered by status |
 | `decisions.py promote --from PRD-OQ3 ...` | Record a resolved PRD open question with a back-link |
-| `decisions.py waive --leg L \| --subject S` | Record a waiver: a leg or rule is out of scope here |
+| `decisions.py waive --leg L \| --subject S` | Record a waiver: a leg or rule is out of scope here. Stamped with its moment and offset |
 | `decisions.py rule --seat S --subject K ...` | A persona seat's binding ruling on a question |
 | `decisions.py precedent --subject K [--question Q]` | The prior rulings a seat must cite or depart from |
 

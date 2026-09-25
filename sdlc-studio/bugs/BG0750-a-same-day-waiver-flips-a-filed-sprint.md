@@ -1,6 +1,7 @@
 # BG0750: A same-day waiver flips a filed sprint report INVALID
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional (a sealed fixture run stays VALID after a later waiver, and the old date-only rule re-flips it INVALID; RPT0006 and RPT0007 re-derive byte-identically before and after; three named mutants killed)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/decisions.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_waiver_window.py, .claude/skills/sdlc-studio/help/decisions.md, changelog.d/BG0750.md
@@ -30,8 +31,10 @@ Have `decisions.py waive` record the waiver's moment, as an ISO timestamp with i
 
 - [ ] **AC1** Given a report generated at instant T, when `decisions.py waive` records a waiver after T on the same day, then `sprint_report.py check` still reads VALID and the page's waiver count is unchanged. Fails on: HEAD's date-only comparison, which counts the later waiver (measured).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_waiver_window.py::WaiverWindowTests::test_a_waiver_recorded_after_the_page_leaves_it_valid
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given a run whose report is generated at T, when `decisions.py waive` records a waiver after the run starts and before T on the generation day, then it is in the page's waivers section. The same holds when the window is stored in UTC and the waiver was recorded after local midnight. Fails on: excluding every waiver dated the generation day, which is the cheap fix to AC1; comparing the local date cell with the UTC window date.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_waiver_window.py::WaiverWindowTests::test_a_waiver_recorded_before_the_page_on_its_day_is_disclosed
+  - **Verified:** yes (2026-09-25)
 
 ## Impact
 

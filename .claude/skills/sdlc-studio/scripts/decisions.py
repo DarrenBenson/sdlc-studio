@@ -15,7 +15,7 @@ import importlib
 import json
 import re
 import sys
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -357,7 +357,11 @@ def record_waiver(root: Path | str, subject: str, rationale: str,
         rationale = f"{rationale} [kind: {kind}]"
     # The authoriser marker stays LAST: its reader is anchored to the end of the cell.
     rationale = f"{rationale} [authorised by: {who}]" if who else rationale
-    return add(root, f"{WAIVER_PREFIX} {subject}", rationale, today=today)
+    # The MOMENT, with its offset, not the date: a report places the waiver on its window by
+    # instant, and a local date cannot say which side of a page generated that day it fell on,
+    # nor agree with a window stored in UTC near midnight.
+    when = today or datetime.now().astimezone().isoformat(timespec="seconds")
+    return add(root, f"{WAIVER_PREFIX} {subject}", rationale, today=when)
 
 
 _AUTHORISER_RE = re.compile(r"\[authorised by:\s*(.+?)\s*\]\s*$")

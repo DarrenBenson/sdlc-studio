@@ -3780,6 +3780,12 @@ def _waivers_in_force(root: Path | str, window_end: str | None,
 
     A missing bound is FAIL-CLOSED. An unbounded read would return every waiver ever recorded and
     call them all in force, which is the direction a signer must never be shown.
+
+    A waiver that records its MOMENT is placed by instant, in the half-open `[start, end)` the
+    DORA figures use. By date alone, one recorded later on the page's own day entered
+    the re-derivation and not the page, so `check` read INVALID; and the cell held the local date
+    while the window is stored in UTC, so near midnight a waiver inside the window fell a day
+    outside it. A date-only row keeps the date rule, so a page already signed re-derives as filed.
     """
     try:
         import decisions as dec  # noqa: PLC0415 - deferred, like the chain's sibling imports
@@ -3787,6 +3793,7 @@ def _waivers_in_force(root: Path | str, window_end: str | None,
         sdlc_md.debug("sprint_report._waivers_in_force", exc)
         return [], []   # the shape the caller unpacks - a bare [] made this guard the death
     hi, lo = (window_end or "")[:10], (window_start or "")[:10]
+    start, end = _at(window_start), _at(window_end)
     rel = "sdlc-studio/decisions.md"
     out, undated = [], []
     for rec in dec.list_decisions(Path(root)):
@@ -3795,7 +3802,8 @@ def _waivers_in_force(root: Path | str, window_end: str | None,
         decision = (rec["decision"] or "").strip()
         if not decision.lower().startswith(dec.WAIVER_PREFIX):
             continue
-        when = (rec["date"] or "").strip()[:10]
+        cell = (rec["date"] or "").strip()
+        when = cell[:10]
         if not hi or not lo:
             continue      # fail-closed: an unbounded read would call every waiver ever in force
         if not when:
@@ -3803,7 +3811,12 @@ def _waivers_in_force(root: Path | str, window_end: str | None,
             # Dropping it silently is the defect BG0715 built `_undatable_findings` to avoid.
             undated.append(rec["id"])
             continue
-        if when > hi or when < lo:
+        moment = _at(cell)       # a date-only cell parses naive: the legacy date rule
+        if moment is not None and moment.tzinfo is not None:
+            when = cell
+            if not _in_window(cell, start, end):
+                continue
+        elif when > hi or when < lo:
             continue
         # `fig()` rows, not raw strings. Every consumer of a section's rows - `leaf_figures`,
         # `fingerprint`, `render_context` - reads `{"value","source"}`, so
