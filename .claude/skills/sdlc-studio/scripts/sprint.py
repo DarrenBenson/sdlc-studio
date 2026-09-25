@@ -9919,9 +9919,25 @@ def prd_outcomes(root: Path | str) -> dict[str, str]:
     return out
 
 
+def _end_goals(text: str) -> list[tuple[str, str]]:
+    """`[(number, text)]` from a card's `## End Goals` section (a Negative card's `End Goals
+    (stated to exclude)` too), numbered as on the card."""
+    goals: list[tuple[str, str]] = []
+    inside = False
+    for line in text.splitlines():
+        if re.match(r"^#{1,2}\s", line):
+            inside = bool(re.match(r"^##\s+End Goals\b", line, re.I))
+            continue
+        m = re.match(r"^\s*(\d+)[.)]\s+(.+?)\s*$", line) if inside else None
+        if m:
+            goals.append((m.group(1), m.group(2)))
+    return goals
+
+
 def persona_cards(root: Path | str) -> list[dict]:
-    """`[{name, role}]` for each persona card in `sdlc-studio/personas/` - the name from its
-    `# ` heading, the role from its Quick Reference `Cast role` (None when undeclared)."""
+    """`[{name, role, end_goals}]` for each persona card in `sdlc-studio/personas/` - the name
+    from its `# ` heading, the role from its Quick Reference `Cast role` (None when undeclared),
+    the End goals numbered as on the card."""
     from validate import _persona_cast_role  # noqa: PLC0415 - the one cast-role reader
     pdir = Path(root) / "sdlc-studio" / "personas"
     cards = []
@@ -9932,7 +9948,8 @@ def persona_cards(root: Path | str) -> list[dict]:
         text = sdlc_md.read_text_safe(p)
         m = re.search(r"^#\s+(.+?)\s*$", text, re.M)
         if m:
-            cards.append({"name": m.group(1), "role": _persona_cast_role(text)})
+            cards.append({"name": m.group(1), "role": _persona_cast_role(text),
+                          "end_goals": _end_goals(text)})
     return cards
 
 
@@ -9983,27 +10000,33 @@ def goal_trace(root: Path | str, goal: str | None, serves: list[str] | None = No
                             "personas": [c["name"] for c in cards if c["role"] != "negative"]}}
 
 
+def _trace_label(s: dict) -> str:
+    """One thing a goal serves: `O2 - <text>`, or `Maya Okafor (Primary)`."""
+    if s["kind"] == "outcome":
+        return f"{s['id']} - {s['text']}"
+    return f"{s['name']} ({(s.get('role') or 'no cast role').capitalize()})"
+
+
+def _trace_none_why(trace: dict) -> str:
+    """Why a flagged trace serves none, and what the goal could serve instead."""
+    could = trace["could_serve"]
+    options = ", ".join([*could["outcomes"], *could["personas"]]) or "nothing on disk"
+    negative = [_trace_label(s) for s in trace["serves"]]
+    why = (f"only {', '.join(negative)}, a persona the product declines to design for"
+           if negative else "the goal names no PRD outcome or persona")
+    return f"{why}; it could serve {options}"
+
+
 def _render_goal_trace(data: dict) -> None:
     """`goal serves:` lines on the text plan; nothing when no trace was recorded."""
     trace = data.get("goal_trace")
     if not trace:
         return
-
-    def _label(s: dict) -> str:
-        if s["kind"] == "outcome":
-            return f"{s['id']} - {s['text']}"
-        return f"{s['name']} ({(s.get('role') or 'no cast role').capitalize()})"
-
     if not trace["flagged"]:
         for s in trace["serves"]:
-            print(f"goal serves: {_label(s)}")
+            print(f"goal serves: {_trace_label(s)}")
     else:
-        could = trace["could_serve"]
-        options = ", ".join([*could["outcomes"], *could["personas"]]) or "nothing on disk"
-        negative = [_label(s) for s in trace["serves"]]
-        why = (f"only {', '.join(negative)}, a persona the product declines to design for"
-               if negative else "the goal names no PRD outcome or persona")
-        print(f"goal serves: NONE - {why}; it could serve {options}. Name one with "
+        print(f"goal serves: NONE - {_trace_none_why(trace)}. Name one with "
               f"--serves <O-id|persona> or in the goal (advice: the plan is not refused)")
     for value in trace["unknown"]:
         what = (f"the PRD lists no outcome {value.upper()}" if re.fullmatch(r"[Oo]\d+", value)
@@ -11127,9 +11150,11 @@ def _plan_path(root: Path) -> Path:
     return Path(root) / "sdlc-studio" / ".local" / "sprint-plan.json"
 
 
-def _compose_seat_brief(plan: dict, goal: str | None, injected: dict | None = None) -> str:
-    """The seat brief text, composed PURELY from the planner's output, the goal and the lessons
-    injected at review - so the same batch and goal produce the same brief every time."""
+def _compose_seat_brief(plan: dict, goal: str | None, injected: dict | None = None,
+                        served: list[str] | None = None) -> str:
+    """The seat brief text, composed PURELY from the planner's output, the goal, what the
+    product serves (`_goal_served_lines`) and the lessons injected at review - so the same batch
+    and goal produce the same brief every time."""
     bd = plan.get("breakdown") or {}
     ungroomed = bd.get("ungroomed") or []
     clusters = bd.get("clusters") or []
@@ -11148,11 +11173,47 @@ def _compose_seat_brief(plan: dict, goal: str | None, injected: dict | None = No
     else:
         lines.append("Shared-file clusters: none")
     lines.append(f"Reachable end state: {end.get('state', '?')} - {end.get('basis', '')}")
+    lines.extend(served or [])
     # The failure classes injected at review, and only those: the review is the pass most likely
     # to catch a repeat, so it must know what has been repeating. An absence is reported too - a
     # reviewer who is not told there are none assumes they were given them.
     lines.extend(lessons.render_phase(injected or {"phase": "review"}))
     return "\n".join(lines)
+
+
+def _goal_served_lines(root: Path, goal: str | None) -> list[str]:
+    """What the product serves, for the seat judging whether the goal serves a user (D0266):
+    the PRD outcomes, each Primary and Secondary persona's End goals, the Negative personas
+    as declined, and the plan's own `goal_trace` of this goal. Reading, never a refusal."""
+    outcomes, cards = prd_outcomes(root), persona_cards(root)
+    if not (outcomes or cards):
+        return ["PRD outcomes and personas: none on disk - nothing to trace the Sprint Goal "
+                "against"]
+    lines = (["PRD outcomes (does the goal serve one?):",
+              *(f"  {oid} - {text}" for oid, text in outcomes.items())] if outcomes else
+             ["PRD outcomes: none - sdlc-studio/prd.md lists no `## Outcomes`"])
+    designed = [c for c in cards if c["role"] in ("primary", "secondary")]
+    if designed:
+        lines.append("Personas designed for (End goals, numbered as on the card):")
+        for c in designed:
+            lines.append(f"  {c['name']} ({c['role'].capitalize()}):")
+            lines.extend([f"    {n}. {text}" for n, text in c["end_goals"]]
+                         or ["    (no End goals on the card)"])
+    else:
+        lines.append("Personas: none - no Primary or Secondary persona card"
+                     if cards else "Personas: none - no persona cards in sdlc-studio/personas/")
+    lines.extend(f"  {c['name']} (Negative) - declined: the product does not design for them"
+                 for c in cards if c["role"] == "negative")
+    trace = goal_trace(root, goal)
+    if trace is None:
+        lines.append("Goal serves: no Sprint Goal set, so nothing is traced")
+    elif not trace["flagged"]:
+        lines.append("Goal serves (the plan's own trace): "
+                     + "; ".join(_trace_label(s) for s in trace["serves"]))
+    else:
+        lines.append(f"Goal serves: NONE - {_trace_none_why(trace)}. Name the outcome or End "
+                     f"goal it serves in your done_means or note (reading, not a refusal)")
+    return lines
 
 
 def _persisted_plan_is_stale(root: Path, plan: dict) -> str | None:
@@ -11178,8 +11239,9 @@ def seat_brief(repo_root: Path | str, worklist: str | None = None,
                goal: str | None = None) -> str:
     """The context a review seat is GIVEN before it judges the Sprint Goal: what the batch is, the
     grooming state the first live review turned on (placeholder ACs, shared-file clusters, the
-    reachable end state), and THIS project's failure classes injected at review from the class
-    store - not a generic checklist.
+    reachable end state), what the product serves (the PRD outcomes, the personas' End goals and
+    the plan's own goal trace), and THIS project's failure classes injected at review from the
+    class store - not a generic checklist.
 
     Give it the batch it is to brief (`worklist`) and it composes from a DRY plan of exactly that
     batch. Without one it falls back to the persisted plan, and REFUSES to render a stale one as
@@ -11189,14 +11251,16 @@ def seat_brief(repo_root: Path | str, worklist: str | None = None,
     injected = lessons.phase_digest(root, "review")
     if worklist:
         plan = build_plan(root, worklist=worklist, skip_personas=True)
-        return _compose_seat_brief(plan, _brief_goal(root, goal, plan), injected)
+        goal = _brief_goal(root, goal, plan)
+        return _compose_seat_brief(plan, goal, injected, _goal_served_lines(root, goal))
     plan = sdlc_md.read_json(_plan_path(root), {})
     stale = _persisted_plan_is_stale(root, plan)
     if stale:
         return (f"NO CURRENT BATCH TO BRIEF: {stale}. Give the brief the batch it is to describe "
                 f"(`goal-review brief --worklist <file>`); the previous run's plan is not rendered "
                 f"here, because a brief describing the wrong batch cannot be told from a right one.")
-    return _compose_seat_brief(plan, _brief_goal(root, goal, plan), injected)
+    goal = _brief_goal(root, goal, plan)
+    return _compose_seat_brief(plan, goal, injected, _goal_served_lines(root, goal))
 
 
 def _brief_goal(root: Path, supplied: str | None, plan: dict) -> str | None:

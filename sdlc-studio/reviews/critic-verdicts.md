@@ -1204,6 +1204,7 @@ One row has been removed since adoption.
 | BG0764 | APPROVE | qa-rev-BG0764 | BG0764-build | 2026-09-25 | fc9339145b06 | full | - |
 | US0933 | REJECT | qa-rev-US0933 | US0933-build | 2026-09-25 | a55a0a1cb7e9 | full | [new] AC2 unmet as worded and the count regex misses N+ word files, while doc\_freshness.census\_claims (a shipped close-lane reader) reads the ADR-001 and scope counts, so AC2 conflicts with D0266 [LC-002]; [new] non-blocking: the AC1 pointer check is document-wide [LC-002]; [new] non-blocking: plain-word enumerations are not caught; [new] non-blocking: deleting test\_trd\_freshness whole drops BG0187's Threat Model guard and BG0187's depth line now reads false; [new] non-blocking: cutting 60+ scripts leaves the doc-freshness census unchecked; [new] non-blocking: the AC3 test pins a hand-kept RETIRED snapshot [LC-008]; [new] non-blocking: commit prose says Test Levels untouched and forty types |
 | BG0758 | APPROVE | qa-rev-BG0758 | BG0758-build | 2026-09-25 | 830694730276 | full | [pre-existing] command\_audit.py --coverage on a tree with no surface module still exits with a traceback, as at HEAD |
+| US0928 | APPROVE | qa-rev-US0928 | US0928-build | 2026-09-25 | 4ab8d4f4a49a | full | [new] non-blocking: \_end\_goals renders unfilled template End goals as real ones (folded into BG0765 AC2) |
 
 ## Supersessions
 

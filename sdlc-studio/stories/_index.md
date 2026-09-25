@@ -10,9 +10,9 @@
 | Draft | 50 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 6 |
+| In Progress | 5 |
 | Review | 0 |
-| Done | 720 |
+| Done | 721 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 72 |
@@ -286,7 +286,7 @@
 | [US0925](US0925-an-upgrading-project-s-config-carries-forward-without.md) | An upgrading project's config carries forward without the retired review keys | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0926](US0926-this-repository-runs-on-the-shipped-defaults-with.md) | This repository runs on the shipped defaults with no stand-down keys | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0927](US0927-a-sprint-plan-names-the-prd-outcome-or.md) | A sprint plan names the PRD outcome or persona its goal serves, and flags a goal that serves none | Done | EP0264 | 2026-09-25 | 2026-09-25 |
-| [US0928](US0928-the-seat-reviewing-a-sprint-goal-is-shown.md) | The seat reviewing a Sprint Goal is shown the PRD outcomes and the personas' End goals | In Progress | EP0264 | 2026-09-25 | 2026-09-25 |
+| [US0928](US0928-the-seat-reviewing-a-sprint-goal-is-shown.md) | The seat reviewing a Sprint Goal is shown the PRD outcomes and the personas' End goals | Done | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0929](US0929-the-prd-describes-the-lean-product-and-lists.md) | The PRD describes the lean product and lists the outcomes a Sprint Goal can serve | Draft | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0930](US0930-a-reviewer-s-brief-lists-the-recent-done.md) | A reviewer's brief lists the recent Done units that changed each file the unit touches, with the defects their reviews found | In Progress | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0931](US0931-a-build-lane-s-brief-carries-the-same.md) | A build lane's brief carries the same file history, and tells the author that history outranks an artefact's account | Draft | EP0264 | 2026-09-25 | 2026-09-25 |

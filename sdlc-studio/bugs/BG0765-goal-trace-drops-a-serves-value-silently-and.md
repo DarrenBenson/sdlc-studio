@@ -25,7 +25,7 @@ Skip the early return when --serves is given and name each value as unknown; ski
 
 - [ ] **AC1** Given a project with no PRD Outcomes section and no persona cards, when `sprint.py plan --serves O1,Maya` runs, then each value is named as unknown on its own line and the plan exits 0 with its batch unchanged; returning early before reading `--serves` (today's code) fails it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_trace_followups.py::GoalTraceFollowupTests::test_serves_is_reported_with_nothing_to_trace_against
-- [ ] **AC2** Given the shipped PRD and persona templates left unfilled, then no outcome whose text holds `{{` and no persona whose heading holds `{{` is traced or offered; reading placeholders as answers fails it
+- [ ] **AC2** Given the shipped PRD and persona templates left unfilled, then no outcome whose text holds `{{`, no persona whose heading holds `{{` and no End goal whose text holds `{{` (`sprint._end_goals`, added by US0928) is traced, offered or shown in the goal-review brief; reading placeholders as answers fails it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_trace_followups.py::GoalTraceFollowupTests::test_unfilled_placeholders_are_not_outcomes_or_personas
 - [ ] **AC3** Given an `- **O7:**` item outside the `## Outcomes` section, then it is not an outcome; a parser that ignores section bounds fails it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_trace_followups.py::GoalTraceFollowupTests::test_an_outcome_outside_the_section_is_ignored
@@ -36,3 +36,4 @@ Skip the early return when --serves is given and name each value as unknown; ski
 | --- | --- | --- |
 | 2026-09-25 | sdlc-studio | Filed |
 | 2026-09-25 | Claude Opus 5.5 | Criteria authored with executable Verify lines for the Sprint 4 batch |
+| 2026-09-25 | Claude Opus 5.5 | AC2 widened to US0928's `_end_goals`, from its review: the same placeholder defect in the new End-goal reader |
