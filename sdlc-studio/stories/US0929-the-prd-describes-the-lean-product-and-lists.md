@@ -1,6 +1,6 @@
 # US0929: The PRD describes the lean product and lists the outcomes a Sprint Goal can serve
 
-> **Status:** In Progress
+> **Status:** Done
 > **Depends on:** US0927 - the PRD Outcomes section the trace reads (CR0594 refinement)
 > **Delivers:** CR0594
 > **Created:** 2026-09-25
@@ -21,10 +21,13 @@
 
 - **AC1:** Given `sdlc-studio/prd.md` after the refresh, when S1's outcome reader parses it, then it returns at least one outcome and every outcome cites a persona card and an End goal number that exist in `sdlc-studio/personas/` (Maya Okafor 1-4, Jonah Reyes 1-3); a PRD with no parseable `## Outcomes` section, or an outcome citing an End goal the card does not have, fails it
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_every_outcome_traces_to_a_real_end_goal
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given the refreshed PRD, then its Mission and §4 Core Behaviours describe the delivery loop as the code runs it - a Sprint Goal of 20 words or fewer that traces to an outcome, one plan approval, one reviewer per unit with at most two rounds and carried known issues, persona rulings through `decisions.py rule`, the one-page sprint report, and failure classes in `sdlc-studio/lessons.jsonl` - and every `<script>.py <subcommand>` those two sections name appears in that script's `--help`; a section naming a subcommand that does not exist fails it
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_the_loop_section_names_only_commands_that_exist
+  - **Verified:** yes (2026-09-25)
 - **AC3:** Given the refreshed PRD, then it no longer presents the retired learning loop as current: the phrases "a learning loop that must produce work" and "lifted into the store the next `sprint plan` prints unasked" are gone, and the Learning loop row of the Feature Inventory names failure classes; the test is red against today's PRD
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_the_retired_learning_loop_is_not_described_as_current
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

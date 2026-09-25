@@ -3,7 +3,7 @@
 > **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/decisions.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_waiver_window.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/decisions.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_waiver_window.py, .claude/skills/sdlc-studio/help/decisions.md, changelog.d/BG0750.md
 > **Evidence:** US0885 review, probe s2/rv885_probe3.py, RUN-01M3891F
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio file

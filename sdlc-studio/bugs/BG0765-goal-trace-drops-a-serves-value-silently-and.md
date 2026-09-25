@@ -3,7 +3,7 @@
 > **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_trace.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_trace_followups.py, changelog.d/BG0765.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_trace.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_trace_followups.py, changelog.d/BG0765.md
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

@@ -2,7 +2,7 @@
 
 **Project:** SDLC Studio
 **Version:** 5.1.0
-**Last Updated:** 2026-07-14
+**Last Updated:** 2026-09-25
 **Status:** Generated (brownfield extraction; epics/stories validated and closed out 2026-07-09, commit 841471e)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -54,9 +54,19 @@ delivery loop (see RFC-0001) a natural next step rather than a new invention.
 We call the resulting discipline **Goal-Driven Development**: the human sets the
 goal and acceptance criteria, the agent drives the lifecycle to them (the lineage
 Test-Driven -> Behaviour-Driven -> Eval-Driven -> Goal-Driven). The `sprint`
-command is its executable form - a prioritised batch driven along the goal ladder
-`triage -> plan -> design -> done` - and every run closes with a reconcile, a
-review and a retro.
+command is its executable form, and it runs as lean Scrum. A Sprint Goal is one
+sentence of user value, 20 words or fewer, that traces to an outcome below or to a
+persona; `sprint.py plan` orders and sizes the batch, and the operator approves the
+plan once. Each unit is built against its acceptance criteria and reviewed by one
+reviewer in at most two rounds: round two re-checks the fixes, and a unit still
+rejected at the cap is carried as a known issue rather than reviewed a third time.
+A question in a persona seat's lens is ruled by that seat and recorded with
+`decisions.py rule`, so the run does not wait on it. `sprint.py close` runs the
+close in one pass once its preconditions hold (a committed batch, a sprint goal, a goal
+verdict and a retro) and files the one-page sprint report, which states every known
+issue rather than being withheld over one, and `sprint.py sign` seals it. What went
+wrong is recorded as a failure class in `sdlc-studio/lessons.jsonl`, whose rule is
+carried into the next plan, build and review.
 
 **Gates over goodwill.** v4 turns the most-skipped parts of that discipline from
 prose into mechanism, because a rule enforced by judgement is the rule that gets
@@ -76,6 +86,24 @@ it retires; a derived fact is generated, never pinned by hand; a repeated failur
 the code path before a check is added; and a lane whose refusals catch no real defect is
 deleted. The persona seats apply this while they build, review and rule (LL0056, lesson
 class LC-008).
+
+---
+
+## Outcomes
+
+What the product is for, numbered so a Sprint Goal can name the one it serves
+(`sprint.py plan --serves O3`, or `O3` in the goal). Each outcome cites the persona
+End goal it answers, numbered as on that persona's card in
+[`sdlc-studio/personas/`](./personas/index.md).
+
+- **O1:** A unit reaches Done only when its acceptance criteria run green against the code, so shipped means verified (Maya Okafor, End goal 1)
+- **O2:** The true state of the work is on disk and one command away after any session, reset or compaction (Maya Okafor, End goal 2)
+- **O3:** A sprint runs from one approved plan to one signed report, pausing only for a decision that is genuinely the operator's (Maya Okafor, End goal 3)
+- **O4:** Specs, indexes and code stay reconciled, and drift is reported when it happens rather than found later (Maya Okafor, End goal 4)
+- **O5:** The process stays small enough to serve the work: a repeated failure is fixed in the code path, and a check that catches nothing is deleted (Maya Okafor, End goal 3)
+- **O6:** An inherited codebase yields a specification validated against its code that the team can trust (Jonah Reyes, End goal 1)
+- **O7:** A team adopts the lifecycle a piece at a time, read-only first, with no big-bang migration (Jonah Reyes, End goal 2)
+- **O8:** Humans and agents are held to the same artefacts and the same gates (Jonah Reyes, End goal 3)
 
 ---
 
@@ -138,8 +166,9 @@ whether a ticket was "big enough for ceremony" shipped the same defect as an age
 with no process at all, precisely on the tickets where the ceremony would have
 caught it. Stronger models engaged unprompted; weaker ones did not, and the
 judgement call is where the process leaks. So the parts of the lifecycle that
-matter most are enforced mechanically: a planning floor, a grooming gate, a
-verified definition of Done, and a learning loop that must produce work.
+matter most are enforced mechanically: a planning floor, a grooming gate and a
+verified definition of Done, with each repeated failure recorded as a class whose
+rule reaches the next plan, build and review.
 
 ### Target Users
 
@@ -229,7 +258,7 @@ epic decomposition cite that governing RFC/CR instead.
 
 | Feature | Description | Status | Priority | Location | Epic |
 | --- | --- | --- | --- | --- | --- |
-| Sprint loop (Goal-Driven) | A prioritised batch driven along `triage -> plan -> design -> done`; WSJF order, dependency waves, agentic execution, close = reconcile + review + retro | Complete | High | reference-sprint.md, scripts/sprint.py | EP0031, EP0032 |
+| Sprint loop (Goal-Driven) | A prioritised batch driven along `triage -> plan -> design -> done`; WSJF order, dependency waves, agentic execution. A Sprint Goal of 20 words or fewer traced to a PRD outcome or persona, one plan approval, one reviewer per unit for at most two rounds, and a one-pass close that files the one-page sprint report `sprint sign` seals | Complete | High | reference-sprint.md, scripts/sprint.py | EP0031, EP0032 |
 | Engagement floor | A multi-file change in a spec-bearing repo REQUIRES the planning pass. Deterministic gate lane: a shipped unit that neither planned (AC / `Verify:` / linked plan) nor declares a real single-file `Affects:` is refused. Opt out only by recorded config or waiver | Complete | High | reference-doctrine.md (rule 16), reference-config.md, scripts/engagement_floor.py | EP0031 |
 | Breakdown gate | `sprint plan` REFUSES an ungroomed batch (a unit must declare `Affects:` and a size). Exits non-zero and prints no plan. `sprint.breakdown: judgement` downgrades it to a report; an absent config BLOCKS | Complete **[Unreleased]** | High | reference-sprint.md#breakdown, scripts/sprint.py | CR0260 |
 | Sprint capacity | `capacity.tokens/minutes/units` - one number feeding both the plan-time fit check and the run-time appetite breaker. Over-budget WARNS, never gates | Complete **[Unreleased]** | Medium | reference-config.md#capacity, scripts/sprint.py, scripts/loop_guard.py | CR0259 |
@@ -239,11 +268,11 @@ epic decomposition cite that governing RFC/CR instead.
 | Generated team (seats) | `persona generate --team` grows fresh named engineering seats from THIS project (PRD/TRD/config/repo map) onto behavioural variables and risk axes, never demographics. 3 core roles + up to 2 signal-earned extras, cast capped at 5. Provenance stamp + content hash keep an operator's edit from being clobbered | Complete | High | reference-persona-generate.md#team-generation, scripts/persona_gen.py | EP0030 |
 | Stakeholder panel | `persona generate --stakeholders` generates the other side of the table (buyer, compliance, ops, served) with veto lines and the Cooper arbitration rule on every card: a buyer goal never overrides the Primary user's interface | Complete | Medium | reference-persona-generate.md, templates/personas/stakeholder-template.md | EP0030 |
 | Cooper persona arbitration | Personas arbitrate rather than decorate: a multi-Primary cast warns, two Primaries on one `Interface:` is an error, `**Serves:**` tags feed a coverage check, and every consult carries the Primary test plus a per-seat objection quota | Complete | Medium | reference-persona.md, scripts/validate.py | EP0030 |
-| Learning loop | Doctrine rule 17: a retro is checked on its CONTENT, every finding takes a disposition (filed, or declined with a reason - silence fails), and its lessons are lifted into the store the next `sprint plan` prints unasked. Bound close-gate lanes; `lessons.loop: judgement` opts out | Complete **[Unreleased]** | High | reference-retro.md, reference-doctrine.md (rule 17), scripts/retro.py, scripts/lessons.py | EP0010 |
+| Learning loop | Each repeated failure is a failure class in `sdlc-studio/lessons.jsonl` (`LC-NNN`: a rule, a behaviour and the phases it is injected at). The plan, the build brief and the review brief each carry their phase's live classes, at most five; a retro Try item or a review finding cites its class, and the close counts the hit, files one CR for a class repeated twice after it was recorded and retires a class quiet for five runs. A retro is still checked on its content and every finding takes a disposition; `lessons.loop: judgement` makes those close lanes advisory | Complete **[Unreleased]** | High | reference-retro.md, scripts/retro.py, scripts/lessons.py, sdlc-studio/lessons.jsonl | EP0010 |
 | Lessons ranking | `lessons rank` orders the registry by recurrence (computed from citations in the files, never asserted), recency, and structural-fix demotion - a lesson whose class a shipped guard now makes impossible stops crowding out live ones | Complete **[Unreleased]** | Medium | scripts/lessons.py | EP0010 |
-| Mutation gate | Proves the tests can FAIL, where `verify_ac` proves they pass: a bounded declared fault set applied to a surface, re-running the suite per mutation, reporting killed / survived / error / unviable. Advisory lane in the gate; an absent report reads not-run, never PASS | Complete | High | help/mutation.md, reference-test-best-practices.md, scripts/mutation.py | EP0011 |
-| Quality gate (`gate`) | One portable, ecosystem-neutral exit code over the deterministic checks (conformance, reconcile, validate, integrity, duplicate-id, doc-coverage, engagement-floor, doc-freshness, mutation, ...), plus bound close lanes (retro, lessons, review currency, handoff) and `--release`, which EXECUTES every story's `Verify:` line | Complete | High | help/gate.md, scripts/gate.py | EP0026, EP0031 |
-| Independence gate | Author != reviewer, enforced mechanically; a verification depth is required before a terminal bug status | Complete | High | scripts/transition.py, scripts/critic.py | EP0026 |
+| Mutation gate | Proves the tests can FAIL, where `verify_ac` proves they pass: a bounded declared fault set applied to a surface, re-running the suite per mutation, reporting killed / survived / error / unviable. An opt-in run (`mutation.py run`) that reports its yield; no gate lane reads it | Complete | High | help/mutation.md, reference-test-best-practices.md, scripts/mutation.py | EP0011 |
+| Quality gate (`gate`) | One portable, ecosystem-neutral exit code over the deterministic checks (conformance, reconcile, validate, integrity, duplicate-id, doc-coverage, engagement-floor, doc-freshness, ...), plus bound close lanes (retro, lessons, review currency, handoff) and `--release`, which EXECUTES every story's `Verify:` line | Complete | High | help/gate.md, scripts/gate.py | EP0026, EP0031 |
+| Independence gate | Author != reviewer, enforced mechanically; a bug reaches Fixed only while its recorded `verify_ac` run is green | Complete | High | scripts/transition.py, scripts/critic.py | EP0026 |
 | Handoff guide | A generated record of where an agentic run stopped: delivered with evidence, remaining with a per-item pointer and a copilot-tail / judgement tag, and the open decisions. A Done unit whose ACs are red or stale is reported as remaining, not delivered | Complete | Medium | scripts/handoff.py | EP0032 |
 | Adversarial audit | Pressure-tests the workspace and its artefacts, seeding its lens set from the ranked lessons registry | Complete | Medium | reference-audit.md, scripts/readiness.py | EP0026 |
 | Triage and noise control | An `inbox` lane for findings under schema v3; duplicate and noise detection on filing | Complete | Medium | scripts/triage_noise.py, scripts/file_finding.py | EP0014 |
@@ -350,8 +379,26 @@ honestly size, so a plan is never false authority over unsized work.
 - Terminal status transitions trigger completion cascades that update all linked
   artifacts, indexes, dependency tables, and PRD feature statuses.
 - The `sprint` loop drives a batch along `triage -> plan -> design -> done`,
-  bounded by a declared appetite, and closes with reconcile + review + retro as a
-  single blocking gate.
+  bounded by a declared appetite. `sprint.py plan` selects, orders and sizes a
+  groomed batch against a Sprint Goal of 20 words or fewer, prints the PRD outcome
+  or persona the goal serves (a goal serving none is flagged, never refused) and the
+  failure classes injected at plan. The operator approves the plan once, and
+  `--write` opens the run.
+- Each unit has one reviewer, briefed by `critic.py brief` and recorded by
+  `critic.py record`, for at most two rounds (`review.max_rounds`): round two
+  re-checks the fixes, and a unit still rejected at the cap is carried as a known
+  issue while the run continues.
+- A question in a persona seat's lens is answered by that seat with
+  `decisions.py rule`, which records a binding ruling or cites the precedent that
+  already answers it (`decisions.py precedent`).
+- `sprint.py close` runs the close chain (review coverage, retro, lessons, gate,
+  handoff, reconcile) in one pass. A step that fails is a known issue on the
+  one-page sprint report the close files, not a refusal, and `sprint.py sign`
+  seals that report against the tree the close left.
+- Failure classes live in `sdlc-studio/lessons.jsonl`, listed by
+  `lessons.py classes`. A retro Try item or a review finding cites its class;
+  `retro.py extract` and the close count the hit, and a class repeated twice after
+  it was recorded becomes one CR to fix its path.
 - Artefacts are created by the deterministic tooling (`artifact.py new`/`batch`,
   `file_finding.py`), never hand-authored: the id, the index row and the epic
   wiring are allocated by construction.
@@ -370,8 +417,8 @@ honestly size, so a plan is never false authority over unsized work.
   an allocation lock; ULID ids (schema v3) carry an entropy tail so two
   uncoordinated writers in the same instant cannot mint the same id at all.
 - "Done" requires verification: a story reaches Done only when its executable ACs
-  pass. `transition -> Done` is gated, and a terminal bug status requires a
-  recorded verification depth.
+  pass. `transition -> Done` is gated, and a bug reaches Fixed only while its
+  recorded `verify_ac` run is green.
 - **Only a story carries executable `- **Verify:**` lines.** CR and bug acceptance
   criteria are prose, and the filer refuses a command-shaped `Verify:` in one: a
   line nothing executes is a permanent false RED when it is wrong and a false GREEN
@@ -619,9 +666,9 @@ Known historical id collisions documented in `reference-outputs.md`. Generate-mo
 validation (tests against behaviour) is not yet wired for the markdown layer.
 
 The 2026-07-04 enforcement-gap retrospective that this section used to carry is
-**closed**: the mutation gate is shipped (assertion integrity is executably checked,
-not merely written down), `transition` reads the verification depth before a terminal
-bug status, reconcile's findings name their cause and route to the tool that
+**closed**: mutation testing is shipped as an opt-in run (assertion integrity is executably
+checked, not merely written down), `transition` refuses a terminal bug status while its
+recorded `verify_ac` run is red, reconcile's findings name their cause and route to the tool that
 diagnoses them, the router carries a Deterministic Entry Points card and
 `reference-scripts.md` is the catalogue, and the style guard enforces British
 spellings. Each was a rule stated but not enforced; each is now a lane with an exit
@@ -661,6 +708,7 @@ once it has enough delivered units, so today's forecasts still lean on the study
 | --- | --- | --- |
 | 2026-06-20 | 2.0.0 | Brownfield extraction of PRD from skill source (Generate mode) |
 | 2026-07-14 | 4.1.0 | Refresh to the v4 feature set: the engagement floor, the breakdown gate, sprint capacity and the run appetite, the sizing and velocity loop (with its falsification stated), ULID identity, the generated team and stakeholder panel, the learning loop, the mutation gate and the release gate. `autosprint` renamed to `sprint`. Corrected the corpus and test counts, replaced the closed 2026-07-04 enforcement-gap list, and expanded the config reference to the gate-bearing keys |
+| 2026-09-25 | 5.1.0 | Lean refresh (US0929): a numbered Outcomes section citing persona End goals, for a Sprint Goal to trace to; the Mission and Core Behaviours describe the loop as it runs (a goal of 20 words or fewer, one plan approval, one reviewer for at most two rounds with carried known issues, persona rulings, the one-page report); the learning loop is described as failure classes in `lessons.jsonl` |
 
 ---
 
