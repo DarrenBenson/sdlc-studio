@@ -1,6 +1,6 @@
 # BG0743: a signed report's digest covers prose that is edited in place, so an unrelated amendment to a decision rationale invalidates a signature over an unchanged run
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -27,7 +27,11 @@ Decide deliberately what the digest covers. Either freeze the prose into the rep
 ## Acceptance Criteria
 
 - [ ] **AC1** The behaviour described is corrected: BG0719 puts each in-force waiver's rationale into the report of record, and it enters the fingerprint like any other figure.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py::SignedReportStableTests::test_an_amended_waiver_rationale_does_not_invalidate
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** The proposed fix lands, pinned by a test: Decide deliberately what the digest covers.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py::SignedReportStableTests::test_a_listed_waiver_amended_or_superseded_and_an_unlisted_one_do_not_invalidate
+  - **Verified:** yes (2026-09-25)
 
 ## Impact
 
@@ -38,3 +42,4 @@ A signature is a claim about a run. If it can be broken by editing prose in an u
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-22 | sdlc-studio | Filed |
+| 2026-09-25 | sdlc | Verify lines added: fixed by US0941/BG0775 (the digest leaves waiver prose that moves independently out; an amended rationale no longer invalidates) |

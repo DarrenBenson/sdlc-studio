@@ -1518,7 +1518,7 @@ class InvalidatedReportInStatusTests(unittest.TestCase):
 
     THE THREE TREES are copies of a run sealed under one report: (i) untouched; (ii) a typo
     fixed in `README.md`, a tracked write that moves no figure the report carries; (iii) a
-    batch unit's `Points:` changed, so `points_delivered` moves. (ii) is the discriminating
+    delivered batch unit reopened, so `points_delivered` moves. (ii) is the discriminating
     one - every reading of D4 agrees about (i) and (iii).
     """
 
@@ -1558,9 +1558,7 @@ class InvalidatedReportInStatusTests(unittest.TestCase):
                          "--date", "2099-01-01T00:00:00+00:00"], root, check=False,
                         env_extra={"GIT_COMMITTER_DATE": "2099-01-01T00:00:00+00:00"})
         if kind == "figure-moved":
-            unit = root / "sdlc-studio" / "stories" / "US0101-a-fixture-unit.md"
-            unit.write_text(unit.read_text(encoding="utf-8")
-                            .replace("> **Points:** 5", "> **Points:** 8"), encoding="utf-8")
+            self.tsr.reopen_a_delivered_unit(root)
         return root, rid
 
     def test_status_names_an_invalidated_report(self) -> None:

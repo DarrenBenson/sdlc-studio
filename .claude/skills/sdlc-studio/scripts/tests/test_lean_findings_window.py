@@ -102,6 +102,10 @@ class FindingsWindowTests(unittest.TestCase):
 
         self._stamped("BG0951", _utc(generated))
         self._assert_valid(rid)
+        # Placed by a fresh derivation over the same window, which replays nothing from a page.
+        self.assertNotIn("BG0951", self._issues(
+            sr.build_report(self.root, lean.RETRO, as_of=_utc(generated))),
+            "a finding stamped in the page's own second entered its window")
         # The positive control: BG0951 IS an open finding the section reads, once a window
         # covers its moment.
         later = sr.build_report(self.root, lean.RETRO,
@@ -127,6 +131,10 @@ class FindingsWindowTests(unittest.TestCase):
         if self._created(after) != generated[:10]:
             self.skipTest("the filing crossed UTC midnight; the premise is the page's own day")
         self._assert_valid(rid)
+        # Placed by a fresh derivation over the same window, which replays nothing from a page.
+        self.assertNotIn(after, self._issues(
+            sr.build_report(self.root, lean.RETRO, as_of=generated)),
+            "a finding filed after the page on its own day entered its window")
         # The positive control: the later finding IS an open finding the section reads.
         later = sr.build_report(self.root, lean.RETRO,
                                 as_of=_utc(datetime.now(timezone.utc) + timedelta(seconds=2)))

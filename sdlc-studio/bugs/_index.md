@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 29 |
 | In Progress | 0 |
-| Fixed | 617 |
+| Fixed | 619 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
 | Superseded | 25 |
-| **Total** | **777** |
+| **Total** | **779** |
 
 ## All Bugs
 
@@ -101,7 +101,7 @@
 | [BG0740](BG0740-a-gate-stood-down-in-prose-rather-than.md) | a gate stood down in prose rather than as a waiver row is invisible to the report's waiver disclosure, which is how the one the operator most needed went unnamed | Open | Medium | 2026-09-22 | 2026-09-22 |
 | [BG0741](BG0741-the-stale-lens-is-silenced-by-the-sweep.md) | the stale lens is silenced by the sweep's own audit rulings, and repairing it will make every abandoned request double-report on the same day | Won't Fix | Medium | 2026-09-22 | 2026-09-22 |
 | [BG0742](BG0742-ac5-style-corpus-coupled-tests-go-red-when.md) | AC5-style corpus-coupled tests go red when the backlog they measure is acted on, and two are red in this tree already | Fixed | Medium | 2026-09-22 | 2026-09-22 |
-| [BG0743](BG0743-a-signed-report-s-digest-covers-prose-that.md) | a signed report's digest covers prose that is edited in place, so an unrelated amendment to a decision rationale invalidates a signature over an unchanged run | Open | Medium | 2026-09-22 | 2026-09-22 |
+| [BG0743](BG0743-a-signed-report-s-digest-covers-prose-that.md) | a signed report's digest covers prose that is edited in place, so an unrelated amendment to a decision rationale invalidates a signature over an unchanged run | Fixed | Medium | 2026-09-22 | 2026-09-22 |
 | [BG0744](BG0744-the-close-refuses-to-file-a-report-but.md) | the close refuses to file a report but a direct build --write files one anyway, skipping the token stamp and the gate verdicts the refusal protects | Fixed | High | 2026-09-23 | 2026-09-23 |
 | [BG0745](BG0745-sprint-report-check-reads-a-report-hand-edited.md) | sprint_report check reads a report hand-edited after signing as VALID | Fixed | High | 2026-09-23 | 2026-09-23 |
 | [BG0746](BG0746-the-spec-claims-timing-claim-deadlocks-every-fresh.md) | The spec-claims timing claim deadlocks every fresh worktree under parallel load | Fixed | Medium | 2026-09-23 | 2026-09-23 |
@@ -133,9 +133,11 @@
 | [BG0772](BG0772-a-held-backlog-item-cannot-close-when-its.md) | A held backlog item cannot close when its closing story ships | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0773](BG0773-bg0755-did-not-converge-in-review-round-2.md) | BG0755 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0774](BG0774-install-sh-exits-1-after-a-successful-install.md) | install.sh exits 1 after a successful install when the gemini target is chosen without the gemini CLI | Open | Medium | 2026-09-25 | 2026-09-25 |
-| [BG0775](BG0775-us0941-did-not-converge-in-review-round-2.md) | US0941 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0775](BG0775-us0941-did-not-converge-in-review-round-2.md) | US0941 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0776](BG0776-sprint-sign-principal-seals-the-run-with-an.md) | sprint sign --principal - seals the run with an empty principal | Open | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0777](BG0777-the-sprint-lane-runner-and-the-revert-check.md) | The sprint lane runner and the revert check run only a criterion's first Verify line | Open | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0778](BG0778-the-retro-reads-only-four-digit-ids-in.md) | The retro reads only four-digit ids in dispositions and carried rows, so a v3 project's ULID ids are dropped | Open | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0779](BG0779-the-pre-commit-hook-hides-the-stamped-test.md) | The pre-commit hook hides the stamped-test re-read list on a passing commit | Open | Medium | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 

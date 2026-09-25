@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 37 |
+| Draft | 36 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 750 |
+| Done | 751 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 90 |
@@ -299,7 +299,7 @@
 | [US0938](US0938-the-release-rehearsal-walks-a-v5-1-project.md) | The release rehearsal walks a v5.1 project across to v6, and every known gap it tolerates has an open owner | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0939](US0939-ci-and-the-push-gate-give-one-verdict.md) | CI and the push gate give one verdict on tools/tests, because both run it the same way | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0940](US0940-every-criterion-on-a-done-story-passes-when.md) | Every criterion on a Done story passes when the release gate runs it, or is retired with its reason | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
-| [US0941](US0941-a-report-maya-signed-still-validates-after-the.md) | A report Maya signed still validates after the tree moves on | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0941](US0941-a-report-maya-signed-still-validates-after-the.md) | A report Maya signed still validates after the tree moves on | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0942](US0942-the-release-tag-is-refused-only-for-what.md) | The release tag is refused only for what a release needs, not for close-owed debt | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0943](US0943-sprint-plan-in-a-consuming-project-prints-the.md) | `sprint plan` in a consuming project prints the skill's toolchain runbook | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0944](US0944-verify-ac-stamps-never-reports-green-on-nothing.md) | `verify_ac stamps` never reports green on nothing, and no stale stamp ships in v6 | Done | EP0265 | 2026-09-25 | 2026-09-25 |

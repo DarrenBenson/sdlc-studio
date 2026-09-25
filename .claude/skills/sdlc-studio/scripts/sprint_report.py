@@ -2793,6 +2793,42 @@ def in_the_digest(section: str, key: str) -> bool:
             and (section, key.split("[", 1)[0]) not in OUTSIDE_THE_DIGEST)
 
 
+def _page_readings(page: dict | None) -> dict:
+    """The readings a filed page took of sources that move on their own after the run, keyed by
+    what places each one in the run. Re-derivation replays these from the page rather than
+    re-reading the source.
+
+    One ruling covers every such figure. A finding's status, severity and title move with
+    triage; a unit's Points line is re-sized; a waiver's rationale and decision text are amended
+    in place and its status is rewritten when it is superseded. Re-reading any of them judged a
+    signed page against today's backlog rather than the run, and RPT0006-RPT0008 read INVALID
+    within a day. WHICH findings and waivers the page lists is a reading too: a finding closed
+    before the page and reopened after it, or a date-only finding filed later on the page's own
+    day, moved the set without the run doing anything. What still re-derives from the tree is
+    what places a reading in the run: a listed finding raised inside the window, a unit in the
+    run's ledger, a listed waiver dated inside the window. The page is the one its signing commit
+    holds (`_signed_page`), never the file on disk, and the readings stay IN the digest, so an
+    edit to one on disk is named against the signed page. With no page (a first derivation, or a
+    page no commit holds signed) every map is None and every source is read.
+    """
+    if page is None:
+        return {"points": None, "findings": None, "waivers": None}
+    rows = {s.get("key"): s.get("rows") or [] for s in page.get("sections") or []}
+
+    def val(row: dict, key: str):
+        f = row.get(key)
+        return f.get("value") if isinstance(f, dict) else None
+
+    findings: dict[str, dict] = {}
+    for row in rows.get("known_issues", []):
+        if val(row, "issue_priority") not in ("carried unit", "close gap", "STOP-SHIP"):
+            findings.setdefault(val(row, "issue_id"), row)
+    return {"points": {val(r, "unit_id"): val(r, "unit_points")
+                       for r in rows.get("delivered", []) if "unit_points" in r},
+            "findings": findings,
+            "waivers": {val(r, "waiver_id"): r for r in rows.get("waivers", [])}}
+
+
 def leaf_figures(report: dict):
     """Every `(section key, figure key, figure)` in the report's figure set, IN ORDER.
 
@@ -3179,15 +3215,18 @@ def _review_rounds(root: Path, uid: str, ledger: list[list[str]], found: bool,
     return sum(1 for r in ledger if r and sdlc_md.norm_id(r[0]) == uid)
 
 
-def _unit_ledger(root: Path, state: dict, state_rel: str) -> list[dict]:
+def _unit_ledger(root: Path, state: dict, state_rel: str,
+                 filed_points: dict | None = None) -> list[dict]:
     """One entry per unit the run planned, added or dropped: plan order, then added order.
 
     Planned points come from the plan snapshot, never the unit file: a unit resized from 3 to 8
     after approval was planned at 3, and reading the file erases the very error this page shows.
     Delivered means the terminal gate PREPARE recorded, when it recorded one - the seal moves
     statuses, so reading a status would change the page the signature froze - else a terminal
-    status on disk.
+    status on disk. A unit's Points are the filed page's reading when one is replayed
+    (`_page_readings`), else the unit file's.
     """
+    filed_points = filed_points or {}
     snap = {sdlc_md.norm_id(k): v
             for k, v in ((state.get("plan_snapshot") or {}).get("units") or {}).items()
             if isinstance(v, dict)}
@@ -3215,12 +3254,14 @@ def _unit_ledger(root: Path, state: dict, state_rel: str) -> list[dict]:
         delivered = (False if dropped else uid in cleared if gate_clear is not None
                      else _terminal(root, uid)[1])
         plan, act = snap.get(uid) or {}, actuals.get(uid) or {}
+        points = (filed_points[uid] if uid in filed_points else
+                  sdlc_md.read_points(sdlc_md.read_text_safe(path)) if path else None)
         out.append({
             "id": uid, "rel": _rel(root, path) if path else state_rel,
             "planned": uid in planned, "added": uid not in planned and uid in added,
             "dropped": dropped, "reason": (change.get("reason") or "").strip(),
             "delivered": delivered, "carried": not dropped and not delivered,
-            "points": sdlc_md.read_points(sdlc_md.read_text_safe(path)) if path else None,
+            "points": points if _num(points) else None,
             "planned_points": plan.get("planned_points"),
             "forecast_minutes": plan.get("forecast_minutes"),
             "forecast_tokens": plan.get("forecast_tokens"),
@@ -3421,12 +3462,23 @@ def _finding_row(root: Path, uid: str) -> tuple[int, dict]:
 
 
 def _known_issues_section(root: Path, state: dict, state_rel: str, ledger: list[dict],
-                          start: str | None, end: str | None) -> dict:
+                          start: str | None, end: str | None,
+                          on_page: dict | None = None) -> dict:
     """STOP-SHIP rulings the close recorded, first and marked, so the signer cannot miss one;
     then open findings raised inside the run's window, most severe first; then the other gaps
-    the close recorded; then the units carried undelivered."""
-    _filed, still_open = _open_findings(root, {"started_at": start, "ended_at": end})
-    ranked = sorted((_finding_row(root, uid) for uid in still_open or []),
+    the close recorded; then the units carried undelivered.
+
+    Re-deriving a filed page, its own reading is replayed (`_page_readings`): the findings it
+    lists that were raised in the window, each as the page read it, so closing, re-grading or
+    reopening one later does not move the page."""
+    raised, still_open = _open_findings(root, {"started_at": start, "ended_at": end})
+
+    def replayed(uid: str) -> tuple[int, dict]:
+        row = {k: dict(f) if isinstance(f, dict) else f for k, f in on_page[uid].items()}
+        priority = (row.get("issue_priority") or {}).get("value")
+        return _priority_rank("" if priority in (None, NOT_MEASURED) else str(priority)), row
+    ranked = sorted([_finding_row(root, uid) for uid in still_open or []] if on_page is None
+                    else [replayed(uid) for uid in raised or [] if uid in on_page],
                     key=lambda pair: (pair[0], pair[1]["issue_id"]["value"]))
     gaps = state.get("close_known_issues")
     gap_rows = [({"issue_id": fig("issue_id", str(gap.get("source") or "close"), state_rel),
@@ -3449,7 +3501,7 @@ def _known_issues_section(root: Path, state: dict, state_rel: str, ledger: list[
     scan = (unmeasured("findings_scan", state_rel,
                        "the run records no start time, so no finding can be placed in it")
             if still_open is None else
-            fig("findings_scan", f"{len(still_open)} open finding(s) raised in the run, "
+            fig("findings_scan", f"{len(ranked)} open finding(s) raised in the run, "
                                  + (f"{len(gaps)} close gap(s)" if isinstance(gaps, list)
                                     else "close gaps not recorded")
                                  + f", {len(carried)} carried unit(s)", state_rel))
@@ -3547,7 +3599,8 @@ def _iso(moment) -> str | None:
 
 
 def build_report(root, retro_id: str, as_of: str | None = None,
-                 window_end: str | None = None, run_id: str | None = None) -> dict:
+                 window_end: str | None = None, run_id: str | None = None,
+                 filed: dict | None = None) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -3557,7 +3610,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     THE WINDOW IS CLOSED AND CARRIED. `ended_at` is None until the seal and written by it, so
     an open run is bounded at the page's generation time, and the resolved end is recorded on
     the report and replayed on every re-derivation - otherwise signing would widen the window,
-    move the figures and invalidate the page it had just signed.
+    move the figures and invalidate the page it had just signed. `filed` is the signed page as
+    its signing commit holds it: its readings of sources that move after the run are replayed,
+    never re-read (`_page_readings`).
     """
     root = Path(root)
     state, state_rel = _run_state_for(root, run_id)
@@ -3602,7 +3657,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         # transcript is read here and nowhere else.
         current = run_state.session_tokens(root)
     tokens = run_state.run_token_total(state, current)
-    ledger = _unit_ledger(root, state, state_rel)
+    readings = _page_readings(filed)
+    ledger = _unit_ledger(root, state, state_rel, readings["points"])
     sections = [
         _section("goal", "Goal", goal_figs),
         _estimates_section(state, state_rel, ledger, tokens,
@@ -3610,7 +3666,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                            else None),
         _delivered_section(root, state_rel, ledger),
         _known_issues_section(root, state, state_rel, ledger,
-                              state.get("started_at"), _iso(end)),
+                              state.get("started_at"), _iso(end), readings["findings"]),
         _signoff_section(state_rel),
         _cost_section(state, state_rel, tokens),
         _dora_section(root, start, end),
@@ -3618,7 +3674,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         _rulings_section(state, state_rel),
         # Bounded at both ends by the run's own window, like DORA, so a decision taken before
         # or after the run cannot move a signed page.
-        _waivers_section(root, _iso(end), _iso(start)),
+        _waivers_section(root, _iso(end), _iso(start), readings["waivers"]),
         _lane_yield_section(root, state, start, end),
         _lessons_section(root, state.get("run_id")),
     ]
@@ -3705,7 +3761,8 @@ def _refuse_sourceless(report: dict, root: Path | None = None) -> None:
 
 
 def _waivers_in_force(root: Path | str, window_end: str | None,
-                      window_start: str | None = None) -> tuple[list[dict], list[str]]:
+                      window_start: str | None = None,
+                      on_page: dict | None = None) -> tuple[list[dict], list[str]]:
     """The ACCEPTED waivers dated at or before `window_end`, as report rows.
 
     RPT0002 was SIGNED with two waivers in force - one standing `review.line_coverage` down from
@@ -3732,6 +3789,11 @@ def _waivers_in_force(root: Path | str, window_end: str | None,
     the re-derivation and not the page, so `check` read INVALID; and the cell held the local date
     while the window is stored in UTC, so near midnight a waiver inside the window fell a day
     outside it. A date-only row keeps the date rule, so a page already signed re-derives as filed.
+
+    Re-deriving a filed page, its own reading is replayed (`_page_readings`): the waivers it
+    lists, each with the page's subject and rationale, so amending one in place or superseding it
+    later does not move the page. Each one's id and date are still read from the log and placed
+    in the window.
     """
     try:
         import decisions as dec  # noqa: PLC0415 - deferred, like the chain's sibling imports
@@ -3743,10 +3805,10 @@ def _waivers_in_force(root: Path | str, window_end: str | None,
     rel = "sdlc-studio/decisions.md"
     out, undated = [], []
     for rec in dec.list_decisions(Path(root)):
-        if rec["status"] != "accepted":
-            continue
         decision = (rec["decision"] or "").strip()
-        if not decision.lower().startswith(dec.WAIVER_PREFIX):
+        filed = (on_page or {}).get(rec["id"])
+        if filed is None and (rec["status"] != "accepted"
+                              or not decision.lower().startswith(dec.WAIVER_PREFIX)):
             continue
         cell = (rec["date"] or "").strip()
         when = cell[:10]
@@ -3764,19 +3826,28 @@ def _waivers_in_force(root: Path | str, window_end: str | None,
                 continue
         elif when > hi or when < lo:
             continue
+        if on_page is not None and filed is None:
+            continue      # the filed page's reading decides which waivers it lists
         # `fig()` rows, not raw strings. Every consumer of a section's rows - `leaf_figures`,
         # `fingerprint`, `render_context` - reads `{"value","source"}`, so
         # raw strings made `build` exit 1 with an AttributeError on any tree holding a waiver.
         out.append({"waiver_id": fig("waiver_id", rec["id"], rel),
-                    "waiver_subject": fig("waiver_subject",
-                                          decision[len(dec.WAIVER_PREFIX):].strip(), rel),
-                    "waiver_reason": fig("waiver_reason", (rec["rationale"] or "").strip(), rel),
+                    "waiver_subject": (dict(filed["waiver_subject"])
+                                       if isinstance((filed or {}).get("waiver_subject"), dict)
+                                       else
+                                       fig("waiver_subject",
+                                           decision[len(dec.WAIVER_PREFIX):].strip(), rel)),
+                    "waiver_reason": (dict(filed["waiver_reason"])
+                                      if isinstance((filed or {}).get("waiver_reason"), dict)
+                                      else
+                                      fig("waiver_reason", (rec["rationale"] or "").strip(),
+                                          rel)),
                     "waiver_date": fig("waiver_date", when, rel)})
     return out, undated
 
 
 def _waivers_section(root: Path | str, window_end: str | None,
-                     window_start: str | None = None) -> dict:
+                     window_start: str | None = None, on_page: dict | None = None) -> dict:
     """The waivers section, ALWAYS present. An absent section reads as "not checked", and the
     whole point is that the signer can tell that apart from "nothing stood down"."""
     rel = "sdlc-studio/decisions.md"
@@ -3789,7 +3860,7 @@ def _waivers_section(root: Path | str, window_end: str | None,
                             "waivers", rel,
                             "the run record carries no usable window, so the waivers in force "
                             "could not be bounded - which is NOT the same as none standing down"))
-    rows, undated = _waivers_in_force(root, window_end, window_start)
+    rows, undated = _waivers_in_force(root, window_end, window_start, on_page)
     note = ("no gate stood down for this seal - the log was read and carries no accepted waiver "
             "dated inside this report's window" if not rows else
             f"{len(rows)} gate(s) were not holding when this page was derived")
@@ -4328,6 +4399,90 @@ def _legacy_window_end(root, stored: dict) -> str | None:
     return gen
 
 
+def _signed_page(root, stored: dict, report_id: str) -> tuple[dict | None, str | None, list]:
+    """`(page, commit, problems)`: the signed page as its signing commit holds it, or
+    `(None, None, problems)` when there is nothing to anchor to.
+
+    The page's readings of sources that move after the run are replayed from here and never
+    from the file on disk, which anyone can edit, re-digest and re-render. What was signed is
+    the fingerprint the RUN RECORD holds (`signature.fingerprint`, written at the signature), so
+    the page is judged against that and never against whichever version was committed first:
+    - only the page the run record's signature names is anchored; another page claiming the
+      principal is named as a problem and re-derived from the tree;
+    - the anchor is the earliest committed version, at any schema and read with
+      `--full-history` so a merged side branch is seen, that carries that fingerprint; every
+      other signed version is named, and so is a fingerprint no committed version carries;
+    - a page signed under an older schema cannot be re-derived, so a page of this schema
+      claiming its signature is named;
+    - a signed page no commit holds yet has no anchor: it must itself carry the fingerprint,
+      and every source is read from the tree, as before signing.
+    A page with no signature, or a run record that holds no signature fingerprint (a run signed
+    before the record carried one), anchors nothing and every source is read from the tree. A
+    missing run record never reaches here: the re-derivation needs it, so `check` refuses first.
+    """
+    if not (stored.get("signature") or {}).get("principal"):
+        return None, None, []
+    rid = sdlc_md.norm_id(report_id)     # the file asked about, whatever id its body claims
+    state, _state_rel = _run_state_for(Path(root), stored.get("run_id"))
+    sig = state.get("signature") if isinstance(state.get("signature"), dict) else {}
+    want = sig.get("fingerprint")
+    if not sig.get("report") or not want:
+        return None, None, []
+    if sdlc_md.norm_id(str(sig["report"])) != rid:
+        return None, None, [{"page": "json", "figure": "signature",
+                             "detail": f"{state.get('run_id')} was signed on "
+                                       f"{sdlc_md.norm_id(str(sig['report']))}, not {rid}, so "
+                                       f"this page's signature is not the run's"}]
+    path = (report_dir(root) / f"{rid}.json").resolve()
+    top = (_git(root, "rev-parse", "--show-toplevel") or "").strip()
+    try:
+        rel = path.relative_to(Path(top).resolve()).as_posix() if top else None
+    except ValueError:
+        rel = None
+    shas = (_git(root, "log", "--full-history", "--date-order", "--reverse", "--format=%H",
+                 "--", str(path)) or "").split() if rel else []
+    signed = []
+    for sha in shas:
+        try:
+            page = json.loads(_git(root, "show", f"{sha}:{rel}") or "")
+        except ValueError:
+            continue
+        if isinstance(page, dict) and (page.get("signature") or {}).get("principal"):
+            signed.append((sha, page))
+
+    def digest(page: dict):
+        # A page of this schema is re-digested, so a recorded fingerprint copied onto other
+        # figures does not pass; an older one can only be read as it records itself.
+        return fingerprint(page) if page.get("schema") == SCHEMA else page.get("fingerprint")
+
+    def carries(page: dict) -> bool:
+        return page.get("fingerprint") == want and digest(page) == want
+    held = next(((sha, page) for sha, page in signed if carries(page)), None)
+    run = state.get("run_id")
+    problems = [{"page": "history", "figure": "the signed page",
+                 "detail": f"the signed version committed in {sha[:10]} digests to "
+                           f"{digest(page)}, not the {want} {run} was signed at"}
+                for sha, page in signed if not carries(page)]
+    if held is None:
+        if signed:
+            problems.append({"page": "history", "figure": "the signed page",
+                             "detail": f"no committed version of {rid} carries the {want} "
+                                       f"{run} was signed at"})
+        elif fingerprint(stored) != want or stored.get("fingerprint") != want:
+            problems.append({"page": "json", "figure": "the signed page",
+                             "detail": f"the page digests to {fingerprint(stored)}, not the "
+                                       f"{want} {run} was signed at"})
+        return None, None, problems
+    sha, page = held
+    if page.get("schema") != SCHEMA:
+        problems.append({"page": "json", "figure": "schema",
+                         "detail": f"{rid} was signed in {sha[:10]} under report schema "
+                                   f"{page.get('schema')}, so a page of schema {SCHEMA} is not "
+                                   f"the page that was signed"})
+        return None, None, problems
+    return page, sha, problems
+
+
 def revalidate(root, report_id: str) -> dict:
     """Is this report still true of the tree? Decided by RE-DERIVING it, never by counting
     writes since the signature.
@@ -4345,15 +4500,20 @@ def revalidate(root, report_id: str) -> dict:
         raise ReportError(f"{stored.get('report_id') or report_id} was filed under report "
                           f"schema {stored.get('schema')} and this builder derives schema "
                           f"{SCHEMA}, so it cannot be re-derived - the page stands as filed")
+    # THE SIGNED PAGE COMES FROM HISTORY, NOT FROM THE FILE. Its readings of moving sources are
+    # replayed, so taking them from the file would let an edited page, fingerprint recomputed
+    # and twin re-rendered, certify itself.
+    anchor, signed_in, anchor_problems = _signed_page(root, stored, report_id)
+    basis = anchor or stored
     # RE-DERIVED OVER THE SAME WINDOW AND THE SAME RUN. Passing the stored generation time is
     # what makes this a comparison of the tree against the page, rather than of one window
     # against a wider one: without it every commit made after the report - including the commit
     # that files it - entered the fresh figures and nothing else had to change for INVALIDATED
     # to appear. The run is the page's own, archived once the next run opens.
-    fresh = build_report(root, stored.get("retro_id"), as_of=stored.get("generated_at"),
-                         window_end=_legacy_window_end(root, stored),
-                         run_id=stored.get("run_id"))
-    was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(stored)
+    fresh = build_report(root, basis.get("retro_id"), as_of=basis.get("generated_at"),
+                         window_end=_legacy_window_end(root, basis),
+                         run_id=basis.get("run_id"), filed=anchor)
+    was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(basis)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)
            if in_the_digest(s, k)}
@@ -4362,20 +4522,34 @@ def revalidate(root, report_id: str) -> dict:
         if was.get(name) != now.get(name):
             changes.append({"figure": name, "key": name.split(".", 1)[1],
                             "signed": was.get(name), "current": now.get(name)})
-    signed = stored.get("fingerprint")
+    signed = basis.get("fingerprint")
     current = fresh["fingerprint"]
     # THE FILED PAGE IS CHECKED AGAINST ITSELF TOO. Re-deriving the tree says nothing about a
     # page edited by hand while the tree still re-derives the original, so the filed figures
     # are digested the way the fingerprint was, and the twin is compared with its own rendering.
+    # A signed page is compared with the page its signing commit holds, figure by figure.
     digest = fingerprint(stored)
     edited = []
-    if digest != signed:
+    if anchor is not None and (digest != fingerprint(anchor)
+                               or stored.get("fingerprint") != signed):
+        held = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(anchor)
+                if in_the_digest(s, k)}
+        filed = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(stored)
+                 if in_the_digest(s, k)}
+        edited = [{"page": "json", "figure": name,
+                   "detail": f"filed {filed.get(name)!r}, the page signed in {signed_in[:10]} "
+                             f"reads {held.get(name)!r}"}
+                  for name in sorted(set(held) | set(filed)) if held.get(name) != filed.get(name)
+                  ] or [{"page": "json", "figure": "fingerprint",
+                         "detail": f"filed {stored.get('fingerprint')!r}, the page signed in "
+                                   f"{signed_in[:10]} records {signed!r}"}]
+    elif digest != signed:
         edited = [{"page": "json", "figure": c["figure"],
                    "detail": f"filed {c['signed']!r}, the tree re-derives {c['current']!r}"}
                   for c in changes] or [
             {"page": "json", "figure": "an unnamed figure",
              "detail": f"the filed figures digest to {digest}, not the {signed} recorded"}]
-    edited += _lifecycle_edits(root, stored, fresh)
+    edited += anchor_problems + _lifecycle_edits(root, stored, fresh)
     twin_edits, twin_note = _twin_check(root, {**stored, "report_id": sdlc_md.norm_id(
         stored.get("report_id") or report_id)})
     edited += twin_edits
@@ -4395,13 +4569,18 @@ def _lifecycle_edits(root, stored: dict, fresh: dict) -> list[dict]:
     was still fixed when the page was generated. The end is the run record's `ended_at`, or
     `open` when the run had not ended by the page's generation time; the duration runs to the
     window the page carries, which the re-derivation replays.
+
+    ONLY those two. The sections outside the digest read stores that move after the run - the
+    lesson store, the per-clone refusal log - so comparing them here reported every later close
+    as a hand edit, which is what excluding them from the digest was meant to prevent.
     """
     state, _state_rel = _run_state_for(Path(root), stored.get("run_id"))
     ended, generated = _at(state.get("ended_at")), _at(stored.get("generated_at"))
-    derived = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)
-               if not in_the_digest(s, k)}
-    filed = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(stored)
-             if not in_the_digest(s, k)}
+
+    def lifecycle(report: dict) -> dict:
+        return {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(report)
+                if (s, k.split("[", 1)[0]) in OUTSIDE_THE_DIGEST}
+    derived, filed = lifecycle(fresh), lifecycle(stored)
     edits = []
     for name in sorted(set(derived) | set(filed)):
         allowed = {derived.get(name)}
@@ -4464,16 +4643,21 @@ def _twin_check(root, stored: dict) -> tuple[list[dict], str | None]:
     return edits, None
 
 
+def _git(root, *args: str) -> str | None:
+    """A read-only git command's output, run from `root`; None when git or the command fails."""
+    try:
+        proc = subprocess.run(["git", *args], cwd=str(root), capture_output=True,
+                              text=True, encoding="utf-8", timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return proc.stdout if proc.returncode == 0 else None
+
+
 def _filed_templates(root: Path, page: list[Path]) -> list[str]:
     """The twin's template as each commit that wrote the page held it, newest first; empty
     when git, those commits or the template at them cannot be read."""
     def git(*args: str) -> str | None:
-        try:
-            proc = subprocess.run(["git", *args], cwd=str(root), capture_output=True,
-                                  text=True, encoding="utf-8", timeout=30)
-        except (OSError, subprocess.SubprocessError):
-            return None
-        return proc.stdout if proc.returncode == 0 else None
+        return _git(root, *args)
 
     top = (git("rev-parse", "--show-toplevel") or "").strip()
     if not top:

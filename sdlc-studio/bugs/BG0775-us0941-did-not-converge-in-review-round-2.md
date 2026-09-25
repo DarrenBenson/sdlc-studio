@@ -1,6 +1,6 @@
 # BG0775: US0941 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py, changelog.d/US0941.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_findings_window.py, changelog.d/BG0775.md
@@ -25,12 +25,16 @@ Fix each finding above, then deliver US0941 again in a later run.
 
 - [ ] **AC1** Given US0941's carried work (sdlc-studio/.local/US0941-carried-r2.patch) applied onto main, then US0941's five criteria pass through their Verify selectors and RPT0006-RPT0009 check VALID. Fails on: a landing that drops the signed-page anchor or the page's own readings
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given a signed report whose page is forged on a side branch (hide an open High, inflate a unit's points, fingerprint recomputed) and merged back with `-X theirs`, when `sprint_report.py check` runs, then it reads INVALID naming the commits whose signed versions disagree. Fails on: reading the path's history without `--full-history`, where simplification drops the real signing commit
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py::SignedReportStableTests::test_a_page_forged_on_a_merged_branch_is_invalid
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC3** Given a copy of a signed page committed under a new report id with a figure forged and the principal kept, when `check` runs on the new id and `status.py` reports it, then it is not VALID and not reported as signed, because only the page the run record's signature names is anchored. Fails on: taking any principal-bearing page's first commit as its own anchor
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py::SignedReportStableTests::test_a_page_minted_under_a_new_id_does_not_certify_itself
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC4** Given a forged signed version committed on top of the real signed page, then `check` reads it INVALID against the EARLIEST signed version. Fails on: taking the latest signed version as the anchor
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py::SignedReportStableTests::test_a_later_signed_version_does_not_replace_the_anchor
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

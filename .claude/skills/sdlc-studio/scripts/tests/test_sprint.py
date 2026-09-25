@@ -18382,14 +18382,15 @@ class TheSealIsATransactionTests(unittest.TestCase):
             after = sr.revalidate(root, rid)
             self.assertTrue(after["valid"],
                             f"the seal invalidated the page it signed: {after['moved']}")
-            # ...and the control: move a figure the page states and the seal never writes.
-            story = root / "sdlc-studio" / "stories" / "US0101-a.md"
-            story.write_text(story.read_text(encoding="utf-8").replace(
-                "**Points:** 5", "**Points:** 8"), encoding="utf-8")
+            # ...and the control: move a figure the page states and the seal never writes. The
+            # gate's record of what it cleared, not a Points line: the page replays its own
+            # reading of a unit's Points (US0941), so a re-size moves nothing.
+            self.assertEqual(["US0101"], (mod.run_state.read(root) or {})["report_gate_clear"])
+            mod.run_state.update(root, report_gate_clear=[])
             moved = sr.revalidate(root, rid)
             self.assertFalse(moved["valid"],
-                             "a report whose points moved still re-derives - the digest is "
-                             "covering nothing")
+                             "a report whose delivered units moved still re-derives - the "
+                             "digest is covering nothing")
             self.assertIn("points_delivered", moved["moved"])
 
     def test_reopen_is_recorded_and_keeps_the_signature_it_breaks(self):

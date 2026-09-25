@@ -3412,6 +3412,17 @@ def fixture_run(root: Path, *, consult: bool = True, ci: bool = True, goal: str 
         json.dumps(state, indent=2), encoding="utf-8")
 
 
+def reopen_a_delivered_unit(root: Path) -> None:
+    """Move a fact the run delivered: US0101, delivered at 5 points, is reopened, so
+    `points_delivered` falls from 103 to 98. A re-sized Points line is not such a fact - the page
+    replays its own reading of it (US0941) - so it cannot serve as the moved figure."""
+    unit = root / "sdlc-studio" / "stories" / "US0101-a-fixture-unit.md"
+    text = unit.read_text(encoding="utf-8")
+    assert text.count("> **Status:** Done") == 1, "the reopen anchor is not unique"
+    unit.write_text(text.replace("> **Status:** Done", "> **Status:** In Progress"),
+                    encoding="utf-8")
+
+
 def _leaf_figures(report: dict):
     """Every (section key, figure key, figure) triple in the report's figure set, in order.
 
@@ -4162,9 +4173,7 @@ class InvalidatedReportTests(ReportOfRecordBase):
                              "--date", "2099-01-01T00:00:00+00:00"], root, check=False,
                             env_extra={"GIT_COMMITTER_DATE": "2099-01-01T00:00:00+00:00"})
             if name == "figure-moved":
-                unit = root / "sdlc-studio" / "stories" / "US0101-a-fixture-unit.md"
-                unit.write_text(unit.read_text(encoding="utf-8")
-                                .replace("> **Points:** 5", "> **Points:** 8"), encoding="utf-8")
+                reopen_a_delivered_unit(root)
             trees.append((name, root, rid))
         return trees
 
@@ -4206,9 +4215,7 @@ class InvalidatedReportTests(ReportOfRecordBase):
         self.assertTrue(after["valid"],
                         f"a commit made after the page invalidated it: {after['moved']}")
         # The paired control, or this would pass on a digest covering nothing.
-        unit = root / "sdlc-studio" / "stories" / "US0101-a-fixture-unit.md"
-        unit.write_text(unit.read_text(encoding="utf-8")
-                        .replace("> **Points:** 5", "> **Points:** 8"), encoding="utf-8")
+        reopen_a_delivered_unit(root)
         self.assertFalse(sr.revalidate(root, rid)["valid"],
                          "a moved figure still re-derives - the digest covers nothing")
 
@@ -4229,7 +4236,7 @@ class InvalidatedReportTests(ReportOfRecordBase):
                 self.assertIn("points_delivered", printed,
                               f"{name}: the figure that moved is not named")
                 self.assertIn("103", printed, f"{name}: the signed value is not named")
-                self.assertIn("106", printed, f"{name}: the current value is not named")
+                self.assertIn("98", printed, f"{name}: the current value is not named")
             else:
                 self.assertEqual(rc, 0, f"{name}: a valid report was refused - {printed}")
                 self.assertIn("VALID", printed)

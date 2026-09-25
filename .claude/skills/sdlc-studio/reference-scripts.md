@@ -268,7 +268,16 @@ lists every script with a one-line summary; open the linked page for the full en
   a RENDERING rather than a serialisation, and `--format` is spelled one way family-wide;
   `check --report RPTxxxx` re-derives the figures and compares the fingerprint, which is how a signed
   report is shown to still describe the tree. The fingerprint digests the ordered figure SET, never
-  the file, so signing a report does not invalidate the signature it just recorded
+  the file, so signing a report does not invalidate the signature it just recorded. A signed page's
+  readings of sources that move after the run - the findings it lists, unit Points, waiver text -
+  are replayed from the committed version carrying the fingerprint the run record's signature
+  holds, so a later triage or re-size does not invalidate it and an edited page cannot re-sign
+  itself. Only the page the run record's signature names is anchored, and every other signed
+  version in its history, merges included, is named; a signed page no commit holds yet is
+  re-derived from the tree throughout. The anchor defends against edits committed to the page;
+  the run record in `sdlc-studio/.local/` is not versioned, so verifying a signature needs the
+  signing clone's run record. The lessons and lane-yield appendices are shown as filed and never
+  checked
 - `handoff.py` - The run-close handoff guide: a JOIN over the run's own evidence naming every
   remaining item with its pointer (file / AC / check) and a copilot-tail vs judgement tag; emits the
   worklist the next `sprint plan --worklist` reads. `lib/run_state.py` holds the run object it closes
