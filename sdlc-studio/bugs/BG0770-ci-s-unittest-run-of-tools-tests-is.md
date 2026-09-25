@@ -1,6 +1,6 @@
 # BG0770: CI's unittest run of tools/tests is red on main
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
 > **Affects:** tools/tests/test_message_first_gate.py, tools/tests/test_lean_refusal_log.py, tools/tests/test_lean_tmp_hygiene.py, tools/tests/test_lean_ci_unittest_run.py, changelog.d/BG0770.md
@@ -25,8 +25,10 @@ Reset `_SCRIPTS_TEMPLATE` to None in `test_message_first_gate.tearDownModule` (o
 
 - [ ] **AC1** Given `python3 -m unittest discover -s tools/tests` run as CI runs it (module order included, `test_lean_refusal_log` before `test_message_first_gate`), then every `test_message_first_gate` test passes. Fails on: HEAD's `tearDownModule`, which deletes the shared scripts template and leaves the module global pointing at it
   - **Verify:** pytest tools/tests/test_lean_ci_unittest_run.py::CiUnittestRunTests::test_the_gate_fixture_survives_an_importers_teardown
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given an interpreter where `xdist` cannot be imported, then `test_lean_tmp_hygiene` passes with its `-n 2` variants skipped and named, and where `xdist` imports they still run. Fails on: HEAD, which exits 4 on the `-n` usage error
   - **Verify:** pytest tools/tests/test_lean_ci_unittest_run.py::CiUnittestRunTests::test_the_tmp_probe_skips_worker_runs_without_xdist
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

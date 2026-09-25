@@ -50,6 +50,15 @@ PRIMED_PYTEST = ("import sys, tempfile; tempfile.gettempdir(); import pytest; "
                  "sys.exit(pytest.main(sys.argv[1:]))")
 
 
+def _xdist_imports() -> bool:
+    """CI installs pytest without pytest-xdist, so `-n` there is a usage error (BG0770)."""
+    try:
+        import xdist  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
 def _env(tmpdir: Path) -> dict:
     return {**os.environ, "TMPDIR": str(tmpdir)}
 
@@ -84,7 +93,8 @@ class TmpHygieneTests(unittest.TestCase):
     def test_a_pytest_session_in_either_tree_leaves_no_temp_dir_behind(self) -> None:
         """AC1. The probe runs under pytest in each test tree, and in both at once as the push's
         full suite runs them, serially and under `-n 2`, with every conftest and pytest.ini copied
-        into a fixture at its repository path. MUTANTS: set only `os.environ["TMPDIR"]` (the
+        into a fixture at its repository path; the `-n 2` sessions are skipped, named, where
+        pytest-xdist is not installed, as on CI. MUTANTS: set only `os.environ["TMPDIR"]` (the
         primed `tempfile` cache still points at the empty directory); confine only tools/tests;
         remove the directory only on a green session."""
         fixture = self._root / "repo"
@@ -102,6 +112,8 @@ class TmpHygieneTests(unittest.TestCase):
         for i, session in enumerate(([probes[0]], [probes[1]], probes)):
             for workers in ([], ["-n", "2"]):
                 with self.subTest(session=session, workers=workers):
+                    if workers and not _xdist_imports():
+                        self.skipTest("pytest-xdist is not installed, so a -n session cannot run")
                     tmp = self._empty_tmpdir(f"session{i}-workers{len(workers)}")
                     proc = subprocess.run(
                         [sys.executable, "-c", PRIMED_PYTEST, "-q", "-p", "no:cacheprovider",

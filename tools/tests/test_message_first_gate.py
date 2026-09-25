@@ -88,8 +88,12 @@ def _scripts_template() -> Path:
 
 
 def tearDownModule() -> None:
+    """Removes the template AND forgets it: under unittest a module that imports this teardown
+    runs it on the same module object, and this module's own later tests rebuild it (BG0770)."""
+    global _SCRIPTS_TEMPLATE
     if _SCRIPTS_TEMPLATE is not None:
         shutil.rmtree(_SCRIPTS_TEMPLATE.parent, ignore_errors=True)
+        _SCRIPTS_TEMPLATE = None
 
 
 def _clean_env() -> dict:

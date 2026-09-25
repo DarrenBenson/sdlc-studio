@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 41 |
+| Open | 40 |
 | In Progress | 0 |
-| Fixed | 609 |
+| Fixed | 610 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
@@ -128,7 +128,7 @@
 | [BG0767](BG0767-us0909-did-not-converge-in-review-round-2.md) | US0909 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0768](BG0768-two-sprint-4-test-modules-are-red-on.md) | Two Sprint 4 test modules are red on main: an unconfined git call and a gate-lane floor the deletions tripped | Fixed | High | 2026-09-25 | 2026-09-25 |
 | [BG0769](BG0769-us0915-did-not-converge-in-review-round-2.md) | US0915 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-25 | 2026-09-25 |
-| [BG0770](BG0770-ci-s-unittest-run-of-tools-tests-is.md) | CI's unittest run of tools/tests is red on main | Open | High | 2026-09-25 | 2026-09-25 |
+| [BG0770](BG0770-ci-s-unittest-run-of-tools-tests-is.md) | CI's unittest run of tools/tests is red on main | Fixed | High | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 
