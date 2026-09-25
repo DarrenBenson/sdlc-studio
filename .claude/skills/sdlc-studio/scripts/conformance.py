@@ -740,7 +740,9 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
     nonconformant = sum(1 for u in units if not u["conformant"] and not u["scoped_out"])
     advisory_n = sum(1 for u in units if not u["conformant"] and u["scoped_out"])
     judged_n = sum(1 for u in units if not u["scoped_out"])
-    ungroomed_n = sum(1 for u in units if u["ungroomed"])
+    # Grooming DEBT, not the placeholder shape: a story retired unbuilt still carries the shape
+    # but owes no grooming, so it is left out of the count and the nudge that reads it.
+    ungroomed_n = sum(1 for u in units if u["ungroomed"] and u["status"] not in retired)
     # Units carrying at least one waived stage. Counted separately from `conformant`, so
     # waived debt is never invisible: the lane passes it and still says how much it passed.
     waived_n = sum(1 for u in units if u["waived"])

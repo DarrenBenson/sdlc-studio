@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 24 |
+| Open | 23 |
 | In Progress | 0 |
-| Fixed | 624 |
+| Fixed | 625 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
@@ -53,7 +53,7 @@
 | [BG0692](BG0692-gate-py-never-sets-the-boundary-suite-marker.md) | gate.py never sets the boundary-suite marker itself, so SDLC_GATE_BOUNDARY=push reads [PASS] module-alone over a red boundary-only test | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0693](BG0693-testplan-derive-and-the-plan-review-brief-still.md) | testplan derive and the plan-review brief still name different unauthored sets: blank cells, table order and a criterion with no row | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0694](BG0694-tag-check-s-tests-pin-the-override-case.md) | tag-check's tests pin the override case, not the blocking predicate, so a later-day close-time repair can be refused again with the suite green | Superseded | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0695](BG0695-conformance-s-ungroomed-nudge-counts-retired-skeletons-and.md) | conformance's ungroomed nudge counts retired skeletons and tells the user to groom Superseded and Won't Implement stories before planning them to Done | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0695](BG0695-conformance-s-ungroomed-nudge-counts-retired-skeletons-and.md) | conformance's ungroomed nudge counts retired skeletons and tells the user to groom Superseded and Won't Implement stories before planning them to Done | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0696](BG0696-critic-py-s-brief-checks-search-the-whole.md) | critic.py's brief checks search the whole brief, so a unit's own text hides a dropped surface, and a REJECT marked as matching no brief can never be retired | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0697](BG0697-the-repair-plan-gate-fails-open-on-a.md) | The repair-plan gate fails open on a zero-finding plan, an unparseable config and an unreadable round file, and its refusals name no remedy or crash on malformed input | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0698](BG0698-repair-plan-rounds-can-be-overwritten-by-concurrent.md) | Repair-plan rounds can be overwritten by concurrent records, a re-record after approval counts as a failed round, and the escalation notice counts a repair-plan REJECT | Superseded | Medium | 2026-09-15 | 2026-09-15 |

@@ -1,6 +1,6 @@
 # BG0695: conformance's ungroomed nudge counts retired skeletons and tells the user to groom Superseded and Won't Implement stories before planning them to Done
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_ungroomed_count.py, changelog.d/BG0695.md
@@ -26,8 +26,10 @@ Leave `retired_story_statuses()` out of the ungroomed count and the nudge; gate 
 
 - [ ] **AC1** Given a fixture holding one Superseded and one Won't Implement story, each still carrying the refine ungroomed-AC placeholder, and one Draft story carrying it, when `conformance.py check` runs, then the summary counts 1 ungroomed story and the groom nudge names 1. Fails on: HEAD, which counts all three (this repository at 013a46d0 is told to groom 124 stories, about 110 of them retired by the D0265 sweep)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_ungroomed_count.py::UngroomedCountTests::test_retired_stories_are_not_counted_ungroomed
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given a fixture whose only placeholder stories are Superseded or Won't Implement, then no groom nudge line is printed. Fails on: a fix that subtracts retired stories from the count but still prints the nudge at zero
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_ungroomed_count.py::UngroomedCountTests::test_no_nudge_when_only_retired_stories_carry_the_placeholder
+  - **Verified:** yes (2026-09-25)
 
 ## Notes
 
