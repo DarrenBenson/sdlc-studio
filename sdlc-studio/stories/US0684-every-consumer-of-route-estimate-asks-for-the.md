@@ -24,9 +24,11 @@
 - [ ] **AC2** Given `route.estimate` asked for the DIFF basis with a base ref against which the unit's hunks resolve, when it returns, then `code` is hunk-scoped, `risk` declares itself file-level, and the dict names the basis
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_route.py::EstimateBasisTests::test_the_diff_basis_names_itself_and_scopes_code
 - [ ] **AC3** Given the DIFF basis where no diff resolves, when it is asked for, then it REFUSES - and the refusal REACHES the caller rather than being swallowed. `plan_review._difficulty_band`, `sprint.py:1103` and `handoff._estimate` each catch a bare `Exception` today, so a refusal degrades silently at every existing site unless each is changed to distinguish a refusal from an unreadable unit
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::DifficultyBandTests::test_a_basis_refusal_reaches_the_caller_rather_than_being_swallowed
+  - **Verify:** manual - retired by US0909: `plan_review._difficulty_band` was deleted; `critic.tier_for` reads `route.estimate` directly
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0909
 - [ ] **AC4** Given `plan_review._difficulty_band`, when it is called, then it takes the basis as a PARAMETER and passes it through - it is the single function both the pre-code gate and `critic.tier_for` reach the estimator by, so a basis that cannot travel through it cannot reach either
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::DifficultyBandTests::test_the_difficulty_band_takes_and_passes_a_basis
+  - **Verify:** manual - retired by US0909: `plan_review._difficulty_band` was deleted; `critic.tier_for` reads `route.estimate` directly
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0909
 - [ ] **AC5** Given the three pre-code consumers - `sprint.py:1094`, `plan_review.py:106` and `:110`, `handoff.py:308` - when each calls the estimator, then each asks for the declared basis and none is refused for want of a diff that cannot exist yet
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlannerBandTests::test_the_planner_asks_for_the_declared_basis
 - [ ] **AC6** Given `critic.tier_for` choosing a tier for a DELIVERED unit, when it calls through `_difficulty_band`, then it asks for the diff basis, and on a refusal it falls back to the existing unknown-band tier rather than to a whole-file score
@@ -47,3 +49,4 @@ Diff-scoping the estimator without changing its callers replaces a constant `ful
 | 2026-08-24 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-24 | sdlc-studio | RE-GROOMED against CR0549's second and third corrections after a pre-code goal review REJECTED the first attempt: the declared basis now reads `Points` and `Affects` breadth rather than whole-file complexity, measured to move `light` from 13% to 33%. |
 | 2026-09-21 | audit ruling | RUN-01M306PY sweep: retired as Won't Implement. Its parent CR0550 retracted itself on 2026-08-24 and is now Rejected; D0150 forbids gating review depth on any author-declared field, which is the approach this story takes; and a pre-code goal review rejected this batch three times. It was blocking EP0217 from deriving Done, which in turn blocked CR0547 and CR0548 - two requests that were FINISHED - from closing. The request was done, the link was not. |
+| 2026-09-25 | Claude Opus 5.5 | AC3, AC4 retired by US0909 (D0259 pattern): `plan_review._difficulty_band` was deleted; `critic.tier_for` reads `route.estimate` directly |

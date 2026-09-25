@@ -41,7 +41,6 @@ GATE_TABLE = {
     "conformance.adopt_after": None,
     "review.two_role_after": None,
     "review.test_plan_after": None,
-    "plan_review.enabled": None,
 }
 
 #: Rows the page must describe as DORMANT, because they resolve unset. A round-2 seat rewrote one

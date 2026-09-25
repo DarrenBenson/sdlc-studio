@@ -24,8 +24,8 @@
 - **When** `plan_review.gate` evaluates a story whose triggers fire
 - **Then** it evaluates the triggers rather than returning `dormant (schema v2)`
 - **Mutant:** read the schema version alone - the gate stays dormant and the whole slice is inert
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::EnablementKeyTests::test_the_knob_switches_the_gate_on_under_schema_v2
-- **Verified:** yes (2026-08-05)
+- **Verify:** manual - retired by US0909: `plan_review.enabled` and the gate it switched were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 
 ### AC2: the knob switches it off under schema v3
 
@@ -33,8 +33,8 @@
 - **When** the same story is gated
 - **Then** the gate is a no-op and its reason names the knob, not the schema version, so a reader is sent to the thing that actually decided
 - **Mutant:** honour the knob only in the permissive direction - a project that deliberately turned it off gets it anyway
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::EnablementKeyTests::test_the_knob_switches_the_gate_off_under_schema_v3
-- **Verified:** yes (2026-08-05)
+- **Verify:** manual - retired by US0909: `plan_review.enabled` and the gate it switched were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 
 ### AC3: an unset knob changes nothing for any existing project
 
@@ -42,8 +42,8 @@
 - **When** the gate is evaluated at schema v2 and again at v3
 - **Then** the results equal today's schema-gated behaviour exactly, so no consuming project moves
 - **Mutant:** default the knob to true - every v2 project acquires a gate nobody adopted
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::EnablementKeyTests::test_an_unset_knob_preserves_the_schema_gated_behaviour
-- **Verified:** yes (2026-08-05)
+- **Verify:** manual - retired by US0909: `plan_review.enabled` and the gate it switched were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 
 ### AC4: one enablement predicate, shared, so the two adopters cannot disagree
 
@@ -51,8 +51,8 @@
 - **When** the source is searched for the knob-then-schema resolution
 - **Then** exactly one definition exists and both call it, because two copies are two answers to one question that drift apart
 - **Mutant:** give `plan_review` its own copy of the resolution - the single-definition assertion reddens
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::EnablementKeyTests::test_one_shared_enablement_predicate_serves_both_adopters
-- **Verified:** yes (2026-08-05)
+- **Verify:** manual - retired by US0909: `plan_review.enabled` and the gate it switched were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 
 ### AC5: the knob is consulted by the COMMAND, not only by the resolver
 
@@ -60,8 +60,8 @@
 - **When** `plan_review.py check` runs against it
 - **Then** the command answers differently from the same project with the knob on - the resolver returning the right value proves nothing about whether the command reads it
 - **Mutant:** make `active()` ignore the stated knob - every in-process test of the resolver still passes and the command stops honouring the decision
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_plan_review.py::US0640ThePlanGateKnobIsConsultedByTheCommand
-- **Verified:** yes (2026-08-15)
+- **Verify:** manual - retired by US0909: `plan_review.enabled` and the gate it switched were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 
 ## Revision History
 
@@ -69,3 +69,4 @@
 | --- | --- | --- |
 | 2026-08-05 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-06 | sdlc-studio | Second review round: US0640 Affects corrected to name config.py and triage_noise.py, where AC4 actually landed; US0643 AC4 restatement narrowed - the distinction is impossible for every state the tooling produces, not by design |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3, AC4, AC5 retired by US0909 (D0259 pattern): `plan_review.enabled` and the gate it switched were deleted |

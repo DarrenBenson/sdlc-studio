@@ -807,7 +807,7 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
     cur = sdlc_md.canonical_status(sdlc_md.extract_field(rpath.read_text(encoding="utf-8"),
                                                          "Status"), vocab)
     if working and cur != working and not sdlc_md.is_terminal_status(rtype, cur or ""):
-        import transition   # local import: transition pulls critic/plan_review; keep off load
+        import transition   # local import: transition pulls critic; keep off load
         try:
             transition.transition(root, rid, working)
             moved_to = working

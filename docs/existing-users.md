@@ -64,11 +64,10 @@ on an edit elsewhere in the same file stops staling it.
 | --- | --- | --- |
 | `sprint.breakdown` (default `enforce`) | `sprint plan` refuses any batch holding a unit with no `Affects` or `Points`. Your existing backlog predates both fields, so this fires on the first plan. | Groom the units you are about to plan (`sprint breakdown --stories Ready --bugs Open` lists them), or record `sprint.breakdown: judgement` in `sdlc-studio/.config.yaml` as a deliberate decision. Omission is not an escape - an absent config blocks. |
 | `conformance.adopt_after` (default unset) | Unset judges EVERY story you have ever written, so `gate.py` fails on history written before the rule existed. | Set `conformance: { adopt_after: US0123 }` to the last id of your pre-v5 era. Ids at or below it are reported `exempt (pre-adoption)` and the gate judges forward only. |
-| `plan_review.enabled` (unset; schema v3) | An independent review of a story's acceptance criteria before it is implemented. Fires on most units. | Nothing to do on an upgrade: it already applied in v4. A project that has never closed a sprint gets a report instead of a refusal for its first run only. |
 | `review.two_role_after` (unset) | Dormant. Set it to an **id cutoff** - a bare number (`57`) or a prefixed id (`US0103`) - to require adversarial evidence plus an independent sign-off before Done. Ids at or below it are legacy and exempt. A DATE here RAISES: the value is parsed as an id, not a date. | Opt in when you want it; an unset value changes nothing. |
 | `review.test_plan_after` (unset) | Dormant. Set it to a **date** (`"2026-01-01"`), compared against each unit's own `Created` field - the opposite kind of value to its neighbour above, despite the matching suffix. Units created on or after it owe a `## Test Plan`, at entry to implementation AND at the transition that makes the work permanent. | Opt in when you want it. |
 
-The last three are listed because operators ask; only the first two change what your
+The last two are listed because operators ask; only the first two change what your
 project is held to the moment you upgrade.
 
 ## What v5 inherits from v4

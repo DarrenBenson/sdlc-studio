@@ -2292,109 +2292,6 @@ class TriageGateTests(unittest.TestCase):
             self.assertIn("> **Triage-severity:** low", text)   # triager's recorded
 
 
-def _v3_story_repo(root: Path, affects: str = "docs/prd.md",
-                   cfg_extra: str = "plan_review:\n  affects_files_threshold: 99\n"
-                                    "  min_difficulty: extreme\n") -> Path:
-    """A schema-v3 repo with one Ready story (spec-citing by default) + its index."""
-    sd = root / "sdlc-studio"
-    (sd / "stories").mkdir(parents=True)
-    (sd / "reviews").mkdir(parents=True)
-    (sd / ".config.yaml").write_text("schema_version: 3\n" + cfg_extra, encoding="utf-8")
-    (sd / "stories" / "US0001-x.md").write_text(
-        "# US0001: s\n\n> **Status:** Ready\n> **Epic:** EP0001\n"
-        f"> **Affects:** {affects}\n\n## Acceptance Criteria\n\n"
-        "### AC1: a\n- **Given** x\n- **When** y\n- **Then** z\n", encoding="utf-8")
-    (sd / "stories" / "_index.md").write_text(
-        "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Ready | 1 |\n"
-        "| In Progress | 0 |\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
-        "| [US0001](US0001-x.md) | s | Ready |\n", encoding="utf-8")
-    # US0662: the plan-review gate REPORTS rather than refuses on a project that has closed no
-    # sprint. Every fixture built here means "an established project" - they exist to test the
-    # refusal - so one retro arms them. The first-run case has its own class and its own fixture.
-    (sd / "retros").mkdir(parents=True, exist_ok=True)
-    (sd / "retros" / "RETRO0001-x.md").write_text("# RETRO0001\n", encoding="utf-8")
-    return root
-
-
-class PlanReviewGateTests(unittest.TestCase):
-    """US0090: a spec-derived story is blocked from entering In Progress until reviewed."""
-
-    def test_triggered_story_blocked_entering_in_progress(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _v3_story_repo(Path(d))          # cites docs/prd.md -> trigger fires
-            with self.assertRaises(ValueError) as ctx:
-                tr.transition(root, "US0001", "In Progress")
-            self.assertIn("plan-review", str(ctx.exception).lower())
-
-    def test_independent_plan_approve_unblocks(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _v3_story_repo(Path(d))
-            cr = _load("critic", "critic.py")
-            cr.record_verdict(root, "US0001", "APPROVE", reviewer="qa", author="dev",
-                              phase="plan-review")
-            res = tr.transition(root, "US0001", "In Progress")
-            self.assertEqual(res["to"], "In Progress")
-
-    def test_override_field_unblocks(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _v3_story_repo(Path(d))
-            sp = root / "sdlc-studio" / "stories" / "US0001-x.md"
-            sp.write_text(sp.read_text(encoding="utf-8").replace(
-                "> **Affects:** docs/prd.md",
-                "> **Affects:** docs/prd.md\n> **Plan-Review-Override:** ops: hotfix"),
-                encoding="utf-8")
-            res = tr.transition(root, "US0001", "In Progress")
-            self.assertEqual(res["to"], "In Progress")
-
-    def test_force_does_not_bypass(self) -> None:
-        # The only sanctioned skip is the recorded override, never --force (AC3).
-        with tempfile.TemporaryDirectory() as d:
-            root = _v3_story_repo(Path(d))
-            with self.assertRaises(ValueError):
-                tr.transition(root, "US0001", "In Progress", force=True)
-
-    def test_dry_run_is_honest(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _v3_story_repo(Path(d))
-            with self.assertRaises(ValueError):
-                tr.transition(root, "US0001", "In Progress", dry_run=True)
-
-    def test_untriggered_story_passes(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _v3_story_repo(Path(d), affects="a.py")   # no spec, low volume
-            res = tr.transition(root, "US0001", "In Progress")
-            self.assertEqual(res["to"], "In Progress")
-
-    def test_direct_ready_to_done_is_blocked(self) -> None:
-        # The gate's PURPOSE is defeated if a spec-derived story can be closed straight to
-        # Done unreviewed - guard every entry to an implementation state, not just In Progress.
-        with tempfile.TemporaryDirectory() as d:
-            root = _v3_story_repo(Path(d))
-            with self.assertRaises(ValueError) as ctx:
-                tr.transition(root, "US0001", "Done")
-            self.assertIn("plan-review", str(ctx.exception).lower())
-
-    def test_forward_walk_after_review_reaches_done(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _v3_story_repo(Path(d))
-            cr = _load("critic", "critic.py")
-            cr.record_verdict(root, "US0001", "APPROVE", reviewer="qa", author="dev",
-                              phase="plan-review")
-            self.assertEqual(tr.transition(root, "US0001", "In Progress")["to"], "In Progress")
-            # In Progress -> Done is not re-gated (already past the pre-impl states)
-            self.assertEqual(tr.transition(root, "US0001", "Done", force=True)["to"], "Done")
-
-    def test_dormant_under_v2(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = _v3_story_repo(Path(d))
-            sd = root / "sdlc-studio"
-            (sd / ".config.yaml").write_text("schema_version: 2\n", encoding="utf-8")
-            res = tr.transition(root, "US0001", "In Progress")
-            self.assertEqual(res["to"], "In Progress")       # gate no-op on v2
-
-
-
-
 class AnnotateVerbTests(unittest.TestCase):
     """CR0209/US0116 AC1: a deterministic metadata-stamp verb."""
 
@@ -2641,28 +2538,32 @@ class RequirementsPreflightTests(unittest.TestCase):
             with self.assertRaises((ValueError, FileNotFoundError)):
                 _quiet(tr.requirements, root, "BG9999", "Fixed")
 
-    def _two_suffix_free_gates(self, root: Path) -> None:
-        """A story that trips the TIER gate and the PLAN-REVIEW gate.
+    def _tier_and_breakdown_gates(self, root: Path) -> None:
+        """An epic whose `Done` trips the TIER gate and the BREAKDOWN gate.
 
-        Both state their reason WITHOUT the `". Override with --force"` suffix, which is the
-        case the old prose-splitting collapsed into one item. Every earlier attempt at this
-        test used a fixture where one of the two blocks carried the suffix, so the wrong
-        delimiter still yielded two and the test passed on the defect.
+        Only the FIRST is suffix-free: `_tier_gate` never appends `". Override with --force"`
+        (not forceable - the sanctioned route adds the sections), while `_epic_breakdown_gate`'s
+        own returned string ends with it. That is deliberate, not a compromise: the plan-review
+        and test-plan gates, both suffix-free on a story, are deleted, and every other gate in
+        the ladder either shares the tier gate's type (story/epic, and none of its
+        siblings there is suffix-free) or shares the suffix-free gates' OWN type (rfc; bug/cr/rfc
+        for triage) with no overlap onto story/epic, so no two genuinely suffix-free gates can
+        ever co-fire on one artifact - checked against the whole ladder in `_pre_write_gates`,
+        not assumed. An ALTERNATING pair (one bare, one suffixed) is thus the fixture this
+        class can build, and it is exactly the shape the old prose-splitting bug mishandled:
+        splitting on the suffix alone leaves the bare gate's text merged into its neighbour's,
+        collapsing two reasons into one. Every earlier attempt at this test used a fixture that
+        did not force that split point, so it stayed green on the defect.
         """
         (root / "sdlc-studio").mkdir(parents=True)
         (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n",
                                                            encoding="utf-8")
-        # US0662: one retro, so the plan-review gate REFUSES rather than reports - this fixture
-        # exists to produce two suffix-free refusals, and a softened gate produces one.
-        (root / "sdlc-studio" / "retros").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / "retros" / "RETRO0001-x.md").write_text("# RETRO0001\n",
-                                                                        encoding="utf-8")
         sd = root / "sdlc-studio" / "stories"
         sd.mkdir()
-        # `Template: full` with none of the sections the full tier promises -> tier gate.
-        # Ready -> In Progress on a schema-v3 story -> plan-review gate.
+        # `Template: full` on the epic with none of the sections the full tier promises -> tier
+        # gate. Its breakdown names a story still Ready -> breakdown gate.
         (sd / "US0001-x.md").write_text(
-            "# US0001: s\n\n> **Status:** Ready\n> **Template:** full\n"
+            "# US0001: s\n\n> **Status:** Ready\n"
             "> **Epic:** [EP0001: e](../epics/EP0001-e.md)\n\n"
             "## Acceptance Criteria\n\n### AC1\n- **Verify:** shell echo ok\n",
             encoding="utf-8")
@@ -2672,10 +2573,11 @@ class RequirementsPreflightTests(unittest.TestCase):
         ed = root / "sdlc-studio" / "epics"
         ed.mkdir()
         (ed / "EP0001-e.md").write_text(
-            "# EP0001: e\n\n> **Status:** In Progress\n\n## Story Breakdown\n\n"
-            "- [ ] [US0001: s](../stories/US0001-x.md)\n\n\n## Acceptance Criteria\n\n- [x] the unit behaves\n", encoding="utf-8")
+            "# EP0001: e\n\n> **Status:** In Progress\n> **Template:** full\n\n"
+            "## Story Breakdown\n\n- [ ] [US0001: s](../stories/US0001-x.md)\n\n\n"
+            "## Acceptance Criteria\n\n- [x] the unit behaves\n", encoding="utf-8")
 
-    def test_two_suffix_free_gates_are_two_requirements_not_one(self) -> None:
+    def test_tier_and_breakdown_gates_are_two_requirements_not_one(self) -> None:
         """THE case the re-parsing collapsed - driven through the real ladder.
 
         The previous version of this test constructed a `GateRefusal` by hand and asserted
@@ -2686,12 +2588,12 @@ class RequirementsPreflightTests(unittest.TestCase):
         """
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._two_suffix_free_gates(root)
-            unmet = _quiet(tr.requirements, root, "US0001", "In Progress")
+            self._tier_and_breakdown_gates(root)
+            unmet = _quiet(tr.requirements, root, "EP0001", "Done")
         self.assertEqual(len(unmet), 2, f"two gates collapsed into {len(unmet)}: {unmet}")
         joined = " ".join(unmet)
         self.assertIn("full", joined)          # the tier gate's reason
-        self.assertIn("plan-review", joined)   # the plan-review gate's reason
+        self.assertIn("breakdown", joined)     # the breakdown gate's reason
         for item in unmet:
             self.assertNotIn("; AND ", item)
 
@@ -2700,9 +2602,9 @@ class RequirementsPreflightTests(unittest.TestCase):
         # `blocks` must match what the message claims, so the two can never disagree.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._two_suffix_free_gates(root)
+            self._tier_and_breakdown_gates(root)
             try:
-                _quiet(tr.transition, root, "US0001", "In Progress", dry_run=True)
+                _quiet(tr.transition, root, "EP0001", "Done", dry_run=True)
                 self.fail("expected the ladder to refuse")
             except tr.GateRefusal as exc:
                 self.assertEqual(len(exc.blocks), 2)
@@ -3893,426 +3795,6 @@ class TerminalOracleTests(unittest.TestCase):
             blocks = mod.requirements(root, "BG0001", "Fixed")
         self.assertFalse(any("nothing speaks for this fix" in b for b in blocks),
                          f"an executable criterion did not satisfy the gate: {blocks}")
-
-
-#: The last commit BEFORE the plan-review softening epic landed: the skill tree an established
-#: project was running the day before it upgraded. Named as a constant so the one thing the
-#: upgrading-project comparison rests on is visible rather than derived at run time.
-#:
-#: "The run's base ref" cannot serve here. The epic landed in August, so any current run's base
-#: ref already contains it and the comparison would run the tree against itself - which is the
-#: whole defect BG0567 records: a baseline built by disabling ONE branch in the current tree
-#: carries every other change the epic made on both sides, where it cannot be seen.
-_PRE_SOFTENING_PIN = "abb75074f25ef219e1ea2a0bc711f9536026a113"
-
-#: What the comparison deliberately ignores, so a reader can see the size of the exemption.
-_NORMALISED_FIELDS = ("the run id (RUN-...)", "absolute temporary paths")
-
-
-def _norm_run(s: str) -> str:
-    s = re.sub(r"RUN-[0-9A-Z]+", "RUN-X", s)
-    return re.sub(r"/tmp/[^\s'\"]+", "/TMP", s)
-
-
-def _projection(returncode: int, stdout: str, stderr: str):
-    """WHAT the two sides of the comparison are held to: the exit status and BOTH STREAMS ENTIRE.
-
-    Not the lines the softening branch itself emits. A comparison narrowed to the branch under
-    test can only ever report on that branch, and reporting on that branch is precisely what a
-    baseline built by disabling it already did. A change the epic made anywhere else in the skill
-    tree has to be able to differ between the two sides, or the comparison is a description.
-    """
-    return returncode, _norm_run(stdout), _norm_run(stderr)
-
-
-_SOFTENING_STORY = ("# US0001: s\n\n> **Status:** Ready\n> **Epic:** EP0001\n"
-                    "> **Affects:** src/a.py, src/b.py, src/c.py, src/d.py, src/e.py, src/f.py\n"
-                    "> **Points:** 3\n\n## Acceptance Criteria\n\n### AC1: it works\n\n"
-                    "- **Given** x\n- **When** y\n- **Then** z\n- **Verify:** shell true\n")
-
-
-def _softening_fixture(d, *, retros: int = 0, schema: int = 3, extra: str = ""):
-    """One workspace holding one story, built by the CURRENT `init.py` on both sides so the two
-    runs differ in the tree under test and in nothing else."""
-    scripts = Path(__file__).resolve().parents[1]
-    root = Path(d)
-    subprocess.run([sys.executable, str(scripts / "init.py"), "--root", str(root), "run"],
-                   capture_output=True, text=True, timeout=300, check=False)
-    cfg = root / "sdlc-studio" / ".config.yaml"
-    cfg.write_text(cfg.read_text(encoding="utf-8").replace(
-        "schema_version: 3", f"schema_version: {schema}") + extra, encoding="utf-8")
-    (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(_SOFTENING_STORY,
-                                                                  encoding="utf-8")
-    rd = root / "sdlc-studio" / "retros"
-    rd.mkdir(parents=True, exist_ok=True)
-    for i in range(retros):
-        (rd / f"RETRO{i:04d}-x.md").write_text(f"# RETRO{i:04d}\n", encoding="utf-8")
-    return root
-
-
-def _run_transition(scripts: Path, root):
-    r = subprocess.run(
-        [sys.executable, str(scripts / "transition.py"), "--root", str(root),
-         "set", "--id", "US0001", "--status", "In Progress"],
-        capture_output=True, text=True, timeout=300, check=False)
-    return _projection(r.returncode, r.stdout, r.stderr)
-
-
-def _extract_pinned_skill_tree(dest, *, pin: str = _PRE_SOFTENING_PIN, skill=None) -> Path:
-    """The whole skill tree AS OF `pin`, extracted READ-ONLY into `dest`; its `scripts/` returned.
-
-    `git archive <pin> -- <skill path>` piped through `tar -x`. Read-only is the point:
-    `git worktree add` is the obvious alternative and it MUTATES git administrative state from
-    inside a test that ships to consuming projects, leaving an entry behind every time the test
-    dies. `git archive` writes nothing a later run has to clean up.
-
-    The whole skill tree, not just `scripts/`: config resolution reads
-    `../templates/config-defaults.yaml`, and a tree missing it warns on every run - a difference
-    that would be read as one the epic caused.
-
-    SKIPS, naming the reason, wherever the pin cannot be resolved: no git on PATH, a directory
-    outside any checkout, a shallow clone, or an installed copy of the skill - `install.sh` copies
-    this tree wholesale, tests included, so this ships to projects holding none of that history,
-    and a test that ERRORS there is one a consuming project deletes.
-    """
-    skill = Path(skill) if skill else Path(__file__).resolve().parents[2]
-    try:
-        top = gitutil.git(["rev-parse", "--show-toplevel"], skill, check=False, timeout=60)
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise unittest.SkipTest(
-            f"the pinned baseline needs git and it could not be run ({exc}) - the comparison "
-            f"is skipped rather than failed") from exc
-    if top.returncode != 0 or not top.stdout.strip():
-        raise unittest.SkipTest(
-            f"{skill} is not inside a git checkout, so the pinned commit {pin[:12]} cannot be "
-            f"resolved (an installed copy of the skill carries no history)")
-    root = Path(top.stdout.decode("utf-8", "replace").strip())
-    rel = skill.resolve().relative_to(root.resolve())
-    archive = gitutil.git(["archive", pin, "--", str(rel)], root, check=False, timeout=300)
-    if archive.returncode != 0 or not archive.stdout:
-        raise unittest.SkipTest(
-            f"the pinned commit {pin[:12]} cannot be resolved in {root} "
-            f"({archive.stderr.decode('utf-8', 'replace').strip() or 'empty archive'}) - a "
-            f"shallow clone or a copy without this history")
-    try:
-        subprocess.run(["tar", "-x", "-C", str(dest)], input=archive.stdout, check=False,
-                       capture_output=True, timeout=300)
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise unittest.SkipTest(f"tar could not extract the pinned tree ({exc})") from exc
-    scripts = Path(dest) / rel / "scripts"
-    if not (scripts / "transition.py").exists():
-        raise unittest.SkipTest(
-            f"the pinned tree at {pin[:12]} holds no {rel}/scripts/transition.py")
-    return scripts
-
-
-def _compare_against_pin(*, observed_scripts=None, **fixture):
-    """Run ONE fixture shape against the pinned pre-epic tree and against the tree under test.
-
-    Both sides are built from the same keyword arguments, and each side's are spelled out rather
-    than shared by reference: an output comparison alone cannot see the two sides diverge, because
-    against the pinned tree the output is byte-identical with retros and without - the softening
-    is the only thing that reads them and the pinned tree has no softening.
-    """
-    baseline_fixture = dict(fixture)
-    observed_fixture = dict(fixture)
-    observed = Path(observed_scripts) if observed_scripts else Path(__file__).resolve().parents[1]
-    with tempfile.TemporaryDirectory() as d:
-        pinned = _extract_pinned_skill_tree(Path(d))
-        with tempfile.TemporaryDirectory() as bd:
-            want = _run_transition(pinned, _softening_fixture(bd, **baseline_fixture))
-        with tempfile.TemporaryDirectory() as od:
-            got = _run_transition(observed, _softening_fixture(od, **observed_fixture))
-    return want, got
-
-
-class FirstRunPlanReviewSofteningTests(unittest.TestCase):
-    """US0662/US0663 through the SHIPPED CLI. `transition.py requirements` returns 0 on every
-    path, so it cannot carry a refusal - the plan review found the first version of these
-    criteria asserting an exit status a reporting verb can never produce. The When is
-    `transition.py set`."""
-
-    _STORY = _SOFTENING_STORY
-
-    def _run(self, root, *args):
-        import subprocess  # noqa: PLC0415
-        scripts = Path(__file__).resolve().parents[1]
-        return subprocess.run(
-            [sys.executable, str(scripts / "transition.py"), "--root", str(root), *args],
-            capture_output=True, text=True, timeout=300, check=False)
-
-    def _proj(self, d, *, retros: int = 0, schema: int = 3, extra: str = ""):
-        # ONE fixture builder, shared with the pinned comparison: two builders is two shapes, and
-        # the comparison's whole claim is that both sides get the same one.
-        return _softening_fixture(d, retros=retros, schema=schema, extra=extra)
-
-    def test_a_project_with_no_retro_reports_the_plan_review_requirement(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d, retros=0)
-            r = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
-            out = r.stdout + r.stderr
-            self.assertEqual(0, r.returncode, out)
-            self.assertIn("plan-review advisory", out,
-                          "the requirement was softened SILENTLY - a concession nobody is told "
-                          "about is met as a surprise refusal on the next run")
-            self.assertIn("retros", out, "the report does not name what arms the gate")
-
-    def test_an_armed_project_still_refuses(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d, retros=1)
-            r = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
-            self.assertNotEqual(0, r.returncode, r.stdout + r.stderr)
-            self.assertIn("plan-review required", r.stdout + r.stderr)
-
-    def test_the_softening_expires_on_the_first_retro(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d, retros=0)
-            first = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
-            self.assertEqual(0, first.returncode)
-            (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
-                self._STORY, encoding="utf-8")
-            (root / "sdlc-studio" / "retros" / "RETRO0001-x.md").write_text(
-                "# RETRO0001\n", encoding="utf-8")
-            second = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
-            self.assertNotEqual(second.returncode, 0,
-                                "the concession survived the first retro, so it does not expire")
-
-    _NORMALISED = _NORMALISED_FIELDS
-
-    def _norm(self, s: str) -> str:
-        return _norm_run(s)
-
-    def test_an_approved_unit_carries_no_first_run_advisory(self) -> None:
-        """The round-2 defect, pinned. The advisory was keyed on `fired and not override`, which
-        also matches a unit with an independent plan-review APPROVE on record - so every properly
-        reviewed story in every project carried it. The repair keys on the gate's own `softened`
-        flag, and a round-3 seat found nothing failed when the repair was reverted."""
-        with tempfile.TemporaryDirectory() as d:
-            root = self._proj(d, retros=0)
-            sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-            import critic as _critic  # noqa: PLC0415
-            _critic.record_verdict(root, "US0001", "APPROVE", reviewer="qa-seat",
-                                   author="author-x", phase="plan-review")
-            r = self._run(root, "set", "--id", "US0001", "--status", "In Progress")
-            out = r.stdout + r.stderr
-            self.assertEqual(0, r.returncode, out)
-            self.assertNotIn("advisory", out,
-                             "a unit with an independent APPROVE on record was given the "
-                             "first-run advisory")
-
-    def test_a_dormant_gate_is_unchanged_by_the_softening(self) -> None:
-        # US0662 AC3, against the PINNED pre-epic tree: the same fixture, run against the skill
-        # tree as it stood the day before the epic. stdout, stderr and the exit status all count;
-        # the normalised fields are named in _NORMALISED so a reader can see what is ignored.
-        self.assertEqual(("the run id (RUN-...)", "absolute temporary paths"), self._NORMALISED)
-        for schema, extra in ((2, ""), (3, "\nplan_review:\n  enabled: false\n")):
-            with self.subTest(schema=schema):
-                want, got = _compare_against_pin(retros=0, schema=schema, extra=extra)
-                self.assertEqual(want, got,
-                                 f"a DORMANT gate (schema {schema}) behaves differently with the "
-                                 "softening in place, so the softening became a second way of "
-                                 "switching it on")
-
-    def test_an_upgrading_project_is_unchanged_against_a_captured_baseline(self) -> None:
-        # US0663 AC2, against the same PINNED baseline: a project WITH retros must behave exactly
-        # as it did before this epic, and "before this epic" is now the tree at the pin rather
-        # than this tree with one branch switched off. Both sides run the SAME fixture - three
-        # retros on each - where the old form ran nought against three and called it a
-        # comparison.
-        want, got = _compare_against_pin(retros=3, schema=3, extra="")
-        self.assertEqual(want, got,
-                         "an established project's behaviour changed - the upgrading case must "
-                         "be byte-identical to the pre-epic tree")
-        self.assertNotEqual(0, got[0])
-        self.assertNotIn("advisory", got[1] + got[2],
-                         "an established project was given the first-run advisory")
-
-
-class UpgradeBaselineTests(unittest.TestCase):
-    """BG0567: the upgrading-project baseline comes from a PINNED pre-epic commit, not from this
-    tree with one branch switched off.
-
-    A counterfactual is only as good as what it holds constant. Disabling one branch in the
-    current tree answers "did THIS branch change the behaviour", which is a real question. It
-    cannot answer "is an upgrading project's behaviour what it was before this epic", which is
-    what the unit promises a consuming project, because every other change the epic made sits on
-    BOTH sides of that comparison where nothing can see it.
-    """
-
-    def _at_pin(self, name: str) -> bytes:
-        """One file's bytes at the pin, read through `git show` - a DIFFERENT mechanism from the
-        `git archive` the capture uses, so the two cannot agree by sharing a bug."""
-        skill = Path(__file__).resolve().parents[2]
-        top = gitutil.git(["rev-parse", "--show-toplevel"], skill, check=False, timeout=60)
-        if top.returncode != 0 or not top.stdout.strip():
-            self.skipTest("not inside a git checkout")
-        root = Path(top.stdout.decode("utf-8", "replace").strip())
-        rel = skill.resolve().relative_to(root.resolve())
-        r = gitutil.git(["show", f"{_PRE_SOFTENING_PIN}:{rel}/scripts/{name}"], root,
-                        check=False, timeout=120)
-        if r.returncode != 0:
-            self.skipTest(f"{name} cannot be read at the pin")
-        return r.stdout
-
-    def test_the_baseline_comes_from_the_pinned_pre_epic_commit(self) -> None:
-        """AC1. MUTANT: revert the baseline capture to copying the CURRENT tree and rewriting the
-        softening marker - the tree it runs is then this one, and every change the epic made
-        outside that branch is present on both sides.
-
-        `git worktree add` is deliberately not the mechanism: it mutates git administrative state
-        from inside a test that `install.sh` copies into consuming projects, and leaves an entry
-        behind whenever the test dies. `git archive` writes nothing.
-        """
-        live = Path(__file__).resolve().parents[1]
-        with tempfile.TemporaryDirectory() as d:
-            pinned = _extract_pinned_skill_tree(Path(d))
-            for name in ("transition.py", "plan_review.py"):
-                at_pin = self._at_pin(name)
-                self.assertEqual(at_pin, (pinned / name).read_bytes(),
-                                 f"the captured {name} is not the one at the pin, so the "
-                                 f"baseline is not the pre-epic tree")
-                self.assertNotEqual((live / name).read_bytes(), (pinned / name).read_bytes(),
-                                    f"the captured {name} is byte-identical to the CURRENT "
-                                    f"tree's - the baseline is this tree wearing a pin's name")
-            # The softening does not merely sit disabled in the captured tree: it is ABSENT,
-            # which is what "before the epic" means and what a doctored copy of this tree can
-            # never be.
-            self.assertNotIn("has_run_history",
-                             (pinned / "plan_review.py").read_text(encoding="utf-8"),
-                             "the captured tree already knows about the softening")
-            self.assertIn("has_run_history", (live / "plan_review.py").read_text(encoding="utf-8"),
-                          "the softening is absent from the CURRENT tree too, so the pin proves "
-                          "nothing about which side of the epic it sits on")
-
-    def test_both_sides_run_the_same_fixture_shape(self) -> None:
-        """AC2. MUTANT: change the `retros` argument the baseline side passes to the fixture
-        builder.
-
-        The arguments, not the outputs. Measured here rather than asserted: against the PINNED
-        tree the output is byte-identical for a fixture with three retros and one with none,
-        because the softening is the only thing that reads them and the pinned tree has no
-        softening - so an output comparison survives a changed argument and only an assertion on
-        the call shape catches it. Both callers are covered, the dormant-gate one included.
-        """
-        shapes = ({"retros": 3, "schema": 3, "extra": ""},
-                  {"retros": 0, "schema": 2, "extra": ""},
-                  {"retros": 0, "schema": 3, "extra": "\nplan_review:\n  enabled: false\n"})
-        for fixture in shapes:
-            with self.subTest(**fixture):
-                with unittest.mock.patch(f"{__name__}._softening_fixture",
-                                         wraps=_softening_fixture) as spy:
-                    _compare_against_pin(**fixture)
-                calls = [c.kwargs for c in spy.call_args_list]
-                self.assertEqual(2, len(calls),
-                                 f"the comparison built {len(calls)} fixture(s), not two")
-                self.assertEqual(calls[0], calls[1],
-                                 "the two sides were built from different arguments, so the "
-                                 "comparison is not like for like")
-                self.assertEqual(fixture, calls[0],
-                                 "neither side received the shape the caller asked for")
-        # THE DISCRIMINATOR, executed: this is why the arguments have to be asserted.
-        with tempfile.TemporaryDirectory() as d:
-            pinned = _extract_pinned_skill_tree(Path(d))
-            outs = []
-            for retros in (0, 3):
-                with tempfile.TemporaryDirectory() as fd:
-                    outs.append(_run_transition(pinned, _softening_fixture(fd, retros=retros)))
-        self.assertEqual(outs[0], outs[1],
-                         "the pinned tree's output DOES move with the retro count, so an output "
-                         "comparison would have caught a changed argument and this assertion is "
-                         "no longer the discriminator it claims to be")
-
-    def test_a_regression_outside_the_branch_is_reported(self) -> None:
-        """AC3. MUTANT: narrow the compared output to the lines the softening branch itself
-        emits - the comparison can then only ever report on the branch a disabled-branch baseline
-        already reported on.
-
-        The deliberate change is in `transition.py`'s refusal wording, outside the softening
-        branch and outside `plan_review.py` altogether: exactly the class of change that used to
-        sit on both sides invisibly.
-        """
-        skill = Path(__file__).resolve().parents[2]
-        marker = "all listed): "
-        with tempfile.TemporaryDirectory() as d:
-            clone = Path(d) / "sdlc-studio"
-            shutil.copytree(skill, clone,
-                            ignore=shutil.ignore_patterns("__pycache__", "tests", ".local"))
-            scripts = clone / "scripts"
-            # THE CONTROL, first: an unperturbed copy of this tree compares EQUAL, so the failure
-            # below is the injected change rather than the act of copying.
-            want, got = _compare_against_pin(observed_scripts=scripts, retros=3, schema=3)
-            self.assertEqual(want, got,
-                             "an untouched copy of this tree already differs from the pin, so "
-                             "this test cannot attribute the difference below")
-            tp = scripts / "transition.py"
-            text = tp.read_text(encoding="utf-8")
-            self.assertEqual(1, text.count(marker),
-                             "the refusal wording moved - this injection no longer changes the "
-                             "output it claims to")
-            tp.write_text(text.replace(marker, "all shown): "), encoding="utf-8")
-            want, got = _compare_against_pin(observed_scripts=scripts, retros=3, schema=3)
-        self.assertNotEqual(want, got,
-                            "a change made OUTSIDE the softening branch is invisible to the "
-                            "comparison, which is the whole defect a pinned baseline removes")
-
-    def test_an_unchanged_tree_compares_equal(self) -> None:
-        """AC4, the control. MUTANT: move the pinned constant forward to a commit that already
-        contains the softening epic.
-
-        A comparison that is permanently red satisfies AC1 and AC3 between them, so the green
-        case has to be asserted too. And the green case alone cannot see a pin in the wrong
-        place - the three shapes below are ones the epic changed nothing about, so they compare
-        equal whichever side of it the pin sits. What the control turns on is the PIN, so its
-        position is measured directly: on the one fixture the epic DID change, the two sides must
-        differ, with the pinned tree refusing where this tree softens.
-
-        Measured: no compared string in any of these fixture shapes carries a run id or a
-        temporary path, so the normalisation is dead on this comparison and cannot be what the
-        control turns on.
-        """
-        for fixture in ({"retros": 3, "schema": 3, "extra": ""},
-                        {"retros": 0, "schema": 2, "extra": ""},
-                        {"retros": 0, "schema": 3,
-                         "extra": "\nplan_review:\n  enabled: false\n"}):
-            with self.subTest(**fixture):
-                want, got = _compare_against_pin(**fixture)
-                self.assertEqual(want, got,
-                                 "the tree differs from the pin on a fixture the epic changed "
-                                 "nothing about")
-                for side in (want, got):
-                    self.assertNotIn("RUN-X", side[1] + side[2])
-                    self.assertNotIn("/TMP", side[1] + side[2])
-        # THE PIN'S OWN POSITION, on the one fixture the epic is about.
-        want, got = _compare_against_pin(retros=0, schema=3, extra="")
-        self.assertNotEqual(want, got,
-                            "the pinned tree behaves like this one on a first-run project, so "
-                            "the pin already contains the softening epic and the whole "
-                            "comparison is the tree against itself")
-        self.assertNotEqual(0, want[0],
-                            "the pinned tree SOFTENED a first-run project, which is the epic's "
-                            "own behaviour - the pin is on the wrong side of it")
-        self.assertEqual(0, got[0], "this tree no longer softens a first-run project")
-
-    def test_an_unresolvable_pin_skips_with_its_reason(self) -> None:
-        """AC5. MUTANT: delete the resolvability check so an unresolvable pin raises.
-
-        `install.sh` copies this tree wholesale, tests included, so this ships to projects with
-        none of that history - and a test that ERRORS there is one a consuming project deletes,
-        taking the comparison with it. Both shapes: a commit that cannot be resolved in a real
-        checkout (a shallow clone), and a copy of the skill sitting outside any checkout at all.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            with self.assertRaises(unittest.SkipTest) as cm:
-                _extract_pinned_skill_tree(Path(d), pin="0" * 40)
-        self.assertIn("0" * 12, str(cm.exception), str(cm.exception))
-        self.assertIn("cannot be resolved", str(cm.exception), str(cm.exception))
-        with tempfile.TemporaryDirectory() as d:
-            outside = Path(d) / "installed-copy"
-            (outside / "scripts").mkdir(parents=True)
-            with tempfile.TemporaryDirectory() as e:
-                with self.assertRaises(unittest.SkipTest) as cm:
-                    _extract_pinned_skill_tree(Path(e), skill=outside)
-        self.assertIn("not inside a git checkout", str(cm.exception), str(cm.exception))
 
 
 class EpicBreakdownGateTests(unittest.TestCase):

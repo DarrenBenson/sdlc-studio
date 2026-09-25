@@ -28,39 +28,6 @@ narrative downgrade; `reject_carries_forward` answers whether a REJECT carries; 
 and `sprint` read it so the close records the policy in force and lists the findings carried,
 each naming the units it was found against so it cannot be orphaned.
 
-### `repair_plan.py`
-
-The repair-plan gate (EP0106 / RFC0053). The repair is the one loop step with no review
-before execution, and where a round's repair seeds the next round's finding. Opt-in via
-`review.repair_plan_gate`, OFF by default. `record_repair_plan` writes a plan for a REJECT -
-one entry per finding (the change, the approach, what it might break), refusing a partial plan,
-an entry with no approach or risk, or a plan against a non-REJECT verdict. `review_repair_plan`
-records an independent verdict (self-approval refused), pinned to the findings by fingerprint
-so a later finding invalidates it. `repair_gate(root, plan)` refuses an unplanned or
-after-the-fact repair when on. A repeat-class repair must declare the design retained or
-changed (`review.repair_design_threshold`). `brief` prints the reviewer questions the loop
-keeps failing; a repair records its plan via `critic.repair_provenance`. `record --unit <id>
---author <who> --plan-file <json>` writes a plan keyed to the unit it repairs (the JSON carries
-`verdict`, `findings` and `entries`), and `review --unit <id> --verdict <APPROVE|REJECT>
---reviewer <who>` records its verdict under the `repair-plan` plan-review kind, which no spec or
-test-plan gate reads and `critic.py repair` does not answer. With the gate on, `transition.py`
-asks `repair_gate` under the unit's own id when a bug reaches Fixed or a story whose `Parent` or
-`Delivers` names a BG/RV reaches Done; a decision terminal such as `Won't Fix` is not asked.
-
-### `plan_review.py`
-
-Plan-review gate (schema v3 only, dormant on v2). Before a story with spec-derived ACs is
-implemented, an independent reviewer must challenge its ACs against the source spec. The
-trigger is **deterministic** (TRD ADR-006): `triggers(text, root)` fires on any of three
-signals - the Affects/ACs cite a `plan_review.spec_globs` path, `affects_files` reaches
-`plan_review.affects_files_threshold`, or the routed difficulty band reaches
-`plan_review.min_difficulty`. `gate(root, id)` blocks a triggered story from entering
-In Progress/Review/Done (wired into `transition.py`) unless an independent plan-review APPROVE
-is on record or a `> **Plan-Review-Override:**` field is present. Record with `plan_review
-record --id US.. --verdict approve --reviewer <seat> --author <plan-author>` - it pins the
-reviewed ACs by fingerprint (its own log, so it never satisfies the delivery critique gate),
-so a later AC edit invalidates the approval. `check --id US00xx` reports the verdict.
-
 ### `spec_guard.py`
 
 Spec-edit guard (schema v3 only, dormant on v2). A delivery must not silently falsify the

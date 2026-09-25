@@ -421,7 +421,6 @@ CONFINEMENT_ALLOWLIST: dict[str, str] = {
     "loop_guard.py": "writes the loop-guard state it owns",
     "resume.py": "writes the resume record it owns",
     "review_prep.py": "writes the review-prep record it owns",
-    "plan_review.py": "writes the plan-review record it owns",
     "plan.py": "moves plan files between the live and archived plan directories",
     "persona_gen.py": "writes the personas it generates",
     "persona_resolve.py": "writes the resolved persona record",

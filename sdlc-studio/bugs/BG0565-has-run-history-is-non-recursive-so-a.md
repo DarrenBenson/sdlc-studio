@@ -26,7 +26,8 @@ The other fooling directions are all safe because they are stricter - a stray `r
 ## Acceptance Criteria
 
 - [x] **AC1** Given a project whose retros are filed under `retros/archive/<version>/`, when `has_run_history` reads it, then it reports True - archiving closed runs must not make an established project read as brand new and take the new-project concession for ever.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py -k an_archived_retro_still_counts_as_run_history
+  - **Verify:** manual - retired by US0909: `has_run_history` went with the plan-review gate's first-run softening
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0909
 
 ## Proposed Fix
 
@@ -43,3 +44,4 @@ Walk the retro directory recursively, or read the retro index rather than the di
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-10 | sdlc-studio | Filed |
+| 2026-09-25 | Claude Opus 5.5 | AC1 retired by US0909 (D0259 pattern): `has_run_history` went with the plan-review gate's first-run softening |

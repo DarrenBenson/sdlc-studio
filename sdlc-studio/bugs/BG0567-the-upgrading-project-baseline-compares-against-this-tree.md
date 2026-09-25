@@ -30,20 +30,20 @@ Capture from the BASE REF: `git worktree add` a throwaway checkout of the run's 
 ## Acceptance Criteria
 
 - [x] **AC1** Given the upgrading-project rehearsal, when its baseline is captured, then it comes from a PINNED commit named as a constant in the test - the last commit before the softening epic - extracted read-only with `git archive` piped through `tar`, rather than from the current tree with one branch rewritten. `git worktree add` is deliberately not used: it mutates git administrative state from inside a test that ships to consuming projects, and leaves entries behind when the test dies. A regression the epic introduced anywhere else in the skill tree then differs between the two sides instead of sitting on both. "The run's base ref" is not usable here: the epic landed in August, so this run's base ref already contains it and the comparison would run the tree against itself
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::UpgradeBaselineTests::test_the_baseline_comes_from_the_pinned_pre_epic_commit
-  - **Verified:** yes (2026-09-10)
+  - **Verify:** manual - retired by US0909: the pinned pre-softening baseline compared the plan-review softening, deleted with the gate
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0909
 - [x] **AC2** Given both sides of the comparison, when their fixtures are built, then the test asserts both sides receive the SAME ARGUMENTS, not merely that their outputs match. Measured against the pinned tree, the baseline's output is byte-identical for a fixture with retros and one without, because the softening is the only thing that reads them and the pinned tree has none - so an output comparison survives a changed argument and only an assertion on the call shape catches it. Both callers are covered, including the dormant-gate one
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::UpgradeBaselineTests::test_both_sides_run_the_same_fixture_shape
-  - **Verified:** yes (2026-09-10)
+  - **Verify:** manual - retired by US0909: the pinned pre-softening baseline compared the plan-review softening, deleted with the gate
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0909
 - [x] **AC3** Given a deliberate change on the epic's side OUTSIDE the softening branch, when the comparison runs, then it FAILS - proving it sees more than the one branch the old baseline disabled
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::UpgradeBaselineTests::test_a_regression_outside_the_branch_is_reported
-  - **Verified:** yes (2026-09-10)
+  - **Verify:** manual - retired by US0909: the pinned pre-softening baseline compared the plan-review softening, deleted with the gate
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0909
 - [x] **AC4** Given no change at all beyond the epic itself, when the comparison runs, then it PASSES. This is the control AC1 and AC3 cannot supply between them: a comparison that is permanently red satisfies both. Measured, no compared string in any of the four fixture shapes carries a run id or a temporary path, so the existing normalisation is dead on this comparison and cannot be what the control turns on - the pin itself is
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::UpgradeBaselineTests::test_an_unchanged_tree_compares_equal
-  - **Verified:** yes (2026-09-10)
+  - **Verify:** manual - retired by US0909: the pinned pre-softening baseline compared the plan-review softening, deleted with the gate
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0909
 - [x] **AC5** Given a root where the pinned commit cannot be resolved - a consuming project's installed copy, a shallow clone, or no git at all - when the test runs, then it SKIPS naming that reason rather than erroring. `install.sh` copies the skill tree wholesale, tests included, so this ships to projects with none of that history, and a test that breaks there is one consumers delete
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::UpgradeBaselineTests::test_an_unresolvable_pin_skips_with_its_reason
-  - **Verified:** yes (2026-09-10)
+  - **Verify:** manual - retired by US0909: the pinned pre-softening baseline compared the plan-review softening, deleted with the gate
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0909
 
 ## Test Plan
 
@@ -61,3 +61,4 @@ Capture from the BASE REF: `git worktree add` a throwaway checkout of the run's 
 | --- | --- | --- |
 | 2026-08-10 | sdlc-studio | Filed |
 | 2026-09-10 | Claude Opus 5 | Delivered. The baseline is captured from pinned commit `abb75074`, the last before the softening epic, with `git archive` piped through `tar`; `git worktree add` is deliberately not used. Both sides now run identical fixture arguments, and `UpgradeBaselineTests` asserts the arguments rather than only the outputs. Measured against the pinned tree: the baseline's output is byte-identical for a fixture with three retros and one with none, so an output comparison would have survived a changed argument. Measured on this tree: all three fixture shapes the epic changed nothing about compare EQUAL against the pin, and the one shape it did change differs, with the pinned tree refusing where this tree softens. An unresolvable pin SKIPS naming its reason. All five declared mutants applied and killed |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3, AC4, AC5 retired by US0909 (D0259 pattern): the pinned pre-softening baseline compared the plan-review softening, deleted with the gate |

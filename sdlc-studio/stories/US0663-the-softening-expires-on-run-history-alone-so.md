@@ -33,8 +33,8 @@
 - **Then** the first refuses and the second reports - the pair asserted together, so the test
   cannot pass on the pre-epic tree where every project refuses.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k the_softening_expires_on_the_first_retro
-- **Verified:** yes (2026-08-10)
+- **Verify:** manual - retired by US0909: the plan-review gate and its first-run softening were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 - **Mutant:** in `plan_review.py`, change the arming predicate to read a config key defaulting to softened, which no retro can expire.
 
 ### AC2
@@ -53,8 +53,8 @@
   run id and absolute temporary paths normalised out, and the test naming both in a constant it
   asserts against.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k an_upgrading_project_is_unchanged_against_a_captured_baseline
-- **Verified:** yes (2026-08-10)
+- **Verify:** manual - retired by US0909: the plan-review gate and its first-run softening were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 - **Mutant:** in `plan_review.py`, widen the arming predicate from `no retro exists` to `no run is currently open`.
 
 ### AC3
@@ -65,8 +65,8 @@
   softening open, asserted as an ABSENCE over both files - and the positive control adds such a
   key to each in turn and asserts the check reddens for both.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py -k no_configuration_key_can_hold_the_softening_open
-- **Verified:** yes (2026-08-10)
+- **Verify:** manual - retired by US0909: the plan-review gate and its first-run softening were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 - **Mutant:** in `templates/config-defaults.yaml`, add a `plan_review.first_run` key.
 
 ## Test Plan
@@ -82,3 +82,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-09 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3 retired by US0909 (D0259 pattern): the plan-review gate and its first-run softening were deleted |

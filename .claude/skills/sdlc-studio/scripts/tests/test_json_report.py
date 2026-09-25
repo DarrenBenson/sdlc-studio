@@ -32,7 +32,6 @@ def _load(name: str, rel: str):
 # (module, module file, argv template - {root} filled per test)
 VERBS = [
     ("spec_guard", "spec_guard.py", ["check", "--changed", "x.py", "--format", "json"]),
-    ("plan_review", "plan_review.py", ["check", "--id", "US9999", "--format", "json"]),
     ("ledger", "ledger.py", ["show", "--unit", "CR9999", "--format", "json"]),
     ("critic", "critic.py", ["show", "--format", "json"]),
     ("doc_freshness", "doc_freshness.py", ["--format", "json"]),

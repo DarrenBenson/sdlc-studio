@@ -195,7 +195,7 @@ def triage(repo_root: Path | str, issue_id: str,
     cur = sdlc_md.canonical_status(
         sdlc_md.extract_field(ipath.read_text(encoding="utf-8"), "Status"), vocab)
     if cur != _WORKING_STATUS and not sdlc_md.is_terminal_status("issue", cur or ""):
-        import transition   # local import: transition pulls critic/plan_review; keep off load
+        import transition   # local import: transition pulls critic; keep off load
         try:
             transition.transition(root, iid, _WORKING_STATUS)
             moved_to = _WORKING_STATUS

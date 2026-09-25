@@ -39,8 +39,8 @@
 - **Then** it is not refused on plan-review grounds, and the requirement is REPORTED with the
   condition that will arm it named.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k a_project_with_no_retro_reports_the_plan_review_requirement
-- **Verified:** yes (2026-08-10)
+- **Verify:** manual - retired by US0909: the plan-review gate and its first-run softening were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 - **Mutant:** in `plan_review.py`, make the first-run branch return the refusal rather than the report.
 
 ### AC2
@@ -50,8 +50,8 @@
 - **Then** it is REFUSED - so this unit proves the gate still exists, rather than leaving that to
   its sibling and shipping a commit in which the flagship gate is off with nothing able to notice.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k an_armed_project_still_refuses
-- **Verified:** yes (2026-08-10)
+- **Verify:** manual - retired by US0909: the plan-review gate and its first-run softening were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 - **Mutant:** in `plan_review.py`, make the softening unconditional rather than reading the retro count.
 
 ### AC3
@@ -63,8 +63,8 @@
   softening branch disabled, so the comparison is against the old behaviour rather than against a
   restatement of the new code.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k a_dormant_gate_is_unchanged_by_the_softening
-- **Verified:** yes (2026-08-10)
+- **Verify:** manual - retired by US0909: the plan-review gate and its first-run softening were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 - **Mutant:** in `plan_review.py`, change the dormancy check to `not active(root) and has_run_history(root)`, so a dormant project without history reaches the softening. Reordering the branch alone is EQUIVALENT - the dormant return carries no plan-review wording and sets `fired` False, so nothing observable moves; that was found by applying it.
 
 ### AC4
@@ -82,8 +82,8 @@
   an ABSENT directory and one holding no retro both answer SOFTENED, asserted here so the three
   cases are distinguished rather than assumed alike.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py -k an_unreadable_history_counts_as_armed
-- **Verified:** yes (2026-08-10)
+- **Verify:** manual - retired by US0909: the plan-review gate and its first-run softening were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 - **Mutant:** in `plan_review.py`, return the softened verdict from the predicate's exception path.
 
 ## Test Plan
@@ -100,3 +100,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-09 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3, AC4 retired by US0909 (D0259 pattern): the plan-review gate and its first-run softening were deleted |

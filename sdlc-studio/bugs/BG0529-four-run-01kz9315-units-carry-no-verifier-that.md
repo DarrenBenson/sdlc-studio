@@ -35,8 +35,8 @@ CR0520 is the standing fix for the class - `verify_ac lane-check` gating a unit 
   - **Verify:** shell test $(python3 .claude/skills/sdlc-studio/scripts/verify_ac.py lane-check 2>&1 | grep -cE "LANE-CHECK: US064[0245]") -eq 0
   - **Verified:** yes (2026-08-15)
 - [x] **AC2** Given the three lane modules this unit adds, when they run together, then every one passes - the four behaviours themselves belong to the four stories' own criteria, and restating them here would leave two criteria sharing one selector and neither discriminating.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_critic.py .claude/skills/sdlc-studio/scripts/tests/test_lane_plan_review.py .claude/skills/sdlc-studio/scripts/tests/test_lane_sprint_report.py
-  - **Verified:** yes (2026-08-15)
+  - **Verify:** manual - retired by US0909: test_lane_plan_review.py was deleted with the plan-review gate it drove
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0909
 
 ## Resolution
 
@@ -69,3 +69,4 @@ carry a lane verifier at all, and that the modules it adds pass.
 | --- | --- | --- |
 | 2026-08-06 | sdlc-studio | Filed |
 | 2026-08-21 | sdlc-studio | `Verification depth` stated a criterion count the artefact contradicts. Corrected, and the class is now gated by a census over every bug artefact so a new disagreement is refused rather than found by a reviewer |
+| 2026-09-25 | Claude Opus 5.5 | AC2 retired by US0909 (D0259 pattern): test_lane_plan_review.py was deleted with the plan-review gate it drove |

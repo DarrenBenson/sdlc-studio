@@ -421,34 +421,6 @@ def record(repo_root: Path | str, fields: dict) -> dict:
     return rec
 
 
-def record_plan_review(repo_root: Path | str, unit: str, verdict: str,
-                       reviewer: str, author: str) -> dict:
-    """Append a plan-review outcome event so the gate's value is measurable over
-    time: how often plan-review runs, its verdict mix, and that it was independent. Best-effort
-    (a write failure never breaks the recording path). Carries an `event: "plan-review"` marker
-    AND a `phase` field; `summarise` reads it as a distinct block, never as a unit-close type.
-    Independence uses the SAME notion as the gate (`critic.is_independent`), so the `-` sentinel
-    and empty author read as not-independent - the metric cannot over-report independence. The
-    whole thing is best-effort: neither the independence read nor the write raises into the loop."""
-    try:
-        import critic  # lazy: telemetry is a leaf; critic has no telemetry dep
-        independent = critic.is_independent({"author": author, "reviewer": reviewer})
-    except Exception:  # noqa: BLE001 - never raise into the recording path; fall back locally
-        def _norm(x):
-            x = (x or "").strip().casefold()
-            return "" if x == "-" else x
-        a, r = _norm(author), _norm(reviewer)
-        independent = bool(a) and r != a
-    rec = {"event": "plan-review", "phase": "plan-review", "id": str(unit),
-           "verdict": (verdict or "").upper(), "reviewer": reviewer, "author": author,
-           "independent": independent, "project": project_name(repo_root)}
-    try:
-        _append(_path(repo_root), [rec])
-    except Exception as exc:  # noqa: BLE001 - telemetry is advisory; never raise into the loop
-        sdlc_md.debug("telemetry.record", exc)
-    return rec
-
-
 def attempts_of(rec: dict) -> list[dict]:
     """The per-attempt breakdown of a unit record as `[{model, tokens}, ...]`, in order.
 
@@ -580,7 +552,7 @@ def latest_actuals(records: list[dict]) -> dict[str, dict]:
     attempt tokens and its `model` the delivering (last) attempt's, so a flat reader and the
     attempts reader (unit_cost, the spend report) can never disagree.
 
-    Event records (plan-review) are not unit closes and are excluded.
+    Event records (those carrying an `event` key) are not unit closes and are excluded.
     """
     out: dict[str, dict] = {}
     for rec in records:
@@ -895,10 +867,9 @@ def summarise(records: list[dict]) -> dict:
     time, reopen rate, verdict mix. A field absent from every record of a type is
     None, never a fabricated 0 - the summary reports what was measured.
 
-    Event records (those carrying an `event` key, e.g. plan-review) are NOT unit-close
-    records and are excluded from the per-type/per-tier aggregates - pooling them would inflate
-    a phantom `unknown` type. Plan-review events are summarised in their own `plan_review` block
-   : count, verdict mix, and the independent-review rate."""
+    Event records (those carrying an `event` key, such as the plan-review events older logs
+    hold) are NOT unit-close records and are excluded - pooling them would inflate a phantom
+    `unknown` type."""
     unit_recs = [r for r in records if not r.get("event")]
     out: dict = {}
     for rec in unit_recs:
@@ -944,19 +915,6 @@ def summarise(records: list[dict]) -> dict:
             b["reopen_rate"] = round(sum(reop) / len(reop), 3) if reop else None
             b["escalation_rate"] = round(sum(esc) / len(esc), 3) if esc else None
         out["by_tier"] = tiers
-    # Plan-review events (their own block, US0091): how often the gate ran, its verdict mix,
-    # and the independent-review rate - so the gate's value is measurable.
-    pr_events = [r for r in records if r.get("event") == "plan-review"]
-    if pr_events:
-        verdicts: dict = {}
-        for r in pr_events:
-            v = r.get("verdict")
-            if v:
-                verdicts[v] = verdicts.get(v, 0) + 1
-        indep = [bool(r.get("independent")) for r in pr_events]
-        out["plan_review"] = {
-            "count": len(pr_events), "verdicts": verdicts,
-            "independent_rate": round(sum(indep) / len(indep), 3) if indep else None}
     return out
 
 
@@ -1052,7 +1010,6 @@ def cmd_show(args: argparse.Namespace) -> int:
             print(json.dumps(s, indent=2))
         else:
             by_tier = s.pop("by_tier", None)
-            plan_review = s.pop("plan_review", None)
             unit_n = sum(b["count"] for b in s.values())
             print(f"{unit_n} unit record(s), {len(s)} type(s)")
             for t, b in sorted(s.items()):
@@ -1060,11 +1017,6 @@ def cmd_show(args: argparse.Namespace) -> int:
                 print(f"  {t:8} count={b['count']} mean_iterations={b['mean_iterations']} "
                       f"mean_wall_time_s={b['mean_wall_time_s']} "
                       f"reopen_rate={b['reopen_rate']} verdicts[{verdicts}]")
-            if plan_review:
-                verdicts = ", ".join(f"{k}:{n}" for k, n in
-                                     sorted(plan_review["verdicts"].items())) or "-"
-                print(f"plan-review: count={plan_review['count']} "
-                      f"independent_rate={plan_review['independent_rate']} verdicts[{verdicts}]")
             if by_tier:
                 print("by tier delivered:")
                 for t, b in sorted(by_tier.items()):

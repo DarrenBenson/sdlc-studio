@@ -205,7 +205,6 @@ lists every script with a one-line summary; open the linked page for the full en
 ### Audit, review & critic - [reference-scripts-review.md](reference-scripts-review.md)
 
 - `ac_scope.py` - Authoring lint (advisory): `check` flags a story whose acceptance criteria mention a
-- `plan_review.py` - Plan-review gate (schema v3 only, dormant on v2). Before a story with spec-derived ACs is
 - `spec_guard.py` - Spec-edit guard (schema v3 only, dormant on v2). A delivery must not silently falsify the
 - `constitution.py` - Project-constitution principle gate. Asserts the machine-checkable
 - `schema_check.py` - One CI-runnable command over the schema-v3 team-schema rules, emitting STABLE rule ids so the

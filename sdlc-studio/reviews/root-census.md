@@ -51,10 +51,10 @@ script joins the family classified rather than silently.
 
 | Classification | Scripts |
 | --- | --- |
-| anchored | 65 |
+| anchored | 64 |
 | unanchored | 1 |
 | non-root | 5 |
-| **total** | **71** |
+| **total** | **70** |
 
 These counts are now PARSED by the guard and held to the measurement. They were not before, which
 is how the block came to claim 5 anchored / 59 unanchored while the family measured otherwise: a
@@ -117,7 +117,6 @@ re-export.
 | `persona_gen.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `persona_resolve.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `plan.py` | non-root | operates on the operator's `~/.claude/plans/` tree via `--plans-dir`, which sits outside any project |
-| `plan_review.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `project_upgrade.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `provenance.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `pvd.py` | non-root | operates on a `--master` and a `--target` repo, so no single project root applies |

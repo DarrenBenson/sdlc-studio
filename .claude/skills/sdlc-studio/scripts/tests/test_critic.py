@@ -1199,7 +1199,7 @@ class BriefTierTests(unittest.TestCase):
     """US0641: `route.py` says it plainly - "Advisory only - no gate reads a tier".
 
     A deterministic 0-100 difficulty with bands and a confidence has been stamped on every unit
-    at plan time since it was built, and `plan_review` is its only consumer. `critic brief
+    at plan time since it was built, and nothing consumed it. `critic brief
     --tier` existed and was cosmetic: one substituted sentence, never recorded, never read,
     never checked. These pin the three steps that make it real - derived, recorded, READ.
     """
@@ -1233,14 +1233,17 @@ class BriefTierTests(unittest.TestCase):
             root, mod = Path(d), _load()
             _banded_unit(root, "US0001", heavy=False)
             self.assertEqual(mod.tier_for(root, "US9999"), "full", "an unknown unit")
-            import plan_review as pr_mod
-            self.addCleanup(setattr, pr_mod, "_difficulty_band", pr_mod._difficulty_band)
-            pr_mod._difficulty_band = lambda *a, **k: None
-            self.assertEqual(mod.tier_for(root, "US0001"), "full", "an unresolvable band")
-            def boom(*a, **k):
-                raise RuntimeError("the estimator died")
-            pr_mod._difficulty_band = boom
-            self.assertEqual(mod.tier_for(root, "US0001"), "full", "a raising estimator")
+            self.assertEqual(mod.tier_for(root, "US0001"), "light", "the control bands light")
+            import route  # noqa: PLC0415 - the module `tier_for` reads the band from
+            with unittest.mock.patch.object(route, "estimate",
+                                            return_value={"difficulty_band": None}):
+                self.assertEqual(mod.tier_for(root, "US0001"), "full", "an unresolvable band")
+            with unittest.mock.patch.object(route, "estimate",
+                                            return_value={"difficulty_band": "enormous"}):
+                self.assertEqual(mod.tier_for(root, "US0001"), "full", "an unknown band name")
+            with unittest.mock.patch.object(route, "estimate",
+                                            side_effect=RuntimeError("the estimator died")):
+                self.assertEqual(mod.tier_for(root, "US0001"), "full", "a raising estimator")
 
     def test_the_tier_is_a_parsed_field_on_the_verdict(self) -> None:
         """Mutant: write the tier into the issues prose - the field is empty on read-back and

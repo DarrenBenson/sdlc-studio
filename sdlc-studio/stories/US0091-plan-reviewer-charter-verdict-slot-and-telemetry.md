@@ -23,40 +23,40 @@ Closes the remainder of CR0194 (charter, verdict slot, telemetry, benchmark note
 - **Given** the agent-prompt template
 - **When** a plan-review is invoked
 - **Then** a documented charter (rendered under the QA/tester seat, a separate instance from the plan's author) instructs the reviewer to re-read each cited spec section and flag any AC that contradicts or inverts it, defaulting to challenge-the-written-ACs and escalating to blind re-derivation for high-difficulty units
-- **Verify:** grep "Plan-Review Charter" .claude/skills/sdlc-studio/reference-agent-prompt-template.md
-- **Verified:** yes (2026-07-09)
+- **Verify:** manual - retired by US0909: the plan-review gate was deleted, and with it its charter, the story template's verdict slot, its telemetry events and its reference-sprint.md description
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 
 ### AC2: The story template carries a plan-review verdict slot
 
 - **Given** `templates/core/story.md`
 - **When** a story is authored
 - **Then** it carries an optional Plan-Review slot (verdict, reviewer, date) the gate can populate
-- **Verify:** grep "Plan-Review" .claude/skills/sdlc-studio/templates/core/story.md
-- **Verified:** yes (2026-07-09)
+- **Verify:** manual - retired by US0909: the plan-review gate was deleted, and with it its charter, the story template's verdict slot, its telemetry events and its reference-sprint.md description
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 
 ### AC3: Plan-review outcomes are recorded to telemetry
 
 - **Given** a plan-review verdict recorded via the phase field
 - **When** the record is written
 - **Then** a telemetry event capturing the plan-review outcome (id, phase, verdict, reviewer != author) is appended to `.local/telemetry.jsonl`
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_review.py::TelemetryTests
-- **Verified:** yes (2026-07-09)
+- **Verify:** manual - retired by US0909: the plan-review gate was deleted, and with it its charter, the story template's verdict slot, its telemetry events and its reference-sprint.md description
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 
 ### AC4: The gate is described in the reference docs
 
 - **Given** the sprint reference
 - **When** an operator reads how implementation is gated
 - **Then** the plan-review gate, its deterministic trigger, and the operator-override path are described
-- **Verify:** grep "plan-review" .claude/skills/sdlc-studio/reference-sprint.md
-- **Verified:** yes (2026-07-09)
+- **Verify:** manual - retired by US0909: the plan-review gate was deleted, and with it its charter, the story template's verdict slot, its telemetry events and its reference-sprint.md description
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 
 ### AC5: The benchmark note records the measurable hypothesis
 
 - **Given** the N=5 benchmark follow-up
 - **When** the gate ships
 - **Then** a note records that a future rerun/fixture can measure whether the gate catches the seeded R5-inversion failure mode
-- **Verify:** grep "R5-inversion" .claude/skills/sdlc-studio/reference-sprint.md
-- **Verified:** yes (2026-07-09)
+- **Verify:** manual - retired by US0909: the plan-review gate was deleted, and with it its charter, the story template's verdict slot, its telemetry events and its reference-sprint.md description
+- **Verified:** manual (2026-09-25) - retired, superseded by US0909
 
 ## Revision History
 
@@ -64,3 +64,4 @@ Closes the remainder of CR0194 (charter, verdict slot, telemetry, benchmark note
 | --- | --- | --- |
 | 2026-07-09 | claude | Created via `new` (deterministic) |
 | 2026-07-09 | claude | Groomed from CR0194 (charter, verdict slot, telemetry) |
+| 2026-09-25 | Claude Opus 5.5 | AC1, AC2, AC3, AC4, AC5 retired by US0909 (D0259 pattern): the plan-review gate was deleted, and with it its charter, the story template's verdict slot, its telemetry events and its reference-sprint.md description |

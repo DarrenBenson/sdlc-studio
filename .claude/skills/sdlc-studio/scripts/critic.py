@@ -3694,25 +3694,20 @@ def tier_for(repo_root: Path | str, unit: str) -> str:
 
     `route.py` says it in its own header - "Advisory only - no gate reads a tier" - and that has
     been true since the score was built: a deterministic 0-100 difficulty with bands and a
-    confidence, stamped on every unit at plan time and consumed by nothing but `plan_review`.
-    This is the consumer. A unit whose blast radius is small stops paying a large unit's review,
-    which is the whole of CR0510's thesis in one function.
-
-    `plan_review._difficulty_band` is REUSED rather than reimplemented. It already resolves the
-    band for a unit whether or not the unit is on disk, and a second resolver here would be two
-    answers to "how risky is this", drifting the moment either is touched.
+    confidence, stamped on every unit at plan time. This is its consumer. A unit whose blast
+    radius is small stops paying a large unit's review, which is the whole of CR0510's thesis in
+    one function.
 
     Fails towards `full`: an unresolvable band, an unknown band name, an unreadable unit. The
     cost of a needless full pass is tokens; the cost of a needless light one is a defect that
     ships. That asymmetry decides the default, not neatness.
     """
     try:
-        import plan_review  # noqa: PLC0415 - deferred; brief() must not pay for it unused
+        import route  # noqa: PLC0415 - deferred; brief() must not pay for it unused
         found = sdlc_md.find_by_id(Path(repo_root), unit)
         if not found:
             return UNKNOWN_BAND_TIER
-        path, _type = found
-        band = plan_review._difficulty_band(Path(repo_root), sdlc_md.read_text_safe(path), path)  # noqa: SLF001
+        band = route.estimate(Path(repo_root), found[0])["difficulty_band"]
     except Exception:  # noqa: BLE001 - a difficulty read must never break a brief
         return UNKNOWN_BAND_TIER
     return BAND_TIER.get(band or "", UNKNOWN_BAND_TIER)

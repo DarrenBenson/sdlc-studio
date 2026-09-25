@@ -400,9 +400,8 @@ def _rfc_accept_gate(text: str, target_canon: str | None) -> str | None:
     rule with no mechanism fires when somebody remembers: six RFCs reached Accepted, were
     decomposed and were delivered carrying nothing but the boilerplate Open row.
 
-    The sanctioned escape is a RECORDED `> **Decision-Override:**` reason, not `--force`,
-    matching the plan-review convention - a skip that leaves its reason in the file is
-    auditable afterwards, a force flag is not.
+    The sanctioned escape is a RECORDED `> **Decision-Override:**` reason, not `--force`: a
+    skip that leaves its reason in the file is auditable afterwards, a force flag is not.
     """
     if target_canon != "Accepted":
         return None
@@ -903,7 +902,7 @@ def _unanswered_delivery_reject(root, uid: str) -> str | None:
     reviewer who rejected) or `repaired` (a complete repair whose `filed:` closures still resolve) - the one
     reader review-coverage and conformance already use, so a unit this passes is one they count
     as reviewed, and a unit that passes the close cannot then stop at its own Done inside
-    apply-signoff. The DELIVERY phase only: a plan-review rejection is the plan gate's to answer.
+    apply-signoff. The DELIVERY phase only: a plan-review rejection holds no transition.
     Nothing in a retro's carried table is read, because a ruling rules on the close, not on the
     reviewer's findings.
     """
@@ -942,7 +941,7 @@ def _unanswered_delivery_reject(root, uid: str) -> str | None:
 def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
                      target_canon, from_canon, force, dry_run, triaged_by,
                      coverage_opts: dict | None = None) -> str | None:
-    """Run the ordered pre-write gates (bug-verify, done-verify, triage, plan-review). Raise
+    """Run the ordered pre-write gates (bug-verify, done-verify, tier, triage, breakdown). Raise
     ValueError on a hard block; else return the accumulated advisory warning (or None).
     Behaviour-preserving extraction of the interleaved gate ladder."""
     gate_warn = None
@@ -1043,7 +1042,7 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             gate_warn = f"{gate_warn}; {lane['warning']}" if gate_warn else lane["warning"]
     # THE LINE-COVERAGE GATE (US0816), beside the mutation lane and on the same terms: it asks a
     # third question - "did the unit's own verifiers execute the lines the unit added" - and is
-    # governed by its own setting, so it is neither nested in the plan gate nor in the lane above.
+    # governed by its own setting, so it is not nested in the lane above.
     if (not force and sdlc_md.executes_verifiers(type_)
             and sdlc_md.is_delivered_terminal(type_, target_canon or "")):
         try:
@@ -1122,32 +1121,9 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
     block = _triage_gate(root, type_, text, from_canon, target_canon, triaged_by)
     if block:
         blocks.append(block)
-    # Plan-review gate: a story with spec-derived ACs cannot REACH implementation
-    # without a recorded independent plan-review verdict. Fires on entry to any state that
-    # implies the plan was built - In Progress, Review, or Done - so a direct Ready->Done
-    # close cannot smuggle an unreviewed plan into the terminal state. Dry-run included
-    # (honest preflight); a no-op on v2 or when the deterministic trigger is not tripped.
-    # Not bypassed by --force - the sanctioned skip is the recorded override field, so a
-    # skip is always auditable. Idempotent for a forward walk: once reviewed/overridden,
-    # In Progress -> Review -> Done all pass.
-    if type_ == "story" and target_canon in _IMPL_TARGETS and from_canon not in _IMPL_TARGETS:
-        import plan_review  # local import: plan_review pulls route/critic; keep them off cold paths
-        pr_res = plan_review.gate(root, artifact_id, path)
-        if not pr_res["ok"]:
-            blocks.append(pr_res["reason"])
-        elif pr_res.get("softened"):
-            # The SOFTENING fired - a project with no closed sprint yet. Keyed on the gate's own
-            # flag, never re-derived from `fired and not override`: that shape also matched a unit
-            # with an independent APPROVE on record, so every properly reviewed story in every
-            # project carried a spurious advisory. Reported rather than silent: a concession nobody is told about is one
-            # they meet as a surprise refusal on the next run, which is the shape this softening
-            # exists to remove. Accumulated, never assigned, so it cannot discard a sibling
-            # advisory depending on statement order.
-            warn = f"plan-review advisory: {pr_res['reason']}"
-            gate_warn = f"{gate_warn}; {warn}" if gate_warn else warn
-    # ...and in its place, the gate an epic SHOULD have had. NOT entry-triggered: `In Progress` is
-    # in an epic's own vocabulary, so a gate guarded by `from_canon not in _IMPL_TARGETS` is
-    # skipped entirely on the `In Progress -> Done` route, which is the ordinary one.
+    # The epic breakdown gate. NOT entry-triggered: `In Progress` is in an epic's own vocabulary,
+    # so a gate guarded by `from_canon not in _IMPL_TARGETS` is skipped entirely on the
+    # `In Progress -> Done` route, which is the ordinary one.
     if not force and type_ == "epic" and target_canon in _EPIC_TERMINAL:
         block = _epic_breakdown_gate(root, sdlc_md.norm_id(artifact_id), text)
         if block:
@@ -1166,7 +1142,7 @@ def _force_bypassed(root, artifact_id, new_status, type_, path, text,
     exempt whichever gate the list forgot.
 
     Called only after the FORCED ladder has already passed, so any block found here is one force
-    is carrying: a gate that ignores force (tier, RFC-accept, plan-review) would have refused the
+    is carrying: a gate that ignores force (tier, RFC-accept, triage) would have refused the
     forced run too and there would be nothing to record."""
     try:
         _pre_write_gates(root, artifact_id, new_status, type_, path, text,
@@ -2680,8 +2656,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="bypass the forceable close gates (story->Done AC-verify, bug Verify, "
                         "request-terminal). Every gate it actually waives is named in a "
                         "`Forced-override` field on the artefact and in its Revision History; "
-                        "gates whose sanctioned skip is a recorded reason (RFC decisions, "
-                        "plan review) and the tier gate are NOT bypassed")
+                        "gates whose sanctioned skip is a recorded reason (RFC decisions) "
+                        "and the tier gate are NOT bypassed")
     s.add_argument("--triaged-by", dest="triaged_by",
                    help="v3 triage: the triaging seat as `Name; type; version` (type is "
                         "human|persona|agent); required and recorded on an inbox->triaged "

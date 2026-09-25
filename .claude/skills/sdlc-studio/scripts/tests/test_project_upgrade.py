@@ -783,15 +783,13 @@ class DigestKindHandlingTests(unittest.TestCase):
 
 
 def _v3_story(sd, sid, status="Ready", difficulty=True, affects="a.py",
-              ac_verify=True, override=False):
+              ac_verify=True):
     """A schema-v3 story with controllable baseline attributes (US0094 census fixture)."""
     lines = [f"# US{sid:04d}: s", "", f"> **Status:** {status}", "> **Epic:** EP0001"]
     if affects:
         lines.append(f"> **Affects:** {affects}")
     if difficulty:
         lines.append("> **Difficulty:** medium")
-    if override:
-        lines.append("> **Plan-Review-Override:** ops")
     lines += ["", "## Acceptance Criteria", "", "### AC1: a", "- **Given** x",
               "- **When** y", "- **Then** z"]
     if ac_verify:
@@ -805,14 +803,13 @@ def _v3_project(d, v3=True):
     (sd / "stories").mkdir(parents=True, exist_ok=True)
     (sd / "reviews").mkdir(parents=True, exist_ok=True)
     if v3:
-        (sd / ".config.yaml").write_text(
-            "schema_version: 3\nplan_review:\n  affects_files_threshold: 99\n"
-            "  min_difficulty: extreme\n", encoding="utf-8")
+        (sd / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
     return sd
 
 
 class RebaselineCensusTests(unittest.TestCase):
-    """US0094 AC1: per-artifact gaps bucketed backfill / re-review / residual (schema v3)."""
+    """Per-artifact gaps bucketed backfill / residual (schema v3). The re-review bucket went with
+    the plan-review gate, its only filler (US0909)."""
 
     def _ids(self, bucket):
         return sorted(e["id"] for e in bucket)
@@ -823,20 +820,15 @@ class RebaselineCensusTests(unittest.TestCase):
             _v3_story(sd, 1, status="Done")                                # terminal -> absent
             _v3_story(sd, 2)                                               # fully baselined -> absent
             _v3_story(sd, 3, difficulty=False)                            # -> backfill (no Difficulty)
-            _v3_story(sd, 4, affects="docs/prd.md")                       # spec-cite -> re-review
+            _v3_story(sd, 4, affects="docs/prd.md")                       # spec-cite -> nothing
             _v3_story(sd, 5, ac_verify=False)                            # AC missing Verify -> residual
             r = pu.rebaseline(d)
-            self.assertNotIn("US0001", self._ids(r["backfill"] + r["re-review"] + r["residual"]))
-            self.assertNotIn("US0002", self._ids(r["backfill"] + r["re-review"] + r["residual"]))
+            self.assertEqual(set(r), {"backfill", "residual"})
+            self.assertNotIn("US0001", self._ids(r["backfill"] + r["residual"]))
+            self.assertNotIn("US0002", self._ids(r["backfill"] + r["residual"]))
+            self.assertNotIn("US0004", self._ids(r["backfill"] + r["residual"]))
             self.assertIn("US0003", self._ids(r["backfill"]))
-            self.assertIn("US0004", self._ids(r["re-review"]))
             self.assertIn("US0005", self._ids(r["residual"]))
-
-    def test_spec_story_with_override_is_not_re_review(self):
-        with tempfile.TemporaryDirectory() as d:
-            sd = _v3_project(d)
-            _v3_story(sd, 4, affects="docs/prd.md", override=True)        # override satisfies it
-            self.assertNotIn("US0004", [e["id"] for e in pu.rebaseline(d)["re-review"]])
 
     def test_terminal_story_with_every_gap_is_in_no_bucket(self):
         # locks terminal-skip for ALL buckets: a Done story with a missing Difficulty, a spec
@@ -846,7 +838,7 @@ class RebaselineCensusTests(unittest.TestCase):
             _v3_story(sd, 1, status="Done", difficulty=False,
                       affects="docs/prd.md", ac_verify=False)
             r = pu.rebaseline(d)
-            self.assertEqual([], r["backfill"] + r["re-review"] + r["residual"])
+            self.assertEqual([], r["backfill"] + r["residual"])
 
     def test_stray_verify_outside_ac_section_does_not_mask_a_gap(self):
         with tempfile.TemporaryDirectory() as d:
@@ -858,23 +850,6 @@ class RebaselineCensusTests(unittest.TestCase):
                 "### AC2: b\n- **Then** y\n\n## Notes\n\n- **Verify:** an example only\n",
                 encoding="utf-8")
             self.assertIn("US0007", [e["id"] for e in pu.rebaseline(d)["residual"]])
-
-    def test_re_review_respects_independence(self):
-        import critic
-        for reviewer, cleared in (("qa", True), ("dev", False)):     # dev==author => self-review
-            with tempfile.TemporaryDirectory() as d:
-                sd = _v3_project(d)
-                _v3_story(sd, 4, affects="docs/prd.md")
-                critic.record_verdict(d, "US0004", "APPROVE", reviewer=reviewer,
-                                      author="dev", phase="plan-review")
-                flagged = "US0004" in [e["id"] for e in pu.rebaseline(d)["re-review"]]
-                self.assertEqual(flagged, not cleared)
-        with tempfile.TemporaryDirectory() as d:                     # independent REJECT: not cleared
-            sd = _v3_project(d)
-            _v3_story(sd, 4, affects="docs/prd.md")
-            critic.record_verdict(d, "US0004", "REJECT", reviewer="qa", author="dev",
-                                  phase="plan-review")
-            self.assertIn("US0004", [e["id"] for e in pu.rebaseline(d)["re-review"]])
 
 
 class RebaselineEraBoundaryTests(unittest.TestCase):
@@ -895,7 +870,7 @@ class RebaselineEraBoundaryTests(unittest.TestCase):
             sd = _v3_project(d, v3=False)
             _v3_story(sd, 2, difficulty=False, affects="docs/prd.md", ac_verify=False)
             r = pu.rebaseline(d)
-            self.assertEqual(r, {"backfill": [], "re-review": [], "residual": []})
+            self.assertEqual(r, {"backfill": [], "residual": []})
 
 
 class RebaselineReportTests(unittest.TestCase):
@@ -909,8 +884,8 @@ class RebaselineReportTests(unittest.TestCase):
             text = "\n".join(lines)
             self.assertIn("US0003", text)
             self.assertIn("backfill", text.lower())
-            self.assertIn("re-review", text.lower())
-            self.assertIn("none", text.lower())                          # empty buckets explicit
+            self.assertIn("residual:\n    - none", text.lower())        # empty buckets explicit
+            self.assertNotIn("re-review", text.lower())
 
 
 class RebaselineDeterminismTests(unittest.TestCase):
@@ -939,7 +914,7 @@ class BackfillApplyTests(unittest.TestCase):
     def test_apply_does_not_action_re_review_or_residual(self):
         with tempfile.TemporaryDirectory() as d:
             sd = _v3_project(d)
-            _v3_story(sd, 4, affects="docs/prd.md")                  # re-review (has Difficulty)
+            _v3_story(sd, 4, affects="docs/prd.md")                  # no gap (has Difficulty)
             _v3_story(sd, 5, ac_verify=False)                        # residual (has Difficulty)
             before4 = (sd / "stories" / "US0004-s.md").read_text(encoding="utf-8")
             before5 = (sd / "stories" / "US0005-s.md").read_text(encoding="utf-8")
