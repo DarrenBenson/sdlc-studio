@@ -1227,6 +1227,8 @@ One row has been removed since adoption.
 | BG0756 | APPROVE | qa-rev-BG0756 | BG0756-fix | 2026-09-25 | bdcd1bb62219 unmatched | full | [new] non-blocking: \_prose drops class and method docstrings in test files so a false claim there passes AC3 [LC-002]; [new] non-blocking: the veto misses the request and passive wordings [LC-002]; [new] non-blocking: nothing pins the reworded enforce text; [pre-existing] sprint plan's unsized-CR fix block shows Points not Size |
 | BG0751 | REJECT | qa-rev-BG0751 | BG0751-build | 2026-09-25 | ef0b3ecc55d2 | full | [new] close\_owed.run\_attributed still bounds inclusively while \_open\_findings is now half-open, so a finding stamped in a run's final second is in neither the report nor the owed gate, newly reachable now outside-batch stamps carry a moment (about 8 lines plus a 20-line test) [LC-006]; [new] non-blocking: \_as\_utc's naive branch is untested and currently unreached [LC-002] |
 | US0910 | APPROVE | qa-rev-US0910 | US0910-fix | 2026-09-25 | 5da1444aa2a1 | full | [new] non-blocking: US0816 and BG0648 were edited but not in Affects (widened at landing); [new] non-blocking: BG0648 test-plan row 56 names a mutant of a deleted function; [pre-existing] help/verify.md and reference-schema.md describe the retired verb, owned by US0924 |
+| US0920 | REJECT | qa-rev-US0920 | US0920-build | 2026-09-25 | 8d03f68ee9c9 | full | [new] US0882 AC3 is retired though its test survives in RegisterKeepsUnmovedRowsTests, so it should be re-pointed (about 4 lines) [LC-002]; [new] non-blocking: the story's Notes undercount the retirements at 7 |
+| BG0751 | APPROVE | qa-rev-BG0751 | BG0751-fix | 2026-09-25 | ef0b3ecc55d2 | full | - |
 
 ## Supersessions
 

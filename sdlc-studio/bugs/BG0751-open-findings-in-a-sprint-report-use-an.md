@@ -1,9 +1,10 @@
 # BG0751: Open findings in a sprint report use an inclusive window end
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional (a sealed fixture stays VALID after a same-day finding filed after the seal; close_owed and the report now share the half-open window, pinned at the run's final second; RPT0006 to RPT0008 re-derive byte-identically; two review rounds)
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_findings_window.py, changelog.d/BG0751.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_findings_window.py, changelog.d/BG0751.md, .claude/skills/sdlc-studio/scripts/close_owed.py, .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Evidence:** US0885 review finding 4 (read, not executed), RUN-01M3891F
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio file
@@ -30,8 +31,10 @@ Compare timestamped stamps with the half-open bound (`when >= hi` excludes). Hav
 
 - [ ] **AC1** Given a report generated at instant T during a run, when a bug is filed whose `Raised-in-batch` stamp carries T's own second, then `sprint_report.py check` still reads VALID, and a bug stamped one second before T is on the page. Fails on: HEAD's inclusive `when > hi`, under which the T-second finding enters only the re-derivation.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_findings_window.py::FindingsWindowTests::test_a_finding_stamped_in_the_generation_second_leaves_the_page_valid
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given a run whose report is generated at T, when one bug is filed by `file_finding.py file` with no batch open after the run starts and before T, and a second the same way after T on the same day, then the first is in the page's known issues and `check` still reads VALID after the second. Fails on: HEAD's date-level `Created` fallback, which admits the second (measured on RPT0008); excluding every date-only stamp on the generation day, which drops the first.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_findings_window.py::FindingsWindowTests::test_a_finding_filed_outside_a_batch_is_placed_by_its_moment_not_its_day
+  - **Verified:** yes (2026-09-25)
 
 ## Impact
 

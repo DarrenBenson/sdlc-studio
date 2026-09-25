@@ -35,7 +35,7 @@ import re
 import shutil
 import subprocess
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -2102,10 +2102,11 @@ _CREATED_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d+)?
 def _created_date(text: str) -> str:
     """The `Created` field, the fallback when a `Raised-in-batch` stamp carries no timestamp.
 
-    `file_finding` writes `none open - raised outside a delivery batch` for a finding raised
-    with no batch open, and that stamp records no moment at all - but the artefact still does,
-    in `Created`. Reading it is what keeps a prose-stamped finding attributable instead of
-    invisible, and `sprint.py`'s reader of the same field already resolves it this way.
+    `file_finding` wrote `none open - raised outside a delivery batch` for a finding raised
+    with no batch open, and until it appended the moment of filing that stamp recorded none -
+    but the artefact still does, to the day, in `Created`. Reading it is what keeps a
+    prose-stamped finding attributable instead of invisible, and `sprint.py`'s reader of the
+    same field already resolves it this way.
     """
     value = (sdlc_md.extract_field(text, "Created") or "").strip()
     # Guarded BY SHAPE, exactly as `_stamp_timestamp` is. `Created: TBD` sorts after every ISO
@@ -2114,6 +2115,13 @@ def _created_date(text: str) -> str:
     # moved one layer over.
     m = _CREATED_DATE_RE.match(value)
     return m.group(0) if m else ""
+
+
+def _as_utc(stamp: str) -> str:
+    """`stamp`, marked UTC when it carries no offset of its own. Every writer here stamps UTC, and
+    a moment read without an offset cannot be compared with one read with it."""
+    at = _at(stamp)
+    return _iso(at.replace(tzinfo=timezone.utc)) if at is not None and at.tzinfo is None else stamp
 
 
 def _undatable_findings(root: Path, *, open_only: bool = True) -> list[str]:
@@ -2201,9 +2209,13 @@ def _open_findings(root: Path, run: dict | None) -> tuple[list[str], list[str]]:
             # both sides for every input gave a 4h22m run 45 findings raised elsewhere that day,
             # and made two different runs each claim the same eleven. 15 days in this corpus
             # carry more than one run, so the loss is live rather than theoretical.
-            lo, hi = ((started[:10], (ended or "")[:10]) if len(when) == 10
-                      else (started, ended or ""))
-            if when < lo or (ended and when > hi):
+            # A moment is placed in the half-open `[start, end)` the DORA figures use: with the
+            # end inclusive, a finding stamped in the page's own generation second entered the
+            # re-derivation and not the page, so `check` read INVALID on a page nobody touched.
+            if len(when) == 10:
+                if when < started[:10] or (ended and when > ended[:10]):
+                    continue
+            elif not _in_window(_as_utc(when), _at(_as_utc(started)), _at(_as_utc(ended or ""))):
                 continue
             filed.append(uid)
             status = (sdlc_md.extract_field(text, "Status") or "").strip()

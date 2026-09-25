@@ -1133,14 +1133,38 @@ class RunAttributedTests(CloseOwedBase):
         """The corpus's other stamp shapes, driven rather than assumed.
 
         `batch` and `none open - raised outside a delivery batch` are both present on real
-        artefacts. Nothing here guards their SHAPE - a letter sorts after every digit, so such a
-        token can never fall inside an ISO window - and this is the test that says so rather
-        than a branch no input could reach.
+        artefacts. Nothing here guards their SHAPE - a stamp that does not parse as a moment
+        (`sprint_report._at` returns `None` for it) can never fall inside a window - and this
+        is the test that says so rather than a branch no input could reach.
         """
         r = self._tree(raised="none open - raised outside a delivery batch",
                        terminal_day="2026-07-30")
         self.assertEqual([], r["run_attributed"])
         self.assertEqual([("BG0005", "bug")], r["unaccounted"])
+
+    def test_a_finding_raised_in_the_run_s_final_second_is_not_attributed(self) -> None:
+        """LC-006 (BG0751 round 2 finding). `close_owed` must agree with
+        `sprint_report._open_findings` about which run a finding belongs to, and that reader
+        places a stamp in the half-open `[start, end)` window - a finding raised in the run's
+        OWN FINAL SECOND is excluded from its report. Attributing it here regardless landed it
+        in neither the report nor this ledger: not on the page that should list it, and not
+        counted as unaccounted either.
+
+        MUTANT: restore the inclusive `started <= raised <= ended` and this boundary second is
+        attributed again.
+        """
+        r = self._tree(raised=self.WINDOW[1], terminal_day="2026-07-30")
+        self.assertEqual([], r["run_attributed"],
+                          "a finding raised in the run's own ended-at second was credited to it")
+        self.assertEqual([("BG0005", "bug")], r["unaccounted"])
+
+    def test_a_finding_raised_one_second_before_the_run_ended_is_attributed(self) -> None:
+        """THE CONTROL beside the boundary test above: the second strictly before `ended_at` is
+        inside the window and must still be credited, or the half-open bound has moved too far."""
+        one_second_earlier = "2026-07-30T22:48:15Z"
+        r = self._tree(raised=one_second_earlier, terminal_day="2026-07-30")
+        self.assertEqual([("BG0005", "bug", "RUN-01KYPZ1G")], r["run_attributed"])
+        self.assertEqual([], r["unaccounted"])
 
     def test_the_shipped_command_names_the_run_that_already_accounts_for_it(self) -> None:
         """THE LANE TEST. MUTANT: attribute in `owed` and print nothing about it.

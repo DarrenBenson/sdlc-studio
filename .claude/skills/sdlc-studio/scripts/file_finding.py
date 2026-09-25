@@ -2180,8 +2180,12 @@ def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields:
     # last-closed span is exactly the misattribution this exists to remove.
     # A caller filing for a run whose batch span is closed, or was never opened (the close), names
     # the run itself in `_batch`; the open span, when there is one, still wins.
+    # The absence carries the MOMENT of filing: `Created` is only a date, so a finding filed later
+    # on a report's own day could not be told from one filed before it, and entered the report's
+    # re-derivation alone. The moment is the stamp's last token, where every reader looks for it.
     batch_key = _open_batch_key(root) or fields.get("_batch")
-    fields = {**fields, "_batch": batch_key or "none open - raised outside a delivery batch"}
+    fields = {**fields, "_batch": batch_key or ("none open - raised outside a delivery batch, "
+                                                f"{sdlc_md.now_iso8601()}")}
     sdlc_md.atomic_write(path, _render(type_, disp_id, title, today, fields, create_status))
     triage_noise.record_creation(root)  # count this minted finding against the session budget
     # One shared header-driven row builder for both create paths: read the index's

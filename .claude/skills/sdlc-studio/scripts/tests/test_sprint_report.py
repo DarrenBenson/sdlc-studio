@@ -4539,6 +4539,16 @@ class FindingAttributionTests(ReportOfRecordBase):
         self.assertNotIn("BG9021", filed2,
                          "a stamp dated outside the window must not be rescued by `Created`")
 
+    def test_as_utc_marks_a_naive_stamp_as_utc(self) -> None:
+        """`_as_utc`'s naive branch, direct: every fixture stamp elsewhere in this suite already
+        carries `Z`, so a mutant returning the stamp unchanged had nothing here to fail it.
+
+        MUTANT: `return stamp` unconditionally - a naive stamp comes back with no offset at all.
+        """
+        self.assertEqual("2026-07-22T09:00:00Z", sr._as_utc("2026-07-22T09:00:00"))
+        # Already-offset stamps are untouched, the branch this one sits beside.
+        self.assertEqual("2026-07-22T09:00:00Z", sr._as_utc("2026-07-22T09:00:00Z"))
+
 
 class StopShipDischargeTests(ReportOfRecordBase):
     """BG0730. A carried stop-ship ruling was collected whatever its finding's status, so a

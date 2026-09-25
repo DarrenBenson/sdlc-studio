@@ -358,12 +358,14 @@ def _raised_in_batch_stamp(root: Path, cid: str) -> str:
     The stamp is `<batch> <timestamp>` or a bare timestamp, so the moment is its last token -
     read exactly as `sprint_report._open_findings` reads it, because the two must agree about
     which run a finding belongs to or the close and the ledger would attribute it differently.
+    `run_attributed` places it in the run's window with `sprint_report._in_window`, the same
+    half-open `[start, end)` rule and parser `_open_findings` uses, for the same reason.
 
     Not every stamp in the corpus ends in a time: `batch` and `none open - raised outside a
-    delivery batch` are both present. Those are compared against the window's ISO bounds as
-    ordinary strings and can never fall inside one, because a letter sorts after every digit -
-    so no separate shape test is written here. A guard for it would be a branch no input can
-    reach, which is the defect class this cluster of repairs is about.
+    delivery batch` are both present. Those parse to no moment at all - `sprint_report._at`
+    returns `None` for either - and `_in_window` reads a stamp that does not parse as outside
+    every window, so no separate shape test is written here. A guard for it would be a branch
+    no input can reach, which is the defect class this cluster of repairs is about.
     """
     hit = sdlc_md.find_by_id(root, cid)
     if not hit:
@@ -383,8 +385,12 @@ def run_attributed(root: Path, uncovered: list) -> tuple[list, list]:
 
     THREE conditions, and all three are load-bearing:
 
-    * the unit was RAISED inside the run's recorded window. Without it, any terminal unit falling
-      in a window would be credited, including the standing backlog tail the baseline exists for.
+    * the unit was RAISED inside the run's recorded window, the half-open `[start, end)`
+      `sprint_report._open_findings` places a finding's stamp in. Without the half-open bound, a
+      finding raised in a run's own final second is excluded from that run's report but counted
+      HERE as accounted for - so it lands in neither the report nor this ledger. Reused rather
+      than a second copy of the rule, via `sprint_report._in_window`, so the two readers can never
+      disagree about which run a finding belongs to.
     * it reached TERMINAL on or before the run ended. Without it, a bug raised in one run and
       fixed two runs later would be credited to the run that only filed it - which delivered
       nothing.
@@ -396,6 +402,7 @@ def run_attributed(root: Path, uncovered: list) -> tuple[list, list]:
     What changes is that the operator is told WHICH run's retro already accounts for the unit
     instead of being sent to write a second close for it.
     """
+    import sprint_report  # noqa: PLC0415 - deferred sibling; only this path pays for its parser
     windows = [r for r in run_state.archived(root)
                if r.get("run_id") and r.get("started_at") and r.get("ended_at")
                and str(r.get("outcome") or "") in _CLOSED_OUTCOMES]
@@ -409,7 +416,10 @@ def run_attributed(root: Path, uncovered: list) -> tuple[list, list]:
         hit = ""
         for rec in windows:
             started, ended = str(rec["started_at"]), str(rec["ended_at"])
-            if not raised or not (started <= raised <= ended):
+            start_at = sprint_report._at(sprint_report._as_utc(started))
+            end_at = sprint_report._at(sprint_report._as_utc(ended))
+            if not raised or not sprint_report._in_window(
+                    sprint_report._as_utc(raised), start_at, end_at):
                 continue
             # The terminal date is a DAY; the window's end is an instant. Compared day-to-day,
             # so a unit closed hours before the run ended is not excluded by the clock.
