@@ -26,8 +26,8 @@
 - **Then** it exits 0, the artefact reads `Fixed`, and a new bug exists naming the unit, the
   criterion, the mutant and the test that failed to kill it - the finding reaches the backlog
   rather than dying with the terminal window
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::SurvivorFilingCLITests::test_a_survivor_is_filed_and_the_close_proceeds
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: survivor filing was deleted from transition.py, so no survivor is filed as a bug
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ### AC2: one command mints one bug, and a dry run mints none
 
@@ -43,8 +43,8 @@
   dry run introduces no write of its own. That contract, not the count, is what the second fixture
   measures. The dry-run leg is the lethal half: on the real leg the later ladder passes dedupe
   against the first, so its count holds under the mutant too
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::SurvivorFilingCLITests::test_one_command_mints_exactly_one_bug_and_a_dry_run_mints_none
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: survivor filing was deleted from transition.py, so no survivor is filed as a bug
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ### AC3: severity is derived from structure, and says what it read
 
@@ -57,8 +57,8 @@
   passing, which is the implementation a hurried author actually writes; and the signal string is
   asserted because without it all three severities can be right for no stated reason, and triage
   has a verdict it cannot disagree with
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::SurvivorSeverityTests::test_severity_is_derived_from_the_enclosing_structure_and_names_its_signal
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: survivor filing was deleted from transition.py, so no survivor is filed as a bug
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ### AC4: re-filing survives a loss of the filer's own bookkeeping
 
@@ -73,8 +73,8 @@
   so deleting the whole directory removes the ledger the Given depends on and run two finds no
   survivor to file - a `.local`-keyed implementation then mints nothing for the wrong reason and
   the mutant survives. The distinction between the evidence and the bookkeeping is the criterion
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::SurvivorFilingCLITests::test_the_same_survivor_does_not_mint_a_second_bug_after_a_cache_loss
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: survivor filing was deleted from transition.py, so no survivor is filed as a bug
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ### AC5: the run names the mode that held it
 

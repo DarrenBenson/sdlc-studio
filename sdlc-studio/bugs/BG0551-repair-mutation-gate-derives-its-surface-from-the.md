@@ -38,8 +38,8 @@ Derive the gate's surface the way `verify_no_surface_claim` now does - from git'
   DIFF. A declaration can only ever SHRINK the derived surface, so deriving from it hands the
   author the fail-open one step over - the same repair `verify_no_surface_claim` already had.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k a_misdeclared_affects_cannot_shrink_the_surface_to_nothing
-- **Verified:** yes (2026-08-11)
+- **Verify:** manual - retired by US0935: repair_mutation_gate and the no-surface exemption were deleted, so no repair's surface is derived for a mutation demand
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 - **Mutant:** in `transition.py`, derive the targets from `sdlc_md.affects_files(text)` again.
 
 ### AC2: a surface that cannot be derived refuses
@@ -50,8 +50,8 @@ Derive the gate's surface the way `verify_no_surface_claim` now does - from git'
   is indistinguishable from nothing to mutate - so the fail-open would be reachable by simply not
   having a run open, which is not a bar at all.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k the_gate_refuses_when_it_cannot_take_a_diff
-- **Verified:** yes (2026-08-11)
+- **Verify:** manual - retired by US0935: repair_mutation_gate and the no-surface exemption were deleted, so no repair's surface is derived for a mutation demand
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 - **Mutant:** in `transition.py`, return None when there is no base ref.
 
 ### AC3: the exemption stays the record's to grant
@@ -62,8 +62,8 @@ Derive the gate's surface the way `verify_no_surface_claim` now does - from git'
   exemption that is re-derived, never inferred from the derivation coming back empty - otherwise
   the record decides nothing and the exemption is a box.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k a_no_surface_repair_records_the_exemption_and_its_reason
-- **Verified:** yes (2026-08-11)
+- **Verify:** manual - retired by US0935: repair_mutation_gate and the no-surface exemption were deleted, so no repair's surface is derived for a mutation demand
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 - **Mutant:** in `transition.py`, return None as soon as the derived surface is empty.
 
 ## Test Plan

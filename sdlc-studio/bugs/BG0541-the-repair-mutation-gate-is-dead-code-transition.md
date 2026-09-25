@@ -38,16 +38,16 @@ US0566's exemption is the second half. `verify_no_surface_claim` re-derives over
       NEW pure-read wrapper composing the existing `repair_mutation_gate`, `no_surface_record` and
       `verify_no_surface_claim`; it is the thing `_pre_write_gates` calls, and it is the name every
       mutant below refers to.
-      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MutationEvidenceLaneCLITests::test_the_command_refuses_what_the_library_refuses
-      - **Verified:** yes (2026-08-07)
+      **Verify:** manual - retired by US0935: the mutation-evidence lane was deleted from transition.py, so no terminal transition reads mutation evidence
+      - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 - [x] **AC2:** The default mode reports and proceeds. With no `review.mutation_evidence` set, the
       same fixture exits 0, the artefact reads `Fixed`, and the stale evidence is named as a
       warning. Wiring a new hard block would contradict the operator's decision in CR0537. The
       default is recorded in `templates/config-defaults.yaml` beside the other review keys, so a
       consuming project can read the mode it is getting rather than infer it.
-      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MutationEvidenceLaneCLITests::test_the_default_mode_reports_and_the_transition_proceeds
-      - **Verified:** yes (2026-08-07)
+      **Verify:** manual - retired by US0935: the mutation-evidence lane was deleted from transition.py, so no terminal transition reads mutation evidence
+      - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 - [x] **AC3:** The exemption is re-derived from the DIFF, and the fixture proves which source it
       read. A repair whose `Affects` names an UNCHANGED Python module while its diff changes a
@@ -64,8 +64,8 @@ US0566's exemption is the second half. `verify_no_surface_claim` re-derives over
       and accepts a `base_ref` it never uses: against a fixture where Affects and the diff name
       the same file, the old behaviour and the new one produce identical output and the test pins
       nothing.
-      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::NoSurfaceExemptionCLITests::test_the_refusal_names_the_path_the_diff_gives_not_the_one_affects_gives
-      - **Verified:** yes (2026-08-07)
+      **Verify:** manual - retired by US0935: the mutation-evidence lane was deleted from transition.py, so no terminal transition reads mutation evidence
+      - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 - [x] **AC4:** The guard can fail, over every lane the DOCTRINE names. `reference-doctrine.md`
       rule 21 is rewritten to ENUMERATE its lanes by name in backticks - `mutation_evidence_lane`,
@@ -79,8 +79,8 @@ US0566's exemption is the second half. `verify_no_surface_claim` re-derives over
       by deleting the filename the guard beside it requires. Rule 21 as it stands backticks one identifier, `transition.py`, so a
       set derived from today's passage has cardinality 1 and no floor above 1 is reachable: making
       the doctrine name its own mechanisms is part of this criterion, not an assumption behind it.
-      **Verify:** pytest tools/tests/test_check_spec_claims.py::DoctrineTests::test_removing_any_lane_the_doctrine_names_reddens_the_guard
-      - **Verified:** yes (2026-08-07)
+      **Verify:** manual - retired by US0935: the mutation-evidence lane was deleted from transition.py, so no terminal transition reads mutation evidence
+      - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 - [x] **AC5:** The lane does not inherit an unrelated cutoff. With `review.test_plan_after` absent
       - so `_plan_gate_active` is False - a STALE repair under `review.mutation_evidence: block`
@@ -88,8 +88,8 @@ US0566's exemption is the second half. `verify_no_surface_claim` re-derives over
       a lane hung there would be inert in every project that has not set a test-plan cutoff,
       while a fixture setting both went green: the dead-lane defect this bug exists to close,
       recreated one level in.
-      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MutationEvidenceLaneCLITests::test_the_lane_runs_with_no_test_plan_cutoff_set
-      - **Verified:** yes (2026-08-07)
+      **Verify:** manual - retired by US0935: the mutation-evidence lane was deleted from transition.py, so no terminal transition reads mutation evidence
+      - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 - [x] **AC6:** Sound evidence PASSES, and `off` refuses nothing and warns about nothing. A repair
       carrying a fresh hash-matching ledger entry over its own changed lines exits 0 under `block`
@@ -98,8 +98,8 @@ US0566's exemption is the second half. `verify_no_surface_claim` re-derives over
       lane that refuses every repair - or one that never fires - satisfies the whole plan. The
       silence under `off` is asserted separately because a lane that warns under `off` passes an
       exit-code assertion while breaking the mode's only promise.
-      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MutationEvidenceLaneCLITests::test_sound_evidence_passes_and_off_refuses_nothing
-      - **Verified:** yes (2026-08-07)
+      **Verify:** manual - retired by US0935: the mutation-evidence lane was deleted from transition.py, so no terminal transition reads mutation evidence
+      - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 - [x] **AC7:** An empty base ref REFUSES the exemption. With no open run, so `run_state.base_ref`
       yields nothing, a repair carrying a `.local/no-mutatable-surface.json` is refused under
@@ -107,8 +107,8 @@ US0566's exemption is the second half. `verify_no_surface_claim` re-derives over
       the exit code, for the same reason AC3 gives. The fallback fails the worse way here:
       a derivation that cannot run and returns an empty set grants every exemption it was built
       to re-derive, which is the fail-open this bug exists to close, one layer down.
-      **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::NoSurfaceExemptionCLITests::test_an_empty_base_ref_refuses_the_exemption
-      - **Verified:** yes (2026-08-07)
+      **Verify:** manual - retired by US0935: the mutation-evidence lane was deleted from transition.py, so no terminal transition reads mutation evidence
+      - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ## Test Plan
 

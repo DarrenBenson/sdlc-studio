@@ -33,26 +33,26 @@ Add `--class` to `register`, validated against the generator's fault-class vocab
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k measured_row_records_its_fault_class
   - **Verified:** yes (2026-08-14)
 - [x] **AC2** Given a measured `killed` and a hand-registered `survived` for one fault class at one line under one content hash, when the ledger is checked, then the disagreement is REPORTED naming both instruments and the class - and refused only under `review.mutation_evidence: block`, because a join on the fault class can be wrong about two honest statements.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k hand_typed_claim_contradicting
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0935: the ledger contradiction check was deleted with the repair lane, so no transition compares registered and measured rows
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 - [x] **AC3** Given a hand-registered claim that AGREES with the measurement, when the same transition is attempted, then nothing is reported - a check that fires on agreement is not a check.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k agreeing_claim_is_not_a_contradiction
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0935: the ledger contradiction check was deleted with the repair lane, so no transition compares registered and measured rows
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 - [x] **AC4** Given a registered row carrying no class, when it disagrees with a measured row at the same line, then no cross-provenance contradiction is claimed - the join is exact or it is silent, never the line alone.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k without_a_class_the_rows_cannot_be_compared
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0935: the ledger contradiction check was deleted with the repair lane, so no transition compares registered and measured rows
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 - [x] **AC5** Given a class the generator never emits, when it is registered, then it is refused - free text joins no measured row, so it records a promise it cannot keep.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k class_the_generator_never_emits
   - **Verified:** yes (2026-08-14)
 - [x] **AC6** Given two DIFFERENT hand-applied mutants of one class at one line, when the ledger is checked, then no cross-provenance contradiction is claimed - the class is coarser than the prose, and this branch ignores the configured mode, so a false positive is not survivable.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k two_registered_rows_of_one_class
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0935: the ledger contradiction check was deleted with the repair lane, so no transition compares registered and measured rows
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 - [x] **AC7** Given the cross-provenance disagreement, when the configured mode is `report` or `off`, then it does not block - a check that can be wrong must be one a project can stand down, unlike the same-provenance one, which is keyed on the mutant's own prose and cannot.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k cross_provenance_finding_can_be_stood_down
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0935: the ledger contradiction check was deleted with the repair lane, so no transition compares registered and measured rows
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 - [x] **AC8** Given a same-provenance row at a key, when a row of the other provenance disagrees with any verdict recorded there, then it is still found - keeping one verdict per provenance hid the very case AC2 exists for.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k same_provenance_row_does_not_hide
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0935: the ledger contradiction check was deleted with the repair lane, so no transition compares registered and measured rows
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ## Resolution
 

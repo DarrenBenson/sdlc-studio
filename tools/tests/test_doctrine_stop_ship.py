@@ -3,9 +3,8 @@
 
 Every probe reads the STOP-SHIP PASSAGE only: the numbered rule under `## The rules` whose
 heading carries the `{#stop-ship}` anchor, from that heading to the next numbered rule or `##`
-heading. The doctrine already says `severity-rated bug` (rule 21) and names the operator
-elsewhere, so a whole-file check is green before a word of this rule exists (BG0457, the
-precedent `test_doctrine_review_scope.py`). A claim is probed inside ONE sentence of the
+heading. The doctrine names the operator elsewhere, so a whole-file check is green before a
+word of this rule exists (BG0457, the precedent `test_doctrine_review_scope.py`). A claim is probed inside ONE sentence of the
 passage, and each test builds a gutted copy in memory as its own positive control.
 
 The table name and the ruling vocabulary are read from `retro.py` at test time and never
@@ -252,9 +251,13 @@ class StopShipDoctrineTests(unittest.TestCase):
 
         severity = SEVERITY_CLAIMS[0][1][0]
         gutted = with_body(self.text, lambda ss: [s for s in ss if not severity.search(s)])
-        self.assertIn("severity-rated bug", rules_section(gutted),
-                      "the control must keep rule 21's `severity-rated bug`")
-        self.assertEqual(name, missing(gutted, SEVERITY_CLAIMS),
+        # The decoy: the claim stated under `## The rules` but outside the {#stop-ship} rule, so
+        # a whole-file or whole-section check would read it as present.
+        decoy = gutted.replace("## The rules\n", "## The rules\n\nSeverity alone is not the "
+                               "ruling.\n", 1)
+        self.assertIn("Severity alone is not the ruling", rules_section(decoy),
+                      "the control must place the claim under ## The rules")
+        self.assertEqual(name, missing(decoy, SEVERITY_CLAIMS),
                          "the severity claim was found outside the {#stop-ship} rule")
 
         inverted = with_body(self.text, lambda ss: [

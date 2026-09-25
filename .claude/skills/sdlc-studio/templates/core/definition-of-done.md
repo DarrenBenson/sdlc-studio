@@ -25,13 +25,8 @@ A story or bug is Done when:
 - [ ] An independent critic APPROVE is recorded (author never reviews its own diff) [check: review.critic-approve]
 - [ ] Its documentation landed in the same unit (help + reference for any new command/flag)
 - [ ] The paperwork shipped in the same commit as the code (changelog fragment, status, index)
-- [ ] If it is a REPAIR: a mutant was applied to its own changed lines and its test was seen
-      to fail on that mutant. A fix's author is not sufficient evidence for that fix - the
-      test is written after the answer is known, so it must be shown capable of failing.
-      By default a survivor is FILED as a severity-rated bug and the unit still closes, so
-      this box is about the evidence existing, not about the count being zero. Set
-      `review.mutation_evidence: block` to make a survivor refuse instead
-      [check: repair.mutation-evidence]
+- [ ] If it is a REPAIR: its test was seen to fail without the fix. The test is written after
+      the answer is known, so it must be shown capable of failing on the change it guards
 
 ## Delivery batch
 

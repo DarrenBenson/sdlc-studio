@@ -3490,39 +3490,6 @@ class FromPlanTests(unittest.TestCase):
             self.assertEqual(m.plan_execution(root, "BG0001")["outstanding"][0]["verdict"],
                              "survived", "a survivor was cancelled by a later kill")
 
-    def test_a_withdrawn_row_stops_contradicting_the_one_beside_it(self) -> None:
-        """BG0553, through the shipped transition verb. The self-contradiction check refuses in
-        EVERY mode including `off`, so before `retract` existed an author who mistyped a verdict
-        and registered the correction was hard-blocked with no escape but `--force` - worse off
-        than one who left the wrong verdict standing.
-
-        Mutant: drop the `withdrawn` skip in `_ledger_contradiction`; the corrected ledger is
-        read as the instrument lying about itself and the transition is refused again.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            m = self._unit(root, [("AC1", "in thing.py, delete the guard")])
-            self._register(m, root, "AC1", "survived")
-            self._register(m, root, "AC1", "killed")
-            import importlib.util
-            spec = importlib.util.spec_from_file_location(
-                "transition_mod", Path(__file__).resolve().parents[1] / "transition.py")
-            tr = importlib.util.module_from_spec(spec)
-            sys.modules["transition_mod"] = tr
-            spec.loader.exec_module(tr)
-            unmet = tr.requirements(str(root), "BG0001", "Fixed")
-            self.assertTrue(any("CONTRADICTS itself" in u for u in unmet),
-                            f"the contradiction is not detected at all: {unmet}")
-
-            m.retract_mutant(root, "src/thing.py", "BG0001", "AC1", 2, "mutant for AC1",
-                             "survived",
-                             "the verdict was mistyped as survived; the test did go red")
-            unmet = tr.requirements(str(root), "BG0001", "Fixed")
-            self.assertFalse(any("CONTRADICTS itself" in u for u in unmet),
-                             f"a withdrawn row still contradicts the live one: {unmet}")
-            self.assertFalse(any("SURVIVED" in u for u in unmet),
-                             f"the withdrawn survivor still holds the transition: {unmet}")
-
     def test_a_malformed_unnameable_does_not_exempt_a_row(self) -> None:
         """US0633 makes `unnameable` cost something at grooming, and exempting a bare one HERE
         refunds that cost one lane later - the marker becomes a free pass at the gate it matters
@@ -4410,169 +4377,42 @@ class RegisterEvidenceIntegrityTests(unittest.TestCase):
             self.assertEqual(ok["verdict"], "killed")
 
 
-class CrossProvenanceContradictionTests(unittest.TestCase):
-    """BG0552. A measured row names the generator's fault class; a registered row names the
-    author's prose. The two shared no joinable value, so the check that catches the ledger
-    contradicting itself could only ever see WITHIN one provenance - and the cross-provenance
-    case is the valuable one, because it is where a hand-typed claim is caught disagreeing with
-    a MEASUREMENT. Establishing it needed a field, not a heuristic.
-    """
+class FaultClassFieldTests(unittest.TestCase):
+    """BG0552, the half that outlives the cross-provenance check: a measured row records the
+    generator's fault class in a field of its own, and `register --class` accepts only a class
+    the generator emits."""
 
     def setUp(self) -> None:
         self.mut = _load()
         self.d = Path(tempfile.mkdtemp(prefix="xprov_"))
         self.addCleanup(__import__("shutil").rmtree, self.d, ignore_errors=True)
-        (self.d / "sdlc-studio" / "bugs").mkdir(parents=True)
         (self.d / "src").mkdir()
         (self.d / "src" / "thing.py").write_text(
             "def f(a, b):\n    if a == b:\n        return 1\n    return 0\n", encoding="utf-8")
-        (self.d / "sdlc-studio" / "bugs" / "BG9002-x.md").write_text(
-            "# BG9002: a fixture bug\n\n> **Status:** Open\n> **Severity:** Medium\n"
-            "> **Points:** 2\n> **Verification depth:** functional\n"
-            "> **Affects:** src/thing.py\n\n## Acceptance Criteria\n\n"
-            "- [x] **AC1** Given a thing, when it happens, then it works.\n"
-            "  - **Verify:** manual a human checks it\n\n## Test Plan\n\n"
-            "| Criterion | Mutant | Title |\n| --- | --- | --- |\n"
-            "| AC1 | invert-guard | Given a thing, when it happens, then it works. |\n",
-            encoding="utf-8")
-        import importlib.util
-        spec = importlib.util.spec_from_file_location(
-            "transition_xprov", Path(__file__).resolve().parents[1] / "transition.py")
-        self.tr = importlib.util.module_from_spec(spec)
-        sys.modules["transition_xprov"] = self.tr
-        spec.loader.exec_module(self.tr)
 
-    def _measure(self) -> None:
-        """A real run: the covering test passes on the original and fails on an inverted guard,
-        so `invert-guard` at line 2 is measured KILLED."""
+    def test_a_measured_row_records_its_fault_class_in_its_own_field(self) -> None:
+        """AC1. The class lived only in the prose slot a registered row fills with words.
+        MUTANT: write None into the field."""
         self.mut.run_gate(
             self.d, [self.d / "src" / "thing.py"],
             "python3 -c \"import sys;sys.path.insert(0,'src');import thing;"
             "assert thing.f(1,1)==1\"",
             unit="BG9002")
-
-    def _register(self, verdict: str, fault_class: str | None) -> None:
-        _register_or_legacy_append(self.mut, self.d, "src/thing.py", "inverted the a == b guard",
-                                   "pytest t.py", verdict, unit="BG9002", criterion="AC1",
-                                   line=2, fault_class=fault_class)
-
-    def _blocks(self) -> list[str]:
-        return [u for u in self.tr.requirements(str(self.d), "BG9002", "Fixed")
-                if "CONTRADICTS" in u or "DISAGREES ACROSS" in u]
-
-    def test_a_measured_row_records_its_fault_class_in_its_own_field(self) -> None:
-        """AC1. The class lived only in the prose slot a registered row fills with words, so
-        there was nothing to join on. MUTANT: write None into the field."""
-        self._measure()
         rows = [m for e in self.mut.ledger_entries(self.d) for m in (e.get("mutants") or [])
                 if self.mut.entry_provenance(e) == self.mut.PROVENANCE_MEASURED]
         self.assertTrue(rows, "the run recorded no measured rows at all")
         self.assertTrue(all(m.get("class") for m in rows),
-                        "a measured row carries no fault class, so it can join nothing")
-
-    def test_a_hand_typed_claim_contradicting_a_measurement_is_caught(self) -> None:
-        """AC2. THE bug: a measured `killed` and a registered `survived` for one mutant at one
-        line, exit 0 and nothing said. MUTANT: skip the cross-provenance branch."""
-        self._measure()
-        self._register("survived", "invert-guard")
-        hard, soft = self.tr._ledger_contradiction(str(self.d), "BG9002")
-        self.assertIsNone(hard, "a cross-provenance disagreement was raised as a same-provenance "
-                                "contradiction, which no config can stand down")
-        self.assertTrue(soft, "a claim contradicting a measurement was not detected at all")
-        self.assertIn("DISAGREES ACROSS", soft)
-        self.assertIn("invert-guard", soft)
-
-    def test_the_cross_provenance_finding_can_be_stood_down_but_the_same_provenance_one_cannot(
-            self) -> None:
-        """BG0552 round 2. The cross join keys on the fault CLASS, which is coarser than a
-        mutant: an independent review built two genuinely different `invert-guard` edits at one
-        line, one measured and one hand-registered, and the guard called the instruments liars
-        and told the author to withdraw TRUE evidence - in a branch that ignored the configured
-        mode, so `off` could not reach it.
-
-        A check that can be wrong must be one a project can stand down. A check that cannot be
-        wrong need not be, and the same-provenance one is keyed on the mutant's own prose.
-
-        MUTANT: append the cross-provenance finding to `blocks` unconditionally again.
-        """
-        self._measure()
-        self._register("survived", "invert-guard")
-        for mode, expect_block in (("report", False), ("off", False), ("block", True)):
-            with self.subTest(mode=mode):
-                (self.d / "sdlc-studio" / ".config.yaml").write_text(
-                    f"review:\n  mutation_evidence: {mode}\n", encoding="utf-8")
-                unmet = self.tr.requirements(str(self.d), "BG9002", "Fixed")
-                got = [u for u in unmet if "DISAGREES ACROSS" in u]
-                self.assertEqual(expect_block, bool(got),
-                                 f"mode={mode}: blocks={got}")
-
-    def test_a_same_provenance_row_does_not_hide_the_cross_provenance_one(self) -> None:
-        """BG0552 round 2, second finding. `seen_class` was FIRST-WINS, so once a
-        same-provenance row occupied a key, a later row of the other provenance was compared
-        only against that first verdict - and AC2's own case went undetected. Register `killed`,
-        then `survived`, then measure `killed`, and the ledger holds a measured `killed` beside a
-        registered `survived` for one class at one line while reporting nothing.
-
-        AC2's test registers a single row, so it could not see this.
-
-        MUTANT: keep only the first verdict per key.
-        """
-        # DIFFERENT prose, so these two are not a same-provenance contradiction - that check
-        # returns early and would mask the very thing under test here.
-        self.mut.register_mutant(self.d, "src/thing.py", "inverted the a == b guard",
-                                 "pytest t.py", "killed", unit="BG9002", criterion="AC1",
-                                 line=2, fault_class="invert-guard")
-        # a second, DIFFERENT mutant on the criterion is its own plan row (US0818 refuses a
-        # disagreeing registration on the SAME row)
-        self.mut.register_mutant(self.d, "src/thing.py", "inverted a different guard entirely",
-                                 "pytest t.py", "survived", unit="BG9002", criterion="AC1",
-                                 line=2, fault_class="invert-guard", row=1)
-        self._measure()
-        _hard, soft = self.tr._ledger_contradiction(str(self.d), "BG9002")
-        self.assertTrue(soft, "a same-provenance row hid the cross-provenance disagreement")
-        self.assertIn("DISAGREES ACROSS", soft)
-
-    def test_an_agreeing_claim_is_not_a_contradiction(self) -> None:
-        """AC3, the positive control. A check that fires on agreement is not a check.
-        MUTANT: drop the `cprior[0] != verdict` test so any second row contradicts."""
-        self._measure()
-        self._register("killed", "invert-guard")
-        self.assertEqual((None, None), self.tr._ledger_contradiction(str(self.d), "BG9002"),
-                         "an agreeing hand-registered claim was read as a disagreement")
-
-    def test_without_a_class_the_rows_cannot_be_compared_and_nothing_is_claimed(self) -> None:
-        """AC4. The honest state, and the reason the field is optional: an author who does not
-        name a class gets no cross-provenance join rather than a guessed one. This is the
-        pre-fix behaviour, kept deliberately and pinned so it is a decision, not a gap."""
-        self._measure()
-        self._register("survived", None)
-        self.assertEqual((None, None), self.tr._ledger_contradiction(str(self.d), "BG9002"),
-                         "rows with no shared class were joined anyway, which is a guess")
+                        "a measured row carries no fault class")
 
     def test_a_class_the_generator_never_emits_is_refused(self) -> None:
         """AC5. Free text would join nothing, so it would record a promise it cannot keep.
         MUTANT: drop the vocabulary check and accept any string."""
         with self.assertRaises(ValueError) as ctx:
-            self._register("survived", "invert-the-guard")
+            _register_or_legacy_append(self.mut, self.d, "src/thing.py",
+                                       "inverted the a == b guard", "pytest t.py", "survived",
+                                       unit="BG9002", criterion="AC1", line=2,
+                                       fault_class="invert-the-guard")
         self.assertIn("joins no measured row", str(ctx.exception))
-
-    def test_two_registered_rows_of_one_class_are_not_a_cross_contradiction(self) -> None:
-        """AC6. The class is coarser than the prose, so two DIFFERENT hand-applied mutants of
-        one class at one line would look identical to the cross join. They are two honest
-        statements, and the same-provenance branch can still tell them apart by prose. This
-        branch ignores the configured mode, so a false positive here is not survivable.
-        MUTANT: drop the `cprior[1] != prov` test so same-provenance rows join on class."""
-        self.mut.register_mutant(self.d, "src/thing.py", "inverted the a == b guard",
-                                 "pytest t.py", "killed", unit="BG9002", criterion="AC1",
-                                 line=2, fault_class="invert-guard")
-        # a second, DIFFERENT mutant on the criterion is its own plan row (US0818 refuses a
-        # disagreeing registration on the SAME row)
-        self.mut.register_mutant(self.d, "src/thing.py", "inverted a different guard entirely",
-                                 "pytest t.py", "survived", unit="BG9002", criterion="AC1",
-                                 line=2, fault_class="invert-guard", row=1)
-        _hard, soft = self.tr._ledger_contradiction(str(self.d), "BG9002")
-        self.assertIsNone(soft, "two registered mutants of one class were read as the two "
-                                "instruments disagreeing")
 
 
 class RetractWithdrawsAVerdictOnTheRecord(unittest.TestCase):

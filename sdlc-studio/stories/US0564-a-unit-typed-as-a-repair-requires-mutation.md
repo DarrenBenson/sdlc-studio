@@ -23,8 +23,8 @@
 - **Given** a bug at `Open` whose changed surface is a Python module, no mutation record for it, and `review.mutation_evidence: block`
 - **When** `transition.py set --id <bug> --status Fixed` runs
 - **Then** it exits non-zero naming the missing mutation evidence and the command that produces it, in the same refusal shape the existing verification-depth demand already uses, because a repair is the least-reviewed code in a sprint and this is the point at which the claim is made. The mode is named in the Given rather than assumed: CR0537 makes reporting the default, so a criterion that says the transition simply refuses now describes only the mode a project opts into
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RepairMutationGateCLITests::test_a_repair_without_mutation_evidence_is_refused_by_the_command
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: repair_mutation_gate was deleted, so a repair reaches Fixed without registered mutation evidence
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ### AC2: the mutated surface is the unit's own changed lines, not its whole Affects
 
@@ -39,16 +39,16 @@
 - **Given** a caller that asserts mutation passed by passing a flag or by writing a claim into the artefact prose
 - **When** the transition gate evaluates the unit
 - **Then** the claim is ignored and the gate reads the recorded mutation run for that unit id and that base ref, refusing when no such record exists, because a gate that trusts the thing it is gating checks nothing
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RepairMutationGateCLITests::test_an_asserted_pass_without_a_record_is_refused_by_the_command
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: repair_mutation_gate was deleted, so a repair reaches Fixed without registered mutation evidence
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ### AC4: a record that does not match the unit's current surface is stale, not green
 
 - **Given** a mutation record for a unit, and a subsequent edit that changes a line the record did not cover
 - **When** the transition gate runs
 - **Then** it refuses as STALE, naming the uncovered line and distinguishing that state from "no record at all", so a passing run cannot be banked and spent against later changes
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RepairMutationGateCLITests::test_a_record_predating_the_current_surface_is_stale_through_the_command
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: repair_mutation_gate was deleted, so a repair reaches Fixed without registered mutation evidence
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ## Revision History
 

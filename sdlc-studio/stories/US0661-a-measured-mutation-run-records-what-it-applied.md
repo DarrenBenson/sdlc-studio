@@ -31,8 +31,8 @@
   selects on `mutants[].unit`, so the strongest evidence available reads as NO evidence and only
   the author's own typed claim opens the gate. Asserting exit 0 alone is vacuous, because
   `transition.py set` exits 0 for every ledger until BG0541 wires the lane
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MeasuredEvidenceCLITests::test_a_measured_run_satisfies_the_gate
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: the repair-mutation gate and its contradiction check were deleted, so no transition reads the measured rows
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ### AC2: a measured record is attributed to the unit that caused it
 
@@ -47,8 +47,8 @@
   gate shut for a second reason nobody measured. The pair is the criterion because a refusal
   alone is not discriminating - an unattributed record and an absent one both leave the gate's
   selection empty and produce the identical message, so no single fixture can tell them apart
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MeasuredEvidenceCLITests::test_a_measured_record_is_attributed_to_its_unit
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: the repair-mutation gate and its contradiction check were deleted, so no transition reads the measured rows
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ### AC3: the ledger records the shape the gate selects on
 
@@ -77,8 +77,8 @@
   mutants as a contradiction, which, since this branch ignores the mode by design, converts the
   default reporting mode into a block no configuration can stand down. The cross-provenance
   case is real and is filed rather than guessed at
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MeasuredEvidenceCLITests::test_a_recorded_kill_shown_to_survive_refuses_even_when_off
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: the repair-mutation gate and its contradiction check were deleted, so no transition reads the measured rows
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ### AC5: a registered mutant records a line, and a missing line is refused not defaulted
 
@@ -102,8 +102,8 @@
   mutant is lethal only to whichever returns first. The clause is verified here
   rather than under AC5 because the string is composed in `transition.py`, and an assertion about
   a refusal placed in `test_mutation.py` is a claim tested where it is not made
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::MeasuredEvidenceCLITests::test_the_refusal_quotes_the_registered_line
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: the repair-mutation gate and its contradiction check were deleted, so no transition reads the measured rows
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ## Test Plan
 

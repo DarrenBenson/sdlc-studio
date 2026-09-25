@@ -23,32 +23,32 @@
 - **Given** `reference-doctrine.md` as shipped, which today contains no mention of mutation or of author-written evidence
 - **When** the repair-evidence rule is added to it
 - **Then** the passage states the rule, states why the repair class specifically carries it, and names the transition gate as what enforces it, so a reader arrives at a mechanism rather than at advice
-- **Verify:** pytest tools/tests/test_check_spec_claims.py::DoctrineTests::test_doctrine_states_the_rule_and_names_the_enforcing_gate
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: rule 21 names no enforcing gate and the Definition of Done carries no mutation-evidence tag, so the guards over them were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ### AC2: the definition-of-done template carries the clause
 
 - **Given** `templates/core/definition-of-done.md`, which a consuming project copies as its own Done contract
 - **When** it is read
 - **Then** it carries a repair-evidence clause consistent with the shipped gate, phrased tool-neutrally and without an internal provenance tag, so `tools/lint-style.sh` stays green on a consuming-facing file
-- **Verify:** pytest tools/tests/test_check_spec_claims.py::DoctrineTests::test_the_definition_of_done_carries_a_consistent_clause
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: rule 21 names no enforcing gate and the Definition of Done carries no mutation-evidence tag, so the guards over them were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ### AC3: the guard discriminates, and its own Revision History cannot satisfy it
 
 - **Given** a guard asserting the doctrine carries this rule
 - **When** the stating passage is deleted while every other line of the file, including the Revision History row describing this change, is left intact
 - **Then** the guard goes red. It anchors on the passage in its own section rather than on a whole-file substring, because a whole-file `assertIn` satisfied by the row describing the change is exactly the defect BG0457 records, and a guard shipped in the same change that introduces the prose is the easiest place to repeat it
-- **Verify:** pytest tools/tests/test_check_spec_claims.py::DoctrineTests::test_deleting_the_stating_passage_reddens_the_guard
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: rule 21 names no enforcing gate and the Definition of Done carries no mutation-evidence tag, so the guards over them were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ### AC4: the carried lesson points at the mechanism instead of restating it
 
 - **Given** the existing carried lesson in `reference-agentic-lessons.md` that a test written by a fix's author asserts the shape of the fix
 - **When** the doctrine passage lands
 - **Then** the lesson cites the gate rather than repeating the advice, so the two cannot drift into disagreeing about what is required
-- **Verify:** pytest tools/tests/test_check_spec_claims.py::DoctrineTests::test_the_carried_lesson_cites_the_gate
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: rule 21 names no enforcing gate and the Definition of Done carries no mutation-evidence tag, so the guards over them were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ### AC5: the doctrine tells an existing project how to keep the bar it was promised
 
@@ -59,8 +59,8 @@
   gets - because a documented block quietly becoming a documented report is a bar lowered on
   somebody else's project without their knowing, and a rule that changes direction owes its
   existing readers the sentence that tells them so
-- **Verify:** pytest tools/tests/test_check_spec_claims.py::DoctrineTests::test_the_doctrine_names_the_mode_that_restores_refusal
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0935: rule 21 names no enforcing gate and the Definition of Done carries no mutation-evidence tag, so the guards over them were deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0935
 
 ## Revision History
 

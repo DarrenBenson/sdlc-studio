@@ -48,8 +48,8 @@ Add `mutation.py retract --unit X --criterion ACn --target F --line N --mutant M
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k measured_verdict_cannot_be_retracted
   - **Verified:** yes (2026-08-14)
 - [x] **AC7** Given a ledger corrected by retraction, when the shipped transition verb runs, then it no longer reports the ledger as contradicting itself and no longer holds the transition.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k withdrawn_row_stops_contradicting
-  - **Verified:** yes (2026-08-14)
+  - **Verify:** manual - retired by US0935: the ledger contradiction check was deleted with the repair lane, so no transition compares registered and measured rows
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0935
 - [x] **AC8** Given a withdrawn verdict, when a reader who is not the author looks - the retractions verb, the plan join, or the seat brief a reviewer is handed - then each shows that a verdict was withdrawn and the reason given, so the correction reaches the person it was made for.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py -k withdrawal_is_visible_to_a_reader
   - **Verified:** yes (2026-08-14)

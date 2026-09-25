@@ -151,14 +151,14 @@ class VerdictVocabularyTests(unittest.TestCase):
 
     def test_a_raise_after_the_status_write_keeps_the_verdict(self) -> None:
         """AC2's limit: a verdict is withdrawn only while the transition has not landed.
-        MUTANT: withdraw on any raise, so a close whose status write landed and whose survivor
-        filing (or an interrupt) then raised leaves a Fixed bug with no verdict row."""
-        for raised in (ValueError("file_finding refused the survivor bug"), KeyboardInterrupt()):
+        MUTANT: withdraw on any raise, so a close whose status write landed and whose index
+        sync (or an interrupt) then raised leaves a Fixed bug with no verdict row."""
+        for raised in (ValueError("the index sync failed"), KeyboardInterrupt()):
             with self.subTest(raised=type(raised).__name__), \
                     tempfile.TemporaryDirectory() as d:
                 root = Path(d)
                 path = _bug(root)
-                with mock.patch.object(transition, "_file_surviving_mutants",
+                with mock.patch.object(transition.reconcile, "apply_type",
                                        side_effect=raised):
                     try:
                         rc, out = _set(root, "--status", "Fixed", "--verdict", "APPROVE",

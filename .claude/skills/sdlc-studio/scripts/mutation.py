@@ -100,56 +100,6 @@ RUN_VERDICT_COUNTER = {"killed": "killed", "survived": "survived", "error": "err
 #: mutant, which is a statement about the mutant, not about what the suite pins. A file carrying
 #: only equivalent registrations has had nothing proven about its tests.
 COVERING_VERDICTS = ("killed", "survived")
-#: What a repair's missing or failing mutation evidence DOES to a terminal transition. The
-#: operator's decision: a survivor is a finding to price, not a bar to clear. `report`
-#: files it as a severity-rated bug and lets the transition through, so a team decides in the
-#: next sprint whether to fix it or live with it; `block` is the old hard bar, opted into;
-#: `off` stands the lane down. A gate that turns every survivor into an immediate stoppage is
-#: one that gets switched off wholesale, and then it holds nothing.
-#:
-#: `report` is FIRST because it is the default, and the default is what most projects run.
-EVIDENCE_MODES = ("report", "block", "off")
-EVIDENCE_MODE_DEFAULT = EVIDENCE_MODES[0]
-
-
-def evidence_mode(root) -> str:
-    """The project's `review.mutation_evidence`, refusing an unrecognised value BY NAME.
-
-    Two failure directions, and they resolve OPPOSITE ways on purpose:
-
-      * an unrecognised value RAISES. A project that typed `blcok` asked for a hard bar and
-        would otherwise get the reporting default, so a typo would quietly switch its bar off -
-        the one outcome no reading of CR0537 asks for.
-      * an UNPARSEABLE config resolves to `block`, never to the default. The config is the only
-        thing that could have said `off`, and a file nobody can read has not said it.
-    """
-    cfg = Path(root) / "sdlc-studio" / ".config.yaml"
-    if cfg.exists() and sdlc_md.config_unparseable(cfg):
-        return "block"
-    raw = sdlc_md.project_override(root, "review.mutation_evidence", None)
-    if raw is None or str(raw).strip() == "":
-        return EVIDENCE_MODE_DEFAULT
-    # YAML 1.1 SPELLS `off` AS A BOOLEAN. `mutation_evidence: off` parses to `False` before
-    # this function ever sees it, so a project writing the mode this doctrine documents would
-    # be refused for typing it correctly. `False` is therefore `off` - the only thing it can
-    # honestly mean - while `True` is refused, because `on` is not one of the three modes and
-    # guessing which of `report` or `block` it meant is exactly the silent-default this
-    # function exists to refuse. Quoting the value also works and needs no special case.
-    if isinstance(raw, bool):
-        if raw is False:
-            return "off"
-        raise ValueError(
-            "review.mutation_evidence is `on` (YAML reads it as the boolean true), which is "
-            f"not one of {', '.join(EVIDENCE_MODES)}. Quote the mode you meant - "
-            "`mutation_evidence: 'report'` - rather than leaving it to be guessed")
-    mode = str(raw).strip().lower()
-    if mode not in EVIDENCE_MODES:
-        raise ValueError(
-            f"review.mutation_evidence is {raw!r}, which is not one of "
-            f"{', '.join(EVIDENCE_MODES)}. Refused by name rather than defaulted: a project "
-            f"that typed this asked for something, and silently giving it the default is how a "
-            f"hard bar gets switched off by a typo nobody sees")
-    return mode
 
 
 def entry_provenance(entry: dict) -> str:
@@ -1849,20 +1799,11 @@ class LedgerUnreadable(RuntimeError):
 
 
 def ledger_entries(root: Path | str) -> list[dict]:
-    """Every entry in the mutation ledger. RAISES `LedgerUnreadable` on a malformed one.
-
-    A real function rather than a guessed one. `repair_mutation_gate` called it behind
-    `hasattr(mutation, "ledger_entries")`, which was False for the whole of its life - so the
-    fallback branch was the only branch, and any caller that reached for it inside a `try`
-    silently got nothing back. A defensive `hasattr` around a name that never existed is
-    indistinguishable from the feature working.
-    """
+    """Every entry in the mutation ledger. RAISES `LedgerUnreadable` on a malformed one."""
     state, reset = _load_ledger(ledger_path(Path(root)))
     if reset:
-        # A ledger that could not be PARSED is not an empty history, and reading it as one made
-        # the check that refuses in every mode - `off` included - silently pass exactly when the
-        # instrument was unreadable. `_load_ledger` reports the replacement; the callers just
-        # never saw it.
+        # A ledger that could not be PARSED is not an empty history. `_load_ledger` reports the
+        # replacement; a reader must not see an empty list in its place.
         raise LedgerUnreadable(
             f"{ledger_path(Path(root))} could not be parsed, so nothing can be checked against "
             f"it. The file is left exactly as it is - a reader does not get to destroy the "

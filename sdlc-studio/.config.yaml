@@ -122,7 +122,6 @@ review:
   # survive even the run-scope reading BG0706 proposes. `report` prints the identical
   # figures and proceeds, so nothing is hidden - only the refusal is lifted.
   line_coverage: off  # D0255: opt-in only from the back-to-basics programme on
-  mutation_evidence: off  # D0255: opt-in only
   require_brief_provenance: false  # D0255
   line_coverage_after: "2026-09-07"
   # D0146 (2026-08-21) CUTS this from 6 to 2, superseding D0132's raise, and the reason is a

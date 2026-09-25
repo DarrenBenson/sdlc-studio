@@ -3104,18 +3104,6 @@ DOR_DOD_CHECK_IDS = {
     "grooming.deps": "dependencies delivered or sequenced in-batch (tranche audit unmet-deps)",
     "story.verify-ac": "the story's executable ACs pass (verify_ac; the transition -> Done gate)",
     "review.critic-approve": "an independent critic APPROVE is recorded (conformance critiqued)",
-    # US0567: the doctrine's repair-evidence rule (reference-doctrine.md#repair-evidence). A
-    # fix's author is not sufficient evidence for that fix, so the repair carries a mutant its
-    # own test was seen to fail on. Registered here because a `[check:]` tag that resolves to
-    # nothing is human intent wearing a machine tag - which is the state this tag was in for
-    # one full suite run, and the registry test caught it.
-    # The description names what the DEFAULT does, not the refusal it stopped performing: a
-    # registry entry promising enforcement nobody performs is the same defect as a doctrine
-    # passage doing it, one layer down and read by the tag rather than by a person.
-    "repair.mutation-evidence": "a repair carries a mutant over its own changed lines whose "
-                                "death was observed - filed as a severity-rated bug by default, "
-                                "refused under review.mutation_evidence: block "
-                                "(transition -> terminal)",
     "close.review-coverage": "every unit in the batch is covered by an independent review "
                              "(sprint close's first chain step - asserted, never performed there)",
     "close.retro": "the batch retro exists and validates (gate --require-retro)",
@@ -3133,6 +3121,9 @@ RETIRED_CHECK_IDS = {
     "review.two-role": "the per-unit evidence row and reviewer-of-record sign-off were "
                        "retired: one independent APPROVE (review.critic-approve) decides a "
                        "unit, and the operator signs the run once at `sprint sign`",
+    "repair.mutation-evidence": "the repair-mutation gate was retired: a repair is judged by "
+                                "its criteria and its independent review, and `mutation.py "
+                                "run` measures on demand",
 }
 CHECK_TAG_RE = re.compile(r"\[check:\s*([a-z0-9.-]+)\s*\]")
 # A bracketed token shaped like a check tag (the word `check` on a word boundary, any case)
