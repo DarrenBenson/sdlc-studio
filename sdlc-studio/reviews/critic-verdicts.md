@@ -1233,6 +1233,7 @@ One row has been removed since adoption.
 | US0920 | APPROVE | qa-rev-US0920 | US0920-fix | 2026-09-25 | 8d03f68ee9c9 | full | [new] non-blocking: the story's AC3 prose still enumerates US0882 (3) (fixed at landing) |
 | BG0763 | APPROVE | qa-rev-BG0763 | BG0763-build | 2026-09-25 | 9077bab39647 | full | [new] non-blocking: the pack override pointed at a missing directory degrades silently [LC-006] |
 | US0911 | APPROVE | qa-rev-US0911 | US0911-fix | 2026-09-25 | ca552e47d82c | full | [new] non-blocking: BG0651 AC4's narrowed note says nothing blocks a terminal transition on a stale row, false under mutation\_evidence block |
+| US0909 | REJECT | qa-rev-US0909 | US0909-fix | 2026-09-25 | eae0dfa215a9 | full | [regression] the patch built on 247e6148 double-merged the surface verb count with US0910, so reference-scripts-surface.md reads 274 against 272 and three surface tests fail (fix: regenerate docgen surface on the rebased tree, 1 line) [LC-006]; [new] non-blocking: the \_tier\_and\_breakdown\_gates docstring states as present fact what is true only once US0911 lands (1 clause) |
 
 ## Supersessions
 
