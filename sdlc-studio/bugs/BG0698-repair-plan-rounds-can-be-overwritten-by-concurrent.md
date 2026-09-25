@@ -1,6 +1,6 @@
 # BG0698: Repair-plan rounds can be overwritten by concurrent records, a re-record after approval counts as a failed round, and the escalation notice counts a repair-plan REJECT
 
-> **Status:** Superseded
+> **Status:** Open
 > **Closes with:** US0913 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 5

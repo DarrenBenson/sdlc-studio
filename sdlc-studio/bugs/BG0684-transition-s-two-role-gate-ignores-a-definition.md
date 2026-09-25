@@ -1,6 +1,6 @@
 # BG0684: transition's two-role gate ignores a Definition of Done that stands the review.two-role tag down
 
-> **Status:** Superseded
+> **Status:** Open
 > **Closes with:** US0916 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 2

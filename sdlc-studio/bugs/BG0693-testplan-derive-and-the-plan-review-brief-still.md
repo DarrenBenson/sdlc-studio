@@ -1,6 +1,6 @@
 # BG0693: testplan derive and the plan-review brief still name different unauthored sets: blank cells, table order and a criterion with no row
 
-> **Status:** Superseded
+> **Status:** Open
 > **Closes with:** US0912 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 2

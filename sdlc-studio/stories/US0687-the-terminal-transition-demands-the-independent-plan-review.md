@@ -1,6 +1,6 @@
 # US0687: The terminal transition demands the independent plan-review approval and refuses without one exactly as entry does today
 
-> **Status:** Superseded
+> **Status:** Blocked
 > **Closes with:** US0909 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0555
 > **Created:** 2026-08-25

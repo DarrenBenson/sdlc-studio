@@ -1,6 +1,6 @@
 # US0683: The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each
 
-> **Status:** Superseded
+> **Status:** Blocked
 > **Closes with:** US0911 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0555
 > **Created:** 2026-08-21

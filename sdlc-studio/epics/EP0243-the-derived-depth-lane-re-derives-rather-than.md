@@ -1,6 +1,6 @@
 # EP0243: The derived-depth lane re-derives, rather than trusting each span's own seal
 
-> **Status:** Superseded
+> **Status:** Draft
 > **Closes with:** US0910 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Derived Point Total:** 8
 > **Parent:** CR0558
@@ -15,9 +15,9 @@ Decomposed from CR0558. Delivers the work CR0558 requested.
 
 ## Story Breakdown
 
-- [x] [US0801: A unit whose stamped derived half no longer matches a fresh derivation is REPORTED with both fingerprints](../stories/US0801-a-unit-whose-stamped-derived-half-no-longer.md)
-- [x] [US0802: A unit whose span matches a fresh derivation is passed silently - the paired control](../stories/US0802-a-unit-whose-span-matches-a-fresh-derivation.md)
-- [x] [US0803: An eviction of a unit's ledger rows is visible from the lane's output alone](../stories/US0803-an-eviction-of-a-unit-s-ledger-rows.md)
+- [ ] [US0801: A unit whose stamped derived half no longer matches a fresh derivation is REPORTED with both fingerprints](../stories/US0801-a-unit-whose-stamped-derived-half-no-longer.md)
+- [ ] [US0802: A unit whose span matches a fresh derivation is passed silently - the paired control](../stories/US0802-a-unit-whose-span-matches-a-fresh-derivation.md)
+- [ ] [US0803: An eviction of a unit's ledger rows is visible from the lane's output alone](../stories/US0803-an-eviction-of-a-unit-s-ledger-rows.md)
 
 ## Acceptance Criteria (Epic Level)
 

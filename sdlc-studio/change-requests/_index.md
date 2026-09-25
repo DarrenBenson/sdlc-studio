@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 21 |
+| Proposed | 25 |
 | Approved | 0 |
-| In Progress | 1 |
+| In Progress | 2 |
 | Complete | 507 |
 | Rejected | 21 |
 | Deferred | 0 |
-| Superseded | 48 |
+| Superseded | 43 |
 | Blocked | 0 |
 | **Total** | **598** |
 
@@ -45,7 +45,7 @@
 | [CR-0536](CR0536-the-spec-documents-do-not-learn-about-a.md) | the spec documents do not learn about a tool that ships, and the guards meant to catch that cannot fail | Rejected | High | Improvement | 2026-08-06 | EP0234 |
 | [CR-0539](CR0539-lane-check-reports-181-units-whose-criteria-never.md) | lane-check reports 181 units whose criteria never enter a shipped entry point | Rejected | Medium | process | 2026-08-08 | EP0235 |
 | [CR-0540](CR0540-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | Superseded | Low | Improvement | 2026-08-09 | -- |
-| [CR-0543](CR0543-plan-review-has-no-adoption-cutoff-so-the.md) | plan_review has no adoption cutoff, so the one hard risk-proportional plan gate in the codebase cannot be turned on by any project with history - including this one | Superseded | High | enhancement | 2026-08-11 | -- |
+| [CR-0543](CR0543-plan-review-has-no-adoption-cutoff-so-the.md) | plan_review has no adoption cutoff, so the one hard risk-proportional plan gate in the codebase cannot be turned on by any project with history - including this one | Proposed | High | enhancement | 2026-08-11 | -- |
 | [CR-0544](CR0544-nothing-reviews-a-repair-s-approach-or-a.md) | Nothing reviews a REPAIR's approach or a PROCEDURE's plan before it is executed, and that is where this session's most expensive findings were | Rejected | High | enhancement | 2026-08-11 | -- |
 | [CR-0545](CR0545-everything-after-the-tag-is-un-tooled-no.md) | Everything after the tag is un-tooled: no command publishes a release, so the runbook has no row for the step and the assets the install path verifies against have never been produced | Proposed | P1 | Improvement | 2026-08-12 | EP0236 |
 | [CR-0546](CR0546-the-run-should-notice-work-it-delivered-that.md) | the run should notice work it delivered that its batch never named | Proposed | High | Improvement | 2026-08-17 | EP0237 |
@@ -56,10 +56,10 @@
 | [CR-0552](CR0552-revert-check-mutates-the-live-working-tree-so.md) | revert-check mutates the live working tree, so a boundary gate rewrites files underneath anything else reading the repo | Proposed | High | Improvement | 2026-08-21 | EP0239 |
 | [CR-0553](CR0553-the-exemption-reason-floor-counts-characters-so-twelve.md) | The exemption reason floor counts characters, so twelve junk characters buy a blanket revert-check exemption | Rejected | Medium | Improvement | 2026-08-21 | EP0240 |
 | [CR-0554](CR0554-a-plan-row-whose-recorded-kill-node-is.md) | A plan row whose recorded kill node is not the criterion's own verifier is undetectable, though the ledger already holds both facts | Proposed | High | Improvement | 2026-08-24 | EP0241 |
-| [CR-0555](CR0555-the-expensive-half-of-the-test-plan-gate.md) | The expensive half of the test-plan gate fires before a diff exists, so move it to where one does instead of banding a signal that cannot discriminate | Superseded | High | Improvement | 2026-08-24 | EP0218 |
+| [CR-0555](CR0555-the-expensive-half-of-the-test-plan-gate.md) | The expensive half of the test-plan gate fires before a diff exists, so move it to where one does instead of banding a signal that cannot discriminate | In Progress | High | Improvement | 2026-08-24 | EP0218 |
 | [CR-0556](CR0556-a-bug-reaches-a-terminal-status-with-no.md) | A bug reaches a terminal status with no independent judgement of its plan OR its code - the only gate is evidence it reports about itself | In Progress | High | Improvement | 2026-08-25 | EP0242 |
 | [CR-0557](CR0557-bg0463-s-twenty-batch-boundary-findings-need-re.md) | BG0463's twenty batch-boundary findings need re-triage against HEAD before any of them is engineered | Complete | Medium | Improvement | 2026-08-25 | EP0257 |
-| [CR-0558](CR0558-the-derived-depth-lane-checks-each-span-against.md) | the derived-depth lane checks each span against its own seal rather than re-deriving it, so a unit whose ledger evidence was evicted still passes | Superseded | High | enhancement | 2026-08-25 | EP0243 |
+| [CR-0558](CR0558-the-derived-depth-lane-checks-each-span-against.md) | the derived-depth lane checks each span against its own seal rather than re-deriving it, so a unit whose ledger evidence was evicted still passes | Proposed | High | enhancement | 2026-08-25 | EP0243 |
 | [CR-0559](CR0559-the-same-concept-is-named-three-ways-across.md) | the same concept is named three ways across the toolchain and twice inside one script, so every invocation is a guess the caller pays for in a refusal | Proposed | Medium | enhancement | 2026-08-26 | EP0244 |
 | [CR-0560](CR0560-filing-a-finding-leaves-the-disclosure-page-stale.md) | filing a finding leaves the disclosure page stale, so the tree is red until somebody separately remembers to regenerate it | Proposed | Medium | enhancement | 2026-08-26 | EP0245 |
 | [CR-0561](CR0561-the-declared-python-3-10-floor-is-stated.md) | the declared Python 3.10 floor is stated in six shipped places and guarded nowhere, and one shipped script already violates it | Complete | High | enhancement | 2026-08-26 | EP0246 |
@@ -79,8 +79,8 @@
 | [CR-0579](CR0579-revert-check-s-set-aside-report-merges-four.md) | revert-check's set-aside report merges four reasons under one token, repeats error text unbounded, and reads a declared but unedited file as the unit's production | Superseded | Medium | Improvement | 2026-09-15 | -- |
 | [CR-0580](CR0580-handoff-generate-outcome-goal-reached-or-closed-outstanding.md) | handoff generate --outcome goal-reached or closed-outstanding ends a run over an unanswered set, and close_owed credits it as a completed close | Superseded | High | Improvement | 2026-09-15 | -- |
 | [CR-0581](CR0581-a-forced-stop-leaves-no-trace-anyone-reads.md) | A forced stop leaves no trace anyone reads, needs no reason or principal, and shares the outcome word stopped with two other endings | Proposed | High | Improvement | 2026-09-15 | -- |
-| [CR-0582](CR0582-no-command-closes-a-plan-review-reject-s.md) | No command closes a plan-review REJECT's findings from the independent re-review that approved the repaired plan | Superseded | Medium | Improvement | 2026-09-15 | -- |
-| [CR-0583](CR0583-no-command-applies-a-unit-s-authored-test.md) | No command applies a unit's authored Test Plan mutants, runs each criterion's selector and registers the kills | Superseded | Medium | Improvement | 2026-09-15 | -- |
+| [CR-0582](CR0582-no-command-closes-a-plan-review-reject-s.md) | No command closes a plan-review REJECT's findings from the independent re-review that approved the repaired plan | Proposed | Medium | Improvement | 2026-09-15 | -- |
+| [CR-0583](CR0583-no-command-applies-a-unit-s-authored-test.md) | No command applies a unit's authored Test Plan mutants, runs each criterion's selector and registers the kills | Proposed | Medium | Improvement | 2026-09-15 | -- |
 | [CR-0584](CR0584-386-acceptance-criteria-select-a-whole-test-module.md) | 386 acceptance criteria select a whole test module, so each one over-claims and costs minutes | Rejected | High | Improvement | 2026-09-16 | -- |
 | [CR-0585](CR0585-corpus-verify-runs-1-900-independent-criteria-in.md) | corpus-verify runs 1,900 independent criteria in one serial job, so a weekly signal costs 85 minutes and sits under its own cap | Rejected | High | Improvement | 2026-09-16 | EP0254 |
 | [CR-0586](CR0586-module-alone-re-runs-all-133-modules-on.md) | module-alone re-runs all 133 modules on every push, 551 s of a 749 s gate, for a signal that changes only when a module's imports do | Superseded | Medium | Improvement | 2026-09-16 | EP0253 |

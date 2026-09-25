@@ -1,6 +1,6 @@
 # CR-0558: the derived-depth lane checks each span against its own seal rather than re-deriving it, so a unit whose ledger evidence was evicted still passes
 
-> **Status:** Superseded
+> **Status:** Proposed
 > **Closes with:** US0910 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Decomposed-into:** EP0243
 > **Priority:** High

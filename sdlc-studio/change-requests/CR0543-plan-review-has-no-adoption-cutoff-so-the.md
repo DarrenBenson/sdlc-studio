@@ -1,6 +1,6 @@
 # CR-0543: plan_review has no adoption cutoff, so the one hard risk-proportional plan gate in the codebase cannot be turned on by any project with history - including this one
 
-> **Status:** Superseded
+> **Status:** Proposed
 > **Closes with:** US0909 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Created:** 2026-08-11
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0689: The move binds behind the existing dated cutoff, so a project that has not adopted it is unchanged and no backlog is retro-refused
 
-> **Status:** Superseded
+> **Status:** Blocked
 > **Closes with:** US0909 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0555
 > **Created:** 2026-08-25

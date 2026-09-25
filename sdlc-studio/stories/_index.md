@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 32 |
+| Draft | 36 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 2 |
@@ -15,8 +15,8 @@
 | Done | 738 |
 | Won't Implement | 81 |
 | Deferred | 0 |
-| Superseded | 83 |
-| Blocked | 0 |
+| Superseded | 72 |
+| Blocked | 7 |
 | **Total** | **936** |
 
 ## All Stories
@@ -47,15 +47,15 @@
 | [US0679](US0679-the-scope-subscore-stops-counting-a-test-file.md) | The scope subscore stops counting a test file present only because the Affects convention requires it | Won't Implement | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0680](US0680-the-band-distribution-over-this-repository-s-corpus.md) | The band distribution over this repository's corpus is RE-MEASURED after the change and recorded, so the claim that the gate discriminates rests on a number | Won't Implement | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0681](US0681-plan-gate-active-takes-a-scope-as-well.md) | _plan_gate_active takes a SCOPE as well as a date, so the test-plan gate can be required of high-band units alone | Won't Implement | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0682](US0682-review-mutation-evidence-stays-independent-of-the-test.md) | review.mutation_evidence stays independent of the test-plan scope, with a fixture setting both proving the two lanes stay sequential rather than nested | Superseded | EP0217 | 2026-08-21 | 2026-08-21 |
-| [US0683](US0683-the-close-reports-which-units-the-test-plan.md) | The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each | Superseded | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0682](US0682-review-mutation-evidence-stays-independent-of-the-test.md) | review.mutation_evidence stays independent of the test-plan scope, with a fixture setting both proving the two lanes stay sequential rather than nested | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
+| [US0683](US0683-the-close-reports-which-units-the-test-plan.md) | The close REPORTS which units the test-plan gate applied to and which it exempted, with the band that decided each | Blocked | EP0217 | 2026-08-21 | 2026-08-21 |
 | [US0684](US0684-every-consumer-of-route-estimate-asks-for-the.md) | Every consumer of route.estimate asks for the basis it can support, and a caller asking for a basis that does not resolve is refused rather than degraded | Won't Implement | EP0217 | 2026-08-24 | 2026-08-24 |
-| [US0685](US0685-the-entry-gate-keeps-the-demand-that-a.md) | The entry gate keeps the demand that a test plan EXISTS and drops the demand that a seat has approved it | Superseded | EP0218 | 2026-08-25 | 2026-08-25 |
-| [US0686](US0686-the-entry-refusal-names-when-the-independent-approval.md) | The entry refusal names WHEN the independent approval will be demanded, so the move is not a silent relaxation | Superseded | EP0218 | 2026-08-25 | 2026-08-25 |
-| [US0687](US0687-the-terminal-transition-demands-the-independent-plan-review.md) | The terminal transition demands the independent plan-review approval and refuses without one exactly as entry does today | Superseded | EP0218 | 2026-08-25 | 2026-08-25 |
+| [US0685](US0685-the-entry-gate-keeps-the-demand-that-a.md) | The entry gate keeps the demand that a test plan EXISTS and drops the demand that a seat has approved it | Blocked | EP0218 | 2026-08-25 | 2026-08-25 |
+| [US0686](US0686-the-entry-refusal-names-when-the-independent-approval.md) | The entry refusal names WHEN the independent approval will be demanded, so the move is not a silent relaxation | Blocked | EP0218 | 2026-08-25 | 2026-08-25 |
+| [US0687](US0687-the-terminal-transition-demands-the-independent-plan-review.md) | The terminal transition demands the independent plan-review approval and refuses without one exactly as entry does today | Blocked | EP0218 | 2026-08-25 | 2026-08-25 |
 | [US0688](US0688-the-plan-review-and-the-delivery-review-are.md) | The plan review and the delivery review are carried in ONE brief, so a unit takes one round where it took two | Superseded | EP0218 | 2026-08-25 | 2026-08-25 |
-| [US0689](US0689-the-move-binds-behind-the-existing-dated-cutoff.md) | The move binds behind the existing dated cutoff, so a project that has not adopted it is unchanged and no backlog is retro-refused | Superseded | EP0218 | 2026-08-25 | 2026-08-25 |
-| [US0690](US0690-the-close-names-which-units-had-the-approval.md) | The close names which units had the approval demanded at terminal and which the cutoff exempted | Superseded | EP0218 | 2026-08-25 | 2026-08-25 |
+| [US0689](US0689-the-move-binds-behind-the-existing-dated-cutoff.md) | The move binds behind the existing dated cutoff, so a project that has not adopted it is unchanged and no backlog is retro-refused | Blocked | EP0218 | 2026-08-25 | 2026-08-25 |
+| [US0690](US0690-the-close-names-which-units-had-the-approval.md) | The close names which units had the approval demanded at terminal and which the cutoff exempted | Blocked | EP0218 | 2026-08-25 | 2026-08-25 |
 | [US0691](US0691-forward-port-check-names-the-project-state-files.md) | `forward-port --check` names the project-state files its verdict deliberately excludes | Won't Implement | EP0219 | 2026-08-27 | 2026-08-27 |
 | [US0692](US0692-a-raised-adopt-after-threshold-records-a-machine.md) | A raised adopt_after threshold records a machine-readable restore condition beside the number | Won't Implement | EP0219 | 2026-08-27 | 2026-08-27 |
 | [US0693](US0693-a-fired-restore-condition-is-reported-naming-the.md) | A fired restore condition is REPORTED, naming the number the exemption should return to | Won't Implement | EP0219 | 2026-08-27 | 2026-08-27 |
@@ -98,7 +98,7 @@
 | [US0730](US0730-a-verdict-distinguishes-a-unit-that-does-not.md) | A verdict distinguishes a unit that does not work from one whose evidence cannot fail | Draft | EP0227 | 2026-08-27 | 2026-08-27 |
 | [US0731](US0731-evidence-debt-is-recorded-against-the-criterion-it.md) | Evidence debt is recorded against the CRITERION it attaches to, naming the surviving mutant | Draft | EP0227 | 2026-08-27 | 2026-08-27 |
 | [US0732](US0732-the-batch-summary-reports-the-two-counts-separately.md) | The batch summary reports the two counts separately | Draft | EP0227 | 2026-08-27 | 2026-08-27 |
-| [US0733](US0733-a-unit-carrying-evidence-debt-is-still-refused.md) | A unit carrying evidence debt is still refused a terminal status until it is cleared or deferred with a reason | Superseded | EP0227 | 2026-08-27 | 2026-08-27 |
+| [US0733](US0733-a-unit-carrying-evidence-debt-is-still-refused.md) | A unit carrying evidence debt is still refused a terminal status until it is cleared or deferred with a reason | Draft | EP0227 | 2026-08-27 | 2026-08-27 |
 | [US0734](US0734-the-seat-briefs-tell-a-reviewer-which-verdict.md) | The seat briefs tell a reviewer which verdict fits which finding, calibrated on RUN-01KYZKY5 | Superseded | EP0227 | 2026-08-27 | 2026-08-27 |
 | [US0735](US0735-drift-is-reported-at-a-point-before-the.md) | Drift is reported at a point BEFORE the close, with the point chosen and priced | Superseded | EP0228 | 2026-08-27 | 2026-08-27 |
 | [US0736](US0736-the-report-names-the-drifted-files-rather-than.md) | The report NAMES the drifted files rather than a count | Superseded | EP0228 | 2026-08-27 | 2026-08-27 |
@@ -166,9 +166,9 @@
 | [US0798](US0798-a-project-that-has-not-adopted-the-change.md) | A project that has not adopted the change is unaffected, bound behind a dated cutoff | Superseded | EP0242 | 2026-08-27 | 2026-08-27 |
 | [US0799](US0799-the-doctrine-states-which-types-are-independently-judged.md) | The doctrine STATES which types are independently judged and at which transition | Superseded | EP0242 | 2026-08-27 | 2026-08-27 |
 | [US0800](US0800-a-bug-whose-declared-mutant-was-killed-by.md) | A bug whose declared mutant was killed by a test its criterion does not name is REPORTED | Draft | EP0242 | 2026-08-27 | 2026-08-27 |
-| [US0801](US0801-a-unit-whose-stamped-derived-half-no-longer.md) | A unit whose stamped derived half no longer matches a fresh derivation is REPORTED with both fingerprints | Superseded | EP0243 | 2026-08-27 | 2026-08-27 |
-| [US0802](US0802-a-unit-whose-span-matches-a-fresh-derivation.md) | A unit whose span matches a fresh derivation is passed silently - the paired control | Superseded | EP0243 | 2026-08-27 | 2026-08-27 |
-| [US0803](US0803-an-eviction-of-a-unit-s-ledger-rows.md) | An eviction of a unit's ledger rows is visible from the lane's output alone | Superseded | EP0243 | 2026-08-27 | 2026-08-27 |
+| [US0801](US0801-a-unit-whose-stamped-derived-half-no-longer.md) | A unit whose stamped derived half no longer matches a fresh derivation is REPORTED with both fingerprints | Draft | EP0243 | 2026-08-27 | 2026-08-27 |
+| [US0802](US0802-a-unit-whose-span-matches-a-fresh-derivation.md) | A unit whose span matches a fresh derivation is passed silently - the paired control | Draft | EP0243 | 2026-08-27 | 2026-08-27 |
+| [US0803](US0803-an-eviction-of-a-unit-s-ledger-rows.md) | An eviction of a unit's ledger rows is visible from the lane's output alone | Draft | EP0243 | 2026-08-27 | 2026-08-27 |
 | [US0804](US0804-every-verb-identifying-a-unit-accepts-unit-including.md) | Every verb identifying a unit accepts `--unit`, including `verify_ac run` where it is refused today | Draft | EP0244 | 2026-08-27 | 2026-08-27 |
 | [US0805](US0805-a-fields-file-document-whose-keys-are-spelled.md) | A `--fields-file` document whose keys are spelled as the verb's own flags is accepted | Draft | EP0244 | 2026-08-27 | 2026-08-27 |
 | [US0806](US0806-a-deprecated-alias-still-works-and-says-once.md) | A deprecated alias still works and says once that it is deprecated | Superseded | EP0244 | 2026-08-27 | 2026-08-27 |

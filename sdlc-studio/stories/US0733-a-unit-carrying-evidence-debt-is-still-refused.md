@@ -1,6 +1,6 @@
 # US0733: A unit carrying evidence debt is still refused a terminal status until it is cleared or deferred with a reason
 
-> **Status:** Superseded
+> **Status:** Draft
 > **Closes with:** US0920 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0524
 > **Created:** 2026-08-27

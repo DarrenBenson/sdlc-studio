@@ -22,7 +22,7 @@
   sign-off (US0916, US0917: `sign` seals the run once), depth tiers and derived depth (US0934,
   US0910), the gate's mutation lane and evidence drift (US0921, US0920), the repair mutation
   gate (US0935) and the plan-review phase (US0915 via BG0769). Each retired criterion is
-  recorded in the D0259 pattern; 25 held backlog items closed as superseded.
+  recorded in the D0259 pattern.
 - **Sprint 3's carries landed:** the lane cap (BG0760, US0905 Done), the lane-yield join
   (BG0761), concurrent pre-commit lanes (BG0759), the CR evidence rule (BG0756), and the
   report-window races (BG0750, BG0751). CI's bandit finding (BG0762) is fixed.
@@ -36,6 +36,10 @@
   0.65), against 93s at Sprint 3's close; BG0754 stays open.
 - **Main was red on CI's unittest run** for an afternoon (BG0770, fixed): the push gate runs
   pytest and CI runs unittest discover. Pick one runner.
+- **25 held backlog items wait on BG0772.** Their closing stories shipped, but a test pins
+  every held item open, so closing them turned the push red; the closure was reverted.
+- **The close's tick-verification row cannot read the lean criterion shape** (BG0771), so it
+  is handed over as a close gap rather than waived (D0271 retracts D0270).
 - Also open: CR0592 (Low findings, several added this run), BG0752, and the prose US0924 owns.
 - **Next: Sprint 5** - US0914 with its historical ruling, then EP0263's remaining waves
   (US0918, US0919, US0922-US0926, US0936).

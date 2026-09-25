@@ -1,6 +1,6 @@
 # CR-0583: No command applies a unit's authored Test Plan mutants, runs each criterion's selector and registers the kills
 
-> **Status:** Superseded
+> **Status:** Proposed
 > **Closes with:** US0911 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Priority:** Medium
 > **Type:** Improvement
