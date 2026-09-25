@@ -1,6 +1,6 @@
 # US0920: The gate runs no evidence-drift lane and the close names no mutation-evidence mode
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,10 +19,13 @@
 
 - **AC1:** Given a staged change that drifts a registered mutant row, when `gate.py` runs, then no `evidence-drift` lane runs or refuses, and the gate's lane list names none. Fails on: HEAD's `gate._evidence_drift`, which refuses the drift
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_mutation_gates.py::MutationGatesGoneTests::test_no_evidence_drift_lane
+  - **Verified:** yes (2026-09-25)
 - **AC2:** Given a fixture config setting `review.mutation_evidence: blcok` (a typo), when `sprint.py close` runs, then the close neither refuses on the value nor names a mutation-evidence mode in its output, and `sprint.mutation_evidence_note` is gone. Fails on: HEAD, whose close refuses the unrecognised mode by name, and on keeping the note while dropping only its refusal
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_mutation_gates.py::MutationGatesGoneTests::test_the_close_names_no_mutation_evidence_mode
-- **AC3:** Given the criteria whose stamped Verify selector names a test this story deletes (EvidenceDriftTests in `test_gate.py` and `test_lean_mutation_off.py`, and MutationEvidenceModeTests in `test_sprint.py`): BG0651 (2), US0660 (1), US0822 (1) and US0882 (3), then each is retired in the D0259 pattern (`Verify: manual - retired by US0920: <why>`, `Verified: manual (<date>) - retired, superseded by US0920`), and no `Verified: yes` selector under sdlc-studio/ names a deleted test node
+  - **Verified:** yes (2026-09-25)
+- **AC3:** Given the criteria whose stamped Verify selector names a test this story deletes (EvidenceDriftTests in `test_gate.py` and `test_lean_mutation_off.py`, and MutationEvidenceModeTests in `test_sprint.py`): BG0651 (2), US0660 (1), US0822 (1), US0882 (2) and BG0747 (1), then each is retired (US0882 AC3 is re-pointed to its surviving test instead) in the D0259 pattern (`Verify: manual - retired by US0920: <why>`, `Verified: manual (<date>) - retired, superseded by US0920`), and no `Verified: yes` selector under sdlc-studio/ names a deleted test node
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_mutation_gates.py::MutationGatesGoneTests::test_no_stamp_names_a_deleted_test
+  - **Verified:** yes (2026-09-25)
 
 ## Notes
 
@@ -37,3 +40,4 @@
 | --- | --- | --- |
 | 2026-09-24 | sdlc-studio | Created via `batch` (deterministic); body trimmed to the lean story shape |
 | 2026-09-25 | Engineering seat | Groomed for Sprint 4 from the readiness review: split 5 -> 3 + 8 (US0935 takes the repair lane, gate, survivor filing, key, DoD tag and `evidence_mode`); retitled to the drift lane and close note; user story rewritten for this half; new AC2 for the close note; stamps measured (7 criteria); Affects narrowed to gate.py, sprint.py and their tests plus the changelog fragment |
+| 2026-09-25 | Claude Opus 5.5 | AC3's list corrected at landing: BG0747 AC3 also retires, and US0882 AC3 is re-pointed to RegisterKeepsUnmovedRowsTests rather than retired (round-1 review) |

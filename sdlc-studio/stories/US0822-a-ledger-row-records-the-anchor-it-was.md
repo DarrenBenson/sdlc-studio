@@ -34,8 +34,8 @@
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::AnchoredStalenessTests::test_register_persists_the_anchor_and_still_refuses_a_non_unique_one
   - **Verified:** yes (2026-09-10)
 - [x] **AC6** Given a target holding rows from several units and an edit touching one unit's site, when the evidence-drift lane runs through the shipped gate, then it names only the rows whose anchors moved and does not demand the others be re-measured. The library answer is not the one a committer meets; the lane is
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::EvidenceDriftTests::test_the_lane_names_only_the_rows_whose_anchors_moved
-  - **Verified:** yes (2026-09-10)
+  - **Verify:** manual - retired by US0920: the evidence-drift gate lane was deleted with gate._evidence_drift, so no commit is judged against registered mutant rows
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0920
 
 - [x] **AC7** Given `mutation.py register` invoked for a self-reported row with no `--anchor`, when it runs, then it REFUSES, naming the flag and what to pass - the text the mutant replaced, quoted until it is unique. Without this the unit's saving stays notional: 515 of 515 live rows carry no anchor today, AC4 keeps every one of them on the file hash, and nothing converts them. Requiring it at the write is the honest migration - a row gains its anchor at the moment somebody actually measures it, rather than by a backfill inventing an anchor for a measurement nobody re-ran
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::AnchorIsRequiredTests::test_a_self_reported_registration_without_an_anchor_is_refused

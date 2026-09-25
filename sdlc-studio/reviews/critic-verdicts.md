@@ -1230,6 +1230,7 @@ One row has been removed since adoption.
 | US0920 | REJECT | qa-rev-US0920 | US0920-build | 2026-09-25 | 8d03f68ee9c9 | full | [new] US0882 AC3 is retired though its test survives in RegisterKeepsUnmovedRowsTests, so it should be re-pointed (about 4 lines) [LC-002]; [new] non-blocking: the story's Notes undercount the retirements at 7 |
 | BG0751 | APPROVE | qa-rev-BG0751 | BG0751-fix | 2026-09-25 | ef0b3ecc55d2 | full | - |
 | US0916 | APPROVE | qa-rev-US0916 | US0916-fix | 2026-09-25 | 05b6ad2123cf | full | [new] non-blocking: the derived AC5 test skips on a shallow clone and CI's ci job fetches depth 1; [new] non-blocking: stale comments name deleted functions in test\_sprint.py, critic.py, sdlc\_md.py and test\_transition.py; [pre-existing] sign accepts a self-APPROVE or evidence-only unit |
+| US0920 | APPROVE | qa-rev-US0920 | US0920-fix | 2026-09-25 | 8d03f68ee9c9 | full | [new] non-blocking: the story's AC3 prose still enumerates US0882 (3) (fixed at landing) |
 
 ## Supersessions
 

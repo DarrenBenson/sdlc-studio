@@ -1,9 +1,8 @@
-"""US0882 (BG0747): switched-off mutation evidence stops refusing commits, and re-registration
-keeps the anchored rows it did not move.
+"""US0882 (BG0747): re-registration keeps the anchored rows it did not move.
 
-The lane is driven through `gate.py --only evidence-drift` and the re-registration through
-`mutation.py register`, the surfaces a committer and an agent meet, in throwaway git
-workspaces. Nothing reads this repository's own config or ledger.
+The re-registration is driven through `mutation.py register`, the surface an agent meets, in
+throwaway git workspaces. Nothing reads this repository's own config or ledger. US0882's
+evidence-drift tests went with the lane (US0920).
 """
 from __future__ import annotations
 
@@ -33,7 +32,7 @@ def _git(cwd: Path, *args: str) -> None:
                    env=gitutil.git_env(), check=True, timeout=120)
 
 
-def _workspace(mode: str | None) -> Path:
+def _workspace() -> Path:
     """A repo whose delivered BG0001 holds a registered row on `src/x.py` at HEAD's bytes."""
     root = Path(tempfile.mkdtemp(prefix="lean_mut_off_"))
     _git(root, "init", "-q", "-b", "main", str(root))
@@ -43,10 +42,6 @@ def _workspace(mode: str | None) -> Path:
     bugs.mkdir(parents=True)
     (bugs / "BG0001-fixture.md").write_text(BUG, encoding="utf-8")
     (root / "sdlc-studio" / ".local").mkdir()
-    if mode is not None:
-        # unquoted, as this repository writes it: YAML reads `off` as the boolean false
-        (root / "sdlc-studio" / ".config.yaml").write_text(
-            f"review:\n  mutation_evidence: {mode}\n", encoding="utf-8")
     (root / ".gitignore").write_text("sdlc-studio/.local/\n", encoding="utf-8")
     _git(root, "add", "-A")
     _git(root, "commit", "-q", "-m", "seed")
@@ -58,13 +53,6 @@ def _workspace(mode: str | None) -> Path:
     return root
 
 
-def _lane(root: Path) -> tuple[int, str]:
-    r = subprocess.run([sys.executable, str(SCRIPTS / "gate.py"), "--root", str(root),
-                        "--only", "evidence-drift"], capture_output=True, text=True,
-                       env=gitutil.git_env(), timeout=300)
-    return r.returncode, r.stdout + r.stderr
-
-
 def _register(root: Path, *argv: str) -> tuple[int, str]:
     out = io.StringIO()
     with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
@@ -72,33 +60,17 @@ def _register(root: Path, *argv: str) -> tuple[int, str]:
     return rc, out.getvalue()
 
 
-class EvidenceDriftTests(unittest.TestCase):
-    def _root(self, mode: str | None) -> Path:
-        root = _workspace(mode)
+class RegisterKeepsUnmovedRowsTests(unittest.TestCase):
+    def _root(self) -> Path:
+        root = _workspace()
         self.addCleanup(shutil.rmtree, root, True)
         return root
 
-    def test_off_means_reported_not_refused(self) -> None:
-        """AC1. MUTANT: read the mode but refuse regardless; or stand the lane down silently."""
-        rc, out = _lane(self._root("off"))
-        self.assertEqual(0, rc, "switched-off evidence still refused the commit:\n" + out)
-        self.assertIn("BG0001: src/x.py rows [AC1 r0]", out, "the drift was not reported:\n" + out)
-        self.assertIn("mutation_evidence is off", out, "the report does not say why:\n" + out)
-
-    def test_block_still_refuses(self) -> None:
-        """AC2. MUTANT: stand the lane down for every mode. `report` (the default) keeps the lane
-        blocking too: it still consumes the evidence to file survivors, so only `off` stands it
-        down, which is what EVIDENCE_MODES says `off` means."""
-        for mode in ("block", "report", None):
-            rc, out = _lane(self._root(mode))
-            self.assertNotEqual(0, rc, f"mode {mode!r} did not refuse the drift:\n" + out)
-            self.assertIn("BG0001: src/x.py rows [AC1 r0]", out, out)
-
     def test_register_keeps_anchored_rows_that_did_not_move(self) -> None:
-        """AC3. MUTANTS: drop every earlier row on changed bytes (the old rule); keep a row whose
+        """US0882 AC3. MUTANTS: drop every earlier row on changed bytes (the old rule); keep a row whose
         anchor is gone; keep a row whose anchor now occurs twice; keep an unanchored row; drop
         or stale another unit's unmoved row."""
-        root = self._root(None)
+        root = self._root()
         fp = root / "src" / "x.py"
         fp.write_text("alpha = 1\nbeta = 1\ngamma = 1\ndelta = 1\nplain = 1\n", encoding="utf-8")
 

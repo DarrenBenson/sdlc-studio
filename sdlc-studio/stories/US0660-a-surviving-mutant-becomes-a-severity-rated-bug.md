@@ -84,8 +84,8 @@
 - **Then** the first two name their resolved mode, and the third is refused with the offending
   value quoted. The accepted pair is the positive control, without which a resolver that refuses
   everything passes; a typo must not silently switch a project's hard bar off
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::MutationEvidenceModeTests::test_the_close_names_the_resolved_mode
-- **Verified:** yes (2026-08-07)
+- **Verify:** manual - retired by US0920: the sprint close no longer names or checks a mutation-evidence mode, and sprint.mutation_evidence_note was deleted
+- **Verified:** manual (2026-09-25) - retired, superseded by US0920
 
 ### AC6: the close counts the survivors this run let through, by severity
 

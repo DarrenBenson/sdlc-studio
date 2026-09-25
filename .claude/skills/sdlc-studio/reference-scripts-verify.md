@@ -188,11 +188,8 @@ evidence at once. A row with no anchor (every row written before this) keeps the
 rule. `register` applies it too: registering on changed bytes carries the registering unit's
 own earlier rows whose anchor still occurs once onto the current entry, and drops only the rest;
 another unit's rows stay on their own entry, where the per-row rule still reads them live. A
-carry never evicts a row: past the per-entry cap, a row stays where it is. The evidence-drift
-lane refuses under `review.mutation_evidence` `block` or `report`; under `off` it reports the
-drift and passes the commit. Both the commit-time evidence-drift lane and the join the terminal
-transition reads
-(`plan_execution`) apply the same rule, so the two cannot disagree about whether a row counts. The
+carry never evicts a row: past the per-entry cap, a row stays where it is. The join the terminal
+transition reads (`plan_execution`) applies the same rule. The
 report's `target_hashes` is deliberately not read as coverage: it is written for every file
 named as a target before any verdict exists, so a refused run would report its targets covered.
 With nothing per-file to judge, the lane degrades to the whole-report checks - a target the

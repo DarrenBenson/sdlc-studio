@@ -18,14 +18,14 @@
 ## Acceptance Criteria
 
 - **AC1:** Given `review.mutation_evidence` off, when a commit drifts a registered mutant row, then the evidence-drift lane reports it and does not refuse
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_off.py::EvidenceDriftTests::test_off_means_reported_not_refused
-  - **Verified:** yes (2026-09-24)
+  - **Verify:** manual - retired by US0920: the evidence-drift gate lane was deleted with gate._evidence_drift, so no commit is judged against registered mutant rows
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0920
 - **AC2:** Given `review.mutation_evidence` block, when the same commit runs, then it is still refused
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_off.py::EvidenceDriftTests::test_block_still_refuses
-  - **Verified:** yes (2026-09-24)
+  - **Verify:** manual - retired by US0920: the evidence-drift gate lane was deleted with gate._evidence_drift, so no commit is judged against registered mutant rows
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0920
 - **AC3:** Given a target holding anchored rows whose sites did not move, when another row on that target is re-registered, then the anchored rows are kept, not dropped
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_off.py::EvidenceDriftTests::test_register_keeps_anchored_rows_that_did_not_move
-  - **Verified:** yes (2026-09-24)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_off.py::RegisterKeepsUnmovedRowsTests::test_register_keeps_anchored_rows_that_did_not_move
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 
