@@ -4,9 +4,9 @@
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/help/status.md, .claude/skills/sdlc-studio/help/help.md, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_optional.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_optional.py, changelog.d/US0923.md
 > **Epic:** EP0263
-> **Points:** 2
+> **Points:** 3
 > **Persona:** Maya Okafor
 
 ## User Story
@@ -17,19 +17,25 @@
 
 ## Acceptance Criteria
 
-- **AC1:** Given a fixture project setting `review.require_brief_provenance: true`, when `critic.py record` runs with no `--brief`, then the verdict is recorded with exit 0 and no provenance refusal or note
+- **AC1:** Given a fixture project setting `review.require_brief_provenance: true`, when `critic.py record` runs with no `--brief`, then the verdict is recorded with exit 0 and no provenance refusal or note; and `critic.py brief --unit <id> --seat qa` still prints the seat charter, the bounded diff scope and the unit's criteria. Fails on: HEAD's provenance refusal, and on a deletion that takes the brief verb with it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_optional.py::BriefProvenanceGoneTests::test_record_needs_no_brief
-- **AC2:** Given `critic.py record --brief <value>`, when it runs, then the row stores the value as given, never matched against a regenerated brief or marked unmatched, and no format refusal fires
+- **AC2:** Given a fixture with seat cards under `sdlc-studio/personas/seats/`, when `critic.py record --brief` runs once with a non-hex value and once with a 12-hex value matching no brief, then each row stores the value as given, unmarked, with no refusal. Fails on: HEAD, which refuses the non-hex value and marks the unmatched fingerprint (the marking fires only when seat cards exist)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_optional.py::BriefProvenanceGoneTests::test_a_brief_value_is_stored_not_judged
-- **AC3:** Given `critic.py brief --unit <id> --seat qa`, when it runs, then it still prints the seat charter, the bounded diff scope and the unit's criteria
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_optional.py::BriefProvenanceGoneTests::test_the_brief_verb_still_briefs
-- **AC4:** Given config-defaults.yaml, then it carries no `review.require_brief_provenance` and no shipped script reads it
+- **AC3:** Given config-defaults.yaml, then it carries no `review.require_brief_provenance` and no shipped script reads it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_optional.py::BriefProvenanceGoneTests::test_the_provenance_key_is_retired
-- **AC5:** Given every criterion whose stamped Verify selector names a test this story deletes (BriefProvenanceTests, UnmatchedBriefFingerprintTests and AbsentBriefTests; at least those on BG0625, BG0672, US0577, US0578), then each is retired as `Verify: manual - retired by <this story>` with a matching `Verified: manual` line, and no `Verified: yes` selector under sdlc-studio/ names a deleted test node, so the stamps-staged lane has nothing to refuse
+- **AC4:** Given the criteria whose stamped Verify selector names a test this story deletes (the refusal and stand-down tests in BriefProvenanceTests, and all of UnmatchedBriefFingerprintTests): US0577 (2) and BG0672 (5), then each is retired in the D0259 pattern (`Verify: manual - retired by US0923: <why>`, `Verified: manual (<date>) - retired, superseded by US0923`), and no `Verified: yes` selector under sdlc-studio/ names a deleted test node. `AbsentBriefTests` (BG0625) and the print, record and stability tests in BriefProvenanceTests (US0578) stay
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_optional.py::BriefProvenanceGoneTests::test_no_stamp_names_a_deleted_test
+
+## Notes
+
+- The old AC3 (the brief verb still briefs) passed at HEAD, so it is now the control half of AC1.
+- `AbsentBriefTests` guards `_unanswered_rejects`' brief-key rule, which survives, so it is kept.
+- Lands after US0914 (which scopes the fingerprint second key to historic rows) and US0919 (the panel interlock at critic.py 2231).
+- `help/status.md` and `help/help.md` document `status --brief`, a different flag, so they left Affects. The shared prose edits to `reference-sprint-toolchain.md` and `reference-scripts-review.md` moved to US0924.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-24 | sdlc-studio | Created via `batch` (deterministic); body trimmed to the lean story shape |
+| 2026-09-25 | Engineering seat | Groomed for Sprint 4 from the readiness review: 2 -> 3 points; AC2 fixture has seat cards and tries a non-hex and an unmatched 12-hex value; the old AC3 control folded into AC1; the stamp criterion keeps AbsentBriefTests and the surviving BriefProvenanceTests (US0577 (2) and BG0672 (5) retire); Affects drops help/status.md and help/help.md, moves reference-sprint-toolchain.md and reference-scripts-review.md to US0924, and adds the changelog fragment |

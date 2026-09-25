@@ -1,6 +1,6 @@
 # EP0194: A unit review is bounded, briefed by the tool, and blocks only on what the unit broke
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 23
 > **Parent:** CR0512
 > **Created:** 2026-08-01
@@ -18,7 +18,7 @@ Decomposed from CR0512. Delivers the work CR0512 requested.
 - [x] [US0578: Recording a verdict with no brief provenance is REFUSED, and the refusal names critic.py brief](../stories/US0578-recording-a-verdict-with-no-brief-provenance-is.md)
 - [x] [US0579: Every finding on a verdict is classified REGRESSION, NEW or PRE-EXISTING, and an unclassified verdict is refused](../stories/US0579-every-finding-on-a-verdict-is-classified-regression.md)
 - [x] [US0580: Only REGRESSION and NEW hold a gate: a PRE-EXISTING finding is reported and does not block](../stories/US0580-only-regression-and-new-hold-a-gate-a.md)
-- [ ] [US0581: A finding matching an open Bug or CR is annotated with that id automatically and never blocks](../stories/US0581-a-finding-matching-an-open-bug-or-cr.md)
+- [x] [US0581: A finding matching an open Bug or CR is annotated with that id automatically and never blocks](../stories/US0581-a-finding-matching-an-open-bug-or-cr.md)
 - [x] [US0582: The shipped doctrine states the review scope rule, so a consuming project inherits the bound and not just the ceremony](../stories/US0582-the-shipped-doctrine-states-the-review-scope-rule.md)
 
 ## Acceptance Criteria (Epic Level)

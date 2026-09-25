@@ -1,6 +1,7 @@
 # CR-0512: A unit review is scoped to that unit's own diff and blocks only on a NEW defect; an already-logged finding is reported, never blocking
 
-> **Status:** In Progress
+> **Status:** Complete
+> **Closed with findings in:** D0267 (product seat, 2026-09-25): AC4 declined, US0581 Won't Implement; AC6 answered by the verdict ledger, 449 of 2,320 findings since 2026-08-02 were PRE-EXISTING and non-blocking; AC1's brief-provenance refusal is retired by EP0263 US0923
 > **Decomposed-into:** EP0194
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

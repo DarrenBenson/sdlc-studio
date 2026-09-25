@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 25 |
+| Proposed | 24 |
 | Approved | 0 |
 | In Progress | 3 |
-| Complete | 505 |
+| Complete | 506 |
 | Rejected | 21 |
 | Deferred | 0 |
 | Superseded | 43 |
@@ -30,7 +30,7 @@
 | [CR-0507](CR0507-closing-a-sprint-asks-twenty-questions-when-it.md) | closing a sprint asks twenty questions when it should ask two, and the ceremony now costs more than the work it certifies | Superseded | High | Improvement | 2026-07-30 | EP0224 |
 | [CR-0509](CR0509-a-review-worktree-opens-at-a-stale-base.md) | A review worktree opens at a stale base, so every delegated reviewer's first act is discovering the units under review do not exist yet | Proposed | High | Improvement | 2026-07-31 | EP0225 |
 | [CR-0511](CR0511-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Rejected | Low | Improvement | 2026-07-31 | -- |
-| [CR-0512](CR0512-a-unit-review-is-scoped-to-that-unit.md) | A unit review is scoped to that unit's own diff and blocks only on a NEW defect; an already-logged finding is reported, never blocking | In Progress | High | Improvement | 2026-08-01 | EP0194 |
+| [CR-0512](CR0512-a-unit-review-is-scoped-to-that-unit.md) | A unit review is scoped to that unit's own diff and blocks only on a NEW defect; an already-logged finding is reported, never blocking | Complete | High | Improvement | 2026-08-01 | EP0194 |
 | [CR-0515](CR0515-an-agent-customises-content-never-tooling-hand-rolled.md) | An agent customises content, never tooling: hand-rolled work is detected from the run diff, reported at the close, and escapes only by filing the gap | Rejected | High | Feature | 2026-08-01 | EP0196 |
 | [CR-0523](CR0523-the-unreviewed-span-is-reported-during-the-run.md) | the unreviewed span is reported DURING the run, not discovered at the close | Superseded | High | Improvement | 2026-08-02 | EP0226 |
 | [CR-0524](CR0524-a-review-verdict-separates-a-broken-feature-from.md) | a review verdict separates a broken feature from evidence that cannot fail | Proposed | High | Improvement | 2026-08-02 | EP0227 |
@@ -91,7 +91,7 @@
 | [CR-0591](CR0591-audit-the-41-in-progress-discovery-requests-against.md) | audit the 41 In-Progress discovery requests against HEAD and close what is dead | Complete | High | Improvement | 2026-09-20 | EP0257 |
 | [CR-0592](CR0592-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Proposed | Low | Improvement | 2026-09-21 | -- |
 | [CR-0593](CR0593-nothing-refuses-a-batch-unit-that-no-goal.md) | nothing refuses a batch unit that no goal clause covers, so a run can deliver work its own goal never tested | Superseded | Medium | Enhancement | 2026-09-22 | -- |
-| [CR-0594](CR0594-the-record-informs-the-work-goals-trace-to.md) | The record informs the work: goals trace to the PRD, and briefs carry the history of the files they touch | Proposed | High | Improvement | 2026-09-24 | -- |
+| [CR-0594](CR0594-the-record-informs-the-work-goals-trace-to.md) | The record informs the work: goals trace to the PRD, and briefs carry the history of the files they touch | In Progress | High | Improvement | 2026-09-24 | EP0264 |
 | [CR-0595](CR0595-prevent-or-retire-lesson-lc-002-criterion-words.md) | Prevent or retire lesson LC-002 (criterion words outrun the fixture) | Proposed | Medium | Improvement | 2026-09-24 | -- |
 | [CR-0596](CR0596-prevent-or-retire-lesson-lc-006-absence-read.md) | Prevent or retire lesson LC-006 (absence read as an answer) | Proposed | Medium | Improvement | 2026-09-24 | -- |
 | [CR-0597](CR0597-prevent-or-retire-lesson-lc-008-constraint-added.md) | Prevent or retire lesson LC-008 (constraint added without retirement) | Proposed | Medium | Improvement | 2026-09-24 | -- |

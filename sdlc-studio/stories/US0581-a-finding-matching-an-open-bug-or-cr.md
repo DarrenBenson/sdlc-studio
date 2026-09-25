@@ -1,6 +1,7 @@
 # US0581: A finding matching an open Bug or CR is annotated with that id automatically and never blocks
 
-> **Status:** Ready
+> **Status:** Won't Implement
+> **Closed with findings in:** D0267 (product seat, 2026-09-25): outcome delivered by US0580, pre-existing findings never block (449 since 2026-08-02, 167 citing their id by hand); reclassifying a NEW finding by text match would let a fuzzy match overrule the reviewer
 > **Delivers:** CR0512
 > **Created:** 2026-08-01
 > **Created-by:** sdlc-studio new

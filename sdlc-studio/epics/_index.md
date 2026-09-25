@@ -1,6 +1,6 @@
 # Epic Index
 
-**Last Updated:** 2026-09-24
+**Last Updated:** 2026-09-25
 
 ## Summary
 
@@ -10,9 +10,9 @@
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 225 |
+| Done | 226 |
 | Superseded | 17 |
-| **Total** | **263** |
+| **Total** | **264** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -25,7 +25,7 @@
 | ID | Title | Status | Stories | Deps | Created | Updated |
 | --- | --- | --- | --- | --- | --- | --- |
 | [EP0171](EP0171-in-flight-sprint-controls-and-a-close-review.md) | In-flight sprint controls and a close review derived from one recorded entry | Done | 7 | -- | 2026-07-27 | 2026-07-27 |
-| [EP0194](EP0194-a-unit-review-is-bounded-briefed-by-the.md) | A unit review is bounded, briefed by the tool, and blocks only on what the unit broke | Draft | 6 | -- | 2026-08-01 | 2026-08-01 |
+| [EP0194](EP0194-a-unit-review-is-bounded-briefed-by-the.md) | A unit review is bounded, briefed by the tool, and blocks only on what the unit broke | Done | 6 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0196](EP0196-hand-rolled-work-is-visible-the-close-names.md) | Hand-rolled work is visible: the close names what an agent did by hand instead of by tool | Superseded | 5 | -- | 2026-08-01 | 2026-08-01 |
 | [EP0206](EP0206-a-sprint-ends-with-nothing-open-a-non.md) | A sprint ends with nothing open: a non-stop-ship finding becomes a bug and its story closes pointing at it | Done | 5 | -- | 2026-08-02 | 2026-08-02 |
 | [EP0210](EP0210-a-refusing-verb-can-be-asked-what-it.md) | A refusing verb can be asked what it demands, before it refuses | Superseded | 6 | -- | 2026-08-07 | 2026-08-07 |
@@ -70,7 +70,8 @@
 | [EP0260](EP0260-the-lean-loop-a-sprint-that-runs-on.md) | The lean loop: a sprint that runs on its own, learns from itself and hands over one page | Done | 11 | -- | 2026-09-23 | 2026-09-23 |
 | [EP0261](EP0261-fast-gates-and-lessons-that-graduate-the-lean.md) | Fast gates and lessons that graduate: the lean loop's second sprint | Done | 11 | -- | 2026-09-24 | 2026-09-24 |
 | [EP0262](EP0262-commits-clear-in-ninety-seconds-and-every-constraint.md) | Commits clear in ninety seconds, and every constraint earns its place | Draft | 19 | -- | 2026-09-24 | 2026-09-24 |
-| [EP0263](EP0263-review-is-one-reviewer-and-a-green-test.md) | Review is one reviewer and a green test: the review and evidence surface is deleted | Draft | 18 | -- | 2026-09-24 | 2026-09-24 |
+| [EP0263](EP0263-review-is-one-reviewer-and-a-green-test.md) | Review is one reviewer and a green test: the review and evidence surface is deleted | Draft | 21 | -- | 2026-09-24 | 2026-09-24 |
+| [EP0264](EP0264-the-record-informs-the-work-goals-trace-to.md) | The record informs the work: goals trace to the PRD, and briefs carry the history and constraints of the files they touch | Draft | 7 | -- | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 

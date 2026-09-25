@@ -4,7 +4,7 @@
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py, changelog.d/US0915.md
 > **Epic:** EP0263
 > **Points:** 5
 > **Persona:** Maya Okafor
@@ -17,17 +17,24 @@
 
 ## Acceptance Criteria
 
-- **AC1:** Given `critic.py record --phase plan-review` or `critic.py brief --phase plan-review`, when invoked, then each exits 2 with a message that plan review is retired and writes nothing, and neither `record --help` nor `brief --help` offers `--phase` or `--kind`
+- **AC1:** Given `critic.py record --phase plan-review` or `critic.py brief --phase plan-review`, when invoked, then each exits 2 with a message that plan review is retired and writes nothing, and none of `record`, `brief`, `supersede` or `show` offers `--phase` or `--kind` in its `--help`; a delivery verdict recorded with no phase flag is read back by `critic.py show`, and a third round on the same unit is still carried, not recorded as round 3. Fails on: hiding the flags from `record` and `brief` only, and on a deletion that breaks the delivery path or the two-round cap
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py::PlanPhaseGoneTests::test_the_plan_review_phase_is_retired
-- **AC2:** Given a delivery verdict recorded with `critic.py record` and no phase flag, then `critic.py show` reads it back, and the two-round cap still counts it: a third round on the same unit is carried, not recorded as round 3
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py::PlanPhaseGoneTests::test_delivery_verdicts_still_record_and_count
-- **AC3:** Given a `plan-review-verdicts.md` holding REJECT rows beside the delivery ledger, when the retro and the sprint report count review rounds, then only delivery verdicts are counted and the plan-review file's bytes are unchanged
+- **AC2:** Given a `plan-review-verdicts.md` holding REJECT rows beside the delivery ledger, when the retro and the sprint report run, then the retro's review split names no test-plan-review arm, the sprint report's rework figure is unchanged from the same run without that file (control), and the plan-review file's bytes are unchanged. Fails on: HEAD's `retro.review_cost_split`, which still reports a plan-review arm
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py::PlanPhaseGoneTests::test_rounds_count_delivery_verdicts_only
-- **AC4:** Given every criterion whose stamped Verify selector names a test this story deletes (PlanCriticTests, PlanCriticIntensityTests, PlanReviewBriefTests and the plan-phase record tests in `test_critic.py`; at least those on BG0596, BG0645, BG0666, US0423, US0425), then each is retired as `Verify: manual - retired by <this story>` with a matching `Verified: manual` line, and no `Verified: yes` selector under sdlc-studio/ names a deleted test node, so the stamps-staged lane has nothing to refuse
+- **AC3:** Given the criteria whose stamped Verify selector names a test this story deletes (PlanReviewBriefTests, PlanReviewBriefUnauthoredNoteTests, PlanReviewKindTests, PlanReviewOriginTests, PlanReviewBriefTeachesMultiRowTests, the plan-review test in RepairPhaseJoinTests, `test_retro.py::PlanVersusCodeReviewCostTests` and `test_sprint.py`'s `test_a_plan_review_round_does_not_inherit_delivery_batch_rounds`): BG0510 (8), BG0596 (1), BG0631 (1), BG0645 (2), BG0666 (1), US0631 (3) and US0634 (2), then each is retired in the D0259 pattern (`Verify: manual - retired by US0915: <why>`, `Verified: manual (<date>) - retired, superseded by US0915`), and no `Verified: yes` selector under sdlc-studio/ names a deleted test node
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py::PlanPhaseGoneTests::test_no_stamp_names_a_deleted_test
+
+## Notes
+
+- Engineering call, which holds the size at 5: `phase` stays as an internal parameter defaulting to `delivery`, and only the CLI surface, the plan-review brief and the Kind column go. Stripping the whole API would be 8 points.
+- The old AC2 (delivery verdicts still record and count) passed at HEAD, so it is now the control half of AC1. The sprint-report half of the old AC3 already passed (the report reads only `critic-verdicts.md`), so it is the control in AC2.
+- `PlanCriticTests` and `PlanCriticIntensityTests` (US0423, US0425) pin `plan_critique`, the pre-plan lens pass, not this phase. They stay.
+- Lands after US0909, US0911 and US0913, which each call `verdict_for` or `read_verdicts` with `phase="plan-review"`, and before US0912 and US0914.
+- The shared prose edit to `reference-scripts-review.md` moved to US0924.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-24 | sdlc-studio | Created via `batch` (deterministic); body trimmed to the lean story shape |
+| 2026-09-25 | Engineering seat | Groomed for Sprint 4 from the readiness review: 5 points held with `phase` kept internal; AC1 covers record, brief, supersede and show, and takes the old AC2 as its control; AC2 names the retro's test-plan arm and keeps the report as control; stamps set corrected (PlanCriticTests dropped) and measured (18 criteria); Affects adds test_sprint.py and the changelog fragment, and moves reference-scripts-review.md to US0924 |

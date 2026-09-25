@@ -10,6 +10,8 @@
 
 Sprint 3 of the back-to-basics programme, part two (deletion batch 2). Deletes plan review, test-plan review, the repair ledger, the evidence and sprint-review ledgers, per-unit two-role sign-off, verification depth tiers, the mutation register and evidence-drift lane (mutation stays as opt-in run), and brief provenance; line coverage becomes opt-in. Yield evidence: 242 of 255 plan-review rejections argued over test apparatus, 636 of 637 depth tiers read functional, 1,033 of 1,043 mutants killed. migrate carries consuming projects' config forward; existing ledgers stay as frozen history.
 
+Groomed for Sprint 4 on 2026-09-25 from the engineering-seat readiness review: 21 units totalling 102 points, not 67. US0910, US0920 and US0921 were split (their second halves are US0934, US0935 and US0936). File-disjointness and the measured dependency order give 13 build waves of at most two units: (1) US0934, US0921; (2) US0911, US0910; (3) US0916; (4) US0913, US0920; (5) US0909, US0917; (6) US0915, US0935; (7) US0912, US0914; (8) US0936, US0922; (9) US0918; (10) US0919; (11) US0923; (12) US0924, US0925; (13) US0926. Each wave merges one unit at a time, reruns `docgen.py surface` and runs the full suite before the next opens. Sprint 4 takes waves 1-4 (7 units, 27 points) beside CR0594, extending to wave 5 if velocity allows.
+
 ## Story Breakdown
 
 - [ ] [US0909: A story reaches In Progress and Done without a plan review](../stories/US0909-a-story-reaches-in-progress-and-done-without.md)
@@ -30,9 +32,13 @@ Sprint 3 of the back-to-basics programme, part two (deletion batch 2). Deletes p
 - [ ] [US0924: The shipped docs teach only the surviving review path](../stories/US0924-the-shipped-docs-teach-only-the-surviving-review.md)
 - [ ] [US0925: An upgrading project's config carries forward without the retired review keys](../stories/US0925-an-upgrading-project-s-config-carries-forward-without.md)
 - [ ] [US0926: This repository runs on the shipped defaults with no stand-down keys](../stories/US0926-this-repository-runs-on-the-shipped-defaults-with.md)
+- [ ] [US0934: A bug reaches Fixed without a depth gate, and the retired --depth flags are refused](../stories/US0934-a-bug-reaches-fixed-without-a-depth-gate.md)
+- [ ] [US0935: A repair reaches Fixed without the mutation-evidence gate, survivor filing or evidence mode](../stories/US0935-a-repair-reaches-fixed-without-the-mutation-evidence.md)
+- [ ] [US0936: The mutation ledger verbs are retired and a mutation run reports its yield only](../stories/US0936-the-mutation-ledger-verbs-are-retired-and-a.md)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-24 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-25 | Engineering seat | Summary notes the re-size to 102 points over 21 units and the 13 build waves from the Sprint 4 readiness review |
