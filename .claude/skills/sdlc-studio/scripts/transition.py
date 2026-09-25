@@ -736,13 +736,13 @@ class GateRefusal(ValueError):
 # written before the last edit.
 
 LINE_COVERAGE_MODES = ("report", "block", "off")
-LINE_COVERAGE_DEFAULT = "report"     # the fallback LITERAL: `project_override` merges no defaults
+LINE_COVERAGE_DEFAULT = "off"        # the fallback LITERAL: `project_override` merges no defaults
 LINE_COVERAGE_ABSENT_REPORT = ("coverage: not measured - the coverage module is absent "
                                "(pip install coverage, or review.line_coverage: off)")
 
 
 def line_coverage_mode(root) -> str:
-    """The project's `review.line_coverage`: `report` (the shipped default), `block` or `off`.
+    """The project's `review.line_coverage`: `off` (the shipped default), `report` or `block`.
 
     An unrecognised value is REFUSED by name, never read as `off`: a typo that switched a
     project's bar off silently is the one outcome nobody asked for. YAML 1.1 parses a bare
@@ -758,17 +758,6 @@ def line_coverage_mode(root) -> str:
         raise ValueError(f"review.line_coverage is `{raw}`, which is not one of "
                          f"{', '.join(LINE_COVERAGE_MODES)} - refused rather than read as off")
     return value
-
-
-def line_coverage_cutoff(root) -> str:
-    """`review.line_coverage_after` as an ISO date string, or "" - compared as strings, never
-    through `parse_cutoff`, which parses numeric ids and raises on a date."""
-    raw = sdlc_md.project_override(root, "review.line_coverage_after", None)
-    return str(raw).strip()[:10] if raw not in (None, "", False) else ""
-
-
-def _created_date(text: str) -> str:
-    return (sdlc_md.extract_field(text, "Created") or "").strip()[:10]
 
 
 def line_coverage_lane(root, unit: str, text: str, type_: str, path, *,
@@ -801,10 +790,6 @@ def line_coverage_lane(root, unit: str, text: str, type_: str, path, *,
         # than printing "no base ref" on every terminal transition of every upgrading project.
         # `block` still refuses below, naming `--base` - a project that chose the bar is in one.
         return out
-    cutoff = line_coverage_cutoff(root)
-    created = _created_date(text)
-    if cutoff and created and len(created) == 10 and created < cutoff:
-        return out            # created before the cutoff: exempt. No Created date: judged.
     uid = sdlc_md.norm_id(unit)
     rep = None
     notes: list = []     # every report-mode observation, joined at the end - never overwritten

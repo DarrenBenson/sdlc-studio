@@ -59,23 +59,13 @@ review:
   policy: block
   # What an ADDED LINE the unit's own verifiers never executed does to a terminal transition
   # (`verify_ac run --coverage`, measured at the transition itself, never read from a prior report):
-  #   report  (default)  print `coverage: N uncovered added line(s)` and proceed
+  #   off     (default)  collect nothing, print nothing
+  #   report             print `coverage: N uncovered added line(s)` and proceed
   #   block              refuse, naming the file, the line and `verify_ac.py coverage rule`
-  #   off                collect nothing, print nothing
-  # `coverage` (7.10 or later) is an OPTIONAL dependency: absent, `block` refuses naming it and
-  # `report` says so and proceeds. Adopt `block` with a dated cutoff - units created before
-  # `line_coverage_after` are exempt, a unit with no parseable Created date is judged:
-  #   line_coverage: block
-  #   line_coverage_after: "2026-01-01"
-  line_coverage: report
-  # WHEN each review gate starts applying. A project adopting this skill mid-life does not want
-  # every gate turned on over its whole back catalogue at once, so each is scoped by a cutoff.
-  # Both cutoffs below are DATES, not ids.
-  #
-  # `line_coverage_after` is a DATE, compared as a string against the unit's own `Created`
-  # field, and scopes the coverage gate above.
-  line_coverage_after: null
-  #
+  # Coverage is opt-in: a close pays for it only in a project that asked. `block` judges every
+  # unit, with no date cutoff. `coverage` (7.10 or later) is an OPTIONAL dependency: absent,
+  # `block` refuses naming it and `report` says so and proceeds.
+  line_coverage: off
   # Who may sign off as reviewer of record: `operator` (the default - a named human the author
   # does not control) or `panel` (the seats recorded for the run). An unknown value is refused,
   # never coerced.

@@ -2950,12 +2950,8 @@ class CoverageGateTests(unittest.TestCase):
     BASE_TEST = ("import sys, pathlib\nsys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))\n"
                  "from src import thing\n\n\nclass TestT:\n    def test_a(self):\n        assert thing.used() == 1\n")
 
-    def _config(self, root: Path, mode, after: str | None = None) -> None:
-        lines = ["review:\n"]
-        if mode is not None:
-            lines.append(f"  line_coverage: {mode}\n")
-        if after:
-            lines.append(f"  line_coverage_after: \"{after}\"\n")
+    def _config(self, root: Path, mode) -> None:
+        lines = ["review:\n", f"  line_coverage: {mode}\n"]
         (root / "sdlc-studio" / ".config.yaml").write_text("".join(lines), encoding="utf-8")
 
     def _bug(self, root: Path, created: str | None = "2026-09-08", verifiers=None, affects=None) -> Path:
@@ -2969,21 +2965,21 @@ class CoverageGateTests(unittest.TestCase):
         p.write_text(head + f"> **Verification depth:** functional\n\n## Acceptance Criteria\n\n{acs}\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n| 2026-09-08 | t | Filed |\n", encoding="utf-8")
         return p
 
-    def _repo(self, d: Path, *, mode="block", uncovered=True, created="2026-09-08", after=None, batch=None) -> Path:
+    def _repo(self, d: Path, *, mode="block", uncovered=True, batch=None) -> Path:
         root = _refuse_working_tree(d)
         for rel in ("src", "tests", "sdlc-studio/.local"):
             (root / rel).mkdir(parents=True, exist_ok=True)
         (root / "src" / "__init__.py").write_text("", encoding="utf-8")
         (root / self.PROD).write_text(self.BASE_PROD, encoding="utf-8")
         (root / self.TEST).write_text(self.BASE_TEST, encoding="utf-8")
-        self._bug(root, created=created)
-        self._config(root, mode, after)
+        self._bug(root)
+        self._config(root, mode)
         _git_repo(root)
         base = _head(root)
         (root / self.PROD).write_text(self.BASE_PROD + ("\n\ndef added_dead():\n    return 2\n" if uncovered else "\n\ndef added_used():\n    return 3\n"), encoding="utf-8")
         if not uncovered:
             (root / self.TEST).write_text(self.BASE_TEST + "\n    def test_b(self):\n        assert thing.added_used() == 3\n", encoding="utf-8")
-            self._bug(root, created=created, verifiers=[f"pytest {self.TEST}::TestT::test_a", f"pytest {self.TEST}::TestT::test_b"])
+            self._bug(root, verifiers=[f"pytest {self.TEST}::TestT::test_a", f"pytest {self.TEST}::TestT::test_b"])
         _git_commit(root, f"fix({self.UNIT}): the change")
         (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(
             {"run_id": "RUN-TEST01", "outcome": "goal-reached", "ended_at": "2026-09-08T00:00:00Z",
@@ -3170,28 +3166,6 @@ class CoverageGateTests(unittest.TestCase):
             rc, out, err = self._set(root)
             self.assertNotEqual(rc, 0, out + err); self.assertIn("not one of report, block, off", out + err)
 
-    # -- AC5 -------------------------------------------------------------------------
-    def test_units_created_before_the_cutoff_are_exempt(self) -> None:
-        """MUTANTS: remove the cutoff comparison; exempt a unit with no Created field; compare
-        with `>` so the on-the-date unit is exempt; compare as a string prefix."""
-        with tempfile.TemporaryDirectory() as d:
-            root = self._repo(Path(d), created="2026-09-01", after="2026-09-07")
-            rc, out, err = self._set(root); self.assertEqual(rc, 0, out + err)
-        with tempfile.TemporaryDirectory() as d:
-            root = self._repo(Path(d), created="2026-09-07", after="2026-09-07")
-            rc, out, err = self._set(root); self.assertNotEqual(rc, 0, "a unit created ON the date is judged")
-        with tempfile.TemporaryDirectory() as d:
-            root = self._repo(Path(d), created="2026-09-10", after="2026-09-1")
-            rc, out, err = self._set(root); self.assertNotEqual(rc, 0, "a prefix is not a date comparison")
-        with tempfile.TemporaryDirectory() as d:
-            root = self._repo(Path(d), created=None, after="2026-09-07")
-            rc, out, err = self._set(root); self.assertNotEqual(rc, 0, "no Created date is judged, never exempted")
-        with tempfile.TemporaryDirectory() as d:
-            # an UNPARSEABLE date is judged too: dropping the length check would read `1999` as
-            # earlier than the cutoff and exempt it, which is a waiver granted by a typo
-            root = self._repo(Path(d), created="1999", after="2026-09-07")
-            rc, out, err = self._set(root); self.assertNotEqual(rc, 0, "an unparseable Created date is judged, never exempted: " + out + err)
-
     # -- AC6 -------------------------------------------------------------------------
     def test_a_missing_coverage_module_never_reads_as_covered(self) -> None:
         """MUTANT: an absent module yields an empty uncovered set."""
@@ -3217,18 +3191,6 @@ class CoverageGateTests(unittest.TestCase):
             with unittest.mock.patch.dict(sys.modules, {"verify_ac": None}):
                 rc, out, err = self._set(root2)
             self.assertEqual(rc, 0, out + err); self.assertIn("verify_ac could not be imported", out + err)
-
-    # -- AC7 -------------------------------------------------------------------------
-    def test_the_shipped_default_is_report(self) -> None:
-        """MUTANTS: flip the fallback literal for the mode to `block`; flip the template's
-        `line_coverage` value to the refusing mode."""
-        with tempfile.TemporaryDirectory() as d:
-            root = self._repo(Path(d), mode=None)     # never set
-            rc, out, err = self._set(root)
-            self.assertEqual(rc, 0, out + err); self.assertIn("coverage: 1 uncovered added line(s)", out + err)
-        template = (DIR.parent / "templates" / "config-defaults.yaml").read_text(encoding="utf-8")
-        self.assertIn("line_coverage: report", template)
-        self.assertIn("OPTIONAL dependency", template); self.assertIn("line_coverage_after", template)
 
     # -- AC8 -------------------------------------------------------------------------
     def test_no_base_ref_refuses_under_block_and_is_reported_under_report(self) -> None:

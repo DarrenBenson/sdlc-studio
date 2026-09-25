@@ -219,9 +219,10 @@ review:
 ### Review gate cutoffs {#review-cutoffs}
 
 Every `review.*` setting is declared with its default in `templates/config-defaults.yaml`.
-`review.line_coverage_after` takes a **DATE** compared against a unit's `Created`.
 `review.two_role_after` and `review.test_plan_after` are retired: one independent APPROVE
-decides a unit, and the operator signs the run once at `sprint sign`.
+decides a unit, and the operator signs the run once at `sprint sign`. `review.line_coverage_after`
+is retired too: line coverage is `off` unless a project opts in, and `review.line_coverage: block`
+judges every unit, with no date cutoff.
 
 ---
 
