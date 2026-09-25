@@ -459,172 +459,32 @@ def _critic_mod():
     return m
 
 
-@unittest.skipUnless(HAS_YAML, "review.two_role_after reads .config.yaml (needs PyYAML)")
-class TwoRoleCritiquedTests(unittest.TestCase):
-    """CR0323 / RFC0044: with review.two_role_after set, a Done unit past the cutoff
-    clears `critiqued` only with adversarial EVIDENCE plus an independent SIGN-OFF -
-    forward-only, so existing projects and pre-cutoff units keep today's behaviour."""
-
-    def _config(self, root: Path) -> None:
-        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / ".config.yaml").write_text(
-            "review:\n  two_role_after: US0100\n", encoding="utf-8")
-
-    def test_verdict_alone_no_longer_clears_critiqued(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root)
-            _story(root, 101, status="Done")
-            _record_verdict(root, "US0101")           # independent APPROVE, old-style
-            u = _units(root)["US0101"]
-            self.assertFalse(u["stages"]["critiqued"])
-            self.assertIn("critiqued", u["missing"])
-
-    def test_evidence_plus_signoff_clears_critiqued(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root)
-            _story(root, 101, status="Done")
-            _record_verdict(root, "US0101")
-            c = _critic_mod()
-            c.record_evidence(root, "US0101", reviewer="qa-seat", author="builder",
-                              findings="adversarial pass done")
-            c.record_signoff(root, "US0101", principal="Darren Benson (operator)",
-                             author="builder")
-            u = _units(root)["US0101"]
-            self.assertTrue(u["stages"]["critiqued"])
-
-    def test_hand_edited_self_signoff_is_backstopped(self) -> None:
-        # record_signoff refuses a self-sign-off; a hand-appended row walks round the
-        # tool, so conformance re-checks independence from the recorded rows.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root)
-            _story(root, 101, status="Done")
-            _record_verdict(root, "US0101")
-            c = _critic_mod()
-            c.record_evidence(root, "US0101", reviewer="qa-seat", author="builder",
-                              findings="adversarial pass done")
-            path = c.signoff_path(root)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            c.record_signoff(root, "US0101", principal="operator", author="builder")
-            text = path.read_text(encoding="utf-8").replace("| operator |", "| builder |")
-            path.write_text(text, encoding="utf-8")   # hand-edit: principal == author
-            u = _units(root)["US0101"]
-            self.assertFalse(u["stages"]["critiqued"])
-
-    def test_signoff_by_session_subagent_is_backstopped(self) -> None:
-        # A sign-off whose principal is a recorded authoring-session reviewer id
-        # (the seat subagent) must not clear the gate even if hand-recorded.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root)
-            _story(root, 101, status="Done")
-            _record_verdict(root, "US0101", reviewer="qa-seat")
-            c = _critic_mod()
-            c.record_evidence(root, "US0101", reviewer="qa-seat", author="builder",
-                              findings="adversarial pass done")
-            c.record_signoff(root, "US0101", principal="operator", author="builder")
-            path = c.signoff_path(root)
-            text = path.read_text(encoding="utf-8").replace("| operator |", "| qa-seat |")
-            path.write_text(text, encoding="utf-8")
-            u = _units(root)["US0101"]
-            self.assertFalse(u["stages"]["critiqued"])
-
-    def test_signoff_without_evidence_not_critiqued(self) -> None:
-        # "critiqued requires BOTH": an independent sign-off with no adversarial
-        # evidence row must not clear the stage (kills the drop-evidence mutant).
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root)
-            _story(root, 101, status="Done")
-            _record_verdict(root, "US0101")
-            c = _critic_mod()
-            c.record_signoff(root, "US0101", principal="Darren Benson (operator)",
-                             author="builder")
-            u = _units(root)["US0101"]
-            self.assertFalse(u["stages"]["critiqued"])
-            self.assertIn("critiqued", u["missing"])
-
-    def test_cutoff_boundary_unit_keeps_old_rule(self) -> None:
-        # The cutoff id itself is grandfathered (<= exempt, > judged) - a `>` -> `>=`
-        # regression would retroactively gate the boundary unit.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root)
-            _story(root, 100, status="Done")          # == US0100 cutoff
-            _record_verdict(root, "US0100")           # verdict alone suffices
-            u = _units(root)["US0100"]
-            self.assertTrue(u["stages"]["critiqued"])
-
-    def test_pre_cutoff_done_unit_keeps_old_rule(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root)
-            _story(root, 99, status="Done")           # <= US0100 cutoff
-            _record_verdict(root, "US0099")           # verdict alone suffices
-            u = _units(root)["US0099"]
-            self.assertTrue(u["stages"]["critiqued"])
-
-    def test_no_config_keeps_old_rule_everywhere(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _story(root, 101, status="Done")
-            _record_verdict(root, "US0101")
-            u = _units(root)["US0101"]
-            self.assertTrue(u["stages"]["critiqued"])
-
-
-@unittest.skipUnless(HAS_YAML, "review.two_role_after reads .config.yaml (needs PyYAML)")
 class SprintReviewCritiquedTests(unittest.TestCase):
     """US0247 / RFC0046 option B: a recorded sprint-level adversarial full-diff review satisfies
-    the per-unit `critiqued` gate for the units in its range - both the verdict half (a covered
-    unit needs no individual APPROVE) and the two-role evidence half - while a per-unit REJECT is
-    still repaired per unit and the per-unit sign-off stays required."""
-
-    def _config(self, root: Path) -> None:
-        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / ".config.yaml").write_text(
-            "review:\n  two_role_after: US0100\n", encoding="utf-8")
+    the per-unit `critiqued` gate for the units in its range (a covered unit needs no individual
+    APPROVE), while a per-unit REJECT is still repaired per unit."""
 
     def test_sprint_review_clears_critiqued_for_covered_unit(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._config(root)
             _story(root, 101, status="Done")           # NO per-unit verdict
             c = _critic_mod()
             c.record_sprint_review(root, ["US0101"], reviewer="qa-seat", author="builder",
                                    verdict="APPROVE", findings="full-diff pass; none blocking")
-            c.record_signoff(root, "US0101", principal="Darren Benson (operator)", author="builder")
             u = _units(root)["US0101"]
             self.assertTrue(u["stages"]["critiqued"])
 
     def test_SprintReview_does_not_override_a_per_unit_reject(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._config(root)
             _story(root, 101, status="Done")
             _record_verdict(root, "US0101", "reject")  # latest per-unit verdict is REJECT
             c = _critic_mod()
             c.record_sprint_review(root, ["US0101"], reviewer="qa-seat", author="builder",
                                    verdict="APPROVE", findings="range looks fine overall")
-            c.record_signoff(root, "US0101", principal="operator", author="builder")
             u = _units(root)["US0101"]
             self.assertFalse(u["stages"]["critiqued"])   # REJECT repairs per unit
             self.assertIn("critiqued", u["missing"])
-
-    def test_SprintReview_still_needs_the_per_unit_signoff(self) -> None:
-        # The sprint pass is EVIDENCE, not the reviewer-of-record sign-off: a covered unit with no
-        # sign-off does not clear the two-role gate.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root)
-            _story(root, 101, status="Done")
-            c = _critic_mod()
-            c.record_sprint_review(root, ["US0101"], reviewer="qa-seat", author="builder",
-                                   verdict="APPROVE", findings="full-diff pass; none blocking")
-            u = _units(root)["US0101"]
-            self.assertFalse(u["stages"]["critiqued"])
 
     def test_SprintReview_refuses_self_review_and_empty(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -1015,15 +875,9 @@ class DiffScopedConformanceTests(unittest.TestCase):
             self.assertIn("reconciled", u2["missing_global"])
 
 
-@unittest.skipUnless(HAS_YAML, "review.two_role_after reads .config.yaml (needs PyYAML)")
-class CritiquedHalvesTests(unittest.TestCase):
-    """`critiqued` is one boolean over up to three independent halves. Reporting only the
-    composite name costs a source dive per occurrence, so every UNMET half is named."""
-
-    def _config(self, root: Path) -> None:
-        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / ".config.yaml").write_text(
-            "review:\n  two_role_after: US0100\n", encoding="utf-8")
+class BackfillRemedyTests(unittest.TestCase):
+    """CR0368: the backfill remedy is aimed at the stage it clears, never printed under a
+    failure it cannot touch."""
 
     def _report(self, root: Path) -> str:
         mod = _load()
@@ -1033,76 +887,12 @@ class CritiquedHalvesTests(unittest.TestCase):
             args.func(args)
         return buf.getvalue()
 
-    def test_only_the_signoff_missing_names_the_signoff_not_the_composite(self) -> None:
-        """AC1. Verdict recorded, adversarial evidence recorded, sign-off absent: the ONE
-        unmet half is the one named. Asserting the sign-off phrase alone would pass on a
-        line naming all three, so the other two are asserted absent."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root)
-            _story(root, 101, status="Done")
-            _record_verdict(root, "US0101")
-            _critic_mod().record_evidence(root, "US0101", reviewer="qa-seat",
-                                          author="builder", findings="adversarial pass done")
-            mod = _load()
-            u = {x["id"]: x for x in mod.detect_conformance(root)["units"]}["US0101"]
-            self.assertEqual(u["critiqued_missing"], [mod.HALF_SIGNOFF])
-            out = self._report(root)
-            self.assertIn(mod.HALF_SIGNOFF, out)
-            self.assertNotIn(mod.HALF_VERDICT, out)
-            self.assertNotIn(mod.HALF_EVIDENCE, out)
-
-    def test_several_unmet_halves_are_all_named_in_one_line(self) -> None:
-        """AC2. Nothing recorded at all: all three halves are unmet and all three are named
-        on the unit's single line - not just the first the composition happened to reach."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root)
-            _story(root, 101, status="Done")
-            mod = _load()
-            u = {x["id"]: x for x in mod.detect_conformance(root)["units"]}["US0101"]
-            self.assertEqual(u["critiqued_missing"],
-                             [mod.HALF_VERDICT, mod.HALF_EVIDENCE, mod.HALF_SIGNOFF])
-            line = next(ln for ln in self._report(root).splitlines() if "US0101" in ln)
-            for half in (mod.HALF_VERDICT, mod.HALF_EVIDENCE, mod.HALF_SIGNOFF):
-                self.assertIn(half, line)
-
-    def test_a_satisfied_critiqued_stage_stays_conformant_and_names_nothing(self) -> None:
-        """AC3. The change is diagnostic detail, never a new refusal."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root)
-            _story(root, 101, status="Done")
-            _record_verdict(root, "US0101")
-            c = _critic_mod()
-            c.record_evidence(root, "US0101", reviewer="qa-seat", author="builder",
-                              findings="adversarial pass done")
-            c.record_signoff(root, "US0101", principal="Darren Benson (operator)",
-                             author="builder")
-            mod = _load()
-            u = {x["id"]: x for x in mod.detect_conformance(root)["units"]}["US0101"]
-            self.assertTrue(u["stages"]["critiqued"])
-            self.assertNotIn("critiqued", u["missing"])
-            self.assertEqual(u["critiqued_missing"], [])
-
-    def test_a_pre_cutoff_unit_names_only_the_verdict_half(self) -> None:
-        """The two-role halves do not APPLY below the cutoff, so they are not reported unmet -
-        an inapplicable half named as owed is the same misdirection in the other direction."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root)
-            _story(root, 99, status="Done")
-            mod = _load()
-            u = {x["id"]: x for x in mod.detect_conformance(root)["units"]}["US0099"]
-            self.assertEqual(u["critiqued_missing"], [mod.HALF_VERDICT])
-
     def test_backfill_remedy_is_withheld_when_no_unit_misses_verified(self) -> None:
         """CR0368's second half: `run verify_ac and back-annotate` is the remedy for the
         VERIFIED stage. Printed under a missing-critiqued failure it sends the operator at
         the wrong gate, which is what cost a source dive."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._config(root)
             _story(root, 101, status="Done", verified="yes")
             mod = _load()
             res = mod.detect_conformance(root)
@@ -1117,7 +907,6 @@ class CritiquedHalvesTests(unittest.TestCase):
         remedy rather than aim it."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            self._config(root)
             _story(root, 101, status="Done", verified="no")
             mod = _load()
             res = mod.detect_conformance(root)
@@ -1211,76 +1000,6 @@ class DocDriftResidualTests(unittest.TestCase):
                           f"{from_}: '{disposition}' is not one of {self.VOCAB}")
             # A disposition with no reason is silence wearing a label.
             self.assertGreaterEqual(len(reason), 30, f"{from_}: reason too thin to be one")
-
-
-class TwoRoleCutoffOnUlidIdsTests(unittest.TestCase):
-    """BG0318: `review.two_role_after` is a NUMERIC cutoff compared against `id_number`, which
-    returns None for a v3 ULID id. `two_role_applies` was therefore False for every ULID unit,
-    so both halves defaulted True unchecked - a forward-only gate standing down on exactly the
-    newest units it exists to cover, silently. A ULID id is by construction newer than any
-    sequential cutoff, so the gate must fail CLOSED on an unnumbered id."""
-
-    ULID = "US-01JQK3F8"
-    V2 = "US0101"
-
-    def _stages(self, root, rid):
-        """Only `critic_required` is switched off, so `critiqued` here is decided by the
-        two-role halves ALONE - the assertion cannot pass on the verdict half's behaviour."""
-        return _load()._done_stages(root, rid, ["yes"], False, set(), True,
-                                    two_role_cutoff=100, critic_required=False)
-
-    def test_a_ulid_unit_past_the_cutoff_is_held_to_both_two_role_halves(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            mod = _load()
-            verified, _rec, critiqued, _doc, unmet = self._stages(d, self.ULID)
-            self.assertTrue(verified)   # the fixture is otherwise clean
-            self.assertFalse(critiqued,
-                             "a ULID unit with no evidence and no sign-off cleared `critiqued`")
-            self.assertEqual(unmet, [mod.HALF_EVIDENCE, mod.HALF_SIGNOFF])
-
-    def test_the_ulid_verdict_matches_the_v2_verdict_for_the_same_evidence(self) -> None:
-        """The two calls differ only in the id's ERA. A gate whose strictness depends on
-        which id scheme a project mints is the defect, so the verdicts must be identical."""
-        with tempfile.TemporaryDirectory() as d:
-            self.assertEqual(self._stages(d, self.ULID)[4], self._stages(d, self.V2)[4])
-
-    def test_no_cutoff_configured_still_leaves_a_ulid_unit_alone(self) -> None:
-        """Fail-closed must not become always-on: without `review.two_role_after` the
-        two-role halves apply to nobody, ULID ids included."""
-        with tempfile.TemporaryDirectory() as d:
-            unmet = _load()._done_stages(d, self.ULID, ["yes"], False, set(), True,
-                                         two_role_cutoff=None, critic_required=False)[4]
-            self.assertEqual(unmet, [])
-
-    @unittest.skipUnless(HAS_YAML, "review.two_role_after reads .config.yaml (needs PyYAML)")
-    def test_end_to_end_a_done_ulid_story_is_not_reported_conformant(self) -> None:
-        """The stage list `detect_conformance` builds drops `critiqued` from `required`
-        on the SAME None comparison, so the `_done_stages` fix alone would still report the
-        story conformant. This pins the report, which is what an operator reads.
-
-        The DoD downgrades the critic half only, leaving the two-role half armed - so
-        `critiqued` survives in `required` for one reason and one reason only."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            sdir = root / "sdlc-studio"
-            sdir.mkdir(parents=True, exist_ok=True)
-            (sdir / ".config.yaml").write_text(
-                "review:\n  two_role_after: US0100\n", encoding="utf-8")
-            (sdir / "definition-of-done.md").write_text(
-                "# Definition of Done\n\n## Story\n\n"
-                "- adversarial review recorded [check: review.two-role]\n",
-                encoding="utf-8")
-            sd = sdir / "stories"
-            sd.mkdir(parents=True, exist_ok=True)
-            (sd / f"{self.ULID}-sample.md").write_text(
-                f"# {self.ULID}: sample\n\n> **Status:** Done\n"
-                "> **Epic:** [EP0001: x](../epics/EP0001-x.md)\n\n"
-                "## Acceptance Criteria\n\n### AC1: works\n- **Given** a thing\n"
-                "- **Verify:** shell echo ok\n- **Verified:** yes (2026-01-01)\n",
-                encoding="utf-8")
-            u = _units(root)[self.ULID]
-            self.assertIn("critiqued", u["missing"],
-                          "the two-role gate stood down for a v3 ULID unit")
 
 
 def _decisions_mod():
@@ -1443,11 +1162,11 @@ class ThreeStateCoverageTests(unittest.TestCase):
             root = Path(d)
             critic.record_verdict(root, "US9101", "REJECT", "qa-seat", "builder",
                                   "[new] alpha broke", "delivery", "abcdef123456")
-            unrepaired = conf.critiqued_unmet(root, "US9101", 0, True, False)
+            unrepaired = conf.critiqued_unmet(root, "US9101")
             self.assertIn(conf.HALF_VERDICT, unrepaired,
                           "an unrepaired REJECT was treated as covered")
             critic.record_repair(root, "US9101", "builder", "alpha broke -> mutant killed")
-            repaired = conf.critiqued_unmet(root, "US9101", 0, True, False)
+            repaired = conf.critiqued_unmet(root, "US9101")
         self.assertNotIn(conf.HALF_VERDICT, repaired,
                          "a repaired unit still reports `missing critiqued "
                          "(independent APPROVE verdict)` - the same words used for a unit "
@@ -1498,7 +1217,7 @@ class TierCoverageTests(unittest.TestCase):
             self.assertFalse(mod.verdict_half_ok(root, "US0002", sprint_covers=False))
             # ...and the operator is told WHICH thing is missing, not sent to look for an
             # approval that is sitting in the log
-            unmet = mod.critiqued_unmet(root, "US0002", two_role_cutoff=None)
+            unmet = mod.critiqued_unmet(root, "US0002")
             self.assertIn(mod.HALF_TIER, unmet)
             self.assertNotIn(mod.HALF_VERDICT, unmet)
 

@@ -45,32 +45,32 @@ It is also the exact shape this project files bugs about most often, and which i
 - **Given** a story past `review.two_role_after` with neither the adversarial evidence nor an independent sign-off
 - **When** `transition set <id> Done` runs
 - **Then** it refuses and names BOTH halves separately - an absent adversarial pass and an absent sign-off need different actions from different people. The bar was stated in the Definition of Done and enforced by a lane running later over a status a different tool had already written; nothing at the moment of the write said no
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TheVerbEnforcesTheBarItWritesTests::test_a_past_cutoff_unit_with_NEITHER_half_is_refused_and_both_are_named
-- **Verified:** yes (2026-07-30)
+- **Verify:** manual - retired by US0916: the transition two-role gate was deleted with the per-unit sign-off; the review bar stays in conformance and at sprint sign
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ### AC2: a sign-off with no adversarial pass is still refused
 
 - **Given** the bug's own reproduction: a unit with a genuine operator sign-off and no evidence at all
 - **When** it is moved to Done
 - **Then** it is refused on the evidence half - ten such units were one `transition set` away from Done
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TheVerbEnforcesTheBarItWritesTests::test_a_unit_with_a_SIGN_OFF_and_no_evidence_is_still_refused
-- **Verified:** yes (2026-07-30)
+- **Verify:** manual - retired by US0916: the transition two-role gate was deleted with the per-unit sign-off; the review bar stays in conformance and at sprint sign
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ### AC3: forward-only, in both directions
 
 - **Given** a project declaring no cutoff, and a unit at or below one that is declared
 - **When** each is moved to Done
 - **Then** neither is affected - the rule is forward-only by design, and a project that never adopted it is not retro-fitted by an upgrade. Paired with a control proving a unit carrying both halves passes: a gate nothing can satisfy is a wall, not a gate
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TheVerbEnforcesTheBarItWritesTests::test_a_unit_AT_OR_BELOW_the_cutoff_is_unaffected
-- **Verified:** yes (2026-07-30)
+- **Verify:** manual - retired by US0916: the transition two-role gate was deleted with the per-unit sign-off; the review bar stays in conformance and at sprint sign
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ### AC4: an unreadable bar is not a passed one
 
 - **Given** a ledger the gate cannot read
 - **When** Done is attempted
 - **Then** it refuses, naming the failure - this gate exists because silence was being read as a pass, so failing open would reproduce the defect it closes. `--force` remains available and remains recorded, on the same terms as every other forceable close gate
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::TheVerbEnforcesTheBarItWritesTests::test_an_unreadable_bar_is_NOT_a_passed_one
-- **Verified:** yes (2026-07-30)
+- **Verify:** manual - retired by US0916: the transition two-role gate was deleted with the per-unit sign-off; the review bar stays in conformance and at sprint sign
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ## Impact
 

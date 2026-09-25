@@ -30,28 +30,32 @@ Fail closed: when `two_role_after` is set and `id_number` returns None, apply th
 - **Given** `review.two_role_after` set and a Done unit carrying a v3 short-ULID id with no adversarial evidence and no sign-off
 - **When** the Done stages are computed
 - **Then** `critiqued` is False and both unmet halves are named
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::TwoRoleCutoffOnUlidIdsTests::test_a_ulid_unit_past_the_cutoff_is_held_to_both_two_role_halves
+- **Verify:** manual - retired by US0916: the two-role cutoff and its per-unit evidence and sign-off halves were deleted; one independent APPROVE decides a unit
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ### AC2: the verdict does not depend on which id era the project mints
 
 - **Given** the same evidence and the same cutoff, once for a ULID id and once for a v2 sequential id past the cutoff
 - **When** both are judged
 - **Then** the unmet-half lists are identical
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::TwoRoleCutoffOnUlidIdsTests::test_the_ulid_verdict_matches_the_v2_verdict_for_the_same_evidence
+- **Verify:** manual - retired by US0916: the two-role cutoff and its per-unit evidence and sign-off halves were deleted; one independent APPROVE decides a unit
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ### AC3: failing closed does not become always-on
 
 - **Given** a project with no `review.two_role_after` configured
 - **When** a ULID unit is judged
 - **Then** no two-role half is required of it, so an unconfigured project is untouched
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::TwoRoleCutoffOnUlidIdsTests::test_no_cutoff_configured_still_leaves_a_ulid_unit_alone
+- **Verify:** manual - retired by US0916: the two-role cutoff and its per-unit evidence and sign-off halves were deleted; one independent APPROVE decides a unit
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ### AC4: the report an operator reads shows the gate applying
 
 - **Given** a workspace with the cutoff set, a Definition of Done that downgrades the critic half only, and a Done ULID story
 - **When** `detect_conformance` runs
 - **Then** `critiqued` is reported missing for that unit, so the second copy of the comparison (the required-stage list) is fixed too
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::TwoRoleCutoffOnUlidIdsTests::test_end_to_end_a_done_ulid_story_is_not_reported_conformant
+- **Verify:** manual - retired by US0916: the two-role cutoff and its per-unit evidence and sign-off halves were deleted; one independent APPROVE decides a unit
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ## Revision History
 

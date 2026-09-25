@@ -21,7 +21,7 @@ Groomed for Sprint 4 on 2026-09-25 from the engineering-seat readiness review: 2
 - [x] [US0913: A repair closes without a reviewed repair plan](../stories/US0913-a-repair-closes-without-a-reviewed-repair-plan.md)
 - [ ] [US0914: A standing REJECT clears only by a round-2 APPROVE or by carrying the unit](../stories/US0914-a-standing-reject-clears-only-by-a-round.md)
 - [ ] [US0915: A review verdict has one phase: delivery](../stories/US0915-a-review-verdict-has-one-phase-delivery.md)
-- [ ] [US0916: A story reaches Done without a per-unit reviewer-of-record sign-off](../stories/US0916-a-story-reaches-done-without-a-per-unit.md)
+- [x] [US0916: A story reaches Done without a per-unit reviewer-of-record sign-off](../stories/US0916-a-story-reaches-done-without-a-per-unit.md)
 - [ ] [US0917: The operator's signature seals the run without a per-unit sign-off row](../stories/US0917-the-operator-s-signature-seals-the-run-without.md)
 - [ ] [US0918: One verdict ledger decides whether a unit was reviewed](../stories/US0918-one-verdict-ledger-decides-whether-a-unit-was.md)
 - [ ] [US0919: Sign-off is the operator's one signature and the per-unit sign-off verbs are gone](../stories/US0919-sign-off-is-the-operator-s-one-signature.md)

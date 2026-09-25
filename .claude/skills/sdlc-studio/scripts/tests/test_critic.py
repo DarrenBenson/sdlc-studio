@@ -5710,12 +5710,12 @@ class ThreeStateCoverageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _rejected(mod, root, "US9002", "[new] alpha broke; [new] beta broke")
-            partial_unmet = conf.critiqued_unmet(root, "US9002", 0, True, False)
+            partial_unmet = conf.critiqued_unmet(root, "US9002")
             self.assertIn(conf.HALF_VERDICT, partial_unmet,
                           "an unrepaired REJECT satisfied the verdict half")
             mod.record_repair(root, "US9002", "builder",
                               "alpha broke -> killed; beta broke -> killed")
-            complete_unmet = conf.critiqued_unmet(root, "US9002", 0, True, False)
+            complete_unmet = conf.critiqued_unmet(root, "US9002")
         self.assertNotIn(conf.HALF_VERDICT, complete_unmet,
                          "a COMPLETE repair did not satisfy the verdict half, so the repaired "
                          "state reaches the gate as 'missing critiqued' after all")

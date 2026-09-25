@@ -3108,26 +3108,12 @@ def goal_review_status(repo_root: Path | str, sprint_goal: str | None,
 
 
 # ---------------------------------------------------------------------------
-# THE REACHABLE END STATE: how far this batch can actually get under its own gates.
+# THE REACHABLE END STATE: the terminal this batch's rung is trying to reach.
 # ---------------------------------------------------------------------------
-# A goal nothing could have satisfied should be caught before the work, not recorded as partial
-# at the close. With `review.two_role_after` set, a unit past the cutoff reaches Done only with
-# an independent reviewer-of-record sign-off that the authoring session is refused - so the
-# furthest state the authoring session can reach on its own is Review.
-#
-# DERIVED FROM THE SAME FIELDS THE GATE READS, never from a second copy of the rule: the cutoff
-# through `parse_cutoff`, and the story Definition of Done's `review.two-role` stand-down, both
-# exactly as `conformance` reads them. A cap that disagreed with the gate would be worse than
-# none.
-END_STATE_DONE = "Done"
-END_STATE_REVIEW = "Review"
-
-
-#: The terminal each rung is trying to reach, and the state a capped batch stops at. A `design`
-#: rung is finished when its units are GROOMED, not when they are built, so reporting `Done` for
-#: it describes work it never set out to do.
-RUNG_TERMINALS = {"triage": ("Triaged", "Triaged"), "plan": ("Ready", "Ready"),
-                  "design": ("Ready", "Ready"), "done": (END_STATE_DONE, END_STATE_REVIEW)}
+#: The terminal each rung is trying to reach. A `design` rung is finished when its units are
+#: GROOMED, not when they are built, so reporting `Done` for it describes work it never set out
+#: to do.
+RUNG_TERMINALS = {"triage": "Triaged", "plan": "Ready", "design": "Ready", "done": "Done"}
 
 #: The rungs whose terminal is a COMPLETING state. Every other rung stops at a pre-terminal one
 #: - `Ready`, `Triaged` - and a type without that state in its vocabulary is simply not moved by
@@ -3167,21 +3153,9 @@ def _terminal_in_type_vocab(root, rung: str, type_: str, terminal: str) -> str:
     return STATE_UNCHANGED
 
 
-def _state_for_batch(root, rung: str, types: list[str], terminal: str,
-                     story_capped: str | None = None) -> str:
-    """The reported end state: `terminal` in every type present, joined when they disagree.
-
-    `story_capped` is the two-role cap, applied to STORIES only because the gate it derives from
-    is story-and-Done only - and applied THROUGH the resolver, never as a raw `RUNG_TERMINALS`
-    token. Writing the token in directly put it back over the resolved answer, so a story batch on
-    the `triage` rung reported `Triaged`, which is not a story status, through the very function
-    added to stop exactly that. The caller no longer computes a cap off the `done` rung at all, so
-    the resolver here cannot currently change the value - it is kept because a cap arriving in
-    another vocabulary is the failure this whole function exists to refuse, and a guard that is
-    correct for one reason should not depend on a second one holding elsewhere."""
+def _state_for_batch(root, rung: str, types: list[str], terminal: str) -> str:
+    """The reported end state: `terminal` in every type present, joined when they disagree."""
     per = {t: _terminal_in_type_vocab(root, rung, t, terminal) for t in (types or ["story"])}
-    if story_capped and "story" in per:
-        per["story"] = _terminal_in_type_vocab(root, rung, "story", story_capped)
     distinct = set(per.values())
     if len(distinct) == 1:
         return distinct.pop()
@@ -3190,17 +3164,10 @@ def _state_for_batch(root, rung: str, types: list[str], terminal: str,
 
 def reachable_end_state(repo_root: Path | str, batch: list[dict],
                         rung: str | None = None) -> dict:
-    """The furthest state this batch can reach under the gates that apply to it.
+    """The state this batch's rung takes each unit to, said in each type's own vocabulary.
 
-    Reports the rung's own terminal and no reason when nothing caps it, so the check cannot
-    degrade into a warning that always fires. Only the two-role rule is derived here; other
-    gates that could cap a batch are not claimed to be covered.
-
-    THE CAP IS STORY-ONLY, because the gate it derives from is. `transition.py` guards the
-    two-role rule with `type_ == "story" and target_canon == "Done"`, so a batch of bugs is
-    capped by nothing here - and reporting `Review` for one named a state that is not in a
-    bug's vocabulary at all. This report was doing that on a bug batch while a unit filed
-    about it sat in that very batch.
+    No per-unit gate caps a batch short of it: the per-unit reviewer-of-record sign-off that
+    once held stories at Review was retired, and one independent APPROVE now decides a unit.
     """
     root = Path(repo_root)
     rung_key = (rung or "done").lower()
@@ -3209,47 +3176,11 @@ def reachable_end_state(repo_root: Path | str, batch: list[dict],
         # unrecognised key for membership split the answer in half: an unknown rung reported the
         # build terminal for a story and `no status change` for a bug.
         rung_key = "done"
-    terminal, capped = RUNG_TERMINALS[rung_key]
+    terminal = RUNG_TERMINALS[rung_key]
     types = sorted({(it.get("type") or it.get("kind") or "story").lower() for it in batch})
-    try:
-        cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "review.two_role_after"))
-    except ValueError as exc:  # a config typo fails loud in the gate; it must not break a plan
-        sdlc_md.debug("sprint.reachable_end_state", exc)
-        cutoff = None
-    dod = sdlc_md.dor_dod_level_checks(root, "done", "story")
-    if dod is not None and "review.two-role" not in dod:
-        cutoff = None          # the project stood the sign-off requirement down; so do we
-    reached: list[str] = []
-    if cutoff is not None and rung_key in COMPLETING_RUNGS:
-        for it in batch:
-            num = sdlc_md.id_number(it["id"])
-            # A unit whose id carries no comparable NUMBER - a v3 ULID - cannot be placed
-            # against a numeric cutoff. `num is None and skip` was a FAIL-OPEN: it reported the
-            # unit as reaching Done when the sign-off gate may well cap it, which is the
-            # direction this whole report exists to refuse. An unanswerable comparison is
-            # treated as PAST the cutoff, which is the same way the conformance gate reads it.
-            # STORIES ONLY. The gate this derives from is story-and-Done only, so a bug or a
-            # CR in the batch is not capped by it and must not be named as though it were.
-            if (it.get("type") or it.get("kind") or "story").lower() != "story":
-                continue
-            if num is None or num > cutoff:
-                reached.append(sdlc_md.norm_id(it["id"]))
-    if not reached:
-        state = _state_for_batch(root, rung_key, types, terminal)
-        return {"state": state, "reason": None, "units": [], "types": types,
-                "gate": "review.two_role_after", "cutoff": cutoff,
-                "basis": (f"no gate in this project caps this batch; the `{rung_key}` rung's own "
-                          f"terminal for each type present is: {state}")}
-    return {
-        "state": _state_for_batch(root, rung_key, types, terminal, story_capped=capped),
-        "types": types,
-        "reason": (f"review.two_role_after is {cutoff}, so {len(reached)} unit(s) past it "
-                   f"reach Done only with an independent reviewer-of-record sign-off that the "
-                   f"authoring session is refused"),
-        "units": sorted(reached), "gate": "review.two_role_after", "cutoff": cutoff,
-        "basis": "derived from the cutoff and the story Definition of Done the conformance "
-                 "gate itself reads; only the two-role rule is derived here",
-    }
+    state = _state_for_batch(root, rung_key, types, terminal)
+    return {"state": state, "types": types,
+            "basis": f"the `{rung_key}` rung's own terminal for each type present is: {state}"}
 
 
 def build_plan(repo_root: Path | str, kind: str | None = None, status: str | None = None,
@@ -3694,19 +3625,6 @@ def _render_goal_review(data: dict) -> None:
                   f"achievable - a classification, not an objection; the plan is not refused")
         return
     print(f"  goal review: the Sprint Goal went UNREVIEWED - {review['reason']}")
-
-
-def _render_reachable_end_state(data: dict) -> None:
-    """The furthest state this batch can reach. Silent when nothing caps it, so the line
-    cannot become a warning that always fires and is therefore never read."""
-    res = data.get("reachable_end_state")
-    if not res or not res.get("reason"):
-        return
-    # The state may now name one answer per TYPE, so a hardcoded `, NOT Done` read as a shortfall
-    # for the bug half of a mixed batch when `Fixed` is exactly the bug's terminal. The reason
-    # already says what the cap is and whom it reaches.
-    print(f"  reachable end state: {res['state']} - {res['reason']}")
-    print(f"    the rule reaches: {', '.join(res['units'])}")
 
 
 def _render_seat_provenance(data: dict) -> None:
@@ -4594,7 +4512,6 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     print(f"batch: {data['count']} unit(s) ({src}){scope}, order={args.order}")
     _render_goal_review(data)
     _render_goal_trace(data)
-    _render_reachable_end_state(data)
     _render_seat_provenance(data)
     _render_waves(data)
     _render_delivery_mode(data)
@@ -5676,8 +5593,7 @@ def unanswered_units(root, state, retro_id=None) -> dict:
     a standing delivery REJECT is held at every non-abandoned status, whatever else would answer
     it - evidence, a drop, a park or a ruling - unless `critic.coverage_state` reads it approved
     or repaired. Otherwise a unit is answered by its status: delivered-terminal or abandoned (a
-    terminal reached by a ruling, derived and never listed), at Review awaiting nothing but a
-    signature (`_awaits_signoff`, called rather than restated), at its run's rung-end status off
+    terminal reached by a ruling, derived and never listed), at its run's rung-end status off
     the build rung, dropped, parked on a pending decision or depending on one (`_parked_units`,
     the closure `blocked_by_pending` reads), or ruled not-stop-ship, accepted-risk or deferred
     in the carried table. `filed` names where its findings went, from every `filed:` closure.
@@ -5708,7 +5624,7 @@ def unanswered_units(root, state, retro_id=None) -> dict:
         ruled.setdefault(row["id"], set()).add(row["ruling"])
     answering = {r for r in retro_mod.KNOWN_ISSUE_RULINGS if r != retro_mod.STOP_SHIP}
     rung = run_rung(state)
-    rung_end = RUNG_TERMINALS.get(rung, (None,))[0] if rung not in COMPLETING_RUNGS else None
+    rung_end = RUNG_TERMINALS.get(rung) if rung not in COMPLETING_RUNGS else None
     info: dict[str, tuple[str, str]] = {}
     for uid in walked:
         hit = sdlc_md.find_by_id(root, uid)
@@ -5747,17 +5663,11 @@ def unanswered_units(root, state, retro_id=None) -> dict:
             passed = (bool(critic.evidence_for(root, uid))
                       or critic.sprint_covers_independently(
                           root, uid, critic.sprint_review_for(root, uid)))
-            if not passed:
-                review_why = WHY_PASS_OWED
-            elif not _awaits_signoff(root, uid):
-                review_why = WHY_AT_REVIEW
-            else:
-                review_why = None         # nothing but a signature is outstanding
+            review_why = WHY_AT_REVIEW if passed else WHY_PASS_OWED
         answered = not stop_ship and (
             terminal or uid in dropped or uid in parked
             or (rung_end is not None and kind
                 and status == _terminal_in_type_vocab(root, rung, kind, rung_end))
-            or review_why is None
             or bool(rulings & answering))
         if not answered:
             if stop_ship:
@@ -6399,12 +6309,11 @@ def _batch_unfanned_units(root, batch) -> list[tuple[str, str, str]]:
     return out
 
 
-#: Types the sign-off fan-out reaches, and the terminal status each one takes. Bugs were left
-#: out on the ground that "conformance is story-scoped", which is not true past the two-role
-#: cutoff: `conformance.two_role_applies_to` judges any numbered id and fails closed. The
-#: consequence was that a bug-heavy run could not close at all - `sprint close` refuses at step 1
-#: on units no independent pass covers, and the only mechanism for covering them skipped every
-#: bug in the batch. A 41-bug programme had no route to a close.
+#: Types the sign-off fan-out reaches, and the terminal status each one takes. Bugs were once
+#: left out on the ground that "conformance is story-scoped". The consequence was that a
+#: bug-heavy run could not close at all - `sprint close` refuses at step 1 on units no
+#: independent pass covers, and the only mechanism for covering them skipped every bug in the
+#: batch. A 41-bug programme had no route to a close.
 _SIGNOFF_TERMINAL = {"story": "Done", "bug": "Fixed"}
 
 
@@ -6467,7 +6376,7 @@ def _signoff_author(root, unit) -> str:
     """The author id the sign-off must be independent OF - read from the unit's recorded critic
     verdict, its evidence row, or the sprint-level review that covers it (a unit reviewed only at
     sprint scope still records its author there). Empty when none exists: a sign-off with no author
-    to be independent of cannot clear the two-role gate, so the caller refuses rather than invent one."""
+    to be independent of cannot be judged independent, so the caller refuses rather than invent one."""
     import critic  # noqa: PLC0415
     for getter in (critic.verdict_for, critic.evidence_for, critic.sprint_review_for):
         rec = getter(root, unit)
@@ -7123,7 +7032,7 @@ def _rung_product_blockers(root, state, rung: str) -> list:
             # Draft or Blocked has the rung's product and has not reached the rung's terminal,
             # so the close read it as complete. The rung is exempt from the build rung's bar,
             # not from having a terminal of its own.
-            terminal, _capped = RUNG_TERMINALS.get(rung.lower(), RUNG_TERMINALS["done"])
+            terminal = RUNG_TERMINALS.get(rung.lower(), RUNG_TERMINALS["done"])
             status = (sdlc_md.extract_field(sdlc_md.read_text_safe(path), "Status") or "").strip()
             vocab = sdlc_md.status_vocab(type_, Path(root))
             canon = sdlc_md.canonical_status(status, vocab)
@@ -7603,11 +7512,6 @@ def _signoff_preflight(root: Path, state: dict) -> list[dict]:
                  "remedy": ("nothing - this row is the record that the delivery gates did not "
                             "apply. The bar this rung IS held to is that every batch unit is "
                             "groomed, reported above as a blocking `status` row when it is not")}]
-    # Read the SAME way conformance reads it, so the pre-flight and the gate agree on which
-    # units the two-role rule reaches. A `hasattr` guard here would silently skip the whole
-    # check if the accessor were ever renamed, which is the failure mode this pre-flight exists
-    # to remove.
-    cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "review.two_role_after"))
     # The SAME resolver apply-signoff uses, not a prefix test of our own. `startswith("US")`
     # reported a sign-off blocker for a batch id with no artefact behind it - which apply-signoff
     # skips entirely - so the pre-flight over-reported work that was never owed.
@@ -7620,18 +7524,6 @@ def _signoff_preflight(root: Path, state: dict) -> list[dict]:
                                                        "sprint-level review covering it",
                         "remedy": "`critic.py record --unit <id> ...` or "
                                   "`critic.py sprint-review --units <ids> ...`"})
-            continue
-        num = sdlc_md.id_number(unit)
-        if cutoff is None or num is None or num <= cutoff:
-            continue          # pre-cutoff units keep today's behaviour
-        if not (critic.evidence_for(root, unit) or covered):
-            out.append({"stage": "sign-off", "detail": f"{unit}: no adversarial pass recorded "
-                                                       "as evidence",
-                        "remedy": "`critic.py evidence --unit <id> ...`"})
-        if not critic.is_independent_signoff(root, unit, critic.signoff_for(root, unit)):
-            out.append({"stage": "sign-off",
-                        "detail": f"{unit}: no independent reviewer-of-record sign-off",
-                        "remedy": "`critic.py signoff --unit <id> --principal \"<name>\" ...`"})
     out.extend(_done_gate_preflight(root, state))
     return out
 
@@ -9516,42 +9408,10 @@ def _report_gate_verdicts(root, state) -> dict:
         except (ValueError, OSError) as exc:
             # OSError as well as ValueError, for `_done_gate_preflight`'s reason: a
             # PermissionError here must not turn a clean refusal into a traceback.
-            why = str(exc).strip().splitlines()[0]
-            out[uid] = None if _only_the_signature_is_owed(exc) else why
+            out[uid] = str(exc).strip().splitlines()[0]
         else:
             out[uid] = None
     return out
-
-
-def _only_the_signature_is_owed(exc) -> bool:
-    """Is the reviewer-of-record sign-off the SINGLE thing this unit's gate is waiting for?
-
-    Then the gate is clear for PREPARE's purposes, because that sign-off is precisely what SEAL
-    is about to write. Without this the split is circular and unshippable: the Done gate demands
-    a signature, the signature comes after the report, and no run past `review.two_role_after`
-    could ever produce one. US0834 AC0's own Given says what "clear" means here - reviews
-    answered, criteria passed, coverage ruled - and the reviewer-of-record half is not in it.
-
-    Read from `GateRefusal.blocks`, which the ladder carries AS DATA for exactly this reason:
-    the blocks are joined with `"; AND "` but only some gates suffix theirs with `". Override
-    with --force"`, so splitting the sentence back up merges adjacent gates and leaks the
-    delimiter. An earlier version of this did re-parse the sentence, and the narrowing that was
-    supposed to make it strict - that the refusal lists exactly ONE requirement - could be
-    replaced by `return True` with the whole suite still green, because no fixture ever reached
-    it. One block, and that block naming the sign-off half and neither of the others, is the
-    same question asked of data nothing has to guess at.
-
-    Anything that is not a gate refusal carrying blocks fails CLOSED: an unreadable gate is not
-    a passed one.
-    """
-    blocks = list(getattr(exc, "blocks", ()) or ())
-    if len(blocks) != 1:
-        return False
-    import conformance  # noqa: PLC0415
-    only = blocks[0]
-    if conformance.HALF_SIGNOFF not in only:
-        return False
-    return not any(h in only for h in (conformance.HALF_EVIDENCE, conformance.HALF_VERDICT))
 
 
 def _report_index_drift(root) -> list:
@@ -10870,19 +10730,9 @@ def blocked_by_pending(repo_root: Path | str) -> dict:
     root = Path(repo_root)
     state = run_state.read(root)
     pending, remaining, blocked = _parked_units(root, state)
-    # A unit standing at Review, on a project past `review.two_role_after`, is not work this
-    # session declined to do - Done needs a reviewer-of-record sign-off the authoring session
-    # is explicitly refused. Reporting it as `could have proceeded` pushed the operator to
-    # --force, whose whole purpose is to price what parking a run threw away, so the record
-    # overstated the loss and the expensive escape became a habit. The same rule
-    # `reachable_end_state` applies at plan time, read here rather than restated.
-    awaiting = sorted(u for u in remaining
-                      if u not in blocked and _awaits_signoff(root, u))
     return {"pending": pending, "remaining": remaining,
             "blocked": sorted(blocked),
-            "awaiting_signoff": awaiting,
-            "unblocked": sorted(u for u in remaining
-                                if u not in blocked and u not in set(awaiting))}
+            "unblocked": sorted(u for u in remaining if u not in blocked)}
 
 
 def _parked_units(root: Path, state: dict) -> tuple[list[dict], list[str], set]:
@@ -10927,73 +10777,6 @@ def _pending_blocked(root: Path, pending: list[dict], units: list[str]) -> set:
                 blocked.add(uid)
                 changed = True
     return blocked
-
-
-def _awaits_signoff(root: Path, uid: str) -> bool:
-    """Is this unit finished bar a signature this session cannot give?
-
-    True only when all three hold: the project sets a two-role cutoff that still applies, the
-    unit sits past it, and its status is Review. Anything it cannot establish is False - a unit
-    wrongly called awaiting-signoff would be dropped from the stop's refusal, which is the one
-    direction that loses work silently.
-    """
-    try:
-        cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "review.two_role_after"))
-    except ValueError as exc:
-        sdlc_md.debug("sprint._awaits_signoff", exc)
-        return False
-    if cutoff is None:
-        return False
-    dod = sdlc_md.dor_dod_level_checks(root, "done", "story")
-    if dod is not None and "review.two-role" not in dod:
-        return False              # the project stood the sign-off requirement down
-    num = sdlc_md.id_number(uid)
-    # An id carrying NO ordinal - a v3 ULID - cannot be ranked against an ordinal cutoff, and is
-    # treated as PAST it. `num is None -> False` made this whole fix inert for the id family the
-    # product now mints by default, and took the opposite decision to `reachable_end_state`
-    # (which this fix claims to read) and to the provenance check repaired in the same run.
-    # An unanswerable comparison resolves one way across the repo, not three.
-    if num is not None and num <= cutoff:
-        return False
-    hit = sdlc_md.find_by_id(root, uid)
-    if hit is None:
-        return False
-    try:
-        status = sdlc_md.extract_field(hit[0].read_text(encoding="utf-8"), "Status") or ""
-    except OSError as exc:
-        sdlc_md.debug("sprint._awaits_signoff", exc)
-        return False
-    # ONE import, and critic's own predicate rather than a third spelling of it: `== "review"`
-    # missed a project using `In Review`, which is what critic's name-matching exists to support.
-    try:
-        import critic  # noqa: PLC0415 - deferred, like the chain's other siblings
-        if not critic.is_awaiting_signoff(status):
-            return False
-        # BOTH halves of the two-role bar, read the way `transition._two_role_gate` reads them,
-        # because this claim is only true when the ONLY outstanding half is the signature.
-        #
-        # The EVIDENCE half is session-doable: `record_evidence` accepts an authoring-session
-        # reviewer, while `record_signoff` refuses that same id. So a unit missing its
-        # adversarial pass is work this run could still dispatch - reporting it as "awaiting a
-        # sign-off this session cannot give" drops real remaining work out of the stop's
-        # refusal, which is the silent-loss direction this function exists to avoid and the one
-        # its first version took. Checking only the signature made the two cases identical.
-        if not (bool(critic.evidence_for(root, uid))
-                or critic.sprint_covers_independently(
-                    root, uid, critic.sprint_review_for(root, uid))):
-            return False                  # the adversarial pass is still owed, and is doable
-        signoff = critic.signoff_for(root, uid)
-        if signoff and critic.is_independent_signoff(root, uid, signoff):
-            return False                  # both halves met: it can reach Done right now
-    except Exception as exc:  # noqa: BLE001 - a reporting clause never fails a stop
-        # FALSE, not True. Every other uncertainty path here returns False, and this one used
-        # to fall through to `return True` - so a critic that raised dropped the unit from the
-        # stop's refusal, which is the direction that loses work silently and the exact defect
-        # this function was written to end. An unanswerable question leaves the unit as
-        # ordinary remaining work, where the worst case is a refusal the operator can override.
-        sdlc_md.debug("sprint._awaits_signoff.critic", exc)
-        return False
-    return True
 
 
 def run_elapsed(repo_root: Path | str) -> dict:
@@ -11112,18 +10895,9 @@ def cmd_stop(args) -> int:
         print(f"  {unanswered_ways_out(held, ua['rulings_from'], state.get('run_id'))}",
               file=sys.stderr)
         return 1
-    if out.get("awaiting_signoff"):
-        # Stated, never silent. These units are dropped from the refusal because nothing this
-        # session can do would move them - but "we did not count them" and "there was nothing
-        # there" must not read the same, and the operator is the one who can act on it.
-        print(f"  {len(out['awaiting_signoff'])} unit(s) await a sign-off this session cannot "
-              f"give: {', '.join(out['awaiting_signoff'])}. They are finished bar an "
-              f"independent reviewer-of-record signature, so they are not counted as work "
-              f"this stop threw away.")
     cause = STOP_PENDING_DECISION if out["pending"] and not forced else STOP_OPERATOR
     stop = {"cause": cause, "detail": (args.reason or "").strip() or None,
             "blocked": out["blocked"], "could_have_proceeded": out["unblocked"],
-            "awaiting_signoff": out.get("awaiting_signoff", []),
             "pending": len(out["pending"]), "stopped_at": sdlc_md.now_iso8601()}
     # What --force WAIVED is the predicate's set, not `could_have_proceeded`: that list reads
     # the pending-decision walk, which cannot see a ruling, a standing REJECT or an owed pass.

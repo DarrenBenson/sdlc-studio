@@ -3104,7 +3104,6 @@ DOR_DOD_CHECK_IDS = {
     "grooming.deps": "dependencies delivered or sequenced in-batch (tranche audit unmet-deps)",
     "story.verify-ac": "the story's executable ACs pass (verify_ac; the transition -> Done gate)",
     "review.critic-approve": "an independent critic APPROVE is recorded (conformance critiqued)",
-    "review.two-role": "adversarial evidence + reviewer-of-record sign-off (review.two_role_after)",
     # US0567: the doctrine's repair-evidence rule (reference-doctrine.md#repair-evidence). A
     # fix's author is not sufficient evidence for that fix, so the repair carries a mutant its
     # own test was seen to fail on. Registered here because a `[check:]` tag that resolves to
@@ -3126,6 +3125,14 @@ DOR_DOD_CHECK_IDS = {
     "release.gate": "the full release gate is green (gate --release)",
     "release.changelog": "changelog fragments composed, no strays (the release gate's lane)",
     "release.version": "version strings consistent across the authoritative files",
+}
+#: Check ids that once named a gate and no longer do, each with why. A project's DoD written
+#: before the retirement still carries the tag, so it is reported as retired, naming `migrate`,
+#: rather than refused as unknown. The ONE list: every reader of retired ids imports it.
+RETIRED_CHECK_IDS = {
+    "review.two-role": "the per-unit evidence row and reviewer-of-record sign-off were "
+                       "retired: one independent APPROVE (review.critic-approve) decides a "
+                       "unit, and the operator signs the run once at `sprint sign`",
 }
 CHECK_TAG_RE = re.compile(r"\[check:\s*([a-z0-9.-]+)\s*\]")
 # A bracketed token shaped like a check tag (the word `check` on a word boundary, any case)
@@ -3160,8 +3167,15 @@ def check_tag_near_misses(text: str) -> list[str]:
 
 def unknown_check_ids(text: str) -> list[str]:
     """The tags that resolve to NO registered check - each is human intent that
-    nothing would enforce, so validation must fail loud on any."""
-    return [t for t in check_tags(text) if t not in DOR_DOD_CHECK_IDS]
+    nothing would enforce, so validation must fail loud on any. A retired id is not
+    unknown: `retired_check_ids` reports it."""
+    return [t for t in check_tags(text)
+            if t not in DOR_DOD_CHECK_IDS and t not in RETIRED_CHECK_IDS]
+
+
+def retired_check_ids(text: str) -> list[str]:
+    """The tags naming a retired check (`RETIRED_CHECK_IDS`), in order."""
+    return [t for t in check_tags(text) if t in RETIRED_CHECK_IDS]
 
 
 def dor_dod_level_checks(repo_root, kind: str, level: str) -> set[str] | None:

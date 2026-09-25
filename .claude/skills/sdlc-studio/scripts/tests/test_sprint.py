@@ -3870,84 +3870,6 @@ class GoalReviewKeepsItsRoundsTests(unittest.TestCase):
                              "the close must be able to say the goal took two rounds")
 
 
-class ReachableEndStateTests(unittest.TestCase):
-    """US0298/CR0354: RUN-01KXVYGR's goal, 'the sized delivery backlog is empty', could not
-    be reached BY CONSTRUCTION - with `review.two_role_after` set, every unit past the cutoff
-    needs a reviewer-of-record sign-off the authoring session is refused, so the furthest
-    reachable state was Review. Nobody noticed until the close."""
-
-    def _config(self, root: Path, body: str) -> None:
-        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / ".config.yaml").write_text(body, encoding="utf-8")
-
-    def test_plan_names_the_reachable_end_state_under_the_two_role_gate(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root, "review:\n  two_role_after: 192\n")
-            _pointed_story(root, 200, 3)
-            _pointed_story(root, 201, 3)
-            data = _load().build_plan(root, "story", "Ready", skip_personas=True)
-            res = data["reachable_end_state"]
-            self.assertEqual(res["state"], "Review")
-            self.assertIn("two_role_after", res["reason"])
-            self.assertEqual(res["units"], ["US0200", "US0201"])
-            out, err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = _load().main(["plan", "--stories", "Ready", "--root", str(root),
-                                   "--no-fetch", "--skip-personas"])
-            self.assertEqual(rc, 0)
-            self.assertIn("reachable end state: Review", out.getvalue() + err.getvalue())
-
-    def test_a_batch_the_two_role_gate_does_not_reach_can_still_reach_done(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root, "review:\n  two_role_after: 192\n")
-            _pointed_story(root, 10, 3)          # below the cutoff
-            data = _load().build_plan(root, "story", "Ready", skip_personas=True)
-            self.assertEqual(data["reachable_end_state"]["state"], "Done")
-            self.assertIsNone(data["reachable_end_state"]["reason"])
-            self.assertEqual(data["reachable_end_state"]["units"], [])
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)                       # ...and with no cutoff configured at all
-            _pointed_story(root, 200, 3)
-            data = _load().build_plan(root, "story", "Ready", skip_personas=True)
-            self.assertEqual(data["reachable_end_state"]["state"], "Done")
-            self.assertIsNone(data["reachable_end_state"]["reason"])
-
-    def test_a_project_that_stood_the_two_role_rule_down_still_reaches_done(self) -> None:
-        """The cap is derived from the SAME fields the conformance gate reads, including the
-        story Definition of Done's `review.two-role` stand-down. A cap that disagreed with the
-        gate it claims to derive would be worse than no cap at all."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root, "review:\n  two_role_after: 192\n")
-            (root / "sdlc-studio" / "definition-of-done.md").write_text(
-                "# DoD\n\n## Story\n\n- verified [check: verify.acs]\n", encoding="utf-8")
-            _pointed_story(root, 200, 3)
-            data = _load().build_plan(root, "story", "Ready", skip_personas=True)
-            self.assertEqual(data["reachable_end_state"]["state"], "Done")
-            self.assertIsNone(data["reachable_end_state"]["reason"])
-
-    def test_the_reachable_end_state_is_recorded_on_the_run_state(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._config(root, "review:\n  two_role_after: 192\n")
-            _pointed_story(root, 200, 3)
-            out, err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
-                    unittest.mock.patch.object(sys, "stdin", io.StringIO("")):
-                rc = _load().main(["plan", "--stories", "Ready", "--root", str(root),
-                                   "--no-fetch", "--skip-personas", "--write",
-                                   "--sprint-goal", "every story Done"])
-            self.assertEqual(rc, 0, err.getvalue())
-            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
-            res = state["reachable_end_state"]
-            self.assertEqual(res["state"], "Review")
-            self.assertIn("two_role_after", res["reason"])
-            self.assertEqual(res["units"], ["US0200"])
-            self.assertEqual(state["sprint_goal"], "every story Done")
-
-
 class GoalVerdictTests(unittest.TestCase):
     """US0183: the closing review judges the increment against the recorded goal."""
 
@@ -5247,261 +5169,6 @@ class UnblockedWorkBlocksTheStopTests(unittest.TestCase):
             self.assertEqual(mod.blocked_by_pending(root)["unblocked"], ["US0102"])
 
 
-class StopAwaitingSignoffTests(unittest.TestCase):
-    """BG0455: `stop` could not tell an unbuilt unit from one the two-role gate holds.
-
-    A unit at Review on a project past `review.two_role_after` is not buildable by anyone in
-    the authoring session - Done needs a reviewer-of-record sign-off the session is explicitly
-    refused. Stopping RUN-01KYPZ1G named 14 such units as `could have proceeded` and demanded
-    --force, when nothing the run could do would have moved one of them. The cost is not only
-    the friction: --force exists to record what parking a run threw away, so the run record
-    overstated the loss, and reaching for it became a habit when it must stay expensive.
-    `reachable_end_state` already draws this distinction at plan time; `stop` never read it.
-    """
-
-    def _fixture(self, root: Path, statuses: dict, *, evidence: bool = True) -> None:
-        """A run whose Review units have had their ADVERSARIAL PASS recorded.
-
-        `evidence=True` by default because that is the state these tests are about: the only
-        outstanding half is the signature, which the authoring session is refused. Without it
-        the units are ordinary remaining work - the evidence half is session-doable, since
-        `record_evidence` accepts an authoring-session reviewer while `record_signoff` refuses
-        the same id. Every fixture here originally omitted it, so the class asserted that a
-        unit owing its adversarial pass was "finished bar a signature" and pinned the defect an
-        independent seat then found.
-        """
-        _close_state(root, batch=sorted(statuses))
-        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / ".config.yaml").write_text(
-            "review:\n  two_role_after: 100\n", encoding="utf-8")
-        d = root / "sdlc-studio" / "stories"
-        d.mkdir(parents=True, exist_ok=True)
-        for uid, status in statuses.items():
-            (d / f"{uid}-x.md").write_text(
-                f"# {uid}: s\n\n> **Status:** {status}\n> **Priority:** Medium\n"
-                f"> **Affects:** src/a.py\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
-        if evidence:
-            import critic
-            for uid, status in statuses.items():
-                if critic.is_awaiting_signoff(status):
-                    critic.record_evidence(root, uid, reviewer="an independent seat",
-                                           author="the authoring session",
-                                           findings="adversarial pass run; none blocking")
-
-    def test_a_unit_held_at_Review_is_not_reported_as_able_to_proceed(self) -> None:
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root, {"US0101": "Review", "US0102": "Ready"})
-            out = mod.blocked_by_pending(root)
-        self.assertEqual(["US0102"], out["unblocked"],
-                         "a unit awaiting a signature is counted as work the run declined to do")
-        self.assertEqual(["US0101"], out["awaiting_signoff"])
-
-    def test_a_stop_is_not_refused_when_only_signatures_are_outstanding(self) -> None:
-        """The filed reproduction: the run is finished, and the only thing outstanding is a
-        signature this session is forbidden to give. That is a fact for the operator, not a
-        refusal aimed at the agent."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root, {"US0101": "Review", "US0102": "Review"})
-            buf_out, buf_err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
-                rc = mod.cmd_stop(argparse.Namespace(root=str(root), force=False,
-                                                     reason="done bar the signatures"))
-        self.assertEqual(0, rc, buf_err.getvalue())
-        self.assertIn("await", (buf_out.getvalue() + buf_err.getvalue()).lower())
-
-    def test_a_genuinely_unbuilt_unit_still_refuses_the_stop(self) -> None:
-        """The positive control. Without it, a change that simply stopped refusing would pass
-        the test above while removing the guard entirely."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root, {"US0101": "Review", "US0102": "Ready"})
-            with contextlib.redirect_stdout(io.StringIO()), \
-                    contextlib.redirect_stderr(io.StringIO()) as err:
-                rc = mod.cmd_stop(argparse.Namespace(root=str(root), force=False, reason="x"))
-        self.assertEqual(1, rc)
-        self.assertIn("US0102", err.getvalue())
-        self.assertNotIn("US0101", err.getvalue(),
-                         "the held unit is named among the work that could have proceeded")
-
-    def test_without_the_two_role_rule_Review_is_ordinary_remaining_work(self) -> None:
-        """The rule is the PROJECT's, not a property of the status. With no cutoff configured,
-        a unit at Review is work somebody in this session can still finish."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root, {"US0101": "Review"})
-            (root / "sdlc-studio" / ".config.yaml").write_text("{}\n", encoding="utf-8")
-            out = mod.blocked_by_pending(root)
-        self.assertEqual(["US0101"], out["unblocked"])
-        self.assertEqual([], out["awaiting_signoff"])
-
-    def test_a_unit_whose_two_role_bar_is_MET_is_still_remaining_work(self) -> None:
-        """The fail-open an independent review reproduced. A unit with adversarial evidence AND
-        an independent sign-off recorded can reach Done right now, so reporting it as "awaiting
-        a signature this session cannot give" drops real remaining work out of the stop's
-        refusal - the one direction this function's own docstring says it never takes."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root, {"US0101": "Review"})
-            calls = {}
-
-            def _signoff_for(_root, unit):
-                calls["asked"] = unit
-                return {"principal": "the operator", "unit": unit}
-
-            import critic
-            with unittest.mock.patch.object(critic, "signoff_for", _signoff_for), \
-                    unittest.mock.patch.object(critic, "is_independent_signoff",
-                                               lambda *_a, **_k: True):
-                out = mod.blocked_by_pending(root)
-        self.assertEqual("US0101", calls.get("asked"), "the sign-off record is never consulted")
-        self.assertEqual([], out["awaiting_signoff"])
-        self.assertEqual(["US0101"], out["unblocked"],
-                         "a unit that can reach Done today was dropped from the stop")
-
-    def test_an_id_with_no_ordinal_is_held_like_reachable_end_state_holds_it(self) -> None:
-        """A v3 ULID carries no ordinal, so `id_number` returns None. Treating that as "below
-        the cutoff" made the whole fix inert for the id family the product mints by default -
-        and took the opposite decision to `reachable_end_state`, which this fix claims to read,
-        and to the provenance check repaired in the same run. One answer across the repo."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root, {"US-01JQK3F8AA": "Review"})
-            out = mod.blocked_by_pending(root)
-        self.assertEqual(["US01JQK3F8AA"], out["awaiting_signoff"],
-                         "a v3 id is reported as work the stop threw away")
-
-    def test_a_renamed_review_status_is_still_held(self) -> None:
-        """`== "review"` was a third spelling of a predicate critic already owns, and it missed
-        a project using `In Review` - which critic's matcher exists to support."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root, {"US0101": "In Review"})
-            out = mod.blocked_by_pending(root)
-        self.assertEqual(["US0101"], out["awaiting_signoff"])
-
-    def test_a_critic_that_RAISES_leaves_the_unit_as_remaining_work(self) -> None:
-        """Round-3 finding. Every uncertainty path in `_awaits_signoff` returns False; the
-        signoff block fell through to `return True`, so a critic that raised DROPPED the unit
-        from the stop's refusal - the direction that loses work silently, and the exact defect
-        BG0455 was filed to end, reintroduced through its own repair.
-
-        The mutant that proves it: making the handler fail-closed SURVIVED the entire
-        5,669-test suite before this test existed."""
-        mod = _load()
-        import critic
-
-        def boom(*_a, **_k):
-            raise RuntimeError("critic is unavailable")
-
-        # Each target must actually be REACHED, or the test proves nothing about it.
-        # `is_independent_signoff` is short-circuited unless a sign-off exists, so that case
-        # supplies one - a control against asserting over a call that never happens.
-        cases = [
-            ("is_awaiting_signoff", {}),
-            ("signoff_for", {}),
-            ("is_independent_signoff", {"signoff_for": lambda *_a, **_k: {"principal": "x"}}),
-        ]
-        for target, extra in cases:
-            with tempfile.TemporaryDirectory() as d:
-                root = Path(d)
-                self._fixture(root, {"US0101": "Review"})
-                with contextlib.ExitStack() as stack:
-                    for name, fn in extra.items():
-                        stack.enter_context(unittest.mock.patch.object(critic, name, fn))
-                    stack.enter_context(unittest.mock.patch.object(critic, target, boom))
-                    out = mod.blocked_by_pending(root)
-                self.assertEqual([], out["awaiting_signoff"],
-                                 f"critic.{target} raising dropped the unit from the refusal")
-                self.assertEqual(["US0101"], out["unblocked"],
-                                 f"critic.{target} raising lost real remaining work silently")
-
-    def test_the_matcher_is_criticS_public_one_not_a_local_copy(self) -> None:
-        """The fallback used to be a byte-identical private copy behind a broad `except`, so
-        deleting critic's predicate produced no error and no behaviour change - and tightening
-        it would have left this call site silently on the old broad rule."""
-        import critic
-        self.assertTrue(hasattr(critic, "is_awaiting_signoff"),
-                        "the cross-module caller depends on a private name")
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root, {"US0101": "Review"})
-            with unittest.mock.patch.object(critic, "is_awaiting_signoff",
-                                            lambda _s: False):
-                out = mod.blocked_by_pending(root)
-        self.assertEqual([], out["awaiting_signoff"],
-                         "critic's matcher is not consulted, so a local copy is deciding")
-
-    def test_a_unit_STILL_OWING_its_adversarial_pass_is_remaining_work(self) -> None:
-        """The seat's finding. The two-role bar has two halves and only the SIGNATURE is beyond
-        this session: `record_evidence` accepts an authoring-session reviewer, `record_signoff`
-        refuses the same id. So a unit whose adversarial pass has not been run is work this run
-        could still dispatch, and reporting it as "awaiting a sign-off this session cannot give"
-        drops it from the stop's refusal - the silent-loss direction this function exists to
-        avoid. Checking only the signature made the two states indistinguishable."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root, {"US0101": "Review"}, evidence=False)
-            out = mod.blocked_by_pending(root)
-        self.assertEqual([], out["awaiting_signoff"],
-                         "a unit owing its adversarial pass is reported as merely awaiting a "
-                         "signature, so the work is silently uncounted")
-        self.assertEqual(["US0101"], out["unblocked"],
-                         "the evidence half is session-doable and must stay in the refusal")
-
-    def test_a_stop_IS_refused_while_an_adversarial_pass_is_owed(self) -> None:
-        """The consequence end to end: the stop must not exit 0 over work the run could do."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root, {"US0101": "Review"}, evidence=False)
-            with contextlib.redirect_stdout(io.StringIO()), \
-                    contextlib.redirect_stderr(io.StringIO()) as err:
-                rc = mod.cmd_stop(argparse.Namespace(root=str(root), force=False, reason="x"))
-        self.assertEqual(1, rc, "the stop exited clean over an un-reviewed unit")
-        self.assertIn("US0101", err.getvalue())
-
-    def test_SPRINT_LEVEL_coverage_counts_as_the_adversarial_pass(self) -> None:
-        """The evidence half is satisfied by a per-unit row OR by a sprint-level review covering
-        the unit - the same either/or `transition._two_role_gate` applies. Reading only the
-        per-unit row would report a unit covered by a full-diff pass as still owing one, and
-        hold a stop that should proceed. Mutation found this limb unpinned."""
-        mod = _load()
-        import critic
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root, {"US0101": "Review"}, evidence=False)
-            critic.record_sprint_review(
-                root, ["US0101"], reviewer="an independent seat",
-                author="the authoring session", verdict="APPROVE",
-                findings="full-diff pass over the batch; none blocking")
-            out = mod.blocked_by_pending(root)
-        self.assertEqual(["US0101"], out["awaiting_signoff"],
-                         "a unit covered by a sprint-level pass is reported as still owing one")
-        self.assertEqual([], out["unblocked"])
-
-    def test_a_unit_below_the_cutoff_is_not_held(self) -> None:
-        """The cutoff is a number, and it must be read as one - a project sets it precisely so
-        the rule applies to new work and not to everything already on disk."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root, {"US0099": "Review"})
-            out = mod.blocked_by_pending(root)
-        self.assertEqual(["US0099"], out["unblocked"])
-        self.assertEqual([], out["awaiting_signoff"])
-
-
 #: The run id every unanswered-unit fixture records, and the author its review rows name.
 _UA_RUN = "RUN-TEST0001"
 _UA_AUTHOR = "the authoring session"
@@ -5671,13 +5338,15 @@ def _ua_ac5_run(root: Path, mod, only: tuple | None = None) -> dict:
     def ours(*ids: str) -> list[str]:
         return [u for u in ids if u in units]
 
-    _ua_config(root, 100)
-    statuses = {"US0101": "In Progress", "US0102": "Review", "US0103": "Review",
-                "US0104": "Review", "BG0101": "Fixed", "US0105": "In Progress",
+    # US0102, US0104 and US0116 once stood at Review past a `two_role_after` cutoff, answered as
+    # awaiting only the signature. That state was retired with the per-unit sign-off (US0916): a
+    # reviewed unit reaches Done on its own, so each stands at Done and is answered by its status.
+    statuses = {"US0101": "In Progress", "US0102": "Done", "US0103": "Review",
+                "US0104": "Done", "BG0101": "Fixed", "US0105": "In Progress",
                 "US0106": "In Progress", "US0107": "Ready", "US0108": "Ready",
                 "US0109": "Ready", "US0110": "Review", "US0111": "Done",
                 "US0112": "In Progress", "BG0102": "Won't Fix", "US0113": "Superseded",
-                "US0114": "Won't Implement", "US0115": "Review", "US0116": "Review",
+                "US0114": "Won't Implement", "US0115": "Review", "US0116": "Done",
                 "US0117": "In Progress"}
     for uid in units:
         _ua_unit(root, uid, statuses[uid], depends="US0107" if uid == "US0108" else "")
@@ -5762,24 +5431,20 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
                           "review-anchor"), mod._CLOSE_CHAIN,
                          "the hold is part of the stop-ship step, not a new chain step")
 
-    def test_review_fixed_and_rung_end_units_do_not_hold_the_close(self) -> None:
-        """MUTANT: count Review as unanswered (every real close deadlocks: Review reaches Done
-        only inside apply-signoff); hold every unit not approved/repaired, skipping the REJECT
-        check; hard-code Ready as answering whatever the rung; read delivered-terminal as Done."""
+    def test_done_fixed_and_rung_end_units_do_not_hold_the_close(self) -> None:
+        """MUTANT: hold every unit not approved/repaired, skipping the REJECT check; hard-code
+        Ready as answering whatever the rung; read delivered-terminal as Done. Replaces the
+        Review half of US0626 AC2: with the per-unit sign-off retired (US0916) a Review unit is
+        remaining work, and a reviewed unit stands at Done."""
         mod = _load()
 
         def harness(root: Path, extra: tuple = ()) -> None:
-            _ua_config(root, 100)
             units = ("US0101", "US0102", "BG0101", *extra)
             for uid in units:
-                _ua_unit(root, uid, {"BG0101": "Fixed", "US0103": "Ready"}.get(uid, "Review"))
-            # PINNED ORDER: apply-signoff stops at BG0101, a Fixed bug with no recorded
-            # author, so it must come after the two stories the Then moves to Done.
+                _ua_unit(root, uid, {"BG0101": "Fixed", "US0103": "Ready"}.get(uid, "Done"))
             _close_state(root, batch=list(units), run_id=_UA_RUN)
             _ua_retro(root, batch=units)
             _ua_waive_all(root)
-            _ua_evidence(root, "US0101")
-            _ua_evidence(root, "US0102")
             _ua_reject(root, "US0102")
             import critic
             critic.record_repair(root, "US0102", _UA_AUTHOR,
@@ -5790,18 +5455,8 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
             root = Path(d)
             harness(root)
             rc, out, err = _ua_close(mod, root)
-            self.assertIn("checklist: ok", out, f"the first close refused:\n{err}")
+            self.assertIn("checklist: ok", out, f"the close refused:\n{err}")
             self.assertEqual(0, rc, err)
-            # US0832: the transitions moved to `sign`. The subject of this test is that a
-            # Review, Fixed or rung-end unit does not HOLD the close, so the close is driven
-            # here and the fan-out follows it through the verb that now owns it.
-            out2, err2 = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(out2), contextlib.redirect_stderr(err2):
-                rc = mod.main(["sign", "--report", "RPT0001", "--principal", "Darren",
-                               "--root", str(root)])
-            self.assertEqual(("Done", "Done", "Fixed"),
-                             tuple(_ua_status(root, u) for u in ("US0101", "US0102", "BG0101")),
-                             err2.getvalue())
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             harness(root, extra=("US0103",))
@@ -5990,11 +5645,13 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
                     self.assertIn(f"no retro carries {run}", _ua_stop_refused_line(err))
 
     def test_stop_refuses_a_review_unit_awaiting_more_than_a_signature(self) -> None:
-        """MUTANT: answer a Review unit on its evidence limbs alone, never calling
-        `_awaits_signoff`; drop the id-versus-cutoff comparison; never read the sign-off."""
+        """MUTANT: answer a Review unit on its evidence limbs alone. Every shape refuses: no
+        cutoff, below a legacy cutoff, past one, and already signed off - the per-unit sign-off
+        and its `review.two_role_after` cutoff were retired (US0916), so nothing a Review unit
+        carries answers it short of its Done transition."""
         mod = _load()
         import critic
-        for case, cutoff in (("a", None), ("b", 200), ("c", 100), ("control", 100)):
+        for case, cutoff in (("a", None), ("b", 200), ("c", 100), ("d", 100)):
             with self.subTest(case=case), tempfile.TemporaryDirectory() as d:
                 root = Path(d)
                 _ua_config(root, cutoff)
@@ -6008,12 +5665,7 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
                         root, "US0101", critic.signoff_for(root, "US0101")))
                 got = mod.unanswered_units(root, mod.run_state.read(root))
                 rc, out, err = _ua_cli(mod, root, "stop", "--reason", "x")
-                if case == "control":
-                    self.assertEqual(0, rc, err)
-                    self.assertEqual([], got["unanswered"], got)
-                    awaiting = [ln for ln in out.splitlines() if "await a sign-off" in ln]
-                    self.assertTrue(awaiting and "US0101" in awaiting[0], out)
-                    continue
+                self.assertNotIn("await a sign-off", out)
                 self.assertEqual(1, rc, err)
                 line = _ua_stop_refused_line(err)
                 self.assertIn("US0101", line)
@@ -6046,8 +5698,7 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
                     self.assertIn("US0101", _ua_stop_refused_line(err))
                     self.assertEqual("running", mod.run_state.read(root)["outcome"])
                 else:
-                    # The remedy the refusal names: both review halves are recorded, so the
-                    # two-role gate admits the Done transition.
+                    # The remedy the refusal names: the Done transition, which needs no sign-off.
                     transition.transition(root, "US0101", "Done")
                     rc, out, err = _ua_close(mod, root)
                     self.assertIn("checklist: ok", out, err)
@@ -6463,8 +6114,8 @@ class EveryRunEndReadsThePredicateTests(unittest.TestCase):
         `blocked_by_pending`'s `unblocked` or from `_remaining_units`; return 1 under --force
         whenever `unanswered_units` is non-empty.
 
-        Compared with the literal only: `could_have_proceeded` and `awaiting_signoff` differ
-        from it in both directions, and US0101, US0112 and US0115 sit in both."""
+        Compared with the literal only: `could_have_proceeded` differs from it in both
+        directions, and US0101, US0103, US0110, US0112 and US0115 sit in both."""
         mod = _load()
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -6546,7 +6197,7 @@ class EveryRunEndReadsThePredicateTests(unittest.TestCase):
                 # The control is not vacuous: the predicate is empty while every other reader
                 # still holds answered units, and none of THE RUN's nine is walked.
                 self.assertEqual([], mod.unanswered_units(root, state)["unanswered"])
-                self.assertLessEqual({"US0102", "US0104", "US0105", "US0107", "US0116"},
+                self.assertLessEqual({"US0105", "US0107"},
                                      set(mod._remaining_units(root, state)))
                 walked = set(state["batch"]) | {c.get("id") for c in state["batch_changes"]}
                 self.assertEqual(set(), walked & _UA_AC5_SET)
@@ -6760,42 +6411,6 @@ class StopRecordTests(unittest.TestCase):
         self.assertEqual(
             telemetry.elapsed_excluding_idle("2026-07-22T00:00:00Z", "2026-07-22T02:00:00Z",
                                              before)["hours"], 2.0)
-
-
-class ReachableEndStateBoundaryTests(unittest.TestCase):
-    """MINOR, RUN-01KY3MFX review: `reachable_end_state` and the conformance gate both compare
-    a unit's id number against `review.two_role_after` with a STRICT `>`, and the docstring
-    leans on the two agreeing. Mutating either comparison to `>=` left all 289 tests green,
-    because no test ever put a unit ON the cutoff. The boundary unit is the only one the two
-    can disagree about."""
-
-    def _batch(self, root: Path, num: int) -> list[dict]:
-        _batch_story(root, num)
-        return [{"id": f"US{num:04d}",
-                 "path": str(root / "sdlc-studio" / "stories" / f"US{num:04d}-x.md")}]
-
-    def _cutoff(self, root: Path, value: int) -> None:
-        p = root / "sdlc-studio" / ".config.yaml"
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(f"review:\n  two_role_after: US{value:04d}\n", encoding="utf-8")
-
-    def test_the_unit_ON_the_cutoff_is_not_past_it(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._cutoff(root, 192)
-            res = _load().reachable_end_state(root, self._batch(root, 192))
-            self.assertEqual(res["cutoff"], 192)
-            self.assertEqual(res["state"], "Done")
-            self.assertEqual(res["units"], [])
-
-    def test_the_next_unit_after_the_cutoff_is_capped(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._cutoff(root, 192)
-            res = _load().reachable_end_state(root, self._batch(root, 193))
-            self.assertEqual(res["cutoff"], 192)
-            self.assertEqual(res["state"], "Review")
-            self.assertEqual(res["units"], ["US0193"])
 
 
 class ApplySignoffTailTests(unittest.TestCase):
@@ -7601,11 +7216,6 @@ class ClosePreflightTests(unittest.TestCase):
         gate_mod.run_gate = lambda *a, **k: {"ok": not lanes, "checks": [
             {"check": c, "status": "fail", "blocking": True, "detail": f"{c} detail"}
             for c in lanes]}
-        # The two-role half only applies past `review.two_role_after`. Without this the whole
-        # evidence/sign-off branch is skipped and the sign-off tests pass for the wrong reason.
-        cfg = root / "sdlc-studio" / ".config.yaml"
-        cfg.parent.mkdir(parents=True, exist_ok=True)
-        cfg.write_text("review:\n  two_role_after: 100\n", encoding="utf-8")
         verdicts = verdicts or {}
         critic_mod.verdict_for = lambda r, u, phase="delivery": verdicts.get(u)
         # A REALISTIC row: `evidence_for` returns one dict of `_EVIDENCE_COLS`, never a list
@@ -7791,10 +7401,11 @@ class ClosePreflightTests(unittest.TestCase):
             rid = self._retro(root)
             self.assertTrue(mod.close_preflight(root, rid)["ready"])
             import critic as critic_mod
-            critic_mod.is_independent_signoff = lambda r, u, s: False   # the gate now refuses
+            critic_mod.verdict_for = lambda r, u, phase="delivery": None
+            critic_mod.sprint_covers_independently = lambda r, u, rev: False  # critic now says no
             res = mod.close_preflight(root, rid)
             self.assertIn("sign-off", self._stages(res),
-                          "the pre-flight reimplements the sign-off rule instead of asking")
+                          "the pre-flight reimplements the review rule instead of asking")
 
     def test_preflight_reports_the_done_gate_apply_signoff_will_hit(self) -> None:
         """The pre-flight said READY and `--apply-signoff` then refused.
@@ -7929,10 +7540,11 @@ class ClosePreflightTests(unittest.TestCase):
         """
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            # Covered but with no verdict: the pre-flight is NOT ready (the sign-off half is
-            # unmet), while the chain's own coverage step passes - so what this test measures
-            # is the pre-flight's non-blocking property and not a different step's refusal.
-            mod = self._mod(root, units=["US0101"], evidence=("US0101",), covered=("US0101",))
+            # A failing gate lane: the pre-flight is NOT ready, while the chain's own coverage
+            # step passes and the gate step comes after retro-validate - so what this test
+            # measures is the pre-flight's non-blocking property and not a step's refusal.
+            mod = self._mod(root, lanes=("conformance",), units=["US0101"],
+                            evidence=("US0101",), covered=("US0101",))
             rid = self._retro(root)
             self.assertFalse(mod.close_preflight(root, rid)["ready"])
             reached = []
@@ -11724,41 +11336,6 @@ class InertMechanismsAreReachedTests(unittest.TestCase):
             (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8")))
         self.assertNotIn("goal panel:", "\n".join(lines),
                          "no clauses means no panel, not a panel over nothing")
-
-
-class UlidUnitsAreNotFailedOpenTests(unittest.TestCase):
-    """BG0354. BG0318 closed the v2-only id grammar in `conformance.py`; the same hole survived
-    in `reachable_end_state`, where a unit whose id carries no comparable number was SKIPPED -
-    reported as reaching Done when the sign-off gate may well cap it. A fail-open in the one
-    report that tells an operator how far a batch can get."""
-
-    def _root(self) -> Path:
-        d = Path(tempfile.mkdtemp(prefix="ulid_"))
-        (d / "sdlc-studio").mkdir(parents=True)
-        (d / "sdlc-studio" / ".config.yaml").write_text(
-            "review:\n  two_role_after: 192\n", encoding="utf-8")
-        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
-        return d
-
-    def test_a_ulid_unit_is_reported_as_capped_not_skipped(self) -> None:
-        sprint = _load()
-        res = sprint.reachable_end_state(self._root(), [{"id": "US-01JQK3F8"}])
-        self.assertEqual(sprint.END_STATE_REVIEW, res["state"],
-                         "a unit the cutoff cannot be compared against was reported as "
-                         "reaching Done - the fail-open direction")
-        # `norm_id` strips the dash, so the reported id is the normalised form.
-        self.assertEqual(["US01JQK3F8"], res["units"])
-
-    def test_a_numbered_unit_below_the_cutoff_still_reaches_done(self) -> None:
-        """The discriminating half - a report that always caps is not a report."""
-        sprint = _load()
-        res = sprint.reachable_end_state(self._root(), [{"id": "US0001"}])
-        self.assertEqual(sprint.END_STATE_DONE, res["state"])
-
-    def test_a_numbered_unit_past_the_cutoff_is_capped(self) -> None:
-        sprint = _load()
-        res = sprint.reachable_end_state(self._root(), [{"id": "US0500"}])
-        self.assertEqual(sprint.END_STATE_REVIEW, res["state"])
 
 
 class BlockerGroupingTests(unittest.TestCase):
@@ -17801,40 +17378,17 @@ class RungTerminalAndProductTests(unittest.TestCase):
             ".", batch, rung="triage")["state"],
             "a story has no triage lane, so the triage rung does not move one")
 
-    def test_the_build_rung_still_reports_its_own_terminal(self) -> None:
-        """The paired control. Making the report rung-aware must not stop it reporting the
-        build rung correctly - a story past the cutoff is still capped at Review.
-
-        Judged in its own root, not this repository's: D0255 stood this repository's two-role
-        cutoff down, and a control that reads the live config pins that config, not the code."""
-        batch = [{"id": "US0700", "type": "story"}]
-        with tempfile.TemporaryDirectory() as tmp:
-            cfg = Path(tmp) / "sdlc-studio" / ".config.yaml"
-            cfg.parent.mkdir(parents=True)
-            cfg.write_text("review:\n  two_role_after: 192\n", encoding="utf-8")
-            self.assertEqual("Review", sprint.reachable_end_state(tmp, batch, rung="done")["state"])
-            cfg.write_text("review:\n  two_role_after: 99999\n", encoding="utf-8")
-            self.assertEqual("Done", sprint.reachable_end_state(tmp, batch, rung="done")["state"],
-                             "a story under the cutoff is capped by nothing")
-
     def test_a_bug_batch_is_not_capped_by_a_story_only_gate(self) -> None:
-        """MUTANT: in `sprint.reachable_end_state`, cap every unit rather than stories only.
-
-        The two-role gate is guarded by `type_ == "story" and target_canon == "Done"`, so a
-        batch of bugs is capped by nothing here - and reporting `Review` named a state that is
-        not in a bug's vocabulary at all. The planner's own brief did that on a bug batch while
-        the unit filed about it sat in that batch."""
+        """MUTANT: in `sprint.reachable_end_state`, report the story terminal `Review` or `Done`
+        for a bug batch. Reporting `Review` named a state that is not in a bug's vocabulary at
+        all. The per-unit cap this once guarded against was retired with the two-role rule
+        (US0916), so nothing caps a batch and the report names no unit and gives no reason."""
         batch = [{"id": "BG0611", "type": "bug"}, {"id": "BG0586", "type": "bug"}]
         state = sprint.reachable_end_state(".", batch, rung="done")
         self.assertEqual("Fixed", state["state"])
         self.assertNotIn("Review", state["state"])
-        # The STATE alone no longer detects this: resolving the terminal into the bug vocabulary
-        # answers `Fixed` whether or not the bugs were collected. What the story-only filter
-        # actually controls is WHO the report says the gate reaches - so assert that, or the
-        # criterion is verified by something the mutant cannot move.
-        self.assertEqual([], state["units"],
-                         "a story-and-Done gate must reach no bug")
-        self.assertIsNone(state["reason"],
+        self.assertEqual([], state.get("units", []), "no gate reaches a bug")
+        self.assertIsNone(state.get("reason"),
                           "nothing caps a bug batch here, so there is no reason to give")
 
     def test_a_rung_terminal_is_said_in_the_batchs_own_vocabulary(self) -> None:
@@ -17857,21 +17411,16 @@ class RungTerminalAndProductTests(unittest.TestCase):
             "Ready", sprint.reachable_end_state(".", [{"id": "US0700", "type": "story"}],
                                                 rung="design")["state"],
             "the paired control: a type that HOLDS the rung terminal still reports it")
-        # THE CAPPED PATH. `_state_for_batch` writes the two-role cap over the story entry, and
-        # writing it in unconditionally put the raw rung token back over the resolved answer -
-        # so a STORY batch on the `triage` rung reported `Triaged`, which no story can hold.
-        # Every assertion above probes bug batches or the uncapped control, so none of them can
-        # see it: this criterion needs the one input where the cap and the resolver meet.
+        # A STORY batch on a rung whose terminal is not in the story vocabulary: the raw rung
+        # token must never come back over the resolved answer (`Triaged` is no story state).
         for rung in ("triage", "plan", "design"):
             res = sprint.reachable_end_state(
                 ".", [{"id": "US0700", "type": "story"}], rung=rung)
             self.assertNotIn("Triaged", res["state"],
                              f"{rung} named an issue state for a story batch")
-            self.assertNotIn("Review", res["state"],
-                             f"{rung} applied the story-and-Done cap on a rung that is not Done")
-            self.assertIsNone(res["reason"],
-                              f"{rung} gave a two-role reason though that gate is Done-only")
-            self.assertEqual([], res["units"], f"{rung} named units reached by a Done-only gate")
+            self.assertNotIn("Review", res["state"], f"{rung} reported a capped story")
+            self.assertIsNone(res.get("reason"), f"{rung} gave a reason though nothing caps it")
+            self.assertEqual([], res.get("units", []), f"{rung} named units a gate reaches")
 
     def test_a_groomed_unit_short_of_the_terminal_blocks(self) -> None:
         """MUTANT: in `sprint._rung_product_blockers`, `continue` as soon as a unit is groomed.
@@ -19392,7 +18941,7 @@ class PrepareRefusesTests(unittest.TestCase):
             rp.write_text(json.dumps(rep), encoding="utf-8")
         return d / f"{slug}.md"
 
-    def _index(self, root, units):
+    def _index(self, root, units, status="Review"):
         """The index rows the drift hold reads. A fixture with no index IS drifted, so a run
         built without them tests the hold rather than what the test claims to be about."""
         for kind, prefix in (("stories", "US"), ("bugs", "BG")):
@@ -19401,7 +18950,7 @@ class PrepareRefusesTests(unittest.TestCase):
                 continue
             d = root / "sdlc-studio" / kind
             d.mkdir(parents=True, exist_ok=True)
-            rows = "".join(f"| [{u}]({u}-a-unit.md) | a unit | Review | 3 |\n" for u in ids)
+            rows = "".join(f"| [{u}]({u}-a-unit.md) | a unit | {status} | 3 |\n" for u in ids)
             (d / "_index.md").write_text(
                 f"# {kind.title()} Registry\n\n**Last Updated:** 2026-09-18\n\n"
                 f"| ID | Title | Status | Points |\n| --- | --- | --- | --- |\n{rows}",
@@ -19417,11 +18966,6 @@ class PrepareRefusesTests(unittest.TestCase):
 
     def _run(self, d, units, **over):
         root = Path(d)
-        # The two-role cutoff is part of the fixture, not decoration: `_awaits_signoff` reads
-        # it, and without it a unit at Review reads as REMAINING WORK rather than as finished
-        # bar a signature. D0213's state - every unit at Review, its gate clear, waiting only
-        # for the seal - is only expressible on a project that sets the cutoff.
-        _config(root, "review:\n  two_role_after: 1\n")
         _close_state(root, batch=list(units), **over)
         _close_retro(root, batch=" ".join(units))
         return root
@@ -19511,10 +19055,10 @@ class PrepareRefusesTests(unittest.TestCase):
             for u in ("US0101", "US0102", "US0103"):
                 self._unit(root, u)
             # TWO unmet gates beside three clear ones, which is the criterion's shape: a story
-            # missing a review half, and a bug at In Progress with no parseable Verification
+            # whose criterion is red, and a bug at In Progress with no parseable Verification
             # depth. The three clear ones matter as much as the two - a hold that refuses
             # everything would pass a test that only checks the two are named.
-            self._unit(root, "US0104")
+            self._unit(root, "US0104", verified=False)
             root_bug = root / "sdlc-studio" / "bugs"
             root_bug.mkdir(parents=True, exist_ok=True)
             (root_bug / "BG0201-a-unit.md").write_text(
@@ -19522,8 +19066,6 @@ class PrepareRefusesTests(unittest.TestCase):
                 encoding="utf-8")
             self._unit(root, "BG0202")
             self._index(root, ["US0101", "US0102", "US0103", "US0104", "BG0201", "BG0202"])
-            # US0104 is left OUT of the batch review: its gate is unmet on the adversarial-pass
-            # half, which the seal does not supply and the carve-out therefore must not forgive.
             self._answer_reviews(root, ["US0101", "US0102", "US0103", "BG0202"])
             _close_state(root, batch=["US0101", "US0102", "US0103", "US0104", "BG0201",
                                       "BG0202"])
@@ -19603,11 +19145,12 @@ class PrepareRefusesTests(unittest.TestCase):
             self.assertIn("report-hold:index-drift",
                           [i["source"] for i in mod.run_state.read(root)["close_known_issues"]])
         with tempfile.TemporaryDirectory() as d2:
-            # The PAIRED CONTROL, identical but undrifted.
+            # The PAIRED CONTROL, undrifted and delivered: a Review unit is remaining work now
+            # the per-unit sign-off is retired (US0916), so a clean run stands at Done.
             mod = _load()
             clean = self._run(d2, ["US0101"])
-            self._unit(clean, "US0101")
-            self._index(clean, ["US0101"])
+            self._unit(clean, "US0101", status="Done")
+            self._index(clean, ["US0101"], status="Done")
             self._answer_reviews(clean, ["US0101"])
             rc, out, err = self._close(clean, mod)
             self.assertEqual(rc, 0, err)

@@ -43,7 +43,7 @@ These block. Everything else in this file is guidance.
 | pre-commit + commit-msg hooks | any lane `.githooks/pre-commit --list` or `.githooks/commit-msg --list` prints; the message rule (a multi-id subject with no `Refs:` trailer) and the collapsed-suite check are lanes there too |
 | pre-push hook | a red boundary gate (`gate.py --boundary push`, or `release` for a tag): a push runs the full suite once plus the core gate lanes, about five minutes, and a tag adds the slow release lanes; `python3 tools/gate_timing.py estimate --suite boundary-push --warn-seconds 0` prints the current figure |
 | `sprint plan` | a batch whose units lack `Affects:` or `Points:`, or exceed the split threshold |
-| `transition -> Done` | a story whose executable ACs have not passed, or that is past `review.two_role_after` without both review halves |
+| `transition -> Done` | a story whose executable ACs have not passed |
 | `transition -> Fixed` | a bug nothing speaks for (no ticked criterion, no `Verify:` line), or whose recorded `verify_ac` run is red |
 | `sprint close` | an uncommitted change to a file a batch unit declares (uncovered units, unanswered items and failing lanes are recorded as known issues on the report, not refused) |
 | `sprint sign` | a report that is not the run's, or a tree changed since the close |

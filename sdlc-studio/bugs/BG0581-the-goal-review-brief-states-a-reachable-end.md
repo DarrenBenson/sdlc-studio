@@ -29,8 +29,8 @@ Take the rung. `reachable_end_state` should accept the goal/rung the brief is be
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RungTerminalAndProductTests::test_the_end_state_is_the_rungs_own_terminal
   - **Verified:** yes (2026-08-25)
 - [ ] **AC2** Given the `done` rung and a story past the two-role cutoff, when the state is derived, then it is Review exactly as today - the paired control, proving the rung was made visible rather than the build case broken
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RungTerminalAndProductTests::test_the_build_rung_still_reports_its_own_terminal
-  - **Verified:** yes (2026-08-25)
+  - **Verify:** manual - retired by US0916: a story past the two-role cutoff no longer stops at Review - the cutoff was deleted with the per-unit sign-off, so the build rung reports Done
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0916
 - [ ] **AC3** Given a batch of BUGS on the build rung, when the state is derived, then it is the bug's own terminal and never `Review`, and the report names NO unit as reached by the gate and gives no reason - the two-role gate is story-and-Done only, so a bug batch is capped by nothing here
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::RungTerminalAndProductTests::test_a_bug_batch_is_not_capped_by_a_story_only_gate
   - **Verified:** yes (2026-08-25)

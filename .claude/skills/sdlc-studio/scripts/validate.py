@@ -822,7 +822,9 @@ def excluded_id_files(repo_root: Path, types=None) -> list[dict]:
 def check_dor_dod(root: Path) -> list[dict]:
     """Validate the project's DoR/DoD documents when present: every `[check: <id>]`
     tag must resolve through the registered vocabulary. An unknown id is an ERROR -
-    a tag nothing enforces is human intent silently unenforced. Untagged criteria
+    a tag nothing enforces is human intent silently unenforced. A retired id
+    (`sdlc_md.RETIRED_CHECK_IDS`) is a WARNING naming the removal instead: a DoD
+    written before the retirement is not wrong, only out of date. Untagged criteria
     are explicitly human-judged and never flagged."""
     out: list[dict] = []
     for name in ("definition-of-ready.md", "definition-of-done.md"):
@@ -836,6 +838,12 @@ def check_dor_dod(root: Path) -> list[dict]:
                         "message": f"[check: {bad}] resolves to no registered check - "
                                    f"an unenforced tag is a silently weakened bar; "
                                    f"registered ids: {known}"})
+        for old in sdlc_md.retired_check_ids(text or ""):
+            out.append({"file": str(path), "severity": SEVERITY_WARNING,
+                        "rule": "retired-check-id",
+                        "message": f"[check: {old}] is retired and enforces nothing "
+                                   f"({sdlc_md.RETIRED_CHECK_IDS[old]}); delete the tag, or "
+                                   f"let `migrate` strip it once it carries that step"})
         for nm in sdlc_md.check_tag_near_misses(text or ""):
             out.append({"file": str(path), "severity": "error", "rule": "malformed-check-tag",
                         "message": f"{nm} is shaped like a check tag but does not parse "

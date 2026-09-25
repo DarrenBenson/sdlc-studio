@@ -36,16 +36,16 @@ See the summary; each cited site names its own remedy.
 - **Given** a v3 ULID unit and a numeric two-role cutoff
 - **When** it is read
 - **Then** it is reported as reaching Review, not Done - an unanswerable comparison must not be read as clearance, which is the fail-open this closed
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UlidUnitsAreNotFailedOpenTests::test_a_ulid_unit_is_reported_as_capped_not_skipped
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0916: reachable_end_state no longer caps a batch at Review - the two-role cutoff it compared ids against was deleted with the per-unit sign-off
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ### AC2: a numbered unit below the cutoff still reaches Done
 
 - **Given** a unit whose id number is below the cutoff
 - **When** it is read
 - **Then** it reaches Done, so the report discriminates rather than capping everything
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UlidUnitsAreNotFailedOpenTests::test_a_numbered_unit_below_the_cutoff_still_reaches_done
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0916: reachable_end_state no longer caps a batch at Review - the two-role cutoff it compared ids against was deleted with the per-unit sign-off
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ### AC3: the commit-msg id hint reads both id eras
 

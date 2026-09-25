@@ -23,7 +23,6 @@ A story or bug is Done when:
 
 - [ ] Its executable acceptance criteria pass and are back-annotated [check: story.verify-ac]
 - [ ] An independent critic APPROVE is recorded (author never reviews its own diff) [check: review.critic-approve]
-- [ ] The adversarial pass is recorded as evidence and the reviewer of record has signed off [check: review.two-role]
 - [ ] Its documentation landed in the same unit (help + reference for any new command/flag)
 - [ ] The paperwork shipped in the same commit as the code (changelog fragment, status, index)
 - [ ] If it is a REPAIR: a mutant was applied to its own changed lines and its test was seen

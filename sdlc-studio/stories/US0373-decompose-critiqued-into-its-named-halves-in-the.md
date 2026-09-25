@@ -25,8 +25,8 @@
 - **Then** the output names the reviewer-of-record sign-off and does NOT name the two halves that
   are satisfied - naming all three whenever any is unmet would pass a weaker check while
   misdirecting exactly as the composite did
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::CritiquedHalvesTests::test_only_the_signoff_missing_names_the_signoff_not_the_composite
-- **Verified:** yes (2026-07-24)
+- **Verify:** manual - retired by US0916: the evidence and sign-off halves were deleted, so critiqued names only the independent APPROVE or its depth
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ### AC2: every unmet half is named on one line, not just the first
 
@@ -34,8 +34,8 @@
 - **When** `conformance.py check` reports it
 - **Then** all three halves appear on that unit's single line - the composition short-circuited on
   the first failure, so an operator repairing what it named met the gate again and was refused
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::CritiquedHalvesTests::test_several_unmet_halves_are_all_named_in_one_line
-- **Verified:** yes (2026-07-24)
+- **Verify:** manual - retired by US0916: the evidence and sign-off halves were deleted, so critiqued names only the independent APPROVE or its depth
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ### AC3: a satisfied critiqued stage is unchanged
 
@@ -44,8 +44,8 @@
 - **When** conformance runs
 - **Then** the unit is conformant, `critiqued` is absent from `missing`, and no half is named - the
   change is diagnostic detail, never a new refusal
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::CritiquedHalvesTests::test_a_satisfied_critiqued_stage_stays_conformant_and_names_nothing
-- **Verified:** yes (2026-07-24)
+- **Verify:** manual - retired by US0916: the evidence and sign-off halves were deleted, so critiqued names only the independent APPROVE or its depth
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ### AC4: the remedy line stops pointing at the wrong gate
 
@@ -54,8 +54,8 @@
 - **Then** neither offers the `verify_ac` back-annotation remedy, which clears the VERIFIED stage;
   it is still offered when a unit genuinely misses `verified`, so the lever is aimed rather than
   deleted
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::CritiquedHalvesTests -k remedy
-- **Verified:** yes (2026-07-24)
+- **Verify:** manual - retired by US0916: the evidence and sign-off halves were deleted with CritiquedHalvesTests; the backfill-remedy tests moved to test_conformance.py::BackfillRemedyTests
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ## Revision History
 

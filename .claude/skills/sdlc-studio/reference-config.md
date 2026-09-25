@@ -220,10 +220,10 @@ review:
 
 ### Review gate cutoffs {#review-cutoffs}
 
-Every `review.*` setting is declared with its default in `templates/config-defaults.yaml`. One
-trap, because both halves are quoted back to you in the refusal they cause:
-`review.test_plan_after` takes a **DATE** compared against a unit's `Created`, while
-`review.two_role_after` takes an **ID cutoff** (`57`, `US0103`) and RAISES on a date.
+Every `review.*` setting is declared with its default in `templates/config-defaults.yaml`.
+`review.test_plan_after` and `review.line_coverage_after` each take a **DATE** compared against
+a unit's `Created`. `review.two_role_after` is retired with the per-unit sign-off: one
+independent APPROVE decides a unit, and the operator signs the run once at `sprint sign`.
 
 ### The plan falsifiability gate {#plan-falsifiability}
 

@@ -130,103 +130,6 @@ def _acs_missing_evidence(text: str) -> tuple[list[str], list[str], str | None]:
     return bare_manual, bare_unspecified, None
 
 
-def _two_role_gate(root: Path, rid: str) -> str | None:
-    """The two-role bar, asked by the verb that WRITES `Status: Done`. Block reason, or None.
-
-    The Definition of Done states this clause and `conformance.py` implements it properly - but
-    conformance is a lane that runs later, over a status a different tool has already written.
-    Nothing at the moment of the write said no, so a unit could be moved to Done with no
-    independent review whatsoever and the only trace was a report somebody had to run and read.
-    That is the mechanism behind every Done story carrying no independent verdict: they did not
-    slip past a gate, the gate they are said to have passed was never asked. The count of 25
-    that circulated with this bug is NOT supported by the tree - a claims-lens census found 21
-    units with neither a per-unit independent verdict nor sprint cover, all of them pre-cutoff,
-    and none in the D0074 cohort failing the critiqued stage.
-
-    Uses `conformance`'s VOCABULARY - the `HALF_*` constants the lane reports - so the verb and
-    the lane name the same halves. It does NOT route its two `critic` reads through
-    `conformance.critiqued_unmet`, for a mechanical reason recorded at the call site: callers
-    that stub `critic` load it as a separate module object, so a call made through conformance
-    sees the real one and silently disagrees with the caller's fixture. That is the defect one rung down that this
-    same sprint fixed for the independence predicates. Forward-only: a project with no
-    `review.two_role_after`, and any unit at or below the cutoff, is unaffected byte-for-byte.
-
-    Fails CLOSED on an unreadable config or ledger. A gate that cannot establish the bar has not
-    cleared it, and this gate exists precisely because silence was being read as a pass.
-    """
-    # THE CONFIG IS READ FIRST, AND ITS FAILURE IS FATAL. `project_override` swallows every
-    # config fault by design and hands back the default, so an unreadable `.config.yaml` made
-    # the cutoff None, `two_role_applies_to` False, and this gate returned before it ever
-    # touched a ledger - a unit past the cutoff reached Done, exit 0, over malformed YAML, a
-    # tab-indented file, non-UTF-8 bytes, a `.config.yaml` that is a directory, or simply no
-    # PyYAML. That is the gate's own docstring principle - silence read as a pass - reproduced
-    # one layer up in the gate written to close it. A project that DECLARES the rule and then
-    # cannot be read has not waived it.
-    cfg = root / "sdlc-studio" / ".config.yaml"
-    if cfg.exists() and sdlc_md.config_unparseable(cfg):
-        return (f"`{cfg.name}` exists but could not be parsed, so the two-role cutoff is "
-                f"UNKNOWN - an unreadable bar is not a passed one. Fix the config, then retry; "
-                f"`--force` overrides")
-    try:
-        import conformance  # noqa: PLC0415 - deferred; transition is on every hot path
-        cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "review.two_role_after"))
-        if not conformance.two_role_applies_to(rid, cutoff):
-            return None
-        # Genuinely delegated now - the predicate AND the vocabulary, which the first version
-        # claimed and did not do: it re-implemented both halves inline with its own strings and
-        # omitted the verdict half entirely, so it was WEAKER than the lane it was meant to
-        # front. A story could reach Done with no independent APPROVE recorded and conformance
-        # would then mark it non-conformant: two answers to one question.
-        # The project's Definition of Done can stand EITHER half down, and the lane honours
-        # that: a DoD without `review.critic-approve` downgrades the verdict half to human
-        # judgement, and one without `review.two-role` stands the sign-off requirement down
-        # even under the cutoff. A verb that ignored those would refuse work the lane accepts -
-        # the same two-answers-to-one-question defect as being weaker than it, pointing the
-        # other way.
-        story_dod = sdlc_md.dor_dod_level_checks(root, "done", "story")
-        critic_required = story_dod is None or "review.critic-approve" in story_dod
-        if story_dod is not None and "review.two-role" not in story_dod:
-            cutoff = None
-        # TWO-ROLE halves only: this gate's bar is the Definition of Done's two-role clause,
-        # which is what BG0417 is about. The verdict half belongs to the `critiqued` stage and
-        # conformance enforces it there; demanding it here refused work the lane accepts.
-        #
-        # The VOCABULARY is conformance's - `HALF_EVIDENCE`, `HALF_SIGNOFF`, the constants the
-        # lane reports - so the verb and the lane name the same halves and a rename moves both.
-        # The two `critic` calls are made HERE rather than through `conformance.critiqued_unmet`
-        # for a mechanical reason, not a stylistic one: callers that stub `critic` load it as a
-        # separate module object, so a call routed through conformance sees the REAL critic and
-        # silently disagrees with the caller's fixture. Routing it there made four close-preflight
-        # tests refuse work they had approved for a year. The residual duplication is two lines
-        # and is filed rather than hidden.
-        del critic_required                # the verdict half is not this gate's to demand
-        import critic  # noqa: PLC0415
-        sprint_covers = critic.sprint_covers_independently(
-            root, rid, critic.sprint_review_for(root, rid))
-        unmet = []
-        if not (bool(critic.evidence_for(root, rid)) or sprint_covers):
-            unmet.append(conformance.HALF_EVIDENCE)
-        if not critic.is_independent_signoff(root, rid, critic.signoff_for(root, rid)):
-            unmet.append(conformance.HALF_SIGNOFF)
-    except Exception as exc:  # noqa: BLE001 - see the docstring: unreadable is not cleared
-        return (f"the two-role gate could not be established ({type(exc).__name__}: {exc}) - "
-                f"an unreadable bar is not a passed one")
-    if not unmet:
-        return None
-    # Every unmet half in ONE refusal, named separately: an absent adversarial pass, an absent
-    # verdict and an absent sign-off need different actions from different people, and a
-    # round-trip per half is the cost the ladder elsewhere in this module already avoids.
-    remedy = {conformance.HALF_VERDICT: "record an independent critic APPROVE (`critic.py "
-                                        "record`, reviewer != author)",
-              conformance.HALF_EVIDENCE: "record the adversarial pass as evidence (`critic.py "
-                                         "evidence --from-verdict`, or a sprint-level review)",
-              conformance.HALF_SIGNOFF: "record an independent reviewer-of-record sign-off "
-                                        "(`critic.py signoff`, a principal the author does "
-                                        "not control)"}
-    return (f"{rid} is past `review.two_role_after` and {len(unmet)} half/halves of the review "
-            f"bar are unmet - " + "; and ".join(f"{h}: {remedy.get(h, 'unmet')}" for h in unmet))
-
-
 def _red_acs(entry: dict) -> str | None:
     """The criteria a verify-report entry records red (failed or stale), named; None when green."""
     if not (entry.get("failed", 0) or entry.get("stale", 0)):
@@ -1192,12 +1095,6 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
                     f"{target_canon} over it is the operator's call")
             gate_warn = f"{gate_warn}; {warn}" if gate_warn else warn
     if type_ == "story" and not force and target_canon == "Done":
-        # Asked HERE, by the verb that writes the status, rather than only by a lane that runs
-        # afterwards. `--force` still overrides and is still recorded, on the same terms as
-        # every other forceable close gate - a two-role bypass must be at least as visible.
-        two_role = _two_role_gate(root, sdlc_md.norm_id(artifact_id))
-        if two_role:
-            blocks.append(f"{two_role}. Override with --force")
         block = _done_verify_gate(root, path, text)
         if block:
             # the gate is hard by default; `quality.done_requires_verified: false`
@@ -2285,9 +2182,8 @@ def _plan_gate_active(root, text: str) -> bool:
     # AN UNREADABLE CONFIG IS NOT AN ABSENT CUTOFF. `project_override` swallows every config
     # fault and returns the default, so `not after` read a malformed, non-UTF-8, unreadable or
     # directory-shaped `.config.yaml` as "this project set no cutoff" and switched BOTH new gates
-    # off entirely. A seat reproduced it four ways. The sibling `_two_role_gate` already solved
-    # this exact case with the helper below, and its comment enumerates the same four shapes -
-    # the repair reached parity with that gate's LEDGER half and skipped its CONFIG half.
+    # off entirely. A seat reproduced it four ways; the helper below is the one that reads all
+    # four as unparseable.
     cfg = Path(root) / "sdlc-studio" / ".config.yaml"
     if cfg.exists() and sdlc_md.config_unparseable(cfg):
         return True          # in scope, and `_test_plan_gate` will report why it cannot judge

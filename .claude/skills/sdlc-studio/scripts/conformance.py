@@ -350,33 +350,15 @@ def _ac_signals(text: str) -> tuple[bool, bool, list[str]]:
     return has_ac, has_verify, verified_states
 
 
-#: The named halves `critiqued` composes. Reporting the composite alone told an operator a
-#: gate was unmet without saying which of up to three independent conditions it wanted, so
-#: the answer was reachable only by reading this function. Each unmet half is named instead.
+#: What `critiqued` owes when it is unmet, named rather than left to the composite. The per-unit
+#: evidence and sign-off halves were retired with the two-role rule: one independent delivery
+#: APPROVE decides a unit, and the operator signs once for the run at `sprint sign`.
 HALF_VERDICT = "independent APPROVE verdict"
-HALF_EVIDENCE = "adversarial-pass evidence"
-HALF_SIGNOFF = "reviewer-of-record sign-off"
 #: Named separately from HALF_VERDICT because the remedy is different in kind. A missing
 #: verdict needs somebody to review; a light verdict on a high-band unit needs the SAME
 #: reviewer to go deeper, and telling them "no independent APPROVE verdict" when one is
 #: sitting in the log would send them to look for something that is already there.
 HALF_TIER = "a review at the depth this unit's risk band demands"
-
-
-def two_role_applies_to(rid: str, two_role_cutoff: int | None) -> bool:
-    """Whether the two-role review requirement covers this unit.
-
-    `review.two_role_after` is a SEQUENTIAL cutoff, and `id_number` has no number to give for
-    a v3 short-ULID id. Treating that None as "before the cutoff" stood the gate down for
-    every ULID unit - the newest work in the workspace, and precisely what a forward-only
-    cutoff exists to cover. An unnumbered id is by construction later than any sequential
-    one, so it fails CLOSED: no number means the gate applies. Unset cutoff still means the
-    requirement applies to nobody, so a project that never configured it is untouched.
-    """
-    if two_role_cutoff is None:
-        return False
-    rid_num = sdlc_md.id_number(rid)
-    return rid_num is None or rid_num > two_role_cutoff
 
 
 def verdict_half_ok(root, rid, sprint_covers: bool) -> bool:
@@ -438,29 +420,15 @@ def tier_covers(root, rid, verdict: dict | None) -> bool:
     return not (depth == "light" and critic.tier_for(root, rid) == "full")
 
 
-def critiqued_unmet(root, rid, two_role_cutoff: int | None,
-                    critic_required: bool = True, two_role_only: bool = False) -> list[str]:
-    """The `critiqued` halves left unmet for `rid`, in this module's own vocabulary.
-
-    THE authority for the Done review bar, so the lane and the VERB that writes `Status: Done`
-    ask one question and get one answer. `transition.py` first re-implemented these halves
-    inline against `critic.*` with its own strings while claiming in its docstring to delegate
-    "the predicate AND the vocabulary" - and the copy was WEAKER than this one, omitting the
-    verdict half entirely, so a story reached Done with no independent APPROVE recorded and the
-    lane then marked it non-conformant. Two answers to one question is the drift the docstring
-    said it was avoiding.
-    """
+def critiqued_unmet(root, rid, critic_required: bool = True) -> list[str]:
+    """What `critiqued` still owes for `rid`, in this module's own vocabulary: nothing, the
+    independent APPROVE, or a review at the depth the unit's risk band demands."""
     verdict = critic.verdict_for(root, rid)
     sprint_covers = critic.sprint_covers_independently(
         root, rid, critic.sprint_review_for(root, rid))
     verdict_ok = verdict_half_ok(root, rid, sprint_covers)
     unmet = []
-    # `two_role_only` is for the callers that enforce the TWO-ROLE clause specifically - the
-    # Done verb, whose bar is that clause. The verdict half is the `critiqued` stage's own
-    # concern and is enforced by this lane; a verb that also demanded it would refuse work this
-    # lane accepts, which is the same two-answers-to-one-question defect pointing the other way.
-    # The vocabulary is shared either way, which is what stops the two drifting.
-    if critic_required and not verdict_ok and not two_role_only:
+    if critic_required and not verdict_ok:
         # WHICH of the two it is, so the remedy fits. An APPROVE that is independent and fails
         # only on depth is a different state from no approval at all.
         approve_but_shallow = (bool(verdict) and verdict["verdict"] == critic.APPROVE
@@ -468,28 +436,15 @@ def critiqued_unmet(root, rid, two_role_cutoff: int | None,
                                     or critic.is_pre_gate(verdict))
                                and not tier_covers(root, rid, verdict))
         unmet.append(HALF_TIER if approve_but_shallow else HALF_VERDICT)
-    if two_role_applies_to(rid, two_role_cutoff):
-        if not (bool(critic.evidence_for(root, rid)) or sprint_covers):
-            unmet.append(HALF_EVIDENCE)
-        if not critic.is_independent_signoff(root, rid, critic.signoff_for(root, rid)):
-            unmet.append(HALF_SIGNOFF)
     return unmet
 
 
 def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
-                 two_role_cutoff=None, critic_required=True, dead_stamps=0) -> tuple:
+                 critic_required=True, dead_stamps=0) -> tuple:
     """The four Done-only conformance stages (verified, reconciled, critiqued, documented),
-    plus the list of `critiqued` halves left unmet.
-
-    The critiqued stage composes its two halves independently, so a story DoD that
-    downgrades ONE of them never disarms the other: the verdict half (independent
-    APPROVE) applies while `critic_required`; the two-role half (evidence + an
-    independent reviewer-of-record sign-off) applies for units past `two_role_cutoff`.
-
-    Every APPLICABLE half is evaluated, never short-circuited on the first failure, because
-    an operator told only the first of three owed conditions repairs one and meets the gate
-    again. Halves that do not apply to this unit are not reported unmet either: naming an
-    inapplicable condition is the same misdirection pointing the other way.
+    plus what `critiqued` still owes. `critiqued` is the independent APPROVE while
+    `critic_required`; a story DoD without `review.critic-approve` downgrades it to human
+    judgement.
     """
     # A stamp is evidence only while the thing it points at still exists. `dead_stamps`
     # counts ACs recorded green whose verifier now selects NOTHING - a `-k` pattern matching
@@ -500,7 +455,6 @@ def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
                 and all(v in ("yes", "manual") for v in verified_states)
                 and dead_stamps == 0)
     reconciled = (not no_index) and sdlc_md.norm_id(rid) not in drift_ids
-    verdict = critic.verdict_for(root, rid)
     # A sprint-level adversarial full-diff review covers every unit in its range at once. It
     # satisfies `critiqued` for a unit that had no INDIVIDUAL verdict - but never overrides a
     # per-unit REJECT, which still repairs per unit.
@@ -512,32 +466,8 @@ def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
     # under the prior risk-scaled policy) are grandfathered; the gate applies to all new work.
     # THE shared definition - see `verdict_half_ok`. A batch-level APPROVE never papers over a
     # per-unit REJECT; only a recorded, complete REPAIR answers one.
-    verdict_ok = verdict_half_ok(root, rid, sprint_covers)
-    verdict_half = verdict_ok if critic_required else True
-    # The two-role half: with `review.two_role_after` set, a Done unit PAST the cutoff
-    # additionally needs the adversarial pass recorded as EVIDENCE and an independent
-    # reviewer-of-record SIGN-OFF (principal != author and not an authoring-session
-    # subagent - re-checked here as the backstop to record_signoff's write-time
-    # refusal). Forward-only: pre-cutoff units and projects without the config keep
-    # today's behaviour byte-for-byte.
-    two_role_applies = two_role_applies_to(rid, two_role_cutoff)
-    evidence_half = signoff_half = True
-    if two_role_applies:
-        # The evidence half is satisfied by a per-unit adversarial pass OR a sprint-level
-        # review covering this unit; the independent reviewer-of-record sign-off is still
-        # required per unit (the sprint pass is evidence, not the principal's sign-off).
-        evidence_half = bool(critic.evidence_for(root, rid)) or sprint_covers
-        signoff_half = critic.is_independent_signoff(root, rid, critic.signoff_for(root, rid))
-    # Conjunction of the same three conditions the short-circuiting form computed, so the
-    # verdict is unchanged; only the reporting gains detail.
-    critiqued = verdict_half and evidence_half and signoff_half
-    unmet = []
-    if critic_required and not verdict_half:
-        unmet.append(HALF_VERDICT)
-    if two_role_applies and not evidence_half:
-        unmet.append(HALF_EVIDENCE)
-    if two_role_applies and not signoff_half:
-        unmet.append(HALF_SIGNOFF)
+    critiqued = verdict_half_ok(root, rid, sprint_covers) if critic_required else True
+    unmet = [] if critiqued else [HALF_VERDICT]
     return verified, reconciled, critiqued, doc_ok, unmet
 
 
@@ -606,19 +536,12 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
     # forward, not retroactively. parse_cutoff accepts both spellings and raises loud on a
     # typo rather than silently dropping the cutoff.
     cutoff_num = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "conformance.adopt_after"))
-    # The two-role review gate's own forward-only cutoff: units past it need
-    # evidence + independent sign-off to clear `critiqued`. Unset = old rule everywhere.
-    two_role_cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "review.two_role_after"))
-    # The story-level Definition of Done, when the project declares one, decides which
-    # review stages are REQUIRED: a DoD without `review.critic-approve` downgrades the
-    # critic stage to human judgement (reported per unit, never silent); one without
-    # `review.two-role` stands the sign-off requirement down even under the cutoff.
+    # The story-level Definition of Done, when the project declares one, decides whether the
+    # review stage is REQUIRED: a DoD without `review.critic-approve` downgrades the critic
+    # stage to human judgement (reported per unit, never silent).
     story_dod = sdlc_md.dor_dod_level_checks(root, "done", "story")
     critic_required = story_dod is None or "review.critic-approve" in story_dod
-    if story_dod is not None and "review.two-role" not in story_dod:
-        two_role_cutoff = None
-    dod_downgrades = [] if story_dod is None else sorted(
-        c for c in ("review.critic-approve", "review.two-role") if c not in story_dod)
+    dod_downgrades = [] if critic_required else ["review.critic-approve"]
     # A story is "reconciled" only if its index row matches and exists: a drifted
     # status (status-mismatch) or a story absent from the index (missing-row) both
     # fail it, and a missing index file fails every story.
@@ -698,8 +621,7 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
                                     "missing": sorted({u["missing"] for u in unevaluable_here})})
             verified, reconciled, critiqued, documented, critiqued_missing = _done_stages(
                 root, rid, verified_states, _no_index, drift_ids, _doc_ok,
-                two_role_cutoff=two_role_cutoff, critic_required=critic_required,
-                dead_stamps=dead)
+                critic_required=critic_required, dead_stamps=dead)
         if status == "Done":
             # The backstop to the transition gate. That gate guards the tool path; a
             # hand-edited `Status: Done` walks round it, and the story is then Done without
@@ -734,11 +656,7 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
             required += ["specified", "verifiable"]
         if status == "Done":
             required += list(DONE_STAGES)
-            # `critiqued` stays required while EITHER half applies: the two-role
-            # requirement (an armed cutoff) survives a critic-approve downgrade -
-            # dropping one tag must never disarm both.
-            two_role_applies = two_role_applies_to(rid, two_role_cutoff)
-            if not critic_required and not two_role_applies:
+            if not critic_required:
                 required.remove("critiqued")
         if scoped_out:
             # A stage this run did not examine cannot be required of the unit: requiring it
@@ -781,8 +699,8 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
             # The stages a recorded decision waived, each naming the decision that waived it -
             # so waived debt reads as waived-and-attributable, never as silently absent.
             "waived": waived,
-            # Which of `critiqued`'s halves are owed. Empty when the stage is satisfied, not
-            # required, or not judged - so a reader never has to infer it from the composite.
+            # What `critiqued` owes. Empty when the stage is satisfied, not required, or not
+            # judged - so a reader never has to infer it from the composite.
             "critiqued_missing": critiqued_missing if "critiqued" in missing else [],
             "missing_global": missing_global,
             "downgraded": dod_downgrades if status == "Done" else [],
@@ -877,10 +795,8 @@ def _bulk_missed(result: dict) -> list[str]:
 
 
 def missing_detail(unit: dict) -> str:
-    """A unit's missing stages, with `critiqued` expanded to the halves it actually owes.
-
-    One line, every unmet half on it. `critiqued` alone reads as a single unmet condition
-    when it is up to three, and which one is owed decides what the operator does next."""
+    """A unit's missing stages on one line, with `critiqued` expanded to what it owes - the
+    remedy for a missing review differs from the one for a review at the wrong depth."""
     halves = unit.get("critiqued_missing") or []
     return ", ".join(f"critiqued ({', '.join(halves)})" if m == "critiqued" and halves else m
                      for m in unit["missing"])

@@ -27,8 +27,8 @@ as partial at the close
 - **When** `sprint plan` runs
 - **Then** the plan names the reachable end state as Review rather than Done, gives the two-role
   rule as the reason, and names the units the rule reaches
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_plan_names_the_reachable_end_state_under_the_two_role_gate
-- **Verified:** yes (2026-07-22)
+- **Verify:** manual - retired by US0916: `review.two_role_after` and the reachable-end-state cap it drove were deleted, so no batch is capped short of Done; the plan reaching Done past a legacy cutoff is test_lean_no_two_role.py::TwoRoleGoneTests::test_the_plan_reaches_done
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ### AC2: a batch the gate does not reach still reaches Done
 
@@ -37,8 +37,8 @@ as partial at the close
 - **When** `sprint plan` runs
 - **Then** the reachable end state is Done and no unreachability is reported, so the check
   cannot become a warning that always fires
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_a_batch_the_two_role_gate_does_not_reach_can_still_reach_done
-- **Verified:** yes (2026-07-22)
+- **Verify:** manual - retired by US0916: `review.two_role_after` and the reachable-end-state cap it drove were deleted, so no batch is capped short of Done; the plan reaching Done past a legacy cutoff is test_lean_no_two_role.py::TwoRoleGoneTests::test_the_plan_reaches_done
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ### AC3: the finding is recorded, not only printed
 
@@ -47,8 +47,8 @@ as partial at the close
 - **Then** the reachable end state and its reason sit on the run state beside the Sprint Goal,
   so the closing `goal-verdict` cites the constraint that was known at plan time instead of
   re-deriving it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_the_reachable_end_state_is_recorded_on_the_run_state
-- **Verified:** yes (2026-07-22)
+- **Verify:** manual - retired by US0916: `review.two_role_after` and the reachable-end-state cap it drove were deleted, so no batch is capped short of Done; the plan reaching Done past a legacy cutoff is test_lean_no_two_role.py::TwoRoleGoneTests::test_the_plan_reaches_done
+- **Verified:** manual (2026-09-25) - retired, superseded by US0916
 
 ## Open Questions
 
@@ -67,3 +67,4 @@ as partial at the close
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-22 | sdlc-studio | Groomed: user story and ACs authored against CR0354 |
+| 2026-09-25 | US0916 | AC1-AC3 retired in the D0259 pattern: `review.two_role_after` and the reachable-end-state cap it drove were deleted with the per-unit sign-off, and their three `test_sprint.py` tests with them |

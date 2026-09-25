@@ -109,8 +109,7 @@ def check(repo_root: Path | str, types: list[str] | None = None) -> dict:
             # cutoff, so the whole family of ids the product now mints by default was exempted
             # by an accident of parsing and reported identically to a pass. An ordinal cutoff
             # cannot rank an id that carries no ordinal, and of the two ways to resolve that
-            # only one fails safe: let the stamp check speak. This is the same direction
-            # `reachable_end_state` takes for an unrankable id.
+            # only one fails safe: let the stamp check speak.
             aid = sdlc_md.extract_record_id(p.stem) or p.stem
             idn = sdlc_md.id_number(aid)
             if idn is not None and idn <= cutoff:  # legacy, pre-adoption: exempt
