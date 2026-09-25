@@ -25,18 +25,18 @@ Count `held` in `_report_preflight`, as `_render_preflight` already does, and sa
 ## Acceptance Criteria
 
 - [x] **AC1** Given a pre-flight carrying blocking and non-blocking rows, when `_report_preflight` prints its headline, then the noun `unmet prerequisite(s)` carries the BLOCKING count, with the total stated beside it - `8 unmet prerequisite(s) (3 blocking)` keeps the overstatement this bug is about.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OnePreflightCountReadByBothRenderersTests::test_the_headline_noun_carries_the_blocking_count
-  - **Verified:** yes (2026-08-18)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheReadyCloseStillSaysWhatItSkippedTests::test_the_headline_noun_carries_the_blocking_count
+  - **Verified:** yes (2026-09-25)
 - [x] **AC2** Given the same rows, when `_render_preflight` prints, then it reports the same two numbers as `_report_preflight` - both read ONE helper, because fixing one renderer and leaving its sibling lying is the exact scope error that rejected BG0582 at round two.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OnePreflightCountReadByBothRenderersTests::test_both_renderers_agree_and_read_one_helper
-  - **Verified:** yes (2026-08-18)
-- [x] **AC3** Given a pre-flight whose rows all block, when either renderer prints, then its headline is byte-identical to today - no cosmetic churn for the common case.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OnePreflightCountReadByBothRenderersTests::test_an_all_blocking_page_is_unchanged
-  - **Verified:** yes (2026-08-18)
+  - **Verify:** manual - retired by US0917: `sprint.py preflight` and its renderer are retired, so one renderer is left
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0917
+- [x] **AC3** Given a pre-flight whose rows all block, when `_report_preflight` prints (the one renderer left once US0917 retired `sprint.py preflight`), then its headline is byte-identical to today - no cosmetic churn for the common case.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheReadyCloseStillSaysWhatItSkippedTests::test_an_all_blocking_page_is_unchanged
+  - **Verified:** yes (2026-09-25)
 
 - [x] **AC4** Given a root the command is pointed at, when `sprint.py preflight` is driven as a SUBPROCESS, then its headline is the one `preflight_headline` produces for that same root - the wiring test, and derived from the helper rather than hardcoded so it asserts that the command REACHES the code, never that a tree is in a particular state.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::OnePreflightCountReadByBothRenderersTests::test_the_shipped_cli_prints_the_two_numbers
-  - **Verified:** yes (2026-08-19)
+  - **Verify:** manual - retired by US0917: `sprint.py preflight` is retired, so no verb prints its page
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 ## Revision History
 
@@ -55,3 +55,4 @@ Count `held` in `_report_preflight`, as `_render_preflight` already does, and sa
 | AC2 | revert `_render_preflight` to its own `len(held)`, fixing only the sibling | Both renderers must read ONE helper - fixing one and leaving the other lying is the scope error this repository keeps meeting. |
 | AC3 | always append the `of N reported` suffix, churning the common case | Given a pre-flight whose rows all block, when either renderer prints, then its headline is byte-identical to today. |
 | AC4 | render the blocker LIST length in `_render_preflight`, which is the renderer the shipped `preflight` command actually uses - the `_report_preflight` mutant SURVIVED because that renderer serves `close`, not `preflight`, and the ledger refused the mismatch | Given a root the command is pointed at, when `sprint.py preflight` is driven as a subprocess, then its headline is the one `preflight_headline` produces for that same root. |
+| 2026-09-25 | US0917 | AC2 and AC4 retired in the D0259 pattern: `sprint.py preflight` and its renderer `_render_preflight` are retired. AC1 and AC3 stay live on `_report_preflight`, which `close` prints on every close that is not ready, re-pointed to TheReadyCloseStillSaysWhatItSkippedTests; AC3 names that one renderer |

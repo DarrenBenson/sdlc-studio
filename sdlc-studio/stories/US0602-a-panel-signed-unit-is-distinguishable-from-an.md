@@ -30,11 +30,12 @@
 - **Given** a closed run mixing both
 - **When** the sprint report renders
 - **Then** it reports the split rather than a single sign-off count, because a total hides exactly the fact an auditor came for
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SignoffProvenanceTests::test_the_report_splits_panel_from_operator
-- **Verified:** yes (2026-08-01)
+- **Verify:** manual - retired by US0917: the checklist's per-unit sign-off row is deleted; the operator signs the run once
+- **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-01 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-25 | US0917 | AC2 retired in the D0259 pattern: the checklist's per-unit sign-off row is deleted |

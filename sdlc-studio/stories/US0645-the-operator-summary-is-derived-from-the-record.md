@@ -51,8 +51,8 @@
 - **When** the summary is generated
 - **Then** it is produced identically and states the capacity, because a second code path for the human case is a path that drifts
 - **Mutant:** generate it only on the panel path - the human close and the seat close diverge
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::OperatorSummaryTests::test_the_summary_is_generated_for_a_human_signoff_too
-- **Verified:** yes (2026-08-05)
+- **Verify:** manual - retired by US0917: the operator summary carries no per-unit sign-off capacity; the operator signs the run once
+- **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 ### AC5: an absent record is NAMED absent in what is printed
 
@@ -68,3 +68,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-05 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-25 | US0917 | AC4 retired in the D0259 pattern: the operator summary carries no per-unit sign-off capacity |

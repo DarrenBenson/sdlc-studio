@@ -73,16 +73,16 @@ exercised against the rows the pre-flight actually built from the real lane.
   - **Then** it exits 0, prints the cadence detail, and marks the row reported rather than
     blocking. The mutant is dropping non-blocking failures from the pre-flight's gate loop,
     which is what made the whole feature unreachable.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CadenceDebtReachesTheCloseTests::test_the_cadence_lane_is_printed_and_does_not_hold_the_close
-  - **Verified:** yes (2026-08-11)
+  - **Verify:** manual - retired by US0917: `sprint.py preflight` is retired; the close prints its own pre-flight through `_report_preflight`, whose non-blocking rows are pinned by TheReadyCloseStillSaysWhatItSkippedTests
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 - [x] **AC4: the same lane blocking holds the same close.**
   - **Given** the identical fixture with the batch uncovered
   - **When** the pre-flight runs
   - **Then** it exits 1 naming the stale anchor, so the repair made the gate legible rather than
     switching it off. The mutant is treating every gate row as advisory.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CadenceDebtReachesTheCloseTests::test_the_same_lane_blocking_holds_the_close
-  - **Verified:** yes (2026-08-11)
+  - **Verify:** manual - retired by US0917: `sprint.py preflight` is retired, so no verb exits on the pre-flight; the lane's row still reaches `close_preflight` (AC5)
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 - [x] **AC5: the bounded exit classes the real cadence row as filable.**
   - **Given** the blocker row the pre-flight built from the real lane
@@ -154,3 +154,4 @@ than merely untested, and the reason it is withdrawn instead of pinned.
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-11 | sdlc-studio | Criteria written to name their mutants; one half withdrawn, the other wired and pinned |
+| 2026-09-25 | US0917 | AC3 and AC4 retired in the D0259 pattern: `sprint.py preflight` is retired |

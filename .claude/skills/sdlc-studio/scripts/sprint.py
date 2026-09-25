@@ -5338,6 +5338,20 @@ WHY_PASS_OWED = "adversarial pass owed"
 WHY_AT_REVIEW = "remaining work at Review"
 
 
+def seal_bar_unmet(root, uid: str) -> list[str]:
+    """What the operator's signature cannot seal this unit over: the review bar, as
+    `conformance` judges `critiqued` - an independent delivery APPROVE at the depth the unit's
+    risk band demands. Empty when met.
+
+    ONE reader for the close and the seal. The close answers a Review unit that meets it (only
+    the signature is owed) and `sign` stops on a unit that does not, so the close names every
+    unit the signature will refuse: at Review as a known issue, already at Done in the
+    pre-flight's `review-coverage` row.
+    """
+    import conformance  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    return conformance.critiqued_unmet(root, sdlc_md.norm_id(uid))
+
+
 def _carried_rulings(root: Path, state: dict, retro_id: str | None) -> tuple:
     """`(retro id or None, carried rows or None, why unreadable)` for the unanswered-unit hold.
 
@@ -5385,10 +5399,12 @@ def unanswered_units(root, state, retro_id=None) -> dict:
     a standing delivery REJECT is held at every non-abandoned status, whatever else would answer
     it - evidence, a drop, a park or a ruling - unless `critic.coverage_state` reads it approved
     or repaired. Otherwise a unit is answered by its status: delivered-terminal or abandoned (a
-    terminal reached by a ruling, derived and never listed), at its run's rung-end status off
-    the build rung, dropped, parked on a pending decision or depending on one (`_parked_units`,
-    the closure `blocked_by_pending` reads), or ruled not-stop-ship, accepted-risk or deferred
-    in the carried table. `filed` names where its findings went, from every `filed:` closure.
+    terminal reached by a ruling, derived and never listed), at Review owing nothing but the
+    run's signature (`seal_bar_unmet`, the bar `sprint sign` stops on), at its run's rung-end
+    status off the build rung, dropped, parked on a pending decision or depending on one
+    (`_parked_units`, the closure `blocked_by_pending` reads), or ruled not-stop-ship,
+    accepted-risk or deferred in the carried table. `filed` names where its findings went, from
+    every `filed:` closure.
     """
     import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     import retro as retro_mod  # noqa: PLC0415
@@ -5451,13 +5467,20 @@ def unanswered_units(root, state, retro_id=None) -> dict:
                                                                  critic.COVERAGE_REPAIRED))
         why = [WHY_REJECT] if rejected else []
         review_why = ""
+        awaits_signature = False
         if critic.is_awaiting_signoff(status):
-            passed = (bool(critic.evidence_for(root, uid))
-                      or critic.sprint_covers_independently(
-                          root, uid, critic.sprint_review_for(root, uid)))
-            review_why = WHY_AT_REVIEW if passed else WHY_PASS_OWED
+            # The seal's own bar, so the close lists exactly the Review units `sign` refuses: one
+            # that meets it owes only the run's signature, which is the step after this close.
+            if not seal_bar_unmet(root, uid):
+                awaits_signature = True
+            elif (critic.evidence_for(root, uid)
+                  or critic.sprint_covers_independently(
+                      root, uid, critic.sprint_review_for(root, uid))):
+                review_why = WHY_AT_REVIEW
+            else:
+                review_why = WHY_PASS_OWED
         answered = not stop_ship and (
-            terminal or uid in dropped or uid in parked
+            terminal or awaits_signature or uid in dropped or uid in parked
             or (rung_end is not None and kind
                 and status == _terminal_in_type_vocab(root, rung, kind, rung_end))
             or bool(rulings & answering))
@@ -5520,8 +5543,9 @@ def unanswered_ways_out(held: list[dict], rulings_from: str | None,
         ways.append("dispatch the owed adversarial pass (`critic.py brief --unit <id> "
                     "--seat qa`)")
     if WHY_AT_REVIEW in whys:
-        ways.append("record what a Review unit still owes, then its Done transition "
-                    "(`transition.py set <id> Done`) - one already signed off lacks only that")
+        ways.append("record the independent delivery APPROVE a Review unit still owes, and "
+                    "`sprint sign` seals it; or take its Done transition "
+                    "(`transition.py set <id> Done`)")
     if "ruling unreadable" in whys:
         ways.append("rule it in a retro whose text carries the run id"
                     + (f" {run_id}" if run_id else "") + ", or name the retro with --retro")
@@ -5626,7 +5650,7 @@ ANCHOR_BEGIN = "<!-- close-status:begin -->"
 ANCHOR_END = "<!-- close-status:end -->"
 
 
-def anchor_status_block(run_id: str, outcome: str, units: int, signoff_owed: bool,
+def anchor_status_block(run_id: str, outcome: str, units: int, signature_owed: bool,
                         rung: str = "done") -> str:
     """The status the close stamps on the anchor. It states what is owed, or states plainly that
     nothing is - a reader must never have to diff this against the run state to learn which.
@@ -5641,9 +5665,9 @@ def anchor_status_block(run_id: str, outcome: str, units: int, signoff_owed: boo
         owed = (f"This was a `{rung}` rung, not a build - its units end at their own terminal "
                 f"and no Done sign-off is owed.")
     else:
-        owed = ("**Sign-off is OWED and is the operator's** - the two-role gate holds Done."
-                if signoff_owed else
-                "**Sign-off is RECORDED** - nothing is owed on this run.")
+        owed = ("**The run signature is OWED and is the operator's** - `sprint sign` seals the "
+                "batch in one signature." if signature_owed else
+                "**The run is SIGNED** - nothing is owed on this run.")
     return (f"{ANCHOR_BEGIN}\n"
             f"> **{run_id} closed {outcome}.** {units} unit(s) in the batch. {owed}\n"
             f"> Stamped by `sprint close` - edit the prose below, not this block.\n"
@@ -5651,12 +5675,12 @@ def anchor_status_block(run_id: str, outcome: str, units: int, signoff_owed: boo
 
 
 def refresh_review_anchor(repo_root: Path | str, run_id: str, outcome: str, units: int,
-                          signoff_owed: bool, rung: str = "done") -> str:
+                          signature_owed: bool, rung: str = "done") -> str:
     """Replace (or insert) the status block in `sdlc-studio/reviews/LATEST.md`. Returns the verb
     for the close line. Never rewrites the narrative: an existing block is swapped in place, and
     a missing one is inserted just after the H1."""
     anchor = Path(repo_root) / "sdlc-studio" / "reviews" / "LATEST.md"
-    block = anchor_status_block(run_id, outcome, units, signoff_owed, rung)
+    block = anchor_status_block(run_id, outcome, units, signature_owed, rung)
     if not anchor.is_file():
         anchor.parent.mkdir(parents=True, exist_ok=True)
         sdlc_md.atomic_write(anchor, f"# Reviews - LATEST (anchor)\n\n{block}\n")
@@ -5673,41 +5697,6 @@ def refresh_review_anchor(repo_root: Path | str, run_id: str, outcome: str, unit
     return "inserted"
 
 
-def _signoff_owed(repo_root: Path | str, state: dict) -> bool:
-    """True while any unit in the batch lacks a RECORDED reviewer-of-record sign-off.
-
-    DERIVED FROM THE SIGN-OFF LEDGER, never proxied by status. An earlier version asked whether
-    every unit was terminal and called that "signed off" - but the terminal set includes
-    `Won't Implement`, `Superseded`, `Won't Fix` and `Closed`, so a batch that was DROPPED read
-    as one that was approved, and the anchor then stamped "sign-off RECORDED" over work nobody
-    signed. The anchor is the file a fresh context is told to read first, so a false claim there
-    is the most expensive kind. `critic.signoff_for` is the authority and is used for exactly
-    this question elsewhere in the close.
-
-    Fail-safe towards OWED: an unreadable ledger reports the sign-off as outstanding, because
-    claiming one that cannot be evidenced is the worse error.
-    """
-    batch = (state or {}).get("batch") or []
-    if not batch:
-        return False          # nothing in the batch, so nothing is owed
-    try:
-        import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
-    except Exception as exc:  # noqa: BLE001
-        sdlc_md.debug("sprint._signoff_owed", exc)
-        return True
-    for entry in batch:
-        uid = entry.get("id") if isinstance(entry, dict) else entry
-        if not uid:
-            continue
-        try:
-            if not critic.signoff_for(repo_root, str(uid)):
-                return True
-        except Exception as exc:  # noqa: BLE001 - an unreadable ledger is not a sign-off
-            sdlc_md.debug("sprint._signoff_owed", exc)
-            return True
-    return False
-
-
 def _close_review_anchor(root, retro, state):
     """Refresh the review anchor so it states THIS run's outcome rather than the previous run's."""
     try:
@@ -5720,7 +5709,7 @@ def _close_review_anchor(root, retro, state):
     units = len(st.get("batch") or [])
     try:
         verb = refresh_review_anchor(root, run_id, outcome, units,
-                                     _signoff_owed(root, st), run_rung(st))
+                                     not st.get("signature"), run_rung(st))
     except OSError as exc:
         return False, f"the review anchor could not be written: {exc}", \
                "check sdlc-studio/reviews/LATEST.md is writable, then re-run close"
@@ -6169,91 +6158,68 @@ def _signoff_author(root, unit) -> str:
     return ""
 
 
-def _apply_signoff(root, state, principal: str | None, author_default: str | None = None,
-                   retro_arg: str | None = None, tail: bool = True) -> int:
-    """Fan the operator's recorded approval across the batch: per story unit, record the
-    reviewer-of-record sign-off then transition it Done (`artifact.close` - AC-verify gated,
-    cascades the parent, records telemetry), then the close tail (velocity row + final reconcile).
+def _seal_units(root, state) -> int:
+    """SEAL's per-unit half: each batch unit to its terminal status, and no per-unit row.
 
-    Story-scoped, idempotent, and stops LOUD at the first refusal (a subagent principal, a unit
-    with no recorded author, a red Done gate) leaving already-done units done - never a partial
-    silent state."""
-    import critic  # noqa: PLC0415
+    The operator signs ONCE, for the run (`_write_the_signature`). What that signature cannot
+    seal a unit over is the review bar (`seal_bar_unmet`) and the unit's own terminal gate (its
+    criteria, run by the transition). The review bar is judged over EVERY unit the seal reaches,
+    one already terminal included, BEFORE anything moves: an unreviewed unit leaves every unit
+    where it stood and the run open, and a unit moved by hand does not walk round the bar. A
+    terminal gate that refuses stops the walk at that unit; a re-run resumes, skipping the units
+    already terminal, whose review stands.
+    """
     import artifact  # noqa: PLC0415
-    if not (principal or "").strip():
-        print("apply-signoff needs an explicit --principal (the reviewer of record) - a sign-off "
-              "with no named principal is not a review", file=sys.stderr)
-        return 2
-    units = _batch_story_units(root, state.get("batch") or [])
-    for uid, status in _batch_abandoned_units(root, state.get("batch") or []):
-        print(f"apply-signoff: {uid} is {status} - ruled out, not built, so it is neither "
-              f"signed off nor moved to Done")
-    signed, done, skipped = [], [], []
+    import transition  # noqa: PLC0415
+    batch = state.get("batch") or []
+    for uid, status in _batch_abandoned_units(root, batch):
+        print(f"sign: {uid} is {status} - ruled out, not built, so it is not moved")
+    units = _batch_story_units(root, batch)
+    owed = [(unit, unmet) for unit in units if (unmet := seal_bar_unmet(root, unit))]
+    for unit, unmet in owed:
+        print(f"sign STOPPED at {unit}: it owes: {'; '.join(unmet)}", file=sys.stderr)
+    if owed:
+        print("  nothing was moved and the run is still open - record the review each unit owes "
+              "(`critic.py brief --unit <id> --seat qa`, then `critic.py record`), then sign "
+              "again", file=sys.stderr)
+        return 1
+    pending, already = [], 0
     for unit in units:
         hit = sdlc_md.find_by_id(Path(root), unit)
-        # Each unit's OWN type decides its vocabulary and its terminal status. Reading a bug
-        # through the story vocabulary reported it as not-terminal whatever it said, because a
-        # bug's terminal is `Fixed` and `Done` is not in its vocabulary at all.
-        kind = hit[1]
-        vocab = sdlc_md.status_vocab(kind, root)
-        terminal = _SIGNOFF_TERMINAL.get(kind, "Done")
+        # Each unit's OWN type decides its terminal: a bug's is `Fixed`, not `Done`.
+        terminal = _SIGNOFF_TERMINAL.get(hit[1], "Done")
         status = sdlc_md.canonical_status(
-            sdlc_md.extract_field(hit[0].read_text(encoding="utf-8"), "Status"), vocab)
-        existing = critic.signoff_for(root, unit)
-        has_signoff = critic.is_independent_signoff(root, unit, existing)
-        # Idempotent: a unit already terminal AND independently signed off is complete - skip it,
-        # so a re-run after a mid-cascade stop resumes rather than re-recording and transitioning.
-        if status == terminal and has_signoff:
-            skipped.append(unit)
-            continue
-        if not has_signoff:  # a stop between signoff and Done leaves the signoff; do not duplicate it
-            author = author_default or _signoff_author(root, unit)
-            if not author:
-                print(f"apply-signoff STOPPED at {unit}: no recorded critic author to sign off "
-                      f"independently of - run the per-unit or sprint-level critic first",
-                      file=sys.stderr)
-                return 1
-            try:
-                critic.record_signoff(root, unit, principal=principal, author=author)
-            except ValueError as exc:  # subagent principal, principal == author, ...
-                print(f"apply-signoff STOPPED at {unit}: {exc}", file=sys.stderr)
-                return 1
-            signed.append(unit)
+            sdlc_md.extract_field(hit[0].read_text(encoding="utf-8"), "Status"),
+            sdlc_md.status_vocab(hit[1], root))
+        if status == terminal:
+            already += 1
+        else:
+            pending.append((unit, terminal))
+    for unit, terminal in pending:
         try:
             if terminal == "Done":
                 artifact.close(root, unit)  # Done + cascade + telemetry; AC-verify gated
             else:
-                # A bug's terminal runs the same gate `transition.py` enforces by hand. Routed
-                # here rather than through `artifact.close`, which is Done-shaped, so a bug cannot
-                # reach a terminal status by a path that skips the checks its own type demands.
-                import transition as _tr  # noqa: PLC0415 - lazy, as elsewhere here
-                _tr.transition(root, unit, terminal)
-        except Exception as exc:  # noqa: BLE001 - a red terminal gate must stop the fan loudly
-            print(f"apply-signoff STOPPED at {unit}: Done transition refused - {exc}",
+                # A bug's terminal runs the gate `transition.py` enforces by hand, not the
+                # Done-shaped `artifact.close`, so no route skips the checks its type demands.
+                transition.transition(root, unit, terminal)
+        except Exception as exc:  # noqa: BLE001 - a red terminal gate must stop the walk loudly
+            print(f"sign STOPPED at {unit}: {terminal} transition refused - {exc}",
                   file=sys.stderr)
             return 1
-        done.append(unit)
-        print(f"apply-signoff: {unit} signed off by {principal} -> Done")
-    # the run's own units - the derivation must not reach epics this close never touched
-    # `tail=False` is SEAL's call: the velocity row, the handoff re-render and the final
-    # reconcile all CHANGE FACTS, so they belong before the signature, not after it. The
-    # legacy `--apply-signoff` path passed them here, which is where RUN-01M2JA6J's two hours
-    # of post-signature work came from.
-    rc = (_apply_signoff_tail(root, state, units=done + skipped, retro_arg=retro_arg)
-          if tail else 0)
-    unfanned = _batch_unfanned_units(root, state.get("batch") or [])
+        print(f"sign: {unit} -> {terminal}")
+    unfanned = _batch_unfanned_units(root, batch)
     if unfanned:
-        # AC1: named, never silently skipped. AC2: the shortfall is stated in the same breath as
-        # the count, so an outcome of goal-reached cannot be read over a batch that is not done.
-        print(f"apply-signoff: {len(unfanned)} batch unit(s) NOT reached by the fan-out - it is "
-              f"story-scoped, and these are not terminal:", file=sys.stderr)
+        # Named, never silently skipped, and stated beside the count so an outcome of
+        # goal-reached cannot be read over a batch that is not done.
+        print(f"sign: {len(unfanned)} batch unit(s) NOT reached - these are not terminal:",
+              file=sys.stderr)
         for uid, kind, status in unfanned:
             print(f"  {uid} ({kind}) is {status} - transition it before the run is read as "
                   f"delivered", file=sys.stderr)
-    print(f"apply-signoff: {len(done)} transitioned Done, {len(signed)} newly signed, "
-          f"{len(skipped)} already complete"
+    print(f"sign: {len(pending)} moved to their terminal status, {already} already there"
           + (f", {len(unfanned)} NOT reached (see above)" if unfanned else ""))
-    return rc
+    return 0
 
 
 def _declared_breakdown_ids(text: str) -> list[str]:
@@ -6456,23 +6422,8 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
     # could print `gate: ok` and still leave the tree red - which is what happened, and the next
     # person to commit inherited a failure they did not cause and had to prove was not theirs.
     # Same defect class as the handoff refresh above: a step reporting a superseded state.
-    # RE-STAMP THE ANCHOR, now that the sign-offs are recorded and the units are Done. The chain
-    # stamped it at step 7 while every unit still sat at Review, so it necessarily said OWED - on
-    # the very close that was recording the sign-off. The RECORDED branch was unreachable from any
-    # close that actually applied one. Same defect class as the handoff refresh above: a step
-    # reporting a state a later step changes.
-    try:
-        st = run_state.read(root) or state or {}
-    except Exception as exc:  # noqa: BLE001 - never lose a completed sign-off to a state read
-        sdlc_md.debug("sprint._apply_signoff_tail", exc)
-        st = state or {}
-    try:
-        refresh_review_anchor(root, st.get("run_id") or "(unknown run)",
-                              st.get("outcome") or "closed", len(st.get("batch") or []),
-                              _signoff_owed(root, st), run_rung(st))
-    except OSError as exc:
-        print(f"apply-signoff: the review anchor could not be re-stamped ({exc}) - it still "
-              f"says sign-off is owed", file=sys.stderr)
+    # The anchor is stamped by the chain's review-anchor step and re-stamped by `sign`, the one
+    # step that changes what it says: the tail signs nothing.
     _finalise_outcome(root, state)
     record_close_tree(root)
     return 0
@@ -6737,7 +6688,7 @@ def run_rung(state) -> str:
     """The rung this run was opened at, lowercased; `done` (the build rung) when unset.
 
     THE reader for the close chain - `refresh_review_anchor`, the grooming report, the
-    apply-signoff re-stamp, `undelivered_blockers` and `_signoff_preflight` all come here, and
+    seal's re-stamp, `undelivered_blockers` and `_seal_preview` all come here, and
     the three that derived it inline were converted rather than left beside this one. A review
     of the first cut of this function caught it claiming to be the single reader while adding a
     fifth spelling and consolidating none, which is the claim-versus-code gap the `claim-drift`
@@ -7119,7 +7070,7 @@ def close_preflight(root, retro_id: str | None = None, *, record_cost: bool = Tr
               f"installed copy - the work this close is signing off is in force nowhere else",
               drift["remedy"])
 
-    blockers.extend(_signoff_preflight(root, state))
+    blockers.extend(_seal_preview(root, state))
     # READY is decided by what HOLDS the close, not by what is reported. A row that declares
     # itself non-blocking - an expired checklist window, a cadence lane - was still counted here,
     # so "reported, not held" was true of the flag and false of the answer, which is the only
@@ -7159,14 +7110,13 @@ def held_blockers(blockers: list) -> list:
 
 
 def preflight_headline(blockers: list) -> str:
-    """The `N unmet prerequisite(s)` phrase, computed ONCE for both renderers.
+    """The `N unmet prerequisite(s)` phrase the close's pre-flight report prints.
 
     The count is the number that HOLDS the close, never the length of the blocker list. Those
-    diverge whenever a row declares itself non-blocking, and `_report_preflight` used to render
-    the length while `_render_preflight` rendered the held count - one fact with two answers,
-    the louder one overstating. An operator told `8 unmet prerequisite(s)` when 3 hold is being
-    told the close is nearly twice as far away as it is, and a count that cries wolf is one
-    whose real refusals get waved through.
+    diverge whenever a row declares itself non-blocking, and rendering the length once gave one
+    fact two answers, the louder one overstating. An operator told `8 unmet prerequisite(s)`
+    when 3 hold is being told the close is nearly twice as far away as it is, and a count that
+    cries wolf is one whose real refusals get waved through.
 
     The total is stated BESIDE the blocking count rather than in place of it, so the advisory
     rows stay visible without inflating the headline - they are still printed, and a page that
@@ -7254,72 +7204,32 @@ def _checklist_blockers(root: Path, retro_id: str, state: dict) -> list[dict]:
     return out
 
 
-def _signoff_preflight(root: Path, state: dict) -> list[dict]:
-    """What `--apply-signoff` will demand of each batch unit, asked BEFORE the close runs.
+def _seal_preview(root: Path, state: dict) -> list[dict]:
+    """What `sprint sign` will do to each batch unit - its terminal transition - previewed.
 
-    These are the prerequisites that surface last today, after a full chain has already passed.
-    Every rule is asked of `critic` itself rather than restated here: a pre-flight carrying its
-    own copy of the independence rule is two answers to one question, and the pair drift.
+    RUNG-AWARE. Only the build rung ends its units at a delivered terminal; a `design` rung
+    grooms them and they correctly end at Ready with red criteria. The skip states itself as a
+    NON-BLOCKING row rather than going quiet, because a check that did not run must not read like
+    one that passed. SCOPED TO `design`, not "not `done`": `plan` and `triage` keep the preview,
+    since no substitute bar stands behind them.
     """
-    import artifact  # noqa: PLC0415 - lazy, as elsewhere in the close path
-    import critic    # noqa: PLC0415
-    out: list[dict] = []
-    # RUNG-AWARE. Both gates below ask a question only the build rung owes: Done, and a
-    # reviewer-of-record sign-off ON that Done. `anchor_status_block` has always said so in
-    # words - "no Done sign-off is owed" - while these two demanded it anyway, and `critic
-    # signoff` REFUSED to write the very row they demanded, so the pair was unclearable by any
-    # means including by hand.
-    #
-    # REPORTED, NEVER SILENT. Returning an empty list would make the close's account of itself
-    # depend on knowing what it chose not to run - every suppression is also a blindfold. So the
-    # skip states itself as a non-blocking row, which `_blocker_label` renders "reported not
-    # blocking", and the grooming bar this rung IS held to is named in the same breath.
-    # A review found that claim half true when it was first written: `_report_preflight` printed
-    # blockers only on the NOT-ready path and via `_stage_label`, so on a clean design close this
-    # row appeared nowhere at all - the exact outcome the paragraph above says it prevents. Both
-    # were fixed there rather than softened here.
-    # SCOPED TO `design`, for the same reason its sibling is, and the first cut of this repair
-    # got it right in one function and wrong in the other. `rung != "done"` here made `plan` and
-    # `triage` skip `_done_gate_preflight` as well - a HARD blocker at the base ref - with NO
-    # substitute bar behind them, since `_rung_product_blockers` is design-only. That is the
-    # "skips the delivery gates and checks nothing" outcome this file elsewhere calls a far
-    # worse defect than the one being repaired, reintroduced one function over.
-    rung = run_rung(state)
-    if rung == "design":
-        return [{"stage": "sign-off", "blocking": False,
-                 "detail": (f"this run's rung is `{rung}`, not a build - its units end at their "
-                            f"own terminal, so no Done transition, no reviewer-of-record "
-                            f"sign-off ON a Done and no adversarial-pass evidence for one was "
-                            f"checked. Independent review coverage is unaffected and still "
-                            f"reported, by the `review-coverage` lane"),
+    if run_rung(state) == "design":
+        return [{"stage": "done-gate", "blocking": False,
+                 "detail": (f"this run's rung is `{run_rung(state)}`, not a build - its units "
+                            f"end at their own terminal, so no Done transition was previewed. "
+                            f"Independent review coverage is unaffected and still reported, "
+                            f"by the `review-coverage` lane"),
                  "remedy": ("nothing - this row is the record that the delivery gates did not "
                             "apply. The bar this rung IS held to is that every batch unit is "
                             "groomed, reported above as a blocking `status` row when it is not")}]
-    # The SAME resolver apply-signoff uses, not a prefix test of our own. `startswith("US")`
-    # reported a sign-off blocker for a batch id with no artefact behind it - which apply-signoff
-    # skips entirely - so the pre-flight over-reported work that was never owed.
-    for unit in _batch_story_units(root, state.get("batch") or []):
-        verdict = critic.verdict_for(root, unit)
-        covered = critic.sprint_covers_independently(
-            root, unit, critic.sprint_review_for(root, unit))
-        if not verdict and not covered:
-            out.append({"stage": "sign-off", "detail": f"{unit}: no critic verdict and no "
-                                                       "sprint-level review covering it",
-                        "remedy": "`critic.py record --unit <id> ...` or "
-                                  "`critic.py sprint-review --units <ids> ...`"})
-    out.extend(_done_gate_preflight(root, state))
-    return out
+    return _done_gate_preflight(root, state)
 
 
 def _done_gate_preflight(root: Path, state: dict) -> list[dict]:
-    """The Done transition apply-signoff performs on each unit, previewed.
+    """The Done transition `sprint sign` performs on each unit, previewed.
 
-    The critic checks above are only half of what `--apply-signoff` demands: after recording the
-    sign-off it calls `artifact.close`, which is AC-verify gated. A pre-flight that asked only
-    about verdicts reported READY for a unit whose executable ACs were never run, and the close
-    then refused it - a pre-flight that disagrees with the run it previews is worse than none,
-    which is this change's own stated reason for existing.
-
+    `artifact.close` is AC-verify gated, so a pre-flight that did not ask it would report READY
+    for a unit whose executable criteria were never run, and the seal would then refuse it.
     Asked by previewing the real close, not by restating its gates.
     """
     import artifact  # noqa: PLC0415
@@ -7344,16 +7254,14 @@ def _done_gate_preflight(root: Path, state: dict) -> list[dict]:
     return out
 
 
-#: Stages only the SEAL owes. PREPARE performs no Done transitions and records no sign-off -
-#: under D0213 the fan-out is `sprint.py sign`'s - so a close can never clear these rows.
-#: They still HOLD: a build rung whose sign-off preview stopped blocking would report READY for
-#: units carrying no sign-off whatever, which is a delivered criterion with its own mutant. What
-#: they are excluded from is the CONVERGENCE SERIES - see `_record_close_attempt`.
-_SIGNOFF_ONLY_STAGES = ("sign-off", "done-gate")
+#: Stages only the SEAL owes. PREPARE performs no terminal transition - under D0213 that is
+#: `sprint.py sign`'s - so a close can never clear these rows. They still HOLD; what they are
+#: excluded from is the CONVERGENCE SERIES - see `_record_close_attempt`.
+_SEAL_ONLY_STAGES = ("done-gate",)
 
 
 def _stage_label(stage: str) -> str:
-    return f"{stage}, for --apply-signoff" if stage in _SIGNOFF_ONLY_STAGES else stage
+    return f"{stage}, for sprint sign" if stage in _SEAL_ONLY_STAGES else stage
 
 
 def _blocker_label(b: dict) -> str:
@@ -7361,22 +7269,6 @@ def _blocker_label(b: dict) -> str:
     reading a list of blockers has no other way to tell which of them stop the close."""
     label = _stage_label(b["stage"])
     return label if b.get("blocking", True) else f"{label}, reported not blocking"
-
-
-def _render_preflight(data: dict) -> None:
-    held = held_blockers(data["blockers"])
-    reported = [b for b in data["blockers"] if b not in held]
-    if data["ready"]:
-        print("preflight: ready - every close prerequisite is met")
-        for b in reported:
-            print(f"  [{_blocker_label(b)}] {b['detail']}")
-            print(f"      -> {b['remedy']}")
-        return
-    print(f"preflight: {preflight_headline(data['blockers'])} - ALL of them, so the close is "
-          f"one more run once these are cleared:")
-    for b in data["blockers"]:
-        print(f"  [{_blocker_label(b)}] {b['detail']}")
-        print(f"      -> {b['remedy']}")
 
 
 #: Steps a dry run does NOT re-run against the scratch copy, and where their verdict comes from
@@ -7625,21 +7517,14 @@ def _report_preflight(root, retro_id: str | None) -> dict:
     return pre
 
 
-def cmd_preflight(args: argparse.Namespace) -> int:
-    data = close_preflight(args.root, args.retro)
-    if args.format == "json":
-        print(json.dumps(data, indent=2))
-    else:
-        _render_preflight(data)
-    return 0 if data["ready"] else 1
-
-
 #: Blocker stages `--file-and-close` may file and defer: ceremony debt, whose absence is
 #: honestly recordable as outstanding work. Everything else - a red gate lane, a unit whose
 #: Done gate refuses (failing/unrun executable ACs), a broken run state, a run with NO
 #: sprint goal (the plain close refuses that unconditionally, and a post-close CR to "set
 #: one at plan time" is unsatisfiable) - is a CORRECTNESS signal, and filing it away would
-#: be the bypass this exit exists to prevent.
+#: be the bypass this exit exists to prevent. No shipped pre-flight row carries `sign-off` any
+#: more (the per-unit sign-off preview is gone); it stays deferrable because the file-and-close
+#: and grouping fixtures model per-unit ceremony debt with it, and no live stage is both.
 _DEFERRABLE_CLOSE_STAGES = ("goal-verdict", "retro", "sign-off")
 
 def hard_blockers(blockers: list) -> list:
@@ -7695,7 +7580,7 @@ def _record_close_attempt(root, pre: dict) -> None:
     not an attempt. The held rows only, less the ones only the signature can clear."""
     attempts = list((run_state.read(root) or {}).get("close_attempts") or [])
     movable = [b for b in held_blockers(pre["blockers"])
-               if b["stage"] not in _SIGNOFF_ONLY_STAGES]
+               if b["stage"] not in _SEAL_ONLY_STAGES]
     attempts.append({"at": sdlc_md.now_iso8601(), "outstanding": len(movable),
                      "stages": sorted({b["stage"] for b in movable})})
     run_state.update(root, close_attempts=attempts)
@@ -9369,10 +9254,10 @@ def _cascade_after_signature(root, state, units) -> None:
 
 
 def _principal_refusals(root, state, principal: str | None, author_default: str | None) -> list:
-    """Every unit of the batch this principal may not sign, asked of `critic`'s own rule.
+    """Every unit of the batch this principal may not seal, asked of `critic`'s own rule.
 
-    Only the units the fan-out would actually SIGN are asked: one already independently signed
-    off is one the seal will skip, and refusing over it would make a resumed seal unrunnable.
+    One principal signs the run once, so the question is whether THIS principal is independent of
+    every unit's author - asked before anything is written.
     """
     import critic  # noqa: PLC0415
     if not (principal or "").strip():
@@ -9380,18 +9265,12 @@ def _principal_refusals(root, state, principal: str | None, author_default: str 
                 "with no named principal is not a review"]
     out = []
     for unit in _batch_story_units(root, state.get("batch") or []):
-        # EVERY unit, including ones already signed off. An earlier reading skipped those for
-        # idempotence, but the question here is not whether a unit needs signing - it is
-        # whether THIS principal may give the run its signature, and the run's signature is
-        # written on a resumed seal too. Skipping them meant a seal resumed after every unit
-        # was signed met no refusal at all, and the author could sign the run off: the exact
-        # hole AC2 exists to close, reached by a different door.
+        # EVERY unit, including ones already terminal: the run's signature is written on a
+        # resumed seal too, and skipping them would let the author sign a resumed run off.
         author = author_default or _signoff_author(root, unit)
         if not author:
-            # NOT this check's business. A unit with no recorded author owes a critic pass, not
-            # a different principal, and `_apply_signoff` already stops on it with that remedy.
-            # Refusing here would answer a question nobody asked and would give the operator a
-            # second, differently worded refusal for one condition.
+            # NOT this check's business. A unit with no recorded author owes a review, not a
+            # different principal, and the seal's review bar stops on it with that remedy.
             continue
         why = critic.signoff_refusal(root, unit, principal, author)
         if why:
@@ -9438,13 +9317,14 @@ def tree_moved_since_close(root, state: dict) -> list[str] | None:
 
 
 def cmd_sign(args: argparse.Namespace) -> int:
-    """SEAL. One command, one principal, and only what the signature entails.
+    """SEAL. One command, one principal, one signature, and only what the signature entails.
 
-    Everything that can change a fact ran in PREPARE. This writes the per-unit sign-off rows,
-    the terminal transitions and the cascades they imply, then the run's own signature and its
-    outcome - and stops. It does NOT run `_apply_signoff_tail`: the velocity row, the handoff
-    re-render and the final reconcile are PREPARE's, because a fact that moves after a
-    signature is a fact the signature did not cover (D0213, RUN-01M2JA6J's own two hours).
+    Everything that can change a fact ran in PREPARE. This writes the terminal transitions and
+    the cascades they imply, then the run's own signature and its outcome - and stops. No
+    per-unit sign-off row is written: the operator signs the run once. It does NOT run
+    `_apply_signoff_tail`: the velocity row, the handoff re-render and the final reconcile are
+    PREPARE's, because a fact that moves after a signature is a fact the signature did not cover
+    (D0213, RUN-01M2JA6J's own two hours).
     """
     root = Path(args.root)
     state = run_state.read(root) or {}
@@ -9476,11 +9356,9 @@ def cmd_sign(args: argparse.Namespace) -> int:
               file=sys.stderr)
     verdict = (state.get("sprint_goal_verdict") or {}).get("verdict")
     outcome = SIGNED_OUTCOMES.get(verdict, run_state.STOPPED)
-    # THE PRINCIPAL IS JUDGED OVER THE WHOLE BATCH, BEFORE ANYTHING IS WRITTEN. `record_signoff`
-    # already refuses a principal the authoring session controls, but per unit and as it walks -
-    # so a subagent recorded on the LAST unit alone is caught only after the first ones have
-    # been signed and moved. One principal signs one batch, so the question is asked of the
-    # batch: every refusal named at once, nothing written, the run left open.
+    # THE PRINCIPAL IS JUDGED OVER THE WHOLE BATCH, BEFORE ANYTHING IS WRITTEN: a principal the
+    # authoring session controls, or a unit's own author, is refused with every refusal named
+    # at once, nothing written and the run left open.
     refused = _principal_refusals(root, state, getattr(args, "principal", None),
                                   getattr(args, "author", None))
     if refused:
@@ -9499,9 +9377,7 @@ def cmd_sign(args: argparse.Namespace) -> int:
         print(f"sign: sealing over {len(stop_ship)} STOP-SHIP known issue(s), listed first on "
               f"{report_id}, on {args.principal}'s decision")
     try:
-        rc = _apply_signoff(root, state, getattr(args, "principal", None),
-                            getattr(args, "author", None),
-                            retro_arg=getattr(args, "retro", None), tail=False)
+        rc = _seal_units(root, state)
         if rc != 0:
             return rc
         _cascade_after_signature(root, state, list(state.get("batch") or []))
@@ -9513,6 +9389,13 @@ def cmd_sign(args: argparse.Namespace) -> int:
             run_state.update(root, **unanswered_record(ua))
         signature = _write_the_signature(root, report_id, args.principal)
         run_state.close_run(root, outcome, handoff=state.get("handoff"))
+        try:
+            # The anchor the close stamped said the signature was owed; it now says it landed.
+            refresh_review_anchor(root, state.get("run_id") or "(unknown run)", outcome,
+                                  len(state.get("batch") or []), False, run_rung(state))
+        except OSError as exc:
+            print(f"sign: the review anchor could not be re-stamped ({exc}) - it still says "
+                  f"the signature is owed", file=sys.stderr)
     finally:
         # What the signature wrote is its own, so a resumed sign is judged against this tree.
         record_close_tree(root)
@@ -11391,8 +11274,8 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--format", choices=("text", "json"), default="text")
     b.set_defaults(func=cmd_breakdown)
 
-    sg = sub.add_parser("sign", help="SEAL a prepared run: one principal writes the per-unit "
-                                     "sign-off rows, the transitions and the run's signature, "
+    sg = sub.add_parser("sign", help="SEAL a prepared run: one principal moves the batch to its "
+                                     "terminal statuses and writes the run's one signature, "
                                      "and nothing runs afterwards")
     sg.add_argument("--report", default=None, metavar="RPTxxxx",
                     help="the report being signed (default: the one the run names)")
@@ -11534,15 +11417,6 @@ def build_parser() -> argparse.ArgumentParser:
     nx.add_argument("--root", default=".", help="Repo root (default: .)")
     nx.set_defaults(func=cmd_next)
 
-    pf = sub.add_parser("preflight",
-                        help="Report EVERY unmet close prerequisite in one read-only pass "
-                             "(gate lanes, retro, goal-verdict and the per-unit sign-off "
-                             "prerequisites), before starting a close.")
-    pf.add_argument("--retro", metavar="RETROxxxx", default=None,
-                    help="the batch retro the close will validate against")
-    pf.add_argument("--format", choices=("text", "json"), default="text")
-    pf.add_argument("--root", default=".", help="Repo root (default: .)")
-    pf.set_defaults(func=cmd_preflight)
 
     g = sub.add_parser("goal-verdict",
                        help="Record the closing review's judgement of the Sprint Goal "
@@ -11766,7 +11640,35 @@ def render_finding_sets(issues: str) -> str:
     return "\n".join(out)
 
 
+#: Verbs removed from the parser, each refused BY NAME. Kept out of the parser itself so neither
+#: `--help` nor the derived command surface lists them.
+RETIRED_VERBS = {
+    "preflight": "the close's prerequisites are reported by `sprint.py close` itself, which "
+                 "runs the same pre-flight first",
+}
+
+
+def _retired_verb(argv: list[str] | None) -> str | None:
+    """The retired verb `argv` invokes, or None. Tokenised with the global `--root` declared, so
+    `--root X preflight` and `preflight --root X` both resolve; a malformed line is left for the
+    real parser to refuse."""
+    pre = argparse.ArgumentParser(add_help=False, exit_on_error=False)
+    pre.add_argument("--root")
+    pre.add_argument("verb", nargs="?")
+    try:
+        known, _rest = pre.parse_known_args(sys.argv[1:] if argv is None else argv)
+    except argparse.ArgumentError:
+        return None
+    return known.verb if known.verb in RETIRED_VERBS else None
+
+
 def main(argv: list[str] | None = None) -> int:
+    retired = _retired_verb(argv)
+    if retired:
+        print(f"error: `sprint.py {retired}` is retired - {RETIRED_VERBS[retired]}. Run "
+              f"`sprint.py close --dry-run` to preview a close. Nothing was written.",
+              file=sys.stderr)
+        return 2
     args = build_parser().parse_args(argv)
     # Resolve the root ONCE and write it back, so every verb below anchors on the tree the
     # run belongs to. The family default `.` means "work it out from here", not "the cwd

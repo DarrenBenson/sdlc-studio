@@ -92,22 +92,23 @@ no goal verdict, no retro, and an uncommitted change to a file a batch unit decl
 **The close is in two halves, and the signature is the second one.** `close` is PREPARE: it runs
 every step that can change a fact - the ten-step chain, the handoff, the velocity row, the
 reconcile - files the report you are going to sign, and leaves the run OPEN. What moves after that
-page is derived is only what the SIGNATURE ITSELF entails: the per-unit rows, the terminal
-transitions and the cascades they imply. Nothing else does, and the page is written so that none
+page is derived is only what the SIGNATURE ITSELF entails: the terminal transitions and the
+cascades they imply. Nothing else does, and the page is written so that none
 of those moves changes a figure it records - which is what makes signing a transaction rather than
 the start of another day's work.
 
 **`sign --report RPTxxxx --principal "<you>"`** is SEAL, and it is the last thing that happens.
-Instead of hand-running `critic signoff` and `transition` for every unit, one command records your
-reviewer-of-record sign-off per unit, transitions each to its own terminal - `Done` for a story,
-`Fixed` for a bug - (AC-verify gated, cascading its
-parent and the request above it), then writes the run's signature and its outcome, and stops. It
-does NOT run the close tail: a fact that moves after a signature is a fact the signature did not
-cover. It walks every unit of the batch to its own terminal, idempotent (a re-run resumes, skipping
-already-done+signed units), and it stops loudly at the first refusal - a unit whose Done gate is
-red - leaving the completed units done. A principal the authoring session controls is refused
-BEFORE any of that, judged across the whole batch, so that refusal leaves nothing written at all.
-It never runs without an explicit `--principal`.
+You sign the run once; no per-unit sign-off row is written. One command transitions each unit to
+its own terminal - `Done` for a story, `Fixed` for a bug - (AC-verify gated, cascading its parent
+and the request above it), then writes the run's one signature and its outcome, and stops. It does
+NOT run the close tail: a fact that moves after a signature is a fact the signature did not cover.
+A unit with no independent delivery APPROVE stops it before anything moves, naming the unit. The
+close names the same units first - one at Review as a known issue, one already moved to Done in
+the pre-flight's blocking `review-coverage` row - so the page you sign already shows them. It is
+idempotent (a re-run resumes, skipping units already terminal), and it stops loudly at the first
+unit whose Done gate is red, leaving the completed units done. A principal the authoring session
+controls is refused BEFORE any of that, judged across the whole batch, so that refusal leaves
+nothing written at all. It never runs without an explicit `--principal`.
 
 `close --apply-signoff` no longer signs: it exits 2 and names `sign`. An alias would have kept the
 old path alive in every operator's fingers, help file and runbook row, and the split would have
@@ -180,14 +181,10 @@ same census read-only. Opt out only as a recorded decision: `sprint.breakdown: j
    is terminal (Done or Blocked). With `routing.enabled` (see below), a failed
    attempt escalates one model tier before the cap quarantines
    (`reference-sprint.md#model-tier-routing`).
-6. **Pre-flight** (optional, read-only) - `sprint preflight --retro RETROxxxx` reports
-   **every** unmet close prerequisite in one pass: the gate lanes, the retro's missing
-   sections, an unjudged goal, and the per-unit sign-off prerequisites (critic verdict,
-   adversarial evidence, independent reviewer-of-record). Those last ones otherwise
-   surface only after the whole chain has passed, so a close took as many runs as it
-   had unmet prerequisites, each costing a full gate run. Writes nothing, so it can be
-   asked before committing to a close. `close` runs it automatically and prints the
-   same list up front; it reports, it never adds a refusal.
+6. **Pre-flight** - `close` first reports **every** unmet close prerequisite in one pass:
+   the gate lanes, the retro's missing sections, an unjudged goal, and each unit's Done
+   gate. It reports, it never adds a refusal. `close --dry-run` previews the whole close
+   writing nothing.
 7. **Close** - `sprint close` runs the close ceremony as one deterministic chain
    (goal-verdict, retro validate + extract, lessons summary, the close gate, handoff,
    reconcile) in one pass: a failing step is printed with its remedy, recorded as a known
@@ -364,7 +361,7 @@ The read-only verbs, which change nothing and are safe to run at any point:
 python3 <skill>/scripts/sprint.py breakdown --stories Ready --bugs Open
 
 # every refusal the close would raise, in one pass, writing nothing
-python3 <skill>/scripts/sprint.py preflight
+python3 <skill>/scripts/sprint.py close --retro RETROxxxx --dry-run
 
 # record the Sprint Goal judgement at the close (achieved | partial | missed)
 python3 <skill>/scripts/sprint.py goal-verdict --verdict achieved --note "<why it holds>"

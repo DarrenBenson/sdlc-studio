@@ -944,13 +944,11 @@ NON_CEREMONY_VERBS = {
     # `next` sits with `plan` on the OPENING side of a run, not the closing one: it resolves a
     # queued charter into a batch and opens from it. A close-checklist row would be asking the
     # close to certify something that happened before the run began.
-    "sprint": ("appetite", "close", "boundary", "report", "checklist", "preflight",
+    # `sign` is the close's own last act: the operator's one signature over the report this
+    # checklist feeds, recorded on the report page and the run. A checklist row for it could
+    # only ever read pending when the page is composed.
+    "sprint": ("appetite", "close", "boundary", "report", "checklist", "sign",
                "reopen", "stop", "decision", "batch", "lane", "next", "queue", "call"),
-    # `signoff` is the RECORDER, not the ceremony step. US0832 split the close, and the stage
-    # "reviewer-of-record sign-off" is now held by `sprint sign`, which is what the checklist's
-    # `signoff` row names; `critic signoff` is what that verb calls to write each row. It is
-    # declared here rather than left to fail the drift guard because a row may name only one
-    # command, and the command an operator runs is the one the checklist should certify.
     "critic": ("brief", "caller-check", "correct", "evidence", "repair", "show",
                "signoff", "signoff-brief", "supersede"),
     "handoff": ("show",),
@@ -999,21 +997,8 @@ CHECKLIST = (
      "title": "Lessons extracted from the batch", "command": "lessons summary",
      "resolver": "_ck_lessons"},
     # `discharged_by: close` - a compulsory item the CLOSE ITSELF produces, so it is reported
-    # like every other row but never held against a close that has not got there yet. Without
-    # this the chain refuses on the sign-off it is about to fan out and no close can ever pass:
-    # a gate whose only exit is the step it blocks is not a gate, it is a deadlock. Reject,
-    # fix, RE-REQUEST is the loop a human sprint runs; a gate must leave the re-request
-    # reachable.
-    # The command that HOLDS this stage is `sprint sign`: US0832 split the close, and the
-    # reviewer-of-record rows are written by SEAL rather than by the close. `critic signoff` is
-    # still the recorder underneath, but naming it here left the ceremony verb `sign` covered by
-    # no row at all, which is exactly the drift `cycle_drift` exists to catch.
-    # `discharged_by` stays `close` because that field decides whether a row HOLDS the close,
-    # and this one must not: it is produced by the close ceremony, of which `sign` is the second
-    # half, so holding PREPARE over it would be a gate whose only exit is the step it blocks.
-    {"id": "signoff", "kind": STAGE, "authority": DERIVED, "discharged_by": "close",
-     "title": "Reviewer-of-record sign-off", "command": "sprint sign",
-     "resolver": "_ck_signoff"},
+    # like every other row but never held against a close that has not got there yet. A gate
+    # whose only exit is the step it blocks is not a gate, it is a deadlock.
     {"id": "handoff", "kind": STAGE, "authority": DERIVED, "discharged_by": "close",
      "title": "Handoff, when the run stopped short of its goal", "command": "handoff generate",
      "resolver": "_ck_handoff"},
@@ -1658,31 +1643,6 @@ def close_report(summary: dict) -> str:
     if deferred := [str(d) for d in (summary.get("deferred") or []) if str(d).strip()]:
         lines += ["", "  DEFERRED (filed, not waived)", _listing(deferred, "")]
     return "\n".join(lines)
-
-
-def _ck_signoff(ctx: dict) -> tuple:
-    units = ctx["units"]
-    if not units:
-        return (NOT_RUN, "no units", "the batch named no units, so there is nothing to sign off")
-    try:
-        import critic  # noqa: PLC0415
-        signed = [u for u in units if critic.signoff_for(ctx["root"], u)]
-    except Exception as exc:  # noqa: BLE001
-        sdlc_md.debug("sprint_report._ck_signoff", exc)
-        return (NOT_RUN, "unreadable", f"the sign-off log could not be read ({exc})")
-    if not signed:
-        return (NOT_RUN, f"0/{len(units)}",
-                "no reviewer of record has signed any unit of this batch")
-    # SPLIT, never a single total. Who accepted a unit - a human principal or an amigo panel -
-    # is exactly the fact a reader comes to this row for, and a combined count hides it behind
-    # a number that looks complete either way.
-    panel = [u for u in signed
-             if critic.is_panel_signoff(critic.signoff_for(ctx["root"], u))]
-    operator = len(signed) - len(panel)
-    split = f" ({len(panel)} panel, {operator} operator)" if panel else ""
-    return (RAN, f"{len(signed)}/{len(units)}{split}",
-            "" if len(signed) == len(units) else
-            f"{len(units) - len(signed)} unit(s) hold at Review until a sign-off lands")
 
 
 def _ck_handoff(ctx: dict) -> tuple:
@@ -2542,10 +2502,9 @@ def operator_summary(root: Path, retro_id: str, rep: dict | None = None) -> dict
     about its own decision. A seat writing its own summary is a seat marking its own homework,
     and the operator would be leading from an account with a stake in the answer.
 
-    So every field here comes from `report`, the sign-off log, the verdict log and the findings
-    scan. There is NO parameter through which anybody's free text reaches this page, which is
-    the property the test pins by varying a verdict's `issues` and asserting the summary does
-    not move.
+    So every field here comes from `report`, the verdict log and the findings scan. There is NO
+    parameter through which anybody's free text reaches this page, which is the property the
+    test pins by varying a verdict's `issues` and asserting the summary does not move.
 
     A component with no record reads UNMEASURED. Omitting it would let a run that measured
     nothing read as a run that cost nothing.
@@ -2562,14 +2521,6 @@ def operator_summary(root: Path, retro_id: str, rep: dict | None = None) -> dict
     shipped, rejected, reversal = [], [], []
     for uid in units:
         v = critic.verdict_for(root, uid)
-        signoff = critic.signoff_for(root, uid)
-        # ASKED of critic, never re-derived here. A second copy of "what counts as a seat"
-        # would drift from the first, and this reader is where the answer becomes visible to
-        # the operator - the one place a wrong answer is acted on.
-        capacity = (critic.CAPACITY_SEAT if critic.signed_by_seat(signoff)
-                    else str((signoff or {}).get("capacity") or "").strip())
-        if capacity in critic.CAPACITY_ABSENT:
-            capacity = "unrecorded"
         verdict = str((v or {}).get("verdict") or "").upper()
         if verdict == critic.REJECT:
             rejected.append({"unit": uid, "state": critic.repair_state(root, uid)["state"]})
@@ -2579,9 +2530,7 @@ def operator_summary(root: Path, retro_id: str, rep: dict | None = None) -> dict
             reversal.append({"unit": uid, "why": "rejected, then repaired - the repair was "
                                                  "judged to answer the finding"})
         elif verdict == critic.APPROVE:
-            shipped.append({"unit": uid, "signed_by": capacity})
-        if critic.signed_by_seat(signoff):
-            reversal.append({"unit": uid, "why": "signed off by a SEAT, not a person"})
+            shipped.append({"unit": uid})
 
     cost = _sprint_cost_line(rep)
     return {
@@ -2633,7 +2582,7 @@ def render_operator_summary(s: dict) -> str:
              "", f"Sprint goal: {s.get('sprint_goal') or 'none recorded'}",
              f"Goal verdict: {s.get('goal_verdict') or 'unjudged'}", ""]
     lines.append(f"Shipped ({len(s['shipped'])}): " + (", ".join(
-        f"{r['unit']} [signed: {r['signed_by']}]" for r in s["shipped"]) or "none"))
+        r["unit"] for r in s["shipped"]) or "none"))
     lines.append(f"Rejected ({len(s['rejected'])}): " + (", ".join(
         f"{r['unit']} [{r['state']}]" for r in s["rejected"]) or "none"))
     lines.append(f"Carried, still open: " + (", ".join(s["carried"]) or "none"))

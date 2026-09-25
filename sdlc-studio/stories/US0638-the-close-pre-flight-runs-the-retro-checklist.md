@@ -33,8 +33,8 @@
 - **When** `sprint.py preflight --retro RETROxxxx` is driven as an operator types it
 - **Then** the checklist blocker reaches the printed page and the non-zero exit code
 - **Mutant:** leave the checklist out of the composition, or stop rendering the `checklist` stage - a missing render is caught here and nowhere else, because a library test does not exercise the wiring
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PreflightChecklistTests::test_the_shipped_preflight_verb_reports_the_checklist
-- **Verified:** yes (2026-08-05)
+- **Verify:** manual - retired by US0917: `sprint.py preflight` is retired; `sprint.py close` runs the same pre-flight first
+- **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 ### AC2: one authority for the checklist, not a second copy of its rules
 
@@ -77,3 +77,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-05 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-25 | US0917 | AC6 retired in the D0259 pattern: `sprint.py preflight` is retired |

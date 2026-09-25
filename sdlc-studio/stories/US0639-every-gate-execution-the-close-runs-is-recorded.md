@@ -78,11 +78,12 @@
 - **When** `sprint.py preflight` is driven as an operator types it
 - **Then** exactly one close row is appended, carrying the run id and the `preflight` mode
 - **Mutant:** record from `cmd_close` instead of from the pre-flight itself - every function test still passes and this reddens, because a bare `preflight` never reaches a close
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseCostRecordingTests::test_the_shipped_preflight_verb_records_its_gate
-- **Verified:** yes (2026-08-05)
+- **Verify:** manual - retired by US0917: `sprint.py preflight` is retired; `sprint.py close` runs the same pre-flight, which records its gate (AC1)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-05 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-25 | US0917 | AC7 retired in the D0259 pattern: `sprint.py preflight` is retired |

@@ -20,9 +20,9 @@
 
 ### AC1: every shipped verb is documented in invocation form, and the check goes red on the page as it stands
 
-- **Given** the 12 verbs derived from sprint.py's build_parser subparser tree (plan, breakdown, close, boundary, report, preflight, goal-verdict, goal-review, reopen, stop, decision, batch), and a committed fixture copy of the page as it is before the rewrite
+- **Given** the 12 verbs derived from sprint.py's build_parser subparser tree (plan, breakdown, close, boundary, report, goal-verdict, goal-review, reopen, stop, decision, batch; `preflight` was retired by US0917), and a committed fixture copy of the page as it is before the rewrite
 - **When** each verb is required in invocation form - /sdlc-studio sprint <verb> or sprint.py <verb> - rather than as a bare substring, and each run-lifecycle verb (batch, stop, reopen, boundary) is additionally required to have its own heading
-- **Then** every verb matches on the rewritten page, the derived verb set is asserted non-empty, and the SAME check run over the pre-rewrite fixture FAILS naming batch, stop, reopen, preflight, breakdown, goal-verdict and goal-review - proving it discriminates, because a substring match passes today on stop (8 occurrences), batch (23) and report (13) while none of the three is documented as a verb
+- **Then** every verb matches on the rewritten page, the derived verb set is asserted non-empty, and the SAME check run over the pre-rewrite fixture FAILS naming batch, stop, reopen, breakdown, goal-verdict and goal-review - proving it discriminates, because a substring match passes today on stop (8 occurrences), batch (23) and report (13) while none of the three is documented as a verb
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_help_structure.py::SprintSurfaceTests::test_every_shipped_verb_appears_in_invocation_form_and_the_pre_rewrite_page_fails
 - **Verified:** yes (2026-08-05)
 
@@ -64,3 +64,4 @@
 | --- | --- | --- |
 | 2026-07-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-27 | Claude Fable 5 | Groomed: authored from the reviewed breakdown (two adversarial rounds), scope capped to the request per D0069 |
+| 2026-09-25 | US0917 | AC1's verb lists drop `preflight`, retired by US0917 |

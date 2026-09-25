@@ -41,8 +41,8 @@ The deeper fix is that nothing makes a commit and a status agree. A unit whose f
     moves it. The mutant is deleting the check's call from `close_preflight`: the library
     function then still exists and answers correctly, which is exactly the shape of a feature no
     invocation reaches.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeliveredUnitLeftAtReadyTests::test_a_ready_unit_whose_code_landed_is_named_by_the_preflight
-  - **Verified:** yes (2026-08-11)
+  - **Verify:** manual - retired by US0917: `sprint.py preflight` is retired; `close_preflight` still calls `undelivered_blockers`, pinned by the class's other tests
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 - [x] **AC2: the cause is reported before its consequences.**
   - **Given** the same run, whose untransitioned units also fail review coverage, sign-off and
@@ -131,3 +131,4 @@ day are not swept in, and a run with no recorded base ref makes no claim at all.
 | --- | --- | --- |
 | 2026-08-06 | sdlc-studio | Filed |
 | 2026-08-11 | sdlc-studio | Criteria groomed to name their mutants; fixed |
+| 2026-09-25 | US0917 | AC1 retired in the D0259 pattern: `sprint.py preflight` is retired |

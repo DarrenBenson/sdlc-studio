@@ -557,7 +557,7 @@ class SprintSurfaceTests(unittest.TestCase):
         self.assertTrue(missing_pre,
                         "the pre-rewrite fixture passes the check, so the check discriminates "
                         "nothing - it would pass on a page documenting no verb at all")
-        for verb in ("batch", "stop", "reopen", "preflight", "breakdown",
+        for verb in ("batch", "stop", "reopen", "breakdown",
                      "goal-verdict", "goal-review"):
             with self.subTest(verb=verb):
                 self.assertIn(verb, missing_pre,

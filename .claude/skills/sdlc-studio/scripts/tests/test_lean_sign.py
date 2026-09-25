@@ -1,7 +1,7 @@
 """US0878: `sprint sign` checks what it seals and records what actually happened.
 
 Driven through `sprint.main`, the shipped entry point, in throwaway project trees. The seal's
-own writes (per-unit sign-off, cascade) are stubbed where a test is about the checks around
+own writes (terminal transitions, cascade) are stubbed where a test is about the checks around
 them, so each test judges one thing.
 """
 from __future__ import annotations
@@ -52,9 +52,9 @@ def _run(root: Path, *argv: str) -> tuple[int, str, str]:
 
 @contextlib.contextmanager
 def _seal_stubbed():
-    """The per-unit fan-out stubbed green: these tests judge the checks and the outcome."""
+    """The terminal transitions stubbed green: these tests judge the checks and the outcome."""
     with unittest.mock.patch.object(sprint, "_principal_refusals", lambda *a, **k: []), \
-            unittest.mock.patch.object(sprint, "_apply_signoff", lambda *a, **k: 0), \
+            unittest.mock.patch.object(sprint, "_seal_units", lambda *a, **k: 0), \
             unittest.mock.patch.object(sprint, "_cascade_after_signature", lambda *a, **k: None):
         yield
 
@@ -124,7 +124,7 @@ class SignChecksTests(unittest.TestCase):
                 _state(root, close_tree=sprint.tree_digest(root))
                 with unittest.mock.patch.object(sprint, "_principal_refusals",
                                                 lambda *a, **k: []), \
-                        unittest.mock.patch.object(sprint, "_apply_signoff", half_seal):
+                        unittest.mock.patch.object(sprint, "_seal_units", half_seal):
                     rc, _out, _err = _run(root, "sign", "--report", "RPT0001",
                                           "--principal", "Darren")
                 self.assertEqual(1, rc)

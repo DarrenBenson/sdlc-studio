@@ -4449,24 +4449,6 @@ class ApplySignoffTests(unittest.TestCase):
             text = (dd / "US0101-widget.md").read_text()
             self.assertIn("Status:** Done", text)
 
-    def test_ApplySignoff_records_and_dones(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _close_state(root)
-            _signoffable_story(root)
-            _close_retro(root)
-            mod = _load()
-            out, err = io.StringIO(), io.StringIO()
-            with _patch_close_steps(mod), \
-                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["sign", "--report", "RPT0001", "--principal", "Darren", "--retro", "RETRO0001", "--root", str(root)])
-            self.assertEqual(rc, 0, err.getvalue())
-            c = _critic_mod()
-            so = c.signoff_for(root, "US0101")
-            self.assertTrue(c.is_independent_signoff(root, "US0101", so))
-            text = (root / "sdlc-studio" / "stories" / "US0101-widget.md").read_text()
-            self.assertIn("Status:** Done", text)
-
 
 class ApplySignoffStopsTests(unittest.TestCase):
     """US0236 AC3: a subagent principal is refused and a red Done gate stops the fan loudly,
@@ -5139,6 +5121,13 @@ def _ua_evidence(root: Path, uid: str) -> None:
                            findings="adversarial pass run; none blocking")
 
 
+def _ua_approve(root: Path, uid: str) -> None:
+    """An independent delivery APPROVE: the review bar `sprint sign` seals a unit over."""
+    import critic
+    critic.record_verdict(root, uid, "APPROVE", "an independent seat", _UA_AUTHOR,
+                          "none blocking", "delivery", "abcdef123456")
+
+
 def _ua_reject(root: Path, uid: str) -> None:
     """A delivery REJECT carrying two itemised findings."""
     import critic
@@ -5786,7 +5775,7 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
                                      r"US0101 \([^)]*\) - [^;]*stop-ship")
 
     def test_the_preflight_names_the_hold_the_checklist_step_refuses_on(self) -> None:
-        """MUTANT: `_checklist_blockers` never asks `unanswered_units` - `sprint.py preflight`
+        """MUTANT: `_checklist_blockers` never asks `unanswered_units` - the close's pre-flight
         then says nothing of an In Progress unit the chain's checklist step stops on, every
         other checklist row being waived. The control stands the unit at Done."""
         mod = _load()
@@ -5802,15 +5791,14 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
                 _ok, detail, _remedy = mod._close_checklist(root, "RETRO0001", state)
                 with unittest.mock.patch.object(gate, "run_gate",
                                                 lambda *_a, **_k: {"ok": True, "checks": []}):
-                    rc, out, err = _ua_cli(mod, root, "preflight", "--retro", "RETRO0001",
-                                           "--format", "json")
-                blockers = json.loads(out)["blockers"]
+                    pre = mod.close_preflight(root, "RETRO0001", record_cost=False)
+                blockers = pre["blockers"]
                 hold = [b for b in blockers if b["stage"] == "checklist"
                         and b["detail"].startswith("known-issues:")]
                 if status == "Done":
                     self.assertEqual([], hold, blockers)
                     continue
-                self.assertEqual(1, rc, err)
+                self.assertFalse(pre["ready"], blockers)
                 self.assertEqual(_ua_known_issues_lines(detail), [b["detail"] for b in hold])
                 self.assertIn("US0101 (In Progress)", hold[0]["detail"])
                 self.assertTrue(hold[0].get("blocking", True), hold[0])
@@ -5837,15 +5825,16 @@ class AbandonedUnitIsNotFannedToDoneTests(unittest.TestCase):
     REJECT, an abandoned unit carrying one stopped the whole close."""
 
     def _run(self, root: Path, second: tuple) -> dict:
-        """US0102 at `second` = (status, rejected), ahead of US0101, a Review story with
-        evidence and no REJECT - so a fan-out that stops at US0102 never reaches US0101."""
+        """US0102 at `second` = (status, rejected), ahead of US0101, a Review story with an
+        independent APPROVE and no REJECT - so a fan-out that stops at US0102 never reaches
+        US0101."""
         _ua_config(root, 100)
         _ua_unit(root, "US0102", second[0])
         _ua_unit(root, "US0101", "Review")
         state = _close_state(root, batch=["US0102", "US0101"], run_id=_UA_RUN)
         _ua_retro(root, batch=("US0102", "US0101"))
         _ua_waive_all(root)
-        _ua_evidence(root, "US0101")
+        _ua_approve(root, "US0101")
         _ua_evidence(root, "US0102")
         if second[1]:
             _ua_reject(root, "US0102")
@@ -5866,7 +5855,7 @@ class AbandonedUnitIsNotFannedToDoneTests(unittest.TestCase):
             with self.subTest(status=kind_status), tempfile.TemporaryDirectory() as d:
                 root = Path(d)
                 state = self._run(root, (kind_status, True))
-                pre = mod._signoff_preflight(root, state)
+                pre = mod._seal_preview(root, state)
                 self.assertEqual([], [b["detail"] for b in pre if "US0102" in b["detail"]],
                                  "the pre-flight names an abandoned unit as owing a Done")
                 rc, out, err = _run_apply_signoff(root, mod, principal="Darren")
@@ -5888,18 +5877,19 @@ class AbandonedUnitIsNotFannedToDoneTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             state = self._run(root, ("Review", True))
-            pre = mod._signoff_preflight(root, state)
+            pre = mod._seal_preview(root, state)
             gate = [b for b in pre if b["stage"] == "done-gate" and "US0102" in b["detail"]]
             self.assertEqual(1, len(gate), f"the control's REJECT is not previewed: {pre}")
             self.assertIn("unanswered delivery REJECT", gate[0]["detail"])
-            # The close's own checklist holds this unit before the fan-out runs (US0626), so the
-            # fan-out is driven directly: it must still stop at the delivered unit.
+            # The close's own checklist holds this unit before the seal runs (US0626), so the
+            # seal is driven directly: it must still stop at the delivered unit, whose REJECT
+            # leaves it without the independent APPROVE the seal's review bar asks for.
             out, err = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod._apply_signoff(root, state, "Darren")
+                rc = mod._seal_units(root, state)
             self.assertEqual(1, rc, out.getvalue())
             self.assertIn("STOPPED at US0102", err.getvalue())
-            self.assertIn("unanswered delivery REJECT", err.getvalue())
+            self.assertIn("independent APPROVE", err.getvalue())
             self.assertEqual("Review", _ua_status(root, "US0102"))
 
 
@@ -7089,8 +7079,7 @@ class ClosePreflightTests(unittest.TestCase):
     Each refusal was correct and well explained, but each was found only after the preceding
     ones were cleared, and every cycle cost a full gate run. The information was all available
     before the first attempt. These tests pin that it is now reported in one pass, that the pass
-    is read-only, and - the part that made the old behaviour so expensive - that it covers the
-    apply-signoff prerequisites, which surfaced last of all.
+    is read-only, and that it previews the Done gate `sprint sign` will run.
     """
 
     def _mod(self, root, *, lanes=(), units=None, verdicts=None, evidence=(), signoffs=(),
@@ -7181,11 +7170,11 @@ class ClosePreflightTests(unittest.TestCase):
             res = mod.close_preflight(root, None)
             self.assertFalse(res["ready"])
             stages = self._stages(res)
-            # goal-verdict AND retro AND both gate lanes AND the sign-off gap - together.
+            # goal-verdict AND retro AND both gate lanes AND the review gap - together.
             self.assertIn("goal-verdict", stages)
             self.assertIn("retro", stages)
             self.assertEqual(stages.count("gate"), 2, res["blockers"])
-            self.assertIn("sign-off", stages)
+            self.assertIn("review-coverage", stages)
             self.assertGreaterEqual(len(res["blockers"]), 5)
 
     def test_preflight_performs_no_step_of_the_close(self) -> None:
@@ -7268,48 +7257,6 @@ class ClosePreflightTests(unittest.TestCase):
                 res = mod.close_preflight(root, rid)
             self.assertFalse(res["ready"], "an unanswered checklist item let the close through")
 
-    def test_preflight_names_missing_signoff_prerequisites(self) -> None:
-        """US0274 AC1: the prerequisites that surface LAST today are surfaced first."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = self._mod(root, units=["US0101"])
-            rid = self._retro(root)
-            res = mod.close_preflight(root, rid)
-            signoff = [b for b in res["blockers"] if b["stage"] == "sign-off"]
-            self.assertTrue(signoff, res["blockers"])
-            self.assertIn("US0101", signoff[0]["detail"])
-            self.assertIn("critic.py", signoff[0]["remedy"])
-
-    def test_preflight_accepts_sprint_level_coverage(self) -> None:
-        """US0274 AC2: a pre-flight that OVER-reports is as untrustworthy as one that under-
-        reports. Sprint coverage satisfies the critique gate, so it must not be flagged."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = self._mod(root, units=["US0101"], covered=("US0101",), signoffs=("US0101",))
-            rid = self._retro(root)
-            res = mod.close_preflight(root, rid)
-            self.assertEqual([b for b in res["blockers"] if b["stage"] == "sign-off"], [],
-                             "sprint-level coverage was reported as a missing critique")
-
-    def test_preflight_delegates_to_critic(self) -> None:
-        """US0274 AC3: swap critic's verdict and the pre-flight must follow.
-
-        A pre-flight carrying its own copy of the independence rule is two answers to one
-        question, and it would pass every other test in this class.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",))
-            rid = self._retro(root)
-            self.assertTrue(mod.close_preflight(root, rid)["ready"])
-            import critic as critic_mod
-            critic_mod.verdict_for = lambda r, u, phase="delivery": None
-            critic_mod.sprint_covers_independently = lambda r, u, rev: False  # critic now says no
-            res = mod.close_preflight(root, rid)
-            self.assertIn("sign-off", self._stages(res),
-                          "the pre-flight reimplements the review rule instead of asking")
-
     def test_preflight_reports_the_done_gate_apply_signoff_will_hit(self) -> None:
         """The pre-flight said READY and `--apply-signoff` then refused.
 
@@ -7359,7 +7306,7 @@ class ClosePreflightTests(unittest.TestCase):
             self.assertIn("Permission denied", detail[0]["detail"])
 
     def test_preflight_ignores_a_batch_id_with_no_artefact(self) -> None:
-        """US0274 AC2, the over-reporting half: apply-signoff resolves batch ids through
+        """US0274 AC2, the over-reporting half: the seal resolves batch ids through
         `_batch_story_units` and skips one with no artefact behind it, so reporting it as owed
         work is a blocker the close will never ask for."""
         with tempfile.TemporaryDirectory() as d:
@@ -7368,8 +7315,7 @@ class ClosePreflightTests(unittest.TestCase):
             (root / "sdlc-studio" / "stories" / "US0101-x.md").unlink()
             rid = self._retro(root)
             res = mod.close_preflight(root, rid)
-            self.assertEqual([b for b in res["blockers"]
-                              if b["stage"] in ("sign-off", "done-gate")], [],
+            self.assertEqual([b for b in res["blockers"] if b["stage"] == "done-gate"], [],
                              "reported work for a batch id with no artefact")
 
     def test_close_reports_blockers_that_its_own_refusals_would_short_circuit(self) -> None:
@@ -7388,7 +7334,7 @@ class ClosePreflightTests(unittest.TestCase):
             out = err.getvalue()
             self.assertIn("close pre-flight", out)
             self.assertIn("conformance", out, "the gate blockers were hidden by the refusal")
-            self.assertIn("sign-off", out, "the sign-off blockers were hidden by the refusal")
+            self.assertIn("review-coverage", out, "the review blockers were hidden by the refusal")
 
     def test_close_reports_all_blockers_before_executing(self) -> None:
         """US0275 AC1: printed before the first chain step runs."""
@@ -7572,7 +7518,7 @@ class PreflightChecklistTests(ClosePreflightTests):
             self.assertIn("sprint_report.py checklist", named[0]["remedy"])
             # and the OTHER blockers still arrived - that is the whole point of one pass
             self.assertIn("gate", stages)
-            self.assertIn("sign-off", stages)
+            self.assertIn("review-coverage", stages)
 
     def test_an_item_the_checklist_does_not_call_outstanding_is_not_a_blocker(self) -> None:
         """AC5. Mutant: block on every row whose value looks unanswered - a waived row blocks a
@@ -7592,31 +7538,6 @@ class PreflightChecklistTests(ClosePreflightTests):
                              "the pre-flight re-derived what is outstanding instead of reading "
                              "the checklist's ruling")
             self.assertTrue(res["ready"], res["blockers"])
-
-    def test_the_shipped_preflight_verb_reports_the_checklist(self) -> None:
-        """THE LANE TEST. Every other case here calls `close_preflight` directly, and the gate's
-        own lane-check said so: a library test does not exercise the wiring (LL0040). This drives
-        `sprint.py preflight` - the verb an operator types - and asserts the checklist blocker
-        reaches the printed page and the exit code.
-
-        Mutant: leave the checklist out of the pre-flight's composition, or stop rendering the
-        `checklist` stage - both redden here, and only here would a missing render be caught.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",),
-                            checklist={"items": [{"id": "seat-review", "title": "seat review",
-                                                  "value": "not run", "detail": "run it"}],
-                                       "outstanding": ["seat-review"]})
-            rid = self._retro(root)
-            out, err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["preflight", "--retro", rid, "--root", str(root)])
-            page = out.getvalue() + err.getvalue()
-            self.assertEqual(rc, 1, page)
-            self.assertIn("seat-review", page)
-            self.assertIn("run it", page)
 
     def test_no_retro_named_reports_the_missing_retro_once_and_no_checklist_row(self) -> None:
         """A checklist is composed FOR a retro. With none named the retro blocker already says
@@ -7703,28 +7624,6 @@ class CloseCostRecordingTests(ClosePreflightTests):
                 res = mod.close_preflight(root, None)
             self.assertIn("gate", self._stages(res), res["blockers"])
             self.assertIn("could NOT be recorded", err.getvalue())
-
-    def test_the_shipped_preflight_verb_records_its_gate(self) -> None:
-        """THE LANE TEST, and the claim this unit is actually about. Driving `close_preflight`
-        proves the function records; driving `sprint.py preflight` proves the VERB an operator
-        runs does - which is where the 148.8s row measured against RUN-01KZ9315 came from, and
-        where the six unrecorded gate runs were lost.
-
-        Mutant: record from `cmd_close` instead of from the pre-flight itself - the function
-        tests still pass and this reddens, because a bare `preflight` never reaches a close.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = self._mod(root, lanes=("conformance",), units=["US0101"])
-            _close_state(root, batch=["US0101"], run_id="RUN-TEST01")
-            with contextlib.redirect_stdout(io.StringIO()), \
-                    contextlib.redirect_stderr(io.StringIO()):
-                rc = mod.main(["preflight", "--root", str(root)])
-            self.assertEqual(rc, 1)
-            rows = self._ledger(mod, root)
-            self.assertEqual(len(rows), 1, rows)
-            self.assertEqual((rows[0]["moment"], rows[0]["mode"], rows[0]["run_id"]),
-                             ("close", "preflight", "RUN-TEST01"))
 
     def test_the_dry_run_records_no_cost_row(self) -> None:
         """A `close --dry-run` leaves the tree byte-identical - stricter than the pre-flight's
@@ -8772,42 +8671,23 @@ class ReviewAnchorRefreshTests(unittest.TestCase):
         self.assertTrue(callable(getattr(s, "_close_review_anchor", None)),
                         "the chain names a step with no handler to dispatch to")
 
-    def test_the_signoff_tail_restamps_the_anchor_as_RECORDED(self):
-        """The anchor must not say OWED on the close that records the sign-off. The chain stamps
-        at step 7 while units are still at Review, so the tail re-stamps once they are Done."""
-        import contextlib, io, json
-        s = _load()
-        d = Path(tempfile.mkdtemp(prefix="restamp_"))
-        (d / "sdlc-studio" / "reviews").mkdir(parents=True)
-        (d / "sdlc-studio" / ".local").mkdir(parents=True)
-        (d / "sdlc-studio" / "reviews" / "LATEST.md").write_text(
-            "# Reviews - LATEST (anchor)\n\nprose\n", encoding="utf-8")
-        state = {"run_id": "RUN-T", "batch": [], "handoff": "", "outcome": "goal-reached"}
-        (d / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(state))
-        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-            s._apply_signoff_tail(d, state, units=[], retro_arg=None)
-        text = (d / "sdlc-studio" / "reviews" / "LATEST.md").read_text(encoding="utf-8")
-        self.assertIn("RUN-T", text)
-        self.assertIn("RECORDED", text)          # an empty batch owes nothing
-        self.assertNotIn("OWED", text)
-
     def test_a_successful_close_states_this_runs_outcome_not_the_previous_one(self):
         s = _load()
         stale = ("# Reviews - LATEST (anchor)\n\n"
                  "> **RUN-OLD delivered 43 units.** Sign-off is owed and is the operator's.\n\n"
                  "## Where the pipeline is\n\nnarrative that must survive\n")
         d = self._repo(stale)
-        s.refresh_review_anchor(d, "RUN-NEW", "goal-reached", 19, signoff_owed=False)
+        s.refresh_review_anchor(d, "RUN-NEW", "goal-reached", 19, signature_owed=False)
         text = (d / "sdlc-studio" / "reviews" / "LATEST.md").read_text(encoding="utf-8")
         self.assertIn("RUN-NEW closed goal-reached", text)
-        self.assertIn("Sign-off is RECORDED", text)          # states that nothing is owed
+        self.assertIn("The run is SIGNED", text)             # states that nothing is owed
         self.assertIn("narrative that must survive", text)   # the prose is untouched
 
     def test_the_block_is_replaced_in_place_not_appended_on_each_close(self):
         s = _load()
         d = self._repo("# Reviews - LATEST (anchor)\n\nprose\n")
-        s.refresh_review_anchor(d, "RUN-A", "goal-reached", 5, signoff_owed=True)
-        s.refresh_review_anchor(d, "RUN-B", "partial", 7, signoff_owed=False)
+        s.refresh_review_anchor(d, "RUN-A", "goal-reached", 5, signature_owed=True)
+        s.refresh_review_anchor(d, "RUN-B", "partial", 7, signature_owed=False)
         text = (d / "sdlc-studio" / "reviews" / "LATEST.md").read_text(encoding="utf-8")
         self.assertEqual(text.count(s.ANCHOR_BEGIN), 1)      # one block, not two
         self.assertIn("RUN-B closed partial", text)
@@ -8815,10 +8695,10 @@ class ReviewAnchorRefreshTests(unittest.TestCase):
 
     def test_an_owed_signoff_is_named_and_a_recorded_one_is_stated_plainly(self):
         s = _load()
-        owed = s.anchor_status_block("RUN-X", "goal-reached", 3, signoff_owed=True)
-        done = s.anchor_status_block("RUN-X", "goal-reached", 3, signoff_owed=False)
+        owed = s.anchor_status_block("RUN-X", "goal-reached", 3, signature_owed=True)
+        done = s.anchor_status_block("RUN-X", "goal-reached", 3, signature_owed=False)
         self.assertIn("OWED", owed)
-        self.assertIn("RECORDED", done)
+        self.assertIn("SIGNED", done)
         self.assertNotEqual(owed, done)   # the reader never has to diff it against the run state
 
 
@@ -8914,22 +8794,11 @@ class CloseStampRungTests(unittest.TestCase):
         self.assertIn("design", block)
         self.assertIn("no Done sign-off is owed", block)
 
-    def test_a_build_rung_still_states_the_owed_signoff(self) -> None:
-        """This fix must NARROW the claim, not remove it. A build rung past the two-role
-        cutoff still owes the operator a signature, and the stamp must still say so."""
-        sprint = _load()
-        block = sprint.anchor_status_block("RUN-Y", "goal-reached", 28, True, rung="done")
-        self.assertIn("**Sign-off is OWED and is the operator's**", block)
-        self.assertIn("two-role gate holds Done", block)
-        # and a build rung whose sign-off HAS landed says so rather than staying silent
-        done = sprint.anchor_status_block("RUN-Y", "goal-reached", 28, False, rung="done")
-        self.assertIn("**Sign-off is RECORDED**", done)
-
     def test_the_default_is_the_build_rung(self) -> None:
         """An omitted rung must behave as it always did. A caller that has not been updated
-        cannot be allowed to silently lose the owed-sign-off line."""
+        cannot be allowed to silently lose the owed-signature line."""
         sprint = _load()
-        self.assertIn("two-role gate holds Done",
+        self.assertIn("run signature is OWED",
                       sprint.anchor_status_block("RUN-Z", "goal-reached", 3, True))
 
 
@@ -8994,7 +8863,8 @@ class ApplySignoffBatchCoverageTests(unittest.TestCase):
     def test_the_FANOUT_names_the_unfanned_units(self) -> None:
         """The lane test, not the helper test. Mutating the CALL SITE - `unfanned = []` - left
         every helper test green, because a function that returns the right answer to nobody
-        proves nothing. This drives `_apply_signoff` itself and reads what it printed."""
+        proves nothing. This drives the seal's `_seal_units` itself and reads what it printed;
+        its review bar is stubbed met, because the subject is which units it walks."""
         sprint = _load()
         with tempfile.TemporaryDirectory() as d:
             root = self._repo(d, {
@@ -9003,10 +8873,10 @@ class ApplySignoffBatchCoverageTests(unittest.TestCase):
             })
             state = {"run_id": "RUN-T", "batch": ["BG0001", "US0001"], "outcome": "goal-reached"}
             err, out = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out), \
+                    unittest.mock.patch.object(sprint, "seal_bar_unmet", lambda *a, **k: []):
                 try:
-                    sprint._apply_signoff(str(root), state, principal="op",
-                                          author_default="author")
+                    sprint._seal_units(str(root), state)
                 except Exception:  # noqa: BLE001 - the fixture lacks the close's machinery
                     pass            # the assertion is on what it PRINTED before that
         printed = err.getvalue() + out.getvalue()
@@ -15051,7 +14921,7 @@ class CadenceDebtReachesTheCloseTests(unittest.TestCase):
     it was.
 
     These drive the LANE's real output - `gate._review_current`, not a hand-written dict -
-    through the shipped `preflight` verb, so the join between the two units is what is pinned.
+    through the close's own pre-flight, so the join between the two units is what is pinned.
     """
 
     def _root(self, d, *, covered: bool = True):
@@ -15083,7 +14953,7 @@ class CadenceDebtReachesTheCloseTests(unittest.TestCase):
         return root
 
     def _preflight_with_the_real_lane(self, root):
-        """`sprint.py preflight` with the gate composed of the REAL review-current lane.
+        """The close's pre-flight with the gate composed of the REAL review-current lane.
 
         Stubbing the lane's verdict here would test the pre-flight against a fixture rather than
         against the unit it has to join to, which is precisely the gap the bug records.
@@ -15110,44 +14980,6 @@ class CadenceDebtReachesTheCloseTests(unittest.TestCase):
             "## Actions raised\n\n| Finding | Disposition |\n| --- | --- |\n"
             "| a finding | declined: not worth it |\n", encoding="utf-8")
         return rid
-
-    def test_the_cadence_lane_is_printed_and_does_not_hold_the_close(self) -> None:
-        """MUTANT (gate.py): `"blocking": False` back to `True`.
-        MUTANT (sprint.py): drop the non-blocking failures from the pre-flight's gate loop.
-
-        Either one reddens here, which is the join neither unit's own tests could see: the first
-        makes the run held, the second makes the declaration invisible.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d)
-            mod, lane = self._preflight_with_the_real_lane(root)
-            rid = self._retro(root)
-            out, err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["preflight", "--retro", rid, "--root", str(root)])
-            page = out.getvalue() + err.getvalue()
-            self.assertIs(False, lane["blocking"], "the fixture did not reach the cadence branch")
-            self.assertEqual(0, rc, page)
-            self.assertIn("CADENCE DEBT", page)
-            self.assertIn("reported not blocking", page)
-
-    def test_the_same_lane_blocking_holds_the_close(self) -> None:
-        """THE POSITIVE CONTROL, one fact changed. MUTANT: treat every gate row as advisory.
-
-        With the batch uncovered the identical lane returns blocking, and the pre-flight must
-        hold - or the repair has turned the gate off rather than made it legible.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, covered=False)
-            mod, lane = self._preflight_with_the_real_lane(root)
-            rid = self._retro(root)
-            out, err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["preflight", "--retro", rid, "--root", str(root)])
-            page = out.getvalue() + err.getvalue()
-            self.assertIs(True, lane["blocking"], "the fixture did not reach the blocking branch")
-            self.assertEqual(1, rc, page)
-            self.assertIn("reviews/LATEST.md is stale", page)
 
     def test_the_bounded_exit_classes_the_real_cadence_row_as_filable(self) -> None:
         """MUTANT: drop the lane's blocking flag when the pre-flight builds its row.
@@ -15213,29 +15045,6 @@ class DeliveredUnitLeftAtReadyTests(unittest.TestCase):
     def _blockers(self, root):
         return _load().undelivered_blockers(root, json.loads(
             (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8")))
-
-    def test_a_ready_unit_whose_code_landed_is_named_by_the_preflight(self) -> None:
-        """MUTANT: delete the `undelivered_blockers` call from `close_preflight`.
-
-        Driven through the shipped verb, because a library call cannot see whether the check is
-        WIRED - which is the whole shape of this defect: the rule existed in `critic signoff` and
-        nothing upstream asked it.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = self._repo(d)
-            mod = _load()
-            import gate as gate_mod
-            self.addCleanup(setattr, gate_mod, "run_gate", gate_mod.run_gate)
-            gate_mod.run_gate = lambda *a, **k: {"ok": True, "checks": []}
-            out, err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-                rc = mod.main(["preflight", "--root", str(root)])
-            page = out.getvalue() + err.getvalue()
-            self.assertEqual(1, rc, page)
-            self.assertIn("[status]", page)
-            self.assertIn("US0101", page)
-            self.assertIn("'Ready'", page)
-            self.assertIn("transition.py set --id US0101", page)
 
     def test_the_cause_is_reported_before_its_consequences(self) -> None:
         """MUTANT: append the status blockers after the coverage/sign-off ones instead.
@@ -15492,23 +15301,20 @@ class ADesignRungIsJudgedAgainstItsOwnProductTests(unittest.TestCase):
                 self.assertIn("'Ready'", rows[0]["detail"])
 
     def test_plan_and_triage_keep_the_signoff_and_done_gate_preview(self) -> None:
-        """MUTANT: scope `_signoff_preflight`'s early return `rung != "done"` instead of
+        """MUTANT: scope `_seal_preview`'s early return `rung != "done"` instead of
         `rung == "design"`.
 
         Found by a round-2 review of this very repair. The first cut fixed the scope in
         `undelivered_blockers` and left the identical `!= "done"` in its sibling, so `plan` and
         `triage` skipped `_done_gate_preflight` too - a HARD blocker at the base ref - with no
         substitute bar, because `_rung_product_blockers` is design-only. The defect was not
-        removed, it was relocated one function over, and no test in this file called
-        `_signoff_preflight` with either rung.
+        removed, it was relocated one function over.
         """
         mod = _load()
         for rung in ("plan", "triage"):
             with self.subTest(rung=rung), tempfile.TemporaryDirectory() as d:
                 root = self._repo(d, goal=rung, status="Review")
-                rows = mod._signoff_preflight(root, self._state(root))
-                # NOT `hard_blockers`: `sign-off` is itself a deferrable stage, so that probe
-                # answers [] for a correct result and the first cut of this test failed on it.
+                rows = mod._seal_preview(root, self._state(root))
                 # What distinguishes the rungs is whether the delivery preview RAN at all.
                 self.assertTrue([r for r in rows if r.get("blocking", True)],
                                 f"a `{rung}` rung lost its whole delivery preview: {rows}")
@@ -15518,7 +15324,7 @@ class ADesignRungIsJudgedAgainstItsOwnProductTests(unittest.TestCase):
                 # without which both assertions above would pass on a function that never
                 # returns a skip row at all.
                 mod_state = dict(self._state(root), goal="design")
-                design_rows = mod._signoff_preflight(root, mod_state)
+                design_rows = mod._seal_preview(root, mod_state)
                 self.assertEqual([False], [r.get("blocking", True) for r in design_rows])
 
     def test_a_done_rung_is_exactly_as_strict_as_before(self) -> None:
@@ -15549,18 +15355,19 @@ class ADesignRungIsJudgedAgainstItsOwnProductTests(unittest.TestCase):
         self.assertEqual("design", mod.run_rung({"goal": "Design"}))
 
     def test_the_skipped_delivery_gates_are_reported_not_silent(self) -> None:
-        """MUTANT: return a bare `[]` from `_signoff_preflight` for a non-done rung.
+        """MUTANT: return a bare `[]` from `_seal_preview` for a non-done rung.
 
-        Every suppression is also a blindfold. A close that quietly stops asking for a sign-off
-        reads identically to one that asked and was satisfied, so the skip must state itself -
+        Every suppression is also a blindfold. A close that quietly stops previewing the Done
+        transition reads identically to one that previewed it and was satisfied, so the skip
+        must state itself -
         as a NON-BLOCKING row, which is the only shape that says "not checked" without holding
         the close.
         """
         with tempfile.TemporaryDirectory() as d:
             root = self._repo(d)
-            rows = _load()._signoff_preflight(root, self._state(root))
+            rows = _load()._seal_preview(root, self._state(root))
             self.assertEqual(1, len(rows), rows)
-            self.assertEqual("sign-off", rows[0]["stage"])
+            self.assertEqual("done-gate", rows[0]["stage"])
             self.assertFalse(rows[0]["blocking"],
                              "the row records what was skipped; it must not hold the close")
             self.assertIn("design", rows[0]["detail"])
@@ -15568,26 +15375,6 @@ class ADesignRungIsJudgedAgainstItsOwnProductTests(unittest.TestCase):
             # that does not hold the close. Testing the `blocking` key alone would pass on a row
             # nobody classified.
             self.assertEqual([], _load().hard_blockers(rows))
-
-    def test_a_done_rung_still_gets_its_blocking_signoff_row(self) -> None:
-        """THE OTHER REGRESSION CONTROL. MUTANT: drop the `rung != "done"` guard on the early
-        return in `_signoff_preflight`.
-
-        If the early return fires for a build run, the two-role gate stops being previewed at
-        all and a close reports READY for units carrying no sign-off whatever.
-
-        NAMED for what it checks. It was called `..._signoff_and_done_gate_rows`, and a review
-        found it asserts nothing whatever about done-gate rows - this fixture produces none,
-        because `artifact.close` refuses earlier. The done-gate lane IS defended, by tests
-        elsewhere in this file, but a name promising cover this test does not provide is how a
-        gap survives a reading of the suite.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = self._repo(d, goal="done")
-            rows = _load()._signoff_preflight(root, self._state(root))
-            self.assertTrue([r for r in rows if r["stage"] == "sign-off"
-                             and r.get("blocking", True)],
-                            f"a build rung lost its blocking sign-off preview: {rows}")
 
 
 class TheReadyCloseStillSaysWhatItSkippedTests(unittest.TestCase):
@@ -15606,7 +15393,7 @@ class TheReadyCloseStillSaysWhatItSkippedTests(unittest.TestCase):
 
     def _render(self, ready: bool):
         mod = _load()
-        rows = [{"stage": "sign-off", "blocking": False,
+        rows = [{"stage": "done-gate", "blocking": False,
                  "detail": "SKIPPED-ROW-DETAIL", "remedy": "nothing"},
                 {"stage": "installed-copy", "detail": "HARD-ROW-DETAIL", "remedy": "forward-port"}]
         if ready:
@@ -15637,6 +15424,52 @@ class TheReadyCloseStillSaysWhatItSkippedTests(unittest.TestCase):
         page = self._render(ready=False)
         self.assertIn("reported not blocking", page)
         self.assertIn("HARD-ROW-DETAIL", page)
+
+    # BG0589: `N unmet prerequisite(s)` was rendered from the blocker LIST rather than the HELD
+    # rows - one fact with two answers, the louder one overstating. `preflight_headline` is the
+    # one helper, and `_report_preflight` prints it on every close that is not ready.
+
+    @staticmethod
+    def _rows(blocking: int, advisory: int) -> list:
+        rows = [{"stage": "gate", "detail": f"b{i}", "remedy": "fix it", "blocking": True}
+                for i in range(blocking)]
+        rows += [{"stage": "gate", "detail": f"a{i}", "remedy": "note it", "blocking": False}
+                 for i in range(advisory)]
+        return rows
+
+    def _report(self, rows: list) -> str:
+        mod = _load()
+        err = io.StringIO()
+        with unittest.mock.patch.object(mod, "close_preflight",
+                                        return_value={"ready": False, "blockers": rows}), \
+                contextlib.redirect_stderr(err):
+            mod._report_preflight(Path("."), None)
+        return err.getvalue()
+
+    def test_the_headline_noun_carries_the_blocking_count(self) -> None:
+        """BG0589 AC1. MUTANTS: `preflight_headline` counts `len(blockers)` again; or
+        `_report_preflight` prints its own `len(pre['blockers'])` instead of calling the helper.
+
+        The noun must count what HOLDS the close, with the total stated beside it: the number the
+        reader takes away is the one the noun is attached to.
+        """
+        rows = self._rows(blocking=3, advisory=5)
+        head = _load().preflight_headline(rows)
+        self.assertEqual("3 unmet prerequisite(s) of 8 reported", head)
+        self.assertIn(f"close pre-flight: {head} - this is ALL of them, not the first:",
+                      self._report(rows))
+
+    def test_an_all_blocking_page_is_unchanged(self) -> None:
+        """BG0589 AC3. MUTANTS: always append the `of N reported` suffix; reword the line
+        `_report_preflight` prints.
+
+        No cosmetic churn for the common case: when nothing is advisory the two numbers
+        coincide and the printed line is byte-identical to the one it replaces.
+        """
+        rows = self._rows(blocking=4, advisory=0)
+        self.assertEqual("4 unmet prerequisite(s)", _load().preflight_headline(rows))
+        self.assertIn("close pre-flight: 4 unmet prerequisite(s) - this is ALL of them, "
+                      "not the first:", self._report(rows))
 
 
 class BatchValidationTests(unittest.TestCase):
@@ -16406,135 +16239,6 @@ class ProbableDuplicatesAreReportedAtPlanTime(unittest.TestCase):
                          ("BG9306", "the edit-verb check is an enumeration", "")])
         self.assertEqual([], sprint.probable_duplicates(root, [{"id": "BG9305"},
                                                                {"id": "BG9306"}]))
-
-
-class OnePreflightCountReadByBothRenderersTests(unittest.TestCase):
-    """BG0589: `N unmet prerequisite(s)` was rendered from the blocker LIST by one renderer and
-    from the HELD rows by its sibling - one fact with two answers, the louder one overstating.
-
-    Pre-existing, but BG0582's rung work made the overcount systematic rather than occasional:
-    every design-rung close now carries exactly one non-blocking row by construction, and the
-    advisory gate lanes add more. A close reporting 8 can have 3 that hold it, and a count that
-    cries wolf is one whose real refusals get waved through.
-    """
-
-    def _rows(self, blocking: int, advisory: int) -> list:
-        rows = [{"stage": "gate", "detail": f"b{i}", "remedy": "fix it", "blocking": True}
-                for i in range(blocking)]
-        rows += [{"stage": "gate", "detail": f"a{i}", "remedy": "note it", "blocking": False}
-                 for i in range(advisory)]
-        return rows
-
-    def test_the_headline_noun_carries_the_blocking_count(self) -> None:
-        """AC1. MUTANT: render `len(blockers)` in the headline again.
-
-        The noun must count what HOLDS the close. `8 unmet prerequisite(s) (3 blocking)` keeps
-        the overstatement this bug is about - the number the reader takes away is the one the
-        noun is attached to, so the noun carries 3 and the total is stated beside it.
-        """
-        rows = self._rows(blocking=3, advisory=5)
-        head = sprint.preflight_headline(rows)
-        self.assertTrue(head.startswith("3 unmet prerequisite(s)"), head)
-        self.assertIn("8", head)
-        self.assertFalse(head.startswith("8"), head)
-
-    def test_both_renderers_agree_and_read_one_helper(self) -> None:
-        """AC2. MUTANT: leave `_report_preflight` computing its own count.
-
-        Fixing one renderer and leaving its sibling lying is the exact scope error that
-        rejected BG0582 at round two, so this asserts the two OUTPUTS agree - not that the
-        helper exists, which a renderer can ignore.
-        """
-        rows = self._rows(blocking=2, advisory=4)
-        data = {"ready": False, "blockers": rows}
-        out = io.StringIO()
-        with contextlib.redirect_stdout(out):
-            sprint._render_preflight(data)
-        err = io.StringIO()
-        with unittest.mock.patch.object(sprint, "close_preflight", return_value=data), \
-                contextlib.redirect_stderr(err):
-            sprint._report_preflight(".", None)
-        head = sprint.preflight_headline(rows)
-        self.assertIn(head, out.getvalue())
-        self.assertIn(head, err.getvalue())
-
-    def test_the_shipped_cli_prints_the_two_numbers(self) -> None:
-        """AC4. MUTANT: have `_report_preflight` compute its own count again.
-
-        THE WIRING TEST. `verify_ac lane-check` reported this unit as changing a command while
-        none of its verifiers entered the shipped entry point - the wiring is the part a
-        library test does not exercise, and this repository spent a whole sprint with a
-        function passing in-process while the command printed nothing.
-
-        Driven against a THROWAWAY root, not this repository. An earlier cut pointed at the
-        real tree, which made it depend on whatever the working copy happened to contain and
-        cost 87 seconds - the same non-hermetic coupling BG0595 was filed for, reproduced while
-        fixing something else.
-        """
-        import subprocess  # noqa: PLC0415 - the point is to leave this process
-        script = Path(__file__).resolve().parents[1] / "sprint.py"
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio" / ".local").mkdir(parents=True)
-            (root / "sdlc-studio" / "stories").mkdir()
-            # A RUN STATE, so the gate's advisory lanes run and the two counts DIVERGE. A bare
-            # directory yields one blocking row, where held == total and `len(blockers)` is an
-            # equivalent mutant - which is exactly how the first cut of this test let it
-            # survive. The fixture has to be able to tell the two numbers apart.
-            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
-                "schema": 1, "run_id": "RUN-T", "started_at": "2026-01-01T00:00:00Z",
-                "outcome": "running", "batch": ["US0001"], "batch_changes": [],
-                "base_ref": "abc", "goal": "done"}), encoding="utf-8")
-            # ...and a named retro over a stale LATEST.md in a skill tree, so the close's one
-            # advisory gate lane, doc-freshness, reports a finding: the other advisory lanes run
-            # only when named with `gate.py --only` (US0895).
-            (root / ".claude" / "skills" / "sdlc-studio").mkdir(parents=True)
-            (root / ".claude" / "skills" / "sdlc-studio" / "SKILL.md").write_text(
-                "---\nname: sdlc-studio\n---\n", encoding="utf-8")
-            (root / "sdlc-studio" / "reviews").mkdir()
-            (root / "sdlc-studio" / "reviews" / "LATEST.md").write_text(
-                "".join(f"- line {i}\n" for i in range(100)), encoding="utf-8")
-            argv = [sys.executable, "-B", str(script), "preflight", "--retro", "RETRO0001",
-                    "--root", str(root)]
-            # The blockers as the COMMAND computes them, read from its own JSON rather than an
-            # in-process call: test_docgen caches a `surface` module that command_audit's
-            # _surface_module then reuses for this fixture, dropping the doc-surface row (BG0758).
-            pre = json.loads(subprocess.run([*argv, "--format", "json"], capture_output=True,
-                                            text=True).stdout)
-            self.assertLess(len(sprint.held_blockers(pre["blockers"])), len(pre["blockers"]),
-                            "the fixture produces no advisory row, so the two counts cannot "
-                            "diverge and this test would pass on the defect")
-            r = subprocess.run(argv, capture_output=True, text=True)
-            page = r.stdout + r.stderr
-            # Derived from the SAME helper over the SAME root, so what is asserted is "the
-            # command reaches this code", never "the tree is in a particular state".
-            expected = sprint.preflight_headline(pre["blockers"])
-        self.assertIn("unmet prerequisite(s)", expected)
-        self.assertIn(expected, page, page)
-
-    def test_an_all_blocking_page_is_unchanged(self) -> None:
-        """AC3. MUTANT: always append the `of N reported` suffix.
-
-        No cosmetic churn for the common case: when nothing is advisory the two numbers
-        coincide and the phrase must be byte-identical to the one it replaces.
-        """
-        rows = self._rows(blocking=4, advisory=0)
-        self.assertEqual("4 unmet prerequisite(s)", sprint.preflight_headline(rows))
-        # THROUGH BOTH RENDERERS, because that is what the criterion says. Asserting the
-        # helper alone let a review reword either print statement and keep the suite green,
-        # which is the churn AC3 exists to forbid. The full line is pinned, not a substring.
-        data = {"ready": False, "blockers": rows}
-        out = io.StringIO()
-        with contextlib.redirect_stdout(out):
-            sprint._render_preflight(data)
-        self.assertIn("preflight: 4 unmet prerequisite(s) - ALL of them, so the close is "
-                      "one more run once these are cleared:", out.getvalue())
-        err = io.StringIO()
-        with unittest.mock.patch.object(sprint, "close_preflight", return_value=data), \
-                contextlib.redirect_stderr(err):
-            sprint._report_preflight(".", None)
-        self.assertIn("close pre-flight: 4 unmet prerequisite(s) - this is ALL of them, "
-                      "not the first:", err.getvalue())
 
 
 import sprint_report  # noqa: E402 - sibling, resolved via the tests path
@@ -18020,9 +17724,10 @@ class PrepareAndSealTests(unittest.TestCase):
     def _prepared(self, d):
         """A run PREPARE has no refusal to make: one unit, retro recorded, goal judged.
 
-        The verify report is part of the fixture, not decoration: SEAL transitions the unit to
-        Done, and the Done gate refuses a story whose executable ACs were never verified. A
-        fixture without it tests the gate's refusal rather than the split under test.
+        The verify report and the independent APPROVE are part of the fixture, not decoration:
+        SEAL transitions the unit to Done, the Done gate refuses a story whose executable ACs
+        were never verified, and the seal refuses a unit with no independent delivery APPROVE.
+        A fixture without them tests a refusal rather than the split under test.
         """
         root = Path(d)
         _close_state(root)
@@ -18036,6 +17741,9 @@ class PrepareAndSealTests(unittest.TestCase):
         rp.write_text(json.dumps({"stories": {"US0101-a": {
             "failed": 0, "stale": 0, "failures": [], "ac_count": 1,
             "verified_at": "2099-01-01T00:00:00Z"}}}), encoding="utf-8")
+        import critic  # noqa: PLC0415
+        critic.record_verdict(root, "US0101", "APPROVE", "qa-seat", "agent", "none blocking",
+                              "delivery", "abcdef123456")
         return root
 
     def _close(self, root, mod, extra=(), record=None, real=()):
@@ -18100,7 +17808,9 @@ class PrepareAndSealTests(unittest.TestCase):
             # itself records a unit's close telemetry as it reaches its terminal status - the
             # row exists because the signature moved the unit, and it is written BY the move
             # rather than by a tail step that runs after it, which is what AC2 forbids.
-            allowed = ("run-state.json", "run-archive", "signoff-record.md", "reports/",
+            # The review anchor is on it because its close-status block records that the run's
+            # signature landed. No sign-off record is: the operator signs the run once.
+            allowed = ("run-state.json", "run-archive", "reviews/LATEST.md", "reports/",
                        "_index.md", "US0101", "VELOCITY.md", "actuals-")
             stray = [str(p) for p in moved
                      if not any(a in str(p) for a in allowed)]
@@ -18194,11 +17904,9 @@ class PrepareAndSealTests(unittest.TestCase):
     def test_the_convergence_series_measures_only_what_prepare_can_move(self):
         """US0832's own defect, found by running the close six times rather than by any test.
 
-        The pre-flight's `sign-off` and `done-gate` rows ask whether the FAN-OUT could run, and
-        under D0213 the fan-out is `sign`'s. They still HOLD the close - a build rung whose
-        sign-off preview stopped blocking would report READY for units carrying no sign-off at
-        all, which is pinned elsewhere with its own mutant, and trying that was my first and
-        wrong repair. What they must not do is count as evidence about whether PREPARE is
+        The pre-flight's `done-gate` rows ask whether the SEAL's transitions could run, and under
+        D0213 those are `sign`'s. They still HOLD the close. What they must not do is count as
+        evidence about whether PREPARE is
         CONVERGING: a close that has cleared everything of its own still records them, the
         series plateaus, and `loop_termination` correctly reads a loop that will never
         terminate. Measured on RUN-01M2SPNS as 31 -> 20 -> 19 -> 20, whose floor was nine
@@ -18210,9 +17918,14 @@ class PrepareAndSealTests(unittest.TestCase):
         """
         with tempfile.TemporaryDirectory() as d:
             root, mod = self._prepared(d), _load()
+            # A criterion that has not passed, so the Done gate the seal will run refuses.
+            (root / "sdlc-studio" / ".local" / "verify-report.json").write_text(json.dumps(
+                {"stories": {"US0101-a": {"failed": 1, "stale": 0, "failures": [{"ac": "AC1"}],
+                                          "ac_count": 1, "verified_at": "2099-01-01T00:00:00Z"}}}),
+                encoding="utf-8")
             pre = mod.close_preflight(root, "RETRO0001")
             held = mod.held_blockers(pre["blockers"])
-            seal_rows = [b for b in held if b["stage"] in mod._SIGNOFF_ONLY_STAGES]
+            seal_rows = [b for b in held if b["stage"] in mod._SEAL_ONLY_STAGES]
             self.assertTrue(seal_rows,
                             "the fixture raised no SEAL-only row, so this asserts nothing")
             # They HOLD - that guard is not weakened.
@@ -18221,12 +17934,11 @@ class PrepareAndSealTests(unittest.TestCase):
             # ...and they are NOT in the series the loop guard reads.
             mod._record_close_attempt(root, pre)
             attempt = ((mod.run_state.read(root) or {}).get("close_attempts") or [])[-1]
-            self.assertNotIn("sign-off", attempt["stages"],
+            self.assertNotIn("done-gate", attempt["stages"],
                              "the convergence series counts work only the SEAL can clear")
-            self.assertNotIn("done-gate", attempt["stages"])
             self.assertEqual(attempt["outstanding"],
                              len([b for b in held
-                                  if b["stage"] not in mod._SIGNOFF_ONLY_STAGES]),
+                                  if b["stage"] not in mod._SEAL_ONLY_STAGES]),
                              "the recorded count and the recorded stages disagree")
 
     def test_the_close_tail_does_not_end_the_run(self):
@@ -18313,7 +18025,7 @@ class PrepareAndSealTests(unittest.TestCase):
             self.assertIn("Status:** Review",
                           (root / "sdlc-studio" / "stories" / "US0101-a.md").read_text(
                               encoding="utf-8"),
-                          "the re-run transitioned a unit - the per-unit rows belong to SEAL")
+                          "the re-run transitioned a unit - the transitions belong to SEAL")
             self.assertFalse((root / "sdlc-studio" / "reviews" / "signoff-record.md").exists(),
                              "the re-run wrote a sign-off row before anyone signed")
             rid2 = (mod.run_state.read(root) or {})["report"]
@@ -18763,28 +18475,6 @@ class SealTests(unittest.TestCase):
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             rc = mod.main(argv)
         return rc, out.getvalue(), err.getvalue()
-
-    def test_one_principal_writes_the_unit_rows_and_the_run_signature(self):
-        """AC0. MUTANT: write the run signature and leave the per-unit rows to a later
-        `--apply-signoff` - the operator then signs twice for one decision."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = self._sealable(d), _load()
-            rc, out, err = self._prepare(root, mod)
-            self.assertEqual(rc, 0, err)
-            rc, out, err = self._sign(root, mod)
-            self.assertEqual(rc, 0, err)
-            # ONE command, and all of it: the unit row, the terminal status, the run signature.
-            rec = (root / "sdlc-studio" / "reviews" / "signoff-record.md").read_text(
-                encoding="utf-8")
-            self.assertIn("Darren Benson", rec, "no per-unit sign-off row names the principal")
-            self.assertIn("US0101", rec)
-            text = (root / "sdlc-studio" / "stories" / "US0101-a.md").read_text(encoding="utf-8")
-            self.assertIn("Status:** Done", text, "the unit did not reach its terminal")
-            sig = (mod.run_state.read(root) or {}).get("signature") or {}
-            self.assertEqual("Darren Benson", sig.get("principal"),
-                             "the run carries no signature from the principal it was given")
-            self.assertNotIn("--apply-signoff", out + err,
-                             "the seal still points at a second command for one decision")
 
 
 class TheSealIsATransactionTests(unittest.TestCase):

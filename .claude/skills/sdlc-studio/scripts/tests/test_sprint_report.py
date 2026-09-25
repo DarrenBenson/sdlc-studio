@@ -2406,12 +2406,10 @@ class SprintChecklistAuthorityTests(ChecklistBase):
         self.assertIn("cost", ck["outstanding"])
 
     def test_the_close_does_not_deadlock_on_what_it_is_about_to_do(self) -> None:
-        """The sign-off and the handoff are produced BY the close. Holding the chain on them
-        makes the only exit the step it blocks, which is a deadlock, not a gate."""
+        """The handoff is produced BY the close. Holding the chain on it makes the only exit the
+        step it blocks, which is a deadlock, not a gate."""
         ck = self._ck(outcome="blocked", handoff=None)
-        self.assertEqual(self._row(ck, "signoff")["state"], sr.NOT_RUN)
-        self.assertNotIn("signoff", ck["outstanding"])
-        self.assertIn("signoff", ck["pending_in_close"])
+        self.assertNotIn("handoff", ck["outstanding"])
         self.assertIn("handoff", ck["pending_in_close"])
         self.assertIn("discharge", sr.render_checklist(ck))
 
@@ -2478,48 +2476,6 @@ class SprintChecklistAuthorityTests(ChecklistBase):
         ok, detail, _ = sprint._close_checklist(self.root, "RETRO9100", state)
         self.assertTrue(ok, f"the step still refuses with everything waived: {detail}")
         self.assertIn("none outstanding", detail)
-
-
-class SignoffProvenanceTests(unittest.TestCase):
-    """The close report must not hide WHO accepted the batch behind a single count."""
-
-    def test_the_report_splits_panel_from_operator(self) -> None:
-        """MUTANT: report `len(signed)` alone, as it did before.
-
-        A combined total reads as complete whether a human or a panel accepted every unit, and
-        those are different facts about who took responsibility.
-        """
-        import importlib.util
-        spec = importlib.util.spec_from_file_location(
-            "sprint_report", SCRIPT if "SCRIPT" in globals()
-            else Path(__file__).resolve().parent.parent / "sprint_report.py")
-        mod = importlib.util.module_from_spec(spec)
-        sys.modules["sprint_report"] = mod
-        spec.loader.exec_module(mod)
-        import critic as _c  # noqa: F401
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio" / "stories").mkdir(parents=True)
-            for uid, slug in (("US0001", "a"), ("US0002", "b")):
-                (root / "sdlc-studio" / "stories" / f"{uid}-{slug}.md").write_text(
-                    f"# {uid}: x\n\n> **Status:** Review\n> **Points:** 3\n"
-                    f"> **Affects:** src/{slug}.py\n", encoding="utf-8")
-            (root / "sdlc-studio" / ".config.yaml").write_text(
-                "review:\n  signoff: panel\n", encoding="utf-8")
-            import critic
-            # Briefed verdicts first: the panel interlock refuses to ratify a review carrying
-            # no provenance, so a fixture without them tests the interlock, not the report.
-            for uid in ("US0001", "US0002"):
-                critic.record_verdict(root, uid, "APPROVE", "qa seat", "auth",
-                                      issues="none blocking", brief="abcdef123456")
-            critic.record_signoff(root, "US0001", "Lena Marsh", "auth",
-                                  panel=["qa", "engineering"])
-            critic.record_signoff(root, "US0002", "Darren Benson", "auth")
-            state, value, _detail = mod._ck_signoff(
-                {"units": ["US0001", "US0002"], "root": root})
-        self.assertEqual("ran", state)
-        self.assertIn("1 panel", value, f"the row does not report the panel count: {value}")
-        self.assertIn("1 operator", value, f"the row does not report the operator count: {value}")
 
 
 class CloseReportTests(unittest.TestCase):
@@ -2920,17 +2876,12 @@ class OperatorSummaryTests(ReportBase):
         """Leading is a bounded act only if the summary says where to look. Mutant: list the
         delivered units alone - the summary is a manifest, and the operator must re-read the
         whole batch to lead it."""
-        import critic
         self._verdict("US0001", "REJECT", issues="the test could not fail")
-        critic.record_signoff(self.root, "US0002", principal="product", author="dev",
-                              capacity=critic.CAPACITY_SEAT)
         with contextlib.redirect_stderr(io.StringIO()):
             s = sr.operator_summary(self.root, "RETRO9100")
         why = {r["unit"]: r["why"] for r in s["reversal_candidates"]}
         self.assertIn("US0001", why)
         self.assertIn("rejected", why["US0001"])
-        self.assertIn("US0002", why)
-        self.assertIn("SEAT", why["US0002"])
         page = sr.render_operator_summary(s)
         self.assertIn("What to overturn", page)
         self.assertIn("US0001", page)
@@ -2960,18 +2911,6 @@ class OperatorSummaryTests(ReportBase):
         self.assertIn("BG0901", s["carried"], s)
         self.assertIn("BG0901", sr.render_operator_summary(s))
 
-    def test_the_summary_is_generated_for_a_human_signoff_too(self) -> None:
-        """Mutant: generate it only on the panel path - the human close and the seat close
-        diverge, and a second code path is one that drifts."""
-        import critic
-        self._verdict("US0001", "APPROVE")
-        critic.record_signoff(self.root, "US0001", principal="darren", author="dev")
-        with contextlib.redirect_stderr(io.StringIO()):
-            s = sr.operator_summary(self.root, "RETRO9100")
-        shipped = {r["unit"]: r["signed_by"] for r in s["shipped"]}
-        self.assertEqual(shipped.get("US0001"), critic.CAPACITY_HUMAN)
-        self.assertNotIn("US0001", [r["unit"] for r in s["reversal_candidates"]],
-                         "a human sign-off is not a thing to overturn on those grounds")
 
     def test_the_shipped_verb_prints_it(self) -> None:
         """THE LANE TEST (LL0040). A summary reachable only from a library call is one no
@@ -3235,7 +3174,7 @@ class ChecklistRosterTests(unittest.TestCase):
     EXPECTED = (
         "reconciled-before-plan", "goal-seat-reviewed", "batch-groomed", "run-opened",
         "batch-boundary-review", "closing-review", "tick-verification", "goal-judged",
-        "retro", "lessons", "signoff", "handoff", "planned-vs-delivered", "not-delivered",
+        "retro", "lessons", "handoff", "planned-vs-delivered", "not-delivered",
         "scope-creep", "coverage-consistency", "doc-surface", "mutation-survivors",
         "review-attribution", "impediments", "known-issues", "cost",
     )

@@ -24,8 +24,8 @@
 - **When** the pre-flight runs
 - **Then** each missing prerequisite is named per unit, alongside the gate lanes - these surface
   only after the whole chain has passed today, which is what made a close take four runs
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_preflight_names_missing_signoff_prerequisites
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by US0917: the per-unit sign-off preview is deleted; review coverage is the `review-coverage` pre-flight row, and the seal stops on a unit with no independent APPROVE
+- **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 ### AC2: a unit covered by a sprint-level review is not reported as missing
 
@@ -34,8 +34,8 @@
 - **When** the pre-flight runs
 - **Then** it is NOT reported as missing its critique, because sprint coverage satisfies that gate
   and a pre-flight that over-reports is as untrustworthy as one that under-reports
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_preflight_accepts_sprint_level_coverage
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by US0917: the per-unit sign-off preview is deleted; review coverage is the `review-coverage` pre-flight row
+- **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 ### AC3: the check asks the real authority, never its own copy of the rule
 
@@ -43,11 +43,12 @@
 - **When** the pre-flight evaluates them
 - **Then** it calls `critic`'s own predicates rather than reimplementing independence, so the
   pre-flight and the gate cannot drift apart and disagree about the same unit
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py -k test_preflight_delegates_to_critic
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by US0917: the per-unit sign-off preview is deleted; the seal's review bar is `conformance.critiqued_unmet`
+- **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-20 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-25 | US0917 | AC1-AC3 retired in the D0259 pattern: the per-unit sign-off preview is deleted |

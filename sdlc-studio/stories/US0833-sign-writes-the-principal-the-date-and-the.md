@@ -47,8 +47,8 @@ as the paired control.
 - **When** `sprint.py sign --report <id> --principal "Darren Benson"` runs once
 - **Then** each batch unit gains its sign-off row naming that principal, reaches its terminal status, its parent epic and request cascade, and the run gains ONE run-level signature - all from the single principal the command was given, with no second prompt and no second command
 - **Mutant:** write the run signature and leave the per-unit rows to a later `--apply-signoff` - the operator then signs twice for one decision, which is the shape D0213 rejected
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SealTests::test_one_principal_writes_the_unit_rows_and_the_run_signature
-- **Verified:** yes (2026-09-18)
+- **Verify:** manual - retired by US0917: `sprint sign` writes no per-unit sign-off row, only the run's one signature (test_lean_sign_seals_once.py::SignSealsOnceTests::test_sign_writes_no_signoff_rows)
+- **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 ### AC1: sign records the principal, the date and the report's OWN fingerprint against the run
 
@@ -104,3 +104,4 @@ as the paired control.
 | 2026-09-17 | grooming 2026-09-17 | Groomed: four criteria, carrying BOTH halves of RFC0059's option E on the consult's finding that a signature nothing refuses over is a convention. Adds the CR0571 inheritance (critic.py's principal rule applied across the batch, the reviewer recorded on the SECOND unit only), the post-seal refusal at `transition.transition` (the chokepoint `artifact.close` routes through) and a recorded re-open that keeps the signature. Affects and Points grown for the two new files. |
 | 2026-09-18 | goal review round 5 | AC4's reason-less arm withdrawn: `sprint.py reopen` at 11638 already declares `--reason` required, so that arm tested argparse rather than this story. It now proves the reopen of a run that was never sealed. |
 | 2026-09-18 | delivery | `critic.signoff_refusal` extracted so the independence rule has one definition and two callers: `record_signoff` raises what it returns, and the seal asks it of every batch unit BEFORE writing. AC2 as written could not otherwise hold - a subagent recorded on the second unit alone was caught only after the first was signed and moved. AC4's re-open record gained the report id. Five mutants applied; AC0, AC1, AC2 and AC4 killed here, AC3 in `transition.py`. |
+| 2026-09-25 | US0917 | AC0 retired in the D0259 pattern: `sprint sign` writes no per-unit sign-off row |

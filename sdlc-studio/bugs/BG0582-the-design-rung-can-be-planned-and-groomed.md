@@ -37,12 +37,12 @@ The close chain must read the rung the run recorded, exactly as the planner does
 - [ ] **AC4** Given a run state carrying no `goal` key, an empty one or whitespace, when `run_rung` reads it, then it answers `done` - most run states predate the rung, and defaulting anywhere else relaxes the delivery gates for every historical run.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ADesignRungIsJudgedAgainstItsOwnProductTests::test_an_absent_goal_is_treated_as_the_build_rung
   - **Verified:** yes (2026-08-16)
-- [ ] **AC5** Given a `design` rung, when `_signoff_preflight` runs, then it emits exactly one NON-BLOCKING `sign-off` row naming the rung and no `done-gate` row - a skipped gate that says nothing reads identically to one that passed.
+- [ ] **AC5** Given a `design` rung, when `_seal_preview` runs, then it emits exactly one NON-BLOCKING `done-gate` row naming the rung and nothing else - a skipped gate that says nothing reads identically to one that passed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ADesignRungIsJudgedAgainstItsOwnProductTests::test_the_skipped_delivery_gates_are_reported_not_silent
   - **Verified:** yes (2026-08-16)
 - [ ] **AC6** Given a `done` rung, when `_signoff_preflight` runs, then it still emits a BLOCKING sign-off row - the two-role gate must keep being previewed for every build run.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ADesignRungIsJudgedAgainstItsOwnProductTests::test_a_done_rung_still_gets_its_blocking_signoff_row
-  - **Verified:** yes (2026-08-16)
+  - **Verify:** manual - retired by US0917: the per-unit sign-off preview is deleted; a build rung's pre-flight previews the Done gate `sprint sign` runs
+  - **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 - [ ] **AC7** Given a `design` rung whose batch carries an ungroomed BUG, when `undelivered_blockers` reads it, then it BLOCKS naming that bug - a mixed batch is the normal case and a story-only bar exempts real work.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ADesignRungIsJudgedAgainstItsOwnProductTests::test_an_ungroomed_BUG_blocks_a_design_rung_too
@@ -54,7 +54,7 @@ The close chain must read the rung the run recorded, exactly as the planner does
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ADesignRungIsJudgedAgainstItsOwnProductTests::test_a_plan_rung_is_not_judged_against_the_design_rungs_product
   - **Verified:** yes (2026-08-16)
 
-- [ ] **AC10** Given a `plan` or `triage` rung, when `_signoff_preflight` runs, then it still produces its blocking delivery preview and does NOT take the design rung's skip row - the sibling function must be scoped the same way, or the defect is relocated rather than removed.
+- [ ] **AC10** Given a `plan` or `triage` rung, when `_seal_preview` runs, then it still produces its blocking delivery preview and does NOT take the design rung's skip row - the sibling function must be scoped the same way, or the defect is relocated rather than removed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ADesignRungIsJudgedAgainstItsOwnProductTests::test_plan_and_triage_keep_the_signoff_and_done_gate_preview
   - **Verified:** yes (2026-08-16)
 - [ ] **AC11** Given a close pre-flight that is READY but carries a non-blocking row, when `_report_preflight` renders it, then the row is printed - a skipped gate that prints nothing reads exactly like one that passed.
@@ -90,3 +90,4 @@ Every grooming run. The design rung is the shipped answer to an ungroomed backlo
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-16 | sdlc-studio | Filed |
+| 2026-09-25 | US0917 | AC6 retired in the D0259 pattern: the per-unit sign-off preview is deleted. AC5 and AC10 name `_seal_preview`, which previews the Done gate `sprint sign` runs, and its `done-gate` skip row |

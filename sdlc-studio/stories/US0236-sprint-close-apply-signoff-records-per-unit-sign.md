@@ -21,16 +21,16 @@
 - **Given** an open run whose close chain has passed
 - **When** `sprint close --retro <id> --apply-signoff` runs with no `--principal`
 - **Then** it exits non-zero, records no sign-off, and names that the reviewer of record must be given explicitly
-- **Verify:** grep "apply-signoff needs an explicit --principal" .claude/skills/sdlc-studio/scripts/sprint.py
-- **Verified:** yes (2026-07-18)
+- **Verify:** manual - retired by US0917: `_apply_signoff` is deleted; `sprint sign` refuses a missing principal in `_principal_refusals`
+- **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 ### AC2: with a principal it records a sign-off and transitions each story unit Done
 
 - **Given** a batch of story units held at Review, each with recorded critic evidence and an APPROVE verdict
 - **When** `sprint close --retro <id> --apply-signoff --principal "<name>"` runs
 - **Then** each story unit gets a reviewer-of-record sign-off (author != principal) and is transitioned Done; bugs already terminal are left untouched
-- **Verify:** shell cd .claude/skills/sdlc-studio/scripts && python3 -m unittest tests.test_sprint.ApplySignoffTests
-- **Verified:** yes (2026-07-18)
+- **Verify:** manual - retired by US0917: `sprint sign` writes no per-unit sign-off row; it moves each unit to its terminal and writes the run's one signature
+- **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 ### AC3: a subagent principal is refused, and the fan stops loudly at the first refusal
 
@@ -45,3 +45,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-25 | US0917 | AC1 and AC2 retired in the D0259 pattern: `sprint sign` writes no per-unit sign-off row |

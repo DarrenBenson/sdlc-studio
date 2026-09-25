@@ -63,11 +63,12 @@ to orient someone who has no other context.
 - **Given** a run closed at `--goal done` with units at Review past `two_role_after`
 - **When** the anchor is stamped
 - **Then** the owed-sign-off line is present exactly as today - this fix must narrow the claim, not remove it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseStampRungTests::test_a_build_rung_still_states_the_owed_signoff
-- **Verified:** yes (2026-07-24)
+- **Verify:** manual - retired by US0917: the close-status block states the run's one signature (`sprint sign` seals the batch), never a per-unit sign-off held by a two-role gate
+- **Verified:** manual (2026-09-25) - retired, superseded by US0917
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-24 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-25 | US0917 | AC2 retired in the D0259 pattern: the close-status block states the run's one signature, never a per-unit sign-off |
