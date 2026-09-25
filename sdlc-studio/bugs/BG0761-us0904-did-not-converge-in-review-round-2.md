@@ -1,6 +1,7 @@
 # BG0761: US0904 did not converge in review: round 2 REJECT findings
 
 > **Status:** Open
+> **Depends on:** BG0759 - its carried patch applies only over the rebased pre-commit hook (QA grooming)
 > **Carried work:** the round-2 patch is kept at sdlc-studio/.local/US0904-carried-r2.patch, complete against 25cbd375 and passing every other probe. Remaining fix: in sprint_report.classify_refusals change `when > at` to `when >= at` (git stamps a commit when it starts, before its hooks) and add a fixture row whose retry carries the refusal's own second; then add the message-refusal test to AC1's Verify line and reword AC2 to the blob rule
 > **Severity:** Medium
 > **Points:** 2

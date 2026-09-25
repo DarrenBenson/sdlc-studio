@@ -1,6 +1,7 @@
 # US0932: A build lane's brief carries the TRD constraints of the components its unit touches
 
 > **Status:** Draft
+> **Depends on:** US0933 - both edit the TRD Component Overview table (CR0594 refinement)
 > **Delivers:** CR0594
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new

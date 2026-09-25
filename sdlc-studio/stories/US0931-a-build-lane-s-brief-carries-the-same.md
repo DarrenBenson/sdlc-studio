@@ -1,6 +1,7 @@
 # US0931: A build lane's brief carries the same file history, and tells the author that history outranks an artefact's account
 
 > **Status:** Draft
+> **Depends on:** US0930 - reuses the file-history walk (CR0594 refinement)
 > **Delivers:** CR0594
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new

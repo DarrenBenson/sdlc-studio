@@ -1,6 +1,7 @@
 # US0912: The test-plan tooling is gone and an old Test Plan section is inert
 
 > **Status:** Draft
+> **Depends on:** US0910, US0934, US0911, US0915 - plan_execution and the testplan helpers they call (EP0263 readiness)
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

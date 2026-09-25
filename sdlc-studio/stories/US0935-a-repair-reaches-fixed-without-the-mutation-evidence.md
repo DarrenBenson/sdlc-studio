@@ -1,6 +1,7 @@
 # US0935: A repair reaches Fixed without the mutation-evidence gate, survivor filing or evidence mode
 
 > **Status:** Draft
+> **Depends on:** US0934, US0916, US0920 - _pre_write_gates, the retired-tag registry, and the evidence-drift lane (EP0263 readiness)
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

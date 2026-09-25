@@ -1,6 +1,7 @@
 # US0911: A unit reaches Done without a test plan or a falsifiability probe
 
 > **Status:** Draft
+> **Depends on:** US0934 - shares _pre_write_gates; the depth gate shapes its fixtures (EP0263 readiness)
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

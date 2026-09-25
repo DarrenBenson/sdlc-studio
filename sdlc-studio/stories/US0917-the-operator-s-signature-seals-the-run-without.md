@@ -1,6 +1,7 @@
 # US0917: The operator's signature seals the run without a per-unit sign-off row
 
 > **Status:** Draft
+> **Depends on:** US0916 - the two-role gate reads the sign-off ledger (EP0263 readiness)
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

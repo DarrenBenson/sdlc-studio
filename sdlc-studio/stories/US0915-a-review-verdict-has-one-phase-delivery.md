@@ -1,6 +1,7 @@
 # US0915: A review verdict has one phase: delivery
 
 > **Status:** Draft
+> **Depends on:** US0909, US0911, US0913 - each reads verdicts with phase plan-review (EP0263 readiness)
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

@@ -1,6 +1,7 @@
 # US0914: A standing REJECT clears only by a round-2 APPROVE or by carrying the unit
 
 > **Status:** Draft
+> **Depends on:** US0911, US0915 - plan_review_repair_clears and repair --phase (EP0263 readiness)
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
