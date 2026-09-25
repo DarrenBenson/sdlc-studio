@@ -422,267 +422,6 @@ def _banded_unit(root: Path, uid: str, *, heavy: bool) -> None:
     (seats / "qa.md").write_text("# Sam - QA seat\n\ncharter text\n", encoding="utf-8")
 
 
-class PanelSignoffCliTests(unittest.TestCase):
-    """US0643 AC4/AC5: the refusals hold through the VERB, not only in the library.
-
-    `critic.py signoff --panel` reads the assignment off the run and refuses a signer other than
-    the one assigned - a check that lives in the CLI path and is invisible to any test that
-    calls `record_signoff` directly. That is LL0040, and it is the failure that let
-    `brief_fingerprint(brief(...))` pass in-process for a whole sprint while the verb printed
-    nothing.
-    """
-
-    def _repo(self, root: Path, mod):
-        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / ".config.yaml").write_text(
-            "review:\n  signoff: panel\n", encoding="utf-8")
-        d = root / "sdlc-studio" / "stories"
-        d.mkdir(parents=True, exist_ok=True)
-        (d / "US0017-x.md").write_text(
-            "# US0017: a unit\n\n> **Status:** Review\n> **Points:** 3\n\n"
-            "## Acceptance Criteria\n\n- [ ] it behaves\n", encoding="utf-8")
-        # The adversarial verdict, WITH brief provenance - a panel may not ratify a review
-        # nothing can prove was properly briefed.
-        mod.record_verdict(root, "US0017", "approve", reviewer="engineering", author="dev",
-                           brief="abc123abc123")
-        import persona_resolve
-        (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
-            "schema": 1, "run_id": "RUN-PANEL", "started_at": "2026-08-05T00:00:00Z",
-            "ended_at": None, "outcome": "running", "goal": "done", "batch": ["US0017"]}),
-            encoding="utf-8")
-        persona_resolve.signoff_panel(root, record=True)
-        return persona_resolve.recorded_signoff_panel(root)
-
-    def _signoff(self, mod, root, principal, author):
-        out, err = io.StringIO(), io.StringIO()
-        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            try:
-                rc = mod.main(["signoff", "--unit", "US0017", "--principal", principal,
-                               "--author", author, "--panel", "--root", str(root)])
-            except SystemExit as exc:      # argparse-level refusals
-                rc = exc.code
-        return rc, out.getvalue() + err.getvalue()
-
-    def test_the_refusals_hold_through_the_shipped_verb_with_DISTINCT_messages(self) -> None:
-        """The first version of this asserted only `rc != 0`, and an independent seat showed that
-        was a proxy: two of the three cases returned a BYTE-IDENTICAL message, because the
-        assigned-signer check fires first and masks whatever else is wrong. Deleting the
-        disjointness guard entirely passed 1,114 tests.
-
-        So each case now asserts the message that names ITS OWN reason. A refusal that fires for
-        a different reason than the one under test is a guard that could be deleted unnoticed.
-
-        Mutant: neuter any one of these guards - the case that names it reddens, and only that
-        case, which is what a per-reason assertion buys over a bare non-zero exit.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            rec = self._repo(root, mod)
-            signer = rec["signer"]
-            for principal, author, marker, why in (
-                (signer, signer, "author", "the author signing their own work"),
-                ("someone-else", "dev", "assigned", "a signer the run did not assign"),
-            ):
-                rc, page = self._signoff(mod, root, principal, author)
-                self.assertNotEqual(rc, 0, f"{why} was accepted:\n{page}")
-                self.assertIn(marker, page.lower(), f"{why} was refused for the WRONG reason")
-            self.assertFalse(mod.signoff_path(root).exists(),
-                             "a refused sign-off appended a row")
-
-    def test_an_adversarial_seat_cannot_ratify_its_own_evidence(self) -> None:
-        """US0598's disjointness guard, tested WHERE IT IS REACHABLE - which the CLI is not.
-
-        `signoff_panel` assigns the signer disjointly from the adversarial seats, so through the
-        verb an adversarial principal always trips the assigned-signer check first and this guard
-        never runs. That is correct layering, not a defect: the assignment makes the case
-        impossible. But it means the CLI cannot test the guard, and the criterion as originally
-        written claimed it could - restated on the artefact with this reason.
-
-        The guard is the backstop for a caller that supplies its own panel, so it is exercised
-        there. Mutant: delete the raise at `record_signoff` - this reddens, and nothing else does.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            self._repo(root, mod)
-            with self.assertRaises(ValueError) as ctx:
-                mod.record_signoff(root, "US0017", principal="engineering", author="dev",
-                                   panel=["engineering", "qa"])
-            self.assertIn("also one of the adversarial", str(ctx.exception))
-            # the positive control: the SAME call with a disjoint principal is accepted
-            mod.record_signoff(root, "US0017", principal="product", author="dev",
-                               panel=["engineering", "qa"])
-            self.assertEqual(mod.signoff_for(root, "US0017")["capacity"], mod.CAPACITY_SEAT)
-
-    def test_a_panel_cannot_ratify_a_verdict_with_no_brief_provenance(self) -> None:
-        """The fourth refusal, and the one a fixture that always supplies a brief never reaches -
-        found by mutation, not by reading. It is pre-existing behaviour (the interlock), pinned
-        here because this unit is what makes the panel path reachable: without it the panel
-        LAUNDERS missing provenance instead of catching it, and the sign-off would rest on a
-        review run off a hand-written prompt carrying neither the seat charter, the bounded diff
-        scope, nor the criteria as law.
-
-        Mutant: drop the interlock - an unbriefed verdict is ratified and this reddens.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            rec = self._repo(root, mod)
-            # A LATER verdict with no brief supersedes the briefed one as the latest row
-            mod.record_verdict(root, "US0017", "approve", reviewer="engineering", author="dev")
-            rc, page = self._signoff(mod, root, rec["signer"], "dev")
-            self.assertNotEqual(rc, 0, page)
-            self.assertIn("brief provenance", page)
-            self.assertFalse(mod.signoff_path(root).exists())
-
-    def test_a_correctly_separated_panel_signs(self) -> None:
-        """THE positive control. Without it, an implementation that refuses every panel sign-off
-        passes the criterion above for exactly the wrong reason - and a gate that refuses
-        everything is the failure mode this whole slice is trying to avoid."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            rec = self._repo(root, mod)
-            rc, page = self._signoff(mod, root, rec["signer"], "dev")
-            self.assertEqual(rc, 0, page)
-            row = mod.signoff_for(root, "US0017")
-            self.assertIsNotNone(row, page)
-            self.assertEqual(row["capacity"], mod.CAPACITY_SEAT)
-            self.assertIn("PANEL sign-off in force", page)
-            self.assertTrue(mod.is_independent_signoff(root, "US0017", row))
-
-
-class SignoffCapacityTests(unittest.TestCase):
-    """US0644: a panel sign-off was distinguishable only by string-matching `panel(...)` inside
-    the free-text chain - a fact a reader can find and a filter cannot rely on. The point of
-    recording a seat sign-off is transparency about WHO judged, and transparency a machine
-    cannot read is transparency in name only.
-    """
-
-    def _panel_ready(self, root: Path, mod, uid: str) -> None:
-        """A unit whose adversarial verdict carries brief provenance and whose project has
-        adopted the panel policy - everything `record_signoff(panel=...)` demands."""
-        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / ".config.yaml").write_text(
-            "review:\n  signoff: panel\n", encoding="utf-8")
-        mod.record_verdict(root, uid, "approve", reviewer="qa", author="dev",
-                           brief="abc123abc123")
-
-    def test_a_panel_signoff_records_capacity_seat(self) -> None:
-        """Mutant: keep the marker in `chain` alone - the field is absent on read-back and a
-        consuming project is back to parsing prose."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            self._panel_ready(root, mod, "US0017")
-            mod.record_signoff(root, "US0017", principal="product", author="dev",
-                               panel=["engineering"])
-            row = mod.signoff_for(root, "US0017")
-            self.assertEqual(row["capacity"], mod.CAPACITY_SEAT)
-            self.assertIn("| Capacity |",
-                          mod.signoff_path(root).read_text(encoding="utf-8"))
-
-    def test_a_human_signoff_records_capacity_human(self) -> None:
-        """Mutant: write the capacity only for panels - "not a seat" and "a row from before the
-        column" become the same answer, and the filter cannot tell them apart."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            mod.record_signoff(root, "US0017", principal="darren", author="dev")
-            self.assertEqual(mod.signoff_for(root, "US0017")["capacity"], mod.CAPACITY_HUMAN)
-
-    def test_an_absent_capacity_never_reads_as_seat(self) -> None:
-        """The direction this must not fail in is a machine's signature being taken for a
-        person's. Mutant: default an absent capacity to `seat` - every historical sign-off in
-        the corpus starts reading as an AI's."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            path = mod.signoff_path(root)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(
-                "# Reviewer-of-Record Sign-offs\n\n"
-                "| Unit | Principal | Chain | Author | Date | Note |\n"
-                "| --- | --- | --- | --- | --- | --- |\n"
-                "| US0017 | darren | - | dev | 2026-07-01 | looked fine |\n",
-                encoding="utf-8")
-            row = mod.signoff_for(root, "US0017")
-            self.assertIsNotNone(row, "a historical sign-off stopped being readable")
-            self.assertNotEqual(row["capacity"], mod.CAPACITY_SEAT)
-            self.assertEqual(row["capacity"], mod.CAPACITY_UNKNOWN)
-
-    def test_the_existing_columns_still_parse_and_the_gate_still_reads_them(self) -> None:
-        """A row SHORT by the new trailing column must still be read, or widening the table
-        silently UN-SIGNS every unit signed before it and the two-role gate starts refusing
-        them. Mutant: require an exact width in `_read_rows` - the historical row vanishes and
-        `is_independent_signoff` reports it unsigned."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            path = mod.signoff_path(root)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(
-                "# Reviewer-of-Record Sign-offs\n\n"
-                "| Unit | Principal | Chain | Author | Date | Note |\n"
-                "| --- | --- | --- | --- | --- | --- |\n"
-                "| US0017 | darren | - | dev | 2026-07-01 | looked fine |\n",
-                encoding="utf-8")
-            row = mod.signoff_for(root, "US0017")
-            self.assertEqual((row["principal"], row["author"], row["chain"], row["note"]),
-                             ("darren", "dev", "-", "looked fine"))
-            self.assertTrue(mod.is_independent_signoff(root, "US0017", row))
-            # ...and a NEW sign-off widens the table without moving a cell of the old row
-            mod.record_signoff(root, "US0018", principal="darren", author="dev")
-            again = mod.signoff_for(root, "US0017")
-            self.assertEqual((again["principal"], again["note"]), ("darren", "looked fine"))
-            lines = [ln for ln in path.read_text(encoding="utf-8").splitlines()
-                     if ln.startswith("|") and not set(ln.strip()) <= set("|-: ")]
-            self.assertEqual({len(mod.sdlc_md.table_cells(ln)) for ln in lines}, {7}, lines)
-
-    def test_the_MIGRATED_table_never_reads_a_historical_row_as_a_seat(self) -> None:
-        """The review finding, and the one with real harm behind it. Every earlier test read the
-        UN-widened table; a seat changed the migration pad from `-` to `seat` and 406 tests
-        passed. With that pad, the first new sign-off widens the table and EVERY historical human
-        sign-off starts reading as a machine's - verbatim the failure this column exists to stop.
-
-        So this asserts the state AFTER migration, which is the state that ships. It also pins
-        the third spelling of absent: `""` on a short row, `-` on a padded one. Mutant: pad with
-        `seat`, or drop either spelling from `CAPACITY_ABSENT` - this reddens.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            path = mod.signoff_path(root)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(
-                "# Reviewer-of-Record Sign-offs\n\n"
-                "| Unit | Principal | Chain | Author | Date | Note |\n"
-                "| --- | --- | --- | --- | --- | --- |\n"
-                "| US0017 | darren | - | dev | 2026-07-01 | a human signed this |\n",
-                encoding="utf-8")
-            # the act that widens it: a new sign-off arriving after the column exists
-            mod.record_signoff(root, "US0018", principal="darren", author="dev")
-            historical = mod.signoff_for(root, "US0017")
-            self.assertIn(historical["capacity"], mod.CAPACITY_ABSENT, historical)
-            self.assertFalse(mod.signed_by_seat(historical),
-                             "a historical HUMAN sign-off reads as a seat after migration")
-            self.assertEqual(historical["note"], "a human signed this", "a cell moved")
-
-    def test_signed_by_seat_answers_no_for_every_spelling_of_absent(self) -> None:
-        """THE predicate, so no reader carries its own copy of the spellings. Stated positively:
-        only the exact marker answers yes. Mutant: make it a negation (`!= human`) - both absent
-        spellings start answering yes, which is the unsafe direction."""
-        mod = _load()
-        for absent in mod.CAPACITY_ABSENT:
-            self.assertFalse(mod.signed_by_seat({"capacity": absent}), repr(absent))
-        self.assertFalse(mod.signed_by_seat({"capacity": mod.CAPACITY_HUMAN}))
-        self.assertFalse(mod.signed_by_seat(None))
-        self.assertFalse(mod.signed_by_seat({}))
-        self.assertTrue(mod.signed_by_seat({"capacity": mod.CAPACITY_SEAT}))
-
-    def test_an_unknown_capacity_is_refused(self) -> None:
-        """Mutant: accept any string - the one field a reader trusts to say who judged becomes
-        free text again."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            with self.assertRaises(ValueError):
-                mod.record_signoff(root, "US0017", principal="p", author="dev",
-                                   capacity="robot")
-
-
 class BriefTierTests(unittest.TestCase):
     """US0641: `route.py` says it plainly - "Advisory only - no gate reads a tier".
 
@@ -1196,138 +935,6 @@ class EvidenceTests(unittest.TestCase):
             self.assertIsNone(mod.evidence_for(root, "US0001"))
 
 
-class SignoffDelegateTests(unittest.TestCase):
-    """CR0323 / RFC0044 D3: the reviewer-of-record sign-off. The principal must be
-    one the author does not control: not the author, and not an authoring-session
-    subagent (any reviewer id recorded on the unit's evidence/verdict rows)."""
-
-    def test_direct_signoff_recorded(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            mod.record_signoff(root, "US0001", principal="Darren Benson (operator)",
-                               author="builder")
-            so = mod.signoff_for(root, "US0001")
-            self.assertIsNotNone(so)
-            self.assertIn("operator", so["principal"])
-            self.assertEqual(so["chain"], "-")
-
-    def test_self_signoff_refused(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            mod = _load()
-            with self.assertRaises(ValueError):
-                mod.record_signoff(d, "US0001", principal="builder", author="builder")
-
-    def test_delegate_chain_recorded(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            mod.record_signoff(root, "US0001", principal="Darren Benson (operator)",
-                               author="builder", delegate="ci-reviewer",
-                               boundary="CI job on main")
-            so = mod.signoff_for(root, "US0001")
-            self.assertEqual(so["principal"], "ci-reviewer")   # the delegate signs
-            self.assertIn("->", so["chain"])                   # chain recorded
-            self.assertIn("CI job", so["chain"])               # trust boundary named
-
-    def test_delegate_requires_boundary(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            mod = _load()
-            with self.assertRaises(ValueError):
-                mod.record_signoff(d, "US0001", principal="operator", author="builder",
-                                   delegate="ci-reviewer")
-
-    def test_authoring_session_subagent_is_accepted_as_a_DISCLOSED_delegate(self) -> None:
-        # AMENDED under D0059, deliberately. This asserted a REFUSAL - the seat subagent is the
-        # author's own spawn, so naming it the delegate hollowed out the self-approval guard.
-        # The operator ruled that such a delegate is fully authorised and the honest answer to
-        # the residual risk is DISCLOSURE rather than prohibition: unattended delivery could
-        # otherwise never reach Done. The sign-off is now accepted AND MARKED, and the marker
-        # is what this test pins - an unmarked row is the one outcome the ruling cannot
-        # tolerate. Independence is not restored by any of this and the docs say so.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            mod.record_evidence(root, "US0001", reviewer="qa-seat", author="builder",
-                                findings="pass done")
-            mod.record_signoff(root, "US0001", principal="operator", author="builder",
-                               delegate="qa-seat", boundary="another session")
-            row = mod.signoff_for(root, "US0001")
-        self.assertIn(mod.DELEGATED_AGENT, row["chain"])
-
-    def test_verdict_reviewer_is_accepted_as_a_DISCLOSED_delegate(self) -> None:
-        # AMENDED under D0059 - see the sibling test above for the reasoning and the cost.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            mod.record_verdict(root, "US0001", "approve", reviewer="Sam seat", author="builder")
-            mod.record_signoff(root, "US0001", principal="operator", author="builder",
-                               delegate="Sam seat", boundary="another session")
-            row = mod.signoff_for(root, "US0001")
-        self.assertIn(mod.DELEGATED_AGENT, row["chain"])
-
-    def test_plan_review_reviewer_is_accepted_as_a_DISCLOSED_delegate(self) -> None:
-        # AMENDED under D0059. The authoring-session set still spans BOTH verdict phases - a
-        # subagent that only reviewed the unit's PLAN is still the author's spawn - so what
-        # this now pins is that the marker is applied to that case too. If the phase were
-        # dropped from the session set, this delegate would be recorded as an ordinary
-        # independent sign-off, which is exactly the silent outcome the ruling forbids.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            mod.record_verdict(root, "US0001", "approve", reviewer="plan-seat",
-                               author="builder", phase="plan-review")
-            mod.record_signoff(root, "US0001", principal="operator", author="builder",
-                               delegate="plan-seat", boundary="another session")
-            row = mod.signoff_for(root, "US0001")
-        self.assertIn(mod.DELEGATED_AGENT, row["chain"])
-
-    def test_direct_principal_in_session_refused(self) -> None:
-        # The write-time refusal covers the DIRECT path too, not only delegates:
-        # a principal who is a recorded session reviewer is the author's own spawn.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            mod.record_evidence(root, "US0001", reviewer="qa-seat", author="builder",
-                                findings="pass done")
-            with self.assertRaises(ValueError):
-                mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
-
-    def test_SprintReview_reviewer_refused_as_principal(self) -> None:
-        # The reviewer-of-record must differ from the adversarial reviewer at sprint scope too:
-        # a principal equal to a covering sprint-level review's reviewer is refused.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            mod.record_sprint_review(root, ["US0001"], reviewer="qa-seat", author="builder",
-                                     verdict="APPROVE", findings="full-diff pass")
-            with self.assertRaises(ValueError):
-                mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
-
-    def test_author_refused_as_delegate(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            mod = _load()
-            with self.assertRaises(ValueError):
-                mod.record_signoff(d, "US0001", principal="operator", author="builder",
-                                   delegate="builder", boundary="another session")
-
-    def test_cli_signoff_and_refusal_exit_codes(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            with contextlib.redirect_stdout(io.StringIO()):
-                rc = mod.main(["signoff", "--unit", "US0001",
-                               "--principal", "Darren Benson (operator)",
-                               "--author", "builder", "--root", str(root)])
-            self.assertEqual(rc, 0)
-            err = io.StringIO()
-            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
-                rc = mod.main(["signoff", "--unit", "US0002", "--principal", "b",
-                               "--author", "b", "--root", str(root)])
-            self.assertEqual(rc, 2)
-            self.assertIsNone(mod.signoff_for(root, "US0002"))
-
-
 class RejoinderTests(unittest.TestCase):
     """CR0329: the re-verdict loop's scaffolding emitted deterministically - the
     prior verdict quoted verbatim, the refreshed scope, the same return contract."""
@@ -1410,75 +1017,6 @@ class RejoinderProbeTests(unittest.TestCase):
             # the contract appears TWICE: the base brief's copy AND the rejoinder tail
             # (dropping the tail restatement must fail here)
             self.assertEqual(text.count("VERDICT: APPROVE or REJECT"), 2)
-
-
-class SignoffBriefTests(unittest.TestCase):
-    """CR0323 AC3 / CR0318: the sign-off request embeds the decision brief -
-    deliveries, per-unit verdict + REJECT history, gate/cost evidence, and the
-    approve/hold/delegate paths. Absent evidence is named absent, never invented."""
-
-    def _workspace(self, root: Path) -> None:
-        d = root / "sdlc-studio" / "stories"
-        d.mkdir(parents=True)
-        (d / "US0101-widget.md").write_text(
-            "# US0101: widget frobnicates\n\n> **Status:** Review\n> **Points:** 5\n"
-            "> **Epic:** EP0001\n\n## Acceptance Criteria\n\n### AC1: works\n"
-            "- **Verify:** shell echo ok\n", encoding="utf-8")
-
-    def test_brief_carries_deliveries_history_and_paths(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._workspace(root)
-            mod = _load()
-            mod.record_verdict(root, "US0101", "reject", reviewer="qa-seat",
-                               author="builder", issues="vacuous killing test")
-            mod.record_verdict(root, "US0101", "approve", reviewer="qa-seat", author="builder")
-            mod.record_evidence(root, "US0101", reviewer="qa-seat", author="builder",
-                                findings="mutants re-run; kill confirmed")
-            text = mod.signoff_brief(root, ["US0101"], gate_note="gate: PASS",
-                                     cost_note="forecast 125k / measured 110k")
-            self.assertIn("US0101", text)
-            self.assertIn("widget frobnicates", text)      # delivery title
-            self.assertIn("5", text)                       # points
-            self.assertIn("REJECT", text)                  # reject history quoted
-            self.assertIn("vacuous killing test", text)
-            self.assertIn("gate: PASS", text)              # gate evidence inline
-            self.assertIn("125k", text)                    # cost evidence inline
-            for path in ("approve", "hold", "delegate"):
-                self.assertIn(path, text.lower())
-
-    def test_brief_names_absent_evidence_never_invents(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._workspace(root)
-            mod = _load()
-            text = mod.signoff_brief(root, ["US0101"])
-            self.assertIn("no critic verdict recorded", text.lower())
-            self.assertIn("no adversarial evidence recorded", text.lower())
-            self.assertIn("not provided", text.lower())    # gate/cost notes absent, named
-
-    def test_brief_refuses_unknown_unit(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._workspace(root)
-            mod = _load()
-            with self.assertRaises(ValueError):
-                mod.signoff_brief(root, ["US9999"])
-
-    def test_SprintReviewBrief_reads_coverage_not_unreviewed(self) -> None:
-        # US0248: a unit with no per-unit verdict but covered by a sprint-level review reads as
-        # reviewed by that pass, never as "(no critic verdict recorded)".
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._workspace(root)
-            mod = _load()
-            mod.record_sprint_review(root, ["US0101"], reviewer="qa-seat", author="builder",
-                                     verdict="APPROVE", findings="full-diff pass; none blocking")
-            text = mod.signoff_brief(root, ["US0101"])
-            self.assertIn("sprint-level review", text.lower())
-            self.assertIn("qa-seat", text)
-            self.assertNotIn("no critic verdict recorded", text.lower())
-            self.assertNotIn("no adversarial evidence recorded", text.lower())
 
 
 def _run_state():
@@ -2204,7 +1742,7 @@ class BriefStatesTheIsolatedCheckoutRuleTests(unittest.TestCase):
 
 class OneIndependenceAuthorityTests(unittest.TestCase):
     """BG0443 + BG0444. There were FOUR independence predicates - `is_independent`,
-    `sprint_covers_independently`, `is_independent_signoff` and a fourth hand-rolled inline in
+    `sprint_covers_independently`, a sign-off predicate since retired, and a fourth inline in
     sprint.py reaching into critic's private `_id`. Correctness depended on each caller
     remembering which combination to AND, nothing checked the four agreed, and twice they did
     not: one required a non-empty reviewer and one did not, and one refused PRE_GATE while the
@@ -2230,8 +1768,6 @@ class OneIndependenceAuthorityTests(unittest.TestCase):
         self.assertFalse(mod.is_independent(row))
         with tempfile.TemporaryDirectory() as d:
             self.assertFalse(mod.sprint_covers_independently(Path(d), "US0001", row))
-            self.assertFalse(mod.is_independent_signoff(
-                Path(d), "US0001", {"principal": "", "author": "alice"}))
 
     def test_the_PRE_GATE_sentinel_is_refused_by_EVERY_predicate(self) -> None:
         """BG0444. `sprint_covers_independently` tested only non-empty-and-distinct, so it
@@ -2242,8 +1778,6 @@ class OneIndependenceAuthorityTests(unittest.TestCase):
         self.assertFalse(mod.is_independent(row))
         with tempfile.TemporaryDirectory() as d:
             self.assertFalse(mod.sprint_covers_independently(Path(d), "US0001", row))
-            self.assertFalse(mod.is_independent_signoff(
-                Path(d), "US0001", {"principal": "bob", "author": mod.PRE_GATE}))
 
     def test_the_predicates_AGREE_across_every_pair(self) -> None:
         """The property the four never had. Whatever the authority says, each predicate says -
@@ -2474,45 +2008,48 @@ class ClaimInventoryTests(unittest.TestCase):
 
 
 class CriticFieldsFileTests(unittest.TestCase):
-    """US0391: the sign-off note reaches the ledger through the shared fields-file loader, so
+    """US0391: critic's free prose reaches the ledger through the shared fields-file loader, so
     prose carrying shell metacharacters is stored verbatim (Python never runs it) rather than
-    swallowed by a shell."""
+    swallowed by a shell. The sign-off note that first carried it is retired (US0919); the
+    supersession reason is the prose critic still takes."""
 
     def _repo(self):
         d = Path(tempfile.mkdtemp(prefix="critic_ff_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
         (d / "sdlc-studio" / "reviews").mkdir(parents=True)
-        return d
+        mod = _load()
+        mod.record_verdict(d, "US0001", "approve", reviewer="operator", author="builder")
+        return mod, d, mod.read_verdicts(d)[0]["date"]
 
     def _run(self, mod, argv):
-        import contextlib, io
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
             rc = mod.main(argv)
         return rc, buf.getvalue()
 
+    def _supersede(self, d, date, fields):
+        return ["supersede", "--unit", "US0001", "--date", date, "--authorised-by", "operator",
+                "--boundary", "operator console", "--fields-file", str(fields), "--root", str(d)]
+
     def test_fields_file_note_is_stored_verbatim_with_shell_metacharacters(self) -> None:
-        import json
-        mod = _load()
-        d = self._repo()
+        mod, d, date = self._repo()
         hazard = "run `git status` and $(whoami) - dangerous on the flag path"
-        (d / "fields.json").write_text(json.dumps({"note": hazard}))
-        rc, _ = self._run(mod, ["signoff", "--unit", "US0001", "--principal", "operator",
-                                "--author", "builder", "--fields-file", str(d / "fields.json"),
-                                "--root", str(d)])
-        self.assertEqual(rc, 0)
-        recorded = mod.signoff_path(d).read_text(encoding="utf-8")
+        (d / "fields.json").write_text(json.dumps({"reason": hazard}))
+        rc, out = self._run(mod, self._supersede(d, date, d / "fields.json"))
+        self.assertEqual(rc, 0, out)
+        self.assertNotIn("metacharacters", out, "the fields-file path crossed no shell")
+        recorded = mod.verdicts_path(d).read_text(encoding="utf-8")
         self.assertIn("`git status`", recorded)     # backtick survived - not executed
         self.assertIn("$(whoami)", recorded)          # command substitution stored verbatim
 
     def test_unknown_field_is_refused_by_the_shared_loader(self) -> None:
-        import json
-        mod = _load()
-        d = self._repo()
-        (d / "bad.json").write_text(json.dumps({"nte": "typo key nobody reads"}))
-        rc, _ = self._run(mod, ["signoff", "--unit", "US0001", "--principal", "operator",
-                                "--author", "builder", "--fields-file", str(d / "bad.json"),
-                                "--root", str(d)])
-        self.assertEqual(rc, 2)                        # refused, not silently ignored
+        mod, d, date = self._repo()
+        before = mod.verdicts_path(d).read_text(encoding="utf-8")
+        (d / "bad.json").write_text(json.dumps({"reasn": "typo key nobody reads"}))
+        rc, out = self._run(mod, self._supersede(d, date, d / "bad.json"))
+        self.assertEqual(rc, 2, out)                   # refused, not silently ignored
+        self.assertIn("reasn", out)
+        self.assertEqual(before, mod.verdicts_path(d).read_text(encoding="utf-8"))
 
 
 class SupersedeTests(unittest.TestCase):
@@ -2666,15 +2203,12 @@ class SupersededGateTests(unittest.TestCase):
                                reviewer="qa-seat", author="builder")
             date = mod.read_verdicts(root)[0]["date"]
             with self.assertRaises(ValueError):
-                mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
-            with self.assertRaises(ValueError):
                 mod.record_supersession(root, "US0001", date=date, reason="mis-filed",
                                         authorised_by="qa-seat", boundary="same session")
-            # nothing retired: the verdict still stands and independence is unchanged
+            # nothing retired: the verdict still stands and the seat still counts as a session
+            # reviewer, so `sprint sign` still refuses it as principal
             self.assertIsNotNone(mod.verdict_for(root, "US0001"))
-            self.assertIn("qa-seat", mod._session_reviewer_ids(root, "US0001"))
-            with self.assertRaises(ValueError):
-                mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
+            self.assertIn("qa-seat", mod.session_reviewer_ids(root, "US0001"))
 
     def test_a_HAND_APPENDED_author_supersession_cannot_retire_a_blocking_REJECT(self) -> None:
         """The fail-open in the honesty gate itself. `record_supersession` refuses to WRITE an
@@ -2821,7 +2355,7 @@ class PrincipalAuthorisedSupersessionTests(unittest.TestCase):
             # nothing written: the verdict still stands and still blocks
             self.assertEqual(mod.read_supersessions(root), [])
             self.assertEqual(mod.verdicts_path(root).read_text(encoding="utf-8"), before)
-            self.assertIn("qa-seat", mod._session_reviewer_ids(root, "US0001"))
+            self.assertIn("qa-seat", mod.session_reviewer_ids(root, "US0001"))
 
     def test_a_principal_authorised_supersession_clears_the_strand(self) -> None:
         """AC2. A verdict row wrongly names the operator as REVIEWER; the operator never reviewed
@@ -2834,19 +2368,15 @@ class PrincipalAuthorisedSupersessionTests(unittest.TestCase):
             mod.record_verdict(root, "US0001", "approve", reviewer="operator", author="builder")
             date = mod.read_verdicts(root)[0]["date"]
             # stranded: the operator reads as an authoring-session reviewer, cannot sign off
-            self.assertIn("operator", mod._session_reviewer_ids(root, "US0001"))
-            with self.assertRaises(ValueError):
-                mod.record_signoff(root, "US0001", principal="operator", author="builder")
+            self.assertIn("operator", mod.session_reviewer_ids(root, "US0001"))
             mod.record_supersession(
                 root, "US0001", date=date,
                 reason="the operator was reviewer of record, not the adversarial critic; "
                        "the pass this row states never ran",
                 authorised_by="operator", boundary="operator console")
-            # the attribution is retired for the gate: the strand is cleared...
-            self.assertNotIn("operator", mod._session_reviewer_ids(root, "US0001"))
-            # ...so the legitimate reviewer of record can now sign off
-            mod.record_signoff(root, "US0001", principal="operator", author="builder")
-            self.assertIsNotNone(mod.signoff_for(root, "US0001"))
+            # the attribution is retired for the gate: the strand is cleared, so the legitimate
+            # reviewer of record can now sign
+            self.assertNotIn("operator", mod.session_reviewer_ids(root, "US0001"))
             # the boundary is recorded on the correction
             self.assertEqual(mod.read_supersessions(root)[0]["boundary"], "operator console")
 
@@ -2870,9 +2400,7 @@ class PrincipalAuthorisedSupersessionTests(unittest.TestCase):
                                             authorised_by=authoriser, boundary=boundary)
             self.assertEqual(mod.read_supersessions(root), [])
             # the gate is unmoved and a self-sign-off stays refused
-            self.assertIn("qa-seat", mod._session_reviewer_ids(root, "US0001"))
-            with self.assertRaises(ValueError):
-                mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
+            self.assertIn("qa-seat", mod.session_reviewer_ids(root, "US0001"))
 
     def test_a_boundaryless_correction_is_refused(self) -> None:
         """The boundary is mandatory - superseding is held to the sign-off's rule, and a
@@ -2914,9 +2442,7 @@ class PrincipalAuthorisedSupersessionTests(unittest.TestCase):
             self._forge(mod, root, mod.read_verdicts(root)[0],
                         authorised_by="qa-seat", boundary="another session")
             self.assertTrue(mod.read_verdicts(root)[0]["superseded"])   # the forge parsed
-            self.assertIn("qa-seat", mod._session_reviewer_ids(root, "US0001"))
-            with self.assertRaises(ValueError):
-                mod.record_signoff(root, "US0001", principal="qa-seat", author="builder")
+            self.assertIn("qa-seat", mod.session_reviewer_ids(root, "US0001"))
 
     def test_a_hand_forged_boundaryless_correction_does_not_clear_the_gate(self) -> None:
         """Read-time backstop, boundary leg: the authoriser here is independent (not the author,
@@ -2933,9 +2459,7 @@ class PrincipalAuthorisedSupersessionTests(unittest.TestCase):
             self._forge(mod, root, row, authorised_by="operator", boundary="")   # no boundary
             self.assertTrue(mod.read_verdicts(root)[0]["superseded"])            # the forge parsed
             # boundaryless: the attribution is NOT retired, so the operator keeps counting
-            self.assertIn("operator", mod._session_reviewer_ids(root, "US0001"))
-            with self.assertRaises(ValueError):
-                mod.record_signoff(root, "US0001", principal="operator", author="builder")
+            self.assertIn("operator", mod.session_reviewer_ids(root, "US0001"))
 
 
 class PlanCriticTests(unittest.TestCase):
@@ -3395,11 +2919,6 @@ class BatchFormTests(_BatchBase):
         self.assertEqual(0, rc, err)
         for unit in self.UNITS:
             self.assertEqual("APPROVE", self.mod.verdict_for(self.root, unit)["verdict"])
-        rc, _, err = self._run(["signoff", "--units", "US0001,US0002,US0003",
-                                "--principal", "operator", "--author", "builder"])
-        self.assertEqual(0, rc, err)
-        for unit in self.UNITS:
-            self.assertIsNotNone(self.mod.signoff_for(self.root, unit), f"{unit} unsigned")
 
     def test_the_open_run_is_the_default_scope_and_an_absent_batch_is_refused(self) -> None:
         rc, _, err = self._run(["record", "--brief", "abcdef123456",
@@ -3669,53 +3188,53 @@ class GhostIdsAreRefusedTests(_BatchBase):
 
 
 class ArgumentCompletenessTests(_BatchBase):
-    """US0557. `critic signoff` needs `--author` and `close --apply-signoff` needs
-    `--principal`; both were learned from a refusal, and the first cost nineteen spawns before
-    the message was read. A refusal has to arrive once, before anything is written, naming
-    everything the command needs."""
+    """US0557. A batch verb's required arguments were learned from a refusal, one flag per
+    round-trip, and the first cost nineteen spawns before the message was read. A refusal has
+    to arrive once, before anything is written, naming everything the command needs. Driven
+    through `evidence`, which needs two (the sign-off verb that first showed it is retired)."""
 
     def test_a_missing_argument_refuses_before_any_unit_is_written(self) -> None:
-        rc, _, err = self._run(["signoff", "--units", "US0001,US0002,US0003",
-                                "--principal", "operator"])
+        rc, _, err = self._run(["evidence", "--units", "US0001,US0002,US0003",
+                                "--reviewer", "qa", "--findings", "probed"])
         self.assertEqual(2, rc, err)
         for unit in self.UNITS:
-            self.assertIsNone(self.mod.signoff_for(self.root, unit),
+            self.assertIsNone(self.mod.evidence_for(self.root, unit),
                               f"{unit} was written despite the refusal")
 
     def test_no_write_is_attempted_not_merely_that_none_landed(self) -> None:
-        """BG0419 AC3. Its siblings assert the POSTCONDITION - `signoff_for(...) is None` - and
+        """BG0419 AC3. Its siblings assert the POSTCONDITION - `evidence_for(...) is None` - and
         that holds equally when every write is ATTEMPTED and every write fails. The claim the
         story makes is about ORDERING: the refusal arrives before anything is written, once,
         naming everything missing. A postcondition cannot express an ordering.
 
-        So the write path is observed directly: `record_signoff` is replaced with a counter, and
-        the assertion is that it was never REACHED. That is the difference between "nothing
+        So the write path is observed directly: `record_evidence` is replaced with a counter,
+        and the assertion is that it was never REACHED. That is the difference between "nothing
         landed" and "nothing was tried", and it is the whole content of the story.
 
         MUTANT: remove the up-front `missing_arguments` refusal from `_run_batch`, so the
         missing argument is discovered per unit instead. This test must redden."""
         calls: list[str] = []
-        real = self.mod.record_signoff
+        real = self.mod.record_evidence
 
         def counting(root, unit, *a, **kw):
             calls.append(str(unit))
             return real(root, unit, *a, **kw)
 
-        self.mod.record_signoff = counting
+        self.mod.record_evidence = counting
         try:
-            rc, _out, err = self._run(["signoff", "--units", "US0001,US0002,US0003",
-                                       "--principal", "operator"])
+            rc, _out, err = self._run(["evidence", "--units", "US0001,US0002,US0003",
+                                       "--reviewer", "qa", "--findings", "probed"])
         finally:
-            self.mod.record_signoff = real
+            self.mod.record_evidence = real
         self.assertEqual(2, rc, err)
         self.assertEqual(calls, [],
                          f"the write path was REACHED {len(calls)} time(s) before the refusal - "
                          f"nothing landed, but the refusal did not arrive first")
 
     def test_the_refusal_names_every_missing_argument(self) -> None:
-        rc, _, err = self._run(["signoff", "--units", "US0001,US0002"])
+        rc, _, err = self._run(["evidence", "--units", "US0001,US0002"])
         self.assertEqual(2, rc)
-        self.assertIn("--principal", err)
+        self.assertIn("--reviewer", err)
         self.assertIn("--author", err,
                       "naming only the first missing argument costs a second round-trip")
 
@@ -3730,7 +3249,7 @@ class ArgumentCompletenessTests(_BatchBase):
         for action in parser._subparsers._group_actions:      # noqa: SLF001 - the only route in
             for verb, sub in action.choices.items():
                 accepted[verb] = {opt for a in sub._actions for opt in a.option_strings}  # noqa: SLF001
-        for verb in ("record", "evidence", "signoff"):
+        for verb in ("record", "evidence"):
             for missing in ([], ["--units", "US0001"]):
                 out, err = io.StringIO(), io.StringIO()
                 with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
@@ -3740,112 +3259,6 @@ class ArgumentCompletenessTests(_BatchBase):
                     with self.subTest(verb=verb, flag=flag):
                         self.assertIn(flag, accepted[verb],
                                       f"{verb} names {flag}, which its parser does not accept")
-
-
-class ASignoffSkipsAUnitThatDeliveredNothingTests(unittest.TestCase):
-    """BG0406's tooling half. `critic signoff --from-run` takes the run's APPROVED BATCH as its
-    scope and wrote a row for every id in it without consulting status. Closing RUN-01KYNKDP
-    wrote three such rows: two bugs reopened precisely because they delivered nothing, and a
-    story reverted to Blocked. The note was batch-scoped so it stated no falsehood about those
-    units - but the ROW reads as approval of work that does not exist, which is the same defect
-    as a status asserting a repair that did not happen."""
-
-    def _repo(self, status: str):
-        td = tempfile.TemporaryDirectory()
-        self.addCleanup(td.cleanup)
-        root = Path(td.name)
-        bugs = root / "sdlc-studio" / "bugs"
-        bugs.mkdir(parents=True)
-        (bugs / "BG0001-a-bug.md").write_text(
-            f"# BG0001: a bug\n\n> **Status:** {status}\n> **Severity:** Medium\n",
-            encoding="utf-8")
-        return root
-
-    def _story_repo(self, status: str):
-        """A STORY, because that is the type whose vocabulary holds `Review`. The first version
-        of this test used a bug - which has no Review status - so `_unit_status` returned
-        "cannot say" and the test passed however the rule behaved. It survived the mutant that
-        restored the deadlock."""
-        td = tempfile.TemporaryDirectory()
-        self.addCleanup(td.cleanup)
-        root = Path(td.name)
-        sd = root / "sdlc-studio" / "stories"
-        sd.mkdir(parents=True)
-        (sd / "US0001-x.md").write_text(
-            f"# US0001: x\n\n> **Status:** {status}\n\n"
-            f"## Acceptance Criteria\n\n- [ ] something\n", encoding="utf-8")
-        return root
-
-    def test_a_unit_AWAITING_signoff_is_eligible(self) -> None:
-        """The deadlock an independent reviewer found. The first version skipped every
-        NON-TERMINAL unit - and `Review` is exactly where this repo's two-role rule HOLDS a unit
-        until the sign-off lands. Skipping it there meant only an already-terminal unit could be
-        signed off, inverting the gate into retrospective paperwork."""
-        mod = _load()
-        root = self._story_repo("Review")
-        state = mod._unit_status(root, "US0001")
-        self.assertEqual("Review", state["status"], "the fixture's status was not read at all")
-        self.assertFalse(state["terminal"], "Review must be non-terminal for this to bite")
-        self.assertIsNone(mod._signoff_withheld(root, "US0001"),
-                          "a story at Review was refused the sign-off that moves it to Done")
-
-    def test_an_undelivered_STORY_is_still_withheld(self) -> None:
-        """The other side, on the same type - so eligibility is about the STATUS and not about
-        the type happening to lack a review state."""
-        mod = _load()
-        root = self._story_repo("Ready")
-        why = mod._signoff_withheld(root, "US0001")
-        self.assertIsNotNone(why, "a story at Ready took a sign-off row")
-        self.assertIn("not been delivered", why)
-
-    def test_a_skip_is_reflected_in_the_exit_code(self) -> None:
-        """The false clean an independent reviewer found: the skip was named on stderr while the
-        summary printed "N unit(s) written" with rc 0 over a record holding fewer. The batch
-        contract's own docstring says acting on nothing and reporting success is a false clean."""
-        import argparse
-        import contextlib
-        import io
-        mod = _load()
-        root = self._story_repo("Ready")
-        args = argparse.Namespace(root=root, unit=["US0001"], units=None, from_run=False,
-                                  principal="Operator", author="agent", delegate=None,
-                                  boundary=None, note="n", fields_file=None, format="text")
-        err = io.StringIO()
-        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
-            rc = mod.cmd_signoff(args)
-        self.assertNotEqual(0, rc,
-                            "every unit was skipped and the command still reported success")
-        self.assertIn("SKIPPED", err.getvalue())
-
-    def test_an_undelivered_unit_is_withheld_and_named(self) -> None:
-        mod = _load()
-        # Statuses the BUG vocabulary actually holds. `Ready` is a story status, so a bug
-        # carrying it reads as "cannot say" - which is correct, and not what this asserts.
-        for status in ("Open", "In Progress"):
-            root = self._repo(status)
-            why = mod._signoff_withheld(root, "BG0001")
-            self.assertIsNotNone(why, f"{status!r} took a sign-off row")
-            self.assertIn("not been delivered", why)
-
-    def test_a_non_terminal_unit_is_skipped_and_named(self) -> None:
-        root = self._repo("Open")
-        state = _load()._unit_status(root, "BG0001")
-        self.assertEqual(state["status"], "Open")
-        self.assertFalse(state["terminal"])
-
-    def test_a_terminal_unit_is_not_skipped(self) -> None:
-        """The positive control: skipping the non-terminal must not skip everything, or the
-        sign-off verb stops working and the guard reads as a clean run."""
-        root = self._repo("Fixed")
-        state = _load()._unit_status(root, "BG0001")
-        self.assertTrue(state["terminal"])
-
-    def test_an_unreadable_unit_says_it_cannot_say(self) -> None:
-        """None means "cannot say", and the caller proceeds. Refusing a sign-off because a file
-        could not be read would make the status check more important than the sign-off."""
-        td = tempfile.TemporaryDirectory()
-        self.addCleanup(td.cleanup)
-        self.assertIsNone(_load()._unit_status(Path(td.name), "BG9999"))
 
 
 class BriefProvenanceTests(unittest.TestCase):
@@ -4237,231 +3650,6 @@ class ReviewRepairTests(unittest.TestCase):
             self.assertIn("pre-existing", passage,
                           f"{rel} still describes coverage as APPROVE-only, which this diff "
                           f"falsified - the same drift the canonical docstring carried")
-
-
-class SignoffPolicyTests(unittest.TestCase):
-    """`review.signoff` decides who may satisfy the reviewer-of-record half.
-
-    Default OPERATOR, always. A project that upgrades must not silently lose its human
-    reviewer: the independence bar is the product's central claim, and a bar that moves
-    without somebody deciding to move it is worth nothing.
-    """
-
-    def _root(self, d):
-        root = Path(d)
-        (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
-            "# US0001: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
-            "> **Affects:** src/a.py\n", encoding="utf-8")
-        # A BRIEFED adversarial verdict: the panel interlock refuses to ratify a review with
-        # no provenance, so a fixture without one would be testing the interlock instead.
-        _load().record_verdict(root, "US0001", "APPROVE", "qa seat", "author",
-                               issues="none blocking", brief="abcdef123456")
-        return root
-
-    def test_the_default_is_operator(self) -> None:
-        """MUTANT: default the policy to `panel`.
-
-        Asserted on the POLICY READER and on the refusal, because a default that is only
-        correct in the reader is not a default the gate honours.
-        """
-        critic = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d)
-            self.assertEqual("operator", critic.signoff_policy(root),
-                             "a project with no setting did not default to operator")
-            with self.assertRaises(ValueError) as caught:
-                critic.record_signoff(root, "US0001", "Lena Marsh", "author",
-                                      panel=["qa", "engineering"])
-        self.assertIn("review.signoff", str(caught.exception),
-                      "the refusal does not name the setting that would allow it")
-
-    def test_panel_is_reached_only_by_explicit_config(self) -> None:
-        """The control. MUTANT: refuse a panel sign-off regardless of config.
-
-        A policy that can never be reached is not opt-in, it is absent.
-        """
-        critic = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d)
-            (root / "sdlc-studio" / ".config.yaml").write_text(
-                "review:\n  signoff: panel\n", encoding="utf-8")
-            self.assertEqual("panel", critic.signoff_policy(root))
-            path = critic.record_signoff(root, "US0001", "Lena Marsh", "author",
-                                         panel=["qa", "engineering"])
-            # Asserted INSIDE the block: the temp directory is gone by the time it exits, so
-            # an exists() check outside is always False and would fail a working implementation.
-            self.assertTrue(path.exists(), "a configured panel sign-off was not recorded")
-            self.assertTrue(critic.is_panel_signoff(critic.signoff_for(root, "US0001")),
-                            "the recorded row does not identify itself as a panel sign-off")
-
-
-class SignoffProvenanceTests(unittest.TestCase):
-    """Who accepted this must never become ambiguous.
-
-    The product's claim is that its records mean something. A panel-signed unit and an
-    operator-signed one are different facts about who took responsibility, and a reader months
-    later cannot re-derive which it was.
-    """
-
-    def _root(self, d):
-        root = Path(d)
-        (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
-            "# US0001: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
-            "> **Affects:** src/a.py\n", encoding="utf-8")
-        (root / "sdlc-studio" / "stories" / "US0002-y.md").write_text(
-            "# US0002: another\n\n> **Status:** Review\n> **Points:** 3\n"
-            "> **Affects:** src/b.py\n", encoding="utf-8")
-        (root / "sdlc-studio" / ".config.yaml").write_text(
-            "review:\n  signoff: panel\n", encoding="utf-8")
-        for uid in ("US0001", "US0002"):
-            _load().record_verdict(root, uid, "APPROVE", "qa seat", "author",
-                                   issues="none blocking", brief="abcdef123456")
-        return root
-
-    def test_panel_and_operator_rows_are_distinguishable(self) -> None:
-        """MUTANT: record a panel sign-off with the same chain an operator's carries.
-
-        Asserted in BOTH directions - the panel row must say panel, and the operator row must
-        NOT - because a marker written onto every row distinguishes nothing.
-        """
-        critic = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d)
-            critic.record_signoff(root, "US0001", "Lena Marsh", "author",
-                                  panel=["qa", "engineering"])
-            critic.record_signoff(root, "US0002", "Darren Benson", "author")
-            panel_row = critic.signoff_for(root, "US0001")
-            operator_row = critic.signoff_for(root, "US0002")
-        self.assertTrue(critic.is_panel_signoff(panel_row),
-                        "a panel sign-off does not identify itself as one")
-        self.assertFalse(critic.is_panel_signoff(operator_row),
-                         "an operator sign-off is being read as a panel one")
-        self.assertIn("qa", panel_row["chain"],
-                      "the panel row does not name the seats that reviewed it")
-
-
-class PanelInterlockTests(unittest.TestCase):
-    """A panel may not ratify a review nobody can prove was properly briefed.
-
-    Without this the panel LAUNDERS missing provenance instead of catching it: the sign-off
-    half would be satisfied by seats whose adversarial half rested on a hand-written prompt
-    carrying neither the charter, the bounded scope, nor the criteria as law.
-    """
-
-    def _root(self, d, brief="abcdef123456"):
-        root = Path(d)
-        (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
-            "# US0001: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
-            "> **Affects:** src/a.py\n", encoding="utf-8")
-        (root / "sdlc-studio" / ".config.yaml").write_text(
-            "review:\n  signoff: panel\n", encoding="utf-8")
-        critic = _load()
-        critic.record_verdict(root, "US0001", "APPROVE", "qa seat", "author",
-                              issues="none blocking", brief=brief)
-        return root
-
-    def test_an_unbriefed_verdict_blocks_the_panel(self) -> None:
-        """MUTANT: drop the provenance check from the panel path."""
-        critic = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, brief="")
-            with self.assertRaises(ValueError) as caught:
-                critic.record_signoff(root, "US0001", "Lena Marsh", "author",
-                                      panel=["qa", "engineering"])
-            msg = str(caught.exception)
-        self.assertIn("provenance", msg.lower(),
-                      "the refusal does not say what is missing")
-        self.assertIn("US0001", msg, "the refusal does not name the unit")
-
-    def test_a_briefed_unit_signs_cleanly(self) -> None:
-        """The control. MUTANT: refuse every panel sign-off regardless of provenance."""
-        critic = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d)
-            path = critic.record_signoff(root, "US0001", "Lena Marsh", "author",
-                                         panel=["qa", "engineering"])
-            self.assertTrue(path.exists(), "a fully briefed unit was refused")
-
-    def test_an_operator_signoff_is_not_subject_to_the_interlock(self) -> None:
-        """A human principal reads the evidence themselves and can see it is unbriefed.
-
-        MUTANT: apply the interlock to every sign-off. That would block the operator from
-        signing off exactly the units they most need to look at, which is the opposite of
-        human-in-the-lead.
-        """
-        critic = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, brief="")
-            path = critic.record_signoff(root, "US0001", "Darren Benson", "author")
-            self.assertTrue(path.exists(),
-                            "an operator sign-off was blocked by the panel interlock")
-
-
-
-class SkippedCountTests(unittest.TestCase):
-    """BG0496: the printed count must equal what the RECORD holds.
-
-    `signoff` over units in a non-signable status printed `14 unit(s) SKIPPED and NOT written`
-    on stderr and `14 unit(s) written` on stdout, over a record holding zero rows. The skip path
-    returns rather than raising, so the batch runner counted it as written. Exit code and stderr
-    were already right, which is worse than both being wrong - the reader who trusts the
-    headline is told the opposite of what happened (LL0008).
-    """
-
-    def _root(self, d, status="Ready"):
-        root = Path(d)
-        (root / "sdlc-studio" / "stories").mkdir(parents=True)
-        (root / "sdlc-studio" / "reviews").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
-            f"# US0001: a unit\n\n> **Status:** {status}\n> **Points:** 3\n"
-            f"> **Affects:** src/a.py\n", encoding="utf-8")
-        return root
-
-    def test_the_printed_count_matches_the_record(self) -> None:
-        """MUTANT: count a skipped unit as written (the shipped behaviour).
-
-        Asserted against the RECORD, not against another number this test computes: the defect
-        was precisely that two numbers in one output disagreed, so the file is the arbiter.
-        """
-        critic = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d)                       # Ready: neither terminal nor awaiting
-            buf, err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
-                rc = critic.main(["signoff", "--units", "US0001",
-                                  "--principal", "Darren Benson", "--author", "an-author",
-                                  "--note", "n", "--root", str(root)])
-            out = buf.getvalue()
-            record = root / "sdlc-studio" / "reviews" / "signoff-record.md"
-            rows = record.read_text(encoding="utf-8").count("| US0001 |") if record.exists() else 0
-        self.assertNotEqual(0, rc, "a wholly skipped batch reported success")
-        self.assertEqual(0, rows, "control: the row should not have been written")
-        self.assertIn("0 unit(s) written", out,
-                      f"the printed count disagrees with the record, which holds {rows} row(s):"
-                      f"\n{out}")
-
-    def test_a_signable_unit_is_still_counted(self) -> None:
-        """The control. MUTANT: subtract every unit, or report zero unconditionally.
-
-        A count that always says zero agrees with an empty record and with nothing else.
-        """
-        critic = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = self._root(d, status="Review")      # awaiting the reviewer of record
-            buf = io.StringIO()
-            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
-                rc = critic.main(["signoff", "--units", "US0001",
-                                  "--principal", "Darren Benson", "--author", "an-author",
-                                  "--note", "n", "--root", str(root)])
-            out = buf.getvalue()
-            record = root / "sdlc-studio" / "reviews" / "signoff-record.md"
-            rows = record.read_text(encoding="utf-8").count("| US0001 |")
-        self.assertEqual(0, rc, f"a signable unit was refused:\n{out}")
-        self.assertEqual(1, rows, "the sign-off row was not written")
-        self.assertIn("1 unit(s) written", out, f"the count does not match the record:\n{out}")
 
 
 def _rejected(mod, root, unit="US0017", issues="[new] alpha broke; [new] beta broke"):
@@ -6427,16 +5615,15 @@ class UnmatchedBriefFingerprintTests(unittest.TestCase):
                              "B carried A's fingerprint and was not marked")
 
     def test_a_marked_row_is_not_counted_as_briefed(self) -> None:
-        """MUTANTS: keep the bare `.strip(' -')` test on the Brief cell in `record_signoff`'s
-        panel interlock, so a marked row still ratifies; strip the marker in `_brief_key` before
-        comparing, so a marked row still keys as briefed.
+        """MUTANT: strip the marker in `_brief_key` before comparing, so a marked row still keys
+        as briefed. (The panel interlock that read the cell too went with the per-unit sign-off.)
 
-        Both readers, each beside the twin whose fingerprint matched: without the twin, a reader
-        that refuses every row passes."""
+        Beside the twin whose fingerprint matched: without the twin, a reader that refuses every
+        row passes."""
         with tempfile.TemporaryDirectory() as d:
             root, mod = Path(d), _load()
             self._workspace(root)
-            self._review_units(root, "US0003", "US0004", "US0005", "US0006")
+            self._review_units(root, "US0003", "US0004")
             # verdict_for, the `_brief_key` observable: a marked approval does not retire a
             # marked rejection carrying the same fingerprint...
             self._record(root, "US0003", "--brief", self.INVENTED, verdict="REJECT",
@@ -6457,32 +5644,6 @@ class UnmatchedBriefFingerprintTests(unittest.TestCase):
             rows = [(r["unit"], r["brief"]) for r in mod.read_verdicts(root)]
             self.assertEqual([("US0003", f"{self.INVENTED} unmatched")] * 2
                              + [("US0004", fp)] * 2, rows, "the fixture's marking is not as set")
-
-            # the panel interlock, through the shipped sign-off verb
-            (root / "sdlc-studio" / ".config.yaml").write_text(
-                "review:\n  signoff: panel\n", encoding="utf-8")
-            self._record(root, "US0005", "--brief", self.INVENTED)
-            _text, fp6 = self._brief(root, "US0006")
-            self._record(root, "US0006", "--brief", fp6)
-            local = root / "sdlc-studio" / ".local"
-            local.mkdir(parents=True, exist_ok=True)
-            (local / "run-state.json").write_text(json.dumps({
-                "schema": 1, "run_id": "RUN-PANEL", "started_at": "2026-09-15T00:00:00Z",
-                "ended_at": None, "outcome": "running", "goal": "done",
-                "batch": ["US0005", "US0006"]}), encoding="utf-8")
-            import persona_resolve  # noqa: PLC0415
-            persona_resolve.signoff_panel(root, record=True)
-            signer = persona_resolve.recorded_signoff_panel(root)["signer"]
-            marked = self._cli(root, "signoff", "--unit", "US0005", "--principal", signer,
-                               "--author", "author", "--panel")
-            self.assertNotEqual(0, marked.returncode, marked.stdout + marked.stderr)
-            self.assertIn("brief provenance", marked.stderr, marked.stdout + marked.stderr)
-            self.assertIsNone(mod.signoff_for(root, "US0005"), "a marked verdict was ratified")
-            twin = self._cli(root, "signoff", "--unit", "US0006", "--principal", signer,
-                             "--author", "author", "--panel")
-            self.assertEqual(0, twin.returncode, twin.stdout + twin.stderr)
-            self.assertIsNotNone(mod.signoff_for(root, "US0006"),
-                                 "the matched twin was not signed")
 
     def test_a_real_fingerprint_is_unmarked(self) -> None:
         """MUTANTS: decide the marker by re-rendering `brief()` at full for each seat rather than

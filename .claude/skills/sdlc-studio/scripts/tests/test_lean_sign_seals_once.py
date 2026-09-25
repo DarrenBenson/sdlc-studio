@@ -103,7 +103,7 @@ def _status(root: Path, uid: str) -> str:
 
 
 def _signoff_rows(root: Path) -> list:
-    path = critic.signoff_path(root)
+    path = root / "sdlc-studio" / "reviews" / "signoff-record.md"
     return [ln for ln in path.read_text(encoding="utf-8").splitlines()
             if ln.startswith("| US")] if path.is_file() else []
 

@@ -29,8 +29,8 @@
 - **Given** a completed run with critic verdicts, gate and mutation results and a recorded forecast
 - **When** the close chain reaches its final step
 - **Then** The printed decision brief carries per-unit deliveries, each unit's verdict + reject history from critic-verdicts.md, gate and mutation results, and forecast vs measured subagent spend - the CR0318 content, composed not hand-written
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_sprint.py -k CloseBrief
-- **Verified:** yes (2026-07-16)
+- **Verify:** manual - retired by US0919: the decision brief was `critic.py signoff-brief`, which is retired; the run's report is the page the operator signs at `sprint sign`
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ### AC3: absent judgement inputs are refusals, never defaults
 
@@ -46,3 +46,4 @@
 | --- | --- | --- |
 | 2026-07-16 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-16 | Claude Fable 5 | Design rung: ACs made executable |
+| 2026-09-25 | US0919 | AC2 retired in the D0259 pattern: the decision brief was `critic.py signoff-brief`, which is retired; the run's report is the page the operator signs at `sprint sign` |

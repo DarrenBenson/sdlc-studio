@@ -859,97 +859,6 @@ class SlotGateLaneTests(unittest.TestCase):
                              "an overlapping re-plan minted a new run instead of re-planning")
 
 
-class SignoffPanelAssignmentTests(unittest.TestCase):
-    """US0643: panel sign-off ships fully built and is unreachable in practice.
-
-    `record_signoff` already refuses a principal equal to the author, refuses one drawn from the
-    unit's recorded reviewers, refuses a signing seat that is also an adversarial seat, and
-    refuses a panel ratifying a verdict with no brief provenance. `persona_resolve.signoff_panel`
-    assigns the two roles disjointly and `critic.py signoff --panel` READS the assignment from
-    the run rather than taking it from the caller. None of that fires unless somebody remembers
-    to run `persona_resolve.py panel --ceremony signoff` by hand first - so a run that forgets it
-    reaches its close and cannot be signed off at all. LL0027: a gate belongs in the command
-    people actually run.
-    """
-
-    def _seats(self, root: Path, roles=("engineering", "product", "qa")) -> None:
-        d = root / "sdlc-studio" / "personas" / "seats"
-        d.mkdir(parents=True, exist_ok=True)
-        for r in roles:
-            (d / f"{r}.md").write_text(f"# A Person - {r.title()} amigo\n\ncharter\n",
-                                       encoding="utf-8")
-
-    def _cfg(self, root: Path, body: str) -> None:
-        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-        (root / "sdlc-studio" / ".config.yaml").write_text(body, encoding="utf-8")
-
-    def _plan(self, root: Path):
-        out, err = io.StringIO(), io.StringIO()
-        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            rc = _load().main(["plan", "--bugs", "Open", "--write", "--no-fetch",
-                               "--root", str(root)])
-        return rc, out.getvalue(), err.getvalue()
-
-    def test_opening_a_run_records_the_signoff_panel(self) -> None:
-        """Mutant: leave the assignment to the operator's memory - the run opens, the close
-        arrives, and `signoff --panel` refuses for want of a record. That is today."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _bug(root, 1, status="Open")
-            self._seats(root)
-            self._cfg(root, "review:\n  signoff: panel\n")
-            rc, out, err = self._plan(root)
-            self.assertEqual(rc, 0, err)
-            state = json.loads(
-                (root / "sdlc-studio" / ".local" / "run-state.json").read_text())
-            panel = state.get("signoff_panel")
-            self.assertTrue(panel, state)
-            self.assertTrue(panel["adversarial"], panel)
-            self.assertNotIn(panel["signer"], panel["adversarial"],
-                             "the signer was drawn from the adversarial set")
-            self.assertIn("sign-off panel assigned", out)
-
-    def test_the_operator_policy_records_no_panel(self) -> None:
-        """The shipped default is `operator`. Mutant: assign unconditionally - every consuming
-        project silently acquires a panel it never decided on, which is the upgrade moving the
-        bar under somebody."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _bug(root, 1, status="Open")
-            self._seats(root)
-            rc, out, err = self._plan(root)
-            self.assertEqual(rc, 0, err)
-            state = json.loads(
-                (root / "sdlc-studio" / ".local" / "run-state.json").read_text())
-            self.assertIsNone(state.get("signoff_panel"), state)
-            self.assertNotIn("sign-off panel", out)
-
-    def test_an_unassignable_panel_refuses_at_plan_time_and_leaves_no_run(self) -> None:
-        """Mutant: swallow the resolution error and open the run anyway - the failure surfaces
-        hours later, at a close that cannot be satisfied, over a batch already delivered. And a
-        HALF-opened run is worse than none: the next plan of any other batch is refused as
-        disjoint against it.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _bug(root, 1, status="Open")
-            self._seats(root)
-            self._cfg(root, "review:\n  signoff: panel\n")
-            # The seat RESOLVER fails - a project whose cards cannot be rendered. Patched one
-            # level BELOW `signoff_panel`, so its own disjointness logic still runs and this
-            # tests the plan's handling of a failure rather than a stub of the thing under test.
-            import persona_resolve as pres
-            self.addCleanup(setattr, pres, "amigo_panel", pres.amigo_panel)
-            def unresolvable(*a, **k):
-                raise pres.RenderError("no seat card could be rendered")
-            pres.amigo_panel = unresolvable
-            rc, out, err = self._plan(root)
-            self.assertEqual(rc, 2, out)
-            self.assertIn("sign-off panel could not be assigned", err)
-            self.assertFalse((root / "sdlc-studio" / ".local" / "run-state.json").exists(),
-                             "a run was left half-opened behind a panel that cannot be built")
-
-
 class SeatWsjfTests(unittest.TestCase):
     """CR0099: seat-scored WSJF ordering, with graceful fallback."""
 
@@ -4267,108 +4176,7 @@ class _CloseReportBase(unittest.TestCase):
 # prints exactly ONE account, the filed report, and that is pinned by
 # PrepareAndSealTests::test_prepare_prints_exactly_one_account_of_the_run. A test that pins
 # removed behaviour is not coverage, it is a second definition of done.
-class CloseBriefTests(unittest.TestCase):
-    """US0198: the decision brief is composed from the committed records - deliveries,
-    verdict + REJECT history, gate and mutation results, forecast vs measured spend.
-
-    US0832 took the brief OFF the close's success path: it was a second account of the run
-    beside the page being signed, and it closed by naming the per-unit `critic.py signoff`
-    route, which is the two-command shape D0213 rejected. The brief itself is unchanged and
-    still has its own verb, so these tests compose it directly. What they no longer assert -
-    and must not - is that a close prints it.
-    """
-
-    def _brief(self, root: Path) -> str:
-        mod = _load()
-        c = _critic_mod()
-        state = mod.run_state.read(root) or {}
-        return c.signoff_brief(root, state.get("batch") or [],
-                               gate_note=f"gate --require-retro RETRO0001: PASS; "
-                                         f"{mod._mutation_note(root)}",
-                               cost_note=mod._cost_note(root, state))
-
-    def _fixture(self, root: Path) -> None:
-        _close_state(root)
-        _close_story(root)
-        _close_retro(root)
-        spec = importlib.util.spec_from_file_location("critic", SCRIPT.parent / "critic.py")
-        c = importlib.util.module_from_spec(spec)
-        sys.modules["critic"] = c
-        spec.loader.exec_module(c)
-        c.record_verdict(root, "US0101", "reject", reviewer="qa-seat", author="builder",
-                         issues="vacuous killing test")
-        c.record_verdict(root, "US0101", "approve", reviewer="qa-seat", author="builder")
-        ev = root / "sdlc-studio" / "retros" / "evidence"
-        ev.mkdir(parents=True, exist_ok=True)
-        (ev / "actuals-2026-07.jsonl").write_text(
-            json.dumps({"id": "US0101", "type": "story", "tokens": 111000,
-                        "model": "m", "project": "p"}) + "\n", encoding="utf-8")
-
-    def test_brief_composed_from_records(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root)
-            text = self._brief(root)
-            self.assertIn("widget frobnicates", text)          # delivery title
-            self.assertIn("REJECT", text)                      # reject history
-            self.assertIn("vacuous killing test", text)
-            self.assertIn("50,000", text)                      # forecast
-            self.assertIn("111,000", text)                     # measured spend
-            self.assertIn("no mutation report", text.lower())  # absent named, not invented
-            for path in ("approve", "hold", "delegate"):
-                self.assertIn(path, text.lower())
-
-    def test_unmeasured_spend_is_named_not_claimed_as_zero(self) -> None:
-        # AC2 honesty: a batch with no telemetry rows must read "not measured, not
-        # zero" - never a zero-spend claim dressed as a measurement.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _close_state(root)
-            _close_story(root)   # no telemetry actuals written
-            _close_retro(root)
-            brief = self._brief(root)
-            self.assertIn("not measured, not zero", brief)
-            self.assertNotIn("tokens measured across", brief)
-
-    def test_red_baseline_mutation_report_named_worthless(self) -> None:
-        # A report whose baseline is red proves nothing; the brief must say so,
-        # never render it as a neutral killed/survived line (closing-critic finding).
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root)
-            rep = {"generated_at": "x", "git_rev": "abc1234", "baseline": "fail",
-                   "summary": {"applied": 25, "killed": 0, "survived": 0, "errors": 25}}
-            p = root / "sdlc-studio" / ".local" / "mutation-report.json"
-            p.write_text(json.dumps(rep), encoding="utf-8")
-            brief = self._brief(root)
-            self.assertIn("WORTHLESS", brief)
-            self.assertNotIn("0 killed / 0 survived", brief)
-
-    def test_mutation_errors_and_truncation_surface(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root)
-            rep = {"generated_at": "x", "git_rev": "abc1234", "baseline": "pass",
-                   "summary": {"applied": 25, "killed": 20, "survived": 2,
-                               "errors": 3, "truncated": 65}}
-            p = root / "sdlc-studio" / ".local" / "mutation-report.json"
-            p.write_text(json.dumps(rep), encoding="utf-8")
-            brief = self._brief(root)
-            self.assertIn("3 errored", brief)
-            self.assertIn("65", brief)   # the truncation, not silent
-
-    def test_brief_includes_mutation_summary_when_report_exists(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._fixture(root)
-            rep = {"generated_at": "x", "git_rev": "abc1234",
-                   "summary": {"applied": 25, "killed": 21, "survived": 3,
-                               "errors": 0, "unviable": 1}}
-            p = root / "sdlc-studio" / ".local" / "mutation-report.json"
-            p.write_text(json.dumps(rep), encoding="utf-8")
-            brief = self._brief(root)
-            self.assertIn("21", brief)                # killed
-            self.assertIn("survived", brief.lower())
+# CloseBriefTests went with `critic.signoff_brief`, which it composed (US0919).
 
 
 def _critic_mod():
@@ -4418,8 +4226,8 @@ class ApplySignoffTests(unittest.TestCase):
                 rc = mod.main(["sign", "--report", "RPT0001", "--retro", "RETRO0001", "--root", str(root)])
             self.assertNotEqual(rc, 0)
             self.assertIn("--principal", err.getvalue())
-            c = _critic_mod()
-            self.assertIsNone(c.signoff_for(root, "US0101"))       # nothing recorded
+            self.assertFalse((root / "sdlc-studio" / "reviews" / "signoff-record.md").exists(),
+                             "a refused sign wrote a sign-off row")
 
     def test_ApplySignoff_resolves_author_from_a_sprint_level_review(self) -> None:
         # US0247 x US0236: a unit covered ONLY by a sprint-level review (no per-unit verdict) must
@@ -5121,6 +4929,17 @@ def _ua_evidence(root: Path, uid: str) -> None:
                            findings="adversarial pass run; none blocking")
 
 
+def _ua_frozen_signoff(root: Path, uid: str) -> None:
+    """A historical row in the frozen sign-off ledger, as the retired `critic signoff` wrote it."""
+    ledger = root / "sdlc-studio" / "reviews" / "signoff-record.md"
+    ledger.parent.mkdir(parents=True, exist_ok=True)
+    ledger.write_text("# Reviewer-of-Record Sign-offs\n\n"
+                      "| Unit | Principal | Chain | Author | Date | Note | Capacity |\n"
+                      "| --- | --- | --- | --- | --- | --- | --- |\n"
+                      f"| {uid} | Darren | - | {_UA_AUTHOR} | 2026-08-01 | - | human |\n",
+                      encoding="utf-8")
+
+
 def _ua_approve(root: Path, uid: str) -> None:
     """An independent delivery APPROVE: the review bar `sprint sign` seals a unit over."""
     import critic
@@ -5540,9 +5359,9 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
         """MUTANT: answer a Review unit on its evidence limbs alone. Every shape refuses: no
         cutoff, below a legacy cutoff, past one, and already signed off - the per-unit sign-off
         and its `review.two_role_after` cutoff were retired (US0916), so nothing a Review unit
-        carries answers it short of its Done transition."""
+        carries answers it short of its Done transition - a row in the frozen sign-off ledger
+        included (US0919)."""
         mod = _load()
-        import critic
         for case, cutoff in (("a", None), ("b", 200), ("c", 100), ("d", 100)):
             with self.subTest(case=case), tempfile.TemporaryDirectory() as d:
                 root = Path(d)
@@ -5552,9 +5371,7 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
                 _ua_retro(root, batch=("US0101",))
                 _ua_evidence(root, "US0101")
                 if case == "c":
-                    critic.record_signoff(root, "US0101", principal="Darren", author=_UA_AUTHOR)
-                    self.assertTrue(critic.is_independent_signoff(
-                        root, "US0101", critic.signoff_for(root, "US0101")))
+                    _ua_frozen_signoff(root, "US0101")
                 got = mod.unanswered_units(root, mod.run_state.read(root))
                 rc, out, err = _ua_cli(mod, root, "stop", "--reason", "x")
                 self.assertNotIn("await a sign-off", out)
@@ -5567,10 +5384,9 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
 
     def test_the_close_holds_a_signed_review_unit_until_it_stands_at_done(self) -> None:
         """MUTANT: `_apply_signoff` hoisted ahead of the `_CLOSE_CHAIN` loop under
-        --apply-signoff; a unit held whenever `critic.signoff_for` returns a row, whatever its
+        --apply-signoff; a unit held whenever the sign-off ledger holds a row, whatever its
         status."""
         mod = _load()
-        import critic
         import transition
         for tree in ("i", "ii"):
             with self.subTest(tree=tree), tempfile.TemporaryDirectory() as d:
@@ -5581,7 +5397,7 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
                 _ua_retro(root, batch=("US0101",))
                 _ua_waive_all(root)
                 _ua_evidence(root, "US0101")
-                critic.record_signoff(root, "US0101", principal="Darren", author=_UA_AUTHOR)
+                _ua_frozen_signoff(root, "US0101")
                 if tree == "i":
                     got = mod.unanswered_units(root, mod.run_state.read(root))
                     self.assertEqual(["US0101"], [h["unit"] for h in got["unanswered"]])
@@ -7082,7 +6898,7 @@ class ClosePreflightTests(unittest.TestCase):
     is read-only, and that it previews the Done gate `sprint sign` will run.
     """
 
-    def _mod(self, root, *, lanes=(), units=None, verdicts=None, evidence=(), signoffs=(),
+    def _mod(self, root, *, lanes=(), units=None, verdicts=None, evidence=(),
              covered=(), checklist=None):
         """sprint module with the gate and critic stubbed, so these run in milliseconds and
         assert the PRE-FLIGHT's composition rather than re-testing the gate.
@@ -7101,8 +6917,7 @@ class ClosePreflightTests(unittest.TestCase):
         ck = {**clean, **(checklist or {})}
         report_mod.checklist = lambda r, rid, **kw: ck
         self.addCleanup(setattr, gate_mod, "run_gate", gate_mod.run_gate)
-        for name in ("verdict_for", "evidence_for", "signoff_for",
-                     "is_independent_signoff", "sprint_review_for",
+        for name in ("verdict_for", "evidence_for", "sprint_review_for",
                      "sprint_covers_independently", "is_independent"):
             self.addCleanup(setattr, critic_mod, name, getattr(critic_mod, name))
         gate_mod.run_gate = lambda *a, **k: {"ok": not lanes, "checks": [
@@ -7117,8 +6932,6 @@ class ClosePreflightTests(unittest.TestCase):
             {"unit": u, "reviewer": "reviewer-a", "author": "author-b",
              "date": "2026-07-29", "findings": "probed the guard paths"}
             if u in evidence else None)
-        critic_mod.signoff_for = lambda r, u: {"principal": "p"} if u in signoffs else None
-        critic_mod.is_independent_signoff = lambda r, u, s: u in signoffs
         critic_mod.sprint_review_for = lambda r, u: None
         critic_mod.sprint_covers_independently = lambda r, u, rev: u in covered
         # The coverage step consults BOTH predicates: `sprint_covers_independently` for the
@@ -7207,7 +7020,7 @@ class ClosePreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",))
+                            evidence=("US0101",), covered=("US0101",))
             rid = self._retro(root)
             res = mod.close_preflight(root, rid)
             self.assertTrue(res["ready"], res["blockers"])
@@ -7229,7 +7042,7 @@ class ClosePreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",))
+                            evidence=("US0101",), covered=("US0101",))
             rid = self._retro(root)
             reported = {"stage": "checklist", "blocking": False,
                         "detail": "goal-seat-reviewed is past its window",
@@ -7249,7 +7062,7 @@ class ClosePreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",))
+                            evidence=("US0101",), covered=("US0101",))
             rid = self._retro(root)
             held = {"stage": "checklist", "blocking": True,
                     "detail": "closing-review is unanswered", "remedy": "answer it"}
@@ -7269,7 +7082,7 @@ class ClosePreflightTests(unittest.TestCase):
             root = Path(d)
             mod = self._mod(root, units=["US0101"],
                             verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",))
+                            evidence=("US0101",))
             # An executable AC that was never verified: `transition -> Done` blocks on it.
             p = root / "sdlc-studio" / "stories" / "US0101-x.md"
             p.write_text(p.read_text(encoding="utf-8")
@@ -7292,7 +7105,7 @@ class ClosePreflightTests(unittest.TestCase):
             root = Path(d)
             mod = self._mod(root, units=["US0101"],
                             verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",))
+                            evidence=("US0101",))
             rid = self._retro(root)
             import artifact as artifact_mod
             self.addCleanup(setattr, artifact_mod, "close", artifact_mod.close)
@@ -7364,7 +7177,7 @@ class ClosePreflightTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",))
+                            evidence=("US0101",), covered=("US0101",))
             rid = self._retro(root)
             self.assertTrue(mod.close_preflight(root, rid)["ready"])
             out, err = io.StringIO(), io.StringIO()
@@ -7427,7 +7240,7 @@ class PreflightChecklistTests(ClosePreflightTests):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",),
+                            evidence=("US0101",), covered=("US0101",),
                             checklist={"items": [{"id": "seat-review", "title": "seat review",
                                                   "value": "not run", "detail": "run it"}],
                                        "outstanding": ["seat-review"]})
@@ -7448,7 +7261,7 @@ class PreflightChecklistTests(ClosePreflightTests):
             root = Path(d)
             novel = "a-row-invented-after-the-preflight-was-written"
             mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",),
+                            evidence=("US0101",), covered=("US0101",),
                             checklist={"items": [{"id": novel, "title": "something new",
                                                   "value": "unanswered", "detail": ""}],
                                        "outstanding": [novel]})
@@ -7471,7 +7284,7 @@ class PreflightChecklistTests(ClosePreflightTests):
             root = Path(d)
             ids = ["one", "two", "three"]
             mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",),
+                            evidence=("US0101",), covered=("US0101",),
                             checklist={"items": [{"id": i, "title": i, "value": "unanswered",
                                                   "detail": ""} for i in ids],
                                        "outstanding": ids})
@@ -7489,7 +7302,7 @@ class PreflightChecklistTests(ClosePreflightTests):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",),
+                            evidence=("US0101",), covered=("US0101",),
                             checklist={"stop_ship": ["BG0999"]})
             rid = self._retro(root)
             res = mod.close_preflight(root, rid)
@@ -7526,7 +7339,7 @@ class PreflightChecklistTests(ClosePreflightTests):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",),
+                            evidence=("US0101",), covered=("US0101",),
                             checklist={"items": [{"id": "waived-row", "title": "a waived row",
                                                   "value": "unanswered",
                                                   "detail": "waived by D0001"}],
@@ -8760,7 +8573,7 @@ class ClosePreflightDriftTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as h:
             root = Path(d)
             mod = self._mod(root, units=["US0101"], verdicts={"US0101": {"verdict": "APPROVE"}},
-                            evidence=("US0101",), signoffs=("US0101",), covered=("US0101",))
+                            evidence=("US0101",), covered=("US0101",))
             rid = self._retro(root)
             with unittest.mock.patch.dict(os.environ, {"HOME": h}):
                 # otherwise ready: without the drift this close has nothing outstanding
@@ -9068,39 +8881,6 @@ class GroomingReportTests(unittest.TestCase):
             line = sprint.render_grooming_report(sprint.grooming_report(root, ["US0001"]))
         self.assertIn("none outstanding", line)
         self.assertNotIn("NOTHING WAS GROOMED", line)
-
-
-class DisclosureTests(unittest.TestCase):
-    """AC2 of US0428: the close is what the operator reads at the moment of the decision, so
-    the disclosure has to appear there and not only in a report they must know to generate."""
-
-    def test_the_close_output_discloses_delegated_signoffs(self) -> None:
-        sprint = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio" / "reviews").mkdir(parents=True)
-            import critic
-            critic.record_verdict(root, "US0001", "approve", reviewer="qa-seat",
-                                  author="builder")
-            critic.record_signoff(root, "US0001", principal="operator", author="builder",
-                                  delegate="qa-seat", boundary="its own agent context")
-            err = io.StringIO()
-            with contextlib.redirect_stderr(err):
-                sprint._disclose_delegated_signoffs(str(root))
-        printed = err.getvalue()
-        self.assertIn("US0001", printed)
-        self.assertIn("NOT by an independent reviewer", printed)
-
-    def test_a_close_with_no_delegated_signoffs_prints_nothing(self) -> None:
-        """The control: a disclosure that fires on every close is noise, and noise is skipped."""
-        sprint = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio" / "reviews").mkdir(parents=True)
-            err = io.StringIO()
-            with contextlib.redirect_stderr(err):
-                sprint._disclose_delegated_signoffs(str(root))
-        self.assertEqual(err.getvalue(), "")
 
 
 class TestStrategyTests(unittest.TestCase):
@@ -14931,14 +14711,12 @@ class CadenceDebtReachesTheCloseTests(unittest.TestCase):
         os.utime(rv / "LATEST.md", (old, old))
         _close_state(root, batch=["US0101"])
         import critic as critic_mod
-        for name in ("verdict_for", "evidence_for", "signoff_for", "is_independent_signoff",
-                     "sprint_review_for", "sprint_covers_independently", "is_independent"):
+        for name in ("verdict_for", "evidence_for", "sprint_review_for",
+                     "sprint_covers_independently", "is_independent"):
             self.addCleanup(setattr, critic_mod, name, getattr(critic_mod, name))
         critic_mod.verdict_for = lambda r, u, phase="delivery": {"verdict": "APPROVE"}
         critic_mod.evidence_for = lambda r, u: {"unit": u, "reviewer": "a", "author": "b",
                                                 "date": "2026-08-02", "findings": "probed"}
-        critic_mod.signoff_for = lambda r, u: {"principal": "p"}
-        critic_mod.is_independent_signoff = lambda r, u, s: True
         critic_mod.sprint_review_for = lambda r, u: None
         critic_mod.sprint_covers_independently = lambda r, u, v: covered
         critic_mod.is_independent = lambda rec: True

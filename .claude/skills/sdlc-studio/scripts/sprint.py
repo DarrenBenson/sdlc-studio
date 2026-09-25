@@ -5715,53 +5715,10 @@ def _close_review_anchor(root, retro, state):
     except OSError as exc:
         return False, f"the review anchor could not be written: {exc}", \
                "check sdlc-studio/reviews/LATEST.md is writable, then re-run close"
-    _disclose_delegated_signoffs(root)
     if run_rung(st) == "design":
         print(render_grooming_report(grooming_report(root, st.get("batch") or [])),
               file=sys.stderr)
     return True, f"review anchor {verb}: {run_id} closed {outcome}", ""
-
-
-def _mutation_note(root) -> str:
-    """The mutation lane's evidence for the brief - read, never invented, and never
-    laundered: a red baseline or an errored run is named as worthless, not rendered
-    as a neutral killed/survived line."""
-    p = Path(root) / "sdlc-studio" / ".local" / "mutation-report.json"
-    if not p.is_file():
-        return ("mutation: no mutation report - run `mutation.py run --since <base ref> "
-                "--test \"<suite>\"` before the close")
-    try:
-        rep = json.loads(p.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return "mutation: report unreadable - re-run mutation.py"
-    s = rep.get("summary", {})
-    if rep.get("baseline") not in (None, "pass"):
-        return (f"mutation: report is WORTHLESS - baseline {rep.get('baseline')!r} "
-                "(tests fail on unmutated code); re-run mutation.py on a clean tree")
-    note = (f"mutation: {s.get('killed', '?')} killed / {s.get('survived', '?')} survived "
-            f"of {s.get('applied', '?')} applied (report at rev {rep.get('git_rev', '?')[:9]})")
-    if s.get("errors"):
-        note += f"; {s['errors']} errored - inspect before trusting the kill rate"
-    if s.get("truncated"):
-        note += f"; {s['truncated']} enumerated mutant(s) beyond the cost ceiling not run"
-    return note
-
-
-def _cost_note(root, state) -> str:
-    """Forecast vs measured subagent spend, from the recorded plan forecast and the
-    telemetry actuals for the batch. Unmeasured units are counted, not glossed."""
-    forecast = state.get("token_forecast")
-    fc = f"{forecast:,} tokens forecast at plan time" if forecast else "no forecast recorded"
-    batch = state.get("batch") or []
-    seen = telemetry.actuals(root)
-    rows = [seen[u] for u in batch if u in seen and seen[u].get("tokens")]
-    if rows:
-        spent = sum(int(r["tokens"]) for r in rows)
-        measured = (f"{spent:,} tokens measured across {len(rows)}/{len(batch)} "
-                    "batch unit(s) (telemetry actuals)")
-    else:
-        measured = f"0/{len(batch)} batch unit(s) have measured tokens - not measured, not zero"
-    return f"{fc}; {measured}"
 
 
 def _retro_path(root, rid: str):
@@ -5972,29 +5929,6 @@ def _oversized_blocks_at(args) -> bool:  # noqa: ARG001 - the rung is deliberate
     are invisible. Written as a function so the asymmetry with the ungroomed leg is stated
     rather than implied by its absence."""
     return True
-
-
-def _disclose_delegated_signoffs(root) -> None:
-    """Print the delegated-agent sign-offs at the CLOSE, not only in the sprint report.
-
-    The close is what the operator reads at the moment of the decision. A disclosure that only
-    reaches a report they would have to know to generate is a disclosure in name - and
-    disclosure is the entire consideration D0059 traded independence for.
-    """
-    try:
-        import critic  # noqa: PLC0415
-        rows = critic.delegated_agent_signoffs(root)
-    except Exception as exc:  # noqa: BLE001 - a close must never die on a log read
-        sdlc_md.debug("sprint._disclose_delegated_signoffs", exc)
-        return
-    if not rows:
-        return
-    print(f"close: {len(rows)} sign-off(s) on this run were made by an agent under the "
-          f"authoring session's control, NOT by an independent reviewer:", file=sys.stderr)
-    for r in rows[:12]:
-        print(f"  {r.get('unit', '?')} via {r.get('chain', '?')}", file=sys.stderr)
-    if len(rows) > 12:
-        print(f"  (+{len(rows) - 12} more)", file=sys.stderr)
 
 
 def _rung_grades(type_: str) -> bool:
@@ -6577,7 +6511,7 @@ def _close_cost(root, state: dict, shipped: list) -> dict:
     zeroed - `close_report` names an absent cost absent, and "not attributable" and "nothing
     spent" are different facts."""
     cost: dict = {}
-    # `token_forecast` is written as a plain INT by the plan (`_cost_note` formats it as one),
+    # `token_forecast` is written as a plain INT by the plan,
     # so `.get("actual")` on it raised AttributeError for every run that carried a forecast -
     # swallowed by the report's advisory `except`, which is why the report went missing rather
     # than complaining. Both shapes are read here: the mapping a later schema may use, and the
@@ -9041,10 +8975,9 @@ def cmd_close(args: argparse.Namespace) -> int:
     # The sign-off BRIEF is gone from this path, and its absence is the point of US0832 AC5.
     # It was a second account of the run - per-unit rows and a cost block of its own, derived
     # from a different root object than the page being signed - and its closing instruction was
-    # the per-unit `critic.py signoff` route, which is the two-command shape D0213 rejected. An
-    # operator reading it would have been told to hand-sign each unit by the very command that
-    # had just filed the one page they are meant to sign. It is still available on its own verb
-    # (`critic.py signoff-brief`) for anyone who wants it; it is no longer PREPARE's last word.
+    # the per-unit sign-off route, which is the two-command shape D0213 rejected. An operator
+    # reading it would have been told to hand-sign each unit by the very command that had just
+    # filed the one page they are meant to sign. Both the brief and that route are retired.
     #
     # AC1: the last line names the ONLY action left. Printed here rather than inside
     # `_file_the_report`, so nothing can be appended after it without moving this line.
@@ -9256,10 +9189,11 @@ def _cascade_after_signature(root, state, units) -> None:
 
 
 def _principal_refusals(root, state, principal: str | None, author_default: str | None) -> list:
-    """Every unit of the batch this principal may not seal, asked of `critic`'s own rule.
+    """Every unit of the batch this principal may not seal: THE principal-independence rule.
 
-    One principal signs the run once, so the question is whether THIS principal is independent of
-    every unit's author - asked before anything is written.
+    One principal signs the run once, so the question is whether THIS principal sits outside the
+    authoring session for every unit - neither the unit's author nor a reviewer recorded on it
+    (`critic.session_reviewer_ids`) - asked before anything is written.
     """
     import critic  # noqa: PLC0415
     if not (principal or "").strip():
@@ -9274,9 +9208,14 @@ def _principal_refusals(root, state, principal: str | None, author_default: str 
             # NOT this check's business. A unit with no recorded author owes a review, not a
             # different principal, and the seal's review bar stops on it with that remedy.
             continue
-        why = critic.signoff_refusal(root, unit, principal, author)
-        if why:
-            out.append(f"{unit}: {why}")
+        if critic.same_identity(principal, author):
+            out.append(f"{unit}: principal {principal!r} is the author - a self-sign-off "
+                       "never clears the gate")
+        elif any(critic.same_identity(principal, rid)
+                 for rid in critic.session_reviewer_ids(root, unit)):
+            out.append(f"{unit}: principal {principal!r} is an authoring-session subagent (a "
+                       "recorded reviewer on this unit) - the reviewer of record must sit "
+                       "outside the author's control")
     return out
 
 
@@ -9805,36 +9744,6 @@ def cmd_plan(args: argparse.Namespace) -> int:
             # drift-free index, and a warning on someone's terminal answers that for nobody.
             if preplan.get("preplan_reconcile"):
                 state = run_state.update(args.root, **preplan)
-            # THE SIGN-OFF PANEL, ASSIGNED BY THE COMMAND THAT OPENS THE RUN. Panel sign-off
-            # ships fully built - the two roles held disjoint, the signer read from the run
-            # rather than named at signing time, the brief-provenance interlock - and is
-            # reachable only if somebody remembers to run `persona_resolve.py panel --ceremony
-            # signoff` by hand first. A run that forgets it cannot sign at all, so the whole
-            # path stays theoretical. That is LL0027: a gate belongs in the command people run.
-            #
-            # REFUSED AT PLAN TIME when the seats cannot supply two disjoint roles, because
-            # discovering that at the close strands a delivered run behind a sign-off nobody can
-            # give. The run is torn down rather than half-opened, exactly as a failed plan write
-            # is below.
-            import critic as critic_mod  # noqa: PLC0415 - deferred, like the close path's
-            if critic_mod.signoff_policy(args.root) == critic_mod.PANEL_MARKER:
-                try:
-                    import persona_resolve  # noqa: PLC0415 - deferred, like the close path's
-                    panel = persona_resolve.signoff_panel(
-                        args.root, skip_personas=getattr(args, "skip_personas", False),
-                        record=True)
-                except Exception as exc:  # noqa: BLE001 - report, never half-open a run
-                    _abandon_open_run(args.root, state)
-                    print(f"plan refused: `review.signoff: panel` is in force and this run's "
-                          f"sign-off panel could not be assigned ({exc}). The run that had just "
-                          f"been opened was removed. Fix the seats, or set `review.signoff: "
-                          f"operator` - a run opened without an assignment cannot be signed off "
-                          f"at all, and that is only discovered at the close.", file=sys.stderr)
-                    return 2
-                state = run_state.read(args.root)
-                adv = ", ".join(s["role"] for s in panel["adversarial"])
-                print(f"sign-off panel assigned: adversarial {adv}; signing "
-                      f"{panel['signer']['role']} - recorded on the run")
         except run_state.DisjointBatchError as exc:
             print(str(exc), file=sys.stderr)
             return 2
@@ -11282,8 +11191,8 @@ def build_parser() -> argparse.ArgumentParser:
     sg.add_argument("--report", default=None, metavar="RPTxxxx",
                     help="the report being signed (default: the one the run names)")
     sg.add_argument("--principal", default=None,
-                    help="the reviewer of record - refused when the authoring session "
-                         "controls it, as `critic.py signoff` refuses it")
+                    help="the reviewer of record - refused when it is a unit's author or a "
+                         "reviewer recorded on it")
     sg.add_argument("--author", default=None, help="the authoring seat, for the independence check")
     sg.add_argument("--retro", default=None, metavar="RETROxxxx")
     sg.add_argument("--root", default=".")
@@ -11327,7 +11236,7 @@ def build_parser() -> argparse.ArgumentParser:
                          "--principal). Story-scoped, idempotent, stops loud at the first refusal")
     cl.add_argument("--principal", default=None,
                     help="the reviewer of record whose approval --apply-signoff fans across the "
-                         "batch (an authoring-session subagent is refused, as `critic signoff` refuses one)")
+                         "batch (a unit's author or a reviewer recorded on it is refused)")
     cl.add_argument("--author", default=None,
                     help="(with --apply-signoff) the author id to record independence against when "
                          "a unit has no recorded critic author; normally read from the unit's verdict")

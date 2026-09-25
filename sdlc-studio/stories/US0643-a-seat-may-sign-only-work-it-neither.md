@@ -33,8 +33,8 @@
 - **When** `sprint plan --write` opens a run
 - **Then** the run state carries the assignment - the adversarial seats and the disjoint signing seat - without any separate command being run
 - **Mutant:** leave the assignment to the operator's memory - a run reaches its close and `signoff --panel` refuses for want of a record, which is today's behaviour
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SignoffPanelAssignmentTests::test_opening_a_run_records_the_signoff_panel
-- **Verified:** yes (2026-08-05)
+- **Verify:** manual - retired by US0919: the sign-off panel, its plan-time assignment and `critic.py signoff --panel` are retired
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ### AC2: a project on the operator policy is unchanged
 
@@ -42,8 +42,8 @@
 - **When** a run is opened
 - **Then** no assignment is recorded and nothing about the plan's output moves, because a project that has not adopted panel sign-off must not acquire one
 - **Mutant:** assign unconditionally - every consuming project silently gains a panel it never decided on
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SignoffPanelAssignmentTests::test_the_operator_policy_records_no_panel
-- **Verified:** yes (2026-08-05)
+- **Verify:** manual - retired by US0919: the sign-off panel, its plan-time assignment and `critic.py signoff --panel` are retired
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ### AC3: an unassignable panel refuses at plan time, not at close time
 
@@ -51,8 +51,8 @@
 - **When** the run is opened under the panel policy
 - **Then** the plan refuses and names the reason, because discovering it at the close strands a delivered run behind a sign-off nobody can give
 - **Mutant:** swallow the resolution error and open the run anyway - the failure surfaces hours later at the gate that cannot be satisfied
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SignoffPanelAssignmentTests::test_an_unassignable_panel_refuses_at_plan_time_and_leaves_no_run
-- **Verified:** yes (2026-08-05)
+- **Verify:** manual - retired by US0919: the sign-off panel, its plan-time assignment and `critic.py signoff --panel` are retired
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ### AC4: each refusal that the CLI can reach is refused for ITS OWN reason
 
@@ -77,8 +77,8 @@
 - **When** `critic.py signoff --panel` is driven for the author signing, and for a signer the run did not assign
 - **Then** each is refused with a message naming ITS OWN reason, and no row is appended
 - **Mutant:** neuter either guard - the case that names it reddens, and only that case. A bare non-zero assertion cannot see the difference, which is the defect this restatement removes
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PanelSignoffCliTests::test_the_refusals_hold_through_the_shipped_verb_with_DISTINCT_messages
-- **Verified:** yes (2026-08-05)
+- **Verify:** manual - retired by US0919: the sign-off panel, its plan-time assignment and `critic.py signoff --panel` are retired
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ### AC5: the positive control - a correctly separated panel signs
 
@@ -86,8 +86,8 @@
 - **When** the same verb runs
 - **Then** the sign-off is recorded and the unit's two-role gate is satisfied
 - **Mutant:** refuse every panel sign-off - AC4 still passes for the wrong reason and only this criterion catches it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PanelSignoffCliTests::test_a_correctly_separated_panel_signs
-- **Verified:** yes (2026-08-05)
+- **Verify:** manual - retired by US0919: the sign-off panel, its plan-time assignment and `critic.py signoff --panel` are retired
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ### AC6: a panel cannot ratify a verdict with no brief provenance
 
@@ -95,8 +95,8 @@
 - **When** the sign-off is attempted through the shipped verb
 - **Then** it is refused, because a panel that ratifies an unprovable review LAUNDERS the missing provenance instead of catching it
 - **Mutant:** drop the interlock - an unbriefed verdict is ratified. Found by mutation: the fixture supplied a brief in every other case, so no test reached this refusal
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PanelSignoffCliTests::test_a_panel_cannot_ratify_a_verdict_with_no_brief_provenance
-- **Verified:** yes (2026-08-05)
+- **Verify:** manual - retired by US0919: the sign-off panel, its plan-time assignment and `critic.py signoff --panel` are retired
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ### AC7: the disjointness guard is tested where it IS reachable (with AC4)
 
@@ -104,8 +104,8 @@
 - **When** the principal is one of the adversarial seats
 - **Then** `record_signoff` refuses, naming the seat - with the positive control beside it, a disjoint principal on the identical call being accepted
 - **Mutant:** delete the raise - this reddens and nothing else in the tree does
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::PanelSignoffCliTests::test_an_adversarial_seat_cannot_ratify_its_own_evidence
-- **Verified:** yes (2026-08-05)
+- **Verify:** manual - retired by US0919: the sign-off panel, its plan-time assignment and `critic.py signoff --panel` are retired
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ## Revision History
 
@@ -113,3 +113,4 @@
 | --- | --- | --- |
 | 2026-08-05 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-08-06 | sdlc-studio | Second review round: US0640 Affects corrected to name config.py and triage_noise.py, where AC4 actually landed; US0643 AC4 restatement narrowed - the distinction is impossible for every state the tooling produces, not by design |
+| 2026-09-25 | US0919 | AC1, AC2, AC3, AC4, AC5, AC6 and AC7 retired in the D0259 pattern: the sign-off panel, its plan-time assignment and `critic.py signoff --panel` are retired |

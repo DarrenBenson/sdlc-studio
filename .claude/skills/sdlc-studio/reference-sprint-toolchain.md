@@ -64,7 +64,6 @@ Read this at plan time. `sprint plan` prints it.
 | Lift the retro's lessons | `retro.py extract --id <id>` | letting a lesson die in one document |
 | Refresh what the next sprint reads | `lessons.py summary` | a digest that no longer matches the log |
 | Record the adversarial pass | `critic.py evidence --unit <id> --reviewer <seat>` | a review that exists only in a transcript |
-| Record the reviewer of record | `critic.py signoff --units <ids> --principal <who>` | claiming a unit is signed |
 | Say where a closed unit's work went | `transition.py annotate --id <id> --field "Closed with findings in"` | leaving the reader to hunt the retro |
 | Close (PREPARE) | `sprint.py close --retro <id>` | transitioning units by hand |
 | Sign the prepared run (SEAL) | `sprint.py sign --report <RPTxxxx> --principal <who>` | `close --apply-signoff`, which is refused |

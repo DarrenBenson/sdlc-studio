@@ -22,27 +22,28 @@
 - **Given** a sign-off whose reviewer of record is a subagent running in a separate context
 - **When** `record_signoff` is called
 - **Then** it is accepted and the row records that the reviewer was a DELEGATED AGENT - D0059 authorises this deliberately, and the record must carry what produced the verdict
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SignoffDelegateTests::test_authoring_session_subagent_is_accepted_as_a_DISCLOSED_delegate
-- **Verified:** yes (2026-07-26)
+- **Verify:** manual - retired by US0919: the per-unit sign-off and its delegated route are retired; `sprint sign` still refuses a principal the authoring session controls
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ### AC2: the delegation is never silent
 
 - **Given** the same sign-off
 - **When** the verdict rows are read back
 - **Then** the delegated marker is present and cannot be omitted - the whole trade D0059 makes is disclosure in place of independence, so a delegated sign-off that reads as an ordinary one destroys the only thing the decision bought
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SignoffDelegateTests::test_verdict_reviewer_is_accepted_as_a_DISCLOSED_delegate
-- **Verified:** yes (2026-07-26)
+- **Verify:** manual - retired by US0919: the per-unit sign-off and its delegated route are retired; `sprint sign` still refuses a principal the authoring session controls
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ### AC3: an author signing their own work is still refused
 
 - **Given** a sign-off whose principal is the unit's own author
 - **When** it is recorded
 - **Then** it is REFUSED - D0059 widens who may act as reviewer of record, and does not touch the self-approval guard
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SignoffDelegateTests::test_self_signoff_refused
-- **Verified:** yes (2026-07-26)
+- **Verify:** manual - retired by US0919: the per-unit sign-off and its delegated route are retired; `sprint sign` still refuses a principal the authoring session controls
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-24 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-25 | US0919 | AC1, AC2 and AC3 retired in the D0259 pattern: the per-unit sign-off and its delegated route are retired; `sprint sign` still refuses a principal the authoring session controls |

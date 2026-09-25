@@ -91,16 +91,12 @@ therefore names two distinct roles:
   **evidence** - findings, reviewer seat, author - with `critic.py evidence` (or
   `--from-verdict` to capture the returned block). Evidence is input to the sign-off,
   never the sign-off.
-- **Reviewer of record** (an independent principal): the operator by default, or a
-  **named delegate in a separate trust boundary** (another session, CI, another human)
-  recorded with `critic.py signoff` - a delegated sign-off carries the chain
-  (delegator -> delegate, boundary named), and a delegate drawn from the authoring
-  session's own subagents is refused loudly. The sign-off request embeds the decision
-  brief (`critic.py signoff-brief`): deliveries, verdict + REJECT history, gate/cost
-  evidence, with approve/hold/delegate paths - an uninformed signature is approval
-  theatre.
+- **Reviewer of record** (an independent principal): the operator, who reads the run's
+  report and signs the run once with `sprint.py sign --principal`. A principal who is a
+  unit's author or a reviewer recorded on it is refused, with nothing written. There is
+  no per-unit sign-off.
 
-All three verbs take a whole batch in one invocation: `--units ID,ID` names them,
+The batch verbs (`record`, `evidence`) take a whole batch in one invocation: `--units ID,ID` names them,
 `--from-run` takes the open run's approved batch, and a repeated `--unit`
 accumulates rather than keeping only its last value. One invocation per verb
 replaces one per unit, and a missing required argument is refused ONCE, before

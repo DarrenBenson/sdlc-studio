@@ -236,7 +236,8 @@ class TwoRoleGoneTests(unittest.TestCase):
             rc, out = _run(transition.main, ["set", SID, "Done", "--root", str(root)])
             self.assertEqual(rc, 0, out)
             self.assertIn("> **Status:** Done", path.read_text(encoding="utf-8"))
-            self.assertFalse(critic.signoff_path(root).exists(), "a sign-off row was written")
+            self.assertFalse((root / "sdlc-studio" / "reviews" / "signoff-record.md").exists(),
+                             "a sign-off row was written")
             for half in RETIRED_HALVES:
                 self.assertNotIn(half, out)
 

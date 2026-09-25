@@ -40,7 +40,16 @@ def _options(parser) -> set[str]:
 
 
 def _critic_repo(d):
+    """A verdict row for `supersede` to retire: critic's prose is the supersession reason (the
+    sign-off note that first carried it is retired, US0919)."""
     (d / "sdlc-studio" / "reviews").mkdir(parents=True)
+    _load("critic").record_verdict(d, "US0001", "approve", reviewer="operator", author="builder")
+
+
+def _critic_argv(d, *prose):
+    from lib import sdlc_md  # noqa: PLC0415
+    return ["supersede", "--unit", "US0001", "--date", sdlc_md.now_date(), "--authorised-by",
+            "operator", "--boundary", "operator console", *prose, "--root", str(d)]
 
 
 def _close_owed_repo(d):
@@ -55,8 +64,7 @@ def _sprint_repo(d):
 
 #: (module name, repo setup, argv builder given root and a note-value) for every converted writer.
 WRITERS = [
-    ("critic", _critic_repo, lambda d, note: ["signoff", "--unit", "US0001", "--principal",
-     "operator", "--author", "builder", "--note", note, "--root", str(d)]),
+    ("critic", _critic_repo, lambda d, note: _critic_argv(d, "--reason", note)),
     ("close_owed", _close_owed_repo, lambda d, note: ["--root", str(d), "baseline", "--note", note]),
     ("sprint", _sprint_repo, lambda d, note: ["goal-verdict", "--verdict", "achieved",
      "--note", note, "--root", str(d)]),
@@ -90,11 +98,11 @@ class FlagPathHazardTests(unittest.TestCase):
             mod = _load(name)
             d = Path(tempfile.mkdtemp(prefix=f"hazard_ff_{name}_"))
             setup(d)
-            fields = {"verdict": "achieved", "note": HAZARD} if name == "sprint" else {"note": HAZARD}
+            fields = ({"verdict": "achieved", "note": HAZARD} if name == "sprint"
+                      else {"reason": HAZARD} if name == "critic" else {"note": HAZARD})
             (d / "f.json").write_text(json.dumps(fields))
             if name == "critic":
-                argv = ["signoff", "--unit", "US0001", "--principal", "operator", "--author",
-                        "builder", "--fields-file", str(d / "f.json"), "--root", str(d)]
+                argv = _critic_argv(d, "--fields-file", str(d / "f.json"))
             elif name == "close_owed":
                 argv = ["--root", str(d), "baseline", "--fields-file", str(d / "f.json")]
             else:

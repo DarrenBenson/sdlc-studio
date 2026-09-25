@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_verify_every_line.py, changelog.d/BG0687.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_verify_every_line.py, changelog.d/BG0687.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
 > **Evidence:** BG0667 round-5 plan repair, RUN-01M2JA6J 2026-09-15.
 > **Created:** 2026-09-15
 > **Created-by:** sdlc-studio file

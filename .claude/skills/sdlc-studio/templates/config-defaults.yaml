@@ -66,10 +66,6 @@ review:
   # unit, with no date cutoff. `coverage` (7.10 or later) is an OPTIONAL dependency: absent,
   # `block` refuses naming it and `report` says so and proceeds.
   line_coverage: off
-  # Who may sign off as reviewer of record: `operator` (the default - a named human the author
-  # does not control) or `panel` (the seats recorded for the run). An unknown value is refused,
-  # never coerced.
-  signoff: operator
   # The priority at or above which a finding BLOCKS. One word, not a list, and the floor is
   # derived from the shared priority order - so a project filing High/Medium/Low and one filing
   # P0..P3 are both covered. An unrecognised value falls back to this default rather than to an

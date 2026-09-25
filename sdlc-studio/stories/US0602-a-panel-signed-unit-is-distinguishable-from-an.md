@@ -22,8 +22,8 @@
 - **Given** one unit signed by a panel and one by the operator
 - **When** the signoff record is read back
 - **Then** each row states which, so the two are distinguishable without inference
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SignoffProvenanceTests::test_panel_and_operator_rows_are_distinguishable
-- **Verified:** yes (2026-08-01)
+- **Verify:** manual - retired by US0919: no per-unit sign-off row is written; the run's signature names its principal
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ### AC2: the sprint report carries the distinction too
 
@@ -39,3 +39,4 @@
 | --- | --- | --- |
 | 2026-08-01 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-25 | US0917 | AC2 retired in the D0259 pattern: the checklist's per-unit sign-off row is deleted |
+| 2026-09-25 | US0919 | AC1 retired in the D0259 pattern: no per-unit sign-off row is written; the run's signature names its principal |

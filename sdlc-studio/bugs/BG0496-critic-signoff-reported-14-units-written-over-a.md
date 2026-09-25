@@ -38,18 +38,19 @@ The sign-off record is the reviewer-of-record half of the two-role gate. A comma
 
 - **Then** a batch in which every unit is skipped prints `0 unit(s) written`, asserted against
   the row count in `signoff-record.md` rather than against another number the test computes
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SkippedCountTests::test_the_printed_count_matches_the_record
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0919: `critic.py signoff` is retired, so no per-unit sign-off count is printed
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ### AC2: a signable unit is still counted
 
 - **Then** a unit awaiting the reviewer of record is written and counted, so the fix
   discriminates rather than reporting zero unconditionally
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SkippedCountTests::test_a_signable_unit_is_still_counted
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0919: `critic.py signoff` is retired, so no per-unit sign-off count is printed
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-02 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-25 | US0919 | AC1 and AC2 retired in the D0259 pattern: `critic.py signoff` is retired, so no per-unit sign-off count is printed |

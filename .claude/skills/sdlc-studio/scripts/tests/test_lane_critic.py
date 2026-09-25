@@ -9,14 +9,13 @@ exactly the state `critic.py brief --tier` sat in for a whole sprint while
 
 So these drive the shipped entry point in a subprocess and assert on exit code and OUTPUT. The
 wiring is the part a library test cannot exercise, which is the whole reason `verify_ac
-lane-check` names a unit that changes a command and has no lane verifier.
+lane-check` names a unit that changes a command and has no lane verifier. US0644's lane (the
+sign-off capacity) went with the per-unit sign-off verb (US0919).
 """
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -49,36 +48,6 @@ class US0642TheClaimInventoryPassIsTierGated(unittest.TestCase):
                          "the light-tier brief carries the pass it exists to omit")
         self.assertNotEqual(full.stdout, light.stdout, "the tier changed nothing that prints")
 
-class US0644TheCapacityReachesTheWrittenRecord(unittest.TestCase):
-    """US0644. A capacity carried only in a return value is a figure nobody can read back. The
-    lane question is whether it reaches the RECORD the next reader opens."""
-
-    def test_a_signoff_record_carries_its_fields_to_disk(self) -> None:
-        """MUTANT: keep the parsed field in memory and never write it - the in-process assertion
-        still passes and the file the next command reads has nothing in it."""
-        # A THROWAWAY workspace, so this asserts on a record it created rather than on the
-        # repository's own. The first cut ran against the real tree with an if/else on the exit
-        # code - BOTH arms passed, so it could not fail either way, which is the exact shape of
-        # test this unit exists to replace.
-        d = Path(tempfile.mkdtemp(prefix="signoff_lane_"))
-        self.addCleanup(__import__("shutil").rmtree, d, ignore_errors=True)
-        (d / "sdlc-studio" / "bugs").mkdir(parents=True)
-        (d / "sdlc-studio" / "reviews").mkdir(parents=True)
-        (d / "sdlc-studio" / "bugs" / "BG9200-x.md").write_text(
-            "# BG9200: a fixture bug\n\n> **Status:** Fixed\n> **Severity:** Medium\n"
-            "> **Points:** 2\n> **Affects:** f.py\n\n## Acceptance Criteria\n\n"
-            "- [x] **AC1** Given a thing, when it happens, then it works.\n"
-            "  - **Verify:** manual a human checks it\n", encoding="utf-8")
-        note = "a lane test asserting the record reaches disk with its fields"
-        proc = _run("critic.py", "signoff", "--unit", "BG9200", "--root", str(d),
-                    "--principal", "Lane Principal", "--author", "lane-author", "--note", note)
-        self.assertEqual(0, proc.returncode,
-                         f"signoff refused in a clean fixture: {proc.stderr[-400:]}")
-        record = d / "sdlc-studio" / "reviews" / "signoff-record.md"
-        self.assertTrue(record.is_file(), "signoff exited 0 and wrote no record at all")
-        text = record.read_text(encoding="utf-8", errors="replace")
-        for field in ("BG9200", "Lane Principal", "lane-author"):
-            self.assertIn(field, text, f"{field!r} never reached the written record")
 
 if __name__ == "__main__":
     unittest.main()

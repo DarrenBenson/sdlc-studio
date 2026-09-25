@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 31 |
+| Open | 32 |
 | In Progress | 0 |
 | Fixed | 616 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
 | Superseded | 22 |
-| **Total** | **775** |
+| **Total** | **776** |
 
 ## All Bugs
 
@@ -134,6 +134,7 @@
 | [BG0773](BG0773-bg0755-did-not-converge-in-review-round-2.md) | BG0755 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0774](BG0774-install-sh-exits-1-after-a-successful-install.md) | install.sh exits 1 after a successful install when the gemini target is chosen without the gemini CLI | Open | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0775](BG0775-us0941-did-not-converge-in-review-round-2.md) | US0941 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0776](BG0776-sprint-sign-principal-seals-the-run-with-an.md) | sprint sign --principal - seals the run with an empty principal | Open | Medium | 2026-09-25 | 2026-09-25 |
 
 ## Archived Releases
 

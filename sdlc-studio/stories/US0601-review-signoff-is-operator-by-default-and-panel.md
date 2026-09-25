@@ -23,19 +23,20 @@
 - **Given** a project with no `review.signoff` setting
 - **When** a sign-off is attempted by a panel
 - **Then** it is refused, because the independence bar must not change under a project during an upgrade
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SignoffPolicyTests::test_the_default_is_operator
-- **Verified:** yes (2026-08-01)
+- **Verify:** manual - retired by US0919: `review.signoff` is retired; the operator signs the run once at `sprint sign`
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ### AC2: panel is reached only by explicit config
 
 - **Given** `review.signoff: panel` recorded in `.config.yaml`
 - **When** the panel signs
 - **Then** it is accepted, and the output states that panel sign-off is in force
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SignoffPolicyTests::test_panel_is_reached_only_by_explicit_config
-- **Verified:** yes (2026-08-01)
+- **Verify:** manual - retired by US0919: `review.signoff` is retired; the operator signs the run once at `sprint sign`
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-01 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-25 | US0919 | AC1 and AC2 retired in the D0259 pattern: `review.signoff` is retired; the operator signs the run once at `sprint sign` |

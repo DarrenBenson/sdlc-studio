@@ -29,16 +29,16 @@
 - **Given** a sign-off delegated by the operator to a named principal in a separate trust boundary
 - **When** the delegated verdict is recorded
 - **Then** Delegated sign-off carries the recorded chain (operator -> delegate, trust boundary named); an authoring-session subagent as delegate is refused loudly
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_critic.py -k Delegate
-- **Verified:** yes (2026-07-16)
+- **Verify:** manual - retired by US0919: the per-unit sign-off, its delegated route and `critic.py signoff-brief` are retired; the operator reads the run's report and signs it once at `sprint sign`
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ### AC3: the sign-off request embeds the decision brief
 
 - **Given** a run ready for the reviewer-of-record ask
 - **When** the sign-off request is composed
 - **Then** The sign-off request embeds the CR0318 decision brief (deliveries, critic REJECTs + repairs, gate/cost evidence) with approve/hold/delegate paths
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_critic.py -k SignoffBrief
-- **Verified:** yes (2026-07-16)
+- **Verify:** manual - retired by US0919: the per-unit sign-off, its delegated route and `critic.py signoff-brief` are retired; the operator reads the run's report and signs it once at `sprint sign`
+- **Verified:** manual (2026-09-25) - retired, superseded by US0919
 
 ## Revision History
 
@@ -46,3 +46,4 @@
 | --- | --- | --- |
 | 2026-07-16 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-16 | Claude Fable 5 | Design rung: ACs made executable |
+| 2026-09-25 | US0919 | AC2 and AC3 retired in the D0259 pattern: the per-unit sign-off, its delegated route and `critic.py signoff-brief` are retired; the operator reads the run's report and signs it once at `sprint sign` |

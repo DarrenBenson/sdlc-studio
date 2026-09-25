@@ -494,38 +494,6 @@ def _ensure_brief_column(path: Path) -> None:
         return
 
 
-def _ensure_trailing_column(path: Path, first_cell: str, name: str, pad: str) -> None:
-    """Widen a table by APPENDING a column, padding existing rows with `pad`.
-
-    The sibling of `_ensure_eighth_column`, which inserts before a named column. Appending is
-    what lets `_read_rows` keep reading a short row: every column this family has gained went on
-    the end, so a row missing trailing cells is one written before the newest column rather than
-    a damaged one. Inserting in the middle would make a short row unreadable - and silently
-    un-signing every historical sign-off is exactly the kind of quiet loss this repository files
-    bugs about.
-    """
-    if not path.exists():
-        return
-    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
-    for i, line in enumerate(lines):
-        if not line.lstrip().startswith(f"| {first_cell} |"):
-            continue
-        if f"| {name} |" in line:
-            return
-        width = len(sdlc_md.table_cells(line))
-        lines[i] = line.rstrip("\n").rstrip() + f" {name} |\n"
-        if i + 1 < len(lines) and set(lines[i + 1].strip()) <= set("|-: "):
-            lines[i + 1] = lines[i + 1].rstrip("\n").rstrip() + " --- |\n"
-        for j in range(i + 2, len(lines)):
-            if not lines[j].lstrip().startswith("|"):
-                break
-            if len(sdlc_md.table_cells(lines[j])) != width:
-                continue
-            lines[j] = lines[j].rstrip("\n").rstrip() + f" {pad} |\n"
-        sdlc_md.atomic_write(path, "".join(lines))
-        return
-
-
 def _ensure_eighth_column(path: Path, name: str) -> None:
     """Widen a seven-column verdict table in place, padding existing rows with `-`.
 
@@ -1058,28 +1026,18 @@ def record_supersession(repo_root: Path | str, unit: str, date: str, reason: str
     return path
 
 
-# --- Two-role review gate ------------------------------------------------------------
+# --- Evidence and repair ledgers ------------------------------------------------------
 # The seat subagent's adversarial pass is EVIDENCE (findings, reviewer seat, author) in
-# its own log; the reviewer-of-record SIGN-OFF is a separate record whose principal the
-# author does not control - the operator by default, or a named delegate in a separate
-# trust boundary, with the delegation chain recorded. Neither substitutes for the other.
+# its own log. The reviewer of record is the operator, who signs the run once at
+# `sprint sign`; the per-unit sign-off ledger is frozen history that nothing reads.
 _EVIDENCE_FILE = "critic-evidence.md"
 _REPAIR_FILE = "repair-record.md"
-_SIGNOFF_FILE = "signoff-record.md"
 _EVIDENCE_HEADER = (
     "# Critic Evidence\n\n"
     "> Append-only. The adversarial reviewer's pass per unit - findings, reviewer seat,\n"
     "> author. Evidence is INPUT to the sign-off, never the sign-off itself.\n\n"
     "| Unit | Reviewer | Author | Date | Findings |\n"
     "| --- | --- | --- | --- | --- |\n")
-_SIGNOFF_HEADER = (
-    "# Reviewer-of-Record Sign-offs\n\n"
-    "> Append-only. The independent principal's sign-off per unit. The principal is\n"
-    "> never the author nor an authoring-session subagent; a delegated sign-off\n"
-    "> records the chain (delegator -> delegate, trust boundary named).\n\n"
-    "> Capacity says WHO judged: `human` for a person, `seat` for a named amigo seat.\n\n"
-    "| Unit | Principal | Chain | Author | Date | Note | Capacity |\n"
-    "| --- | --- | --- | --- | --- | --- | --- |\n")
 _EVIDENCE_COLS = ("unit", "reviewer", "author", "date", "findings")
 #: A REPAIR answers a REJECT. `closed` carries one `<finding> -> <evidence>` item per finding
 #: the repair closes, and `disposition` records fixed-vs-filed per item; both ride on the text
@@ -1088,43 +1046,8 @@ _EVIDENCE_COLS = ("unit", "reviewer", "author", "date", "findings")
 #: which is what `_attributable_phase` then resolves from the date, or reports.
 _REPAIR_COLS = ("unit", "verdict_date", "author", "date", "closed", "outstanding",
                 "phase", "rejection")
-_SIGNOFF_COLS = ("unit", "principal", "chain", "author", "date", "note", "capacity")
-#: In what CAPACITY the reviewer of record signed. A panel sign-off was distinguishable only by
-#: string-matching the `panel(...)` marker inside the free-text chain - a fact a reader can find
-#: and a filter cannot rely on. The point is transparency about WHO judged, not a simulation of
-#: a human having done it, and transparency a machine cannot read is transparency in name only.
-CAPACITY_SEAT = "seat"
-CAPACITY_HUMAN = "human"
-#: What a row written before the column existed reads as. UNKNOWN, never `seat`: the direction
-#: this must not fail in is a machine's signature being taken for a person's, and every such row
-#: predates seat sign-off entirely.
-CAPACITY_UNKNOWN = ""
-#: The THIRD spelling of absent, and the one that bit. A row written before the column reads
-#: `""` (it has no cell); a row PADDED by the migration reads `-`, this file's absent marker.
-#: Both mean "nobody recorded a capacity" and neither may ever read as a seat. A review seat
-#: found that changing the migration pad to `seat` passed 406 tests - and with that pad, the
-#: first new sign-off widens the table and every historical HUMAN sign-off starts reading as a
-#: machine's, which is verbatim the failure this column exists to prevent.
-CAPACITY_ABSENT = (CAPACITY_UNKNOWN, "-")
-
-
-def signed_by_seat(signoff: dict | None) -> bool:
-    """Did a SEAT sign this? THE predicate, so no reader has to know the spellings of absent.
-
-    Stated positively and narrowly: only the exact `seat` marker answers yes. Every other value
-    - the two absent spellings, `human`, or anything a future writer adds - answers no, which is
-    the safe direction: a machine's signature must never be mistaken for a person's, and the
-    cost of the opposite error is only that a seat sign-off reads as unrecorded.
-    """
-    return str((signoff or {}).get("capacity") or "").strip() == CAPACITY_SEAT
-
-
 def evidence_path(repo_root: Path | str) -> Path:
     return Path(repo_root) / "sdlc-studio" / "reviews" / _EVIDENCE_FILE
-
-
-def signoff_path(repo_root: Path | str) -> Path:
-    return Path(repo_root) / "sdlc-studio" / "reviews" / _SIGNOFF_FILE
 
 
 def repair_path(repo_root: Path | str) -> Path:
@@ -1949,7 +1872,7 @@ def _is_principal_superseded(repo_root: Path | str, unit: str, row: dict) -> boo
     """True when a verdict row's attribution is retired by a PRINCIPAL-authorised supersession -
     the only kind that stops the row's reviewer counting toward independence. This re-checks the
     recorded supersession at READ time (record_supersession refuses at write time, but a
-    hand-appended record walks round the tool - the same backstop `is_independent_signoff` is):
+    hand-appended record walks round the tool):
     the correction must name a boundary, its authoriser must not be the row's own author, and the
     authoriser must not itself have done in-session review work on the unit (judged excluding this
     row). An author-reachable or boundary-less correction retires the VERDICT but not the fact
@@ -1964,11 +1887,11 @@ def _is_principal_superseded(repo_root: Path | str, unit: str, row: dict) -> boo
     return authoriser not in _adversarial_worker_ids(repo_root, unit, exclude_row=row)
 
 
-def _session_reviewer_ids(repo_root: Path | str, unit: str) -> set[str]:
+def session_reviewer_ids(repo_root: Path | str, unit: str) -> set[str]:
     """Every reviewer id recorded on the unit's evidence, verdict, and sprint-level-review rows.
-    A delegate or principal drawn from this set is a reviewer signing off its own review (or the
-    author's proxy), and is refused: the reviewer-of-record must differ from BOTH the author and
-    the adversarial reviewer, per-unit or sprint-scope alike.
+    A principal drawn from this set is a reviewer signing off its own review (or the author's
+    proxy), and `sprint sign` refuses it: the reviewer of record must differ from BOTH the
+    author and the adversarial reviewer, per-unit or sprint-scope alike.
 
     A superseded row STILL CONTRIBUTES unless the supersession was PRINCIPAL-authorised
     (`_is_principal_superseded`). Superseding retires a VERDICT; it cannot un-make the historical
@@ -1995,228 +1918,6 @@ def _session_reviewer_ids(repo_root: Path | str, unit: str) -> set[str]:
             ids.add(_id(sr["reviewer"]))
     ids.discard("")
     return ids
-
-
-#: The marker a delegated sign-off carries when the delegate is under the authoring session's
-#: control. It is written into the CHAIN, not a note, because a note is optional and this is the
-#: entire consideration the disclosure trade is built on.
-DELEGATED_AGENT = "DELEGATED AGENT"
-
-
-def delegated_agent_signoffs(repo_root: Path | str) -> list[dict]:
-    """Every recorded sign-off whose chain carries the delegated-agent marker.
-
-    Read by the sprint report and the close so the disclosure reaches the operator at the
-    moment of the decision, rather than sitting in a log they would have to know to open.
-    """
-    rows = _read_rows(signoff_path(repo_root), _SIGNOFF_COLS)
-    return [r for r in rows if DELEGATED_AGENT in (r.get("chain") or "")]
-
-
-#: How a panel sign-off announces itself in the chain cell. A reader months later must be able
-#: to tell WHO accepted a unit without re-deriving it, so the marker is written into the record
-#: rather than inferred from the principal's name looking like a seat.
-PANEL_MARKER = "panel"
-
-#: The policies. `operator` is the default and stays the default: a project that upgrades must
-#: not silently lose its human reviewer, because the independence bar is the central claim and
-#: one that moves without a decision is worth nothing.
-SIGNOFF_POLICIES = ("operator", "panel")
-
-
-def signoff_policy(repo_root: Path | str) -> str:
-    """`review.signoff`, defaulting to `operator`. An unknown value is refused, not coerced."""
-    raw = str(sdlc_md.project_override(repo_root, "review.signoff", "operator") or "operator")
-    value = raw.strip().lower()
-    if value not in SIGNOFF_POLICIES:
-        raise ValueError(f"review.signoff is {raw!r} - expected one of "
-                         f"{', '.join(SIGNOFF_POLICIES)}")
-    return value
-
-
-def is_panel_signoff(row: dict | None) -> bool:
-    """Whether a recorded sign-off was given by a panel rather than by a human principal."""
-    return bool(row) and str(row.get("chain", "")).lstrip().startswith(f"{PANEL_MARKER}(")
-
-
-def _is_the_assigned_signer(root, principal: str, role: str) -> bool:
-    """Whether `principal` IS the seat the run assigned, by either spelling.
-
-    The assignment records a ROLE (`product`); an operator signs with whatever they call that
-    seat - the role, or the human name on its card. Comparing the two raw made a correct
-    sign-off look like a re-roll attempt, which is the guard firing on the honest case.
-    """
-    if _seat_role(principal) == _id(role):
-        return True
-    try:
-        import persona_resolve  # noqa: PLC0415
-        for entry in persona_resolve.amigo_panel(root, (role,)):
-            if _id(entry.get("seat", "")) == _id(principal):
-                return True
-    except Exception:  # noqa: BLE001 - an unresolvable card must not authorise the signer
-        return False
-    return False
-
-
-def _seat_role(who: str) -> str:
-    """The SEAT ROLE behind a principal string, so `Lena Marsh (product)` and `product` compare
-    equal. A name and a role are two spellings of one seat; comparing them raw let a signer
-    drawn from the reviewing panel through under its human name."""
-    raw = str(who or "").strip()
-    if "(" in raw and raw.rstrip().endswith(")"):
-        raw = raw[raw.rfind("(") + 1:-1]
-    return _id(raw)
-
-
-def signoff_refusal(repo_root: Path | str, unit: str, principal: str, author: str,
-                    delegate: str | None = None,
-                    session_ids: set[str] | None = None) -> str | None:
-    """Why this principal may not sign THIS unit off, or None. The independence rule itself.
-
-    ONE rule, two callers. `record_signoff` raises what this returns, and a RUN-LEVEL caller -
-    `sprint.py sign`, which signs a whole batch from one principal - asks it of every unit
-    BEFORE writing anything, so a principal refused on the last unit cannot leave the first
-    ones already signed. Extracted rather than re-implemented there: a second copy of this rule
-    is CR0571 returning in a new command, which is the finding the consult raised against the
-    seal by name.
-    """
-    ids = _session_reviewer_ids(repo_root, unit) if session_ids is None else session_ids
-    if _id(principal) == _id(author):
-        return (f"principal {principal!r} is the author - a self-sign-off "
-                "never clears the gate")
-    if _id(principal) in ids and delegate is None:
-        # Still refused on the DIRECT path: an author naming their own subagent as principal,
-        # with no delegation chain and no boundary, is a self-sign-off wearing another name.
-        # The delegated path is the deliberate, disclosed route.
-        return (f"principal {principal!r} is an authoring-session subagent (a recorded "
-                "reviewer on this unit) - the reviewer of record must sit outside the "
-                "author's control, or be recorded as a disclosed delegation; refused")
-    return None
-
-
-def record_signoff(repo_root: Path | str, unit: str, principal: str, author: str,
-                   delegate: str | None = None, boundary: str | None = None,
-                   note: str = "", panel: list | None = None,
-                   capacity: str | None = None) -> Path:
-    """Append the reviewer-of-record sign-off for a unit.
-
-    Direct form: `principal` (the operator by default) signs; chain is `-`.
-    Delegated form: `delegate` signs on the principal's behalf - `boundary` (the
-    separate trust boundary it runs in) is mandatory and the chain is recorded.
-    Refusals, all loud: a principal or delegate equal to the author; a delegate
-    (or effective principal) that matches any reviewer id already recorded on the
-    unit's evidence/verdict rows - those are the authoring session's own subagents.
-    """
-    if not (principal or "").strip():
-        raise ValueError("sign-off needs a --principal (the reviewer of record)")
-    if not (author or "").strip():
-        raise ValueError("sign-off needs the --author it is independent of")
-    session_ids = _session_reviewer_ids(repo_root, unit)
-    chain = "-"
-    effective = principal
-    if panel:
-        # Refused unless the project DECIDED to allow it. The default is operator, so an
-        # upgrade never moves the bar under anybody.
-        policy = signoff_policy(repo_root)
-        if policy != "panel":
-            raise ValueError(
-                f"a panel sign-off needs `review.signoff: panel` in .config.yaml; this "
-                f"project's policy is {policy!r}. Set it deliberately, or have the reviewer "
-                f"of record sign.")
-        seats = [str(s).strip() for s in panel if str(s).strip()]
-        if not seats:
-            raise ValueError("a panel sign-off needs the adversarial seats it rests on")
-        # Compared on the ROLE, not the spelling. `principal="Lena Marsh (product)"` against a
-        # panel holding `product` is the same seat wearing a name, and comparing raw ids let it
-        # through - the guard was checking two different namespaces.
-        if _seat_role(principal) in {_seat_role(s) for s in seats}:
-            raise ValueError(f"the signing seat {principal!r} is also one of the adversarial "
-                             f"seats - a seat cannot ratify evidence it filed")
-        # THE INTERLOCK. A panel may not ratify a review nobody can prove was properly briefed:
-        # without this the panel LAUNDERS the missing provenance instead of catching it, and
-        # the sign-off half would rest on a hand-written prompt carrying neither the seat
-        # charter, the bounded diff scope, nor the criteria as law.
-        #
-        # Scoped to the PANEL path on purpose. A human principal reads the evidence themselves
-        # and can see it is unbriefed; applying this to them would block the operator from
-        # signing exactly the units most worth their attention, which is the opposite of
-        # human-in-the-lead.
-        verdict = verdict_for(repo_root, unit)
-        if not _brief_key(verdict or {}):
-            raise ValueError(
-                f"the adversarial verdict on {sdlc_md.norm_id(unit)} carries no brief "
-                f"provenance (no fingerprint, or one `record` marked {UNMATCHED_MARK}), so a "
-                f"panel cannot ratify it - nothing distinguishes that review from one run off "
-                f"a hand-written prompt.\n"
-                f"  Re-run it briefed:  critic.py brief --unit {sdlc_md.norm_id(unit)} "
-                f"--seat <seat>\n"
-                f"  This is a TOOLING failure, not a judgement call: fix the provenance and "
-                f"the panel signs.")
-        # Into the CHAIN, not a note: a panel sign-off that reads as an ordinary one destroys
-        # the only thing recording it buys, exactly as the delegated marker does above.
-        chain = f"{PANEL_MARKER}({', '.join(seats)}) -> {principal}"
-    if delegate is not None:
-        if not (boundary or "").strip():
-            raise ValueError("a delegated sign-off needs --boundary - the separate "
-                             "trust boundary the delegate runs in (another session, "
-                             "CI, another human)")
-        if _id(delegate) == _id(author):
-            raise ValueError(f"delegate {delegate!r} is the author - refused")
-        # An authoring-session subagent used to be REFUSED here. The operator ruled otherwise:
-        # a subagent running in its own context is fully authorised as reviewer of record, and
-        # the honest answer to the residual risk is DISCLOSURE rather than prohibition.
-        #
-        # What that buys: unattended and long-running delivery can reach Done at all, which was
-        # impossible on any project with `two_role_after` set - the work stopped at
-        # reviewed-and-ready however good it was.
-        #
-        # What it costs, recorded here so nobody has to rediscover it: the sign-off is
-        # disclosed, not independent. The guard no longer proves the property its name claims,
-        # and the audit trail's value now rests on the disclosure being READ. That is why the
-        # marker is not optional and is written into the chain itself rather than a note - a
-        # delegated sign-off that reads as an ordinary one destroys the only thing the ruling
-        # bought.
-        marker = f" [{DELEGATED_AGENT}]" if _id(delegate) in session_ids else ""
-        chain = f"{principal} -> {delegate} (boundary: {boundary}){marker}"
-        effective = delegate
-    refusal = signoff_refusal(repo_root, unit, effective, author, delegate=delegate,
-                              session_ids=session_ids)
-    if refusal:
-        raise ValueError(refusal)
-    # DERIVED, not asked for, unless the caller states it: a panel signs as a seat and anyone
-    # else signs as a human. A caller that had to remember to pass it would eventually forget,
-    # and the value it forgot would be the one that matters.
-    who = capacity or (CAPACITY_SEAT if panel else CAPACITY_HUMAN)
-    if who not in (CAPACITY_SEAT, CAPACITY_HUMAN):
-        raise ValueError(f"unknown sign-off capacity {who!r} - expected "
-                         f"{CAPACITY_SEAT!r} or {CAPACITY_HUMAN!r}")
-    # The pad is an ABSENT marker, taken from the declared tuple rather than typed here: a
-    # literal at this call site is what let a mutant change it to `seat` unnoticed.
-    _ensure_trailing_column(signoff_path(repo_root), "Unit", "Capacity", CAPACITY_ABSENT[1])
-    return _append_row(signoff_path(repo_root), _SIGNOFF_HEADER,
-                       (sdlc_md.norm_id(unit), _clean(effective), _clean(chain),
-                        _clean(author), sdlc_md.now_date(), _clean(note) or "-", who))
-
-
-def signoff_for(repo_root: Path | str, unit: str):
-    """The latest sign-off row for a unit, or None."""
-    return _latest_for(_read_rows(signoff_path(repo_root), _SIGNOFF_COLS), unit)
-
-
-def is_independent_signoff(repo_root: Path | str, unit: str, signoff: dict | None) -> bool:
-    """Backstop re-check of a recorded sign-off (record_signoff refuses at write time,
-    but a hand-appended row walks round the tool): the principal must be non-empty,
-    differ from the recorded author, and not be an authoring-session reviewer id."""
-    if not signoff:
-        return False
-    # The shared half through the ONE authority; the trust-boundary half stays here, because it
-    # is what makes a SIGN-OFF different from a review - a principal the authoring session
-    # controls is a delegate the author controls, which is the whole point of the boundary.
-    # PRE_GATE is refused here too, and was not before: a sign-off attributed to the migration
-    # sentinel is not a sign-off anybody made.
-    if not independence(signoff.get("principal", ""), signoff.get("author", ""))[0]:
-        return False
-    return _id(signoff.get("principal", "")) not in _session_reviewer_ids(repo_root, unit)
 
 
 # --- Sprint-level review (one full-diff pass covers a batch) ---------------------------
@@ -3240,72 +2941,6 @@ def sprint_covers_independently(repo_root: Path | str, unit: str, review: dict |
     return independence(review.get("reviewer", ""), review.get("author", ""))[0]
 
 
-def signoff_brief(repo_root: Path | str, units: list[str], gate_note: str | None = None,
-                  cost_note: str | None = None) -> str:
-    """The sign-off request with the decision brief inline - per-unit deliveries,
-    each unit's verdict + REJECT history, the adversarial evidence, and the gate/cost
-    evidence - so the principal judges content, not counts. Absent evidence is named
-    absent, never invented. Refuses an unknown unit loudly."""
-    root = Path(repo_root)
-    lines = ["# Reviewer-of-record sign-off request", "",
-             "You are asked to sign off the units below as the independent principal.",
-             "The brief is composed from the committed records - judge it, then reply.", ""]
-    for unit in units:
-        found = sdlc_md.find_by_id(root, unit)
-        if not found:
-            raise ValueError(f"no artefact with id {unit!r} - the brief only covers real units")
-        path, _type = found
-        text = sdlc_md.read_text_safe(path)
-        uid = sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or unit)
-        title = sdlc_md.extract_h1_title(text) or uid
-        points = sdlc_md.extract_field(text, "Points") or "?"
-        status = sdlc_md.extract_field(text, "Status") or "?"
-        lines.append(f"## {uid} ({points} pts, {status}) - {title}")
-        history = [v for v in read_verdicts(root)
-                   if sdlc_md.norm_id(v["unit"]) == uid]
-        # A sprint-level review covering this unit is coverage, not an absence: the brief reads it
-        # as such rather than reporting the unit unreviewed, so the principal sees what the one
-        # full-diff pass judged instead of a false "(no verdict)" for every unit it covered.
-        sprint_rev = sprint_review_for(root, uid)
-        covered = sprint_covers_independently(root, uid, sprint_rev)
-        if history:
-            for v in history:
-                marker = f"- verdict {v['verdict']} by {v['reviewer']} ({v['date']})"
-                if v["verdict"] != APPROVE or (v.get("issues") or "-") != "-":
-                    marker += f": {v['issues']}"
-                marker += _superseded_suffix(v)  # a retired row is shown, and shown retired
-                lines.append(marker)
-        elif covered:
-            lines.append(f"- covered by sprint-level review ({sprint_rev['verdict']}) by "
-                         f"{sprint_rev['reviewer']} ({sprint_rev['date']}) - no per-unit verdict needed")
-        else:
-            lines.append("- (no critic verdict recorded)")
-        ev = evidence_for(root, uid)
-        if ev:
-            lines.append(f"- evidence: adversarial pass by {ev['reviewer']} "
-                         f"({ev['date']}): {ev['findings']}")
-        elif covered:
-            lines.append(f"- evidence: sprint-level full-diff pass by {sprint_rev['reviewer']} "
-                         f"({sprint_rev['date']}): {sprint_rev['findings']}")
-        else:
-            lines.append("- (no adversarial evidence recorded)")
-        lines.append("")
-    lines.append("## Gate evidence")
-    lines.append(gate_note or "(not provided - run gate.py and pass --gate-note)")
-    lines.append("")
-    lines.append("## Cost evidence")
-    lines.append(cost_note or "(not provided - pass --cost-note with forecast vs measured)")
-    lines.append("")
-    lines.append("## Your paths")
-    lines.append("- APPROVE: record with `critic.py signoff --unit <id> --principal "
-                 "\"<you>\" --author <author-id>` per unit")
-    lines.append("- HOLD: name what must change; nothing is recorded")
-    lines.append("- DELEGATE: name a principal in a separate trust boundary: "
-                 "`critic.py signoff ... --delegate <name> --boundary <where>` - "
-                 "the chain is recorded; the authoring session's subagents are refused")
-    return "\n".join(lines)
-
-
 def _id(value: str) -> str:
     """Normalise an author/reviewer id for comparison: case-folded, stripped, with the
     markdown escaping that `_clean` adds on write removed, so `Dani\\_Okafor` and
@@ -3330,8 +2965,8 @@ def independence(reviewer: str, author: str) -> tuple[bool, str]:
     """THE independence test: `(independent, reason)` for a reviewer/author pair.
 
     One authority, because there were four - `is_independent`, `sprint_covers_independently`,
-    `is_independent_signoff`, and a fourth hand-rolled inline in `sprint.py` reaching into this
-    module's private `_id`. Correctness depended on each caller remembering which combination to
+    a sign-off predicate since retired, and a fourth hand-rolled inline in `sprint.py` reaching
+    into this module's private `_id`. Correctness depended on each caller remembering which combination to
     AND, nothing checked that the four agreed, and twice they did not: one required a non-empty
     reviewer and one did not (so an empty reviewer cleared the Done gate, since "" != "alice"),
     and one refused the PRE_GATE sentinel while the module that actually gates Done accepted it.
@@ -4352,7 +3987,6 @@ def batch_units(args: argparse.Namespace, verb: str) -> list[str]:
 BATCH_REQUIRED: dict = {
     "record": (("author", "--author"),),
     "evidence": (("reviewer", "--reviewer"), ("author", "--author")),
-    "signoff": (("principal", "--principal"), ("author", "--author")),
 }
 
 
@@ -4362,7 +3996,7 @@ def missing_arguments(args: argparse.Namespace, verb: str) -> list[str]:
             if not str(getattr(args, attr, "") or "").strip()]
 
 
-def _run_batch(args: argparse.Namespace, verb: str, write, skipped=None) -> int:
+def _run_batch(args: argparse.Namespace, verb: str, write) -> int:
     """Resolve the batch, refuse ONCE for anything missing, then write every unit.
 
     Both refusals happen before the first write, so a bad invocation costs one message rather
@@ -4408,21 +4042,13 @@ def _run_batch(args: argparse.Namespace, verb: str, write, skipped=None) -> int:
             print(f"{verb} refused for {unit}: {exc}", file=sys.stderr)
         else:
             written.append(unit)
-    # A unit the writer SKIPPED raised nothing, so it landed in `written` and was counted -
-    # the record held zero rows while the line said 14. The exit code and the stderr list were
-    # already right, which is worse than both being wrong: a reader who trusts the headline
-    # number is told the opposite of what happened (LL0008).
-    if skipped:
-        skipped_ids = {str(s).split(" ", 1)[0] for s in skipped}
-        written = [u for u in written if sdlc_md.norm_id(u) not in
-                   {sdlc_md.norm_id(s) for s in skipped_ids}]
     print(f"{verb}: {len(written)} unit(s) written"
           + (f" ({', '.join(written)})" if written else "")
           + (f"; {len(failed)} REFUSED ({', '.join(failed)})" if failed else ""))
     if not failed:
         return 0
     # Two different facts, two different codes. Nothing written is a REFUSAL (2) - the code
-    # the single-unit form has always returned for a self-signoff or a bad identity, and the
+    # the single-unit form has always returned for a bad identity, and the
     # one a caller keys on. Something written alongside a refusal is a PARTIAL batch (1),
     # which is neither: the caller has to look at what landed before deciding what to re-run.
     return 2 if not written else 1
@@ -4635,66 +4261,6 @@ def cmd_evidence(args: argparse.Namespace) -> int:
     return _run_batch(args, "evidence", write)
 
 
-def cmd_signoff(args: argparse.Namespace) -> int:
-    import file_finding  # noqa: PLC0415 - the shared prose-fields loader, as elsewhere
-    try:
-        fields = file_finding.resolve_prose_fields(
-            getattr(args, "fields_file", None), {"note": args.note}, allowed=("note",))
-    except ValueError as exc:
-        print(f"signoff refused: {exc}", file=sys.stderr)
-        return 2
-
-    skipped: list[str] = []
-
-    def write(unit: str) -> None:
-        # A sign-off row against a unit whose DELIVERY WAS WITHDRAWN reads as approval of work
-        # that does not exist. The first version skipped every NON-TERMINAL unit, which
-        # deadlocked the repo's central gate: `Review` is exactly where the two-role rule holds
-        # a unit UNTIL this sign-off lands, so refusing it there meant only an already-terminal
-        # unit could be signed off - inverting the gate into retrospective paperwork.
-        why = _signoff_withheld(args.root, unit)
-        if why:
-            skipped.append(f"{sdlc_md.norm_id(unit)} ({why})")
-            print(f"sign-off SKIPPED for {sdlc_md.norm_id(unit)}: {why}", file=sys.stderr)
-            return
-        panel = None
-        if getattr(args, "panel", False):
-            # READ from the run, never taken from the caller. A --panel that accepted seats on
-            # the command line would put the re-roll back: a caller could name whichever seats
-            # suited the answer and the record would show nothing amiss. The assignment is a
-            # fact about the run, so it is looked up, not supplied.
-            import persona_resolve  # noqa: PLC0415
-            rec = persona_resolve.recorded_signoff_panel(args.root)
-            panel = list(rec.get("adversarial") or [])
-            signer = str(rec.get("signer") or "").strip()
-            if signer and not _is_the_assigned_signer(args.root, args.principal, signer):
-                raise ValueError(
-                    f"the run assigned the {signer!r} seat as signer, but the sign-off names "
-                    f"{args.principal!r}. Sign as the assigned seat - by its role or by the "
-                    f"name on its card - or re-assign it on the record. A signer chosen at "
-                    f"signing time is the re-roll this reads the run to prevent.")
-        path = record_signoff(args.root, unit, args.principal, args.author,
-                              delegate=args.delegate, boundary=args.boundary,
-                              note=fields.get("note", ""), panel=panel)
-        print(f"sign-off recorded for {sdlc_md.norm_id(unit)} -> {path}")
-        if panel:
-            # US0601 AC2: the output SAYS panel sign-off is in force. A policy that changes who
-            # may sign and prints nothing different is indistinguishable from the default.
-            print(f"  PANEL sign-off in force (review.signoff: panel) - adversarial seats "
-                  f"{', '.join(panel)}, signed by {args.principal}.")
-
-    rc = _run_batch(args, "signoff", write, skipped=skipped)
-    if skipped:
-        # The COUNT and the EXIT CODE must agree with the record. The first version named the
-        # skip on stderr and still printed "N unit(s) written" with rc 0 over a record holding
-        # fewer - the same false clean the batch contract exists to prevent.
-        print(f"signoff: {len(skipped)} unit(s) SKIPPED and NOT written: "
-              f"{', '.join(skipped)} - the count above covers only what was recorded",
-              file=sys.stderr)
-        return rc or 3
-    return rc
-
-
 #: Statuses that mean "delivered, awaiting the reviewer of record" - the state a sign-off EXISTS
 #: to resolve. Matched by name so a project renaming its review status keeps working.
 #:
@@ -4704,50 +4270,6 @@ def cmd_signoff(args: argparse.Namespace) -> int:
 #: One owner, one name, and a caller that breaks loudly if it ever moves.
 def is_awaiting_signoff(status: str) -> bool:
     return "review" in (status or "").strip().lower()
-
-
-def _is_awaiting_signoff(status: str) -> bool:
-    """Deprecated private alias. Use `is_awaiting_signoff`."""
-    return is_awaiting_signoff(status)
-
-
-def _signoff_withheld(root, unit: str) -> str | None:
-    """Why this unit must not take a sign-off row, or None when it may.
-
-    Withheld only for an undelivered unit, never for one merely unfinished-looking: a status
-    that is neither terminal nor awaiting sign-off means the work has not been delivered. A
-    reopen moves the status off terminal, so it is caught here too.
-
-    `Review` is explicitly eligible. That is the whole point of the gate.
-    """
-    state = _unit_status(root, unit)
-    if state is None:
-        return None                     # cannot say is not the same as not delivered
-    if state["terminal"] or _is_awaiting_signoff(state["status"]):
-        return None
-    return (f"its status is {state['status']!r}, which is neither terminal nor awaiting "
-            f"sign-off - the work has not been delivered")
-
-
-def _unit_status(root, unit: str) -> dict | None:
-    """`{"status", "terminal"}` for a unit, or None when it cannot be read.
-
-    None means "cannot say", and the caller proceeds: refusing a sign-off because a file could
-    not be read would make the status check more important than the sign-off it guards."""
-    try:
-        found = sdlc_md.find_by_id(Path(root), unit)
-        if not found:
-            return None
-        path, type_ = found
-        text = sdlc_md.read_text_safe(path)
-        vocab = sdlc_md.status_vocab(type_, Path(root))
-        status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
-        if not status:
-            return None
-        return {"status": status, "terminal": sdlc_md.is_terminal_status(type_, status)}
-    except Exception as exc:  # noqa: BLE001 - cannot say is not the same as not terminal
-        sdlc_md.debug("critic._unit_status", exc)
-        return None
 
 
 def cmd_sprint_review(args: argparse.Namespace) -> int:
@@ -4782,20 +4304,6 @@ def cmd_sprint_review(args: argparse.Namespace) -> int:
     for unit in units:
         if notice := escalation_notice(args.root, unit):
             print(notice)
-    return 0
-
-
-def cmd_signoff_brief(args: argparse.Namespace) -> int:
-    units = [u.strip() for u in args.units.split(",") if u.strip()]
-    if not units:
-        print("signoff-brief refused: --units needs at least one unit id", file=sys.stderr)
-        return 2
-    try:
-        print(signoff_brief(args.root, units, gate_note=args.gate_note,
-                            cost_note=args.cost_note))
-    except ValueError as exc:
-        print(f"signoff-brief refused: {exc}", file=sys.stderr)
-        return 2
     return 0
 
 
@@ -4839,8 +4347,12 @@ def _superseded_suffix(verdict: dict) -> str:
 
 
 def cmd_supersede(args: argparse.Namespace) -> int:
+    import file_finding  # noqa: PLC0415 - the shared prose-fields loader, as elsewhere
     try:
-        path = record_supersession(args.root, args.unit, args.date, args.reason,
+        reason = file_finding.resolve_prose_fields(
+            getattr(args, "fields_file", None), {"reason": args.reason},
+            allowed=("reason",)).get("reason", "")
+        path = record_supersession(args.root, args.unit, args.date, reason,
                                    args.authorised_by, args.boundary, reviewer=args.reviewer,
                                    verdict=args.verdict)
     except (OSError, ValueError) as exc:
@@ -4949,33 +4461,6 @@ def build_parser() -> argparse.ArgumentParser:
     rp.add_argument("--phase", default="delivery", choices=("delivery", "plan-review"))
     rp.add_argument("--root", default=".")
     rp.set_defaults(func=cmd_repair)
-    so = sub.add_parser("signoff", help="Record the reviewer-of-record sign-off "
-                                        "(independent principal; optional named delegate with chain).")
-    so.add_argument("--unit", action="append", metavar="ID",
-                    help="a unit id; repeatable, and a comma-separated list is accepted")
-    so.add_argument("--units", action="append", metavar="ID[,ID...]",
-                    help="unit ids for a whole batch in one invocation; repeatable")
-    so.add_argument("--from-run", dest="from_run", action="store_true",
-                    help="take the open run's approved batch as the scope; refused when no run is open")
-    so.add_argument("--principal",
-                    help="the reviewer of record (the operator by default)")
-    so.add_argument("--author")
-    so.add_argument("--delegate", default=None,
-                    help="a named delegate signing on the principal's behalf")
-    so.add_argument("--boundary", default=None,
-                    help="the delegate's separate trust boundary (required with --delegate)")
-    so.add_argument("--panel", action="store_true",
-                    help="sign as the PANEL assigned to this run (requires `review.signoff: "
-                         "panel`). The seats are READ from the run's recorded assignment, never "
-                         "supplied here - a caller-named panel is the re-roll the record exists "
-                         "to prevent.")
-    so.add_argument("--note", default="")
-    so.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
-                    help="read the sign-off note from a JSON object ({\"note\": \"...\"}) instead "
-                         "of --note, so prose carrying shell metacharacters is stored verbatim "
-                         "rather than interpreted by the shell")
-    so.add_argument("--root", default=".")
-    so.set_defaults(func=cmd_signoff)
     sr = sub.add_parser("sprint-review", help="Record one adversarial full-diff review covering "
                                               "a batch of units - coverage for the per-unit "
                                               "critiqued gate.")
@@ -4990,20 +4475,17 @@ def build_parser() -> argparse.ArgumentParser:
     sr.add_argument("--base", default=None, help="the diff base ref the review covered (advisory)")
     sr.add_argument("--root", default=".")
     sr.set_defaults(func=cmd_sprint_review)
-    sb = sub.add_parser("signoff-brief", help="Print the sign-off request with the "
-                                              "decision brief inline (deliveries, verdict history, evidence).")
-    sb.add_argument("--units", required=True, help="comma-separated unit ids")
-    sb.add_argument("--gate-note", dest="gate_note", default=None)
-    sb.add_argument("--cost-note", dest="cost_note", default=None)
-    sb.add_argument("--root", default=".")
-    sb.set_defaults(func=cmd_signoff_brief)
     sp = sub.add_parser("supersede", aliases=["correct"],
                         help="Retire a verdict row that records an event which did not "
                              "happen, by appending a supersession record naming the row, "
                              "the reason and the authoriser. The row itself stays.")
     sp.add_argument("--unit", required=True)
     sp.add_argument("--date", required=True, help="the retired row's Date cell")
-    sp.add_argument("--reason", required=True, help="why the row records something untrue")
+    sp.add_argument("--reason", default=None, help="why the row records something untrue")
+    sp.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
+                    help="read the reason from a JSON object ({\"reason\": \"...\"}) instead of "
+                         "--reason, so prose carrying shell metacharacters is stored verbatim "
+                         "rather than interpreted by the shell")
     sp.add_argument("--authorised-by", dest="authorised_by", required=True,
                     help="who authorised the correction - a principal independent of the "
                          "author, never the row's own author nor an in-session reviewer")
@@ -5027,14 +4509,27 @@ def build_parser() -> argparse.ArgumentParser:
 #: The verbs that once took `--phase`; `repair` keeps its own until the repair ledger goes.
 _PHASELESS_VERBS = ("record", "brief", "supersede", "correct", "show")
 
+#: Verbs removed from the parser, each refused BY NAME. Kept out of the parser itself so neither
+#: `--help` nor the derived command surface lists them.
+RETIRED_VERBS = {
+    "signoff": "the operator signs the run once with `sprint.py sign`, and no per-unit "
+               "sign-off row is written",
+    "signoff-brief": "the operator reads the run's report and signs it once with "
+                     "`sprint.py sign`",
+}
+
+
+def _verb(argv: list[str]) -> str:
+    """The subcommand: the first bare word that is not the value of a leading `--root`."""
+    return next((a for i, a in enumerate(argv) if not a.startswith("-")
+                 and (i == 0 or argv[i - 1] != "--root")), "")
+
 
 def _plan_phase_retired(argv: list[str]) -> str | None:
     """The refusal for a `--phase` handed to a verdict verb, or None. Plan review is retired, so
     every verdict is a delivery verdict and the flag has nothing left to choose. Named rather
     than left to argparse, whose "unrecognized arguments" would not say why."""
-    # the subcommand: the first bare word that is not the value of a leading `--root`
-    verb = next((a for i, a in enumerate(argv) if not a.startswith("-")
-                 and (i == 0 or argv[i - 1] != "--root")), "")
+    verb = _verb(argv)
     if verb in _PHASELESS_VERBS and any(a == "--phase" or a.startswith("--phase=")
                                         for a in argv):
         return (f"{verb} refused: plan review is retired - every verdict is a delivery "
@@ -5044,6 +4539,10 @@ def _plan_phase_retired(argv: list[str]) -> str | None:
 
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else list(argv)
+    if (verb := _verb(argv)) in RETIRED_VERBS:
+        print(f"error: `critic.py {verb}` is retired - {RETIRED_VERBS[verb]}. Nothing was "
+              f"written.", file=sys.stderr)
+        return 2
     if why := _plan_phase_retired(argv):
         print(why, file=sys.stderr)
         return 2
