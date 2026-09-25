@@ -112,8 +112,9 @@ TRY_TAG_RE = re.compile(r"^\[\s*(?:(LC-\d{3,})|new\s*:([^\]]*))\s*\]\s*(.*)$", r
 #: its author meant to count. Prose is not: a leading link or checkbox, a code named in passing,
 #: or a sentence opening on the word "New".
 TRY_TAGLIKE_RE = re.compile(r"^\s*(?:[\[(*]\W*)?LC(?:\b|\d)|^\s*[\[(*]\W*new\b", re.IGNORECASE)
-#: The unit a repeat happened on: the first story, bug or CR the Try item names.
-TRY_UNIT_RE = re.compile(r"\b((?:US|BG|CR)\d{4})\b")
+#: The unit a repeat happened on: the first story, bug or CR the Try item names, in either id
+#: era, through the shared id grammar.
+TRY_UNIT_RE = sdlc_md.cited_id_re(("US", "BG", "CR"))
 
 # The sections a retro written before Keep/Stop/Try carries. Those retros are history, and are
 # still validated against the shape they were written in.
@@ -169,12 +170,14 @@ PLACEHOLDER_RE = re.compile(r"\{\{.*?\}\}")
 # durable form is a recorded lesson. Refusing to accept one would push those findings toward a
 # decline, which loses the lesson, or toward a make-work CR, which is the noise the decline path
 # exists to prevent. It is no cheaper to game than declining, which is already free.
-ARTEFACT_ID_RE = re.compile(r"\b((?:CR|BG|US|RFC|EP|LL)-?\d{4})\b", re.IGNORECASE)
-# A Batch line names delivery units in either id era: the v2 `US0101`, or the v3 ULID form
-# (`US-01M3CVPV`), which a run's batch carries normalised (`US01M3CVPV`). The v2-only grammar
-# read a fresh v3 project's whole batch as empty, so its report measured nothing.
-BATCH_ID_RE = re.compile(
-    r"\b((?:CR|BG|US|RFC|EP|LL)(?:(?-i:-?[0-9A-HJKMNP-TV-Z]{8,})|-?\d{4}))\b", re.IGNORECASE)
+#
+# Every id the retro reads - a disposition, a carried row, a Batch unit - is read through the
+# grammar `sdlc_md` owns, in both id eras: the v2 `US0101` and the v3 ULID, bare
+# (`US-01M3CVPV`) or normalised (`US01M3CVPV`), as a run's batch carries it. The disposition and
+# carried-row reader used to be a four-digit copy, so a v3 project's ULID ids there read as
+# naming nothing. It reads only the families a finding is filed as, so a `SC2086` ShellCheck
+# code or a `TS2345` TypeScript error cited in a disposition is prose, not a filing.
+ARTEFACT_ID_RE = BATCH_ID_RE = sdlc_md.cited_id_re(("CR", "BG", "US", "RFC", "EP", "LL"))
 DECLINED_RE = re.compile(r"^\s*declined\s*:\s*(.+\S)\s*$", re.IGNORECASE)
 
 # The third disposition: a finding FIXED within the sprint, carrying the commit or unit that
@@ -472,7 +475,9 @@ def try_class(item: str) -> dict | None:
                              f"lists them) or `[new: <class name>] Rule. Behaviour.`")
         return None
     code, spec, rest = m.group(1), m.group(2), " ".join(m.group(3).split())
-    unit = (TRY_UNIT_RE.search(rest) or [None, ""])[1]
+    # Normalised, as the critic's hit on the same unit is (`critic.cited_lessons`): a Try item
+    # and a REJECT naming `US-01M3CVPV` are one repeat, not two, when the class counts them.
+    unit = sdlc_md.norm_id(hit.group(1)) if (hit := TRY_UNIT_RE.search(rest)) else ""
     if code:
         return {"kind": "hit", "code": code.upper(), "unit": unit}
     name, _bar, phases = spec.partition("|")

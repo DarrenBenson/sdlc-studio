@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import errno
+import functools
 import json
 import os
 import re
@@ -1245,6 +1246,40 @@ ANY_ID_SEARCH_RE = re.compile(
         ")(?:" + _V3_SUFFIX,
         "|" + "|".join(_META_PREFIXES) + ")(?:" + _V3_SUFFIX, 1),
     ID_SEARCH_RE.flags)
+
+#: A v3 id as `norm_id` leaves it, the dash stripped (`US01M3CVPV`): the form a run record and
+#: a retro's Batch line carry. With no dash, the suffix's first character is all that separates
+#: an id from an uppercase word (`CRXYZ12345`). A ULID opens on its 48-bit timestamp, whose
+#: leading base32 character is 0-7, so the normalised suffix must open on one.
+_V3_NORM_SUFFIX = r"(?-i:[0-7][0-9A-HJKMNP-TV-Z]{7,})"
+
+#: An id as a record CITES it - a retro's disposition, its carried known-issue rows, its Batch
+#: line. `ID_SEARCH_RE` with two splices, built as `ANY_ID_SEARCH_RE` is so the pipeline
+#: prefixes and both id eras follow it: the `LL` lesson prefix (a lesson is a disposition) and
+#: the normalised v3 form. Group 1 is the id, and it must end the token, so `US0001x` and
+#: `EP2000s` are prose. A five-digit v2 id (`US01010`) is read whole, as `ID_SEARCH_RE` reads it.
+CITED_ID_RE = re.compile(
+    "(" + ID_SEARCH_RE.pattern.replace(
+        ")(?:" + _V3_SUFFIX,
+        "|LL)(?:" + _V3_SUFFIX + "|" + _V3_NORM_SUFFIX, 1) + ")(?![A-Za-z0-9])",
+    ID_SEARCH_RE.flags)
+_CITED_PREFIX_ALT = re.search(r"\(\?:([A-Z|]+)\)", CITED_ID_RE.pattern)
+
+
+@functools.lru_cache(maxsize=None)
+def cited_id_re(prefixes: tuple[str, ...]) -> re.Pattern:
+    """`CITED_ID_RE` read for `prefixes` only: the same grammar, both id eras, with its prefix
+    alternation narrowed. A reader that knows which families it can name (a retro disposition
+    names a CR, never a `SC2086` ShellCheck code) narrows here rather than copying the grammar.
+    A prefix the shared grammar does not read is refused, so narrowing can never widen it."""
+    known = _CITED_PREFIX_ALT.group(1).split("|")
+    unknown = [p for p in prefixes if p not in known]
+    if unknown or not prefixes:
+        raise ValueError(f"cited_id_re: {unknown or 'no prefixes'} not among {known}")
+    start, end = _CITED_PREFIX_ALT.span(1)
+    keep = "|".join(p for p in known if p in prefixes)
+    return re.compile(CITED_ID_RE.pattern[:start] + keep + CITED_ID_RE.pattern[end:],
+                      CITED_ID_RE.flags)
 
 
 def type_home(type_: str) -> tuple[str, str]:

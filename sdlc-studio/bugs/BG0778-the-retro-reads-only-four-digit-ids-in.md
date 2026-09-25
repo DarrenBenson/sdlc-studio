@@ -1,6 +1,6 @@
 # BG0778: The retro reads only four-digit ids in dispositions and carried rows, so a v3 project's ULID ids are dropped
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_retro_v3_ids.py, changelog.d/BG0778.md, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py
@@ -25,11 +25,14 @@ Reuse the id grammar US0951 introduces (`BATCH_ID_RE`, or the shared `sdlc_md` i
 
 - [ ] **AC1** Given a schema-v3 project whose retro names ULID ids (bare and normalised) in its dispositions and `Known issues carried` rows, when the retro's readers parse it, then every such id is read, as a four-digit id is. Fails on: `ARTEFACT_ID_RE` matching only `(CR|BG|US|RFC|EP|LL)-?NNNN`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_retro_v3_ids.py::RetroV3IdTests::test_dispositions_and_carried_rows_read_v3_ids
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given prose in a retro that mentions a word shaped like an id prefix but no id (e.g. `USB`, `EPIC`), when the readers parse it, then no id is read from it. Fails on: a widened grammar that matches any prefix followed by letters
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_retro_v3_ids.py::RetroV3IdTests::test_prose_is_not_read_as_an_id
+  - **Verified:** yes (2026-09-25)
 
 - [ ] **AC3** Given the retro's id readers after this fix, when they are searched for an id grammar of their own, then both `ARTEFACT_ID_RE` and US0951's `BATCH_ID_RE` read ids through the one grammar `lib/sdlc_md.py` owns, so an uppercase non-id such as `CRXYZ12345` is not read as a unit id. Fails on: a third hand-written id regex in retro.py
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_retro_v3_ids.py::RetroV3IdTests::test_the_retro_reads_ids_through_the_shared_grammar
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 
