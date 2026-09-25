@@ -3065,7 +3065,8 @@ def _unstaged(top: Path) -> dict[str, str]:
         if code[1] == " ":
             continue      # staged, and the working tree matches what is staged
         try:
-            out[rel] = hashlib.sha1((top / rel).read_bytes()).hexdigest()
+            out[rel] = hashlib.sha1((top / rel).read_bytes(),
+                                   usedforsecurity=False).hexdigest()   # change detection only
         except OSError:
             out[rel] = "gone"
     return out

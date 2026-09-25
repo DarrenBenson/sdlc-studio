@@ -1,6 +1,6 @@
 # US0927: A sprint plan names the PRD outcome or persona its goal serves, and flags a goal that serves none
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Delivers:** CR0594
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new

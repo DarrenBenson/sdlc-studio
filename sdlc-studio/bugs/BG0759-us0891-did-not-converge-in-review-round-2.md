@@ -1,6 +1,6 @@
 # BG0759: US0891 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** In Progress
 > **Carried work:** the round-2 patch is kept at sdlc-studio/.local/US0891-carried-r2.patch, written against 08b60ce7. It no longer applies to `.githooks/pre-commit`: US0899 and US0901 changed the hook since. Remaining fix: rebase onto US0901's `run "gate"` and `run "suite-handover"` lanes, add `trap 'stop_lanes 129' HUP`, and pin the TERM trap and `stop_lanes`' wait
 > **Severity:** Medium
 > **Points:** 3

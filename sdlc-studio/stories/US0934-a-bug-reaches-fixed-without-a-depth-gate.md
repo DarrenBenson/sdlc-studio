@@ -1,6 +1,6 @@
 # US0934: A bug reaches Fixed without a depth gate, and the retired --depth flags are refused
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

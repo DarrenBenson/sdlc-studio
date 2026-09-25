@@ -1,9 +1,9 @@
 # BG0757: repo_map.py build crashes on Python 3.10 when a source file holds a null byte
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/repo_map.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_repo_map_null_byte.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/repo_map.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_repo_map_null_byte.py, changelog.d/BG0757.md
 > **Evidence:** US0908 review round 1, RUN-01M39MC0: the whole skill suite run under a 3.10 venv
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio file
