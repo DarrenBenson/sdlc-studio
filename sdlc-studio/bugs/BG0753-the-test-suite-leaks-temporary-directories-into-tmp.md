@@ -3,7 +3,7 @@
 > **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** tools/tests/conftest.py, .claude/skills/sdlc-studio/scripts/tests/conftest.py, tools/skill-tests.sh, tools/tests/test_lean_tmp_hygiene.py
+> **Affects:** tools/tests/conftest.py, .claude/skills/sdlc-studio/scripts/tests/conftest.py, tools/skill-tests.sh, tools/tests/test_lean_tmp_hygiene.py, changelog.d/BG0753.md, conftest.py
 > **Evidence:** RUN-01M3891F: /tmp at 1048576/1048576 inodes; lane B commit failed with 32 ENOSPC errors
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio file

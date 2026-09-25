@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import ast
 import inspect
-import subprocess
 import sys
 import tempfile
 import textwrap
@@ -23,6 +22,10 @@ from pathlib import Path
 SCRIPTS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS))
 import reconcile  # noqa: E402
+
+TESTS = Path(__file__).resolve().parent
+sys.path.insert(0, str(TESTS))
+import gitutil  # noqa: E402 - confined, hermetic git for fixtures
 
 # The algorithms bandit's B324 flags when `usedforsecurity` is not False.
 WEAK = {"md4", "md5", "sha", "sha1"}
@@ -52,7 +55,8 @@ def _weak_calls(func) -> list[str]:
 
 
 def _git(root: Path, *args: str) -> None:
-    subprocess.run(["git", "-C", str(root), *args], check=True, capture_output=True, text=True)
+    """Git confined to the fixture, with the host's config and identity neutralised."""
+    gitutil.git(list(args), root)
 
 
 class SettleFingerprintTests(unittest.TestCase):

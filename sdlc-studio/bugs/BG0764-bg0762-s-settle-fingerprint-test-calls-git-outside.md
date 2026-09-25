@@ -1,9 +1,10 @@
 # BG0764: BG0762's settle-fingerprint test calls git outside a confined environment, so the unconfined-git sweep is red
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional (the unconfined-git sweep is red at main HEAD and green with the fix; the fixture still fails a path-hashing mutant of reconcile._unstaged)
 > **Severity:** High
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_settle_fingerprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_settle_fingerprint.py, changelog.d/BG0764.md
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -25,8 +26,10 @@ Run the fixture's git through the confined helper the other test modules use (te
 
 - [ ] **AC1** Given main with this fix, when the unconfined-git sweep runs, then it passes and no longer names `test_lean_settle_fingerprint`; a fix that deletes the fixture's git steps instead of confining them fails AC2
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py::UnconfinedRawGitCallSweepTests
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given the settle fingerprint, then it still changes when a staged file's bytes are edited and holds while they are not, run through a confined git environment
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_settle_fingerprint.py::SettleFingerprintTests::test_the_fingerprint_still_changes_with_the_bytes
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 
