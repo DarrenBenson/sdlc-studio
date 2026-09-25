@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import ast
 import importlib.util
+import shutil
 import sys
 import contextlib
 import io
@@ -965,6 +966,8 @@ class CoverageCorpusTests(unittest.TestCase):
         import docgen
         skill = pathlib.Path(d)
         (skill / "scripts" / "lib").mkdir(parents=True)
+        # The tree carries its own surface module: one without reads unreadable (BG0758).
+        shutil.copy(_SCRIPTS / "lib" / "surface.py", skill / "scripts" / "lib")
         (skill / "scripts" / "a.py").write_text(
             "import argparse\n"
             "def build_parser():\n"
@@ -1078,6 +1081,8 @@ class CoverageFindingTests(unittest.TestCase):
     def _fixture(self, d):
         skill = pathlib.Path(d)
         (skill / "scripts" / "lib").mkdir(parents=True)
+        # The tree carries its own surface module: one without reads unreadable (BG0758).
+        shutil.copy(_SCRIPTS / "lib" / "surface.py", skill / "scripts" / "lib")
         (skill / "scripts" / "named.py").write_text(
             "import argparse\n"
             "def build_parser():\n"

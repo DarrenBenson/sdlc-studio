@@ -1,6 +1,7 @@
 # BG0758: command_audit._surface_module reuses whatever surface module the process already imported
 
-> **Status:** In Progress
+> **Status:** Fixed
+> **Verification depth:** functional (after a dev import surface, the fixture tree now resolves its own module and a tree with none reads unreadable; three mutants killed by the QA reviewer)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_surface_module.py, .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py, changelog.d/BG0758.md
@@ -28,8 +29,10 @@ Load the tree's own surface module by path under a unique module name, never thr
 
 - [ ] **AC1** Given a process that has already imported the dev repo's `surface`, when `_surface_module` is asked for a fixture skill tree with its own `scripts/lib/surface.py`, then it returns the fixture's module, and `sys.modules["surface"]` still holds the dev module afterwards. Fails on: HEAD's `import surface`, which returns the cached dev module (measured); popping `sys.modules["surface"]` and re-importing, which returns the fixture's module but leaves it cached for the next caller.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_surface_module.py::SurfaceModuleTests::test_the_judged_trees_own_surface_module_is_loaded_whatever_is_cached
+  - **Verified:** yes (2026-09-25)
 - [ ] **AC2** Given a process that has already imported the dev repo's `surface`, when `command_audit.verb_coverage` runs over a fixture tree with no `scripts/lib/surface.py`, then it reports the surface as unreadable rather than counting the dev repo's verbs. The close checklist's in-process doc-surface row reads the same as the CLI's. Fails on: falling back to `sys.modules["surface"]` when the tree has none, which is HEAD's behaviour.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_surface_module.py::SurfaceModuleTests::test_a_tree_with_no_surface_module_reads_unreadable_in_process
+  - **Verified:** yes (2026-09-25)
 
 ## Revision History
 

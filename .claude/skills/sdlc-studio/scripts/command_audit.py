@@ -25,8 +25,9 @@ from __future__ import annotations
 
 import argparse
 import ast
+import importlib.util
+import itertools
 import json
-import contextlib
 import re
 import subprocess
 import sys
@@ -1069,22 +1070,31 @@ def _coverage_corpus(skill: Path) -> str:
     return "\n".join(parts)
 
 
-def _surface_module(skill: Path):
-    """`lib/surface.py`, imported with the search path RESTORED afterwards.
+#: Suffixes for the private name each `_surface_module` load runs under, so no two collide.
+_SURFACE_LOADS = itertools.count()
 
-    A bare `sys.path.insert` per call grows the path without bound in a long-lived process and
-    leaves two skill trees' `scripts/` dirs on it at once, so the second caller resolves the
-    first one's modules.
+
+def _surface_module(skill: Path):
+    """The judged tree's own `scripts/lib/surface.py`, loaded by PATH on every call.
+
+    Never `import surface`: that returns whatever module the process already cached under the
+    name, so a fixture tree was judged with the dev repo's module. The module is held in
+    `sys.modules` under a private name only while it executes (a dataclass looks its module up
+    there), so no later caller resolves it. A tree with none raises, which reads as unreadable.
     """
-    added = [str(skill / "scripts"), str(skill / "scripts" / "lib")]
-    sys.path[:0] = added
+    path = skill / "scripts" / "lib" / "surface.py"
+    if not path.is_file():
+        raise ModuleNotFoundError(f"no surface module at {path}", name="surface",
+                                  path=str(path))
+    name = f"_judged_surface_{next(_SURFACE_LOADS)}"
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
     try:
-        import surface  # noqa: PLC0415
-        return surface
+        spec.loader.exec_module(mod)
     finally:
-        for entry in added:
-            with contextlib.suppress(ValueError):
-                sys.path.remove(entry)
+        sys.modules.pop(name, None)
+    return mod
 
 
 def verb_coverage(root: str = ".") -> dict:
