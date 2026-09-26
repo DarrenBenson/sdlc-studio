@@ -31,24 +31,24 @@ Decide which ledger is the review record of a round, and make both halves use it
   - **When** the second is recorded
   - **Then** the operator is NOTIFIED, because a round is any recorded adversarial verdict
     naming the unit and the rule now reads both ledgers
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EscalationReachesBothRecordingCommandsTests
-  - **Verified:** yes (2026-08-03) - four tests, each driving a shipped `main([...])`
+  - **Verify:** manual - retired by US0918: `sprint.py review-batch` and `critic.py sprint-review` are retired, so `critic.py record` is the one command that records a round
+  - **Verified:** manual (2026-09-26) - retired, superseded by US0918
 
 - [x] **AC2: one REJECT still does not escalate.**
   - **Given** a single rejection, which is the loop working rather than failing
   - **When** it is recorded
   - **Then** nothing escalates - a notification that fires on every ordinary finding is one the
     operator learns to ignore, which is the same outcome as not sending it
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EscalationReachesBothRecordingCommandsTests::test_one_reject_through_review_batch_does_not_escalate
-  - **Verified:** yes (2026-08-03)
+  - **Verify:** manual - retired by US0918: `sprint.py review-batch` and `critic.py sprint-review` are retired, so `critic.py record` is the one command that records a round
+  - **Verified:** manual (2026-09-26) - retired, superseded by US0918
 
 - [x] **AC3: deleting the escalation loop from either command reddens a criterion.**
   - **Given** the round-two finding that deleting the whole loop left all five of US0603's
     criteria green, because each called `panel_escalation` directly
   - **When** the loop is removed from `cmd_review_batch`, or from `critic.cmd_record`
   - **Then** a test fails in each case
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EscalationReachesBothRecordingCommandsTests::test_two_rejects_through_critic_record_escalate
-  - **Verified:** yes (2026-08-03) - both deletions executed as mutants and killed
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_one_verdict_ledger.py::SurvivingReviewRulesTests::test_two_rejects_through_critic_record_escalate
+  - **Verified:** yes (2026-09-26) - the `critic.cmd_record` deletion executed as a mutant and killed; `cmd_review_batch` is retired
 
 ## Verification evidence
 
@@ -114,3 +114,5 @@ The escalation exists so a twice-rejected or split-panel unit reaches the operat
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-03 | closing review RUN-01KYZKY5 | Filed |
+| 2026-09-26 | US0918 | AC3 re-pointed to its re-homed test in test_lean_one_verdict_ledger.py: `critic.py record` is the one command left that records a round |
+| 2026-09-26 | US0918 | AC1 and AC2 retired in the D0259 pattern: `sprint.py review-batch` and `critic.py sprint-review` are retired, so `critic.py record` is the one command that records a round |

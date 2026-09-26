@@ -465,18 +465,28 @@ def _critic_mod():
     return m
 
 
+def _frozen_sprint_review(root: Path, units: str, findings: str) -> None:
+    """A sprint-level APPROVE row as the retired `sprint-review` verb wrote it, dated before
+    `critic.REPAIR_VERB_RETIRED`, so the frozen ledger still reads it."""
+    path = root / "sdlc-studio" / "reviews" / "sprint-review-record.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("| Base | Reviewer | Author | Verdict | Date | Units | Findings |\n"
+                    "| --- | --- | --- | --- | --- | --- | --- |\n"
+                    f"| - | qa-seat | builder | APPROVE | 2026-07-18 | {units} | {findings} |\n",
+                    encoding="utf-8")
+
+
 class SprintReviewCritiquedTests(unittest.TestCase):
     """US0247 / RFC0046 option B: a recorded sprint-level adversarial full-diff review satisfies
     the per-unit `critiqued` gate for the units in its range (a covered unit needs no individual
-    APPROVE), while a per-unit REJECT is still repaired per unit."""
+    APPROVE), while a per-unit REJECT is still repaired per unit. No verb writes the ledger now
+    (US0918); a row dated before `critic.REPAIR_VERB_RETIRED` is read frozen."""
 
     def test_sprint_review_clears_critiqued_for_covered_unit(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _story(root, 101, status="Done")           # NO per-unit verdict
-            c = _critic_mod()
-            c.record_sprint_review(root, ["US0101"], reviewer="qa-seat", author="builder",
-                                   verdict="APPROVE", findings="full-diff pass; none blocking")
+            _frozen_sprint_review(root, "US0101", "full-diff pass; none blocking")
             u = _units(root)["US0101"]
             self.assertTrue(u["stages"]["critiqued"])
 
@@ -485,26 +495,10 @@ class SprintReviewCritiquedTests(unittest.TestCase):
             root = Path(d)
             _story(root, 101, status="Done")
             _record_verdict(root, "US0101", "reject")  # latest per-unit verdict is REJECT
-            c = _critic_mod()
-            c.record_sprint_review(root, ["US0101"], reviewer="qa-seat", author="builder",
-                                   verdict="APPROVE", findings="range looks fine overall")
+            _frozen_sprint_review(root, "US0101", "range looks fine overall")
             u = _units(root)["US0101"]
             self.assertFalse(u["stages"]["critiqued"])   # REJECT repairs per unit
             self.assertIn("critiqued", u["missing"])
-
-    def test_SprintReview_refuses_self_review_and_empty(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            c = _critic_mod()
-            with self.assertRaises(ValueError):        # reviewer == author
-                c.record_sprint_review(root, ["US0101"], reviewer="bob", author="bob",
-                                       verdict="APPROVE", findings="x")
-            with self.assertRaises(ValueError):        # empty findings
-                c.record_sprint_review(root, ["US0101"], reviewer="qa", author="bob",
-                                       verdict="APPROVE", findings="")
-            with self.assertRaises(ValueError):        # no covered units
-                c.record_sprint_review(root, [], reviewer="qa", author="bob",
-                                       verdict="APPROVE", findings="x")
 
 
 class GlobalAttributionTests(unittest.TestCase):

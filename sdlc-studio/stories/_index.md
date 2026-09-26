@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 28 |
+| Draft | 27 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 759 |
+| Done | 760 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 90 |
@@ -276,7 +276,7 @@
 | [US0915](US0915-a-review-verdict-has-one-phase-delivery.md) | A review verdict has one phase: delivery | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0916](US0916-a-story-reaches-done-without-a-per-unit.md) | A story reaches Done without a per-unit reviewer-of-record sign-off | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0917](US0917-the-operator-s-signature-seals-the-run-without.md) | The operator's signature seals the run without a per-unit sign-off row | Done | EP0263 | 2026-09-24 | 2026-09-24 |
-| [US0918](US0918-one-verdict-ledger-decides-whether-a-unit-was.md) | One verdict ledger decides whether a unit was reviewed | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0918](US0918-one-verdict-ledger-decides-whether-a-unit-was.md) | One verdict ledger decides whether a unit was reviewed | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0919](US0919-sign-off-is-the-operator-s-one-signature.md) | Sign-off is the operator's one signature and the per-unit sign-off verbs are gone | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0920](US0920-a-repair-reaches-fixed-without-registered-mutation-evidence.md) | The gate runs no evidence-drift lane and the close names no mutation-evidence mode | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0921](US0921-mutation-testing-is-an-opt-in-run-with.md) | The gate carries no mutation lane | Done | EP0263 | 2026-09-24 | 2026-09-24 |

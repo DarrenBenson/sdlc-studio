@@ -1130,7 +1130,7 @@ class ChecklistWindowTests(ChecklistBase):
         window that is not the close, and every window must name a verb the tooling exposes.
         """
         pre_close = {"reconciled-before-plan", "goal-seat-reviewed", "batch-groomed",
-                     "run-opened", "batch-boundary-review"}
+                     "run-opened"}
         rows = {i["id"]: i for i in sr.CHECKLIST}
         self.assertTrue(pre_close <= set(rows), "a pre-close row was renamed or removed")
         for rid in pre_close:
@@ -1836,22 +1836,6 @@ class SprintChecklistStageTests(ChecklistBase):
                       " ".join(ck["outstanding"] + ck["expired"]) + " " + text)
         self.assertIn("Handoff", text)
         self.assertIn("NOT RUN", text)
-
-    def test_a_batch_span_OPENED_is_not_a_review_HELD(self) -> None:
-        """Certifying the ceremony by the act of scheduling it is the failure mode: a span with
-        no `reviewed_at` is a batch nobody reviewed, however many spans were opened."""
-        unreviewed = self._ck(batches=[{"units": ["US0001"], "opened_at": "2026-01-01T01:00:00Z"}])
-        row = self._row(unreviewed, "batch-boundary-review")
-        # EXPIRED, not NOT RUN: its enforcer is `sprint review-batch`, which cannot be run at a
-        # close where the batch has already been delivered (US0591). Still reported, and still
-        # distinguishable from a batch that WAS reviewed - which is this test's subject.
-        self.assertEqual(row["state"], sr.EXPIRED)
-        self.assertIn("0/1", row["value"])
-        self.assertIn("batch-boundary-review", unreviewed["expired"])
-        # ... and the control, so the state depends on the review rather than being constant.
-        reviewed = self._ck(batches=[{"units": ["US0001"], "opened_at": "2026-01-01T01:00:00Z",
-                                      "reviewed_at": "2026-01-01T02:00:00Z"}])
-        self.assertEqual(self._row(reviewed, "batch-boundary-review")["state"], sr.RAN)
 
     def test_the_stage_set_and_the_cycle_cannot_drift_apart(self) -> None:
         drift = sr.cycle_drift()
@@ -3167,7 +3151,7 @@ class ChecklistRosterTests(unittest.TestCase):
     #: and another added in the same change.
     EXPECTED = (
         "reconciled-before-plan", "goal-seat-reviewed", "batch-groomed", "run-opened",
-        "batch-boundary-review", "closing-review", "tick-verification", "goal-judged",
+        "closing-review", "tick-verification", "goal-judged",
         "retro", "lessons", "handoff", "planned-vs-delivered", "not-delivered",
         "scope-creep", "coverage-consistency", "doc-surface",
         "review-attribution", "impediments", "known-issues", "cost",

@@ -121,7 +121,7 @@ A REJECT has two exits, and `critic.py record` writes both: a round-2 APPROVE fr
 
 `brief --rejoinder FILE|-` emits the RE-REVIEW brief after a REJECT's repairs, in `--phase`'s shape: the prior VERDICT/ISSUES/BLOCKING quoted verbatim, then for delivery the diff scope refreshed, the demand to re-execute the previously named probes and mutants and the delivery return contract, and for `--phase plan-review` the plan brief re-rendered - no diff scope, the CURRENT Test Plan table, each finding to be ruled against it - closing with the plan-review contract (`--tier` is refused there, as on the plain plan brief). Both print the fingerprint footer on stderr that `record --brief` consumes, each naming its own ledger's record command. A malformed prior block is refused loudly.
 
-`evidence --unit --reviewer --author --findings|--from-verdict` records the adversarial pass in `sdlc-studio/reviews/critic-evidence.md` (evidence, distinct from the verdict). There is no per-unit sign-off: the operator signs the run once with `sprint.py sign --principal`, which refuses a principal who is a unit's author or a reviewer recorded on it. `signoff-record.md` is frozen history that nothing reads or writes.
+`evidence` and `sprint-review` are retired: each exits 2 naming `record`, and the old `sdlc-studio/reviews/critic-evidence.md` is read by nothing, so a unit's delivery verdict is the one record of its review. There is no per-unit sign-off: the operator signs the run once with `sprint.py sign --principal`, which refuses a principal who is a unit's author or a reviewer recorded on it. `signoff-record.md` is frozen history that nothing reads or writes.
 
 ### `persona_resolve.py`
 

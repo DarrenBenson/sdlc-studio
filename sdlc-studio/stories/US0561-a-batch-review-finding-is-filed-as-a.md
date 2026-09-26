@@ -25,8 +25,8 @@
 
 ### AC2: The batch span carries the ids raised against it, so the batch can be read back as work-plus-findings rather than work alone
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BatchBoundaryReviewTests::test_findings_raised_against_a_batch_are_recorded_on_it
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0918: `sprint.py review-batch` is retired, so no delivery batch span is opened
+- **Verified:** manual (2026-09-26) - retired, superseded by US0918
 
 ### AC3: A finding filed with NO open batch is recorded as such rather than silently attributed to the last one - an absence is stated, never guessed
 
@@ -38,3 +38,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-29 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-26 | US0918 | AC2 retired in the D0259 pattern: `sprint.py review-batch` is retired, so no delivery batch span is opened |

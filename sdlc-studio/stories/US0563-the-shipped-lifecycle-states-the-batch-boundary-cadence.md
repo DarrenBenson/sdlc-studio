@@ -30,11 +30,12 @@
 
 ### AC3: `help/sprint.md` documents `review-batch` in runnable invocation form
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::TheCloseCertifiesRatherThanReviewsTests::test_the_documented_invocations_actually_parse
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by US0918: `sprint.py review-batch` is retired and no longer documented
+- **Verified:** manual (2026-09-26) - retired, superseded by US0918
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-29 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-26 | US0918 | AC3 retired in the D0259 pattern: `sprint.py review-batch` is retired and no longer documented |

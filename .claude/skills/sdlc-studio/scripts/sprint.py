@@ -1560,10 +1560,10 @@ def _rejected_unanswered(root: Path, uid: str) -> bool:
     """Is this unit's latest review round a REJECT, in EITHER ledger?
 
     Two ledgers, and the question spans them: `critic record` appends to `critic-verdicts.md`
-    while `sprint review-batch` appends a batch row to `sprint-review-record.md`. Reading only
+    while the frozen `sprint-review-record.md` still holds historical batch rows. Reading only
     the first was a real defect twice over - `review_rounds_across_ledgers` exists because two
-    `review-batch --verdict REJECT` rounds on one unit once escalated nothing - so this asks
-    that function rather than reaching for `verdict_for`, which reads one file.
+    batch REJECT rounds on one unit once escalated nothing - so this asks that function rather
+    than reaching for `verdict_for`, which reads one file.
 
     FAILS CLOSED. An unreadable ledger is not an approval: a directory at the ledger's path, or
     any other read fault, must leave the unit priced as unbuilt rather than waved through on the
@@ -5123,11 +5123,11 @@ def _no_negative_verdict(root, uid: str, critic) -> bool:
 def review_coverage(root, units: list[str]) -> dict:
     """Per unit: is it covered by an INDEPENDENT adversarial pass, and by what.
 
-    Three records can cover a unit, and every one of them proves independence the same way -
-    the reviewer is not the author. A per-unit critic verdict, a recorded adversarial evidence
-    pass, or a batch/sprint-level review naming the unit. A self-review covers NOTHING: it is
-    the context that wrote the code agreeing with itself, which is the whole failure the
-    two-role rule exists to stop.
+    Two records can cover a unit, and both prove independence the same way - the reviewer is not
+    the author: a per-unit critic verdict, or a frozen batch review naming the unit, dated
+    before `critic.REPAIR_VERB_RETIRED` (`critic.sprint_reviews`). The retired evidence ledger
+    covers nothing. A self-review covers NOTHING: it is the context that wrote the code agreeing
+    with itself, which is the whole failure the two-role rule exists to stop.
 
     The surface is the units passed in - the BATCH's units - not the run's whole set. A review
     recorded over batch 1 therefore leaves batch 2 uncovered, which is the point: the review
@@ -5140,19 +5140,15 @@ def review_coverage(root, units: list[str]) -> dict:
         if not uid:
             continue
         # A recorded NEGATIVE verdict is TERMINAL for the unit: no later lane reconsiders it.
-        # The lanes below are tried in order and `continue` on a miss, so a REJECT used to fail
-        # lane one and fall straight into the evidence lane - which carries no verdict column by
-        # design and therefore cannot see that the unit was rejected. The REJECT was not
-        # overridden by a better verdict; it was overridden by a lane that cannot hold one.
-        # Absence of a verdict must still fall through (that is what the other lanes are FOR);
-        # only a verdict that exists and is not an APPROVE stops here.
+        # The lanes below are tried in order and `continue` on a miss, so a REJECT must not fall
+        # through to the batch lane. Absence of a verdict must still fall through (that is what
+        # the batch lane is FOR); only a verdict that exists and is not an APPROVE stops here.
         if not _no_negative_verdict(root, uid, critic):
             out[uid] = {"covered": False, "by": None}
             continue
         by = None
-        for label, getter, verdicted in (("per-unit verdict", critic.verdict_for, True),
-                                         ("adversarial evidence", critic.evidence_for, False),
-                                         ("batch review", critic.sprint_review_for, True)):
+        for label, getter in (("per-unit verdict", critic.verdict_for),
+                              ("batch review", critic.sprint_review_for)):
             try:
                 rec = getter(root, uid)
             except Exception as exc:  # noqa: BLE001 - a missing ledger is "not covered"
@@ -5160,21 +5156,6 @@ def review_coverage(root, units: list[str]) -> dict:
                 rec = None
             if not rec:
                 continue
-            if not verdicted:
-                # An EVIDENCE row carries no verdict column at all - recording the pass IS the
-                # claim. Judging it by a verdict it cannot have made the whole lane dead code.
-                # Independence is still proven, by the same ids the other two are held to.
-                row = rec[0] if isinstance(rec, list) else rec
-                if not isinstance(row, dict):
-                    continue
-                # Through the ONE authority, not a fourth hand-rolled copy reaching into a
-                # sibling module's private `_id`. The copy happened to agree; nothing checked
-                # that it did, and two of the other three did not agree with each other.
-                if not critic.independence(str(row.get("reviewer") or ""),
-                                           str(row.get("author") or ""))[0]:
-                    continue
-                by = label
-                break
             # `sprint_covers_independently` is THE predicate: an APPROVE - or a REJECT whose
             # findings are ALL tagged `[pre-existing]` - whose reviewer and author are both
             # recorded and distinct. Reimplementing the independence half here
@@ -5233,11 +5214,11 @@ def _close_review_coverage(root, retro, state):
               f"{', '.join(missing)}\n"
               f"  {placement}\n"
               f"  The close certifies that a review happened; it does not perform one.")
-    remedy = ("review the uncovered units at their delivery batch boundary and record it - "
-              f"`sprint.py review-batch --units {','.join(missing[:6])}"
+    remedy = ("review each uncovered unit and record its delivery verdict - "
+              f"`critic.py record --units {','.join(missing[:6])}"
               f"{',...' if len(missing) > 6 else ''} --reviewer <who> --author <who> "
-              "--verdict APPROVE --findings '<what was probed>'`. A self-review does not clear "
-              "this: the reviewer must differ from the author.")
+              "--verdict APPROVE`. A self-review does not clear this: the reviewer must differ "
+              "from the author.")
     return False, detail, remedy
 
 
@@ -5458,9 +5439,11 @@ def unanswered_units(root, state, retro_id=None) -> dict:
             # that meets it owes only the run's signature, which is the step after this close.
             if not seal_bar_unmet(root, uid):
                 awaits_signature = True
-            elif (critic.evidence_for(root, uid)
-                  or critic.sprint_covers_independently(
-                      root, uid, critic.sprint_review_for(root, uid))):
+            elif row or critic.sprint_covers_independently(
+                    root, uid, critic.sprint_review_for(root, uid)):
+                # A pass is on record - a delivery verdict, or a frozen batch review - and the
+                # bar is still unmet. The verdict ledger says a pass ran; the retired evidence
+                # ledger is read by nothing.
                 review_why = WHY_AT_REVIEW
             else:
                 review_why = WHY_PASS_OWED
@@ -6071,11 +6054,11 @@ def _batch_story_units(root, batch) -> list[str]:
 
 def _signoff_author(root, unit) -> str:
     """The author id the sign-off must be independent OF - read from the unit's recorded critic
-    verdict, its evidence row, or the sprint-level review that covers it (a unit reviewed only at
-    sprint scope still records its author there). Empty when none exists: a sign-off with no author
-    to be independent of cannot be judged independent, so the caller refuses rather than invent one."""
+    verdict, or the frozen sprint-level review that covers it (a unit reviewed only at sprint scope
+    still records its author there). Empty when none exists: a sign-off with no author to be
+    independent of cannot be judged independent, so the caller refuses rather than invent one."""
     import critic  # noqa: PLC0415
-    for getter in (critic.verdict_for, critic.evidence_for, critic.sprint_review_for):
+    for getter in (critic.verdict_for, critic.sprint_review_for):
         rec = getter(root, unit)
         if rec and (rec.get("author") or "").strip() not in ("", "-"):
             return rec["author"]
@@ -6830,10 +6813,9 @@ def coverage_blockers(root, state) -> list:
              "detail": (f"{len(missing)} of {len(batch)} unit(s) are covered by no independent "
                         f"review: {', '.join(missing[:8])}"
                         f"{', ...' if len(missing) > 8 else ''}"),
-             "remedy": ("review them at their delivery batch boundary and record it with "
-                        "`sprint.py review-batch --reviewer <who> --author <who> --verdict "
-                        "APPROVE --findings '<what was probed>'` - a self-review does not "
-                        "clear it")}]
+             "remedy": ("review each one and record its delivery verdict with "
+                        "`critic.py record --units <ids> --reviewer <who> --author <who> "
+                        "--verdict APPROVE` - a self-review does not clear it")}]
 
 
 def close_preflight(root, retro_id: str | None = None, *, record_cost: bool = True) -> dict:
@@ -7487,7 +7469,7 @@ def panel_escalation(rounds: list, seat_verdicts: dict) -> tuple[bool, str]:
 
     The rule moved next to the ledgers it judges, because the commands that record a round were
     consulting it from opposite sides of two different files. Kept here as a delegation rather
-    than deleted, and honestly: after the move this has no PRODUCTION caller - `cmd_review_batch`
+    than deleted, and honestly: after the move this has no PRODUCTION caller - `critic record`
     goes through `critic.escalation_notice` - so it is a named shim for the tests and for any
     consuming project that reached for it. One rule with two homes is the shape that produced the
     defect, and the looser copy is the one that runs, so the body lives in exactly one place.
@@ -7731,90 +7713,6 @@ def appetite_overage_line(root: Path | str) -> str | None:
         parts.append(f"{m['accepted']:g}min against a standing {m['standing']:g}min")
     return "OVER APPETITE - this batch was " + "; ".join(parts) + " (the ceiling was raised to "\
            "accept it, and the run is reported against the standing appetite, not that ceiling)"
-
-
-def cmd_review_batch(args: argparse.Namespace) -> int:
-    """Record the independent pass over the open delivery batch and close its span.
-
-    Delegates the independence proof to `critic.record_sprint_review`, which already refuses a
-    missing reviewer, a missing author, a reviewer equal to the author, an empty findings text
-    and a verdict that is neither APPROVE nor REJECT. A second implementation of those rules
-    would be a second place for them to drift."""
-    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
-    root = args.root
-    # A review's findings are exactly the prose most likely to carry backticks and `$(`, which
-    # inside a shell argument are command substitution, not text. This project mangled its own
-    # findings twice that way. `resolve_prose_fields` is the shared loader every other writer
-    # already uses, so the fields-file spelling cannot drift from theirs.
-    if getattr(args, "fields_file", None):
-        import file_finding  # noqa: PLC0415
-        try:
-            fields = file_finding.resolve_prose_fields(
-                args.fields_file, {"findings": args.findings}, allowed=("findings",))
-        except ValueError as exc:
-            print(f"review-batch refused: {exc}", file=sys.stderr)
-            return 2
-        args.findings = fields.get("findings") or args.findings
-    if args.open_units:
-        ids = [u.strip() for u in args.open_units.replace(",", " ").split() if u.strip()]
-        run_state.start_batch(root, ids)
-        print(f"delivery batch OPENED over {len(ids)} unit(s): {', '.join(ids)}")
-        return 0
-    missing = [f"--{f}" for f in ("reviewer", "author", "findings")
-               if not (getattr(args, f, None) or "").strip()]
-    if missing:
-        print(f"review-batch refused: {', '.join(missing)} required to RECORD a review "
-              f"(they are not needed by --open, which starts a span). Independence is proven, "
-              f"never assumed, and an empty adversarial pass is not evidence.", file=sys.stderr)
-        return 2
-    span = run_state.open_batch(root)
-    if args.units:
-        units = [u.strip() for u in args.units.replace(",", " ").split() if u.strip()]
-    elif span:
-        units = list(span.get("units") or [])
-    else:
-        print("review-batch refused: no delivery batch is open and --units was not given - a "
-              "review must name the units it covers, never guess them", file=sys.stderr)
-        return 2
-    if not units:
-        print("review-batch refused: the open batch names no units", file=sys.stderr)
-        return 2
-    try:
-        path = critic.record_sprint_review(root, units, args.reviewer, args.author,
-                                           args.verdict, args.findings, base=args.base or "")
-    except ValueError as exc:
-        print(f"review-batch refused: {exc}", file=sys.stderr)
-        return 2
-    span_units = {sdlc_md.norm_id(u) for u in (span.get("units") or [])} if span else set()
-    reviewed_units = {sdlc_md.norm_id(u) for u in units}
-    if span and span_units <= reviewed_units:
-        run_state.close_batch(root, reviewer=args.reviewer, author=args.author,
-                              verdict=args.verdict, findings=args.findings)
-    elif span:
-        # The review named fewer units than the span holds. Closing it would stamp the span
-        # reviewed by a pass that never looked at part of it, count it in the reviewed
-        # numerator, and - because `open_batch` then returns None - silently drop the
-        # attribution of every finding filed afterwards. The record stands; the span does not.
-        print(f"  note: the open batch holds {len(span_units)} unit(s) this review did not "
-              f"name ({', '.join(sorted(span_units - reviewed_units))}), so the span stays "
-              f"OPEN. The review is recorded against the units it actually covered.")
-    verdict = (args.verdict or "").upper()
-    print(f"batch review recorded ({verdict}) over {len(units)} unit(s) -> {path}")
-    if verdict == "REJECT":
-        print("  REJECT: the batch was reviewed and rejected. It clears no unit's gate - fix "
-              "the findings and record a fresh pass.")
-    # ESCALATION, at the point a verdict is recorded. A unit the panel keeps rejecting is not
-    # converging, and the operator learns that here rather than at the close - which is the
-    # difference between a decision they can act on and a fact they are told afterwards. It
-    # NOTIFIES; nothing waits on a reply.
-    # Reads BOTH ledgers. This command writes to `sprint-review-record.md` and the escalation
-    # used to read `critic-verdicts.md` alone, so two REJECT rounds recorded HERE escalated
-    # nothing - the notification fired only when somebody happened to use both commands on the
-    # same unit.
-    for uid in sorted(reviewed_units):
-        if notice := critic.escalation_notice(root, uid):
-            print(notice)
-    return 0
 
 
 def _swap_points(root: Path, ids) -> int:
@@ -11460,36 +11358,6 @@ def build_parser() -> argparse.ArgumentParser:
     ap_.add_argument("--root", default=".", help="Repo root (default: .)")
     ap_.set_defaults(func=cmd_appetite)
 
-    rb = sub.add_parser(
-        "review-batch",
-        help="Record the INDEPENDENT adversarial pass over the open delivery batch, and close "
-             "the span. This is the review point: a batch reaching the project's commit "
-             "threshold is reviewed HERE, so a finding is delivery work in the batch that "
-             "caused it rather than close overhead. `sprint close` refuses a batch carrying "
-             "units no such pass covered. Reviewer and author must differ - a self-review "
-             "clears nothing.")
-    rb.add_argument("--units", default=None,
-                    help="comma-separated unit ids (default: the open batch span's units)")
-    # NOT required at the parser: `--open` starts a span and uses none of them, so requiring
-    # them made the documented open invocation exit 2 and left the whole span mechanism
-    # unreachable from any documented CLI form. They are required for a REVIEW, and refused
-    # in the command where that distinction can actually be made.
-    rb.add_argument("--reviewer", default=None, help="who ran the adversarial pass")
-    rb.add_argument("--author", default=None, help="who wrote the code being reviewed")
-    rb.add_argument("--verdict", default="APPROVE", help="APPROVE or REJECT")
-    rb.add_argument("--findings", default=None,
-                    help="what was probed and what was found - an empty pass is not evidence")
-    rb.add_argument("--fields-file", metavar="FINDINGS.json",
-                    help="read the findings from a JSON object instead of the flag, so prose "
-                         "carrying backticks or `$(` is stored verbatim rather than executed "
-                         "by the shell")
-    rb.add_argument("--base", default="", help="the git base the review's diff was taken from")
-    rb.add_argument("--open", dest="open_units", default=None,
-                    help="instead of reviewing: OPEN a new batch span over these unit ids")
-    rb.add_argument("--format", choices=("text", "json"), default="text")
-    rb.add_argument("--root", default=".", help="Repo root (default: .)")
-    rb.set_defaults(func=cmd_review_batch)
-
     ln = sub.add_parser(
         "lane",
         help="Dispatch and close ONE delegated unit of delivery. `brief` prints what each lane "
@@ -11541,7 +11409,10 @@ def render_finding_sets(issues: str) -> str:
 #: `--help` nor the derived command surface lists them.
 RETIRED_VERBS = {
     "preflight": "the close's prerequisites are reported by `sprint.py close` itself, which "
-                 "runs the same pre-flight first",
+                 "runs the same pre-flight first. Run `sprint.py close --dry-run` to preview a "
+                 "close",
+    "review-batch": "one verdict ledger says whether a unit was reviewed: record a per-unit "
+                    "delivery verdict with `critic.py record`",
 }
 
 
@@ -11562,9 +11433,8 @@ def _retired_verb(argv: list[str] | None) -> str | None:
 def main(argv: list[str] | None = None) -> int:
     retired = _retired_verb(argv)
     if retired:
-        print(f"error: `sprint.py {retired}` is retired - {RETIRED_VERBS[retired]}. Run "
-              f"`sprint.py close --dry-run` to preview a close. Nothing was written.",
-              file=sys.stderr)
+        print(f"error: `sprint.py {retired}` is retired - {RETIRED_VERBS[retired]}. Nothing "
+              f"was written.", file=sys.stderr)
         return 2
     args = build_parser().parse_args(argv)
     # Resolve the root ONCE and write it back, so every verb below anchors on the tree the

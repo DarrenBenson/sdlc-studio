@@ -387,7 +387,7 @@ class SprintInvocationBinderTests(unittest.TestCase):
         self.assertTrue(_unparsable_invocations([bad]),
                         "a documented flag owned by no parser and declared by no page was "
                         "accepted - the binder is reading the verb and stopping")
-        self.assertTrue(_unparsable_invocations([("script", "review-batch --nope 1")]),
+        self.assertTrue(_unparsable_invocations([("script", "batch drop US0001 --nope 1")]),
                         "a script-form flag no parser owns was accepted, so the script surface "
                         "is extracted but not parsed")
         self.assertEqual([], _unparsable_invocations([("slash", "--bugs Open")]),
@@ -442,8 +442,8 @@ def _sprint_verbs() -> list[str]:
     """Every subcommand the SHIPPED parser owns, read from the parser itself.
 
     Derived, never listed here. The story that asked for this named twelve verbs; the parser
-    carries eighteen, because `call`, `next`, `queue`, `lane`, `appetite` and `review-batch`
-    landed after it was written. An enumeration of a rule is a lower bound, not a boundary - a
+    carried eighteen, because `call`, `next`, `queue`, `lane`, `appetite` and `review-batch`
+    (since retired) landed after it was written. An enumeration of a rule is a lower bound, not a boundary - a
     hard-coded list would have silently exempted the six newest verbs, which are exactly the
     ones a page is most likely not to document yet.
     """

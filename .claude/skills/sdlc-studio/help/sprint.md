@@ -221,41 +221,17 @@ that carry a measured tokens/pt), but the sample is small and noisy and the arms
 ways, so it fixes no optimum. Picking a batch-size number off this few measured sprints would
 invent a target the data cannot defend. Read `retro.py velocity` and decide per batch.
 
-## The review point: `review-batch`
+## The review point
 
-The adversarial review runs at the DELIVERY BATCH BOUNDARY, not at the close. Where it runs
-decides what its findings cost: at the close, every defect it finds is close work by
-definition. At the batch boundary, the same defect is delivery work in the batch that caused
-it, priced there, and fixed by a context still holding it.
+Each unit is reviewed by an independent seat, and its delivery verdict is recorded with
+`critic.py record`: one verdict ledger says whether a unit was reviewed. `sprint.py review-batch`
+is retired, and so are `critic.py evidence` and `critic.py sprint-review`. Reviewer and author
+must differ - a self-review is the context that wrote the code agreeing with itself, and it
+clears nothing.
 
-Open a span over the units a batch will land, and review it when the batch is committed:
-
-```bash
-# open the span as the batch starts
-python3 <skill>/scripts/sprint.py review-batch --open US0560,US0561,US0562,US0563
-
-# ... deliver ...
-
-# record the INDEPENDENT pass and close the span
-python3 <skill>/scripts/sprint.py review-batch \
-  --reviewer "the fresh context that did not write this" \
-  --author   "whoever wrote it" \
-  --verdict  APPROVE \
-  --findings "what was probed, and what was found - 'none blocking' is a finding"
-```
-
-`--units` overrides the span's unit set; without an open span it is required, because a
-review must name what it covers rather than guess. Reviewer and author must differ - a
-self-review is the context that wrote the code agreeing with itself, and it clears nothing.
-A `REJECT` is recorded (the range WAS reviewed) but clears no gate.
-
-Any finding filed while a span is open is stamped `Raised-in-batch` and recorded against that
-span, so a sprint can report where its defects were found. Filed with no span open, the
-artefact says so rather than being attributed to the last one.
-
-`sprint close` records each batch unit no independent pass covered as a known issue, naming it:
-**the close asserts that coverage exists, it does not perform the review.** A rolling boundary
-halts on any known issue rather than open the next cycle over it.
+`sprint close` records each batch unit no independent verdict covers as a known issue, naming
+it: **the close asserts that coverage exists, it does not perform the review.** A rolling
+boundary halts on any known issue rather than open the next cycle over it.
 
 ## In-flight controls: changing a run without lying about it
 

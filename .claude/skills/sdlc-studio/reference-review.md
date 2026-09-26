@@ -545,8 +545,8 @@ Refusals, all loud, all writing nothing:
   The CLI exits 2.
 - **An authoriser the author controls.** Superseding can retire an independence attribution, so it
   is held to the sign-off's rule: the row's *author* is refused, and so is any party that did
-  in-session review work on the unit (a reviewer on its evidence, or another verdict / sprint-review
-  row). The one exception is the row's own wrongly named reviewer, who did no other reviewing work -
+  in-session review work on the unit (a reviewer on another verdict row, or on a historical
+  sprint-level review row). The one exception is the row's own wrongly named reviewer, who did no other reviewing work -
   the case this exists for, and the one who can rule the pass never ran.
 - **No boundary**, naming the separate trust boundary the authoriser acted in (operator console,
   another human, CI), exactly as a delegated sign-off must - or **no reason, or no authoriser.**

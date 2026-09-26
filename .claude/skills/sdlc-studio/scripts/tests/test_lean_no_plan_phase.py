@@ -48,8 +48,9 @@ DELETED = {
                        # whole with the repair ledger (US0914), which checks it
                        "PlanReviewBriefTeachesMultiRowTests"),
     "test_retro.py": ("PlanVersusCodeReviewCostTests",),
-    "test_sprint.py": ("EscalationReachesBothRecordingCommandsTests::test_a_plan_review_round_"
-                       "does_not_inherit_delivery_batch_rounds",),
+    # EscalationReachesBothRecordingCommandsTests, whose plan-review test this story deleted,
+    # went whole with `sprint.py review-batch` (US0918), which checks it
+    "test_sprint.py": ("EscalationReachesBothRecordingCommandsTests",),
 }
 
 

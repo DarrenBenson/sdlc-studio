@@ -23,7 +23,7 @@ Groomed for Sprint 4 on 2026-09-25 from the engineering-seat readiness review: 2
 - [x] [US0915: A review verdict has one phase: delivery](../stories/US0915-a-review-verdict-has-one-phase-delivery.md)
 - [x] [US0916: A story reaches Done without a per-unit reviewer-of-record sign-off](../stories/US0916-a-story-reaches-done-without-a-per-unit.md)
 - [x] [US0917: The operator's signature seals the run without a per-unit sign-off row](../stories/US0917-the-operator-s-signature-seals-the-run-without.md)
-- [ ] [US0918: One verdict ledger decides whether a unit was reviewed](../stories/US0918-one-verdict-ledger-decides-whether-a-unit-was.md)
+- [x] [US0918: One verdict ledger decides whether a unit was reviewed](../stories/US0918-one-verdict-ledger-decides-whether-a-unit-was.md)
 - [x] [US0919: Sign-off is the operator's one signature and the per-unit sign-off verbs are gone](../stories/US0919-sign-off-is-the-operator-s-one-signature.md)
 - [x] [US0920: A repair reaches Fixed without registered mutation evidence](../stories/US0920-a-repair-reaches-fixed-without-registered-mutation-evidence.md)
 - [x] [US0921: Mutation testing is an opt-in run with a yield and nothing more](../stories/US0921-mutation-testing-is-an-opt-in-run-with.md)

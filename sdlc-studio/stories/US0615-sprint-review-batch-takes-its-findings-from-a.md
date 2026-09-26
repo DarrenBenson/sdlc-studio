@@ -23,19 +23,20 @@
 - **Given** findings text containing backticks and `$(`
 - **When** it is passed via `--fields-file`
 - **Then** it is stored verbatim, because on the flag path that prose is command substitution
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ReviewBatchFieldsFileTests::test_findings_with_metacharacters_are_stored_verbatim
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0918: `sprint.py review-batch` and its `--fields-file` are retired
+- **Verified:** manual (2026-09-26) - retired, superseded by US0918
 
 ### AC2: the flag path still works
 
 - **Given** ordinary findings text with no metacharacters
 - **When** it is passed via `--findings`
 - **Then** it records as before, so the fields-file is an addition rather than a migration
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::ReviewBatchFieldsFileTests::test_the_flag_path_is_unchanged
-- **Verified:** yes (2026-08-02)
+- **Verify:** manual - retired by US0918: `sprint.py review-batch` and its `--fields-file` are retired
+- **Verified:** manual (2026-09-26) - retired, superseded by US0918
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-01 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-26 | US0918 | AC1 and AC2 retired in the D0259 pattern: `sprint.py review-batch` and its `--fields-file` are retired |

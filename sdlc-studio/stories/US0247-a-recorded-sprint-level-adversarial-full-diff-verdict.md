@@ -37,11 +37,12 @@
 - **Given** `critic sprint-review` recording a batch verdict
 - **When** reviewer == author, or findings/units are empty
 - **Then** it is refused loudly (independence is proven, not assumed)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::SprintReviewCritiquedTests::test_SprintReview_refuses_self_review_and_empty
-- **Verified:** yes (2026-07-18)
+- **Verify:** manual - retired by US0918: `critic.py sprint-review` is retired, so nothing writes a sprint-level review to refuse; the frozen ledger is still read
+- **Verified:** manual (2026-09-26) - retired, superseded by US0918
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-26 | US0918 | AC3 retired in the D0259 pattern: `critic.py sprint-review` is retired, so nothing writes a sprint-level review to refuse; the frozen ledger is still read |

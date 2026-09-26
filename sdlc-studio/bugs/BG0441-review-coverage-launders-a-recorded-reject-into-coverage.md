@@ -60,27 +60,29 @@ Also worth settling during refine: whether the coverage figure should distinguis
 - **Given** a unit carrying a REJECT verdict AND an adversarial evidence row - the shape every reviewed-and-rejected unit in this workspace has, and the one the two pre-existing tests could not reach because both build a repo with no evidence row
 - **When** review_coverage runs
 - **Then** the unit is NOT covered: the REJECT is terminal and no later lane reconsiders it, where before it fell through into a lane that carries no verdict column by design and so could not see it had been rejected
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BatchBoundaryReviewTests::test_a_REJECT_is_not_laundered_into_coverage_by_the_evidence_lane
-- **Verified:** yes (2026-07-30)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_one_verdict_ledger.py::SurvivingReviewRulesTests::test_a_reject_is_terminal_beside_a_frozen_batch_approve
+- **Verified:** yes (2026-09-26)
 
 ### AC2: the evidence lane still covers a unit that was never rejected
 
 - **Given** a unit with an independent evidence row and no verdict at all
 - **When** review_coverage runs
 - **Then** it is still covered by that lane - the control, without which this fix is indistinguishable from deleting the evidence lane; absence of a verdict must fall through, only a verdict that exists and is not an APPROVE stops the search
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BatchBoundaryReviewTests::test_an_evidence_row_still_covers_a_unit_that_was_never_rejected
-- **Verified:** yes (2026-07-30)
+- **Verify:** manual - retired by US0918: the evidence lane and `sprint.py review-batch` are retired; a unit is covered by its independent delivery verdict or a frozen pre-constant batch row
+- **Verified:** manual (2026-09-26) - retired, superseded by US0918
 
 ### AC3: an unreadable verdict ledger does not manufacture a rejection
 
 - **Given** a unit whose verdict ledger cannot be read, reached through review_coverage rather than the helper because a library test is not a lane test
 - **When** review_coverage runs
 - **Then** the unit is judged by its lanes rather than treated as rejected - added because this mutant SURVIVED the first three, and answering 'rejected' on a filesystem error invents a verdict nobody gave
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BatchBoundaryReviewTests::test_an_unreadable_verdict_ledger_does_not_manufacture_a_rejection
-- **Verified:** yes (2026-07-30)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_one_verdict_ledger.py::SurvivingReviewRulesTests::test_an_unreadable_verdict_ledger_does_not_manufacture_a_rejection
+- **Verified:** yes (2026-09-26)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-30 | engineering amigo seat (independent, isolated worktree), reproduced by author | Filed |
+| 2026-09-26 | US0918 | AC1 and AC3 re-pointed to their re-homed tests in test_lean_one_verdict_ledger.py: the evidence ledger is retired, so the lane the REJECT must not fall through to is the frozen batch-review row |
+| 2026-09-26 | US0918 | AC2 retired in the D0259 pattern: the evidence lane and `sprint.py review-batch` are retired; a unit is covered by its independent delivery verdict or a frozen pre-constant batch row |

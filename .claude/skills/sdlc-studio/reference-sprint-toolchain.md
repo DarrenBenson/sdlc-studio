@@ -47,9 +47,7 @@ Read this at plan time. `sprint plan` prints it.
 | --- | --- | --- |
 | Brief a seat | `critic.py brief --unit <id> --seat engineering\|product\|qa` | writing the review prompt yourself |
 | Resolve who reviews and who signs | `persona_resolve.py panel` | choosing seats by judgement |
-| Record the adversarial pass | `critic.py evidence --unit <id> --findings ...` | leaving the pass in a transcript |
 | Record the verdict | `critic.py record --unit <id> --verdict ... [--brief <fingerprint>]` | a verdict left in a transcript; it records with or without `--brief`, and `critic.py brief` remains the way to brief the seat |
-| Record a batch pass | `sprint.py review-batch --units ... --fields-file <doc>` | findings mangled by the shell |
 | Answer a REJECT once its findings are fixed | `critic.py brief --unit <id> --seat <seat> --rejoinder <verdict>`, then the rejecting reviewer's round 2 through `critic.py record`: an APPROVE answers it, a REJECT at the cap carries the unit to a bug | a hand drop, a ruling or a different reviewer's APPROVE, none of which answers it |
 | Find library-only verifiers | `verify_ac.py lane-check` | discovering it in review |
 
@@ -63,7 +61,6 @@ Read this at plan time. `sprint plan` prints it.
 | Record estimate versus actual | `retro.py accuracy --id <id> --write` | leaving the cost unmeasured |
 | Lift the retro's lessons | `retro.py extract --id <id>` | letting a lesson die in one document |
 | Refresh what the next sprint reads | `lessons.py summary` | a digest that no longer matches the log |
-| Record the adversarial pass | `critic.py evidence --unit <id> --reviewer <seat>` | a review that exists only in a transcript |
 | Say where a closed unit's work went | `transition.py annotate --id <id> --field "Closed with findings in"` | leaving the reader to hunt the retro |
 | Close (PREPARE) | `sprint.py close --retro <id>` | transitioning units by hand |
 | Sign the prepared run (SEAL) | `sprint.py sign --report <RPTxxxx> --principal <who>` | `close --apply-signoff`, which is refused |
@@ -100,10 +97,9 @@ tag without a release is, to the update mechanism, unreleased.
 | Pull a unit from the batch | `sprint.py batch drop <id> --reason <why>` | `Deferred`, which leaves it gated |
 | Add an epic's stories as one priced set | `sprint.py batch add-epic --epic <id> --status Ready` | adding them one at a time |
 | Raise the ceiling on the record | `sprint.py appetite resize --units <n> --reason <why>` | overrunning silently |
-| Review at the batch boundary | `sprint.py review-batch --open <ids>` | queueing every review to the close |
 
-Review at the BOUNDARY, not at the close. A batch reviewed where it was built makes a finding
-delivery work in the batch that caused it; the same finding found at the close is close
+Review each unit as it lands, not at the close, and record its verdict with `critic.py record`.
+A unit reviewed where it was built makes a finding delivery work in the batch that caused it; the same finding found at the close is close
 overhead, and by then the repair means reopening work believed finished.
 
 ## When a command is missing

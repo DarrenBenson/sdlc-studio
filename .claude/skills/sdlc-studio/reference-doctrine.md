@@ -170,9 +170,9 @@ rules, the agents/services) live in that project's agent-instructions file
 
     So the review point is the batch boundary the project already commits on. Reviewed
     there, a finding is delivery work in the batch that caused it, priced against that
-    batch, and fixed by a context that still holds it. Record the pass with
-    `sprint review-batch --reviewer <who> --author <who> --verdict APPROVE --findings
-    "<what was probed>"`; reviewer and author must differ, because a self-review is the
+    batch, and fixed by a context that still holds it. Record each unit's verdict with
+    `critic.py record --unit <id> --reviewer <who> --author <who> --verdict APPROVE`;
+    reviewer and author must differ, because a self-review is the
     context that wrote the code agreeing with itself. `sprint close` then REFUSES a batch
     carrying units no independent pass covered, and names them: **the close asserts that
     coverage exists, it does not perform the review.** A repair written in response to a

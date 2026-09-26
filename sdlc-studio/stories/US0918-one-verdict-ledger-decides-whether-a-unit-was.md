@@ -1,6 +1,6 @@
 # US0918: One verdict ledger decides whether a unit was reviewed
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,14 +19,19 @@
 
 - **AC1:** Given `critic.py evidence`, `critic.py sprint-review` or `sprint.py review-batch`, when invoked, then each exits 2 with a message that it is retired naming `critic.py record` for a per-unit delivery verdict, and neither script's `--help` lists them
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_one_verdict_ledger.py::OneVerdictLedgerTests::test_the_ledger_verbs_are_retired
+  - **Verified:** yes (2026-09-26)
 - **AC2:** Given a Done fixture story covered only by a `sprint-review-record.md` APPROVE row dated on or after `critic.REPAIR_VERB_RETIRED`, when `conformance.py check` runs, then critiqued is unmet naming the missing independent APPROVE; the same row dated before the constant covers the story; and an independent delivery APPROVE covers it either way. Fails on: HEAD, where the on-constant row covers; deleting the batch-review read outright, where the pre-constant row stops covering (in this repository 253 Done stories are covered only by such rows, and conformance falls from 854 to 670 of 936, measured by stubbing the read)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_one_verdict_ledger.py::OneVerdictLedgerTests::test_only_a_frozen_batch_row_or_a_delivery_approve_covers
+  - **Verified:** yes (2026-09-26)
 - **AC3:** Given a Done unit with a `critic-evidence.md` row and a pre-constant `sprint-review-record.md` row, when conformance, the gate, the close and the sprint report run, then each output is identical with `critic-evidence.md` removed, both files' bytes are unchanged, and no shipped script calls `critic.evidence_for`. Fails on: removing conformance's read while `sprint.py` (5166, 5476, 6154) still reads evidence rows
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_one_verdict_ledger.py::OneVerdictLedgerTests::test_the_evidence_ledger_is_frozen_and_unread
+  - **Verified:** yes (2026-09-26)
 - **AC4:** Given `docgen.py surface` rerun in the same commit, then reference-scripts-surface.md names none of `critic.py evidence`, `critic.py sprint-review` or `sprint.py review-batch` and `docgen.py surface --check` reports 0 drift
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_one_verdict_ledger.py::OneVerdictLedgerTests::test_the_surface_names_no_retired_verb
+  - **Verified:** yes (2026-09-26)
 - **AC5:** Given the criteria whose stamped Verify selector names a test this story deletes (EvidenceTests, SprintReviewCritiquedTests, BatchBoundaryReviewTests, ReviewBatchFieldsFileTests, EscalationReachesBothRecordingCommandsTests and TheCloseCertifiesRatherThanReviewsTests): BG0441 (3), BG0499 (3), US0247 (3), US0560 (5), US0561 (1), US0562 (4), US0563 (1) and US0615 (2), then each is retired in the D0259 pattern (`Verify: manual - retired by US0918: <why>`, `Verified: manual (<date>) - retired, superseded by US0918`), and no `Verified: yes` selector under sdlc-studio/ names a deleted test node. A SprintReviewCritiquedTests case that pins the pre-constant read survives, and its stamp stays
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_one_verdict_ledger.py::OneVerdictLedgerTests::test_no_stamp_names_a_deleted_test
+  - **Verified:** yes (2026-09-26)
 
 ## Notes
 

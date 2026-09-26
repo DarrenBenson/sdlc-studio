@@ -465,9 +465,10 @@ def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
                 and all(v in ("yes", "manual") for v in verified_states)
                 and dead_stamps == 0)
     reconciled = (not no_index) and sdlc_md.norm_id(rid) not in drift_ids
-    # A sprint-level adversarial full-diff review covers every unit in its range at once. It
-    # satisfies `critiqued` for a unit that had no INDIVIDUAL verdict - but never overrides a
-    # per-unit REJECT, which is answered per unit.
+    # A frozen sprint-level review (dated before `critic.REPAIR_VERB_RETIRED`, the licence
+    # `critic.sprint_reviews` applies) covers every unit in its range at once. It satisfies
+    # `critiqued` for a unit that had no INDIVIDUAL verdict - but never overrides a per-unit
+    # REJECT, which is answered per unit. No verb writes the ledger now.
     sprint_rev = critic.sprint_review_for(root, rid)
     sprint_covers = critic.sprint_covers_independently(root, rid, sprint_rev)
     # The verdict half: an APPROVE AND proven author != reviewer independence - a

@@ -881,20 +881,17 @@ def is_superseded(verdict: dict | None) -> bool:
 def _adversarial_worker_ids(repo_root: Path | str, unit: str,
                             exclude_row: dict | None = None) -> set[str]:
     """Every reviewer id that did adversarial or review WORK on the unit in-session: the
-    reviewers on its evidence rows, and on its verdict and sprint-level-review rows OTHER than
-    the one under correction. A principal wrongly named on a single verdict row appears in NONE
-    of these - a reviewer of record signs off; they do not file evidence or a second verdict -
-    which is the recordable distinction between a mis-attribution and an author retiring a true
-    verdict. `exclude_row` is the verdict row a supersession is about: its own reviewer is not
-    counted FROM that row, so the party the correction concerns cannot veto their own correction;
-    a genuine seat that filed a blocking verdict also left an evidence row and so is still caught.
+    reviewers on its verdict and sprint-level-review rows OTHER than the one under correction.
+    A principal wrongly named on a single verdict row appears in NONE of these - a reviewer of
+    record signs off; they do not file a second verdict - which is the recordable distinction
+    between a mis-attribution and an author retiring a true verdict. `exclude_row` is the
+    verdict row a supersession is about: its own reviewer is not counted FROM that row, so the
+    party the correction concerns cannot veto their own correction. The retired evidence ledger
+    is not read: one verdict ledger says who reviewed a unit.
     Superseded rows are read RAW here: independence is about who touched the unit, and this set is
     what decides whether a supersession may retire that fact - it cannot depend on the answer."""
     target = sdlc_md.norm_id(unit)
     ids: set[str] = set()
-    for r in _read_rows(evidence_path(repo_root), _EVIDENCE_COLS):
-        if sdlc_md.norm_id(r["unit"]) == target:
-            ids.add(_id(r["reviewer"]))
     for ph in PHASES:
         for v in read_verdicts(repo_root, ph):
             if sdlc_md.norm_id(v["unit"]) != target:
@@ -930,7 +927,7 @@ def record_supersession(repo_root: Path | str, unit: str, date: str, reason: str
       superseding can retire an independence attribution, so it is held to the sign-off's own
       rule: a correction with no recorded boundary is a hand edit with extra steps;
     - an authoriser who is the row's own AUTHOR, or who did in-session review work on the unit
-      (a reviewer on its evidence, or on any other verdict / sprint-review row) - a party the
+      (a reviewer on any other verdict or frozen sprint-review row) - a party the
       author controls cannot authorise retiring the review that blocks it. The row's own wrongly
       named reviewer is NOT refused on that row alone: a row naming the wrong reviewer is exactly
       the case this exists for, and the person wrongly named is the one who can rule the pass
@@ -977,7 +974,7 @@ def record_supersession(repo_root: Path | str, unit: str, date: str, reason: str
     if _id(authorised_by) in _adversarial_worker_ids(repo_root, unit, exclude_row=row):
         raise ValueError(
             f"authoriser {authorised_by!r} did in-session review work on {target} (a reviewer "
-            f"on its evidence or another verdict / sprint-review row) - a party the author "
+            f"on another verdict or sprint-review row) - a party the author "
             f"controls cannot authorise retiring the review, on the sign-off's independence "
             f"rule; name a principal in a separate trust boundary")
     path = verdicts_path(repo_root, phase)
@@ -996,22 +993,10 @@ def record_supersession(repo_root: Path | str, unit: str, date: str, reason: str
     return path
 
 
-# --- Evidence and repair ledgers ------------------------------------------------------
-# The seat subagent's adversarial pass is EVIDENCE (findings, reviewer seat, author) in
-# its own log. The reviewer of record is the operator, who signs the run once at
-# `sprint sign`; the per-unit sign-off ledger is frozen history that nothing reads.
-_EVIDENCE_FILE = "critic-evidence.md"
-_EVIDENCE_HEADER = (
-    "# Critic Evidence\n\n"
-    "> Append-only. The adversarial reviewer's pass per unit - findings, reviewer seat,\n"
-    "> author. Evidence is INPUT to the sign-off, never the sign-off itself.\n\n"
-    "| Unit | Reviewer | Author | Date | Findings |\n"
-    "| --- | --- | --- | --- | --- |\n")
-_EVIDENCE_COLS = ("unit", "reviewer", "author", "date", "findings")
-def evidence_path(repo_root: Path | str) -> Path:
-    return Path(repo_root) / "sdlc-studio" / "reviews" / _EVIDENCE_FILE
-
-
+# --- Ledger rows ------------------------------------------------------------------------
+# One verdict ledger (`critic-verdicts.md`) says whether a unit was reviewed. The evidence
+# ledger (`critic-evidence.md`) and the per-unit sign-off ledger are frozen history that nothing
+# reads; the operator signs the run once at `sprint sign`.
 
 
 def _append_row(path: Path, header: str, cells: tuple[str, ...]) -> Path:
@@ -1056,29 +1041,6 @@ def _read_rows(path: Path, cols: tuple[str, ...]) -> list[dict]:
     return out
 
 
-def _latest_for(rows: list[dict], unit: str):
-    target = sdlc_md.norm_id(unit)
-    latest = None
-    for r in rows:
-        if sdlc_md.norm_id(r["unit"]) == target:
-            latest = r
-    return latest
-
-
-def record_evidence(repo_root: Path | str, unit: str, reviewer: str, author: str,
-                    findings: str) -> Path:
-    """Append the adversarial pass as evidence. Findings must have substance -
-    an empty evidence row would certify a pass that cannot be shown to have run."""
-    if not (findings or "").strip():
-        raise ValueError("evidence needs findings text - an empty adversarial pass "
-                         "is not evidence (record what was probed, even 'none blocking')")
-    if not (reviewer or "").strip() or not (author or "").strip():
-        raise ValueError("evidence needs both --reviewer (the seat) and --author")
-    return _append_row(evidence_path(repo_root), _EVIDENCE_HEADER,
-                       (sdlc_md.norm_id(unit), _clean(reviewer), _clean(author),
-                        sdlc_md.now_date(), _clean(findings)))
-
-
 def split_items(text: str) -> list[str]:
     """Split a channel string into items on an UNESCAPED `;`, unescaping as it goes.
 
@@ -1111,11 +1073,6 @@ def split_items(text: str) -> list[str]:
     return out
 
 
-def evidence_for(repo_root: Path | str, unit: str):
-    """The latest evidence row for a unit, or None."""
-    return _latest_for(_read_rows(evidence_path(repo_root), _EVIDENCE_COLS), unit)
-
-
 def _is_principal_superseded(repo_root: Path | str, unit: str, row: dict) -> bool:
     """True when a verdict row's attribution is retired by a PRINCIPAL-authorised supersession -
     the only kind that stops the row's reviewer counting toward independence. This re-checks the
@@ -1136,7 +1093,7 @@ def _is_principal_superseded(repo_root: Path | str, unit: str, row: dict) -> boo
 
 
 def session_reviewer_ids(repo_root: Path | str, unit: str) -> set[str]:
-    """Every reviewer id recorded on the unit's evidence, verdict, and sprint-level-review rows.
+    """Every reviewer id recorded on the unit's verdict and sprint-level-review rows.
     A principal drawn from this set is a reviewer signing off its own review (or the author's
     proxy), and `sprint sign` refuses it: the reviewer of record must differ from BOTH the
     author and the adversarial reviewer, per-unit or sprint-scope alike.
@@ -1151,9 +1108,6 @@ def session_reviewer_ids(repo_root: Path | str, unit: str) -> set[str]:
     which is what un-strands the unit the incident stranded."""
     target = sdlc_md.norm_id(unit)
     ids: set[str] = set()
-    for r in _read_rows(evidence_path(repo_root), _EVIDENCE_COLS):
-        if sdlc_md.norm_id(r["unit"]) == target:
-            ids.add(_id(r["reviewer"]))
     for phase in PHASES:  # BOTH verdict phases - a plan-review seat is still the author's spawn
         for v in read_verdicts(repo_root, phase):
             if sdlc_md.norm_id(v["unit"]) != target:
@@ -1168,60 +1122,18 @@ def session_reviewer_ids(repo_root: Path | str, unit: str) -> set[str]:
     return ids
 
 
-# --- Sprint-level review (one full-diff pass covers a batch) ---------------------------
-# The closing adversarial pass reads the WHOLE sprint diff at once, so recording it per unit is
-# false precision - it is one judgement over one range. Recorded here as evidence keyed to the
-# units it covers, so the per-unit `critiqued` gate reads it as coverage for a unit that had no
-# individual verdict. Coverage NEVER overrides a per-unit REJECT: a rejected unit still repairs
-# per unit (a later per-unit APPROVE), because the sprint pass judged the range, not that fix.
+# --- Sprint-level review (frozen: read, never written) -----------------------------------
+# A closing full-diff pass once covered a batch at once, recorded as one row naming the units.
+# No verb writes the ledger now: a unit is reviewed by its own delivery verdict. It is the only
+# record that some historical Done units were reviewed, so it is still READ, frozen - a row dated
+# before `REPAIR_VERB_RETIRED` covers the units it names, and a later row covers nothing
+# (`sprint_reviews`). Coverage NEVER overrides a per-unit REJECT.
 _SPRINT_FILE = "sprint-review-record.md"
-_SPRINT_HEADER = (
-    "# Sprint-level Reviews\n\n"
-    "> Append-only. One adversarial full-diff review covering a batch of units at close -\n"
-    "> verdict, reviewer, author, and the units covered. It is coverage for the per-unit\n"
-    "> critiqued gate; a per-unit REJECT still repairs per unit.\n\n"
-    "| Base | Reviewer | Author | Verdict | Date | Units | Findings |\n"
-    "| --- | --- | --- | --- | --- | --- | --- |\n")
 _SPRINT_COLS = ("base", "reviewer", "author", "verdict", "date", "units", "findings")
 
 
 def sprint_review_path(repo_root: Path | str) -> Path:
     return Path(repo_root) / "sdlc-studio" / "reviews" / _SPRINT_FILE
-
-
-def record_sprint_review(repo_root: Path | str, units: list[str], reviewer: str, author: str,
-                         verdict: str, findings: str, base: str = "",
-                         tokens: int | None = run_state.UNMEASURED,
-                         repaired: list[dict] | None = None) -> Path:
-    """Record one sprint-level adversarial full-diff review over `units`.
-
-    Independence is PROVEN, not assumed: reviewer and author are both required and must differ.
-    Findings must have substance - an empty adversarial pass is not evidence. The verdict is
-    APPROVE or REJECT; a REJECT is recorded (the range was reviewed and rejected) but never clears
-    a unit's gate."""
-    v = (verdict or "").upper()
-    if v not in (APPROVE, REJECT):
-        raise ValueError(f"sprint review verdict must be {APPROVE} or {REJECT}, got {verdict!r}")
-    if not (reviewer or "").strip() or not (author or "").strip():
-        raise ValueError("a sprint review needs both --reviewer and --author - independence is proven")
-    if _id(reviewer) == _id(author):
-        raise ValueError(f"reviewer {reviewer!r} == author - a sprint-level self-review never "
-                         "clears the critiqued gate")
-    if not (findings or "").strip():
-        raise ValueError("a sprint review needs findings text - an empty adversarial pass is "
-                         "not evidence (record what was probed, even 'none blocking')")
-    ids = [sdlc_md.norm_id(u) for u in units if sdlc_md.norm_id(u)]
-    if not ids:
-        raise ValueError("a sprint review must name the units it covers")
-    written = _append_row(sprint_review_path(repo_root), _SPRINT_HEADER,
-                          (_clean(base) or "-", _clean(reviewer), _clean(author), v,
-                           sdlc_md.now_date(), _clean(" ".join(ids)), _clean(findings)))
-    # The review IS the round. Recorded after the row is written, so a run-state failure can
-    # never cost us the evidence; and skipped entirely when no run is open, which leaves the
-    # review recorded and nothing counted against a run that has no identity to count against.
-    run_state.record_review_round(repo_root, verdict=v, units=ids, reviewer=_clean(reviewer),
-                                  tokens=tokens, repaired=repaired)
-    return written
 
 
 #: A goal clause's possible verdicts. `partial` exists because a goal with more than one clause
@@ -1416,7 +1328,23 @@ def judge_defects_against_goal(defects: list[dict], clauses: list[str],
 
 
 def sprint_reviews(repo_root: Path | str) -> list[dict]:
-    return _read_rows(sprint_review_path(repo_root), _SPRINT_COLS)
+    """The frozen batch-review rows that still count: those dated before `REPAIR_VERB_RETIRED`.
+
+    THE one read of the ledger, so every reader - conformance, the close, the sign, the report
+    and `sprint_review_for` - applies the same date licence. The ledger's last row predates the
+    constant, so it reuses the repair ledger's day rather than pinning a second one. An undated
+    row, or one dated on or after the constant, covers nothing: no verb writes one now, and a
+    hand-appended row cannot mint coverage for new work.
+    """
+    return [r for r in _read_rows(sprint_review_path(repo_root), _SPRINT_COLS)
+            if _dated_before(r.get("date"), REPAIR_VERB_RETIRED)]
+
+
+def _dated_before(cell, day: str) -> bool:
+    """True when a row's Date cell is an ISO date strictly before `day`; blank or unparseable
+    reads False, so an undated row is never taken for history."""
+    when = str(cell or "").strip()[:10]
+    return bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", when)) and when < day
 
 
 #: Two REJECTs on one unit is the point at which the repair has stopped converging.
@@ -1428,11 +1356,10 @@ def review_rounds_across_ledgers(repo_root: Path | str, unit: str,
     """Every recorded adversarial round on one unit, from BOTH ledgers, oldest first.
 
     A unit's rounds live in two files and the question "has this stopped converging" spans them:
-    `critic.py record` appends to `critic-verdicts.md`, and `sprint.py review-batch` appends a
-    batch row naming the unit to `sprint-review-record.md`. Escalation used to read the first
-    only, while the command that consulted it wrote the second - so two `review-batch --verdict
-    REJECT` rounds on one unit escalated nothing, and the notification fired only in the single
-    combination where somebody used both commands on the same unit.
+    `critic.py record` appends to `critic-verdicts.md`, and the frozen batch ledger
+    (`sprint-review-record.md`, read through `sprint_reviews`) still holds historical batch rows
+    naming the unit. Escalation once read the first only, so two batch REJECT rounds on one unit
+    escalated nothing.
 
     Deliberately NOT folded into `unit_review_rounds`, which feeds `seat_verdicts` and the
     coverage predicate. Those ask "which seat holds what verdict on this unit" - a per-unit
@@ -1460,13 +1387,8 @@ def panel_escalation(rounds: list, seat_verdicts: dict) -> tuple[bool, str]:
     not mean the machine blocks on input that will not arrive. An escalation that waits is
     indistinguishable from a hang, and unattended that is exactly what it becomes.
 
-    Lives here, beside the ledgers it judges, so the THREE commands that record a round consult
-    one rule rather than a copy each: `sprint review-batch`, `critic record` and `critic
-    sprint-review`. The first draft of this said "two" and wired two - `sprint-review` writes the
-    same batch ledger `review-batch` writes and was left out, so two REJECTs recorded through it
-    printed nothing and the notice surfaced later against an unrelated verdict. Independent
-    review found that, not the author, which is the argument for counting the callers rather
-    than remembering them.
+    Lives here, beside the ledgers it judges, so the command that records a round - `critic
+    record`, the one verdict writer - consults one rule rather than a copy of it.
 
     `sprint.panel_escalation` delegates here and now has no production caller of its own - it is
     kept as a named shim because tests and any consuming project may still reach for it.
@@ -2108,7 +2030,8 @@ def _covered_ids(row: dict) -> set[str]:
 
 
 def sprint_review_for(repo_root: Path | str, unit: str):
-    """The latest sprint-level review whose covered-units list includes `unit`, or None."""
+    """The latest frozen sprint-level review (`sprint_reviews`, dated before
+    `REPAIR_VERB_RETIRED`) whose covered-units list includes `unit`, or None."""
     target = sdlc_md.norm_id(unit)
     latest = None
     for r in sprint_reviews(repo_root):
@@ -2126,8 +2049,8 @@ COVERAGE_UNREVIEWED = "unreviewed"  # nobody looked, or looked and the answer is
 
 def coverage_state(repo_root: Path | str, unit: str, phase: str = "delivery") -> str:
     """Which of the two states this unit's review is in: `approved` by an independent APPROVE
-    (or a batch review covering a unit with no verdict of its own), else `unreviewed`. A standing
-    REJECT reads `unreviewed` whatever else is recorded beside it."""
+    (or a frozen batch review covering a unit with no verdict of its own), else `unreviewed`. A
+    standing REJECT reads `unreviewed` whatever else is recorded beside it."""
     row = verdict_for(repo_root, unit, phase)
     # ONE authority, shared with `conformance.critiqued_unmet`. Answering this through
     # `sprint_covers_independently` alone gave two answers to one question: that predicate
@@ -2138,10 +2061,9 @@ def coverage_state(repo_root: Path | str, unit: str, phase: str = "delivery") ->
                    and (is_independent(row) or is_pre_gate(row)))
     if per_unit_ok:
         return COVERAGE_APPROVED
-    # No per-unit verdict at all: a batch review naming the unit still covers it, which is the
-    # third lane `review_coverage` has always read. Ignoring it classed an independently
-    # batch-reviewed unit as unreviewed AND named it as the one real gap - manufacturing
-    # exactly the false alarm this epic exists to remove.
+    # No per-unit verdict at all: a frozen batch review naming the unit, dated before
+    # `REPAIR_VERB_RETIRED`, still covers it - the same licence every batch-ledger reader
+    # applies through `sprint_reviews`, so this and `sprint.review_coverage` cannot disagree.
     if not row and sprint_covers_independently(repo_root, unit,
                                                sprint_review_for(repo_root, unit)):
         return COVERAGE_APPROVED
@@ -3254,7 +3176,6 @@ def batch_units(args: argparse.Namespace, verb: str) -> list[str]:
 #: refusal pays a round-trip per flag, which is how one sign-off cost nineteen spawns.
 BATCH_REQUIRED: dict = {
     "record": (("author", "--author"),),
-    "evidence": (("reviewer", "--reviewer"), ("author", "--author")),
 }
 
 
@@ -3407,30 +3328,6 @@ def cmd_record(args: argparse.Namespace) -> int:
     return rc
 
 
-def cmd_evidence(args: argparse.Namespace) -> int:
-    findings = args.findings
-    if getattr(args, "from_verdict", None):
-        if findings:
-            print("evidence refused: --from-verdict and --findings are mutually "
-                  "exclusive - one source of truth per record", file=sys.stderr)
-            return 2
-        src = args.from_verdict
-        try:
-            raw = (sys.stdin.read() if src == "-"
-                   else Path(src).read_text(encoding="utf-8"))
-            verdict, issues = parse_verdict_block(raw)
-        except (OSError, ValueError) as exc:
-            print(f"evidence refused: {exc}", file=sys.stderr)
-            return 2
-        findings = f"{verdict}: {issues or 'none'}"
-
-    def write(unit: str) -> None:
-        path = record_evidence(args.root, unit, args.reviewer, args.author, findings or "")
-        print(f"evidence recorded for {sdlc_md.norm_id(unit)} -> {path}")
-
-    return _run_batch(args, "evidence", write)
-
-
 #: Statuses that mean "delivered, awaiting the reviewer of record" - the state a sign-off EXISTS
 #: to resolve. Matched by name so a project renaming its review status keeps working.
 #:
@@ -3440,41 +3337,6 @@ def cmd_evidence(args: argparse.Namespace) -> int:
 #: One owner, one name, and a caller that breaks loudly if it ever moves.
 def is_awaiting_signoff(status: str) -> bool:
     return "review" in (status or "").strip().lower()
-
-
-def cmd_sprint_review(args: argparse.Namespace) -> int:
-    units = [u.strip() for u in args.units.split(",") if u.strip()]
-    findings = args.findings
-    if getattr(args, "from_verdict", None):
-        if findings:
-            print("sprint-review refused: --from-verdict and --findings are mutually exclusive",
-                  file=sys.stderr)
-            return 2
-        try:
-            raw = sys.stdin.read() if args.from_verdict == "-" else Path(args.from_verdict).read_text("utf-8")
-            v, issues = parse_verdict_block(raw)
-        except (OSError, ValueError) as exc:
-            print(f"sprint-review refused: {exc}", file=sys.stderr)
-            return 2
-        findings = f"{v}: {issues or 'none'}"
-        args.verdict = args.verdict or v
-    try:
-        path = record_sprint_review(args.root, units, args.reviewer, args.author,
-                                    args.verdict or "", findings or "", base=args.base or "")
-    except ValueError as exc:
-        print(f"sprint-review refused: {exc}", file=sys.stderr)
-        return 2
-    print(f"sprint-level review recorded ({args.verdict}) over {len(units)} unit(s) -> {path}")
-    # THE THIRD recording command. This writes the same batch ledger `sprint review-batch`
-    # writes, so it records rounds on exactly the same terms - and it was the one command left
-    # unwired when the escalation was taught to read both ledgers. Two REJECTs recorded here
-    # printed nothing, and the notice then appeared later, attached to an unrelated APPROVE
-    # through another command. That is the defect this rule exists to remove, surviving in the
-    # third door; found by the independent review of BG0499 rather than by the author.
-    for unit in units:
-        if notice := escalation_notice(args.root, unit):
-            print(notice)
-    return 0
 
 
 def cmd_show(args: argparse.Namespace) -> int:
@@ -3588,36 +3450,6 @@ def build_parser() -> argparse.ArgumentParser:
                     help="check the open run's approved batch; refused when no run is open")
     cc.add_argument("--root", default=".")
     cc.set_defaults(func=cmd_caller_check)
-    e = sub.add_parser("evidence", help="Record the adversarial pass as evidence "
-                                        "(findings, reviewer seat, author) - distinct from the verdict.")
-    e.add_argument("--unit", action="append", metavar="ID",
-                   help="a unit id; repeatable, and a comma-separated list is accepted")
-    e.add_argument("--units", action="append", metavar="ID[,ID...]",
-                   help="unit ids for a whole batch in one invocation; repeatable")
-    e.add_argument("--from-run", dest="from_run", action="store_true",
-                   help="take the open run's approved batch as the scope; refused when no run is open")
-    e.add_argument("--reviewer", help="the seat that ran the adversarial pass")
-    e.add_argument("--author")
-    e.add_argument("--findings", default="",
-                   help="what was probed and found; or use --from-verdict")
-    e.add_argument("--from-verdict", dest="from_verdict", metavar="FILE|-",
-                   help="record the returned VERDICT/ISSUES/BLOCKING block as the findings")
-    e.add_argument("--root", default=".")
-    e.set_defaults(func=cmd_evidence)
-    sr = sub.add_parser("sprint-review", help="Record one adversarial full-diff review covering "
-                                              "a batch of units - coverage for the per-unit "
-                                              "critiqued gate.")
-    sr.add_argument("--units", required=True, help="comma-separated unit ids the review covers")
-    sr.add_argument("--reviewer", required=True, help="the independent reviewer (the QA seat)")
-    sr.add_argument("--author", required=True, help="the author the review is independent of")
-    sr.add_argument("--verdict", default=None, choices=("APPROVE", "REJECT"),
-                    help="the review verdict (or read from --from-verdict's block)")
-    sr.add_argument("--findings", default=None, help="what the adversarial pass probed")
-    sr.add_argument("--from-verdict", dest="from_verdict", default=None,
-                    help="read the VERDICT/ISSUES block from a file (or - for stdin)")
-    sr.add_argument("--base", default=None, help="the diff base ref the review covered (advisory)")
-    sr.add_argument("--root", default=".")
-    sr.set_defaults(func=cmd_sprint_review)
     sp = sub.add_parser("supersede", aliases=["correct"],
                         help="Retire a verdict row that records an event which did not "
                              "happen, by appending a supersession record naming the row, "
@@ -3660,6 +3492,10 @@ RETIRED_VERBS = {
     "signoff-brief": "the operator reads the run's report and signs it once with "
                      "`sprint.py sign`",
     "repair": "the repair ledger is gone, and a REJECT has two exits: " + REJECT_EXITS,
+    "evidence": "one verdict ledger says whether a unit was reviewed: record a per-unit "
+                "delivery verdict with `critic.py record`",
+    "sprint-review": "a batch review covers nothing new: record a per-unit delivery verdict "
+                     "with `critic.py record`",
 }
 
 

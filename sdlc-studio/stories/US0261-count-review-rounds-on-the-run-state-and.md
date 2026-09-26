@@ -22,8 +22,8 @@
 - **Given** an open run with no review rounds recorded
 - **When** a review verdict is recorded for the run
 - **Then** the run state carries a review-round count of 1, and a second recorded verdict makes it 2
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_recording_a_verdict_increments_the_run_review_round
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by US0918: the review round's only writer, `critic.py sprint-review`, is retired and `critic.py record` records no round; `review_round_guard` still reads the rounds a run carries
+- **Verified:** manual (2026-09-26) - retired, superseded by US0918
 
 ### AC2: Past the ceiling, a further round is refused rather than started
 
@@ -54,8 +54,8 @@
 - **Given** no open run
 - **When** a verdict is recorded
 - **Then** the verdict is still recorded and the absence of a run is reported, never a phantom count written against a null run id
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_verdict_without_an_open_run_reports_rather_than_counts
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by US0918: the review round's only writer, `critic.py sprint-review`, is retired and `critic.py record` records no round; `review_round_guard` still reads the rounds a run carries
+- **Verified:** manual (2026-09-26) - retired, superseded by US0918
 
 ## Notes
 
@@ -70,3 +70,4 @@ from `_blank()` is a `KeyError` on any run opened before this story.
 | --- | --- | --- |
 | 2026-07-19 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-20 | sdlc-studio | Groomed: user story and ACs authored against the critic/run_state surface |
+| 2026-09-26 | US0918 | AC1 and AC5 retired in the D0259 pattern: the review round's only writer, `critic.py sprint-review`, is retired and `critic.py record` records no round; `review_round_guard` still reads the rounds a run carries |

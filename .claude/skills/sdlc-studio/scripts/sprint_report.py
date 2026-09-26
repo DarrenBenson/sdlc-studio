@@ -921,8 +921,7 @@ NON_CEREMONY_VERBS = {
     # only ever read pending when the page is composed.
     "sprint": ("appetite", "close", "boundary", "report", "checklist", "sign",
                "reopen", "stop", "decision", "batch", "lane", "next", "queue", "call"),
-    "critic": ("brief", "caller-check", "correct", "evidence", "repair", "show",
-               "supersede"),
+    "critic": ("brief", "caller-check", "correct", "repair", "show", "supersede"),
     "handoff": ("show",),
     "lessons": ("add", "carried", "carry", "classes", "list", "propose", "prune", "rank",
                 "recall", "repeats", "revalidate", "violated"),
@@ -949,12 +948,8 @@ CHECKLIST = (
      "window": "sprint plan",
      "title": "Batch approved and the run opened", "command": "sprint plan",
      "resolver": "_ck_run_opened"},
-    {"id": "batch-boundary-review", "kind": STAGE, "authority": DERIVED,
-     "window": "sprint review-batch",
-     "title": "Review at each delivery batch boundary", "command": "sprint review-batch",
-     "resolver": "_ck_batch_boundary_review"},
     {"id": "closing-review", "kind": STAGE, "authority": DERIVED,
-     "title": "Closing full-diff review", "command": "critic sprint-review",
+     "title": "Closing full-diff review", "command": "critic record",
      "resolver": "_ck_closing_review"},
     {"id": "tick-verification", "kind": STAGE, "authority": DERIVED,
      "title": "Ticked criteria the tree supports", "command": "sprint report",
@@ -1110,29 +1105,6 @@ def _ck_run_opened(ctx: dict) -> tuple:
     return (RAN, f"{run['run_id']} ({len(run.get('batch') or [])} unit(s))", "")
 
 
-def _ck_batch_boundary_review(ctx: dict) -> tuple:
-    try:
-        spans = run_state.batches(ctx["root"])
-    except Exception as exc:  # noqa: BLE001
-        sdlc_md.debug("sprint_report._ck_batch_boundary_review", exc)
-        return (NOT_RUN, "unreadable", f"the batch spans could not be read ({exc})")
-    if not spans:
-        return (NOT_RUN, "no batch spans",
-                "no delivery batch was opened, so every finding this run raised was raised at "
-                "the close - which is close work, not sprint work")
-    done = [s for s in spans if s.get("reviewed_at")]
-    if not done:
-        # A span OPENED is not a review HELD. Reporting `ran` here on the strength of the
-        # span's existence would certify the ceremony by the act of scheduling it.
-        return (NOT_RUN, f"0/{len(spans)} reviewed",
-                "delivery batches were opened and none was independently reviewed, so every "
-                "finding this run raised was raised at the close")
-    if len(done) < len(spans):
-        return (RAN, f"{len(done)}/{len(spans)} reviewed",
-                f"{len(spans) - len(done)} span(s) closed without an independent pass")
-    return (RAN, f"{len(done)}/{len(spans)} reviewed", "")
-
-
 #: The one verdict that COVERS a unit. Compared against an upper-cased cell, because the
 #: ledgers are written by two different recorders and a case-sensitive match against one
 #: spelling is how a recorded approval comes to satisfy nothing.
@@ -1175,9 +1147,9 @@ def _coverage(ctx: dict) -> dict | None:
     uncovered` and `71 recorded passes` about the same batch. A report that contradicts itself
     is a fact about the report, and the reader has no way to tell which number to believe.
 
-    `sprint.review_coverage` is the canonical one: it is the richest (per-unit verdict,
-    adversarial evidence, batch review, each proving independence the same way) and it is
-    already what the close chain refuses on. Making the checklist rows read it means the close
+    `sprint.review_coverage` is the canonical one: it reads the per-unit verdict and the frozen
+    batch review, each proving independence the same way, and it is already what the close chain
+    refuses on. Making the checklist rows read it means the close
     and the page it prints cannot diverge.
 
     None is not an empty reading. An unresolvable answer must not read as "nothing is covered",

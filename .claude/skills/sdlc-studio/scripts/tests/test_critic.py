@@ -149,33 +149,6 @@ class CliTests(unittest.TestCase):
             self.assertIsNone(mod.verdict_for(Path(d), "US0017"),
                               "a refused record must write nothing")
 
-    def test_cli_SprintReview_records_and_covers(self) -> None:
-        # US0247: the sprint-review CLI records a batch verdict readable as coverage per unit.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            rc = mod.main(["sprint-review", "--units", "US0017,US0018", "--reviewer", "qa-seat",
-                           "--author", "builder", "--verdict", "APPROVE",
-                           "--findings", "full-diff pass", "--root", str(root)])
-            self.assertEqual(rc, 0)
-            rev = mod.sprint_review_for(root, "US0018")
-            self.assertIsNotNone(rev)
-            self.assertTrue(mod.sprint_covers_independently(root, "US0018", rev))
-
-    def test_cli_SprintReview_refuses_self_review(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            mod = _load()
-            # Captured, not printed: this call REFUSES by design, so its refusal is noise a
-            # real error could hide behind. Asserted on, which is stronger than letting it
-            # scroll past - the message is now part of the contract rather than a side effect.
-            buf = io.StringIO()
-            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
-                rc = mod.main(["sprint-review", "--units", "US0017", "--reviewer", "bob",
-                               "--author", "bob", "--verdict", "APPROVE", "--findings", "x",
-                               "--root", d])
-            self.assertNotEqual(rc, 0)
-            self.assertIn("self-review", buf.getvalue())
-
     def test_underscores_escaped_to_avoid_md037(self):
         # BG0023: underscored identifiers in the issues text must be escaped so they cannot
         # pair into markdown emphasis (markdownlint MD037).
@@ -880,63 +853,6 @@ class FromVerdictTests(unittest.TestCase):
             self.assertIn("mutually exclusive", err.getvalue())
 
 
-class EvidenceTests(unittest.TestCase):
-    """CR0323 / RFC0044 D1: the seat subagent's adversarial pass is recorded as
-    EVIDENCE (findings, reviewer seat, author) in its own log, distinct from the
-    verdict record - the finder's output is input to the sign-off, never the sign-off."""
-
-    def test_record_and_lookup_evidence(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            mod.record_evidence(root, "US0001", reviewer="qa-seat", author="builder",
-                                findings="two probes executed; none blocking")
-            ev = mod.evidence_for(root, "US0001")
-            self.assertIsNotNone(ev)
-            self.assertEqual(ev["reviewer"], "qa-seat")
-            self.assertEqual(ev["author"], "builder")
-            self.assertIn("probes", ev["findings"])
-            self.assertIsNone(mod.evidence_for(root, "US9999"))
-            # distinct from the verdict log: recording evidence never mints a verdict
-            self.assertIsNone(mod.verdict_for(root, "US0001"))
-            self.assertNotEqual(mod.evidence_path(root), mod.verdicts_path(root))
-
-    def test_evidence_refuses_empty_findings(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            mod = _load()
-            with self.assertRaises(ValueError):
-                mod.record_evidence(d, "US0001", reviewer="qa", author="b", findings="  ")
-
-    def test_evidence_cli_from_verdict_block(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            f = root / "v.txt"
-            f.write_text("VERDICT: REJECT\nISSUES: [regression] off-by-one at flow.py:10\nBLOCKING: the off-by-one\n",
-                         encoding="utf-8")
-            with contextlib.redirect_stdout(io.StringIO()):
-                rc = mod.main(["evidence", "--unit", "US0001", "--reviewer", "qa-seat",
-                               "--author", "builder", "--from-verdict", str(f),
-                               "--root", str(root)])
-            self.assertEqual(rc, 0)
-            ev = mod.evidence_for(root, "US0001")
-            self.assertIn("REJECT", ev["findings"])
-            self.assertIn("off-by-one", ev["findings"])
-
-    def test_evidence_cli_refuses_malformed_block(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = _load()
-            f = root / "v.txt"
-            f.write_text("no contract here\n", encoding="utf-8")
-            err = io.StringIO()
-            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
-                rc = mod.main(["evidence", "--unit", "US0001", "--reviewer", "qa",
-                               "--author", "b", "--from-verdict", str(f), "--root", str(root)])
-            self.assertNotEqual(rc, 0)
-            self.assertIsNone(mod.evidence_for(root, "US0001"))
-
-
 class RejoinderTests(unittest.TestCase):
     """CR0329: the re-verdict loop's scaffolding emitted deterministically - the
     prior verdict quoted verbatim, the refreshed scope, the same return contract."""
@@ -1021,6 +937,12 @@ class RejoinderProbeTests(unittest.TestCase):
             self.assertEqual(text.count("VERDICT: APPROVE or REJECT"), 2)
 
 
+def _round(root, verdict: str = "REJECT", **kw):
+    """One close-review round on the open run, as the retired batch-review writer recorded it."""
+    return _run_state().record_review_round(root, verdict=verdict.upper(), units=["US0001"],
+                                            reviewer="seat", **kw)
+
+
 def _run_state():
     """The run_state module, loaded the same way critic.py reaches it."""
     import importlib
@@ -1039,24 +961,12 @@ class ReviewRoundCountTests(unittest.TestCase):
         rs.open_run(root, batch=["US0001"], goal="done")
         return rs
 
-    def test_recording_a_verdict_increments_the_run_review_round(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, rs = _load(), self._open(root)
-            mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
-                                     verdict="reject", findings="something")
-            self.assertEqual(rs.review_round_count(root), 1)
-            mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
-                                     verdict="approve", findings="repaired")
-            self.assertEqual(rs.review_round_count(root), 2)
-
     def test_round_past_the_ceiling_is_refused(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod, rs = _load(), self._open(root)
             for _ in range(3):
-                mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
-                                         verdict="reject", findings="f")
+                _round(root, "reject")
             with self.assertRaises(ValueError) as ctx:
                 mod.review_round_guard(root, ceiling=3)
             msg = str(ctx.exception)
@@ -1097,11 +1007,9 @@ class ReviewRoundCountTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod, rs = _load(), self._open(root)
-            mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
-                                     verdict="reject", findings="f")
+            _round(root, "reject")
             self.assertEqual(mod.review_round_guard(root), 1)   # still under the ceiling
-            mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
-                                     verdict="reject", findings="f")
+            _round(root, "reject")
             with self.assertRaises(ValueError):
                 mod.review_round_guard(root)
             self.assertEqual(rs.review_round_count(root), 2)
@@ -1111,23 +1019,10 @@ class ReviewRoundCountTests(unittest.TestCase):
             root = Path(d)
             mod, rs = _load(), self._open(root)
             for _ in range(3):
-                mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
-                                         verdict="reject", findings="f")
+                _round(root, "reject")
             mod.review_round_guard(root, ceiling=3, override=True)
             state = rs.read(root)
             self.assertEqual(state["review_ceiling_overrides"], [{"at_round": 3, "ceiling": 3}])
-
-    def test_verdict_without_an_open_run_reports_rather_than_counts(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, rs = _load(), _run_state()
-            mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
-                                     verdict="approve", findings="f")
-            # the review itself is still recorded - the evidence is never dropped
-            self.assertEqual(len(mod.sprint_reviews(root)), 1)
-            # but nothing is counted against a run that does not exist
-            self.assertIsNone(rs.read(root).get("run_id"))
-            self.assertEqual(rs.review_round_count(root), 0)
 
     def test_rounds_without_a_run_id_are_not_counted(self) -> None:
         """The guard's own mechanism, reached directly.
@@ -1151,7 +1046,7 @@ class ReadRowsHeaderTests(unittest.TestCase):
     first-column literal, so a table led by any other column does not return its own header."""
 
     def test_sprint_review_table_does_not_return_its_header_as_data(self) -> None:
-        """One recorded sprint review reads back as exactly one row.
+        """One frozen sprint review reads back as exactly one row.
 
         The sprint-review table is led by `Base`, not `Unit`. A first-column literal skip
         knows only `Unit`, so it returned the `| Base | Reviewer | ... |` header as a data
@@ -1160,8 +1055,12 @@ class ReadRowsHeaderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
-            mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
-                                     verdict="approve", findings="f")
+            path = mod.sprint_review_path(root)
+            path.parent.mkdir(parents=True)
+            path.write_text("| Base | Reviewer | Author | Verdict | Date | Units | Findings |\n"
+                            "| --- | --- | --- | --- | --- | --- | --- |\n"
+                            "| - | seat | builder | APPROVE | 2026-09-01 | US0001 | f |\n",
+                            encoding="utf-8")
             rows = mod.sprint_reviews(root)
             self.assertEqual(len(rows), 1)
             self.assertEqual(rows[0]["base"], "-")
@@ -1215,8 +1114,7 @@ class RepairRegressionTests(unittest.TestCase):
         rs = _run_state()
         rs.open_run(root, batch=["US0001"], goal="done")
         mod = _load()
-        mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
-                                 verdict="reject", findings="r1", repaired=repaired)
+        _round(root, "reject", repaired=repaired)
         return mod
 
     def test_round_records_its_repaired_file_set(self) -> None:
@@ -1277,9 +1175,7 @@ class RepairRegressionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = self._run_with_round(root, [{"file": "old.py", "lines": [[1, 5]]}])
-            mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
-                                     verdict="reject", findings="r2",
-                                     repaired=[{"file": "new.py", "lines": [[1, 5]]}])
+            _round(root, "reject", repaired=[{"file": "new.py", "lines": [[1, 5]]}])
             self.assertEqual(mod.classify_finding(root, file="new.py", line=3)["class"],
                              mod.REPAIR_REGRESSION)
             self.assertEqual(mod.classify_finding(root, file="old.py", line=3)["class"],
@@ -1293,9 +1189,7 @@ class EscalationTests(unittest.TestCase):
         rs = _run_state()
         rs.open_run(root, batch=["US0001"], goal="done")
         mod = _load()
-        mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
-                                 verdict="reject", findings="r1",
-                                 repaired=[{"file": "critic.py", "lines": [[10, 20]]}])
+        _round(root, "reject", repaired=[{"file": "critic.py", "lines": [[10, 20]]}])
         return mod, mod.classify_finding(root, file="critic.py", line=15)
 
     def test_repair_regression_presents_the_three_options(self) -> None:
@@ -1395,8 +1289,7 @@ class RoundCostTests(unittest.TestCase):
         return _load(), rs
 
     def _review(self, mod, root, **kw):
-        mod.record_sprint_review(root, ["US0001"], reviewer="seat", author="builder",
-                                 verdict="reject", findings="f", **kw)
+        _round(root, "reject", **kw)
 
     def test_round_records_its_token_cost(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -2194,16 +2087,15 @@ class SupersededGateTests(unittest.TestCase):
         blocked by a REJECT superseded it - the only guard being that the authoriser was not the
         row's own author, met by any other string - the reviewer dropped out of the session set,
         and the author's own subagent was accepted as reviewer of record. Refused end to end now:
-        the seat that filed the blocking verdict also filed evidence, so it is not an independent
-        authoriser and the correction is refused before it can move the gate."""
+        the seat that filed the blocking verdict also reviewed an earlier round, so it is not an
+        independent authoriser and the correction is refused before it can move the gate."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
-            mod.record_evidence(root, "US0001", reviewer="qa-seat", author="builder",
-                                findings="the defect the reject records")
+            _earlier_round(mod, root, "qa-seat")
             mod.record_verdict(root, "US0001", "reject",
                                reviewer="qa-seat", author="builder")
-            date = mod.read_verdicts(root)[0]["date"]
+            date = mod.read_verdicts(root)[-1]["date"]
             with self.assertRaises(ValueError):
                 mod.record_supersession(root, "US0001", date=date, reason="mis-filed",
                                         authorised_by="qa-seat", boundary="same session")
@@ -2325,13 +2217,27 @@ class SupersededGateTests(unittest.TestCase):
             self.assertFalse(payload[1]["superseded"])
 
 
+def _earlier_round(mod, root, reviewer: str) -> None:
+    """In-session review work by `reviewer` on US0001: a REJECT at an earlier round, re-dated a
+    day the row under correction is not, so a supersession names one row unambiguously. The
+    evidence ledger that once carried this is retired; the verdict ledger says who reviewed."""
+    mod.record_verdict(root, "US0001", "reject", reviewer=reviewer, author="builder",
+                       issues="[new] a real defect")
+    path = mod.verdicts_path(root)
+    text = path.read_text(encoding="utf-8")
+    today = mod.read_verdicts(root)[-1]["date"]
+    assert text.count(f"| {today} |") == 1, text
+    path.write_text(text.replace(f"| {today} |", "| 2026-09-01 |"), encoding="utf-8")
+
+
 class PrincipalAuthorisedSupersessionTests(unittest.TestCase):
     """BG0284. Superseding retires a verdict; whether it also retires the ATTRIBUTION (so the
     named reviewer stops counting toward independence) turns on WHO authorised it. The bypass
-    and the mis-attribution incident are mechanically identical in the verdict rows alone -
-    the recordable distinction is that a working session reviewer left an EVIDENCE row, while a
-    principal wrongly named on a verdict row did not, and authorised the correction from a
-    separate trust boundary. That distinction is what the guard tests."""
+    and the mis-attribution incident are mechanically identical in the row under correction -
+    the recordable distinction is that a working session reviewer left ANOTHER verdict row on the
+    unit (the evidence ledger that once carried it is retired), while a principal wrongly named on
+    a verdict row did not, and authorised the correction from a separate trust boundary. That
+    distinction is what the guard tests."""
 
     def test_an_authoring_session_authoriser_is_refused(self) -> None:
         """AC1. A supersession authorised by a party who did in-session review work on the unit -
@@ -2339,13 +2245,12 @@ class PrincipalAuthorisedSupersessionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
-            # qa-seat runs the adversarial pass (evidence) and files a blocking REJECT.
-            mod.record_evidence(root, "US0001", reviewer="qa-seat", author="builder",
-                                findings="a hole in the batch fan-out")
+            # qa-seat reviewed an earlier round and files a blocking REJECT.
+            _earlier_round(mod, root, "qa-seat")
             mod.record_verdict(root, "US0001", "reject", reviewer="qa-seat", author="builder")
-            date = mod.read_verdicts(root)[0]["date"]
+            date = mod.read_verdicts(root)[-1]["date"]
             before = mod.verdicts_path(root).read_text(encoding="utf-8")
-            for authoriser in ("qa-seat",        # the author's own seat - it left evidence
+            for authoriser in ("qa-seat",        # the author's own seat - it reviewed before
                                "QA-Seat",         # ...however cased
                                "builder"):        # the row's own author
                 with self.assertRaises(ValueError) as cm:
@@ -2361,7 +2266,7 @@ class PrincipalAuthorisedSupersessionTests(unittest.TestCase):
 
     def test_a_principal_authorised_supersession_clears_the_strand(self) -> None:
         """AC2. A verdict row wrongly names the operator as REVIEWER; the operator never reviewed
-        (no evidence row). That strands the unit - the operator reads as a session reviewer and so
+        (no other verdict row). That strands the unit - the operator reads as a session reviewer and so
         cannot be its reviewer of record. A supersession the operator authorises from a separate,
         recorded boundary retires the attribution, and the strand clears."""
         with tempfile.TemporaryDirectory() as d:
@@ -2383,19 +2288,18 @@ class PrincipalAuthorisedSupersessionTests(unittest.TestCase):
             self.assertEqual(mod.read_supersessions(root)[0]["boundary"], "operator console")
 
     def test_no_author_only_sequence_clears_the_gate(self) -> None:
-        """AC3. On a unit the author built, with a genuine two-role review (evidence + verdict),
+        """AC3. On a unit the author built, with a genuine review over two rounds,
         no supersession the author can author ALONE - itself or its own seat, any boundary string
-        it can assert - retires the reviewer from the gate. A blocking review leaves evidence, and
-        an evidence-row reviewer is refused as an authoriser however the boundary is dressed up."""
+        it can assert - retires the reviewer from the gate. A reviewer with another verdict row on
+        the unit is refused as an authoriser however the boundary is dressed up."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
-            mod.record_evidence(root, "US0001", reviewer="qa-seat", author="builder",
-                                findings="a real defect")
+            _earlier_round(mod, root, "qa-seat")
             mod.record_verdict(root, "US0001", "reject", reviewer="qa-seat", author="builder")
-            date = mod.read_verdicts(root)[0]["date"]
+            date = mod.read_verdicts(root)[-1]["date"]
             for authoriser, boundary in (("builder", "console"),      # the author
-                                         ("qa-seat", "another session"),  # its seat (has evidence)
+                                         ("qa-seat", "another session"),  # its seat (reviewed before)
                                          ("qa-seat", "CI")):           # relabel the boundary
                 with self.assertRaises(ValueError):
                     mod.record_supersession(root, "US0001", date=date, reason="retire it",
@@ -2438,12 +2342,11 @@ class PrincipalAuthorisedSupersessionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = _load()
-            mod.record_evidence(root, "US0001", reviewer="qa-seat", author="builder",
-                                findings="a real defect")
+            _earlier_round(mod, root, "qa-seat")
             mod.record_verdict(root, "US0001", "reject", reviewer="qa-seat", author="builder")
-            self._forge(mod, root, mod.read_verdicts(root)[0],
+            self._forge(mod, root, mod.read_verdicts(root)[-1],
                         authorised_by="qa-seat", boundary="another session")
-            self.assertTrue(mod.read_verdicts(root)[0]["superseded"])   # the forge parsed
+            self.assertTrue(mod.read_verdicts(root)[-1]["superseded"])   # the forge parsed
             self.assertIn("qa-seat", mod.session_reviewer_ids(root, "US0001"))
 
     def test_a_hand_forged_boundaryless_correction_does_not_clear_the_gate(self) -> None:
@@ -2909,12 +2812,7 @@ class BatchFormTests(_BatchBase):
     required argument, one unit at a time."""
 
     def test_each_verb_records_every_named_unit_in_one_invocation(self) -> None:
-        rc, out, err = self._run(["evidence", "--units", "US0001,US0002,US0003",
-                                  "--reviewer", "qa", "--author", "builder",
-                                  "--findings", "probed the boundary"])
-        self.assertEqual(0, rc, err)
-        for unit in self.UNITS:
-            self.assertIsNotNone(self.mod.evidence_for(self.root, unit), f"{unit} unrecorded")
+        """`record` is the one batch verb left: `evidence` and `signoff` are retired."""
         rc, _, err = self._run(["record", "--brief", "abcdef123456",
                                 "--units", "US0001,US0002,US0003",
                                 "--verdict", "approve", "--reviewer", "qa", "--author", "builder"])
@@ -3193,48 +3091,53 @@ class ArgumentCompletenessTests(_BatchBase):
     """US0557. A batch verb's required arguments were learned from a refusal, one flag per
     round-trip, and the first cost nineteen spawns before the message was read. A refusal has
     to arrive once, before anything is written, naming everything the command needs. Driven
-    through `evidence`, which needs two (the sign-off verb that first showed it is retired)."""
+    through `record`, the one batch verb left (`evidence` and `signoff` are retired); the
+    two-argument case widens its requirement for the test, since `record` needs only one."""
+
+    _RECORD = ["record", "--brief", "abcdef123456", "--units", "US0001,US0002,US0003",
+               "--verdict", "approve", "--reviewer", "qa"]
 
     def test_a_missing_argument_refuses_before_any_unit_is_written(self) -> None:
-        rc, _, err = self._run(["evidence", "--units", "US0001,US0002,US0003",
-                                "--reviewer", "qa", "--findings", "probed"])
+        rc, _, err = self._run(self._RECORD)
         self.assertEqual(2, rc, err)
         for unit in self.UNITS:
-            self.assertIsNone(self.mod.evidence_for(self.root, unit),
+            self.assertIsNone(self.mod.verdict_for(self.root, unit),
                               f"{unit} was written despite the refusal")
 
     def test_no_write_is_attempted_not_merely_that_none_landed(self) -> None:
-        """BG0419 AC3. Its siblings assert the POSTCONDITION - `evidence_for(...) is None` - and
+        """BG0419 AC3. Its siblings assert the POSTCONDITION - `verdict_for(...) is None` - and
         that holds equally when every write is ATTEMPTED and every write fails. The claim the
         story makes is about ORDERING: the refusal arrives before anything is written, once,
         naming everything missing. A postcondition cannot express an ordering.
 
-        So the write path is observed directly: `record_evidence` is replaced with a counter,
+        So the write path is observed directly: `_record` is replaced with a counter,
         and the assertion is that it was never REACHED. That is the difference between "nothing
         landed" and "nothing was tried", and it is the whole content of the story.
 
         MUTANT: remove the up-front `missing_arguments` refusal from `_run_batch`, so the
         missing argument is discovered per unit instead. This test must redden."""
         calls: list[str] = []
-        real = self.mod.record_evidence
+        real = self.mod._record
 
         def counting(root, unit, *a, **kw):
             calls.append(str(unit))
             return real(root, unit, *a, **kw)
 
-        self.mod.record_evidence = counting
+        self.mod._record = counting
         try:
-            rc, _out, err = self._run(["evidence", "--units", "US0001,US0002,US0003",
-                                       "--reviewer", "qa", "--findings", "probed"])
+            rc, _out, err = self._run(self._RECORD)
         finally:
-            self.mod.record_evidence = real
+            self.mod._record = real
         self.assertEqual(2, rc, err)
         self.assertEqual(calls, [],
                          f"the write path was REACHED {len(calls)} time(s) before the refusal - "
                          f"nothing landed, but the refusal did not arrive first")
 
     def test_the_refusal_names_every_missing_argument(self) -> None:
-        rc, _, err = self._run(["evidence", "--units", "US0001,US0002"])
+        two = {"record": (("reviewer", "--reviewer"), ("author", "--author"))}
+        with unittest.mock.patch.dict(self.mod.BATCH_REQUIRED, two):
+            rc, _, err = self._run(["record", "--brief", "abcdef123456", "--units",
+                                    "US0001,US0002", "--verdict", "approve", "--reviewer", ""])
         self.assertEqual(2, rc)
         self.assertIn("--reviewer", err)
         self.assertIn("--author", err,
@@ -3251,7 +3154,7 @@ class ArgumentCompletenessTests(_BatchBase):
         for action in parser._subparsers._group_actions:      # noqa: SLF001 - the only route in
             for verb, sub in action.choices.items():
                 accepted[verb] = {opt for a in sub._actions for opt in a.option_strings}  # noqa: SLF001
-        for verb in ("record", "evidence"):
+        for verb in ("record",):
             for missing in ([], ["--units", "US0001"]):
                 out, err = io.StringIO(), io.StringIO()
                 with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
@@ -4232,29 +4135,6 @@ class CodeSpanEdgeSpaceTests(unittest.TestCase):
                              set(self._md038_lines(raw)),
                              "a refused member does not raise MD038 when written raw, so the "
                              "harness cannot see what it judges")
-
-    def test_the_evidence_writer_inherits_the_refusal(self) -> None:
-        """MUTANT: move the edge check out of `_clean` into `record_verdict`, applied to its
-        issues only, so `record_evidence` writes the span. The trimmed value records - the
-        paired control, without which a writer refusing everything passes."""
-        mod = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root, _ledger = self._workspace(d)
-            evidence = mod.evidence_path(root)
-            evidence.write_text(mod._EVIDENCE_HEADER + "| US0001 | qa seat | author | "
-                                "2026-09-14 | an earlier pass |\n", encoding="utf-8")
-            before = evidence.read_bytes()
-            r = self._cli(root, "evidence", "--unit", "US0001", "--reviewer", "qa seat",
-                          "--author", "author", "--findings", "probed `budget: ` and more")
-            self.assertEqual(2, r.returncode, r.stdout + r.stderr)
-            self.assertIn("trailing edge", r.stderr, r.stderr)
-            self.assertEqual(before, evidence.read_bytes(),
-                             "the refused findings changed the evidence ledger")
-            ok = self._cli(root, "evidence", "--unit", "US0001", "--reviewer", "qa seat",
-                           "--author", "author", "--findings", "probed `budget:` and more")
-            self.assertEqual(0, ok.returncode, ok.stdout + ok.stderr)
-            self.assertIn("probed `budget:` and more",
-                          evidence.read_text(encoding="utf-8").splitlines()[-1])
 
 
 class BriefRefusesMissingPracticeTests(unittest.TestCase):
