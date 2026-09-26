@@ -1,6 +1,6 @@
 # BG0789: The release workflow publishes a release-candidate tag as the latest release, so every installed copy is prompted to upgrade to it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 1
 > **Affects:** .github/workflows/release.yml, tools/tests/test_release_prerelease.py, changelog.d/BG0789.md
@@ -25,8 +25,10 @@ Pass --prerelease (and --latest=false) when the tag carries a pre-release suffix
 
 - [ ] **AC1** Given `.github/workflows/release.yml`, when the publish step runs for a tag carrying a pre-release suffix (`v6.0.0-rc.1`), then both `gh release create` branches pass `--prerelease` and `--latest=false`, so the forge's latest release stays the last final one. Fails on: a `gh release create` with no pre-release flag
   - **Verify:** pytest tools/tests/test_release_prerelease.py::ReleasePrereleaseTests::test_a_suffixed_tag_is_published_as_a_prerelease
+  - **Verified:** yes (2026-09-26)
 - [ ] **AC2** Given a plain tag (`v6.0.0`), then neither branch passes `--prerelease`, so a final release still becomes the latest. Fails on: a workflow that marks every release a pre-release
   - **Verify:** pytest tools/tests/test_release_prerelease.py::ReleasePrereleaseTests::test_a_final_tag_is_published_as_the_latest
+  - **Verified:** yes (2026-09-26)
 
 ## Revision History
 

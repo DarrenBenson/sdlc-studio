@@ -90,13 +90,17 @@ jobs:
           set -euo pipefail
           tag="${{ steps.tag.outputs.tag }}"
           notes="docs/release-notes-${tag}.md"
+          # A semver pre-release tag (v6.0.0-rc.1) must never become the latest Release: installed
+          # copies read /releases/latest to decide whether to prompt an upgrade (BG0789).
+          pre=()
+          case "$tag" in *-*) pre=(--prerelease --latest=false) ;; esac
           # A Release may already exist if the tag was pushed before this workflow shipped; upload
           # into it rather than failing, so an existing Release can be completed rather than
           # duplicated. --clobber keeps a re-run idempotent.
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" dist/* --clobber
           elif [ -f "$notes" ]; then
-            gh release create "$tag" dist/* --title "$tag" --notes-file "$notes"
+            gh release create "$tag" dist/* --title "$tag" --notes-file "$notes" "${pre[@]}"
           else
-            gh release create "$tag" dist/* --title "$tag" --generate-notes
+            gh release create "$tag" dist/* --title "$tag" --generate-notes "${pre[@]}"
           fi
