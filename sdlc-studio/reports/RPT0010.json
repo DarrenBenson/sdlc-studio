@@ -3,8 +3,8 @@
   "report_id": "RPT0010",
   "run_id": "RUN-01M3CK1K",
   "retro_id": "RETRO0125",
-  "generated_at": "2026-09-26T18:41:02Z",
-  "window_end": "2026-09-26T18:41:02Z",
+  "generated_at": "2026-09-26T18:50:20Z",
+  "window_end": "2026-09-26T18:50:20Z",
   "signature": null,
   "sections": [
     {
@@ -23,7 +23,7 @@
         },
         "goal_verdict_note": {
           "key": "goal_verdict_note",
-          "value": "The lean loop runs on a fresh v6 project on the shipped defaults, plan to sign (US0950 AC3, US0951); all 37 batch units delivered under the two-round cap; the release bar is met (no open High), and v6.0.0-rc.1 is cut from this close by the release runbook before the report is signed",
+          "value": "The lean loop runs on a fresh v6 project on the shipped defaults, plan to sign (US0950 AC3, US0951); all 37 batch units delivered under the two-round cap; the release bar is met (no open High) and the v6.0.0-rc.1 release commit is on this tree; the rc tag is cut on the signed commit once the release gate is green",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "run_id": {
@@ -43,7 +43,7 @@
         },
         "duration_hours": {
           "key": "duration_hours",
-          "value": "27.1h",
+          "value": "27.3h",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "verified_sha": {
@@ -100,12 +100,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 1628.7,
+            "value": 1638.0,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "2.49x",
+            "value": "2.51x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -127,7 +127,7 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 19205700,
+            "value": 19225437,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
@@ -2559,7 +2559,7 @@
         },
         "tokens_total": {
           "key": "tokens_total",
-          "value": 19205700,
+          "value": 19225437,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "token_coverage": {
@@ -2582,7 +2582,7 @@
           },
           "model_tokens": {
             "key": "model_tokens",
-            "value": 4917281,
+            "value": 4937018,
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -2602,7 +2602,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": 71,
+            "value": 72,
             "source": "git log"
           },
           "dora_mapping": {
@@ -2617,7 +2617,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - 71 commit(s) on main inside the run window",
+            "value": "git history - 72 commit(s) on main inside the run window",
             "source": "git log"
           }
         },
@@ -2629,7 +2629,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "26h 49m",
+            "value": "27h 1m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -2644,7 +2644,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 71 commit(s)",
+            "value": "git history - first to last of 72 commit(s)",
             "source": "git log"
           }
         },
@@ -3289,5 +3289,5 @@
       "not_measured": null
     }
   ],
-  "fingerprint": "d3c84d05a076be43"
+  "fingerprint": "08b6bb603f8fe5e7"
 }
