@@ -24,7 +24,7 @@ Sprint 5 of the v6 release (D0272): finish EP0263's deletions with their histori
 - [x] [US0947: The files the close writes pass markdownlint without a hand fix](../stories/US0947-the-files-the-close-writes-pass-markdownlint-without.md)
 - [x] [US0948: A writer that cannot take the allocation lock writes nothing instead of losing rows](../stories/US0948-a-writer-that-cannot-take-the-allocation-lock.md)
 - [x] [US0949: No shipped command help offers a retired behaviour](../stories/US0949-no-shipped-command-help-offers-a-retired-behaviour.md)
-- [ ] [US0950: A fresh project can brief and record its one review with the shipped defaults](../stories/US0950-a-fresh-project-can-brief-and-record-its.md)
+- [x] [US0950: A fresh project can brief and record its one review with the shipped defaults](../stories/US0950-a-fresh-project-can-brief-and-record-its.md)
 - [x] [US0951: A clean run's report hands over no false known issues](../stories/US0951-a-clean-run-s-report-hands-over-no.md)
 
 ## Revision History

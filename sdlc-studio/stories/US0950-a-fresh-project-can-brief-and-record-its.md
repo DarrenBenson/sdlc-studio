@@ -1,6 +1,6 @@
 # US0950: A fresh project can brief and record its one review with the shipped defaults
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,10 +19,13 @@
 
 - **AC1:** Given a fresh `init.py run` fixture with no `sdlc-studio/personas/seats/`, when `critic.py brief --unit <id> --seat qa` runs, then it exits 0 and the brief carries the same seat charter `persona_resolve.py resolve --seat qa --render review` prints for that fixture. Fails on: HEAD, which refuses with `no seat card at .../personas/seats/qa.md - available seats: none` (critic.py:3729-3732)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_fresh_project_loop.py::FreshLoopTests::test_brief_falls_back_to_the_shipped_seat
+  - **Verified:** yes (2026-09-26)
 - **AC2:** Given the same fixture with a project card `sdlc-studio/personas/seats/qa.md`, when the brief runs, then it carries the project card's charter, not the shipped one. Fails on: a fallback that always reads the shipped card, which would silently ignore a project's own generated team
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_fresh_project_loop.py::FreshLoopTests::test_a_project_seat_card_wins
+  - **Verified:** yes (2026-09-26)
 - **AC3:** Given a fresh `init.py run` fixture on the shipped config and one story with a green `Verify:` line, when `sprint.py plan --write`, `verify_ac.py run`, `critic.py brief`, `critic.py record --verdict APPROVE` (reviewer not the author), `transition.py set <id> Review`, `sprint.py close` and `sprint.py sign` run in order, then each exits 0 and the story ends Done. Fails on: HEAD, where `critic.py record` refuses for missing brief provenance and `critic.py brief` refuses for a missing seat card, so the loop dead-ends at its one review
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_fresh_project_loop.py::FreshLoopTests::test_the_lean_loop_runs_on_shipped_defaults
+  - **Verified:** yes (2026-09-26)
 
 ## Notes
 

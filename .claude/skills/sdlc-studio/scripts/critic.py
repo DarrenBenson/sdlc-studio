@@ -2582,6 +2582,19 @@ def _criteria_from_whole_file(text: str) -> str:
     return "\n\n".join(out)
 
 
+def _review_seat_card(root: Path, seat: str) -> Path:
+    """The seat's charter, by persona_resolve's one resolver: the project card whose declared
+    `role:` is the seat, else the shipped default, so a fresh project briefs its review on the
+    shipped team. The brief never judged a card's sections and does not start here; a seat with
+    no card anywhere is refused rather than briefed without a charter."""
+    import persona_resolve  # noqa: PLC0415 - sibling; one resolver for every seat reader
+    card = persona_resolve.resolve_card(root, seat)
+    if card is None:
+        raise ValueError(f"no seat card for {seat!r} - neither the project nor the skill "
+                         f"carries one (seats: {', '.join(persona_resolve.SEATS)})")
+    return card
+
+
 def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> str:
     """The seat-review prompt, assembled deterministically.
 
@@ -2595,11 +2608,7 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> st
         raise ValueError(f"no artefact with id {unit!r} - brief needs a real unit")
     path, _type = found
     text = sdlc_md.read_text_safe(path)
-    seats_dir = root / "sdlc-studio" / "personas" / "seats"
-    card = seats_dir / f"{seat}.md"
-    if not card.is_file():
-        available = ", ".join(sorted(p.stem for p in seats_dir.glob("*.md"))) or "none"
-        raise ValueError(f"no seat card at {card} - available seats: {available}")
+    card = _review_seat_card(root, seat)
     # the SAME heading rule as the runner's `criteria_blocks`: case-insensitive, more words allowed
     m = re.search(r"(?mi)^##\s+acceptance criteria\b[^\n]*\n(.*?)(?=^## |\Z)", text, re.S)
     acs = (m.group(1).strip() if m else _criteria_from_whole_file(text)
@@ -3548,7 +3557,9 @@ def build_parser() -> argparse.ArgumentParser:
     b = sub.add_parser("brief", help="Print the assembled seat-review prompt for a unit "
                                      "(charter + ACs + scope + return contract).")
     b.add_argument("--unit", required=True)
-    b.add_argument("--seat", required=True, help="a card under sdlc-studio/personas/seats/")
+    b.add_argument("--seat", required=True,
+                   help="the seat role: the project card declaring it under "
+                        "sdlc-studio/personas/seats/, else the shipped one")
     b.add_argument("--tier", choices=TIERS, default=None,
                    help="override the tier DERIVED from the unit's risk band. Omit it and the "
                         "band decides: a low-band unit gets a bounded brief, a medium-or-worse "

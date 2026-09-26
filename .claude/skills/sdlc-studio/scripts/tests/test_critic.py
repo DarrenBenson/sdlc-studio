@@ -381,7 +381,8 @@ def _workspace(root: Path) -> None:
         "- **Then** z\n- **Verify:** shell true\n", encoding="utf-8")
     seats = root / "sdlc-studio" / "personas" / "seats"
     seats.mkdir(parents=True, exist_ok=True)
-    (seats / "qa.md").write_text("# Sam - QA seat\n\ncharter text\n", encoding="utf-8")
+    (seats / "qa.md").write_text("<!-- role: qa -->\n# Sam - QA seat\n\ncharter text\n",
+                                 encoding="utf-8")
 
 
 def _banded_unit(root: Path, uid: str, *, heavy: bool) -> None:
@@ -419,7 +420,8 @@ def _banded_unit(root: Path, uid: str, *, heavy: bool) -> None:
         f"## Acceptance Criteria\n\n{acs}", encoding="utf-8")
     seats = root / "sdlc-studio" / "personas" / "seats"
     seats.mkdir(parents=True, exist_ok=True)
-    (seats / "qa.md").write_text("# Sam - QA seat\n\ncharter text\n", encoding="utf-8")
+    (seats / "qa.md").write_text("<!-- role: qa -->\n# Sam - QA seat\n\ncharter text\n",
+                                 encoding="utf-8")
 
 
 class BriefTierTests(unittest.TestCase):
@@ -1491,7 +1493,7 @@ class NeutralBriefTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = self._root(d)
             mod = _load()
-            text = mod.neutral_brief(root, "US0001", "qa-seat")
+            text = mod.neutral_brief(root, "US0001", "qa")
             self.assertIn("US0001", text)
             self.assertTrue(len(text.strip()) > 100, "a brief must carry the work to be done")
 
@@ -1499,7 +1501,7 @@ class NeutralBriefTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = self._root(d)
             mod = _load()
-            text = mod.neutral_brief(root, "US0001", "qa-seat", prior=_PRIOR, round_number=4)
+            text = mod.neutral_brief(root, "US0001", "qa", prior=_PRIOR, round_number=4)
             # the return contract necessarily names both verdict words and BLOCKING - that is
             # the reply format, not priming - so the property is checked with it excluded
             self.assertEqual(mod.neutrality_violations(text), [])
@@ -1513,7 +1515,7 @@ class NeutralBriefTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = self._root(d)
             mod = _load()
-            text = mod.neutral_brief(root, "US0001", "qa-seat", prior=_PRIOR)
+            text = mod.neutral_brief(root, "US0001", "qa", prior=_PRIOR)
             # the factual re-execution demand survives...
             self.assertIn("tests/test_repo_hygiene.py", text)
             self.assertIn("scripts/readiness.py:88", text)
@@ -1529,7 +1531,7 @@ class NeutralBriefTests(unittest.TestCase):
             root = self._root(d)
             mod = _load()
             with self.assertRaises(ValueError) as ctx:
-                mod.neutral_brief(root, "US0001", "qa-seat",
+                mod.neutral_brief(root, "US0001", "qa",
                                   prior="VERDICT: REJECT\nISSUES: it felt wrong\nBLOCKING: yes\n")
             self.assertRegex(str(ctx.exception), r"(?i)probe")
 
@@ -1572,7 +1574,7 @@ class NeutralBriefTests(unittest.TestCase):
             root = self._root(d)
             mod = _load()
             self.assertEqual(mod.neutrality_violations(
-                mod.neutral_brief(root, "US0001", "qa-seat")), [])
+                mod.neutral_brief(root, "US0001", "qa")), [])
 
 
 
@@ -4278,7 +4280,8 @@ class BriefRefusesMissingPracticeTests(unittest.TestCase):
             "- **Then** z\n- **Verify:** shell exit 0\n", encoding="utf-8")
         seats = root / "sdlc-studio" / "personas" / "seats"
         seats.mkdir(parents=True, exist_ok=True)
-        (seats / "qa.md").write_text("# Sam - QA seat\n\ncharter text\n", encoding="utf-8")
+        (seats / "qa.md").write_text("<!-- role: qa -->\n# Sam - QA seat\n\ncharter text\n",
+                                     encoding="utf-8")
         prior = root / "prior.txt"
         prior.write_text(self.PRIOR, encoding="utf-8")
         mod = _load()
