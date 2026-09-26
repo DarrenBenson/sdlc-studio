@@ -5,8 +5,8 @@
 
 ## Keep
 
-- One QA-seat reviewer per unit, capped at two rounds, with round 2 judging the repair against round 1's findings: 16 units were rejected at round 1, 15 converged at round 2, and US0941 was carried as BG0775 and landed in the same run. Every round-1 REJECT named a defect a mutant proved - a signed-report forgery route, five shipping review rules left untested by a deletion, a leak guard the flake fix dropped - not wording.
-- Filing what a review finds instead of widening the unit: ten follow-up bugs (BG0777-BG0786) were filed, and the ones a v6 user would meet (v3 ids in the retro, lock errors, the hook hiding the re-read advisory) were groomed and landed in the same run.
+- One QA-seat reviewer per unit, capped at two rounds, with round 2 judging the repair against round 1's findings: 18 units were rejected at round 1, 17 converged at round 2, and US0941 was carried as BG0775 and landed in the same run. Every round-1 REJECT named a defect a mutant proved - a signed-report forgery route, five shipping review rules left untested by a deletion, a leak guard the flake fix dropped - not wording.
+- Filing what a review finds instead of widening the unit: twelve follow-up bugs (BG0777-BG0788) were filed, and the ones a v6 user would meet (v3 ids in the retro, lock errors, the hook hiding the re-read advisory) were groomed and landed in the same run.
 - Collapsing the review record to one verdict ledger: the repair ledger, the sign-off verbs, the evidence and sprint-review verbs, the mutation ledger verbs and the brief-provenance refusal are gone, each retired criterion recorded in the D0259 pattern and the historic record read frozen rather than rewritten.
 
 ## Stop
