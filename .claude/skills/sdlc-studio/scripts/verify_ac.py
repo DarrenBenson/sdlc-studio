@@ -1803,6 +1803,28 @@ def shell_allowed_for(text: str, *, allow_shell: bool = True,
     provenance = (sdlc_md.extract_field(text, "Provenance") or "").strip().lower()
     return allow_shell and (allow_external or provenance != "external")
 
+def run_lines(verifiers: list[str], run, *, every: bool = False) -> list[tuple]:
+    """Run a criterion's Verify lines in order through `run(line)`; `[(line, result), ...]`.
+
+    The one loop every runner of a criterion goes through - `run`, the sprint lane runner and
+    the revert check - so no two of them can disagree about which lines a criterion has. It
+    stops at the first red line, which is all a verdict needs; `every` runs the rest too, for
+    the revert check, which names each line that stays green without the change.
+    """
+    runs: list[tuple] = []
+    for line in verifiers:
+        result = run(line)
+        runs.append((line, result))
+        if not result.ok and not every:
+            break
+    return runs
+
+
+def first_red(runs: list[tuple]) -> tuple:
+    """A criterion's verdict from `run_lines`: its first red `(line, result)`, else its last."""
+    return next((pair for pair in runs if not pair[1].ok), runs[-1])
+
+
 def verify_story(
     story_path: Path,
     dry_run: bool,
@@ -1832,6 +1854,17 @@ def verify_story(
                                           allow_external=allow_external)
     pending: list = []  # (block, new_state) - applied bottom-up after the loop
 
+    def run_one(verifier: str) -> VerifierResult:
+        result = None
+        if jest_cache is not None:
+            result = resolve_jest_from_cache(verifier, jest_cache)
+        if result is None and pytest_cache is not None:
+            result = resolve_pytest_from_cache(verifier, pytest_cache, pytest_collected)
+        if result is None:
+            result = run_verifier(verifier, timeout, repo_root,
+                                  allow_shell=story_allow_shell, allow_fallback=allow_fallback)
+        return result
+
     for block in blocks:
         # Two distinct non-executable cases, counted SEPARATELY - conflating them is how a
         # deleted (rather than declared) verifier reaches a green release gate:
@@ -1850,17 +1883,7 @@ def verify_story(
         # EVERY line runs, in order, and the first red one is the criterion's verdict and the
         # line its failure names. Once only the first ran, so a criterion that must hold
         # in two environments was green while its second line failed.
-        for verifier in block.verifiers:
-            result = None
-            if jest_cache is not None:
-                result = resolve_jest_from_cache(verifier, jest_cache)
-            if result is None and pytest_cache is not None:
-                result = resolve_pytest_from_cache(verifier, pytest_cache, pytest_collected)
-            if result is None:
-                result = run_verifier(verifier, timeout, repo_root,
-                                      allow_shell=story_allow_shell, allow_fallback=allow_fallback)
-            if not result.ok:
-                break
+        verifier, result = first_red(run_lines(block.verifiers, run_one))
 
         if result.ok:
             recorded = (block.verified_state or "").strip().lower()
@@ -4023,12 +4046,19 @@ def revert_check(root, unit: str, base_ref: str | None = None, *,
             criteria.append({"ac": ac, "state": "unspecified"})
         elif _is_manual(expr):
             criteria.append({"ac": ac, "state": "manual", "verifier": expr})
-        elif selector_resolves(expr, root) is False:
-            criteria.append({"ac": ac, "state": "unresolved", "verifier": expr})
         else:
-            entry = {"ac": ac, "state": "pending", "verifier": expr}
+            # Every line, settled here against the intact tree and run below against the
+            # reverted one. Reading only the first let a second line that stays green without
+            # the change go unseen, and refused a unit whose second line does reach it.
+            lines = [{"verifier": v, "state": ("unresolved" if selector_resolves(v, root)
+                                               is False else "pending")}
+                     for v in block.verifiers]
+            entry = {"ac": ac, "verifier": expr, "lines": lines,
+                     "state": ("unresolved" if all(ln["state"] == "unresolved" for ln in lines)
+                               else "pending")}
             criteria.append(entry)
-            to_run.append(entry)
+            if entry["state"] == "pending":
+                to_run.append(entry)
 
     snapshot: dict = {}
     restored = False
@@ -4081,22 +4111,31 @@ def revert_check(root, unit: str, base_ref: str | None = None, *,
             result["reverted"].append(rel)
         _purge_pyc(root, targets["production"])
         for entry in to_run:
-            res = run_verifier(entry["verifier"], timeout, root,
-                               allow_shell=story_allow_shell)
-            entry["kind"] = res.kind
-            if res.ok:
-                entry["state"] = "green"
-            elif res.kind in ("invalid", "blocked") or res.vacuous:
-                # NOT RED. `run_verifier` already distinguishes an expression it could not
-                # parse, one the trust boundary refused to execute, and a runner that exited
-                # clean having run nothing - and every one of those is a verifier that did not
-                # RUN, not a test that noticed the change. Counting them red made a unit whose
-                # `Verify:` line was a typo pass the one check that asks whether its tests
-                # reach anything. AC5 states the rule for an unresolvable selector; this is the
-                # same rule, and the discriminating data was already in hand.
-                entry["state"] = "unmeasured"
-            else:
-                entry["state"] = "red"
+            runnable = [ln for ln in entry["lines"] if ln["state"] == "pending"]
+            runs = run_lines([ln["verifier"] for ln in runnable],
+                             lambda v: run_verifier(v, timeout, root,
+                                                    allow_shell=story_allow_shell),
+                             every=True)
+            for ln, (_line, res) in zip(runnable, runs):
+                ln["kind"] = res.kind
+                if res.ok:
+                    ln["state"] = "green"
+                elif res.kind in ("invalid", "blocked") or res.vacuous:
+                    # NOT RED. `run_verifier` already distinguishes an expression it could not
+                    # parse, one the trust boundary refused to execute, and a runner that exited
+                    # clean having run nothing - and every one of those is a verifier that did
+                    # not RUN, not a test that noticed the change. Counting them red made a unit
+                    # whose `Verify:` line was a typo pass the one check that asks whether its
+                    # tests reach anything. AC5 states the rule for an unresolvable selector;
+                    # this is the same rule, and the discriminating data was already in hand.
+                    ln["state"] = "unmeasured"
+                else:
+                    ln["state"] = "red"
+            # One red line proves the criterion's tests reach the change, as one red criterion
+            # does for the unit; a line that stays green is still named in `lines`.
+            states = [ln["state"] for ln in runnable]
+            entry["state"] = next(st for st in ("red", "green", "unmeasured") if st in states)
+            entry["kind"] = runnable[states.index(entry["state"])]["kind"]
     finally:
         restore()
         _release_signals(previous)
@@ -4149,8 +4188,12 @@ def cmd_revert_check(args: argparse.Namespace) -> int:
         for line in res.get("errors", []):
             print(f"revert-check: {line}")
         for c in res.get("criteria", []):
-            extra = c.get("why") or c.get("verifier") or ""
+            stacked = c.get("lines", []) if len(c.get("lines", [])) > 1 else []
+            extra = (c.get("why") or (f"{len(stacked)} Verify lines" if stacked else "")
+                     or c.get("verifier") or "")
             print(f"  {c['ac']:<6} {c['state']:<11} {extra}")
+            for ln in stacked:
+                print(f"  {'':<6}   {ln['state']:<11} {ln['verifier']}")
         if res.get("note"):
             print(f"revert-check: {res['note']}")
         if res.get("ok"):

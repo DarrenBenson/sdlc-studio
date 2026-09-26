@@ -2486,12 +2486,12 @@ LANE_PRIOR_ART = (
 
 
 def _lane_ac_blocks(text: str) -> list[dict]:
-    """The unit's acceptance criteria as `{ac, title, verifier}`, parsed by the SAME parser the
-    verifier executes (`verify_ac.parse_story`). A second parser here would let a lane be
-    dispatched against criteria the runner cannot see, which is the divergence that makes an
-    executable contract stop being executable."""
+    """The unit's acceptance criteria as `{ac, title, verifier, verifiers}`, parsed by the SAME
+    parser the verifier executes (`verify_ac.parse_story`). A second parser here would let a lane
+    be dispatched against criteria the runner cannot see, which is the divergence that makes an
+    executable contract stop being executable. `verifiers` is every Verify line, in order."""
     import verify_ac  # noqa: PLC0415 - sibling; imported lazily so a plan never pays for it
-    return [{"ac": b.ac_id, "title": b.title, "verifier": b.verifier}
+    return [{"ac": b.ac_id, "title": b.title, "verifier": b.verifier, "verifiers": b.verifiers}
             for b in verify_ac.parse_story(text)]
 
 
@@ -2765,8 +2765,11 @@ def lane_verify(repo_root: Path | str, unit_id: str, timeout: int = 300,
         verifier = crit["verifier"]
         result = None
         if verifier is not None and not verify_ac._is_manual(verifier):
-            result = verify_ac.run_verifier(verifier, timeout, root,
-                                            allow_shell=_lane_allow_shell)
+            # Every line, through the loop `verify_ac run` uses: the first red line is the
+            # verdict and the line reported (a later `manual` line is not run here; `run` reads it).
+            verifier, result = verify_ac.first_red(verify_ac.run_lines(
+                crit["verifiers"],
+                lambda v: verify_ac.run_verifier(v, timeout, root, allow_shell=_lane_allow_shell)))
         state = _lane_criterion_state(verifier, result)
         output = ""
         if result is not None:
