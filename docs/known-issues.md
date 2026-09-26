@@ -55,8 +55,6 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0740` | Medium | a gate stood down in prose rather than as a waiver row is invisible to the report's waiver disclosure, which is how the one the operator most neede... |
 | `BG0752` | Medium | Per-commit test selection skips hooks, test infrastructure and code reached through another script |
 | `BG0754` | Medium | A commit touching a widely imported script runs well over the 90-second budget |
-| `BG0774` | Medium | install.sh exits 1 after a successful install when the gemini target is chosen without the gemini CLI |
-| `BG0776` | Medium | sprint sign --principal - seals the run with an empty principal |
 | `BG0782` | Medium | About 57 test modules commit in a temporary git repo with auto-maintenance on, the race BG0711 fixed in one |
 | `BG0783` | Medium | Review rounds are write-dead after US0918, so the ceiling and repair-regression readers of run-state rounds read nothing |
 | `BG0784` | Medium | A seat card with no role line is silently bypassed for the shipped card, and the unknown-seat refusal names the wrong seats |
@@ -64,8 +62,9 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0786` | Medium | flow.py compute takes about 90 seconds on this repository, so its CLI grammar control times out at 120 under load and reddens the push gate |
 | `BG0788` | Medium | Signed-report rounds are positional, so a hand-deleted verdict row goes unseen when a same-day later run re-reviewed the unit, and verdict rows car... |
 | `BG0790` | Medium | An installed release candidate is never prompted to move to its final release, because version comparison ignores the pre-release suffix |
+| `BG0792` | Medium | US0940 AC1's own Verify takes about three minutes, so the release gate's verify lane reads it red at the 120-second default |
 
-27 findings: 27 Medium, 0 Low.
+26 findings: 26 Medium, 0 Low.
 
 ## Not carried
 

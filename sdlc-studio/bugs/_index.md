@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 27 |
+| Open | 26 |
 | In Progress | 0 |
-| Fixed | 631 |
+| Fixed | 632 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
@@ -132,7 +132,7 @@
 | [BG0771](BG0771-the-close-s-tick-verification-row-cannot-read.md) | The close's tick-verification row cannot read the lean criterion shape | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0772](BG0772-a-held-backlog-item-cannot-close-when-its.md) | A held backlog item cannot close when its closing story ships | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0773](BG0773-bg0755-did-not-converge-in-review-round-2.md) | BG0755 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-25 | 2026-09-25 |
-| [BG0774](BG0774-install-sh-exits-1-after-a-successful-install.md) | install.sh exits 1 after a successful install when the gemini target is chosen without the gemini CLI | Open | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0774](BG0774-install-sh-exits-1-after-a-successful-install.md) | install.sh exits 1 after a successful install when the gemini target is chosen without the gemini CLI | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0775](BG0775-us0941-did-not-converge-in-review-round-2.md) | US0941 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0776](BG0776-sprint-sign-principal-seals-the-run-with-an.md) | sprint sign --principal - seals the run with an empty principal | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0777](BG0777-the-sprint-lane-runner-and-the-revert-check.md) | The sprint lane runner and the revert check run only a criterion's first Verify line | Fixed | Medium | 2026-09-25 | 2026-09-25 |

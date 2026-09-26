@@ -94,7 +94,7 @@ which `tools/known_issues.py write` generates from the bug corpus at the cut; th
 refuses the tag while the page and the corpus disagree. The count below is written by the same
 run, so it cannot drift from the page.
 
-**v6.0.0-rc.1 discloses 27 open defects: 27 Medium, 0 Low.**
+**v6.0.0-rc.1 discloses 26 open defects: 26 Medium, 0 Low.**
 
 The v6.0 bar is zero open Critical or High finding at the tag. The open Mediums ship under the
 triage decision D0273 rather than a waiver per finding: it names most of them individually,
@@ -133,3 +133,8 @@ curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/insta
 
 Composed at the cut from `changelog.d/` by `release_cut.py changelog-cut`: 152 fragments, one
 per delivered unit, now the [6.0.0 section of the CHANGELOG](../CHANGELOG.md#600---2026-09-26).
+
+Two fixes landed after the cut and ship in this candidate, listed under the CHANGELOG's
+`[Unreleased]` heading until the v6.0.0 cut folds them in: `sprint sign` refuses a principal
+that names nobody (BG0776), and `install.sh` exits 0 after installing the gemini or copilot
+target when that tool's CLI is absent (BG0774).

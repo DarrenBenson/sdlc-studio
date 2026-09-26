@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`sprint sign` refuses a principal that names nobody.** The guard stripped the raw string, so
+  `--principal -` passed it while the id comparison reads `-` as no id, and the run was sealed
+  under a signature naming no principal; `_` sealed the same way. A principal now needs at least
+  one letter or digit: `-`, `_` or blanks exit 2 naming the value given, the run stays open and
+  no signature is written. A real principal such as `Darren Benson` seals as before.
+- **`install.sh` exits 0 after installing the gemini or copilot target when that tool's CLI is
+  absent.** The native-installer hint ended in a trailing `command -v ... && echo` test, so with
+  no `gemini` (or no `gh`, for copilot) on PATH the hint returned non-zero, `set -e` stopped the
+  installer after the skill was already in place, and the Next steps output was cut short. Both
+  probes are now explicit `if` blocks: the hint still prints when the CLI is present and is
+  silently omitted when it is not.
+
 ## [6.0.0] - 2026-09-26
 
 ### Breaking

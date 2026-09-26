@@ -176,10 +176,18 @@ invoke_note() {
 }
 
 # Native installer one-liner, printed only when the tool's CLI is present.
+# Explicit `if`s, not trailing `&&` tests: an absent CLI must still return 0, or `set -e`
+# aborts the installer mid-way through its Next steps (BG0774, the BG0054 shape).
 native_hint() {
     case "$1" in
-        gemini)  command -v gemini >/dev/null 2>&1 && echo "  native: gemini skills install https://github.com/$REPO" ;;
-        copilot) command -v gh >/dev/null 2>&1 && echo "  native: gh skills install $REPO $SKILL_NAME" ;;
+        gemini)
+            if command -v gemini >/dev/null 2>&1; then
+                echo "  native: gemini skills install https://github.com/$REPO"
+            fi ;;
+        copilot)
+            if command -v gh >/dev/null 2>&1; then
+                echo "  native: gh skills install $REPO $SKILL_NAME"
+            fi ;;
     esac
 }
 
