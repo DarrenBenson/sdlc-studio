@@ -134,7 +134,8 @@ curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/insta
 Composed at the cut from `changelog.d/` by `release_cut.py changelog-cut`: 152 fragments, one
 per delivered unit, now the [6.0.0 section of the CHANGELOG](../CHANGELOG.md#600---2026-09-26).
 
-Two fixes landed after the cut and ship in this candidate, listed under the CHANGELOG's
+Three fixes landed after the cut and ship in this candidate, listed under the CHANGELOG's
 `[Unreleased]` heading until the v6.0.0 cut folds them in: `sprint sign` refuses a principal
-that names nobody (BG0776), and `install.sh` exits 0 after installing the gemini or copilot
-target when that tool's CLI is absent (BG0774).
+that names nobody (BG0776), `install.sh` exits 0 after installing the gemini or copilot target
+when that tool's CLI is absent (BG0774), and the boundary suite reads an absent `changelog.d/`
+as no fragments, so a fresh checkout after a release cut stays green (BG0793).

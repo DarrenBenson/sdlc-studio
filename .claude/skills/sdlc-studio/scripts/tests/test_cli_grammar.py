@@ -564,6 +564,15 @@ def _highest_bug_id(repo: Path) -> str:
     return max(ids, key=lambda rid: int(rid[2:]))
 
 
+def _fragments(root: Path) -> list[str]:
+    """The fragment names under `root`'s `changelog.d/`, sorted; none when the directory is absent.
+
+    BG0793. A release cut consumes every fragment and git does not carry an empty directory, so a
+    fresh checkout of the cut commit has no `changelog.d/` - an unguarded listing raised there."""
+    home = root / "changelog.d"
+    return sorted(p.name for p in home.iterdir()) if home.is_dir() else []
+
+
 def _verb_label(script: str, argv) -> str:
     return f"{script} {' '.join(argv)}".strip()
 
@@ -704,15 +713,15 @@ class RealTreeMarkerTests(unittest.TestCase):
         self.assertIsNone(sdlc_md.find_by_id(self.REPO, "BG9999"))
         self._assert_green(result, "an answer naming only an id that resolves nowhere")
 
-    @boundary_only("it copies the repository and runs the 83s control over it twice. The marker "
-                   "it depends on is pinned per commit by the four tests beside it; what defers "
-                   "is only the proof that the live inventory stays green as fragments come and "
-                   "go, which a release cut exercises at the boundary this runs at")
-    def test_the_control_is_green_in_either_fragment_state(self) -> None:
-        """AC4. MUTANT: put `changelog.py check` back in the inventory - it names a fragment only
-        while `changelog.d/` holds one, so the emptied state turns it red."""
+    def _control_in_fragment_states(self, states) -> None:
+        """Run the control over a copy of the repository once per `states` entry, in order.
+
+        Every state starts from a copy with NO `changelog.d/`, whatever the working tree holds:
+        "absent" leaves it so, "emptied" creates the directory bare, and "one minted fragment"
+        writes a single fragment into it. The working tree's own fragments are compared before
+        and after, so a test that touched the real tree fails here."""
         body = _test_body(getattr(RootIsReadNotJustParsed, self.CONTROL))
-        before = sorted(p.name for p in (self.REPO / "changelog.d").iterdir())
+        before = _fragments(self.REPO)
 
         def leave_out(directory, names):
             rel = Path(directory).relative_to(self.REPO)
@@ -722,20 +731,48 @@ class RealTreeMarkerTests(unittest.TestCase):
             copy = Path(d) / "repo"
             shutil.copytree(self.REPO, copy, symlinks=True, ignore=leave_out)
             fragments = copy / "changelog.d"
-            for p in fragments.iterdir():
-                p.unlink()
+            shutil.rmtree(fragments, ignore_errors=True)
             minted = self._leak(copy)
-            for state in ("emptied", "one minted fragment"):
-                if state != "emptied":
+            for state in states:
+                if state == "emptied":
+                    fragments.mkdir(exist_ok=True)
+                elif state == "one minted fragment":
+                    fragments.mkdir(exist_ok=True)
                     (fragments / f"{minted}.md").write_text(
                         "<!-- section: Fixed -->\n\n- A fragment the control's test minted.\n",
                         encoding="utf-8")
-                want = [] if state == "emptied" else [f"{minted}.md"]
-                self.assertEqual(want, sorted(p.name for p in fragments.iterdir()), state)
+                self.assertEqual(state != "absent", fragments.is_dir(), state)
+                want = [f"{minted}.md"] if state == "one minted fragment" else []
+                self.assertEqual(want, _fragments(copy), state)
                 result, _ = self._run_isolated(self.CONTROL, body=body, repo=copy)
+                self.assertEqual(state != "absent", fragments.is_dir(),
+                                 f"{state}: the control changed whether changelog.d/ exists, so "
+                                 f"the state it ran over is not the one named")
                 self._assert_green(result, f"the control over the copy, changelog.d/ {state}")
-        self.assertEqual(before, sorted(p.name for p in (self.REPO / "changelog.d").iterdir()),
+        self.assertEqual(before, _fragments(self.REPO),
                          "the working tree's changelog.d/ changed - the test touched the real tree")
+
+    @boundary_only("it copies the repository and runs the 83s control over it twice. The marker "
+                   "it depends on is pinned per commit by the four tests beside it; what defers "
+                   "is only the proof that the live inventory stays green as fragments come and "
+                   "go, which a release cut exercises at the boundary this runs at")
+    def test_the_control_is_green_in_either_fragment_state(self) -> None:
+        """AC4. MUTANT: put `changelog.py check` back in the inventory - it names a fragment only
+        while `changelog.d/` holds one, so the emptied state turns it red."""
+        self._control_in_fragment_states(("emptied", "one minted fragment"))
+
+    @boundary_only("it copies the repository and runs the 83s control over it once. What defers "
+                   "is only the proof that the live inventory holds on a checkout with no "
+                   "changelog.d/ at all, the state a release cut leaves a fresh clone in, and "
+                   "the boundary is where a cut is tagged and CI checks it out")
+    def test_the_control_holds_with_no_fragment_directory(self) -> None:
+        """BG0793 AC2. A release cut consumes every fragment and git carries no empty directory,
+        so a fresh checkout - CI's - has no `changelog.d/` at all, a state a local tree that keeps
+        the empty directory never reaches. Only the copy loses the directory, never the working
+        tree. MUTANTS: list `changelog.d/` with an unguarded `iterdir()` (FileNotFoundError, as
+        CI raised on 0abe99f6); recreate the directory before the control runs, so the absent
+        state is never the one exercised."""
+        self._control_in_fragment_states(("absent",))
 
     def test_the_boundary_control_resolves_ids_rather_than_matching_a_frozen_range(self) -> None:
         """AC5. MUTANTS: leave the control on the frozen marker; add a resolving helper beside it

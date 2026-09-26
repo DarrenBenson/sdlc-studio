@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The boundary suite passes on a checkout with no `changelog.d/`.** A release cut consumes every
+  fragment and a fresh clone carries no empty directory, so the boundary test that lists the
+  fragments raised FileNotFoundError in CI on the cut commit, while the local gate, whose tree
+  kept the empty directory, passed. An absent directory now reads as no fragments, and a boundary
+  case runs the real-tree control over a copy with the directory removed.
 - **`sprint sign` refuses a principal that names nobody.** The guard stripped the raw string, so
   `--principal -` passed it while the id comparison reads `-` as no id, and the run was sealed
   under a signature naming no principal; `_` sealed the same way. A principal now needs at least
