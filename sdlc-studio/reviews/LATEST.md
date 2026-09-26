@@ -34,6 +34,12 @@
   mints its own bug (BG0731), and the CI teardown race is traced to git 2.55's detached
   maintenance (BG0711).
 
+- **After the close, before rc.1:** the v6.0.0-rc.1 release commit (version bump, changelog cut
+  with a 58-entry breaking inventory, known issues, release notes), and three fixes the rc needed:
+  a pre-release tag is published as a pre-release, never the latest (BG0789, High), `sprint sign`
+  refuses a principal that names nobody (BG0776), and `install.sh` exits 0 when the gemini or
+  copilot CLI is absent (BG0774). BG0791 keeps a test off a fragment the cut consumes.
+
 ## What is owed
 
 - **Sprint 6 (EP0266): the docs and the site.** US0924 (the skill docs, several retired verbs
