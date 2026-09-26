@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 1
-> **Affects:** .github/workflows/release.yml, tools/tests/test_release_prerelease.py
+> **Affects:** .github/workflows/release.yml, tools/tests/test_release_prerelease.py, changelog.d/BG0789.md
 > **Created:** 2026-09-26
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
