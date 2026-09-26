@@ -4,7 +4,7 @@
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_config.py, .claude/skills/sdlc-studio/reference-upgrade.md, .claude/skills/sdlc-studio/help/upgrade.md, changelog.d/US0925.md, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_testplan_tooling.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_two_role.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_config.py, .claude/skills/sdlc-studio/reference-upgrade.md, .claude/skills/sdlc-studio/help/upgrade.md, changelog.d/US0925.md, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_testplan_tooling.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_two_role.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_optional.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_coverage_opt_in.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_repair_plan.py
 > **Epic:** EP0263
 > **Points:** 5
 > **Persona:** Jonah Reyes
