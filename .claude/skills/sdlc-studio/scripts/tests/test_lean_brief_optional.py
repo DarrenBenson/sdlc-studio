@@ -162,7 +162,7 @@ class BriefProvenanceGoneTests(unittest.TestCase):
                          f"{defaults.name} still carries review.{KEY}")
         readers = [p.relative_to(SKILL).as_posix() for p in sorted(SCRIPTS.rglob("*.py"))
                    if "tests" not in p.relative_to(SCRIPTS).parts
-                   and KEY in p.read_text(encoding="utf-8", errors="replace")]
+                   and KEY in stamps.shipped_source(p)]
         self.assertEqual([], readers, "a shipped script still reads the retired key")
 
     def test_no_stamp_names_a_deleted_test(self) -> None:

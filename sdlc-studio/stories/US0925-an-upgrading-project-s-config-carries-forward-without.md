@@ -1,6 +1,6 @@
 # US0925: An upgrading project's config carries forward without the retired review keys
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,16 +19,22 @@
 
 - **AC1:** Given a Definition of Done in the v5.1 shape, tagging `[check: review.two-role]` and `[check: repair.mutation-evidence]`, when `migrate.py --apply` runs, then each retired tag is removed, its criterion line is kept as a human-judged item, and the report names it; an id added to `sdlc_md.RETIRED_CHECK_IDS` is stripped with no change to `migrate.py`. Fails on: HEAD, where both tags survive `migrate --apply` (measured on a project initialised with v5.1.0's `init.py`); a second hand-kept list of ids in `migrate.py`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_config.py::MigrateConfigTests::test_retired_dod_tags_are_untagged
+  - **Verified:** yes (2026-09-26)
 - **AC2:** Given an AGENTS.md or CLAUDE.md whose text names a retired config key or verb (for example the v5.1 template's `review.two_role_after` paragraph), when `migrate.py` runs, then the report lists each such line under needs-a-human with the file and line number, and neither file is rewritten. Fails on: HEAD, which does not report the v5.1 paragraph (measured); a rewrite, which would edit a project's own instructions without judgement
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_config.py::MigrateConfigTests::test_instructions_naming_a_retired_surface_are_reported
+  - **Verified:** yes (2026-09-26)
 - **AC3:** Given a fixture `.config.yaml` in this repository's shape, holding retired keys set by hand (the `plan_review` block, `review.test_plan_after`, `review.two_role_after`, `review.signoff`, `review.mutation_evidence`, `review.line_coverage_after`, `review.require_brief_provenance`, `quality.depth_parity_gate`), when `migrate.py --apply` runs, then each retired key's own line and a removed block's child lines are removed, every other line is byte-identical, comments included, the report names each key with what replaced it and any comment block left directly above one, and `review.line_coverage: block` is kept. The keys are read from one registry beside `RETIRED_CHECK_IDS`. Fails on: a parse-and-dump rewrite, which loses comments and reorders keys; removing only the non-default `signoff: panel`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_config.py::MigrateConfigTests::test_apply_strips_every_retired_key
+  - **Verified:** yes (2026-09-26)
 - **AC4:** Given the AC1 and AC3 fixtures, when `migrate.py` runs without `--apply`, then nothing is written and the report lists the same removals; and after one `--apply`, a second changes no byte and lists nothing to remove. Fails on: a stripper that writes in dry-run, or re-reports on every pass
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_config.py::MigrateConfigTests::test_dry_run_writes_nothing_and_a_second_apply_is_a_no_op
+  - **Verified:** yes (2026-09-26)
 - **AC5:** Given the frozen ledgers present (`plan-review-verdicts.md`, `signoff-record.md`, `repair-record.md`, `critic-evidence.md`, `sprint-review-record.md`, `plan-rulings.md`), when migrated, then each is reported as frozen history and left byte-identical, and the report counts the `repair-record.md` and `sprint-review-record.md` rows dated on or after `critic.REPAIR_VERB_RETIRED`, saying those rows no longer answer a REJECT or cover a unit. Fails on: silence about rows the historical licence does not cover, which a v5.1 project that kept repairing after the constant would otherwise meet as a conformance finding
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_config.py::MigrateConfigTests::test_frozen_ledgers_are_reported_with_their_unlicensed_rows
+  - **Verified:** yes (2026-09-26)
 - **AC6:** Given `migrate.py --apply` on a copy of a real consuming workspace older than v5 (a v4 consuming project's shape: schema 2, `conformance.adopt_after`, no retired key), then only `.version` changes and the conformance and validate results are identical before and after. Fails on: a stripper that touches a config holding no retired key
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_config.py::MigrateConfigTests::test_a_workspace_with_nothing_retired_is_left_alone
+  - **Verified:** yes (2026-09-26)
 
 ## Notes
 

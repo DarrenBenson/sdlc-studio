@@ -400,6 +400,9 @@ CONFINEMENT_ALLOWLIST: dict[str, str] = {
     "init.py": "seeds a whole project tree, so every path it writes is its target",
     "project_upgrade.py": "rewrites the tree it migrates; covered by the upgrade suite",
     "migrate_v3.py": "renames artefacts wholesale as its purpose",
+    "migrate.py": ("removes retired tags and keys from the DoR/DoD and .config.yaml it upgrades, "
+                   "line by line; test_lean_migrate_config holds that the first --apply changes "
+                   "those files and .version only, and a second changes nothing"),
     "archive.py": "moves index rows between live and archive indexes",
     "refine.py": "rewrites the artefacts it decomposes",
     "triage.py": "rewrites the artefacts it dispositions",

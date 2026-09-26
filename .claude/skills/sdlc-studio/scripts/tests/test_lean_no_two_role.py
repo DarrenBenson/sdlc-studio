@@ -95,14 +95,36 @@ def _check(root: Path) -> tuple[dict, str]:
 
 
 def _string_reads(path: Path) -> list[str]:
-    """Every string constant in a module that is not a docstring - the values code can read."""
+    """Every string constant in a module that is not a docstring - the values code can read. A
+    key of a `RETIRED_*` registry is not a read: it names the surface so `migrate` can remove it."""
     tree = ast.parse(path.read_text(encoding="utf-8"))
     docs = {id(n.body[0].value) for n in ast.walk(tree)
             if isinstance(n, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
             and n.body and isinstance(n.body[0], ast.Expr)
             and isinstance(n.body[0].value, ast.Constant)}
+    docs |= {id(k) for n in ast.walk(tree)
+             if isinstance(n, ast.Assign) and isinstance(n.value, ast.Dict)
+             and any(getattr(t, "id", "").startswith("RETIRED_") for t in n.targets)
+             for k in n.value.keys}
     return [n.value for n in ast.walk(tree)
             if isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in docs]
+
+
+def shipped_source(path: Path) -> str:
+    """A shipped module's source with the keys of its `RETIRED_*` registries blanked: naming a
+    retired surface so `migrate` can remove it is not reading it. Everything else, comments
+    included, is left for a substring scan to find."""
+    src = path.read_text(encoding="utf-8")
+    lines = [ln.encode("utf-8") for ln in src.splitlines(keepends=True)]
+    for n in ast.walk(ast.parse(src)):
+        if (isinstance(n, ast.Assign) and isinstance(n.value, ast.Dict)
+                and any(getattr(t, "id", "").startswith("RETIRED_") for t in n.targets)):
+            for k in n.value.keys:
+                if isinstance(k, ast.Constant) and k.lineno == k.end_lineno:
+                    ln = lines[k.lineno - 1]     # ast offsets are UTF-8 byte offsets
+                    lines[k.lineno - 1] = (ln[:k.col_offset] + b" " * (k.end_col_offset
+                                           - k.col_offset) + ln[k.end_col_offset:])
+    return b"".join(lines).decode("utf-8")
 
 
 def _git(*args: str) -> str | None:

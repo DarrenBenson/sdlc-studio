@@ -197,8 +197,10 @@ class TestPlanToolingGoneTests(unittest.TestCase):
             self.assertFalse((REPO / rel).exists(), f"{rel} survives")
         self.assertTrue((REPO / "sdlc-studio" / "reviews" / "plan-rulings.md").is_file(),
                         "the ruling history was deleted rather than kept")
-        writers = [p.name for p in SCRIPTS.glob("*.py") if "plan-rulings" in p.read_text(
-            encoding="utf-8")]
+        # migrate.py names it in FROZEN_LEDGERS only to report it as history, and
+        # test_lean_migrate_config holds its bytes unchanged through `migrate --apply`.
+        writers = [p.name for p in SCRIPTS.glob("*.py") if p.name != "migrate.py"
+                   and "plan-rulings" in p.read_text(encoding="utf-8")]
         self.assertEqual(writers, [], "a shipped script still names the ruling file")
 
     def test_the_surface_names_no_retired_verb(self) -> None:

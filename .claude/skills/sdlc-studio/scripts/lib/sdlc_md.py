@@ -3190,6 +3190,28 @@ RETIRED_CHECK_IDS = {
                                 "its criteria and its independent review, and `mutation.py "
                                 "run` measures on demand",
 }
+#: `.config.yaml` keys that once set a review gate and no longer do, each with what replaced it.
+#: A dotted key is one setting; a top-level name is a block removed with its children. `migrate`
+#: strips them and reports where a project's instructions still name one.
+RETIRED_CONFIG_KEYS = {
+    "plan_review": "plan review is retired: every verdict is a delivery verdict",
+    "review.test_plan_after": "the test-plan gate is retired: a unit's criteria and Verify "
+                              "selectors are its test plan",
+    "review.two_role_after": RETIRED_CHECK_IDS["review.two-role"],
+    "review.signoff": "per-unit sign-off is retired: the operator signs the run once at "
+                      "`sprint sign`",
+    "review.mutation_evidence": RETIRED_CHECK_IDS["repair.mutation-evidence"],
+    "review.line_coverage_after": "the coverage gate has no date cutoff: `review.line_coverage: "
+                                  "block` opts in and judges every unit",
+    "review.require_brief_provenance": "a verdict's brief provenance is no longer refused",
+    "review.plan_falsifiability": "the falsifiability probe is retired: a unit's criteria and "
+                                  "Verify selectors are its test plan",
+    "review.repair_plan_gate": "the repair-plan gate is retired: a REJECT is answered by a "
+                               "round-2 review of the fix",
+    "review.repair_design_threshold": "read only by the retired repair-plan gate",
+    "quality.depth_parity_gate": "the depth-parity check is retired: a story reaches Done on its "
+                                 "criteria",
+}
 CHECK_TAG_RE = re.compile(r"\[check:\s*([a-z0-9.-]+)\s*\]")
 # A bracketed token shaped like a check tag (the word `check` on a word boundary, any case)
 # that the strict parser above does NOT accept - a mis-cased or mis-spaced near-miss.

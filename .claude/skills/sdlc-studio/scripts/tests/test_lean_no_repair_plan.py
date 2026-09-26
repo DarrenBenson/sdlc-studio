@@ -23,6 +23,7 @@ SCRIPTS = HERE.parent
 SKILL = SCRIPTS.parent
 sys.path.insert(0, str(HERE))
 import workspace  # noqa: E402
+import test_lean_no_two_role as stamps  # noqa: E402 - `shipped_source`, the shared reader scan
 
 REPO = workspace.REPO
 
@@ -134,7 +135,7 @@ class RepairPlanGoneTests(unittest.TestCase):
             self.assertIsNone(re.search(rf"^\s*{leaf}\s*:", defaults, re.M),
                               f"config-defaults.yaml still declares {key}")
             readers = [p.relative_to(SCRIPTS).as_posix() for p in _shipped_scripts()
-                       if leaf in p.read_text(encoding="utf-8")]
+                       if leaf in stamps.shipped_source(p)]
             self.assertEqual([], readers, f"a shipped script still reads {key}")
 
     def test_the_surface_names_no_retired_verb(self) -> None:

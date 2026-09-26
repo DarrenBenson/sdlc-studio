@@ -32,6 +32,7 @@ import gitutil  # noqa: E402 - confined, hermetic git for the fixture repositori
 import transition  # noqa: E402
 import verify_ac  # noqa: E402
 from lib import sdlc_md  # noqa: E402
+import test_lean_no_two_role as stamps  # noqa: E402 - `shipped_source`, the shared reader scan
 
 SID = "US0001"
 PROD = "src/thing.py"
@@ -166,7 +167,7 @@ class CoverageOptInTests(unittest.TestCase):
         self.assertNotIn("line_coverage_after", defaults)
         readers = [str(p.relative_to(SCRIPTS)) for p in sorted(SCRIPTS.rglob("*.py"))
                    if "tests" not in p.relative_to(SCRIPTS).parts
-                   and "line_coverage_after" in p.read_text(encoding="utf-8")]
+                   and "line_coverage_after" in stamps.shipped_source(p)]
         self.assertEqual(readers, [], "a shipped script still reads review.line_coverage_after")
 
     def test_no_stamp_names_a_deleted_test(self) -> None:

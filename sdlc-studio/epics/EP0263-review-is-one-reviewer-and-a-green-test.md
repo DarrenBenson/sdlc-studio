@@ -30,7 +30,7 @@ Groomed for Sprint 4 on 2026-09-25 from the engineering-seat readiness review: 2
 - [x] [US0922: Line coverage is measured only when a project opts in](../stories/US0922-line-coverage-is-measured-only-when-a-project.md)
 - [x] [US0923: A review verdict records without brief provenance](../stories/US0923-a-review-verdict-records-without-brief-provenance.md)
 - [ ] [US0924: The shipped docs teach only the surviving review path](../stories/US0924-the-shipped-docs-teach-only-the-surviving-review.md)
-- [ ] [US0925: An upgrading project's config carries forward without the retired review keys](../stories/US0925-an-upgrading-project-s-config-carries-forward-without.md)
+- [x] [US0925: An upgrading project's config carries forward without the retired review keys](../stories/US0925-an-upgrading-project-s-config-carries-forward-without.md)
 - [ ] [US0926: This repository runs on the shipped defaults with no stand-down keys](../stories/US0926-this-repository-runs-on-the-shipped-defaults-with.md)
 - [x] [US0934: A bug reaches Fixed without a depth gate, and the retired --depth flags are refused](../stories/US0934-a-bug-reaches-fixed-without-a-depth-gate.md)
 - [x] [US0935: A repair reaches Fixed without the mutation-evidence gate, survivor filing or evidence mode](../stories/US0935-a-repair-reaches-fixed-without-the-mutation-evidence.md)
