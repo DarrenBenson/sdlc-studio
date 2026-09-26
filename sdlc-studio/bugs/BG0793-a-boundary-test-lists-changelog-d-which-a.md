@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py, changelog.d/BG0793.md
 > **Created:** 2026-09-26
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
