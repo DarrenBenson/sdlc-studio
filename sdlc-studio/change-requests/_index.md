@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-09-25
+**Last Updated:** 2026-09-26
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 18 |
+| Proposed | 19 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 508 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 52 |
 | Blocked | 0 |
-| **Total** | **599** |
+| **Total** | **600** |
 
 ## All Changes
 
@@ -97,6 +97,7 @@
 | [CR-0597](CR0597-prevent-or-retire-lesson-lc-008-constraint-added.md) | Prevent or retire lesson LC-008 (constraint added without retirement) | Proposed | Medium | Improvement | 2026-09-24 | -- |
 | [CR-0598](CR0598-prevent-or-retire-lesson-lc-003-mechanism-reaches.md) | Prevent or retire lesson LC-003 (mechanism reaches no caller) | Proposed | Medium | Improvement | 2026-09-25 | -- |
 | [CR-0599](CR0599-the-sprint-signature-is-recorded-in-a-tracked.md) | The sprint signature is recorded in a tracked file, so any clone can verify a signed report | Proposed | High | Feature | 2026-09-25 | -- |
+| [CR-0600](CR0600-prevent-or-retire-lesson-lc-004-premise-not.md) | Prevent or retire lesson LC-004 (premise not executed) | Proposed | Medium | Improvement | 2026-09-26 | -- |
 
 ## Archived Releases
 

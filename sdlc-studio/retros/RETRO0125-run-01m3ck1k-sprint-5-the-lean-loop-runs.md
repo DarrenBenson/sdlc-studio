@@ -68,13 +68,15 @@
 
 **0 of 37 unit(s) measured; 29 of 37 forecast at plan time.**
 
+**Sprint tokens/point: 184,233** (18,791,718 tokens over 102 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+
 **Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 
 Review passes - read from the verdict ledger:
 
-  code review: 51 pass(es) over 36 unit(s), 16 rejected
+  code review: 54 pass(es) over 37 unit(s), 17 rejected
 Unmeasured: BG0681, BG0687, BG0695, BG0711, BG0717, BG0731, BG0771, BG0772, US0914, US0918, US0919, US0922, US0923, US0925, US0936, US0937, US0938, US0939, US0940, US0942, US0943, US0944, US0945, US0946, US0947, US0948, US0949, US0950, US0951. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
 Unforecast: BG0773, BG0775, BG0777, BG0778, BG0779, BG0780, BG0781, BG0787. No plan-time forecast was recorded for them, so they are excluded too. The estimate is NOT re-derived from today's constants: a number computed at judgement time, by the model being judged, is not a prediction.
 No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
@@ -83,3 +85,7 @@ Forecast by `TOKENS_PER_POINT=353810`, recorded at plan time. OUT-OF-SAMPLE: for
 
 Ratio is estimate / actual: above 1 the plan over-forecast, below 1 it under-forecast. Nothing is re-fitted here - see VELOCITY.md for the trend across sprints, and change the constants only on evidence a human has looked at.
 <!-- accuracy:end -->
+
+## Handoff
+
+- [HO-0090](../handoffs/HO0090-maya-runs-the-lean-loop-on-a-fresh.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
