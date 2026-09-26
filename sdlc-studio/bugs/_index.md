@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 26 |
+| Open | 27 |
 | In Progress | 0 |
 | Fixed | 632 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
 | Superseded | 28 |
-| **Total** | **792** |
+| **Total** | **793** |
 
 ## All Bugs
 
@@ -151,6 +151,7 @@
 | [BG0790](BG0790-an-installed-release-candidate-is-never-prompted-to.md) | An installed release candidate is never prompted to move to its final release, because version comparison ignores the pre-release suffix | Open | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0791](BG0791-test-lean-cr-filing-reads-a-changelog-fragment.md) | test_lean_cr_filing reads a changelog fragment that the release cut consumes, so the suite goes red on every release commit | Fixed | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0792](BG0792-us0940-ac1-s-own-verify-takes-about-three.md) | US0940 AC1's own Verify takes about three minutes, so the release gate's verify lane reads it red at the 120-second default | Open | Medium | 2026-09-26 | 2026-09-26 |
+| [BG0793](BG0793-a-boundary-test-lists-changelog-d-which-a.md) | A boundary test lists changelog.d, which a fresh checkout does not have once a release cut consumes every fragment, so CI is red on the rc.1 commit | Open | Medium | 2026-09-26 | 2026-09-26 |
 
 ## Archived Releases
 
