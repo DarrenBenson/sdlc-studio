@@ -22,3 +22,4 @@ _None yet: add them here, or on the stories `refine` decomposes this into._
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-25 | sdlc-studio | Raised |
+| 2026-09-26 | sdlc | US0940 re-pointed US0941 AC5 at hermetic tests: check cannot re-validate RPT0006-RPT0009 in a clean clone without .local, so the pre-fix-signed clause is uncarried until the signature record is tracked; restore AC5's original Verify when this lands |
