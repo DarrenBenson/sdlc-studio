@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_sign.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_principal.py, changelog.d/BG0776.md
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,11 +23,14 @@ Normalise the principal before the empty check, and refuse a value that normalis
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: sprint.py sign refuses an empty --principal, but the guard strips the raw string before sprint's id normaliser reads '-' as empty, so '--principal -' passes...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Normalise the principal before the empty check, and refuse a value that normalises to empty; pin it with a test.
+- [ ] **AC1** Given a closed run, when `sprint.py sign --report <id> --principal` is given a value that normalises to empty (`-`, `  `, `_`), then it exits non-zero naming the principal, and the run is not sealed and no signature is written. Fails on: checking the raw string for emptiness before the id normaliser runs
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_principal.py::SignPrincipalTests::test_a_principal_that_normalises_to_empty_is_refused
+- [ ] **AC2** Given the same run, when `sign` is given a real principal (`Darren Benson`), then it seals as before and the signature names that principal. Fails on: a guard that refuses every principal
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_principal.py::SignPrincipalTests::test_a_real_principal_still_seals
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-25 | sdlc-studio | Filed |
+| 2026-09-26 | sdlc | Groomed for v6.0.0-rc.1 (operator ruling: fixed before the rc tag) |
