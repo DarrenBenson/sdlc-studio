@@ -4,7 +4,7 @@
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_optional.py, changelog.d/US0923.md, AGENTS.md, .claude/skills/sdlc-studio/reference-sprint-toolchain.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_optional.py, changelog.d/US0923.md, AGENTS.md, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_file_history.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py, sdlc-studio/bugs/BG0672-critic-record-accepts-a-brief-fingerprint-no-brief.md, sdlc-studio/stories/US0578-recording-a-verdict-with-no-brief-provenance-is.md
 > **Epic:** EP0263
 > **Points:** 3
 > **Persona:** Maya Okafor
