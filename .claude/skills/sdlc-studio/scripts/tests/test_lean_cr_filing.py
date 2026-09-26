@@ -190,10 +190,11 @@ _SKILL = Path(__file__).resolve().parents[2]
 _REPO = _SKILL.parents[2]
 # The shipped texts that say who sizes a CR, read from this repository. Includes this module
 # and test_two_backlogs.py (both carry the claim in prose comments/docstrings) and the US0128
-# story whose revision history once repeated it.
+# story whose revision history once repeated it. US0900's `changelog.d/` fragment is not
+# listed: the 6.0.0 cut consumed it into CHANGELOG.md, whose released history is frozen.
 _TRUTH_FILES = (_SKILL / "help" / "cr.md", _SKILL / "reference-scripts-create.md",
                 _SKILL / "templates" / "agent-instructions.md",
-                _SKILL / "scripts" / "file_finding.py", _REPO / "changelog.d" / "US0900.md",
+                _SKILL / "scripts" / "file_finding.py",
                 Path(__file__).resolve(),
                 _SKILL / "scripts" / "tests" / "test_two_backlogs.py",
                 _REPO / "sdlc-studio" / "stories" /

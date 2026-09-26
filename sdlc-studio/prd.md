@@ -1,7 +1,7 @@
 # Product Requirements Document
 
 **Project:** SDLC Studio
-**Version:** 5.1.0
+**Version:** 6.0.0-rc.1
 **Last Updated:** 2026-09-25
 **Status:** Generated (brownfield extraction; epics/stories validated and closed out 2026-07-09, commit 841471e)
 

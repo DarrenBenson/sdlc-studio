@@ -6,7 +6,7 @@
 
 Ask for software in plain language. The team plans it, builds it, tests it, and proves it is done.
 
-**Version 5.1.0**
+**Version:** 6.0.0-rc.1
 
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Lint](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml/badge.svg)](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml)
@@ -474,8 +474,9 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 - `/sdlc-studio help` - the command catalogue (also [help/help.md](.claude/skills/sdlc-studio/help/help.md))
 - [Greenfield runbook](.claude/skills/sdlc-studio/help/getting-started.md) and [Brownfield runbook](.claude/skills/sdlc-studio/help/brownfield-runbook.md) - the step-by-step paths
 - [reference-doctrine.md](.claude/skills/sdlc-studio/reference-doctrine.md) - the operating doctrine for running any project with this skill
+- [docs/release-notes-v6.0.0-rc.1.md](docs/release-notes-v6.0.0-rc.1.md) - the v6 release candidate: the lean loop, one verdict ledger, one signature, every retired surface and how `migrate --apply` carries a v5.1 project across
 - [docs/release-notes-v5.0.0.md](docs/release-notes-v5.0.0.md) - what v5 is, what it refuses, and what changed, for a reader deciding whether to upgrade
-- [docs/release-notes-v5.1.0.md](docs/release-notes-v5.1.0.md) - the current release: the carried list closed, every Medium disposed of or ruled
+- [docs/release-notes-v5.1.0.md](docs/release-notes-v5.1.0.md) - the current stable release: the carried list closed, every Medium disposed of or ruled
 - [docs/release-notes-v5.0.1.md](docs/release-notes-v5.0.1.md) - one defect, the verified install path that had never worked
 - [docs/known-issues.md](docs/known-issues.md) - the defects this release ships with, by id, and the bar it was held to
 - [CHANGELOG.md](CHANGELOG.md) - release history | [SECURITY.md](SECURITY.md) | [SUPPORT.md](SUPPORT.md)

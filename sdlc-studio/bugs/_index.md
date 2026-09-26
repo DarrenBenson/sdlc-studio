@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 28 |
+| Open | 27 |
 | In Progress | 0 |
-| Fixed | 629 |
+| Fixed | 630 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
@@ -149,7 +149,7 @@
 | [BG0788](BG0788-signed-report-rounds-are-positional-so-a-hand.md) | Signed-report rounds are positional, so a hand-deleted verdict row goes unseen when a same-day later run re-reviewed the unit, and verdict rows carry no run id | Open | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0789](BG0789-the-release-workflow-publishes-a-release-candidate-tag.md) | The release workflow publishes a release-candidate tag as the latest release, so every installed copy is prompted to upgrade to it | Fixed | High | 2026-09-26 | 2026-09-26 |
 | [BG0790](BG0790-an-installed-release-candidate-is-never-prompted-to.md) | An installed release candidate is never prompted to move to its final release, because version comparison ignores the pre-release suffix | Open | Medium | 2026-09-26 | 2026-09-26 |
-| [BG0791](BG0791-test-lean-cr-filing-reads-a-changelog-fragment.md) | test_lean_cr_filing reads a changelog fragment that the release cut consumes, so the suite goes red on every release commit | Open | Medium | 2026-09-26 | 2026-09-26 |
+| [BG0791](BG0791-test-lean-cr-filing-reads-a-changelog-fragment.md) | test_lean_cr_filing reads a changelog fragment that the release cut consumes, so the suite goes red on every release commit | Fixed | Medium | 2026-09-26 | 2026-09-26 |
 
 ## Archived Releases
 

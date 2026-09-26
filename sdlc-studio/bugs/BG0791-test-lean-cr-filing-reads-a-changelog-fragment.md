@@ -1,6 +1,6 @@
 # BG0791: test_lean_cr_filing reads a changelog fragment that the release cut consumes, so the suite goes red on every release commit
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_cr_filing.py
@@ -25,6 +25,7 @@ Scan only files that exist after a cut, with no path to a fragment the cut consu
 
 - [ ] **AC1** Given the tree after `release_cut.py changelog-cut` has consumed every fragment, when `test_lean_cr_filing` runs, then it passes and names no path under `changelog.d/`. Fails on: a scan list naming a fragment the cut deletes
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_cr_filing.py
+  - **Verified:** yes (2026-09-26)
 
 ## Revision History
 
