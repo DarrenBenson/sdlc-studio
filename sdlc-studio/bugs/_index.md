@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 27 |
+| Open | 26 |
 | In Progress | 0 |
-| Fixed | 627 |
+| Fixed | 628 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
@@ -145,7 +145,7 @@
 | [BG0784](BG0784-a-seat-card-with-no-role-line-is.md) | A seat card with no role line is silently bypassed for the shipped card, and the unknown-seat refusal names the wrong seats | Open | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0785](BG0785-migrate-leaves-a-v4-era-project-s-conformance.md) | migrate leaves a v4-era project's conformance lane red on its pre-adoption stories and names no cutoff for them | Open | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0786](BG0786-flow-py-compute-takes-about-90-seconds-on.md) | flow.py compute takes about 90 seconds on this repository, so its CLI grammar control times out at 120 under load and reddens the push gate | Open | Medium | 2026-09-26 | 2026-09-26 |
-| [BG0787](BG0787-a-signed-sprint-report-reads-invalidated-once-a.md) | A signed sprint report reads INVALIDATED once a later run reviews one of its units, because unit rounds are re-derived from the whole live verdict ledger | Open | High | 2026-09-26 | 2026-09-26 |
+| [BG0787](BG0787-a-signed-sprint-report-reads-invalidated-once-a.md) | A signed sprint report reads INVALIDATED once a later run reviews one of its units, because unit rounds are re-derived from the whole live verdict ledger | Fixed | High | 2026-09-26 | 2026-09-26 |
 | [BG0788](BG0788-signed-report-rounds-are-positional-so-a-hand.md) | Signed-report rounds are positional, so a hand-deleted verdict row goes unseen when a same-day later run re-reviewed the unit, and verdict rows carry no run id | Open | Medium | 2026-09-26 | 2026-09-26 |
 
 ## Archived Releases

@@ -1,6 +1,6 @@
 # BG0787: A signed sprint report reads INVALIDATED once a later run reviews one of its units, because unit rounds are re-derived from the whole live verdict ledger
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py, changelog.d/BG0787.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_report.py
@@ -25,10 +25,13 @@ Window `unit_rounds` to verdict rows recorded within the signed run (as BG0751 w
 
 - [ ] **AC1** Given a signed sprint report whose batch holds a unit that a later run reviews (a verdict row recorded after the signature), when `sprint_report.py check` runs on it, then it reads VALID and `unit_rounds` for that unit reads as signed. Fails on: re-deriving unit rounds from every verdict row in the live ledger, with no run window
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py::SignedReportStableTests::test_a_later_run_reviewing_a_batch_unit_does_not_invalidate
+  - **Verified:** yes (2026-09-26)
 - [ ] **AC2** Given the same report, when a verdict row inside the run's own window is edited by hand for a unit no later run re-reviewed on the same UTC day (that case is BG0788, D0277), then `check` still reads INVALID naming the unit's rounds. Fails on: a window so wide or a rounds figure so frozen that the check stops reading the run's own rows
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py::SignedReportStableTests::test_a_hand_edited_in_window_round_is_still_invalid
+  - **Verified:** yes (2026-09-26)
 - [ ] **AC3** Given this repository, when `sprint_report.py check` runs on RPT0006, RPT0007, RPT0008 and RPT0009 with the signing clone's run record present, then each exits 0. Fails on: a fix that only helps reports signed after it lands
   - **Verify:** shell sh -c 'for r in RPT0006 RPT0007 RPT0008 RPT0009; do python3 .claude/skills/sdlc-studio/scripts/sprint_report.py check --report $r >/dev/null || exit 1; done'
+  - **Verified:** yes (2026-09-26)
 
 ## Revision History
 

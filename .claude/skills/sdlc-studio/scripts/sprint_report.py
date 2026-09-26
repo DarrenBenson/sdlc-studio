@@ -2014,6 +2014,19 @@ def _undatable_findings(root: Path, *, open_only: bool = True) -> list[str]:
     return sorted(out)
 
 
+def _in_run(when: str, started: str | None, ended: str | None) -> bool:
+    """Is a moment something was raised or recorded at inside the run's window?
+
+    Judged at the granularity the value HAS: a date-only value to the day, against the days
+    the run spans; a full stamp in the half-open `[start, end)` the DORA figures use. One rule,
+    read by the open findings and the unit review rounds alike, so the two cannot place the
+    same day in different runs."""
+    started = started or ""
+    if len(when) == 10:
+        return not (when < started[:10] or (ended and when > ended[:10]))
+    return _in_window(_as_utc(when), _at(_as_utc(started)), _at(_as_utc(ended or "")))
+
+
 def _open_findings(root: Path, run: dict | None) -> tuple[list[str], list[str]]:
     """`(filed during the run, of those the ones still open)`, by artefact id.
 
@@ -2068,10 +2081,7 @@ def _open_findings(root: Path, run: dict | None) -> tuple[list[str], list[str]]:
             # A moment is placed in the half-open `[start, end)` the DORA figures use: with the
             # end inclusive, a finding stamped in the page's own generation second entered the
             # re-derivation and not the page, so `check` read INVALID on a page nobody touched.
-            if len(when) == 10:
-                if when < started[:10] or (ended and when > ended[:10]):
-                    continue
-            elif not _in_window(_as_utc(when), _at(_as_utc(started)), _at(_as_utc(ended or ""))):
+            if not _in_run(when, started, ended):
                 continue
             filed.append(uid)
             status = (sdlc_md.extract_field(text, "Status") or "").strip()
@@ -2842,27 +2852,6 @@ def _table_rows(text: str, header: str) -> list[list[str]]:
     return []
 
 
-def _verdict_rows(root: Path, units=None) -> tuple[list[list[str]], str]:
-    """The delivery verdict ledger's rows for THIS run's units, and the file they came from.
-    Every verdict is a delivery verdict: a historical plan-review ledger is never read.
-
-    The ledgers are PROJECT-WIDE and append-only: read whole they carry a year of other runs'
-    verdicts. Unscoped, this repository's own report read 185 rejected units out of a batch of
-    23 and printed a rework rate of 804% - measured, not imagined, on the first run against the
-    real tree. `units` is the run's batch; None keeps every row, for a caller that wants the
-    whole file and says so.
-    """
-    p = root / "sdlc-studio" / "reviews" / "critic-verdicts.md"
-    rel = _rel(root, p)
-    if not p.is_file():
-        return [], rel
-    rows = _table_rows(sdlc_md.read_text_safe(p), "Unit | Verdict")
-    if units is None:
-        return rows, rel
-    want = {sdlc_md.norm_id(u) for u in units}
-    return [r for r in rows if r and sdlc_md.norm_id(r[0]) in want], rel
-
-
 # --- the forge, and the git history behind it ------------------------------------------------
 
 #: Where a `gh run list --json ...` answer is cached for this run. The report reads the cache
@@ -3117,25 +3106,58 @@ def _num(value) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
-def _review_rounds(root: Path, uid: str, ledger: list[list[str]], found: bool,
-                   state: dict | None = None) -> int | None:
-    """A unit's delivery review rounds: `critic.review_rounds` where it exists, else the unit's
-    rows in the verdict ledger, one row per recorded round. None when there is no ledger to
-    count: no ledger is not zero rounds, whichever route would have counted them."""
-    if not found:
-        return None
-    try:
-        import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
-        counter = getattr(critic, "review_rounds", None)
-        if callable(counter):
-            return int(counter(root, uid, state=state))
-    except Exception as exc:  # noqa: BLE001 - fall back to the ledger rather than fail the page
-        sdlc_md.debug("sprint_report._review_rounds", exc)
-    return sum(1 for r in ledger if r and sdlc_md.norm_id(r[0]) == uid)
+def _later_review_bases(root: Path, state: dict) -> dict[str, int]:
+    """Per unit, the fewest of its verdict rows any run LATER than `state` found when it first
+    reviewed the unit: that run's `REVIEW_BASE`. Every row from there on is the later run's.
+
+    A verdict row is dated to the day, so the window alone cannot part two runs on one day: a
+    run ended at 13:30, the next opened at 15:32 and reviewed a unit the first had cut, and both
+    runs' rows carry the same date. The later run's record says where its reviews of the unit
+    began.
+
+    The bound is only as good as this clone's run records, which are gitignored and unsigned.
+    A later run whose record is missing here, or which `run_state.archived` skips as unreadable,
+    bounds nothing, and its same-day rows then count against this run. An unreadable live
+    record never reaches here: `_run_state_for` has already refused it. A position cannot see
+    a row deleted once a same-day later run re-reviewed the unit either: that needs verdict
+    rows to carry an identity, which they do not yet."""
+    start, rid = _at(state.get("started_at")), state.get("run_id")
+    bases: dict[str, int] = {}
+    for run in [*run_state.archived(root), run_state.read(root) or {}]:
+        at = _at(run.get("started_at"))
+        if run.get("run_id") == rid or at is None or start is None or at <= start:
+            continue
+        for uid, base in (run.get(run_state.REVIEW_BASE) or {}).items():
+            if isinstance(base, int):
+                uid = sdlc_md.norm_id(uid)
+                bases[uid] = min(base, bases.get(uid, base))
+    return bases
 
 
-def _unit_ledger(root: Path, state: dict, state_rel: str,
-                 filed_points: dict | None = None) -> list[dict]:
+def _review_rounds(uid: str, rows: list[dict], state: dict, later_base: int | None,
+                   window: tuple) -> int:
+    """A unit's delivery review rounds IN THIS RUN, bounded by position and by date.
+
+    The ledger is project-wide and append-only, so read whole it moves after every run: a unit
+    the run cut or carried and the next run reviewed moved a signed page's rounds from 0 to 2
+    (RPT0009). The rows counted run from this run's own review base to the first row a later
+    run reviewed (`_later_review_bases`), and are dated inside the run's days by the rule that
+    places the open findings (`_in_run`). A run that records review bases and fixed none for
+    this unit never reviewed it: 0, since the date alone would hand it an earlier same-day
+    run's rows. A run from before review bases has only the date. A superseded row records an
+    event ruled not to have happened, so it is no round."""
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    mine = [r for r in rows if sdlc_md.norm_id(r.get("unit", "")) == uid]
+    own = (state.get(run_state.REVIEW_BASE) or {}).get(uid)
+    if not isinstance(own, int) and run_state.REVIEW_BASE in state:
+        return 0
+    mine = mine[own if isinstance(own, int) else 0:later_base]
+    return sum(1 for r in mine if not critic.is_superseded(r)
+               and _in_run(str(r.get("date") or "").strip(), *window))
+
+
+def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | None,
+                 window: tuple) -> list[dict]:
     """One entry per unit the run planned, added or dropped: plan order, then added order.
 
     Planned points come from the plan snapshot, never the unit file: a unit resized from 3 to 8
@@ -3143,7 +3165,8 @@ def _unit_ledger(root: Path, state: dict, state_rel: str,
     Delivered means the terminal gate PREPARE recorded, when it recorded one - the seal moves
     statuses, so reading a status would change the page the signature froze - else a terminal
     status on disk. A unit's Points are the filed page's reading when one is replayed
-    (`_page_readings`), else the unit file's.
+    (`_page_readings`), else the unit file's. Its review rounds are counted inside `window`,
+    the run's `(start, end)` (`_review_rounds`).
     """
     filed_points = filed_points or {}
     snap = {sdlc_md.norm_id(k): v
@@ -3162,8 +3185,11 @@ def _unit_ledger(root: Path, state: dict, state_rel: str,
                                + [sdlc_md.norm_id(u) for u in state.get("batch") or []]))
     gate_clear = state.get("report_gate_clear")
     cleared = {sdlc_md.norm_id(u) for u in gate_clear or []}
-    ledger, ledger_rel = _verdict_rows(root, order)
-    ledger_found = (root / ledger_rel).is_file()
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    ledger_path = critic.verdicts_path(root, "delivery")
+    ledger_rel, ledger_found = _rel(root, ledger_path), ledger_path.is_file()
+    verdicts = critic.read_verdicts(root) if ledger_found else []
+    later = _later_review_bases(root, state) if ledger_found else {}
     out = []
     for uid in order:
         found = sdlc_md.find_by_id(root, uid)
@@ -3186,7 +3212,8 @@ def _unit_ledger(root: Path, state: dict, state_rel: str,
             "forecast_tokens": plan.get("forecast_tokens"),
             "minutes": act.get("minutes"), "tokens": act.get("tokens"),
             "in_plan": bool(plan), "measured": bool(act),
-            "rounds": _review_rounds(root, uid, ledger, ledger_found, state),
+            "rounds": (_review_rounds(uid, verdicts, state, later.get(uid), window)
+                       if ledger_found else None),
             "rounds_rel": ledger_rel})
     return out
 
@@ -3577,7 +3604,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         current = run_state.session_tokens(root)
     tokens = run_state.run_token_total(state, current)
     readings = _page_readings(filed)
-    ledger = _unit_ledger(root, state, state_rel, readings["points"])
+    ledger = _unit_ledger(root, state, state_rel, readings["points"],
+                          (state.get("started_at"), _iso(end)))
     sections = [
         _section("goal", "Goal", goal_figs),
         _estimates_section(state, state_rel, ledger, tokens,

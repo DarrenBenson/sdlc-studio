@@ -71,12 +71,15 @@ def lean_run(root: Path, *, measured: bool = True) -> None:
     (root / "sdlc-studio" / "retros" / f"{RETRO}-a-sprint.md").write_text(
         f"# {RETRO}: a sprint\n\n> **Batch:** US0001, US0002, US0004, US0005\n",
         encoding="utf-8")
+    # The shape `critic.py record` writes: a five-cell row is read as the legacy shape with no
+    # Author, whose Date cell would then hold the author.
     (root / "sdlc-studio" / "reviews" / "critic-verdicts.md").write_text(
-        "# Critic verdicts\n\n| Unit | Verdict | Reviewer | Author | Date |\n"
-        "| --- | --- | --- | --- | --- |\n"
-        "| US0001 | REJECT | a seat | author | 2026-09-20 |\n"
-        "| US0001 | APPROVE | a seat | author | 2026-09-20 |\n"
-        "| US0002 | APPROVE | a seat | author | 2026-09-20 |\n", encoding="utf-8")
+        "# Critic verdicts\n\n"
+        "| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Issues |\n"
+        "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
+        "| US0001 | REJECT | a seat | author | 2026-09-20 | - | - | - |\n"
+        "| US0001 | APPROVE | a seat | author | 2026-09-20 | - | - | - |\n"
+        "| US0002 | APPROVE | a seat | author | 2026-09-20 | - | - | - |\n", encoding="utf-8")
     _finding(root, "BG0901", priority="High", status="Open", raised="2026-09-20T10:00:00Z")
     _finding(root, "BG0902", priority="Low", status="Open", raised="2026-09-20T11:00:00Z")
     _finding(root, "CR0901", priority="Medium", status="Proposed", raised="2026-09-20T12:00:00Z")
@@ -400,7 +403,7 @@ class RunTotalsTests(unittest.TestCase):
         lean_run(self.root)
         ledger = self.root / "sdlc-studio" / "reviews" / "critic-verdicts.md"
         ledger.write_text(ledger.read_text(encoding="utf-8")
-                          + "| US0002 | APPROVE | a seat | author | 2026-09-20 |\n",
+                          + "| US0002 | APPROVE | a seat | author | 2026-09-20 | - | - | - |\n",
                           encoding="utf-8")
         self._state(review_base={"US0001": 0, "US0002": 0, "US0004": 0, "US0005": 0})
 

@@ -32,3 +32,4 @@ Record a run id (or a digest of the unit's rows) on each verdict row or at the r
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-26 | sdlc-studio | Filed |
+| 2026-09-26 | sdlc | BG0787 QA round 2: superseding an in-window verdict row after signing also moves a signed rounds figure; row identity covers it too. AC1 needs grooming into a testable criterion before build |

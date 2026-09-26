@@ -1,4 +1,4 @@
-"""US0941: a report Maya signed still validates after the tree moves on.
+"""US0941 and BG0787: a report Maya signed still validates after the tree moves on.
 
 `sprint_report.py check` judged a signed page against today's backlog, lesson store and decisions
 log, so RPT0006, RPT0007 and RPT0008 read INVALID within a day of their signatures: a lesson
@@ -10,6 +10,9 @@ the verdict through the shipped `sprint_report.py check` entry point.
 The page's readings of those sources are replayed from the page its signing commit holds, never
 from the file on disk: the forgery tests re-derive the page from the moved tree, recompute its
 fingerprint and re-render its twin, and `check` must still refuse it.
+
+A unit's review rounds are re-derived, but only from the verdict rows recorded inside the run:
+RPT0009 read INVALIDATED once the next run reviewed a unit it had cut (BG0787).
 """
 from __future__ import annotations
 
@@ -484,6 +487,143 @@ class SignedReportStableTests(unittest.TestCase):
         self.assertNotEqual(self._section(page, "waivers")["rows"][0]["waiver_id"]["value"],
                             fresh[0]["waiver_id"]["value"])
         self._assert_valid(rid)
+
+    # --- BG0787: a unit's review rounds are counted inside the run's window ------------------
+
+    LEDGER = Path("sdlc-studio") / "reviews" / "critic-verdicts.md"
+
+    def _record(self, unit: str, verdict: str) -> None:
+        """Record a verdict through the shipped `critic.py record`, as a later run's review
+        does: dated today, and fixing the unit's review base when an open run holds it."""
+        proc = subprocess.run(
+            [sys.executable, str(HERE.parent / "critic.py"), "record", "--unit", unit,
+             "--verdict", verdict, "--reviewer", "qa-rev-later", "--author", "later-build",
+             "--issues", "[new] a finding of the later run", "--root", str(self.root)],
+            capture_output=True, text=True, timeout=120)
+        self.assertEqual(0, proc.returncode, proc.stderr)
+
+    def _rounds(self, report: dict) -> dict:
+        return {r["unit_id"]["value"]: r["unit_rounds"]["value"]
+                for r in self._section(report, "delivered")["rows"]}
+
+    def _run_ending_now(self) -> str:
+        """Move the fixture run onto today, ending now, with its ledger rows dated today and
+        its reviewed units' bases fixed: the shape of RUN-01M3BK9Y, whose next run opened and
+        reviewed a unit it had not on the same UTC day. Returns that day."""
+        now = datetime.now(timezone.utc)
+        live = self.root / "sdlc-studio" / ".local" / "run-state.json"
+        state = json.loads(live.read_text(encoding="utf-8"))
+        state.update({"started_at": _utc(now - timedelta(hours=1)), "ended_at": _utc(now),
+                      sr.run_state.REVIEW_BASE: {"US0001": 0, "US0002": 0}})
+        live.write_text(json.dumps(state), encoding="utf-8")
+        day = state["ended_at"][:10]
+        ledger = self.root / self.LEDGER
+        ledger.write_text(ledger.read_text(encoding="utf-8").replace("2026-09-20", day),
+                          encoding="utf-8")
+        return day
+
+    def _open_a_later_run(self, batch: list[str]) -> None:
+        """Archive the signed run and open the next one holding `batch`, as the next plan does."""
+        sr.run_state.archive(self.root)
+        sr.run_state.write(self.root, {"schema": 1, "run_id": "RUN-01LATERRUN",
+                                       "started_at": _utc(datetime.now(timezone.utc)),
+                                       "outcome": "running",
+                                       "batch": batch})
+
+    def test_a_later_run_reviewing_a_batch_unit_does_not_invalidate(self) -> None:
+        """BG0787 AC1. MUTANTS: count a unit's rounds over every row in the live ledger - a
+        carried unit the next run reviews moves the signed `unit_rounds` from 0 to 2 (RPT0009:
+        `unit_rounds[28]: signed 0, now 2`); bound the rows by the window's DAY alone - the next
+        run's rows on the page's own day still count; bound them by the later run's review base
+        alone - a review recorded on a later day outside any run still counts. The next run
+        re-reviews US0001, which this run reviewed, so its base is what bounds US0001."""
+        cases = {
+            "the next run reviews it on the page's own day": True,
+            "a review outside any run on a later day": False,
+        }
+        for label, same_day in cases.items():
+            with self.subTest(label):
+                self.setUp()
+                day = self._run_ending_now() if same_day else None
+                rid = self._file_and_sign()
+                signed = self._rounds(sr.read_report(self.root, rid))
+                self.assertEqual({"US0001": 2, "US0002": 1, "US0005": 0},
+                                 {u: signed[u] for u in ("US0001", "US0002", "US0005")})
+                if same_day:
+                    self._open_a_later_run(["US0005", "US0001"])
+                    self._record("US0001", "approve")
+                self._record("US0005", "reject")
+                self._record("US0005", "approve")
+                later = [ln for ln in (self.root / self.LEDGER).read_text(
+                    encoding="utf-8").splitlines() if ln.startswith("| US0005 |")]
+                self.assertEqual(2, len(later), "the later review was not recorded")
+                if same_day:
+                    # Dated inside the window's last day, so only the next run's base places
+                    # them outside the run.
+                    self.assertTrue(all(f"| {day} |" in ln for ln in later), later)
+
+                self._assert_valid(rid)
+                state = sr.revalidate(self.root, rid)
+                self.assertEqual([], state["moved"])
+                page = sr.read_report(self.root, rid)
+                fresh = sr.build_report(self.root, lean.RETRO, as_of=page["generated_at"],
+                                        window_end=page["window_end"], run_id=lean.RUN)
+                self.assertEqual(signed, self._rounds(fresh))
+
+    def test_a_hand_edited_in_window_round_is_still_invalid(self) -> None:
+        """BG0787 AC2. MUTANT: replay the rounds from the signed page, or widen the window past
+        the run's own rows - deleting the REJECT that made US0001 a two-round unit then reads
+        VALID."""
+        rid = self._file_and_sign()
+        page = sr.read_report(self.root, rid)
+        rows = self._section(page, "delivered")["rows"]
+        self.assertEqual("US0001", rows[0]["unit_id"]["value"])
+        self.assertEqual(2, rows[0]["unit_rounds"]["value"])
+        self._record("US0005", "approve")        # a later review, outside the window
+        self._assert_valid(rid)                  # the positive control
+
+        self._replace(self.root / self.LEDGER,
+                      "| US0001 | REJECT | a seat | author | 2026-09-20 | - | - | - |\n", "")
+        rc, out = self._check(rid)
+        self.assertEqual(1, rc, out)
+        self.assertIn("INVALID", out)
+        self.assertIn("unit_rounds[0]: signed 2, now 1", out)
+
+    def test_rows_before_the_run_s_own_review_base_are_not_its_rounds(self) -> None:
+        """BG0787 round 2 (F1). MUTANTS: fall back to the date alone for a unit the run never
+        reviewed - an earlier same-day run's two REJECTs on carried US0005 count as this run's;
+        ignore the run's own review base - US0002's earlier-run REJECT counts as a second round.
+        A run from before review bases keeps the date alone."""
+        day = self._run_ending_now()
+        row = "| {} | {} | a seat | author | %s | - | - | - |\n" % day
+        earlier = (row.format("US0005", "REJECT") * 2) + row.format("US0002", "REJECT")
+        ledger = self.root / self.LEDGER
+        head, sep, tail = ledger.read_text(encoding="utf-8").partition("| US0001 | REJECT")
+        ledger.write_text(head + earlier + sep + tail, encoding="utf-8")
+        live = self.root / "sdlc-studio" / ".local" / "run-state.json"
+        state = json.loads(live.read_text(encoding="utf-8"))
+        state[sr.run_state.REVIEW_BASE] = {"US0001": 0, "US0002": 1}
+        live.write_text(json.dumps(state), encoding="utf-8")
+        got = self._rounds(sr.build_report(self.root, lean.RETRO))
+        self.assertEqual({"US0001": 2, "US0002": 1, "US0005": 0},
+                         {u: got[u] for u in ("US0001", "US0002", "US0005")})
+
+        state.pop(sr.run_state.REVIEW_BASE)      # a run from before review bases
+        live.write_text(json.dumps(state), encoding="utf-8")
+        got = self._rounds(sr.build_report(self.root, lean.RETRO))
+        self.assertEqual({"US0001": 2, "US0002": 2, "US0005": 2},
+                         {u: got[u] for u in ("US0001", "US0002", "US0005")})
+
+    def test_the_earliest_later_run_bounds_a_unit(self) -> None:
+        """MUTANT: take any later run's base rather than the fewest rows - two later runs that
+        reviewed US0001 at 3 and at 1 must bound it at 1."""
+        for rid, base, hour in (("RUN-01LATER1", 3, 20), ("RUN-01LATER2", 1, 21)):
+            sr.run_state.archive(self.root, {
+                "run_id": rid, "started_at": f"2026-09-20T{hour}:00:00Z",
+                sr.run_state.REVIEW_BASE: {"US0001": base}})
+        state = json.loads((self.root / "sdlc-studio" / ".local" / "run-state.json")
+                           .read_text(encoding="utf-8"))
+        self.assertEqual({"US0001": 1}, sr._later_review_bases(self.root, state))  # noqa: SLF001
 
 
 if __name__ == "__main__":
