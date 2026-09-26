@@ -9090,9 +9090,12 @@ def _principal_refusals(root, state, principal: str | None, author_default: str 
     (`critic.session_reviewer_ids`) - asked before anything is written.
     """
     import critic  # noqa: PLC0415
-    if not (principal or "").strip():
-        return ["sign needs an explicit --principal (the reviewer of record) - a sign-off "
-                "with no named principal is not a review"]
+    # A principal NAMES someone: a letter or a digit. Stripping the raw string let `-`, the empty
+    # cell `critic.same_identity` reads as no id, seal the run under an empty principal; every
+    # value that id normaliser empties has no letter or digit, and nor does `_`.
+    if not any(ch.isalnum() for ch in principal or ""):
+        return [f"--principal {principal or ''!r} names nobody - sign needs the reviewer of "
+                "record, and a sign-off with no named principal is not a review"]
     out = []
     for unit in _batch_story_units(root, state.get("batch") or []):
         # EVERY unit, including ones already terminal: the run's signature is written on a

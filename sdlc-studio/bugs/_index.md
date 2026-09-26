@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 27 |
 | In Progress | 0 |
-| Fixed | 630 |
+| Fixed | 631 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
 | Superseded | 28 |
-| **Total** | **791** |
+| **Total** | **792** |
 
 ## All Bugs
 
@@ -134,7 +134,7 @@
 | [BG0773](BG0773-bg0755-did-not-converge-in-review-round-2.md) | BG0755 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0774](BG0774-install-sh-exits-1-after-a-successful-install.md) | install.sh exits 1 after a successful install when the gemini target is chosen without the gemini CLI | Open | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0775](BG0775-us0941-did-not-converge-in-review-round-2.md) | US0941 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-25 | 2026-09-25 |
-| [BG0776](BG0776-sprint-sign-principal-seals-the-run-with-an.md) | sprint sign --principal - seals the run with an empty principal | Open | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0776](BG0776-sprint-sign-principal-seals-the-run-with-an.md) | sprint sign --principal - seals the run with an empty principal | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0777](BG0777-the-sprint-lane-runner-and-the-revert-check.md) | The sprint lane runner and the revert check run only a criterion's first Verify line | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0778](BG0778-the-retro-reads-only-four-digit-ids-in.md) | The retro reads only four-digit ids in dispositions and carried rows, so a v3 project's ULID ids are dropped | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0779](BG0779-the-pre-commit-hook-hides-the-stamped-test.md) | The pre-commit hook hides the stamped-test re-read list on a passing commit | Fixed | Medium | 2026-09-25 | 2026-09-25 |
@@ -150,6 +150,7 @@
 | [BG0789](BG0789-the-release-workflow-publishes-a-release-candidate-tag.md) | The release workflow publishes a release-candidate tag as the latest release, so every installed copy is prompted to upgrade to it | Fixed | High | 2026-09-26 | 2026-09-26 |
 | [BG0790](BG0790-an-installed-release-candidate-is-never-prompted-to.md) | An installed release candidate is never prompted to move to its final release, because version comparison ignores the pre-release suffix | Open | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0791](BG0791-test-lean-cr-filing-reads-a-changelog-fragment.md) | test_lean_cr_filing reads a changelog fragment that the release cut consumes, so the suite goes red on every release commit | Fixed | Medium | 2026-09-26 | 2026-09-26 |
+| [BG0792](BG0792-us0940-ac1-s-own-verify-takes-about-three.md) | US0940 AC1's own Verify takes about three minutes, so the release gate's verify lane reads it red at the 120-second default | Open | Medium | 2026-09-26 | 2026-09-26 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # BG0776: sprint sign --principal - seals the run with an empty principal
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_principal.py, changelog.d/BG0776.md
@@ -25,8 +25,10 @@ Normalise the principal before the empty check, and refuse a value that normalis
 
 - [ ] **AC1** Given a closed run, when `sprint.py sign --report <id> --principal` is given a value that normalises to empty (`-`, `  `, `_`), then it exits non-zero naming the principal, and the run is not sealed and no signature is written. Fails on: checking the raw string for emptiness before the id normaliser runs
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_principal.py::SignPrincipalTests::test_a_principal_that_normalises_to_empty_is_refused
+  - **Verified:** yes (2026-09-26)
 - [ ] **AC2** Given the same run, when `sign` is given a real principal (`Darren Benson`), then it seals as before and the signature names that principal. Fails on: a guard that refuses every principal
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_principal.py::SignPrincipalTests::test_a_real_principal_still_seals
+  - **Verified:** yes (2026-09-26)
 
 ## Revision History
 
