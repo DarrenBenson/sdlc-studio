@@ -951,7 +951,10 @@ class ConsolidationCliTests(unittest.TestCase):
     CR invites orchestrator retries and duplicate findings."""
 
     def _v3_cr_ready(self, repo: Path) -> None:
+        # Consolidation is opt-in (D0217), so the lane under test is switched on explicitly.
         _v3(repo)
+        (repo / "sdlc-studio" / ".config.yaml").write_text(
+            "schema_version: 3\ntriage:\n  low_consolidation: true\n", encoding="utf-8")
         _index(repo, "cr", "| ID | Title | Status | Priority | Type | Date | Linked Epics |")
 
     def test_low_consolidation_dry_run_exits_zero(self) -> None:

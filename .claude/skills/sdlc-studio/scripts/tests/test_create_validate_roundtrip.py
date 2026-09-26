@@ -232,6 +232,9 @@ class ContentRoundTripTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _workspace(root, "v3")
+            # Consolidation is opt-in (D0217); this creator only exists when a project opts in.
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "schema_version: 3\ntriage:\n  low_consolidation: true\n", encoding="utf-8")
             file_finding.ensure_index(root, "cr", "2026-07-13")
             res = file_finding.file_finding(root, "bug", "a trivial nit",
                                             {**CONTENT["bug"], "severity": "Low"})

@@ -607,7 +607,7 @@ the few that matter:
 | Key | Default | Effect |
 | --- | --- | --- |
 | `triage.session_cap` | `20` | Max findings one session may file; the N+1th is refused loudly. A session is keyed by the `SDLC_TRIAGE_SESSION` environment variable (set a new value to start a fresh budget); the count lives in `.local/triage-session.json`. |
-| `triage.low_consolidation` | `true` | A Low-severity finding folds into a themed consolidation CR (one per theme) rather than minting its own artefact; Medium and above always get individual artefacts. |
+| `triage.low_consolidation` | `false` | Off, a Low-severity finding mints its own artefact like any other severity: SDLC Studio decision D0217 ruled that a consolidation bucket is not a change request, since `refine` cannot decompose a bucket whose only shared property is a severity band. Set `true` to fold each Low finding into a themed consolidation CR (one per theme) instead; Medium and above always get individual artefacts. |
 | `triage.sample_rate` | `0.20` | Fraction of the non-always-sampled triaged findings a human audits. |
 | `triage.always_sample` | `[Critical, disagreement]` | Always audited: every Critical-severity finding, and every raiser/triager severity disagreement. |
 

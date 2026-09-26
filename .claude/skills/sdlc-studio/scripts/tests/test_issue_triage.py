@@ -44,10 +44,12 @@ triage = _load("triage", "triage.py")
 validate = _load("validate", "validate.py")
 
 
-def _enforce(root: Path, *, v3: bool = False) -> None:
+def _enforce(root: Path, *, v3: bool = False, low_consolidation: bool = False) -> None:
     p = root / "sdlc-studio" / ".config.yaml"
     p.parent.mkdir(parents=True, exist_ok=True)
     head = "schema_version: 3\n" if v3 else ""
+    if low_consolidation:
+        head += "triage:\n  low_consolidation: true\n"
     p.write_text(head + "two_backlog:\n  enforce: true\n", encoding="utf-8")
 
 
@@ -241,13 +243,14 @@ class TriageTests(unittest.TestCase):
             self.assertEqual(reconcile.detect_type("bug", root)["drift"], [])
 
     def test_v3_low_severity_triage_mints_individual_bugs_not_a_cr(self) -> None:
-        # Regression guard: on a schema-v3 project a Low-severity bug is normally folded into a
-        # consolidation CR by the finding-noise controls. A TRIAGED bug is a deliberate
-        # decomposition unit and must bypass that (consolidate=False), or the Issue would be wired
-        # to a CR instead of a bug and the preflight (which cannot see the divergence) would pass.
+        # Regression guard: on a schema-v3 project that opts into `triage.low_consolidation`, a
+        # Low-severity bug is folded into a consolidation CR by the finding-noise controls. A
+        # TRIAGED bug is a deliberate decomposition unit and must bypass that (consolidate=False),
+        # or the Issue would be wired to a CR instead of a bug and the preflight (which cannot see
+        # the divergence) would pass. The opt-in is explicit: off (the default) passes vacuously.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _enforce(root, v3=True)
+            _enforce(root, v3=True, low_consolidation=True)
             _touch_affects(root, "src/a.py", "src/b.py")
             iid = _new_issue(root)
             res = triage.triage(root, iid,

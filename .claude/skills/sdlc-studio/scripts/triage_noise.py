@@ -71,7 +71,9 @@ def session_cap(root) -> int:
 
 
 def low_consolidation(root) -> bool:
-    return bool(_cfg(root, "low_consolidation", True))
+    """Opt-in, matching config-defaults.yaml. The fallback is reachable: a `triage:` block
+    holding only commented-out keys parses as null and replaces the defaults' mapping."""
+    return bool(_cfg(root, "low_consolidation", False))
 
 
 def is_low(severity: str | None) -> bool:

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 23 |
+| Open | 22 |
 | In Progress | 0 |
-| Fixed | 625 |
+| Fixed | 626 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
@@ -89,7 +89,7 @@
 | [BG0728](BG0728-a-unit-s-declared-affects-is-never-compared.md) | a unit's declared Affects is never compared with the files its delivering commit changed | Won't Fix | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0729](BG0729-the-batch-level-reviewer-contribution-to-the-lens.md) | the batch-level reviewer contribution to the lens count is asserted by no test | Won't Fix | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0730](BG0730-a-stop-ship-ruling-is-never-re-derived.md) | a stop-ship ruling is never re-derived against its finding's status, so a ruling on a Fixed finding blocks every close permanently | Fixed | High | 2026-09-21 | 2026-09-21 |
-| [BG0731](BG0731-filing-a-low-severity-finding-recreates-the-consolidation.md) | filing a Low-severity finding recreates the consolidation bucket that was just ruled not to be a change request | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0731](BG0731-filing-a-low-severity-finding-recreates-the-consolidation.md) | filing a Low-severity finding recreates the consolidation bucket that was just ruled not to be a change request | Fixed | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0732](BG0732-the-derived-only-corpus-ceiling-is-an-absolute.md) | the derived-only corpus ceiling is an absolute count, so a run that files findings breaches it without the detector over-reaching | Superseded | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0733](BG0733-a-verified-line-reading-partial-or-no-is.md) | a Verified line reading PARTIAL or no is treated exactly like yes, so an honest self-report of a miss is laundered into a green | Fixed | High | 2026-09-21 | 2026-09-21 |
 | [BG0734](BG0734-the-blockquote-skip-in-check-versions-is-unreachable.md) | the blockquote skip in check_versions is unreachable, so it guards nothing | Open | Medium | 2026-09-21 | 2026-09-21 |

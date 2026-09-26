@@ -1,6 +1,6 @@
 # BG0731: filing a Low-severity finding recreates the consolidation bucket that was just ruled not to be a change request
 
-> **Status:** Open
+> **Status:** Fixed
 > **Merged from:** BG0738 (backlog sweep 2026-09-24, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 2
@@ -26,10 +26,13 @@ Decide what a Low finding should be and make the code and the decisions log agre
 
 - [ ] **AC1** Given a fresh schema-v3 project that sets no `triage` keys, when `file_finding.py file --type bug --severity Low` runs, then it creates a BG artefact at Low severity and creates or appends to no CR. Fails on: HEAD, whose shipped default `triage.low_consolidation: true` folds the finding into a `Low-severity bugs (consolidated)` CR, the bucket D0217 ruled is not a change request (CR0592 was minted this way the day after D0217)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_low_finding_is_a_bug.py::LowFindingTests::test_a_low_finding_mints_its_own_bug_by_default
+  - **Verified:** yes (2026-09-26)
 - [ ] **AC2** Given a project that sets `triage.low_consolidation: true`, when a Low finding is filed, then it folds into the themed consolidation CR as it does at HEAD. Fails on: deleting consolidation outright, which removes an opt-in a project may have chosen without a migrate note
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_low_finding_is_a_bug.py::LowFindingTests::test_an_opted_in_project_still_consolidates
+  - **Verified:** yes (2026-09-26)
 - [ ] **AC3** Given `reference-config.md`, then its `triage.low_consolidation` row states the default is false and cites D0217. Fails on: flipping the default in config-defaults.yaml while the reference still documents true
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_low_finding_is_a_bug.py::LowFindingTests::test_the_reference_states_the_default
+  - **Verified:** yes (2026-09-26)
 
 ## Notes
 

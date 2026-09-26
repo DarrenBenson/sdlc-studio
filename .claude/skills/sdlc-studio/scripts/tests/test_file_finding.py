@@ -506,7 +506,10 @@ class ConsolidationRevisionAuthorTests(unittest.TestCase):
     def _low_finding(self, root: Path, **extra) -> str:
         _seed_index(root, "bug")
         _seed_index(root, "cr")
-        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+        # Consolidation is opt-in (D0217): without the key the Low finding mints its own bug and
+        # this test would pass without ever reaching the consolidation branch it names.
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "schema_version: 3\ntriage:\n  low_consolidation: true\n", encoding="utf-8")
         res = ff.file_finding(root, "bug", "a low defect",
                               {"severity": "Low", "summary": "s", "steps": "x", "fix": "y",
                                "date": "2026-07-13", **GROOM, **extra})
@@ -515,6 +518,7 @@ class ConsolidationRevisionAuthorTests(unittest.TestCase):
     def test_consolidation_cr_names_the_author(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             body = self._low_finding(Path(d), author="Dani Okafor; agent; v2")
+            self.assertIn("> **Consolidation:**", body, "the finding did not consolidate")
             self.assertIn("> **Raised-by:** Dani Okafor; agent; v2", body)
             row = _rev_row(body)
             self.assertIn("| Dani Okafor |", row)

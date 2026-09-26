@@ -207,8 +207,9 @@ provenance:
 triage:
   session_cap: 20          # max findings one session may file; the N+1th is refused loudly
                            # (start a fresh session with SDLC_TRIAGE_SESSION, or raise the cap)
-  low_consolidation: true  # a Low-severity finding folds into a themed consolidation CR rather
-                           # than minting its own artefact; Medium and above get individual ones
+  low_consolidation: false # true folds a Low-severity finding into a themed consolidation CR
+                           # rather than minting its own bug; off by default, because a bucket
+                           # is not a change request (D0217). Medium and above are always individual
   sample_rate: 0.20        # fraction of non-always-sampled triaged findings a human audits
   always_sample:           # always audited regardless of sample_rate
     - Critical             # every Critical-severity finding
