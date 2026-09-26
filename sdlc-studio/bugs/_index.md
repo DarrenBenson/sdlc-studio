@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 26 |
+| Open | 28 |
 | In Progress | 0 |
 | Fixed | 628 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
 | Superseded | 28 |
-| **Total** | **788** |
+| **Total** | **790** |
 
 ## All Bugs
 
@@ -147,6 +147,8 @@
 | [BG0786](BG0786-flow-py-compute-takes-about-90-seconds-on.md) | flow.py compute takes about 90 seconds on this repository, so its CLI grammar control times out at 120 under load and reddens the push gate | Open | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0787](BG0787-a-signed-sprint-report-reads-invalidated-once-a.md) | A signed sprint report reads INVALIDATED once a later run reviews one of its units, because unit rounds are re-derived from the whole live verdict ledger | Fixed | High | 2026-09-26 | 2026-09-26 |
 | [BG0788](BG0788-signed-report-rounds-are-positional-so-a-hand.md) | Signed-report rounds are positional, so a hand-deleted verdict row goes unseen when a same-day later run re-reviewed the unit, and verdict rows carry no run id | Open | Medium | 2026-09-26 | 2026-09-26 |
+| [BG0789](BG0789-the-release-workflow-publishes-a-release-candidate-tag.md) | The release workflow publishes a release-candidate tag as the latest release, so every installed copy is prompted to upgrade to it | Open | High | 2026-09-26 | 2026-09-26 |
+| [BG0790](BG0790-an-installed-release-candidate-is-never-prompted-to.md) | An installed release candidate is never prompted to move to its final release, because version comparison ignores the pre-release suffix | Open | Medium | 2026-09-26 | 2026-09-26 |
 
 ## Archived Releases
 
