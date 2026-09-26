@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py, changelog.d/BG0787.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py, changelog.d/BG0787.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_report.py
 > **Created:** 2026-09-26
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
