@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 23 |
+| Open | 24 |
 | In Progress | 0 |
 | Fixed | 627 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
 | Superseded | 28 |
-| **Total** | **784** |
+| **Total** | **785** |
 
 ## All Bugs
 
@@ -143,6 +143,7 @@
 | [BG0782](BG0782-about-57-test-modules-commit-in-a-temporary.md) | About 57 test modules commit in a temporary git repo with auto-maintenance on, the race BG0711 fixed in one | Open | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0783](BG0783-review-rounds-are-write-dead-after-us0918-so.md) | Review rounds are write-dead after US0918, so the ceiling and repair-regression readers of run-state rounds read nothing | Open | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0784](BG0784-a-seat-card-with-no-role-line-is.md) | A seat card with no role line is silently bypassed for the shipped card, and the unknown-seat refusal names the wrong seats | Open | Medium | 2026-09-26 | 2026-09-26 |
+| [BG0785](BG0785-migrate-leaves-a-v4-era-project-s-conformance.md) | migrate leaves a v4-era project's conformance lane red on its pre-adoption stories and names no cutoff for them | Open | Medium | 2026-09-26 | 2026-09-26 |
 
 ## Archived Releases
 
