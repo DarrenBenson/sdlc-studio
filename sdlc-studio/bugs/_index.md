@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-25
+**Last Updated:** 2026-09-26
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 21 |
+| Open | 22 |
 | In Progress | 0 |
 | Fixed | 627 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 19 |
 | Superseded | 28 |
-| **Total** | **782** |
+| **Total** | **783** |
 
 ## All Bugs
 
@@ -141,6 +141,7 @@
 | [BG0780](BG0780-the-allocation-lock-fails-closed-on-a-non.md) | The allocation lock fails closed on a non-busy flock error, and three callers mishandle its timeout | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0781](BG0781-a-busy-lock-reported-as-eacces-fails-at.md) | A busy lock reported as EACCES fails at once, and two lock warnings advise a retry that duplicates | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0782](BG0782-about-57-test-modules-commit-in-a-temporary.md) | About 57 test modules commit in a temporary git repo with auto-maintenance on, the race BG0711 fixed in one | Open | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0783](BG0783-review-rounds-are-write-dead-after-us0918-so.md) | Review rounds are write-dead after US0918, so the ceiling and repair-regression readers of run-state rounds read nothing | Open | Medium | 2026-09-26 | 2026-09-26 |
 
 ## Archived Releases
 
