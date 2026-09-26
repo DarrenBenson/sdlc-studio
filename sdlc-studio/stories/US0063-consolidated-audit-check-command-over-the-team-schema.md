@@ -21,8 +21,8 @@
 - **Given** the rule set (authorship, evidence, duties, index-derived, id-format, tranche-shape)
 - **When** the command runs
 - **Then** it exits non-zero on any violation with a stable rule id and fix hint, zero on a clean repo
-- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/audit_check.py check --root .
-- **Verified:** yes (2026-07-23)
+- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/schema_check.py check --root .
+- **Verified:** yes (2026-09-26)
 
 ### AC2: Each rule is a tested worked example
 
@@ -38,3 +38,4 @@
 | --- | --- | --- |
 | 2026-07-06 | sdlc | Created via `new` (deterministic) |
 | 2026-09-25 | US0944 | AC2 retired in the D0259 pattern: its stamp named `test_audit_check.py`, gone since the US0345-US0346 rename, and `test_schema_check.py` does not prove each rule's message names the rule and the fix |
+| 2026-09-26 | US0940 | AC1 re-pointed: US0345-US0346 (0288bd76) renamed `audit_check.py` to `schema_check.py`; the same command over this repository |

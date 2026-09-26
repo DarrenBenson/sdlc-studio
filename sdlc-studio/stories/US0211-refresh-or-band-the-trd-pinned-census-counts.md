@@ -37,11 +37,12 @@
 - **Given** the other pinned counts (help, templates, lib, test modules) had drifted the same way; extending `doc_freshness.py` is out of this story's edit scope
 - **When** those counts are banded in §3 too (`40+`, `80+`, `90+`), so they no longer drift, rather than adding a new guard lane
 - **Then** Optional: the guard extended to band-check the other pinned counts (help, templates, lib, test modules)
-- **Verify:** grep "90\+ modules" sdlc-studio/trd.md
-- **Verified:** yes (2026-07-17)
+- **Verify:** manual - retired by US0940: US0933 cut every component count from the TRD and TSD, because the code derives them, pinned by `test_lean_spec_restatements.py::SpecRestatementTests::test_no_spec_states_a_component_count`; the `90+ modules` band this criterion checked is gone on purpose
+- **Verified:** manual (2026-09-26) - retired, superseded by US0933
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-26 | US0940 | AC3 retired in the D0259 pattern: US0933 removed the counts it banded |

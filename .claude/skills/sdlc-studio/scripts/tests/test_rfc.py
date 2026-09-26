@@ -67,6 +67,7 @@ class DigestTests(unittest.TestCase):
             root = Path(d)
             _rfc(root, 1)  # no decisions table at all
             r = _by_id(root)["RFC0001"]
+            self.assertTrue(r["has_recommendation"])   # US0021 AC1's field, the True case
             self.assertFalse(r["decided"])
             self.assertTrue(r["ready_for_decision"])
 

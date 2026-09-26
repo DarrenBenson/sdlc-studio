@@ -29,8 +29,8 @@ existing `rfc accept`). The adversarial judgement stays model-instructed.
 - **Given** a Draft RFC with N open-decision rows (M still Open) and W workstreams
 - **When** `digest(root)` runs
 - **Then** the RFC's entry reports `open_decisions=N`, `open_count=M`, `workstreams=W`, and `has_recommendation`
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_rfc.py::DigestTests::test_ready_when_recommendation_and_no_open
-- **Verified:** no (2026-07-20)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_rfc.py::DigestTests
+- **Verified:** yes (2026-09-26)
 
 ### AC2: ready_for_decision reflects open decisions + recommendation
 
@@ -66,3 +66,4 @@ existing `rfc accept`). The adversarial judgement stays model-instructed.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (CR0024) | Decomposed from CR0024 (rfc-decide) |
+| 2026-09-26 | US0940 | AC1 re-pointed to `test_rfc.py::DigestTests`: BG0177 (2777271a) renamed its test when an all-resolved RFC began reading DECIDED, and no one test now asserts all four fields the Then names; the class does (`open_decisions`, `open_count`, `workstreams`, and `has_recommendation` both ways) |

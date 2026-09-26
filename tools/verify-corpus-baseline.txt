@@ -131,6 +131,12 @@
 # and AC5, are re-pointed to the live tests that replaced their deleted source-greps, so
 # `verify_ac.py stamps --root . --bugs` reports none and dead-stamps goes 3 -> 0.
 #
+# BANKED BY US0940, 2026-09-26, 18 -> 0, and again no move is a reading. Each of the 18 is
+# repaired or retired in the D0259 pattern with its reason in its own story's revision history,
+# and US0940's test executes every one through the verify lane's own call: the D0186 waiver that
+# carried them into v5.1 is not re-used for v6. The row now tolerates nothing, so any red on a
+# Done story reads as NEW by id.
+#
 # metric|count|what it counts|identities
-red-criteria|18|executable acceptance criteria that FAIL when run, across stories already at Done|US0021::AC1 US0040::AC3 US0042::AC2 US0047::AC1 US0052::AC4 US0063::AC1 US0070::AC1 US0070::AC2 US0080::AC2 US0165::AC2 US0202::AC3 US0207::AC3 US0268::AC1 US0284::AC4 US0289::AC2 US0347::AC1 US0512::AC4 US0666::AC1
+red-criteria|0|executable acceptance criteria that FAIL when run, across stories already at Done|
 dead-stamps|0|criteria stamped `Verified: yes` whose selector now selects nothing|

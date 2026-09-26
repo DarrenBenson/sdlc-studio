@@ -63,9 +63,9 @@ This story implements the writer half of CR0125. The read path (`reconcile.parse
 - **Given** a live index that may contain a row whose status is not in the vocab
 - **When** the writer runs in dry-run mode, or encounters an unclassifiable row in a real run
 - **Then** dry-run previews counts per status plus the target sub-index path and writes nothing; an unclassifiable row aborts with a non-zero exit and no partial write (fail loud, LL0008)
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_index_archive.py::WriterTests::test_index_archive_dryrun_and_failloud
+- **Verify:** manual - retired by US0940: CR0248 (6a7bcedb) made `archive.py` the single archive writer, and it keeps a row whose status is outside the vocabulary live rather than aborting, so the fail-loud half no longer ships; the dry-run half is pinned by `test_index_archive.py::WriterTests::test_index_archive_dryrun_and_unknown_status`
 - **Verification target:** functional
-- **Verified:** no (2026-07-20)
+- **Verified:** manual (2026-09-26) - retired, superseded by CR0248
 
 ### AC4: reconcile stays clean and the summary still equals the full census
 
@@ -165,6 +165,7 @@ None
 
 ## Revision History
 
-| Date       | Author | Change                                               |
-| ---------- | ------ | ---------------------------------------------------- |
-| 2026-06-27 | Dani   | Authored to Ready (design rung, breakdown of CR0125) |
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-06-27 | Dani | Authored to Ready (design rung, breakdown of CR0125) |
+| 2026-09-26 | US0940 | AC3 retired in the D0259 pattern: CR0248 replaced the abort on an unclassifiable row with keeping the row live |

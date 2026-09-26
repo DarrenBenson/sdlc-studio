@@ -31,8 +31,7 @@
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py::SignedReportStableTests::test_a_hand_edited_figure_is_still_invalid
   - **Verified:** yes (2026-09-25)
 - **AC5:** Given this repository after the change, then `sprint_report.py check --report` exits 0 for each of RPT0006, RPT0007, RPT0008 and RPT0009. Fails on: a fix that only reports signed after it lands benefit from
-  - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/sprint_report.py check --report RPT0006 && python3 .claude/skills/sdlc-studio/scripts/sprint_report.py check --report RPT0007 && python3 .claude/skills/sdlc-studio/scripts/sprint_report.py check --report RPT0008 && python3 .claude/skills/sdlc-studio/scripts/sprint_report.py check --report RPT0009
-  - **Verified:** yes (2026-09-25)
+  - **Verify:** manual - deferred to BG0787: its original check, `sprint_report.py check` on RPT0006-RPT0009, needs the signing clone's run record (CR0599) and reads RPT0009 INVALID until BG0787 lands (unit review rounds are not run-windowed); BG0787 AC3 restores it as an executable check
 
 ## Notes
 
@@ -43,3 +42,4 @@ QA proposes High: `sprint sign` is v6's one signature. Engineering call on mecha
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-25 | sdlc-studio v6 planning | Created for v6.0.0 Sprint 5 from the seat planning (N1) |
+| 2026-09-26 | US0940 | AC5 made manual and left unstamped: its check reads the run record from gitignored `.local` (CR0599), so it is red in any clean clone, and in the signing clone it reads RPT0009 INVALID, filed High as BG0787. BG0787 AC3 restores the executable check |

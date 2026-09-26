@@ -37,11 +37,12 @@
 - **Given** the rfcs index summary did not reflect the supersession
 - **When** the RFC0034 index row is annotated with the partial-supersession state
 - **Then** The rfcs index summary reflects the supersession state
-- **Verify:** grep "D1 and D5 superseded by RFC-0038" sdlc-studio/rfcs/_index.md
-- **Verified:** yes (2026-07-17)
+- **Verify:** grep "D1, D5 partially superseded by RFC-0038" sdlc-studio/rfcs/archive/v5.0.0/rfc.md
+- **Verified:** yes (2026-09-26)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-26 | US0940 | AC3 re-pointed: the live `rfcs/_index.md` is derived since BG0361 and cannot carry a hand annotation, and RFC0034's row was archived to v5.0.0 (fa7cd067); the archived index row carries the supersession state |

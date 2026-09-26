@@ -92,9 +92,9 @@ The unified review (PRD - TRD - TSD - Persona - Code) is Claude's judgement call
 - **Given** the cadence (every 5 minor releases, per-epic completion, > 4 weeks since last unified review) and the writing of `review-state.json` / `reviews/LATEST.md`
 - **When** the review command runs
 - **Then** `review_prep.py` only *reads* `review-state.json` and *emits* inputs; it has a single `prep` subcommand and never writes review state, never enforces an interval, and provides no pause/resume queue - the cadence decision, the `review-state.json` write (step 4 of `reference-review.md#review-workflow`), and `LATEST.md` are performed by Claude as part of the review command
-- **Verify:** shell f=sdlc-studio/.local/review-state.json; b=$(cat "$f" 2>/dev/null; stat -c %Y "$f" 2>/dev/null); python3 .claude/skills/sdlc-studio/scripts/review_prep.py prep --format json >/dev/null 2>&1; a=$(cat "$f" 2>/dev/null; stat -c %Y "$f" 2>/dev/null); test "$b" = "$a"
+- **Verify:** shell d=$(mktemp -d) && trap 'rm -rf "$d"' EXIT && mkdir -p "$d/sdlc-studio/.local" && f="$d/sdlc-studio/.local/review-state.json" && printf '{"last_reviewed": "2026-01-01"}' > "$f" && touch -d 2026-01-01 "$f" && b=$(cat "$f"; stat -c %Y "$f") && python3 .claude/skills/sdlc-studio/scripts/review_prep.py prep --root "$d" --format json >/dev/null && a=$(cat "$f"; stat -c %Y "$f") && test "$b" = "$a"
 - **Verification target:** functional
-- **Verified:** yes (2026-06-24)
+- **Verified:** yes (2026-09-26)
 
 > **Verification target tiers:** `functional` (single round-trip – default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 
@@ -216,3 +216,4 @@ Not applicable – story does not change runtime behaviour. The script is read-o
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Darren Benson | Story extracted (brownfield) from scripts/review_prep.py |
+| 2026-09-26 | US0940 | AC5 narrowed to a fixture root: `review_prep.py prep` over this repository took 130 s, past the verify lane's 120 s default ceiling. The line seeds a review-state.json in a temp root, runs `prep` there, requires it to exit 0 (the old line ignored prep's exit, so a crash read as 'wrote nothing'), and compares the file's bytes and mtime. The 'single prep subcommand' clause has been out of date since `close` was added to stamp review-state.json |

@@ -1119,14 +1119,21 @@ class MutationSeriesNoEvidenceTests(unittest.TestCase):
                 return next(outcomes, "error")
 
             with unittest.mock.patch.object(mut, "_run_tests", _fake):
-                mut.run_gate(root, [root / "target.py"],
-                             f"{sys.executable} -m unittest test_good", max_mutations=3)
+                rep = mut.run_gate(root, [root / "target.py"],
+                                   f"{sys.executable} -m unittest test_good", max_mutations=3)
             row = self._rows(root)[0]
             self.assertGreater(row["applied"], 0)      # mutants WERE applied...
             self.assertEqual(row["killed"], 0)
             self.assertEqual(row["survived"], 0)
             self.assertFalse(row["evidence"])          # ...and none of them judged anything
             self.assertEqual(row["outcome"], "no-evidence")
+            # US0052 AC4: each runner error is RECORDED as `error` and counted apart from
+            # killed. MUTANTS: map the `error` outcome to `unviable`, or count no errors.
+            verdicts = [m["verdict"] for m in rep["mutations"]]
+            self.assertTrue(verdicts, rep)
+            self.assertEqual(["error"] * len(verdicts), verdicts)
+            self.assertEqual(len(verdicts), rep["summary"]["errors"])
+            self.assertEqual(0, rep["summary"]["killed"])
 
     def test_zero_survivors_over_nothing_differs_from_zero_over_twenty(self) -> None:
         mut = _load()

@@ -64,9 +64,9 @@ local-versus-CI gap here so it does not recur.
 - **Given** the runtime-scripts coverage gate currently fails on the CI runner
 - **When** the gate command runs in the CI environment (no `gh`, no git identity, no external tools), not only on a developer machine
 - **Then** runtime-scripts coverage is >= 80% and the gate exits zero
-- **Verify:** shell coverage run --source=.claude/skills/sdlc-studio/scripts -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests && coverage report --omit='*/tests/*' --fail-under=80
+- **Verify:** pytest tools/tests/test_lean_push.py::PushBoundaryTests::test_ci_runs_the_suite_once
 - **Verification target:** functional
-- **Verified:** no (2026-07-23)
+- **Verified:** yes (2026-09-26)
 
 ### AC2: Local-versus-CI discrepancy identified and removed
 
@@ -193,6 +193,7 @@ None.
 
 ## Revision History
 
-| Date       | Author | Change                                                             |
-| ---------- | ------ | ------------------------------------------------------------------ |
-| 2026-06-27 | Dani   | Authored to Ready (design rung, CI health for Dependabot adoption) |
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-06-27 | Dani | Authored to Ready (design rung, CI health for Dependabot adoption) |
+| 2026-09-26 | US0940 | AC1 narrowed: the line re-ran the whole skill suite under coverage, which the verify lane kills at its 300 s ceiling. It now runs `test_lean_push.py::PushBoundaryTests::test_ci_runs_the_suite_once`, which asserts CI runs the suite once under coverage and reads `coverage report --fail-under=80` after it, and drives the runner under coverage on a fixture. Dropped: the measured figure itself (>= 80% on the runner), which CI's 'Coverage gate (runtime scripts, >= 80%)' step reports on every push (green on 93d37f16) |

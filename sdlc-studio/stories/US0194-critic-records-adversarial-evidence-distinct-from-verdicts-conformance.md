@@ -21,8 +21,8 @@
 - **Given** a unit reviewed by a seat subagent and a sign-off recorded by a principal
 - **When** critic.py records the adversarial pass and conformance evaluates the critiqued stage
 - **Then** critic.py records the adversarial pass as evidence distinct from the verdict; conformance critiqued requires evidence + a sign-off whose principal differs from the author AND from the authoring session's subagents
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests/ -p test_critic.py -k Evidence
-- **Verified:** yes (2026-07-16)
+- **Verify:** manual - retired by US0940: US0918 (2bc6eb15) retired `critic.py evidence` and deleted `record_evidence` with `EvidenceTests`, so no adversarial pass is recorded as evidence apart from its verdict; `critiqued` now reads one independent delivery verdict or a frozen batch row, and the signature is one per run at `sprint sign` (US0919)
+- **Verified:** manual (2026-09-26) - retired, superseded by US0918
 
 ### AC2: a delegated sign-off carries its chain; a self-controlled delegate is refused
 
@@ -47,3 +47,4 @@
 | 2026-07-16 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-16 | Claude Fable 5 | Design rung: ACs made executable |
 | 2026-09-25 | US0919 | AC2 and AC3 retired in the D0259 pattern: the per-unit sign-off, its delegated route and `critic.py signoff-brief` are retired; the operator reads the run's report and signs it once at `sprint sign` |
+| 2026-09-26 | US0940 | AC1 retired in the D0259 pattern: US0918 deleted the evidence ledger it recorded into, without retiring this stamp |

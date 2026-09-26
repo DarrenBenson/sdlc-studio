@@ -1,6 +1,6 @@
 # US0940: Every criterion on a Done story passes when the release gate runs it, or is retired with its reason
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,8 +19,10 @@
 
 - **AC1:** Given the 27 criteria on Done stories that `gate.py --release` reports red at 013a46d0 (US0021::AC1, US0040::AC3, US0042::AC2, US0047::AC1, US0052::AC4, US0063::AC1, US0063::AC2, US0070::AC1, US0070::AC2, US0080::AC2, US0165::AC2, US0202::AC3, US0207::AC3, US0268::AC1, US0284::AC4, US0289::AC2, US0347::AC1, US0512::AC4, US0666::AC1, US0162::AC1, US0178::AC3, US0211::AC3, US0224::AC1, US0224::AC2, US0251::AC2, US0268::AC3, US0854::AC1), when each is executed through `verify_ac`, then each passes or carries `Verify: manual - retired by <this unit>: <why>` with its `Verified:` line in the D0259 pattern, and `tools/verify-corpus-baseline.txt`'s red-criteria row names none of them. Fails on: HEAD (27 red, measured: 19 in the v5.1 baseline, 8 new since); retiring a criterion whose behaviour still ships, which the reviewer checks by re-running the retired selector's intent against HEAD
   - **Verify:** pytest tools/tests/test_lean_release_verify.py::ReleaseVerifyTests::test_the_measured_red_criteria_pass_or_are_retired
+  - **Verified:** yes (2026-09-26)
 - **AC2:** Given US0251 AC2, whose Verify runs `command_audit.py --write`, when it runs in a clean clone, then `git status --porcelain` is empty afterwards, and no Verify line on a Done story passes `--write` or `--apply` to a shipped script. Fails on: HEAD, where the release gate's verify lane rewrites the tracked `sdlc-studio/reviews/command-audit.md` (measured on a copy), so `record-green` would stamp a tree that differs from the commit
   - **Verify:** pytest tools/tests/test_lean_release_verify.py::ReleaseVerifyTests::test_no_verify_line_writes_a_tracked_file
+  - **Verified:** yes (2026-09-26)
 
 ## Notes
 

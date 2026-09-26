@@ -1,6 +1,6 @@
 # EP0265: v6.0.0: the lean loop works on a fresh project, and the release cuts clean
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -14,7 +14,7 @@ Sprint 5 of the v6 release (D0272): finish EP0263's deletions with their histori
 - [x] [US0937: Work that already shipped reads Done, so the repair ledger can go and the release cut ships no notes for open stories](../stories/US0937-work-that-already-shipped-reads-done-so-the.md)
 - [x] [US0938: The release rehearsal walks a v5.1 project across to v6, and every known gap it tolerates has an open owner](../stories/US0938-the-release-rehearsal-walks-a-v5-1-project.md)
 - [x] [US0939: CI and the push gate give one verdict on tools/tests, because both run it the same way](../stories/US0939-ci-and-the-push-gate-give-one-verdict.md)
-- [ ] [US0940: Every criterion on a Done story passes when the release gate runs it, or is retired with its reason](../stories/US0940-every-criterion-on-a-done-story-passes-when.md)
+- [x] [US0940: Every criterion on a Done story passes when the release gate runs it, or is retired with its reason](../stories/US0940-every-criterion-on-a-done-story-passes-when.md)
 - [x] [US0941: A report Maya signed still validates after the tree moves on](../stories/US0941-a-report-maya-signed-still-validates-after-the.md)
 - [x] [US0942: The release tag is refused only for what a release needs, not for close-owed debt](../stories/US0942-the-release-tag-is-refused-only-for-what.md)
 - [x] [US0943: `sprint plan` in a consuming project prints the skill's toolchain runbook](../stories/US0943-sprint-plan-in-a-consuming-project-prints-the.md)

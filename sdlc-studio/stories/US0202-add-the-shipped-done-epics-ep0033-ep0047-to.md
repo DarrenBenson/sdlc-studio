@@ -37,11 +37,12 @@
 - **Given** the Coverage note's parenthetical listed only four unreleased workstreams while the tables now cover many more
 - **When** the parenthetical is expanded to name the added workstreams (two-backlog, refine and migrate, Issue and triage, sprint close-down)
 - **Then** The coverage note's parenthetical list of unreleased workstreams matches what the tables actually cover
-- **Verify:** grep "the two-backlog workflow, the refine" sdlc-studio/prd.md
-- **Verified:** yes (2026-07-17)
+- **Verify:** manual - retired by US0940: a point-in-time PRD edit to the v4.1.0 Coverage note; the v5.0.0 release shipped the workstreams it listed as unreleased and the note was rewritten (2588384b), so the parenthetical it corrected no longer exists
+- **Verified:** manual (2026-09-26) - retired, superseded by the v5.0.0 PRD refresh (2588384b)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-26 | US0940 | AC3 retired in the D0259 pattern: the Coverage note it corrected was rewritten for v5.0.0 |

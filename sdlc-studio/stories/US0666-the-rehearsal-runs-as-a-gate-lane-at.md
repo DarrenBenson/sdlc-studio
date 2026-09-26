@@ -26,8 +26,8 @@
   the gate is already over its budget on most commits, and a guard whose cost is paid on every
   commit gets switched off.
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py -k the_rehearsal_lane_runs_at_the_push_and_release_boundaries
-- **Verified:** yes (2026-08-26)
+- **Verify:** shell SDLC_STUDIO_BOUNDARY_SUITE=1 python3 -m pytest -q .claude/skills/sdlc-studio/scripts/tests/test_gate.py -k the_rehearsal_lane_runs_at_the_push_and_release_boundaries
+- **Verified:** yes (2026-09-26)
 
 ### AC2
 
@@ -63,3 +63,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-10 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-26 | US0940 | AC1 re-pointed: BG0579 (c3d867ec) marked the test `boundary_only`, so without the boundary marker the verify lane read it skipped; the line sets the marker. The push half of the Then is superseded by US0881 (8daaa2fe), which keeps the rehearsal at the release boundary only; the test asserts that, and that a per-commit gate never runs it |

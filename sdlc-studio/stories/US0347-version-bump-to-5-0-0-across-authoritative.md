@@ -22,8 +22,8 @@
 - **Given** the version strings check_versions.py treats as authoritative
 - **When** `check_versions.py --strict` is run on a clean tree and its reported version is read
 - **Then** it exits 0 AND reports 5.0.0. Asserting only that the guard is green is vacuous: it was green at 4.1.0 and would be green at any consistent version, so the check must bind the VALUE, not the consistency
-- **Verify:** shell python3 tools/check_versions.py --strict | grep -q '5\.0\.0'
-- **Verified:** yes (2026-07-26)
+- **Verify:** manual - retired by US0940: a point-in-time bump; the v5.1.0 cut moved every authoritative file on deliberately, so 5.0.0 no longer ships. Consistency across those files is still refused per commit by the pre-commit `versions` lane
+- **Verified:** manual (2026-09-26) - retired, superseded by the v5.1.0 cut
 
 ### AC2: the bump is refused while any file disagrees
 
@@ -38,3 +38,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-26 | US0940 | AC1 retired in the D0259 pattern: the version it bound was superseded by the v5.1.0 cut |

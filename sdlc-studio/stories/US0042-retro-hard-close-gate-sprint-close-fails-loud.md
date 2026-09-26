@@ -66,9 +66,9 @@ sprint, autosprint, and review close paths must refuse to report success until
 - **Given** a closing batch whose `retros/RETRO{next}.md` exists
 - **When** the close path runs
 - **Then** the gate passes and the close proceeds, mirroring the reconcile-drift-0 gate
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RetroCloseGateTests::test_close_gate_passes_with_retro
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RetroCloseGateTests::test_close_gate_passes_with_a_complete_retro
 - **Verification target:** functional
-- **Verified:** no (2026-07-20)
+- **Verified:** yes (2026-09-26)
 
 > **Verification target tiers:** `functional` (single round-trip – default) | `conversational` (multi-turn / multi-step session continuity) | `soak` (live traffic over a window) | `live` (operator-confirmed in production). End-to-end ACs default to `conversational`; production-affecting ACs default to `soak`; ACs shipping behind a flag awaiting promotion default to `live`. See `reference-test-best-practices.md#verification-depth-tiers`.
 
@@ -168,6 +168,7 @@ None.
 
 ## Revision History
 
-| Date       | Author | Change                                               |
-| ---------- | ------ | ---------------------------------------------------- |
-| 2026-06-27 | Dani   | Authored to Ready (design rung, breakdown of CR0129) |
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-06-27 | Dani | Authored to Ready (design rung, breakdown of CR0129) |
+| 2026-09-26 | US0940 | AC2 re-pointed: BG0123 (8d3c32e7) renamed the test when a heading-only retro stopped satisfying the gate; the successor asserts the close gate passes with the batch retro present |

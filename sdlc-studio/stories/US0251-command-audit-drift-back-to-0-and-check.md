@@ -32,11 +32,12 @@ skill-spec guards green
 - **When** the audit is regenerated over the current working tree
 - **Then** the file is byte-identical to the committed copy, so the report cannot claim
   a surface state the tree no longer has
-- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/command_audit.py --write --check-tools && git diff --exit-code -- sdlc-studio/reviews/command-audit.md
-- **Verified:** yes (2026-07-28)
+- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/command_audit.py --check-tools | diff - sdlc-studio/reviews/command-audit.md
+- **Verified:** yes (2026-09-26)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-26 | US0940 | AC2 re-pointed: the line wrote the tracked report it then compared, so a release gate run rewrote `command-audit.md` in the tree it was certifying; it now compares a fresh render against the committed copy and writes nothing. The committed report is regenerated (70 scripts: deletion units since removed two) |

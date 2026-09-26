@@ -56,8 +56,8 @@
 - **Given** a test command that itself crashes (not a test failure)
 - **When** the run completes
 - **Then** the mutation records verdict error and the summary separates it from killed
-- **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p 'test_mutation.py' -k test_runner_error_not_a_kill
-- **Verified:** no (2026-07-20)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::BridgeTests::test_broken_runner_baseline_refuses_never_a_kill .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::MutationSeriesNoEvidenceTests::test_an_all_error_run_records_no_evidence_even_though_it_applied_mutants
+- **Verified:** yes (2026-09-26)
 
 ### AC5: unviable mutants are never counted killed
 
@@ -74,3 +74,4 @@
 | 2026-07-04 | sdlc | Created via `new` (deterministic) |
 | 2026-07-04 | claude | Authored at design: D5 settled per accepted RFC-0022; points + ACs + Verify lines |
 | 2026-07-04 | claude | AC5 added from the critic's high finding: py mutants are compile-checked; unviable is its own verdict |
+| 2026-09-26 | US0940 | AC4 re-pointed: BG0180 (05b3204f) renamed the test when a runner that errors at the baseline began refusing before any mutant; the line runs that successor and the test where every applied mutant errors after a green baseline, which records none of them killed or survived |

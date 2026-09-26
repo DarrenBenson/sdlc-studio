@@ -37,8 +37,8 @@
 - **Given** any of the three seats
 - **When** persona_resolve.py resolves it for a review render
 - **Then** no retired-home deprecation warning is emitted
-- **Verify:** shell sh -c 'python3 .claude/skills/sdlc-studio/scripts/persona_resolve.py resolve --seat engineering --render review 2>&1 | grep -qi retired && exit 1 || exit 0'
-- **Verified:** yes (2026-07-16)
+- **Verify:** shell sh -c 'for s in engineering product qa; do err=$(python3 .claude/skills/sdlc-studio/scripts/persona_resolve.py resolve --seat $s --render review 2>&1 >/dev/null) || exit 1; echo "$err" | grep -qi retired && exit 1; done; exit 0'
+- **Verified:** yes (2026-09-26)
 
 ## Revision History
 
@@ -46,3 +46,4 @@
 | --- | --- | --- |
 | 2026-07-16 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-16 | Claude Fable 5 | ACs written and delivered (CR0292; layout half via migrate --apply) |
+| 2026-09-26 | US0940 | AC3 re-pointed: the warning is a stderr line, and the line read stdout too, where the engineering charter's own text now says 'retired'; it reads stderr alone, for all three seats the Given names, and fails when a resolution fails |

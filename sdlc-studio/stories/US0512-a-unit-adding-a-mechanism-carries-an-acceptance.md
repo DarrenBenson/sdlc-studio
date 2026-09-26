@@ -49,7 +49,8 @@
 - **Then** the consuming call site is named and resolves in the tree, so the mechanism is
   reachable in production rather than correct in isolation
 - **Caller:** `critic.py caller-check --unit <id>`, catalogued in reference-scripts.md
-- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/critic.py caller-check --unit US0512 --root .
+- **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/critic.py caller-check --help >/dev/null && grep -q 'critic.py caller-check' .claude/skills/sdlc-studio/reference-scripts-surface.md
+- **Verified:** yes (2026-09-26)
 
 ## Revision History
 
@@ -58,3 +59,4 @@
 | 2026-07-28 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-28 | Claude Fable 5 | Groomed against the carried lessons |
 | 2026-07-28 | Claude Fable 5 | Caller named at review - this unit's own check reported it caller-unnamed |
+| 2026-09-26 | US0940 | AC4 re-pointed: BG0379 (2eb1da8a) made `caller-check` report a unit whose declared files are all its own verifiers' subjects as caller-indeterminate, so run over this unit it cannot answer; the line checks the declared Caller directly: the verb runs and is catalogued |

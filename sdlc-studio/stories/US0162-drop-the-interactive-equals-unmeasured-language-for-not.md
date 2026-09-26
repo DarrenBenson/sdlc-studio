@@ -21,11 +21,12 @@
 - **Given** the retro doctrine surfaces
 - **When** they are read
 - **Then** the template, retro.py module docstring, and reference-retro frame an interactive sprint's tokens as harness-tracked / not-yet-captured (supply via `accuracy --tokens N`), keep the descriptive-never-a-target guard, and all markdown links + style pass
-- **Verify:** shell grep -q 'not-yet-captured' .claude/skills/sdlc-studio/templates/reviews/retro.md && grep -q 'not-yet-captured' .claude/skills/sdlc-studio/reference-retro.md && python3 tools/check_links.py && bash tools/lint-style.sh
-- **Verified:** yes (2026-07-15)
+- **Verify:** shell grep -q 'not-yet-captured' .claude/skills/sdlc-studio/reference-retro.md && python3 tools/check_links.py && bash tools/lint-style.sh
+- **Verified:** yes (2026-09-26)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-15 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-26 | US0940 | AC1 re-pointed: US0877 (31ffb8fc) cut the retro template to Keep, Stop and Try and moved token figures to the sprint report, so the template half no longer ships; the reference-retro framing, links and style still hold |

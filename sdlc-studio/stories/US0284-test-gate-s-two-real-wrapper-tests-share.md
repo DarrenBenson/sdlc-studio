@@ -67,8 +67,8 @@ that is the pin that the 15 real lanes wire up and return the documented shape.
   checks, each carries the same 5 keys, and the exit code is 0 or 1
 - **When** the file runs after the change
 - **Then** every one of those assertions is still made
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py
-- **Verified:** yes (2026-07-21)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::GateRealWrapperTests
+- **Verified:** yes (2026-09-26)
 
 ### AC5: the saving is measured, not assumed
 
@@ -91,3 +91,4 @@ that is the pin that the 15 real lanes wire up and return the documented shape.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-21 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-26 | US0940 | AC4 narrowed to `GateRealWrapperTests`, the class holding every assertion it lists (`ok` is a bool, the lane roster, each row's keys, main's exit-code mapping): the whole file takes about 230 s, which the verify lane's 120 s default ceiling reads as red |

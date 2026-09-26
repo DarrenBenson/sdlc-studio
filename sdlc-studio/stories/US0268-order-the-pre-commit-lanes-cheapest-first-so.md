@@ -36,8 +36,8 @@ Note `CR0361` names `tools/pre-commit.sh`, which does not exist; the hook is
 - **Given** the tracked pre-commit hook
 - **When** its lane order is read
 - **Then** both markdown lanes are invoked before `skill-tests`
-- **Verify:** shell test "$(grep -n 'run \"markdown\"' .githooks/pre-commit | head -1 | cut -d: -f1)" -lt "$(grep -n 'run \"skill-tests\"' .githooks/pre-commit | head -1 | cut -d: -f1)"
-- **Verified:** yes (2026-07-19)
+- **Verify:** shell grep -q 'run "markdown" ' .githooks/pre-commit && grep -q 'run "markdown-payload" ' .githooks/pre-commit && python3 -m pytest -q tools/tests/test_precommit_lane_order.py::LaneOrderTests::test_markdown_lanes_run_before_the_unit_suites
+- **Verified:** yes (2026-09-26)
 
 ### AC2: a markdown-only failure never reaches the unit suites
 
@@ -54,8 +54,8 @@ Note `CR0361` names `tools/pre-commit.sh`, which does not exist; the hook is
 - **When** the hook completes
 - **Then** it still names the lanes that ran, so a reordering does not silently drop a lane
   from a docs-only commit's coverage
-- **Verify:** grep "Docs-only commit: style, links, budgets, markdown and the artefact gate still ran" .githooks/pre-commit
-- **Verified:** yes (2026-07-19)
+- **Verify:** shell grep -q "Style, links, budgets, markdown and the artefact gate still ran" .githooks/pre-commit && python3 -m pytest -q tools/tests/test_lean_precommit_parallel.py::ParallelLaneTests::test_output_prints_in_declared_order_whatever_finishes_first
+- **Verified:** yes (2026-09-26)
 
 ### AC4: no lane is lost in the reorder
 
@@ -72,3 +72,4 @@ Note `CR0361` names `tools/pre-commit.sh`, which does not exist; the hook is
 | 2026-07-19 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-19 | sdlc-studio | Groomed: ACs written from the measured lane order and two real refusals |
 | 2026-09-24 | sdlc-studio | AC4 retired, superseded by US0905: the lane cap replaced the exact lane sets its test pinned (D0259 pattern) |
+| 2026-09-26 | US0940 | AC1 and AC3 re-pointed. AC1: US0372 (028c2b7e) moved the unit suites into the commit-msg hook, which git runs only after pre-commit completes, so no `skill-tests` line is left in pre-commit to compare against; the line checks both markdown lanes are in pre-commit and that `test_markdown_lanes_run_before_the_unit_suites` holds across the pair. AC3: US0880 (315ec358) re-cased the fallback note and made gate.py's selection the usual skip, which prints its own reason; every lane that ran is named by its own ok or FAIL line, which `test_output_prints_in_declared_order_whatever_finishes_first` asserts for every declared lane |
