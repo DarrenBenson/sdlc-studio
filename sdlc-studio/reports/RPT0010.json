@@ -3,8 +3,8 @@
   "report_id": "RPT0010",
   "run_id": "RUN-01M3CK1K",
   "retro_id": "RETRO0125",
-  "generated_at": "2026-09-26T15:51:20Z",
-  "window_end": "2026-09-26T15:51:20Z",
+  "generated_at": "2026-09-26T18:41:02Z",
+  "window_end": "2026-09-26T18:41:02Z",
   "signature": null,
   "sections": [
     {
@@ -43,7 +43,7 @@
         },
         "duration_hours": {
           "key": "duration_hours",
-          "value": "24.3h",
+          "value": "27.1h",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "verified_sha": {
@@ -100,12 +100,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 1459.0,
+            "value": 1628.7,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "2.23x",
+            "value": "2.49x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -127,12 +127,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 18791718,
+            "value": 19205700,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "0.52x",
+            "value": "0.53x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -2372,40 +2372,6 @@
         {
           "issue_id": {
             "key": "issue_id",
-            "value": "BG0774",
-            "source": "sdlc-studio/bugs/BG0774-install-sh-exits-1-after-a-successful-install.md"
-          },
-          "issue_priority": {
-            "key": "issue_priority",
-            "value": "Medium",
-            "source": "sdlc-studio/bugs/BG0774-install-sh-exits-1-after-a-successful-install.md"
-          },
-          "issue_detail": {
-            "key": "issue_detail",
-            "value": "install.sh exits 1 after a successful install when the gemini target is chosen without the gemini CLI",
-            "source": "sdlc-studio/bugs/BG0774-install-sh-exits-1-after-a-successful-install.md"
-          }
-        },
-        {
-          "issue_id": {
-            "key": "issue_id",
-            "value": "BG0776",
-            "source": "sdlc-studio/bugs/BG0776-sprint-sign-principal-seals-the-run-with-an.md"
-          },
-          "issue_priority": {
-            "key": "issue_priority",
-            "value": "Medium",
-            "source": "sdlc-studio/bugs/BG0776-sprint-sign-principal-seals-the-run-with-an.md"
-          },
-          "issue_detail": {
-            "key": "issue_detail",
-            "value": "sprint sign --principal - seals the run with an empty principal",
-            "source": "sdlc-studio/bugs/BG0776-sprint-sign-principal-seals-the-run-with-an.md"
-          }
-        },
-        {
-          "issue_id": {
-            "key": "issue_id",
             "value": "BG0782",
             "source": "sdlc-studio/bugs/BG0782-about-57-test-modules-commit-in-a-temporary.md"
           },
@@ -2508,6 +2474,40 @@
         {
           "issue_id": {
             "key": "issue_id",
+            "value": "BG0790",
+            "source": "sdlc-studio/bugs/BG0790-an-installed-release-candidate-is-never-prompted-to.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG0790-an-installed-release-candidate-is-never-prompted-to.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "An installed release candidate is never prompted to move to its final release, because version comparison ignores the pre-release suffix",
+            "source": "sdlc-studio/bugs/BG0790-an-installed-release-candidate-is-never-prompted-to.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG0792",
+            "source": "sdlc-studio/bugs/BG0792-us0940-ac1-s-own-verify-takes-about-three.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG0792-us0940-ac1-s-own-verify-takes-about-three.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "US0940 AC1's own Verify takes about three minutes, so the release gate's verify lane reads it red at the 120-second default",
+            "source": "sdlc-studio/bugs/BG0792-us0940-ac1-s-own-verify-takes-about-three.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
             "value": "CR0600",
             "source": "sdlc-studio/change-requests/CR0600-prevent-or-retire-lesson-lc-004-premise-not.md"
           },
@@ -2559,7 +2559,7 @@
         },
         "tokens_total": {
           "key": "tokens_total",
-          "value": 18791718,
+          "value": 19205700,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "token_coverage": {
@@ -2582,7 +2582,7 @@
           },
           "model_tokens": {
             "key": "model_tokens",
-            "value": 4503299,
+            "value": 4917281,
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -2602,7 +2602,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": 61,
+            "value": 71,
             "source": "git log"
           },
           "dora_mapping": {
@@ -2617,7 +2617,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - 61 commit(s) on main inside the run window",
+            "value": "git history - 71 commit(s) on main inside the run window",
             "source": "git log"
           }
         },
@@ -2629,7 +2629,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "23h 59m",
+            "value": "26h 49m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -2644,7 +2644,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 61 commit(s)",
+            "value": "git history - first to last of 71 commit(s)",
             "source": "git log"
           }
         },
@@ -3289,5 +3289,5 @@
       "not_measured": null
     }
   ],
-  "fingerprint": "a0ca5cb38fc2965b"
+  "fingerprint": "d3c84d05a076be43"
 }

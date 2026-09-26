@@ -6,8 +6,8 @@ Maya runs the lean loop on a fresh v6 project, and the release candidate ships.
 
 **Verdict: Judged achieved** - The lean loop runs on a fresh v6 project on the shipped defaults, plan to sign (US0950 AC3, US0951); all 37 batch units delivered under the two-round cap; the release bar is met (no open High), and v6.0.0-rc.1 is cut from this close by the release runbook before the report is signed
 
-> **Run:** 2026-09-25T15:32:20Z to open (24.3h)
-> **Verified on:** 1c404a481692986b13208ea43178d918a3275f5d   **Fingerprint:** a0ca5cb38fc2965b
+> **Run:** 2026-09-25T15:32:20Z to open (27.1h)
+> **Verified on:** 1c404a481692986b13208ea43178d918a3275f5d   **Fingerprint:** d3c84d05a076be43
 
 ## Estimates
 
@@ -18,8 +18,8 @@ over forecast.
 | Measure | Forecast | Actual | Ratio | Over |
 | --- | --- | --- | --- | --- |
 | Points | 102 | 102 | 1.0x | 37 of 37 delivered unit(s) |
-| Minutes | 652.8 | 1459.0 | 2.23x | the whole run: forecast over 37 of 37 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
-| Tokens | 36,088,620 | 18,791,718 | 0.52x | the whole run: forecast over 37 of 37 unit(s) planned or added and not dropped; actual is the main-thread meter plus 73 delegated agent(s)' reported totals, split in the appendix |
+| Minutes | 652.8 | 1628.7 | 2.49x | the whole run: forecast over 37 of 37 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
+| Tokens | 36,088,620 | 19,205,700 | 0.53x | the whole run: forecast over 37 of 37 unit(s) planned or added and not dropped; actual is the main-thread meter plus 73 delegated agent(s)' reported totals, split in the appendix |
 
 Each unit's minutes and tokens are measured over its own open span. Units open at the same time
 share hours and tokens, so these spans may overlap and are never added up into the run's figures
@@ -129,14 +129,14 @@ size, plan and added together: 102.
 | Issue | Priority | Detail |
 | --- | --- | --- |
 | CR0599 | High | The sprint signature is recorded in a tracked file, so any clone can verify a signed report |
-| BG0774 | Medium | install.sh exits 1 after a successful install when the gemini target is chosen without the gemini CLI |
-| BG0776 | Medium | sprint sign --principal - seals the run with an empty principal |
 | BG0782 | Medium | About 57 test modules commit in a temporary git repo with auto-maintenance on, the race BG0711 fixed in one |
 | BG0783 | Medium | Review rounds are write-dead after US0918, so the ceiling and repair-regression readers of run-state rounds read nothing |
 | BG0784 | Medium | A seat card with no role line is silently bypassed for the shipped card, and the unknown-seat refusal names the wrong seats |
 | BG0785 | Medium | migrate leaves a v4-era project's conformance lane red on its pre-adoption stories and names no cutoff for them |
 | BG0786 | Medium | flow.py compute takes about 90 seconds on this repository, so its CLI grammar control times out at 120 under load and reddens the push gate |
 | BG0788 | Medium | Signed-report rounds are positional, so a hand-deleted verdict row goes unseen when a same-day later run re-reviewed the unit, and verdict rows carry no run id |
+| BG0790 | Medium | An installed release candidate is never prompted to move to its final release, because version comparison ignores the pre-release suffix |
+| BG0792 | Medium | US0940 AC1's own Verify takes about three minutes, so the release gate's verify lane reads it red at the 120-second default |
 | CR0600 | Medium | Prevent or retire lesson LC-004 (premise not executed) |
 
 ## Sign-off
@@ -153,17 +153,17 @@ Signing records the principal, the date and this report's fingerprint against RU
 
 | Model | Tokens |
 | --- | --- |
-| mixed | 4,503,299 |
+| mixed | 4,917,281 |
 
-Total 18,791,718, of which delegated 14,288,419. Coverage: 1 session(s);
+Total 19,205,700, of which delegated 14,288,419. Coverage: 1 session(s);
 read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp.
 
 ### DORA
 
 | Key | This run | Mapping | Elite band | Derived from |
 | --- | --- | --- | --- | --- |
-| Deployment frequency | 61 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window | on demand | git history - 61 commit(s) on main inside the run window |
-| Lead time for changes | 23h 59m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 61 commit(s) |
+| Deployment frequency | 71 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window | on demand | git history - 71 commit(s) on main inside the run window |
+| Lead time for changes | 26h 49m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 71 commit(s) |
 | Change failure rate | NOT MEASURED - no forge run data | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that did not conclude success | 0-15% | no push-triggered CI run is readable for this run window |
 | Time to restore | NOT MEASURED - no forge run data | the span from a push-triggered run concluding failure on main to the next push-triggered run concluding success | under an hour | no push-triggered CI run is readable for this run window |
 
