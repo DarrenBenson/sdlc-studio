@@ -47,7 +47,6 @@ These block. Everything else in this file is guidance.
 | `transition -> Fixed` | a bug nothing speaks for (no ticked criterion, no `Verify:` line), or whose recorded `verify_ac` run is red |
 | `sprint close` | an uncommitted change to a file a batch unit declares (uncovered units, unanswered items and failing lanes are recorded as known issues on the report, not refused) |
 | `sprint sign` | a report that is not the run's, a tree changed since the close, or a principal who is a unit's author or a reviewer recorded on it |
-| `critic record` | a verdict carrying no brief provenance (`--brief`), unless stood down by a recorded config decision |
 
 **Enable the hooks once per clone: `bash tools/enable-hooks.sh`.** It installs the three tracked hooks
 (pre-commit, commit-msg, pre-push), names each, and sets this clone's `core.sshCommand` to an ssh

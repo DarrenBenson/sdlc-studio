@@ -71,11 +71,6 @@ review:
   # P0..P3 are both covered. An unrecognised value falls back to this default rather than to an
   # empty floor: a floor nobody configured must not silently become no floor at all.
   blocking_priority: high
-  # Whether a recorded verdict must carry the fingerprint `critic.py brief` printed for the
-  # prompt its reviewer was given. `true` is the default and the point: a verdict with no
-  # provenance cannot be told from one produced by a hand-written prompt, which carries neither
-  # the seat charter nor the bounded diff scope.
-  require_brief_provenance: true
   # `review.max_rounds` is DELIBERATELY ABSENT, and adding it back is the repair to avoid. One
   # key was read by two consumers with different defaults - the close-attempt cap and the
   # review-round ceiling - so no single value was correct for both, and setting it to suit one

@@ -290,6 +290,10 @@ class PlanPhaseGoneTests(unittest.TestCase):
         restored = bg0672.replace(clause, clause[:-1] + ", and the same value recorded with "
                                   "`--phase plan-review` writes a plan-review row carrying the "
                                   "marker too\n")
+        # US0923 retired AC1's stamp; the guard judges `yes` stamps, so put AC1's back.
+        restored = restored.replace(
+            "  - **Verified:** manual (2026-09-25) - retired, superseded by US0923",
+            "  - **Verified:** yes (2026-09-15)", 1)
         self.assertEqual(["AC1"], _overclaims(restored), "the exemption passes a real over-claim")
 
 

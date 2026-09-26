@@ -48,7 +48,7 @@ Read this at plan time. `sprint plan` prints it.
 | Brief a seat | `critic.py brief --unit <id> --seat engineering\|product\|qa` | writing the review prompt yourself |
 | Resolve who reviews and who signs | `persona_resolve.py panel` | choosing seats by judgement |
 | Record the adversarial pass | `critic.py evidence --unit <id> --findings ...` | leaving the pass in a transcript |
-| Record the verdict | `critic.py record --unit <id> --verdict ... --brief <fingerprint>` | a verdict with no provenance |
+| Record the verdict | `critic.py record --unit <id> --verdict ... [--brief <fingerprint>]` | a verdict left in a transcript; it records with or without `--brief`, and `critic.py brief` remains the way to brief the seat |
 | Record a batch pass | `sprint.py review-batch --units ... --fields-file <doc>` | findings mangled by the shell |
 | Answer a REJECT once its findings are fixed | `critic.py brief --unit <id> --seat <seat> --rejoinder <verdict>`, then the rejecting reviewer's round 2 through `critic.py record`: an APPROVE answers it, a REJECT at the cap carries the unit to a bug | a hand drop, a ruling or a different reviewer's APPROVE, none of which answers it |
 | Find library-only verifiers | `verify_ac.py lane-check` | discovering it in review |

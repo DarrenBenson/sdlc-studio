@@ -3390,28 +3390,9 @@ class BriefProvenanceTests(unittest.TestCase):
                               "--root", str(root), *extra])
         return rc, buf_out.getvalue() + buf_err.getvalue()
 
-    def test_a_verdict_without_provenance_is_refused(self) -> None:
-        """MUTANT: delete the `if required: return 2` branch in cmd_record.
-
-        The seat-brief rule is doctrine everywhere else in this repo, and doctrine is what got
-        skipped - a review round was run from four hand-written prompts while the shipped brief
-        existed. A rule that matters is refused by the command people actually run (LL0027).
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._unit(root, "US0001")
-            rc, out = self._record(root)
-        self.assertEqual(2, rc, "a verdict with no brief provenance was recorded")
-        self.assertIn("critic.py brief", out,
-                      "the refusal does not name the command that produces a brief")
-        self.assertIn("--seat", out,
-                      "the refusal does not show the seat the brief needs")
-
     def test_a_briefed_verdict_records_cleanly(self) -> None:
-        """The positive control. MUTANT: make the refusal unconditional.
-
-        A gate that refuses everything discriminates no better than one that refuses nothing,
-        so the passing case is half the contract."""
+        """MUTANT: refuse, or drop, a fingerprint the reviewer supplied. The value is stored as
+        given, never judged."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._unit(root, "US0001")
@@ -3421,23 +3402,6 @@ class BriefProvenanceTests(unittest.TestCase):
         self.assertEqual(0, rc, f"a briefed verdict was refused:\n{out}")
         self.assertIn("abc123def456", recorded,
                       "the fingerprint the reviewer supplied was not recorded")
-
-    def test_the_stand_down_is_stated_not_silent(self) -> None:
-        """MUTANT: drop the NOTE, or honour the config without saying so.
-
-        Switching the rule off and forgetting it are different events, and a record that cannot
-        tell them apart is the one that lets the second masquerade as the first."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._unit(root, "US0001")
-            (root / "sdlc-studio" / ".config.yaml").write_text(
-                "review:\n  require_brief_provenance: false\n", encoding="utf-8")
-            rc, out = self._record(root)
-        self.assertEqual(0, rc, f"a recorded stand-down did not take effect:\n{out}")
-        self.assertIn("require_brief_provenance", out,
-                      "the stand-down was honoured silently - nothing on the output says the "
-                      "requirement was switched off rather than met")
-
 
 class FindingClassTests(unittest.TestCase):
     """The ORIGIN axis: did THIS unit's diff cause the finding?
@@ -3559,39 +3523,6 @@ class ReviewRepairTests(unittest.TestCase):
                       "nothing a reviewer can run produces the value `record` demands")
         self.assertIn("--brief", err,
                       "the fingerprint is printed without saying what to do with it")
-
-    def test_a_made_up_brief_value_is_refused(self) -> None:
-        """F2. MUTANT: delete the _FINGERPRINT_RE check in cmd_record.
-
-        `--brief x` was accepted, so the provenance gate was satisfied by inventing a value -
-        recording provenance for a prompt that was never issued, which is precisely what the
-        field exists to make detectable."""
-        critic = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._unit(root)
-            buf_out, buf_err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
-                rc = critic.main(["record", "--unit", "US0001", "--verdict", "approve",
-                                  "--reviewer", "ada", "--author", "grace",
-                                  "--brief", "x", "--root", str(root)])
-            err = buf_err.getvalue() + buf_out.getvalue()
-        self.assertEqual(2, rc, "a value that is not a fingerprint was accepted as provenance")
-        self.assertIn("hex", err, "the refusal does not say what a fingerprint looks like")
-
-    def test_a_well_formed_fingerprint_is_accepted(self) -> None:
-        """The control for the check above: a gate refusing every value discriminates nothing."""
-        critic = _load()
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._unit(root)
-            buf_out, buf_err = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(buf_out), contextlib.redirect_stderr(buf_err):
-                rc = critic.main(["record", "--unit", "US0001", "--verdict", "approve",
-                                  "--reviewer", "ada", "--author", "grace",
-                                  "--brief", "0123456789ab", "--root", str(root)])
-            err = buf_err.getvalue() + buf_out.getvalue()
-        self.assertEqual(0, rc, f"a well-formed fingerprint was refused:\n{err}")
 
     def test_an_untagged_finding_does_not_cover_a_unit(self) -> None:
         """F4. MUTANT: delete the `any(f["origin"] != ORIGIN_PRE_EXISTING)` guard.
@@ -3991,8 +3922,7 @@ class AbsentBriefTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = self._root(d)
             (root / "sdlc-studio" / ".config.yaml").write_text(
-                "schema_version: 3\nreview:\n  require_brief_provenance: false\n",
-                encoding="utf-8")
+                "schema_version: 3\n", encoding="utf-8")
             for verdict, seat in (("reject", "qa-seat"), ("approve", "engineering-seat")):
                 subprocess.run(
                     [sys.executable, str(SCRIPT), "--root", str(root), "record",
@@ -4151,10 +4081,7 @@ class CodeSpanEdgeSpaceTests(unittest.TestCase):
     """BG0659: a code span whose rendered interior begins or ends in whitespace was written into
     the ledger verbatim, and markdownlint's MD038 then refused the NEXT commit touching the file -
     blocked by a row its committer did not write. Padding the span is no remedy (one space each
-    side is stripped on render, two still raise MD038), so the shared `_clean` refuses it.
-
-    The CLI fixtures stand brief provenance down in `.config.yaml` rather than pass `--brief`, so
-    no fingerprint matcher runs and nothing but the finding decides the outcome."""
+    side is stripped on render, two still raise MD038), so the shared `_clean` refuses it."""
 
     _HEAD = ("# Critic Verdicts\n\n"
              "| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Issues |\n"
@@ -4169,7 +4096,7 @@ class CodeSpanEdgeSpaceTests(unittest.TestCase):
         (root / "sdlc-studio" / "stories" / "US0001-x.md").write_text(
             "# US0001: a unit\n\n> **Status:** Review\n> **Points:** 3\n", encoding="utf-8")
         (root / "sdlc-studio" / ".config.yaml").write_text(
-            "schema_version: 3\nreview:\n  require_brief_provenance: false\n", encoding="utf-8")
+            "schema_version: 3\n", encoding="utf-8")
         ledger = root / "sdlc-studio" / "reviews" / "critic-verdicts.md"
         ledger.parent.mkdir(parents=True)
         # SEEDED, header and one row: `record_verdict` writes the header before `_clean` runs,
@@ -4326,188 +4253,6 @@ class CodeSpanEdgeSpaceTests(unittest.TestCase):
             self.assertEqual(0, ok.returncode, ok.stdout + ok.stderr)
             self.assertIn("probed `budget:` and more",
                           evidence.read_text(encoding="utf-8").splitlines()[-1])
-
-
-class UnmatchedBriefFingerprintTests(unittest.TestCase):
-    """BG0672: `record --brief` refused an ABSENT fingerprint and accepted any 12-hex one. A value
-    no brief rendered printed a stderr note and the row carried it in its Brief column exactly as
-    a briefed one does, so every reader that counts provenance counted it.
-
-    The marker is the word `unmatched` beside the fingerprint: it matches no brief this repo can
-    currently produce for the unit and phase, invented or stale. Unknown - no seat cards to ask -
-    is not unmatched. Every fixture carries the SHIPPED seat cards unless the test says otherwise,
-    because the matcher renders one brief per card and a hand-written card proves less."""
-
-    INVENTED = "0123456789ab"
-    SEATS = REPO_ROOT / "sdlc-studio" / "personas" / "seats"
-
-    def _workspace(self, root: Path, *, seats: bool = True) -> None:
-        _banded_unit(root, "US0001", heavy=False)
-        _banded_unit(root, "US0002", heavy=True)
-        seat_dir = root / "sdlc-studio" / "personas" / "seats"
-        if not seats:
-            shutil.rmtree(seat_dir)
-            return
-        cards = sorted(self.SEATS.glob("*.md"))
-        if not cards:
-            self.skipTest(f"no shipped seat cards at {self.SEATS}")
-        for card in cards:
-            shutil.copy(card, seat_dir / card.name)
-
-    def _review_units(self, root: Path, *uids: str) -> None:
-        for uid in uids:
-            (root / "sdlc-studio" / "stories" / f"{uid}-x.md").write_text(
-                f"# {uid}: a unit\n\n> **Status:** Review\n> **Points:** 3\n"
-                f"> **Affects:** docs/note.md\n\n## Acceptance Criteria\n\n"
-                f"### AC1: works\n\n- **Then** it works\n", encoding="utf-8")
-
-    def _cli(self, root: Path, *argv: str):
-        import subprocess  # noqa: PLC0415
-        return subprocess.run([sys.executable, "-B", str(SCRIPT), *argv, "--root", str(root)],
-                              capture_output=True, text=True, check=False, timeout=300)
-
-    def _brief(self, root: Path, unit: str, *extra: str) -> tuple[str, str]:
-        """The brief text a seat would save, and the fingerprint its footer printed."""
-        r = self._cli(root, "brief", "--unit", unit, "--seat", "qa", *extra)
-        self.assertEqual(0, r.returncode, r.stderr)
-        m = re.search(r"brief fingerprint: ([0-9a-f]{12})", r.stderr)
-        self.assertIsNotNone(m, f"the brief printed no fingerprint:\n{r.stderr}")
-        return r.stdout, m.group(1)
-
-    def _record(self, root: Path, unit: str, *extra: str, verdict: str = "APPROVE",
-                issues: str = "none blocking"):
-        r = self._cli(root, "record", "--unit", unit, "--verdict", verdict,
-                      "--reviewer", "engineering seat", "--author", "author",
-                      "--issues", issues, *extra)
-        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
-        return r
-
-    def _last(self, root: Path) -> dict:
-        return _load().read_verdicts(root)[-1]
-
-    def test_an_invented_fingerprint_is_marked_on_the_row(self) -> None:
-        """MUTANT: guard the marker with `seats is None` rather than `seats is not None and not
-        seats`, so an invented value in a seat-carded workspace is written unmarked."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._workspace(root)
-            self._record(root, "US0002", "--brief", self.INVENTED)
-            self.assertEqual(f"{self.INVENTED} unmatched", self._last(root)["brief"])
-
-    def test_a_batch_marks_each_unit_on_its_own_match(self) -> None:
-        """MUTANT: ask the matcher once, for the first unit, before the write loop and apply its
-        answer to every row - B inherits A's match and is written unmarked."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._workspace(root)
-            _text, fp = self._brief(root, "US0001")
-            self._record(root, "US0001", "--unit", "US0002", "--brief", fp)
-            rows = {r["unit"]: r["brief"] for r in _load().read_verdicts(root)}
-            self.assertEqual(fp, rows["US0001"], "A's own brief was marked")
-            self.assertEqual(f"{fp} unmatched", rows["US0002"],
-                             "B carried A's fingerprint and was not marked")
-
-    def test_a_marked_row_is_not_counted_as_briefed(self) -> None:
-        """MUTANT: strip the marker in `_brief_key` before comparing, so a marked row still keys
-        as briefed. (The panel interlock that read the cell too went with the per-unit sign-off.)
-
-        Beside the twin whose fingerprint matched: without the twin, a reader that refuses every
-        row passes."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            self._workspace(root)
-            self._review_units(root, "US0003", "US0004")
-            # verdict_for, the `_brief_key` observable: a marked approval does not retire a
-            # marked rejection carrying the same fingerprint...
-            self._record(root, "US0003", "--brief", self.INVENTED, verdict="REJECT",
-                         issues="[new] AC1 is not reached")
-            marked_cell = mod.read_verdicts(root)[-1]["brief"]
-            with _before_the_round_rules(mod):
-                mod.record_verdict(root, "US0003", "APPROVE", "qa seat r2", "author",
-                                   "none blocking", brief=marked_cell)
-            # the fingerprint pairs rounds only on a ledger from before the round rule, where
-            # seats were named per round: read these rows as that ledger
-            before_the_rule = unittest.mock.patch.object(mod, "ROUND_RULE_SHIPPED", "9999-12-31")
-            with before_the_rule:
-                self.assertEqual("REJECT", mod.verdict_for(root, "US0003")["verdict"])
-            # ...where the same pair on a matched fingerprint does
-            _text, fp = self._brief(root, "US0004")
-            self._record(root, "US0004", "--brief", fp, verdict="REJECT",
-                         issues="[new] AC1 is not reached")
-            with _before_the_round_rules(mod):
-                mod.record_verdict(root, "US0004", "APPROVE", "qa seat r2", "author",
-                                   "none blocking", brief=fp)
-            with before_the_rule:
-                self.assertEqual("APPROVE", mod.verdict_for(root, "US0004")["verdict"])
-            rows = [(r["unit"], r["brief"]) for r in mod.read_verdicts(root)]
-            self.assertEqual([("US0003", f"{self.INVENTED} unmatched")] * 2
-                             + [("US0004", fp)] * 2, rows, "the fixture's marking is not as set")
-
-    def test_a_real_fingerprint_is_unmarked(self) -> None:
-        """MUTANTS: decide the marker by re-rendering `brief()` at full for each seat rather than
-        through the matcher; pass no tier to the matcher; test the rejoinder mark on the --brief
-        value rather than the file; hash a rejoinder's base with `brief_fingerprint`, dropping
-        the phase tag; hash every rejoinder at the delivery phase; hash every --brief-file with
-        `rejoinder_fingerprint`, marked or not.
-
-        Each Brief cell must EQUAL the footer's fingerprint: an unmarked cell holding a value no
-        footer printed is the last mutant, which the matcher cannot see."""
-        with tempfile.TemporaryDirectory() as d:
-            root, mod = Path(d), _load()
-            self._workspace(root)
-            # six rows on one unit: this is about what each row records, not the round cap
-            (root / "sdlc-studio" / ".config.yaml").write_text(
-                "review:\n  max_rounds: 9\n", encoding="utf-8")
-            # the fixture must derive differently, or the tier paths below discriminate nothing
-            self.assertEqual(("light", "full"),
-                             (mod.tier_for(root, "US0001"), mod.tier_for(root, "US0002")))
-
-            # no --tier on a unit deriving light: the brief derives it, and record ALSO omits
-            # --tier - so the matcher must try the derived tier itself
-            _text, fp = self._brief(root, "US0001")
-            self._record(root, "US0001", "--brief", fp)
-            row = self._last(root)
-            self.assertEqual((fp, "-"), (row["brief"], row["tier"]),
-                             "derived-light brief, recorded with no tier")
-
-            # an explicit light brief on a unit deriving full
-            _text, fp = self._brief(root, "US0002", "--tier", "light")
-            self._record(root, "US0002", "--brief", fp, "--tier", "light", "--tier-explicit")
-            self.assertEqual(fp, self._last(root)["brief"], "explicit light on a full unit")
-
-            # --brief-file of a saved first-round delivery brief
-            text, fp = self._brief(root, "US0002")
-            saved = root / "first-round.txt"
-            saved.write_text(text, encoding="utf-8")
-            self._record(root, "US0002", "--brief-file", str(saved))
-            self.assertEqual(fp, self._last(root)["brief"], "saved first-round brief")
-
-            # --brief-file of a saved delivery rejoinder
-            prior = root / "prior.txt"
-            prior.write_text("VERDICT: REJECT\nISSUES: [new] AC1 is not reached\n"
-                             "BLOCKING: [new] AC1 is not reached\n", encoding="utf-8")
-            text, fp = self._brief(root, "US0002", "--rejoinder", str(prior))
-            saved = root / "rejoinder.txt"
-            saved.write_text(text, encoding="utf-8")
-            self._record(root, "US0002", "--brief-file", str(saved))
-            self.assertEqual(fp, self._last(root)["brief"], "saved delivery rejoinder")
-
-            # the positive control: an invented value in the same workspace IS marked
-            self._record(root, "US0002", "--brief", self.INVENTED)
-            self.assertEqual(f"{self.INVENTED} unmatched", self._last(root)["brief"])
-
-    def test_an_unaskable_match_is_not_marked(self) -> None:
-        """MUTANT: change the marker test to `not seats`, so the None a workspace without seat
-        cards returns is marked. Unknown is not unmatched."""
-        with tempfile.TemporaryDirectory() as bare, tempfile.TemporaryDirectory() as carded:
-            root = Path(bare)
-            self._workspace(root, seats=False)
-            self._record(root, "US0002", "--brief", self.INVENTED)
-            self.assertEqual(self.INVENTED, self._last(root)["brief"])
-            control = Path(carded)
-            self._workspace(control)
-            self._record(control, "US0002", "--brief", self.INVENTED)
-            self.assertEqual(f"{self.INVENTED} unmatched", self._last(control)["brief"])
 
 
 class BriefRefusesMissingPracticeTests(unittest.TestCase):

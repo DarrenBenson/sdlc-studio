@@ -98,12 +98,9 @@ _COLS_BY_PHASE = {"delivery": _DELIVERY_COLS, "plan-review": _PLAN_COLS}
 
 
 
-#: What `brief_fingerprint` produces: sha256 truncated to 12 lowercase hex characters.
-_FINGERPRINT_LEN = 12
-_FINGERPRINT_RE = re.compile(r"[0-9a-f]{%d}" % _FINGERPRINT_LEN)
-#: Written beside a fingerprint in the Brief cell when `record` finds no brief this repo can
-#: currently produce for that unit and phase - invented or stale, the two are not separable.
-#: An unmarked cell holds the fingerprint alone.
+#: Written beside a fingerprint in the Brief cell by an earlier `record` when the fingerprint
+#: matched no brief the repo could then produce. Nothing writes it now; `_brief_key` still reads
+#: a historical row carrying it as unbriefed.
 UNMATCHED_MARK = "unmatched"
 
 
@@ -115,57 +112,9 @@ def rejoinder_fingerprint(text: str, phase: str = "delivery") -> str:
     verdict quoted beneath. The base is what identifies the seat and the unit's state at this
     round; the quoted prior is the seat's own earlier words, which the ledger holds as fields
     and no reader could re-render byte for byte - so a fingerprint over the whole text would be
-    one `record --brief` could never recognise, and every honest re-review would carry the
-    unrecognised-brief note that marks a fabricated one."""
+    one no re-review could reproduce."""
     base = text.split(_REJOINDER_MARK, 1)[0]
     return brief_fingerprint(base + f"\n<rejoinder:{phase}>")
-
-
-def _seats_whose_brief_matches(repo_root, unit: str, fingerprint: str,
-                               tier: str | None = None):
-    """Seats whose CURRENT brief for `unit` - first-round or rejoinder - fingerprints to
-    `fingerprint`.
-
-    `tier` is the one the verdict is being recorded at, tried beside the default and the
-    derived one: a seat briefed at an explicit `--tier light` on a unit deriving full was
-    handed a light brief, and a matcher that never rendered one could not recognise it.
-
-    Returns None when the question cannot be asked at all - no unit, no seat cards, an
-    unreadable tree. None means UNKNOWN and must not be read as "no match", because reporting
-    a mismatch nobody could have avoided is how a useful note becomes noise.
-    """
-    try:
-        seats = [p.stem for p in
-                 (Path(repo_root) / "sdlc-studio" / "personas" / "seats").glob("*.md")]
-    except OSError:
-        return None
-    if not seats:
-        return None
-    matched, asked = [], False
-    # the tiers a delivery brief could have been rendered at: the default, the derived one,
-    # and the one the verdict names
-    tiers = ["full"]
-    try:
-        derived = tier_for(repo_root, unit)
-        if derived not in tiers:
-            tiers.append(derived)
-    except Exception:  # noqa: BLE001 - an underivable tier narrows the search, never ends it
-        pass
-    if tier and tier not in tiers:
-        tiers.append(tier)
-    for seat in seats:
-        for tier in tiers:
-            try:
-                # The REJOINDER's identity beside the first round's: a re-review's footer used
-                # to print a value nothing could reproduce.
-                text = brief(repo_root, unit, seat, tier)
-            except (OSError, ValueError):
-                continue
-            asked = True
-            if fingerprint in (brief_fingerprint(text), rejoinder_fingerprint(text)):
-                if seat not in matched:
-                    matched.append(seat)
-    return matched if asked else None
 
 
 def brief_fingerprint(brief_text: str) -> str:
@@ -181,7 +130,7 @@ def brief_fingerprint(brief_text: str) -> str:
     between two identical briefs can never be compared, which would make the field decorative.
 
     The file-history section is left out: it moves when another unit sharing a file lands, so
-    digesting it would mark an honest verdict unmatched between briefing and recording.
+    digesting it would change the fingerprint between briefing and recording.
     """
     import hashlib  # noqa: PLC0415 - local; only this path needs it
     import reconcile  # noqa: PLC0415 - sibling; the section's renderer owns its shape
@@ -805,11 +754,10 @@ def _brief_key(row: dict) -> str:
     empty string this check was originally written against is a state `record` has never
     produced and `if not fp` never fired.
 
-    A cell `record` MARKED unmatched is not provenance either: its fingerprint matches no brief
-    this repo can currently produce, whether the value was invented or went stale. Reading it as
-    briefed would let an invented value retire a rejection it shares, and let a panel ratify a
-    review nothing shows was briefed. This is the one reading of the cell - the panel interlock
-    calls it too - so the two cannot drift apart.
+    A historical cell `record` MARKED unmatched is not provenance either: its fingerprint matched
+    no brief the repo could produce when it was recorded. Reading it as briefed would let two
+    marked rows sharing a value pair and answer a rejection. Nothing writes the mark any more,
+    but the rows that carry it stay in the ledger.
     """
     cell = str(row.get("brief") or "").strip(" -")
     return "" if UNMATCHED_MARK in cell.split() else cell
@@ -3215,7 +3163,7 @@ def cmd_brief(args: argparse.Namespace) -> int:
                 assert_brief_claim_pass(text)
             print(text)
             # the footer the delivery rejoinder never printed: a re-review's verdict needs the
-            # same provenance as the first one, and a fingerprint the matcher can reproduce
+            # same provenance as the first one, and a fingerprint the reviewer can quote back
             fp = rejoinder_fingerprint(text)
             how = "chosen" if explicit else "derived from the unit's risk band"
             print(f"\nreview tier: {tier} ({how})\n"
@@ -3231,8 +3179,8 @@ def cmd_brief(args: argparse.Namespace) -> int:
             explicit = args.tier is not None
             tier = args.tier or tier_for(args.root, args.unit)
             text = brief(args.root, args.unit, args.seat, tier)
-            # The checks run here, in the verb, and never inside `brief()`, which the fingerprint
-            # matcher also renders through. The practices block reaches every delivery tier; the
+            # The checks run here, in the verb, and never inside `brief()`, which other readers
+            # also render through. The practices block reaches every delivery tier; the
             # claim inventory only the full one, so a light brief is not asked for it. Refused
             # before printing, so a deficient brief never reaches a reviewer and never earns a
             # fingerprint.
@@ -3413,64 +3361,15 @@ def cmd_record(args: argparse.Namespace) -> int:
               "  e.g. --issues \"[regression] verify_ac crashes on an empty Affects; "
               "[pre-existing] BG0123 slow gate\"", file=sys.stderr)
         return 2
-    if brief and not _FINGERPRINT_RE.fullmatch(brief):
-        print(f"record refused: {brief!r} is not a brief fingerprint - expected "
-              f"{_FINGERPRINT_LEN} lowercase hex characters, as `critic.py brief` prints.\n"
-              "  A gate satisfied by any string is met by inventing one, which records "
-              "provenance for a prompt that was never issued - the exact thing this field "
-              "exists to make detectable.", file=sys.stderr)
-        return 2
-    required = sdlc_md.project_override(args.root, "review.require_brief_provenance", True)
-    if not brief:
-        if required:
-            print("record refused: this verdict carries no brief provenance, so nothing "
-                  "distinguishes it from one produced by a hand-written prompt - and a "
-                  "hand-written prompt carries neither the seat charter, nor the bounded diff "
-                  "scope, nor the acceptance criteria as law.\n"
-                  "  Get one:  critic.py brief --unit <id> --seat engineering|product|qa\n"
-                  "  then:     critic.py record ... --brief <the fingerprint it printed>\n"
-                  "  or:       critic.py record ... --brief-file <the saved brief text>\n"
-                  "  Standing the rule down is a DECISION, not an omission: set "
-                  "`review.require_brief_provenance: false` in .config.yaml and it is "
-                  "recorded as such.", file=sys.stderr)
-            return 2
-        # Accepted, but never silently. An omission and a decision must be different events in
-        # the record, or the stand-down is indistinguishable from nobody having noticed.
-        print("NOTE: recording without brief provenance - `review.require_brief_provenance` "
-              "is false for this project, so this verdict is accepted with no evidence of the "
-              "prompt that produced it.", file=sys.stderr)
 
     carry_failed: list[str] = []
 
     def write(unit: str) -> None:
-        # NOT a refusal. The brief embeds the artefact's own state, so it legitimately changes
-        # when the unit is transitioned or re-verified between briefing and recording. A
-        # mismatch therefore means EITHER staleness OR a fabricated value, and the two are not
-        # separable here, so it is surfaced rather than judged: refusing would reject the
-        # ordinary case, and silence would let an invented value pass unremarked. Per unit,
-        # because `--unit` is repeatable and a batch can span several.
-        #
-        # And MARKED on the row, not only noted on stderr. The note is gone once the command
-        # returns, and a row carrying an invented fingerprint was otherwise indistinguishable
-        # from a briefed one to every reader that counts provenance. Unknown (None, no seat
-        # cards to ask) is not unmatched, so it is never marked.
-        recorded = brief
-        if brief:
-            with sdlc_md.corpus_cache():   # every seat and tier rendered shares one corpus walk
-                seats = _seats_whose_brief_matches(args.root, unit, brief,
-                                                   tier=getattr(args, "tier", None))
-            if seats is not None and not seats:
-                print(f"NOTE: {brief} matches no brief this repo can currently produce for "
-                      f"{sdlc_md.norm_id(unit)}. Either the unit changed after the seat was "
-                      f"briefed, or the value did not come from `critic.py brief`. The row is "
-                      f"marked {UNMATCHED_MARK} and no reader counts it as briefed; re-brief "
-                      f"the seat to clear it.", file=sys.stderr)
-                recorded = f"{brief} {UNMATCHED_MARK}"
         note = ("" if _id(args.author) != _id(args.reviewer)
                 else "  (WARNING: self-review - blocked at the gate)")
         try:
             path, n, bug = _record(args.root, unit, args.verdict, args.reviewer, args.author,
-                                   args.issues, brief=recorded,
+                                   args.issues, brief=brief,
                                    tier=getattr(args, "tier", None),
                                    tier_explicit=getattr(args, "tier_explicit", False))
         except CarryFailed as exc:
@@ -3632,9 +3531,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Authoring seat / delegation id that produced the diff (must differ from --reviewer).")
     r.add_argument("--issues", default="")
     r.add_argument("--brief", default="",
-                   help="the fingerprint `critic.py brief` printed for the prompt this seat "
-                        "was given. Required by default: a verdict with no provenance cannot "
-                        "be told from one produced by a hand-written prompt")
+                   help="optional: the fingerprint `critic.py brief` printed for the prompt this "
+                        "seat was given, stored on the row as given")
     r.add_argument("--brief-file", metavar="PATH",
                    help="read the brief TEXT from a file and fingerprint it here, for a "
                         "reviewer who saved the brief rather than its fingerprint")

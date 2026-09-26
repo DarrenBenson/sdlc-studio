@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 30 |
+| Draft | 29 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 757 |
+| Done | 758 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 90 |
@@ -281,7 +281,7 @@
 | [US0920](US0920-a-repair-reaches-fixed-without-registered-mutation-evidence.md) | The gate runs no evidence-drift lane and the close names no mutation-evidence mode | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0921](US0921-mutation-testing-is-an-opt-in-run-with.md) | The gate carries no mutation lane | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0922](US0922-line-coverage-is-measured-only-when-a-project.md) | Line coverage is measured only when a project opts in | Done | EP0263 | 2026-09-24 | 2026-09-24 |
-| [US0923](US0923-a-review-verdict-records-without-brief-provenance.md) | A review verdict records without brief provenance | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0923](US0923-a-review-verdict-records-without-brief-provenance.md) | A review verdict records without brief provenance | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0924](US0924-the-shipped-docs-teach-only-the-surviving-review.md) | The shipped docs teach only the surviving review path | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0925](US0925-an-upgrading-project-s-config-carries-forward-without.md) | An upgrading project's config carries forward without the retired review keys | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0926](US0926-this-repository-runs-on-the-shipped-defaults-with.md) | This repository runs on the shipped defaults with no stand-down keys | Draft | EP0263 | 2026-09-24 | 2026-09-24 |

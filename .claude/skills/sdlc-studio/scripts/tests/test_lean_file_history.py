@@ -217,41 +217,34 @@ class FileHistoryTests(unittest.TestCase):
 
     def test_the_fingerprint_does_not_digest_the_history(self) -> None:
         """The history moves when a sibling lands, so it stays out of the brief fingerprint.
-        MUTANTS: digest the whole brief (the sibling marks the verdict unmatched); strip too
+        MUTANTS: digest the whole brief (a sibling landing moves the fingerprint); strip too
         much (a change to the unit's own criteria still matches); leave the heading in (a
         fingerprint recorded before the section existed stops matching)."""
         with tempfile.TemporaryDirectory() as d:
             root = _workspace(d)
-            for seat in ("engineering", "product"):
-                (root / "sdlc-studio" / "personas" / "seats" / f"{seat}.md").write_text(
-                    f"# {seat}\n", encoding="utf-8")
             _unit(root, "US0001", "Done", ["src/a.py"], "2026-03-01")
             _unit(root, "US0020", "In Progress", ["src/a.py"], "2026-03-02")
             _unit(root, "US0010", "In Progress", ["src/a.py"])
             _ledger(root)
             before = _brief(root, "US0010")
-            err = io.StringIO()
-            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
-                critic.main(["brief", "--unit", "US0010", "--seat", "qa", "--tier", "full",
-                             "--root", str(root)])
-            fp = re.search(r"brief fingerprint: ([0-9a-f]{12})", err.getvalue()).group(1)
 
-            def record() -> str:
+            def footer() -> str:
+                """The fingerprint the shipped brief verb prints for the unit now."""
                 err = io.StringIO()
                 with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
-                    rc = critic.main(["record", "--unit", "US0010", "--verdict", "REJECT",
-                                      "--reviewer", "qa-rev", "--author", "dev", "--brief", fp,
-                                      "--tier", "full", "--issues", "[new] x",
-                                      "--root", str(root)])
+                    rc = critic.main(["brief", "--unit", "US0010", "--seat", "qa",
+                                      "--tier", "full", "--root", str(root)])
                 self.assertEqual(0, rc, err.getvalue())
-                return critic.read_verdicts(root)[-1]["brief"]
+                return re.search(r"brief fingerprint: ([0-9a-f]{12})", err.getvalue()).group(1)
+
+            fp = footer()
 
             # A sibling sharing the file lands between briefing and recording.
             _unit(root, "US0020", "Done", ["src/a.py"], "2026-03-02")
             after = _brief(root, "US0010")
             self.assertNotEqual(_section(before), _section(after), "the history did not move")
             self.assertEqual(["US0020", "US0001"], _listed(_section(after)))
-            self.assertEqual(fp, record(), "a sibling landing marked the verdict unmatched")
+            self.assertEqual(fp, footer(), "a sibling landing moved the fingerprint")
             # A fingerprint taken before the section existed: the same brief, no history.
             # By name, so the patch reaches whichever module `brief()` imports.
             with unittest.mock.patch("reconcile.file_history_section", lambda *a, **k: ""):
@@ -259,18 +252,18 @@ class FileHistoryTests(unittest.TestCase):
             self.assertNotIn(HEADING, legacy)
             self.assertEqual(critic.brief_fingerprint(legacy),
                              critic.brief_fingerprint(critic.brief(root, "US0010", "qa")))
-            # Positive control: the unit's own criteria changing still unmatches it.
+            # Positive control: the unit's own criteria changing still moves it.
             p = root / "sdlc-studio" / "stories" / "US0010-x.md"
             p.write_text(p.read_text(encoding="utf-8").replace("then y", "then z"),
                          encoding="utf-8")
-            self.assertEqual(f"{fp} {critic.UNMATCHED_MARK}", record())
+            self.assertNotEqual(fp, footer(), "a change to the unit's criteria kept the fingerprint")
 
     def test_a_criterion_line_starting_with_the_heading_is_not_stripped(self) -> None:
         """US0931 hardening. The strip matches the rendered section, not the first line anywhere
         that starts with the heading text. MUTANTS: the unanchored pattern (strips a criterion
         line, or a later line quoting the heading); the first match rather than the last (strips
         a criterion that quotes the whole `none recorded` line). Either way the history is
-        digested, so a sibling landing unmatches the verdict, and an edit to the stripped
+        digested, so a sibling landing moves the fingerprint, and an edit to the stripped
         criterion no longer moves the fingerprint."""
         with tempfile.TemporaryDirectory() as d:
             root = _workspace(d)
