@@ -1,12 +1,12 @@
-# Gate lanes that FAIL on a freshly migrated v4-era project, each with the artefact that will
-# clear it and what the lane will say once it is cleared.
+# Gate lanes that FAIL on a freshly migrated fixture, per rehearsal path, each with the open
+# artefact that will clear it and what the lane will say once it is cleared.
 #
-# This file is the honest statement of a known gap in the upgrade path. `rehearse-release.sh
-# upgrade` reddens in BOTH directions against it: a lane failing that is not recorded here
-# blocks, and a lane recorded here that starts passing blocks too - because a baseline that only
-# ever tolerates is one that never empties, and an entry nobody is forced to remove is an
-# exemption that outlives its reason.
+# This file is the honest statement of the known gaps in the upgrade paths. `rehearse-release.sh
+# upgrade` and `upgrade-v5` each redden in BOTH directions against their own rows: a lane failing
+# that is not recorded here blocks, and a lane recorded here that starts passing blocks too -
+# because a baseline that only ever tolerates is one that never empties, and an entry nobody is
+# forced to remove is an exemption that outlives its reason. A path with no row must gate green.
 #
-# Format: lane|clearing artefact|what the lane says once cleared
+# Format: path|lane|clearing artefact|what the lane says once cleared
 #
-conformance|CR0497|exempt (pre-adoption) once migrate records a conformance.adopt_after cutoff for the project's pre-v5 history, so the corpus is judged from adoption forward rather than retrospectively
+upgrade|conformance|BG0785|exempt (pre-adoption) once migrate names a conformance.adopt_after cutoff for the project's pre-v5 history and the upgrader applies it, so the corpus is judged from adoption forward rather than retrospectively

@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 26 |
+| Draft | 25 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 761 |
+| Done | 762 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 90 |
@@ -296,7 +296,7 @@
 | [US0935](US0935-a-repair-reaches-fixed-without-the-mutation-evidence.md) | A repair reaches Fixed without the mutation-evidence gate, survivor filing or evidence mode | Done | EP0263 | 2026-09-25 | 2026-09-25 |
 | [US0936](US0936-the-mutation-ledger-verbs-are-retired-and-a.md) | The mutation ledger verbs are retired and a mutation run reports its yield only | Done | EP0263 | 2026-09-25 | 2026-09-25 |
 | [US0937](US0937-work-that-already-shipped-reads-done-so-the.md) | Work that already shipped reads Done, so the repair ledger can go and the release cut ships no notes for open stories | Done | EP0265 | 2026-09-25 | 2026-09-25 |
-| [US0938](US0938-the-release-rehearsal-walks-a-v5-1-project.md) | The release rehearsal walks a v5.1 project across to v6, and every known gap it tolerates has an open owner | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
+| [US0938](US0938-the-release-rehearsal-walks-a-v5-1-project.md) | The release rehearsal walks a v5.1 project across to v6, and every known gap it tolerates has an open owner | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0939](US0939-ci-and-the-push-gate-give-one-verdict.md) | CI and the push gate give one verdict on tools/tests, because both run it the same way | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0940](US0940-every-criterion-on-a-done-story-passes-when.md) | Every criterion on a Done story passes when the release gate runs it, or is retired with its reason | Draft | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0941](US0941-a-report-maya-signed-still-validates-after-the.md) | A report Maya signed still validates after the tree moves on | Done | EP0265 | 2026-09-25 | 2026-09-25 |

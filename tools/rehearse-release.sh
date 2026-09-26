@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
-# Drive the two paths every adopter arrives on, through the shipped CLI, on fixtures built from
+# Drive the paths every adopter arrives on, through the shipped CLI, on fixtures built from
 # nothing.
 #
-# Every other check in this repository runs against this repository. The two situations a user is
-# actually in - a project that has just been created, and a project being upgraded from v4 - are
-# the two this repository cannot occupy, and both were found broken the first time anybody walked
-# them. Twenty minutes of walking them by hand turned up three consumer-facing defects that a
-# 6000-test suite, twenty gate lanes and a 250-point backlog had all missed.
+# Every other check in this repository runs against this repository. The situations a user is
+# actually in - a project that has just been created, and a project being upgraded from v4 or
+# v5.1 - are the ones this repository cannot occupy, and the first two were found broken the
+# first time anybody walked them. Twenty minutes of walking them by hand turned up three
+# consumer-facing defects that a 6000-test suite, twenty gate lanes and a 250-point backlog had
+# all missed.
 #
 #   rehearse-release.sh greenfield   init a project from nothing, reach a written sprint plan
 #   rehearse-release.sh upgrade      build a v4-era workspace, migrate it, gate it
-#   rehearse-release.sh all          both
+#   rehearse-release.sh upgrade-v5   build a v5.1 workspace, migrate it, gate it
+#   rehearse-release.sh all          all three, in that order
 #
 # Exit 0 only when the path completes. Every command is invoked as the shipped CLI and its exit
 # status is read directly - never through a pipe, because a pipe reports the last stage's status
@@ -143,34 +145,109 @@ AGE
   # the review suggested it, and running the command decided it.
   echo "    migrated: .version written, CR0001 carries a derived Size"
 
+  gate_against_baseline upgrade "$root"
+}
+
+# Gate a migrated fixture and compare its failing lanes with the baseline rows for this path
+# (the first column). Reddens in both directions; see the note above `rehearse_upgrade`.
+gate_against_baseline() {
+  local path="$1" root="$2"
   step "gate"
   echo "    order: gate"
   local out; out="$($PY "$SCRIPTS/gate.py" --root "$root" 2>&1)"
   local failing; failing="$(echo "$out" | sed -n 's/^  \[FAIL\] \([a-z-]*\) .*/\1/p' | sort -u)"
-  local baselined; baselined="$(sed -n 's/^\([a-z-]*\)|.*/\1/p' "$BASELINE" | sort -u)"
+  local baselined; baselined="$(sed -n "s/^$path|\([a-z-]*\)|.*/\1/p" "$BASELINE" | sort -u)"
 
   local new_failures; new_failures="$(comm -23 <(echo "$failing") <(echo "$baselined"))"
   local now_passing; now_passing="$(comm -13 <(echo "$failing") <(echo "$baselined"))"
 
   if [ -n "$new_failures" ]; then
     echo "$out" >&2
-    fail "upgrade: lane(s) failing that the baseline does not record: $(echo "$new_failures" | tr '\n' ' ')"
+    fail "$path: lane(s) failing that the baseline does not record: $(echo "$new_failures" | tr '\n' ' ')"
   fi
   if [ -n "$now_passing" ]; then
-    fail "upgrade: baselined lane(s) now PASS and must be removed from $BASELINE: $(echo "$now_passing" | tr '\n' ' ')"
+    fail "$path: baselined lane(s) now PASS and must be removed from $BASELINE: $(echo "$now_passing" | tr '\n' ' ')"
   fi
 
-  while IFS='|' read -r lane artefact _rest; do
-    case "$lane" in ''|\#*) continue ;; esac
-    [ -n "$artefact" ] || fail "upgrade: baseline row for '$lane' names no clearing artefact"
+  while IFS='|' read -r rowpath lane artefact _rest; do
+    [ "$rowpath" = "$path" ] || continue
+    [ -n "$artefact" ] || fail "$path: baseline row for '$lane' names no clearing artefact"
     echo "    known gap: $lane -> $artefact"
   done < "$BASELINE"
-  echo "upgrade: OK ($(echo "$baselined" | wc -w) known gap(s), none new)"
+  echo "$path: OK ($(echo "$baselined" | wc -w) known gap(s), none new)"
+}
+
+# ---------------------------------------------------------------- upgrade-v5
+
+# A project on v5.1 carries what v6 retired: DoD criteria tagged with the retired review and
+# repair gates, and instructions naming the retired `review.two_role_after` key. `migrate --apply`
+# must strip the tags (keeping each criterion as human-judged) and REPORT the instructions line,
+# which is the project's own prose and never rewritten. The DoD lines below are v5.1.0's template,
+# verbatim; the rest of the workspace is this tree's `init`, which v5.1.0's matches at schema 3.
+rehearse_upgrade_v5() {
+  echo "upgrade-v5: a v5.1 project migrates, and its gate matches the recorded baseline"
+  local root="$WORK/upgrade-v5"
+  mkdir -p "$root"
+
+  step "init run, then give the workspace v5.1's retired review surfaces"
+  $PY "$SCRIPTS/init.py" --root "$root" run >/dev/null 2>&1 \
+    || fail "upgrade-v5: \`init run\` did not complete"
+  $PY - "$root" <<'AGE' || fail "upgrade-v5: the fixture could not be given its v5.1 shape"
+import pathlib, sys
+root = pathlib.Path(sys.argv[1])
+cfg = root / "sdlc-studio" / ".config.yaml"
+if "schema_version: 3" not in cfg.read_text(encoding="utf-8"):
+    sys.exit("init no longer writes schema 3, so this fixture is not v5.1's shape")
+dod = root / "sdlc-studio" / "definition-of-done.md"
+lines = dod.read_text(encoding="utf-8").splitlines(keepends=True)
+at = [i for i, ln in enumerate(lines) if "[check: review.critic-approve]" in ln]
+if len(at) != 1:
+    sys.exit(f"the DoD names review.critic-approve {len(at)} times, so the v5.1 lines have no anchor")
+lines[at[0] + 1:at[0] + 1] = [
+    "- [ ] The adversarial pass is recorded as evidence and the reviewer of record has signed off"
+    " [check: review.two-role]\n",
+    "- [ ] If it is a REPAIR: a mutant was applied to its own changed lines and its test was seen\n",
+    "      to fail on that mutant. A fix's author is not sufficient evidence for that fix - the\n",
+    "      test is written after the answer is known, so it must be shown capable of failing.\n",
+    "      By default a survivor is FILED as a severity-rated bug and the unit still closes, so\n",
+    "      this box is about the evidence existing, not about the count being zero. Set\n",
+    "      `review.mutation_evidence: block` to make a survivor refuse instead\n",
+    "      [check: repair.mutation-evidence]\n",
+]
+dod.write_text("".join(lines), encoding="utf-8")
+agents = root / "AGENTS.md"
+agents.write_text(agents.read_text(encoding="utf-8") + (
+    "\n**Review is independent of the author.** With\n"
+    "`review.two_role_after` set in `.config.yaml`, a unit holds at Review until that\n"
+    "sign-off lands.\n"), encoding="utf-8")
+AGE
+  local agents_line; agents_line="$(grep -n 'review\.two_role_after' "$root/AGENTS.md" | cut -d: -f1)"
+
+  step "migrate --apply"
+  echo "    order: migrate"
+  local report; report="$($PY "$SCRIPTS/migrate.py" --root "$root" --apply 2>&1)" \
+    || fail "upgrade-v5: \`migrate --apply\` did not complete"
+
+  # What `migrate --apply` writes, and what it must only report. Dropping `--apply` leaves both
+  # tags, so the first check is what catches a rehearsal that never migrated.
+  if grep -qE '\[check: *(review\.two-role|repair\.mutation-evidence) *\]' \
+       "$root/sdlc-studio/definition-of-done.md"; then
+    fail "upgrade-v5: the DoD still carries a retired [check:] tag after migrate --apply"
+  fi
+  case "$report" in
+    *"AGENTS.md:$agents_line names the retired \`review.two_role_after\`"*) ;;
+    *) echo "$report" >&2
+       fail "upgrade-v5: migrate's report does not name AGENTS.md:$agents_line, the line naming review.two_role_after" ;;
+  esac
+  echo "    migrated: the DoD carries no retired tag, AGENTS.md:$agents_line reported"
+
+  gate_against_baseline upgrade-v5 "$root"
 }
 
 case "${1:-all}" in
   greenfield) rehearse_greenfield ;;
   upgrade)    rehearse_upgrade ;;
-  all)        rehearse_greenfield && rehearse_upgrade ;;
-  *)          echo "usage: rehearse-release.sh [greenfield|upgrade|all]" >&2; exit 2 ;;
+  upgrade-v5) rehearse_upgrade_v5 ;;
+  all)        rehearse_greenfield && rehearse_upgrade && rehearse_upgrade_v5 ;;
+  *)          echo "usage: rehearse-release.sh [greenfield|upgrade|upgrade-v5|all]" >&2; exit 2 ;;
 esac

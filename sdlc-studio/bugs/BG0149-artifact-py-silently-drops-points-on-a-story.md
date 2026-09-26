@@ -2,7 +2,7 @@
 
 > **Status:** Fixed
 > **Verification depth:** functional
-> **Severity:** major
+> **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py
 > **Created:** 2026-07-15
@@ -26,3 +26,4 @@ artifact.py must write Points on a story/bug from --points, using the same `sdlc
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-15 | sdlc-studio | Filed |
+| 2026-09-26 | US0938 | Severity re-graded from the off-vocabulary `major` to High, so `known_issues.py` reads it |
