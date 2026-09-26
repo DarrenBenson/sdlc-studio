@@ -4,7 +4,7 @@
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_fresh_project_loop.py, changelog.d/US0950.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_fresh_project_loop.py, changelog.d/US0950.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Epic:** EP0265
 > **Points:** 3
 > **Persona:** Maya Okafor
