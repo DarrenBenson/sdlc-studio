@@ -50,7 +50,7 @@ def _workspace(d: str) -> Path:
     root = Path(d)
     seats = root / "sdlc-studio" / "personas" / "seats"
     seats.mkdir(parents=True)
-    (seats / "qa.md").write_text("# QA seat\n", encoding="utf-8")
+    (seats / "qa.md").write_text("<!-- role: qa -->\n# QA seat\n", encoding="utf-8")
     (root / "src").mkdir()
     for letter in ("a", "b", "c"):
         (root / "src" / f"{letter}.py").write_text("x = 1\n", encoding="utf-8")

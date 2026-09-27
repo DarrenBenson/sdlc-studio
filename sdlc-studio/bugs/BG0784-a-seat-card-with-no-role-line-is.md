@@ -1,9 +1,9 @@
 # BG0784: A seat card with no role line is silently bypassed for the shipped card, and the unknown-seat refusal names the wrong seats
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/persona_resolve.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG0784.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/persona_resolve.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG0784.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_file_history.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_history.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_ledger_retired.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_review.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
 > **Created:** 2026-09-26
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -25,8 +25,10 @@ Warn on stderr when seats/<seat>.md exists without a role line; name the project
 
 - [ ] **AC1** Given a project card `sdlc-studio/personas/seats/qa.md` carrying no `<!-- role: -->` line, when `critic.py brief --unit <id> --seat qa` runs, then stderr names that card and says it declares no role so the shipped qa card was used, and the brief is still produced from the shipped charter; and a card that declares `role: qa` produces no such line. Fails on: HEAD's silent fallback (stderr empty, measured on a fresh `init` project, 2026-09-27); warning on every card, which the control case catches
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SeatCardResolutionTests::test_a_role_less_card_is_named_on_stderr
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC2** Given a project with a card declaring `role: security` and a role-less card, when `critic.py brief --seat wizard` runs, then the refusal lists `security` among the seats it can brief and names the role-less card. Fails on: HEAD's fixed list (`engineering, qa, product`); the existing test's `assertIn('qa', ...)`, which HEAD passes
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SeatCardResolutionTests::test_the_unknown_seat_refusal_names_the_project_s_seats
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

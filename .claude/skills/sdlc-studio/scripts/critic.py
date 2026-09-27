@@ -2294,8 +2294,11 @@ def _review_seat_card(root: Path, seat: str) -> Path:
     import persona_resolve  # noqa: PLC0415 - sibling; one resolver for every seat reader
     card = persona_resolve.resolve_card(root, seat)
     if card is None:
+        roleless = "".join(f"; {p} declares no role"
+                           for p in persona_resolve.roleless_cards(root))
         raise ValueError(f"no seat card for {seat!r} - neither the project nor the skill "
-                         f"carries one (seats: {', '.join(persona_resolve.SEATS)})")
+                         f"carries one (seats: {', '.join(persona_resolve.seat_roster(root))}"
+                         f"{roleless})")
     return card
 
 

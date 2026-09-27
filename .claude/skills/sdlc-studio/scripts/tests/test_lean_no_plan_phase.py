@@ -67,7 +67,7 @@ def _workspace(d: str) -> Path:
     (root / "src" / "unit.py").write_text("x = 1\n", encoding="utf-8")
     seats = root / "sdlc-studio" / "personas" / "seats"
     seats.mkdir(parents=True)
-    (seats / "qa.md").write_text("# QA seat\n", encoding="utf-8")
+    (seats / "qa.md").write_text("<!-- role: qa -->\n# QA seat\n", encoding="utf-8")
     (root / "sdlc-studio" / ".config.yaml").write_text(
         "review:\n  require_brief_provenance: false\n", encoding="utf-8")
     return root

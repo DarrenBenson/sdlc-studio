@@ -228,7 +228,7 @@ class LessonStoreTests(unittest.TestCase):
                        "### AC1: it holds\n\n- **Verify:** shell true\n", encoding="utf-8")
         seats = self.root / "sdlc-studio" / "personas" / "seats"
         seats.mkdir(parents=True)
-        (seats / "qa.md").write_text("# QA seat\n", encoding="utf-8")
+        (seats / "qa.md").write_text("<!-- role: qa -->\n# QA seat\n", encoding="utf-8")
         worklist = self.root / "wl.txt"
         worklist.write_text("BG0001\n", encoding="utf-8")
 
@@ -492,7 +492,7 @@ class SeedFallbackTests(unittest.TestCase):
                        "### AC1: it holds\n\n- **Verify:** shell true\n", encoding="utf-8")
         seats = self.root / "sdlc-studio" / "personas" / "seats"
         seats.mkdir(parents=True)
-        (seats / "qa.md").write_text("# QA seat\n", encoding="utf-8")
+        (seats / "qa.md").write_text("<!-- role: qa -->\n# QA seat\n", encoding="utf-8")
         worklist = self.root / "wl.txt"
         worklist.write_text("BG0001\n", encoding="utf-8")
         return worklist

@@ -113,7 +113,7 @@ def _banded(root: Path, uid: str, *, heavy: bool) -> None:
     _write(root, f"sdlc-studio/stories/{uid}-x.md",
            f"# {uid}: the thing\n\n> **Status:** In Progress\n> **Affects:** {affects}\n"
            f"> **Points:** {points}\n\n## Acceptance Criteria\n\n{acs}")
-    _write(root, "sdlc-studio/personas/seats/qa.md", "# Sam - QA seat\n\ncharter text\n")
+    _write(root, "sdlc-studio/personas/seats/qa.md", "<!-- role: qa -->\n# Sam - QA seat\n\ncharter text\n")
 
 
 #: The criteria whose selector named a test this story deletes, by unit - the story's list, plus

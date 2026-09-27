@@ -3974,5 +3974,68 @@ class BriefRefusesMissingPracticeTests(unittest.TestCase):
         self.assertNotIn("plan-review", para)
 
 
+class SeatCardResolutionTests(unittest.TestCase):
+    """BG0784: a project seat card with no `<!-- role: -->` line was skipped for the shipped card
+    in silence, and the unknown-seat refusal named a fixed list rather than the project's seats.
+    Both run through `critic.main`, the verb a reviewer is briefed by."""
+
+    ROLELESS = "not a role line"
+
+    def _brief(self, root: Path, seat: str) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = _load().main(["brief", "--unit", "US0001", "--seat", seat, "--tier", "light",
+                               "--root", str(root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_a_role_less_card_is_named_on_stderr(self) -> None:
+        """AC1. MUTANTS: HEAD's silent fallback (stderr carries no warning); warn on every card,
+        which the declared-role control fails; warn without naming the card."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _workspace(root)
+            card = root / "sdlc-studio" / "personas" / "seats" / "qa.md"
+            card.write_text(f"# Sam - QA seat\n\n{self.ROLELESS}\n", encoding="utf-8")
+            rc, out, err = self._brief(root, "qa")
+            self.assertEqual(0, rc, err)
+            lines = [ln for ln in err.splitlines() if "declares no role" in ln]
+            self.assertEqual(1, len(lines), err)
+            self.assertIn(str(card), lines[0])
+            self.assertIn("shipped qa card was used", lines[0])
+            # the brief is still produced, from the shipped charter and not the role-less card
+            self.assertIn("You are the qa review seat", out)
+            self.assertIn(str(Path("templates") / "personas" / "amigos" / "qa.md"), out)
+            self.assertNotIn(str(card), out)
+            # the control: a card that declares its role is used, and nothing is said
+            card.write_text(f"<!-- role: qa -->\n# Sam - QA seat\n\n{self.ROLELESS}\n",
+                            encoding="utf-8")
+            rc, out, err = self._brief(root, "qa")
+            self.assertEqual(0, rc, err)
+            self.assertNotIn("declares no role", err)
+            self.assertIn(str(card), out)
+
+    def test_the_unknown_seat_refusal_names_the_project_s_seats(self) -> None:
+        """AC2. MUTANTS: HEAD's fixed `engineering, qa, product` list; list the declared roles
+        but not the role-less card; list every card file as a seat, role-less ones included."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _workspace(root)
+            seats = root / "sdlc-studio" / "personas" / "seats"
+            (seats / "kim.md").write_text("<!-- role: security -->\n# Kim - security seat\n",
+                                          encoding="utf-8")
+            (seats / "lee.md").write_text("# Lee - a card with no role line\n", encoding="utf-8")
+            rc, out, err = self._brief(root, "wizard")
+            self.assertEqual(2, rc, err)
+            self.assertEqual("", out)
+            m = re.search(r"\(seats: ([^;)]*)", err)
+            self.assertIsNotNone(m, err)
+            named = m.group(1).split(", ")
+            for seat in ("engineering", "product", "qa", "security"):
+                self.assertIn(seat, named, err)
+            self.assertNotIn("lee", named, err)
+            self.assertIn(str(seats / "lee.md"), err)
+            self.assertIn("declares no role", err)
+
+
 if __name__ == "__main__":
     unittest.main()

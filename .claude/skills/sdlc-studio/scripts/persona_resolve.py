@@ -91,6 +91,20 @@ def seat_card(root: Path | str, seat: str) -> Path | None:
     return matches[0]
 
 
+def roleless_cards(root: Path | str) -> list[Path]:
+    """The project's seat cards that declare no role: resolution can never reach them."""
+    sdir = Path(root) / "sdlc-studio" / "personas" / "seats"
+    return sorted(p for p in sdir.glob("*.md") if card_role(p) is None) if sdir.is_dir() else []
+
+
+def seat_roster(root: Path | str) -> list[str]:
+    """Every seat a card can be resolved for: the shipped seats, then the project's declared
+    roles."""
+    sdir = Path(root) / "sdlc-studio" / "personas" / "seats"
+    declared = {card_role(p) for p in sdir.glob("*.md")} if sdir.is_dir() else set()
+    return list(SEATS) + sorted(r for r in declared - set(SEATS) if r)
+
+
 def default_card(seat: str) -> Path | None:
     """The skill's shipped default amigo card, if present."""
     skill = version_check.skill_root()
@@ -142,6 +156,15 @@ def resolve_card(root: Path | str, seat: str, skip_personas: bool = False,
                   f"home; migrate the card to personas/seats/ with a declared "
                   f"`<!-- role: {seat} -->` (project upgrade migrates it mechanically)",
                   file=sys.stderr)
+        # The card named for the seat is the one its author meant; without the role line it
+        # is never matched, and the fallback below would stand in for it unannounced.
+        named = Path(root) / "sdlc-studio" / "personas" / "seats" / f"{seat}.md"
+        if named in roleless_cards(root):
+            used = card or default_card(seat)
+            what = (f"the shipped {seat} card was used ({used})" if card is None and used
+                    else f"{used} was used" if used else "no card resolved")
+            print(f"warning: seat card {named} declares no role (no `<!-- role: {seat} -->` "
+                  f"line), so {what}; add the line to brief from it", file=sys.stderr)
     if card is not None:
         if render == "review" and not _has_review_render(card):
             raise RenderError(

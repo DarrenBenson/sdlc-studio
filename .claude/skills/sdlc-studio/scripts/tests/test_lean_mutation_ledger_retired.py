@@ -97,7 +97,7 @@ def _project(root: Path) -> None:
     _write(root, "sdlc-studio/tsd.md",
            "# TSD\n\n## Test Levels\n\n### Mutation Testing (assertion integrity)\n\n"
            "Covers `gate.py`.\n\n## Next Section\n")
-    _write(root, "sdlc-studio/personas/seats/qa.md", "# Sam - QA amigo\n\ncharter\n")
+    _write(root, "sdlc-studio/personas/seats/qa.md", "<!-- role: qa -->\n# Sam - QA amigo\n\ncharter\n")
     _write(root, "sdlc-studio/stories/US0101-widget.md",
            "# US0101: widget\n\n> **Status:** Review\n> **Points:** 3\n> **Epic:** EP0001\n"
            "> **Affects:** src/gate.py\n\n## Acceptance Criteria\n\n### AC1: works\n"

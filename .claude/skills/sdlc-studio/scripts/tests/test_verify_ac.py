@@ -4727,7 +4727,7 @@ class CriteriaSectionTests(unittest.TestCase):
         for sub in ("bugs", "stories", "personas/seats"):
             (root / "sdlc-studio" / sub).mkdir(parents=True)
         (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
-        (root / "sdlc-studio" / "personas" / "seats" / "qa.md").write_text("# Sam - QA amigo\n\nthe charter\n", encoding="utf-8")
+        (root / "sdlc-studio" / "personas" / "seats" / "qa.md").write_text("<!-- role: qa -->\n# Sam - QA amigo\n\nthe charter\n", encoding="utf-8")
         (root / "sdlc-studio" / "bugs" / "BG0001-two-shapes.md").write_text(
             "# BG0001: two shapes\n\n> **Status:** Open\n> **Affects:** src/x.py\n\n## Acceptance Criteria\n\n"
             "- [ ] **AC1** Given a, when b, then c\n  - **Verify:** shell true\n\n## Impact\n\n"
