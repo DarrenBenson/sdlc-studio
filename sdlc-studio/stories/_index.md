@@ -7,10 +7,10 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 24 |
+| Draft | 22 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 3 |
+| In Progress | 5 |
 | Review | 0 |
 | Done | 765 |
 | Won't Implement | 81 |
@@ -284,7 +284,7 @@
 | [US0923](US0923-a-review-verdict-records-without-brief-provenance.md) | A review verdict records without brief provenance | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0924](US0924-the-shipped-docs-teach-only-the-surviving-review.md) | The shipped docs teach only the surviving review path | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0925](US0925-an-upgrading-project-s-config-carries-forward-without.md) | An upgrading project's config carries forward without the retired review keys | Done | EP0263 | 2026-09-24 | 2026-09-24 |
-| [US0926](US0926-this-repository-runs-on-the-shipped-defaults-with.md) | This repository runs on the shipped defaults with no stand-down keys | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0926](US0926-this-repository-runs-on-the-shipped-defaults-with.md) | This repository runs on the shipped defaults with no stand-down keys | In Progress | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0927](US0927-a-sprint-plan-names-the-prd-outcome-or.md) | A sprint plan names the PRD outcome or persona its goal serves, and flags a goal that serves none | Done | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0928](US0928-the-seat-reviewing-a-sprint-goal-is-shown.md) | The seat reviewing a Sprint Goal is shown the PRD outcomes and the personas' End goals | Done | EP0264 | 2026-09-25 | 2026-09-25 |
 | [US0929](US0929-the-prd-describes-the-lean-product-and-lists.md) | The PRD describes the lean product and lists the outcomes a Sprint Goal can serve | Done | EP0264 | 2026-09-25 | 2026-09-25 |
@@ -313,7 +313,7 @@
 | [US0952](US0952-an-upgrader-reads-every-v6-breaking-change-first.md) | An upgrader reads every v6 breaking change first | In Progress | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0953](US0953-the-v6-release-notes-lead-with-what-changed.md) | The v6 release notes lead with what changed for the person using it | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0954](US0954-the-repository-s-front-door-describes-v6-and.md) | The repository's front door describes v6 and teaches no retired surface | In Progress | EP0266 | 2026-09-25 | 2026-09-25 |
-| [US0955](US0955-an-upgrading-project-follows-one-page-from-v5.md) | An upgrading project follows one page from v5 to v6 | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
+| [US0955](US0955-an-upgrading-project-follows-one-page-from-v5.md) | An upgrading project follows one page from v5 to v6 | In Progress | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0956](US0956-the-shipped-docs-teach-the-lean-loop-in.md) | The shipped docs teach the lean loop in one place | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0957](US0957-the-white-paper-and-the-value-argument-describe.md) | The white paper and the value argument describe the v6 operating model | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0958](US0958-the-last-skill-docs-outside-us0924-name-no.md) | The last skill docs outside US0924 name no command or setting v6 dropped | Superseded | EP0266 | 2026-09-25 | 2026-09-25 |

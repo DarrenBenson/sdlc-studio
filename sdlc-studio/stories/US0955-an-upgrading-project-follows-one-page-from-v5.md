@@ -1,6 +1,6 @@
 # US0955: An upgrading project follows one page from v5 to v6
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

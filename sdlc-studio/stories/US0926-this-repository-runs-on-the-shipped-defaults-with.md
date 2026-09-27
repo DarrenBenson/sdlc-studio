@@ -1,6 +1,6 @@
 # US0926: This repository runs on the shipped defaults with no stand-down keys
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
