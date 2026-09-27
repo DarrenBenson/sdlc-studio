@@ -1,6 +1,6 @@
 # BG0805: verify_ac stamps passes a -k expression whose dead term hides behind a live one, so eight stamped criteria verify nothing of what they claim
 
-> **Status:** Open
+> **Status:** In Progress
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

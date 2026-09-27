@@ -1,6 +1,6 @@
 # BG0801: The known-issues page puts its ship-open paragraph under the oldest bar's history and states a Not carried count the corpus contradicts
 
-> **Status:** Open
+> **Status:** In Progress
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
