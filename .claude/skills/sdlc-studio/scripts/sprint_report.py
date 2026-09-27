@@ -1881,11 +1881,26 @@ def _ck_known_issues(ctx: dict) -> tuple:
 
 
 def _ck_cost(ctx: dict) -> tuple:
-    spend = ctx.get("spend") or {}
-    if not spend.get("measured_units") and not ctx.get("sprint_actual_tokens"):
+    """An operator's supplied total overrides; else the run's measured total, the figure the
+    Estimates section states; else per-unit telemetry."""
+    spend, run = ctx.get("spend") or {}, ctx.get("run") or {}
+    measured, agents = _run_tokens_actual(run, run_state.run_token_total(run)) if run else (
+        None, 0)
+    supplied = ctx.get("sprint_actual_tokens")
+    if supplied:
+        return (ANSWERED, f"{supplied:,} tokens, supplied",
+                "an operator's figure from `retro.py accuracy --tokens`, overriding "
+                + (f"the run's measured {measured:,}" if measured else
+                   "a run that measured no total"))
+    if measured:
+        return (ANSWERED, f"{measured:,} tokens, measured",
+                "the run's meter" + (f" plus {agents} delegated agent(s)' reported totals"
+                                     if agents else "")
+                + ", as the report's Estimates section states it - a lower bound")
+    if not spend.get("measured_units"):
         return (UNMEASURABLE, "unattributed",
-                "no per-unit telemetry and no harness-tracked sprint total, so what this "
-                "sprint cost is not attributable - which is not zero")
+                "no per-unit telemetry, no measured run total and no supplied sprint total, "
+                "so what this sprint cost is not attributable - which is not zero")
     return (ANSWERED, f"{spend.get('tokens', 0):,} token(s) over "
                       f"{spend.get('measured_units', 0)} measured unit(s)", "")
 
@@ -2080,7 +2095,9 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
         "plan": sdlc_md.read_json(Path(root) / "sdlc-studio" / ".local" / "sprint-plan.json", {}),
         "sprint_goal": rep.get("sprint_goal"), "goal_verdict": rep.get("sprint_goal_verdict"),
         "delivered_points": rep.get("delivered_points"), "spend": rep.get("spend"),
-        "sprint_actual_tokens": rep.get("sprint_actual_tokens"),
+        # The total passed here, else the one `retro.py accuracy --tokens N --write` recorded.
+        "sprint_actual_tokens": (rep.get("sprint_actual_tokens")
+                                 or retro.supplied_sprint_tokens(root, retro_id)),
         "sprint_reviews": sprint_reviews,
         "filed_in_run": filed, "open_filed_in_run": still_open,
         "carried_issues": _carried_issues(root, retro_id),
@@ -3235,6 +3252,20 @@ def _estimate_row(measure: str, forecast, actual, basis: str, src: str,
         "est_basis": fig("est_basis", basis, src)}
 
 
+def _run_tokens_actual(state: dict, run_tokens: dict) -> tuple:
+    """`(tokens, agents)`: the run's token actual and how many delegated agents it adds.
+
+    The meter plus the delegated agents' reported totals, which are real spend the main-thread
+    meter cannot see: a run that fans its work out would otherwise read a fraction of its cost.
+    One reader, so the Estimates row and the checklist's cost row state one figure."""
+    tokens = run_tokens.get("tokens")
+    delegated = run_state.delegated_total(state)
+    if not (tokens and delegated):
+        return tokens, 0
+    agents = len([r for r in (state.get(run_state.DELEGATED) or []) if isinstance(r, dict)])
+    return tokens + delegated, agents
+
+
 def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_tokens,
                        span_minutes) -> dict:
     """Forecast, actual and actual over forecast. Points over the units the run delivered;
@@ -3269,16 +3300,11 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
         f = legacy if _num(legacy) else None
         if f is not None:
             over = "the whole run: the plan's run-level token forecast"
-    tokens = run_tokens.get("tokens")
-    # Delegated agents' reported totals are real spend the main-thread meter cannot see: a run
-    # that fans its work out would otherwise read a fraction of its cost.
-    delegated = run_state.delegated_total(state)
-    agents = len([r for r in (state.get(run_state.DELEGATED) or []) if isinstance(r, dict)])
+    tokens, agents = _run_tokens_actual(state, run_tokens)
     basis = f"{over}; actual is the run meter, a lower bound"
-    if tokens and delegated:
+    if agents:
         basis = (f"{over}; actual is the main-thread meter plus {agents} delegated agent(s)' "
                  f"reported totals, split in the appendix")
-        tokens += delegated
     rows.append(_estimate_row(
         "Tokens", f, tokens or None, basis,
         state_rel, "no token forecast is recorded",

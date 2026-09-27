@@ -1,6 +1,6 @@
 # BG0796: The report's cost row reads unattributed while the same report measures the run's tokens
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_cost_row.py, changelog.d/BG0796.md
@@ -25,8 +25,10 @@ Read the run's measured token total (`run_state.run_token_total`, as the Estimat
 
 - [ ] **AC1** Given a run whose record carries token stamps and delegated totals and no hand `--tokens`, when the checklist composes, then the cost row is answered with the run's measured total, the same figure the Estimates section states. Fails on: HEAD's `_ck_cost`, which answers 'unattributed' unless `sprint_actual_tokens` was supplied by hand (RPT0010: Estimates 19,225,437; cost 'no harness-tracked sprint total')
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_cost_row.py::CostRowTests::test_the_cost_row_reads_the_run_s_measured_total
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC2** Given the same run and `retro.py accuracy --tokens N`, when the checklist composes, then the cost row states N and names it supplied. Fails on: the measured total silently replacing an operator's override
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_cost_row.py::CostRowTests::test_a_supplied_total_overrides_and_is_named
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

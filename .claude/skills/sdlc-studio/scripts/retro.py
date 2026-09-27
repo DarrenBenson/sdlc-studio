@@ -2487,6 +2487,18 @@ def _actual_source(res: dict, actual, existing=None) -> str | None:
     return existing or None
 
 
+def supplied_sprint_tokens(root, retro_id: str) -> int | None:
+    """The sprint total an operator typed with `accuracy --tokens N --write`, read back from
+    the velocity row it was written to, or None. Only a `supplied` row: a harness capture is a
+    reading of the run's meter, which the report reads from the run record itself."""
+    rid = sdlc_md.norm_id(retro_id)
+    row = next((r for r in velocity_history(root) if r["id"] == rid), None)
+    if not row or row.get("source") != SOURCE_SUPPLIED:
+        return None
+    tokens = row.get("actual_tokens")
+    return int(tokens) if tokens else None
+
+
 def _overhead_terms(root, unit_ids) -> dict:
     """`{overhead_ratio, overhead_bound}` for this batch, or both absent.
 
