@@ -9,7 +9,9 @@ directory). Four passes:
    `path.md#anchor` reference is checked to point at a file and anchor that
    exist. Illustrative examples (e.g. `doc.md#section-name` in the documentation
    style guide) are allowlisted.
-2. root docs (README, AGENTS, ...): their `.md` links must name a real file.
+2. root docs (README, AGENTS, ...): their `.md` links must name a real file, and a
+   `CHANGELOG.md#anchor` link there, under `docs/` or in the CHANGELOG itself must
+   name a CHANGELOG heading.
 3. workspace indexes (`sdlc-studio/**/_index.md`): an index row LINKS an
    artefact file, and that file must exist. Validating anchors alone let a row
    point at a deleted artefact and still pass.
@@ -357,6 +359,53 @@ def check_root_docs(repo_root: Path) -> list[str]:
     return sorted(broken)
 
 
+#: A markdown link carrying an anchor, the path part optional (`(#x)` names the linking file).
+_ANCHORED_LINK_RE = re.compile(r"\]\(([\w./-]*)#([\w-]+)\)")
+
+
+def _heading_slugs(path: Path) -> set[str]:
+    """The anchors GitHub renders for `path`'s headings, a repeated slug suffixed `-1`, `-2`."""
+    seen: dict[str, int] = {}
+    out: set[str] = set()
+    for line in _without_code(path.read_text(encoding="utf-8")):
+        m = _HEADING_RE.match(line)
+        if not m:
+            continue
+        base = slug(m.group(1))
+        n = seen.get(base, 0)
+        seen[base] = n + 1
+        out.add(base if n == 0 else f"{base}-{n}")
+    return out
+
+
+def check_changelog_anchors(repo_root: Path) -> list[str]:
+    """Every `CHANGELOG.md#anchor` link in the root docs, `docs/` and the CHANGELOG itself must
+    name a CHANGELOG heading. The root-docs pass checks the file only, so a release cut that
+    renames a heading broke each link into it silently. Scoped to the CHANGELOG: other anchors in
+    these documents are not measured here."""
+    changelog = repo_root / "CHANGELOG.md"
+    # No CHANGELOG is named at each link into it, never read as a clean pass over nothing.
+    anchors = _heading_slugs(changelog) if changelog.is_file() else None
+    docs = [repo_root / name for name in ROOT_DOCS]
+    if (repo_root / "docs").is_dir():
+        docs += sorted((repo_root / "docs").rglob("*.md"))
+    broken: list[str] = []
+    for path in docs:
+        if not path.is_file():
+            continue
+        rel = path.relative_to(repo_root).as_posix()
+        for i, line in enumerate(_without_code(path.read_text(encoding="utf-8")), 1):
+            for tgt, anc in _ANCHORED_LINK_RE.findall(line):
+                target = (path.parent / tgt).resolve() if tgt else path.resolve()
+                if target != changelog.resolve():
+                    continue
+                if anchors is None:
+                    broken.append(f"{rel}:{i} -> CHANGELOG.md#{anc} [file missing]")
+                elif anc not in anchors:
+                    broken.append(f"{rel}:{i} -> CHANGELOG.md#{anc} [anchor missing]")
+    return broken
+
+
 #: A cell whose content is a TEMPLATE rather than a path (`help/{type}.md`, `{domain}`).
 _TEMPLATED = re.compile(r"\{[^}]*\}")
 #: A cell that is a command to run, not a file to load.
@@ -510,6 +559,7 @@ def main(argv: list[str] | None = None) -> int:
     allow = set(DEFAULT_ALLOW) | set(args.allow)
     body_allow = set(DEFAULT_BODY_ALLOW) | set(args.allow_body)
     broken = (check(root, allow) + check_loading_guide(root) + check_root_docs(repo_root)
+              + check_changelog_anchors(repo_root)
               + check_index_links(workspace) + check_body_links(workspace, body_allow))
     if broken:
         print(f"Broken markdown links ({len(broken)}):")

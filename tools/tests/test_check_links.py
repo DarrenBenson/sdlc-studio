@@ -5,7 +5,9 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import re
 import shutil
 import sys
@@ -92,6 +94,64 @@ class RootDocsTests(unittest.TestCase):
             broken = check_links.check_root_docs(root)
             self.assertEqual(len(broken), 1)
             self.assertIn("docs/missing.md", broken[0])
+
+
+class RootDocAnchorTests(unittest.TestCase):
+    """US0952 AC4: a root doc's `CHANGELOG.md#anchor` must name a CHANGELOG heading.
+
+    The root-docs pass checked the file only, so renaming a release heading at the cut broke
+    every link into it, the release notes' among them, and nothing noticed."""
+
+    def _repo(self, notes_anchor: str, readme_anchor: str = "600---2026-10-01") -> Path:
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root, True)
+        _write(root, ".claude/skills/sdlc-studio/SKILL.md", "# Skill\n")
+        _write(root, "CHANGELOG.md", "# Changelog\n\n## [6.0.0] - 2026-10-01\n\n### Breaking\n\n"
+                                     "- See [the candidate](#600-rc1---2026-09-26).\n\n"
+                                     "## [6.0.0-rc.1] - 2026-09-26\n\n### Added\n\n- x\n")
+        _write(root, "README.md", f"See [6.0.0](CHANGELOG.md#{readme_anchor}).\n")
+        _write(root, "docs/notes.md", f"# Notes\n\nIntro.\n\n[the section]"
+                                      f"(../CHANGELOG.md#{notes_anchor}), under Breaking.\n")
+        return root
+
+    def _run(self, root: Path) -> tuple[int, str]:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = check_links.main(["--root", str(root / ".claude/skills/sdlc-studio"),
+                                   "--repo-root", str(root)])
+        return rc, out.getvalue()
+
+    def test_a_changelog_anchor_that_resolves_nowhere_fails(self) -> None:
+        """MUTANTS: the anchor pass not wired into `main`; the pass reading `docs/` only, or the
+        root docs only (the release notes live in docs/); a slug that keeps the dots, so no rc
+        anchor resolves; a missing CHANGELOG read as a clean pass."""
+        rc, out = self._run(self._repo("600---2026-09-26"))
+        self.assertEqual(1, rc, out)
+        self.assertIn("docs/notes.md:5 -> CHANGELOG.md#600---2026-09-26 [anchor missing]", out)
+
+        rc, out = self._run(self._repo("600-rc1---2026-09-26", readme_anchor="600---2026-09-26"))
+        self.assertEqual(1, rc, out)
+        self.assertIn("README.md:1 -> CHANGELOG.md#600---2026-09-26 [anchor missing]", out)
+
+        root = self._repo("600-rc1---2026-09-26")
+        (root / "CHANGELOG.md").unlink()
+        rc, out = self._run(root)
+        self.assertEqual(1, rc, out)
+        self.assertIn("docs/notes.md:5 -> CHANGELOG.md#600-rc1---2026-09-26 [file missing]", out)
+
+        rc, out = self._run(self._repo("600-rc1---2026-09-26"))
+        self.assertEqual(0, rc, f"a resolving CHANGELOG anchor failed:\n{out}")
+
+    def test_the_changelogs_own_anchors_are_read_too(self) -> None:
+        """The composed Breaking lead links its own file's rc heading: a missed rename breaks it."""
+        root = self._repo("600-rc1---2026-09-26")
+        cl = root / "CHANGELOG.md"
+        cl.write_text(cl.read_text(encoding="utf-8").replace("## [6.0.0-rc.1] - 2026-09-26",
+                                                             "## [6.0.0-rc.9] - 2026-09-26"),
+                      encoding="utf-8")
+        rc, out = self._run(root)
+        self.assertEqual(1, rc, out)
+        self.assertIn("CHANGELOG.md:7 -> CHANGELOG.md#600-rc1---2026-09-26 [anchor missing]", out)
 
 
 class IndexLinkTests(unittest.TestCase):

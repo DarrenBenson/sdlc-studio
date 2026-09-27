@@ -10,9 +10,9 @@
 | Draft | 22 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 4 |
+| In Progress | 3 |
 | Review | 0 |
-| Done | 766 |
+| Done | 767 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -310,7 +310,7 @@
 | [US0949](US0949-no-shipped-command-help-offers-a-retired-behaviour.md) | No shipped command help offers a retired behaviour | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0950](US0950-a-fresh-project-can-brief-and-record-its.md) | A fresh project can brief and record its one review with the shipped defaults | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0951](US0951-a-clean-run-s-report-hands-over-no.md) | A clean run's report hands over no false known issues | Done | EP0265 | 2026-09-25 | 2026-09-25 |
-| [US0952](US0952-an-upgrader-reads-every-v6-breaking-change-first.md) | An upgrader reads every v6 breaking change first | In Progress | EP0266 | 2026-09-25 | 2026-09-25 |
+| [US0952](US0952-an-upgrader-reads-every-v6-breaking-change-first.md) | An upgrader reads every v6 breaking change first | Done | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0953](US0953-the-v6-release-notes-lead-with-what-changed.md) | The v6 release notes lead with what changed for the person using it | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0954](US0954-the-repository-s-front-door-describes-v6-and.md) | The repository's front door describes v6 and teaches no retired surface | Done | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0955](US0955-an-upgrading-project-follows-one-page-from-v5.md) | An upgrading project follows one page from v5 to v6 | In Progress | EP0266 | 2026-09-25 | 2026-09-25 |

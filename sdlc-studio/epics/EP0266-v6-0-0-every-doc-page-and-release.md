@@ -11,7 +11,7 @@ Sprint 6 of the v6 release (D0272): the release notes, breaking changes, README,
 
 ## Story Breakdown
 
-- [ ] [US0952: An upgrader reads every v6 breaking change first](../stories/US0952-an-upgrader-reads-every-v6-breaking-change-first.md)
+- [x] [US0952: An upgrader reads every v6 breaking change first](../stories/US0952-an-upgrader-reads-every-v6-breaking-change-first.md)
 - [ ] [US0953: The v6 release notes lead with what changed for the person using it](../stories/US0953-the-v6-release-notes-lead-with-what-changed.md)
 - [x] [US0954: The repository's front door describes v6 and teaches no retired surface](../stories/US0954-the-repository-s-front-door-describes-v6-and.md)
 - [ ] [US0955: An upgrading project follows one page from v5 to v6](../stories/US0955-an-upgrading-project-follows-one-page-from-v5.md)

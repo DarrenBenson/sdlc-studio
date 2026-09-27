@@ -1,6 +1,6 @@
 # US0952: An upgrader reads every v6 breaking change first
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,12 +19,16 @@
 
 - **AC1:** Given the 6.0.0 Breaking text (the `<!-- section: Breaking -->` fragment `changelog.d/US0952.md` before the cut; the `### Breaking` block under `## [6.0.0]` after the cut renames today's section `## [6.0.0-rc.1]`), then it opens by telling a 5.1 upgrader that every breaking change listed under 6.0.0-rc.1 ships in 6.0.0, links that section, and says to run `migrate` then `migrate --apply`; and every verb in `migrate._retired_verbs()`, every key in `sdlc_md.RETIRED_CONFIG_KEYS` and every id in `sdlc_md.RETIRED_CHECK_IDS` appears in the Breaking text of 6.0.0 or 6.0.0-rc.1. Fails on: the cut's rename alone, which leaves `## [6.0.0]` holding only Sprint 6's fixes, so a reader of the 6.0.0 section sees no breaking change at all; a verb or key retired during Sprint 6 with no Breaking line
   - **Verify:** pytest tools/tests/test_lean_breaking_inventory.py::BreakingInventoryTests::test_every_registered_retirement_is_disclosed
+  - **Verified:** yes (2026-09-27)
 - **AC2:** Given a fixture CHANGELOG with `[6.0.0]` (1 Breaking, 7 Added, 7 Changed, 7 Fixed) above `[6.0.0-rc.1]` (4 Breaking) above `[5.1.0]`, when `project_upgrade` renders its digest for a project recorded at 5.1.0 and installed at 6.0.0, then the Breaking group prints first with all 5 entries, uncapped; and for a project recorded at 6.0.0-rc.1, only 6.0.0's entries appear. Fails on: HEAD, whose `_KIND_ORDER` (project_upgrade.py:539) omits Breaking so it prints after up to 18 capped entries, and whose `_VER_HEAD_RE` does not read a pre-release heading, so rc.1's entries are folded into 6.0.0's and shown again to a project already on rc.1
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_upgrade_breaking.py::UpgradeDigestTests::test_breaking_leads_the_digest_uncapped
+  - **Verified:** yes (2026-09-27)
 - **AC3:** Given the 6.0.0 Breaking text, then it states that entries under 6.0.0-rc.1 adding or fixing plan review, the test plan, repair plans, per-unit sign-off, depth tiers or mutation evidence describe machinery the same release then removed, and that the Breaking tables are the current word. Fails on: leaving them unflagged (the rc.1 section's Added, Changed and Fixed name that machinery on 84 lines, among them 'The repair-plan gate is reachable'), or deleting them, which loses the history
   - **Verify:** pytest tools/tests/test_lean_breaking_inventory.py::BreakingInventoryTests::test_superseded_entries_are_flagged
+  - **Verified:** yes (2026-09-27)
 - **AC4:** Given a root doc linking `CHANGELOG.md#<anchor>`, when `tools/check_links.py` runs, then an anchor no CHANGELOG heading produces exits non-zero naming the doc, the line and the anchor, and one that resolves passes. Fails on: HEAD's root-docs pass, which checks the file only, so the cut's rename silently breaks the rc.1 notes' two `#600---2026-09-26` links (lines 45 and 135) and nothing notices
   - **Verify:** pytest tools/tests/test_check_links.py::RootDocAnchorTests::test_a_changelog_anchor_that_resolves_nowhere_fails
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

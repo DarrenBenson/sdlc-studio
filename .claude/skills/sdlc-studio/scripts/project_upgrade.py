@@ -536,8 +536,10 @@ _VER_HEAD_RE = re.compile(rf"^##\s*\[({version_check.VERSION})\]")
 # dropped but the heading still RESETS the kind, so a qualified heading never
 # leaks its bullets into the previous group.
 _KIND_HEAD_RE = re.compile(r"^###\s+([A-Za-z][A-Za-z ]*?)\s*(?:\([^)]*\))?\s*$")
-_KIND_ORDER = ("Added", "Changed", "Fixed", "Deprecated", "Removed", "Security")
+# Breaking leads and is never capped: it is what will refuse an upgrader's scripts and CI.
+_KIND_ORDER = ("Breaking", "Added", "Changed", "Fixed", "Deprecated", "Removed", "Security")
 _GROUP_CAP = 6  # keep the digest a digest; the tail names what was dropped
+_UNCAPPED = {"Breaking"}
 
 
 def _changelog_path() -> Path:
@@ -584,7 +586,7 @@ def changelog_digest(recorded: str | None, installed: str | None,
             continue
         if cur_kind and line.startswith("- "):
             bucket = groups.setdefault(cur_kind, [])
-            if len(bucket) < _GROUP_CAP:
+            if cur_kind in _UNCAPPED or len(bucket) < _GROUP_CAP:
                 bucket.append(line[2:].strip())
             else:
                 extra[cur_kind] = extra.get(cur_kind, 0) + 1
