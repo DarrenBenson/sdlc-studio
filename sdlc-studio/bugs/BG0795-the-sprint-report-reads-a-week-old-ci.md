@@ -1,6 +1,6 @@
 # BG0795: The sprint report reads a week-old CI cache as current, so DORA's failure rate and restore time read no forge data
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_frozen_report_inputs.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_integrity.py, changelog.d/BG0795.md
