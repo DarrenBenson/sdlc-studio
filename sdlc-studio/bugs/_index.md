@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 18 |
-| In Progress | 4 |
-| Fixed | 651 |
+| In Progress | 3 |
+| Fixed | 652 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -161,7 +161,7 @@
 | [BG0800](BG0800-the-close-s-pre-flight-lists-as-unmet.md) | The close's pre-flight lists as unmet the goal verdict the same invocation records and the review anchor the close writes itself | In Progress | Low | 2026-09-27 | 2026-09-27 |
 | [BG0801](BG0801-the-known-issues-page-puts-its-ship-open.md) | The known-issues page puts its ship-open paragraph under the oldest bar's history and states a Not carried count the corpus contradicts | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0802](BG0802-artifact-new-type-bug-drops-its-verify-line.md) | artifact new --type bug drops its --verify line and writes an unnamed criterion, so sprint plan refuses the bug it just filed | Fixed | Medium | 2026-09-27 | 2026-09-27 |
-| [BG0803](BG0803-sprint-plan-to-the-plan-or-design-rung.md) | sprint plan to the plan or design rung crashes in capacity_report on the default token budget | In Progress | Low | 2026-09-27 | 2026-09-27 |
+| [BG0803](BG0803-sprint-plan-to-the-plan-or-design-rung.md) | sprint plan to the plan or design rung crashes in capacity_report on the default token budget | Fixed | Low | 2026-09-27 | 2026-09-27 |
 | [BG0804](BG0804-the-report-s-lessons-section-cites-sdlc-studio.md) | The report's Lessons section cites sdlc-studio/lessons.jsonl on a project that has none, when the bundled seed was read | Open | Low | 2026-09-27 | 2026-09-27 |
 | [BG0805](BG0805-verify-ac-stamps-passes-a-k-expression-whose.md) | verify_ac stamps passes a -k expression whose dead term hides behind a live one, so eight stamped criteria verify nothing of what they claim | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0806](BG0806-tsd-staleness-is-never-judged-in-a-consuming.md) | TSD staleness is never judged in a consuming project and reports a false reason on every sprint plan | In Progress | Medium | 2026-09-27 | 2026-09-27 |

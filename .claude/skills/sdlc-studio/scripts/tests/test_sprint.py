@@ -1746,6 +1746,51 @@ class CapacityHonestyTests(unittest.TestCase):
             self.assertEqual(cap["over"], [])
             self.assertTrue(cap["tokens_may_exceed"])
 
+    def test_an_unpriced_forecast_under_a_token_budget_is_not_compared(self) -> None:
+        """BG0803 AC1. Mutant: compare the top of the band against the budget with the band
+        None (HEAD: TypeError), or render the unpriced figure as a number."""
+        sp = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            cap = sp.capacity_report(root, [{"id": "BG0001"}], {"marginal_unmeasured": True},
+                                     sp.resolve_appetite(root))
+        self.assertEqual(sp.DEFAULT_CAPACITY["tokens"], cap["budget"]["tokens"])
+        self.assertEqual(500_000, cap["budget"]["tokens"])
+        self.assertIsNone(cap["forecast"]["tokens"])
+        self.assertFalse(cap["tokens_may_exceed"])
+        self.assertNotIn("tokens", cap["over"])
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            sp._render_capacity({"capacity": cap})
+        self.assertIn("tokens unjudged", out.getvalue())
+
+    def test_a_design_rung_plan_on_a_fresh_project_exits_zero(self) -> None:
+        """BG0803 AC2. Mutant: guard `build_plan` rather than `capacity_report`, which another
+        caller bypasses, or leave the budget line formatting None."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            env = gitutil.git_env()
+            env.pop("PYTHONPATH", None)
+
+            def run(script: str, *argv: str) -> subprocess.CompletedProcess:
+                return subprocess.run([sys.executable, str(SCRIPT.parent / script), *argv],
+                                      cwd=root, env=env, capture_output=True, text=True,
+                                      timeout=300)
+
+            gitutil.git(["init", "-q"], root)
+            self.assertEqual(0, run("init.py", "run", "--root", str(root)).returncode)
+            made = run("artifact.py", "new", "--type", "bug", "--title", "widget breaks",
+                       "--severity", "Low", "--summary", "it breaks", "--steps", "run it",
+                       "--fix", "fix it", "--points", "1", "--affects", "src/w.py",
+                       "--ac", "the widget works", "--verify", "shell true",
+                       "--root", str(root))
+            self.assertEqual(0, made.returncode, made.stderr)
+            plan = run("sprint.py", "plan", "--bugs", "inbox", "--goal", "design",
+                       "--root", str(root))
+            self.assertEqual(0, plan.returncode, plan.stderr)
+            self.assertIn("batch: 1 unit(s)", plan.stdout)
+
     # A velocity row as `retro.py accuracy --write` now writes it: the estimate AS FORECAST at
     # plan time, and the constants that produced it. `{cur}` is the estimator in force, which is
     # what makes the row out-of-sample evidence rather than a row about some other model.

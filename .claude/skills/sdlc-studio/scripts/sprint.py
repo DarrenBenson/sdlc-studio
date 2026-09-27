@@ -625,7 +625,9 @@ def capacity_report(repo_root: Path | str, batch: list[dict], forecast: dict | N
         "over": over,
         "over_budget": bool(over),
         # under budget on the point estimate, but the top of the honest band is not
-        "tokens_may_exceed": bool(token_budget and "tokens" not in over and high > token_budget),
+        # an unpriced forecast has no top of band: unjudged, never compared
+        "tokens_may_exceed": bool(token_budget and high is not None and "tokens" not in over
+                                  and high > token_budget),
         "appetite": appetite,
         "calibration": cal,
         "unit_wall_minutes_floor": _unit_wall_minutes(_velocity_rows(root)),
@@ -4281,9 +4283,11 @@ def _render_capacity(data: dict) -> None:
         return
     b, fc, app, cal = cap["budget"], cap["forecast"], cap["appetite"], cap["calibration"]
     units = f"{cap['units']}/{b['units']}" if b["units"] else f"{cap['units']}/unbounded"
-    tokens = (f"~{fc['tokens']:,}/{b['tokens']:,}" if b["tokens"]
-              else f"~{fc['tokens']:,}/unbounded")
+    spend = "unjudged" if fc["tokens"] is None else f"~{fc['tokens']:,}"
+    tokens = f"{spend}/{b['tokens']:,}" if b["tokens"] else f"{spend}/unbounded"
     verdict = ("OVER BUDGET (" + ", ".join(cap["over"]) + ")") if cap["over"] else "within budget"
+    if fc["tokens"] is None:
+        verdict += " on units; this rung prices no tokens"
     print(f"  capacity: units {units}, tokens {tokens} - {verdict}")
     if cap["over"]:
         print(f"  capacity: this batch does not fit. Cut it, or raise the appetite deliberately "
