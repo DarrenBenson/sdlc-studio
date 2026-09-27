@@ -22,8 +22,10 @@ Resolve each `or`-joined term of a stamped -k expression separately and name a d
 
 ## Acceptance Criteria
 
-- [ ] Given a stamped Verify line `pytest <file> -k "a or b"` where `b` selects no test in `<file>` and `a` selects one, when `verify_ac stamps` runs, then it names the criterion and the dead term and exits non-zero. Fails on: resolving the expression as a whole, so a live term hides the dead one (HEAD)
-- [ ] Given this repository, when `verify_ac stamps --bugs` runs, then it exits 0 and none of the 8 dead terms remains: each is repointed to the test that replaced it or retired in the D0259 pattern. Fails on: HEAD, 8 terms selecting nothing
+- [ ] **AC1** Given a stamped Verify line `pytest <file> -k "a or b"` where `b` selects no test in `<file>` and `a` selects one, when `verify_ac stamps` runs, then it names the criterion and the dead term and exits non-zero. Fails on: resolving the expression as a whole, so a live term hides the dead one (HEAD)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_stamps_k_terms.py::StampsKTermTests::test_a_dead_k_term_is_named
+- [ ] **AC2** Given this repository, when `verify_ac stamps --bugs` runs, then it exits 0 and none of the 8 dead terms remains: each is repointed to the test that replaced it or retired in the D0259 pattern. Fails on: HEAD, 8 terms selecting nothing
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_stamps_k_terms.py::StampsKTermTests::test_the_repository_carries_no_dead_k_term
 
 ## Notes
 

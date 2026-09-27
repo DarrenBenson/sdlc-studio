@@ -22,8 +22,10 @@ Under `--local`, sweep only the local scope; when a personal Claude Code copy ex
 
 ## Acceptance Criteria
 
-- [ ] Given a personal copy at `$HOME/.claude/skills/sdlc-studio`, when `install.sh --local --from <dir>` runs in a project, then the personal copy is byte-identical afterwards and the project copy is installed. Fails on: HEAD's sweep, which rewrites a personal copy of the same or an older version, so pinning a candidate in one project moves every project
-- [ ] Given that personal copy, when `install.sh --local --target claude` completes, then it prints that Claude Code loads the personal copy ahead of the project copy, naming both paths and versions. Fails on: HEAD, which reports success for a copy Claude Code will not load
+- [ ] **AC1** Given a personal copy at `$HOME/.claude/skills/sdlc-studio`, when `install.sh --local --from <dir>` runs in a project, then the personal copy is byte-identical afterwards and the project copy is installed. Fails on: HEAD's sweep, which rewrites a personal copy of the same or an older version, so pinning a candidate in one project moves every project
+  - **Verify:** pytest tools/tests/test_install_sweep.py::LocalSweepTests::test_a_local_install_leaves_personal_copies
+- [ ] **AC2** Given that personal copy, when `install.sh --local --target claude` completes, then it prints that Claude Code loads the personal copy ahead of the project copy, naming both paths and versions. Fails on: HEAD, which reports success for a copy Claude Code will not load
+  - **Verify:** pytest tools/tests/test_install_sweep.py::LocalSweepTests::test_a_shadowed_local_install_is_named
 
 ## Notes
 

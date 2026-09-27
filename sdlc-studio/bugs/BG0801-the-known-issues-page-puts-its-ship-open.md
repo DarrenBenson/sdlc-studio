@@ -22,8 +22,10 @@ Emit the ship-open paragraph under the bar in force, before the history; derive 
 
 ## Acceptance Criteria
 
-- [ ] Given `known_issues.py write --release 6.0.0` over a corpus with open Medium findings, when the page is rendered, then the ship-open paragraph sits under `## The bar v6.0 is held to`, before the first `kept as history` heading. Fails on: HEAD, where it follows `## The bar v5.0.0 was held to, kept as history`
-- [ ] Given a corpus holding four High findings at Won't Fix and none superseded, when the page is rendered, then Not carried states four and names each id, and a corpus with none renders no such claim. Fails on: HEAD's constant 'Three ... and one was superseded'
+- [ ] **AC1** Given `known_issues.py write --release 6.0.0` over a corpus with open Medium findings, when the page is rendered, then the ship-open paragraph sits under `## The bar v6.0 is held to`, before the first `kept as history` heading. Fails on: HEAD, where it follows `## The bar v5.0.0 was held to, kept as history`
+  - **Verify:** pytest tools/tests/test_known_issues.py::PageProseTests::test_the_ship_open_paragraph_sits_under_the_bar_in_force
+- [ ] **AC2** Given a corpus holding four High findings at Won't Fix and none superseded, when the page is rendered, then Not carried states four and names each id, and a corpus with none renders no such claim. Fails on: HEAD's constant 'Three ... and one was superseded'
+  - **Verify:** pytest tools/tests/test_known_issues.py::PageProseTests::test_not_carried_is_derived_from_the_corpus
 
 ## Notes
 

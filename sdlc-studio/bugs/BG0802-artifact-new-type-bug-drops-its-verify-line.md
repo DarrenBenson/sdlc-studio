@@ -22,7 +22,8 @@ Pair --ac/--verify for bugs as for stories, in the bug criterion shape (`- [ ] *
 
 ## Acceptance Criteria
 
-- [ ] Given `artifact.py new --type bug` with one `--ac` and one `--verify`, when it writes the bug, then its criterion reads `- [ ] **AC1** <text>` followed by `- **Verify:** <verify>`, and `sprint.py plan` over that bug does not refuse it for a missing Verify. Fails on: HEAD (Verify dropped, criterion unnamed, measured 2026-09-27); writing the Verify under an unnamed bullet the runner cannot pair
+- [ ] **AC1** Given `artifact.py new --type bug` with one `--ac` and one `--verify`, when it writes the bug, then its criterion reads `- [ ] **AC1** <text>` followed by `- **Verify:** <verify>`, and `sprint.py plan` over that bug does not refuse it for a missing Verify. Fails on: HEAD (Verify dropped, criterion unnamed, measured 2026-09-27); writing the Verify under an unnamed bullet the runner cannot pair
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::BugCriteriaTests::test_a_bug_s_verify_is_written_under_its_named_criterion
 
 ## Notes
 

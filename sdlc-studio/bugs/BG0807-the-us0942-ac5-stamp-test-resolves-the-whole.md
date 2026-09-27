@@ -22,7 +22,8 @@ Filter to the artefacts whose Verify lines name US0942's test modules before res
 
 ## Acceptance Criteria
 
-- [ ] Given `TagNoCloseOwedTests::test_no_stamp_names_the_retired_flag`, when it runs, then `verify_ac.unresolvable_stamps` is called only on stories and bugs whose Verify lines name a test module US0942's Affects lists, and a stamp naming a deleted node in such a module is still reported. Fails on: resolving every stamp in the corpus and filtering afterwards (HEAD), or filtering so narrowly that the deleted-node mutant survives
+- [ ] **AC1** Given `TagNoCloseOwedTests::test_no_stamp_names_the_retired_flag`, when it runs, then `verify_ac.unresolvable_stamps` is called only on stories and bugs whose Verify lines name a test module US0942's Affects lists, and a stamp naming a deleted node in such a module is still reported. Fails on: resolving every stamp in the corpus and filtering afterwards (HEAD), or filtering so narrowly that the deleted-node mutant survives
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tag_no_close_owed.py::TagNoCloseOwedTests::test_no_stamp_names_the_retired_flag
 
 ## Notes
 

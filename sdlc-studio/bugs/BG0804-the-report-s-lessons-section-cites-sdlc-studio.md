@@ -22,7 +22,8 @@ Read the source label from `lessons.store_source().`
 
 ## Acceptance Criteria
 
-- [ ] Given a project with no `sdlc-studio/lessons.jsonl`, when the report's Lessons section is built, then every figure's source is the bundled seed's label, and with a store present it is `sdlc-studio/lessons.jsonl`. Fails on: citing `lessons.STORE_FILE` unconditionally (HEAD)
+- [ ] **AC1** Given a project with no `sdlc-studio/lessons.jsonl`, when the report's Lessons section is built, then every figure's source is the bundled seed's label, and with a store present it is `sdlc-studio/lessons.jsonl`. Fails on: citing `lessons.STORE_FILE` unconditionally (HEAD)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::LessonsSourceTests::test_the_lessons_section_cites_the_store_it_read
 
 ## Notes
 

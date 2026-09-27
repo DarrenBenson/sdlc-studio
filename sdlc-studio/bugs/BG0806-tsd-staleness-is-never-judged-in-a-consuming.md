@@ -22,8 +22,10 @@ Judge the TSD against the last commit outside sdlc-studio/ in a consuming projec
 
 ## Acceptance Criteria
 
-- [ ] Given a consuming project (no skill scripts/ in its tree) whose `sdlc-studio/tsd.md` was committed before a later commit to a path outside `sdlc-studio/`, when `tsd_staleness` runs, then it returns `known: True, stale: True` naming that commit time. Fails on: comparing against `.claude/skills/sdlc-studio/scripts` (HEAD: `known: False` in every consuming project)
-- [ ] Given the same project whose TSD commit is newer than every commit outside `sdlc-studio/`, then `known: True, stale: False`; and a tree with no git history reports `known: False` naming the missing history. Fails on: counting commits to `sdlc-studio/` artefacts as code, so every backlog commit marks the TSD stale
+- [ ] **AC1** Given a consuming project (no skill scripts/ in its tree) whose `sdlc-studio/tsd.md` was committed before a later commit to a path outside `sdlc-studio/`, when `tsd_staleness` runs, then it returns `known: True, stale: True` naming that commit time. Fails on: comparing against `.claude/skills/sdlc-studio/scripts` (HEAD: `known: False` in every consuming project)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tsd_staleness.py::TsdStalenessTests::test_a_consuming_project_with_later_code_reads_stale
+- [ ] **AC2** Given the same project whose TSD commit is newer than every commit outside `sdlc-studio/`, then `known: True, stale: False`; and a tree with no git history reports `known: False` naming the missing history. Fails on: counting commits to `sdlc-studio/` artefacts as code, so every backlog commit marks the TSD stale
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tsd_staleness.py::TsdStalenessTests::test_a_tsd_revised_after_the_code_reads_current
 
 ## Notes
 
