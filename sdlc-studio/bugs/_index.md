@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 24 |
-| In Progress | 3 |
-| Fixed | 646 |
+| In Progress | 2 |
+| Fixed | 647 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -153,7 +153,7 @@
 | [BG0792](BG0792-us0940-ac1-s-own-verify-takes-about-three.md) | US0940 AC1's own Verify takes about three minutes, so the release gate's verify lane reads it red at the 120-second default | Fixed | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0793](BG0793-a-boundary-test-lists-changelog-d-which-a.md) | A boundary test lists changelog.d, which a fresh checkout does not have once a release cut consumes every fragment, so CI is red on the rc.1 commit | Fixed | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0794](BG0794-the-waiver-window-test-compares-a-utc-page.md) | The waiver-window test compares a UTC page date with a local-time waiver date, so it fails for the hour after local midnight in a timezone ahead of UTC | Fixed | Medium | 2026-09-27 | 2026-09-27 |
-| [BG0795](BG0795-the-sprint-report-reads-a-week-old-ci.md) | The sprint report reads a week-old CI cache as current, so DORA's failure rate and restore time read no forge data | In Progress | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0795](BG0795-the-sprint-report-reads-a-week-old-ci.md) | The sprint report reads a week-old CI cache as current, so DORA's failure rate and restore time read no forge data | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0796](BG0796-the-report-s-cost-row-reads-unattributed-while.md) | The report's cost row reads unattributed while the same report measures the run's tokens | Open | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0797](BG0797-per-unit-minutes-and-tokens-are-recorded-only.md) | Per-unit minutes and tokens are recorded only on an In Progress transition the lean loop never makes, and the report does not say why the column is empty | Open | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0798](BG0798-the-forecast-rate-never-re-fits-353-810.md) | The forecast rate never re-fits: 353,810 tokens per point has forecast about twice the measured spend for three sprints | Open | Medium | 2026-09-27 | 2026-09-27 |

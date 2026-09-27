@@ -2824,45 +2824,61 @@ def _table_rows(text: str, header: str) -> list[list[str]]:
 
 # --- the forge, and the git history behind it ------------------------------------------------
 
-#: Where a `gh run list --json ...` answer is cached for this run. The report reads the cache
-#: when it is there and asks the forge when it is not, so a report can be rebuilt offline from
-#: the same data it was first built from - which is what makes re-derivation a check rather
-#: than a second network call with a different answer.
-CI_RUNS_REL = "sdlc-studio/.local/ci-runs.json"
+#: The run record's field holding the CI runs PREPARE read from the forge for the run's window,
+#: as `{"source": ..., "runs": [...]}`. Frozen there, not in a per-clone cache: a cache written
+#: once and read forever served a week-old answer to every later run, and a clone without it
+#: read the live forge, whose answer moves a signed page. The record is sealed and tracked, so
+#: every clone re-derives from the runs the page was built from.
+CI_RUNS = "ci_runs"
 _CI_FIELDS = "databaseId,event,conclusion,headBranch,headSha,workflowName,createdAt,updatedAt"
 
 
-def _ci_runs(root: Path) -> tuple[list[dict], str]:
-    """Every CI run this clone can see, and the source they were read from."""
-    cached = root / CI_RUNS_REL
-    if cached.is_file():
-        try:
-            rows = json.loads(cached.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            rows = []
-        return ([r for r in rows if isinstance(r, dict)], CI_RUNS_REL)
+def fetch_ci_runs(root: Path) -> tuple[list[dict], str]:
+    """Every CI run the forge answers now, and the source: `gh run list`, or `gh run list - `
+    and why it could not answer, in which case there are no runs."""
     if shutil.which("gh") is None:
-        return [], "gh run list"
+        return [], "gh run list - gh is not installed"
     try:
         proc = subprocess.run(["gh", "run", "list", "--limit", "100", "--json", _CI_FIELDS],
                               capture_output=True, text=True, cwd=str(root), timeout=30)
-        rows = json.loads(proc.stdout or "[]") if proc.returncode == 0 else []
-    except (OSError, ValueError, subprocess.SubprocessError):
-        rows = []
-    rows = [r for r in rows if isinstance(r, dict)]
-    # WRITE THE CACHE. Nothing wrote it, so every read went to the live forge - and a forge
-    # answer is time-varying and page-truncated, which makes the guardrail and all four DORA
-    # keys move on a tree nobody touched. A report is supposed to re-derive from the same data
-    # it was first built from; without this it re-derives from a second network call with a
-    # different answer, which is the thing the fragment claims is avoided. Best-effort: a clone
-    # that cannot write its own `.local/` still gets its figures, just not the stability.
-    if rows:
-        try:
-            cached.parent.mkdir(parents=True, exist_ok=True)
-            cached.write_text(json.dumps(rows, indent=2) + "\n", encoding="utf-8")
-        except OSError as exc:
-            sdlc_md.debug("sprint_report.ci_runs.cache", exc)
-    return (rows, "gh run list")
+    except (OSError, subprocess.SubprocessError) as exc:
+        return [], f"gh run list - {type(exc).__name__}"
+    if proc.returncode != 0:
+        return [], f"gh run list - exit {proc.returncode}"
+    try:
+        rows = json.loads(proc.stdout or "[]")
+    except ValueError:
+        return [], "gh run list - the answer is not JSON"
+    return ([r for r in rows if isinstance(r, dict)] if isinstance(rows, list) else [],
+            "gh run list")
+
+
+def freeze_ci_runs(root: Path) -> dict:
+    """PREPARE's reading of the forge, recorded on the live run as `CI_RUNS`: the runs created
+    since the run opened, fetched fresh on every prepare. Returns what was recorded."""
+    try:
+        start = _at((run_state.read(root) or {}).get("started_at"))
+        rows, source = fetch_ci_runs(root)
+        frozen = {"source": source,
+                  "runs": [r for r in rows if _in_window(r.get("createdAt"), start, None)]}
+        run_state.update(root, **{CI_RUNS: frozen})
+    except (run_state.RunStateError, OSError) as exc:
+        raise ReportError(f"the CI runs could not be frozen on the run record: {exc}") from exc
+    return frozen
+
+
+def _ci_runs(root: Path, state: dict, state_rel: str, run_id: str | None
+             ) -> tuple[list[dict], str]:
+    """The CI runs this page reads, and their source. From the record whenever it froze them;
+    none for a named run or a sealed record that froze none, so `check` never reads the forge;
+    live from the forge only for an unfrozen preview of the open run."""
+    frozen = state.get(CI_RUNS)
+    if isinstance(frozen, dict):
+        return ([r for r in frozen.get("runs") or [] if isinstance(r, dict)],
+                str(frozen.get("source") or state_rel))
+    if run_id or state.get("ended_at"):
+        return [], state_rel
+    return fetch_ci_runs(root)
 
 
 def _at(value) -> "datetime | None":
@@ -2922,7 +2938,7 @@ DEPLOY_MAPPING = ("a push to main IS the deployment in this trunk-based reposito
 _NO_FORGE = "no forge run data"
 
 
-def _dora_rows(root: Path, start, end) -> list[dict]:
+def _dora_rows(root: Path, start, end, runs: list[dict], ci_source: str) -> list[dict]:
     """The four keys, each with its value, this project's mapping, the elite band and a source.
 
     Deployment frequency and change failure rate count PUSH-TRIGGERED runs alone. Counting
@@ -2930,7 +2946,6 @@ def _dora_rows(root: Path, start, end) -> list[dict]:
     deployment, which is not a change reaching the trunk, and the rate it produces is a
     different number about a different thing.
     """
-    runs, ci_source = _ci_runs(root)
     windowed = [r for r in runs if _in_window(r.get("createdAt"), start, end)]
     pushes = [r for r in windowed if str(r.get("event") or "") == "push"]
     failed = [r for r in pushes if str(r.get("conclusion") or "").lower() not in ("success", "")]
@@ -3501,11 +3516,11 @@ def _rulings_section(state: dict, state_rel: str) -> dict:
                                 sum(1 for r in recs if r.get("by") == "operator"), state_rel)})
 
 
-def _dora_section(root: Path, start, end) -> dict:
-    rows = _dora_rows(root, start, end)
+def _dora_section(root: Path, start, end, runs: list[dict], ci_source: str) -> dict:
+    rows = _dora_rows(root, start, end, runs, ci_source)
     if all(r["dora_value"]["value"] == NOT_MEASURED for r in rows):
         return _section("dora", "DORA", not_measured=unmeasured(
-            "dora", _ci_runs(root)[1],
+            "dora", ci_source,
             f"{_NO_FORGE} and no commit on main inside the run window"))
     return _section("dora", "DORA", rows=rows)
 
@@ -3600,7 +3615,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                               state.get("started_at"), _iso(end), readings["findings"]),
         _signoff_section(state_rel),
         _cost_section(state, state_rel, tokens),
-        _dora_section(root, start, end),
+        _dora_section(root, start, end, *_ci_runs(root, state, state_rel, run_id)),
         _calibration_section(state, state_rel),
         _rulings_section(state, state_rel),
         # Bounded at both ends by the run's own window, like DORA, so a decision taken before

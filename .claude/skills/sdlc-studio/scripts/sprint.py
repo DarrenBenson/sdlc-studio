@@ -8998,6 +8998,13 @@ def _file_the_report(root, retro_id):
     failure this whole split exists to end (US0832 AC4).
     """
     import sprint_report  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    # The forge is read HERE, fresh, and frozen on the run: the page and every later
+    # re-derivation of it read the runs from the record, never a per-clone cache.
+    try:
+        sprint_report.freeze_ci_runs(root)
+    except sprint_report.ReportError as exc:
+        print(f"close: the run cannot be reported yet - {exc}", file=sys.stderr)
+        return "", ""
     # THE REPORT-TIME STAMP, taken here because here is the only place it can be. `open_run`
     # takes the `open` reading; without a closing one from the same session no delta exists,
     # and the cost row reads NOT MEASURED on every run - which is what a library function with

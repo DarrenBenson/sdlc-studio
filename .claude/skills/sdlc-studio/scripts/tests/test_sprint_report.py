@@ -3202,14 +3202,6 @@ def _unit_file(root: Path, uid: str, points: int, *, status: str, acs: int = 3) 
     return p
 
 
-def _ci_runs_file(root: Path, rows: list[dict]) -> Path:
-    d = root / "sdlc-studio" / ".local"
-    d.mkdir(parents=True, exist_ok=True)
-    p = d / "ci-runs.json"
-    p.write_text(json.dumps(rows, indent=2), encoding="utf-8")
-    return p
-
-
 FIX_CI_ROWS = [
     # THREE push-triggered runs, one of them red - 1 of 3 is 33%.
     {"databaseId": 900001, "event": "push", "conclusion": "success", "headBranch": "main",
@@ -3298,8 +3290,6 @@ def fixture_run(root: Path, *, consult: bool = True, ci: bool = True, goal: str 
     if consult:
         (root / "sdlc-studio" / "reviews" / "RV9001-stakeholder-consult.md").write_text(
             CONSULT.format(run=FIX_RUN), encoding="utf-8")
-    if ci:
-        _ci_runs_file(root, FIX_CI_ROWS)
     # The two review ledgers: three plan REJECTs and two delivery REJECTs (the rework signal).
     rows = []
     for i, uid in enumerate(FIX_UNITS):
@@ -3330,6 +3320,9 @@ def fixture_run(root: Path, *, consult: bool = True, ci: bool = True, goal: str 
                                      if verdict else None),
              "base_ref": "0000000000000000000000000000000000000000",
              "verified_sha": FIX_SHA, "forecast_tokens": 2_575_000}
+    if ci:
+        # As PREPARE freezes them on the run (BG0795).
+        state["ci_runs"] = {"source": "gh run list", "runs": FIX_CI_ROWS}
     if stamps:
         state["session_token_stamps"] = [
             {"tokens": FIX_OPEN_READING, "source": "/t/s1.jsonl", "at": "2026-09-15T05:00:00Z",
@@ -4082,7 +4075,7 @@ class InvalidatedReportTests(ReportOfRecordBase):
         """The three trees, in REAL git repositories.
 
         `mkdtemp` alone left `_git_commits` shelling out to git, getting a non-zero exit and
-        returning `[]`, so every DORA figure came from the static `ci-runs.json` fixture and
+        returning `[]`, so every DORA figure came from the fixture's static CI rows and
         tree (ii)'s write was never committed. The one case AC1 calls discriminating was the
         one the fixture could not reach - and the defect it could not see was real: the DORA
         window is open-ended until SEAL, so on a git tree every later commit entered the

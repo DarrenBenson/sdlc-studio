@@ -473,8 +473,8 @@ class WindowRaceTests(unittest.TestCase):
     push-triggered CI run stamped in that same second is paperwork that came after the page -
     and with the end inclusive it entered the re-derivation alone and `check` read INVALID for
     any outcome. A real git repository, because in a bare directory `_git_commits` returns
-    nothing and the commit half of the window cannot be observed; the forge is the cached
-    `.local/ci-runs.json`, so nothing reaches the network.
+    nothing and the commit half of the window cannot be observed; the forge is the runs frozen
+    on the run record, so nothing reaches the network.
     """
 
     GENERATED = "2026-09-20T14:00:37Z"     # the page's generation instant, second t, off a
@@ -510,7 +510,11 @@ class WindowRaceTests(unittest.TestCase):
                 "headBranch": "main", "workflowName": "Lint", "createdAt": at}
 
     def _runs(self, rows: list[dict]) -> None:
-        (self.root / sr.CI_RUNS_REL).write_text(json.dumps(rows), encoding="utf-8")
+        self._state(**{sr.CI_RUNS: {"source": "gh run list", "runs": rows}})
+
+    def _frozen(self) -> list[dict]:
+        p = self.root / "sdlc-studio" / ".local" / "run-state.json"
+        return json.loads(p.read_text(encoding="utf-8"))[sr.CI_RUNS]["runs"]
 
     def _commit(self, message: str, at: str) -> None:
         (self.root / "work.txt").write_text(message + "\n", encoding="utf-8")
@@ -543,8 +547,7 @@ class WindowRaceTests(unittest.TestCase):
         rc, out = self._check(rid)
         self.assertEqual(0, rc, out)                       # the positive control
 
-        runs = json.loads((self.root / sr.CI_RUNS_REL).read_text(encoding="utf-8"))
-        self._runs(runs + [self._run(4, self.GENERATED)])
+        self._runs(self._frozen() + [self._run(4, self.GENERATED)])
         rc, out = self._check(rid)
         self.assertEqual(0, rc, f"a push run in the generation second moved the page\n{out}")
 
@@ -563,8 +566,7 @@ class WindowRaceTests(unittest.TestCase):
         1 and the lead time shrinks. Or by ignoring the forge - the count then falls back to the
         commits, and the source no longer names the runs. A run and a commit AT the generation
         second, and a dispatch run inside, are present and not counted."""
-        self._runs(json.loads((self.root / sr.CI_RUNS_REL).read_text(encoding="utf-8"))
-                   + [self._run(4, self.GENERATED)])
+        self._runs(self._frozen() + [self._run(4, self.GENERATED)])
         self._commit("the close's paperwork", self.GENERATED)
         report = sr.build_report(self.root, lean.RETRO, as_of=self.GENERATED)
         dora = self._dora(report)

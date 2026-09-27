@@ -1,6 +1,6 @@
 # BG0795: The sprint report reads a week-old CI cache as current, so DORA's failure rate and restore time read no forge data
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_frozen_report_inputs.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_integrity.py, changelog.d/BG0795.md
@@ -26,10 +26,13 @@ Key the cache to the run (or refresh when the run window ends after the cache's 
 
 - [ ] **AC1** Given a `.local/ci-runs.json` written before the run opened and a stub `gh` answering a push run inside the run's window, when the close prepares the report, then DORA counts the stub's run and the run record carries it. Fails on: HEAD's `_ci_runs`, which returns the cache whenever it exists (RPT0010 read no forge data from a cache written 2026-09-18)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_frozen_report_inputs.py::FrozenCiRunsTests::test_the_close_reads_the_forge_not_a_stale_cache
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC2** Given a signed fixture whose run record carries its CI runs, when `sprint_report.py check` runs with a stub `gh` answering a different set of runs, then it exits 0. Fails on: re-deriving DORA from a live `gh run list`, which reads RPT0010 INVALIDATED in a forge-connected clone (`dora_value[0]` signed 72, now 7; measured at dee380d9)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_frozen_report_inputs.py::FrozenCiRunsTests::test_a_signed_report_rederives_dora_from_its_record
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC3** Given the scripts, then nothing reads or writes `sdlc-studio/.local/ci-runs.json`. Fails on: keeping the per-clone cache as a second source beside the record
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_frozen_report_inputs.py::FrozenCiRunsTests::test_no_per_clone_ci_cache_remains
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 
