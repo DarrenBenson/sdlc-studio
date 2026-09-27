@@ -22,6 +22,11 @@ The CHANGELOG check is advisory between releases (the topmost released
 heading lags until the release PR) unless --strict is passed, when it
 must match too.
 
+Without --strict the homes are compared by their semver core, so a
+pre-release suffix is ignored. --strict (the release gate) compares the
+full version: a cut left with one home at 6.0.0-rc.1 beside 6.0.0 is a
+skill that offers its own release to itself.
+
 Usage:
     python3 tools/check_versions.py [--root DIR] [--strict]
 
@@ -38,7 +43,12 @@ from pathlib import Path
 
 SKILL_DIR = ".claude/skills/sdlc-studio"
 
-SEMVER = r"(\d+\.\d+\.\d+)"
+SEMVER = r"(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)"
+
+
+def _core(v: str) -> str:
+    """The semver core of a version: `6.0.0-rc.1` -> `6.0.0`."""
+    return v.split("-", 1)[0]
 
 
 def from_package_json(root: Path) -> str | None:
@@ -48,8 +58,6 @@ def from_package_json(root: Path) -> str | None:
         return None
     if not v:
         return None
-    # Normalise a pre-release (`4.0.0-rc.1` -> `4.0.0`) to the SEMVER core, so package.json
-    # compares consistently with the other homes (which already extract the core via SEMVER).
     m = re.match(SEMVER, v)
     return m.group(1) if m else v
 
@@ -258,7 +266,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="repo root")
     parser.add_argument("--strict", action="store_true",
-                        help="CHANGELOG topmost release must match too (release gate)")
+                        help="compare full versions, pre-release suffix included, and the "
+                             "CHANGELOG topmost release must match too (release gate)")
     args = parser.parse_args(argv)
     root = Path(args.root)
 
@@ -285,7 +294,8 @@ def main(argv: list[str] | None = None) -> int:
     changelog = from_changelog(root)
 
     errors = [f"{name}: version not found" for name, v in versions.items() if v is None]
-    found = {v for v in versions.values() if v is not None}
+    key = (lambda v: v) if args.strict else _core
+    found = {key(v) for v in versions.values() if v is not None}
     if len(found) > 1:
         detail = ", ".join(f"{name}={v}" for name, v in versions.items())
         errors.append(f"version mismatch: {detail}")

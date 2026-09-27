@@ -143,7 +143,7 @@ def _read_version(root: Path) -> tuple[int | None, str | None]:
         return None, None
     t = v.read_text(encoding="utf-8")
     sm = re.search(r"^schema_version:\s*(\d+)", t, re.M)
-    km = re.search(r'^skill_version:\s*"?([\d.]+)"?', t, re.M)
+    km = re.search(r'^skill_version:\s*"?([\d.]+(?:-[0-9A-Za-z.-]+)?)"?', t, re.M)
     return (int(sm.group(1)) if sm else None), (km.group(1) if km else None)
 
 
@@ -531,7 +531,7 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
     return actions
 
 
-_VER_HEAD_RE = re.compile(r"^##\s*\[(\d+\.\d+\.\d+)\]")
+_VER_HEAD_RE = re.compile(rf"^##\s*\[({version_check.VERSION})\]")
 # `### Kind`, `### Kind Words`, or `### Kind (qualifier)` - the qualifier is
 # dropped but the heading still RESETS the kind, so a qualified heading never
 # leaks its bullets into the previous group.

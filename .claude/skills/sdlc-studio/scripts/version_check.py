@@ -28,7 +28,10 @@ from lib import sdlc_md  # noqa: E402
 
 REPO = "DarrenBenson/sdlc-studio"
 DEFAULT_TTL_HOURS = 24
-_SEMVER = re.compile(r"(\d+)\.(\d+)\.(\d+)")
+#: A version as written: the semver core plus any pre-release suffix (`6.0.0-rc.1`). Shared with
+#: every reader of a stamp or heading, so no reader drops the suffix and reads an rc as its final.
+VERSION = r"\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?"
+_SEMVER = re.compile(r"(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?")
 
 
 def skill_root() -> Path:
@@ -40,13 +43,21 @@ def installed_version(skill_dir: Path | str) -> str | None:
     sk = Path(skill_dir) / "SKILL.md"
     if not sk.exists():
         return None
-    m = re.search(r'^\s*version:\s*"?(\d+\.\d+\.\d+)"?', sk.read_text(encoding="utf-8"), re.M)
+    m = re.search(rf'^\s*version:\s*"?({VERSION})"?', sk.read_text(encoding="utf-8"), re.M)
     return m.group(1) if m else None
 
 
 def _semver(v: str | None):
+    """A sort key in semver precedence: a pre-release orders below its final, and its
+    identifiers compare numerically when numeric (rc.10 > rc.2), else as text, numbers first."""
     m = _SEMVER.search(v or "")
-    return tuple(int(x) for x in m.groups()) if m else None
+    if not m:
+        return None
+    core = tuple(int(x) for x in m.groups()[:3])
+    if m.group(4) is None:
+        return core + ((1,),)
+    ids = tuple((0, int(i), "") if i.isdigit() else (1, 0, i) for i in m.group(4).split("."))
+    return core + ((0, ids),)
 
 
 def _gt(a: str | None, b: str | None) -> bool:

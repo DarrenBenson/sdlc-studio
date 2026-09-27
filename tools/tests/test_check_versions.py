@@ -56,6 +56,25 @@ class StrictBumpTests(unittest.TestCase):
             self.assertIn("4.1.0", msg)                       # ...and its stale value
             self.assertIn("5.0.0", msg)                       # against the version the rest carry
 
+    def test_a_pre_release_home_beside_a_final_is_named(self) -> None:
+        # BG0790: a cut half-bumped from 6.0.0-rc.1 to 6.0.0. Once the version check keeps the
+        # suffix, the stale SKILL.md would offer the release to itself forever, so the release
+        # gate compares full versions, not the semver core.
+        with tempfile.TemporaryDirectory() as d:
+            _fixture(Path(d), pkg="6.0.0", yaml="6.0.0", skill="6.0.0-rc.1",
+                     readme="6.0.0", changelog="6.0.0")
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = check_versions.main(["--root", d, "--strict"])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("SKILL.md metadata.version=6.0.0-rc.1", err.getvalue())
+        # the control: every home at the rc, with the rc's own CHANGELOG heading, passes
+        with tempfile.TemporaryDirectory() as d:
+            _fixture(Path(d), pkg="6.0.0-rc.1", yaml="6.0.0-rc.1", skill="6.0.0-rc.1",
+                     readme="6.0.0-rc.1", changelog="6.0.0-rc.1")
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(check_versions.main(["--root", d, "--strict"]), 0)
+
     def test_all_at_5_0_0_passes_strict(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             _fixture(Path(d), pkg="5.0.0", yaml="5.0.0", skill="5.0.0",
@@ -120,13 +139,15 @@ class VersionTests(unittest.TestCase):
             self.assertEqual(check_versions.main(["--root", d]), 1)
 
     def test_prerelease_package_json_normalises_to_core(self) -> None:
-        # A pre-release (`4.0.0-rc.1`) in package.json must compare equal to the SEMVER-core
-        # `4.0.0` the other homes yield, so an rc release passes the consistency check.
+        # Between releases a pre-release (`4.0.0-rc.1`) compares by its semver core, so the
+        # plain check passes it beside `4.0.0`. The reader keeps the suffix (BG0790): only
+        # --strict, the release gate, compares the full version and refuses this tree.
         with tempfile.TemporaryDirectory() as d:
             _fixture(Path(d), pkg="4.0.0-rc.1", yaml="4.0.0", skill="4.0.0",
                      readme="4.0.0", changelog="4.0.0")
-            self.assertEqual(check_versions.from_package_json(Path(d)), "4.0.0")
+            self.assertEqual(check_versions.from_package_json(Path(d)), "4.0.0-rc.1")
             self.assertEqual(check_versions.main(["--root", d]), 0)
+            self.assertEqual(check_versions.main(["--root", d, "--strict"]), 1)
 
     def test_real_repo_passes(self) -> None:
         repo = Path(__file__).resolve().parents[2]
