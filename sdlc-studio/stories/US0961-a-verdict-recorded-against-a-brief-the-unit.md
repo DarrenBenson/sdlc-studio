@@ -1,6 +1,6 @@
 # US0961: A verdict recorded against a brief the unit has since outgrown says so
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,8 +19,10 @@
 
 - **AC1:** Given a unit briefed with fingerprint F, then its Affects widened by one file, when `critic.py record --unit <id> --brief F --verdict APPROVE ...` runs, then it records the row and prints on stderr that the unit's brief is now G, naming the changed field (Affects or criteria) and the `critic.py brief` command to re-brief. Fails on: HEAD, which records silently (the retro's widen-after-brief pattern, three units in Sprint 5); refusing the record, which the ratchet forbids
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_rebrief.py::RebriefTests::test_a_widened_unit_is_named_at_record
+  - **Verified:** yes (2026-09-27)
 - **AC2:** Given the same unit with nothing changed since the brief, when record runs, then stderr carries no such line; and a rejoinder brief's fingerprint is compared the way its footer printed it. Fails on: comparing a rejoinder against the base brief, which warns on every round 2
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_rebrief.py::RebriefTests::test_an_unchanged_unit_records_quietly
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

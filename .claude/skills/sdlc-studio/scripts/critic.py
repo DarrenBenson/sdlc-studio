@@ -2302,6 +2302,90 @@ def _review_seat_card(root: Path, seat: str) -> Path:
     return card
 
 
+def _brief_criteria(text: str) -> str:
+    """The criteria a brief quotes, by the SAME heading rule as the runner's `criteria_blocks`:
+    case-insensitive, more words allowed."""
+    m = re.search(r"(?mi)^##\s+acceptance criteria\b[^\n]*\n(.*?)(?=^## |\Z)", text, re.S)
+    return (m.group(1).strip() if m else _criteria_from_whole_file(text)
+            or "(no Acceptance Criteria section - judge the diff against the unit's stated intent)")
+
+
+#: Where `critic.py brief` notes each brief it prints, so `record` can tell a verdict taken
+#: against a scope the unit has since outgrown. Runtime state: gitignored, and never judged.
+BRIEF_NOTES_REL = Path("sdlc-studio") / ".local" / "briefs.jsonl"
+
+
+def _brief_scope(root: Path, unit: str) -> dict:
+    """The two brief inputs a fix round moves: the unit's Affects and its criteria (digested)."""
+    found = sdlc_md.find_by_id(root, unit)
+    if not found:
+        raise ValueError(f"no artefact with id {unit!r}")
+    text = sdlc_md.read_text_safe(found[0])
+    return {"affects": sdlc_md.affects_files(text),
+            "criteria": brief_fingerprint(_brief_criteria(text))}
+
+
+def note_brief(root: Path | str, unit: str, seat: str, tier: str, fp: str,
+               rejoinder: bool, explicit: bool) -> None:
+    """Append what this brief was taken over. Best-effort: a brief is never refused for it."""
+    try:
+        row = {"fp": fp, "unit": sdlc_md.norm_id(unit), "seat": seat, "tier": tier,
+               "explicit": explicit, "rejoinder": rejoinder, **_brief_scope(Path(root), unit)}
+        path = Path(root) / BRIEF_NOTES_REL
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row) + "\n")
+    except (OSError, ValueError):
+        pass
+
+
+def rebrief_notice(root: Path | str, unit: str, fp: str) -> str | None:
+    """The warning for a verdict recorded against brief `fp` when the unit's Affects or criteria
+    have changed since that brief was printed, or None. A fingerprint no brief here noted (a
+    hand-written prompt, a brief taken in another clone) says nothing: it is stored, not judged.
+    """
+    uid = sdlc_md.norm_id(unit)
+    try:
+        # `replace`: a stray byte costs the line it sits on, never the record that asked
+        lines = (Path(root) / BRIEF_NOTES_REL).read_text(encoding="utf-8",
+                                                         errors="replace").splitlines()
+    except OSError:
+        return None
+    noted = None
+    for line in lines:
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(row, dict) and row.get("fp") == fp and row.get("unit") == uid:
+            noted = row
+    if noted is None:
+        return None
+    try:
+        now = _brief_scope(Path(root), uid)
+        changed = [name for key, name in (("affects", "Affects"), ("criteria", "criteria"))
+                   if noted.get(key) != now[key]]
+        if not changed:
+            return None
+        seat, explicit = noted["seat"], bool(noted["explicit"])
+        rejoinder = bool(noted.get("rejoinder"))
+        # A derived tier is derived again: the widening that moved the scope can move the band.
+        tier = noted["tier"] if explicit else tier_for(root, uid)
+        base = brief(root, uid, seat, tier)
+    except (KeyError, OSError, ValueError):
+        return None
+    # the way the footer printed it: a rejoinder's fingerprint is its base plus the phase
+    new = rejoinder_fingerprint(base) if rejoinder else brief_fingerprint(base)
+    again = f"critic.py brief --unit {uid} --seat {seat}"
+    if explicit:
+        again += f" --tier {tier}"
+    if rejoinder:
+        again += " --rejoinder <prior verdict file>"
+    return (f"warning: {uid} was briefed as {fp}, and its {' and '.join(changed)} changed "
+            f"since, so its brief is now {new}; this verdict was recorded against the earlier "
+            f"scope. Re-brief the seat: {again}")
+
+
 def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> str:
     """The seat-review prompt, assembled deterministically.
 
@@ -2316,10 +2400,7 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> st
     path, _type = found
     text = sdlc_md.read_text_safe(path)
     card = _review_seat_card(root, seat)
-    # the SAME heading rule as the runner's `criteria_blocks`: case-insensitive, more words allowed
-    m = re.search(r"(?mi)^##\s+acceptance criteria\b[^\n]*\n(.*?)(?=^## |\Z)", text, re.S)
-    acs = (m.group(1).strip() if m else _criteria_from_whole_file(text)
-           or "(no Acceptance Criteria section - judge the diff against the unit's stated intent)")
+    acs = _brief_criteria(text)
     affects = sdlc_md.affects_files(text)
     scope = (", ".join(affects) if affects
              else "(no Affects declared - derive the scope from git status)")
@@ -2881,6 +2962,8 @@ def cmd_brief(args: argparse.Namespace) -> int:
             # the footer the delivery rejoinder never printed: a re-review's verdict needs the
             # same provenance as the first one, and a fingerprint the reviewer can quote back
             fp = rejoinder_fingerprint(text)
+            note_brief(args.root, args.unit, args.seat, tier, fp, rejoinder=True,
+                       explicit=explicit)
             how = "chosen" if explicit else "derived from the unit's risk band"
             print(f"\nreview tier: {tier} ({how})\n"
                   f"brief fingerprint: {fp}\n"
@@ -2904,15 +2987,18 @@ def cmd_brief(args: argparse.Namespace) -> int:
             if tier == "full":
                 assert_brief_claim_pass(text)
             print(text)
+            fp = brief_fingerprint(text)
+            note_brief(args.root, args.unit, args.seat, tier, fp, rejoinder=False,
+                       explicit=explicit)
             # On stderr so the brief itself stays pipeable, and stated as the next command so
             # a reviewer does not have to know the flag exists. The tier is carried INTO that
             # command: a tier printed and not recorded is the state this whole flag was in.
             how = "chosen" if explicit else "derived from the unit's risk band"
             print(f"\nreview tier: {tier} ({how})\n"
-                  f"brief fingerprint: {brief_fingerprint(text)}\n"
+                  f"brief fingerprint: {fp}\n"
                   f"  record the verdict with:  critic.py record --unit "
                   f"{sdlc_md.norm_id(args.unit)} --verdict <APPROVE|REJECT> "
-                  f"--brief {brief_fingerprint(text)} --tier {tier}"
+                  f"--brief {fp} --tier {tier}"
                   f"{' --tier-explicit' if explicit else ''} ...", file=sys.stderr)
     except (OSError, ValueError) as exc:
         print(f"brief refused: {exc}", file=sys.stderr)
@@ -3108,6 +3194,8 @@ def cmd_record(args: argparse.Namespace) -> int:
     for unit in recorded:
         if notice := escalation_notice(args.root, unit):
             print(notice)
+        if brief and (moved := rebrief_notice(args.root, unit, brief)):
+            print(moved, file=sys.stderr)
     if drift := _seat_drift_warning(args.root, args.reviewer):
         print(f"WARNING: {drift}", file=sys.stderr)
     return rc
