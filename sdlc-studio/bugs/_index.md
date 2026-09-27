@@ -7,13 +7,13 @@
 | Status | Count |
 | --- | --- |
 | Open | 25 |
-| In Progress | 3 |
+| In Progress | 4 |
 | Fixed | 644 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
 | Superseded | 28 |
-| **Total** | **809** |
+| **Total** | **810** |
 
 ## All Bugs
 
@@ -168,6 +168,7 @@
 | [BG0807](BG0807-the-us0942-ac5-stamp-test-resolves-the-whole.md) | The US0942 AC5 stamp test resolves the whole corpus before filtering, costing about 50 seconds of every commit that touches verify_ac.py | Fixed | Low | 2026-09-27 | 2026-09-27 |
 | [BG0808](BG0808-init-records-no-project-version-so-a-fresh.md) | init records no project version, so a fresh project's first migrate reports work and its upgrade digest reads the range as unknown | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0809](BG0809-install-sh-local-rewrites-every-personal-copy-of.md) | install.sh --local rewrites every personal copy of the skill, and the copy it installs is one Claude Code does not load | Open | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0810](BG0810-the-one-runner-agreement-test-races-its-own.md) | The one-runner agreement test races its own fixture: two worker processes share one template directory | In Progress | Medium | 2026-09-27 | 2026-09-27 |
 
 ## Archived Releases
 
