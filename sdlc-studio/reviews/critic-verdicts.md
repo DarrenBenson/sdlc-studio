@@ -1351,6 +1351,7 @@ One row has been removed since adoption.
 | BG0800 | REJECT | qa-rev-stack4 | BG0800-build | 2026-09-27 | 44275606062f | full | [regression] blocking: the self-caused review-current skip also applies on --file-and-close, which writes no anchor, so file-and-close closes a run HEAD refused [LC-006]; [new] non-blocking: the file-and-close exclusion for the goal verdict is unpinned; [new] non-blocking: a mutant hiding every checklist item when a verdict is supplied survives [LC-002]; [pre-existing] non-blocking: close --dry-run does not pass the supplied verdict to the pre-flight |
 | BG0803 | APPROVE | qa-rev-stack4 | BG0803-build | 2026-09-27 | e54d86767ffd | full | [new] non-blocking: the no-tokens suffix of the capacity line is unpinned |
 | BG0806 | APPROVE | qa-rev-stack4 | BG0806-build | 2026-09-27 | de99d1235c3c | full | [pre-existing] non-blocking: staleness compares ISO strings across UTC offsets, now reachable in consuming projects [LC-006]; [new] non-blocking: this repo comparing against its own scripts is unpinned |
+| BG0797 | APPROVE | qa-rev-pair7 | BG0797-build | 2026-09-27 | c84f7310eb81 | full | [new] non-blocking: a partly timed unit with a span shows span minutes beside agent tokens and the fallback is untested [LC-002]; [pre-existing] non-blocking: the printed remedy can record onto a sealed or the next run, since record\_delegated\_tokens checks only run\_id [LC-006]; [new] non-blocking: skipping non-finite minutes on read is untested |
 
 ## Supersessions
 

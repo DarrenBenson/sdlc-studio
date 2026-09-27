@@ -108,9 +108,9 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
     </tbody>
   </table></div>
 <!-- when: estimates_units -->
-  <p class="lede">Each unit's minutes and tokens are measured over its own open span. Units open at the same time share hours and tokens, so these spans may overlap and are never added up into the run's figures above.</p>
+  <p class="lede">Each cell names its source. A figure labelled agent minutes or agent tokens sums the agent totals tagged to that unit; an unlabelled one is measured over the unit's own open span. Spans of units open at the same time overlap, so no per-unit figure is added up into the run's figures above.</p>
   <div class="scroll"><table>
-    <thead><tr><th scope="col">Unit</th><th scope="col" class="num">Forecast minutes</th><th scope="col" class="num">Minutes (open span)</th><th scope="col" class="num">Forecast tokens</th><th scope="col" class="num">Tokens (open span)</th></tr></thead>
+    <thead><tr><th scope="col">Unit</th><th scope="col" class="num">Forecast minutes</th><th scope="col" class="num">Minutes</th><th scope="col" class="num">Forecast tokens</th><th scope="col" class="num">Tokens</th></tr></thead>
     <tbody>
 <!-- repeat: estimates_units -->
       <tr><th scope="row"><span class="uid">{{unit_id}}</span></th><td class="num">{{eu_forecast_minutes}}</td><td class="num">{{eu_minutes}}</td>

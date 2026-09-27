@@ -1,6 +1,6 @@
 # BG0797: Per-unit minutes and tokens are recorded only on an In Progress transition the lean loop never makes, and the report does not say why the column is empty
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_unit_actuals.py, changelog.d/BG0797.md, .claude/skills/sdlc-studio/templates/core/sprint-report.md, .claude/skills/sdlc-studio/templates/reports/sprint-report.html
@@ -25,10 +25,13 @@ Open a unit's span when its build is dispatched or its first verify or verdict i
 
 - [ ] **AC1** Given an open run and two delegated totals recorded with `retro.py accuracy --delegated-tokens N --delegated-unit US0001 --delegated-minutes M`, when the report derives, then US0001's row reads the sum of their tokens and minutes, labelled agent tokens and agent minutes. Fails on: HEAD reading only In Progress spans, so all 37 of RPT0010's units read NOT MEASURED, or a span on the shared main-thread meter, which counts the other parallel units' traffic
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_unit_actuals.py::UnitActualsTests::test_a_unit_s_tagged_delegated_totals_are_its_actuals
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC2** Given tagged and untagged delegated totals, when the run's token total is derived, then each record counts once. Fails on: adding the per-unit sums to the run total beside the records they came from
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_unit_actuals.py::UnitActualsTests::test_tagged_totals_count_once_in_the_run_total
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC3** Given a batch unit with no span and no tagged total, when the report derives, then its row reads NOT MEASURED naming both missing sources and the `--delegated-unit` flag. Fails on: the bare 'not recorded' RPT0010 prints
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_unit_actuals.py::UnitActualsTests::test_an_unmeasured_unit_names_why
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

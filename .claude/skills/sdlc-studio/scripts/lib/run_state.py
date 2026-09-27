@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 from pathlib import Path
@@ -1424,8 +1425,33 @@ def delegated_total(state: dict) -> int:
     return sum(r["tokens"] for r in delegated_records(state))
 
 
+def unit_agent_totals(state: dict) -> dict[str, dict]:
+    """Per unit, the delegated totals tagged to it: `{unit: {"tokens", "minutes", "agents",
+    "timed"}}`.
+
+    A unit's own agents' reported spend, never a span on the main-thread meter, which counts the
+    traffic of every unit open beside it. `minutes` sums the `timed` records that carried minutes,
+    None when none did; it is the unit's minutes only when `timed == agents`. A view of
+    `delegated_records` by unit: the records count once, in `delegated_total`, and these sums are
+    never added to the run's total beside them."""
+    out: dict[str, dict] = {}
+    for r in delegated_records(state):
+        uid = r.get("unit")
+        if not isinstance(uid, str) or not uid.strip():
+            continue
+        t = out.setdefault(sdlc_md.norm_id(uid),
+                           {"tokens": 0, "minutes": None, "agents": 0, "timed": 0})
+        t["tokens"] += r["tokens"]
+        t["agents"] += 1
+        m = r.get("minutes")
+        if isinstance(m, (int, float)) and not isinstance(m, bool) and math.isfinite(m) and m > 0:
+            t["minutes"] = (t["minutes"] or 0) + m
+            t["timed"] += 1
+    return out
+
+
 def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
-                            note: str = "") -> dict | None:
+                            note: str = "", unit: str = "", minutes=None) -> dict | None:
     """Record one delegated agent's SUPPLIED token total against the open run.
 
     Returns the record, or None when no run is open - a spend counted against a run with no
@@ -1433,15 +1459,25 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
 
     A non-positive or non-integer total RAISES rather than being recorded: the whole point of
     this record is that it is a real figure an agent reported, and a 0 recorded here would be
-    added into a published total as though a delegated agent had cost nothing.
+    added into a published total as though a delegated agent had cost nothing. `unit` tags the
+    record to the unit the agent worked on and `minutes` is the agent's own reported duration,
+    a positive number when given; `unit_agent_totals` reads them as that unit's actuals.
     """
     if isinstance(tokens, bool) or not isinstance(tokens, int) or tokens <= 0:
         raise ValueError(f"a delegated token total must be a positive integer, got {tokens!r} - "
                          f"an absent or zero total is not a measurement of a delegated agent")
+    if minutes is not None and (isinstance(minutes, bool) or not isinstance(minutes, (int, float))
+                                or not math.isfinite(minutes) or minutes <= 0):
+        raise ValueError(f"a delegated agent's minutes must be a positive finite number, got "
+                         f"{minutes!r}")
     if not read(repo_root).get("run_id"):
         return None
     entry = {"tokens": tokens, "agent": agent, "note": note,
              "provenance": SUPPLIED, "recorded_at": sdlc_md.now_iso8601()}
+    if unit:
+        entry["unit"] = sdlc_md.norm_id(unit)
+    if minutes is not None:
+        entry["minutes"] = float(minutes)
 
     def apply(state: dict) -> dict:
         state = state or _blank()

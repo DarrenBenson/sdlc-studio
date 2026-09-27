@@ -28,11 +28,12 @@ over forecast.
 <!-- end -->
 
 <!-- when: estimates_units -->
-Each unit's minutes and tokens are measured over its own open span. Units open at the same time
-share hours and tokens, so these spans may overlap and are never added up into the run's figures
+Each cell names its source. A figure labelled agent minutes or agent tokens sums the agent
+totals tagged to that unit; an unlabelled one is measured over the unit's own open span. Spans of
+units open at the same time overlap, so no per-unit figure is added up into the run's figures
 above.
 
-| Unit | Forecast minutes | Minutes (open span) | Forecast tokens | Tokens (open span) |
+| Unit | Forecast minutes | Minutes | Forecast tokens | Tokens |
 | --- | --- | --- | --- | --- |
 <!-- repeat: estimates_units -->
 | {{unit_id}} | {{eu_forecast_minutes}} | {{eu_minutes}} | {{eu_forecast_tokens}} | {{eu_tokens}} |

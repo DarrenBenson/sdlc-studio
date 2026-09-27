@@ -3176,6 +3176,7 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
             if isinstance(v, dict)}
     actuals = {sdlc_md.norm_id(k): v for k, v in (state.get("unit_actuals") or {}).items()
                if isinstance(v, dict)}
+    agent_totals = run_state.unit_agent_totals(state)
     changes = {sdlc_md.norm_id(c.get("id") or ""): c for c in state.get("batch_changes") or []
                if isinstance(c, dict) and c.get("id") and not c.get("note")
                and c.get("action") in ("drop", "add")}
@@ -3201,6 +3202,11 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
         delivered = (False if dropped else uid in cleared if gate_clear is not None
                      else _terminal(root, uid)[1])
         plan, act = snap.get(uid) or {}, actuals.get(uid) or {}
+        # The unit's tagged agent totals, where recorded, over its span on the shared meter.
+        agent = agent_totals.get(uid) or {}
+        # Minutes are the unit's only when every tagged agent reported them: a sum over some of
+        # them, beside tokens from all of them, would read as the whole unit's time.
+        agent_minutes = bool(agent) and agent["timed"] == agent["agents"]
         points = (filed_points[uid] if uid in filed_points else
                   sdlc_md.read_points(sdlc_md.read_text_safe(path)) if path else None)
         out.append({
@@ -3212,8 +3218,12 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
             "planned_points": plan.get("planned_points"),
             "forecast_minutes": plan.get("forecast_minutes"),
             "forecast_tokens": plan.get("forecast_tokens"),
-            "minutes": act.get("minutes"), "tokens": act.get("tokens"),
-            "in_plan": bool(plan), "measured": bool(act),
+            "minutes": agent["minutes"] if agent_minutes else act.get("minutes"),
+            "tokens": agent["tokens"] if agent else act.get("tokens"),
+            "agent_minutes": agent_minutes, "agent_tokens": bool(agent), "spanned": bool(act),
+            "agents": agent.get("agents", 0), "timed": agent.get("timed", 0),
+            "timed_minutes": agent.get("minutes"),
+            "in_plan": bool(plan), "measured": bool(act) or bool(agent),
             "rounds": (_review_rounds(uid, verdicts, state, later.get(uid), window)
                        if ledger_found else None),
             "rounds_rel": ledger_rel})
@@ -3311,17 +3321,34 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
         run_tokens.get("reason") or ("the run meter read no spend between its readings"
                                      if tokens == 0 else "no token actual was recorded")))
 
-    def cell(key, value, why):
+    def cell(key, value, why, label=None):
         if _num(value):
-            return fig(key, round(value, 1) if isinstance(value, float) else value, state_rel)
+            return fig(key, round(value, 1) if isinstance(value, float) else value, state_rel,
+                       **({"label": label} if label else {}))
         return unmeasured(key, state_rel, why)
+
+    def why(u):
+        """Why a unit's minutes or tokens are missing, and how to record them."""
+        if u["agent_tokens"]:
+            some = (f" ({round(u['timed_minutes'], 1)} between them)" if u["timed"] else "")
+            return (f"{u['timed']} of its {u['agents']} tagged agent(s) reported minutes{some}, "
+                    f"so its minutes are unknown - an agent's minutes are recorded with its "
+                    f"`--delegated-tokens` as `--delegated-minutes M` when it reports, and "
+                    f"cannot be added afterwards")
+        if u["spanned"]:
+            return "not recorded on its In Progress span"
+        return (f"no In Progress span and no agent total tagged to it - record one with "
+                f"`retro.py accuracy --delegated-tokens N --delegated-unit {u['id']} "
+                f"--delegated-minutes M`")
     unit_rows = [{"unit_id": fig("unit_id", u["id"], u["rel"]),
                   "eu_forecast_minutes": cell("eu_forecast_minutes", u["forecast_minutes"],
                                               "not in the plan"),
-                  "eu_minutes": cell("eu_minutes", u["minutes"], "not recorded"),
+                  "eu_minutes": cell("eu_minutes", u["minutes"], why(u),
+                                     "agent minutes" if u["agent_minutes"] else None),
                   "eu_forecast_tokens": cell("eu_forecast_tokens", u["forecast_tokens"],
                                              "not in the plan"),
-                  "eu_tokens": cell("eu_tokens", u["tokens"], "not recorded")}
+                  "eu_tokens": cell("eu_tokens", u["tokens"], why(u),
+                                    "agent tokens" if u["agent_tokens"] else None)}
                  for u in ledger if not u["dropped"] and (u["in_plan"] or u["measured"])]
     if not any(_num(u[k]) for u in ledger for k in ("forecast_minutes", "minutes",
                                                     "forecast_tokens", "tokens")):
@@ -4134,12 +4161,13 @@ def _emit(nodes: list, scope: dict, rows: dict, flags: dict, seen: set) -> str:
 
 
 def _cell(f: dict):
-    """How one figure reads on the page: NOT MEASURED carries its reason, and a large count
-    carries thousands separators."""
+    """How one figure reads on the page: NOT MEASURED carries its reason, a large count carries
+    thousands separators, and a labelled figure says what it counts (`agent tokens`)."""
     value = f.get("value")
     if value == NOT_MEASURED and f.get("reason"):
         return f"{NOT_MEASURED} - {f['reason']}"
-    return f"{value:,}" if isinstance(value, int) and abs(value) >= 10000 else value
+    shown = f"{value:,}" if isinstance(value, int) and abs(value) >= 10000 else value
+    return f"{shown} {f['label']}" if f.get("label") else shown
 
 
 def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict, dict, dict]:

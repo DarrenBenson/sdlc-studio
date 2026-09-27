@@ -2986,10 +2986,16 @@ def cmd_accuracy(args) -> int:
     # fan-out sprint's delegated spend reaches the record at all - and it is a claim, so it is
     # recorded as `supplied` and published as part of a lower bound.
     delegated = getattr(args, "delegated_tokens", None)
+    unit, minutes = getattr(args, "delegated_unit", ""), getattr(args, "delegated_minutes", None)
+    if delegated is None and (unit or minutes is not None):
+        print("--delegated-unit and --delegated-minutes describe a --delegated-tokens record; "
+              "nothing was recorded", file=sys.stderr)
+        return 2
     if delegated is not None:
         try:
             rec = run_state.record_delegated_tokens(
-                args.root, delegated, agent=getattr(args, "delegated_agent", "") or "")
+                args.root, delegated, agent=getattr(args, "delegated_agent", "") or "",
+                unit=unit or "", minutes=minutes)
         except ValueError as exc:
             print(f"delegated total refused: {exc}", file=sys.stderr)
             return 1
@@ -2998,7 +3004,13 @@ def cmd_accuracy(args) -> int:
                   "supply the sprint's whole figure with `--tokens N` instead")
         else:
             print(f"delegated total recorded (supplied, not measured): {rec['tokens']:,}"
-                  + (f" for {rec['agent']}" if rec["agent"] else ""))
+                  + (f" for {rec['agent']}" if rec["agent"] else "")
+                  + (f" against {rec['unit']}" if rec.get("unit") else "")
+                  + (f", {rec['minutes']:g} minutes" if rec.get("minutes") else ""))
+            batch = {sdlc_md.norm_id(u) for u in run_state.read(args.root).get("batch") or []}
+            if rec.get("unit") and rec["unit"] not in batch:
+                print(f"warning: {rec['unit']} is not in the open run's batch - the total counts "
+                      f"in the run's, but no per-unit row shows it", file=sys.stderr)
     # WHERE the figure below came from, decided where it is fetched rather than inferred later.
     # An explicit `--tokens N` is an operator's typed claim; the branches below overwrite this
     # with what they actually did.
@@ -3536,6 +3548,14 @@ def build_parser() -> argparse.ArgumentParser:
             p.add_argument("--delegated-agent", dest="delegated_agent", default="",
                            metavar="NAME",
                            help="which agent reported the --delegated-tokens figure")
+            p.add_argument("--delegated-unit", dest="delegated_unit", default="",
+                           metavar="ID",
+                           help="the unit the agent worked on: the report reads a unit's tagged "
+                                "totals as its agent tokens and agent minutes")
+            p.add_argument("--delegated-minutes", dest="delegated_minutes", type=float,
+                           default=None, metavar="M",
+                           help="the agent's own reported duration in minutes, for "
+                                "--delegated-tokens")
             p.add_argument("--elapsed-hours", dest="elapsed_hours", type=float, default=None,
                            metavar="H",
                            help="the sprint's real elapsed hours (start to close), for the PRIMARY "
