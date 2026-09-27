@@ -154,7 +154,7 @@ lists every script with a one-line summary; open the linked page for the full en
 - `init.py` - Deterministic greenfield initialiser - `init` is now an executable, not a manual
 - `decisions.py` - Project decisions log - the canonical home for load-bearing decisions, both
 - `transition.py` - Deterministic status transition + cascade. `set --id <ID> --status <new>` sets `Status`,
-  and the canonical one-call bug close is `set --id BGxxxx --status Fixed --depth "<tier (evidence)>" --verdict approve --reviewer <R> --author <A>` - depth stamp, independent verdict and gated transition in one call, every predictable refusal raised before any write,
+  and the canonical one-call bug close is `set --id BGxxxx --status Fixed --verdict approve --reviewer <R> --author <A>` - independent verdict and gated transition in one call, every predictable refusal raised before any write,
 - `archive.py` - Index archival for large boards. `archive --type <t> --release <r>` moves a
 - `refine.py` - Decompose a request (RFC/CR) into an epic and stories, with the two-backlog links wired. `refine show --request <id>` surfaces the request's content and confirms it is refinable; `refine apply --request <id> --epic-title "..." --story "title|points[|affects]" ...` creates the epic (T-shirt sized from the point total, `Parent:` the request) and each story, writes the request's `Decomposed-into:`, rolls the epic's `Derived Point Total`, moves the request to its working status (In Progress / In Review), and surfaces `--question` items for a Three-Amigos consult. The automation of the hand-decomposition the two-backlog gates otherwise ask an operator to do, and the migration path for an upgrading project (an old childless CR becomes stories). Validates before minting: a non-request, an already-decomposed request, or an off-scale story point is refused and nothing is written.
 - `file_finding.py` - Deterministic Bug/CR/RFC filer for audit findings. Allocates a
@@ -179,7 +179,7 @@ lists every script with a one-line summary; open the linked page for the full en
   file the commit stages, against the index blob by AST in all four selector shapes, and
   reports a stamp already dead at HEAD rather than refusing it - the `stamps-staged`
   pre-commit lane.
-- `mutation.py` - The executable mutation-check gate - the complement of `verify_ac.py`: verify_ac
+- `mutation.py` - The opt-in mutation probe no gate reads - the complement of `verify_ac.py`: verify_ac
   confirms an AC's tests pass, this asks whether they would fail if the feature broke. Every run
   appends one row to `sdlc-studio/.local/mutation-series.jsonl` recording what it cost
   (wall-clock) and what it found, so the gate is judged on its record rather than on the run that

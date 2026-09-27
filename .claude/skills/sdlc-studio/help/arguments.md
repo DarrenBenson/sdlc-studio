@@ -60,10 +60,9 @@ Full command-line argument reference. For the common subset, see `help/help.md`
 
 | Flag | Description |
 | --- | --- |
-| `new --template minimal\|planning\|full` | Scaffold richness. `minimal` (default) is the bare stub; `planning` is the lean pre-implementation tier for a story/epic (under 60 lines: ACs with `Verify:` and `Verification target:`, scope, technical notes - and no constraint chain, edge cases, test scenarios or rollback envelope); `full` is the whole `templates/core/` body. `batch` takes the same flag and the same `minimal` default |
+| `new --template minimal\|planning\|full` | Scaffold richness. `minimal` (default) is the bare stub; `planning` is the lean pre-implementation tier for a story/epic (under 60 lines: ACs with `Verify:`, scope, technical notes - and no constraint chain, edge cases, test scenarios or rollback envelope); `full` is the whole `templates/core/` body. `batch` takes the same flag and the same `minimal` default |
 | `new --ac "<criterion>"` | Acceptance criterion (repeatable; story/CR/epic) |
 | `new --verify "<command>"` | The executable check for the AC in the same position (repeatable; pairs with `--ac`). Written verbatim - it is a command the verifier runs |
-| `new --target functional\|conversational\|soak\|live` | The `Verification target` tier written on each supplied AC |
 | `promote --id <ID> [--to full]` | Add every section the full template carries and this artifact lacks, preserving what is written, and re-stamp the tier `full`. The sections arrive as empty `{{placeholder}}` scaffolds - promotion gives you the headings and the obligation, not the content. Idempotent |
 
 A planning-tier story or epic **cannot reach In Progress, Review or Done while it is missing
@@ -83,14 +82,12 @@ the stamp from the decision entirely and judge every story and epic on its secti
 | Flag | Description |
 | --- | --- |
 | `annotate --id --field --value` | (transition.py) set/update one metadata field deterministically |
-| `set --depth "<text>"` | (transition.py) one-call close: stamp `Verification depth` before the gated transition |
 | `set --verdict --reviewer --author` | (transition.py) one-call close: record the independent critic verdict too (reviewer != author refused up front) |
-| `close --depth "<text>"` | stamp `Verification depth` before the terminal transition |
 | `close --verdict --reviewer --author` | record the critic verdict in the same call (reviewer != author refused up front) |
-| `close --issues "<note>"` | verdict issues/tier note for the recorded verdict |
+| `close --issues "<note>"` | the issues noted on the recorded verdict |
 
-One orchestrated `artifact.py close` = stamp + verdict + transition; each step is durable and
-re-runnable, so a refusal at a later gate never loses the earlier steps.
+One orchestrated `artifact.py close` = verdict + transition; each step is durable and
+re-runnable, so a refusal at the transition never loses the recorded verdict.
 
 ## Sprint, Gate & Product
 

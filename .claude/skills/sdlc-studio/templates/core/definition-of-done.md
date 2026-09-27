@@ -35,8 +35,8 @@ The review point. A batch of work reaching the project's commit threshold is don
 - [ ] An independent review has covered THIS batch's units, and its reviewer is not its author
 - [ ] Every finding it raised is filed against this batch, so the cost is priced where the work
       was rather than carried into the close
-- [ ] A repair written in response to a finding is itself covered by a later batch review, never
-      shipped self-reviewed
+- [ ] A repair written in response to a REJECT is judged by a round-2 verdict from the reviewer
+      who rejected it, never shipped self-reviewed
 
 > The review belongs here, not at the close. A review that runs at the close makes every defect
 > it finds close work by definition, and the close then costs more than the delivery it

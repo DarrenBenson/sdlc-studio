@@ -147,7 +147,7 @@ The env-key diff and the persistent-volume assertion are mechanical gates a proj
 
 **Pattern:** A feature is not Done until it has soaked under live traffic for the configured window (default 7 days). Smoke green is necessary but not sufficient.
 
-This pairs with the verification-depth `soak` tier and the `staged-rollout` release strategy. Stories whose AC carries `Verification target: soak` cannot be marked Done immediately post-deploy; they remain In Progress / Verifying until the soak completes.
+This pairs with the verification-depth `soak` tier and the `staged-rollout` release strategy. Write the soak as one of the story's acceptance criteria, with a `Verify:` line that reads its result: the story then stays In Progress after the deploy until the soak completes.
 
 **Soak monitoring contract:**
 

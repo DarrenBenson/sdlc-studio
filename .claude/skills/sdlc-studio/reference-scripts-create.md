@@ -64,15 +64,14 @@ exists to stop. So create then fill then validate; do not read the create-time r
 failure.
 
 A story's criteria may carry their proof: `--verify` (repeatable, positional with `--ac`)
-writes the executable check on the matching AC, and `--target functional|conversational|soak|live`
-writes its `Verification target`. A Verify expression is written **verbatim**, never
+writes the executable check on the matching AC. A Verify expression is written **verbatim**, never
 markdown-safed: it is a command `verify_ac` reads back and runs, and safing an underscore
 rewrites it (`rg -q my_token src/` becomes ``rg -q `my_token` src/``). For a list-form verb
 (`shell=False`) that is a corrupted literal argument - the check quietly stops checking what it
 says it checks. For a **shell-backed verb**, which runs under `shell=True`, the same rewrite is
 command substitution and the backticked token executes. A multi-line expression is refused.
 
-Neither flag is ever invented: an AC given no Verify line gets none, because there is no
+A Verify line is never invented: an AC given none gets none, because there is no
 honest default - a
 placeholder fails the validator and `manual` asserts a proof nobody ran. Conformance's
 `verifiable` stage reports the gap out loud instead.
@@ -111,7 +110,7 @@ template has a structural floor near 170 lines once every mandated heading survi
 near 150), so a pre-implementation story cannot get under it however economically it is
 written - and a planning batch that has settled nothing about edge cases or rollback is
 filing 170 lines of furniture per story. The planning tier carries what planning actually
-settles - metadata, the user story, ACs with their `Verify:` and `Verification target:` lines,
+settles - metadata, the user story, ACs with their `Verify:` lines,
 scope, technical notes - and renders under 60 lines. The constraint chain, module views, edge
 cases, test scenarios, dependencies, estimation and the rollback envelope arrive with
 promotion, not before.
@@ -207,9 +206,9 @@ waiving them. Unstamped artefacts are unaffected unless `quality.require_full_se
 **Schema v3:** a finding leaving `inbox` is gated too - a structured `--triaged-by` (refused
 without one), triager != raiser (separation of duties; solo-human warns), `--triage-severity`
 recorded. Dormant on v2. **A blocked transition reports EVERY unmet gate in one refusal**
-(depth AND triage together), so clearing them costs one round-trip, not one
+(criteria AND triage together), so clearing them costs one round-trip, not one
 per gate. `annotate --id <ID> --field <Name> --value <v>` deterministically sets/updates one
-metadata field (e.g. `Verification depth`) in place - the stamp verb; no more hand edits.
+metadata field (e.g. `Affects`) in place - the stamp verb; no more hand edits.
 
 ### `archive.py`
 

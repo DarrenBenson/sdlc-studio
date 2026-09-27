@@ -31,7 +31,6 @@ Related: help/story.md, reference-story.md, templates/core/story.md
 - **When** {{ac1_when}}
 - **Then** {{ac1_then}}
 - **Verify:** {{ac1_verify}}
-- **Verification target:** {{ac1_verification_target}}
 
 ### AC2: {{ac2_name}}
 
@@ -39,9 +38,6 @@ Related: help/story.md, reference-story.md, templates/core/story.md
 - **When** {{ac2_when}}
 - **Then** {{ac2_then}}
 - **Verify:** {{ac2_verify}}
-- **Verification target:** {{ac2_verification_target}}
-
-> **Verification target tiers:** `functional` | `conversational` | `soak` | `live` - see `reference-test-best-practices.md#verification-depth-tiers`. The `- **Mutation-checked:**` and `- **Verified:**` lines arrive with promotion: they record work only implementation can do.
 
 ## Scope
 

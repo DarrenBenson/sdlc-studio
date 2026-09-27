@@ -79,12 +79,14 @@ class PlanningStoryShapeTests(unittest.TestCase):
             n = len(text.splitlines())
             self.assertLess(n, 60, f"planning skeleton rendered {n} lines:\n{text}")
             for want in ("## Acceptance Criteria", "### AC1:", "- **Verify:**",
-                         "- **Verification target:**", "## Scope", "### In Scope",
+                         "## Scope", "### In Scope",
                          "### Out of Scope", "## Technical Notes", "## Revision History"):
                 self.assertIn(want, text, f"planning skeleton lost {want!r}")
             for gone in ("## Inherited Constraints", "## Rollback Envelope", "## Estimation",
                          "## Edge Cases", "## Test Scenarios"):
                 self.assertNotIn(gone, text, f"{gone!r} is implementation furniture")
+            # US0924: the retired tier field is gone from the planning template too.
+            self.assertNotIn("Verification target", text)
 
     def test_a_filled_planning_story_keeps_its_acs_verifies_and_scope(self) -> None:
         with tempfile.TemporaryDirectory() as d:

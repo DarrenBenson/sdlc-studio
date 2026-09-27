@@ -23,9 +23,7 @@ Read this at plan time. `sprint plan` prints it.
 | --- | --- | --- |
 | Turn a CR/RFC into deliverable units | `refine.py apply --request <id> --breakdown <file>` | hand-creating epics and stories |
 | Check a batch is plannable | `sprint.py breakdown --stories Ready --bugs Open` | reading each file for `Affects` and `Points` |
-| Ask whether a unit's criteria CAN FAIL | `verify_ac.py testplan probe --unit <id>` | assuming a criterion nobody ran is falsifiable |
-| Record a decision to plan over one that cannot | `verify_ac.py testplan rule --unit <id> --criterion ACn --reason <why> --author <who>` | leaving the exemption in somebody's head |
-| Lift that decision when the criterion changes | `verify_ac.py testplan withdraw --unit <id> --criterion ACn --reason <why>` | deleting the row, which leaves no record it was ever taken |
+| Ask whether a unit's tests CAN FAIL (opt-in; no gate reads it) | `mutation.py run --story <id> --test "<suite>"` | assuming a test nobody saw red would catch a break |
 | Review the sprint goal with the seats | `sprint.py goal-review record --goal ... --seat ...` | asserting the goal is achievable |
 | Open the run | `sprint.py plan --worklist <file> --write --sprint-goal ...` | picking units by eye |
 
@@ -46,7 +44,7 @@ Read this at plan time. `sprint plan` prints it.
 | Do | Command | Instead of |
 | --- | --- | --- |
 | Brief a seat | `critic.py brief --unit <id> --seat engineering\|product\|qa` | writing the review prompt yourself |
-| Resolve who reviews and who signs | `persona_resolve.py panel` | choosing seats by judgement |
+| Resolve a refine or triage panel | `persona_resolve.py panel --ceremony refine\|triage` | choosing seats by judgement |
 | Record the verdict | `critic.py record --unit <id> --verdict ... [--brief <fingerprint>]` | a verdict left in a transcript; it records with or without `--brief`, and `critic.py brief` remains the way to brief the seat |
 | Answer a REJECT once its findings are fixed | `critic.py brief --unit <id> --seat <seat> --rejoinder <verdict>`, then the rejecting reviewer's round 2 through `critic.py record`: an APPROVE answers it, a REJECT at the cap carries the unit to a bug | a hand drop, a ruling or a different reviewer's APPROVE, none of which answers it |
 | Find library-only verifiers | `verify_ac.py lane-check` | discovering it in review |
@@ -77,7 +75,7 @@ Read this at plan time. `sprint plan` prints it.
 | --- | --- | --- |
 | Compose the changelog section | `release_cut.py changelog-cut --version <v>` | hand-merging fragments |
 | Stamp the commit the gate passed on | `release_cut.py record-green --commit <sha>` | tagging on a green nobody recorded |
-| Refuse a tag the gate never covered | `release_cut.py tag-check --version <v>` | tagging on memory |
+| Refuse a tag the gate never covered | `release_cut.py tag-check --commit <sha>` | tagging on memory |
 | Publish the release and its artefacts | your project's release automation, triggered by the tag | a hand-uploaded artefact, which is the step that gets skipped |
 
 Make the publish step something the tag triggers, not a line somebody runs. Where a project offers

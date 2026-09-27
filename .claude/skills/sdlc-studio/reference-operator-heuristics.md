@@ -25,7 +25,7 @@ The same anti-pattern shows up under many guises. *"It's probably a race conditi
 5. **If the hypothesis is unfalsifiable** (no cheap test can disprove it), widen it until you have one. "The CI runner is flaky" is unfalsifiable. "The CI runner has >100ms p99 disk write latency" is falsifiable.
 6. **A timeout bump, sleep, retry, or `.skip` is a workaround, not a fix.** If you ship one, it must carry a `// TODO(YYYY-MM-DD)` comment naming the unproven hypothesis it papers over and the date you'll come back. Workarounds without TODOs become permanent.
 
-**Bug close-out gate:** A bug cannot be marked Fixed unless the bug record contains all three of: (a) the hypothesis that was confirmed, (b) the evidence that confirmed it, (c) the fix that addresses the confirmed root cause. "It seems to work now" is not evidence. See also `reference-bug.md#bug-close-workflow` and the depth-tier requirements in `reference-test-best-practices.md#verification-depth-tiers`.
+**Bug close-out rule:** Do not mark a bug Fixed until the bug record contains all three of: (a) the hypothesis that was confirmed, (b) the evidence that confirmed it, (c) the fix that addresses the confirmed root cause. "It seems to work now" is not evidence. See also `reference-bug.md#bug-close-workflow`, and the tier vocabulary in `reference-test-best-practices.md#verification-depth-tiers` for saying how far the fix was exercised.
 
 **Anti-pattern:** Treating an investigator's first guess as a finding. The first guess is just the *most available* hypothesis – the one shaped by recent context, surface symptoms, or the bug's title (see `#bug-title-framing`). Falsify it before letting it steer the fix.
 

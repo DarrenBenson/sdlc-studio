@@ -10,9 +10,9 @@
 | Draft | 27 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 2 |
+| In Progress | 1 |
 | Review | 0 |
-| Done | 763 |
+| Done | 764 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -282,7 +282,7 @@
 | [US0921](US0921-mutation-testing-is-an-opt-in-run-with.md) | The gate carries no mutation lane | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0922](US0922-line-coverage-is-measured-only-when-a-project.md) | Line coverage is measured only when a project opts in | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0923](US0923-a-review-verdict-records-without-brief-provenance.md) | A review verdict records without brief provenance | Done | EP0263 | 2026-09-24 | 2026-09-24 |
-| [US0924](US0924-the-shipped-docs-teach-only-the-surviving-review.md) | The shipped docs teach only the surviving review path | In Progress | EP0263 | 2026-09-24 | 2026-09-24 |
+| [US0924](US0924-the-shipped-docs-teach-only-the-surviving-review.md) | The shipped docs teach only the surviving review path | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0925](US0925-an-upgrading-project-s-config-carries-forward-without.md) | An upgrading project's config carries forward without the retired review keys | Done | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0926](US0926-this-repository-runs-on-the-shipped-defaults-with.md) | This repository runs on the shipped defaults with no stand-down keys | Draft | EP0263 | 2026-09-24 | 2026-09-24 |
 | [US0927](US0927-a-sprint-plan-names-the-prd-outcome-or.md) | A sprint plan names the PRD outcome or persona its goal serves, and flags a goal that serves none | Done | EP0264 | 2026-09-25 | 2026-09-25 |

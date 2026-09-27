@@ -226,12 +226,12 @@ Quick happy path: verify fix and close in one step.
    - [ ] Regression tests pass
    - [ ] No side effects observed
    - [ ] Documentation updated (if applicable)
-   - [ ] Verification depth recorded (`smoke` / `functional` / `conversational` / `soak` / `live`) – see `reference-test-best-practices.md#verification-depth-tiers`
+   - [ ] The bug's `Verify:` selectors pass (they are what `transition -> Fixed` reads)
 
 5. **Update Bug Report**
    - Check off verification items
    - Fill in verifier and verification date
-   - **Set `Verification depth:`** to the highest tier the fix has actually achieved. Smoke alone is never sufficient to mark Fixed; functional is the minimum to escalate. A production-affecting bug must reach `soak` before Closed.
+   - Note how far the fix was exercised, in the tier words of `reference-test-best-practices.md#verification-depth-tiers` if they help; it is advice for the reader, and no gate reads it
    - Update status: Fixed → Closed (verified)
    - Record close reason as "Verified"
    - Add revision history entry
@@ -258,7 +258,7 @@ Close a bug with reason selection.
 1. **Check Prerequisites**
    - Verify bug status is "Fixed" or "Open"
    - If already closed, report error
-   - **Check verification depth.** A production-affecting bug (`> **Production-affecting:** yes`) cannot be Closed until its `Verification depth:` field reaches `soak` (default 7-day window). A non-production bug must be at least `functional` to be marked Fixed. Smoke-only verification is never sufficient. **Enforced, not advisory:** `transition.py` refuses Fixed below `functional` and a production-affecting Closed below `soak`; a missing depth field on a gated transition is refused, not assumed (`--force` records an override). See `reference-test-best-practices.md#verification-depth-tiers` and the *Hypothesis discipline* gate in `reference-operator-heuristics.md#hypothesis-discipline`.
+   - **Check the evidence.** `transition.py` reads the bug's criteria: Fixed is refused while one is red or nothing speaks for the fix (no ticked criterion, no `Verify:` line). How far the fix was exercised is advice for the reader, not a gate: a production-affecting bug (`> **Production-affecting:** yes`) is best soaked (default 7-day window) before it is Closed, and smoke-only verification is never enough to call a bug fixed. See `reference-test-best-practices.md#verification-depth-tiers` and the *Hypothesis discipline* rule in `reference-operator-heuristics.md#hypothesis-discipline`.
 
 2. **Prompt for Close Reason**
    Use AskUserQuestion:

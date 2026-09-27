@@ -358,7 +358,7 @@ variables and risk axes, never demographics**; the mechanical floor is owned by 
 ### Step 1: Analyse (every source that exists; degrade honestly when absent)
 
 Read the PRD (domain, user classes, compliance vocabulary), TRD (stack, architecture),
-TSD + `.config.yaml` (quality bar, depth tiers), `repo_map.py build` output (languages,
+TSD + `.config.yaml` (quality bar), `repo_map.py build` output (languages,
 frameworks, test runners), and the design-persona cast if present. With only a repo
 available (the brownfield taster), analyse the repo map alone and say so. Present a
 **discoveries table**: domain, stack, risk signals, quality bar - each row marked

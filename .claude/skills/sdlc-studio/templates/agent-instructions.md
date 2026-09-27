@@ -57,10 +57,11 @@ Triage and **fix** the findings before tagging. No exceptions - even a genuine
 production hotfix files a `bug` (rationale + `Verify:` expression + audit pin).
 
 **Review is independent of the author.** Whoever wrote the change never records its
-sign-off. Two roles, never merged: an **adversarial reviewer** (a fresh context that
-did not write the code) files findings as evidence, and a **reviewer of record** - the
-operator, or a named delegate in a separate trust boundary - approves, once for the
-whole run, with `sprint sign`.
+verdict. One **independent reviewer** (a fresh context that did not write the code)
+records each unit's delivery verdict with `critic.py record`, and its APPROVE decides
+the unit. The run is then signed once, with `sprint sign`, by its **reviewer of
+record** - the operator, or a named delegate in a separate trust boundary, never a
+unit's author or a reviewer recorded on it.
 
 **Index & verification conventions.** Keep **one canonical status summary** per `_index.md` - the
 `| Status | Count |` table with a `**Total**` row, which `reconcile` maintains. Per-section / per-epic

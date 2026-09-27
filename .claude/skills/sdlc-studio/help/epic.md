@@ -126,7 +126,7 @@ Review Epic status based on Stories and codebase. **Cascades by default** - revi
 - Technical Considerations
 - Sizing & Effort
 - Story Breakdown
-- Test Plan link
+- Test Spec link
 
 ## Examples
 
@@ -156,7 +156,7 @@ After generating Epics:
 
 ```
 /sdlc-studio story                # Generate Stories from Epics
-/sdlc-studio test-plan            # Generate Test Plans for Epics
+/sdlc-studio test-spec            # Generate Test Specs for Epics
 ```
 
 ## Naming Convention

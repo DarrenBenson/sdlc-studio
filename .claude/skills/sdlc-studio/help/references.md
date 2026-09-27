@@ -35,7 +35,7 @@ Five test references, each with a distinct scope - load the one that matches the
 | --- | --- |
 | Creating a test **spec** (plan + cases + fixtures) | `reference-test-spec.md` |
 | Generating executable test **code** / setting up a test env | `reference-test-automation.md` |
-| Writing/reviewing tests, choosing **verification depth**, tuning timeouts | `reference-test-best-practices.md` |
+| Writing/reviewing tests, assertion integrity, tuning timeouts | `reference-test-best-practices.md` |
 | **Validating** generated specs/tests against the real codebase (brownfield) | `reference-test-validation.md` |
 | Generating **E2E / integration** tests (mocking, environments) | `reference-test-e2e-guidelines.md` |
 

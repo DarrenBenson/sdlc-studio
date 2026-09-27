@@ -290,9 +290,10 @@ ceremony as ONE deterministic chain - goal-verdict (recorded here, reused when a
 refused when unjudged), retro validate + extract, lessons summary, `gate --require-retro
 --require-review`, handoff generate (skipped when the run is already closed), reconcile detect -
 STOPPING loudly at the first failing step with the remedy named; a re-run after repair resumes
-idempotently. It ends by printing the sign-off decision brief composed from the committed
-records (per-unit deliveries, verdict + REJECT history, gate and mutation results, forecast vs
-measured telemetry spend); absent retro content, an unset goal, or an unjudged goal-verdict are
+idempotently. It ends by filing the run's one-page report, composed from the committed
+records (per-unit deliveries, verdict + REJECT history, gate results, forecast vs measured
+telemetry spend), and printing the one action left: `sprint.py sign --report <RPT>
+--principal <name>`, the operator's single signature on the run; absent retro content, an unset goal, or an unjudged goal-verdict are
 refusals with the command to run, never defaults. `goal-verdict` records the closing review's
 Sprint Goal judgement on the run state.
 

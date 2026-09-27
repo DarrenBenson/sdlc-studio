@@ -3970,9 +3970,8 @@ class BriefRefusesMissingPracticeTests(unittest.TestCase):
         self.assertNotRegex(practices, r"(?i)full[- ]tier|light")
         claim = one("claim-inventory pass omits")
         self.assertIn("full-tier delivery brief", claim)
-        plan = one("plan-review brief")
-        self.assertIn("carries neither", plan)
-        self.assertIn("not checked", plan)
+        # US0924: plan review is retired, so the doctrine no longer names a plan-review brief.
+        self.assertNotIn("plan-review", para)
 
 
 if __name__ == "__main__":

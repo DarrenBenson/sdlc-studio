@@ -215,7 +215,7 @@ The `release_strategy` config knob (see `reference-config.md#release-strategy`) 
 **Choosing staged-rollout:**
 
 - Production system with multi-environment deploys (e.g. AB01 primary + AB02 standby + a soak window before promotion).
-- "Live" verification depth (`reference-test-best-practices.md#verification-depth-tiers`) requires a stable soak before a feature can be Done.
+- A feature that needs `live` evidence (`reference-test-best-practices.md#verification-depth-tiers`) carries its stable soak as an acceptance criterion, so it reaches Done only when the soak's `Verify:` line passes.
 - Combine with `pr-required` if a team is committing – they are orthogonal concerns; staged-rollout is about *deploy* discipline, pr-required is about *commit* discipline. The skill currently surfaces them as a single field; if both apply, set `staged-rollout` and document the PR requirement at project-level.
 
 ---
@@ -367,7 +367,7 @@ they cannot drift apart.
 **The gates READ the documents** (absent = shipped defaults, byte-compatible):
 `sprint plan` grooming resolves the story DoR (grooming.*); `transition -> Done`
 and conformance's review stages the story DoD (story.verify-ac,
-review.critic-approve, review.two-role); `gate --require-retro`/`--require-review`
+review.critic-approve); `gate --require-retro`/`--require-review`
 the sprint DoD (close.* - the un-skippable close-down restated as its close
 clause); `gate --release` the release DoD (release.changelog). Editing a tagged
 criterion changes gate behaviour without code changes; a removed tag is reported

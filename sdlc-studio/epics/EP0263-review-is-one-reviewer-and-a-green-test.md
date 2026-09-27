@@ -29,7 +29,7 @@ Groomed for Sprint 4 on 2026-09-25 from the engineering-seat readiness review: 2
 - [x] [US0921: Mutation testing is an opt-in run with a yield and nothing more](../stories/US0921-mutation-testing-is-an-opt-in-run-with.md)
 - [x] [US0922: Line coverage is measured only when a project opts in](../stories/US0922-line-coverage-is-measured-only-when-a-project.md)
 - [x] [US0923: A review verdict records without brief provenance](../stories/US0923-a-review-verdict-records-without-brief-provenance.md)
-- [ ] [US0924: The shipped docs teach only the surviving review path](../stories/US0924-the-shipped-docs-teach-only-the-surviving-review.md)
+- [x] [US0924: The shipped docs teach only the surviving review path](../stories/US0924-the-shipped-docs-teach-only-the-surviving-review.md)
 - [x] [US0925: An upgrading project's config carries forward without the retired review keys](../stories/US0925-an-upgrading-project-s-config-carries-forward-without.md)
 - [ ] [US0926: This repository runs on the shipped defaults with no stand-down keys](../stories/US0926-this-repository-runs-on-the-shipped-defaults-with.md)
 - [x] [US0934: A bug reaches Fixed without a depth gate, and the retired --depth flags are refused](../stories/US0934-a-bug-reaches-fixed-without-a-depth-gate.md)

@@ -139,7 +139,7 @@ Full workflow: `reference-verify.md`. User-facing help:
 
 ### `mutation.py`
 
-The executable mutation-check gate - the complement of `verify_ac.py`: verify_ac
+The opt-in mutation probe - the complement of `verify_ac.py`: verify_ac
 confirms an AC's tests PASS; mutation asks whether they would FAIL if the feature
 broke. Applies a declared, bounded set of textual mutations (invert-guard,
 stub-return-null, unset-delivered-field, no-op-mapper) to a selected surface via

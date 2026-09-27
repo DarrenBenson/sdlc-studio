@@ -22,11 +22,12 @@
 - **Given** reference-review.md
 - **When** a reader asks what a delegated sign-off proves
 - **Then** it carries a `## A disclosed sign-off is not an independent one` section stating that the guard no longer proves the property its name claims, and that the audit trail's value rests on the disclosure being read
-- **Verify:** grep '## A disclosed sign-off is not an independent one' .claude/skills/sdlc-studio/reference-review.md
-- **Verified:** yes (2026-07-24)
+- **Verify:** manual - retired by US0924: per-unit sign-off was retired in v6, and with it the delegated sign-off and its disclosure marker this section weighed; the run is signed once at `sprint sign`, and reference-review.md no longer carries the section
+- **Verified:** manual (2026-09-27) - retired, superseded by US0924
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-24 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-27 | Claude Opus 5.5 | AC1 retired by US0924 (D0259 pattern): the delegated per-unit sign-off it documented was retired in v6, so the section is deleted from reference-review.md |

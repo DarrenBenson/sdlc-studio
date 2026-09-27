@@ -97,7 +97,7 @@ Trigger phrases - any of these should reach this skill:
 - "break this into epics", "write a story", "acceptance criteria", "groom the backlog"
 - "file a bug", "raise a CR", "write an RFC", "triage the findings"
 - "plan a sprint", "run a sprint", "close the sprint", "sprint status", "what's the next step"
-- "review this unit", "adversarial review", "sign this off", "two-role review"
+- "review this unit", "adversarial review", "sign this off", "independent review"
 - "write a test spec", "test automation", "verify the acceptance criteria", "mutation check"
 - "reconcile the indexes", "project status", "what's outstanding", "repo map"
 - any `/sdlc-studio` command.
@@ -179,7 +179,7 @@ lines, honour its Reading Guide instead of a whole-file read:
 | Hypothesis discipline (don't guess root cause) | reference-operator-heuristics.md#hypothesis-discipline | reference-bug.md#bug-close-workflow | reference-test-best-practices.md#verification-depth-tiers |
 | Preparing to tag a release | templates/workflows/release-gate.md | reference-operator-heuristics.md | reference-reconcile.md |
 | Deploy readiness (cold-spawn, smoke budget, rollback, soak) | reference-deploy-readiness.md | reference-test-best-practices.md#verification-depth-tiers | reference-decisions.md#release-strategy-decision |
-| Verification depth tiers (smoke / functional / conversational / soak / live) | reference-test-best-practices.md#verification-depth-tiers | templates/core/bug.md | templates/core/story.md |
+| Verification depth tiers (smoke / functional / conversational / soak / live), advice no gate reads | reference-test-best-practices.md#verification-depth-tiers | reference-bug.md#bug-close-workflow | reference-deploy-readiness.md#soak-window |
 | Test-timeout tuning (measure local + CI variance) | reference-test-best-practices.md#test-timeout-tuning | - | - |
 | Validation workflows / advanced testing patterns | reference-test-validation.md | reference-test-best-practices.md | - |
 | E2E mocking patterns and strategies | reference-test-e2e-guidelines.md | reference-test-best-practices.md#test-anti-patterns | - |
@@ -259,7 +259,7 @@ approach decisions. The full index is in `help/references.md`.
 | `reconcile` | Detect and fix status drift across all artifacts |
 | `gate` | Portable, ecosystem-neutral CI quality gate over the deterministic checks |
 | `deploy` | Orchestrate-only deploy last-mile: gate, verify, record (operator-triggered, never autonomous) |
-| `mutation` | Executable mutation-check gate: prove the tests can FAIL (killed vs survived per mutation) |
+| `mutation` | Opt-in mutation probe no gate reads: can the tests FAIL? (killed vs survived per mutation) |
 | `skill-update` | Check for and install a newer SDLC Studio release (the skill itself) |
 | `status` | Visual dashboard: Requirements, Code, Tests health |
 | `hint` | Single actionable next step |

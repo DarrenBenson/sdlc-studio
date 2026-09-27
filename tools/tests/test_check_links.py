@@ -464,10 +464,10 @@ class LoadingGuideTests(unittest.TestCase):
         kinds = {}
         for c in cells:
             kinds[c["kind"]] = kinds.get(c["kind"], 0) + 1
-        self.assertEqual(29, kinds.get("anchored"),
+        self.assertEqual(31, kinds.get("anchored"),
                          f"the anchored-cell count changed: {kinds}. The story's AC said 30; the "
-                         f"measured figure is 29, and this pins the measurement rather than the "
-                         f"claim")
+                         f"measured figure was 29, and US0924's tier row gained two anchored "
+                         f"cells (31); this pins the measurement rather than the claim")
         for c in cells:
             if c["kind"] == "anchored":
                 self.assertTrue(c["path"], "an anchored cell yielded no path to check")

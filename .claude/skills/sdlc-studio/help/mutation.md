@@ -4,7 +4,7 @@ Dependencies: SKILL.md (always loaded first)
 Related: reference-test-best-practices.md#mutation-check, reference-scripts.md, help/verify.md
 -->
 
-# /sdlc-studio mutation - the executable mutation-check gate
+# /sdlc-studio mutation - an opt-in probe: can these tests fail?
 
 ## You can just ask
 
@@ -14,11 +14,19 @@ Related: reference-test-best-practices.md#mutation-check, reference-scripts.md, 
 | "Mutation-check what this release changed" | `mutation.py run --since v3.3.0 --test "<suite>"` |
 | "Mutation-check this story's surface" | `mutation.py run --story US0051 --test "<suite>"` |
 | "Which of these tests assert nothing?" | `mutation.py prefilter --tests tests/*.py` |
+| "What did that run cost and find?" | `mutation.py yield --run <MRUN-id>` |
+| "I am about to rewrite source in place" | `mutation.py window open --owner <who> --paths <files>` |
 
-`verify_ac` proves an AC's tests **pass**; this gate proves they can **fail**. It applies a
-declared, bounded fault set to the surface, re-runs the tests per mutation, and reports
-**killed** (good - the test pins the behaviour) vs **survived** (a finding - the test stayed
-green over broken code).
+Mutation testing is opt-in: run it when you want to know, and no gate reads its result.
+`verify_ac` shows an AC's tests **pass**; this probe asks whether they can **fail**. It applies
+a declared, bounded fault set to the surface, re-runs the tests per mutation, and reports
+**killed** (good - the test pins the behaviour) vs **survived** (a finding worth reading - the
+test stayed green over broken code).
+
+Four verbs: `run` mutates and reports, `yield` reads back what one run cost and what was filed
+from it, `window` declares (or clears, or reports) that a process is rewriting source files in
+place so a concurrent commit is refused rather than staging a half-mutated tree - `run` opens
+and closes its own - and `prefilter` lists test files with no recognisable assertion.
 
 ## Quick Reference
 
@@ -28,6 +36,10 @@ python3 <skill>/scripts/mutation.py run --since HEAD~1 --test "npm test"
 python3 <skill>/scripts/mutation.py run --story US0051 --test "pytest -q"
 python3 <skill>/scripts/mutation.py yield --run MRUN-20260925T090000-a1b2c3
 python3 <skill>/scripts/mutation.py prefilter --tests tests/test_*.py
+python3 <skill>/scripts/mutation.py window open --owner "a reviewer" --paths src/loader.py \
+    --note "hand-applying a mutant"
+python3 <skill>/scripts/mutation.py window status
+python3 <skill>/scripts/mutation.py window close --owner "a reviewer"
 ```
 
 ## What it does
@@ -105,6 +117,6 @@ at `mutation.py run`: to see whether a test can fail, run the mutants and read t
 
 ## See Also
 
-- `reference-test-best-practices.md#mutation-check` - the discipline this enforces
+- `reference-test-best-practices.md#mutation-check` - the discipline this probes
 - `reference-scripts.md` - the full catalogue entry
 - `help/verify.md` - the passing half of the claim

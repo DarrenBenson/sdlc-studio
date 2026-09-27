@@ -173,11 +173,11 @@ rules, the agents/services) live in that project's agent-instructions file
     batch, and fixed by a context that still holds it. Record each unit's verdict with
     `critic.py record --unit <id> --reviewer <who> --author <who> --verdict APPROVE`;
     reviewer and author must differ, because a self-review is the
-    context that wrote the code agreeing with itself. `sprint close` then REFUSES a batch
-    carrying units no independent pass covered, and names them: **the close asserts that
-    coverage exists, it does not perform the review.** A repair written in response to a
-    finding is itself covered by a later batch review - repairs are the least-reviewed
-    code in any sprint and they land in guards.
+    context that wrote the code agreeing with itself. `sprint close` then names every unit
+    no independent pass covered on the run's report as a known issue: **the close reports
+    whether coverage exists, it does not perform the review.** A repair written in response
+    to a REJECT is judged by a round-2 verdict from the same reviewer - repairs are the
+    least-reviewed code in any sprint and they land in guards.
 
 19. **A review judges the unit's own diff, and only what the unit broke may block it.**
     The scope of a review is that unit's declared `Affects` against the run's base ref -

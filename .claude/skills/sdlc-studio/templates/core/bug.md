@@ -90,12 +90,12 @@ collapses beyond it, so a bigger number is a triage failure, not a harder estima
 - [ ] Fix verified in development
 - [ ] Regression tests pass
 - [ ] No side effects observed
-- [ ] **Mutation-checked** - the regression test was seen to **fail** against the unfixed code (re-introduce the bug → test red → restore), proving it actually pins the fix. Record: `{{mutation_check_note}}`
+- [ ] The regression test was seen to **fail** against the unfixed code (re-introduce the bug → test red → restore), proving it actually pins the fix
 
 **Verified by:** {{verifier}}
 **Verification date:** {{verification_date}}
 
-> **The regression test must be mutation-checked** (above): a test added alongside a fix but never seen to fail may be asserting the wrong thing and would not catch the bug's return. Seeing it red against the unfixed code is the proof it pins the fix. See `reference-test-best-practices.md#mutation-check`.
+> **Watch the regression test fail** (above): a test added alongside a fix but never seen to fail may be asserting the wrong thing and would not catch the bug's return. Seeing it red against the unfixed code is the proof it pins the fix. See `reference-test-best-practices.md#mutation-check`.
 
 ---
 

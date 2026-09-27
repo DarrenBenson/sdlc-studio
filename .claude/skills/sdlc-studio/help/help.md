@@ -238,7 +238,7 @@ The tooling sprint uses to create and close artifacts the same way every time (t
 | --- | --- |
 | `scripts/artifact.py new --type <type> --title ...` | Create any of the 8 numbered artifacts: collision-free id, valid scaffold, index row, parent-epic wiring, `Created-by` + `Raised-by` stamps |
 | `scripts/artifact.py new --template full` | Scaffold the full template (all sections) instead of the minimal stub |
-| `scripts/artifact.py new --template planning` | The lean pre-implementation tier (story/epic): ACs with `Verify:` + `Verification target:`, scope, technical notes - under 60 lines, no implementation furniture. Promote before implementation |
+| `scripts/artifact.py new --template planning` | The lean pre-implementation tier (story/epic): ACs with `Verify:`, scope, technical notes - under 60 lines, no implementation furniture. Promote before implementation |
 | `scripts/artifact.py promote --id <ID>` | Promote a planning-tier artifact to the full template (adds the deferred sections; idempotent) |
 | `scripts/artifact.py batch --type <type> --spec <items.json>` | Reserve an id range and write one pre-wired artefact per spec item atomically (fan-out authoring); the lean shape by default, `--template planning` or `full` on request; an unknown item key is refused |
 | `scripts/next_id.py allocate --type <type>` | The next collision-free id for a type (what `new`/`batch`/`file_finding` call internally; `--remote` also considers `origin/main`) |
@@ -286,7 +286,7 @@ running code and tests, migrating artefacts, shipping, and closing a batch out.
 | `/sdlc-studio test-env up` | Start test environment |
 | `/sdlc-studio test-env down` | Stop test environment |
 | `/sdlc-studio test-env status` | Check environment health |
-| `/sdlc-studio mutation` | Executable mutation-check gate: prove the tests can FAIL (killed vs survived per mutation) |
+| `/sdlc-studio mutation` | Opt-in mutation probe no gate reads: can the tests FAIL? (killed vs survived per mutation) |
 | `/sdlc-studio deploy` | Orchestrate-only deploy last-mile: gate, verify, record (operator-triggered, never autonomous) |
 | `/sdlc-studio repo map build` | Index the repository symbols and imports |
 | `/sdlc-studio repo map build --ignore vendor` | Skip an extra directory during indexing |
