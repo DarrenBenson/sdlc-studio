@@ -10,9 +10,9 @@
 | Draft | 19 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 4 |
+| In Progress | 3 |
 | Review | 0 |
-| Done | 769 |
+| Done | 770 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -315,7 +315,7 @@
 | [US0954](US0954-the-repository-s-front-door-describes-v6-and.md) | The repository's front door describes v6 and teaches no retired surface | Done | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0955](US0955-an-upgrading-project-follows-one-page-from-v5.md) | An upgrading project follows one page from v5 to v6 | In Progress | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0956](US0956-the-shipped-docs-teach-the-lean-loop-in.md) | The shipped docs teach the lean loop in one place | In Progress | EP0266 | 2026-09-25 | 2026-09-25 |
-| [US0957](US0957-the-white-paper-and-the-value-argument-describe.md) | The white paper and the value argument describe the v6 operating model | In Progress | EP0266 | 2026-09-25 | 2026-09-25 |
+| [US0957](US0957-the-white-paper-and-the-value-argument-describe.md) | The white paper and the value argument describe the v6 operating model | Done | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0958](US0958-the-last-skill-docs-outside-us0924-name-no.md) | The last skill docs outside US0924 name no command or setting v6 dropped | Superseded | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0959](US0959-a-signed-sprint-report-checks-in-any-full.md) | A signed sprint report checks in any full clone, from a sealed run record tracked beside it | Done | EP0267 | 2026-09-27 | 2026-09-27 |
 | [US0960](US0960-every-report-signed-before-the-tracked-record-checks.md) | Every report signed before the tracked record checks valid in a clean clone once migrate files its record | Draft | EP0267 | 2026-09-27 | 2026-09-27 |

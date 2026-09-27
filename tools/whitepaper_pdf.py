@@ -11,7 +11,6 @@ exhibits, no network fetches, so the render is reproducible anywhere.
 from __future__ import annotations
 
 import argparse
-import datetime
 import re
 from pathlib import Path
 
@@ -19,6 +18,8 @@ import markdown  # type: ignore
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "docs" / "whitepaper.md"
+#: The markdown's version line, the one home of the edition the cover prints.
+VERSION_LINE = re.compile(r"^\*\*An SDLC Studio white paper · (.+?) · (.+?)\*\*$", re.M)
 
 INK = "#1b2735"       # deep navy - body headings, cover
 ACCENT = "#0e7c66"    # teal - rules, links, table headers
@@ -179,8 +180,8 @@ def cost_svg():
 
 def trail_svg():
     """The worked-example delivery trail."""
-    steps = ["Finding\nfiled", "Failing test\nfirst", "Fix", "Gated close\n(depth + verdict)",
-             "Reconcile\n+ gate", "Attestation\nledger"]
+    steps = ["Finding\nfiled", "Failing test\nfirst", "Fix", "Independent\nreview",
+             "Reconcile\n+ gate", "Close, report\n+ signature"]
     n, bw, bh, gap = len(steps), 116, 52, 26
     w = n * bw + (n - 1) * gap + 8
     out = [f'<svg width="170mm" height="22mm" viewBox="0 0 {w} 66" '
@@ -206,6 +207,11 @@ def trail_svg():
 
 def build(out_path: Path) -> None:
     md = SRC.read_text(encoding="utf-8")
+    edition = VERSION_LINE.search(md)
+    if not edition:
+        raise SystemExit(f"{SRC} has no '**An SDLC Studio white paper · <version> · <date>**' "
+                         f"line, so the cover would print an edition the paper does not state")
+    version, dated = edition.groups()
 
     # Split off the title block (rendered as the cover) from the body.
     body_md = md.split("---", 2)[2] if md.count("---") >= 2 else md
@@ -251,14 +257,13 @@ def build(out_path: Path) -> None:
     # ...but not the very first h2 (At a glance follows the cover naturally)
     html_body = html_body.replace('<h2 style="page-break-before: always"', "<h2", 1)
 
-    today = datetime.date(2026, 7, 10).strftime("%-d %B %Y")
     cover = f"""
 <div class="cover"><div class="band"></div>
   <div class="inner">
     <h1>The Mill,<br/>Not the Engine</h1>
     <div class="sub">Running a full engineering discipline through<br/>
     the AI coding agent you already have</div>
-    <div class="meta">SDLC Studio white paper · v4.0 · {today}<br/>
+    <div class="meta">SDLC Studio white paper · {version} · {dated}<br/>
     Open source · every claim traceable to shipped behaviour or published measurement</div>
   </div>
   <div class="thesis">"The code is the cloth. The organisation around it is

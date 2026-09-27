@@ -2,13 +2,13 @@
 
 ## Running a full engineering discipline through the AI coding agent you already have
 
-**An SDLC Studio white paper · v4.0 · July 2026**
+**An SDLC Studio white paper · v6 · September 2026**
 
 ---
 
 ## At a glance
 
-Five findings, each expanded in the paper and each traceable to shipped behaviour or
+Six findings, each expanded in the paper and each traceable to shipped behaviour or
 published measurement (the [claims register](#claims-register) at the end maps every
 one to its evidence):
 
@@ -27,16 +27,22 @@ one to its evidence):
 3. **Judgement-gated process is not process.** When engagement with the discipline
    was left to the model's own judgement, base models skipped it precisely on the
    tasks that needed it, and performed no better than no process at all. SDLC Studio
-   v4 therefore ships the engagement floor as a default rule, not a recommendation. (Section 4.)
+   therefore ships the engagement floor as a default rule, not a recommendation. (Section 4.)
 4. **The proof is the product.** Every unit of work carries its requirements, its
    executable acceptance criteria, its verification results, and an independent
-   review verdict signed by a reviewer who is mechanically prevented from being the
-   author. This is the audit trail a change-approval board accepts, produced as a
-   by-product of delivery rather than as an afterthought. (Sections 7-8.)
-5. **The team is grown from your project, not shipped to it.** v4 generates named
-   working seats and stakeholder panels from your codebase and requirements, on Alan
-   Cooper's goal-directed method, so the reviewer who signs off payments code is
-   paranoid about idempotency rather than generically diligent. (Section 5.)
+   review verdict recorded by a reviewer who is mechanically prevented from being the
+   author; the operator signs each run once. This is the audit trail a change-approval
+   board accepts, produced as a by-product of delivery rather than as an afterthought.
+   (Sections 7-8.)
+5. **The team is grown from your project, not shipped to it.** SDLC Studio generates
+   named working seats and stakeholder panels from your codebase and requirements, on
+   Alan Cooper's goal-directed method, so the reviewer of payments code is paranoid
+   about idempotency rather than generically diligent. (Section 5.)
+6. **Every check must earn its place.** Enforcement ratchets: each failure became a
+   gate and no gate was retired, until 82% of the project's last 116 sprint units served
+   the machinery (its back-to-basics review). v6 retires 58 surfaces (its CHANGELOG
+   inventory) and runs one loop - plan, build, one capped review per unit, close, one
+   signature, learn. (Section 11.)
 
 **The thesis in one sentence:** the value of industrialised software delivery was
 never the machine but the mill - the organisation of specification, evidence, and
@@ -142,18 +148,20 @@ none works alone.
 | Instrument | What it means | Where it lives in SDLC Studio |
 | --- | --- | --- |
 | **Specification** | Intent written down precisely enough to act on and check against | PRD, TRD, epics, and stories; every acceptance criterion may carry an executable `Verify:` line that actually runs |
-| **Governed platform** | The agent is a channel, not an exception: same permissions, same audit trail for every consumer, human or AI | One set of gates binds both - status transitions, verification-depth tiers, and reviewer independence apply to any writer |
+| **Governed platform** | The agent is a channel, not an exception: same permissions, same audit trail for every consumer, human or AI | One set of gates binds both - status transitions, executable criteria, and reviewer independence apply to any writer |
 | **Measurement** | Knowing the state of the system without asking anyone | `status` and `reconcile` recompute truth from the files - counts derived from a census, never asserted; the published benchmark measures the tool itself |
-| **Evidence** | "Can we prove this works?" as a first-class question | `verify_ac` runs the criteria; depth tiers record how a fix was verified; the critic-verdict record is an attestation log - reviewer and author identities per unit, in the separation-of-duties sense |
+| **Evidence** | "Can we prove this works?" as a first-class question | `verify_ac` runs the criteria and the Done gate reads only its report; the critic-verdict ledger records reviewer and author identities per unit, in the separation-of-duties sense |
 | **Identity and persistence** | Durable values and judgement rather than ephemeral chat sessions | The personas ARE this instrument: a generated team whose non-negotiables persist across every session, consult, and review |
 
 The loop that runs across these instruments is the essays' operating maxim made
 executable: **"specify together, build apart, review independently."** Specification
-is where the human leads - the interview, the consults, the plan gate. The build
-fans out to agents working alone against the shared spec. Review runs against that
-spec, never against the conversation that produced the code. And the loop is
-batch-to-goal rather than time-boxed: a unit of work closes when its criteria are
-verified, whether that takes an hour or a week.
+is where the human leads - the interview, the consults, the one plan approval. The
+build fans out to agents working alone against the shared spec. Review runs against
+that spec, never against the conversation that produced the code. In v6 a sprint is
+six steps, each one command: plan and approve, build, review (one independent reviewer
+per unit, at most two rounds), close, sign (the operator, once per run) and learn. The
+loop is batch-to-goal rather than time-boxed: a unit of work closes when its criteria
+are verified, whether that takes an hour or a week.
 
 ## 4. The evidence: what you enforce matters more than what you spend
 
@@ -221,7 +229,8 @@ Three findings, stated with their edges:
   zero in five on the premium model, at 1.07-1.18x the baseline's tokens. The one
   remaining escape is itself instructive: that run's plan surfaced the interaction,
   resolved it wrongly, and shipped the wrong call with the full authority of the
-  process behind it - which is why the plan itself gets an independent review gate.
+  process behind it. v5 answered that with a review of every plan; section 11 shows what
+  that gate cost, and why v6 removed it.
 
 **The prices.** At July 2026 list rates, assuming the typical agentic 80/20
 input/output split (the assumption and arithmetic are in the benchmark report):
@@ -261,7 +270,7 @@ runs that had shipped the defect. The rerun's sample reproduced the shape: what 
 un-governed workspaces could not evidence was exactly the interaction their authors
 had missed.
 
-Because of these results, v4 ships finding 3 as product, not advice: **the
+Because of these results, SDLC Studio ships finding 3 as product, not advice: **the
 engagement floor**. A multi-file change in a spec-bearing repository requires the
 planning pass - a spec delta naming every interacting requirement, one acceptance
 criterion per interaction - before code. It is doctrine rule 16 and part of the
@@ -274,7 +283,7 @@ the floor.
 Most agentic tooling ships no personas at all: the work is reviewed - where it is
 reviewed - by the model's own default character, at best behind a generic expert
 prompt. Where personas do appear, they are typically a fixed cast of role-prompts
-shipped identically to every project. SDLC Studio v4 does the third thing: it
+shipped identically to every project. SDLC Studio does the third thing: it
 generates the team from the project itself.
 
 `persona generate --team` reads the requirements, the stack, and the risk signals,
@@ -297,17 +306,17 @@ the status dashboard counts the unreviewed until someone does. A validation floo
 checks every seat has a declared role, a review render, and no demographic filler.
 
 Why this matters beyond flavour: **the seats are load-bearing.** They consult on
-designs before they freeze, score the backlog, and hold the review gate - and the
-review gate is mechanical: a recorded verdict whose reviewer identity matches the
-author's never clears a terminal status, and the seat that wrote the tests cannot
-sign them off. Alongside the mechanical gate sits a consult discipline carried by
+designs before they freeze, score the backlog, and review each unit - and the review
+is mechanical where it must be: `critic.py brief` frames the reviewing seat, a recorded
+verdict whose reviewer identity matches the author's never clears a unit, and the
+operator who signs the run cannot be a unit's author or one of its reviewers. Alongside the mechanical gate sits a consult discipline carried by
 the templates and graded by the eval suite - each consulted seat raises at least one
 concrete objection or states why none exists, because a favourable-and-vague panel
 is a failed consult. For higher stakes, the reviewing seat can run on a different
 model entirely: a separate instance of one model catches self-favouritism; a
 different model also catches shared misreadings - the class of unreviewed
-misresolution our one mandated-arm escape shipped, and the reason the plan itself
-gets an independent review gate. We claim coverage from this, not intelligence: a
+misresolution our one mandated-arm escape shipped. We claim coverage from this, not
+intelligence: a
 project-specific cast is built to catch the blind spots a generic prompt walks past.
 It does not make the model smarter, and nothing in this paper says it does.
 
@@ -325,8 +334,8 @@ machinery that refuses to proceed without them:
 | WSJF prioritisation | Seat-scored backlog ordering in the sprint planner |
 | TDD / BDD | Given-When-Then criteria with executable `Verify:` lines; red-first default; a story cannot reach Done while its criteria fail |
 | Change control | RFC-before-CR design exploration; gated status transitions; every change an artefact |
-| Retrospectives | Sprint close files a retro artefact; lessons accumulate in a registry recalled before decisions |
-| Separation of duties | The critic-verdict attestation log: reviewer and author recorded per unit, identity-checked |
+| Retrospectives | Sprint close files a Keep, Stop and Try retro; each Try item becomes a lesson keyed to a failure class whose repeats are counted, and the next plan and briefs carry it |
+| Separation of duties | One independent reviewer per unit, reviewer and author recorded in the verdict ledger and identity-checked; the operator signs each run once |
 | Audit readiness | The census-reconciled workspace: indexes derived from files, drift detected and repaired mechanically |
 
 The pattern all of these share - and the reason they hold when deadline pressure
@@ -340,7 +349,7 @@ repository - no server, no database, no vendor account. The skill installs into 
 agent you already use (one install covers the major agent runtimes), and its
 mechanical spine is a set of standard-library scripts: id allocation, status
 transitions with cascade, census-based reconciliation, executable-criteria
-verification, the portable quality gate, the persona generator, the critic ledger.
+verification, the portable quality gate, the persona generator, the verdict ledger.
 The model does the judgement; the scripts do the arithmetic; neither is asked to do
 the other's job.
 
@@ -353,17 +362,20 @@ repository, which builds itself through its own pipeline:
    mechanically, never by hand.
 2. The fix is developed test-first: the regression test fails against the old code,
    then passes.
-3. Close is a gated, single call: the transition records the verification depth
-   (what was actually run to prove the fix) and an independent reviewer's verdict.
-   The gate refuses a reviewer id equal to the author id, and refuses a terminal
-   status with no recorded depth. The verdict lands in the attestation ledger.
+3. An independent seat, briefed by `critic.py brief`, reviews the fix and records its
+   verdict with `critic.py record`, which refuses a reviewer id equal to the author id.
+   A REJECT goes back to the same reviewer for a second round; one still rejected at
+   the cap is carried as a filed bug rather than reviewed again.
 4. `reconcile` recomputes the indexes from the file census; the pre-commit gate
-   re-runs style, links, structural validation, conformance, and - for any commit
-   touching code - the full test suite. The paperwork ships in the same commit as the code.
+   re-runs style, links and structural validation plus the tests the change touches,
+   and the push runs the full suite. The paperwork ships in the same commit as the code.
+5. The sprint closes with one command that files a one-page report. The operator reads
+   it and signs the run: `sprint sign` moves the bug to Fixed only if its criteria and
+   recorded verification run speak for it.
 
 The result, for an auditor, is that any change can be walked backwards: commit to
 artefact, artefact to criteria, criteria to verification output, verification to an
-independent identity that attested to it. That chain is what a change-approval
+independent reviewer's recorded verdict and the operator's signature on the run. That chain is what a change-approval
 board actually asks for, and it was produced by delivering the fix, not by a
 documentation sprint afterwards.
 
@@ -388,10 +400,13 @@ For the reader who answers to a regulator, the properties that matter:
 - **Separation of duties is enforced, not asserted.** The author of a change cannot
   be its reviewer; the check is an identity comparison in a script, and the verdict
   record carries both identities per unit - the shape SOC 2 CC8.1 auditors ask for.
+  The operator's signature seals each run, and `sprint sign` refuses a principal who
+  authored or reviewed any unit in it.
 - **Evidence has a checkable form.** A criterion's `Verify:` line either ran and
   passed or it did not - the Done gate reads only the machine-written report, so a
   hand-stamped verification state is a detectable lie, recomputable on demand. A
-  bug's verification depth is recorded or its close is refused. The review ledger's
+  bug nothing speaks for - no ticked criterion, no `Verify:` line - is refused Fixed,
+  and so is one whose recorded run is red. The review ledger's
   protections are identity distinctness and version-controlled history; it is an
   append-only record, not a cryptographic one.
 - **The agent is not an exception path.** Human and agent writers pass the same
@@ -419,7 +434,8 @@ incremental:
   the closed-platform school articulates well and which an open skill can deliver
   against your own repository.
 - **The human load shifts rather than grows.** Someone ratifies specs, approves
-  plans, reviews generated personas, and tags releases - the bookend roles stay
+  plans, reviews generated personas, signs each run, and tags releases - the bookend
+  roles stay
   human by design. The reading load is real; the typing load largely disappears;
   the lite profile keeps the ceremony proportionate while the habits form.
 - **Existing projects are never auto-switched.** Upgrades ask explicit questions
@@ -454,12 +470,42 @@ Stated with the same discipline the tool enforces:
   and queued. Until then that story rests on the field reports and the mechanism.
 - **Personas buy coverage, not capability.** The literature is clear that personas
   do not make models smarter, and neither do we.
-- **This is not an autonomy play.** The operator gates remain human by design:
-  specs are ratified, plans are approved, releases are tagged by a person who
-  answers for them. Teams seeking lights-out software factories are reading the
-  wrong paper.
+- **Autonomy is bounded, not total.** Once the operator approves a plan, a v6 run
+  does not stop to ask what a seat can answer. The bookends stay human by design:
+  specs are ratified, the plan is approved, the run is signed, and releases are
+  tagged by a person who answers for them.
 
-## 11. Claims register {#claims-register}
+## 11. The ratchet: what was removed in v6, and why
+
+Enforcement has a failure mode of its own, and this project walked into it. Every failure
+became a lesson, every lesson became a gate, and no gate was ever retired. By September 2026
+the machinery was the product: **82% of the last 116 sprint units** built or repaired the
+sprint, review and gate machinery, or tooling used only in this repository (the back-to-basics
+review, `sdlc-studio/reviews/back-to-basics-review.md`, 2026-09-23). Re-derived for this
+edition from the run archive by each unit's declared `Affects`, the share is 79% to 85%,
+depending on whether the triage and report scripts count as machinery.
+
+The review of every plan, the answer section 4's one mandated-arm escape seemed to call for,
+is the clearest case. It rejected **255 of 428** plans, **60%** (the frozen ledger,
+`sdlc-studio/reviews/plan-review-verdicts.md`, counted for this edition), and the
+back-to-basics review found that its recorded fixes changed test plans, not code. Delivery
+review, by contrast, kept finding real defects.
+
+So v6 deletes. The `CHANGELOG.md` 6.0.0 Breaking inventory, derived from the code's own
+retirement registries, lists **58 retired surfaces**: 19 verbs, 20 flags, 13 config keys (11
+retired, 2 defaults changed), 2 check ids and 4 gate lanes. Among them are plan review with its
+test-plan and repair-plan gates, the verification-depth field and its gate, the mutation ledger
+and its evidence gate, per-unit sign-off with its attestation record, and the batch review.
+
+What replaced them is one loop. One independent reviewer per unit, at most two rounds (the
+shipped `review.max_rounds` default); a unit still rejected at the cap is filed as a bug and
+carried, so the run continues. One signature per run, after reading a one-page report. A
+three-line retro - Keep, Stop, Try - whose Try items become lessons keyed to failure classes,
+counted when they recur. Mutation testing and line coverage remain, as probes a project opts
+into. The rule the project took from it: a check must earn its place, and a constraint added
+without retiring one is how a process ratchets shut.
+
+## 12. Claims register {#claims-register}
 
 Every load-bearing claim in this paper, with its verification path. Bare paths are
 relative to the public repository, github.com/DarrenBenson/sdlc-studio. An
@@ -472,9 +518,13 @@ unverifiable claim in a paper about verifiable delivery would be a poor start.
 | July 10/10 vs 2/5 escape result; auditability 0.88 vs 0.60 | [2026-07-08 N=5 report](https://github.com/DarrenBenson/sdlc-studio/blob/main/docs/benchmarks/2026-07-08-n5-run.md) (previous model generation, kept dated) |
 | Rubric convergence with the hidden suites; requirements-not-code-quality failures | Rubric archive `tools/bench/results/v4-rerun/`; convergence claim restricted to behavioural verdicts, artefact rows disclosed |
 | Engagement floor as default | Doctrine rule 16; `templates/agent-instructions.md`; `engagement_floor` in the config reference |
-| Independence gate, depth-gated closes, attestation ledger | `scripts/transition.py`, `scripts/critic.py`; the tool's own repository history is the working example |
+| One independent reviewer per unit, the two-round cap, carrying at the cap | `scripts/critic.py` (`round_refusal`, `DEFAULT_REVIEW_CEILING`, `carry_at_cap`); the tool's own repository history is the working example |
+| One signature per run; a principal who authored or reviewed a unit is refused | `scripts/sprint.py` (`sign`); `help/sprint.md` |
+| 82% of the last 116 sprint units served the machinery | `sdlc-studio/reviews/back-to-basics-review.md` (2026-09-23); re-derived from the run archive by declared `Affects` at 79-85% |
+| Plan review rejected 255 of 428 plans (60%) | `sdlc-studio/reviews/plan-review-verdicts.md`, the frozen ledger |
+| 58 retired surfaces | The `CHANGELOG.md` 6.0.0 Breaking inventory, derived from the retirement registries |
 | Generated team mechanics (never-clobber, provisional labels, validation floor) | `scripts/persona_gen.py`, `scripts/validate.py`; flow in `reference-persona-generate.md` |
-| Operationalised-practice table rows (WSJF, red-first, retros, coverage checks) | Each row's machinery is named in-repo: `reference-sprint.md`, `scripts/validate.py serves`, `scripts/artifact.py` retro type |
+| Operationalised-practice table rows (WSJF, red-first, retros, coverage checks) | Each row's machinery is named in-repo: `reference-sprint.md#the-loop`, `scripts/validate.py serves`, `scripts/retro.py` |
 | "One install covers the major agent runtimes" | `install.sh --list-targets` |
 | Genre characterisations and the fixed-cast observation (sections 2 and 5) | The project's competitive-research record (RFC0028); specific citations held by the project and available on request - anonymised here under the no-competitor policy |
 | DORA 2024 correlation; ~5% of pilots extract value | 2024 DORA Accelerate State of DevOps report; MIT "GenAI Divide" (2025) |

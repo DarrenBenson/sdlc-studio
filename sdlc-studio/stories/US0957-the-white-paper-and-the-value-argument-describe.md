@@ -1,6 +1,6 @@
 # US0957: The white paper and the value argument describe the v6 operating model
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,10 +19,13 @@
 
 - **AC1:** Given docs/whitepaper.md and docs/why-sdlc-studio.md, then neither names a retired surface from US0924's derived list or the retired phrases (depth tiers as a gate, an attestation ledger of sign-offs, the plan's independent review gate) except in a passage saying it was removed and why. Fails on: HEAD whitepaper 145 and 147 (depth tiers recording how a fix was verified) and why-sdlc-studio 70, 72 and 124 (verification-depth tiers, an attestation record, a depth tier per unit)
   - **Verify:** pytest tools/tests/test_lean_value_docs.py::ValueDocsTests::test_the_value_docs_teach_no_retired_surface
+  - **Verified:** yes (2026-09-27)
 - **AC2:** Given the white paper, then its version line names v6, it carries a section on the ratchet citing its sources (82% of the last 116 units served the machinery; plan review 60% REJECT, 255 of 428; what was deleted), and its claims register has no row for a deleted gate. Fails on: HEAD's 'v4.0 · July 2026' line; a version bump with the claims register still citing `transition.py` for depth-gated closes
   - **Verify:** pytest tools/tests/test_lean_value_docs.py::ValueDocsTests::test_the_whitepaper_is_v6_and_carries_the_ratchet
+  - **Verified:** yes (2026-09-27)
 - **AC3:** Given docs/whitepaper.pdf, when its text is extracted, then it carries the markdown's v6 version line. Fails on: shipping the 2026-07-10 v4.0 PDF (its extracted text reads 'v4.0 · 10 July 2026') under a v6 README
   - **Verify:** shell pdftotext docs/whitepaper.pdf - | grep -q 'v6'
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

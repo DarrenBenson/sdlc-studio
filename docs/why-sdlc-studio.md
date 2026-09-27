@@ -31,7 +31,7 @@ tooling **recomputes from the files and holds the agent to**. Status is derived 
 census, never asserted. Acceptance criteria carry executable `Verify:` lines that actually
 run. A story cannot reach Done while its criteria are red (an operator override exists,
 and is recorded - never silent). A review verdict whose reviewer id matches its author id
-never clears the Done gate, so nobody signs off their own work. The discipline stops
+never clears the Done gate, so nobody approves their own work. The discipline stops
 depending on anyone (carbon or silicon) remembering it under pressure.
 
 ## The mill, not the engine
@@ -67,9 +67,9 @@ instruments, in this document's framing. Each maps to a shipped subsystem:
 | Instrument | What it means | Where it lives here |
 | --- | --- | --- |
 | **Specification** | Intent written down, precise enough to act on and check against | PRD/TRD/epics/stories; executable `Verify:` lines on acceptance criteria |
-| **Governed platform** | AI as a channel, not an exception: "same permissions, same audit trail" for every consumer, human or agent | The same gates bind both - transitions, independence, depth tiers apply to any writer |
+| **Governed platform** | AI as a channel, not an exception: "same permissions, same audit trail" for every consumer, human or agent | The same gates bind both - transitions, executable criteria and reviewer independence apply to any writer |
 | **Measurement** | Knowing the state of the system without asking anyone | `status`/`reconcile` recompute truth from the files; the published benchmark measures the tool itself |
-| **Evidence** | "Can we prove this works?" as a first-class question | `verify_ac`, verification-depth tiers, and the critic-verdict record - an **attestation log** in the separation-of-duties sense (the reviewer who approved is recorded, distinct from the author, per unit; the shape auditors ask for when they ask who attested to this change) |
+| **Evidence** | "Can we prove this works?" as a first-class question | `verify_ac`, the Done gate that reads only its report, and the critic-verdict ledger in the separation-of-duties sense (the reviewer who approved is recorded, distinct from the author, per unit; the shape auditors ask for when they ask who reviewed this change) |
 | **Identity / persistence** | Durable values and judgement, not ephemeral chat sessions | The personas ARE this instrument: a generated team whose non-negotiables persist across every session, consult, and review |
 
 One consequence of instrument two worth stating plainly: because review is a seat with an
@@ -108,8 +108,11 @@ not a guideline that hopes.
 
 The sprint loop maps the essays' operating maxim verbatim - **"specify together, build
 apart, review independently."** Specification is where the human leads (the interview, the
-consults, the plan gate); the build fans out to agents working alone against the shared
-spec; review runs against that spec, never against the conversation that produced the code.
+consults, the one plan approval); the build fans out to agents working alone against the
+shared spec; review runs against that spec, never against the conversation that produced the
+code. In v6 [the loop](../.claude/skills/sdlc-studio/reference-sprint.md#the-loop) is six
+steps: plan and approve, build, review (one independent reviewer per unit, at most two
+rounds), close, sign (the operator, once per run) and learn.
 And the loop is deliberately **batch-to-goal, not time-boxed**: the essays' "railway time"
 point is that coordination regimes change when the machine does - a fixed-length sprint is
 local sun time kept after the trains arrived. A batch closes when its goal is verified,
@@ -121,8 +124,8 @@ Others argue that the way to enterprise-grade agentic delivery is a closed platf
 the vendor's models unbounded context over your estate, let requirements flow straight to
 code, and eliminate intermediate artifacts - user stories included - as drag. We think the
 opposite, and the disagreement is precise. **Stories are where the proof lives.** A story
-carries its acceptance criteria, its executable verifications, its depth tier, and its
-per-unit review verdict; delete the story and you have deleted the place evidence attaches.
+carries its acceptance criteria, its executable verifications, and its per-unit review
+verdict; delete the story and you have deleted the place evidence attaches.
 Our stance: enforced process with verifiable artifacts, independent review that no author
 can waive, and everything - specs, verdicts, audit trail - as plain files in **your**
 repository, portable to any agent you already run. If the category is autonomous delivery
@@ -194,8 +197,8 @@ run ([N=5 report](benchmarks/2026-07-08-n5-run.md); spikes:
   below conventional
   significance at this sample size (one-sided Fisher p 0.083), and it names the honest
   boundary: mandated planning changes *where* an error must occur, it does not make errors
-  impossible. A bad plan propagates with authority - which is why the next pipeline change
-  this data points at is an independent check of the plan against the spec.
+  impossible. A bad plan propagates with authority. v5 answered that by reviewing every plan
+  against the spec; v6 removed that review, for the reasons below.
 - **Auditability is measurable - and it graded us honestly.** An independent auditor agent
   answering maintainer questions from the finished workspace alone (with cited evidence
   mechanically validated - a cited test must fail against a seeded mutant to count) scored
@@ -246,12 +249,32 @@ friendly aliases for humans), atomic index writes with advisory locking, typed a
 the numbering question explicitly, and forward-only adoption (old ids stay valid, new
 artifacts mint ULIDs) is fully supported.
 
+## The ratchet: what was removed in v6
+
+The argument above is for gates over goodwill. It has a failure mode, and this project
+walked into it: every failure became a lesson, every lesson a gate, and no gate was retired.
+
+- **The machinery became the product.** 82% of the last 116 sprint units built or repaired
+  the sprint, review and gate machinery, or tooling used only in this repository
+  (`sdlc-studio/reviews/back-to-basics-review.md`, 2026-09-23; re-derived from the run
+  archive by each unit's declared `Affects`, 79% to 85%).
+- **The plan review argued over paperwork.** It rejected 255 of 428 plans, 60%
+  (`sdlc-studio/reviews/plan-review-verdicts.md`, the frozen ledger), and its recorded fixes
+  changed test plans, not code (the same back-to-basics review).
+
+So v6 deletes: 58 retired surfaces (the `CHANGELOG.md` 6.0.0 Breaking inventory), among them
+plan review, the verification-depth tiers as a gate, the mutation ledger, per-unit sign-off
+with its attestation record, and the batch review. What is left is one review per unit,
+capped at two rounds, and one signature per run. A check now has to earn its place.
+
 ## What we are still proving
 
 - Statistical significance: the N=5 escape difference (10/10 vs 2/5) is directionally
   consistent across runs but needs a larger sample to clear conventional thresholds.
-- The fix for the measured failure mode: an independent check of the plan's acceptance
-  criteria against the source spec, so a mis-read rule cannot propagate with authority.
+- The fix for the measured failure mode, a mis-read rule propagating with authority. v5's
+  plan review, removed for not earning its place (above), is gone; in v6 criteria quality is
+  part of the one delivery review, and whether that catches a mis-read rule is not yet
+  measured.
 - Whether the value is *having* good acceptance criteria or *mechanically enforcing* them -
   a planned arm with ticket-grade ACs but no gates.
 - Fan-out economics as a measurement rather than a field report.
