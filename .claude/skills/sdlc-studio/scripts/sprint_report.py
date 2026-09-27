@@ -2757,7 +2757,12 @@ def _rel(root: Path, path: Path) -> str:
 
 
 def _run_state_for(root: Path, run_id: str | None) -> tuple[dict, str]:
-    """The run record this report describes, and the relative path it was read from."""
+    """The run record this report describes, and the relative path it was read from.
+
+    The live record when it names the run, else the sealed record `sprint sign` tracked beside
+    the report (every clone has it), else the `.local` archive (a project not yet migrated).
+    Returned as recorded: `build_report` decides whether a page reads it through
+    `run_state.portable` (`PORTABLE_PATHS`)."""
     rel = _rel(root, run_state.path(root))
     try:
         live = run_state.read(root) or {}
@@ -2766,11 +2771,20 @@ def _run_state_for(root: Path, run_id: str | None) -> tuple[dict, str]:
     if not run_id or sdlc_md.norm_id(str(live.get("run_id") or "")) == sdlc_md.norm_id(run_id):
         if live.get("run_id"):
             return live, rel
+    tracked = run_state.tracked_path(root, run_id) if run_id else None
+    if tracked is not None:
+        try:
+            record = run_state.read_tracked(root, run_id)
+        except run_state.RunStateError as exc:
+            raise ReportError(str(exc)) from exc
+        if record:
+            return record, _rel(root, tracked)
     for archived in run_state.archived(root):
         if str(archived.get("run_id") or "") == run_id:
             return archived, _rel(root, run_state.archive_path(root, run_id))
-    raise ReportError(f"no run record names {run_id or 'a run'} - looked in {rel} and the "
-                      f"run archive beside it")
+    looked = f"{_rel(root, tracked)}, " if tracked is not None else ""
+    raise ReportError(f"no run record names {run_id or 'a run'} - looked in {rel}, {looked}"
+                      f"and the run archive beside it")
 
 
 def _retro_for_run(root: Path, state: dict) -> str:
@@ -3500,9 +3514,17 @@ def _iso(moment) -> str | None:
     return moment.isoformat().replace("+00:00", "Z") if moment else None
 
 
+#: The envelope mark of a page derived from its run record through `run_state.portable`, the
+#: projection the tracked record is filed through, so the page names a session outside the
+#: repository (an uncovered one, in the cost section) exactly as the tracked record does. A page
+#: filed before records were tracked carries no mark and is re-derived from the record as it
+#: stands, so every figure reads as it was signed. An envelope field, never a figure.
+PORTABLE_PATHS = "record_paths"
+
+
 def build_report(root, retro_id: str, as_of: str | None = None,
                  window_end: str | None = None, run_id: str | None = None,
-                 filed: dict | None = None) -> dict:
+                 filed: dict | None = None, portable: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -3514,10 +3536,14 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     the report and replayed on every re-derivation - otherwise signing would widen the window,
     move the figures and invalidate the page it had just signed. `filed` is the signed page as
     its signing commit holds it: its readings of sources that move after the run are replayed,
-    never re-read (`_page_readings`).
+    never re-read (`_page_readings`). `portable` reads the run record through
+    `run_state.portable` and marks the page so (`PORTABLE_PATHS`); a re-derivation passes what
+    the page it re-derives carries.
     """
     root = Path(root)
     state, state_rel = _run_state_for(root, run_id)
+    if portable:
+        state = run_state.portable(state, root)
     generated_at = as_of or sdlc_md.now_iso8601()
     start = _at(state.get("started_at"))
     end = (_at(window_end) if window_end else
@@ -3558,6 +3584,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         # The LEGACY single baseline needs a closing reading of the same meter, so the
         # transcript is read here and nowhere else.
         current = run_state.session_tokens(root)
+        if portable:
+            current = run_state.portable(current, root)
     tokens = run_state.run_token_total(state, current)
     readings = _page_readings(filed)
     ledger = _unit_ledger(root, state, state_rel, readings["points"],
@@ -3589,7 +3617,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               "retro_id": sdlc_md.norm_id(retro_id), "generated_at": generated_at,
               # An envelope field, never a figure: in the digest, recording the bound would
               # change the fingerprint it protects.
-              "window_end": _iso(end), "signature": None, "sections": sections}
+              "window_end": _iso(end), "signature": None, "sections": sections,
+              **({PORTABLE_PATHS: "portable"} if portable else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -4324,6 +4353,89 @@ def _legacy_window_end(root, stored: dict) -> str | None:
     return gen
 
 
+def _git_path(root, path: Path) -> str | None:
+    """`path` relative to the repository's top level, as `git show <sha>:<path>` takes it."""
+    top = (_git(root, "rev-parse", "--show-toplevel") or "").strip()
+    try:
+        return Path(path).resolve().relative_to(Path(top).resolve()).as_posix() if top else None
+    except ValueError:
+        return None
+
+
+def _committed_versions(root, path: Path) -> list[tuple[str, dict]]:
+    """`(sha, parsed JSON)` for every committed version of `path`, oldest first, read with
+    `--full-history` so a merged side branch is seen. A version that does not parse is
+    skipped. Resolved first: git runs from `root`, so a path relative to a relative root would
+    be resolved against the root a second time and find no history."""
+    path = Path(path).resolve()
+    rel = _git_path(root, path)
+    shas = (_git(root, "log", "--full-history", "--date-order", "--reverse", "--format=%H",
+                 "--", str(path)) or "").split() if rel else []
+    out = []
+    for sha in shas:
+        try:
+            data = json.loads(_git(root, "show", f"{sha}:{rel}") or "")
+        except ValueError:
+            continue
+        if isinstance(data, dict):
+            out.append((sha, data))
+    return out
+
+
+def _run_signature(root, run_id: str | None, state: dict) -> tuple[dict, list]:
+    """`(signature, problems)`: the run's signature, read from the tracked record's committed
+    history whenever a tracked record exists, and from the run record otherwise (a run signed
+    before records were tracked).
+
+    The signature is the one first committed with the record. A later COMMITTED version whose
+    signature differs is accepted only when it carries a fingerprint and records a reopen the
+    accepted version did not: a reopened run is signed again. Every other change - a stripped
+    signature, a re-pointed one with no reopen, or any signature change in the working copy - is
+    named against the version that carried the accepted signature. `.local` is never read here
+    and the working copy never changes a committed signature. A tracked record no commit holds
+    yet (signed, not yet committed) is read as it stands."""
+    path = run_state.tracked_path(root, run_id) if run_id else None
+    versions = [(sha[:10], rec) for sha, rec in _committed_versions(root, path)] if path else []
+    committed = len(versions)
+    if path is not None and path.is_file():
+        try:
+            rec = run_state.read_tracked(root, run_id)
+        except run_state.RunStateError as exc:
+            raise ReportError(str(exc)) from exc
+        if not versions or rec != versions[-1][1]:
+            versions.append(("the working copy", rec))
+    if not versions:
+        sig = state.get("signature")
+        return (sig if isinstance(sig, dict) else {}), []
+    accepted: tuple[str, dict, dict] | None = None
+    problems = []
+    for n, (where, rec) in enumerate(versions):
+        sig = rec.get("signature") if isinstance(rec.get("signature"), dict) else {}
+        if accepted is None:
+            if sig.get("fingerprint"):
+                accepted = (where, rec, sig)
+            continue
+        first, held, want = accepted
+        if sig == want:
+            continue
+        reopens = rec.get("reopened") if isinstance(rec.get("reopened"), list) else []
+        if (n < committed and sig.get("fingerprint")
+                and len(reopens) > len(held.get("reopened") or [])):
+            accepted = (where, rec, sig)
+            continue
+        claims = (f"signs {sig.get('report') or 'no report'} at {sig['fingerprint']}"
+                  if sig.get("fingerprint") else "carries no signature")
+        why = ("a signature changes only in a commit, after a reopen" if n >= committed else
+               "no reopen is recorded between them" if sig.get("fingerprint") else
+               "a signature is never removed")
+        problems.append({"page": "history", "figure": "the run's signature",
+                         "detail": f"the tracked run record in {where} {claims}, but the "
+                                   f"version committed with the signature in {first} signs "
+                                   f"{want.get('report')} at {want.get('fingerprint')}, and "
+                                   f"{why}"})
+    return (accepted[2] if accepted else {}), problems
+
+
 def _signed_page(root, stored: dict, report_id: str) -> tuple[dict | None, str | None, list]:
     """`(page, commit, problems)`: the signed page as its signing commit holds it, or
     `(None, None, problems)` when there is nothing to anchor to.
@@ -4344,36 +4456,25 @@ def _signed_page(root, stored: dict, report_id: str) -> tuple[dict | None, str |
     A page with no signature, or a run record that holds no signature fingerprint (a run signed
     before the record carried one), anchors nothing and every source is read from the tree. A
     missing run record never reaches here: the re-derivation needs it, so `check` refuses first.
+    The signature is `_run_signature`'s, so its own problems are named here too.
     """
     if not (stored.get("signature") or {}).get("principal"):
         return None, None, []
     rid = sdlc_md.norm_id(report_id)     # the file asked about, whatever id its body claims
     state, _state_rel = _run_state_for(Path(root), stored.get("run_id"))
-    sig = state.get("signature") if isinstance(state.get("signature"), dict) else {}
+    sig, sig_problems = _run_signature(root, stored.get("run_id"), state)
     want = sig.get("fingerprint")
     if not sig.get("report") or not want:
-        return None, None, []
+        return None, None, sig_problems
     if sdlc_md.norm_id(str(sig["report"])) != rid:
-        return None, None, [{"page": "json", "figure": "signature",
-                             "detail": f"{state.get('run_id')} was signed on "
-                                       f"{sdlc_md.norm_id(str(sig['report']))}, not {rid}, so "
-                                       f"this page's signature is not the run's"}]
-    path = (report_dir(root) / f"{rid}.json").resolve()
-    top = (_git(root, "rev-parse", "--show-toplevel") or "").strip()
-    try:
-        rel = path.relative_to(Path(top).resolve()).as_posix() if top else None
-    except ValueError:
-        rel = None
-    shas = (_git(root, "log", "--full-history", "--date-order", "--reverse", "--format=%H",
-                 "--", str(path)) or "").split() if rel else []
-    signed = []
-    for sha in shas:
-        try:
-            page = json.loads(_git(root, "show", f"{sha}:{rel}") or "")
-        except ValueError:
-            continue
-        if isinstance(page, dict) and (page.get("signature") or {}).get("principal"):
-            signed.append((sha, page))
+        return None, None, sig_problems + [
+            {"page": "json", "figure": "signature",
+             "detail": f"{state.get('run_id')} was signed on "
+                       f"{sdlc_md.norm_id(str(sig['report']))}, not {rid}, so this page's "
+                       f"signature is not the run's"}]
+    signed = [(sha, page)
+              for sha, page in _committed_versions(root, report_dir(root) / f"{rid}.json")
+              if (page.get("signature") or {}).get("principal")]
 
     def digest(page: dict):
         # A page of this schema is re-digested, so a recorded fingerprint copied onto other
@@ -4384,7 +4485,7 @@ def _signed_page(root, stored: dict, report_id: str) -> tuple[dict | None, str |
         return page.get("fingerprint") == want and digest(page) == want
     held = next(((sha, page) for sha, page in signed if carries(page)), None)
     run = state.get("run_id")
-    problems = [{"page": "history", "figure": "the signed page",
+    problems = sig_problems + [{"page": "history", "figure": "the signed page",
                  "detail": f"the signed version committed in {sha[:10]} digests to "
                            f"{digest(page)}, not the {want} {run} was signed at"}
                 for sha, page in signed if not carries(page)]
@@ -4425,6 +4526,13 @@ def revalidate(root, report_id: str) -> dict:
         raise ReportError(f"{stored.get('report_id') or report_id} was filed under report "
                           f"schema {stored.get('schema')} and this builder derives schema "
                           f"{SCHEMA}, so it cannot be re-derived - the page stands as filed")
+    # A DEPTH-LIMITED CLONE CANNOT JUDGE. The run's window and the signing commit are history
+    # it does not hold, so re-deriving there reads figures as moved that never moved.
+    if (_git(root, "rev-parse", "--is-shallow-repository") or "").strip() == "true":
+        raise ReportError(f"{stored.get('report_id') or report_id} cannot be judged in this "
+                          f"clone: its history is shallow, so the run's commits and the "
+                          f"signing commit are not here to re-derive from - fetch the full "
+                          f"history (`git fetch --unshallow`) and check again")
     # THE SIGNED PAGE COMES FROM HISTORY, NOT FROM THE FILE. Its readings of moving sources are
     # replayed, so taking them from the file would let an edited page, fingerprint recomputed
     # and twin re-rendered, certify itself.
@@ -4437,7 +4545,8 @@ def revalidate(root, report_id: str) -> dict:
     # to appear. The run is the page's own, archived once the next run opens.
     fresh = build_report(root, basis.get("retro_id"), as_of=basis.get("generated_at"),
                          window_end=_legacy_window_end(root, basis),
-                         run_id=basis.get("run_id"), filed=anchor)
+                         run_id=basis.get("run_id"), filed=anchor,
+                         portable=basis.get(PORTABLE_PATHS) == "portable")
     was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(basis)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)

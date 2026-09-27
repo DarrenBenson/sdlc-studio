@@ -1,10 +1,10 @@
 # US0959: A signed sprint report checks in any full clone, from a sealed run record tracked beside it
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, changelog.d/US0959.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/US0959.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Epic:** EP0267
 > **Parent:** CR0599
 > **Points:** 5
@@ -20,14 +20,19 @@
 
 - **AC1:** Given a fixture run closed and signed with `sprint.py sign`, when the seal finishes, then `sdlc-studio/reports/runs/<RUN-ID>.json` exists carrying the run's signature, outcome and `ended_at`, and no string value in it is an absolute path. Fails on: copying `.local/run-state.json` verbatim, which commits the home directory and session transcript ids every recent record carries (`plan`, `session_token_stamps[].source`, `unit_actuals.*.start_source`)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py::TrackedRunRecordTests::test_sign_files_a_portable_sealed_record
+  - **Verified:** yes (2026-09-27)
 - **AC2:** Given that fixture committed and cloned with full history and no `.local`, when `sprint_report.py check --report` runs in the clone, then it exits 0. Fails on: HEAD's `_run_state_for`, which looks only in `.local` and exits 2 'no run record names RUN-...' (measured in a clean clone of dee380d9 for RPT0006-RPT0010)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py::TrackedRunRecordTests::test_a_clean_clone_checks_the_signed_report
+  - **Verified:** yes (2026-09-27)
 - **AC3:** Given the signing clone, when the `.local` record's signature is stripped or re-pointed at another fingerprint, then `check` still exits 0 from the tracked record; and when the tracked record's signature is re-pointed in a later commit with no recorded reopen, then `check` exits 1 naming the signature against the version first committed with it. Fails on: reading the signature from `.local` (CR0599's route) or from the tracked record's working copy, where an edit certifies itself
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py::TrackedRunRecordTests::test_the_signature_is_read_from_tracked_history
+  - **Verified:** yes (2026-09-27)
 - **AC4:** Given a signed run reopened with a recorded reason and signed again, when `check` runs on its report, then it exits 0. Fails on: anchoring the first committed signature unconditionally, which reads every legitimate re-seal as forged
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py::TrackedRunRecordTests::test_a_reopened_and_resigned_run_checks_valid
+  - **Verified:** yes (2026-09-27)
 - **AC5:** Given a depth-1 clone holding the tracked records, when `check` runs on a signed report, then it exits 2 and names shallow history as why it cannot judge, never INVALIDATED. Fails on: HEAD, which reads RPT0006 and RPT0010 INVALIDATED on `dora_band` in a depth-1 clone (measured)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py::TrackedRunRecordTests::test_a_shallow_clone_cannot_judge_and_says_so
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

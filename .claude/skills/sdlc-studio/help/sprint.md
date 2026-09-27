@@ -117,6 +117,28 @@ nothing written at all. It never runs without an explicit `--principal`.
 old path alive in every operator's fingers, help file and runbook row, and the split would have
 shipped with its own bypass intact.
 
+**The sealed run record is tracked, so a signed report checks in any full clone.** `sign` files
+`sdlc-studio/reports/runs/<RUN-ID>.json` beside the page, before it re-records the tree, so the
+seal commit carries it; commit it with the page. It is the run record (`.local/run-state.json`)
+as sealed - `signature`, `outcome`, `ended_at`, `reopened` and every other field - through one
+projection: an absolute path inside the repository becomes repo-relative, any other becomes
+`sha256:<12 hex>` of itself, which keeps the home directory and session transcript ids out of
+the tree and still groups a session's token stamps. A page derived since then reads its run
+record through the same projection and says so (`record_paths: portable`), so it names a
+session outside the repository exactly as the tracked record does; a page derived before is
+re-derived from the record as it stands. `sprint_report.py check --report RPTxxxx` reads the run
+from the live record when it names the run, else this tracked record, else the `.local` archive
+(a project whose earlier reports were signed before records were tracked). Once a tracked
+record is committed, the signature is read from its committed history and never from `.local`.
+A later commit whose signature differs is accepted only when it carries a fingerprint and
+records a reopen the earlier version did not (`sprint.py reopen --reason ...`, then close and
+sign again); a stripped signature, a re-pointed one with no reopen, and any signature change
+that only the working copy carries are named against the version first committed with the
+signature (exit 1). A re-signature therefore counts once it is committed. The trust root is
+committed history: a verifier sees only the commits it holds. A depth-1 clone holds neither the
+run's commits nor the signing commit, so `check` exits 2 and says the history is shallow rather
+than judging the page.
+
 Natural language works too: "do a sprint to deliver all open bugs"; "plan and break down the
 next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
 

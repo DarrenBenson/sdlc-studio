@@ -17269,7 +17269,9 @@ class ReportCostRowTests(unittest.TestCase):
                           for r in cost["rows"]])
         coverage = figs["token_coverage"]["value"]
         self.assertIn("2", str(coverage), "the coverage clause does not name the session count")
-        self.assertIn("s3.jsonl", str(coverage),
+        # Named by its portable identity (US0959): the page is tracked, so a transcript path
+        # outside the repository is printed as the digest the tracked run record carries.
+        self.assertIn(run_state.portable("/t/s3.jsonl", root), str(coverage),
                       "the coverage clause does not name the session that wrote to the run "
                       "without a closing stamp")
         units = {s["key"]: s for s in rep["sections"]}["delivered"]

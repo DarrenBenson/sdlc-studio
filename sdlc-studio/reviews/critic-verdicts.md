@@ -1329,6 +1329,7 @@ One row has been removed since adoption.
 | BG0682 | REJECT | qa-rev-stack2 | BG0682-build | 2026-09-27 | 058c621da343 | full | [regression] blocking: the wider token pattern wraps an already backslash-escaped underscore, so critic-escaped findings filed through file\_finding are minted lint-red (MD038); [new] non-blocking: URL paths, link targets and anchors are now rewritten [LC-002]; [new] non-blocking: the AC2 test cannot tell its two guards apart [LC-002] |
 | BG0808 | APPROVE | qa-rev-stack2 | BG0808-build | 2026-09-27 | 6d828671861a | full | [new] non-blocking: init run --force now overwrites an existing .version record; [new] non-blocking: a project\_upgrade docstring still says init writes no .version; [new] non-blocking: the unreadable-install branch is untested |
 | BG0807 | APPROVE | qa-rev-stack2 | BG0807-build | 2026-09-27 | 780b195ec409 | full | [new] non-blocking: nothing asserts the filtered list is non-empty, so a drifted Verify format would pass vacuously [LC-006] |
+| US0959 | APPROVE | qa-rev-US0959 | US0959-build | 2026-09-27 | 6e3a81d035d5 | full | [new] non-blocking: a run closed on pre-US0959 code and signed after reads INVALIDATED in a clean clone, where base read no run record [LC-002]; [new] non-blocking: between a legitimate re-sign and its commit, check reads INVALID edited; [new] non-blocking: reading the page mark from disk instead of the signing commit is unpinned |
 
 ## Supersessions
 

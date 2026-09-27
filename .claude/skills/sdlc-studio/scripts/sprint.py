@@ -9226,7 +9226,16 @@ def cmd_sign(args: argparse.Namespace) -> int:
         else:
             run_state.update(root, **unanswered_record(ua))
         signature = _write_the_signature(root, report_id, args.principal)
-        run_state.close_run(root, outcome, handoff=state.get("handoff"))
+        sealed = run_state.close_run(root, outcome, handoff=state.get("handoff"))
+        try:
+            # THE SEALED RECORD IS TRACKED, beside the page, so any full clone can re-derive
+            # the page and read the signature from committed history. Before the tree is
+            # re-recorded, so the seal commit carries it and the tree check never counts it.
+            run_state.file_tracked(root, sealed)
+        except OSError as exc:
+            print(f"sign: the sealed run record could not be filed at "
+                  f"{run_state.tracked_path(root, sealed['run_id'])} ({exc}) - the report "
+                  f"checks only in this clone until it is", file=sys.stderr)
         try:
             # The anchor the close stamped said the signature was owed; it now says it landed.
             refresh_review_anchor(root, state.get("run_id") or "(unknown run)", outcome,

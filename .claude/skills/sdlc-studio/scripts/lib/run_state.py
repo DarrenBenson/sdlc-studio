@@ -37,6 +37,7 @@ A library, not a command: the writers are `sprint.py` and `handoff.py`.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -54,6 +55,12 @@ SCHEMA = 1
 # taken at close, keyed by `run_id`, and the live file's shape is deliberately UNCHANGED so
 # every existing reader sees exactly what it saw before.
 ARCHIVE_REL = Path("sdlc-studio") / ".local" / "run-archive"
+
+# Where `sprint sign` files a SEALED run's record: tracked, beside the report it underwrites,
+# so any full clone can re-derive the signed page and read the signature from committed
+# history. `.local` exists only in the clone that signed, and anyone who can write it could
+# re-point or strip a signature kept there.
+TRACKED_REL = Path("sdlc-studio") / "reports" / "runs"
 
 # The outcome vocabulary. A run is RUNNING until something says otherwise; the three ways
 # it stops are the three the handoff exists for (goal reached, budget spent, blocked), plus
@@ -436,6 +443,63 @@ def read_archived(repo_root: Path | str, run_id: str) -> dict:
     except (OSError, json.JSONDecodeError):
         return {}
     return rec if isinstance(rec, dict) else {}
+
+
+def tracked_path(repo_root: Path | str, run_id: str) -> Path:
+    return Path(repo_root) / TRACKED_REL / f"{run_id}.json"
+
+
+#: An absolute path, as a record stores one: one line, from the filesystem root, whose first
+#: segment is a single word with another segment after it (`/home/x/...`, `C:\...`). Prose
+#: that merely starts with a slash (`/sdlc-studio status ...`) is not one.
+_ABSOLUTE_PATH = re.compile(r"^(?:/[^/\s]+/|[A-Za-z]:[\\/])[^\n]*$")
+
+
+def portable(value, repo_root: Path | str):
+    """`value` with every absolute path made portable: a path inside the repository becomes
+    repo-relative, any other becomes `sha256:<12 hex>` of itself.
+
+    A run record carries the home directory and session transcript ids (`plan`, every token
+    stamp's `source`, `unit_actuals.*.start_source`). No figure prints them, and the one thing
+    read from them - which stamps share a session - survives a digest. Idempotent, so a record
+    read back through it is unchanged. `sprint_report.build_report` reads a run record through it
+    for every page it marks so, so such a page's figures are the same whichever copy of the
+    record they were derived from."""
+    if isinstance(value, dict):
+        return {k: portable(v, repo_root) for k, v in value.items()}
+    if isinstance(value, list):
+        return [portable(v, repo_root) for v in value]
+    if not isinstance(value, str) or not _ABSOLUTE_PATH.match(value):
+        return value
+    for base in dict.fromkeys((Path(repo_root).absolute(), Path(repo_root).resolve())):
+        try:
+            return Path(value).relative_to(base).as_posix()
+        except ValueError:
+            continue
+    return "sha256:" + hashlib.sha256(value.encode("utf-8")).hexdigest()[:12]
+
+
+def file_tracked(repo_root: Path | str, state: dict) -> Path:
+    """File a sealed run's record at `tracked_path`, through `portable`. Returns the path."""
+    p = tracked_path(repo_root, state["run_id"])
+    p.parent.mkdir(parents=True, exist_ok=True)
+    sdlc_md.atomic_write(p, json.dumps(portable(state, repo_root), indent=2) + "\n")
+    return p
+
+
+def read_tracked(repo_root: Path | str, run_id: str) -> dict:
+    """The tracked record of `run_id`, or `{}` when none is filed. RAISES `RunStateError` on
+    one that does not parse: a damaged signed record is not the same fact as an absent one."""
+    p = tracked_path(repo_root, run_id)
+    try:
+        rec = json.loads(p.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {}
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RunStateError(f"the tracked run record at {p} cannot be read: {exc}") from exc
+    if not isinstance(rec, dict):
+        raise RunStateError(f"the tracked run record at {p} is not an object")
+    return rec
 
 
 def is_open(repo_root: Path | str) -> bool:
