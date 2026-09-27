@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 32 |
-| In Progress | 5 |
-| Fixed | 635 |
+| In Progress | 4 |
+| Fixed | 636 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -140,7 +140,7 @@
 | [BG0779](BG0779-the-pre-commit-hook-hides-the-stamped-test.md) | The pre-commit hook hides the stamped-test re-read list on a passing commit | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0780](BG0780-the-allocation-lock-fails-closed-on-a-non.md) | The allocation lock fails closed on a non-busy flock error, and three callers mishandle its timeout | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0781](BG0781-a-busy-lock-reported-as-eacces-fails-at.md) | A busy lock reported as EACCES fails at once, and two lock warnings advise a retry that duplicates | Fixed | Medium | 2026-09-25 | 2026-09-25 |
-| [BG0782](BG0782-about-57-test-modules-commit-in-a-temporary.md) | About 57 test modules commit in a temporary git repo with auto-maintenance on, the race BG0711 fixed in one | In Progress | Medium | 2026-09-25 | 2026-09-25 |
+| [BG0782](BG0782-about-57-test-modules-commit-in-a-temporary.md) | About 57 test modules commit in a temporary git repo with auto-maintenance on, the race BG0711 fixed in one | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0783](BG0783-review-rounds-are-write-dead-after-us0918-so.md) | Review rounds are write-dead after US0918, so the ceiling and repair-regression readers of run-state rounds read nothing | Fixed | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0784](BG0784-a-seat-card-with-no-role-line-is.md) | A seat card with no role line is silently bypassed for the shipped card, and the unknown-seat refusal names the wrong seats | Open | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0785](BG0785-migrate-leaves-a-v4-era-project-s-conformance.md) | migrate leaves a v4-era project's conformance lane red on its pre-adoption stories and names no cutoff for them | In Progress | Medium | 2026-09-26 | 2026-09-26 |

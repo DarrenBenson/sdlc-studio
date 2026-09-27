@@ -64,6 +64,14 @@ run_tmp="$(mktemp -d "${TMPDIR:-/tmp}/sdlc-tests.XXXXXXXXXX")" || exit 1
 trap 'rm -rf "$run_tmp"' EXIT
 export TMPDIR="$run_tmp" SDLC_TEST_TMPDIR="$run_tmp"
 
+# Git's automatic maintenance is off for the run (BG0782), as the repository-root conftest.py turns
+# it off for pytest: from git 2.55 a fixture commit's detached `git maintenance run --auto` outlives
+# the commit and writes into `.git` while the temporary directory is removed (BG0711). Appended
+# after any GIT_CONFIG_* entry the caller made, which stays in force.
+git_cfg_n="${GIT_CONFIG_COUNT:-0}"
+export "GIT_CONFIG_KEY_$git_cfg_n=maintenance.auto" "GIT_CONFIG_VALUE_$git_cfg_n=false" \
+  GIT_CONFIG_COUNT="$((git_cfg_n + 1))"
+
 skill="${1:-.claude/skills/sdlc-studio/scripts}"
 shift 2>/dev/null || true
 

@@ -13,6 +13,13 @@ conftest inside each tree cannot work: both trees are packages named `tests`, so
 both files to the module `tests.conftest` and refuses the second in any session that spans the
 two, which is the push's full suite. `tools/skill-tests.sh` confines the unittest runner, which
 never loads a conftest, the same way.
+
+The session also turns git's automatic maintenance off (BG0782). Every `git commit` a fixture
+makes starts `git maintenance run --auto --detach`, and from git 2.55 (CI's) that process outlives
+the commit and writes into `.git` while the temporary directory is being removed, which fails a
+green test on teardown (BG0711). The setting is appended through `GIT_CONFIG_COUNT`/`KEY`/`VALUE`,
+so every git process under the session reads it whatever `GIT_CONFIG_GLOBAL` a fixture sets, and
+an entry the caller already made stays in force.
 """
 import os
 import shutil
@@ -24,10 +31,41 @@ import tempfile
 OWNER_VAR = "SDLC_TEST_TMPDIR"
 
 _owned = None   # (private dir, TMPDIR before, marker before, tempfile.tempdir before)
+_git_config_before = None   # the GIT_CONFIG_* variables this session set, as they were
+
+MAINTENANCE_OFF = ("maintenance.auto", "false")
+
+
+def _git_config_entries():
+    count = int(os.environ.get("GIT_CONFIG_COUNT") or 0)
+    return [(os.environ.get(f"GIT_CONFIG_KEY_{i}"), os.environ.get(f"GIT_CONFIG_VALUE_{i}"))
+            for i in range(count)]
+
+
+def _turn_git_maintenance_off():
+    """Append `maintenance.auto=false` to the environment's git config after what is there. A
+    session that inherits it (an xdist worker, a run nested in a confined one) adds nothing."""
+    global _git_config_before
+    entries = _git_config_entries()
+    if MAINTENANCE_OFF in entries:
+        return
+    n = len(entries)
+    names = ("GIT_CONFIG_COUNT", f"GIT_CONFIG_KEY_{n}", f"GIT_CONFIG_VALUE_{n}")
+    _git_config_before = {name: os.environ.get(name) for name in names}
+    os.environ.update(zip(names, (str(n + 1), *MAINTENANCE_OFF)))
+
+
+def _restore(saved):
+    for name, value in saved.items():
+        if value is None:
+            os.environ.pop(name, None)
+        else:
+            os.environ[name] = value
 
 
 def pytest_configure(config):
     global _owned
+    _turn_git_maintenance_off()
     current = os.environ.get("TMPDIR")
     if current and os.environ.get(OWNER_VAR) == current:
         tempfile.tempdir = current      # tempfile may have cached another directory before this ran
@@ -39,15 +77,13 @@ def pytest_configure(config):
 
 
 def pytest_unconfigure(config):
-    global _owned
+    global _owned, _git_config_before
+    _restore(_git_config_before or {})
+    _git_config_before = None
     if _owned is None:
         return
     private, env, owner, cached = _owned
     _owned = None
     tempfile.tempdir = cached
-    for name, value in (("TMPDIR", env), (OWNER_VAR, owner)):
-        if value is None:
-            os.environ.pop(name, None)
-        else:
-            os.environ[name] = value
+    _restore({"TMPDIR": env, OWNER_VAR: owner})
     shutil.rmtree(private, ignore_errors=True)

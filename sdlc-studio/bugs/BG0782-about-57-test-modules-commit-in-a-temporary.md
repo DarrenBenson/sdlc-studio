@@ -1,9 +1,9 @@
 # BG0782: About 57 test modules commit in a temporary git repo with auto-maintenance on, the race BG0711 fixed in one
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** conftest.py, tools/skill-tests.sh, .claude/skills/sdlc-studio/scripts/tests/test_lean_git_maintenance_off.py, tools/tests/test_lean_git_maintenance_off.py, changelog.d/BG0782.md
+> **Affects:** conftest.py, tools/skill-tests.sh, .claude/skills/sdlc-studio/scripts/tests/test_lean_git_maintenance_off.py, tools/tests/test_lean_skill_tests_maintenance.py, changelog.d/BG0782.md
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -25,8 +25,10 @@ Set maintenance.auto=false suite-wide through `GIT_CONFIG_COUNT`/KEY/VALUE in th
 
 - [ ] **AC1** Given a pytest session over either test tree, when a test makes a fixture repository with `git init` in a temporary directory, then `git config maintenance.auto` reads false there. Fails on: HEAD, where only test_complexity.py turns it off (BG0711) and about 110 modules commit in temporary repositories with detached maintenance on
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_git_maintenance_off.py::GitMaintenanceOffTests::test_a_fixture_repo_reads_maintenance_off
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC2** Given `tools/skill-tests.sh` running that module under unittest, when the environment already carries one `GIT_CONFIG_COUNT` entry, then the module passes and the existing entry is still in force. Fails on: setting the variable only in conftest.py, which unittest never loads, or overwriting `GIT_CONFIG_COUNT` and dropping a setting the caller made
-  - **Verify:** pytest tools/tests/test_lean_git_maintenance_off.py::SkillTestsMaintenanceTests::test_skill_tests_turns_maintenance_off_and_keeps_existing_config
+  - **Verify:** pytest tools/tests/test_lean_skill_tests_maintenance.py::SkillTestsMaintenanceTests::test_skill_tests_turns_maintenance_off_and_keeps_existing_config
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 
@@ -38,3 +40,4 @@ Set maintenance.auto=false suite-wide through `GIT_CONFIG_COUNT`/KEY/VALUE in th
 | --- | --- | --- |
 | 2026-09-25 | sdlc-studio | Filed |
 | 2026-09-27 | sdlc-studio v6 planning | Groomed for Sprint 6: criteria and Verify selectors written |
+| 2026-09-27 | sdlc-studio v6 build | AC2 Verify retargeted to `tools/tests/test_lean_skill_tests_maintenance.py`: two `tests` packages holding one basename collide in a single pytest session, so one criterion was never collected |
