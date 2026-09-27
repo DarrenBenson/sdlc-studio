@@ -1,6 +1,6 @@
 # BG0809: install.sh --local rewrites every personal copy of the skill, and the copy it installs is one Claude Code does not load
 
-> **Status:** Open
+> **Status:** In Progress
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

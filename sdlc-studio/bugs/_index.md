@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 17 |
-| In Progress | 2 |
+| Open | 15 |
+| In Progress | 4 |
 | Fixed | 655 |
 | Verified | 0 |
 | Closed | 87 |
@@ -50,7 +50,7 @@
 | [BG0689](BG0689-the-release-tag-guard-never-reads-close-owed.md) | The release tag guard never reads close_owed's velocity half, so a retro owing its velocity row does not refuse the tag | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0690](BG0690-critic-py-repair-re-judges-stored-findings-through.md) | critic.py repair re-judges stored findings through the code-span guard, and its typed closure scanner unescapes any backslash before a greater-than sign | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0691](BG0691-changelog-py-shape-judges-unreadable-and-symlinked-fragments.md) | changelog.py shape judges unreadable and symlinked fragments differently in its two modes, and its git-failure refusals are unpinned | Open | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0692](BG0692-gate-py-never-sets-the-boundary-suite-marker.md) | gate.py never sets the boundary-suite marker itself, so SDLC_GATE_BOUNDARY=push reads [PASS] module-alone over a red boundary-only test | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0692](BG0692-gate-py-never-sets-the-boundary-suite-marker.md) | gate.py never sets the boundary-suite marker itself, so SDLC_GATE_BOUNDARY=push reads [PASS] module-alone over a red boundary-only test | In Progress | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0693](BG0693-testplan-derive-and-the-plan-review-brief-still.md) | testplan derive and the plan-review brief still name different unauthored sets: blank cells, table order and a criterion with no row | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0694](BG0694-tag-check-s-tests-pin-the-override-case.md) | tag-check's tests pin the override case, not the blocking predicate, so a later-day close-time repair can be refused again with the suite green | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0695](BG0695-conformance-s-ungroomed-nudge-counts-retired-skeletons-and.md) | conformance's ungroomed nudge counts retired skeletons and tells the user to groom Superseded and Won't Implement stories before planning them to Done | Fixed | Medium | 2026-09-15 | 2026-09-15 |
@@ -167,7 +167,7 @@
 | [BG0806](BG0806-tsd-staleness-is-never-judged-in-a-consuming.md) | TSD staleness is never judged in a consuming project and reports a false reason on every sprint plan | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0807](BG0807-the-us0942-ac5-stamp-test-resolves-the-whole.md) | The US0942 AC5 stamp test resolves the whole corpus before filtering, costing about 50 seconds of every commit that touches verify_ac.py | Fixed | Low | 2026-09-27 | 2026-09-27 |
 | [BG0808](BG0808-init-records-no-project-version-so-a-fresh.md) | init records no project version, so a fresh project's first migrate reports work and its upgrade digest reads the range as unknown | Fixed | Medium | 2026-09-27 | 2026-09-27 |
-| [BG0809](BG0809-install-sh-local-rewrites-every-personal-copy-of.md) | install.sh --local rewrites every personal copy of the skill, and the copy it installs is one Claude Code does not load | Open | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0809](BG0809-install-sh-local-rewrites-every-personal-copy-of.md) | install.sh --local rewrites every personal copy of the skill, and the copy it installs is one Claude Code does not load | In Progress | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0810](BG0810-the-one-runner-agreement-test-races-its-own.md) | The one-runner agreement test races its own fixture: two worker processes share one template directory | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0811](BG0811-a-root-level-file-with-no-listed-extension.md) | A root-level file with no listed extension drops out of a unit's Affects, so review scope and the plan's file checks never see it | In Progress | Medium | 2026-09-27 | 2026-09-27 |
 

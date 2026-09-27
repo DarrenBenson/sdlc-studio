@@ -1,6 +1,6 @@
 # BG0692: gate.py never sets the boundary-suite marker itself, so SDLC_GATE_BOUNDARY=push reads [PASS] module-alone over a red boundary-only test
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, changelog.d/BG0692.md
