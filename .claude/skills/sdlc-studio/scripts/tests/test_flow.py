@@ -8,6 +8,7 @@ import pathlib
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import gitutil  # noqa: E402 - confined git for the fixture repos below
@@ -554,6 +555,117 @@ class BucketGuardTests(unittest.TestCase):
                                      "| RETRO0003 | 2026-07-03 | 0 | 0 | 3600 |"])
             self.assertIn("refused", flow.sprint_forecast(root, 0, seed=1))
             self.assertIn("refused", flow.sprint_forecast(root, 8, seed=1))
+
+
+class BatchedTerminalDateTests(unittest.TestCase):
+    """BG0786: `compute` reads every delivered unit's date from ONE history read, not one
+    `git log -1 -G` per unit (1,483 of them on this repository, 39.5 s of a 43.9 s profile)."""
+
+    def _unit(self, root, rel, rid, status, body=""):
+        f = root / "sdlc-studio" / rel
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(f"# {rid}: x\n\n> **Status:** {status}\n> **Created:** 2026-01-01\n"
+                     f"> **Points:** 1\n{body}", encoding="utf-8")
+        return f
+
+    def _commit(self, repo, day):
+        _git(repo, "add", "-A")
+        _git(repo, "commit", "-q", "-m", f"day {day}", "--date", f"2026-02-{day:02d}T12:00:00")
+
+    def _per_file(self, root, f, status):
+        """The per-file read `compute` made before, spelled out as the oracle."""
+        rel = f.relative_to(root).as_posix()
+        out = gitutil.git(["log", "-1", "--format=%aI", "-G",
+                           r"^> \*\*Status:\*\* " + status + "$", "--", rel],
+                          cwd=root, text=True).stdout.strip()
+        return dt.datetime.fromisoformat(out).date().isoformat() if out else None
+
+    def _history(self, repo, root):
+        """Units closed, reopened and closed again, relabelled, edited after closing and renamed,
+        committed in `repo` under the project root `root`; `{id: (file, status)}` of the
+        delivered ones."""
+        _git(repo, "init", "-q")
+        reopened = self._unit(root, "stories/US0001-reopened.md", "US0001", "Done")
+        edited = self._unit(root, "stories/US0002-edited.md", "US0002", "Done")
+        self._unit(root, "stories/US0003-wont.md", "US0003", "Done")
+        quoting = self._unit(root, "stories/US0004-quoting.md", "US0004", "Done")
+        relabelled = self._unit(root, "bugs/BG0001-relabelled.md", "BG0001", "Won't Fix")
+        fixed = self._unit(root, "bugs/BG0002-fixed.md", "BG0002", "Fixed")
+        renamed = self._unit(root, "bugs/BG0003-old-slug.md", "BG0003", "Fixed")
+        self._commit(repo, 1)
+        self._unit(root, "stories/US0001-reopened.md", "US0001", "In Progress")
+        self._unit(root, "bugs/BG0001-relabelled.md", "BG0001", "Fixed")
+        self._commit(repo, 2)
+        self._unit(root, "stories/US0001-reopened.md", "US0001", "Done")
+        self._unit(root, "stories/US0003-wont.md", "US0003", "Won't Implement")
+        self._unit(root, "bugs/BG0002-fixed.md", "BG0002", "Closed")
+        # a body edit in the same commit as another unit's close: not this unit's date
+        self._unit(root, "stories/US0002-edited.md", "US0002", "Done", "\nA note.\n")
+        self._commit(repo, 3)
+        self._unit(root, "stories/US0002-edited.md", "US0002", "Done",
+                   "\nA note.\n\nQuoted in a later note: > **Status:** Done\n")
+        renamed.rename(renamed.with_name("BG0003-new-slug.md"))
+        renamed = renamed.with_name("BG0003-new-slug.md")
+        self._commit(repo, 4)
+        # a story quoting a BUG's header on a line of its own: another status's anchored line
+        self._unit(root, "stories/US0004-quoting.md", "US0004", "Done",
+                   "\nThe bug it replaced read:\n\n> **Status:** Fixed\n")
+        self._commit(repo, 5)
+        return {"US0001": (reopened, "Done"), "US0002": (edited, "Done"),
+                "US0004": (quoting, "Done"), "BG0001": (relabelled, "Fixed"),
+                "BG0002": (fixed, "Closed"), "BG0003": (renamed, "Fixed")}
+
+    def test_the_batched_read_equals_the_per_file_read(self):
+        """AC1, at a repository root and at a project root inside a repository. MUTANTS: a
+        batched pattern broader than the unit's own anchored Status header - unanchored or the
+        bare word (US0002's later edit quotes its own header in prose), or every delivered
+        status in one alternation (US0004 quotes a bug's `Fixed` header on its own line); drop
+        `--relative` (under the subdirectory root no path matches, so every unit reads no date);
+        renames detected (BG0003 reads no date); `--pickaxe-all` (US0002 takes the close commit
+        it rode in); the oldest match."""
+        for sub in ("", "proj"):
+            with self.subTest(root=sub or "the repository root"), \
+                    tempfile.TemporaryDirectory() as tmp:
+                repo = pathlib.Path(tmp)
+                root = repo / sub
+                want = self._history(repo, root)
+                report = flow.compute(root)
+                got = {rid: (report["units"][rid].get("delivered"),
+                             report["units"][rid].get("cycle_source")) for rid in want}
+                oracle = {rid: (self._per_file(root, f, status), "git")
+                          for rid, (f, status) in want.items()}
+                self.assertEqual(oracle, got)
+                self.assertEqual({"US0001": "2026-02-03", "US0002": "2026-02-01",
+                                  "US0004": "2026-02-01", "BG0001": "2026-02-02",
+                                  "BG0002": "2026-02-03", "BG0003": "2026-02-04"},
+                                 {k: v[0] for k, v in got.items()})
+                self.assertTrue(report["units"]["US0003"].get("closed_undelivered"))
+                self.assertEqual({}, report["unmeasurable"])
+
+    def test_git_is_called_a_bounded_number_of_times(self):
+        """AC2: at most one read per delivered status, whatever the unit count. MUTANT: HEAD's
+        per-unit `terminal_date` read - 40 delivered units spawn 40."""
+        calls = []
+        real_run = flow.subprocess.run
+
+        def counting_run(argv, *args, **kwargs):
+            if argv and argv[0] == "git":
+                calls.append(argv)
+            return real_run(argv, *args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            _git(root, "init", "-q")
+            for i in range(1, 41):     # both types, every delivered status
+                kind, prefix, status = (("stories", "US", "Done"), ("bugs", "BG", "Fixed"),
+                                        ("bugs", "BG", "Closed"))[i % 3]
+                self._unit(root, f"{kind}/{prefix}{i:04d}-x.md", f"{prefix}{i:04d}", status)
+            self._commit(root, 1)
+            with mock.patch.object(flow.subprocess, "run", counting_run):
+                report = flow.compute(root)
+        self.assertEqual(40, sum(1 for u in report["units"].values() if u.get("delivered")))
+        statuses = set().union(*flow.DELIVERED_STATUS.values())
+        self.assertLessEqual(len(calls), len(statuses), calls[:4])
 
 
 if __name__ == "__main__":

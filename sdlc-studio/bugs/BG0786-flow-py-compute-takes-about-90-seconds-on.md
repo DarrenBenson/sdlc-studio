@@ -1,6 +1,6 @@
 # BG0786: flow.py compute takes about 90 seconds on this repository, so its CLI grammar control times out at 120 under load and reddens the push gate
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/flow.py, .claude/skills/sdlc-studio/scripts/tests/test_flow.py, changelog.d/BG0786.md
@@ -25,8 +25,10 @@ Profile flow.py compute and cut its cost; or point the control at a fixture root
 
 - [ ] **AC1** Given a fixture repository whose units were closed, reopened and closed again, set to Won't Do, and edited after closing, when `flow.compute` runs, then every unit's delivery date equals the per-file `git log -1 -G` answer. Fails on: a batched pattern broader than the anchored Status header, which moves a unit's date
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_flow.py::BatchedTerminalDateTests::test_the_batched_read_equals_the_per_file_read
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC2** Given a fixture of 40 delivered units, when `flow.compute` runs, then it spawns a bounded number of git processes independent of the unit count. Fails on: HEAD's `terminal_date`, one `git log` per delivered unit (1,483 on this repository: 39.5 s of a 43.9 s profile waiting on them)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_flow.py::BatchedTerminalDateTests::test_git_is_called_a_bounded_number_of_times
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

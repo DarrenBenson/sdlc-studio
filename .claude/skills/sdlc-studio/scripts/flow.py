@@ -67,31 +67,77 @@ def _revision_dates(text: str) -> list[dt.date]:
     return out
 
 
+def _status_pattern(status: str) -> str:
+    """`-G` on the anchored HEADER line, not `-S` on the bare literal: a pickaxe over the
+    occurrence count is poisoned by a later body-prose mention of the same string (the newest
+    such edit would masquerade as the transition, source "git")."""
+    return r"^> \*\*Status:\*\* " + re.escape(status) + r"$"
+
+
+def status_commits(root: Path, dirs, status: str) -> dict[str, dt.datetime]:
+    """`{path relative to root: author time}` of the newest commit that added or removed the
+    anchored `status` header line, for every file under `dirs`, in ONE history read: the
+    per-file `git log -1 -G` answer for each path at that status, since the pattern is the same.
+    One read per status replaces one process per delivered unit (1,483 on this repository, 39.5
+    s of a 43.9 s `compute`); one read over every status would be broader than a unit's own
+    header, and a story quoting a bug's `Fixed` header on a line of its own would move.
+
+    `--no-renames` lists a renamed file as added whole, as the per-file read of its new path sees
+    it; without `--pickaxe-all` a commit names only the files whose own diff matched;
+    `--relative` names paths from `root` when it sits below the repository's top. One difference
+    stays: history simplification over the directories can walk a merged branch the per-file
+    read prunes (the same status change cherry-picked onto two branches that are then merged),
+    so across merges the two can name different commits. Empty when git cannot answer, so every
+    unit takes the revision fallback, as the per-file read did."""
+    try:
+        out = subprocess.run(
+            ["git", "-c", "core.quotePath=false", "log", "--no-renames", "--relative",
+             "--format=%x00%aI", "--name-only", "-G", _status_pattern(status), "--", *dirs],
+            cwd=root, capture_output=True, text=True, timeout=300)
+    except (OSError, subprocess.TimeoutExpired):
+        return {}
+    if out.returncode != 0:
+        return {}
+    found: dict[str, dt.datetime] = {}
+    for commit in out.stdout.split("\0")[1:]:
+        stamp, _, names = commit.partition("\n")
+        try:
+            when = dt.datetime.fromisoformat(stamp.strip())
+        except ValueError:
+            continue
+        for name in names.splitlines():
+            if name.strip():
+                found.setdefault(name.strip(), when)     # newest first: the first is the answer
+    return found
+
+
 def terminal_date(root: Path, path: Path, type_: str, status: str,
-                  allow_revision_fallback: bool = True):
+                  allow_revision_fallback: bool = True, commits: dict | None = None):
     """When `path` reached `status`: `(datetime, source)` or `(None, None)`.
 
-    git history is the precise source (the newest commit that changed the
-    occurrence count of the status line). Fallback: the LAST revision-history
+    git history is the precise source (the newest commit that added or removed the
+    anchored status line), read per file, or looked up in `commits` when the caller made one
+    `status_commits` read for many files at this `status`. Fallback: the LAST revision-history
     row's date (day precision) - sound for a TERMINAL status (the last row IS
     the close), wrong for a transient one like Blocked (a post-block edit
     masquerades as the transition), so those callers pass
     allow_revision_fallback=False and get an honest (None, None) instead.
     """
     rel = path.resolve().relative_to(Path(root).resolve())
-    # -G on the anchored HEADER line, not -S on the bare literal: a pickaxe over the
-    # occurrence count is poisoned by a later body-prose mention of the same string
-    # (the newest such edit would masquerade as the transition, source "git").
-    pattern = r"^> \*\*Status:\*\* " + re.escape(status) + r"$"
-    try:
-        out = subprocess.run(
-            ["git", "log", "-1", "--format=%aI", "-G", pattern, "--", str(rel)],
-            cwd=root, capture_output=True, text=True, timeout=30)
-        stamp = out.stdout.strip().splitlines()[0] if out.stdout.strip() else ""
-        if out.returncode == 0 and stamp:
-            return dt.datetime.fromisoformat(stamp), "git"
-    except (OSError, subprocess.TimeoutExpired, ValueError):
-        pass
+    if commits is not None:
+        if rel.as_posix() in commits:
+            return commits[rel.as_posix()], "git"
+    else:
+        try:
+            out = subprocess.run(
+                ["git", "log", "-1", "--format=%aI", "-G", _status_pattern(status), "--",
+                 str(rel)],
+                cwd=root, capture_output=True, text=True, timeout=30)
+            stamp = out.stdout.strip().splitlines()[0] if out.stdout.strip() else ""
+            if out.returncode == 0 and stamp:
+                return dt.datetime.fromisoformat(stamp), "git"
+        except (OSError, subprocess.TimeoutExpired, ValueError):
+            pass
     if allow_revision_fallback:
         text = sdlc_md.read_text_safe(path)
         rows = _revision_dates(text)
@@ -160,6 +206,9 @@ def compute(root, types=("story", "bug"), today: dt.date | None = None) -> dict:
     units: dict[str, dict] = {}
     unmeasurable: dict[str, str] = {}
     delivered_dates: list[dt.date] = []
+    # {status: {path: git date}}, one history read per delivered status, at its first unit
+    commits: dict[str, dict] = {}
+    dirs = [sdlc_md.ARTIFACT_TYPES[t][0] for t in types if t in sdlc_md.ARTIFACT_TYPES]
 
     for type_ in types:
         for path, text in sdlc_md.iter_artifact_files(type_, root):
@@ -183,7 +232,10 @@ def compute(root, types=("story", "bug"), today: dt.date | None = None) -> dict:
                     created = None
             unit: dict = {"type": type_, "status": status}
             if status in DELIVERED_STATUS.get(type_, set()):
-                when, source = terminal_date(root, path, type_, status)
+                if status not in commits:
+                    commits[status] = status_commits(root, dirs, status)
+                when, source = terminal_date(root, path, type_, status,
+                                             commits=commits[status])
                 if when is None or created is None:
                     why = "no Created date" if created is None else "no resolvable delivery date (no git history, no revision row)"
                     unmeasurable[rec] = why
