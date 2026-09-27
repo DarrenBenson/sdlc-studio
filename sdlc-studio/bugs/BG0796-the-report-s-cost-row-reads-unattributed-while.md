@@ -1,6 +1,6 @@
 # BG0796: The report's cost row reads unattributed while the same report measures the run's tokens
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_cost_row.py, changelog.d/BG0796.md

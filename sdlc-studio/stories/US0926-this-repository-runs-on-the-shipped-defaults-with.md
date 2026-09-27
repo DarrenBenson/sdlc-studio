@@ -4,7 +4,7 @@
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** sdlc-studio/.config.yaml, sdlc-studio/definition-of-done.md, sdlc-studio/.version, AGENTS.md, changelog.d/US0926.md
+> **Affects:** sdlc-studio/.config.yaml, sdlc-studio/definition-of-done.md, sdlc-studio/.version, AGENTS.md, changelog.d/US0926.md, sdlc-studio/change-requests/CR0575-low-severity-crs-consolidated.md, sdlc-studio/change-requests/CR0592-low-severity-bugs-consolidated.md
 > **Epic:** EP0263
 > **Points:** 2
 > **Persona:** Maya Okafor
