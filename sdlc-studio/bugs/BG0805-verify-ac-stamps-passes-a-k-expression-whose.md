@@ -4,7 +4,7 @@
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_stamps_k_terms.py, sdlc-studio/stories/US0062-evidence-as-schema-per-type-required-evidence-lint.md, sdlc-studio/stories/US0077-route-github-sync-and-verify-ac-through-shared.md, sdlc-studio/stories/US0081-batch-scaffold-wiring-polish.md, sdlc-studio/bugs/BG0264-verify-ac-lint-accepts-a-grep-or-file.md, sdlc-studio/bugs/BG0555-twelve-scripts-declare-root-only-per-subcommand-a.md, changelog.d/BG0805.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_stamps_k_terms.py, sdlc-studio/stories/US0062-evidence-as-schema-per-type-required-evidence-lint.md, sdlc-studio/stories/US0077-route-github-sync-and-verify-ac-through-shared.md, sdlc-studio/stories/US0081-batch-scaffold-wiring-polish.md, sdlc-studio/bugs/BG0264-verify-ac-lint-accepts-a-grep-or-file.md, sdlc-studio/bugs/BG0555-twelve-scripts-declare-root-only-per-subcommand-a.md, changelog.d/BG0805.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
 > **Severity:** Medium
 > **Points:** 2
 

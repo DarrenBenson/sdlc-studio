@@ -96,8 +96,11 @@ def _project(root: Path) -> Path:
 #: BG0770's pair. The gate module keeps a shared template in a module global and its teardown
 #: deletes the directory WITHOUT forgetting it; the importer (first in discover's order) runs
 #: that teardown on whatever module object `import test_bg_gate` gives it. Each test records that
-#: it ran, so a run that collected nothing cannot agree by accident.
+#: it ran, so a run that collected nothing cannot agree by accident. The template is keyed to the
+#: process: the sharing BG0770 is about lives in one process's module global, and the push's two
+#: workers must not delete each other's directory (BG0810).
 _GATE_MODULE = '''\
+import os
 import unittest
 from pathlib import Path
 
@@ -108,7 +111,7 @@ _TEMPLATE = None
 def template():
     global _TEMPLATE
     if _TEMPLATE is None:
-        _TEMPLATE = ROOT / "shared-template"
+        _TEMPLATE = ROOT / f"shared-template-{os.getpid()}"
         _TEMPLATE.mkdir(exist_ok=True)
     return _TEMPLATE
 
@@ -203,6 +206,33 @@ class OneRunnerTests(unittest.TestCase):
             with self.subTest("control: the pair splits unittest discover from the push"):
                 old_green, old_out = verdict(["bash", "-c", f"python3 -m {RETIRED}"])
                 self.assertNotEqual(push_green, old_green, old_out)
+
+    def test_the_template_is_private_to_its_process(self) -> None:
+        """BG0810 AC1. The push runs the pair's two modules in separate worker processes; a
+        teardown in one must not delete the template the other is still asserting.
+        MUTANT: a template path shared across processes (`ROOT / "shared-template"`), where B's
+        teardown removes the directory A created and A reads it gone."""
+        with tempfile.TemporaryDirectory(prefix="bg0810-") as tmp:
+            root = Path(tmp)
+            tests = _project(root)
+            (tests / "test_bg_gate.py").write_text(_GATE_MODULE, encoding="utf-8")
+            head = f"import sys; sys.path.insert(0, {str(tests)!r}); import test_bg_gate as g; "
+            holder = subprocess.Popen(
+                [sys.executable, "-c", head + "t = g.template(); print('ready', flush=True); "
+                 "sys.stdin.readline(); print(t.is_dir(), flush=True)"],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, env=_clean_env())
+            try:
+                self.assertEqual("ready", holder.stdout.readline().strip())
+                other = subprocess.run(
+                    [sys.executable, "-c", head + "g.template(); g.tearDownModule()"],
+                    capture_output=True, text=True, env=_clean_env(), timeout=60)
+                self.assertEqual(0, other.returncode, other.stderr)
+                out, _ = holder.communicate("\n", timeout=60)
+            finally:
+                if holder.poll() is None:
+                    holder.kill()
+            self.assertEqual("True", out.strip(),
+                             "another process's teardown deleted this process's template")
 
     def test_a_boundary_run_keeps_boundary_only_tests(self) -> None:
         """AC3. `--run-tests` at `--boundary push` runs the `boundary_only` tests; without a

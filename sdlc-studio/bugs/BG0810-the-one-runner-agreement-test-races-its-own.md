@@ -1,6 +1,6 @@
 # BG0810: The one-runner agreement test races its own fixture: two worker processes share one template directory
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** tools/tests/test_lean_one_runner.py, changelog.d/BG0810.md
@@ -26,8 +26,10 @@ Key the fixture's template directory to the process (`ROOT / f"shared-template-{
 
 - [ ] **AC1** Given the fixture's gate module, when two worker processes each run one of the pair's modules, then neither process's teardown removes the other's template, and the push lane reads green. Fails on: a template path shared across processes (HEAD), where a teardown in one worker deletes the directory the importer in the other is asserting
   - **Verify:** pytest tools/tests/test_lean_one_runner.py::OneRunnerTests::test_the_template_is_private_to_its_process
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC2** Given the same pair run by `unittest discover` in one process, then it is still red, so the control that CI's old command splits the pair still holds. Fails on: a per-test template that removes the module-global sharing itself
   - **Verify:** pytest tools/tests/test_lean_one_runner.py::OneRunnerTests::test_ci_and_push_agree_on_a_shared_global_fixture
+  - **Verified:** yes (2026-09-27)
 
 ## Revision History
 
