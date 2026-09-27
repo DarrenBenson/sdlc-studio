@@ -1,6 +1,6 @@
 # BG0784: A seat card with no role line is silently bypassed for the shipped card, and the unknown-seat refusal names the wrong seats
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/persona_resolve.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG0784.md

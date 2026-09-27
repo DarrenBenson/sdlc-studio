@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 25 |
-| In Progress | 3 |
+| Open | 24 |
+| In Progress | 4 |
 | Fixed | 645 |
 | Verified | 0 |
 | Closed | 87 |
@@ -142,7 +142,7 @@
 | [BG0781](BG0781-a-busy-lock-reported-as-eacces-fails-at.md) | A busy lock reported as EACCES fails at once, and two lock warnings advise a retry that duplicates | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0782](BG0782-about-57-test-modules-commit-in-a-temporary.md) | About 57 test modules commit in a temporary git repo with auto-maintenance on, the race BG0711 fixed in one | Fixed | Medium | 2026-09-25 | 2026-09-25 |
 | [BG0783](BG0783-review-rounds-are-write-dead-after-us0918-so.md) | Review rounds are write-dead after US0918, so the ceiling and repair-regression readers of run-state rounds read nothing | Fixed | Medium | 2026-09-26 | 2026-09-26 |
-| [BG0784](BG0784-a-seat-card-with-no-role-line-is.md) | A seat card with no role line is silently bypassed for the shipped card, and the unknown-seat refusal names the wrong seats | Open | Medium | 2026-09-26 | 2026-09-26 |
+| [BG0784](BG0784-a-seat-card-with-no-role-line-is.md) | A seat card with no role line is silently bypassed for the shipped card, and the unknown-seat refusal names the wrong seats | In Progress | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0785](BG0785-migrate-leaves-a-v4-era-project-s-conformance.md) | migrate leaves a v4-era project's conformance lane red on its pre-adoption stories and names no cutoff for them | Fixed | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0786](BG0786-flow-py-compute-takes-about-90-seconds-on.md) | flow.py compute takes about 90 seconds on this repository, so its CLI grammar control times out at 120 under load and reddens the push gate | Fixed | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0787](BG0787-a-signed-sprint-report-reads-invalidated-once-a.md) | A signed sprint report reads INVALIDATED once a later run reviews one of its units, because unit rounds are re-derived from the whole live verdict ledger | Fixed | High | 2026-09-26 | 2026-09-26 |

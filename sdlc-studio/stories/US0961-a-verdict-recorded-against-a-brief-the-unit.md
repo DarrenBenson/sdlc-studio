@@ -1,6 +1,6 @@
 # US0961: A verdict recorded against a brief the unit has since outgrown says so
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
