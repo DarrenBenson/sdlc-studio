@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 31 |
+| Open | 39 |
 | In Progress | 0 |
 | Fixed | 633 |
 | Verified | 0 |
 | Closed | 87 |
-| Won't Fix | 19 |
+| Won't Fix | 22 |
 | Superseded | 28 |
-| **Total** | **798** |
+| **Total** | **809** |
 
 ## All Bugs
 
@@ -63,16 +63,16 @@
 | [BG0702](BG0702-the-unanswered-set-s-ways-out-are-picked.md) | The unanswered set's ways out are picked by substring and offer dead ends for a stop-ship ruling, and the set is rendered and recorded in drifting copies | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0703](BG0703-the-unanswered-set-predicate-s-fail-closed-handlers.md) | The unanswered-set predicate's fail-closed handlers and the handoff behaviours around it survive mutants no test kills | Won't Fix | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0704](BG0704-the-done-guard-reads-a-filed-closure-naming.md) | The Done guard reads a filed closure naming the unit itself as a repair, and lists repaired findings as outstanding when the only APPROVE is the author's own | Superseded | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0705](BG0705-the-findings-filed-to-line-survives-a-reopen.md) | The Findings-filed-to line survives a reopen, is not reported in text output, and names only the filed subset of a partial repair | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0705](BG0705-the-findings-filed-to-line-survives-a-reopen.md) | The Findings-filed-to line survives a reopen, is not reported in text output, and names only the filed subset of a partial repair | Won't Fix | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0706](BG0706-the-coverage-gate-charges-another-unit-s-added.md) | The coverage gate charges another unit's added lines to a unit sharing its file, and a coverage ruling is voided by any edit to that file | Open | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0707](BG0707-the-corpus-baseline-s-ci-run-line-is.md) | the corpus baseline's CI-run line is judged by shape alone, so a hand-typed run id reads as a re-measure | Won't Fix | Medium | 2026-09-16 | 2026-09-16 |
-| [BG0708](BG0708-gate-py-reads-sdlc-verify-timeout-per-call.md) | gate.py reads SDLC_VERIFY_TIMEOUT per call, so a previously hermetic suite now inherits whatever the environment sets | Open | Medium | 2026-09-16 | 2026-09-16 |
+| [BG0708](BG0708-gate-py-reads-sdlc-verify-timeout-per-call.md) | gate.py reads SDLC_VERIFY_TIMEOUT per call, so a previously hermetic suite now inherits whatever the environment sets | Won't Fix | Medium | 2026-09-16 | 2026-09-16 |
 | [BG0709](BG0709-the-pre-push-red-main-check-trusts-the.md) | the pre-push red-main check trusts the forge's ordering, so a stale first row demands acknowledgement of a two-month-old red | Fixed | Medium | 2026-09-16 | 2026-09-16 |
 | [BG0710](BG0710-the-close-prints-the-run-s-cost-before.md) | the close prints the run's cost before the step that captures it, so every close reports the sprint as not attributable | Superseded | Medium | 2026-09-16 | 2026-09-16 |
 | [BG0711](BG0711-test-complexity-s-temporary-git-fixture-races-its.md) | test_complexity's temporary git fixture races its own cleanup on CI, reddening main on a teardown rather than a failure | Fixed | Medium | 2026-09-17 | 2026-09-17 |
 | [BG0712](BG0712-a-local-guard-that-tolerates-what-a-criterion.md) | a local guard that tolerates what a criterion refuses lets a breach pass the commit and redden CI | Open | Medium | 2026-09-17 | 2026-09-17 |
 | [BG0713](BG0713-the-per-unit-coverage-gate-charges-a-unit.md) | the per-unit coverage gate charges a unit for its batch siblings' added lines in a shared file | Won't Fix | High | 2026-09-18 | 2026-09-18 |
-| [BG0714](BG0714-284-added-lines-of-run-01m2spns-are-executed.md) | 284 added lines of RUN-01M2SPNS are executed by no verifier in the run, and BG0706's proposed fix inherits most of the false charge | Open | Medium | 2026-09-18 | 2026-09-18 |
+| [BG0714](BG0714-284-added-lines-of-run-01m2spns-are-executed.md) | 284 added lines of RUN-01M2SPNS are executed by no verifier in the run, and BG0706's proposed fix inherits most of the false charge | Won't Fix | Medium | 2026-09-18 | 2026-09-18 |
 | [BG0715](BG0715-the-close-attributes-every-finding-raised-outside-a.md) | the close attributes every finding raised outside a delivery batch to whichever run is open, because it dates them by the last word of a prose stamp | Fixed | High | 2026-09-18 | 2026-09-18 |
 | [BG0716](BG0716-prepare-mints-a-new-report-id-on-every.md) | PREPARE mints a new report id on every re-file, so a run that prepares twice has two reports of record | Fixed | Medium | 2026-09-18 | 2026-09-18 |
 | [BG0717](BG0717-the-close-s-handoff-link-leaves-a-trailing.md) | the close's handoff link leaves a trailing blank line in the retro, so every close fails this project's own markdownlint | Fixed | Medium | 2026-09-18 | 2026-09-18 |
@@ -157,6 +157,17 @@
 | [BG0796](BG0796-the-report-s-cost-row-reads-unattributed-while.md) | The report's cost row reads unattributed while the same report measures the run's tokens | Open | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0797](BG0797-per-unit-minutes-and-tokens-are-recorded-only.md) | Per-unit minutes and tokens are recorded only on an In Progress transition the lean loop never makes, and the report does not say why the column is empty | Open | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0798](BG0798-the-forecast-rate-never-re-fits-353-810.md) | The forecast rate never re-fits: 353,810 tokens per point has forecast about twice the measured spend for three sprints | Open | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0799](BG0799-a-first-sprint-s-report-hands-over-as.md) | A first sprint's report hands over, as known issues, the epic drift its own close settles, split into one row per line of reconcile's output | Open | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0800](BG0800-the-close-s-pre-flight-lists-as-unmet.md) | The close's pre-flight lists as unmet the goal verdict the same invocation records and the review anchor the close writes itself | Open | Low | 2026-09-27 | 2026-09-27 |
+| [BG0801](BG0801-the-known-issues-page-puts-its-ship-open.md) | The known-issues page puts its ship-open paragraph under the oldest bar's history and states a Not carried count the corpus contradicts | Open | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0802](BG0802-artifact-new-type-bug-drops-its-verify-line.md) | artifact new --type bug drops its --verify line and writes an unnamed criterion, so sprint plan refuses the bug it just filed | Open | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0803](BG0803-sprint-plan-to-the-plan-or-design-rung.md) | sprint plan to the plan or design rung crashes in capacity_report on the default token budget | Open | Low | 2026-09-27 | 2026-09-27 |
+| [BG0804](BG0804-the-report-s-lessons-section-cites-sdlc-studio.md) | The report's Lessons section cites sdlc-studio/lessons.jsonl on a project that has none, when the bundled seed was read | Open | Low | 2026-09-27 | 2026-09-27 |
+| [BG0805](BG0805-verify-ac-stamps-passes-a-k-expression-whose.md) | verify_ac stamps passes a -k expression whose dead term hides behind a live one, so eight stamped criteria verify nothing of what they claim | Open | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0806](BG0806-tsd-staleness-is-never-judged-in-a-consuming.md) | TSD staleness is never judged in a consuming project and reports a false reason on every sprint plan | Open | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0807](BG0807-the-us0942-ac5-stamp-test-resolves-the-whole.md) | The US0942 AC5 stamp test resolves the whole corpus before filtering, costing about 50 seconds of every commit that touches verify_ac.py | Open | Low | 2026-09-27 | 2026-09-27 |
+| [BG0808](BG0808-init-records-no-project-version-so-a-fresh.md) | init records no project version, so a fresh project's first migrate reports work and its upgrade digest reads the range as unknown | Open | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0809](BG0809-install-sh-local-rewrites-every-personal-copy-of.md) | install.sh --local rewrites every personal copy of the skill, and the copy it installs is one Claude Code does not load | Open | Medium | 2026-09-27 | 2026-09-27 |
 
 ## Archived Releases
 

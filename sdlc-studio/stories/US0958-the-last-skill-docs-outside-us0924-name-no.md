@@ -1,6 +1,6 @@
 # US0958: The last skill docs outside US0924 name no command or setting v6 dropped
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -31,3 +31,4 @@ Re-measured at 013a46d0, the split's second half is smaller than proposed. Of th
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-25 | sdlc-studio v6 planning | Created for v6.0.0 Sprint 6 from the seat planning (US0924b) |
+| 2026-09-27 | sdlc | Superseded by US0924 (Sprint 6 product seat): its two criteria moved into US0924 as AC4-AC5, sharing its test module |

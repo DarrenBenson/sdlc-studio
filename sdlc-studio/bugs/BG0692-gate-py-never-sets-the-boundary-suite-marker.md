@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, tools/tests/test_boundary_marker.py, .githooks/pre-push, tools/run-suite.sh, AGENTS.md
+> **Points:** 1
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, changelog.d/BG0692.md
 > **Evidence:** Independent delivery review, RUN-01M2JA6J 2026-09-15: verdicts/BG0664-delivery-engineering.txt (engineering seat); verdicts/BG0664-delivery-qa.txt (qa seat); verdict rows in sdlc-studio/reviews/critic-verdicts.md. The re-run line half was repaired in ef5b29e8; the environment route was re-read at HEAD (gate.py sets no SDLC_STUDIO_BOUNDARY_SUITE).
 > **Created:** 2026-09-15
 > **Created-by:** sdlc-studio file
@@ -24,11 +24,18 @@ Have gate.py export `SDLC_STUDIO_BOUNDARY_SUITE`=1 into the lanes' environment w
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `SDLC_STUDIO_BOUNDARY_SUITE`=1 is set only on the pre-push hook's own gate.py invocations.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Have gate.py export `SDLC_STUDIO_BOUNDARY_SUITE`=1 into the lanes' environment whenever it resolves a push or release boundary, by flag or by...
+- [ ] **AC1** Given a failing test marked `boundary_only` and a caller environment without `SDLC_STUDIO_BOUNDARY_SUITE`, when `gate.py --boundary release` (or `SDLC_GATE_BOUNDARY=push`) runs its test lane, then the lane is red naming that test. Fails on: the marker exported only by the pre-push hook, so a hand-run release gate reads the test as skipped
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::BoundaryMarkerExportTests::test_every_route_to_a_boundary_runs_the_marked_tests
+- [ ] **AC2** Given no boundary (a commit's selected run), then the marker is not exported and the marked test stays deferred. Fails on: exporting the marker unconditionally, which charges every commit the boundary tests
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::BoundaryMarkerExportTests::test_a_commit_selection_leaves_the_marked_tests_deferred
+
+## Notes
+
+- - 2026-09-27 (QA triage): reproduced through the gate's own push plan: rc 0 (skipped) without the marker, rc 1 with it. The v6.0.0 cut runs the release gate by hand from a fresh checkout, so this matters at the cut. The `test_boundary_marker.py` rewrite, the revert-check pricing and the 'full suite' wording stay open under this id.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
+| 2026-09-27 | sdlc-studio v6 planning | QA seat: narrowed to the marker export for Sprint 6 |

@@ -1,6 +1,6 @@
 # BG0705: The Findings-filed-to line survives a reopen, is not reported in text output, and names only the filed subset of a partial repair
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
@@ -32,3 +32,4 @@ Retract or annotate the line on reopen as `_retract_depth` does. Print it in tex
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-15 | sdlc-studio | Filed |
+| 2026-09-27 | sdlc | Retired at Sprint 6 planning (QA seat triage, D0278): the surface it describes was deleted by US0914 |

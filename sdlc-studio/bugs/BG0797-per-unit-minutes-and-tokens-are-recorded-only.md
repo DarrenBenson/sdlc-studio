@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_unit_actuals.py, changelog.d/BG0797.md
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,12 +23,20 @@ Open a unit's span when its build is dispatched or its first verify or verdict i
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `run_state.record_unit_actual` opens a unit's span only on a move to In Progress and closes it at a terminal status.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: RPT0010 per-unit table: 37 of 37 NOT MEASURED - not recorded; sdlc-studio/.local/run-state.json has no `unit_actuals` entries.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Open a unit's span when its build is dispatched or its first verify or verdict is recorded (a lean-loop event that always happens), keep In Progress as one...
+- [ ] **AC1** Given an open run and two delegated totals recorded with `retro.py accuracy --delegated-tokens N --delegated-unit US0001 --delegated-minutes M`, when the report derives, then US0001's row reads the sum of their tokens and minutes, labelled agent tokens and agent minutes. Fails on: HEAD reading only In Progress spans, so all 37 of RPT0010's units read NOT MEASURED, or a span on the shared main-thread meter, which counts the other parallel units' traffic
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_unit_actuals.py::UnitActualsTests::test_a_unit_s_tagged_delegated_totals_are_its_actuals
+- [ ] **AC2** Given tagged and untagged delegated totals, when the run's token total is derived, then each record counts once. Fails on: adding the per-unit sums to the run total beside the records they came from
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_unit_actuals.py::UnitActualsTests::test_tagged_totals_count_once_in_the_run_total
+- [ ] **AC3** Given a batch unit with no span and no tagged total, when the report derives, then its row reads NOT MEASURED naming both missing sources and the `--delegated-unit` flag. Fails on: the bare 'not recorded' RPT0010 prints
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_unit_actuals.py::UnitActualsTests::test_an_unmeasured_unit_names_why
+
+## Notes
+
+- Sprint 6 engineering: attribute delegated agent totals to units rather than opening spans at the first verdict; the loop runs 4-7 agents at once, so a span on the main-thread meter cannot say which unit spent what. The data is already recorded in free text: 69 of RUN-01M3CK1K's 73 delegated records name their unit in the note (13,121,230 tokens over 36 units); the new field makes it structured. The Agent tool reports tokens and duration, so minutes come from the same record. Keep the In Progress span as it is. `critic.py` leaves Affects: no verdict-time hook is needed. Does not have to precede BG0798's tokens-per-point fix; it must precede any minutes-per-point re-fit.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-27 | sdlc-studio | Filed |
+| 2026-09-27 | sdlc-studio v6 planning | Groomed for Sprint 6: per-unit actuals from tagged delegated totals, not main-thread spans; critic.py dropped from Affects |

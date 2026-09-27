@@ -1,6 +1,6 @@
 # BG0714: 284 added lines of RUN-01M2SPNS are executed by no verifier in the run, and BG0706's proposed fix inherits most of the false charge
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -57,3 +57,4 @@ Two things. First, the four substantive lines are real gaps in the page an opera
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-18 | sdlc-studio | Filed |
+| 2026-09-27 | sdlc | Retired at Sprint 6 planning (QA seat triage, D0278): superseded; its residue is folded into BG0795 and BG0706 |

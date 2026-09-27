@@ -17,10 +17,15 @@ Sprint 6 of the v6 release (D0272): the release notes, breaking changes, README,
 - [ ] [US0955: An upgrading project follows one page from v5 to v6](../stories/US0955-an-upgrading-project-follows-one-page-from-v5.md)
 - [ ] [US0956: The shipped docs teach the lean loop in one place](../stories/US0956-the-shipped-docs-teach-the-lean-loop-in.md)
 - [ ] [US0957: The white paper and the value argument describe the v6 operating model](../stories/US0957-the-white-paper-and-the-value-argument-describe.md)
-- [ ] [US0958: The last skill docs outside US0924 name no command or setting v6 dropped](../stories/US0958-the-last-skill-docs-outside-us0924-name-no.md)
+- [x] [US0958: The last skill docs outside US0924 name no command or setting v6 dropped](../stories/US0958-the-last-skill-docs-outside-us0924-name-no.md)
+
+## Notes
+
+- - 2026-09-27 (product seat, Sprint 6 planning): the website and deck units (WEB0, W1a-W5, DECK) run as sdlc-studio-web's own lean sprint on the rc.1 skill (operator ruling 2), so they are not stories in this epic; their friction is filed here as rc.1 findings. US0958 is folded into US0924. The epic gains the soak work the rc.1 notes promised: the migration rehearsed on two consuming projects and the eval re-run, plus the scripts' --help text and init's missing project version.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-25 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-27 | sdlc-studio v6 planning | Product seat, Sprint 6: website units move to the web repository's own sprint; US0958 folded into US0924; soak units join |

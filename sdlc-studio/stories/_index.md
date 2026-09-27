@@ -1,13 +1,13 @@
 # Story Index
 
-**Last Updated:** 2026-09-25
+**Last Updated:** 2026-09-27
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 24 |
+| Draft | 29 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -15,9 +15,9 @@
 | Done | 763 |
 | Won't Implement | 81 |
 | Deferred | 0 |
-| Superseded | 90 |
+| Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **958** |
+| **Total** | **964** |
 
 ## All Stories
 
@@ -316,7 +316,13 @@
 | [US0955](US0955-an-upgrading-project-follows-one-page-from-v5.md) | An upgrading project follows one page from v5 to v6 | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0956](US0956-the-shipped-docs-teach-the-lean-loop-in.md) | The shipped docs teach the lean loop in one place | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0957](US0957-the-white-paper-and-the-value-argument-describe.md) | The white paper and the value argument describe the v6 operating model | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
-| [US0958](US0958-the-last-skill-docs-outside-us0924-name-no.md) | The last skill docs outside US0924 name no command or setting v6 dropped | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
+| [US0958](US0958-the-last-skill-docs-outside-us0924-name-no.md) | The last skill docs outside US0924 name no command or setting v6 dropped | Superseded | EP0266 | 2026-09-25 | 2026-09-25 |
+| [US0959](US0959-a-signed-sprint-report-checks-in-any-full.md) | A signed sprint report checks in any full clone, from a sealed run record tracked beside it | Draft | EP0267 | 2026-09-27 | 2026-09-27 |
+| [US0960](US0960-every-report-signed-before-the-tracked-record-checks.md) | Every report signed before the tracked record checks valid in a clean clone once migrate files its record | Draft | EP0267 | 2026-09-27 | 2026-09-27 |
+| [US0961](US0961-a-verdict-recorded-against-a-brief-the-unit.md) | A verdict recorded against a brief the unit has since outgrown says so | Draft | EP0267 | 2026-09-27 | 2026-09-27 |
+| [US0962](US0962-the-migration-to-v6-is-rehearsed-on-two.md) | The migration to v6 is rehearsed on two real consuming projects, and the record is published | Draft | EP0267 | 2026-09-27 | 2026-09-27 |
+| [US0963](US0963-the-eval-scenarios-run-against-v6-and-the.md) | The eval scenarios run against v6, and the independence scenario grades v6's rule | Draft | EP0267 | 2026-09-27 | 2026-09-27 |
+| [US0964](US0964-every-script-s-help-describes-the-v6-loop.md) | Every script's --help describes the v6 loop and no retired review step | Draft | EP0267 | 2026-09-27 | 2026-09-27 |
 
 ## Archived Releases
 

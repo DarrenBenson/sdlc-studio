@@ -35,3 +35,4 @@ Search only the rendered block for practices and claim surfaces. Share one helpe
 | 2026-09-15 | sdlc-studio | Filed |
 | 2026-09-24 | Claude Opus 5.5 | Backlog sweep D0265 (sdlc-studio/reviews/backlog-sweep-2026-09-24.md): held open under D0264 until US0923 ships - planning: SUPERSEDED - brief practice checks: brief provenance/practice checks deleted in batch 2; superseded only once US0923 ships (D0264) |
 | 2026-09-24 | Claude Opus 5.5 | US0907 round-2 review: US0923 covers part (2) only; part (1), the whole-brief practice and claim-surface search, stays live |
+| 2026-09-27 | sdlc | Sprint 6 QA triage (D0278): part 2 no longer reproduces after Sprint 5; part 1 stays disclosed to v6.1 |

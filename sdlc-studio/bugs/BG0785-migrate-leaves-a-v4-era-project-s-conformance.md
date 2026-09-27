@@ -24,12 +24,20 @@ migrate reports, as a needs-a-human item, the pre-adoption units the conformance
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: A v4-era project upgraded with `migrate --apply` fails the gate's conformance lane on every pre-adoption unit (stories written before executable criteria...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Run `bash tools/rehearse-release.sh upgrade`: the rehearsal passes only because the baseline row `upgrade|conformance|...` tolerates the red lane.
-- [ ] **AC3** The proposed fix lands, pinned by a test: migrate reports, as a needs-a-human item, the pre-adoption units the conformance lane would fail and the `conformance.adopt_after` line that grandfathers them...
+- [ ] **AC1** Given the rehearsal's v4-era fixture (US0001 Done and US0002 Ready, neither with a Verify line, no `conformance.adopt_after`), when `migrate.py` runs dry and then with `--apply`, then both reports carry one needs-a-human item naming the units the conformance lane would fail and the exact line `conformance.adopt_after: US0002` that grandfathers them, and `sdlc-studio/.config.yaml` is byte-identical afterwards. Fails on: HEAD (no such item; measured through `tools/rehearse-release.sh upgrade`); migrate writing the cutoff itself; naming a cutoff below a failing unit
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py::ConformanceCutoffTests::test_migrate_names_the_cutoff_and_writes_nothing
+- [ ] **AC2** Given a project whose `conformance.adopt_after` already covers every unit the lane would fail (the shape of a real v4.1 project that set 179), when `migrate.py` runs, then no cutoff item is reported. Fails on: proposing a cutoff unconditionally, or proposing one that lowers an existing cutoff
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py::ConformanceCutoffTests::test_an_existing_covering_cutoff_is_left_alone
+- [ ] **AC3** Given `tools/rehearse-release.sh upgrade`, when the rehearsal applies the line migrate named, as an upgrader would, then the gate's conformance lane passes with the units reported exempt (pre-adoption), and `tools/release-rehearsal-baseline.txt` carries no `upgrade|conformance` row. Fails on: leaving the baseline row (the rehearsal reddens in the other direction), or a rehearsal that hard-codes the cutoff rather than reading it from migrate's report
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_rehearse_release.py::UpgradeRehearsalTests::test_the_upgrade_gates_green_on_the_cutoff_migrate_names
+
+## Notes
+
+- - 2026-09-27 (QA seat, Sprint 6 planning): reproduced at HEAD f76b70cc: `bash tools/rehearse-release.sh upgrade` passes only on the `upgrade|conformance|BG0785` baseline row. On a scratch clone of a real v4.1 project the conformance lane passed because it already sets `adopt_after: 179`, hence AC2. Out of scope and filed separately: `parse_cutoff` refuses every ULID id, so a schema v3 project cannot use the remedy the gate names (see qa-new.json). The engagement-floor lane has its own cutoff and is not part of this bug.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-26 | sdlc-studio | Filed |
+| 2026-09-27 | sdlc-studio v6 planning | QA seat: groomed for Sprint 6 - three lean criteria; AC2 added from a real v4.1 project that already carries a cutoff |

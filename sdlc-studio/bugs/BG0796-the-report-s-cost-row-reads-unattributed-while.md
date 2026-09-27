@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_cost_row.py, changelog.d/BG0796.md
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,12 +23,18 @@ Read the run's measured token total (`run_state.run_token_total`, as the Estimat
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: RPT0010's Estimates table measures 19.2M tokens from the run record (main thread plus 73 delegated agents), but the checklist's cost row reads 'not measured -...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: `sprint_report.py` render --report RPT0010: Estimates tokens 19,225,437; Not measured: cost 'no harness-tracked sprint total'.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Read the run's measured token total (`run_state.run_token_total`, as the Estimates section does) in `_ck_cost` and in retro accuracy, so a hand --tokens is an...
+- [ ] **AC1** Given a run whose record carries token stamps and delegated totals and no hand `--tokens`, when the checklist composes, then the cost row is answered with the run's measured total, the same figure the Estimates section states. Fails on: HEAD's `_ck_cost`, which answers 'unattributed' unless `sprint_actual_tokens` was supplied by hand (RPT0010: Estimates 19,225,437; cost 'no harness-tracked sprint total')
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_cost_row.py::CostRowTests::test_the_cost_row_reads_the_run_s_measured_total
+- [ ] **AC2** Given the same run and `retro.py accuracy --tokens N`, when the checklist composes, then the cost row states N and names it supplied. Fails on: the measured total silently replacing an operator's override
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_cost_row.py::CostRowTests::test_a_supplied_total_overrides_and_is_named
+
+## Notes
+
+- Sprint 6 engineering: one reader, `run_state.run_token_total`, as the Estimates section uses. Note RPT0010's Estimates (19,225,437) and RETRO0125's VELOCITY row (18,791,718) are two moments of one growing total; AC1 pins the cost row to the Estimates figure only.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-27 | sdlc-studio | Filed |
+| 2026-09-27 | sdlc-studio v6 planning | Groomed for Sprint 6: criteria and Verify selectors written |

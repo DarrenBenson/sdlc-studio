@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
+> **Points:** 1
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG0725.md
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,24 +23,14 @@ Replace both literals with `retro.STOP_SHIP`. For the verb list, add the opposit
 
 ## Acceptance Criteria
 
-### AC1: the stop-ship constant has one spelling
-
-- **Given** `retro.STOP_SHIP` and the two bare `stop-ship` literals in sprint_report.py
-- **When** the constant's value is changed in a test
-- **Then** every comparison follows it, so no site keeps matching the old string
-- **Mutant:** in `.claude/skills/sdlc-studio/scripts/sprint_report.py`, restore the bare `"stop-ship"` literals at the two comparison sites - a rename then leaves them silently matching nothing while the code reads as though it still works
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::StopShipConstantTests::test_every_comparison_follows_the_constant
-
-### AC2: a verb list entry naming a verb no parser exposes is reported
-
-- **Given** `NON_CEREMONY_VERBS`, which lists `checklist` under `sprint` where `sprint`'s parser no longer exposes it
-- **When** the guard runs
-- **Then** the stale entry is named - today it would fire on exactly that one
-- **Mutant:** in `.claude/skills/sdlc-studio/scripts/sprint_report.py`, keep the guard subtracting the list only, so it can report a verb missing FROM the list but never an entry naming a verb that does not exist
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::StopShipConstantTests::test_a_verb_list_entry_with_no_parser_is_reported
+- [ ] **AC1** Given `NON_CEREMONY_VERBS`, when each listed script's `build_parser()` subcommands are read, then every listed verb is a real subcommand (`sprint checklist` and `critic repair` removed), and the test reddens on an entry naming no verb. Fails on: a guard that only subtracts the list, which can never report a stale entry
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::NonCeremonyVerbTests::test_every_listed_verb_is_a_real_subcommand
+- [ ] **AC2** Given `retro.STOP_SHIP` patched to another value and a retro ruling written with it, when the report counts stop-ship rulings, then it still counts that ruling. Fails on: the bare `"stop-ship"` literals at sprint_report.py:1894 and :1896
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::NonCeremonyVerbTests::test_stop_ship_rulings_are_read_through_the_constant
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-21 | sdlc-studio | Filed |
+| 2026-09-27 | sdlc-studio v6 planning | QA seat: groomed for Sprint 6 from the triage repro |

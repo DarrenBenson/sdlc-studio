@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Points:** 2
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/persona_resolve.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG0784.md
 > **Created:** 2026-09-26
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,12 +23,18 @@ Warn on stderr when seats/<seat>.md exists without a role line; name the project
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: After US0950, critic.py brief resolves seats through `persona_resolve.resolve_card`: a sdlc-studio/personas/seats/<seat>.md without a role line is ignored and...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Write seats/qa.md with no role line; run critic.py brief --seat qa: the shipped charter is briefed silently.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Warn on stderr when seats/<seat>.md exists without a role line; name the project's declared roles and role-less cards in the refusal, and make the test assert...
+- [ ] **AC1** Given a project card `sdlc-studio/personas/seats/qa.md` carrying no `<!-- role: -->` line, when `critic.py brief --unit <id> --seat qa` runs, then stderr names that card and says it declares no role so the shipped qa card was used, and the brief is still produced from the shipped charter; and a card that declares `role: qa` produces no such line. Fails on: HEAD's silent fallback (stderr empty, measured on a fresh `init` project, 2026-09-27); warning on every card, which the control case catches
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SeatCardResolutionTests::test_a_role_less_card_is_named_on_stderr
+- [ ] **AC2** Given a project with a card declaring `role: security` and a role-less card, when `critic.py brief --seat wizard` runs, then the refusal lists `security` among the seats it can brief and names the role-less card. Fails on: HEAD's fixed list (`engineering, qa, product`); the existing test's `assertIn('qa', ...)`, which HEAD passes
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::SeatCardResolutionTests::test_the_unknown_seat_refusal_names_the_project_s_seats
+
+## Notes
+
+- - 2026-09-27 (QA seat, Sprint 6 planning): reproduced through the CLI on a fresh rc.1 `init` project: a role-less `seats/qa.md` gave exit 0, empty stderr, and a brief naming `templates/personas/amigos/qa.md`; `--seat wizard` refused with `(seats: engineering, qa, product)`. Points 1 -> 2: the refusal must read the project's declared roles, not a constant. If the warning is placed in `persona_resolve.resolve_card` so consult readers share it, `persona_resolve.py` is in Affects; otherwise drop it.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-26 | sdlc-studio | Filed |
+| 2026-09-27 | sdlc-studio v6 planning | QA seat: groomed for Sprint 6 - two lean criteria with a no-warning control; 1 -> 2 points |

@@ -1,18 +1,18 @@
 # Epic Index
 
-**Last Updated:** 2026-09-25
+**Last Updated:** 2026-09-27
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 15 |
+| Draft | 16 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 229 |
 | Superseded | 22 |
-| **Total** | **266** |
+| **Total** | **267** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -74,6 +74,7 @@
 | [EP0264](EP0264-the-record-informs-the-work-goals-trace-to.md) | The record informs the work: goals trace to the PRD, and briefs carry the history and constraints of the files they touch | Done | 7 | -- | 2026-09-25 | 2026-09-25 |
 | [EP0265](EP0265-v6-0-0-the-lean-loop-works-on.md) | v6.0.0: the lean loop works on a fresh project, and the release cuts clean | Done | 15 | -- | 2026-09-25 | 2026-09-25 |
 | [EP0266](EP0266-v6-0-0-every-doc-page-and-release.md) | v6.0.0: every doc, page and release note describes the lean product | Draft | 7 | -- | 2026-09-25 | 2026-09-25 |
+| [EP0267](EP0267-v6-0-0-the-release-is-honest-end.md) | v6.0.0: the release is honest end to end - signed reports check anywhere, the report measures itself, and a new user's first week works | Draft | 6 | -- | 2026-09-27 | 2026-09-27 |
 
 ## Archived Releases
 

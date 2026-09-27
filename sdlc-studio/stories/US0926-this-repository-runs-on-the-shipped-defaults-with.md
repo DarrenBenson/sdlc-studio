@@ -4,9 +4,9 @@
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** sdlc-studio/.config.yaml, sdlc-studio/definition-of-done.md, AGENTS.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_repo_defaults.py, changelog.d/US0926.md
+> **Affects:** sdlc-studio/.config.yaml, sdlc-studio/definition-of-done.md, sdlc-studio/.version, AGENTS.md, changelog.d/US0926.md
 > **Epic:** EP0263
-> **Points:** 3
+> **Points:** 2
 > **Persona:** Maya Okafor
 
 ## User Story
@@ -17,12 +17,10 @@
 
 ## Acceptance Criteria
 
-- **AC1:** Given this repository after `migrate.py --apply`, then `sdlc-studio/.config.yaml` holds none of the retired keys; `review.line_coverage` is absent (it equalled the new default `off`); no comment names a retired key except to say it is retired; and `sdlc-studio/definition-of-done.md` carries no retired check tag. Fails on: running `migrate` alone, which keeps comments byte-identical and so leaves about 60 comment lines explaining keys that no longer exist
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_repo_defaults.py::RepoDefaultsTests::test_the_repo_config_holds_no_retired_key
-- **AC2:** Given a mirror of this repository on the stripped config, when a story and a bug, each with green criteria and an independent delivery APPROVE and the bug with no `Verification depth`, are moved to Done and Fixed, then each succeeds with no plan review, test plan, sign-off, depth or mutation evidence asked for; and the same story with no verdict reads critiqued unmet in `conformance.py check`. Fails on: HEAD's config, under which the bug is refused for its missing depth tier
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_repo_defaults.py::RepoDefaultsTests::test_the_lean_path_holds_on_the_real_config
-- **AC3:** Given AGENTS.md, then its refusal table names no retired gate (brief provenance on `critic record`, `critic signoff`, `Verification depth` on `transition -> Fixed`, the two-role rule on `transition -> Done`), its lane roster names no deleted lane (`derived-depth`, `evidence-drift`), its review rule points at no retired sign-off panel (`persona_resolve.py panel` for review), and its soft-dependency table does not describe `review.line_coverage` as a gate. Fails on: HEAD (AGENTS.md 50, 51, 87-96, 217)
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_repo_defaults.py::RepoDefaultsTests::test_agents_md_names_no_retired_gate
+- **AC1:** Given this repository after `migrate.py --apply`, then a second `migrate.py` dry run lists no retired key, no retired `[check:]` tag and no stale `.version`; `review.line_coverage: off` is gone as equal to the shipped default; and no line of `sdlc-studio/.config.yaml`, comments included, names a key in `sdlc_md.RETIRED_CONFIG_KEYS` by its dotted path or as a YAML key. Fails on: HEAD, whose dry run lists `review.two_role_after`, `review.signoff`, `review.require_brief_provenance`, `review.line_coverage_after`, the `plan_review` block, the DoD's `[check: review.two-role]` and `.version` at 5.1.0; and `migrate --apply` alone, which keeps the comment block (lines 77-95) explaining keys nothing reads
+  - **Verify:** shell python3 -c "import re,sys; sys.path.insert(0,'.claude/skills/sdlc-studio/scripts/lib'); import sdlc_md; t=open('sdlc-studio/.config.yaml').read(); bad=[k for k in sdlc_md.RETIRED_CONFIG_KEYS if re.search(r'\b'+re.escape(k)+r'\b', t) or re.search(r'(?m)^\s*#?\s*'+re.escape(k.split('.').pop())+r'\s*:', t)]; sys.exit(1 if bad else 0)" && python3 .claude/skills/sdlc-studio/scripts/migrate.py | grep -q '^migrate: 0 deterministic'
+- **AC2:** Given AGENTS.md, then its review rule describes one independent reviewer per unit, briefed with `critic.py brief`, and the operator signing the run once with `sprint sign`, and it names no panel for review. Fails on: HEAD lines 83-86 ('Two roles, never merged ... a reviewer of record ... approves', read per unit) and 94 ('Resolve the panel with `persona_resolve.py panel`', whose only ceremonies are now `refine` and `triage`, so the command it points a reviewer at has no review panel)
+  - **Verify:** shell ! grep -nE 'reviewer of record|persona_resolve.py panel' AGENTS.md && grep -q 'sprint sign' AGENTS.md
 
 ## Notes
 
@@ -32,6 +30,9 @@
 - `README.md` line 209 carries the mermaid `two-role review + sign-off` edge.
 - Lands last, after US0924 and US0925.
 - - 2026-09-25 (product seat census): the README half of AC3 (the mermaid `two-role review + sign-off` edge, README 209) moves to U3, which owns README.md whole; AC4 (docs/existing-users.md) moves to U4, which owns that page and its pinned test `test_existing_users_page.py`. README.md, docs/existing-users.md and test_existing_users_page.py leave this unit's Affects, so no two units edit one file. AC3 gains AGENTS.md 87-96 (the sign-off panel, retired by US0919) and 217 (`review.line_coverage` as a gate, opt-in under US0922).
+- - 2026-09-27 re-measure (product seat, dee380d9): the refusal-table half of the old AC3 already holds (US0923 removed the `critic record` brief-provenance row; the table names no retired gate), so AC2 keeps only the review rule. The old AC2 (the lean path holds on the real config) is retired in the LC-002 pattern: nothing reads the retired keys any more, so stripping them changes no behaviour and the criterion cannot fail; US0950 and US0951 proved the loop on the shipped defaults. `test_lean_repo_defaults.py` is no longer needed: AC1 reads `migrate`'s own report, so no new test module is added.
+- Run after BG0790, so `migrate --apply` stamps `.version` 6.0.0-rc.1 rather than 6.0.0 while this repository runs the candidate; the cut restamps 6.0.0.
+- `migrate --apply` here also applies two sizing items (CR0575, CR0592: Size S from Points 3); expected, and named in the commit.
 
 ## Revision History
 
@@ -40,3 +41,4 @@
 | 2026-09-24 | sdlc-studio | Created via `batch` (deterministic); body trimmed to the lean story shape |
 | 2026-09-25 | Engineering seat | Groomed for Sprint 4 from the readiness review: 2 -> 3 points; AC1 has `review.line_coverage` absent as redundant and prunes comments on retired keys; AC2 drops the false premise that Done refuses a missing verdict (the bar is read in conformance) and adds a bug so it fails at HEAD; AC3 covers the README's mermaid edge; Affects adds README.md and the changelog fragment |
 | 2026-09-25 | sdlc-studio v6 planning | Product seat, Sprint 5/6 planning: README.md and docs/existing-users.md move to U3 and U4 (they own those files whole); AC4 removed and AC3 narrowed to AGENTS.md, adding its sign-off-panel and line-coverage lines; points stay 3 |
+| 2026-09-27 | sdlc-studio v6 planning | Product seat, Sprint 6 re-measure at dee380d9: 3 -> 2 points; AC1 reads migrate's report (no new test module); old AC2 retired as unable to fail; old AC3 narrowed to AGENTS.md's review rule, the refusal table being already clean |

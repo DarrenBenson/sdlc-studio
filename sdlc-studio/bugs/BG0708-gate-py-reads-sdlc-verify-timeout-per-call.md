@@ -1,6 +1,6 @@
 # BG0708: gate.py reads SDLC_VERIFY_TIMEOUT per call, so a previously hermetic suite now inherits whatever the environment sets
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
@@ -32,3 +32,4 @@ Make the ambient value explicit where the suite depends on it: either clear `SDL
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-16 | sdlc-studio | Filed |
+| 2026-09-27 | sdlc | Retired at Sprint 6 planning (QA seat triage, D0278): not reproducible as a defect at HEAD (QA seat triage, executed) |
