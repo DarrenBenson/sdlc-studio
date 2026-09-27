@@ -10,7 +10,7 @@ A story or bug is Done when:
 
 - [ ] Its executable acceptance criteria pass and are back-annotated [check: story.verify-ac]
 - [ ] An independent critic APPROVE is recorded (author never reviews its own diff) [check: review.critic-approve]
-- [ ] The adversarial pass is recorded as evidence and the reviewer of record has signed off
+- [ ] One independent reviewer recorded a verdict on the unit with `critic.py record`, and the operator signs the run once at `sprint sign`
 - [ ] Its documentation landed in the same unit (help + reference for any new command/flag)
 - [ ] The paperwork shipped in the same commit as the code (changelog fragment, status, index)
 - [ ] If it is a REPAIR: its test was seen to fail without the fix. The test is written after
