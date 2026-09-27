@@ -1,6 +1,6 @@
 # US0954: The repository's front door describes v6 and teaches no retired surface
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,12 +19,16 @@
 
 - **AC1:** Given the retired surface US0924's test derives (imported, never restated), then none of README.md, CONTRIBUTING.md and docs/INSTALL.md names one except inside a 'Removed in v6' passage. Fails on: HEAD README 136 ('verification-depth tiers (a bug cannot reach Fixed'), 209 (the mermaid edge `two-role review + sign-off`) and 469 ('two-role review' among the site's concept guides); a second hand list of retired names in this module, which misses the next retirement
   - **Verify:** pytest tools/tests/test_lean_public_docs_retired.py::PublicDocsTests::test_the_front_door_teaches_no_retired_surface
+  - **Verified:** yes (2026-09-27)
 - **AC2:** Given README.md, then its first section after the badges is 'New in 6', it links docs/release-notes-v6.0.0.md and `reference-sprint.md#the-loop`, its FAQ upgrade answer describes the v5-to-v6 path through `migrate --apply`, and it keeps at least three routes to docs/existing-users.md (the count `test_existing_users_page.py` requires), none calling v6 a drop-in. Fails on: HEAD's 'New in 5.1' section (line 23), line 180 and FAQ 414 ('two v5 gates refuse work on day one'), and no link to the loop
   - **Verify:** pytest tools/tests/test_lean_public_docs_retired.py::PublicDocsTests::test_the_readme_leads_with_v6
+  - **Verified:** yes (2026-09-27)
 - **AC3:** Given README.md, then it states no test or script count typed by hand. Fails on: HEAD line 450 ('4,000+ unit tests'; 7,628 test functions at 013a46d0)
   - **Verify:** pytest tools/tests/test_lean_public_docs_retired.py::PublicDocsTests::test_the_readme_pins_no_hand_count
+  - **Verified:** yes (2026-09-27)
 - **AC4:** Given README.md, CONTRIBUTING.md and docs/INSTALL.md, then every verified-install example pins the release tag `check_versions.py` reports, the README's release-notes list names 6.0.0 as current and no older release as 'the current stable release', and CONTRIBUTING's paperwork rule names a `changelog.d/<UNIT-ID>.md` fragment. Fails on: HEAD README 89 (`--version v5.1.0`, so a newcomer copying the verified install gets v5) and 479 (v5.1.0 'the current stable release'), INSTALL 162 (`v5.0.1`), CONTRIBUTING 91-92 (a `CHANGELOG.md [Unreleased]` entry)
   - **Verify:** pytest tools/tests/test_lean_public_docs_retired.py::PublicDocsTests::test_contributing_and_install_are_current
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

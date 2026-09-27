@@ -102,6 +102,11 @@ PHRASES: dict[str, str] = {
     "the Verification depth and Verification target fields":
         r"\bVerification (?:depth|target)\b(?![- ]tiers?\b)",
     "Mutation-checked": r"\bMutation-checked\b",
+    # The tiers stay as advice; a gate on them, or a unit held from Done or Fixed by them, is gone.
+    "the verification-depth gate":
+        r"(?i)(?<![#\w-])(?:verification[- ])?depth(?:[- ](?:gate|parity)\b"
+        r"|\b[^\n]*\b(?:cannot|can.t|may not|must not)\s+reach\b)"
+        r"|\b(?:cannot|can.t|may not|must not)\s+reach\b[^\n]*(?<![#\w-])(?:verification[- ])?depth\b",
     "plan review as a step": r"(?i)\bplan[- ]review\b",
     "batch review": r"(?i)\bbatch review\b",
     "the sign-off brief": r"(?i)\bsign-?off (?:decision )?brief\b|\bsign-off chain\b"

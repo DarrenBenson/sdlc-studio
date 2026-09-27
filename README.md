@@ -20,34 +20,30 @@ SDLC Studio is an open [Agent Skill](https://agentskills.io) - a plug-in for AI 
 
 One install works in **Claude Code, Cursor, OpenAI Codex, Gemini CLI, opencode, and GitHub Copilot**.
 
-## New in 5.1: it stops making you wait
+## New in 6: one plan, one review, one signature
 
-If you have run SDLC Studio against a real backlog, you know the two things that grated.
+v6 keeps what catches defects - acceptance criteria that run, and a review by someone other than
+the author - and drops the ceremony around each unit that caught nothing.
 
-**`status` took about a minute, every single time.** On a backlog of 822 stories and 667 bugs,
-measured on the same machine:
+- **One plan.** A Sprint Goal is one sentence. `sprint plan` orders and sizes the batch, and you
+  approve it once.
+- **One review per unit.** Each unit is built against its acceptance criteria and reviewed by one
+  independent reviewer, in at most two rounds, recorded in one verdict ledger.
+- **One signature.** `sprint close` files a one-page report that states every known issue, and
+  `sprint sign` seals it once, from someone who neither built nor reviewed a unit in it.
+- **It learns from its own runs.** What went wrong is recorded as a failure class and its rule is
+  carried into the next plan, build and review.
 
-| | 5.0.1 | 5.1 |
-| --- | ---: | ---: |
-| `status` | 59.6s | **0.9s** |
-| `status hint` | 59.5s | **0.8s** |
+How a run goes, step by step: [the loop](.claude/skills/sdlc-studio/reference-sprint.md#the-loop).
+What changed and why: [the release notes](docs/release-notes-v6.0.0-rc.1.md). Upgrading a v5
+project: `migrate`, then `migrate --apply`, and [docs/existing-users.md](docs/existing-users.md).
 
-**And fixing one bug meant redoing other people's work.** Mutation evidence was tied to a whole
-file, so editing anywhere in a file another unit had touched invalidated that unit's evidence
-too - one line moving forced seven units' checks to be re-run by hand before anyone could
-commit. Evidence is now tied to the exact spot a test covered, so an edit elsewhere in the same
-file leaves it alone.
+### Removed in v6
 
-**Being straight about the other direction:** the checks that run when you commit take *longer*
-now, not less. There are 536 more tests than 5.0.1, and the full suite went from 286s to 331s.
-That is the trade - more is checked, so more is caught. The commands you run interactively are
-the ones that got fast.
-
-The rest of 5.1 is about trusting what the checks tell you: a new probe asks whether a criterion
-could ever FAIL before you build against it, `Done` refuses a unit whose own tests never ran a
-line it added, and the release gate asks the forge whether CI actually passed rather than
-believing a local file. Full detail in [the release notes](docs/release-notes-v5.1.0.md), and one
-breaking change is called out there.
+The plan review, the test plan, repair plans, per-unit sign-off, the verification-depth gate and
+the mutation evidence ledger are gone. Their verbs, flags and config keys are refused by name, with
+the replacement printed; the full inventory is under **Breaking** in the
+[CHANGELOG](CHANGELOG.md). `mutation.py run` still measures a suite when you ask it to.
 
 ## Quick start
 
@@ -86,10 +82,10 @@ irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 
 **Installing in a sensitive environment?** The default install tracks `main`, which publishes no `.sha256` sidecar, so the installer warns and proceeds unverified. Pin a tagged release and make the checksum mandatory instead:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v5.1.0
+curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.0.0-rc.1
 ```
 
-What that verifies: an archive this project built from the tag and published as a release asset, against a `.sha256` published beside it in the same step. Both halves are ours, so they cannot drift apart. Tags before v5.0.1 have no published assets and this command will refuse them rather than pretend - see [Verifying the download](docs/INSTALL.md#verifying-the-download).
+That pins the current release; name any later tag the same way. What it verifies: an archive this project built from the tag and published as a release asset, against a `.sha256` published beside it in the same step. Both halves are ours, so they cannot drift apart. Tags before v5.0.1 have no published assets and this command will refuse them rather than pretend - see [Verifying the download](docs/INSTALL.md#verifying-the-download).
 
 </details>
 
@@ -133,8 +129,8 @@ states - can file bugs, stories, and change requests concurrently and never mint
 No coordination, no renumber-on-merge.
 
 Around that identity sits the quality floor: a mechanical **independence gate** (the author
-of a change can never be its reviewer), **verification-depth tiers** (a bug cannot reach Fixed
-without recorded evidence of how it was verified), a **portable CI gate** (`gate.py`, runs the
+of a change can never be its reviewer), **executable acceptance criteria** (a story reaches
+Done, and a bug Fixed, only when its criteria pass), a **portable CI gate** (`gate.py`, runs the
 same checks anywhere), and reconciliation that keeps every index and epic checkbox in step with
 the files - recomputed from them, not asserted.
 
@@ -146,7 +142,7 @@ about idempotency; a games QA about frame budgets). Until then, Dani (Engineerin
 and Lena (Product) work out of the box. Where other tooling ships a fixed cast of role-prompts identically to
 every project, here the working seats, the design personas, and the stakeholder panel live in
 one system, generated from the project itself - and no seat may mark its own homework. The
-persona that argued for the requirement is the one who refuses to sign off work that does not
+persona that argued for the requirement is the one who refuses to approve work that does not
 meet it. The point is **coverage**: a project-specific cast is built to
 catch the blind spots a generic prompt walks past - it does not make the model smarter,
 and we do not claim it does.
@@ -177,9 +173,9 @@ Every card is yours to edit - and the moment you edit one, generation treats it 
 authored and will never overwrite it.
 
 **Already running SDLC Studio on a project?** Your artifacts are safe and nothing is
-rewritten without asking - but two v5 gates refuse work on day one until you clear them,
-each with a one-line remedy. Your page is
-**[docs/existing-users.md](docs/existing-users.md)**.
+rewritten without asking, but v6 is not a drop-in: it refuses the verbs, flags and config keys it
+retired, each by name with its replacement, and `migrate --apply` carries the project across.
+Your page is **[docs/existing-users.md](docs/existing-users.md)**.
 
 ## You just ask
 
@@ -206,11 +202,12 @@ flowchart TB
   P --> E[Epics] --> S
   RQ[Request: CR / RFC - discovery backlog] -->|refine| S[Stories + bugs, acceptance criteria - delivery backlog]
   S -->|sprint plan| BLD[Build under TDD] --> VF[Verify criteria]
-  VF -->|two-role review + sign-off| DN[Done]
+  VF -->|independent review| DN[Done]
+  DN -->|sprint close + one signature| RPT[Sprint report]
   VF -. reconcile keeps docs true .-> S
 ```
 
-Two backlogs, one disciplined path through. A request is not work until `refine` decomposes it into sized units (the two-backlog rule). A story reaches Done only when its executable acceptance criteria pass **and** an independent reviewer - never the author - signs it off. The dotted line back is reconcile, keeping every document true to what was built.
+Two backlogs, one disciplined path through. A request is not work until `refine` decomposes it into sized units (the two-backlog rule). A story reaches Done only when its executable acceptance criteria pass **and** an independent reviewer - never the author - approves it; the run closes with a one-page report you sign once. The dotted line back is reconcile, keeping every document true to what was built.
 
 Run `/sdlc-studio status` any time for the at-a-glance dashboard:
 
@@ -235,7 +232,7 @@ Run `/sdlc-studio status` any time for the at-a-glance dashboard:
 Two more ideas worth knowing:
 
 - **Two modes.** For a brand-new project (greenfield), `create` interviews you to write the spec. For existing code (brownfield), `generate` reads the code and writes the spec for you, then checks it by running tests against the real implementation. See [reference-philosophy.md](.claude/skills/sdlc-studio/reference-philosophy.md).
-- **Your own engineering team.** The work is done by the *Three Amigos* - Dani (Engineering), Sam (QA), Lena (Product) - editable persona cards that both *do* the work and *review* it, and `persona generate --team` replaces them with fresh named seats grown from your project. The reviewer is always a different seat than the author, so no one signs off their own code.
+- **Your own engineering team.** The work is done by the *Three Amigos* - Dani (Engineering), Sam (QA), Lena (Product) - editable persona cards that both *do* the work and *review* it, and `persona generate --team` replaces them with fresh named seats grown from your project. The reviewer is always a different seat than the author, so no one approves their own code.
 
 ## What you can do
 
@@ -249,7 +246,7 @@ Two more ideas worth knowing:
 | Build and prove | Plan, implement, then verify against the criteria | `code plan` -> `code implement` -> `code verify` |
 | Drive to a goal | An autonomous batch loop that closes with reconcile + review | `sprint --goal done` |
 | Keep status honest | Detect and fix index drift from a file census; run executable `Verify:` lines | `reconcile`, `reconcile --verify` |
-| Prove tests can fail | Mutation-check the changed surface: killed vs survived, never a silent pass | `mutation run --since <ref>` |
+| Prove tests can fail | On demand, mutate the changed surface: killed vs survived, never a silent pass | `mutation run --since <ref>` |
 | Keep your house style | Declare status columns, companion suffixes, bug headings, and templates once - every check honours them | `.config.yaml` `conventions:` |
 | Upgrade and onboard | Migrate a project to current conventions AND see the capability delta since your version | `project upgrade` |
 | Stay token-lean | Archive terminal index rows by release when the advisory fires; the state anchor stays a capped window | `archive --type <t> --release <r>` |
@@ -293,12 +290,12 @@ Writes `sdlc-studio/epics/EP0001-*.md` and `sdlc-studio/stories/US000*.md`. Revi
 You say: *"Build the next story."*
 
 ```text
-/sdlc-studio code plan        # plan tasks; a blind-review gate checks the plan satisfies every AC
+/sdlc-studio code plan        # plan tasks against every acceptance criterion
 /sdlc-studio code implement   # build it under TDD
 /sdlc-studio code verify      # run the acceptance criteria
 ```
 
-The plan is gated against the acceptance criteria *before* you write code, and `verify` runs the story's executable `Verify:` lines:
+The plan is written against the acceptance criteria *before* you write code, and `verify` runs the story's executable `Verify:` lines:
 
 ```text
 [APL] US0001-export-requested.md: ac=2 pass=2 fail=0 manual=0 changes=2
@@ -404,14 +401,14 @@ Dani (Engineering), Sam (QA), and Lena (Product) - editable persona cards that b
 <details>
 <summary>What is the sprint loop?</summary>
 
-`sprint` drives a prioritised batch of work along a goal ladder (`triage -> plan -> design -> done`), stops when its acceptance criteria are met, and closes with a reconcile and review. Run a single rung for a checkpoint, or `--goal done` to take it all the way.
+`sprint` drives a prioritised batch of work toward a one-sentence goal along a goal ladder (`triage -> plan -> design -> done`): you approve the plan once, each unit is built and independently reviewed, and the run closes with a reconcile and a one-page report you sign once. Run a single rung for a checkpoint, or `--goal done` to take it all the way. Step by step: [the loop](.claude/skills/sdlc-studio/reference-sprint.md#the-loop).
 
 </details>
 
 <details>
 <summary>How do I upgrade?</summary>
 
-Re-run the installer, or `/sdlc-studio skill-update`, then `migrate --apply`. Your existing `sdlc-studio/` directories keep working and nothing is rewritten without asking - but v5 is not a drop-in for the GATE: `sprint plan` refuses a backlog that predates the sizing fields, and `gate.py` fails on history that predates the conformance rule, until you groom or set an adoption cutoff. Both remedies, the two dormant gates you can opt into, the numbering question and its three answers live in **[docs/existing-users.md](docs/existing-users.md)** and, in full, at **[sdlc-studio.com](https://sdlc-studio.com)**.
+Re-run the installer, or `/sdlc-studio skill-update`. To carry a v5 project to v6, run `migrate` (a dry run naming what it would change), then `migrate --apply`: it removes the config keys and `[check:]` tags v6 retired and restamps the project version, keeping every other byte. It reports, and never rewrites, any instruction-file line naming a retired verb or key, and your own scripts and CI are yours to search against the CHANGELOG's **Breaking** inventory. If you installed the 6.0.0-rc.1 candidate, its version check will not offer a later 6.0.0: reinstall with the installer instead of waiting for the prompt. The upgrade steps, the numbering question and its three answers live in **[docs/existing-users.md](docs/existing-users.md)** and, in full, at **[sdlc-studio.com](https://sdlc-studio.com)**.
 
 </details>
 
@@ -447,9 +444,9 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 
 ## Under the hood
 
-- **Determinism in scripts, judgement in the model.** Standard-library-only Python helpers (census, status, validation, ID allocation, repo indexing, AC verification, the portable quality gate, deterministic artifact create/close, GitHub sync) with 4,000+ unit tests do the mechanical work.
+- **Determinism in scripts, judgement in the model.** Standard-library-only Python helpers (census, status, validation, ID allocation, repo indexing, AC verification, the portable quality gate, deterministic artifact create/close, GitHub sync), each under its own unit tests, do the mechanical work.
 - **Status that polices itself.** `reconcile` detects and fixes index drift from a file census; acceptance criteria can carry executable `Verify:` lines that `reconcile --verify` actually runs.
-- **Tests that prove they can fail.** The mutation-check gate injects declared faults into the changed surface and reports **killed vs survived** per mutation - a test that stays green over broken code is a finding, not a pass. Honest by construction: un-mutatable surfaces read un-checked, stale reports read STALE, truncated budgets are counted. Every unit close feeds a local, no-upload telemetry log (`telemetry show --summary`) so estimates calibrate against reality.
+- **Tests that prove they can fail.** `mutation run`, on demand, injects declared faults into the changed surface and reports **killed vs survived** per mutation - a test that stays green over broken code is a finding, not a pass. Honest by construction: un-mutatable surfaces read un-checked, stale reports read STALE, truncated budgets are counted. Every unit close feeds a local, no-upload telemetry log (`telemetry show --summary`) so estimates calibrate against reality.
 - **Agentic execution.** `epic implement --agentic` runs safe waves of parallel implementation agents (Claude Code), with quality gates at every wave boundary and a lessons file that makes each wave smarter than the last.
 
 ## Troubleshooting
@@ -466,17 +463,17 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 
 ## Documentation
 
-- **[sdlc-studio.com](https://sdlc-studio.com)** - the documentation home: getting started with guided `init`, greenfield and brownfield worked walkthroughs, the specification layer (PRD, TRD, TSD and the multi-repo PVD), personas and the Three Amigos, the concept guides (two-backlog, sprint planning, two-role review, executable acceptance criteria), the FAQ, and the multi-harness install guide. The files below are the in-repo reference the skill loads at runtime.
+- **[sdlc-studio.com](https://sdlc-studio.com)** - the documentation home: getting started with guided `init`, greenfield and brownfield worked walkthroughs, the specification layer (PRD, TRD, TSD and the multi-repo PVD), personas and the Three Amigos, the concept guides (two-backlog, sprint planning, independent review, executable acceptance criteria), the FAQ, and the multi-harness install guide. The files below are the in-repo reference the skill loads at runtime.
 - [The white paper](docs/whitepaper.md) - the mill, described properly: the operating model, the measured evidence, governance, and adoption, for the engineering leader evaluating an agentic SDLC
 - [docs/why-sdlc-studio.md](docs/why-sdlc-studio.md) - the full value argument: thesis, evidence (field + benchmark), economics, and honest caveats
-- [docs/existing-users.md](docs/existing-users.md) - already running SDLC Studio? What v5 refuses on day one and how to clear it, the two-backlog workflow, the numbering question, upgrade steps
+- [docs/existing-users.md](docs/existing-users.md) - already running SDLC Studio? The upgrade steps, what a new version refuses and how to clear it, the two-backlog workflow, the numbering question
 - [docs/INSTALL.md](docs/INSTALL.md) - full installer reference
 - `/sdlc-studio help` - the command catalogue (also [help/help.md](.claude/skills/sdlc-studio/help/help.md))
 - [Greenfield runbook](.claude/skills/sdlc-studio/help/getting-started.md) and [Brownfield runbook](.claude/skills/sdlc-studio/help/brownfield-runbook.md) - the step-by-step paths
 - [reference-doctrine.md](.claude/skills/sdlc-studio/reference-doctrine.md) - the operating doctrine for running any project with this skill
-- [docs/release-notes-v6.0.0-rc.1.md](docs/release-notes-v6.0.0-rc.1.md) - the v6 release candidate: the lean loop, one verdict ledger, one signature, every retired surface and how `migrate --apply` carries a v5.1 project across
+- [docs/release-notes-v6.0.0-rc.1.md](docs/release-notes-v6.0.0-rc.1.md) - the current release candidate: the lean loop, one verdict ledger, one signature, every retired surface and how `migrate --apply` carries a v5.1 project across
 - [docs/release-notes-v5.0.0.md](docs/release-notes-v5.0.0.md) - what v5 is, what it refuses, and what changed, for a reader deciding whether to upgrade
-- [docs/release-notes-v5.1.0.md](docs/release-notes-v5.1.0.md) - the current stable release: the carried list closed, every Medium disposed of or ruled
+- [docs/release-notes-v5.1.0.md](docs/release-notes-v5.1.0.md) - faster `status`, and the carried list closed with every Medium disposed of or ruled
 - [docs/release-notes-v5.0.1.md](docs/release-notes-v5.0.1.md) - one defect, the verified install path that had never worked
 - [docs/known-issues.md](docs/known-issues.md) - the defects this release ships with, by id, and the bar it was held to
 - [CHANGELOG.md](CHANGELOG.md) - release history | [SECURITY.md](SECURITY.md) | [SUPPORT.md](SUPPORT.md)

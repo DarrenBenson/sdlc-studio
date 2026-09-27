@@ -130,13 +130,16 @@ build or dependency install is needed.
 ## Updating and uninstalling
 
 - **Update**: re-run the installer; it replaces the existing copy in place.
+  If you installed the 6.0.0-rc.1 candidate, its version check will not offer a later 6.0.0:
+  reinstall rather than waiting for the prompt. Carrying a v5 project to v6 is a separate step,
+  `migrate` then `migrate --apply`; see [existing users](existing-users.md).
 - **Stale-copy sweep**: after installing, the installer also refreshes every
   other sdlc-studio copy it finds in the known tool locations (it never touches
   a directory without an sdlc-studio `SKILL.md`), reporting each refresh as
   `old -> new`. Skip this with `--no-sweep` (bash) or `-NoSweep` (PowerShell);
   preview it with `--dry-run`.
-- **Specific version**: `--version v1.8.0` (bash) or `-Version v1.8.0`
-  (PowerShell).
+- **Specific version**: `--version <tag>` (bash) or `-Version <tag>`
+  (PowerShell), for example `--version v6.0.0-rc.1`.
 - **Uninstall**: `--uninstall` (bash) or `-Uninstall` (PowerShell), with the same
   `--target` / scope you installed with. Preview first with `--dry-run`. The
   uninstall does not sweep other locations.
@@ -155,11 +158,11 @@ After installing, start your tool in any project and check the skill loads:
 
 The default install tracks `main`, which is a moving branch with no published digest: the
 installer says so and proceeds. If you need the download verified, pin a tag and make the
-check mandatory.
+check mandatory. The example pins the current release; name any later tag the same way.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh \
-  | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v5.0.1
+  | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.0.0-rc.1
 ```
 
 ```powershell
