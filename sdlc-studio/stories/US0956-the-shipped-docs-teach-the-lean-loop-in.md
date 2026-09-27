@@ -1,6 +1,6 @@
 # US0956: The shipped docs teach the lean loop in one place
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

@@ -1,6 +1,6 @@
 # US0957: The white paper and the value argument describe the v6 operating model
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
