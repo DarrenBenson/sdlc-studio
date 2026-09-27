@@ -364,6 +364,20 @@ def _story_acs(f: dict) -> str:
     return "".join(out)
 
 
+def _criteria_body(type_: str, f: dict) -> str:
+    """The supplied criteria in the shape their type's runner reads. A story takes its id'd
+    blocks; a bug takes the finding filer's `- [ ] **ACn**` rows with each positional `--verify`
+    beneath (`file_finding.criteria_block`, one writer for both creation paths), because a bug's
+    Verify lines are executed too. Every other type keeps a plain checklist."""
+    if type_ == "story":
+        return _story_acs(f)
+    acs = _list(f, "acs")
+    if type_ == "bug":
+        return file_finding.criteria_block(
+            "bug", {"acs": acs, "verify": _verifiers_of(f)}) + "\n" if acs else ""
+    return "".join(f"- [ ] {a}\n" for a in acs)
+
+
 #: The User Story block's three lines and the field each is written from.
 _USER_STORY_LINES = (("As a", "role"), ("I want", "capability"), ("So that", "benefit"))
 
@@ -554,8 +568,8 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
         # when not. A bug WITHOUT them is a legitimate scaffold the criteria floor refuses at
         # the transition to Fixed; a bug whose author WROTE them and had them dropped in silence
         # is the failure that floor cannot help with, because by then the words are gone.
-        acs = _list(f, "acs")
-        ac_body = ("\n## Acceptance Criteria\n\n" + "".join(f"- [ ] {a}\n" for a in acs)) if acs else ""
+        acs = _criteria_body("bug", f)
+        ac_body = f"\n## Acceptance Criteria\n\n{acs}" if acs else ""
         return (head + f"> **Severity:** {normalise_severity(f.get('severity') or 'Medium')}\n" + _sizing_line("bug", f) +
                 "\n## Summary\n\n" + _text(f, "summary", "{{symptom}}") +
                 "\n\n## Steps to Reproduce\n\n" + _text(f, "steps", "{{steps}}") +
@@ -627,7 +641,8 @@ def _land_supplied(body: str, type_: str, f: dict) -> str:
     for key, names in _LANDABLE_SECTIONS:
         probe = _probe(f.get(key))
         if probe and probe not in re.sub(r"[^a-z0-9]+", "", body.lower()):
-            content = _story_acs(f) if (key == "acs" and type_ == "story") else _rendered(key, f)
+            content = (_criteria_body(type_, f) if key == "acs" and type_ in ("story", "bug")
+                       else _rendered(key, f))
             body = _put_section(body, names, content)
     return body
 
@@ -664,7 +679,7 @@ def _fill_acs(body: str, type_: str, f: dict) -> str:
     acs = _list(f, "acs")
     if not acs:
         return body
-    filled = _story_acs(f) if type_ == "story" else "".join(f"- [ ] {a}\n" for a in acs)
+    filled = _criteria_body(type_, f)
     m = _AC_HEAD_RE.search(body)
     if not m:
         return _put_section(body, ("Acceptance Criteria",), filled)
@@ -1740,9 +1755,9 @@ def build_parser() -> argparse.ArgumentParser:
                         "metadata line the planner reads. Required for a bug: "
                         "`sprint plan` refuses a unit that names no files - it cannot size one, "
                         "nor see two units colliding on the same file")
-    n.add_argument("--ac", action="append", help="story/cr acceptance criterion (repeatable)")
+    n.add_argument("--ac", action="append", help="acceptance criterion (repeatable)")
     n.add_argument("--verify", action="append",
-                   help="story: the executable check for the AC in the same position "
+                   help="story/bug: the executable check for the AC in the same position "
                         "(repeatable; pairs with --ac). Omit it and the AC carries no Verify "
                         "line - which conformance reports, rather than inventing one")
     # RETIRED: kept only so a caller still passing it is refused by name (`cmd_new`).

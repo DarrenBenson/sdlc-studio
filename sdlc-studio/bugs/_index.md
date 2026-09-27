@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 28 |
-| In Progress | 4 |
-| Fixed | 640 |
+| In Progress | 3 |
+| Fixed | 641 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -160,7 +160,7 @@
 | [BG0799](BG0799-a-first-sprint-s-report-hands-over-as.md) | A first sprint's report hands over, as known issues, the epic drift its own close settles, split into one row per line of reconcile's output | Open | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0800](BG0800-the-close-s-pre-flight-lists-as-unmet.md) | The close's pre-flight lists as unmet the goal verdict the same invocation records and the review anchor the close writes itself | Open | Low | 2026-09-27 | 2026-09-27 |
 | [BG0801](BG0801-the-known-issues-page-puts-its-ship-open.md) | The known-issues page puts its ship-open paragraph under the oldest bar's history and states a Not carried count the corpus contradicts | Open | Medium | 2026-09-27 | 2026-09-27 |
-| [BG0802](BG0802-artifact-new-type-bug-drops-its-verify-line.md) | artifact new --type bug drops its --verify line and writes an unnamed criterion, so sprint plan refuses the bug it just filed | In Progress | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0802](BG0802-artifact-new-type-bug-drops-its-verify-line.md) | artifact new --type bug drops its --verify line and writes an unnamed criterion, so sprint plan refuses the bug it just filed | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0803](BG0803-sprint-plan-to-the-plan-or-design-rung.md) | sprint plan to the plan or design rung crashes in capacity_report on the default token budget | Open | Low | 2026-09-27 | 2026-09-27 |
 | [BG0804](BG0804-the-report-s-lessons-section-cites-sdlc-studio.md) | The report's Lessons section cites sdlc-studio/lessons.jsonl on a project that has none, when the bundled seed was read | Open | Low | 2026-09-27 | 2026-09-27 |
 | [BG0805](BG0805-verify-ac-stamps-passes-a-k-expression-whose.md) | verify_ac stamps passes a -k expression whose dead term hides behind a live one, so eight stamped criteria verify nothing of what they claim | Open | Medium | 2026-09-27 | 2026-09-27 |

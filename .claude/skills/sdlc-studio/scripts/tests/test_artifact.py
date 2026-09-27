@@ -3151,6 +3151,70 @@ class SeverityVocabularyTests(unittest.TestCase):
                                      f"{spelling!r} differs from 'High' only in surrounding "
                                      f"whitespace and was refused:\n{r.stdout}{r.stderr}")
 
+
+import contextlib  # noqa: E402
+
+
+class BugCriteriaTests(unittest.TestCase):
+    """BG0802: a bug's `--verify` was accepted and discarded at exit 0, and its criterion written
+    as an unnamed `- [ ] <text>` bullet, so `sprint plan` refused the bug it had just filed as
+    carrying no executable Verify. A bug is written in the shape the finding filer and the runner
+    share: `- [ ] **ACn** <text>` with its `- **Verify:**` line beneath."""
+
+    AC = "Given x, when y, then z. Fails on: w"
+    VERIFY = "pytest tests/test_a.py::ATests::test_a_holds"
+
+    def _repo(self, d: str) -> Path:
+        repo = Path(d)
+        _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+        return repo
+
+    def _criteria(self, path: Path) -> list[str]:
+        body = path.read_text(encoding="utf-8")
+        section = body.split("## Acceptance Criteria", 1)[1].split("\n## ", 1)[0]
+        return [line for line in section.splitlines() if line.strip()]
+
+    def _plan(self, repo: Path, status: str) -> tuple[int, str]:
+        import unittest.mock
+        import sprint  # noqa: PLC0415 - the reader this criterion names
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                unittest.mock.patch.object(sys, "stdin", io.StringIO("")):
+            rc = sprint.main(["plan", "--bugs", status, "--no-fetch",
+                              "--sprint-goal", "the filed bug is planned", "--root", str(repo)])
+        return rc, out.getvalue() + err.getvalue()
+
+    def test_a_bug_s_verify_is_written_under_its_named_criterion(self) -> None:
+        """Mutant: the pre-fix render (`- [ ] <text>`, Verify dropped), or the Verify written
+        under an unnamed bullet - both leave `plan` refusing the bug as `no-verifier`."""
+        import json
+        common = {"severity": "Low", "summary": "s", "steps": "s", "fix": "f", "points": 1,
+                  "affects": "src/a.py"}
+        for route in ("new", "batch"):
+            with self.subTest(route=route), tempfile.TemporaryDirectory() as d:
+                repo = self._repo(d)
+                _affect(repo, "src/a.py")
+                if route == "new":
+                    argv = ["new", "--type", "bug", "--title", "a filed bug",
+                            "--severity", "Low", "--summary", "s", "--steps", "s", "--fix", "f",
+                            "--points", "1", "--affects", "src/a.py",
+                            "--ac", self.AC, "--verify", self.VERIFY, "--root", str(repo)]
+                else:
+                    spec = repo / "spec.json"
+                    spec.write_text(json.dumps([{"title": "a filed bug", **common,
+                                                 "acs": [self.AC], "verify": [self.VERIFY]}]),
+                                    encoding="utf-8")
+                    argv = ["batch", "--type", "bug", "--spec", str(spec), "--root", str(repo)]
+                with contextlib.redirect_stdout(io.StringIO()), quiet.diagnostics():
+                    self.assertEqual(0, artifact.main(argv))
+                path = next((repo / "sdlc-studio" / "bugs").glob("BG*.md"))
+                self.assertEqual([f"- [ ] **AC1** {self.AC}", f"  - **Verify:** {self.VERIFY}"],
+                                 self._criteria(path))
+                status = sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status")
+                rc, said = self._plan(repo, status)
+                self.assertNotIn("none carries an executable `Verify:`", said)
+                self.assertEqual(0, rc, said)
+
 if __name__ == "__main__":
     unittest.main()
 
