@@ -26,6 +26,7 @@ import gitutil  # noqa: E402
 import workspace  # noqa: E402
 
 UNITS = ("US0001", "US0002", "US0003")
+_VERIFY_RE = re.compile(r"\*\*Verify:\*\*\s*(.*)")
 #: What a green forge answers `gh run list --commit <sha> --json ...` with.
 GREEN_RUNS = '[{"workflowName": "Lint", "status": "completed", "conclusion": "success"}]'
 
@@ -151,7 +152,7 @@ class TagNoCloseOwedTests(unittest.TestCase):
         for kind in ("stories", "bugs"):
             for path in sorted((repo / "sdlc-studio" / kind).glob("*.md")):
                 for line in path.read_text(encoding="utf-8").splitlines():
-                    m = re.search(r"\*\*Verify:\*\*\s*(.*)", line)
+                    m = _VERIFY_RE.search(line)
                     if m and not m.group(1).startswith("manual") and retired.search(m.group(1)):
                         live.append(f"{path.name}: {m.group(1)}")
         self.assertEqual([], live, "a live stamp still names the retired close-owed surface")
@@ -165,9 +166,14 @@ class TagNoCloseOwedTests(unittest.TestCase):
         edited = [Path(p).name for p in sdlc_md.affects_files(own.read_text(encoding="utf-8"))
                   if "/tests/test_" in p]
         self.assertIn("test_release_cut.py", edited)
+        # Resolve only the artefacts whose Verify lines name an edited module (BG0807): resolving
+        # every stamp in the corpus and filtering afterwards cost about 50 s of every commit.
+        naming = [path for kind in ("stories", "bugs")
+                  for path in sorted((repo / "sdlc-studio" / kind).glob("*.md"))
+                  if any(name in m.group(1) for m in _VERIFY_RE.finditer(
+                      path.read_text(encoding="utf-8")) for name in edited)]
         dead = [f"{row['record']} {row['ac']}: {row['verifier']}"
-                for kind in ("stories", "bugs")
-                for path in sorted((repo / "sdlc-studio" / kind).glob("*.md"))
+                for path in naming
                 for row in verify_ac.unresolvable_stamps(path, repo)
                 if any(name in row["verifier"] for name in edited)]
         self.assertEqual([], dead, "a stamp rests on a test node this unit deleted")
