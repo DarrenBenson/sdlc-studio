@@ -1,6 +1,6 @@
 # BG0682: artifact.py revision writes a bare _identifier into the Revision History, which markdownlint refuses as MD037
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, changelog.d/BG0682.md

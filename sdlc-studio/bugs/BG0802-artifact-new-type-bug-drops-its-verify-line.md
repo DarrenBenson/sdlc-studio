@@ -1,6 +1,6 @@
 # BG0802: artifact new --type bug drops its --verify line and writes an unnamed criterion, so sprint plan refuses the bug it just filed
 
-> **Status:** Open
+> **Status:** In Progress
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

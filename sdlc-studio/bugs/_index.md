@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 32 |
-| In Progress | 2 |
+| Open | 28 |
+| In Progress | 6 |
 | Fixed | 638 |
 | Verified | 0 |
 | Closed | 87 |
@@ -40,7 +40,7 @@
 | [BG0679](BG0679-with-review-repair-plan-gate-on-a-repair.md) | With review.repair_plan_gate on, a repair bug set straight to Closed or Verified skips the gate | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0680](BG0680-repair-state-counts-a-repair-row-once-per.md) | repair_state counts a repair row once per rejection sharing its date, so closed and fixed counts are doubled | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0681](BG0681-config-py-show-key-crashes-on-a-key.md) | config.py show --key crashes on a key whose value holds an unquoted YAML date, the path BG0670 left | Fixed | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0682](BG0682-artifact-py-revision-writes-a-bare-identifier-into.md) | artifact.py revision writes a bare _identifier into the Revision History, which markdownlint refuses as MD037 | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0682](BG0682-artifact-py-revision-writes-a-bare-identifier-into.md) | artifact.py revision writes a bare _identifier into the Revision History, which markdownlint refuses as MD037 | In Progress | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0683](BG0683-repair-gate-s-review-before-repair-ordering-check.md) | repair_gate's review-before-repair ordering check (US0312 AC4) is dead on the wired path | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0684](BG0684-transition-s-two-role-gate-ignores-a-definition.md) | transition's two-role gate ignores a Definition of Done that stands the review.two-role tag down | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0685](BG0685-project-upgrade-reads-plan-review-verdicts-with-no.md) | project_upgrade reads plan-review verdicts with no kind, so a repair-plan APPROVE counts as a repair story's spec review | Superseded | Medium | 2026-09-15 | 2026-09-15 |
@@ -160,13 +160,13 @@
 | [BG0799](BG0799-a-first-sprint-s-report-hands-over-as.md) | A first sprint's report hands over, as known issues, the epic drift its own close settles, split into one row per line of reconcile's output | Open | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0800](BG0800-the-close-s-pre-flight-lists-as-unmet.md) | The close's pre-flight lists as unmet the goal verdict the same invocation records and the review anchor the close writes itself | Open | Low | 2026-09-27 | 2026-09-27 |
 | [BG0801](BG0801-the-known-issues-page-puts-its-ship-open.md) | The known-issues page puts its ship-open paragraph under the oldest bar's history and states a Not carried count the corpus contradicts | Open | Medium | 2026-09-27 | 2026-09-27 |
-| [BG0802](BG0802-artifact-new-type-bug-drops-its-verify-line.md) | artifact new --type bug drops its --verify line and writes an unnamed criterion, so sprint plan refuses the bug it just filed | Open | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0802](BG0802-artifact-new-type-bug-drops-its-verify-line.md) | artifact new --type bug drops its --verify line and writes an unnamed criterion, so sprint plan refuses the bug it just filed | In Progress | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0803](BG0803-sprint-plan-to-the-plan-or-design-rung.md) | sprint plan to the plan or design rung crashes in capacity_report on the default token budget | Open | Low | 2026-09-27 | 2026-09-27 |
 | [BG0804](BG0804-the-report-s-lessons-section-cites-sdlc-studio.md) | The report's Lessons section cites sdlc-studio/lessons.jsonl on a project that has none, when the bundled seed was read | Open | Low | 2026-09-27 | 2026-09-27 |
 | [BG0805](BG0805-verify-ac-stamps-passes-a-k-expression-whose.md) | verify_ac stamps passes a -k expression whose dead term hides behind a live one, so eight stamped criteria verify nothing of what they claim | Open | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0806](BG0806-tsd-staleness-is-never-judged-in-a-consuming.md) | TSD staleness is never judged in a consuming project and reports a false reason on every sprint plan | Open | Medium | 2026-09-27 | 2026-09-27 |
-| [BG0807](BG0807-the-us0942-ac5-stamp-test-resolves-the-whole.md) | The US0942 AC5 stamp test resolves the whole corpus before filtering, costing about 50 seconds of every commit that touches verify_ac.py | Open | Low | 2026-09-27 | 2026-09-27 |
-| [BG0808](BG0808-init-records-no-project-version-so-a-fresh.md) | init records no project version, so a fresh project's first migrate reports work and its upgrade digest reads the range as unknown | Open | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0807](BG0807-the-us0942-ac5-stamp-test-resolves-the-whole.md) | The US0942 AC5 stamp test resolves the whole corpus before filtering, costing about 50 seconds of every commit that touches verify_ac.py | In Progress | Low | 2026-09-27 | 2026-09-27 |
+| [BG0808](BG0808-init-records-no-project-version-so-a-fresh.md) | init records no project version, so a fresh project's first migrate reports work and its upgrade digest reads the range as unknown | In Progress | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0809](BG0809-install-sh-local-rewrites-every-personal-copy-of.md) | install.sh --local rewrites every personal copy of the skill, and the copy it installs is one Claude Code does not load | Open | Medium | 2026-09-27 | 2026-09-27 |
 
 ## Archived Releases

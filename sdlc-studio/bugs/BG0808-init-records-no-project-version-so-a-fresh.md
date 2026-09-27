@@ -1,6 +1,6 @@
 # BG0808: init records no project version, so a fresh project's first migrate reports work and its upgrade digest reads the range as unknown
 
-> **Status:** Open
+> **Status:** In Progress
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
