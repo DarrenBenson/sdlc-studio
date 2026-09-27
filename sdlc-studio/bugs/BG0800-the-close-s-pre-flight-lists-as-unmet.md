@@ -1,6 +1,6 @@
 # BG0800: The close's pre-flight lists as unmet the goal verdict the same invocation records and the review anchor the close writes itself
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -24,8 +24,10 @@ Evaluate the pre-flight after applying what the invocation supplies (the goal ve
 
 - [ ] **AC1** Given a run with a filled retro and no `reviews/LATEST.md`, when `sprint.py close --retro <R> --goal-verdict achieved --note <n>` runs, then the pre-flight lists neither `[goal-verdict]` nor `review-current`, and the close exits 0. Fails on: HEAD ('4 unmet prerequisite(s) of 5 reported' then exit 0)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close.py::PreflightTests::test_the_preflight_lists_nothing_this_invocation_answers
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC2** Given the same run and a bare `sprint.py close --retro <R>` with no verdict, then the pre-flight still lists `[goal-verdict]`. Fails on: dropping the goal-verdict item from the pre-flight altogether
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close.py::PreflightTests::test_a_close_given_no_verdict_still_lists_it
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

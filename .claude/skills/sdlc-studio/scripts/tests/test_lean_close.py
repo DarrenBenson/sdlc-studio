@@ -369,5 +369,98 @@ class CloseDriftTests(unittest.TestCase):
                              rows)
 
 
+def _preflight_lines(err: str) -> list[str]:
+    """The pre-flight's listed rows, from its headline to the first line that is not a row."""
+    lines = err.splitlines()
+    start = next((i for i, ln in enumerate(lines) if ln.startswith("close pre-flight:")), None)
+    if start is None:
+        return []
+    rows = []
+    for ln in lines[start + 1:]:
+        if not ln.startswith("  "):
+            break
+        rows.append(ln)
+    return rows
+
+
+class PreflightTests(unittest.TestCase):
+    """BG0800: the pre-flight lists only what this invocation leaves unmet."""
+
+    def test_the_preflight_lists_nothing_this_invocation_answers(self) -> None:
+        """AC1. Mutant: evaluate the pre-flight before the verdict the invocation supplies, or
+        list the review anchor the close's own review-anchor step writes (HEAD)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root, sprint_goal_verdict=None)
+            self.assertFalse((root / "sdlc-studio" / "reviews" / "LATEST.md").exists())
+            rc, _out, err = _close(root, "--goal-verdict", "achieved", "--note", "it did")
+            self.assertEqual(0, rc, err)
+            rows = _preflight_lines(err)
+            self.assertFalse([r for r in rows if "[goal-verdict]" in r], rows)
+            self.assertFalse([r for r in rows if "goal-judged" in r], rows)
+            self.assertFalse([r for r in rows if "review-current" in r], rows)
+            # the positive control: an item the verdict does not answer is still listed
+            self.assertTrue([r for r in rows if "[checklist] closing-review" in r], rows)
+            self.assertEqual("achieved", _read(root)["sprint_goal_verdict"]["verdict"])
+
+    def test_a_filing_close_lists_what_it_neither_records_nor_writes(self) -> None:
+        """Round-2 review. `--file-and-close` records no verdict and never writes the review
+        anchor. Mutant: apply the review-current skip on that path too (it then read ready and
+        closed the run with no anchor), or read its verdict as supplied."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root, sprint_goal_verdict=None)
+            _rc, _out, err = _close(root, "--file-and-close", "--goal-verdict", "achieved",
+                                    "--note", "it did")
+            rows = _preflight_lines(err)
+            self.assertTrue([r for r in rows if "review-current" in r], err)
+            self.assertTrue([r for r in rows if "[goal-verdict]" in r], err)
+            self.assertFalse((root / "sdlc-studio" / "reviews" / "LATEST.md").exists())
+
+    def test_the_dry_run_reads_the_supplied_verdict_as_the_close_does(self) -> None:
+        """Round-2 review. Mutant: the preview judges the goal unjudged although the close it
+        previews records the verdict first; or it records that verdict on the real tree."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root, sprint_goal_verdict=None)
+            # the retro names its batch, so the checklist reads this run's goal
+            retro = root / "sdlc-studio" / "retros" / "RETRO0001-lean.md"
+            retro.write_text(retro.read_text(encoding="utf-8").replace(
+                "> **Date:** 2026-09-23\n", "> **Date:** 2026-09-23\n> **Batch:** US0101\n"),
+                encoding="utf-8")
+            mod = _live("sprint")
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                given = json.dumps(mod.close_dry_run(root, "RETRO0001", goal_verdict="achieved"))
+                bare = json.dumps(mod.close_dry_run(root, "RETRO0001"))
+            self.assertIn("goal-judged", bare)
+            self.assertIn("the Sprint Goal is unjudged", bare)
+            self.assertNotIn("goal-judged", given)
+            self.assertNotIn("the Sprint Goal is unjudged", given)
+            self.assertIsNone(_read(root).get("sprint_goal_verdict"), "the preview wrote")
+            # and through the shipped entry point, which hands the dry run the verdict
+            for extra, unjudged in (((), True), (("--goal-verdict", "achieved", "--note", "n"),
+                                                 False)):
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                    mod.main(["close", "--dry-run", "--retro", "RETRO0001", *extra,
+                              "--root", str(root)])
+                self.assertEqual(unjudged, "the Sprint Goal is unjudged" in out.getvalue(),
+                                 out.getvalue())
+            self.assertIsNone(_read(root).get("sprint_goal_verdict"), "the preview wrote")
+
+    def test_a_close_given_no_verdict_still_lists_it(self) -> None:
+        """AC2. Mutant: drop the goal-verdict item from the pre-flight altogether, or read a
+        verdict the close refuses to record (no --note) as answered."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root, sprint_goal_verdict=None)
+            for extra, want_rc in (((), 1), (("--goal-verdict", "achieved"), 2)):
+                rc, _out, err = _close(root, *extra)
+                self.assertEqual(want_rc, rc, err)
+                rows = _preflight_lines(err)
+                self.assertTrue([r for r in rows if "[goal-verdict]" in r], err)
+
+
 if __name__ == "__main__":
     unittest.main()

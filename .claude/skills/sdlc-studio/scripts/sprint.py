@@ -6837,7 +6837,8 @@ def coverage_blockers(root, state) -> list:
                         "--verdict APPROVE` - a self-review does not clear it")}]
 
 
-def close_preflight(root, retro_id: str | None = None, *, record_cost: bool = True) -> dict:
+def close_preflight(root, retro_id: str | None = None, *, record_cost: bool = True,
+                    goal_verdict: str | None = None, writes_anchor: bool = False) -> dict:
     """Every unmet close prerequisite, in ONE read-only pass.
 
     The close is a chain that stops at its first failure, and the sign-off prerequisites are not
@@ -6865,6 +6866,12 @@ def close_preflight(root, retro_id: str | None = None, *, record_cost: bool = Tr
     "gate_ran": bool}. `gate_ran` is load-bearing: the dry run reports the gate's
     verdict from here rather than re-running it, and an early return that never
     reached the gate must not be reportable as a gate that passed.
+
+    `goal_verdict` is the verdict the calling close records before its chain runs: the run is
+    judged as it will stand once recorded, so neither the goal-verdict row nor the checklist's
+    goal-judged row is listed. With `writes_anchor` - the caller's close runs the chain whose last
+    step writes the review anchor, which `--file-and-close` never does - a review-currency lane
+    the close's own output alone fails is not listed either, as the gate step does not count it.
     """
     import gate   # noqa: PLC0415 - deferred, so `plan` never pays for the gate import graph
     import retro  # noqa: PLC0415 - deferred, like the planner's retro import
@@ -6889,7 +6896,7 @@ def close_preflight(root, retro_id: str | None = None, *, record_cost: bool = Tr
         block("sprint-goal", "no sprint goal recorded on this run",
               "set one at plan time with --sprint-goal; a close cannot invent what the run "
               "aimed at")
-    if not state.get("sprint_goal_verdict"):
+    if not (state.get("sprint_goal_verdict") or goal_verdict):
         block("goal-verdict", "the Sprint Goal is unjudged",
               '`sprint.py goal-verdict --verdict achieved|partial|missed --note "..."`')
     # AHEAD of the review-coverage check, because it is upstream of it in fact as well as in
@@ -6923,7 +6930,8 @@ def close_preflight(root, retro_id: str | None = None, *, record_cost: bool = Tr
     # Only with a retro named, because the checklist is composed FOR one - and when none is named
     # the retro blocker above already says so, so a second blocker would be one fact twice.
     if retro_id:
-        for entry in _checklist_blockers(root, retro_id, state):
+        answered = {"goal-judged"} if goal_verdict else set()
+        for entry in _checklist_blockers(root, retro_id, state, answered=answered):
             # Appended WHOLE, never rebuilt through `block()`. That helper takes three strings and
             # constructs a fresh dict, so it silently drops `blocking` - and `_checklist_blockers`
             # is the one producer that sets it False, for an expired window. Rebuilt, the entry
@@ -6971,6 +6979,11 @@ def close_preflight(root, retro_id: str | None = None, *, record_cost: bool = Tr
         # "reported" and is reported nowhere has been switched off, not relaxed.
         for c in report.get("checks", []):
             if c.get("status") != "fail":
+                continue
+            # The gate step's own attribution: a lane only this close's output fails (the anchor
+            # its review-anchor step writes) is not counted there, so it is not listed here.
+            if (writes_anchor and c["check"] in _CLOSE_SELF_LANES
+                    and close_review_currency(root, state)["self_caused"]):
                 continue
             entry = {"stage": "gate", "blocking": bool(c.get("blocking")),
                      "detail": f"{c['check']}: {c.get('detail', '')}",
@@ -7055,7 +7068,8 @@ def preflight_headline(blockers: list) -> str:
             else f"{held} unmet prerequisite(s) of {total} reported")
 
 
-def _checklist_blockers(root: Path, retro_id: str, state: dict) -> list[dict]:
+def _checklist_blockers(root: Path, retro_id: str, state: dict,
+                        answered: set[str] | frozenset[str] = frozenset()) -> list[dict]:
     """Every compulsory checklist row the close would stop on, ASKED of the one authority.
 
     `sprint_report.checklist` decides what is outstanding and what a waiver has answered; this
@@ -7102,6 +7116,8 @@ def _checklist_blockers(root: Path, retro_id: str, state: dict) -> list[dict]:
                     "remedy": "gate it where it can still be answered; a waiver here is a "
                               "receipt, not an answer"})
     for item_id in ck.get("outstanding") or []:
+        if item_id in answered:          # the calling close supplies the answer
+            continue
         row = rows.get(item_id, {})
         detail = f"{item_id}: {row.get('title', '')} - {row.get('value', '')}".rstrip(" -")
         out.append({"stage": "checklist", "detail": detail,
@@ -7216,7 +7232,7 @@ DRY_RUN_FROM_PREFLIGHT = {
 DRY_RUN_ACTION_STEPS = tuple(_CLOSE_CHAIN)
 
 
-def close_dry_run(root, retro_id: str | None = None) -> dict:
+def close_dry_run(root, retro_id: str | None = None, goal_verdict: str | None = None) -> dict:
     """Every refusal the close chain would raise, in ONE pass, writing nothing.
 
     `close_preflight` answers the PREREQUISITES and is read-only by construction, but three of
@@ -7241,7 +7257,10 @@ def close_dry_run(root, retro_id: str | None = None) -> dict:
     # A DRY RUN LEAVES THE TREE BYTE-IDENTICAL, which is stricter than the pre-flight's own
     # contract: this is a preview, and a preview that wrote to the real tree would be a close.
     # So the cost row is suppressed here and only here.
-    pre = close_preflight(root, retro_id, record_cost=False)
+    # The pre-flight of the close it previews: the chain's last step writes the anchor, and a
+    # verdict the invocation supplies is recorded before the chain.
+    pre = close_preflight(root, retro_id, record_cost=False, goal_verdict=goal_verdict,
+                          writes_anchor=True)
     for blocker in pre["blockers"]:
         note(blocker["stage"], "refuse", blocker.get("detail", ""), blocker.get("remedy", ""))
     if pre["ready"]:
@@ -7280,6 +7299,10 @@ def close_dry_run(root, retro_id: str | None = None) -> dict:
         return _dry_run_result(steps, scratch)
 
     try:
+        if goal_verdict:
+            # Recorded on the COPY, as the close records it before its chain runs, so the
+            # previewed checklist judges the goal the close will have judged.
+            run_state.record_goal_verdict(scratch, goal_verdict, "supplied to the dry run")
         state = run_state.read(scratch) or {}
         rid = retro_id or _dry_run_retro(scratch, state, note)
         gate_refused = any(b["stage"] == "gate" for b in pre["blockers"])
@@ -7414,13 +7437,15 @@ def dry_run_report(result: dict) -> str:
     return "\n".join(lines)
 
 
-def _report_preflight(root, retro_id: str | None) -> dict:
+def _report_preflight(root, retro_id: str | None, goal_verdict: str | None = None,
+                      writes_anchor: bool = False) -> dict:
     """Print every unmet prerequisite to stderr. Returns the pre-flight result.
 
     Never changes the caller's control flow or exit code: `close`'s own refusals and its chain
     decide what stops a close, so nothing that succeeded before this existed now fails.
     """
-    pre = close_preflight(root, retro_id)
+    pre = close_preflight(root, retro_id, goal_verdict=goal_verdict,
+                          writes_anchor=writes_anchor)
     if not pre["ready"]:
         print(f"close pre-flight: {preflight_headline(pre['blockers'])} - this is ALL "
               f"of them, not the first:", file=sys.stderr)
@@ -8714,10 +8739,15 @@ def cmd_close(args: argparse.Namespace) -> int:
     # placed after them reported nothing whenever one of them fired - which is exactly the serial
     # discovery this exists to end, reintroduced by its own placement. Reported, never a refusal:
     # the refusals below and the chain after them still decide what stops the close.
+    # The verdict this invocation records before its chain runs is an answer, not a gap: the
+    # `--file-and-close` path records none (nor writes the review anchor), and a bare verdict
+    # with no note is refused below.
+    filing = bool(getattr(args, "file_and_close", False))
+    supplied = args.goal_verdict if args.goal_verdict and args.note and not filing else None
     if getattr(args, "dry_run", False):
         # Before `_record_close_attempt`: a preview is not an attempt, and counting it as one
         # would make the attempt trend report the tool being used carefully as a tool failing.
-        result = close_dry_run(root, args.retro)
+        result = close_dry_run(root, args.retro, goal_verdict=supplied)
         print(dry_run_report(result))
         if refusal := _refuse_batch_repair(root, state, "close"):
             print(refusal)          # REPORTED on a preview, refused on the real thing
@@ -8740,7 +8770,7 @@ def cmd_close(args: argparse.Namespace) -> int:
         print(f"  Sign the run with: sprint.py sign --report "
               f"{state.get('report') or '<report id>'} --principal \"<name>\"", file=sys.stderr)
         return 2
-    pre = _report_preflight(root, args.retro)
+    pre = _report_preflight(root, args.retro, goal_verdict=supplied, writes_anchor=not filing)
     # An OVER-APPETITE batch is reported as the over-commitment it was, not as the raised ceiling
     # Placed above every refusal so a close that stops later still states it.
     overage = appetite_overage_line(root)
