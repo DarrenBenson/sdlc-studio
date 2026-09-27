@@ -22,8 +22,8 @@
 - **Given** the review guidance in reference-review.md and reference-sprint.md
 - **When** the round definition is read
 - **Then** The review guidance states a round is at least two reviewers with distinct lenses whatever the diff size, and names the claims lens as one.
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::ReviewRoundLensesDocTests::test_a_round_is_two_reviewers_on_distinct_lenses_whatever_the_diff .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py::ReviewRoundLensesDocTests::test_the_sprint_close_states_the_same_two_lens_round
-- **Verified:** yes (2026-07-24)
+- **Verify:** manual - retired by US0956: v6 reviews each unit with one independent reviewer, so a round is no longer defined as two reviewers on distinct lenses; the sprint report still counts the lenses and marks a single-lens round, and AC2 still holds
+- **Verified:** manual (2026-09-27) - retired, superseded by US0956
 
 ### AC2: Where a round runs with one reviewer, the review record says so
 
@@ -38,3 +38,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-27 | Claude Opus 5.5 | AC1 retired by US0956 (D0259 pattern): the lean loop reviews each unit with one independent reviewer, so the two-reviewer round it pinned is gone from both docs; AC2 stands |

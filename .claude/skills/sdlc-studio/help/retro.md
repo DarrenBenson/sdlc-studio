@@ -1,58 +1,74 @@
 # `/sdlc-studio retro`
 
-The retrospective: what the sprint taught, and what you are going to **do** about it.
+The retrospective: what the sprint taught, and what you are going to **do** about it. It is the
+[learn step](../reference-sprint.md#the-loop) of the sprint loop.
 
 A retro that nobody reads is a diary. The point of the ceremony is the second half -
-turning what you learned into work, and into a lesson the next sprint actually sees.
+turning what you learned into a lesson the next sprint actually sees.
 
 ## Commands
 
 | Command | Does |
 | --- | --- |
-| `/sdlc-studio retro create` | Write the retro for the batch just closed (`artifact new --type retro`) |
-| `/sdlc-studio retro validate` | Content check: sections, a real lesson, every finding dispositioned |
-| `/sdlc-studio retro dispose` | List each finding: filed, declined, or still undecided |
-| `/sdlc-studio retro extract` | Lift the retro's lessons into the project lessons log |
+| `/sdlc-studio retro create` | Write the retro for the batch just closed (`artifact new --type retro`); `sprint close` with no `--retro` scaffolds it for you |
+| `/sdlc-studio retro validate` | Content check: the three lines, the Try limit, no placeholder left, every class tag known |
+| `/sdlc-studio retro extract` | Turn each Try item into a lesson (the close runs this) |
+| `/sdlc-studio retro dispose` | An older retro's findings: filed, fixed, declined, or still undecided |
 
-## What a retro must carry
+## The shape: Keep, Stop, Try
 
-The close gate reads the content, not the filename. All of these must be there:
+Three lines, written at the close. The estimates, delivery against plan and known issues are on
+the sprint report, so the retro does not repeat them.
 
-- **Delivered** / **Blocked or deferred** - what shipped, what did not.
-- **What went well** / **What was hard or what stalled** - the honest account.
-- **Lessons** - at least one, in your own words. A `{{placeholder}}` is the template
-  talking, not you. If the sprint genuinely taught nothing, say *that*, in a bullet - it
-  is a claim worth making explicitly, and it is not the default.
-- **Actions raised** - the question that turns the retro into work.
+```markdown
+## Keep
 
-## The question
+- One reviewer per unit caught every regression this run; keep briefing with `critic.py brief`.
 
-> **Are there any CRs or Bugs you want to raise in this project to address any of the
-> issues found?**
+## Stop
 
-Every finding takes a disposition. There are exactly two green answers:
+- Planning units with no `Affects:` cost two re-plans; stop admitting them.
 
-| Disposition | Means |
+## Try
+
+- [LC-003] US0142 shipped a criterion its own test could not fail; name the mutant first.
+- [new: stale fixture] A fixture copied from another unit hides a changed schema. Rebuild it from the template.
+```
+
+- **Keep** - what worked and should carry on.
+- **Stop** - what cost more than it returned.
+- **Try** - at most 3 items: the changes for the next run. A list that can grow is one nobody
+  acts on, so `retro validate` refuses one more; keep the ones that matter most.
+
+Every line must be this run's own: an empty section or a `{{placeholder}}` left from the template
+is refused.
+
+## A Try item becomes a lesson
+
+`retro extract`, run by the close, lifts each Try item into the lessons stores. Tag it with its
+failure class and a repeat is counted rather than written again:
+
+| Tag | Does |
 | --- | --- |
-| `BG0125` / `CR0456` | **Filed.** It became work. |
-| `declined: <reason>` | **Declined**, and here is why. |
+| `[LC-003] what happened this time` | adds a hit to class LC-003 in `sdlc-studio/lessons.jsonl` |
+| `[new: <class name>] Rule. What to do differently.` | records a new class, injected at plan, build and review |
+| `[new: <class name> \| build, review] ...` | a new class injected only at the named phases |
 
-Both pass. Declining is a first-class answer, not a workaround - so honesty costs exactly
-what noise costs, and there is nothing to game by filing rubbish to go green.
+`lessons.py classes` lists every code, its name, state and hit count. A class that keeps
+recurring files a CR to fix its failing path or retire it; a quiet one retires. An untagged item
+goes to the project lessons log. An item that looks like a tag but does not parse (`(LC-003)`,
+`[LC 3]`) is refused, never filed as prose: its author meant it to count.
 
-What does **not** pass is silence: a finding written down and left to rot. A bare
-`declined` with no reason is silence wearing a decision's clothes, and it is refused.
+## Retros written before Keep, Stop and Try
 
-To say "nothing worth raising", say so in a row and give the reason. An empty table is not
-an answer to a question.
-
-## Why the gate reads the content
-
-Because a gate that checks a file *exists* is satisfied by `touch`, and the one ceremony
-worth enforcing is the one an agent would otherwise skip. Existence is not evidence.
+An older retro is still validated against the shape it was written in: Delivered, What went
+well, What was hard / what stalled, Lessons and Actions raised, with every finding in Actions
+raised dispositioned - filed (`BG0125`), fixed in-sprint (`fixed-in: <sha or unit>`) or
+`declined: <reason>`. `retro dispose` lists those findings. A bare `declined` with no reason is
+refused.
 
 ## See also
 
-- `reference-retro.md` - the full workflow and the disposition rules
-- `help/lessons.md` - the two lesson tiers, and when to promote one
-- `reference-sprint.md` - where the retro sits in the sprint close
+- `reference-retro.md` - the full workflow
+- `help/lessons.md` - the lesson tiers and the failure classes
+- [`reference-sprint.md#the-loop`](../reference-sprint.md#the-loop) - where the retro sits in the sprint

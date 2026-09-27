@@ -20,9 +20,10 @@ SDLC Studio is model-invoked - say it in plain language:
 | "Run the whole thing unattended" | `/sdlc-studio sprint --bugs Open --autonomous` |
 
 Run a prioritised batch of work to a goal. You set the goal and the acceptance
-criteria; the loop drives the proven lifecycle (decompose -> TDD -> verify ->
-conformance -> review) to it. Add `--autonomous` to run unattended. See
-`reference-sprint.md` for the full workflow.
+criteria; the loop drives the batch to it: plan and approve -> build -> review -> close ->
+sign -> learn. Each step, and the one command that performs it, is in
+[the loop](../reference-sprint.md#the-loop), the only place the loop is described. Add
+`--autonomous` to run unattended.
 
 > **Renamed from `autosprint`.** `/sdlc-studio autosprint ...` still works as a
 > **deprecated alias** (the command is now the whole sprint lifecycle - `--goal plan` /
@@ -37,7 +38,7 @@ conformance -> review) to it. Add `--autonomous` to run unattended. See
 /sdlc-studio sprint --epic EP0007 --goal done       # deliver an epic
 /sdlc-studio sprint --crs Proposed --goal design    # just the backlog (no code)
 /sdlc-studio sprint --crs Proposed --goal plan       # select+sequence+estimate a sprint, stop
-/sdlc-studio sprint plan --prd prd.md --goal design  # greenfield: PRD -> epics -> stories
+/sdlc-studio sprint plan --prd prd.md --goal design  # greenfield: the PRD into epics and stories
 /sdlc-studio sprint --worklist <file> --order wsjf   # a tranche file, WSJF order
 /sdlc-studio sprint --bugs Open --autonomous         # unattended: deterministic guardrails on
 /sdlc-studio sprint decision defer --unit US0001 --question "..." --option "a|..." --option "b|..."  # set the unit aside, batch continues
@@ -67,8 +68,8 @@ elapsed the run-state cannot know. Read-only.
 
 **The compulsory checklist is part of that report, not a second document.** It carries one row per
 STAGE of the cycle - the pre-plan reconcile, the goal's seat review, the grooming gate, the run
-opening, the batch-boundary reviews, the closing review, the goal verdict, the retro, the lessons,
-the sign-off, the handoff - plus the figures a close otherwise re-derives by hand: planned against
+opening, the review verdicts, the ticked criteria the tree supports, the goal verdict, the retro,
+the lessons, the handoff - plus the figures a close otherwise re-derives by hand: planned against
 delivered, what was dropped or held or carried over and why, scope creep as a count and a ratio, who
 reviewed what under which seat and over how many lenses, the impediments still standing, the known
 issues carried, and the cost. Every row but one is DERIVED from the tree, because a checklist that
@@ -88,8 +89,10 @@ report; the close does not refuse over it. A checklist row the run gives nothing
 cost meter, no run record to join) is not a known issue: the report's appendix lists it as `not
 measured` with its reason. A row that does not apply to the project is omitted. To answer an item
 instead, record a waiver -
-`decisions.py waive --subject rule:sprint-checklist:<item> --rationale "<why>"` - so closing without
-an item and forgetting it are different events in the record. What still stops it: no sprint goal,
+`decisions.py waive --subject rule:sprint-checklist:<item> --rationale "<why>" --authorised-by
+"<who>"` - so closing without an item and forgetting it are different events in the record. A
+checklist waiver with no `--authorised-by` is refused: an item set aside by nobody in
+particular is a decision with no decider. What still stops it: no sprint goal,
 no goal verdict, no retro, and an uncommitted change to a file a batch unit declares.
 
 **The close is in two halves, and the signature is the second one.** `close` is PREPARE: it runs
@@ -107,7 +110,11 @@ and the request above it), then writes the run's one signature and its outcome, 
 NOT run the close tail: a fact that moves after a signature is a fact the signature did not cover.
 A unit with no independent delivery APPROVE stops it before anything moves, naming the unit. The
 close names the same units first - one at Review as a known issue, one already moved to Done in
-the pre-flight's blocking `review-coverage` row - so the page you sign already shows them. It is
+the pre-flight's blocking `review-coverage` row - so the page you sign already shows them. A unit
+still rejected at the review round cap is not one of these: it was carried when its cap REJECT
+was recorded, its findings filed as a bug and the unit dropped from the batch, so neither the
+close nor the signature holds it. A batch unit with no independent APPROVE stays at Review and is
+handed over as a known issue. It is
 idempotent (a re-run resumes, skipping units already terminal), and it stops loudly at the first
 unit whose Done gate is red, leaving the completed units done. A principal the authoring session
 controls is refused BEFORE any of that, judged across the whole batch, so that refusal leaves
@@ -192,39 +199,13 @@ same census read-only. Opt out only as a recorded decision: `sprint.breakdown: j
 
 ## What happens
 
-1. **Plan** - `sprint plan` selects + orders the batch, refusing an ungroomed one.
-2. **Tranche audit** - `readiness.py check` grooms the batch for readiness (weak-AC,
-   unmet-deps, already-terminal, link-integrity) before you approve it.
-3. **Triage STOP** - the groomed plan is shown; you approve, then it runs
-   autonomously, re-pausing only on a material issue.
-4. **Per unit** - `cr action` -> `epic implement --agentic` (TDD) -> `verify_ac` ->
-   `conformance check` (hard-fail gate) -> independent critic -> green commit.
-   Each ruling is appended to the decisions `ledger` so it survives compaction.
-5. **Stall** - `loop_guard` quarantines a unit at the cap (3 attempts) or on a
-   repeated failure signature: it is marked Blocked, logged, skipped; the run
-   continues. The completion oracle declares the batch done only when every unit
-   is terminal (Done or Blocked). With `routing.enabled` (see below), a failed
-   attempt escalates one model tier before the cap quarantines
-   (`reference-sprint.md#model-tier-routing`).
-6. **Pre-flight** - `close` first reports **every** unmet close prerequisite in one pass:
-   the gate lanes, the retro's missing sections, an unjudged goal, and each unit's Done
-   gate. It reports, it never adds a refusal. `close --dry-run` previews the whole close
-   writing nothing.
-7. **Close** - `sprint close` runs the close ceremony as one deterministic chain
-   (goal-verdict, retro validate + extract, lessons summary, the close gate, handoff,
-   reconcile) in one pass: a failing step is printed with its remedy, recorded as a known
-   issue, and the chain runs on to file the report you sign. Run it with **no `--retro`**
-   the first time and it **scaffolds the retro for you** (allocated id + template + index row, Batch/Goal
-   pre-filled from the run), then stops so you fill it; re-run with the id it prints
-   (`sprint close --retro RETROxxxx`) to finish. Never hand-author the retro - the
-   scaffold is the one path that also wires its index row.
-8. **Sprint review** - every run ends with a mandatory `reconcile` + `review`; the
-   CODE leg is the adversarial full-diff critic pass (independent instance, refute
-   framing, findings with repros, fixes seen red first, the SAME critic re-runs its
-   own repros before approve - see `reference-sprint.md`).
-
-In `--autonomous` mode steps 4's guardrails are deterministic scripts the model
-cannot skip; without it they are model-instructed (the portable Phase-1 path).
+The steps, in order, with the command for each, are in
+[the loop](../reference-sprint.md#the-loop); this page does not restate them. What a step does
+when something goes wrong - a unit that will not go green, a question only you can answer, a
+close you exit with debt filed - is under
+[inside a run](../reference-sprint.md#inside-a-run). With `--autonomous` the guardrails there
+(the attempt cap, the repetition breaker, the completion oracle) are scripts the model cannot
+skip; without it they are model-instructed.
 
 **Model-tier routing (opt-in):** with `routing.enabled` in `.config.yaml`, the plan
 stamps each unit with an advisory `tier`/`model` recommendation (difficulty-scored by
@@ -246,7 +227,18 @@ invent a target the data cannot defend. Read `retro.py velocity` and decide per 
 ## The review point
 
 Each unit is reviewed by an independent seat, and its delivery verdict is recorded with
-`critic.py record`: one verdict ledger says whether a unit was reviewed. `sprint.py review-batch`
+`critic.py record`: one verdict ledger says whether a unit was reviewed. Each finding in
+`--issues` carries an origin tag, and the items are separated by semicolons:
+
+```bash
+python3 <skill>/scripts/critic.py record --unit US0001 --verdict REJECT --reviewer "<seat>" \
+  --author "<author>" --issues "[regression] the parser drops an empty line; [pre-existing] BG0123 slow gate"
+```
+
+`[regression]` (the diff broke something that worked at the base ref) and `[new]` (the diff
+introduced a defect) block; `[pre-existing]` (already true of the tree, or already recorded in
+an open Bug or CR) is reported and does not block. A finding with no tag is refused, and nothing
+is written. `sprint.py review-batch`
 is retired, and so are `critic.py evidence` and `critic.py sprint-review`. Reviewer and author
 must differ - a self-review is the context that wrote the code agreeing with itself, and it
 clears nothing.

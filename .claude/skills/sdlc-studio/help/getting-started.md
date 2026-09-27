@@ -56,9 +56,9 @@ handoff context.
 
 ## 2. Implementation - the sprint handoff
 
-**sprint needs a runnable verification environment.** Its loop (implement -> test ->
-gate -> critic -> commit-green) leans on a gate it can actually run each iteration. On
-greenfield that does not exist yet, so:
+**sprint needs a runnable verification environment.** Its build and review steps lean on
+a gate it can actually run for every unit (the steps, and the command for each, are in
+[the loop](../reference-sprint.md#the-loop)). On greenfield that gate does not exist yet, so:
 
 1. **Build the foundation epic by hand to a green gate.** It establishes the buildable /
    testable scaffold (toolchain, test harness - an in-memory substitute like `pg-mem` is
@@ -74,4 +74,4 @@ greenfield that does not exist yet, so:
 - `help/brownfield-runbook.md` - the same path for an existing codebase (generate mode)
 - `help/init.md` - the bootstrap step in detail
 - `reference-verify.md` - the test-spec AC-to-test bridge + the `Verify:` DSL
-- `reference-sprint.md` - the autonomous delivery loop (and its cold-start precondition)
+- [`reference-sprint.md#the-loop`](../reference-sprint.md#the-loop) - the sprint loop, step by step (and its cold-start precondition)

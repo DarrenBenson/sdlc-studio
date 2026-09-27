@@ -975,8 +975,9 @@ class EstimatorBasisAgreesWithTheCodeTests(unittest.TestCase):
 
 
 class ReviewRoundLensesDocTests(unittest.TestCase):
-    """US0396: both review docs require a round of at least two reviewers on distinct lenses,
-    one of them the claims lens, whatever the diff size - and record a single-reviewer round."""
+    """US0396 AC2: both review docs say a round run with one reviewer is recorded as one. AC1's
+    two-reviewer minimum was retired by US0956: v6 reviews each unit with one independent
+    reviewer, and the sprint report marks a single-lens round rather than refusing it."""
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -987,22 +988,6 @@ class ReviewRoundLensesDocTests(unittest.TestCase):
         # emphasis markers so a bolded word does not split a phrase match
         return re.sub(r"\s+", " ", text.replace("*", "").replace("`", "")).lower()
 
-    def test_a_round_is_two_reviewers_on_distinct_lenses_whatever_the_diff(self) -> None:
-        # AC1, in the file that owns the closing-review brief.
-        r = self._norm(self.review)
-        self.assertIn("at least two reviewers", r)
-        self.assertIn("distinct lens", r)          # matches "distinct lens"/"distinct lenses"
-        self.assertIn("whatever the diff size", r,
-                      "diff size must not license dropping to a single reviewer")
-        self.assertIn("claims lens", r, "one lens is named as the claims lens")
-
-    def test_the_sprint_close_states_the_same_two_lens_round(self) -> None:
-        # AC1 mirrored where the sprint close is documented.
-        s = self._norm(self.sprint)
-        self.assertIn("at least two reviewers", s)
-        self.assertIn("claims lens", s)
-        self.assertIn("whatever the diff size", s)
-
     def test_a_single_reviewer_round_is_recorded_as_such(self) -> None:
         # AC2: both docs say a one-reviewer round is put on the record as one.
         for name, doc in (("reference-review.md", self.review),
@@ -1011,12 +996,6 @@ class ReviewRoundLensesDocTests(unittest.TestCase):
             self.assertIn("one reviewer", d, f"{name} must address the one-reviewer case")
             self.assertTrue("review record says so" in d or "record says so" in d,
                             f"{name} must say a single-reviewer round is recorded as such")
-
-    def test_a_diff_size_carveout_would_be_caught(self) -> None:
-        """Guard the guard: prose letting a small diff drop to one reviewer must fail AC1."""
-        carveout = self._norm(
-            "For a small diff one reviewer is enough and no claims lens is needed.")
-        self.assertNotIn("at least two reviewers", carveout)
 
 
 class BatchSizeTradeoffDocTests(unittest.TestCase):

@@ -53,8 +53,8 @@ problem still real" stays model-instructed (delegates to RFC0002 when built).
 - **Given** `reference-sprint.md`
 - **When** searched for the tranche-audit step
 - **Then** step 2 "Tranche audit" sits between `plan` and the triage STOP
-- **Verify:** grep "Tranche audit" .claude/skills/sdlc-studio/reference-sprint.md
-- **Verified:** yes (2026-07-10)
+- **Verify:** manual - retired by US0956: the v6 loop has no tranche-audit step and no triage STOP; the operator approves the plan once and `reference-sprint.md#the-loop` lists six steps. `readiness.py check` still ships as a command
+- **Verified:** manual (2026-09-27) - retired, superseded by US0956
 
 ## Implementation
 
@@ -69,3 +69,4 @@ problem still real" stays model-instructed (delegates to RFC0002 when built).
 | --- | --- | --- |
 | 2026-06-20 | Autosprint (CR0021) | Decomposed from CR0021 (determinism sprint) |
 | 2026-07-27 | BG0303 | AC1-AC3 named `tests/test_audit.py`, deleted by the US0345 rename, so the verifiers collected nothing and exited 0 while the story sat Done. Re-pointed at `tests/test_readiness.py`; the three classes and test names are unchanged, so the ACs assert what they always did |
+| 2026-09-27 | Claude Opus 5.5 | AC4 retired by US0956 (D0259 pattern): the lean loop removed the tranche-audit step it documented, so reference-sprint.md no longer names it |
