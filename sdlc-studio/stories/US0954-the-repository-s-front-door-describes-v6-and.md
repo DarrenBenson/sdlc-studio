@@ -1,6 +1,6 @@
 # US0954: The repository's front door describes v6 and teaches no retired surface
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

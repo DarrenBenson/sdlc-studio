@@ -1,6 +1,6 @@
 # US0952: An upgrader reads every v6 breaking change first
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

@@ -7,10 +7,10 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 27 |
+| Draft | 25 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 1 |
+| In Progress | 3 |
 | Review | 0 |
 | Done | 764 |
 | Won't Implement | 81 |
@@ -310,9 +310,9 @@
 | [US0949](US0949-no-shipped-command-help-offers-a-retired-behaviour.md) | No shipped command help offers a retired behaviour | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0950](US0950-a-fresh-project-can-brief-and-record-its.md) | A fresh project can brief and record its one review with the shipped defaults | Done | EP0265 | 2026-09-25 | 2026-09-25 |
 | [US0951](US0951-a-clean-run-s-report-hands-over-no.md) | A clean run's report hands over no false known issues | Done | EP0265 | 2026-09-25 | 2026-09-25 |
-| [US0952](US0952-an-upgrader-reads-every-v6-breaking-change-first.md) | An upgrader reads every v6 breaking change first | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
+| [US0952](US0952-an-upgrader-reads-every-v6-breaking-change-first.md) | An upgrader reads every v6 breaking change first | In Progress | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0953](US0953-the-v6-release-notes-lead-with-what-changed.md) | The v6 release notes lead with what changed for the person using it | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
-| [US0954](US0954-the-repository-s-front-door-describes-v6-and.md) | The repository's front door describes v6 and teaches no retired surface | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
+| [US0954](US0954-the-repository-s-front-door-describes-v6-and.md) | The repository's front door describes v6 and teaches no retired surface | In Progress | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0955](US0955-an-upgrading-project-follows-one-page-from-v5.md) | An upgrading project follows one page from v5 to v6 | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0956](US0956-the-shipped-docs-teach-the-lean-loop-in.md) | The shipped docs teach the lean loop in one place | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0957](US0957-the-white-paper-and-the-value-argument-describe.md) | The white paper and the value argument describe the v6 operating model | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
