@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 32 |
-| In Progress | 4 |
-| Fixed | 636 |
+| In Progress | 3 |
+| Fixed | 637 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -152,7 +152,7 @@
 | [BG0791](BG0791-test-lean-cr-filing-reads-a-changelog-fragment.md) | test_lean_cr_filing reads a changelog fragment that the release cut consumes, so the suite goes red on every release commit | Fixed | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0792](BG0792-us0940-ac1-s-own-verify-takes-about-three.md) | US0940 AC1's own Verify takes about three minutes, so the release gate's verify lane reads it red at the 120-second default | In Progress | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0793](BG0793-a-boundary-test-lists-changelog-d-which-a.md) | A boundary test lists changelog.d, which a fresh checkout does not have once a release cut consumes every fragment, so CI is red on the rc.1 commit | Fixed | Medium | 2026-09-26 | 2026-09-26 |
-| [BG0794](BG0794-the-waiver-window-test-compares-a-utc-page.md) | The waiver-window test compares a UTC page date with a local-time waiver date, so it fails for the hour after local midnight in a timezone ahead of UTC | In Progress | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0794](BG0794-the-waiver-window-test-compares-a-utc-page.md) | The waiver-window test compares a UTC page date with a local-time waiver date, so it fails for the hour after local midnight in a timezone ahead of UTC | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0795](BG0795-the-sprint-report-reads-a-week-old-ci.md) | The sprint report reads a week-old CI cache as current, so DORA's failure rate and restore time read no forge data | Open | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0796](BG0796-the-report-s-cost-row-reads-unattributed-while.md) | The report's cost row reads unattributed while the same report measures the run's tokens | Open | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0797](BG0797-per-unit-minutes-and-tokens-are-recorded-only.md) | Per-unit minutes and tokens are recorded only on an In Progress transition the lean loop never makes, and the report does not say why the column is empty | Open | Medium | 2026-09-27 | 2026-09-27 |

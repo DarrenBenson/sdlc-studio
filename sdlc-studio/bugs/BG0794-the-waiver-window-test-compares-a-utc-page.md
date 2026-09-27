@@ -1,6 +1,6 @@
 # BG0794: The waiver-window test compares a UTC page date with a local-time waiver date, so it fails for the hour after local midnight in a timezone ahead of UTC
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_waiver_window.py, changelog.d/BG0794.md
@@ -25,6 +25,7 @@ Date waiver rows and the report window in one timezone (UTC), or pin the test's 
 
 - [ ] **AC1** Given the test's clock set to 00:02 UTC, when the page and the waiver are made, then both carry the same UTC date and the test's assertions hold. Fails on: backdating the page five minutes from the wall clock, which crosses UTC midnight for the first five minutes of every day and refused a push at 00:04 UTC
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_waiver_window.py::WaiverWindowTests::test_the_page_and_its_waiver_share_a_day_just_after_utc_midnight
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

@@ -5,8 +5,11 @@ the LOCAL date. A waiver recorded later on the page's own day entered the re-der
 the page, so `check` read INVALID on a page nobody touched; and near midnight the local date and
 the window's UTC date disagree, so a waiver inside the window could fall a day outside it.
 
-Each waiver here is recorded through the shipped `decisions.py waive` entry point, in a process
-whose clock zone the test chooses, because the local date is half of the defect.
+AC2's waivers are recorded through the shipped `decisions.py waive` entry point, in a process
+whose clock zone the test chooses, because the local date is half of the defect. AC1's page and
+waiver are made at a moment the test injects, through `decisions.record_waiver`'s own clock
+parameter, since the entry point stamps the wall clock: backdating the page from the wall clock
+put it on the day before the waiver for the first five minutes of every UTC day (BG0794).
 """
 from __future__ import annotations
 
@@ -43,16 +46,24 @@ def _zone_past_local_midnight() -> str:
     return f"<+{24 - hour:02d}>-{24 - hour}" if hour else "<-12>+12"
 
 
+#: AC1's clocks: the middle of a UTC day, and two minutes past a UTC midnight.
+MIDDAY = datetime(2026, 9, 27, 12, 0, tzinfo=timezone.utc)
+JUST_AFTER_MIDNIGHT = datetime(2026, 9, 27, 0, 2, tzinfo=timezone.utc)
+
+
 class WaiverWindowTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
         lean.lean_run(self.root)
-        # An open run that started an hour ago, so the page's window ends at its generation.
+
+    def _open_run(self, now: datetime) -> None:
+        """An open run that started an hour before `now`, so the page's window ends at its
+        generation."""
         live = self.root / "sdlc-studio" / ".local" / "run-state.json"
         state = json.loads(live.read_text(encoding="utf-8"))
-        state["started_at"] = _utc(datetime.now(timezone.utc) - timedelta(hours=1))
+        state["started_at"] = _utc(now - timedelta(hours=1))
         state.pop("ended_at")
         live.write_text(json.dumps(state), encoding="utf-8")
 
@@ -76,16 +87,18 @@ class WaiverWindowTests(unittest.TestCase):
             rc = sr.main(["--root", str(self.root), "check", "--report", rid])
         return rc, out.getvalue() + err.getvalue()
 
-    def test_a_waiver_recorded_after_the_page_leaves_it_valid(self) -> None:
-        """AC1. MUTANT: compare the waiver's date with the window end's date - the waiver is
-        dated the page's own day, so the re-derivation counts it and `check` reads INVALID."""
-        generated = datetime.now(timezone.utc) - timedelta(minutes=5)
+    def _page_then_waiver(self, now: datetime) -> None:
+        """The page is generated at `now` and a waiver recorded a minute later, on its day."""
+        self._open_run(now)
+        generated = now
         rid = sr.file_report(self.root, sr.build_report(self.root, lean.RETRO,
                                                         as_of=_utc(generated)))
         filed = sr.read_report(self.root, rid)
         self.assertEqual(0, self._waivers(filed)["figures"]["waivers_count"]["value"])
 
-        row = self._waive("UTC")
+        row = decisions.record_waiver(
+            self.root, "rule:engagement-floor", "the floor is out of scope for this fixture",
+            today=(now + timedelta(minutes=1)).isoformat(timespec="seconds"))
         self.assertEqual(_utc(generated)[:10], row["date"][:10],
                          "the waiver must be dated the page's own day, or this proves nothing")
 
@@ -97,14 +110,26 @@ class WaiverWindowTests(unittest.TestCase):
         self.assertEqual(0, self._waivers(again)["figures"]["waivers_count"]["value"],
                          "the page's waiver count moved after the page was generated")
         # The positive control: the row IS a waiver the section reads, once a window covers it.
-        later = sr.build_report(self.root, lean.RETRO,
-                                as_of=_utc(datetime.now(timezone.utc) + timedelta(minutes=1)))
+        later = sr.build_report(self.root, lean.RETRO, as_of=_utc(now + timedelta(minutes=2)))
         self.assertEqual([row["id"]], [r["waiver_id"]["value"]
                                        for r in self._waivers(later)["rows"]])
+
+    def test_a_waiver_recorded_after_the_page_leaves_it_valid(self) -> None:
+        """AC1 (BG0750). MUTANT: compare the waiver's date with the window end's date - the
+        waiver is dated the page's own day, so the re-derivation counts it and `check` reads
+        INVALID."""
+        self._page_then_waiver(MIDDAY)
+
+    def test_the_page_and_its_waiver_share_a_day_just_after_utc_midnight(self) -> None:
+        """BG0794 AC1. At 00:02 UTC the page and the waiver carry one UTC date and every
+        assertion above holds. MUTANT: backdate the page five minutes from the clock, as the
+        test did, which puts it on the day before the waiver."""
+        self._page_then_waiver(JUST_AFTER_MIDNIGHT)
 
     def test_a_waiver_recorded_before_the_page_on_its_day_is_disclosed(self) -> None:
         """AC2. MUTANTS: exclude every waiver dated the generation day (the cheap fix to AC1),
         and compare the local Date cell with the window's UTC date."""
+        self._open_run(datetime.now(timezone.utc))
         for zone in ("UTC", _zone_past_local_midnight()):
             with self.subTest(zone=zone):
                 row = self._waive(zone)
