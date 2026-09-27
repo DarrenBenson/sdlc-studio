@@ -1,6 +1,7 @@
 # CR-0575: Low-severity crs (consolidated)
 
 > **Status:** Rejected
+> **Size:** S
 > **Priority:** Low
 > **Type:** Improvement
 > **Date:** 2026-09-15

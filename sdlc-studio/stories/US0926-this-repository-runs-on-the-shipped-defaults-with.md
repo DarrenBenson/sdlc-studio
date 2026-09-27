@@ -1,6 +1,6 @@
 # US0926: This repository runs on the shipped defaults with no stand-down keys
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,8 +19,10 @@
 
 - **AC1:** Given this repository after `migrate.py --apply`, then a second `migrate.py` dry run lists no retired key, no retired `[check:]` tag and no stale `.version`; `review.line_coverage: off` is gone as equal to the shipped default; and no line of `sdlc-studio/.config.yaml`, comments included, names a key in `sdlc_md.RETIRED_CONFIG_KEYS` by its dotted path or as a YAML key. Fails on: HEAD, whose dry run lists `review.two_role_after`, `review.signoff`, `review.require_brief_provenance`, `review.line_coverage_after`, the `plan_review` block, the DoD's `[check: review.two-role]` and `.version` at 5.1.0; and `migrate --apply` alone, which keeps the comment block (lines 77-95) explaining keys nothing reads
   - **Verify:** shell python3 -c "import re,sys; sys.path.insert(0,'.claude/skills/sdlc-studio/scripts/lib'); import sdlc_md; t=open('sdlc-studio/.config.yaml').read(); bad=[k for k in sdlc_md.RETIRED_CONFIG_KEYS if re.search(r'\b'+re.escape(k)+r'\b', t) or re.search(r'(?m)^\s*#?\s*'+re.escape(k.split('.').pop())+r'\s*:', t)]; sys.exit(1 if bad else 0)" && python3 .claude/skills/sdlc-studio/scripts/migrate.py | grep -q '^migrate: 0 deterministic'
+  - **Verified:** yes (2026-09-27)
 - **AC2:** Given AGENTS.md, then its review rule describes one independent reviewer per unit, briefed with `critic.py brief`, and the operator signing the run once with `sprint sign`, and it names no panel for review. Fails on: HEAD lines 83-86 ('Two roles, never merged ... a reviewer of record ... approves', read per unit) and 94 ('Resolve the panel with `persona_resolve.py panel`', whose only ceremonies are now `refine` and `triage`, so the command it points a reviewer at has no review panel)
   - **Verify:** shell ! grep -nE 'reviewer of record|persona_resolve.py panel' AGENTS.md && grep -q 'sprint sign' AGENTS.md
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

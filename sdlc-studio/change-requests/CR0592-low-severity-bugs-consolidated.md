@@ -1,6 +1,7 @@
 # CR-0592: Low-severity bugs (consolidated)
 
 > **Status:** Proposed
+> **Size:** S
 > **Priority:** Low
 > **Type:** Improvement
 > **Date:** 2026-09-21

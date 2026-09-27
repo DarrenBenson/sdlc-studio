@@ -1,6 +1,6 @@
 # EP0263: Review is one reviewer and a green test: the review and evidence surface is deleted
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -31,7 +31,7 @@ Groomed for Sprint 4 on 2026-09-25 from the engineering-seat readiness review: 2
 - [x] [US0923: A review verdict records without brief provenance](../stories/US0923-a-review-verdict-records-without-brief-provenance.md)
 - [x] [US0924: The shipped docs teach only the surviving review path](../stories/US0924-the-shipped-docs-teach-only-the-surviving-review.md)
 - [x] [US0925: An upgrading project's config carries forward without the retired review keys](../stories/US0925-an-upgrading-project-s-config-carries-forward-without.md)
-- [ ] [US0926: This repository runs on the shipped defaults with no stand-down keys](../stories/US0926-this-repository-runs-on-the-shipped-defaults-with.md)
+- [x] [US0926: This repository runs on the shipped defaults with no stand-down keys](../stories/US0926-this-repository-runs-on-the-shipped-defaults-with.md)
 - [x] [US0934: A bug reaches Fixed without a depth gate, and the retired --depth flags are refused](../stories/US0934-a-bug-reaches-fixed-without-a-depth-gate.md)
 - [x] [US0935: A repair reaches Fixed without the mutation-evidence gate, survivor filing or evidence mode](../stories/US0935-a-repair-reaches-fixed-without-the-mutation-evidence.md)
 - [x] [US0936: The mutation ledger verbs are retired and a mutation run reports its yield only](../stories/US0936-the-mutation-ledger-verbs-are-retired-and-a.md)

@@ -82,17 +82,16 @@ cost.
 becomes a diff. A CR or RFC is not work until `refine` decomposes it into sized units.
 This repo is held to it like any consuming project.
 
-**Review is independent of the author.** Two roles, never merged: an adversarial reviewer
-(a fresh context that did not write the code) files findings as evidence, and a reviewer of
-record - the operator, or a named delegate in a separate trust boundary - approves. A
-delegate the author controls does not satisfy this.
+**Review is independent of the author.** Each unit gets one independent reviewer, a fresh
+context that did not write the code, briefed with `critic.py brief` and recording its verdict
+with `critic.py record`. The operator signs the run once, after the close, with `sprint sign`.
+A reviewer the author controls does not satisfy this.
 
 **Brief a reviewer with the shipped tool, never by hand.** `critic.py brief --unit <id>
 --seat engineering|product|qa` carries the seat charter, the bounded diff scope (the unit's
 declared `Affects`), the canonical acceptance criteria as law, and the claim-inventory pass.
 A hand-written prompt carries none of them and silently substitutes an unbounded surface for
-a unit review. Resolve the panel with `persona_resolve.py panel` rather than picking seats
-by judgement.
+a unit review.
 
 **A review judges the unit's own diff.** Scope is that unit's `Affects` against the run's
 base ref. Only a regression or a newly introduced defect blocks; anything already true of

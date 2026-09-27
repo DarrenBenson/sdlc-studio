@@ -74,56 +74,6 @@ review:
   # Every finding must still be filed or explicitly waived - nothing is discarded. Revisit once
   # CR0510 (ceremony by blast radius) and EP0207 (test-plan-before-code) are in force.
   policy: carry-forward
-  # Two-role review gate (RFC0044/CR0323), forward-only from the sprint that built it:
-  # units past US0192 clear `critiqued` only with the adversarial pass recorded as
-  # evidence AND an independent reviewer-of-record sign-off (critic.py evidence/signoff).
-  # Under it, Done means signed off - units hold at Review until the close ceremony.
-  # D0255 (2026-09-23): stood down for good by the back-to-basics programme - one review of
-  # at most two rounds replaces the two-role and per-unit sign-off ceremony.
-  two_role_after: 99999
-  # D0130: the reviewer of record may be a NAMED SEAT, held disjoint from the adversarial ones.
-  # The operator's framing, recorded because it is the whole argument: "human in the loop is too
-  # slow for true AI speed; human in the lead is the best approach." The independence rule is
-  # unchanged - it is about SEPARATE CONTEXT AND SEPARATE INCENTIVES, which a fresh seat has and
-  # a tired person rubber-stamping ten units at the end of a long day does not.
-  #
-  # What this does NOT relax: three distinct contexts are still enforced (author, adversarial
-  # reviewer, signer), the signer is READ from the run's recorded assignment rather than named at
-  # signing time, and a panel may not ratify a verdict carrying no brief provenance. The record
-  # states plainly that a seat signed - `capacity: seat` - so no reader can mistake it for a
-  # person's signature, and `sprint_report.py operator-summary` derives the page the operator
-  # leads from. Adopted on RUN-01KZ9315, the sprint that made the path reachable (US0643).
-  signoff: operator  # D0255: the operator signs the run once, at `sprint sign`
-  # D0131: the test-plan gate goes live, dated so it captures the bug lane and exempts the
-  # story lane. That is chosen, not arbitrary. EP0207 shipped the mechanism on RUN-01KZBBZ0 and
-  # its own units could not measure it - the cutoff that protects an existing backlog necessarily
-  # exempts the batch that builds the gate, so the claim "reviewing the test costs a fraction of
-  # reviewing the code" stayed an assertion. This date makes the NEXT sprint an A/B in one batch:
-  # units created from 2026-08-01 (the recent bugs) derive and independently review a test plan
-  # before any code; older units (the stories) do not. `retro.py accuracy` reports both arms, and
-  # that number decides whether this process is pointed at the remaining unplanned backlog.
-  # test_plan_after removed under D0255: plan and test-plan review are deleted.
-  # D0183/US0816 (2026-09-07): the line-coverage gate is ON here from the day the batch that
-  # built it was planned, so the three stories created that day - US0815, US0816, US0818 - are
-  # judged by it rather than exempted, the exemption D0131's cutoff granted its own builders.
-  # Of the three bugs the batch fixed, only BG0614 predates the cutoff and is exempt; BG0652
-  # and BG0653 were created ON 2026-09-07 and are judged by it, like the stories. Each carries
-  # a `verify_ac run --coverage` figure in its revision rows either way.
-  # STOOD DOWN AGAIN for the seal of RUN-01M33WJ3 only, under D0249, and restored to `block`
-  # in the same commit sequence as that run's paperwork - the same shape D0214 used and for the
-  # same cause. Five bugs delivered concurrently into three shared files, so BG0706 charges each
-  # with its siblings' lines: BG0730's refusal names sprint_report.py lines that are BG0715's.
-  # Using this lane rather than filing the report around the hold, which is what the first
-  # attempt did - and that bypass cost the page its closing token stamp and its per-unit gate
-  # verdicts, because both are written by the PREPARE lane the bypass skipped.
-  # STOOD DOWN for the seal of RUN-01M2SPNS only, under D0214, and restored to `block` in
-  # the same commit sequence as that run's paperwork. BG0706 charges every unit of a batch
-  # with its siblings' added lines in a shared file; BG0714 records the 284 lines that
-  # survive even the run-scope reading BG0706 proposes. `report` prints the identical
-  # figures and proceeds, so nothing is hidden - only the refusal is lifted.
-  line_coverage: off  # D0255: opt-in only from the back-to-basics programme on
-  require_brief_provenance: false  # D0255
-  line_coverage_after: "2026-09-07"
   # D0146 (2026-08-21) CUTS this from 6 to 2, superseding D0132's raise, and the reason is a
   # measurement rather than a preference. D0132 raised it to 6 saying "revisit if a run reaches 6";
   # RUN-01M0CT8P reached 5 delivery rounds on 6 units, and the marginal yield of those rounds is
@@ -320,7 +270,3 @@ triage:
 # D0128: raised from the default 4 because BG0516 made four close rounds unactionable -
 # the close reported an unattributable refusal while the gate named its failing lane.
 # The cap stays and the divergence detector is untouched; revisit when BG0516 lands.
-
-# D0255: plan review is deleted by the back-to-basics programme.
-plan_review:
-  enabled: false
