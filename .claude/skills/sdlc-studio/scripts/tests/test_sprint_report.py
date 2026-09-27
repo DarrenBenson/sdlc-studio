@@ -593,22 +593,19 @@ class OverheadRatioTests(ReportBase):
 
     On RUN-01KYHVWK that ratio was about 9:1 and surfaced only because the operator said it
     felt slow and it was then computed by hand. Every component here comes from a record the
-    run wrote - the test-execution ledger, the mutation series, the review-round stamps - and a
-    component nothing recorded reads UNMEASURED, never as a cheap zero.
+    run wrote - the test-execution ledger, the mutation series - and a component nothing recorded
+    reads UNMEASURED, never as a cheap zero. No record times a review (BG0783 deleted the
+    write-dead round ledger), so review and repair is always the part the ratio excludes.
     """
 
     #: A ten-hour run. 08:00-18:00 = 36,000s of measured wall-clock.
     WINDOW = ("2026-07-28T08:00:00Z", "2026-07-28T18:00:00Z")
 
-    def _run(self, rounds: list[dict] | None = None, ended: str | None = "") -> None:
+    def _run(self, ended: str | None = "") -> None:
         (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
             "run_id": "RUN-OVERHEAD", "batch": ["US0001", "US0002"], "outcome": "running",
             "started_at": self.WINDOW[0],
-            "ended_at": self.WINDOW[1] if ended == "" else ended,
-            "review_rounds": rounds if rounds is not None else [
-                {"round": 1, "verdict": "REJECT", "recorded_at": "2026-07-28T12:00:00Z"},
-                {"round": 2, "verdict": "APPROVE", "recorded_at": "2026-07-28T13:00:00Z"},
-            ]}), encoding="utf-8")
+            "ended_at": self.WINDOW[1] if ended == "" else ended}), encoding="utf-8")
 
     def _ledger(self, runs: list[dict]) -> None:
         (self.root / "sdlc-studio" / ".local" / "test-execution.json").write_text(
@@ -625,13 +622,13 @@ class OverheadRatioTests(ReportBase):
         return rid
 
     def _measured_sprint(self) -> None:
-        """21,600s of test execution + 1,800s of mutation + a 3,600s review-and-repair span =
-        27,000s of overhead inside a 36,000s run, leaving 9,000s of delivery: 3.0:1."""
+        """25,200s of test execution + 1,800s of mutation = 27,000s of overhead inside a 36,000s
+        run, leaving 9,000s of delivery: 3.0:1, a floor because review time is not captured."""
         self._run()
         self._ledger([
             {"at": "2026-07-28T10:00:00Z", "mode": "full", "seconds": 18000,
              "verdict": "pass", "moment": "commit"},
-            {"at": "2026-07-28T14:00:00Z", "mode": "full", "seconds": 3600,
+            {"at": "2026-07-28T14:00:00Z", "mode": "full", "seconds": 7200,
              "verdict": "pass", "moment": "close"},
             {"at": "2026-07-27T10:00:00Z", "mode": "full", "seconds": 9999,
              "verdict": "pass", "moment": "commit"},   # BEFORE the window: another sprint's
@@ -684,6 +681,8 @@ class OverheadRatioTests(ReportBase):
         self.assertIn("at most", line,
                       "the delivery figure is a CEILING for the same reason, and said so with "
                       "no qualifier at all")
+        self.assertIn("delivery is derived by SUBTRACTION, so that unattributed time is counted "
+                      "as delivery", line, "the line must say where the unattributed time went")
 
     def test_the_two_qualifiers_come_from_one_decision(self) -> None:
         """The negative control, and the reason it is shaped this way: `bound == "exact"` is not
@@ -709,16 +708,16 @@ class OverheadRatioTests(ReportBase):
         record - a figure invented at close would not follow it."""
         self._measured_sprint()
         by_name = {c["name"]: c for c in self._report()["overhead"]["components"]}
-        self.assertEqual(by_name["test execution"]["seconds"], 21600.0)
+        self.assertEqual(by_name["test execution"]["seconds"], 25200.0)
         self.assertEqual(by_name["mutation"]["seconds"], 1800.0)
-        self.assertEqual(by_name["review and repair"]["seconds"], 3600.0)
+        self.assertIsNone(by_name["review and repair"]["seconds"])
         for comp in by_name.values():
             self.assertTrue(comp["source"], "a component names the record it came from")
         # the ledger gains another 1,800s: overhead follows the record, delivery falls by it
         self._ledger([
             {"at": "2026-07-28T10:00:00Z", "mode": "full", "seconds": 18000,
              "verdict": "pass", "moment": "commit"},
-            {"at": "2026-07-28T14:00:00Z", "mode": "full", "seconds": 3600,
+            {"at": "2026-07-28T14:00:00Z", "mode": "full", "seconds": 7200,
              "verdict": "pass", "moment": "close"},
             {"at": "2026-07-28T15:00:00Z", "mode": "full", "seconds": 1800,
              "verdict": "pass", "moment": "close"},
@@ -731,9 +730,9 @@ class OverheadRatioTests(ReportBase):
                          "the parts sum to the measured run, so nothing was invented")
 
     def test_an_unmeasured_component_is_not_zero(self) -> None:
-        """US0524 AC1: a run with no recorded review round has UNMEASURED review time, and the
-        ratio says which part it excludes. A zero there would read as a review that was free."""
-        self._run(rounds=[])
+        """US0524 AC1: review time no record captures reads UNMEASURED, and the ratio says which
+        part it excludes. A zero there would read as a review that was free."""
+        self._run()
         self._ledger([{"at": "2026-07-28T10:00:00Z", "mode": "full", "seconds": 21600,
                        "verdict": "pass", "moment": "commit"}])
         self._mutation_run(1800.0)
@@ -771,7 +770,7 @@ class OverheadRatioTests(ReportBase):
         self.assertEqual(vel["overhead_ratio"], 3.0)
         self.assertEqual(vel["overhead_ratio"], rep["overhead"]["ratio"],
                          "ONE computation, so the two readings cannot drift")
-        self.assertEqual(vel["overhead_excludes"], [])
+        self.assertEqual(vel["overhead_excludes"], ["review and repair"])
         text = sr.render(rep)
         idx = [i for i, ln in enumerate(text.splitlines())]
         lines = text.splitlines()
@@ -779,55 +778,6 @@ class OverheadRatioTests(ReportBase):
         opos = next(i for i in idx if lines[i].startswith("Overhead vs delivery"))
         self.assertLess(vpos, opos, "the ratio sits with the velocity figures")
         self.assertLess(opos - vpos, 4, "...not paragraphs away from them")
-
-
-class OverheadReviewTermTests(unittest.TestCase):
-    """US0535 / BG0366. `_component_review` could only measure the span BETWEEN round stamps -
-    nothing before the first round, and zero when rounds were stamped together at close. So the
-    largest overhead component of the last two sprints was reported UNMEASURED, and the ratio,
-    which computes delivery by subtraction, credited that time to delivery."""
-
-    def _rounds(self, *seconds):
-        return [{"round": i, "verdict": "REJECT", "recorded_at": "2026-07-28T10:00:00Z",
-                 "seconds": s} for i, s in enumerate(seconds, 1)]
-
-    def _ctx(self, rounds):
-        return {"state": {sr.run_state.REVIEW_ROUNDS: rounds}}
-
-    def test_recorded_round_durations_feed_the_overhead_term(self) -> None:
-        c = sr._component_review(self._ctx(self._rounds(600, 900)))
-        self.assertTrue(c["measured"])
-        self.assertEqual(c["seconds"], 1500.0)
-
-    def test_every_round_timed_is_exact_and_a_mix_is_a_lower_bound(self) -> None:
-        """A sum of durations counts the review itself rather than the gaps between stamps, so
-        it is exact when every round carries one. A mix stays a floor: the untimed rounds
-        contribute nothing, and counting them as zero is the error being removed."""
-        exact = sr._component_review(self._ctx(self._rounds(600, 900)))
-        self.assertEqual(exact["bound"], "exact")
-        UN = sr.run_state.UNMEASURED
-        mixed = sr._component_review(self._ctx(self._rounds(600, UN)))
-        self.assertTrue(mixed["measured"])
-        self.assertEqual(mixed["seconds"], 600.0)
-        self.assertEqual(mixed["bound"], "lower")
-
-    def test_the_floor_caveat_tracks_actual_unmeasured_components(self) -> None:
-        """The caveat qualifies a number. It must be stated while a component is genuinely
-        unmeasured and dropped when none is - a permanent 'at least' is noise a reader learns
-        to skip, and an absent one on an incomplete measurement is a false precision."""
-        UN = sr.run_state.UNMEASURED
-        none_timed = sr._component_review(self._ctx(self._rounds(UN, UN)))
-        self.assertFalse(none_timed["measured"])
-        # It falls through to the stamp-span reading, which correctly refuses too - and says
-        # so in its own words. The assertion is that it is NOT reported as free, however it
-        # reaches that answer.
-        self.assertIn("not a review that was free", none_timed["why"])
-        self.assertIsNone(none_timed["seconds"])
-
-    def test_no_rounds_at_all_is_still_unmeasured_not_zero(self) -> None:
-        c = sr._component_review(self._ctx([]))
-        self.assertFalse(c["measured"])
-        self.assertIsNone(c["seconds"])
 
 
 class GoalVersusCountTests(unittest.TestCase):
@@ -1714,14 +1664,13 @@ class ClosingReviewVerdictTests(ChecklistBase):
     """US0593. The row counted recorded passes and reported `ran` over four rounds of which
     three rejected. A count cannot see a verdict.
 
-    Every fixture writes into BOTH ledgers the resolver reads - the sprint-review rows and the
-    run-state rounds - because against a fixture that populates only one, the old counting
-    implementation returns `none recorded`, which is the same OUTSTANDING state a correct
-    resolver returns, and the mutant survives its own test.
+    Every fixture writes the sprint-review rows the resolver reads, because against a fixture
+    with no rows the old counting implementation returns `none recorded`, which is the same
+    OUTSTANDING state a correct resolver returns, and the mutant survives its own test.
     """
 
-    def _ledgers(self, rows: list[tuple], rounds: list[tuple]) -> None:
-        """`rows` as (verdict, units, date); `rounds` as (verdict, units, recorded_at)."""
+    def _ledgers(self, rows: list[tuple]) -> None:
+        """`rows` as (verdict, units, date)."""
         path = self.root / "sdlc-studio" / "reviews"
         path.mkdir(parents=True, exist_ok=True)
         body = ["| Base | Reviewer | Author | Verdict | Date | Units | Findings |",
@@ -1730,19 +1679,14 @@ class ClosingReviewVerdictTests(ChecklistBase):
             body.append(f"| abc123 | qa; seat; r | agent | {verdict} | {date} | {units} | none |")
         (path / "sprint-review-record.md").write_text(
             "# Sprint reviews\n\n" + "\n".join(body) + "\n", encoding="utf-8")
-        self._extra_rounds = [
-            {"round": i + 1, "verdict": v, "reviewer": "qa; seat", "units": u.split(","),
-             "recorded_at": at}
-            for i, (v, u, at) in enumerate(rounds)]
 
     def _resolve(self) -> dict:
-        ck = self._ck(review_rounds=getattr(self, "_extra_rounds", []))
+        ck = self._ck()
         return self._row(ck, "closing-review")
 
     def test_reject_only_rounds_are_outstanding(self) -> None:
         """Mutant: revert the resolver to `len(ctx['sprint_reviews'])`, reading no verdict."""
-        self._ledgers([("REJECT", "US0001,US0002", "2026-01-02")],
-                      [("REJECT", "US0001,US0002", "2026-01-02T10:00:00Z")])
+        self._ledgers([("REJECT", "US0001,US0002", "2026-01-02")])
         row = self._resolve()
         self.assertEqual(sr.NOT_RUN, row["state"])
         self.assertNotIn("none recorded", row["value"],
@@ -1761,9 +1705,8 @@ class ClosingReviewVerdictTests(ChecklistBase):
         where a NON-VERDICT lane says covered and a verdict says otherwise, which is exactly the
         shape that produced the false green.
         """
-        self._ledgers([("REJECT", "US0001,US0002", "2026-01-02")],
-                      [("REJECT", "US0001,US0002", "2026-01-02T10:00:00Z")])
-        self._run(review_rounds=getattr(self, "_extra_rounds", []))
+        self._ledgers([("REJECT", "US0001,US0002", "2026-01-02")])
+        self._run()
         with mock.patch.object(sr, "_coverage",
                                return_value={"US0001": {"covered": True, "by": "evidence"},
                                              "US0002": {"covered": True, "by": "evidence"}}):
@@ -1774,8 +1717,7 @@ class ClosingReviewVerdictTests(ChecklistBase):
 
     def test_an_approve_covering_every_unit_passes(self) -> None:
         """The control. A row that never clears satisfies the test above for free."""
-        self._ledgers([("APPROVE", "US0001,US0002", "2026-01-02")],
-                      [("APPROVE", "US0001,US0002", "2026-01-02T10:00:00Z")])
+        self._ledgers([("APPROVE", "US0001,US0002", "2026-01-02")])
         row = self._resolve()
         self.assertEqual(sr.RAN, row["state"], row["detail"])
 
@@ -1786,9 +1728,7 @@ class ClosingReviewVerdictTests(ChecklistBase):
         with no time, so two verdicts in one sitting tie and a date-keyed max picks either.
         """
         self._ledgers([("REJECT", "US0001,US0002", "2026-01-02"),
-                       ("APPROVE", "US0001,US0002", "2026-01-03")],
-                      [("REJECT", "US0001,US0002", "2026-01-02T10:00:00Z"),
-                       ("APPROVE", "US0001,US0002", "2026-01-03T10:00:00Z")])
+                       ("APPROVE", "US0001,US0002", "2026-01-03")])
         row = self._resolve()
         self.assertEqual(sr.RAN, row["state"], row["detail"])
 
@@ -1798,8 +1738,7 @@ class ClosingReviewVerdictTests(ChecklistBase):
         That implementation kills all three mutants above and still reports `ran` on a batch of
         twelve where one was reviewed, which is the counted-passes defect one level down.
         """
-        self._ledgers([("APPROVE", "US0001", "2026-01-02")],
-                      [("APPROVE", "US0001", "2026-01-02T10:00:00Z")])
+        self._ledgers([("APPROVE", "US0001", "2026-01-02")])
         row = self._resolve()
         self.assertEqual(sr.NOT_RUN, row["state"])
         self.assertIn("unreviewed", row["value"])
@@ -3121,7 +3060,7 @@ class ChecklistHonestyTests(unittest.TestCase):
         verdict with nothing behind it.
         """
         import unittest.mock as _m
-        ctx = {"units": ["US0001"], "review_rounds": [{"r": 1}]}
+        ctx = {"units": ["US0001"]}
         with _m.patch.object(sr, "_verdict_entries", lambda c: [("k", sr._APPROVE, ["US0001"])]), \
                 _m.patch.object(sr, "_coverage", lambda c: {"US0001": {"covered": False}}):
             state, value, _d = sr._ck_closing_review(ctx)
@@ -3131,7 +3070,7 @@ class ChecklistHonestyTests(unittest.TestCase):
     def test_a_covered_unit_with_an_approve_still_reports_ran(self) -> None:
         """The control - the fold must not swallow a genuinely reviewed unit."""
         import unittest.mock as _m
-        ctx = {"units": ["US0001"], "review_rounds": [{"r": 1}]}
+        ctx = {"units": ["US0001"]}
         with _m.patch.object(sr, "_verdict_entries", lambda c: [("k", sr._APPROVE, ["US0001"])]), \
                 _m.patch.object(sr, "_coverage", lambda c: {"US0001": {"covered": True}}):
             state, _v, _d = sr._ck_closing_review(ctx)

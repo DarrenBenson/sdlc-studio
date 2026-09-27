@@ -17,8 +17,6 @@ SCRIPT = Path(__file__).resolve().parent.parent / "critic.py"
 REPO_ROOT = Path(__file__).resolve().parents[5]
 sys.path.insert(0, str(SCRIPT.parent))
 from lib.sdlc_md import norm_id as sdlc_md_norm  # noqa: E402
-sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/, for quiet
-import quiet  # noqa: E402 - the shared console-diagnostics capture
 
 
 def _load():
@@ -937,41 +935,9 @@ class RejoinderProbeTests(unittest.TestCase):
             self.assertEqual(text.count("VERDICT: APPROVE or REJECT"), 2)
 
 
-def _round(root, verdict: str = "REJECT", **kw):
-    """One close-review round on the open run, as the retired batch-review writer recorded it."""
-    return _run_state().record_review_round(root, verdict=verdict.upper(), units=["US0001"],
-                                            reviewer="seat", **kw)
-
-
-def _run_state():
-    """The run_state module, loaded the same way critic.py reaches it."""
-    import importlib
-    sys.path.insert(0, str(SCRIPT.parent))
-    try:
-        return importlib.import_module("lib.run_state")
-    finally:
-        sys.path.pop(0)
-
-
 class ReviewRoundCountTests(unittest.TestCase):
-    """US0261 - the close review counts its rounds and stops at a ceiling."""
-
-    def _open(self, root):
-        rs = _run_state()
-        rs.open_run(root, batch=["US0001"], goal="done")
-        return rs
-
-    def test_round_past_the_ceiling_is_refused(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, rs = _load(), self._open(root)
-            for _ in range(3):
-                _round(root, "reject")
-            with self.assertRaises(ValueError) as ctx:
-                mod.review_round_guard(root, ceiling=3)
-            msg = str(ctx.exception)
-            self.assertIn("3", msg)            # the count and the ceiling are both named
-            self.assertIn("override", msg.lower())
+    """US0261 - the review round cap (`review.max_rounds`) resolves from config, default 2. The
+    cap itself is exercised through `critic.py record` in test_lean_review_cap."""
 
     def test_ceiling_resolves_from_config_with_default(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -996,50 +962,6 @@ class ReviewRoundCountTests(unittest.TestCase):
             mod = _load()
             self.assertEqual(mod.DEFAULT_REVIEW_CEILING, 2)
             self.assertEqual(mod.review_ceiling(root), 2)   # no config present
-
-    def test_the_default_ceiling_refuses_the_third_round_not_the_second(self) -> None:
-        """The numeric boundary, driven through the guard with no explicit ceiling.
-
-        Two-sided: with one round recorded the guard returns rather than raises, and with two
-        it raises. A larger default would permit a third round; a smaller one would refuse the
-        second.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, rs = _load(), self._open(root)
-            _round(root, "reject")
-            self.assertEqual(mod.review_round_guard(root), 1)   # still under the ceiling
-            _round(root, "reject")
-            with self.assertRaises(ValueError):
-                mod.review_round_guard(root)
-            self.assertEqual(rs.review_round_count(root), 2)
-
-    def test_ceiling_override_is_explicit_and_recorded(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, rs = _load(), self._open(root)
-            for _ in range(3):
-                _round(root, "reject")
-            mod.review_round_guard(root, ceiling=3, override=True)
-            state = rs.read(root)
-            self.assertEqual(state["review_ceiling_overrides"], [{"at_round": 3, "ceiling": 3}])
-
-    def test_rounds_without_a_run_id_are_not_counted(self) -> None:
-        """The guard's own mechanism, reached directly.
-
-        `record_review_round` already refuses with no run open, so through the public path
-        this state never arises and a test driving it proves nothing. A hand-edited or
-        partially-written run-state file DOES produce it, and rounds that belong to no run
-        must not be counted as the current run's - they cannot be attributed to it."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            rs = _run_state()
-            rs.write(root, {"schema": 1, "run_id": None, "outcome": "running",
-                            "review_rounds": [{"round": 1, "verdict": "REJECT"},
-                                              {"round": 2, "verdict": "APPROVE"}]})
-            self.assertEqual(len(rs.review_rounds(root)), 2)   # they are readable
-            self.assertEqual(rs.review_round_count(root), 0)   # but attributed to no run
-
 
 class ReadRowsHeaderTests(unittest.TestCase):
     """BG0227 - the header skip is derived from the declared column names, not one table's
@@ -1105,257 +1027,6 @@ class ReadRowsHeaderTests(unittest.TestCase):
                             "| Unit | someone |\n", encoding="utf-8")
             self.assertEqual(mod._read_rows(path, ("unit", "reviewer")),
                              [{"unit": "Unit", "reviewer": "someone"}])
-
-
-class RepairRegressionTests(unittest.TestCase):
-    """US0262 - a finding in code the previous round's repair touched is named as such."""
-
-    def _run_with_round(self, root, repaired):
-        rs = _run_state()
-        rs.open_run(root, batch=["US0001"], goal="done")
-        mod = _load()
-        _round(root, "reject", repaired=repaired)
-        return mod
-
-    def test_round_records_its_repaired_file_set(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._run_with_round(root, [{"file": "critic.py", "lines": [[10, 20]]}])
-            rounds = _run_state().review_rounds(root)
-            self.assertEqual(rounds[0]["repaired"], [{"file": "critic.py", "lines": [[10, 20]]}])
-
-    def test_finding_in_prior_repair_surface_is_a_repair_regression(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = self._run_with_round(root, [{"file": "critic.py", "lines": [[10, 20]]}])
-            got = mod.classify_finding(root, file="critic.py", line=15)
-            self.assertEqual(got["class"], mod.REPAIR_REGRESSION)
-            self.assertEqual(got["round"], 1)
-
-    def test_finding_outside_prior_repair_surface_is_fresh(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = self._run_with_round(root, [{"file": "critic.py", "lines": [[10, 20]]}])
-            self.assertEqual(mod.classify_finding(root, file="sprint.py", line=15)["class"],
-                             mod.FRESH)
-
-    def test_same_file_outside_repaired_lines_is_fresh(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = self._run_with_round(root, [{"file": "critic.py", "lines": [[10, 20]]}])
-            # same file, well outside the repaired span - a file-level match would call this a
-            # regression and, on files of this size, would call almost everything one
-            self.assertEqual(mod.classify_finding(root, file="critic.py", line=800)["class"],
-                             mod.FRESH)
-
-    def test_first_round_findings_are_always_fresh(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            rs = _run_state()
-            rs.open_run(root, batch=["US0001"], goal="done")
-            mod = _load()
-            # no round recorded yet: there is no prior repair surface to regress against
-            self.assertEqual(mod.classify_finding(root, file="critic.py", line=15)["class"],
-                             mod.FRESH)
-
-    def test_unlocatable_finding_is_unclassified_not_fresh(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = self._run_with_round(root, [{"file": "critic.py", "lines": [[10, 20]]}])
-            for bad in ({"file": None, "line": 15}, {"file": "critic.py", "line": None}):
-                got = mod.classify_finding(root, **bad)
-                self.assertEqual(got["class"], mod.UNCLASSIFIED, bad)
-                self.assertTrue(got["reason"].strip(), "an unclassified finding must say why")
-
-    def test_only_the_latest_round_is_the_comparison_surface(self) -> None:
-        """Round 3 regresses against round 2's repair, not round 1's.
-
-        Round 1's surface has already been re-reviewed by round 2; a finding there now is a
-        fresh miss by round 2, not a regression round 2's repair created."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod = self._run_with_round(root, [{"file": "old.py", "lines": [[1, 5]]}])
-            _round(root, "reject", repaired=[{"file": "new.py", "lines": [[1, 5]]}])
-            self.assertEqual(mod.classify_finding(root, file="new.py", line=3)["class"],
-                             mod.REPAIR_REGRESSION)
-            self.assertEqual(mod.classify_finding(root, file="old.py", line=3)["class"],
-                             mod.FRESH)
-
-
-class EscalationTests(unittest.TestCase):
-    """US0263 - a repair regression escalates instead of buying another patch round."""
-
-    def _regressed(self, root):
-        rs = _run_state()
-        rs.open_run(root, batch=["US0001"], goal="done")
-        mod = _load()
-        _round(root, "reject", repaired=[{"file": "critic.py", "lines": [[10, 20]]}])
-        return mod, mod.classify_finding(root, file="critic.py", line=15)
-
-    def test_repair_regression_presents_the_three_options(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, finding = self._regressed(root)
-            esc = mod.escalation_for(root, finding)
-            labels = [o["label"] for o in esc["options"]]
-            self.assertEqual(sorted(labels), ["accept-and-file", "redesign", "revert"])
-            for o in esc["options"]:
-                self.assertTrue(o["consequence"].strip(), f"{o['label']} has no consequence")
-            # another patch round is NOT among the offered options
-            self.assertNotIn("patch", " ".join(labels).lower())
-
-    def test_revert_option_names_its_scope(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, finding = self._regressed(root)
-            revert = next(o for o in mod.escalation_for(root, finding)["options"]
-                          if o["label"] == "revert")
-            self.assertIn("critic.py", revert["consequence"])
-            self.assertIn("1", revert["consequence"])   # the round it would revert
-
-    def test_escalation_choice_is_recorded_against_the_run(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, finding = self._regressed(root)
-            mod.record_escalation(root, "redesign", finding)
-            rec = _run_state().read(root)["escalations"]
-            self.assertEqual(len(rec), 1)
-            self.assertEqual(rec[0]["choice"], "redesign")
-            self.assertEqual(rec[0]["round"], 1)          # the regression that triggered it
-            self.assertIn("critic.py", rec[0]["finding"]["file"])
-
-    def test_accept_and_file_mints_a_linked_artefact(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio" / "bugs").mkdir(parents=True)
-            # the filer refuses an `Affects` that does not resolve, and it is right to:
-            # a path the parser cannot find counts as no Affects at all
-            affected = root / "scripts" / "critic.py"
-            affected.parent.mkdir(parents=True, exist_ok=True)
-            affected.write_text("# fixture\n", encoding="utf-8")
-            mod, finding = self._regressed(root)
-            # The filer NOTES an Affects that names a source file without its test. That is a
-            # correct diagnostic about this fixture's deliberately-narrow Affects, and it is
-            # not what this row is about - so it is captured and asserted rather than left on
-            # the console, where a green suite printing `note:` teaches everyone to skim.
-            with quiet.diagnostics() as err:
-                out = mod.record_escalation(root, "accept-and-file", finding,
-                                            title="the regressed guard is unpinned",
-                                            summary="round 1's repair left the branch unpinned",
-                                            severity="Medium", steps="see the round-1 finding",
-                                            fix="pin the branch",
-                                            affects="scripts/critic.py",
-                                            points=2)
-            self.assertIn("footprint was understated", err.getvalue(),
-                          f"the filer stopped noting a source-only Affects:\n{err.getvalue()}")
-            self.assertTrue(out["filed"], "accept-and-file must report the id it filed")
-            self.assertRegex(out["filed"], r"^BG\d{4}$")
-            self.assertTrue((root / "sdlc-studio" / "bugs").glob(f"{out['filed']}*"))
-
-    def test_an_unknown_choice_is_refused(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, finding = self._regressed(root)
-            with self.assertRaises(ValueError):
-                mod.record_escalation(root, "just-patch-it-again", finding)
-
-    def test_autonomous_regression_blocks_rather_than_chooses(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, finding = self._regressed(root)
-            mod.defer_escalation(root, unit="US0001", finding=finding)
-            pending = _run_state().read(root)["pending_decisions"]
-            self.assertEqual(len(pending), 1)
-            self.assertEqual(pending[0]["unit"], "US0001")
-            self.assertIsNone(pending[0]["resolution"], "nothing may be chosen for the operator")
-            labels = [o["label"] for o in pending[0]["options"]]
-            self.assertEqual(sorted(labels), ["accept-and-file", "redesign", "revert"])
-
-    def test_a_fresh_finding_does_not_escalate(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, _ = self._regressed(root)
-            fresh = mod.classify_finding(root, file="sprint.py", line=15)
-            with self.assertRaises(ValueError):
-                mod.escalation_for(root, fresh)
-
-
-class RoundCostTests(unittest.TestCase):
-    """US0264 - what the rounds have cost, shown when the next one is offered."""
-
-    def _run(self, root):
-        rs = _run_state()
-        rs.open_run(root, batch=["US0001"], goal="done")
-        return _load(), rs
-
-    def _review(self, mod, root, **kw):
-        _round(root, "reject", **kw)
-
-    def test_round_records_its_token_cost(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, rs = self._run(root)
-            self._review(mod, root, tokens=80_000)
-            self.assertEqual(rs.review_rounds(root)[0]["tokens"], 80_000)
-
-    def test_next_round_offer_shows_cumulative_cost(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, _ = self._run(root)
-            self._review(mod, root, tokens=80_000)
-            self._review(mod, root, tokens=60_000)
-            text = mod.round_cost_report(root)
-            self.assertIn("80,000", text)
-            self.assertIn("60,000", text)
-            self.assertIn("140,000", text)   # the cumulative total, not just the parts
-
-    def test_unmeasured_round_is_named_not_zeroed(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, _ = self._run(root)
-            self._review(mod, root, tokens=80_000)
-            self._review(mod, root)                       # unmeasured
-            text = mod.round_cost_report(root)
-            self.assertRegex(text, r"(?i)unmeasured")
-            self.assertRegex(text, r"(?i)partial")        # the total is marked incomplete
-            self.assertIn("80,000", text)
-            # the unmeasured round must not be summed as zero and the total then presented as
-            # whole: the TOTAL LINE itself has to carry the partial marker, not just the body
-            total_line = next(l for l in text.splitlines() if "total" in l.lower())
-            self.assertIn("PARTIAL", total_line)
-            self.assertIn("1 of 2", total_line, "the total must say how many rounds it covers")
-
-    def test_a_measured_zero_is_not_unmeasured(self) -> None:
-        """0 and 'not measured' are different facts and must read differently.
-
-        This is the BG0224 shape one level up: a falsy test cannot tell them apart, and
-        showing a measured zero as 'unmeasured' would understate confidence rather than cost.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, rs = self._run(root)
-            self._review(mod, root, tokens=0)
-            self.assertEqual(rs.review_rounds(root)[0]["tokens"], 0)
-            text = mod.round_cost_report(root)
-            self.assertNotRegex(text, r"(?i)unmeasured")
-            self.assertNotRegex(text, r"(?i)partial")
-
-    def test_the_offer_carries_the_cost_and_the_count(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            mod, _ = self._run(root)
-            self._review(mod, root, tokens=80_000)
-            offer = mod.next_round_offer(root)
-            self.assertIn("80,000", offer)
-            self.assertIn("1", offer)                     # rounds so far
-            self.assertIn(str(mod.DEFAULT_REVIEW_CEILING), offer)
-
-    def test_no_rounds_reports_no_cost_rather_than_zero(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            self._run(root)
-            mod = _load()
-            self.assertRegex(mod.round_cost_report(root), r"(?i)no .*round")
 
 
 _PRIOR = """VERDICT: REJECT
@@ -2700,41 +2371,11 @@ class CallerIndeterminateTests(unittest.TestCase):
 
 
 class ReviewDurationTests(unittest.TestCase):
-    """US0534. No round recorded a duration, so `_component_review` could only measure the span
-    BETWEEN round stamps - nothing before the first round, and zero for rounds stamped together
-    at close. A review that took hours read as unmeasured while the ratio treated it as free."""
-
-    def test_a_recorded_round_carries_its_duration(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio" / ".local").mkdir(parents=True)
-            _load().run_state.open_run(root, batch=["US0001"], goal="x")
-            entry = _load().run_state.record_review_round(
-                root, verdict="REJECT", units=["US0001"], reviewer="qa",
-                started_at="2026-07-28T10:00:00Z", ended_at="2026-07-28T10:22:30Z")
-            self.assertEqual(_load().run_state.round_duration(entry), 1350)
-
-    def test_an_untimed_round_reads_unmeasured_not_zero(self) -> None:
-        """The distinction the whole field exists for: a round nobody timed must not be folded
-        to zero, because the ratio computes delivery by subtraction and a silent zero reports
-        the review as having cost nothing."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio" / ".local").mkdir(parents=True)
-            _load().run_state.open_run(root, batch=["US0001"], goal="x")
-            entry = _load().run_state.record_review_round(root, verdict="APPROVE", units=["US0001"],
-                                                  reviewer="qa")
-            self.assertIsNone(_load().run_state.round_duration(entry))
-            self.assertIsNot(entry["seconds"], 0)
+    """US0534. An elapsed span nobody can read is UNMEASURED, never an invented 0."""
 
     def test_an_unparseable_stamp_is_unmeasured_rather_than_invented(self) -> None:
         self.assertIsNone(_load().run_state._elapsed_seconds("nonsense", "2026-07-28T10:00:00Z"))
         self.assertIsNone(_load().run_state._elapsed_seconds("2026-07-28T10:00:00Z", None))
-
-    def test_a_measured_zero_is_kept_as_a_measurement(self) -> None:
-        """Zero seconds is a legitimate reading; only UNMEASURED means nobody looked."""
-        self.assertEqual(_load().run_state.round_duration({"seconds": 0}), 0)
-
 
 class GoalPanelTests(unittest.TestCase):
     """US0542. The Sprint Goal verdict was recorded by whoever ran the close - which, on an
@@ -3309,13 +2950,7 @@ class BriefProvenanceTests(unittest.TestCase):
                       "the fingerprint the reviewer supplied was not recorded")
 
 class FindingClassTests(unittest.TestCase):
-    """The ORIGIN axis: did THIS unit's diff cause the finding?
-
-    Held apart from the existing `class` axis (FRESH / REPAIR_REGRESSION), which asks a
-    different question - whether a round-N finding is a regression in round N-1's REPAIR. The
-    word "regression" appears on both and means different things, so a test here that could
-    pass by reading `class` would be pinning the wrong axis.
-    """
+    """The ORIGIN axis: did THIS unit's diff cause the finding?"""
 
     def _unit(self, root: Path, uid: str = "US0001") -> None:
         d = root / "sdlc-studio" / "stories"

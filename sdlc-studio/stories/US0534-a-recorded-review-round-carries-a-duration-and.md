@@ -23,16 +23,16 @@
 - **Given** a review round recorded with a start and an end
 - **When** the round is written to the review record
 - **Then** the round carries its duration
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ReviewDurationTests::test_a_recorded_round_carries_its_duration
-- **Verified:** yes (2026-07-28)
+- **Verify:** manual - retired by BG0783: `record_review_round`, the only writer of a round duration, had no caller after US0918 and is deleted with its ledger
+- **Verified:** manual (2026-09-27) - retired, superseded by BG0783
 
 ### AC2: a round with no duration says so rather than counting as zero
 
 - **Given** a review round recorded without timing information
 - **When** the round is read back
 - **Then** its duration reads as unmeasured, and nothing treats it as zero elapsed
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ReviewDurationTests::test_an_untimed_round_reads_unmeasured_not_zero
-- **Verified:** yes (2026-07-28)
+- **Verify:** manual - retired by BG0783: `record_review_round`, the only writer of a round duration, had no caller after US0918 and is deleted with its ledger
+- **Verified:** manual (2026-09-27) - retired, superseded by BG0783
 
 ## Revision History
 
@@ -40,3 +40,4 @@
 | --- | --- | --- |
 | 2026-07-28 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-28 | Claude Opus 5 | Groomed: criteria authored against this story's slice, each with an executable Verify line |
+| 2026-09-27 | BG0783 | AC1 and AC2 retired in the D0259 pattern: `record_review_round`, the only writer of a round duration, had no caller after US0918 and is deleted with its ledger |

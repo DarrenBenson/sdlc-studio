@@ -3711,10 +3711,8 @@ class GoalVerdictTests(unittest.TestCase):
                                "--note", "shipped the honest path", "--root", str(root)])
             self.assertEqual(rc, 0)
             state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json").read_text())
-            # the round count is DERIVED from the ledger and stamped on the record (BG0261)
             self.assertEqual(state["sprint_goal_verdict"],
-                             {"verdict": "achieved", "note": "shipped the honest path",
-                              "rounds": 0})
+                             {"verdict": "achieved", "note": "shipped the honest path"})
 
     def test_goal_verdict_refused_when_no_goal_recorded(self):
         with tempfile.TemporaryDirectory() as d:

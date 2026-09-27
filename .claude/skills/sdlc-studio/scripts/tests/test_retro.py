@@ -3503,24 +3503,15 @@ class VelocityOverheadTermAgreesWithTheCloseTests(unittest.TestCase):
                 f"# {sid}: s\n\n> **Status:** Done\n> **Points:** {pts}\n", encoding="utf-8")
 
     def _run(self) -> None:
-        """A run whose review rounds carry their own durations: 3,600s of review and repair,
-        measured rather than inferred from the gap between two stamps, so the component is EXACT
-        and the bound this fixture reports is decided by the other two."""
         (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps({
             "run_id": "RUN-OVERHEAD", "batch": self.UNITS, "outcome": "running",
-            "started_at": self.WINDOW[0], "ended_at": self.WINDOW[1],
-            "review_rounds": [
-                {"round": 1, "verdict": "REJECT", "recorded_at": "2026-07-28T12:00:00Z",
-                 "seconds": 1800},
-                {"round": 2, "verdict": "APPROVE", "recorded_at": "2026-07-28T13:00:00Z",
-                 "seconds": 1800},
-            ]}), encoding="utf-8")
+            "started_at": self.WINDOW[0], "ended_at": self.WINDOW[1]}), encoding="utf-8")
 
     def _ledger(self) -> None:
-        """21,600s of test execution inside the window."""
+        """25,200s of test execution inside the window."""
         (self.root / "sdlc-studio" / ".local" / "test-execution.json").write_text(
             json.dumps({"runs": [{"at": "2026-07-28T10:00:00Z", "mode": "full",
-                                  "seconds": 21600, "verdict": "pass", "moment": "commit"}]}),
+                                  "seconds": 25200, "verdict": "pass", "moment": "commit"}]}),
             encoding="utf-8")
 
     def _mutation(self, elapsed: float = 1800.0) -> None:
@@ -3539,8 +3530,8 @@ class VelocityOverheadTermAgreesWithTheCloseTests(unittest.TestCase):
                         "errors": 0, "unviable": 0, "truncated": 0}}, elapsed)
 
     def _measured_sprint(self) -> None:
-        """21,600 + 1,800 + 3,600 = 27,000s of overhead in a 36,000s run: 9,000s of delivery,
-        a ratio of 3.0. With the gate and mutation components blanked it is 0.1."""
+        """25,200 + 1,800 = 27,000s of overhead in a 36,000s run: 9,000s of delivery, a ratio
+        of 3.0. With the gate and mutation components blanked there is no ratio at all."""
         self._run()
         self._ledger()
         self._mutation()
@@ -3574,12 +3565,21 @@ class VelocityOverheadTermAgreesWithTheCloseTests(unittest.TestCase):
     def test_the_row_records_whether_the_ratio_is_exact_or_a_floor(self) -> None:
         """A floor measured from one component of three is not the same quantity as an exact
         figure, and this file exists to be compared row against row."""
+        import sprint_report
         self._measured_sprint()
-        self.assertEqual("exact", self._terms()["overhead_bound"],
-                         "every component was measured, so the ratio is not a floor")
+        timed = {"seconds": 0.0, "measured": True, "bound": "exact", "source": "a stub",
+                 "why": ""}
+        every = tuple((name, (lambda ctx: timed) if name == "review and repair" else fn)
+                      for name, fn in sprint_report._OVERHEAD_COMPONENTS)
+        with mock.patch.object(sprint_report, "_OVERHEAD_COMPONENTS", every):
+            self.assertEqual("exact", self._terms()["overhead_bound"],
+                             "every component was measured, so the ratio is not a floor")
+        self.assertEqual("lower", self._terms()["overhead_bound"],
+                         "review time is not captured, so the real ratio is a floor")
         (self.root / "sdlc-studio" / ".local" / "mutation-series.jsonl").write_text(
             "", encoding="utf-8")
-        self.assertEqual("lower", self._terms()["overhead_bound"],
+        with mock.patch.object(sprint_report, "_OVERHEAD_COMPONENTS", every):
+            self.assertEqual("lower", self._terms()["overhead_bound"],
                          "a component nothing recorded makes the ratio a floor, and the row has "
                          "to say so or the next sprint compares it with an exact one")
 

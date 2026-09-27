@@ -45,16 +45,14 @@ rather than written silently. Both tests below fail today: the first because
 `doc_freshness` checks only version, test count, disclosure count and length, the second
 because nothing reads the ledger back at record time.
 
-### AC1: the freshness check compares the anchor's two load-bearing claims against state
+### AC1: the freshness check compares the anchor's sign-off claim against state
 
-- **Given** a LATEST.md stating that a sign-off is owed and narrating three review
-  rounds, over a run whose index shows the batch Done, whose `close_owed` detect reports
-  none, and whose `review_rounds` holds six entries
+- **Given** a LATEST.md stating that a sign-off is owed, over a run whose index shows the
+  batch Done and whose `close_owed` detect reports none
 - **When** `doc_freshness` runs
-- **Then** it reports both the landed-but-claimed-owed sign-off and the round-count
-  divergence as findings, distinct from the line-count finding, and reports neither when
-  the document agrees with the state
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py::AnchorClaimsCheckedAgainstRunStateTests::test_a_landed_signoff_and_a_contradicted_round_count_are_both_reported
+- **Then** it reports the landed-but-claimed-owed sign-off as a finding, distinct from the
+  line-count finding, and does not report it when the document agrees with the state
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py::AnchorClaimsCheckedAgainstRunStateTests::test_a_landed_signoff_is_reported_and_an_agreeing_anchor_is_not
 
 ### AC2: the round ledger cannot be contradicted at the moment it is written
 
@@ -64,10 +62,11 @@ because nothing reads the ledger back at record time.
   with its own index
 - **Then** each is refused or reported at that moment, and the round count a note carries
   is derived from the ledger rather than restated beside it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::ReviewLedgerHonestyTests::test_a_note_round_or_label_contradicting_the_ledger_is_refused
+- **Verify:** manual - retired by BG0783: the close-review round ledger has had no writer since US0918; the goal verdict no longer carries or checks a round count, and the ledger's record-time refusals are deleted with it
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-22 | sdlc-studio | Filed |
+| 2026-09-27 | BG0783 | AC2 retired in the D0259 pattern: the close-review round ledger has had no writer since US0918; the goal verdict no longer carries or checks a round count, and the ledger's record-time refusals are deleted with it. AC1 is narrowed to its sign-off half: the "narrating three review rounds" and "`review_rounds` holds six entries" Given clauses and the round-count-divergence Then clause are removed, because the round-count check read the same write-dead ledger and is deleted, and its Verify is re-pointed at the renamed sign-off test, which checks everything the narrowed text states |

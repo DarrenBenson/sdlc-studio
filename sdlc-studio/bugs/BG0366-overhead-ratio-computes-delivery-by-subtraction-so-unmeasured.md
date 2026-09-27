@@ -25,13 +25,13 @@ Measure delivery directly rather than by residue, and report the unattributed re
 
 ### AC1: The overhead line states that delivery is derived by SUBTRACTION, so unattributed time is counted as delivery
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::OverheadReviewTermTests
-- **Verified:** yes (2026-07-28)
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::OverheadRatioTests::test_an_unmeasured_component_is_not_credited_to_delivery
+- **Verified:** yes (2026-09-27)
 
 ### AC2: A recorded round duration feeds the term rather than leaving it unmeasured
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::OverheadReviewTermTests::test_recorded_round_durations_feed_the_overhead_term
-- **Verified:** yes (2026-07-28)
+- **Verify:** manual - retired by BG0783: no record the run writes times a review since US0918 deleted the close-review round's writer, so the overhead's review component reads NOT CAPTURED and the round-duration read is deleted
+- **Verified:** manual (2026-09-27) - retired, superseded by BG0783
 
 ## Revision History
 
@@ -39,3 +39,4 @@ Measure delivery directly rather than by residue, and report the unattributed re
 | --- | --- | --- |
 | 2026-07-28 | Claude Opus 5 (RUN-01KYKVZM review carry-forward) | Filed |
 | 2026-07-28 | Claude Opus 5 | Criteria authored at delivery. |
+| 2026-09-27 | BG0783 | AC1 re-pointed at OverheadRatioTests' delivery-ceiling test, which pins the subtraction it states; AC2 retired in the D0259 pattern: no record the run writes times a review since US0918 deleted the close-review round's writer, so the overhead's review component reads NOT CAPTURED and the round-duration read is deleted |

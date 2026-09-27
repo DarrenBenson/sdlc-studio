@@ -30,8 +30,8 @@
 - **Given** a run whose recorded review-round count has reached the configured ceiling
 - **When** another review round is requested
 - **Then** it is refused, naming the count, the ceiling and the override, and no brief is generated
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_round_past_the_ceiling_is_refused
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by BG0783: the close-review round ledger has had no writer since US0918, so `review_round_guard` and the override it recorded read nothing and are deleted; the live per-unit cap (`review.max_rounds` through `critic.py record`) refuses a third round, pinned by test_lean_review_cap
+- **Verified:** manual (2026-09-27) - retired, superseded by BG0783
 
 ### AC3: The ceiling is configurable with a shipped default
 
@@ -46,8 +46,8 @@
 - **Given** a refused round past the ceiling
 - **When** the operator confirms the extra round explicitly
 - **Then** the round proceeds and the run state records that the ceiling was overridden and at which round, so the retro can read it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_ceiling_override_is_explicit_and_recorded
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by BG0783: the close-review round ledger has had no writer since US0918, so `review_round_guard` and the override it recorded read nothing and are deleted; the live per-unit cap (`review.max_rounds` through `critic.py record`) refuses a third round, pinned by test_lean_review_cap
+- **Verified:** manual (2026-09-27) - retired, superseded by BG0783
 
 ### AC5: A run that never opened does not silently count rounds into nothing
 
@@ -71,3 +71,4 @@ from `_blank()` is a `KeyError` on any run opened before this story.
 | 2026-07-19 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-20 | sdlc-studio | Groomed: user story and ACs authored against the critic/run_state surface |
 | 2026-09-26 | US0918 | AC1 and AC5 retired in the D0259 pattern: the review round's only writer, `critic.py sprint-review`, is retired and `critic.py record` records no round; `review_round_guard` still reads the rounds a run carries |
+| 2026-09-27 | BG0783 | AC2 and AC4 retired in the D0259 pattern: the close-review round ledger has had no writer since US0918, so `review_round_guard` and the override it recorded read nothing and are deleted; the live per-unit cap (`review.max_rounds` through `critic.py record`) refuses a third round, pinned by test_lean_review_cap |

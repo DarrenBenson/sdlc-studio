@@ -65,26 +65,9 @@ _SIGNOFF_OUTSTANDING = (
     re.compile(r"\bunreviewed\b", re.I),
 )
 
-# A COUNT of review rounds the anchor narrates. The number leads, only review adjectives may sit
-# between it and the word, so an ordinal ("round 3", "one of the rounds") is not misread. Shared
-# in spirit with run_state's ledger check - both read a count off prose to compare with the data.
-_ROUND_COUNT_RE = re.compile(
-    r"\b(\d+|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+"
-    r"(?:(?:independent|adversarial|review|close|closing|full)\s+){0,3}rounds?\b", re.I)
-_WORD_NUMBERS = {"zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
-                 "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12}
-
 
 def _claims_signoff_outstanding(text: str) -> bool:
     return any(p.search(text) for p in _SIGNOFF_OUTSTANDING)
-
-
-def _claimed_round_count(text: str) -> int | None:
-    m = _ROUND_COUNT_RE.search(text)
-    if not m:
-        return None
-    tok = m.group(1).lower()
-    return _WORD_NUMBERS.get(tok, None) if tok in _WORD_NUMBERS else int(tok)
 
 
 def _close_landed(root: Path, state: dict) -> bool:
@@ -243,10 +226,9 @@ def check(repo_root: Path | str = ".") -> dict:
         if td is not None and int(cd) != td:
             findings.append({"kind": "disclosure-drift",
                              "detail": f"LATEST.md says disclosure {cd}; actual is {td}"})
-    # the two load-bearing claims a resuming agent acts on - has the owed sign-off landed, and
-    # does the narrated round count match the run's ledger. Both compared against state the tool
-    # already holds; the document being wrong here sends a fresh context looking for a signature
-    # that arrived and re-reviewing a repair already judged.
+    # the load-bearing claim a resuming agent acts on - has the owed sign-off landed - compared
+    # against state the tool already holds; the document being wrong here sends a fresh context
+    # looking for a signature that arrived.
     try:
         from lib import run_state
         state = run_state.read(root)
@@ -259,18 +241,6 @@ def check(repo_root: Path | str = ".") -> dict:
                                     "the run carries an end and close_owed reports none owed - the "
                                     "signature it says is owed has landed. A resuming agent will "
                                     "hunt for an owed sign-off that arrived")})
-    # round count the anchor narrates, against the run's own review ledger
-    claimed = _claimed_round_count(text)
-    if claimed is not None:
-        try:
-            ledger = len(run_state.review_rounds(root))
-        except Exception:  # noqa: BLE001 - never crash the gate
-            ledger = 0
-        if ledger and claimed != ledger:
-            findings.append({"kind": "round-count-drift",
-                             "detail": (f"LATEST.md narrates {claimed} review round(s); the run "
-                                        f"ledger (review_rounds) holds {ledger} - claim the "
-                                        f"ledger's count, not a smaller number beside it")})
     # anchor-window ceiling: the anchor is re-read at every session start, so
     # it must stay a WINDOW (current state + one-line history), not a ledger
     # of full past-sprint paragraphs duplicating the retros

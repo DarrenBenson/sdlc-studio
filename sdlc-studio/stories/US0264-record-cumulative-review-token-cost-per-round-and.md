@@ -22,32 +22,32 @@
 - **Given** a completed review round with a known token cost
 - **When** the round is recorded
 - **Then** that cost is stored against the round on the run state
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_round_records_its_token_cost
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by BG0783: the per-round token cost and the next-round offer read the close-review round ledger, which has had no writer since US0918; both are deleted
+- **Verified:** manual (2026-09-27) - retired, superseded by BG0783
 
 ### AC2: The cumulative total is shown when the next round is offered
 
 - **Given** two recorded rounds costing 80k and 60k
 - **When** a third round is offered
 - **Then** the offer states the per-round costs and the cumulative 140k
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_next_round_offer_shows_cumulative_cost
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by BG0783: the per-round token cost and the next-round offer read the close-review round ledger, which has had no writer since US0918; both are deleted
+- **Verified:** manual (2026-09-27) - retired, superseded by BG0783
 
 ### AC3: An unmeasured round says so and is never counted as zero
 
 - **Given** a round whose token cost could not be measured
 - **When** the cumulative total is rendered
 - **Then** the round is shown as unmeasured and the total is marked as a partial sum - an unmeasured round is never silently added as 0, which would understate the spend
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_unmeasured_round_is_named_not_zeroed
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by BG0783: the per-round token cost and the next-round offer read the close-review round ledger, which has had no writer since US0918; both are deleted
+- **Verified:** manual (2026-09-27) - retired, superseded by BG0783
 
 ### AC4: A measured zero is distinguishable from an unmeasured round
 
 - **Given** a round whose measured cost was zero
 - **When** the cost report is rendered
 - **Then** it reads as a measured zero, not as unmeasured, and the total is not marked partial - the two are different facts and neither is inferred from falsiness
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_a_measured_zero_is_not_unmeasured
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by BG0783: the per-round token cost and the next-round offer read the close-review round ledger, which has had no writer since US0918; both are deleted
+- **Verified:** manual (2026-09-27) - retired, superseded by BG0783
 
 ## Notes
 
@@ -68,3 +68,4 @@ zero and unmeasured are different facts, and neither may be inferred from falsin
 | 2026-07-19 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-20 | sdlc-studio | Groomed: user story and ACs authored; the zero/unmeasured cases pinned from L-0156 and BG0224 |
 | 2026-07-20 | sdlc-studio | AC4 corrected at verification: it assumed upsert semantics (a round re-recorded without a cost reusing the value), but rounds are append-only, so no re-record exists to test. Rewritten to the property actually delivered - a measured zero is not an unmeasured round - rather than repointing the Verify line at a passing test |
+| 2026-09-27 | BG0783 | AC1 to AC4 retired in the D0259 pattern: the per-round token cost and the next-round offer read the close-review round ledger, which has had no writer since US0918; both are deleted |

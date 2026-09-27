@@ -80,8 +80,7 @@ CLOSED = tuple(o for o in OUTCOMES if o != RUNNING)
 # the module docstring: this list documents, it does not gate.
 FIELDS = ("schema", "run_id", "started_at", "ended_at", "outcome", "goal", "batch",
           "batch_changes", "reopened",
-          "plan", "handoff", "review_rounds", "review_ceiling_overrides",
-          "session_token_baseline", "session_token_stamps", "delegated_tokens")
+          "plan", "handoff", "session_token_baseline", "session_token_stamps", "delegated_tokens")
 
 # The session's token meter reading at the moment this run opened. The close subtracts it from
 # the meter's CURRENT reading to get the tokens THIS run spent, because the harness transcript
@@ -127,22 +126,10 @@ DELEGATED = "delegated_tokens"
 #: The provenance every delegated record carries. Never `measured`: nothing here read a meter.
 SUPPLIED = "supplied"
 
-# The close review's rounds, appended one per sprint-level review. Seeded in `_blank()` so a
-# new run carries them and `FIELDS` stays true of the record it documents; readers still go
-# through `.get(...) or []` because a run opened BEFORE these existed has no such key on disk
-# and must not raise.
-REVIEW_ROUNDS = "review_rounds"
 # A DELIVERY BATCH span: the unit set committed together, and the independent review that
 # covered it. The review belongs HERE, at the cadence the project already commits on, so a
 # finding is delivery work in the batch that caused it rather than close overhead.
 BATCHES = "batches"
-CEILING_OVERRIDES = "review_ceiling_overrides"
-
-# The sentinel for "this round's token cost was not measured", which is NOT the same fact as
-# a measured zero. A falsy test cannot tell them apart, and conflating them has shipped a
-# defect on this codebase before: an unmeasured round summed as 0 understates the
-# spend, and the operator is then shown a total that reads cheaper than the run was.
-UNMEASURED = None
 
 
 #: Where the harness keeps its per-session transcripts, overridable for tests and non-standard
@@ -314,55 +301,8 @@ class DisjointBatchError(RuntimeError):
 
 
 class ReviewLedgerError(ValueError):
-    """A write would contradict the review ledger at the moment it is recorded: a goal-verdict
-    note naming a round count the ledger does not carry, a round recorded against a run that has
-    already ended, or a reviewer label naming a round number other than the index it lands at.
-    Each is refused here rather than written, because the ledger is the thing later readers trust
-    to say how many rounds ran and when they stopped, and a note beside the data restating it
-    wrong is the exact drift BG0261 was filed for."""
-
-
-# Number words the ledger checks understand, so a note or reviewer label that spells a count out
-# ("three rounds") is read the same as one that writes the digit ("3 rounds").
-_WORD_NUMBERS = {"zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
-                 "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12}
-_NUM = r"(?:\d+|" + "|".join(_WORD_NUMBERS) + r")"
-
-# A COUNT of rounds ("three independent adversarial rounds", "5 rounds"): the number comes first
-# and only a bounded set of review adjectives may sit between it and the word. Kept tight on
-# purpose so an ordinal phrase ("one of the rounds", "round 3") is not misread as a count.
-_ROUND_COUNT_RE = re.compile(
-    r"\b(" + _NUM + r")\s+(?:(?:independent|adversarial|review|close|closing|full|more)\s+){0,3}"
-    r"rounds?\b", re.I)
-
-# An ORDINAL a reviewer label carries ("round 7"): the word comes first, then the number. This is
-# what a reviewer-supplied string uses to name which round it is, and it must agree with the index
-# the entry is stored at.
-_ROUND_ORDINAL_RE = re.compile(r"\bround\s+(" + _NUM + r")\b", re.I)
-
-
-def _as_int(token: str) -> int | None:
-    t = token.lower()
-    if t in _WORD_NUMBERS:
-        return _WORD_NUMBERS[t]
-    try:
-        return int(t)
-    except ValueError:
-        return None
-
-
-def stated_round_count(text: str | None) -> int | None:
-    """The round COUNT a note narrates, or None when it names none. `len(review_rounds)` is the
-    only honest source; this only exists to catch a note that restates a different one."""
-    m = _ROUND_COUNT_RE.search(text or "")
-    return _as_int(m.group(1)) if m else None
-
-
-def stated_round_ordinal(text: str | None) -> int | None:
-    """The round NUMBER a reviewer label names ("round 7" -> 7), or None. A label that names none
-    is fine - the index stands. A label naming a different one is the disagreement BG0261 found."""
-    m = _ROUND_ORDINAL_RE.search(text or "")
-    return _as_int(m.group(1)) if m else None
+    """Nothing in this module raises it since the close-review round ledger and its checks were
+    deleted; kept only because `sprint.py`'s goal-verdict callers still name it in an `except`."""
 
 
 def path(repo_root: Path | str) -> Path:
@@ -509,7 +449,7 @@ def _blank() -> dict:
     false fact in the one file the next reader trusts. An unopened run says so."""
     return {"schema": SCHEMA, "run_id": None, "started_at": None, "ended_at": None,
             "outcome": RUNNING, "goal": None, "batch": [], "plan": None, "handoff": None,
-            REVIEW_ROUNDS: [], CEILING_OVERRIDES: [], TOKEN_BASELINE: None, TOKEN_STAMPS: [],
+            TOKEN_BASELINE: None, TOKEN_STAMPS: [],
             DELEGATED: [],
             # Seeded empty like its siblings: `reopened` is part of the documented shape, and a
             # field that only appears after a reopen would make every reader test for it.
@@ -1202,25 +1142,6 @@ def appetite_overage(repo_root: Path | str) -> dict | None:
     }
 
 
-def review_rounds(repo_root: Path | str) -> list[dict]:
-    """Every recorded close-review round, in order. A malformed entry is skipped rather than
-    raising: the rounds are a cost and convergence signal, and one bad record must not make
-    the run unreadable to the close that needs the rest."""
-    rounds = read(repo_root).get(REVIEW_ROUNDS) or []
-    if not isinstance(rounds, list):
-        return []
-    return [r for r in rounds if isinstance(r, dict)]
-
-
-def review_round_count(repo_root: Path | str) -> int:
-    """How many close-review rounds this run has recorded. Zero when no run is open - a round
-    counted against a run with no identity could not be joined to anything later, so it is
-    not counted at all (the review itself is still recorded by the caller)."""
-    if not read(repo_root).get("run_id"):
-        return 0
-    return len(review_rounds(repo_root))
-
-
 #: Units a lane was BRIEFED on and has not returned from. A lane that dies mid-flight leaves
 #: real code in the working tree behind a unit still marked Ready, and a restart cannot tell a
 #: delivered unit from an untouched one - one restarted lane was dispatched onto three units
@@ -1265,24 +1186,6 @@ def lanes_in_flight(repo_root: Path | str) -> list[dict]:
     return [r for r in (read(repo_root).get(IN_FLIGHT) or []) if isinstance(r, dict)]
 
 
-def round_duration(entry: dict) -> int | None:
-    """A recorded round's duration in seconds, or None for UNMEASURED.
-
-    None is the honest reading of a round nobody timed, and it must never be folded to 0: the
-    overhead ratio computes delivery by subtraction, so a silent zero reports review as having
-    cost nothing and inflates the delivered share by exactly the time the review took. The two
-    largest sprints in this record spent more wall-clock in review-and-repair than in delivery,
-    and the ratio said review was unmeasured while treating it as free."""
-    value = entry.get("seconds", UNMEASURED)
-    if value is UNMEASURED or value is None:
-        return None
-    try:
-        n = int(value)
-    except (TypeError, ValueError):
-        return None
-    return n if n >= 0 else None
-
-
 def _elapsed_seconds(started_at: str | None, ended_at: str | None) -> int | None:
     """Seconds between two ISO-8601 stamps, or None when either is absent or unparseable.
 
@@ -1296,69 +1199,6 @@ def _elapsed_seconds(started_at: str | None, ended_at: str | None) -> int | None
         return None
     delta = int((b - a).total_seconds())
     return delta if delta >= 0 else None
-
-
-def record_review_round(repo_root: Path | str, verdict: str, units: list[str] | None = None,
-                        reviewer: str = "", tokens: int | None = UNMEASURED,
-                        repaired: list[dict] | None = None,
-                        started_at: str | None = None, ended_at: str | None = None,
-                        seconds: int | None = UNMEASURED) -> dict | None:
-    """Append one close-review round to the run. Returns the round recorded, or None when no
-    run is open.
-
-    `tokens` distinguishes an unmeasured round (None) from a measured zero, and both are
-    preserved as given - see UNMEASURED. `repaired` is the file-and-line surface the round's
-    repair touched, which the NEXT round compares its findings against.
-
-    REFUSED, never written silently, when the write would contradict the ledger it is joining:
-    a round recorded against a run that already carries `ended_at` (a review accepted against a
-    run already closed - BG0261 found one recorded 33 minutes after the run ended), or a reviewer
-    label naming a round number other than the index this entry lands at (the tool's numbering and
-    the reviewer's must not disagree by one and nothing object)."""
-    current = read(repo_root)
-    if not current.get("run_id"):
-        return None
-    index = len(review_rounds(repo_root)) + 1
-    if current.get("ended_at"):
-        raise ReviewLedgerError(
-            f"cannot record a review round against a run that already ended at "
-            f"{current['ended_at']!r} - the review would be accepted against a closed run and "
-            f"counted after the fact. Record the round before the run is closed, or reopen it")
-    label = stated_round_ordinal(reviewer)
-    if label is not None and label != index:
-        raise ReviewLedgerError(
-            f"reviewer label {reviewer!r} names round {label}, but this entry is stored at round "
-            f"{index} - the ledger's numbering and the reviewer's must not disagree. Drop the "
-            f"number from the label (the index is authoritative) or record it at the right round")
-    # A round's DURATION, on the same UNMEASURED discipline as its tokens: an explicit figure
-    # wins, else it is derived from a start and an end, else it stays UNMEASURED. Never 0 by
-    # default - a zero is a measurement, and inventing one here is what let the overhead ratio
-    # report review as free while it was the largest cost in the sprint.
-    if seconds is UNMEASURED or seconds is None:
-        derived = _elapsed_seconds(started_at, ended_at)
-        seconds = UNMEASURED if derived is None else derived
-    entry = {
-        "round": index,
-        "verdict": (verdict or "").upper(),
-        "reviewer": reviewer,
-        "units": [sdlc_md.norm_id(u) for u in (units or [])],
-        "recorded_at": sdlc_md.now_iso8601(),
-        "tokens": tokens,
-        "repaired": repaired or [],
-        "started_at": started_at or None,
-        "ended_at": ended_at or None,
-        "seconds": seconds,
-    }
-
-    def apply(state: dict) -> dict:
-        state = state or _blank()
-        existing = state.get(REVIEW_ROUNDS)
-        state[REVIEW_ROUNDS] = ([r for r in existing if isinstance(r, dict)]
-                                if isinstance(existing, list) else []) + [entry]
-        return state
-
-    _mutate(repo_root, apply)
-    return entry
 
 
 #: How a multi-clause Sprint Goal is split. A goal is one sentence by convention, and its
@@ -1472,22 +1312,14 @@ def run_id_from_name(name: str) -> str | None:
 
 def record_goal_verdict(repo_root: Path | str, verdict: str, note: str = "",
                         clauses: list[dict] | None = None) -> dict:
-    """Record the closing review's Sprint Goal verdict beside the goal it judges.
+    """Record the closing review's Sprint Goal verdict beside the goal it judges. Returns the
+    record written.
 
-    The round count is DERIVED from the ledger and stamped on the record (`rounds`), never taken
-    from the prose. A note that narrates a DIFFERENT count is REFUSED, not silently written: the
-    verdict note is the sentence a fresh context reads to learn how many adversarial rounds ran,
-    and BG0261 found one saying 'three independent adversarial rounds' while six sat in the
-    `review_rounds` key beside it. Derive it from the ledger or do not restate it - the two must
-    not disagree. Returns the record written."""
-    ledger = review_round_count(repo_root)
-    stated = stated_round_count(note)
-    if stated is not None and stated != ledger:
-        raise ReviewLedgerError(
-            f"the goal-verdict note narrates {stated} round(s), but the ledger carries {ledger} "
-            f"(len(review_rounds)) - a note may not restate a round count the ledger contradicts. "
-            f"Drop the number (the derived `rounds` field carries it) or record the missing rounds")
-    record = {"verdict": verdict, "note": note, "rounds": ledger}
+    It carries no round count: the per-unit rounds live in the verdict ledger
+    (`critic.delivery_rounds`). The run-level round ledger it once read lost its only writer when
+    the sprint-level review verb was retired, so it stamped 0 on every verdict and refused any
+    note that named a count."""
+    record = {"verdict": verdict, "note": note}
     if clauses:
         # Per-clause verdicts, recorded BESIDE the single word rather than instead of it: the
         # one-word verdict is what every existing reader consumes, and a clause list is what
@@ -1552,25 +1384,6 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
         existing = state.get(DELEGATED)
         state[DELEGATED] = ([r for r in existing if isinstance(r, dict)]
                             if isinstance(existing, list) else []) + [entry]
-        return state
-
-    _mutate(repo_root, apply)
-    return entry
-
-
-def record_ceiling_override(repo_root: Path | str, at_round: int, ceiling: int) -> dict | None:
-    """Record that the operator explicitly bought a round past the ceiling. Returns the
-    override, or None with no run open. The record is what makes the override auditable: a
-    ceiling silently exceeded is the same as no ceiling."""
-    if not read(repo_root).get("run_id"):
-        return None
-    entry = {"at_round": at_round, "ceiling": ceiling}
-
-    def apply(state: dict) -> dict:
-        state = state or _blank()
-        existing = state.get(CEILING_OVERRIDES)
-        state[CEILING_OVERRIDES] = ([o for o in existing if isinstance(o, dict)]
-                                    if isinstance(existing, list) else []) + [entry]
         return state
 
     _mutate(repo_root, apply)

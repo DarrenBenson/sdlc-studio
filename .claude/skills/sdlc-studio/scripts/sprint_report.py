@@ -579,7 +579,7 @@ def _execution_lines(rep: dict) -> list[str]:
 # Two rules it will not bend, and they are the same two the rest of this file lives by:
 #
 #   EVERY COMPONENT IS READ BACK FROM A RECORD THE RUN WROTE - the test-execution ledger, the
-#   mutation series, the review-round stamps, the run's own start and end. Nothing here is
+#   mutation series, the run's own start and end. Nothing here is
 #   estimated at close time. A figure invented at the close is a claim about a sprint, not a
 #   measurement of one, and it would be indistinguishable from the hand-computed number this
 #   exists to replace.
@@ -618,45 +618,12 @@ def _component_mutation(ctx: dict) -> dict:
 
 
 def _component_review(ctx: dict) -> dict:
-    """Review and repair: the span the run's own review-round stamps cover.
-
-    A LOWER BOUND, and labelled one. No round records a duration, so the span from the first
-    recorded round to the last is the repair time BETWEEN rounds and nothing before the first;
-    a run whose rounds were all stamped together at close covers seconds of a review that took
-    hours. Fewer than two stamps, or a span of zero, measures nothing at all and says so -
-    reporting either as 0s would publish a review that cost nothing.
-    """
-    state = ctx.get("state") or {}
-    rounds = [r for r in (state.get(run_state.REVIEW_ROUNDS) or []) if isinstance(r, dict)]
-    # A round that CARRIES a duration is measured directly, and a sum of durations is exact -
-    # it counts the review itself, not merely the gaps between the stamps. The stamp-span
-    # fallback below stays for rounds recorded before durations existed, and stays labelled a
-    # lower bound. Mixed is still a lower bound: the untimed rounds contribute nothing, and
-    # counting them as zero is what made review look free while it was the largest cost.
-    durations = [d for d in (run_state.round_duration(r) for r in rounds) if d is not None]
-    if durations:
-        every = len(durations) == len(rounds)
-        return {"seconds": float(sum(durations)), "measured": True,
-                "bound": "exact" if every else "lower",
-                "source": (f"{len(durations)} recorded round duration(s)"
-                           + ("" if every else f" of {len(rounds)} round(s); the rest are "
-                                               f"UNMEASURED and contribute nothing")),
-                "why": ""}
-    stamps = sorted(t for t in (telemetry._parse_iso(r.get("recorded_at"))  # noqa: SLF001
-                                for r in rounds) if t is not None)
-    source = "the recorded review-round stamps"
-    if len(stamps) < 2:
-        return {"seconds": None, "measured": False, "bound": None, "source": source,
-                "why": f"{len(rounds)} review round(s) are recorded and no round carries a "
-                       f"duration, so the review and repair time is NOT CAPTURED, not zero"}
-    span = (stamps[-1] - stamps[0]).total_seconds()
-    if span <= 0:
-        return {"seconds": None, "measured": False, "bound": None, "source": source,
-                "why": "every recorded round carries the same stamp (they were recorded "
-                       "together), so their span measures nothing - not a review that was free"}
-    return {"seconds": round(span, 1), "measured": True, "bound": "lower", "source": source,
-            "why": "the span between the first and last recorded round, so it bounds the "
-                   "review and repair time from below"}
+    """Review and repair: NOT CAPTURED, never zero. No record the run writes times a review -
+    the per-unit verdict rows carry no duration - so the ratio names it as the part it excludes
+    rather than crediting that time to delivery."""
+    return {"seconds": None, "measured": False, "bound": None, "source": "the verdict ledger",
+            "why": "no record the run writes times a review, so the review and repair time is "
+                   "NOT CAPTURED, not zero"}
 
 
 #: The overhead components, defined ONCE as a table of extractors. The sum, the unmeasured
@@ -1112,12 +1079,7 @@ _APPROVE = "APPROVE"
 
 
 def _verdict_entries(ctx: dict) -> list[tuple]:
-    """Every recorded verdict from both ledgers as `(sort_key, verdict, units)`, in order.
-
-    Two ledgers hold this, and the row counts them BOTH: `critic`'s sprint-review rows and the
-    run-state review rounds. Reading one and not the other is how a run whose REJECTs were
-    written to the ledger this row did not consult reported `none recorded` - the same state a
-    genuinely unreviewed run reports, and indistinguishable from it.
+    """Every recorded sprint-review verdict as `(sort_key, verdict, units)`, in order.
 
     Ordered by the recorded stamp with a stable tiebreak on append order. NOT by date alone:
     `record_verdict` writes a date with no time, so two verdicts recorded in one sitting tie,
@@ -1130,11 +1092,6 @@ def _verdict_entries(ctx: dict) -> list[tuple]:
         units = [sdlc_md.norm_id(u) for u in re.split(r"[,;\s]+", cell) if u.strip()]
         entries.append(((str(row.get("date") or ""), 0, i),
                         str(row.get("verdict") or "").strip().upper(), units))
-    for i, rnd in enumerate(ctx.get("review_rounds") or []):
-        idx = rnd.get("round") if isinstance(rnd.get("round"), int) else i
-        entries.append(((str(rnd.get("recorded_at") or ""), 1, idx),
-                        str(rnd.get("verdict") or "").strip().upper(),
-                        [sdlc_md.norm_id(u) for u in (rnd.get("units") or [])]))
     entries.sort(key=lambda e: e[0])
     return entries
 
@@ -1248,7 +1205,6 @@ def _ck_closing_review(ctx: dict) -> tuple:
     # verdict with nothing behind it.
     rejected_set = set(rejected)
     unreviewed = [u for u in open_units if u not in rejected_set]
-    rounds = len(ctx.get("review_rounds") or [])
     if rejected or unreviewed:
         # The VALUE has to say which of the two outstanding states this is. Outstanding because
         # the verdicts were read and did not clear is a different fact from outstanding because
@@ -1259,10 +1215,10 @@ def _ck_closing_review(ctx: dict) -> tuple:
         if unreviewed:
             parts.append(f"{len(unreviewed)} unreviewed")
         named = ", ".join(sorted(rejected + unreviewed)[:6])
-        return (NOT_RUN, f"{', '.join(parts)} of {len(units)} unit(s) over {rounds} round(s)",
+        return (NOT_RUN, f"{', '.join(parts)} of {len(units)} unit(s)",
                 f"no APPROVE covers: {named} - the row reads each unit's latest verdict, so a "
                 f"batch is reviewed only when every unit in it is")
-    return (RAN, f"{len(units)} unit(s) approved over {rounds} round(s)", "")
+    return (RAN, f"{len(units)} unit(s) approved", "")
 
 
 #: A criterion the author ticked. The `[x]` is a human saying "I checked this"; the row below
@@ -1802,7 +1758,7 @@ def _ck_review_attribution(ctx: dict) -> tuple:
     # The reviewers of the batch as a whole count too: a full-diff pass covers every unit at
     # once, so counting only per-unit rows would report a two-lens round as one-lens.
     reviewers |= {str(r.get("reviewer") or "").strip()
-                  for r in ctx["sprint_reviews"] + ctx["review_rounds"]}
+                  for r in ctx["sprint_reviews"]}
     lenses = len({_lens(r) for r in reviewers if r})
     under = lenses < MIN_LENSES
     # The uncovered bucket holds two DIFFERENT facts and the operator needs both: a rejection
@@ -2105,10 +2061,10 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
     run = _run_record(root, units)
     try:
         import critic  # noqa: PLC0415
-        sprint_reviews, review_rounds = critic.sprint_reviews(root), run_state.review_rounds(root)
+        sprint_reviews = critic.sprint_reviews(root)
     except Exception as exc:  # noqa: BLE001 - a report must not die on a log read
         sdlc_md.debug("sprint_report.checklist.reviews", exc)
-        sprint_reviews, review_rounds = [], []
+        sprint_reviews = []
     filed, still_open = _open_findings(root, run)
     ctx = {
         # `read_root` is the tree a READ-ONLY probe should ask, and it differs from `root` in
@@ -2125,7 +2081,7 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
         "sprint_goal": rep.get("sprint_goal"), "goal_verdict": rep.get("sprint_goal_verdict"),
         "delivered_points": rep.get("delivered_points"), "spend": rep.get("spend"),
         "sprint_actual_tokens": rep.get("sprint_actual_tokens"),
-        "sprint_reviews": sprint_reviews, "review_rounds": review_rounds,
+        "sprint_reviews": sprint_reviews,
         "filed_in_run": filed, "open_filed_in_run": still_open,
         "carried_issues": _carried_issues(root, retro_id),
         # Named in the checklist so the close can SAY what its window could not

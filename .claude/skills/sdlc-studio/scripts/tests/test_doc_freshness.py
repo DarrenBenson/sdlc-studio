@@ -32,15 +32,14 @@ def _latest(root: Path, text: str) -> None:
     (rd / "LATEST.md").write_text(text, encoding="utf-8")
 
 
-def _runstate(root: Path, rounds: int, ended: bool = True) -> None:
-    """A run-state.json with `rounds` recorded review rounds, closed when `ended`."""
+def _runstate(root: Path, ended: bool = True) -> None:
+    """A run-state.json, closed when `ended`."""
     d = root / "sdlc-studio" / ".local"
     d.mkdir(parents=True, exist_ok=True)
     state = {
         "schema": 1, "run_id": "RUN-TESTBG0261", "started_at": "2026-07-22T10:00:00Z",
         "ended_at": "2026-07-22T11:41:23Z" if ended else None,
         "outcome": "goal-reached" if ended else "running",
-        "review_rounds": [{"round": i + 1, "verdict": "REJECT"} for i in range(rounds)],
     }
     (d / "run-state.json").write_text(__import__("json").dumps(state), encoding="utf-8")
 
@@ -186,45 +185,34 @@ class AnchorWindowCeilingTests(unittest.TestCase):
             self.assertNotIn("anchor-ledger", [f["kind"] for f in r["findings"]])
 
 class AnchorClaimsCheckedAgainstRunStateTests(unittest.TestCase):
-    """BG0261: the anchor's two load-bearing claims - has the owed sign-off landed, does the
-    narrated round count match the ledger - are checked against the run state, and neither check
-    can be satisfied by correcting the prose alone."""
+    """BG0261: the anchor's load-bearing claim - has the owed sign-off landed - is checked against
+    the run state. Its round-count half read a ledger nothing writes, and BG0783 deleted it."""
 
-    def test_a_landed_signoff_and_a_contradicted_round_count_are_both_reported(self):
+    def test_a_landed_signoff_is_reported_and_an_agreeing_anchor_is_not(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _skill(root, "2.4.4", 3)
-            _runstate(root, rounds=6, ended=True)          # run closed; ledger holds 6 rounds
+            _runstate(root, ended=True)
             _latest(root, "**Project version:** 2.4.4\n\n"
                           "The run is NOT closed: the sign-off is owed and round 3's repair is "
-                          "unreviewed. Three independent adversarial rounds have run.\n")
-            r = df.check(root)
-            kinds = [f["kind"] for f in r["findings"]]
-            self.assertIn("signoff-drift", kinds)
-            self.assertIn("round-count-drift", kinds)
-            # distinct findings, not folded into the line-count one
-            self.assertNotEqual("signoff-drift", "round-count-drift")
-            rc = next(f for f in r["findings"] if f["kind"] == "round-count-drift")
-            self.assertIn("6", rc["detail"])               # names the ledger's real count
+                          "unreviewed.\n")
+            self.assertIn("signoff-drift", [f["kind"] for f in df.check(root)["findings"]])
 
-        # and NEITHER fires when the document agrees with the state
+        # and it does not fire when the document agrees with the state
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _skill(root, "2.4.4", 3)
-            _runstate(root, rounds=6, ended=True)
+            _runstate(root, ended=True)
             _latest(root, "**Project version:** 2.4.4\n\n"
-                          "The run is closed and the sign-off landed. "
-                          "Six adversarial rounds ran.\n")
-            kinds = [f["kind"] for f in df.check(root)["findings"]]
-            self.assertNotIn("signoff-drift", kinds)
-            self.assertNotIn("round-count-drift", kinds)
+                          "The run is closed and the sign-off landed.\n")
+            self.assertNotIn("signoff-drift", [f["kind"] for f in df.check(root)["findings"]])
 
     def test_signoff_owed_is_true_while_the_run_is_still_open(self):
         # the check must not fire when the sign-off is GENUINELY owed - an open run
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _skill(root, "2.4.4", 3)
-            _runstate(root, rounds=2, ended=False)
+            _runstate(root, ended=False)
             _latest(root, "**Project version:** 2.4.4\n\nThe sign-off is owed.\n")
             self.assertNotIn("signoff-drift", [f["kind"] for f in df.check(root)["findings"]])
 

@@ -22,48 +22,48 @@
 - **Given** a review round whose REJECT is followed by repair commits
 - **When** the round is closed out
 - **Then** the run state records that round's repaired file set, so the next round has something to compare against
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_round_records_its_repaired_file_set
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by BG0783: `classify_finding` compared a finding with the last close-review round's repair surface, a ledger with no writer since US0918, so it read nothing and is deleted
+- **Verified:** manual (2026-09-27) - retired, superseded by BG0783
 
 ### AC2: A finding inside the previous round's repair surface is classified a repair regression
 
 - **Given** round 1 repaired `critic.py`
 - **When** round 2 returns a finding located in `critic.py`
 - **Then** that finding is reported as a repair regression, naming the round whose repair touched it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_finding_in_prior_repair_surface_is_a_repair_regression
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by BG0783: `classify_finding` compared a finding with the last close-review round's repair surface, a ledger with no writer since US0918, so it read nothing and is deleted
+- **Verified:** manual (2026-09-27) - retired, superseded by BG0783
 
 ### AC3: A finding outside that surface is reported as fresh
 
 - **Given** round 1 repaired `critic.py` only
 - **When** round 2 returns a finding located in `sprint.py`
 - **Then** it is reported as a fresh finding, not a repair regression
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_finding_outside_prior_repair_surface_is_fresh
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by BG0783: `classify_finding` compared a finding with the last close-review round's repair surface, a ledger with no writer since US0918, so it read nothing and is deleted
+- **Verified:** manual (2026-09-27) - retired, superseded by BG0783
 
 ### AC4: Round 1 can never produce a repair regression
 
 - **Given** a run whose first review round is in progress, with no prior repair recorded
 - **When** findings are classified
 - **Then** every finding is fresh, and no repair regression is reported against an empty prior surface
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_first_round_findings_are_always_fresh
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by BG0783: `classify_finding` compared a finding with the last close-review round's repair surface, a ledger with no writer since US0918, so it read nothing and is deleted
+- **Verified:** manual (2026-09-27) - retired, superseded by BG0783
 
 ### AC5: Classification is by file AND the finding's located lines, not file alone
 
 - **Given** round 1 repaired one function in a large file
 - **When** round 2 returns a finding elsewhere in that same file, outside the repaired lines
 - **Then** it is reported as fresh, not a repair regression - a file-level match alone would call almost everything a regression on this codebase, where single files carry thousands of lines
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_same_file_outside_repaired_lines_is_fresh
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by BG0783: `classify_finding` compared a finding with the last close-review round's repair surface, a ledger with no writer since US0918, so it read nothing and is deleted
+- **Verified:** manual (2026-09-27) - retired, superseded by BG0783
 
 ### AC6: An unlocatable finding is reported as unclassified, never defaulted to fresh
 
 - **Given** a round-2 finding with no parseable file location
 - **When** it is classified
 - **Then** it is reported unclassified with its reason, and is not silently counted as fresh - a default that hides a regression is the failure this story exists to prevent
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py -k test_unlocatable_finding_is_unclassified_not_fresh
-- **Verified:** yes (2026-07-20)
+- **Verify:** manual - retired by BG0783: `classify_finding` compared a finding with the last close-review round's repair surface, a ledger with no writer since US0918, so it read nothing and is deleted
+- **Verified:** manual (2026-09-27) - retired, superseded by BG0783
 
 ## Notes
 
@@ -78,3 +78,4 @@ regression.
 | --- | --- | --- |
 | 2026-07-19 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-20 | sdlc-studio | Groomed: user story and ACs authored; line-level granularity and the unclassified case added |
+| 2026-09-27 | BG0783 | AC1 to AC6 retired in the D0259 pattern: `classify_finding` compared a finding with the last close-review round's repair surface, a ledger with no writer since US0918, so it read nothing and is deleted |
