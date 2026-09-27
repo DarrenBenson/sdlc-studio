@@ -38,7 +38,7 @@ Add a path-suffix check to the lint: a `grep` or `file` verifier whose resolved 
 - **When** `lint_markdown_evidence` judges each, alongside a `pytest` verifier, a `manual`
   one, a `grep` over a Python file, and a mixed target list naming both markdown and code
 - **Then** all four originals are refused and none of the others is
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k "test_every_verifier_us0310_shipped_is_refused or test_a_behavioural_verifier_is_untouched or test_a_mixed_target_list_is_not_refused or test_file_verb_on_markdown_is_refused"
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k "test_every_verifier_us0310_shipped_is_refused or test_a_behavioural_verifier_is_untouched or test_a_mixed_target_list_is_not_refused or test_the_file_verb_is_refused_over_markdown_and_over_a_prose_directory"
 - **Verified:** yes (2026-07-22)
 
 ### AC2: the refusal fails the command while authoring, and lifts once the story has shipped
@@ -47,7 +47,7 @@ Add a path-suffix check to the lint: a `grep` or `file` verifier whose resolved 
 - **When** `verify_ac lint` runs against it at `Draft`, then again at `Done`
 - **Then** the first exits non-zero and the second exits zero, so authoring is interrupted
   and a lint over shipped history still runs
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k "test_lint_exits_non_zero_on_a_draft_story_and_zero_once_done or test_uppercase_extension_is_refused"
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k "test_lint_exits_non_zero_on_a_draft_story_and_zero_once_done or test_an_uppercase_extension_directory_is_refused"
 - **Verified:** yes (2026-07-22)
 
 ## Resolution
@@ -97,3 +97,4 @@ symlink rule).
 | 2026-07-22 | sdlc-studio | Round 4 REJECT repaired, bought past the ceiling because round 3's repair had shipped unreviewed. THE DESIGN CHANGED: four versions had tried to ENUMERATE what the runner reads and each was beaten by a case it had not thought of, so the burden is now INVERTED - a prose verb is refused unless a readable, non-symlinked, non-markdown file it reads can be pointed at. Every uncertainty refuses. This closes all nine known forms and BG0266 for free. Two further defects of my own were corrected: the case rule was implemented TWICE and the two disagreed, so a mutant dropping one `.lower()` flipped a verdict while every test stayed green - and I had asserted that mutant was EQUIVALENT without running it, in the same commit that named that exact failure. |
 | 2026-07-22 | sdlc-studio | Round 3 REJECT repaired, and UNREVIEWED - `review.max_rounds` is 3 and the ceiling is spent. An EIGHTH escape, verified passing: the guard shared the runner's parse but not its WALK, so one hidden, gitignored or symlinked non-markdown file made an all-prose directory read as mixed and pass. The walk now derives from `rg --files`. A surviving mutant that flipped a nested all-markdown directory from refused to allowed is also closed; every directory fixture had been flat, so the tests and the mutant agreed by construction. |
 | 2026-07-22 | sdlc-studio | REPAIRED after the closing review REJECTED. The guard judged only the tokens as WRITTEN and was defeated three ways: a directory glob (`sdlc-studio/reviews/*`), a flag read as the pattern (`grep -c "x" a.md`), and a bare recursive directory. It now judges the files actually READ - flags split from the pattern, globs expanded, directories walked under `-r` and dropped without it - with the written tokens kept as a floor. The claim that the previously surviving mutant was EQUIVALENT was FALSE and is withdrawn; that mutant is now killed, along with four others. The repair plan itself was attacked before execution and REFUTED: the first proposed fix closed none of the three escapes. |
+| 2026-09-27 | Claude Opus 5.5 | BG0805: three -k terms selected nothing. AC1: `test_file_verb_on_markdown_is_refused` repointed to `test_the_file_verb_is_refused_over_markdown_and_over_a_prose_directory`, its replacement in round 4 (897ff3c8). `test_a_mixed_target_list_is_not_refused` was deleted in 897ff3c8 with no replacement, so it is restored in `test_verify_ac.py` (markdown and code targets, both orders) and the term is unchanged. AC2: `test_uppercase_extension_is_refused` repointed to `test_an_uppercase_extension_directory_is_refused`, its replacement in 897ff3c8. |

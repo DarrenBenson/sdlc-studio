@@ -28,7 +28,7 @@
 - **Given** the script CLIs
 - **When** `--root` is passed
 - **Then** github_sync accepts it (resolving STATE_PATH against it) and verify_ac aliases it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k "root_is_alias_of_repo_root or dir_and_report_resolve_against_root"
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py -k "root_and_repo_root_bind_the_standard_dest or dir_and_report_resolve_against_root"
 - **Verified:** yes (2026-07-10)
 
 ## Revision History
@@ -36,3 +36,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-06 | sdlc | Created via `new` (deterministic) |
+| 2026-09-27 | Claude Opus 5.5 | BG0805: AC2's -k term `root_is_alias_of_repo_root`, which selected nothing, repointed to `root_and_repo_root_bind_the_standard_dest`, the test CR0234's uniform CLI grammar (95aaacd9) renamed it to. |

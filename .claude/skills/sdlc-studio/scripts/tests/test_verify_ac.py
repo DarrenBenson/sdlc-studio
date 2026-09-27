@@ -2832,6 +2832,16 @@ class MarkdownEvidenceLintTests(unittest.TestCase):
             with self.subTest(expr=expr):
                 self.assertIsNone(verify_ac.lint_markdown_evidence(expr, root))
 
+    def test_a_mixed_target_list_is_not_refused(self) -> None:
+        # BG0264 AC1: a target list naming markdown AND code reads the code, so it can
+        # discriminate. Both orders, so judging the first target alone refuses one of them.
+        md = ".claude/skills/sdlc-studio/reference-sprint.md"
+        py = ".claude/skills/sdlc-studio/scripts/sprint.py"
+        for targets in (f"{md} {py}", f"{py} {md}"):
+            with self.subTest(targets=targets):
+                self.assertIsNone(verify_ac.lint_markdown_evidence(
+                    f"grep 'refuses' {targets}", self._root()))
+
     def test_the_file_verb_is_refused_over_markdown_and_over_a_prose_directory(self) -> None:
         # BG0266: `file <dir>` runs `test -e`, which passes forever. The inverted burden
         # closes it without a separate rule - a prose directory demonstrates nothing.

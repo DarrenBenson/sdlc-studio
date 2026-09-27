@@ -26,7 +26,7 @@ Install the global option with `sdlc_md.add_global_root` on each script's top-le
 ## Acceptance Criteria
 
 - [x] **AC1** Given any script in the family, when its parser is swept, then `--root` is a global option accepted before or after the verb, and every per-subcommand copy defaults to SUPPRESS so it cannot clobber a value given first.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py -k "root_is_a_global_flag or subcommand_root_cannot_clobber"
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py -k "every_root_dealing_script_accepts_root_before_the_subcommand or subcommand_root_cannot_clobber"
   - **Verified:** yes (2026-08-14)
 - [x] **AC2** Given `ROOT_GRAMMAR_DEBT`, when the suite runs, then it is empty and a test says so - the set only shrinks, and eight of its twelve names were already stale.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py -k debt_set_is_empty
@@ -56,3 +56,4 @@ The debt set is now empty, and a test asserts it, so the next entry has to be ar
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-08 | sdlc-studio | Filed |
+| 2026-09-27 | Claude Opus 5.5 | BG0805: AC1's -k term `root_is_a_global_flag` named no test at filing (git log -S finds none) and selected nothing; repointed to `every_root_dealing_script_accepts_root_before_the_subcommand`, the RootPlacementConformance sweep that asserts the global --root this criterion states. |

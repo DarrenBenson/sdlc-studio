@@ -908,12 +908,15 @@ def selector_resolves(expr: str, cwd=None) -> bool | None:
     return bool(nodes)
 
 
+#: One token of a pytest `-k` expression: a parenthesis, an operator, or a substring operand.
+_K_TOKEN_RE = re.compile(r"\(|\)|\band\b|\bor\b|\bnot\b|[^\s()]+")
+
+
 def _k_selects(pattern: str, nodes: list[str]) -> bool:
     """Does pytest's `-k <pattern>` match any node id? Supports the `and/or/not` and
     parenthesised forms pytest accepts, over case-insensitive substring matches - enough to
     answer "does this select anything" without importing pytest's own expression engine."""
-    import re as _re
-    tokens = _re.findall(r"\(|\)|\band\b|\bor\b|\bnot\b|[^\s()]+", pattern)
+    tokens = _K_TOKEN_RE.findall(pattern)
     for node in nodes:
         low = node.lower()
         reduced = [
@@ -925,6 +928,55 @@ def _k_selects(pattern: str, nodes: list[str]) -> bool:
         except SyntaxError:
             return True  # an expression we cannot evaluate: assume it selects, never false-dead
     return False
+
+
+def _k_or_terms(pattern: str) -> list[str]:
+    """The top-level `or` operands of a `-k` expression, each re-joined from its tokens. `or`
+    binds loosest, so every operand is a complete expression of its own; one inside parentheses
+    belongs to its group and is not split."""
+    terms: list[list[str]] = [[]]
+    depth = 0
+    for tok in _K_TOKEN_RE.findall(pattern):
+        depth += (tok == "(") - (tok == ")")
+        if tok == "or" and depth == 0:
+            terms.append([])
+        else:
+            terms[-1].append(tok)
+    return [" ".join(t) for t in terms]
+
+
+def dead_k_terms(expr: str, cwd=None) -> list[str]:
+    """The `or`-joined `-k` terms of a pytest selector that select nothing while another term
+    selects something. Empty when every term is live, when there is no top-level `or`, when
+    the selector cannot be answered here, and when EVERY term is dead: that selector selects
+    nothing, which `selector_resolves` already reports.
+
+    Resolving the expression whole let a live term hide a dead one, so a stamp read green while
+    the part of the claim the dead term stood for verified nothing. Every file the selector
+    names is collected, because pytest's `-k` spans them all."""
+    head = expr.split(None, 1)[0].lower() if expr.split() else ""
+    if head not in _COLLECTABLE or _is_manual(expr) or not shutil.which(head):
+        return []
+    try:
+        _kind, argv = _build_command(expr, cwd=cwd)
+    except Exception:  # noqa: BLE001 - a selector that will not build has no terms to judge
+        return []
+    if not isinstance(argv, list) or "-k" not in argv[:-1]:
+        return []
+    k = argv.index("-k")
+    terms = _k_or_terms(argv[k + 1])
+    rest = argv[1:k] + argv[k + 2:]
+    files = [a for a in rest if a.endswith(".py")]
+    if len(terms) < 2 or not files or any("::" in a for a in rest):
+        return []
+    nodes: list[str] = []
+    for test_file in files:
+        got = _collect_nodes(test_file, cwd)
+        if got is None:
+            return []  # a file that will not collect is judged by `selector_resolves`
+        nodes += got
+    dead = [t for t in terms if not _k_selects(t, nodes)]
+    return dead if len(dead) < len(terms) else []
 
 
 def _eval_bool(tokens: list[str]) -> bool:
@@ -1131,6 +1183,19 @@ def unresolvable_stamps(path: Path, cwd=None) -> list[dict]:
             continue
         if selector_resolves(block.verifier, cwd) is False:
             out.append({"ac": block.ac_id, "verifier": block.verifier,
+                        "record": sdlc_md.extract_record_id(path.stem) or path.stem})
+    return out
+
+
+def dead_k_term_stamps(path: Path, cwd=None) -> list[dict]:
+    """Stamped-green ACs in `path` whose `-k` carries a term `dead_k_terms` finds dead."""
+    out: list[dict] = []
+    for block in criteria_blocks(sdlc_md.read_text_safe(path)):
+        if (block.verified_state or "").strip().lower() != "yes" or not block.verifier:
+            continue
+        terms = dead_k_terms(block.verifier, cwd)
+        if terms:
+            out.append({"ac": block.ac_id, "verifier": block.verifier, "terms": terms,
                         "record": sdlc_md.extract_record_id(path.stem) or path.stem})
     return out
 
@@ -3668,15 +3733,25 @@ def cmd_stamps(args: argparse.Namespace) -> int:
         bugs = under_root(repo_root, "sdlc-studio/bugs")
         if bugs.is_dir():
             paths += sorted(p for p in bugs.glob("*.md") if not p.name.startswith("_"))
-    dead = 0
+    dead = partial = 0
     for p in paths:
         for row in unresolvable_stamps(p, repo_root):
             dead += 1
             print(f"{row['record']} {row['ac']}: stamped verified, but its verifier selects "
                   f"nothing\n    {row['verifier']}")
+        for row in dead_k_term_stamps(p, repo_root):
+            partial += 1
+            named = ", ".join(repr(t) for t in row["terms"])
+            print(f"{row['record']} {row['ac']}: stamped verified, but -k term(s) {named} "
+                  f"select nothing - a live term hides them\n    {row['verifier']}")
     if dead:
         print(f"verify-stamps: {dead} stamped AC(s) resting on a selector that resolves to "
               f"nothing - the stamp is STALE, not green", file=sys.stderr)
+    if partial:
+        print(f"verify-stamps: {partial} stamped AC(s) carrying a -k term that selects "
+              f"nothing - repoint each at the test that replaced it, or retire it",
+              file=sys.stderr)
+    if dead or partial:
         return 1
     print(f"verify-stamps: {len(paths)} file(s) checked, every stamped verifier still resolves")
     return 0
@@ -4306,7 +4381,9 @@ def build_parser() -> argparse.ArgumentParser:
     cv.add_argument("--author", default=None)
     cv.add_argument("--root", default=".")
     cv.set_defaults(func=cmd_coverage)
-    st = sub.add_parser("stamps", help="Flag stamped-green ACs whose verifier selects nothing")
+    st = sub.add_parser("stamps", help="Flag stamped-green ACs whose verifier selects nothing, "
+                        "or whose `-k` carries an or-joined term that selects nothing. Terms "
+                        "match collected node ids only: a term naming a marker reads as dead")
     st.add_argument("--root", default=".", help="Repo root --dir is resolved under")
     st.add_argument("--dir", default="sdlc-studio/stories", help="Stories directory")
     st.add_argument("--story", "--file", dest="story",
