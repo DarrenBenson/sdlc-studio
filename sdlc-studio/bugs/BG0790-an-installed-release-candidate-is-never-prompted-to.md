@@ -1,6 +1,6 @@
 # BG0790: An installed release candidate is never prompted to move to its final release, because version comparison ignores the pre-release suffix
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/version_check.py, .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/migrate.py, tools/check_versions.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_prerelease_versions.py, tools/tests/test_check_versions.py, changelog.d/BG0790.md

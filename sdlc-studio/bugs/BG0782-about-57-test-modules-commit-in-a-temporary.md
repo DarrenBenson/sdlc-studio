@@ -1,6 +1,6 @@
 # BG0782: About 57 test modules commit in a temporary git repo with auto-maintenance on, the race BG0711 fixed in one
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** conftest.py, tools/skill-tests.sh, .claude/skills/sdlc-studio/scripts/tests/test_lean_git_maintenance_off.py, tools/tests/test_lean_git_maintenance_off.py, changelog.d/BG0782.md

@@ -1,6 +1,6 @@
 # BG0792: US0940 AC1's own Verify takes about three minutes, so the release gate's verify lane reads it red at the 120-second default
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_release_verify_ceiling.py, .claude/skills/sdlc-studio/templates/workflows/release-gate.md, changelog.d/BG0792.md
