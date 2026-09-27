@@ -1,6 +1,6 @@
 # BG0799: A first sprint's report hands over, as known issues, the epic drift its own close settles, split into one row per line of reconcile's output
 
-> **Status:** Open
+> **Status:** In Progress
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

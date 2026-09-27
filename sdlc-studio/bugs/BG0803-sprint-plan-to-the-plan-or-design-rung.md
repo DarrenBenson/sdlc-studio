@@ -1,6 +1,6 @@
 # BG0803: sprint plan to the plan or design rung crashes in capacity_report on the default token budget
 
-> **Status:** Open
+> **Status:** In Progress
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

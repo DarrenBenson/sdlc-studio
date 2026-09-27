@@ -1,6 +1,6 @@
 # BG0800: The close's pre-flight lists as unmet the goal verdict the same invocation records and the review anchor the close writes itself
 
-> **Status:** Open
+> **Status:** In Progress
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

@@ -1,6 +1,6 @@
 # BG0806: TSD staleness is never judged in a consuming project and reports a false reason on every sprint plan
 
-> **Status:** Open
+> **Status:** In Progress
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
