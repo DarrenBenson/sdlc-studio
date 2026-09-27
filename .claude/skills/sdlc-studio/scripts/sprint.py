@@ -12053,24 +12053,31 @@ def tsd_staleness(root) -> dict:
     EP0071 spent a sprint repairing - so the comparison is made and REPORTED before the document
     is used. The verdict is a comparison of commit times, not a freshness marker anyone can
     write: a stamp asserts currency, it does not establish it.
+
+    The code is the skill's scripts where the tree holds their history (the skill's own
+    repository), else every path outside `sdlc-studio/` - a consuming project's code, never its
+    backlog, whose commits would mark the TSD stale on every grooming change.
     """
     import subprocess  # noqa: PLC0415
-    def _last(path: str) -> str:
+    def _last(*paths: str) -> str:
         try:
-            r = subprocess.run(["git", "log", "-1", "--format=%cI", "--", path],
+            r = subprocess.run(["git", "log", "-1", "--format=%cI", "--", *paths],
                                cwd=str(root), capture_output=True, text=True,
                                timeout=10)  # nosec B603 B607
         except (OSError, subprocess.SubprocessError):
             return ""
         return r.stdout.strip() if r.returncode == 0 else ""
     tsd = _last("sdlc-studio/tsd.md")
-    code = _last(".claude/skills/sdlc-studio/scripts")
+    code, what = _last(".claude/skills/sdlc-studio/scripts"), "the scripts"
+    if not code:
+        code, what = _last(".", ":(exclude)sdlc-studio"), "the code outside sdlc-studio/"
     if not tsd or not code:
         return {"known": False, "stale": False,
-                "why": "commit times unavailable - staleness unknown, which is not the same "
-                       "as fresh"}
+                "why": f"no commit history for "
+                       f"{'sdlc-studio/tsd.md' if not tsd else what} - staleness unknown, "
+                       f"which is not the same as fresh"}
     return {"known": True, "stale": code > tsd, "tsd_at": tsd, "code_at": code,
-            "why": (f"the scripts changed at {code} and the TSD was last revised at {tsd}"
+            "why": (f"{what} changed at {code} and the TSD was last revised at {tsd}"
                     if code > tsd else "")}
 
 

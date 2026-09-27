@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 18 |
-| In Progress | 3 |
-| Fixed | 652 |
+| In Progress | 2 |
+| Fixed | 653 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -164,7 +164,7 @@
 | [BG0803](BG0803-sprint-plan-to-the-plan-or-design-rung.md) | sprint plan to the plan or design rung crashes in capacity_report on the default token budget | Fixed | Low | 2026-09-27 | 2026-09-27 |
 | [BG0804](BG0804-the-report-s-lessons-section-cites-sdlc-studio.md) | The report's Lessons section cites sdlc-studio/lessons.jsonl on a project that has none, when the bundled seed was read | Open | Low | 2026-09-27 | 2026-09-27 |
 | [BG0805](BG0805-verify-ac-stamps-passes-a-k-expression-whose.md) | verify_ac stamps passes a -k expression whose dead term hides behind a live one, so eight stamped criteria verify nothing of what they claim | Fixed | Medium | 2026-09-27 | 2026-09-27 |
-| [BG0806](BG0806-tsd-staleness-is-never-judged-in-a-consuming.md) | TSD staleness is never judged in a consuming project and reports a false reason on every sprint plan | In Progress | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0806](BG0806-tsd-staleness-is-never-judged-in-a-consuming.md) | TSD staleness is never judged in a consuming project and reports a false reason on every sprint plan | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0807](BG0807-the-us0942-ac5-stamp-test-resolves-the-whole.md) | The US0942 AC5 stamp test resolves the whole corpus before filtering, costing about 50 seconds of every commit that touches verify_ac.py | Fixed | Low | 2026-09-27 | 2026-09-27 |
 | [BG0808](BG0808-init-records-no-project-version-so-a-fresh.md) | init records no project version, so a fresh project's first migrate reports work and its upgrade digest reads the range as unknown | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0809](BG0809-install-sh-local-rewrites-every-personal-copy-of.md) | install.sh --local rewrites every personal copy of the skill, and the copy it installs is one Claude Code does not load | Open | Medium | 2026-09-27 | 2026-09-27 |

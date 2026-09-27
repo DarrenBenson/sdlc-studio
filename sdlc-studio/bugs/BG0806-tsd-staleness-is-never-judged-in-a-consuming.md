@@ -1,6 +1,6 @@
 # BG0806: TSD staleness is never judged in a consuming project and reports a false reason on every sprint plan
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -24,8 +24,10 @@ Judge the TSD against the last commit outside sdlc-studio/ in a consuming projec
 
 - [ ] **AC1** Given a consuming project (no skill scripts/ in its tree) whose `sdlc-studio/tsd.md` was committed before a later commit to a path outside `sdlc-studio/`, when `tsd_staleness` runs, then it returns `known: True, stale: True` naming that commit time. Fails on: comparing against `.claude/skills/sdlc-studio/scripts` (HEAD: `known: False` in every consuming project)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tsd_staleness.py::TsdStalenessTests::test_a_consuming_project_with_later_code_reads_stale
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC2** Given the same project whose TSD commit is newer than every commit outside `sdlc-studio/`, then `known: True, stale: False`; and a tree with no git history reports `known: False` naming the missing history. Fails on: counting commits to `sdlc-studio/` artefacts as code, so every backlog commit marks the TSD stale
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tsd_staleness.py::TsdStalenessTests::test_a_tsd_revised_after_the_code_reads_current
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 
