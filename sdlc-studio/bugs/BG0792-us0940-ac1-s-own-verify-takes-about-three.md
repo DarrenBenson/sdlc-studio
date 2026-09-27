@@ -1,6 +1,6 @@
 # BG0792: US0940 AC1's own Verify takes about three minutes, so the release gate's verify lane reads it red at the 120-second default
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_release_verify_ceiling.py, .claude/skills/sdlc-studio/templates/workflows/release-gate.md, changelog.d/BG0792.md
@@ -25,6 +25,7 @@ Split the AC1 check so no single verifier exceeds the default (one criterion per
 
 - [ ] **AC1** Given no `SDLC_VERIFY_TIMEOUT` in the environment, when the verify lane runs, then its per-verifier ceiling is 300 s, CI's measured figure, and an explicit positive `SDLC_VERIFY_TIMEOUT` still wins. Fails on: HEAD's 120 s default, under which US0940 AC1's 177 s verifier read red on the v6.0.0-rc.1 release commit
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_release_verify_ceiling.py::ReleaseVerifyCeilingTests::test_the_verify_ceiling_defaults_to_ci_s_figure
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

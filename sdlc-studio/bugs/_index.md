@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 32 |
-| In Progress | 3 |
-| Fixed | 637 |
+| In Progress | 2 |
+| Fixed | 638 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -150,7 +150,7 @@
 | [BG0789](BG0789-the-release-workflow-publishes-a-release-candidate-tag.md) | The release workflow publishes a release-candidate tag as the latest release, so every installed copy is prompted to upgrade to it | Fixed | High | 2026-09-26 | 2026-09-26 |
 | [BG0790](BG0790-an-installed-release-candidate-is-never-prompted-to.md) | An installed release candidate is never prompted to move to its final release, because version comparison ignores the pre-release suffix | Fixed | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0791](BG0791-test-lean-cr-filing-reads-a-changelog-fragment.md) | test_lean_cr_filing reads a changelog fragment that the release cut consumes, so the suite goes red on every release commit | Fixed | Medium | 2026-09-26 | 2026-09-26 |
-| [BG0792](BG0792-us0940-ac1-s-own-verify-takes-about-three.md) | US0940 AC1's own Verify takes about three minutes, so the release gate's verify lane reads it red at the 120-second default | In Progress | Medium | 2026-09-26 | 2026-09-26 |
+| [BG0792](BG0792-us0940-ac1-s-own-verify-takes-about-three.md) | US0940 AC1's own Verify takes about three minutes, so the release gate's verify lane reads it red at the 120-second default | Fixed | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0793](BG0793-a-boundary-test-lists-changelog-d-which-a.md) | A boundary test lists changelog.d, which a fresh checkout does not have once a release cut consumes every fragment, so CI is red on the rc.1 commit | Fixed | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0794](BG0794-the-waiver-window-test-compares-a-utc-page.md) | The waiver-window test compares a UTC page date with a local-time waiver date, so it fails for the hour after local midnight in a timezone ahead of UTC | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0795](BG0795-the-sprint-report-reads-a-week-old-ci.md) | The sprint report reads a week-old CI cache as current, so DORA's failure rate and restore time read no forge data | Open | Medium | 2026-09-27 | 2026-09-27 |

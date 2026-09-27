@@ -1619,7 +1619,11 @@ LESSONS_CLOSE_CHECKS = {
 }
 
 
-VERIFY_TIMEOUT = 120  # per-verifier seconds; matches the verify_ac default
+#: The per-verifier ceiling in seconds, CI's figure: the corpus-verify job runs every criterion
+#: under 300, and a release gate on a developer machine must not read red what CI reads green. At
+#: the old 120 (the `verify_ac run` default) a 177 s verifier failed the local release gate on the
+#: v6.0.0-rc.1 commit while CI passed it, and the cut runbook carried the override by hand.
+VERIFY_TIMEOUT = 300
 #: The operator's per-verifier ceiling for the executing verify lane, in whole seconds. A slower
 #: machine reads a criterion that outlives the default as red, and the lane cannot tell a
 #: timeout from a regression, so a runner that needs longer says so here rather than banking
