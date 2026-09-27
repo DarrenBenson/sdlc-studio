@@ -95,13 +95,14 @@ STORY
 
 # ------------------------------------------------------------------- upgrade
 
-# The upgrade does NOT reach a green gate today: conformance fails on a freshly migrated project,
-# and the remedy is the grandfathering work in a later charter. (Its stale indexes still show,
-# reported rather than refused, as mechanical drift the reconcile and index-derived lanes name.)
-# Claiming green here would be exactly the false claim this rehearsal exists to prevent, so the
-# failing lanes are compared against a recorded baseline and the comparison reddens in BOTH
-# directions - a new failure blocks, and a baselined lane that starts passing blocks too, because
-# a baseline that only ever tolerates is one that never empties.
+# Conformance fails a freshly migrated v4-era project on its pre-adoption units, and choosing the
+# `conformance.adopt_after` cutoff that grandfathers them is the upgrader's judgement, so migrate
+# names the line and never writes it. The rehearsal applies the line migrate's report names, as an
+# upgrader would, and reads it from that report rather than knowing it. (Its stale indexes still
+# show, reported rather than refused, as mechanical drift the reconcile and index-derived lanes
+# name.) The failing lanes are compared against a recorded baseline and the comparison reddens in
+# BOTH directions - a new failure blocks, and a baselined lane that starts passing blocks too,
+# because a baseline that only ever tolerates is one that never empties.
 rehearse_upgrade() {
   echo "upgrade: a v4-era project migrates, and its gate matches the recorded baseline"
   local root="$WORK/upgrade"
@@ -128,8 +129,8 @@ cfg.write_text(cfg.read_text(encoding="utf-8").replace("schema_version: 3", "sch
 AGE
 
   step "migrate --apply"
-  echo "    order: migrate" 
-  $PY "$SCRIPTS/migrate.py" --root "$root" --apply >/dev/null 2>&1 \
+  echo "    order: migrate"
+  local named; named="$($PY "$SCRIPTS/migrate.py" --root "$root" --apply 2>&1)" \
     || fail "upgrade: \`migrate --apply\` did not complete"
 
   # ASSERT THE MIGRATE HAPPENED, on its real deterministic outputs. Dropping `--apply` above
@@ -145,6 +146,22 @@ AGE
   # the review suggested it, and running the command decided it.
   echo "    migrated: .version written, CR0001 carries a derived Size"
 
+  local rx='`conformance\.adopt_after: ([A-Za-z]+-?[0-9]+)`'
+  if [[ ! "$named" =~ $rx ]]; then
+    echo "$named" >&2
+    fail "upgrade: migrate's report names no conformance.adopt_after cutoff for the pre-adoption" \
+      "units"
+  fi
+  local cutoff="${BASH_REMATCH[1]}"
+  printf '\nconformance:\n  adopt_after: %s\n' "$cutoff" >> "$root/sdlc-studio/.config.yaml"
+  echo "    applied the cutoff migrate named: conformance.adopt_after: $cutoff"
+  local conf; conf="$($PY "$SCRIPTS/conformance.py" --root "$root" check 2>&1)"
+  case "$conf" in
+    *"exempt (pre-adoption)"*) echo "    ${conf%%$'\n'*}" ;;
+    *) echo "$conf" >&2
+       fail "upgrade: the conformance lane reports no unit exempt under $cutoff" ;;
+  esac
+
   gate_against_baseline upgrade "$root"
 }
 
@@ -154,8 +171,14 @@ gate_against_baseline() {
   local path="$1" root="$2"
   step "gate"
   echo "    order: gate"
-  local out; out="$($PY "$SCRIPTS/gate.py" --root "$root" 2>&1)"
+  local out rc; out="$($PY "$SCRIPTS/gate.py" --root "$root" 2>&1)"; rc=$?
   local failing; failing="$(echo "$out" | sed -n 's/^  \[FAIL\] \([a-z-]*\) .*/\1/p' | sort -u)"
+  # A gate that dies before judging prints no [FAIL] line, so its lane set matches an empty
+  # baseline. Its exit status is what tells the two apart.
+  if [ "$rc" -ne 0 ] && [ -z "$failing" ]; then
+    echo "$out" >&2
+    fail "$path: gate.py exited $rc and named no failing lane - it did not finish judging"
+  fi
   local baselined; baselined="$(sed -n "s/^$path|\([a-z-]*\)|.*/\1/p" "$BASELINE" | sort -u)"
 
   local new_failures; new_failures="$(comm -23 <(echo "$failing") <(echo "$baselined"))"

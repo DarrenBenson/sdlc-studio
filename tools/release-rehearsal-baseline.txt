@@ -9,4 +9,3 @@
 #
 # Format: path|lane|clearing artefact|what the lane says once cleared
 #
-upgrade|conformance|BG0785|exempt (pre-adoption) once migrate names a conformance.adopt_after cutoff for the project's pre-v5 history and the upgrader applies it, so the corpus is judged from adoption forward rather than retrospectively

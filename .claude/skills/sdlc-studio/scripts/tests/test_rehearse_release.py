@@ -266,31 +266,30 @@ class UpgradeRehearsalTests(unittest.TestCase):
         self.assertIn("migrated: .version written", r.stdout,
                       "the harness does not assert the migration happened, so the rehearsal "
                       "passes on a fixture that was never migrated")
-        self.assertIn("known gap:", r.stdout)
+        self.assertRegex(r.stdout, r"upgrade: OK \(\d+ known gap\(s\), none new\)")
 
     def test_the_upgrade_baseline_reddens_in_both_directions(self) -> None:
         """A baseline that only ever tolerates is one that never empties.
 
-        Both directions on a COPY: a lane removed from the baseline must be reported as a new
-        failure, and a lane added that is already passing must be reported as removable.
+        Both directions on a COPY: a lane failing that the baseline does not record must be
+        reported as a new failure, and a lane recorded that is already passing must be reported as
+        removable. The `upgrade` path records nothing since BG0785, so the failing lane comes from
+        a migrate that names a cutoff below a failing unit, which leaves conformance red.
         """
         lanes = self._baseline_lanes()
-        self.assertTrue(lanes, "the baseline records no lanes, so neither direction is testable")
         with tempfile.TemporaryDirectory() as d:
-            clone = Path(d) / "repo"
-            (clone / "tools").mkdir(parents=True)
-            shutil.copy2(HARNESS, clone / "tools" / "rehearse-release.sh")
-            shutil.copytree(REPO / ".claude" / "skills" / "sdlc-studio",
-                            clone / ".claude" / "skills" / "sdlc-studio",
-                            ignore=shutil.ignore_patterns("__pycache__", ".local"))
+            clone = _clone(d)
             bl = clone / "tools" / "release-rehearsal-baseline.txt"
-
-            kept = sorted(lanes)[1:]
-            bl.write_text("".join(f"upgrade|{n}|BG0001|x\n" for n in kept), encoding="utf-8")
+            migrate = clone / ".claude" / "skills" / "sdlc-studio" / "scripts" / "migrate.py"
+            original = _mutate(migrate, "max(ids, key=sdlc_md.id_number)",
+                               "min(ids, key=sdlc_md.id_number)")
+            bl.write_text("".join(f"upgrade|{n}|BG0001|x\n" for n in sorted(lanes)),
+                          encoding="utf-8")
             dropped = _run("upgrade", cwd=clone)
             self.assertNotEqual(0, dropped.returncode,
                                 "a lane failing that the baseline does not record was tolerated")
-            self.assertIn("does not record", dropped.stdout + dropped.stderr)
+            self.assertIn("does not record: conformance", dropped.stdout + dropped.stderr)
+            migrate.write_text(original, encoding="utf-8")
 
             bl.write_text("".join(f"upgrade|{n}|BG0001|x\n" for n in sorted(lanes))
                           + "upgrade|integrity|nothing|it already passes\n", encoding="utf-8")
@@ -346,6 +345,62 @@ class UpgradeRehearsalTests(unittest.TestCase):
             self.assertGreater(len(expected), 20,
                                f"{lane} does not say what the lane will report once cleared, so a "
                                f"reader cannot tell the gap is closed")
+
+    def test_the_upgrade_gates_green_on_the_cutoff_migrate_names(self) -> None:
+        """BG0785 AC3. The rehearsal applies the `conformance.adopt_after` line migrate's report
+        names, as an upgrader would, and the conformance lane passes with the units exempt, so the
+        baseline carries no `upgrade|conformance` row. Red on a harness that hard-codes the cutoff
+        (it passes a migrate that names none) and on a baseline that keeps the row."""
+        self.assertNotIn("conformance", self._baseline_lanes())
+        r = _run("upgrade")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertIn("applied the cutoff migrate named: conformance.adopt_after: US0002",
+                      r.stdout)
+        self.assertIn("2 exempt (pre-adoption)", r.stdout)
+        self.assertIn("upgrade: OK (0 known gap(s), none new)", r.stdout)
+        with tempfile.TemporaryDirectory() as d:
+            clone = _clone(d)
+            migrate = clone / ".claude" / "skills" / "sdlc-studio" / "scripts" / "migrate.py"
+            original = _mutate(migrate, "    needs_human += _conformance_cutoff(root)\n", "")
+            r = _run("upgrade", cwd=clone)
+            self.assertNotEqual(0, r.returncode, "the rehearsal passed on a migrate that names no "
+                                                 "cutoff, so it does not read the one it applies")
+            self.assertIn("names no conformance.adopt_after", r.stdout + r.stderr)
+            migrate.write_text(original, encoding="utf-8")
+
+            # A migrate naming a DIFFERENT id: one below a failing unit. A harness reading the
+            # report applies it and the lane stays red; one that knows US0002 passes regardless.
+            _mutate(migrate, "max(ids, key=sdlc_md.id_number)", "min(ids, key=sdlc_md.id_number)")
+            r = _run("upgrade", cwd=clone)
+            self.assertIn("applied the cutoff migrate named: conformance.adopt_after: US0001",
+                          r.stdout, "the harness did not apply the id migrate named")
+            self.assertNotEqual(0, r.returncode, "the rehearsal passed on a cutoff below a "
+                                                 "failing unit, so it does not apply migrate's")
+            self.assertIn("does not record: conformance", r.stdout + r.stderr)
+            migrate.write_text(original, encoding="utf-8")
+
+            bl = clone / "tools" / "release-rehearsal-baseline.txt"
+            bl.write_text(bl.read_text(encoding="utf-8")
+                          + "upgrade|conformance|BG0785|exempt (pre-adoption) once migrate names "
+                            "the cutoff\n", encoding="utf-8")
+            r = _run("upgrade", cwd=clone)
+            self.assertNotEqual(0, r.returncode, "the baseline kept a conformance row the gate "
+                                                 "no longer needs")
+            self.assertIn("now PASS and must be removed", r.stdout + r.stderr)
+
+    def test_a_gate_that_dies_does_not_read_as_ok(self) -> None:
+        """BG0785 round 1. With an empty baseline, a gate that exits non-zero before it prints a
+        lane has the same (empty) failing-lane set as a green one, so the harness must read its
+        exit status. Red on a harness that counts `[FAIL]` lines alone."""
+        with tempfile.TemporaryDirectory() as d:
+            clone = _clone(d)
+            gate = clone / ".claude" / "skills" / "sdlc-studio" / "scripts" / "gate.py"
+            _mutate(gate, "    args = build_parser().parse_args(argv)\n",
+                    "    raise SystemExit('gate died before judging')\n")
+            r = _run("upgrade", cwd=clone)
+            self.assertNotEqual(0, r.returncode, "a gate that died read as a pass")
+            self.assertNotIn("upgrade: OK", r.stdout)
+            self.assertIn("named no failing lane", r.stdout + r.stderr)
 
     def test_every_baselined_gap_names_an_open_owner(self) -> None:
         """US0938 AC3. The open-owner check extends US0665's test above rather than adding another

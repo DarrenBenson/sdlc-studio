@@ -1,6 +1,6 @@
 # BG0785: migrate leaves a v4-era project's conformance lane red on its pre-adoption stories and names no cutoff for them
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py, tools/rehearse-release.sh, tools/release-rehearsal-baseline.txt, .claude/skills/sdlc-studio/scripts/tests/test_rehearse_release.py, changelog.d/BG0785.md
@@ -26,10 +26,13 @@ migrate reports, as a needs-a-human item, the pre-adoption units the conformance
 
 - [ ] **AC1** Given the rehearsal's v4-era fixture (US0001 Done and US0002 Ready, neither with a Verify line, no `conformance.adopt_after`), when `migrate.py` runs dry and then with `--apply`, then both reports carry one needs-a-human item naming the units the conformance lane would fail and the exact line `conformance.adopt_after: US0002` that grandfathers them, and `sdlc-studio/.config.yaml` is byte-identical afterwards. Fails on: HEAD (no such item; measured through `tools/rehearse-release.sh upgrade`); migrate writing the cutoff itself; naming a cutoff below a failing unit
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py::ConformanceCutoffTests::test_migrate_names_the_cutoff_and_writes_nothing
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC2** Given a project whose `conformance.adopt_after` already covers every unit the lane would fail (the shape of a real v4.1 project that set 179), when `migrate.py` runs, then no cutoff item is reported. Fails on: proposing a cutoff unconditionally, or proposing one that lowers an existing cutoff
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py::ConformanceCutoffTests::test_an_existing_covering_cutoff_is_left_alone
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC3** Given `tools/rehearse-release.sh upgrade`, when the rehearsal applies the line migrate named, as an upgrader would, then the gate's conformance lane passes with the units reported exempt (pre-adoption), and `tools/release-rehearsal-baseline.txt` carries no `upgrade|conformance` row. Fails on: leaving the baseline row (the rehearsal reddens in the other direction), or a rehearsal that hard-codes the cutoff rather than reading it from migrate's report
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_rehearse_release.py::UpgradeRehearsalTests::test_the_upgrade_gates_green_on_the_cutoff_migrate_names
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

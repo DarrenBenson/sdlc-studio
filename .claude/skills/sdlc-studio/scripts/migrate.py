@@ -14,8 +14,9 @@ retired Definition of Done tag or `.config.yaml` key, line by line so every othe
 judgement: a request's breakdown (`refine`), an Issue's triage (`triage`), a delivery unit's
 re-size (there is no honest Effort->Points map) are REPORTED with the exact command, never done for
 you. An AGENTS.md or CLAUDE.md line naming a retired key or verb is reported, never rewritten,
-and the frozen review ledgers are reported as history and left as written. Dry-run by default;
-`--apply` writes only the deterministic set.
+so is the `conformance.adopt_after` cutoff that would grandfather the units the conformance lane
+fails, and the frozen review ledgers are reported as history and left as written. Dry-run by
+default; `--apply` writes only the deterministic set.
 
 Skill/consuming-project tool: it operates on the `sdlc-studio/` workspace under the root. Reuses
 `project_upgrade`, `migrate_v3` and `reconcile`; pure stdlib.
@@ -25,6 +26,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -292,6 +294,49 @@ def _frozen(root: Path) -> list[dict]:
     return out
 
 
+def _conformance_cutoff(root: Path) -> list[dict]:
+    """The `conformance.adopt_after` line that grandfathers every unit the conformance lane would
+    fail, for a human: the cutoff is a judgement about the project's history, so it is named,
+    never written. The lane itself decides which units fail, so a cutoff already covering them
+    leaves nothing to name, and the one named (the highest failing id) is never below a failing
+    unit. A ULID id has no number for a cutoff to reach, so it is left to the lane's report.
+
+    The lane resolves a stamped pytest selector by running the project's `pytest --collect-only`,
+    so the call runs with pytest's cache and Python's bytecode writes off, restored after: a
+    migrate run, a dry one above all, leaves the project's bytes where they were."""
+    import conformance  # noqa: PLC0415 - the lane is needed only here
+    saved = {k: os.environ.get(k) for k in ("PYTEST_ADDOPTS", "PYTHONDONTWRITEBYTECODE")}
+    opts = saved["PYTEST_ADDOPTS"] or ""
+    os.environ["PYTEST_ADDOPTS"] = f"{opts} -p no:cacheprovider".strip()
+    os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
+    try:
+        units = conformance.detect_conformance(root)["units"]
+    except ValueError as exc:        # a malformed existing cutoff: the lane refuses it, loudly
+        return [{"kind": "conformance-cutoff", "command": None,
+                 "detail": f"the conformance lane cannot read this project ({exc}), so no "
+                           f"`conformance.adopt_after` cutoff can be proposed - fix it, then "
+                           f"re-run"}]
+    finally:
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+    failing = [u for u in units if not u["conformant"] and sdlc_md.id_number(u["id"]) is not None]
+    if not failing:
+        return []
+    ids = [u["id"] for u in failing]
+    line = f"conformance.adopt_after: {max(ids, key=sdlc_md.id_number)}"
+    # Each unit's missing stages, so a human can tell old history from a recent breakage.
+    why = [f"{u['id']} ({conformance.missing_detail(u)})" for u in failing]
+    return [{"kind": "conformance-cutoff", "ids": ids, "line": line, "command": None,
+             "detail": f"the conformance lane would fail {len(ids)} unit(s): "
+                       f"{conformance._elide(why, 10)}. To grandfather them as pre-adoption "
+                       f"history, add `{line}` to sdlc-studio/.config.yaml (the `adopt_after` "
+                       f"key under `conformance:`) once you have checked none of them is new "
+                       f"work - every id at or below it is exempt"}]
+
+
 def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: bool = False,
             today: str | None = None) -> dict:
     """Run the upgrade sweep. Returns
@@ -359,6 +404,9 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
             needs_human.append({"kind": bucket.replace("_", "-"), "id": item["id"],
                                 "detail": f"{item['id']} ({item['type']}): {label}{also}",
                                 "command": cmd(item)})
+    # 5. the grandfathering cutoff, judged on the tree as it now stands: migrated under --apply,
+    # as found on a dry run.
+    needs_human += _conformance_cutoff(root)
 
     # Terminal legacy-sized units are NOT needs-human work: a Closed/Fixed unit is never planned,
     # so re-sizing it changes nothing. Report them as a single historical count, never as an action.

@@ -206,5 +206,116 @@ class MigrateTests(unittest.TestCase):
             self.assertIn("refine apply --request", text)
 
 
+def _v4_era(root: Path, config_tail: str = "") -> None:
+    """`tools/rehearse-release.sh upgrade`'s fixture: an `init`ed workspace aged to schema 2,
+    US0001 Done and US0002 Ready (neither with a Verify line) and an Effort-sized CR."""
+    import subprocess  # noqa: PLC0415
+    subprocess.run([sys.executable, str(_SCRIPTS / "init.py"), "--root", str(root), "run"],
+                   check=True, capture_output=True, text=True)
+    cfg = root / "sdlc-studio" / ".config.yaml"
+    cfg.write_text(cfg.read_text(encoding="utf-8").replace("schema_version: 3", "schema_version: 2")
+                   + config_tail, encoding="utf-8")
+    _w(root, "stories/US0001-legacy.md",
+       "# US0001: legacy login\n\n> **Status:** Done\n> **Epic:** EP0001\n> **Priority:** High\n\n"
+       "## Acceptance Criteria\n\n- [x] **AC1** a valid password logs the user in\n")
+    _w(root, "stories/US0002-legacy.md",
+       "# US0002: legacy reset\n\n> **Status:** Ready\n> **Epic:** EP0001\n"
+       "> **Priority:** Medium\n\n"
+       "## Acceptance Criteria\n\n- [ ] **AC1** a reset link sets a new password\n")
+    _w(root, "change-requests/CR0001-legacy.md",
+       "# CR-0001: legacy request\n\n> **Status:** Approved\n> **Priority:** Medium\n"
+       "> **Effort:** M\n\n## Summary\n\nAdd SSO.\n")
+
+
+class ConformanceCutoffTests(unittest.TestCase):
+    """BG0785: the conformance lane fails a v4-era project's pre-adoption units, and migrate names
+    the `conformance.adopt_after` cutoff that grandfathers them without ever writing it."""
+
+    @staticmethod
+    def _cutoffs(res: dict) -> list[dict]:
+        return [h for h in res["needs_human"] if h["kind"] == "conformance-cutoff"]
+
+    def test_migrate_names_the_cutoff_and_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _v4_era(root)
+            cfg = root / "sdlc-studio" / ".config.yaml"
+            before = cfg.read_bytes()
+            for apply in (False, True):
+                res = migrate.migrate(root, apply=apply)
+                items = self._cutoffs(res)
+                self.assertEqual(1, len(items), f"apply={apply}: {res['needs_human']}")
+                detail = items[0]["detail"]
+                # The units the lane fails, and the HIGHEST of them as the cutoff: a lower one
+                # leaves US0002 failing.
+                self.assertIn("US0001", detail)
+                self.assertIn("US0002", detail)
+                self.assertIn("`conformance.adopt_after: US0002`", detail)
+                # each unit with what it misses, so history reads apart from a breakage
+                self.assertIn("US0002 (verifiable)", detail)
+                self.assertIn("conformance.adopt_after: US0002", migrate.render(res))
+                self.assertEqual(before, cfg.read_bytes(),
+                                 f"apply={apply}: migrate wrote the cutoff itself")
+
+    def test_an_existing_covering_cutoff_is_left_alone(self) -> None:
+        # A real v4.1 project already carries `adopt_after: 179`, a bare number above every unit.
+        # Proposing a cutoff anyway - or one computed without the existing exemption, which
+        # would LOWER it to US0002 - is the failure.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _v4_era(root, "\nconformance:\n  adopt_after: 179\n")
+            for apply in (False, True):
+                res = migrate.migrate(root, apply=apply)
+                self.assertEqual([], self._cutoffs(res), f"apply={apply}")
+
+    def test_a_dry_run_leaves_a_stamped_tree_byte_identical(self) -> None:
+        # The lane resolves a STAMPED pytest selector by running the project's
+        # `pytest --collect-only`, which writes into the project unless told not to: bytecode for
+        # the conftest it loads, and `.pytest_cache/v/cache/lastfailed` when collection fails, as
+        # the stamped file's missing import makes it. Both halves of migrate's guard are needed
+        # for a dry run to leave every byte where it was. The caller's own cache and bytecode
+        # settings are cleared so only migrate's guard can pass this.
+        import os  # noqa: PLC0415
+        import shutil  # noqa: PLC0415
+        from unittest import mock  # noqa: PLC0415
+        if shutil.which("pytest") is None:
+            self.skipTest("no pytest on PATH, so the lane collects nothing and writes nothing")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _v4_era(root)
+            (root / "tests").mkdir()
+            (root / "tests" / "conftest.py").write_text("import os\n", encoding="utf-8")
+            (root / "tests" / "test_login.py").write_text(
+                "import nosuchmod  # noqa: F401\n\n\ndef test_ok():\n    assert True\n",
+                encoding="utf-8")
+            _w(root, "stories/US0003-stamped.md",
+               "# US0003: stamped\n\n> **Status:** Done\n> **Epic:** EP0001\n\n"
+               "## Acceptance Criteria\n\n- [x] **AC1** given x, when y, then z\n"
+               "  - **Verify:** pytest tests/test_login.py::test_ok\n"
+               "  - **Verified:** yes (2026-09-02)\n")
+
+            def tree() -> dict:
+                return {str(p.relative_to(root)): (p.read_bytes() if p.is_file() else None)
+                        for p in sorted(root.rglob("*"))}
+            before = tree()
+            env = {k: v for k, v in os.environ.items()
+                   if k not in ("PYTEST_ADDOPTS", "PYTHONDONTWRITEBYTECODE")}
+            with mock.patch.dict(os.environ, env, clear=True):
+                self.assertEqual(1, len(self._cutoffs(migrate.migrate(root))))
+                self.assertNotIn("PYTEST_ADDOPTS", os.environ, "the guard leaked past the call")
+            after = tree()
+            self.assertEqual(sorted(before), sorted(after), "a dry run created or removed paths")
+            self.assertEqual(before, after, "a dry run changed a file's bytes")
+
+    def test_an_unreadable_cutoff_is_reported_not_raised(self) -> None:
+        # The lane refuses a malformed cutoff; migrate names it rather than dying on it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _v4_era(root, "\nconformance:\n  adopt_after: soon\n")
+            items = self._cutoffs(migrate.migrate(root))
+            self.assertEqual(1, len(items))
+            self.assertIn("soon", items[0]["detail"])
+
+
 if __name__ == "__main__":
     unittest.main()
