@@ -1,6 +1,6 @@
 # US0962: The migration to v6 is rehearsed on two real consuming projects, and the record is published
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
