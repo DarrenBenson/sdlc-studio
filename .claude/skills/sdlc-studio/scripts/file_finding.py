@@ -1545,12 +1545,20 @@ def _md_safe(text) -> str:
     """Backtick-wrap bare snake_case/dunder identifier tokens in free prose so an unbackticked
     `_` is not read as markdown emphasis (MD037/MD049/MD050) - the filer must not mint
     lint-red artefacts. Only text OUTSIDE existing code spans is touched, so an
-    already-backticked token is left alone. (Reversed-link shapes like `)[1]` are a rarer
-    residual, noted in the CR.)"""
+    already-backticked token is left alone. A leading-underscore name with no second underscore
+    (`_check`) is a token too: two on one line read as emphasis (MD037). (Reversed-link shapes
+    like `)[1]` are a rarer residual, noted in the CR.)"""
     parts = str(text).split("`")
     for i in range(0, len(parts), 2):  # even indices are outside backtick spans
-        parts[i] = re.sub(r"(?<![\w`])([A-Za-z_][\w.]*_[\w().\[\]]*)", r"`\1`", parts[i])
+        parts[i] = _MD_TOKEN_RE.sub(r"`\1`", parts[i])
     return "`".join(parts)
+
+
+#: A token after `\` is left alone: `\_name` is already escaped, and a backtick after the
+#: backslash would be escaped in turn, leaving an unbalanced span (MD038). The leading-underscore
+#: shape also skips a token after `/` or `#`, which is a URL path, link target or anchor.
+_MD_TOKEN_RE = re.compile(
+    r"(?<![\w`\\])([A-Za-z_][\w.]*_[\w().\[\]]*|(?<![/#])_[A-Za-z]\w*(?:\.\w+)*)")
 
 
 # The `**Field:**` declaration shape at either place `extract_field` anchors a field: a line

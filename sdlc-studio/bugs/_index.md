@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 25 |
-| In Progress | 4 |
-| Fixed | 643 |
+| In Progress | 3 |
+| Fixed | 644 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -40,7 +40,7 @@
 | [BG0679](BG0679-with-review-repair-plan-gate-on-a-repair.md) | With review.repair_plan_gate on, a repair bug set straight to Closed or Verified skips the gate | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0680](BG0680-repair-state-counts-a-repair-row-once-per.md) | repair_state counts a repair row once per rejection sharing its date, so closed and fixed counts are doubled | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0681](BG0681-config-py-show-key-crashes-on-a-key.md) | config.py show --key crashes on a key whose value holds an unquoted YAML date, the path BG0670 left | Fixed | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0682](BG0682-artifact-py-revision-writes-a-bare-identifier-into.md) | artifact.py revision writes a bare _identifier into the Revision History, which markdownlint refuses as MD037 | In Progress | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0682](BG0682-artifact-py-revision-writes-a-bare-identifier-into.md) | artifact.py revision writes a bare _identifier into the Revision History, which markdownlint refuses as MD037 | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0683](BG0683-repair-gate-s-review-before-repair-ordering-check.md) | repair_gate's review-before-repair ordering check (US0312 AC4) is dead on the wired path | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0684](BG0684-transition-s-two-role-gate-ignores-a-definition.md) | transition's two-role gate ignores a Definition of Done that stands the review.two-role tag down | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0685](BG0685-project-upgrade-reads-plan-review-verdicts-with-no.md) | project_upgrade reads plan-review verdicts with no kind, so a repair-plan APPROVE counts as a repair story's spec review | Superseded | Medium | 2026-09-15 | 2026-09-15 |

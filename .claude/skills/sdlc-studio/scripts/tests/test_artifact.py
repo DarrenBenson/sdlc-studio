@@ -1,7 +1,9 @@
 """Unit tests for artifact.py - deterministic create + close cascade (CR0045)."""
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import re
 import sys
 import tempfile
@@ -918,6 +920,78 @@ class RevisionVerbTests(unittest.TestCase):
                                     "--note", "n", "--root", str(repo)])
             self.assertNotEqual(rc, 0)
             self.assertIn("CR0099", err.getvalue())
+
+
+class RevisionNoteMarkdownTests(unittest.TestCase):
+    """BG0682: a revision note naming two underscore identifiers was written verbatim into the
+    Revision History row, where `_check, then _` reads as emphasis and markdownlint refuses the
+    file (MD037). The note goes through the one prose escaper, `file_finding._md_safe`."""
+
+    def _row(self, d: str, note: str) -> tuple[str, Path]:
+        repo = RevisionVerbTests()._repo(d)
+        with contextlib.redirect_stdout(io.StringIO()):
+            rc = artifact.main(["revision", "--id", "CR0001", "--author", "x", "--note", note,
+                                "--root", str(repo)])
+        self.assertEqual(0, rc)
+        path = repo / "sdlc-studio" / "change-requests" / "CR0001-thing-1.md"
+        return path.read_text(encoding="utf-8").splitlines()[-1], path
+
+    @staticmethod
+    def _markdownlint() -> str | None:
+        """`MARKDOWNLINT_BIN`, else PATH, else this checkout's node_modules; None when absent."""
+        import os
+        import shutil
+        mdl = (os.environ.get("MARKDOWNLINT_BIN") or shutil.which("markdownlint")
+               or str(Path(__file__).resolve().parents[5] / "node_modules/.bin/markdownlint"))
+        return mdl if Path(mdl).exists() else None
+
+    def test_bare_underscore_identifiers_are_code_spanned(self) -> None:
+        """Mutants: the note written verbatim; only the first identifier spanned."""
+        import subprocess
+        with tempfile.TemporaryDirectory() as d:
+            row, path = self._row(d, "x _check, then _series raises")
+            self.assertEqual("| 2026-09-27 | x | x `_check`, then `_series` raises |",
+                             re.sub(r"^\| \d{4}-\d\d-\d\d \|", "| 2026-09-27 |", row))
+            mdl = self._markdownlint()
+            if mdl is None:
+                self.skipTest("markdownlint not installed - the spans are asserted above")
+            r = subprocess.run([mdl, "--disable", "MD013", "MD041", "--", str(path)],
+                               capture_output=True, text=True, check=False)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+
+    def test_an_existing_code_span_is_left_alone(self) -> None:
+        """Mutants: wrapping inside an existing span (the span-parity guard), and wrapping a token
+        right after a backtick (the lookbehind). `see _check` reaches only the first."""
+        with tempfile.TemporaryDirectory() as d:
+            row, _path = self._row(d, "keeps `_check` and `see _check`, wraps _series here")
+            self.assertTrue(
+                row.endswith("| keeps `_check` and `see _check`, wraps `_series` here |"), row)
+
+    def test_escaped_underscores_urls_and_anchors_are_left_as_written(self) -> None:
+        """Round 2. Mutants: a lookbehind without `\\`, which spans `\\_name` and leaves the
+        backslash escaping the opening backtick (MD038); one without `/` or `#`, which spans a
+        URL path segment, a link target or an anchor. Through both writers of the escaper: the
+        finding filer (critic findings reach it carrying `\\_`) and the revision note."""
+        import file_finding
+        prose = (r"\_signed\_page reads it; EXPECTED\_LANES is hand-kept; see "
+                 "<https://x.io/a/_config.yml>, [doc](https://x.io/docs/_private/page) "
+                 "and [toc](#_toc)")
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created | Updated |")
+            with contextlib.redirect_stdout(io.StringIO()), quiet.diagnostics():
+                rc = file_finding.main(["file", "--type", "bug", "--title", "escaped",
+                                        "--severity", "Low", "--summary", prose, "--steps", "s",
+                                        "--fix", "f", "--affects", "src/thing.py",
+                                        "--points", "1", "--ac", "it holds",
+                                        "--root", str(repo)])
+            self.assertEqual(0, rc)
+            body = next((repo / "sdlc-studio" / "bugs").glob("BG*.md")).read_text(
+                encoding="utf-8")
+            self.assertIn(f"\n{prose}\n", body)
+        with tempfile.TemporaryDirectory() as d:
+            row, _path = self._row(d, prose)
+            self.assertTrue(row.endswith(f"| {prose} |"), row)
 
 
 class CloseUlidTests(unittest.TestCase):
@@ -3150,9 +3224,6 @@ class SeverityVocabularyTests(unittest.TestCase):
                     self.assertEqual(0, r.returncode,
                                      f"{spelling!r} differs from 'High' only in surrounding "
                                      f"whitespace and was refused:\n{r.stdout}{r.stderr}")
-
-
-import contextlib  # noqa: E402
 
 
 class BugCriteriaTests(unittest.TestCase):

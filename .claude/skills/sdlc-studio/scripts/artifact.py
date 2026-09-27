@@ -1891,7 +1891,8 @@ def cmd_revision(args: argparse.Namespace) -> int:
                   file=sys.stderr)
             refused += 1
             continue
-        row = sdlc_md.join_row([today, author, args.note])
+        # The note is prose in a table cell: a bare `_check, then _series` there is emphasis.
+        row = sdlc_md.join_row([today, author, file_finding._md_safe(args.note)])
         lines.insert(last_row + 1, row)
         path.write_text("\n".join(lines) + ("\n" if text.endswith("\n") else ""),
                         encoding="utf-8")

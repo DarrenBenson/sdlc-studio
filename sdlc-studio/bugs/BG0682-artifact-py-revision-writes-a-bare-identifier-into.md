@@ -1,6 +1,6 @@
 # BG0682: artifact.py revision writes a bare _identifier into the Revision History, which markdownlint refuses as MD037
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, changelog.d/BG0682.md
@@ -27,8 +27,10 @@ Wrap bare underscore-bearing identifiers in code spans (outside existing spans) 
 
 - [ ] **AC1** Given `artifact.py revision --id <unit> --note 'x _check, then _series raises'`, when the Revision History row is written, then both identifiers sit in code spans and markdownlint passes the file (no MD037). Fails on: writing the note verbatim, or code-spanning only the first identifier
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::RevisionNoteMarkdownTests::test_bare_underscore_identifiers_are_code_spanned
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC2** Given a note whose identifier is already in backticks, then the existing span is left as written and only the bare token is wrapped. Fails on: wrapping inside an existing span, which doubles the backticks
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::RevisionNoteMarkdownTests::test_an_existing_code_span_is_left_alone
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 
