@@ -1,6 +1,6 @@
 # BG0811: A root-level file with no listed extension drops out of a unit's Affects, so review scope and the plan's file checks never see it
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_affects_root_files.py, changelog.d/BG0811.md, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py
