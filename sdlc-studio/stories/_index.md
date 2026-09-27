@@ -7,10 +7,10 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 28 |
+| Draft | 27 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 1 |
+| In Progress | 2 |
 | Review | 0 |
 | Done | 763 |
 | Won't Implement | 81 |
@@ -317,7 +317,7 @@
 | [US0956](US0956-the-shipped-docs-teach-the-lean-loop-in.md) | The shipped docs teach the lean loop in one place | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0957](US0957-the-white-paper-and-the-value-argument-describe.md) | The white paper and the value argument describe the v6 operating model | Draft | EP0266 | 2026-09-25 | 2026-09-25 |
 | [US0958](US0958-the-last-skill-docs-outside-us0924-name-no.md) | The last skill docs outside US0924 name no command or setting v6 dropped | Superseded | EP0266 | 2026-09-25 | 2026-09-25 |
-| [US0959](US0959-a-signed-sprint-report-checks-in-any-full.md) | A signed sprint report checks in any full clone, from a sealed run record tracked beside it | Draft | EP0267 | 2026-09-27 | 2026-09-27 |
+| [US0959](US0959-a-signed-sprint-report-checks-in-any-full.md) | A signed sprint report checks in any full clone, from a sealed run record tracked beside it | In Progress | EP0267 | 2026-09-27 | 2026-09-27 |
 | [US0960](US0960-every-report-signed-before-the-tracked-record-checks.md) | Every report signed before the tracked record checks valid in a clean clone once migrate files its record | Draft | EP0267 | 2026-09-27 | 2026-09-27 |
 | [US0961](US0961-a-verdict-recorded-against-a-brief-the-unit.md) | A verdict recorded against a brief the unit has since outgrown says so | Draft | EP0267 | 2026-09-27 | 2026-09-27 |
 | [US0962](US0962-the-migration-to-v6-is-rehearsed-on-two.md) | The migration to v6 is rehearsed on two real consuming projects, and the record is published | Draft | EP0267 | 2026-09-27 | 2026-09-27 |

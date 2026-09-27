@@ -1,9 +1,9 @@
 # BG0785: migrate leaves a v4-era project's conformance lane red on its pre-adoption stories and names no cutoff for them
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py, tools/rehearse-release.sh, tools/release-rehearsal-baseline.txt, .claude/skills/sdlc-studio/scripts/tests/test_rehearse_release.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py, tools/rehearse-release.sh, tools/release-rehearsal-baseline.txt, .claude/skills/sdlc-studio/scripts/tests/test_rehearse_release.py, changelog.d/BG0785.md
 > **Evidence:** US0938: `tools/rehearse-release.sh upgrade` on a v4-era fixture (US0001 Done, US0002 Ready, neither with a Verify line): migrate reports 2 applied and 3 needing a human, none about conformance; `gate.py` then fails conformance with 2 non-conformant units and names `conformance.adopt_after` as its remedy
 > **Created:** 2026-09-26
 > **Created-by:** sdlc-studio file

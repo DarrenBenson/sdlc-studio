@@ -1,6 +1,6 @@
 # US0959: A signed sprint report checks in any full clone, from a sealed run record tracked beside it
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
