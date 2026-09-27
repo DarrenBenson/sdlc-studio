@@ -601,6 +601,17 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
             header += f"# Detected stack: {lang}\n"
         _write(f"{SDLC}/.config.yaml", header + "\n" + cfg_tmpl.read_text(encoding="utf-8"))
 
+    # 3a. the project version, in the shape `project upgrade --apply` writes, so a fresh project's
+    # first migrate owes no stamp and its first upgrade digest knows the range it crossed. An
+    # unreadable install version is left unstamped, never fabricated (the upgrade's own rule).
+    import project_upgrade  # noqa: PLC0415 - it imports this module; deferred to break the cycle
+    import version_check  # noqa: PLC0415
+    installed = version_check.installed_version(version_check.skill_root())
+    if installed:
+        _write(f"{SDLC}/.version", project_upgrade._VERSION.format(
+            schema=project_upgrade._effective_schema(root), prev="null", today=today,
+            skill=installed))
+
     # 3b. gitignore the runtime-state dir so derived caches/reports/lessons are never committed
     #. Self-contained in sdlc-studio/ - never touches the project's own root .gitignore.
     _write(f"{SDLC}/.gitignore",

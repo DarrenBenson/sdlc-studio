@@ -1,6 +1,6 @@
 # BG0808: init records no project version, so a fresh project's first migrate reports work and its upgrade digest reads the range as unknown
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -24,8 +24,10 @@ In an empty scratch directory: `git init`, then `python3 <skill>/scripts/init.py
 
 - [ ] **AC1** Given an empty git repository, when `init.py run` and then `migrate.py` run, then `sdlc-studio/.version` names the installed skill version with its pre-release suffix and `migrate` reports no deterministic upgrade for the version. Fails on: HEAD, where init writes no .version and the fresh project's first migrate reports a missing one
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_init_version.py::InitVersionTests::test_init_stamps_the_skill_version
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC2** Given a project initialised at 6.0.0-rc.1 and the skill then at 6.0.0, when `project_upgrade` renders its digest, then it names the range 6.0.0-rc.1 to 6.0.0 and lists 6.0.0's entries. Fails on: HEAD's 'version range unknown (recorded ?, installed 6.0.0)'
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_init_version.py::InitVersionTests::test_a_fresh_project_gets_its_upgrade_digest
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 
