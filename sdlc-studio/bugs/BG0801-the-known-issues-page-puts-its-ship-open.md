@@ -1,6 +1,6 @@
 # BG0801: The known-issues page puts its ship-open paragraph under the oldest bar's history and states a Not carried count the corpus contradicts
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -24,8 +24,10 @@ Emit the ship-open paragraph under the bar in force, before the history; derive 
 
 - [ ] **AC1** Given `known_issues.py write --release 6.0.0` over a corpus with open Medium findings, when the page is rendered, then the ship-open paragraph sits under `## The bar v6.0 is held to`, before the first `kept as history` heading. Fails on: HEAD, where it follows `## The bar v5.0.0 was held to, kept as history`
   - **Verify:** pytest tools/tests/test_known_issues.py::PageProseTests::test_the_ship_open_paragraph_sits_under_the_bar_in_force
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC2** Given a corpus holding four High findings at Won't Fix and none superseded, when the page is rendered, then Not carried states four and names each id, and a corpus with none renders no such claim. Fails on: HEAD's constant 'Three ... and one was superseded'
   - **Verify:** pytest tools/tests/test_known_issues.py::PageProseTests::test_not_carried_is_derived_from_the_corpus
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

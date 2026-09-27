@@ -25,6 +25,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import textwrap
 import traceback
 from pathlib import Path
 
@@ -140,19 +141,54 @@ rather than read.
 ## The bar v{major}.{minor} is held to
 
 {in_force[2]}
-{history}{body}
-## Triaged to {target}
+{body}
+{history}## Triaged to {target}
 
 """
 
 
+#: The terminal statuses a barred finding can leave by WITHOUT a fix, and how the page says so.
+#: Such a finding is neither open nor fixed, so the page names it rather than letting the list
+#: above read as everything the bar ever saw.
+NOT_FIXED = (("Won't Fix", "ruled `Won't Fix` on {its} own merits"),
+             ("Superseded", "superseded by later work"))
+
+
+def not_carried(repo: Path | None = None) -> dict[str, list[str]]:
+    """`{status: [bug id, ...]}` for every finding at a barred severity that reached a NOT_FIXED
+    status. Derived, because the sentence it replaced was true once and then stayed put."""
+    found: dict[str, list[str]] = {status: [] for status, _verb in NOT_FIXED}
+    for path in sorted(((repo or REPO) / BUGS_REL).glob("BG*.md")):
+        row = _read(path)
+        if row is None or not _matches(row[2], BARRED):
+            continue
+        for status in found:
+            if row[1].casefold() == status.casefold():
+                found[status].append(row[0])
+    return {status: ids for status, ids in found.items() if ids}
+
+
+def _not_carried(repo: Path | None) -> str:
+    """The Not carried section, or nothing: a corpus with none makes no such claim."""
+    found = not_carried(repo)
+    if not found:
+        return ""
+    lines = []
+    for status, verb in NOT_FIXED:
+        ids = found.get(status)
+        if not ids:
+            continue
+        one = len(ids) == 1
+        lines.append(textwrap.fill(
+            f"{len(ids)} {'finding' if one else 'findings'} at a barred severity "
+            f"{'was' if one else 'were'} {verb.format(its='its' if one else 'their')}: "
+            + ", ".join(f"`{i}`" for i in ids) + ".", width=92, break_on_hyphens=False))
+    return ("\n## Not carried\n\n" + "\n\n".join(lines) + "\n\n"
+            "They are not in the list above because they are not open, and a disclosure that pads\n"
+            "its count is as misleading as one that trims it.\n")
+
+
 TAIL = """
-## Not carried
-
-Three High findings were ruled `Won't Fix` on their own merits before this bar was set,
-and one was superseded by later work. They are not in the list above because they are not
-open, and a disclosure that pads its count is as misleading as one that trims it.
-
 ## How this list is kept
 
 It is derived from the bug corpus by `tools/known_issues.py` when a release is cut, not
@@ -302,7 +338,7 @@ def render(repo: Path | None, release: str) -> str:
         lines.append(f"| `{bug_id}` | {sev} | {title} |")
     total, mediums, lows = _split(found)
     lines += ["", f"{total} findings: {mediums} Medium, {lows} Low."]
-    return _head(total, release) + "\n".join(lines) + "\n" + TAIL
+    return _head(total, release) + "\n".join(lines) + "\n" + _not_carried(repo) + TAIL
 
 
 def _git(root: Path, *args: str, text: bool = True) -> subprocess.CompletedProcess:

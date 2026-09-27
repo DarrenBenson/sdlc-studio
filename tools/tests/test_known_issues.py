@@ -609,5 +609,75 @@ class ReleaseNamedTests(unittest.TestCase):
                 self.assertFalse((root / ki.PAGE_REL).exists(), "a refused cut wrote the page")
 
 
+
+class PageProseTests(unittest.TestCase):
+    """BG0801: the page's prose is true of the corpus it is cut from. The ship-open paragraph
+    belongs to the bar in force, not to the oldest history bar it used to trail; and Not carried
+    is derived from the findings at a barred severity that left without a fix, not a sentence
+    fixed when the count was three."""
+
+    def _corpus(self, tmp: Path, bugs: list) -> Path:
+        """`(id, status, severity)` per finding, in a throwaway corpus."""
+        root = tmp / "r"; (root / ki.BUGS_REL).mkdir(parents=True)
+        for bid, status, sev in bugs:
+            (root / ki.BUGS_REL / f"{bid}-x.md").write_text(
+                f"# {bid}: finding {bid}\n\n> **Status:** {status}\n> **Severity:** {sev}\n",
+                encoding="utf-8")
+        return root
+
+    @staticmethod
+    def _section(page: str, heading: str) -> str:
+        """The body under `## heading`, up to the next H2."""
+        start = page.index(f"## {heading}\n") + len(heading) + 4
+        end = page.find("\n## ", start)
+        return page[start:] if end < 0 else page[start:end]
+
+    def test_the_ship_open_paragraph_sits_under_the_bar_in_force(self) -> None:
+        """MUTANT: HEAD's order - the paragraph emitted after the history, so it reads as the
+        v5.0.0 bar's."""
+        with tempfile.TemporaryDirectory() as d:
+            page = ki.render(self._corpus(Path(d), [("BG9001", "Open", "Medium")]), "6.0.0")
+        para = page.index("**Medium and Low findings ship open")
+        self.assertLess(page.index("## The bar v6.0 is held to\n"), para)
+        self.assertLess(para, page.index("kept as history"),
+                        "the ship-open paragraph follows a history heading, so it reads as "
+                        "part of an older bar")
+        self.assertIn("ship open", self._section(page, "The bar v6.0 is held to"))
+
+    def test_not_carried_is_derived_from_the_corpus(self) -> None:
+        """MUTANT: HEAD's constant 'Three ... and one was superseded'. The Closed and Fixed
+        Highs and the Won't Fix Medium are controls: only a barred finding that left WITHOUT a
+        fix is not carried, and a corpus with none makes no such claim."""
+        wont = ["BG0124", "BG0139", "BG0583", "BG0713"]
+        bugs = [(b, "Won't Fix", "High") for b in wont] + [
+            ("BG0001", "Closed", "High"), ("BG0002", "Fixed", "Critical"),
+            ("BG0003", "Won't Fix", "Medium"), ("BG0004", "Open", "Medium")]
+        with tempfile.TemporaryDirectory() as d:
+            page = ki.render(self._corpus(Path(d), bugs), "6.0.0")
+        carried = self._section(page, "Not carried")
+        self.assertIn("4 findings at a barred severity were ruled `Won't Fix`", carried)
+        for bid in wont:
+            self.assertIn(f"`{bid}`", carried)
+        for control in ("BG0001", "BG0002", "BG0003", "BG0004"):
+            self.assertNotIn(control, carried)
+        self.assertNotIn("superseded", carried.casefold())
+        self.assertNotIn("Three", carried)
+
+        with tempfile.TemporaryDirectory() as d:
+            page = ki.render(self._corpus(Path(d), [("BG0010", "Superseded", "critical"),
+                                                    ("BG0011", "Won't Fix", "High")]), "6.0.0")
+        carried = self._section(page, "Not carried")
+        self.assertIn("1 finding at a barred severity was ruled `Won't Fix`", carried)
+        self.assertIn("1 finding at a barred severity was superseded", carried)
+        self.assertIn("`BG0010`", carried)
+
+        with tempfile.TemporaryDirectory() as d:
+            none = ki.render(self._corpus(Path(d), [("BG0001", "Closed", "High"),
+                                                    ("BG0004", "Open", "Medium")]), "6.0.0")
+        self.assertNotIn("## Not carried", none, "a corpus with none still claims some")
+        self.assertNotIn("Won't Fix", none)
+        self.assertIn("## How this list is kept", none)
+
+
 if __name__ == "__main__":
     unittest.main()
