@@ -4,7 +4,7 @@
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** README.md, CONTRIBUTING.md, docs/INSTALL.md, tools/tests/test_lean_public_docs_retired.py, changelog.d/US0954.md
+> **Affects:** README.md, CONTRIBUTING.md, docs/INSTALL.md, tools/tests/test_lean_public_docs_retired.py, changelog.d/US0954.md, .claude/skills/sdlc-studio/scripts/tests/retired_surface.py
 > **Epic:** EP0266
 > **Points:** 3
 > **Persona:** Maya Okafor
