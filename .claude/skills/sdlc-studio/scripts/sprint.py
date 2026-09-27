@@ -5050,8 +5050,12 @@ def _close_handoff(root, retro_id, state):
 
 
 def _close_reconcile(root, retro_id, state):
-    rc, out = _run_cli(reconcile.main, ["detect", "--root", str(root)])
-    if rc == 0:
+    # The close SETTLES what it owns before it reads drift: a parent of this run's units whose
+    # every child is now terminal is derived here, not only in the tail, or the report hands over
+    # as known issues the epic status the same close then sets.
+    _derive_close_parents(root, (state or {}).get("batch") or [], "close")
+    _per_type, drift = reconcile.detect_all(root)
+    if not drift:
         return True, "no index drift", ""
     # A `request-derivable` item that another gate refuses is real drift, but `reconcile apply`
     # provably CANNOT clear it - so the printed remedy is a loop with no exit, and every close in
@@ -5063,7 +5067,10 @@ def _close_reconcile(root, retro_id, state):
         ids = ", ".join(d["id"] for d in blocked)
         return True, (f"no mechanical drift; {len(blocked)} request(s) awaiting another gate "
                       f"({ids}) - reported, not clearable by apply"), ""
-    return False, out, "`reconcile.py apply` clears mechanical drift, then re-run"
+    # ONE LINE PER DRIFT ITEM, from the structured sweep: the step's detail becomes one known
+    # issue per line, and `detect`'s printed summary and guidance are not drift.
+    return False, "\n".join(f"{d['kind']} {d['id'] or d['type']}: {d['fix']}" for d in drift), \
+        "`reconcile.py detect` explains each kind; `reconcile.py apply` clears mechanical drift"
 
 
 def _only_blocked_derivable_drift(root, blocked) -> bool:
@@ -6234,6 +6241,24 @@ def _derive_parent_requests(root, scope_ids=None) -> list[str]:
     return done
 
 
+def _derive_close_parents(root, units, who: str) -> list[str]:
+    """Derive terminal the parent epics of `units` whose every child is terminal, then the
+    requests above them, printing each as `who`. Idempotent: an already-terminal parent is
+    skipped, so the reconcile step and the tail may both call it. Returns the ids derived."""
+    derived = _derive_parent_epics(root, units)
+    if derived:
+        print(f"{who}: derived {', '.join(derived)} terminal (all children terminal)")
+    # A request ABOVE those epics reaches its terminal by derivation too - run it AFTER the epics,
+    # so a CR/RFC whose last child was an epic just marked Done is now itself derivable and the
+    # close no longer leaves it for a manual `reconcile apply`. Scoped to this run's units plus the
+    # epics just derived, so the close never sweeps unrelated requests.
+    requests = _derive_parent_requests(root, scope_ids=list(units or []) + derived)
+    if requests:
+        print(f"{who}: derived parent request(s) {', '.join(requests)} terminal "
+              f"(all children resolved)")
+    return derived + requests
+
+
 def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -> int:
     """The close tail: derive parent epics terminal, write the run's velocity row,
     and run a final reconcile. The per-unit cascade ticks each epic's breakdown checkbox but
@@ -6243,17 +6268,7 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
     detection."""
     import reconcile  # noqa: PLC0415
     import retro  # noqa: PLC0415
-    derived = _derive_parent_epics(root, units)
-    if derived:
-        print(f"apply-signoff: derived {', '.join(derived)} terminal (all children terminal)")
-    # A request ABOVE those epics reaches its terminal by derivation too - run it AFTER the epics,
-    # so a CR/RFC whose last child was an epic just marked Done is now itself derivable and the
-    # close no longer leaves it for a manual `reconcile apply`. Scoped to this run's units plus the
-    # epics just derived, so the close never sweeps unrelated requests.
-    derived_requests = _derive_parent_requests(root, scope_ids=list(units or []) + derived)
-    if derived_requests:
-        print(f"apply-signoff: derived parent request(s) {', '.join(derived_requests)} terminal "
-              f"(all children resolved)")
+    _derive_close_parents(root, units, "apply-signoff")
     # The chain wrote the handoff one step BEFORE this cascade transitioned anything, so the
     # document and its worklist described units as remaining that the close then completed.
     # Re-render it here, against this run's own batch, so the tail reports the state the close
@@ -8828,6 +8843,12 @@ def cmd_close(args: argparse.Namespace) -> int:
     # The report holds are known issues too: the page states them rather than being withheld.
     held = _report_holds(root, state)
     for h in held:
+        # The index-drift hold reads the same sweep the reconcile step carried item by item;
+        # carrying it as well would hand one drift item over twice.
+        if h["hold"] == "index-drift" and any(k["source"] == "reconcile" for k in known):
+            print(f"close: report hold [index-drift]: carried by the reconcile step above - "
+                  f"{h['detail']}", file=sys.stderr)
+            continue
         known.append({"source": f"report-hold:{h['hold']}", "detail": h["detail"]})
         print(f"close: report hold [{h['hold']}]: known issue - {h['detail']}", file=sys.stderr)
     for name in _REPORT_HOLDS:

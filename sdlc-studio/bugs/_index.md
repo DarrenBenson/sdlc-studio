@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 18 |
-| In Progress | 5 |
-| Fixed | 650 |
+| In Progress | 4 |
+| Fixed | 651 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -157,7 +157,7 @@
 | [BG0796](BG0796-the-report-s-cost-row-reads-unattributed-while.md) | The report's cost row reads unattributed while the same report measures the run's tokens | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0797](BG0797-per-unit-minutes-and-tokens-are-recorded-only.md) | Per-unit minutes and tokens are recorded only on an In Progress transition the lean loop never makes, and the report does not say why the column is empty | In Progress | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0798](BG0798-the-forecast-rate-never-re-fits-353-810.md) | The forecast rate never re-fits: 353,810 tokens per point has forecast about twice the measured spend for three sprints | Open | Medium | 2026-09-27 | 2026-09-27 |
-| [BG0799](BG0799-a-first-sprint-s-report-hands-over-as.md) | A first sprint's report hands over, as known issues, the epic drift its own close settles, split into one row per line of reconcile's output | In Progress | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0799](BG0799-a-first-sprint-s-report-hands-over-as.md) | A first sprint's report hands over, as known issues, the epic drift its own close settles, split into one row per line of reconcile's output | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0800](BG0800-the-close-s-pre-flight-lists-as-unmet.md) | The close's pre-flight lists as unmet the goal verdict the same invocation records and the review anchor the close writes itself | In Progress | Low | 2026-09-27 | 2026-09-27 |
 | [BG0801](BG0801-the-known-issues-page-puts-its-ship-open.md) | The known-issues page puts its ship-open paragraph under the oldest bar's history and states a Not carried count the corpus contradicts | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0802](BG0802-artifact-new-type-bug-drops-its-verify-line.md) | artifact new --type bug drops its --verify line and writes an unnamed criterion, so sprint plan refuses the bug it just filed | Fixed | Medium | 2026-09-27 | 2026-09-27 |

@@ -1,10 +1,10 @@
 # BG0799: A first sprint's report hands over, as known issues, the epic drift its own close settles, split into one row per line of reconcile's output
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_close.py, changelog.d/BG0799.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_close.py, changelog.d/BG0799.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Severity:** Medium
 > **Points:** 2
 
@@ -24,8 +24,10 @@ Settle close-owned derivations (parent epics of this run's units) before the rec
 
 - [ ] **AC1** Given a fresh `init` project whose only epic's single story reaches Done in the run, when `sprint.py close --retro <R> --goal-verdict achieved` files the report, then the epic reads Done and the report's Known issues table carries no `epic-status-stale` row. Fails on: HEAD (five rows for one item the same close resolved, measured on a fresh rc.1 project 2026-09-27); suppressing every reconcile issue, which AC2 catches
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close.py::CloseDriftTests::test_the_close_does_not_hand_over_drift_it_settles
+  - **Verified:** yes (2026-09-27)
 - [ ] **AC2** Given index drift the close does not settle (a story's index row hand-edited to a stale status), when the close runs, then the report carries exactly one known-issue row per drift item, naming the id and the kind, and no row for reconcile's `scope=` summary or `Guidance:` lines. Fails on: splitting the reconcile step's stdout per line (HEAD)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close.py::CloseDriftTests::test_one_drift_item_is_one_known_issue
+  - **Verified:** yes (2026-09-27)
 
 ## Notes
 

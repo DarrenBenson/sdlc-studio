@@ -4,7 +4,7 @@
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** docs/whitepaper.md, docs/whitepaper.pdf, docs/why-sdlc-studio.md, tools/tests/test_lean_value_docs.py, changelog.d/US0957.md
+> **Affects:** docs/whitepaper.md, docs/whitepaper.pdf, docs/why-sdlc-studio.md, tools/tests/test_lean_value_docs.py, changelog.d/US0957.md, tools/whitepaper_pdf.py
 > **Epic:** EP0266
 > **Points:** 5
 > **Persona:** Jonah Reyes

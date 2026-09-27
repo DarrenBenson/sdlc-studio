@@ -6890,10 +6890,13 @@ class CloseReconcileBlockedDerivableTests(unittest.TestCase):
     def _mod_with(self, detect_rc, derivable, per_type_drift=0):
         mod = _load()
         rec = mod.reconcile
-        self.addCleanup(setattr, rec, "main", rec.main)
+        self.addCleanup(setattr, rec, "detect_all", rec.detect_all)
         self.addCleanup(setattr, rec, "derivable_request_drift", rec.derivable_request_drift)
         self.addCleanup(setattr, rec, "detect_type", rec.detect_type)
-        rec.main = lambda argv: detect_rc
+        # The step reads the structured sweep (BG0799); `detect_rc` 1 is one drift item.
+        rec.detect_all = lambda root, scope=None: ({}, [
+            {"kind": "request-derivable", "id": "RFC0046", "type": "rfc",
+             "fix": "derive it terminal"}] * detect_rc)
         rec.derivable_request_drift = lambda root, explain=True: derivable
         rec.detect_type = lambda t, root: {"drift": [{"x": 1}] * per_type_drift}
         return mod

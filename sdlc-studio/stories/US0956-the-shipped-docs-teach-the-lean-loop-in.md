@@ -4,7 +4,7 @@
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/help/getting-started.md, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/help/retro.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_loop_docs.py, changelog.d/US0956.md
+> **Affects:** .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/help/getting-started.md, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/help/retro.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_loop_docs.py, changelog.d/US0956.md, .claude/skills/sdlc-studio/scripts/tests/test_docs_single_writer.py, sdlc-studio/stories/US0013-tranche-audit-step.md, sdlc-studio/stories/US0396-reference-review-md-and-reference-sprint-md-require.md
 > **Epic:** EP0266
 > **Points:** 5
 > **Persona:** Maya Okafor

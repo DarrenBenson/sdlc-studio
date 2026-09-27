@@ -81,9 +81,11 @@ def _fixture(root: Path, **over) -> None:
 
 
 def _green_steps(mod, real: tuple[str, ...] = ()) -> contextlib.ExitStack:
-    """Every chain step but those in `real` stubbed green, and the report holds cleared."""
+    """Every chain step but those in `real` stubbed green, and the report holds cleared unless
+    `real` names `report-holds`."""
     stack = contextlib.ExitStack()
-    stack.enter_context(unittest.mock.patch.object(mod, "_report_holds", lambda *a, **k: []))
+    if "report-holds" not in real:
+        stack.enter_context(unittest.mock.patch.object(mod, "_report_holds", lambda *a, **k: []))
     for name in mod._CLOSE_CHAIN:
         if name not in real:
             stack.enter_context(unittest.mock.patch.object(
@@ -277,6 +279,94 @@ class KnownIssueDetailTests(unittest.TestCase):
             self.assertEqual("STOP-SHIP", rows[0]["issue_priority"], rows)
             self.assertIn("BG0009", rows[0]["issue_detail"])
             self.assertEqual(1, sum(r["issue_priority"] == "STOP-SHIP" for r in rows))
+
+
+def _cli(name: str, *argv: str) -> str:
+    """Run a sibling script's `main` quietly, returning its stdout; a non-zero exit fails."""
+    out, err = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        rc = _live(name).main(list(argv))
+    if rc:
+        raise AssertionError(f"{name} {' '.join(argv)} exited {rc}:\n{out.getvalue()}"
+                             f"{err.getvalue()}")
+    return out.getvalue()
+
+
+def _fresh_run(root: Path, *, done: bool) -> tuple[str, str]:
+    """A fresh `init` project whose only epic holds one story, the run's whole batch. With
+    `done` the story reaches Done through the real gates (verified, reviewed, transitioned)."""
+    _cli("init", "--root", str(root), "run")
+
+    def new(*argv: str) -> str:
+        return json.loads(_cli("artifact", "new", *argv, "--root", str(root),
+                               "--format", "json"))["id"]
+
+    eid = new("--type", "epic", "--title", "Calculator", "--summary", "adds numbers")
+    uid = new("--type", "story", "--epic", eid, "--title", "A user can add numbers",
+              "--points", "1", "--affects", "src/calc.py", "--ac", "the module exists",
+              "--verify", "shell test -f src/calc.py")
+    (root / "src").mkdir()
+    (root / "src" / "calc.py").write_text("def add(a, b):\n    return a + b\n", "utf-8")
+    for status in ("Ready", "In Progress"):
+        _cli("transition", "set", "--id", uid, "--status", status, "--root", str(root))
+    if done:
+        _cli("verify_ac", "run", "--id", uid, "--root", str(root))
+        _cli("critic", "record", "--unit", uid, "--verdict", "approve", "--reviewer",
+             "Reviewer; agent; v1", "--author", "Builder; agent; v1", "--root", str(root))
+        _cli("transition", "set", "--id", uid, "--status", "Done", "--root", str(root))
+    _state(root, batch=[uid])
+    _retro(root)
+    return eid, uid
+
+
+class CloseDriftTests(unittest.TestCase):
+    """BG0799: the report hands over the drift the close could not settle, one row per item."""
+
+    def test_the_close_does_not_hand_over_drift_it_settles(self) -> None:
+        """AC1. Mutant: derive the run's parent epics only in the tail, after the reconcile step
+        and the report holds have read drift (HEAD: five rows for one item the close settled)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            eid, _uid = _fresh_run(root, done=True)
+            rc, out, err = _close(root, real=("reconcile", "report-holds"))
+            self.assertEqual(0, rc, err)
+            self.assertIn("reconcile: ok", out, "the reconcile step did not run clean")
+            epic = next((root / "sdlc-studio" / "epics").glob(f"{eid}-*.md"))
+            self.assertIn("> **Status:** Done", epic.read_text(encoding="utf-8"))
+            state = _read(root)
+            rows = [r["issue_detail"] for r in _known_issue_rows(root, state["report"])]
+            self.assertEqual([], [r for r in rows if "epic-status-stale" in r], rows)
+
+    def test_one_drift_item_is_one_known_issue(self) -> None:
+        """AC2. Mutant: split the reconcile step's stdout per line (HEAD), which carries the
+        `scope=` summary and the `Guidance:` block as issues; or carry the index-drift hold
+        beside the step's own row, which names the one item twice."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            eid, uid = _fresh_run(root, done=False)
+            index = root / "sdlc-studio" / "stories" / "_index.md"
+            text = index.read_text(encoding="utf-8")
+            # the row AND its summary count, so the one drift item is the row's stale status
+            edits = {f"| {eid} | In Progress |": f"| {eid} | Draft |",
+                     "| Draft | 0 |": "| Draft | 1 |", "| In Progress | 1 |": "| In Progress | 0 |"}
+            for old, new in edits.items():
+                self.assertEqual(1, text.count(old), text)
+                text = text.replace(old, new)
+            index.write_text(text, encoding="utf-8")
+            _per_type, items = _live("reconcile").detect_all(root)
+            self.assertEqual([("status-mismatch", uid)], [(i["kind"], i["id"]) for i in items])
+            rc, _out, err = _close(root, real=("reconcile", "report-holds"))
+            self.assertEqual(0, rc, err)
+            state = _read(root)
+            carried = [i["detail"] for i in state["close_known_issues"]
+                       if i["source"] == "reconcile"]
+            self.assertEqual(1, len(carried), carried)
+            self.assertIn(uid, carried[0])
+            self.assertIn("status-mismatch", carried[0])
+            rows = [r["issue_detail"] for r in _known_issue_rows(root, state["report"])]
+            self.assertEqual(1, sum(uid in r and "status-mismatch" in r for r in rows), rows)
+            self.assertFalse([r for r in rows if r.startswith(("scope=", "Guidance:", "- "))],
+                             rows)
 
 
 if __name__ == "__main__":
