@@ -5,9 +5,9 @@
 > **RUN-01M3HR74, Sprint 6 of the v6 release: v6.0.0 is ready to cut.** Goal: "v6.0.0 ships:
 > Maya and Jonah install, upgrade and learn it from docs and notes that match the code." 55 of 55
 > batch units delivered, each by one independent QA-seat reviewer under the two-round cap. BG0818
-> needed an operator-granted third round (D0285) and landed by a recorded override (D0286), because
-> the cap has no per-unit exception path (BG0841). Verdict: achieved; the tag is cut after the
-> signature.
+> needed an operator-granted third round (D0285): the cap has no per-unit exception path (BG0841),
+> so it landed by a recorded override (D0286) and its round-3 APPROVE reached the ledger through a
+> one-call cap raise (D0287). Verdict: achieved; the tag is cut after the signature.
 
 ## What landed
 
