@@ -158,7 +158,7 @@ so the two do not drift.
 | `.claude/skills/sdlc-studio/reference-*.md` | Domain workflows (50+ files); `help/references.md` indexes them |
 | `.claude/skills/sdlc-studio/help/` | Type-specific help (~45 files) |
 | `.claude/skills/sdlc-studio/lessons/` | Cross-project lessons registry |
-| `.claude/skills/sdlc-studio/personas/seats/` | The three amigo seats, in work and review renders |
+| `.claude/skills/sdlc-studio/templates/personas/amigos/` | The three shipped amigo seats, in work and review renders; this repo's own cards in `sdlc-studio/personas/seats/` override them (`persona_resolve.py resolve --seat <s> --path-only` names the one in force) |
 | `.claude/skills/sdlc-studio/scripts/` | 40+ helpers sharing `lib/sdlc_md.py` |
 | `.claude/skills/sdlc-studio/templates/` | Documents and code, incl. `agent-instructions.md` (the starter this file's shape follows) |
 | `.claude/skills/sdlc-studio/best-practices/` | Quality guidelines (19 files) |

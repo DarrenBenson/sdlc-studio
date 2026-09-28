@@ -48,11 +48,13 @@ Get structured feedback from personas on SDLC artefacts.
 
 ### Single Persona
 
+<!-- sample-personas -->
 ```bash
 /sdlc-studio consult sarah-chen sdlc-studio/prd.md
 ```
 
-Get feedback from one specific persona.
+Get feedback from one specific persona. Sarah Chen here is a sample persona from the archetype
+seeds, not the Product amigo.
 
 **Output:**
 
@@ -71,6 +73,8 @@ success metrics. How will we measure if this feature is working?"
 - Add measurable success criteria
 ```
 
+<!-- /sample-personas -->
+
 ### Team (Three Amigos)
 
 ```bash
@@ -79,11 +83,9 @@ success metrics. How will we measure if this feature is working?"
 
 Get feedback from Product, Engineering, and QA perspectives.
 
-**Default representatives:**
-
-- Product: First Product persona or Sarah Chen
-- Engineering: First Senior Engineer or Marcus Johnson
-- QA: First QA persona or Priya Sharma
+**Default representatives:** the Product amigo, Engineering amigo and QA amigo, each the seat
+`persona_resolve.py resolve-consult --role <product|engineering|qa>` picks (a project seat card
+declaring the role, else the one the skill ships).
 
 **Override defaults:**
 

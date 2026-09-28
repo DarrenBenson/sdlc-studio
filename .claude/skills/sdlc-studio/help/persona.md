@@ -58,11 +58,14 @@ Personas are organised into two categories:
 
 ### Three Amigos (Team)
 
-| Amigo | Focus | Archetype Examples |
-| ------- | ------- | ------------------- |
-| Product | What & Why | Sarah Chen (PO), Alex Rivera (BA) |
-| Engineering | How | Marcus Johnson (Senior Dev), Nadia Okonkwo (Architect) |
-| QA | What If | Priya Sharma (QA Lead), Jordan Lee (Automation) |
+| Amigo | Focus | Seat |
+| --- | --- | --- |
+| Product | What & Why | Product amigo: `persona_resolve.py resolve --seat product` |
+| Engineering | How | Engineering amigo: `persona_resolve.py resolve --seat engineering` |
+| QA | What If | QA amigo: `persona_resolve.py resolve --seat qa` |
+
+A project seat card overrides the shipped one. The team archetype seeds in
+`reference-persona.md#archetypes` are sample personas to start `persona create` from, not amigos.
 
 ---
 
@@ -135,7 +138,8 @@ Display all personas for current project.
 /sdlc-studio persona list
 ```
 
-**Output:**
+<!-- sample-personas -->
+**Output** (sample personas from the archetype seeds; a team persona listed here is not an amigo):
 
 ```
 TEAM PERSONAS
@@ -159,6 +163,8 @@ Users:
 Business:
   James Mitchell (Exec) - ROI, timelines
 ```
+
+<!-- /sample-personas -->
 
 ### export
 

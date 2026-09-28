@@ -1,6 +1,6 @@
 # BG0816: Seven skill docs still call the Three Amigos by retired names, and AGENTS.md names a seat directory that does not exist
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/reference-bug.md, .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/reference-consult.md, .claude/skills/sdlc-studio/reference-chat.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/help/consult.md, AGENTS.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_amigo_names.py, changelog.d/BG0816.md
@@ -26,8 +26,10 @@ Where a doc means the Three Amigos, use the role labels the resolver prints (Pro
 
 - [ ] **AC1** Given the skill's docs, then no passage that means the Three Amigos names Sarah Chen, Marcus Johnson or Priya Sharma, and each remaining mention of those names is marked as a sample user persona. Fails on: the rc.1 docs, where Bug Fix, review, consult and chat steps name amigos the resolver never loads
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_amigo_names.py::AmigoNameTests::test_no_amigo_passage_names_a_retired_seat
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC2** Given AGENTS.md's 'Where things live' table, then the row for the amigo seats names a directory that exists and that `persona_resolve.py` loads. Fails on: personas/seats/, which does not exist
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_amigo_names.py::AmigoNameTests::test_agents_md_names_the_real_seat_directory
+  - **Verified:** yes (2026-09-28)
 
 ## Revision History
 

@@ -277,8 +277,8 @@ If `sdlc-studio/personas/` contains persona files and `--skip-personas` was NOT 
 1. Load persona index (`sdlc-studio/personas/index.md`)
 2. For each reviewed document, identify relevant personas from the consultation guide:
    - **PRD:** Darren (scope, priorities), Cora (API shape, errors), Webapp Dev (API docs, schema), HA (health, sensors)
-   - **TRD:** Claude Code (patterns, testability), Marcus Johnson (architecture), Cora (error contracts)
-   - **TSD:** Priya Sharma (coverage, risk), Claude Code (test structure, runnable locally)
+   - **TRD:** Claude Code (patterns, testability), the Engineering amigo (architecture), Cora (error contracts)
+   - **TSD:** the QA amigo (coverage, risk), Claude Code (test structure, runnable locally)
 3. Consult each relevant persona on the review findings from their perspective:
    - Does the implementation meet their stated needs?
    - Are their frustrations addressed?
