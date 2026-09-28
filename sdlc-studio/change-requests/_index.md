@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-09-26
+**Last Updated:** 2026-09-28
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 18 |
+| Proposed | 21 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 509 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 52 |
 | Blocked | 0 |
-| **Total** | **600** |
+| **Total** | **603** |
 
 ## All Changes
 
@@ -98,6 +98,9 @@
 | [CR-0598](CR0598-prevent-or-retire-lesson-lc-003-mechanism-reaches.md) | Prevent or retire lesson LC-003 (mechanism reaches no caller) | Proposed | Medium | Improvement | 2026-09-25 | -- |
 | [CR-0599](CR0599-the-sprint-signature-is-recorded-in-a-tracked.md) | The sprint signature is recorded in a tracked file, so any clone can verify a signed report | Complete | High | Feature | 2026-09-25 | US0959, US0960, BG0795, BG0788 |
 | [CR-0600](CR0600-prevent-or-retire-lesson-lc-004-premise-not.md) | Prevent or retire lesson LC-004 (premise not executed) | Proposed | Medium | Improvement | 2026-09-26 | -- |
+| [CR-0601](CR0601-a-shipped-command-reports-where-a-project-s.md) | A shipped command reports where a project's own docs still name retired v5 surface | Proposed | Medium | Improvement | 2026-09-28 | -- |
+| [CR-0602](CR0602-a-run-s-token-and-minute-actuals-are.md) | A run's token and minute actuals are measured without the operator stamping a baseline | Proposed | Medium | Improvement | 2026-09-28 | -- |
+| [CR-0603](CR0603-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | Proposed | Low | Improvement | 2026-09-28 | -- |
 
 ## Archived Releases
 

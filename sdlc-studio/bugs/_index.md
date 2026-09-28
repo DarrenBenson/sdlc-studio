@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 13 |
+| Open | 29 |
 | In Progress | 6 |
 | Fixed | 667 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
 | Superseded | 28 |
-| **Total** | **823** |
+| **Total** | **839** |
 
 ## All Bugs
 
@@ -182,6 +182,22 @@
 | [BG0821](BG0821-install-ps1-local-still-refreshes-every-personal-copy.md) | install.ps1 -Local still refreshes every personal copy of the skill, the defect BG0809 fixed only in install.sh | In Progress | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0822](BG0822-the-close-sign-and-the-signed-report-still.md) | The close, sign and the signed report still speak the retired v5 sign-off vocabulary, and the close misstates the outcome sign will write | In Progress | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0823](BG0823-sprint-close-dry-run-reports-no-goal-no.md) | sprint close --dry-run reports no goal, no units and no start time for a run whose state holds all three, and previews writes as done | In Progress | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0824](BG0824-init-guided-s-personas-stage-seeds-the-legacy.md) | init guided's personas stage seeds the legacy flat personas.md, which the persona registry and sprint plan --serves never read | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0825](BG0825-ulid-ids-are-printed-as-their-hyphenless-comparison.md) | ULID ids are printed as their hyphenless comparison key, so plan, brief, carry and the signed report name ids no file carries | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0826](BG0826-the-scaffolded-retro-carries-neither-the-run-id.md) | The scaffolded retro carries neither the run id nor a Known issues carried table, so the run's rulings cannot be found or written | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0827](BG0827-the-review-brief-asks-the-reviewer-to-judge.md) | The review brief asks the reviewer to judge origin 'at the base ref' but never names the base ref | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0828](BG0828-the-one-call-closes-do-not-check-the.md) | The one-call closes do not check the review brief: artifact.py close records a verdict with no brief and no warning, and transition --brief accepts a fingerprint no brief printed | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0829](BG0829-a-unit-carried-at-the-review-cap-is.md) | A unit carried at the review cap is filed as an ungroomed bug that sprint plan cannot take, and every carry prints that the operator was notified | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0830](BG0830-a-verdict-or-delegated-token-record-written-after.md) | A verdict or delegated-token record written after the seal lands on the sealed run without a warning | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0831](BG0831-the-configuration-reference-documents-keys-the-code-does.md) | The configuration reference documents keys the code does not honour: sprint.split_above, review.policy carry-forward, and review.max_rounds | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0832](BG0832-reference-review-md-step-3a-ships-a-private.md) | reference-review.md step 3a ships a private project's consultation cast as its example, names amigos with no resolver, and the neutrality lane misses it | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0833](BG0833-the-engagement-floor-judges-a-decomposed-cr-by.md) | The engagement floor judges a decomposed CR by its own criteria, so a CR reconcile derives Complete from planned children is refused as unplanned | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0834](BG0834-persona-generate-team-lets-a-pre-supplied-or.md) | persona generate --team lets a pre-supplied or headless default stand as an answer, so its report claims questions were asked and accepted when none was | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0835](BG0835-token-capture-looks-for-the-session-transcript-in.md) | Token capture looks for the session transcript in a directory named by replacing only '/', so a project path holding '.' or '_' reads NOT ATTRIBUTABLE | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0836](BG0836-no-command-writes-a-lesson-class-s-graduated.md) | No command writes a lesson class's graduated state, so every graduation CR carries a criterion only a hand edit can meet | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0837](BG0837-the-pre-push-gate-judges-the-working-tree.md) | The pre-push gate judges the working tree, not the commits being pushed, so an uncommitted fix turns a red push green | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0838](BG0838-retired-surface-excuses-a-live-retired-name-by.md) | retired_surface excuses a live retired name by the shape of its sentence, so a live instruction passes as history | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0839](BG0839-an-eval-worker-session-loads-the-personal-skill.md) | An eval worker session loads the personal skill ahead of the candidate copy, and nothing in the harness says so or prevents it | Open | Medium | 2026-09-28 | 2026-09-28 |
 
 ## Archived Releases
 
