@@ -569,6 +569,19 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
     return _number_rounds(_annotate_superseded(out, read_supersessions(repo_root, phase)))
 
 
+def row_identity(row: dict) -> str:
+    """A delivery verdict row's identity: a digest of its eight parsed cells, `-` and empty
+    reading the same, so a row written before a column existed already has one.
+
+    Not the raw line, which a table re-pad changes, and not a stored Run column, which no
+    historic row could carry. Two rows with the same cells share an identity; the ledger holds
+    exact duplicates, so a caller counting identities counts a multiset."""
+    import hashlib  # noqa: PLC0415 - local; only this path needs it
+    cells = [str(row.get(col) or "").strip() for col in _DELIVERY_COLS]
+    return hashlib.sha256("\x1f".join("" if c == "-" else c for c in cells)
+                          .encode("utf-8")).hexdigest()[:16]
+
+
 def _number_rounds(rows: list[dict]) -> list[dict]:
     """Stamp each row with its `round`: its ordinal among the unit's live rows in this ledger.
 

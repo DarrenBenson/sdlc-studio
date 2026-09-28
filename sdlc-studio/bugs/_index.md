@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 15 |
-| In Progress | 4 |
-| Fixed | 655 |
+| In Progress | 3 |
+| Fixed | 656 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -146,7 +146,7 @@
 | [BG0785](BG0785-migrate-leaves-a-v4-era-project-s-conformance.md) | migrate leaves a v4-era project's conformance lane red on its pre-adoption stories and names no cutoff for them | Fixed | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0786](BG0786-flow-py-compute-takes-about-90-seconds-on.md) | flow.py compute takes about 90 seconds on this repository, so its CLI grammar control times out at 120 under load and reddens the push gate | Fixed | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0787](BG0787-a-signed-sprint-report-reads-invalidated-once-a.md) | A signed sprint report reads INVALIDATED once a later run reviews one of its units, because unit rounds are re-derived from the whole live verdict ledger | Fixed | High | 2026-09-26 | 2026-09-26 |
-| [BG0788](BG0788-signed-report-rounds-are-positional-so-a-hand.md) | Signed-report rounds are positional, so a hand-deleted verdict row goes unseen when a same-day later run re-reviewed the unit, and verdict rows carry no run id | In Progress | Medium | 2026-09-26 | 2026-09-26 |
+| [BG0788](BG0788-signed-report-rounds-are-positional-so-a-hand.md) | Signed-report rounds are positional, so a hand-deleted verdict row goes unseen when a same-day later run re-reviewed the unit, and verdict rows carry no run id | Fixed | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0789](BG0789-the-release-workflow-publishes-a-release-candidate-tag.md) | The release workflow publishes a release-candidate tag as the latest release, so every installed copy is prompted to upgrade to it | Fixed | High | 2026-09-26 | 2026-09-26 |
 | [BG0790](BG0790-an-installed-release-candidate-is-never-prompted-to.md) | An installed release candidate is never prompted to move to its final release, because version comparison ignores the pre-release suffix | Fixed | Medium | 2026-09-26 | 2026-09-26 |
 | [BG0791](BG0791-test-lean-cr-filing-reads-a-changelog-fragment.md) | test_lean_cr_filing reads a changelog fragment that the release cut consumes, so the suite goes red on every release commit | Fixed | Medium | 2026-09-26 | 2026-09-26 |

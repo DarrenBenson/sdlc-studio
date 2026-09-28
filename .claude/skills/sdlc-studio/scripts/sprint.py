@@ -9053,10 +9053,12 @@ def _file_the_report(root, retro_id):
     failure this whole split exists to end (US0832 AC4).
     """
     import sprint_report  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
-    # The forge is read HERE, fresh, and frozen on the run: the page and every later
-    # re-derivation of it read the runs from the record, never a per-clone cache.
+    # The forge and the verdict ledger are read HERE, fresh, and frozen on the run: the page and
+    # every later re-derivation of it read the CI runs and the rows each unit's rounds count
+    # from the record, never a per-clone cache or a later run's record.
     try:
         sprint_report.freeze_ci_runs(root)
+        sprint_report.freeze_review_rows(root)
     except sprint_report.ReportError as exc:
         print(f"close: the run cannot be reported yet - {exc}", file=sys.stderr)
         return "", ""

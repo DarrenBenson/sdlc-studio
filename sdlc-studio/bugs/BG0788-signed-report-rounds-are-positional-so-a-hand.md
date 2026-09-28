@@ -1,6 +1,6 @@
 # BG0788: Signed-report rounds are positional, so a hand-deleted verdict row goes unseen when a same-day later run re-reviewed the unit, and verdict rows carry no run id
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py, changelog.d/BG0788.md
@@ -26,12 +26,16 @@ Record a run id (or a digest of the unit's rows) on each verdict row or at the r
 
 - [ ] **AC1** Given a signed fixture report, when a later run on the same UTC day reviews a batch unit and the signed run's own REJECT row for that unit is deleted, then `sprint_report.py check` exits 1 naming that unit's rounds. Fails on: HEAD's positional bound, which slides the later run's row into the slice and reads VALID
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py::SignedReportStableTests::test_a_deleted_row_is_seen_past_a_same_day_later_run
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC2** Given a signed fixture report, when one of the run's own counted rows is superseded after the signature, then `check` exits 0 and the unit's rounds read as signed. Fails on: counting only rows live at check time, so a later correction by addition moves a signed figure (BG0787 QA round 2)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py::SignedReportStableTests::test_a_supersession_after_the_signature_does_not_move_rounds
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC3** Given a close, when PREPARE files the report, then the run record carries each batch unit's counted verdict rows as identities digested from the row's eight parsed cells, and the ledger file is byte-identical before and after. Fails on: adding a Run column (a ninth cell under an eight-column header, and 1,286 rows that could never carry it), or digesting the raw line, which a table re-pad changes
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py::SignedReportStableTests::test_the_close_freezes_row_identities_without_touching_the_ledger
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC4** Given a signed fixture whose run record froze its rows, when a later run that reviewed a batch unit the same day has no record in this clone, then `check` exits 0. Fails on: re-deriving rounds through `_later_review_bases`, which needs every later run's gitignored record
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py::SignedReportStableTests::test_frozen_rounds_need_no_later_run_record
+  - **Verified:** yes (2026-09-28)
 
 ## Notes
 

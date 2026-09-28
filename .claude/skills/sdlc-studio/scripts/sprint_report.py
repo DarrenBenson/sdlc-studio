@@ -35,6 +35,7 @@ import re
 import shutil
 import subprocess
 import sys
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -3117,12 +3118,10 @@ def _later_review_bases(root: Path, state: dict) -> dict[str, int]:
     runs' rows carry the same date. The later run's record says where its reviews of the unit
     began.
 
-    The bound is only as good as this clone's run records, which are gitignored and unsigned.
-    A later run whose record is missing here, or which `run_state.archived` skips as unreadable,
-    bounds nothing, and its same-day rows then count against this run. An unreadable live
-    record never reaches here: `_run_state_for` has already refused it. A position cannot see
-    a row deleted once a same-day later run re-reviewed the unit either: that needs verdict
-    rows to carry an identity, which they do not yet."""
+    The bound is only as good as this clone's run records, which are gitignored and unsigned,
+    and a position cannot see a row deleted once a same-day later run re-reviewed the unit. So
+    it is read only for a record that froze no `REVIEW_ROWS`: a run sealed before PREPARE froze
+    them. Retire it once no such record remains."""
     start, rid = _at(state.get("started_at")), state.get("run_id")
     bases: dict[str, int] = {}
     for run in [*run_state.archived(root), run_state.read(root) or {}]:
@@ -3136,26 +3135,85 @@ def _later_review_bases(root: Path, state: dict) -> dict[str, int]:
     return bases
 
 
-def _review_rounds(uid: str, rows: list[dict], state: dict, later_base: int | None,
-                   window: tuple) -> int:
-    """A unit's delivery review rounds IN THIS RUN, bounded by position and by date.
+#: The run record's field holding, per unit the run lists, the identities
+#: (`critic.row_identity`) of the verdict rows its rounds count, frozen at PREPARE. The rounds a
+#: page states are then the frozen rows still in the ledger, whatever a later run records the
+#: same day, and a supersession recorded after the signature leaves the row, and the figure, in
+#: place. A list, not a set: the ledger holds exact duplicate rows.
+REVIEW_ROWS = "review_rows"
+
+
+def _counted_rows(uid: str, rows: list[dict], state: dict, later_base: int | None,
+                  window: tuple) -> list[dict]:
+    """The verdict rows that are a unit's delivery review rounds IN THIS RUN, bounded by
+    position and by date. PREPARE freezes their identities (`REVIEW_ROWS`); this rule is read
+    again only for a record that froze none.
 
     The ledger is project-wide and append-only, so read whole it moves after every run: a unit
     the run cut or carried and the next run reviewed moved a signed page's rounds from 0 to 2
     (RPT0009). The rows counted run from this run's own review base to the first row a later
     run reviewed (`_later_review_bases`), and are dated inside the run's days by the rule that
     places the open findings (`_in_run`). A run that records review bases and fixed none for
-    this unit never reviewed it: 0, since the date alone would hand it an earlier same-day
+    this unit never reviewed it: none, since the date alone would hand it an earlier same-day
     run's rows. A run from before review bases has only the date. A superseded row records an
     event ruled not to have happened, so it is no round."""
     import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     mine = [r for r in rows if sdlc_md.norm_id(r.get("unit", "")) == uid]
     own = (state.get(run_state.REVIEW_BASE) or {}).get(uid)
     if not isinstance(own, int) and run_state.REVIEW_BASE in state:
-        return 0
+        return []
     mine = mine[own if isinstance(own, int) else 0:later_base]
-    return sum(1 for r in mine if not critic.is_superseded(r)
-               and _in_run(str(r.get("date") or "").strip(), *window))
+    return [r for r in mine if not critic.is_superseded(r)
+            and _in_run(str(r.get("date") or "").strip(), *window)]
+
+
+def _frozen_rounds(ids: list, present: Counter) -> int:
+    """How many of a unit's frozen row identities the ledger still holds, as a multiset."""
+    return sum(min(n, present[i]) for i, n in Counter(ids).items())
+
+
+def _unit_order(state: dict) -> tuple[dict, dict, list, list, list]:
+    """`(snapshot, changes, planned, added, order)`: the units a run lists, plan order then
+    added order, with the plan snapshot and the drop/add changes they were read from."""
+    snap = {sdlc_md.norm_id(k): v
+            for k, v in ((state.get("plan_snapshot") or {}).get("units") or {}).items()
+            if isinstance(v, dict)}
+    changes = {sdlc_md.norm_id(c.get("id") or ""): c for c in state.get("batch_changes") or []
+               if isinstance(c, dict) and c.get("id") and not c.get("note")
+               and c.get("action") in ("drop", "add")}
+    planned = ([u for u, v in snap.items() if not v.get("added")] if snap
+               else _planned_ids(state))
+    added = [u for u, v in snap.items() if v.get("added")] + \
+        [u for u, c in changes.items() if c.get("action") == "add"]
+    order = list(dict.fromkeys(planned + added
+                               + [sdlc_md.norm_id(u) for u in state.get("batch") or []]))
+    return snap, changes, planned, added, order
+
+
+def counted_review_rows(root: Path, state: dict, window: tuple) -> dict[str, list[str]]:
+    """Per unit `state` lists, the identities of the verdict rows its rounds count by the
+    positional rule (`_counted_rows`), which is right at close, when no later run exists."""
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    rows = critic.read_verdicts(root)
+    later = _later_review_bases(root, state)
+    return {uid: [critic.row_identity(r)
+                  for r in _counted_rows(uid, rows, state, later.get(uid), window)]
+            for uid in _unit_order(state)[-1]}
+
+
+def freeze_review_rows(root: Path) -> dict:
+    """PREPARE's reading of the verdict ledger, recorded on the live run as `REVIEW_ROWS`, over
+    the window the page will state (`started_at` to now). Re-read on every prepare; the ledger
+    itself is only read. Returns what was recorded."""
+    try:
+        state = run_state.read(root) or {}
+        frozen = counted_review_rows(root, state, (state.get("started_at"),
+                                                   sdlc_md.now_iso8601()))
+        run_state.update(root, **{REVIEW_ROWS: frozen})
+    except (run_state.RunStateError, OSError) as exc:
+        raise ReportError(f"the review rows could not be frozen on the run record: {exc}"
+                          ) from exc
+    return frozen
 
 
 def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | None,
@@ -3167,32 +3225,27 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
     Delivered means the terminal gate PREPARE recorded, when it recorded one - the seal moves
     statuses, so reading a status would change the page the signature froze - else a terminal
     status on disk. A unit's Points are the filed page's reading when one is replayed
-    (`_page_readings`), else the unit file's. Its review rounds are counted inside `window`,
-    the run's `(start, end)` (`_review_rounds`).
+    (`_page_readings`), else the unit file's. Its review rounds are the rows PREPARE froze on
+    the record that the ledger still holds (`REVIEW_ROWS`), else those counted inside `window`,
+    the run's `(start, end)` (`_counted_rows`).
     """
     filed_points = filed_points or {}
-    snap = {sdlc_md.norm_id(k): v
-            for k, v in ((state.get("plan_snapshot") or {}).get("units") or {}).items()
-            if isinstance(v, dict)}
+    snap, changes, planned, added, order = _unit_order(state)
     actuals = {sdlc_md.norm_id(k): v for k, v in (state.get("unit_actuals") or {}).items()
                if isinstance(v, dict)}
     agent_totals = run_state.unit_agent_totals(state)
-    changes = {sdlc_md.norm_id(c.get("id") or ""): c for c in state.get("batch_changes") or []
-               if isinstance(c, dict) and c.get("id") and not c.get("note")
-               and c.get("action") in ("drop", "add")}
-    planned = ([u for u, v in snap.items() if not v.get("added")] if snap
-               else _planned_ids(state))
-    added = [u for u, v in snap.items() if v.get("added")] + \
-        [u for u, c in changes.items() if c.get("action") == "add"]
-    order = list(dict.fromkeys(planned + added
-                               + [sdlc_md.norm_id(u) for u in state.get("batch") or []]))
     gate_clear = state.get("report_gate_clear")
     cleared = {sdlc_md.norm_id(u) for u in gate_clear or []}
     import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     ledger_path = critic.verdicts_path(root, "delivery")
     ledger_rel, ledger_found = _rel(root, ledger_path), ledger_path.is_file()
     verdicts = critic.read_verdicts(root) if ledger_found else []
-    later = _later_review_bases(root, state) if ledger_found else {}
+    frozen = state.get(REVIEW_ROWS)
+    if isinstance(frozen, dict):
+        frozen = {sdlc_md.norm_id(u): ids for u, ids in frozen.items()}
+        present = Counter(critic.row_identity(r) for r in verdicts)
+    later = (_later_review_bases(root, state)
+             if ledger_found and not isinstance(frozen, dict) else {})
     out = []
     for uid in order:
         found = sdlc_md.find_by_id(root, uid)
@@ -3224,8 +3277,10 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
             "agents": agent.get("agents", 0), "timed": agent.get("timed", 0),
             "timed_minutes": agent.get("minutes"),
             "in_plan": bool(plan), "measured": bool(act) or bool(agent),
-            "rounds": (_review_rounds(uid, verdicts, state, later.get(uid), window)
-                       if ledger_found else None),
+            "rounds": (None if not ledger_found else
+                       _frozen_rounds(frozen.get(uid) or [], present)
+                       if isinstance(frozen, dict) else
+                       len(_counted_rows(uid, verdicts, state, later.get(uid), window))),
             "rounds_rel": ledger_rel})
     return out
 

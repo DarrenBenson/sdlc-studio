@@ -625,6 +625,112 @@ class SignedReportStableTests(unittest.TestCase):
                            .read_text(encoding="utf-8"))
         self.assertEqual({"US0001": 1}, sr._later_review_bases(self.root, state))  # noqa: SLF001
 
+    # --- BG0788: the rounds a report counts are frozen as row identities at PREPARE ----------
+
+    REJECT_ROW = "| US0001 | REJECT | a seat | author | {} | - | - | - |\n"
+
+    def _frozen_signed_run(self) -> tuple[str, str]:
+        """The fixture run on today's date, its counted rows frozen on the record as PREPARE
+        freezes them, then filed, signed and committed. Returns `(report id, day)`."""
+        day = self._run_ending_now()
+        sr.freeze_review_rows(self.root)
+        rid = self._file_and_sign()
+        self.assertEqual(2, self._rounds(sr.read_report(self.root, rid))["US0001"])
+        return rid, day
+
+    def test_a_deleted_row_is_seen_past_a_same_day_later_run(self) -> None:
+        """BG0788 AC1. MUTANT: HEAD's positional bound - the rows from the run's own review base
+        to the later run's - slides the later run's same-day APPROVE into the slice once the
+        signed run's REJECT is deleted, and reads 2 rounds, VALID."""
+        rid, day = self._frozen_signed_run()
+        self._open_a_later_run(["US0001"])
+        self._record("US0001", "approve")
+        self._assert_valid(rid)                  # the positive control: a later review alone
+
+        self._replace(self.root / self.LEDGER, self.REJECT_ROW.format(day), "")
+        rc, out = self._check(rid)
+        self.assertEqual(1, rc, out)
+        self.assertIn("INVALID", out)
+        self.assertIn("unit_rounds[0]: signed 2, now 1", out)
+
+    def test_a_supersession_after_the_signature_does_not_move_rounds(self) -> None:
+        """BG0788 AC2. MUTANT: count only the frozen rows still live at check time - the REJECT
+        superseded after the signature drops US0001 from 2 rounds to 1, INVALID."""
+        rid, day = self._frozen_signed_run()
+        proc = subprocess.run(
+            [sys.executable, str(HERE.parent / "critic.py"), "supersede", "--unit", "US0001",
+             "--date", day, "--verdict", "REJECT", "--reviewer", "a seat",
+             "--reason", "the reviewer mis-entered the verdict",
+             "--authorised-by", "Maya Okafor", "--boundary", "operator console",
+             "--root", str(self.root)],
+            capture_output=True, text=True, timeout=120)
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        import critic  # noqa: PLC0415 - the ledger's own reader
+        self.assertTrue(any(critic.is_superseded(r) for r in critic.read_verdicts(self.root)
+                            if r["unit"] == "US0001"), "premise: the row is superseded")
+
+        self._assert_valid(rid)
+        page = sr.read_report(self.root, rid)
+        fresh = sr.build_report(self.root, lean.RETRO, as_of=page["generated_at"],
+                                window_end=page["window_end"], run_id=lean.RUN)
+        self.assertEqual(self._rounds(page), self._rounds(fresh))
+
+    def test_the_close_freezes_row_identities_without_touching_the_ledger(self) -> None:
+        """BG0788 AC3. PREPARE (`sprint._file_the_report`) records each batch unit's counted rows
+        as identities of their eight parsed cells, and writes nothing to the ledger. MUTANTS:
+        digest the raw line - a re-padded table moves every identity; digest fewer cells - a
+        row differing only in its Issues (or Brief, or Tier) collides with its neighbour; read
+        `-` and empty differently - a re-padded blank cell moves an identity; freeze nothing on
+        the record, or write a Run column into the ledger."""
+        from unittest import mock  # noqa: PLC0415
+        import critic  # noqa: PLC0415 - the ledger's own reader and identity
+        import sprint  # noqa: PLC0415 - PREPARE's report filer
+        self._run_ending_now()
+        ledger = self.root / self.LEDGER
+        before = ledger.read_bytes()
+        with mock.patch.object(sr.run_state, "stamp_tokens"), \
+                mock.patch.object(sr, "fetch_ci_runs", return_value=([], "gh run list - stub")), \
+                contextlib.redirect_stdout(io.StringIO()):
+            rid, _fp = sprint._file_the_report(self.root, lean.RETRO)   # noqa: SLF001
+        self.assertTrue(rid, "the report was not filed")
+        self.assertEqual(before, ledger.read_bytes(), "PREPARE wrote to the verdict ledger")
+
+        rows = critic.read_verdicts(self.root)
+        ident = [critic.row_identity(r) for r in rows]
+        state = json.loads((self.root / "sdlc-studio" / ".local" / "run-state.json")
+                           .read_text(encoding="utf-8"))
+        self.assertEqual({"US0001": ident[:2], "US0002": ident[2:3], "US0003": [],
+                          "US0004": [], "US0005": []}, state[sr.REVIEW_ROWS])
+
+        # The identity is the parsed cells': a re-padded table, with `-` written as empty,
+        # leaves every identity where it was.
+        head, sep, table = before.decode().partition("| US0001")
+        repadded = [
+            "|" + "|".join(f"  {'' if c.strip() == '-' else c.strip()}   "
+                           for c in line.split("|")[1:-1]) + "|\n"
+            for line in (sep + table).splitlines()]
+        self.assertNotEqual(sep + table, "".join(repadded))
+        ledger.write_text(head + "".join(repadded), encoding="utf-8")
+        self.assertEqual(ident, [critic.row_identity(r) for r in critic.read_verdicts(self.root)])
+        # ...and every one of the eight cells is in it.
+        base = dict(rows[0])
+        for col in ("unit", "verdict", "reviewer", "author", "date", "brief", "tier", "issues"):
+            with self.subTest(cell=col):
+                self.assertNotEqual(critic.row_identity(base),
+                                    critic.row_identity({**base, col: base[col] + "x"}))
+
+    def test_frozen_rounds_need_no_later_run_record(self) -> None:
+        """BG0788 AC4. MUTANT: re-derive a frozen record's rounds through
+        `_later_review_bases` - the later run's record is not in this clone, so its same-day
+        review of US0001 counts as a third round of the signed run, INVALID."""
+        rid, _day = self._frozen_signed_run()
+        self._open_a_later_run(["US0001"])
+        self._record("US0001", "approve")
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").unlink()   # not in this clone
+        self.assertEqual([lean.RUN], [r.get("run_id")
+                                      for r in sr.run_state.archived(self.root)])
+        self._assert_valid(rid)
+
 
 if __name__ == "__main__":
     unittest.main()
