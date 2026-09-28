@@ -1,6 +1,6 @@
 # BG0819: A signed sprint report's 'Verified on' names the run's base ref, the commit before any work, because nothing writes verified_sha
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_verified_on.py, changelog.d/BG0819.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -26,8 +26,10 @@ Stamp `verified_sha` on the run state at PREPARE, as `record_close_tree` stamps 
 
 - [ ] **AC1** Given a run closed at a commit after its base ref, when the report is drawn, then `Verified on:` names the commit the close's gate ran against. Fails on: HEAD, which prints the base ref
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_verified_on.py::ReportVerifiedOnTests::test_the_close_commit_is_named
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC2** Given a run state with no verified commit recorded, then `Verified on:` reads `not recorded`. Fails on: falling back to the base ref
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_verified_on.py::ReportVerifiedOnTests::test_no_record_is_not_the_base_ref
+  - **Verified:** yes (2026-09-28)
 
 ## Revision History
 

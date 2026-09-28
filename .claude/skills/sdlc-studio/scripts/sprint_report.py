@@ -3712,8 +3712,17 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         "duration_hours": (fig("duration_hours", f"{duration}h", state_rel) if duration else
                            unmeasured("duration_hours", state_rel,
                                       "the run record carries no end time")),
-        "verified_sha": fig("verified_sha", state.get("verified_sha") or state.get("base_ref")
-                            or "none recorded", state_rel),
+        # The commit the close's gate ran against, which the close stamps (a close that could
+        # not read HEAD stamps the key as null). Never the base ref for a new page: that is the
+        # commit the run was PLANNED from, and a page naming it as the commit it was verified on
+        # misstates where its evidence came from. A record with NO key predates the stamp, and
+        # its signed page named the base ref under the old rule; re-deriving that page reads the
+        # base ref from the record again, so the figure is still judged against the record and
+        # a rewritten base ref, or a stamp deleted from a newer record, still moves it.
+        "verified_sha": fig("verified_sha", state.get("verified_sha")
+                            or (state.get("base_ref")
+                                if filed is not None and "verified_sha" not in state else None)
+                            or "not recorded", state_rel),
     }
 
     current = None

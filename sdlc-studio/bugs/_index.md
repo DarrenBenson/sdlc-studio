@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 31 |
-| In Progress | 2 |
-| Fixed | 671 |
+| In Progress | 1 |
+| Fixed | 672 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -177,7 +177,7 @@
 | [BG0816](BG0816-seven-skill-docs-still-call-the-three-amigos.md) | Seven skill docs still call the Three Amigos by retired names, and AGENTS.md names a seat directory that does not exist | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0817](BG0817-the-bug-close-guidance-says-briefed-with-critic.md) | The bug-close guidance says briefed with critic.py brief but never says to hand the reviewer the brief whole, so agents relay a trimmed or broken brief | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0818](BG0818-init-guided-treats-a-stage-s-own-drafted.md) | init guided treats a stage's own drafted scaffold, or any pre-existing file, as the stage done, so the resume point skips the stage it just drafted | Fixed | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0819](BG0819-a-signed-sprint-report-s-verified-on-names.md) | A signed sprint report's 'Verified on' names the run's base ref, the commit before any work, because nothing writes verified_sha | In Progress | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0819](BG0819-a-signed-sprint-report-s-verified-on-names.md) | A signed sprint report's 'Verified on' names the run's base ref, the commit before any work, because nothing writes verified_sha | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0820](BG0820-a-unit-with-an-independent-approve-that-the.md) | A unit with an independent APPROVE that the loop left at Ready or In Progress is handed over as an unanswered known issue, then sealed by sign | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0821](BG0821-install-ps1-local-still-refreshes-every-personal-copy.md) | install.ps1 -Local still refreshes every personal copy of the skill, the defect BG0809 fixed only in install.sh | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0822](BG0822-the-close-sign-and-the-signed-report-still.md) | The close, sign and the signed report still speak the retired v5 sign-off vocabulary, and the close misstates the outcome sign will write | In Progress | Medium | 2026-09-28 | 2026-09-28 |

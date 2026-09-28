@@ -8961,8 +8961,13 @@ def cmd_close(args: argparse.Namespace) -> int:
     # until SEAL, so the page cannot say Done and must not: what is true of every unit here is
     # that its terminal gate cleared, and the report says that instead. Written before the
     # report is built, because the composer reads it from the run state as a sourced figure.
+    # The commit this close's gate ran against, stamped beside it: the page states it as the
+    # commit the run was verified on, and the base ref is the commit it was planned from.
+    head = _git(root, "rev-parse", "HEAD")
     run_state.update(root, report_gate_clear=sorted(
         u for u, why in _report_gate_verdicts(root, state).items() if not why),
+                     verified_sha=(head.stdout.strip() or None)
+                     if head is not None and head.returncode == 0 else None,
                      **{run_state.CLOSE_KNOWN_ISSUES: known})
     report_id, _fingerprint = _file_the_report(root, args.retro)
     # The tree the close LEFT, stamped after the last thing it writes: `sign` refuses a tree
