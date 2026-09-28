@@ -61,6 +61,7 @@ One JSON file per scenario in `scenarios/`:
 | `06-independence-gate` | Author != reviewer and the verified-depth gate on terminal status |
 | `07-team-generation` | Ask-before-write on ambiguous signals; never-clobber; the seats floor |
 | `08-consult-objection-quota` | Anti-sycophancy: >=1 objection per seat; the Primary test arbitrates a buyer-serving feature |
+| `09-lean-sprint` | A lean sprint the shipped docs cannot carry from plan to close: a skipped or self-run review, a hand-rolled step, or a worker that signs its own run |
 
 Add a scenario whenever a release breaks behaviour these did not catch -
 the gap is the spec for the next scenario.

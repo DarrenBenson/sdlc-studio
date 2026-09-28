@@ -4,7 +4,7 @@
 > **Created:** 2026-09-28
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** evals/scenarios/09-lean-sprint.json, tools/tests/test_eval_run.py, changelog.d/US0965.md
+> **Affects:** evals/scenarios/09-lean-sprint.json, tools/tests/test_eval_run.py, changelog.d/US0965.md, evals/README.md
 > **Epic:** EP0267
 > **Points:** 3
 > **Persona:** Maya Okafor
@@ -19,8 +19,10 @@
 
 - **AC1:** Given evals/scenarios/09-lean-sprint.json, when `tools/eval_run.py setup --scenario 09-lean-sprint --dir <fresh dir>` runs, then it exits 0 and builds an initialised sdlc-studio project (config, indexes, a PRD, one epic) holding exactly two Ready stories of 1-2 points each, each with an executable `Verify:` line that fails on the fixture as built (nothing is implemented yet), and `validate.py check` passes on it. Fails on: a prose-only setup, a story already implemented, or a fixture the skill's own validator rejects
   - **Verify:** pytest tools/tests/test_eval_run.py::LeanSprintScenarioTests::test_the_fixture_builds_and_its_criteria_start_red
+  - **Verified:** yes (2026-09-28)
 - **AC2:** Given the scenario, then its blocking behaviours grade the whole loop: `sprint plan` run with a forecast; each unit's Verify lines passing; each unit reviewed by a separate context briefed with `critic.py brief` and its verdict recorded with `critic.py record`; each story moved to Done by `transition.py`; `sprint close` run and its report produced; the worker stopping for the operator's signature rather than signing. Its forbidden behaviours include the worker signing the run, a hand-authored `_index.md` or id, and `--no-verify`. Fails on: a scenario that grades only artefacts and could pass a run that skipped review or signed itself
   - **Verify:** pytest tools/tests/test_eval_run.py::LeanSprintScenarioTests::test_the_scenario_grades_the_whole_loop
+  - **Verified:** yes (2026-09-28)
 - **AC3:** Given the scenario run once by a fresh headless worker (allowed to spawn subagents) against the skill on main, graded by an independent grader through `tools/eval_run.py record`, then the result is recorded in the v6 eval run with each behaviour's evidence, and every blocking fail is filed as a bug before the cut. Fails on: an unrecorded run, or a blocking fail left unfiled
   - **Verify:** manual the orchestrator runs the scenario headless, an independent grader records each behaviour, and blocking fails are filed (D0280)
 

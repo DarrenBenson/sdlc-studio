@@ -5,6 +5,8 @@ import contextlib
 import importlib.util
 import io
 import json
+import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -198,6 +200,102 @@ class ForbiddenBehaviourTests(unittest.TestCase):
                                 "--behaviour", "FB9", "--verdict", "fail", "--evidence", "x")
         self.assertEqual(rc, 2)
         self.assertIn("FB9", err)
+
+
+REPO = Path(__file__).resolve().parents[2]
+LEAN = "09-lean-sprint"
+VALIDATE = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts" / "validate.py"
+
+
+def _run(argv: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess:
+    return subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=120)
+
+
+def _pytest(fixture: Path, *selectors: str) -> subprocess.CompletedProcess:
+    return _run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", *selectors],
+                cwd=fixture)
+
+
+class LeanSprintScenarioTests(unittest.TestCase):
+    """US0965 (D0280): v6.0.0 ships only if a fresh agent runs a two-unit lean sprint from plan to
+    close. These pin that the fixture starts red (every Verify selector fails, the foundation suite
+    passes) and that the scenario grades every step of the loop, so a run that skipped review or
+    signed itself cannot pass it. That the scenario can be won is shown by rehearsing it, not here."""
+
+    def test_the_fixture_builds_and_its_criteria_start_red(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fx = Path(tmp) / "fx"
+            setup = _run([sys.executable, str(TOOLS), "setup", "--scenario", LEAN, "--dir", str(fx)])
+            self.assertEqual(setup.returncode, 0, setup.stdout + setup.stderr)
+            sd = fx / "sdlc-studio"
+            self.assertRegex((sd / ".config.yaml").read_text(encoding="utf-8"),
+                             r"(?m)^schema_version: 3$")
+            for kind in ("epics", "stories", "bugs", "change-requests"):
+                self.assertTrue((sd / kind / "_index.md").is_file(), f"no {kind}/_index.md")
+            self.assertTrue((sd / "prd.md").is_file())
+            self.assertEqual(len([p for p in (sd / "epics").glob("*.md") if p.name != "_index.md"]),
+                             1)
+            check = _run([sys.executable, str(VALIDATE), "--root", str(fx), "check"])
+            self.assertEqual(check.returncode, 0, check.stdout + check.stderr)
+
+            stories = [p for p in (sd / "stories").glob("*.md") if p.name != "_index.md"]
+            self.assertEqual(len(stories), 2, [p.name for p in stories])
+            for story in stories:
+                text = story.read_text(encoding="utf-8")
+                self.assertRegex(text, r"(?m)^> \*\*Status:\*\* Ready$", story.name)
+                self.assertRegex(text, r"(?m)^> \*\*Affects:\*\* \S", story.name)
+                points = re.search(r"(?m)^> \*\*Points:\*\* (\d+)$", text)
+                self.assertIsNotNone(points, story.name)
+                self.assertIn(int(points.group(1)), (1, 2), story.name)
+                criteria = re.findall(r"(?m)^- \*\*AC\d+:\*\* (.+)$", text)
+                selectors = re.findall(r"(?m)^\s+- \*\*Verify:\*\* pytest (\S+)$", text)
+                self.assertTrue(criteria, story.name)
+                self.assertEqual(len(selectors), len(criteria), story.name)
+                for ac in criteria:
+                    self.assertRegex(ac, r"^Given .+, when .+, then ", story.name)
+                for sel in selectors:
+                    self.assertNotEqual(_pytest(fx, sel).returncode, 0,
+                                        f"{story.name}: {sel} already passes as built")
+            # Red because nothing is built, not because the project is broken: the foundation
+            # suite the stories build on is green.
+            base = _pytest(fx, "tests/test_shelf.py")
+            self.assertEqual(base.returncode, 0, base.stdout + base.stderr)
+
+    #: Each step of the loop, and the words the blocking behaviour grading it must carry.
+    LOOP_STEPS = {
+        "plan with a forecast": ("`sprint plan`", "forecast", "--write"),
+        "verify lines passing": ("verify lines pass", "verify_ac.py run"),
+        "separate reviewer briefed": ("`critic.py brief", "subagent", "separate context"),
+        "verdict recorded": ("`critic.py record`", "reviewer differs from its author"),
+        "done by transition": ("`transition.py", "done"),
+        "close files the report": ("`sprint close`", "report"),
+        "stop for the signature": ("stops for the operator's signature", "rather than signing"),
+    }
+    #: Behaviours the scenario must forbid, and the words that name each.
+    FORBIDDEN = {
+        "the worker signing": ("`sprint sign`",),
+        "a hand-authored index or id": ("`_index.md`", "hand-picked artefact id"),
+        "no-verify": ("`--no-verify`",),
+    }
+
+    def test_the_scenario_grades_the_whole_loop(self) -> None:
+        sc = json.loads((REPO / "evals" / "scenarios" / f"{LEAN}.json").read_text(encoding="utf-8"))
+        self.assertEqual(sc["id"], LEAN)
+        ebs = sc["expected_behaviours"]
+        self.assertEqual(len({eb["id"] for eb in ebs}), len(ebs), "duplicate behaviour id")
+        blocking = [eb["description"].lower() for eb in ebs if eb["severity"] == "blocking"]
+        for step, words in self.LOOP_STEPS.items():
+            self.assertTrue(any(all(w.lower() in d for w in words) for d in blocking),
+                            f"no blocking behaviour grades '{step}' (needs {words})")
+        forbidden = [str(fb).lower() for fb in eval_run.forbidden_behaviours(sc).values()]
+        for what, words in self.FORBIDDEN.items():
+            self.assertTrue(any(all(w.lower() in f for w in words) for f in forbidden),
+                            f"'{what}' is not forbidden (needs {words})")
+        # The grader's mechanical evidence that each unit was briefed, and both goal-verdict routes.
+        for anchor in ("briefs.jsonl", "sprint.py goal-verdict", "--goal-verdict"):
+            self.assertIn(anchor, sc["grading_notes"])
+        # The eval measures whether the docs lead the worker to the tools, so the prompt names none.
+        self.assertNotRegex(sc["prompt"], r"\.py\b|critic|transition|verify_ac")
 
 
 if __name__ == "__main__":

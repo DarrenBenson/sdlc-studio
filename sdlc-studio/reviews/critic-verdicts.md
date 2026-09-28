@@ -1369,6 +1369,7 @@ One row has been removed since adoption.
 | US0960 | APPROVE | qa-rev-US0960 | US0960-build | 2026-09-28 | b8f2437bd605 | full | [new] non-blocking: the length guard in \_moved\_only\_by\_projection is correct but no test pins it, a row in the word-by-word table would |
 | BG0804 | APPROVE | qa-rev-a2c47ccd | builder-a8cbd615 | 2026-09-28 | ff554e72a9cd | full | - |
 | BG0725 | APPROVE | qa-rev-a2c47ccd | builder-a8cbd615 | 2026-09-28 | be08f746c786 | full | [new] non-blocking: cycle\_drift's docstring still says all three buckets though it now returns four, corrected at landing |
+| US0965 | APPROVE | qa-rev-a5a5c456 | builder-a2916e15 | 2026-09-28 | 8f925096d312 | full | [new] non-blocking: the grading notes accepted one goal-verdict route, did not require the recorded verdict to match the subagent's reply or cite briefs.jsonl, and did not stop the grader writing tracked files before sign, all tightened before landing; [new] non-blocking: US0963 AC2's report exits 1 until 09 is graded in the same run |
 
 ## Supersessions
 
