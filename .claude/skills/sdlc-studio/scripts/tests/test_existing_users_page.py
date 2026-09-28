@@ -29,9 +29,11 @@ PAGE = REPO / "docs" / "existing-users.md"
 README = REPO / "README.md"
 UPGRADE_REF = REPO / ".claude" / "skills" / "sdlc-studio" / "reference-upgrade.md"
 
-#: The one step the page tells a reader to expect a non-zero exit from, named once rather than
-#: string-matched twice.
-_EXPECTED_TO_FAIL = "gate.py"
+#: The one step in the page's block a reader does by hand, marked there by a comment naming the key:
+#: add the `conformance.adopt_after` line `migrate` named. The test does what the comment says, so
+#: a page that drops the step leaves the gate step red.
+_HAND_STEP = "conformance.adopt_after"
+_NAMED_CUTOFF = re.compile(r"`conformance\.adopt_after: ([A-Za-z]+-?[0-9]+)`")
 
 #: The defaults that decide what an EXISTING project is held to on upgrade, and what the page must
 #: say about each. Derived here in one place so the page's table and the resolved values cannot
@@ -39,18 +41,12 @@ _EXPECTED_TO_FAIL = "gate.py"
 GATE_TABLE = {
     "sprint.breakdown": "enforce",
     "conformance.adopt_after": None,
-    "review.two_role_after": None,
-    "review.test_plan_after": None,
 }
-
-#: Rows the page must describe as DORMANT, because they resolve unset. A round-2 seat rewrote one
-#: of these to "Fires on every story from the moment you upgrade" and the criterion's own Then -
-#: "fires when it is dormant reddens" - did not notice.
-DORMANT_ROWS = ("review.two_role_after", "review.test_plan_after")
 
 
 def _steps_from_page() -> list[str]:
-    """The commands in the page's upgrade-steps block, parsed from the page itself."""
+    """The lines of the page's upgrade-steps block, parsed from the page itself: each command,
+    and each comment, which names a step the reader does by hand."""
     text = PAGE.read_text(encoding="utf-8")
     section = text.split("## Upgrade steps", 1)
     if len(section) < 2:
@@ -58,8 +54,7 @@ def _steps_from_page() -> list[str]:
     block = re.search(r"```bash\n(.*?)```", section[1], re.S)
     if not block:
         return []
-    return [ln.strip() for ln in block.group(1).splitlines()
-            if ln.strip() and not ln.strip().startswith("#")]
+    return [ln.strip() for ln in block.group(1).splitlines() if ln.strip()]
 
 
 class PageStepsAreExecutedTests(unittest.TestCase):
@@ -74,6 +69,9 @@ class PageStepsAreExecutedTests(unittest.TestCase):
         cfg.write_text(cfg.read_text(encoding="utf-8").replace("schema_version: 3",
                                                                "schema_version: 2"),
                        encoding="utf-8")
+        (root / "sdlc-studio" / ".version").write_text(
+            'schema_version: 2\nupgraded_from: null\nupgraded_at: 2025-01-01\n'
+            'skill_version: "4.1.0"\n', encoding="utf-8")
         (root / "sdlc-studio" / "stories" / "US0001-legacy.md").write_text(
             "# US0001: legacy login\n\n> **Status:** Done\n> **Epic:** EP0001\n"
             "> **Priority:** High\n\n## Acceptance Criteria\n\n- [x] **AC1** it logs in\n",
@@ -95,9 +93,21 @@ class PageStepsAreExecutedTests(unittest.TestCase):
             self.assertIn(step, page_text,
                           f"the executed step `{step}` does not appear in the page, so the "
                           f"sequence is hardcoded rather than read from the document")
+        self.assertTrue(any(s.startswith("#") and _HAND_STEP in s for s in steps),
+                        "the block does not tell the reader to add the cutoff migrate names")
         with tempfile.TemporaryDirectory() as d:
             root = self._v4_fixture(d)
+            named = ""
             for step in steps:
+                if step.startswith("#"):
+                    if _HAND_STEP in step:
+                        # The reader's hand step: the line the last `migrate` report named.
+                        cutoff = _NAMED_CUTOFF.search(named)
+                        self.assertTrue(cutoff, f"migrate named no cutoff line:\n{named}")
+                        with (root / "sdlc-studio" / ".config.yaml").open(
+                                "a", encoding="utf-8") as cfg:
+                            cfg.write(f"\nconformance:\n  adopt_after: {cutoff.group(1)}\n")
+                    continue
                 script, *args = step.split()
                 path = SCRIPTS / script
                 self.assertTrue(path.exists(),
@@ -105,19 +115,21 @@ class PageStepsAreExecutedTests(unittest.TestCase):
                                 f"exist - the page names a command nobody can type")
                 r = subprocess.run([sys.executable, str(path), "--root", str(root), *args],
                                    capture_output=True, text=True, timeout=900, check=False)
-                # The gate step is EXPECTED to fail here - the page says so, and the rehearsal
-                # baseline records which lanes. What must not happen is a step that cannot run.
                 self.assertNotIn("Traceback", r.stderr,
                                  f"the page's step `{step}` crashed:\n{r.stderr[-800:]}")
-                if script != _EXPECTED_TO_FAIL:
-                    self.assertEqual(0, r.returncode,
-                                     f"the page's step `{step}` failed:\n{r.stdout}{r.stderr}")
+                # Every step, the gate included, passes once the page's steps are followed.
+                self.assertEqual(0, r.returncode,
+                                 f"the page's step `{step}` failed:\n{r.stdout}{r.stderr}")
+                if script == "migrate.py":
+                    named = r.stdout
 
 
 class PageClaimsTests(unittest.TestCase):
     """BG0560 AC2, AC3, AC4."""
 
     def test_every_readme_route_points_at_the_v5_page_and_claims_no_drop_in(self) -> None:
+        # The name stays because a stamped Verify line (BG0560 AC2) selects it; the page it
+        # checks is now the v6 one.
         # All THREE routes. The previous plan covered one, and a test checking only the
         # best-known route cannot notice the drop-in wording returning on another.
         text = README.read_text(encoding="utf-8")
@@ -130,8 +142,8 @@ class PageClaimsTests(unittest.TestCase):
                 ln, r"(?i)\bit is a drop-in\b|\bdrop-in:\s*no project migration",
                 f"a README route still calls v5 a drop-in requiring no migration: {ln[:120]}")
         self.assertTrue(PAGE.read_text(encoding="utf-8").startswith(
-            "# SDLC Studio v5 for existing projects"),
-            "the page every route points at does not say v5 in its own title")
+            "# SDLC Studio v6 for existing projects"),
+            "the page every route points at does not say v6 in its own title")
 
     def test_the_pages_gate_table_agrees_with_the_resolved_defaults(self) -> None:
         text = PAGE.read_text(encoding="utf-8")
@@ -159,17 +171,9 @@ class PageClaimsTests(unittest.TestCase):
                                          stated.group(1).lower(),
                                          f"the page's row for {key} states a default of "
                                          f"{stated.group(1)!r}, but it resolves to {actual!r}")
-        # The two that FIRE must be described as firing, and the dormant ones as dormant.
+        # The gate that FIRES must be described as firing.
         self.assertRegex(text, r"`sprint\.breakdown`[^|]*\|[^|]*refuses",
                          "the page does not say sprint.breakdown REFUSES on an upgraded project")
-        for key in DORMANT_ROWS:
-            row = next((ln for ln in text.splitlines() if ln.startswith(f"| `{key}`")), "")
-            self.assertTrue(row, f"the page has no row for {key}")
-            self.assertRegex(row, r"\|\s*Dormant",
-                             f"the page's row for {key} does not say it is dormant, though it "
-                             f"resolves unset - a reader is told a gate fires when it does not")
-            self.assertNotRegex(row, r"(?i)\bfires on every\b|\bfrom the moment you upgrade\b",
-                                f"the page's row for {key} describes a dormant gate as firing")
 
     def test_the_upgrade_reference_hands_off_the_v5_gate_delta(self) -> None:
         text = UPGRADE_REF.read_text(encoding="utf-8")

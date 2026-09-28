@@ -1,6 +1,6 @@
 # US0955: An upgrading project follows one page from v5 to v6
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,10 +19,13 @@
 
 - **AC1:** Given docs/existing-users.md, then it opens with an 'Upgrading to v6' section that tells the reader to run `migrate` then `migrate --apply`, lists what it removes, and maps each retired verb, flag, config key and check id (the union US0924's test derives) to its replacement or migrate step; outside that section it names none of them. Fails on: HEAD's title 'SDLC Studio v5 for existing projects', lines 40-50 (`testplan withdraw` and `mutation.py register --anchor` taught as current), 68 (`review.test_plan_after` as a dormant gate) and 80 (verification-depth tiers as a quality floor); a section that lists the names with no replacement
   - **Verify:** pytest tools/tests/test_lean_upgrade_page_docs.py::UpgradePageTests::test_the_upgrade_page_maps_every_retired_surface
+  - **Verified:** yes (2026-09-28)
 - **AC2:** Given the page's upgrade-steps block, when `test_existing_users_page.py` parses and executes it against a fixture, then every step runs, and the test no longer pins the retired keys as dormant rows or the page title to v5. Fails on: rewriting the page while `GATE_TABLE` and `DORMANT_ROWS` (lines 39-49) still require `review.two_role_after` and `review.test_plan_after` rows, so the test goes red on a correct page
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_existing_users_page.py::PageStepsAreExecutedTests::test_the_pages_own_steps_are_parsed_and_executed
+  - **Verified:** yes (2026-09-28)
 - **AC3:** Given the page, then it gives the path for a project last upgraded on v4 or earlier (the path the migration rehearsal walked on the two consuming projects recording 4.1.0 and 2.4.1), naming what `migrate` does across schema 2 and what it leaves to a human, and links docs/upgrade-rehearsal-v6.md. Fails on: a page that assumes every reader is on 5.1, while both consuming projects on this machine record 4.1.0 and 2.4.1
   - **Verify:** pytest tools/tests/test_lean_upgrade_page_docs.py::UpgradePageTests::test_the_upgrade_page_covers_an_older_project
+  - **Verified:** yes (2026-09-28)
 
 ## Notes
 

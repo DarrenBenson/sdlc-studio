@@ -1388,6 +1388,7 @@ One row has been removed since adoption.
 | BG0819 | APPROVE | qa-rev-ada8f560 | builder-a213cd82 | 2026-09-28 | 087e1b32aedc | full | [new] non-blocking: no test covers the close stamping a null verified\_sha when git rev-parse HEAD fails; [pre-existing] non-blocking: an unanchored old signed page reads not recorded rather than its base ref |
 | BG0820 | APPROVE | qa-rev-a562d27e | builder-a213cd82 | 2026-09-28 | 6509c6bc5d8b | full | [pre-existing] non-blocking: a CR at Review, reachable only by hand edit, passes the close and sign leaves it at Review with no known-issue row; [new] non-blocking: a negation after the Review command survives the AC2 doc test |
 | US0962 | APPROVE | qa-rev-a46a5db9 | builder-a81e72b2 | 2026-09-28 | 449cf71f7ed0 | full | [new] non-blocking: finding 4 said the cutoff exempts 98 units reviewed, though only 49 hold an APPROVE, corrected at landing; [new] non-blocking: the record test checks shape, not figures, so figure-level lies survive; [new] non-blocking: the story's Notes say no pinned test though the Verify lines require one |
+| US0955 | APPROVE | qa-rev-pair5 | US0955-build | 2026-09-28 | 533145fbd7db | full | [new] non-blocking: every run exited 0 is true only of the migrate runs, corrected at landing; [pre-existing] non-blocking: upgrade step 4 did not say to commit before gate.py judges the project, corrected at landing |
 
 ## Supersessions
 
