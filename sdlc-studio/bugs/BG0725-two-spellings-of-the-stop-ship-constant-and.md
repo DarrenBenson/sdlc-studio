@@ -1,6 +1,6 @@
 # BG0725: two spellings of the stop-ship constant, and a hand-maintained verb list whose stale entries nothing can report
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG0725.md
@@ -25,8 +25,10 @@ Replace both literals with `retro.STOP_SHIP`. For the verb list, add the opposit
 
 - [ ] **AC1** Given `NON_CEREMONY_VERBS`, when each listed script's `build_parser()` subcommands are read, then every listed verb is a real subcommand (`sprint checklist` and `critic repair` removed), and the test reddens on an entry naming no verb. Fails on: a guard that only subtracts the list, which can never report a stale entry
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::NonCeremonyVerbTests::test_every_listed_verb_is_a_real_subcommand
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC2** Given `retro.STOP_SHIP` patched to another value and a retro ruling written with it, when the report counts stop-ship rulings, then it still counts that ruling. Fails on: the bare `"stop-ship"` literals at sprint_report.py:1894 and :1896
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::NonCeremonyVerbTests::test_stop_ship_rulings_are_read_through_the_constant
+  - **Verified:** yes (2026-09-28)
 
 ## Revision History
 

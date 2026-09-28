@@ -4717,5 +4717,45 @@ class LessonsSourceTests(ReportOfRecordBase):
         self.assertEqual({"sdlc-studio/lessons.jsonl"}, self._sources(own))
 
 
+class NonCeremonyVerbTests(ReportOfRecordBase):
+    """BG0725. Two values kept in two places where one is authoritative: the stop-ship ruling
+    compared as a bare literal beside `retro.STOP_SHIP`, and an exemption list the drift guard
+    only ever subtracted, so an entry naming a verb that had gone could never be reported."""
+
+    def test_every_listed_verb_is_a_real_subcommand(self) -> None:
+        self.assertEqual([], sr.cycle_drift()["stale"],
+                         "NON_CEREMONY_VERBS exempts a verb no build_parser() exposes")
+        # ...and the bucket reddens: an entry naming no verb is reported, script-qualified.
+        real = sr.NON_CEREMONY_VERBS
+        with mock.patch.object(sr, "NON_CEREMONY_VERBS",
+                               {**real, "sprint": real["sprint"] + ("no-such-verb",)}):
+            self.assertEqual(["sprint no-such-verb"], sr.cycle_drift()["stale"])
+
+    def test_stop_ship_rulings_are_read_through_the_constant(self) -> None:
+        # The module object the report bound, not `import retro`: another suite module can
+        # re-import retro, and a patch on a second copy would not reach the report.
+        retro_mod = sr.retro
+        retro_dir = self.root / "sdlc-studio" / "retros"
+        bugs = self.root / "sdlc-studio" / "bugs"
+        retro_dir.mkdir(parents=True)
+        bugs.mkdir(parents=True)
+        (bugs / "BG9401-x.md").write_text("# BG9401: x\n\n> **Status:** Fixed\n", encoding="utf-8")
+        (bugs / "BG9402-x.md").write_text("# BG9402: x\n\n> **Status:** Open\n", encoding="utf-8")
+        (retro_dir / "RETRO9400-r.md").write_text(
+            "# RETRO9400: a sprint\n\n## Known issues carried\n\n"
+            "| Issue | Ruling | By | Date |\n| --- | --- | --- | --- |\n"
+            "| BG9401 | halt-ship | Someone | 2026-09-01 |\n"
+            "| BG9402 | halt-ship | Someone | 2026-09-01 |\n", encoding="utf-8")
+        rulings = ("halt-ship",) + retro_mod.KNOWN_ISSUE_RULINGS[1:]
+        with mock.patch.object(retro_mod, "STOP_SHIP", "halt-ship"), \
+                mock.patch.object(retro_mod, "KNOWN_ISSUE_RULINGS", rulings):
+            rows = sr._carried_issues(self.root, "RETRO9400")
+            self.assertTrue(all(r["ok"] for r in rows), rows)
+            _state, summary, _detail = sr._ck_known_issues(
+                {"carried_issues": rows, "open_filed_in_run": [], "undatable_findings": []})
+        self.assertIn("1 STOP-SHIP", summary)
+        self.assertIn("1 discharged", summary)
+
+
 if __name__ == "__main__":
     unittest.main()

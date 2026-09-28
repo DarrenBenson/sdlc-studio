@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 12 |
-| In Progress | 3 |
-| Fixed | 662 |
+| In Progress | 2 |
+| Fixed | 663 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -83,7 +83,7 @@
 | [BG0722](BG0722-the-unruled-lens-catches-a-request-nobody-closed.md) | the unruled lens catches a request nobody closed, not the request everybody abandoned - the dominant accumulation path is still unguarded | Fixed | High | 2026-09-21 | 2026-09-21 |
 | [BG0723](BG0723-a-stated-count-in-source-or-test-prose.md) | a stated count in source or test prose is never checked against the tree it counts | Won't Fix | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0724](BG0724-check-spec-claims-reads-raw-text-so-a.md) | check_spec_claims reads raw text, so a claim inside a fenced code block is judged as a live claim | Superseded | Medium | 2026-09-21 | 2026-09-21 |
-| [BG0725](BG0725-two-spellings-of-the-stop-ship-constant-and.md) | two spellings of the stop-ship constant, and a hand-maintained verb list whose stale entries nothing can report | In Progress | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0725](BG0725-two-spellings-of-the-stop-ship-constant-and.md) | two spellings of the stop-ship constant, and a hand-maintained verb list whose stale entries nothing can report | Fixed | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0726](BG0726-the-report-renders-no-declared-seat-without-asking.md) | the report renders NO DECLARED SEAT without asking whether the project declares any personas at all | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0727](BG0727-check-script-tests-sweeps-two-fixed-globs-so.md) | check_script_tests sweeps two fixed globs, so a script in any other scripts subdirectory needs no test | Superseded | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0728](BG0728-a-unit-s-declared-affects-is-never-compared.md) | a unit's declared Affects is never compared with the files its delivering commit changed | Won't Fix | Medium | 2026-09-21 | 2026-09-21 |

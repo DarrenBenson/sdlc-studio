@@ -879,7 +879,8 @@ DERIVED, RECORDED = "derived", "recorded"
 #: The direction of failure is deliberate. A ceremony verb missing from a row appears in
 #: `uncovered` and the guard fires; a NON-ceremony verb missing from here does the same and
 #: somebody adds it. The list can over-report, never under-report - which is the opposite of
-#: an enumerated list that silently exempts what it forgot.
+#: an enumerated list that silently exempts what it forgot. The other direction is `stale`:
+#: an entry naming a verb its script no longer exposes is reported, not silently kept.
 NON_CEREMONY_VERBS = {
     # `next` sits with `plan` on the OPENING side of a run, not the closing one: it resolves a
     # queued charter into a batch and opens from it. A close-checklist row would be asking the
@@ -887,9 +888,9 @@ NON_CEREMONY_VERBS = {
     # `sign` is the close's own last act: the operator's one signature over the report this
     # checklist feeds, recorded on the report page and the run. A checklist row for it could
     # only ever read pending when the page is composed.
-    "sprint": ("appetite", "close", "boundary", "report", "checklist", "sign",
+    "sprint": ("appetite", "close", "boundary", "report", "sign",
                "reopen", "stop", "decision", "batch", "lane", "next", "queue", "call"),
-    "critic": ("brief", "caller-check", "correct", "repair", "show", "supersede"),
+    "critic": ("brief", "caller-check", "correct", "show", "supersede"),
     "handoff": ("show",),
     "lessons": ("add", "carried", "carry", "classes", "list", "propose", "prune", "rank",
                 "recall", "repeats", "revalidate", "violated"),
@@ -1848,9 +1849,9 @@ def _ck_known_issues(ctx: dict) -> tuple:
     # some of them printed "2 STOP-SHIP" beside a close that proceeded over one - the operator
     # reads this row, not the gate's dict.
     stop = [r["id"] for r in rows
-            if r["ok"] and r["ruling"] == "stop-ship" and not r.get("terminal")]
+            if r["ok"] and r["ruling"] == retro.STOP_SHIP and not r.get("terminal")]
     discharged = [r["id"] for r in rows
-                  if r["ok"] and r["ruling"] == "stop-ship" and r.get("terminal")]
+                  if r["ok"] and r["ruling"] == retro.STOP_SHIP and r.get("terminal")]
     broken = [f"{r['id'] or '(no id)'}: {r['why']}" for r in rows if not r["ok"]]
     undatable = ctx.get("undatable_findings") or []
     if not rows and not open_findings:
@@ -2252,7 +2253,7 @@ def scope_tail_error(scope: str) -> str | None:
 
 
 def cycle_drift() -> dict:
-    """`{unresolved, uncovered, unverifiable}` - how the checklist and the cycle come apart.
+    """`{unresolved, uncovered, unverifiable, stale}` - how the checklist and the cycle part.
 
     `unresolved`: a checklist row whose holding command no longer resolves to a shipped script
     and verb, so the row certifies a ceremony that has been renamed or removed.
@@ -2260,14 +2261,16 @@ def cycle_drift() -> dict:
     mechanics, so a stage was added to the cycle and the checklist grew no row for it.
     `unverifiable`: a row whose script ships but publishes no parser to enumerate - reported
     with its reason, never counted as either green or broken.
+    `stale`: a NON_CEREMONY_VERBS entry naming a verb its script's parser does not expose, so
+    the exemption list keeps a verb that has gone and subtracting it could never say so.
 
     The `uncovered` half is what makes this a drift guard rather than a tautology: it is
     derived from the SHIPPED CLI, not from the checklist, so the two can genuinely disagree.
 
-    All THREE buckets are the guard. `unverifiable` was non-empty on the shipped tree and
+    All FOUR buckets are the guard. `unverifiable` was non-empty on the shipped tree and
     asserted by nothing, so two rows were certified unchecked while a caller reading the first
     two saw green; `uncovered` walked `sprint` alone while six rows hold a stage in `critic`,
-    `retro`, `lessons` or `handoff`. Both are closed, and the verifier asserts all three.
+    `retro`, `lessons` or `handoff`. Both are closed, and the verifier asserts all four.
     """
     scripts = Path(__file__).resolve().parent
     unresolved, unverifiable, verbs_by_script = [], [], {}
@@ -2325,7 +2328,13 @@ def cycle_drift() -> dict:
             continue                     # unresolved or unverifiable, already reported above
         extra = known - covered.get(script, set()) - set(NON_CEREMONY_VERBS.get(script, ()))
         uncovered += [f"{script} {v}" for v in sorted(extra)]
-    return {"unresolved": unresolved, "uncovered": uncovered, "unverifiable": unverifiable}
+    stale = []
+    for script, listed in sorted(NON_CEREMONY_VERBS.items()):
+        known = verbs(script)
+        stale += [f"{script} {v}" for v in sorted(listed)
+                  if not isinstance(known, set) or v not in known]
+    return {"unresolved": unresolved, "uncovered": uncovered, "unverifiable": unverifiable,
+            "stale": stale}
 
 
 def render_checklist(ck: dict) -> str:
