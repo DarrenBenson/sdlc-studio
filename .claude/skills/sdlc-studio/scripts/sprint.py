@@ -5054,10 +5054,10 @@ def _close_handoff(root, retro_id, state):
         _finalise_outcome(root, state)
         return True, f"already generated ({state['handoff']}) - skipped", ""
     import handoff  # noqa: PLC0415
-    # The outcome is DERIVED from the recorded goal-verdict, never defaulted: only an
-    # achieved goal closes as goal-reached; partial/missed close as the honest `stopped`.
+    # The outcome is DERIVED from the recorded goal-verdict, never defaulted: each verdict maps to
+    # the outcome sign writes (SIGNED_OUTCOMES), and only a run with no verdict reads `stopped`.
     verdict = (state.get("sprint_goal_verdict") or {}).get("verdict")
-    outcome = run_state.GOAL_REACHED if verdict == "achieved" else run_state.STOPPED
+    outcome = SIGNED_OUTCOMES.get(verdict, run_state.STOPPED)
     # ...and the TITLE follows the outcome, not the ambition. The goal was the title
     # unconditionally, so a run that closed PARTIAL minted a handoff whose H1, filename slug and
     # index row all asserted the thing the verdict had just denied - and all three derive from
@@ -5078,7 +5078,9 @@ def _close_handoff(root, retro_id, state):
         return False, out, "`handoff.py generate` must write the handoff - see its output"
     verb = "refreshed" if out.startswith("refreshed") else "generated"
     return True, (f"handoff {verb}; the run stays OPEN for `sprint.py sign`, which writes "
-                  f"the {outcome} outcome from the {verdict} verdict"), ""
+                  f"the {outcome} outcome "
+                  + (f"from the {verdict} verdict" if verdict else
+                     "- no goal verdict is recorded")), ""
 
 
 def _close_reconcile(root, retro_id, state):
@@ -6191,7 +6193,7 @@ def _declared_breakdown_ids(text: str) -> list[str]:
     return reconcile.declared_breakdown_ids(text)
 
 
-def _derive_parent_epics(root, units=None) -> list[str]:
+def _derive_parent_epics(root, units=None, who: str = "close") -> list[str]:
     """Transition an epic whose breakdown units are ALL terminal to its derived terminal.
 
     The per-unit cascade ticks an epic's breakdown checkbox but never sets the epic's own
@@ -6233,7 +6235,7 @@ def _derive_parent_epics(root, units=None) -> list[str]:
             continue                                   # not this run's epic - not our claim
         resolved = list(reconcile._breakdown_units(root, text))
         if len(resolved) != len(declared):
-            print(f"apply-signoff: {eid} not derived - {len(declared) - len(resolved)} of "
+            print(f"{who}: {eid} not derived - {len(declared) - len(resolved)} of "
                   f"{len(declared)} breakdown unit(s) could not be read (no file, or no "
                   f"Status); an unreadable child is unknown, not done", file=sys.stderr)
             continue
@@ -6246,11 +6248,11 @@ def _derive_parent_epics(root, units=None) -> list[str]:
             transition.transition(root, eid, target)
             moved.append(eid)
         except (ValueError, OSError) as exc:
-            print(f"apply-signoff: {eid} not derived {target} ({exc})", file=sys.stderr)
+            print(f"{who}: {eid} not derived {target} ({exc})", file=sys.stderr)
     return moved
 
 
-def _derive_parent_requests(root, scope_ids=None) -> list[str]:
+def _derive_parent_requests(root, scope_ids=None, who: str = "close") -> list[str]:
     """Transition a parent request (CR/RFC) whose children are ALL terminal to its successful
     terminal - the step the epic derivation leaves undone. `apply-signoff` derived the epics this
     run completed, but a CR/RFC ABOVE those epics was left non-terminal, so an operator had to
@@ -6281,7 +6283,7 @@ def _derive_parent_requests(root, scope_ids=None) -> list[str]:
             transition.transition(root, d["id"], target)
             done.append(d["id"])
         except (ValueError, FileNotFoundError) as exc:  # a refusal is information, not a crash
-            print(f"apply-signoff: {d['id']} not derived terminal ({str(exc).splitlines()[0]})",
+            print(f"{who}: {d['id']} not derived terminal ({str(exc).splitlines()[0]})",
                   file=sys.stderr)
     return done
 
@@ -6290,14 +6292,14 @@ def _derive_close_parents(root, units, who: str) -> list[str]:
     """Derive terminal the parent epics of `units` whose every child is terminal, then the
     requests above them, printing each as `who`. Idempotent: an already-terminal parent is
     skipped, so the reconcile step and the tail may both call it. Returns the ids derived."""
-    derived = _derive_parent_epics(root, units)
+    derived = _derive_parent_epics(root, units, who)
     if derived:
         print(f"{who}: derived {', '.join(derived)} terminal (all children terminal)")
     # A request ABOVE those epics reaches its terminal by derivation too - run it AFTER the epics,
     # so a CR/RFC whose last child was an epic just marked Done is now itself derivable and the
     # close no longer leaves it for a manual `reconcile apply`. Scoped to this run's units plus the
     # epics just derived, so the close never sweeps unrelated requests.
-    requests = _derive_parent_requests(root, scope_ids=list(units or []) + derived)
+    requests = _derive_parent_requests(root, scope_ids=list(units or []) + derived, who=who)
     if requests:
         print(f"{who}: derived parent request(s) {', '.join(requests)} terminal "
               f"(all children resolved)")
@@ -6313,7 +6315,7 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
     detection."""
     import reconcile  # noqa: PLC0415
     import retro  # noqa: PLC0415
-    _derive_close_parents(root, units, "apply-signoff")
+    _derive_close_parents(root, units, "close")
     # The chain wrote the handoff one step BEFORE this cascade transitioned anything, so the
     # document and its worklist described units as remaining that the close then completed.
     # Re-render it here, against this run's own batch, so the tail reports the state the close
@@ -6324,15 +6326,15 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
         try:
             rep = handoff.refresh(root, hid, batch=state.get("batch") or None)
         except Exception as exc:  # noqa: BLE001 - a stale handoff must not lose the close
-            print(f"apply-signoff: {hid} NOT refreshed ({exc}) - it still describes the "
+            print(f"close: {hid} NOT refreshed ({exc}) - it still describes the "
                   f"state before this cascade", file=sys.stderr)
         else:
             if rep is None:
-                print(f"apply-signoff: {hid} has no file on disk - not refreshed",
+                print(f"close: {hid} has no file on disk - not refreshed",
                       file=sys.stderr)
             else:
                 s = rep["summary"]
-                print(f"apply-signoff: {hid} refreshed - {s['delivered']} delivered, "
+                print(f"close: {hid} refreshed - {s['delivered']} delivered, "
                       f"{s['remaining']} remaining")
     # The run-state field is set only when THIS close scaffolded the retro. A retro made
     # the documented way (`artifact.py new --type retro`) never sets it, so fall back to
@@ -6352,12 +6354,12 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
         if rc == 0:
             for line in out.splitlines():
                 if line.startswith("token actual"):
-                    print(f"apply-signoff: {line}")
-            print(f"apply-signoff: velocity row recorded for {retro_id}")
+                    print(f"close: {line}")
+            print(f"close: velocity row recorded for {retro_id}")
         else:
-            print(f"apply-signoff: velocity not recorded ({out.splitlines()[-1] if out else 'see retro'})")
+            print(f"close: velocity not recorded ({out.splitlines()[-1] if out else 'see retro'})")
     else:
-        print("apply-signoff: velocity NOT recorded - no retro id on the run state or the "
+        print("close: velocity NOT recorded - no retro id on the run state or the "
               "command line; record it with `retro.py accuracy --id RETROxxxx --write`",
               file=sys.stderr)
     unconformant = _post_transition_conformance(root, units)
@@ -6366,7 +6368,7 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
         # inheriting a red gate they did not cause and having to prove it was not theirs. Naming
         # it here, attributed to this close, ends that. Failing instead would strand a completed
         # and signed-off delivery behind ceremony debt the sign-off did not depend on.
-        print(f"apply-signoff: the tree is NOT conformant after the transitions - "
+        print(f"close: the tree is NOT conformant after the transitions - "
               f"{', '.join(unconformant)}. The close's earlier gate judged these at Review, "
               f"where the evidence they now owe was not required. Clear them (`verify_ac` then "
               f"back-annotate `- **Verified:**`) - otherwise the next commit inherits this.",
@@ -6378,10 +6380,10 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
         # blocking on it strands the sign-off behind a decision nobody in this run can make.
         blocked = [d for d in reconcile.derivable_request_drift(root) if d.get("blocked_by")]
         if not (blocked and _only_blocked_derivable_drift(root, blocked)):
-            print("apply-signoff: final reconcile reports drift - run `reconcile.py apply`",
+            print("close: final reconcile reports drift - run `reconcile.py apply`",
                   file=sys.stderr)
             return 1
-        print(f"apply-signoff: {len(blocked)} request(s) awaiting another gate "
+        print(f"close: {len(blocked)} request(s) awaiting another gate "
               f"({', '.join(d['id'] for d in blocked)}) - reported, not clearable by apply")
     # THE GATE MUST JUDGE THE STATE THE CLOSE LEAVES BEHIND, not the one it started from. The
     # chain runs `gate` at step 4, while every unit still sits at Review; this cascade then moves
@@ -8988,7 +8990,7 @@ def cmd_close(args: argparse.Namespace) -> int:
     # `_file_the_report`, so nothing can be appended after it without moving this line.
     if report_id:
         print(f"\nsign it with: sprint.py sign --report {report_id} "
-              f"--principal \"<the reviewer of record>\"")
+              f"--principal \"<the operator who signs>\"")
     return 0
 
 
@@ -9164,10 +9166,11 @@ def _cascade_after_signature(root, state, units) -> None:
     the signature. It is NOT `_apply_signoff_tail`: the velocity row and the final reconcile
     change facts the report states, so they run in PREPARE, before anyone signs.
     """
-    derived = _derive_parent_epics(root, units)
+    derived = _derive_parent_epics(root, units, "sign")
     if derived:
         print(f"sign: derived {', '.join(derived)} terminal (all children terminal)")
-    derived_requests = _derive_parent_requests(root, scope_ids=list(units or []) + derived)
+    derived_requests = _derive_parent_requests(root, scope_ids=list(units or []) + derived,
+                                               who="sign")
     if derived_requests:
         print(f"sign: derived parent request(s) {', '.join(derived_requests)} terminal")
     # The velocity row joins the cascade for the same reason the epics do: it counts DELIVERED
@@ -9217,8 +9220,8 @@ def _principal_refusals(root, state, principal: str | None, author_default: str 
     # cell `critic.same_identity` reads as no id, seal the run under an empty principal; every
     # value that id normaliser empties has no letter or digit, and nor does `_`.
     if not any(ch.isalnum() for ch in principal or ""):
-        return [f"--principal {principal or ''!r} names nobody - sign needs the reviewer of "
-                "record, and a sign-off with no named principal is not a review"]
+        return [f"--principal {principal or ''!r} names nobody - sign needs the operator "
+                "who signs, and a signature with no named principal is not a review"]
     out = []
     for unit in _batch_story_units(root, state.get("batch") or []):
         # EVERY unit, including ones already terminal: the run's signature is written on a
@@ -9234,7 +9237,7 @@ def _principal_refusals(root, state, principal: str | None, author_default: str 
         elif any(critic.same_identity(principal, rid)
                  for rid in critic.session_reviewer_ids(root, unit)):
             out.append(f"{unit}: principal {principal!r} is an authoring-session subagent (a "
-                       "recorded reviewer on this unit) - the reviewer of record must sit "
+                       "recorded reviewer on this unit) - the operator who signs must sit "
                        "outside the author's control")
     return out
 
@@ -9325,7 +9328,7 @@ def cmd_sign(args: argparse.Namespace) -> int:
     if refused:
         for line in refused:
             print(f"sign REFUSED: {line}", file=sys.stderr)
-        print("  the run is untouched and still open - sign with a reviewer of record outside "
+        print("  the run is untouched and still open - sign as an operator outside "
               "the authoring session's control", file=sys.stderr)
         return 2
     # A STOP-SHIP RULING DOES NOT REFUSE THE SEAL (D0257): the signer decides, and so is shown

@@ -78,7 +78,10 @@ reads `judgement`, never a confidently-wrong `copilot-tail`.
 
 `sprint plan --write` opens the run (id, start time, approved batch, `--goal` rung) in
 `sdlc-studio/.local/run-state.json`; `handoff generate --outcome <how it ended>` closes it.
-Outcomes: `goal-reached`, `budget-spent`, `blocked`, `stopped`. A run nobody opened still
+Outcomes: `goal-reached`, `budget-spent`, `blocked`, `stopped`, `closed-outstanding`, `partial`
+and `missed`. `sprint sign` writes the one its goal verdict maps to - `goal-reached` for an
+achieved goal, `partial` or `missed` for the others, `stopped` when no verdict is recorded - and
+the close's handoff step names it before the signature. A run nobody opened still
 gets a handoff - the document says the run was not opened rather than inventing a start time.
 
 `--outcome` also writes the unanswered set onto the run record as `unanswered` (`[]` when

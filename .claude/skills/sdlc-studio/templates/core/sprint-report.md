@@ -78,7 +78,7 @@ No open finding, close gap or carried unit is recorded.
 
 ## Sign-off
 
-| Reviewer of record | Date | Fingerprint signed |
+| Signed by | Date | Fingerprint signed |
 | --- | --- | --- |
 | {{principal}} | {{signed_at}} | {{signed_fingerprint}} |
 

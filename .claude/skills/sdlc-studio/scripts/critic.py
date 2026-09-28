@@ -959,7 +959,7 @@ def record_supersession(repo_root: Path | str, unit: str, date: str, reason: str
     if not (boundary or "").strip():
         raise ValueError("a supersession needs --boundary naming the separate trust boundary "
                          "its authoriser acted in - superseding can retire an independence "
-                         "attribution, so it is held to the sign-off's own rule")
+                         "attribution, so it is held to the signature's own rule")
     target, want_date = sdlc_md.norm_id(unit), (date or "").strip()
     candidates = [v for v in read_verdicts(repo_root, phase)
                   if sdlc_md.norm_id(v["unit"]) == target and v["date"] == want_date]

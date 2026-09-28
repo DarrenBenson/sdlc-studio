@@ -1,6 +1,6 @@
 # BG0822: The close, sign and the signed report still speak the retired v5 sign-off vocabulary, and the close misstates the outcome sign will write
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/templates/core/sprint-report.md, .claude/skills/sdlc-studio/templates/reports/sprint-report.html, .claude/skills/sdlc-studio/help/handoff.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_close_output_vocabulary.py, changelog.d/BG0822.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -26,8 +26,10 @@ Rename the tail's prefix to `close:`, the principal hint and refusals to `the op
 
 - [ ] **AC1** Given a close run to the end on a fixture, then no stdout or stderr line carries `apply-signoff` or `reviewer of record`, and the report's Sign-off header does not read `Reviewer of record`. Fails on: HEAD
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close_output_vocabulary.py::CloseOutputVocabularyTests::test_no_retired_sign_off_words_in_close_output
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC2** Given a partial goal verdict, when the handoff step reports, then it names the partial outcome sign will write. Fails on: HEAD's `stopped outcome from the partial verdict`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close_output_vocabulary.py::CloseOutputVocabularyTests::test_the_handoff_step_names_the_signed_outcome
+  - **Verified:** yes (2026-09-28)
 
 ## Revision History
 

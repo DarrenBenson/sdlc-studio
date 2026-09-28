@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 31 |
-| In Progress | 1 |
-| Fixed | 672 |
+| In Progress | 0 |
+| Fixed | 673 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -180,7 +180,7 @@
 | [BG0819](BG0819-a-signed-sprint-report-s-verified-on-names.md) | A signed sprint report's 'Verified on' names the run's base ref, the commit before any work, because nothing writes verified_sha | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0820](BG0820-a-unit-with-an-independent-approve-that-the.md) | A unit with an independent APPROVE that the loop left at Ready or In Progress is handed over as an unanswered known issue, then sealed by sign | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0821](BG0821-install-ps1-local-still-refreshes-every-personal-copy.md) | install.ps1 -Local still refreshes every personal copy of the skill, the defect BG0809 fixed only in install.sh | Fixed | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0822](BG0822-the-close-sign-and-the-signed-report-still.md) | The close, sign and the signed report still speak the retired v5 sign-off vocabulary, and the close misstates the outcome sign will write | In Progress | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0822](BG0822-the-close-sign-and-the-signed-report-still.md) | The close, sign and the signed report still speak the retired v5 sign-off vocabulary, and the close misstates the outcome sign will write | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0823](BG0823-sprint-close-dry-run-reports-no-goal-no.md) | sprint close --dry-run reports no goal, no units and no start time for a run whose state holds all three, and previews writes as done | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0824](BG0824-init-guided-s-personas-stage-seeds-the-legacy.md) | init guided's personas stage seeds the legacy flat personas.md, which the persona registry and sprint plan --serves never read | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0825](BG0825-ulid-ids-are-printed-as-their-hyphenless-comparison.md) | ULID ids are printed as their hyphenless comparison key, so plan, brief, carry and the signed report name ids no file carries | Open | Medium | 2026-09-28 | 2026-09-28 |
