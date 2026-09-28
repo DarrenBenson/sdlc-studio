@@ -12,7 +12,7 @@
 
 ## Summary
 
-In the v6 eval 06 runs on main (run v6-main, 2026-09-28) the worker ran critic.py brief correctly, then relayed its own shortened version to the reviewing subagent: the final run dropped the brief's standing practices and lessons and added its own mutation instruction; run 2's first reviewer launch carried a literal $(see below) and no brief at all. help/bug.md and reference-bug.md say the reviewer is 'briefed with critic.py brief' but not that the brief text is passed verbatim; only reference-scripts-review.md:118 says 'pipe it to the reviewing subagent verbatim', which the worker never read. critic.py brief prints to stdout with no file to hand over.
+In the v6 eval 06 runs on main (run v6-main, 2026-09-28) the worker ran critic.py brief correctly, then relayed its own shortened version to the reviewing subagent: the final run dropped the brief's standing practices and lessons and added its own mutation instruction; run 2's first reviewer launch carried an unexpanded shell placeholder reading 'see below' and no brief at all. help/bug.md and reference-bug.md say the reviewer is 'briefed with critic.py brief' but not that the brief text is passed verbatim; only reference-scripts-review.md:118 says 'pipe it to the reviewing subagent verbatim', which the worker never read. critic.py brief prints to stdout with no file to hand over.
 
 ## Steps to Reproduce
 
