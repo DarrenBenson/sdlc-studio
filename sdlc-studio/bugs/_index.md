@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 29 |
+| Open | 30 |
 | In Progress | 5 |
 | Fixed | 668 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
 | Superseded | 28 |
-| **Total** | **839** |
+| **Total** | **840** |
 
 ## All Bugs
 
@@ -198,6 +198,7 @@
 | [BG0837](BG0837-the-pre-push-gate-judges-the-working-tree.md) | The pre-push gate judges the working tree, not the commits being pushed, so an uncommitted fix turns a red push green | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0838](BG0838-retired-surface-excuses-a-live-retired-name-by.md) | retired_surface excuses a live retired name by the shape of its sentence, so a live instruction passes as history | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0839](BG0839-an-eval-worker-session-loads-the-personal-skill.md) | An eval worker session loads the personal skill ahead of the candidate copy, and nothing in the harness says so or prevents it | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0840](BG0840-bg0818-did-not-converge-in-review-round-2.md) | BG0818 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-28 | 2026-09-28 |
 
 ## Archived Releases
 

@@ -3,7 +3,7 @@
 > **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/init.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_guided_stage_confirm.py, .claude/skills/sdlc-studio/help/init.md, changelog.d/BG0818.md, .claude/skills/sdlc-studio/scripts/tests/test_init.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/init.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_guided_stage_confirm.py, .claude/skills/sdlc-studio/help/init.md, changelog.d/BG0818.md, .claude/skills/sdlc-studio/scripts/tests/test_init.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py
 > **Evidence:** v6.0.0-rc.1 soak F1 and F3 (website project, WEB-init); re-run at HEAD 7e53a438 in a fresh fixture (init run, then init guided x2, then --confirm)
 > **Created:** 2026-09-28
 > **Created-by:** sdlc-studio file
