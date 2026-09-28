@@ -1,6 +1,6 @@
 # BG0812: The bug-close path teaches a named verdict with no independent reviewing context, so an agent approves its own fix under another name
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/reference-bug.md, .claude/skills/sdlc-studio/help/bug.md, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_bug_close_review.py, changelog.d/BG0812.md, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
