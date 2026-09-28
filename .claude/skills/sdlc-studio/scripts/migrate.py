@@ -337,6 +337,102 @@ def _conformance_cutoff(root: Path) -> list[dict]:
                        f"work - every id at or below it is exempt"}]
 
 
+#: The per-clone CI cache a pre-6.0 close read DORA from whenever it existed. Read here only, to
+#: freeze the runs a signed page read onto its tracked record; nothing re-derives from it.
+_CI_CACHE = "sdlc-studio/.local/ci-runs.json"
+
+
+def _page_ci_runs(root: Path, start, end) -> dict:
+    """The CI runs a page signed before 6.0 read inside its window: the per-clone cache's rows,
+    as that close read them, or none where this clone holds no cache (the forge's answer then
+    was never kept)."""
+    import sprint_report as sr  # noqa: PLC0415 - needed only for a signed report
+    try:
+        rows = json.loads((root / _CI_CACHE).read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {"source": "no forge", "runs": []}
+    except (OSError, ValueError):
+        rows = []                      # the old reader took an unreadable cache as no runs
+    return {"source": _CI_CACHE,
+            "runs": [r for r in (rows if isinstance(rows, list) else []) if isinstance(r, dict)
+                     and sr._in_window(r.get("createdAt"), sr._at(start), sr._at(end))]}
+
+
+def _signed_records(root: Path, apply: bool) -> tuple[list[dict], list[dict]]:
+    """Each signed report whose run record lives only in this clone's `.local`, filed as the
+    tracked record `sprint sign` now files (`run_state.file_tracked`), so the report checks in
+    any clone. The inputs the page read that a clean clone lacks are frozen on it as a close now
+    freezes them: the verdict rows its rounds count (`REVIEW_ROWS`, by the rule `check` reads a
+    record that froze none with) and the CI runs inside its window (`CI_RUNS`, from the cache
+    the page read). A field the record already holds is kept.
+
+    Filed only when the page re-derives from that record, as a clean clone will read it, to the
+    fingerprint it was signed at; otherwise the report is named for a human and nothing is filed,
+    since a record filed then would move a signed page in every clone. A record already filed is
+    never rewritten. Returns (deterministic, needs-human)."""
+    import sprint_report as sr  # noqa: PLC0415 - needed only for a signed report
+    from lib import run_state  # noqa: PLC0415
+    det: list[dict] = []
+    human: list[dict] = []
+    try:
+        live = run_state.read(root) or {}
+    except run_state.RunStateError:
+        live = {}
+    for path in sorted(sr.report_dir(root).glob("RPT*.json")):
+        try:
+            page = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(page, dict):
+            continue
+        rid, run_id = sdlc_md.norm_id(path.stem), page.get("run_id")
+        if (not run_id or page.get("schema") != sr.SCHEMA
+                or not (page.get("signature") or {}).get("principal")
+                or run_state.tracked_path(root, run_id).exists()):
+            continue
+        rel = sr._rel(root, run_state.tracked_path(root, run_id))
+        check = f"sprint_report.py check --report {rid}"
+        state = live if live.get("run_id") == run_id else run_state.read_archived(root, run_id)
+        if not state:
+            human.append({"kind": "run-record", "id": rid, "command": check, "detail":
+                          f"{rid} is signed, but no run record of {run_id} is tracked or in "
+                          f"this clone's .local, so none can be filed here - run migrate in "
+                          f"the clone that signed it"})
+            continue
+        signed_on = (state.get("signature") or {}).get("report")
+        if signed_on and sdlc_md.norm_id(str(signed_on)) != rid:
+            continue                   # the run was signed on another page; that one is filed
+        window = (state.get("started_at"), sr._legacy_window_end(root, page, state))
+        frozen = dict(state)
+        if sr.REVIEW_ROWS not in frozen:
+            frozen[sr.REVIEW_ROWS] = sr.counted_review_rows(root, state, window)
+        if sr.CI_RUNS not in frozen:
+            frozen[sr.CI_RUNS] = _page_ci_runs(root, *window)
+        record = run_state.portable(frozen, root)
+        try:
+            verdict = sr.revalidate(root, rid, record=record)
+        except sr.ReportError as exc:
+            why = str(exc)
+        else:
+            moved = ", ".join(verdict["moved"]) or ", ".join(
+                e["figure"] for e in verdict["edited"])
+            why = ("" if verdict["valid"] else verdict.get("predates") or
+                   f"re-derived from the record it would file, {rid} reads "
+                   f"{verdict['fingerprint']}, not the {verdict['signed_fingerprint']} it was "
+                   f"signed at ({moved})")
+        if why:
+            human.append({"kind": "run-record", "id": rid, "command": check,
+                          "detail": f"{rid}: no record filed for {run_id} - {why}"})
+            continue
+        det.append({"source": "run-record", "id": rid, "run": run_id, "path": rel,
+                    "detail": f"{rid}: files {run_id}'s sealed record at {rel}, its review rows "
+                              f"and CI runs frozen as the page read them; it re-derives to "
+                              f"{verdict['fingerprint']}", "applied": apply})
+        if apply:
+            run_state.file_tracked(root, record)
+    return det, human
+
+
 def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: bool = False,
             today: str | None = None) -> dict:
     """Run the upgrade sweep. Returns
@@ -374,9 +470,12 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
     # reports the delivery units and undecomposed requests/issues it cannot convert safely.
     sizing = migrate_v3.migrate_sizing(root, dry_run=not apply)
 
-    # 4. aggregate into one report. Deterministic = the conventions auto-fixes, the retired tags
-    # and keys removed, and the sizing conversions; `applied` reflects the mode, and the
-    # classification is identical either way.
+    # 4. the tracked run record of each report signed before records were tracked.
+    records, records_human = _signed_records(root, apply)
+
+    # 5. aggregate into one report. Deterministic = the conventions auto-fixes, the retired tags
+    # and keys removed, the sizing conversions and the run records; `applied` reflects the mode,
+    # and the classification is identical either way.
     deterministic: list[dict] = []
     for a in au["auto"]:
         deterministic.append({"source": "conventions", "kind": a["kind"],
@@ -388,6 +487,7 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
         deterministic.append({"source": "sizing", "id": c["id"],
                               "detail": f"{c['id']}: Size {c['size']} (from {c['from']})",
                               "applied": apply})
+    deterministic += records
 
     needs_human: list[dict] = []
     for m in au["manual"]:                       # conventions that need judgement (index drift, etc.)
@@ -404,7 +504,8 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
             needs_human.append({"kind": bucket.replace("_", "-"), "id": item["id"],
                                 "detail": f"{item['id']} ({item['type']}): {label}{also}",
                                 "command": cmd(item)})
-    # 5. the grandfathering cutoff, judged on the tree as it now stands: migrated under --apply,
+    needs_human += records_human
+    # 6. the grandfathering cutoff, judged on the tree as it now stands: migrated under --apply,
     # as found on a dry run.
     needs_human += _conformance_cutoff(root)
 

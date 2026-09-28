@@ -1,0 +1,1258 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M3CK1K",
+  "started_at": "2026-09-25T15:32:20Z",
+  "ended_at": "2026-09-26T20:46:16Z",
+  "outcome": "goal-reached",
+  "goal": "done",
+  "batch": [
+    "US0937",
+    "BG0771",
+    "BG0772",
+    "US0914",
+    "US0925",
+    "US0939",
+    "US0936",
+    "US0922",
+    "US0919",
+    "US0918",
+    "US0923",
+    "US0950",
+    "US0938",
+    "US0940",
+    "US0942",
+    "US0943",
+    "US0944",
+    "US0945",
+    "US0946",
+    "US0947",
+    "US0948",
+    "US0949",
+    "US0951",
+    "BG0681",
+    "BG0687",
+    "BG0695",
+    "BG0711",
+    "BG0731",
+    "BG0717",
+    "BG0773",
+    "BG0775",
+    "BG0779",
+    "BG0778",
+    "BG0780",
+    "BG0777",
+    "BG0781",
+    "BG0787"
+  ],
+  "plan": "sha256:2e2f8b72a73b",
+  "handoff": "HO-0090",
+  "review_rounds": [],
+  "review_ceiling_overrides": [],
+  "session_token_baseline": {
+    "tokens": 66232420,
+    "source": "sha256:569cd260872e",
+    "at": "2026-09-25T15:32:20Z"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 66232420,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-25T15:32:21Z",
+      "kind": "open",
+      "model": "mixed"
+    },
+    {
+      "tokens": 70735719,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-26T15:51:20Z",
+      "kind": "report",
+      "model": "mixed"
+    },
+    {
+      "tokens": 71149701,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-26T18:41:02Z",
+      "kind": "report",
+      "model": "mixed"
+    },
+    {
+      "tokens": 71169438,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-26T18:50:20Z",
+      "kind": "report",
+      "model": "mixed"
+    }
+  ],
+  "delegated_tokens": [
+    {
+      "tokens": 362572,
+      "agent": "plan-product-v6",
+      "note": "RUN-01M3CK1K planning agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-25T15:32:30Z"
+    },
+    {
+      "tokens": 402722,
+      "agent": "plan-eng-v6",
+      "note": "RUN-01M3CK1K planning agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-25T15:32:30Z"
+    },
+    {
+      "tokens": 337548,
+      "agent": "plan-qa-v6",
+      "note": "RUN-01M3CK1K planning agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-25T15:32:30Z"
+    },
+    {
+      "tokens": 64347,
+      "agent": "goal-review-product",
+      "note": "RUN-01M3CK1K planning agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-25T15:32:30Z"
+    },
+    {
+      "tokens": 222730,
+      "agent": "a642084cb41e89c7e",
+      "note": "build-US0937 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 139605,
+      "agent": "a7bb20bd83f21aa3c",
+      "note": "build-BG0771 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 243830,
+      "agent": "a07094689148d730c",
+      "note": "build-BG0772 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 261927,
+      "agent": "af8baac1a3f4a1563",
+      "note": "build-BG0755 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 88544,
+      "agent": "a8e136bd814e64287",
+      "note": "build-BG0681 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 177181,
+      "agent": "a4c00002bcc78c6b1",
+      "note": "build-US0946 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 75495,
+      "agent": "a90e135944102c8a8",
+      "note": "review-BG0681 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 129454,
+      "agent": "aa3bbee7e799355e4",
+      "note": "review-US0946 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 175040,
+      "agent": "a518e6a77605471e0",
+      "note": "review-BG0772 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 160900,
+      "agent": "afa8c0e3dbd68ce3d",
+      "note": "review-BG0755 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 117525,
+      "agent": "ab016cd8483d098d2",
+      "note": "review-BG0771 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 183492,
+      "agent": "ac9b17337958c816a",
+      "note": "review-US0937 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 394259,
+      "agent": "affa6ac8f2ea16ee6",
+      "note": "build-US0925 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 192300,
+      "agent": "a2f7fbfb3d4859a04",
+      "note": "build-US0939 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 433554,
+      "agent": "af18fe82deb81554f",
+      "note": "build-US0941 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 93449,
+      "agent": "a8e0b03135b8dca05",
+      "note": "build-US0943 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 196786,
+      "agent": "a3797c5ff2bcf93a1",
+      "note": "build-US0944 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 116391,
+      "agent": "a83e997120240e3d3",
+      "note": "review-US0943 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 168700,
+      "agent": "af1e884112afaa0ff",
+      "note": "review-US0944 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 240311,
+      "agent": "acf4e306965544bf8",
+      "note": "review-US0925 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 208804,
+      "agent": "adc9b3ae929f2d530",
+      "note": "review-US0941 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 134194,
+      "agent": "a184dc5a0b041f115",
+      "note": "review-US0939 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 456184,
+      "agent": "aa0444903dfe03052",
+      "note": "build-US0936 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 164697,
+      "agent": "a2108163bbfa899e8",
+      "note": "build-US0922 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 436105,
+      "agent": "ade58f54e95cf7d94",
+      "note": "build-US0919 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 285880,
+      "agent": "a74602e87edf86028",
+      "note": "build-US0942 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 122762,
+      "agent": "a6482c006a968e660",
+      "note": "review-US0922 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 200939,
+      "agent": "aa31088407ac1c9b0",
+      "note": "review-US0942 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 226749,
+      "agent": "ab160b5f8b1d9147a",
+      "note": "review-US0936 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 182393,
+      "agent": "aa468cbcfc2a6969b",
+      "note": "review-US0919 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 219279,
+      "agent": "a0e64c8f8d89dd05a",
+      "note": "review-BG0775 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 378133,
+      "agent": "a3c461790152ce4cd",
+      "note": "build-US0914 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 332291,
+      "agent": "a1ca7d942b43b5ec9",
+      "note": "build-US0951 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 238327,
+      "agent": "a81ffe0ba77162664",
+      "note": "build-US0949 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 143613,
+      "agent": "aff013bfd037354a2",
+      "note": "build-BG0687 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 147872,
+      "agent": "a78a414c74e1e7ccf",
+      "note": "review-BG0687 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 175280,
+      "agent": "a22a73a34ebc18d60",
+      "note": "review-US0949 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 114359,
+      "agent": "ac92682a05ef91ee7",
+      "note": "build-US0947 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 119427,
+      "agent": "abb6706b00f8c54e1",
+      "note": "build-US0948 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 164308,
+      "agent": "a00ea7c904838d030",
+      "note": "build-US0945 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 82808,
+      "agent": "a7a3b0a4bb472fd36",
+      "note": "review-US0947 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 160823,
+      "agent": "a647cb433735ded06",
+      "note": "review-US0951 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 142422,
+      "agent": "a9e2b7aaf411bfece",
+      "note": "review-US0945 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 141581,
+      "agent": "abc1492c8c5df9b9f",
+      "note": "review-US0948 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 113448,
+      "agent": "af43f83f995017ff9",
+      "note": "build-BG0779 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 236233,
+      "agent": "a63ae6e52cc6ff13c",
+      "note": "review-US0914 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 185636,
+      "agent": "a60e870bda9c0e9b5",
+      "note": "build-BG0778 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 91260,
+      "agent": "ac30bd58bcf40283a",
+      "note": "review-BG0779 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 142275,
+      "agent": "ab01b1200cf140572",
+      "note": "build-BG0780 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 133189,
+      "agent": "aae4e7fe3c4d76011",
+      "note": "review-BG0778 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 105856,
+      "agent": "a1f45582b9531b048",
+      "note": "review-BG0780 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 201418,
+      "agent": "af8da63ce4ab856ff",
+      "note": "build-BG0711 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 151695,
+      "agent": "a2f5ad7a5016bc1ca",
+      "note": "build-BG0731 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 139192,
+      "agent": "a21a610b6543dabae",
+      "note": "review-BG0731 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 484391,
+      "agent": "ade790b17acfef255",
+      "note": "build-US0918 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 241297,
+      "agent": "a2d2238fa2646740f",
+      "note": "build-US0923 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 102003,
+      "agent": "a8362e7136db8f493",
+      "note": "build-BG0695 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 116246,
+      "agent": "a055cd32ed5878dad",
+      "note": "build-BG0781 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 110304,
+      "agent": "a23b577c6fea9a885",
+      "note": "review-BG0781 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 103175,
+      "agent": "a5a396a3dbb968a34",
+      "note": "review-BG0695 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 85505,
+      "agent": "a49a31718a3c1c98e",
+      "note": "review-BG0711 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 156195,
+      "agent": "aa90206c0631b2e8e",
+      "note": "review-US0923 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 120497,
+      "agent": "a8983fec054992957",
+      "note": "review-BG0777 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 168627,
+      "agent": "ab9c04ce50dc305f9",
+      "note": "build-US0950 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 230764,
+      "agent": "a298502919ec78acf",
+      "note": "review-US0918 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 122158,
+      "agent": "a847885070e21323f",
+      "note": "review-US0950 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 381159,
+      "agent": "a3403ed2ec3424819",
+      "note": "build-US0940 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 259793,
+      "agent": "a87997039237c5bf3",
+      "note": "build-US0938 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    },
+    {
+      "tokens": 148211,
+      "agent": "a7183eafe7c9945f3",
+      "note": "review-US0938 (final context, Sprint 5)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-26T14:00:40Z"
+    }
+  ],
+  "reopened": [],
+  "batch_changes": [
+    {
+      "action": "drop",
+      "id": "BG0755",
+      "reason": "carried at the review cap: BG0773",
+      "at": "2026-09-25T16:22:32Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0773",
+      "at": "2026-09-25T16:22:54Z",
+      "reason": "carries BG0755 at the review cap; its one-line fix restores US0081's full-template selection"
+    },
+    {
+      "action": "drop",
+      "id": "US0941",
+      "reason": "carried at the review cap: BG0775",
+      "at": "2026-09-25T17:31:15Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0775",
+      "at": "2026-09-25T17:31:40Z",
+      "reason": "carries US0941 (never-cut, D0275) at the review cap; closes two anchor bypasses the round-2 review found"
+    },
+    {
+      "action": "add",
+      "id": "BG0779",
+      "at": "2026-09-25T18:54:24Z",
+      "reason": "US0945's advisory is invisible on a passing commit; the story's title promises it before the commit lands"
+    },
+    {
+      "action": "add",
+      "id": "BG0778",
+      "at": "2026-09-25T18:54:24Z",
+      "reason": "fresh v6 projects are schema v3; the retro drops their ULID ids, the same class US0951 fixed for the Batch"
+    },
+    {
+      "action": "add",
+      "id": "BG0780",
+      "at": "2026-09-25T19:19:12Z",
+      "reason": "US0948 made the lock fail closed; its QA review found a non-busy flock error now fails every write, and three callers mishandle the timeout"
+    },
+    {
+      "action": "add",
+      "id": "BG0777",
+      "at": "2026-09-25T19:56:04Z",
+      "reason": "BG0687 made verify_ac run every Verify line; the lane runner and revert check still read the first, a false green on a stacked block"
+    },
+    {
+      "action": "add",
+      "id": "BG0781",
+      "at": "2026-09-25T19:56:05Z",
+      "reason": "BG0780's QA review: a busy lock as EACCES fails at once (regression on SMB mounts) and two warnings invite a duplicate filing"
+    },
+    {
+      "action": "add",
+      "id": "BG0787",
+      "at": "2026-09-26T14:48:40Z",
+      "reason": "A High: RPT0009, the last signed report, reads INVALIDATED; rc.1's bar is zero open High"
+    }
+  ],
+  "batches": [],
+  "rulings": [
+    {
+      "id": "D0276",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0277",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    }
+  ],
+  "base_ref": "1c404a481692986b13208ea43178d918a3275f5d",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-09-25T15:31:21Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "Maya runs the lean loop on a fresh v6 project, and the release candidate ships.",
+  "sprint_goal_review": {
+    "reviewed": true,
+    "status": "read",
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "product",
+        "achievable": "partly",
+        "done_means": "On a fresh `init.py run` project with shipped defaults, plan, verify_ac run, critic brief, critic record, transition, sprint close and sprint sign each exit 0 and the story ends Done (US0950 AC3), and v6.0.0-rc.1 is tagged through release runbook steps 1-14 with tag-check green, the release gate's verify lane green and the v5.1 rehearsal passing.",
+        "one_increment": "A v6.0.0-rc.1 tag with its assets on the forge, installable, together with a fresh project that reaches a signed report on first run without generating a team or standing a gate down.",
+        "note": "The plan's cut order puts US0923+U7 (US0950) fifth, yet those two units are the only ones that make the goal's first clause true (HEAD dead-ends the fresh loop at its one review), so move them to never-cut; the rc.1 cut itself is a close step with no unit or criterion behind it, so name it as the sprint's exit condition or the goal can read met with no tag, while BG0711, BG0731 and US0945 serve the machinery rather than Maya and are the honest first cuts."
+      }
+    ],
+    "goal": "Maya runs the lean loop on a fresh v6 project, and the release candidate ships.",
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 76,
+    "objected": false,
+    "objections": [],
+    "reviewed_at": "2026-09-25T15:31:05Z",
+    "change_type": null,
+    "amended_from": null,
+    "requesting_seat": null,
+    "needs_reconsult": [
+      "engineering",
+      "qa"
+    ],
+    "themed": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Fixed (bug), Done (story)",
+    "types": [
+      "bug",
+      "story"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed (bug), Done (story)"
+  },
+  "plan_snapshot": {
+    "units": {
+      "US0937": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0771": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0772": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0755": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0914": {
+        "planned_points": 8,
+        "forecast_tokens": 2830480,
+        "forecast_minutes": 51.2,
+        "added": false
+      },
+      "US0925": {
+        "planned_points": 5,
+        "forecast_tokens": 1769050,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "US0939": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0936": {
+        "planned_points": 8,
+        "forecast_tokens": 2830480,
+        "forecast_minutes": 51.2,
+        "added": false
+      },
+      "US0922": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0919": {
+        "planned_points": 5,
+        "forecast_tokens": 1769050,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "US0918": {
+        "planned_points": 5,
+        "forecast_tokens": 1769050,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "US0923": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0950": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0938": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0940": {
+        "planned_points": 5,
+        "forecast_tokens": 1769050,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "US0941": {
+        "planned_points": 5,
+        "forecast_tokens": 1769050,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "US0942": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0943": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "US0944": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0945": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0946": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "US0947": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0948": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0949": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0951": {
+        "planned_points": 5,
+        "forecast_tokens": 1769050,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "BG0681": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0687": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0695": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0711": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0731": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0717": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0773": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": true
+      },
+      "BG0775": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": true
+      },
+      "BG0779": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": true
+      },
+      "BG0778": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": true
+      },
+      "BG0780": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": true
+      },
+      "BG0777": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": true
+      },
+      "BG0781": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": true
+      },
+      "BG0787": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": true
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 353810,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 6.4,
+        "source": "fallback: 0 row(s) for claude-opus-5, under 3, so the latest rows of any single model: median of RETRO0028"
+      }
+    }
+  },
+  "token_forecast": 32550520,
+  "goal_content_review": [
+    {
+      "phase": "plan",
+      "goal": "Maya runs the lean loop on a fresh v6 project, and the release candidate ships.",
+      "answer": "yes",
+      "missing": "",
+      "shortfall": {},
+      "recorded_at": "2026-09-25T15:32:21Z"
+    }
+  ],
+  "review_base": {
+    "BG0681": 0,
+    "US0946": 0,
+    "BG0755": 0,
+    "BG0772": 0,
+    "BG0771": 0,
+    "US0943": 0,
+    "BG0773": 0,
+    "US0941": 0,
+    "US0925": 0,
+    "US0944": 0,
+    "US0937": 0,
+    "US0939": 0,
+    "US0922": 0,
+    "US0942": 0,
+    "US0936": 0,
+    "US0919": 0,
+    "BG0775": 0,
+    "BG0687": 0,
+    "US0949": 0,
+    "US0947": 0,
+    "US0951": 0,
+    "US0945": 0,
+    "BG0779": 0,
+    "US0914": 0,
+    "US0948": 0,
+    "BG0778": 0,
+    "BG0780": 0,
+    "BG0731": 0,
+    "BG0781": 0,
+    "BG0711": 0,
+    "BG0695": 0,
+    "BG0777": 0,
+    "US0923": 0,
+    "US0950": 0,
+    "US0938": 0,
+    "US0918": 0,
+    "BG0717": 0,
+    "US0940": 0,
+    "BG0787": 0
+  },
+  "close_not_measured": [
+    {
+      "id": "cost",
+      "title": "Cost, velocity and estimate accuracy",
+      "detail": "no per-unit telemetry and no harness-tracked sprint total, so what this sprint cost is not attributable - which is not zero"
+    }
+  ],
+  "sprint_goal_verdict": {
+    "verdict": "achieved",
+    "note": "The lean loop runs on a fresh v6 project on the shipped defaults, plan to sign (US0950 AC3, US0951); all 37 batch units delivered under the two-round cap; the release bar is met (no open High) and the v6.0.0-rc.1 release commit is on this tree; the rc tag is cut on the signed commit once the release gate is green",
+    "rounds": 0
+  },
+  "close_attempts": [
+    {
+      "at": "2026-09-26T15:46:17Z",
+      "outstanding": 0,
+      "stages": []
+    },
+    {
+      "at": "2026-09-26T18:36:34Z",
+      "outstanding": 0,
+      "stages": []
+    },
+    {
+      "at": "2026-09-26T18:45:53Z",
+      "outstanding": 0,
+      "stages": []
+    }
+  ],
+  "handoff_worklist": "sdlc-studio/.local/handoff-worklist.txt",
+  "handoff_remaining": 0,
+  "close_tree": "e9e59e03682e59d3416ef28381ae6eaa3149a052",
+  "report_gate_clear": [
+    "BG0681",
+    "BG0687",
+    "BG0695",
+    "BG0711",
+    "BG0717",
+    "BG0731",
+    "BG0771",
+    "BG0772",
+    "BG0773",
+    "BG0775",
+    "BG0777",
+    "BG0778",
+    "BG0779",
+    "BG0780",
+    "BG0781",
+    "BG0787",
+    "US0914",
+    "US0918",
+    "US0919",
+    "US0922",
+    "US0923",
+    "US0925",
+    "US0936",
+    "US0937",
+    "US0938",
+    "US0939",
+    "US0940",
+    "US0942",
+    "US0943",
+    "US0944",
+    "US0945",
+    "US0946",
+    "US0947",
+    "US0948",
+    "US0949",
+    "US0950",
+    "US0951"
+  ],
+  "close_known_issues": [],
+  "report": "RPT0010",
+  "report_fingerprint": "08b6bb603f8fe5e7",
+  "unanswered": [],
+  "unanswered_rulings_from": "RETRO0125",
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-09-26T20:46:16Z",
+    "report": "RPT0010",
+    "fingerprint": "08b6bb603f8fe5e7"
+  },
+  "review_rows": {
+    "US0937": [
+      "f1054c532d330b96",
+      "f628b2e1aac97f5c"
+    ],
+    "BG0771": [
+      "7573b471fb288b10"
+    ],
+    "BG0772": [
+      "fb34e880d48618de",
+      "3cdcb2fbfdc7184b"
+    ],
+    "BG0755": [
+      "b5eaf4f3ebd544a6",
+      "c65b3e2491c14620"
+    ],
+    "US0914": [
+      "7991283e10fb46c2",
+      "1fe3bc227c03bd34"
+    ],
+    "US0925": [
+      "89c2e52e5837e7d8",
+      "06d88a1b1345146e"
+    ],
+    "US0939": [
+      "48c1458addf67e60"
+    ],
+    "US0936": [
+      "3d9d11dc66428d8a"
+    ],
+    "US0922": [
+      "0bbffc4d88bd5fa3"
+    ],
+    "US0919": [
+      "60e56eeefcf4b01c",
+      "7c2908edcf6e0898"
+    ],
+    "US0918": [
+      "d4c3e94b9e4e5401",
+      "14c40ba143e24a58"
+    ],
+    "US0923": [
+      "a75c6f5e1912aac3"
+    ],
+    "US0950": [
+      "ebacbf52a69680c0"
+    ],
+    "US0938": [
+      "06a54ee92dd56c0a",
+      "619832f937807212"
+    ],
+    "US0940": [
+      "b8ab5c73829836a1",
+      "02356b618f9b74c1"
+    ],
+    "US0941": [
+      "92adeb4c20446628",
+      "bae4ac8da003ec03"
+    ],
+    "US0942": [
+      "41d01a337e154eeb",
+      "3ba820c984a4a746"
+    ],
+    "US0943": [
+      "4ebf8f9852a21a0e"
+    ],
+    "US0944": [
+      "78ad52e9aa1a352f",
+      "7d307083d79b5f04"
+    ],
+    "US0945": [
+      "8955d84cfedcd110",
+      "5a620b73148a43e6"
+    ],
+    "US0946": [
+      "62f4adbc9e2e99a4",
+      "9e4f0978ebc857a7"
+    ],
+    "US0947": [
+      "aeec9038091c8db7"
+    ],
+    "US0948": [
+      "3ff5c80cf7cb0f5b"
+    ],
+    "US0949": [
+      "7aa1833f19524def",
+      "68253bf456b224a4"
+    ],
+    "US0951": [
+      "e69ad04f21632565"
+    ],
+    "BG0681": [
+      "f10e4950fe8f2364"
+    ],
+    "BG0687": [
+      "16eaac8704783442"
+    ],
+    "BG0695": [
+      "4a5625f21ec67712"
+    ],
+    "BG0711": [
+      "86b8471263f1f5ee"
+    ],
+    "BG0731": [
+      "fe37fd05d3b9107e",
+      "450fdca7c74a5b3c"
+    ],
+    "BG0717": [
+      "1d6c7b181776d418"
+    ],
+    "BG0773": [
+      "7307a8dca05ce8a5"
+    ],
+    "BG0775": [
+      "a9b9c21efc2a761c",
+      "e136df96708a57a0"
+    ],
+    "BG0779": [
+      "8e5233ba01f466a4"
+    ],
+    "BG0778": [
+      "f44ed670fde06192",
+      "b65e8ff4511378d9"
+    ],
+    "BG0780": [
+      "c10ee13083323eb4"
+    ],
+    "BG0777": [
+      "5ce5337ec3464932"
+    ],
+    "BG0781": [
+      "3481aed947abcf7d"
+    ],
+    "BG0787": [
+      "63f8f0a52ade31d0",
+      "d202b2d214be66c8"
+    ]
+  },
+  "ci_runs": {
+    "source": "sdlc-studio/.local/ci-runs.json",
+    "runs": []
+  }
+}

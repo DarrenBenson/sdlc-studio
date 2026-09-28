@@ -2774,13 +2774,17 @@ def _rel(root: Path, path: Path) -> str:
         return str(path)
 
 
-def _run_state_for(root: Path, run_id: str | None) -> tuple[dict, str]:
+def _run_state_for(root: Path, run_id: str | None,
+                   record: dict | None = None) -> tuple[dict, str]:
     """The run record this report describes, and the relative path it was read from.
 
     The live record when it names the run, else the sealed record `sprint sign` tracked beside
     the report (every clone has it), else the `.local` archive (a project not yet migrated).
     Returned as recorded: `build_report` decides whether a page reads it through
-    `run_state.portable` (`PORTABLE_PATHS`)."""
+    `run_state.portable` (`PORTABLE_PATHS`). `record` is a tracked record not yet filed, read in
+    place of every copy this clone holds: what a clean clone would read once it is filed."""
+    if record is not None:
+        return record, _rel(root, run_state.tracked_path(root, record["run_id"]))
     rel = _rel(root, run_state.path(root))
     try:
         live = run_state.read(root) or {}
@@ -3647,7 +3651,8 @@ PORTABLE_PATHS = "record_paths"
 
 def build_report(root, retro_id: str, as_of: str | None = None,
                  window_end: str | None = None, run_id: str | None = None,
-                 filed: dict | None = None, portable: bool = True) -> dict:
+                 filed: dict | None = None, portable: bool = True,
+                 record: dict | None = None) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -3661,10 +3666,10 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     its signing commit holds it: its readings of sources that move after the run are replayed,
     never re-read (`_page_readings`). `portable` reads the run record through
     `run_state.portable` and marks the page so (`PORTABLE_PATHS`); a re-derivation passes what
-    the page it re-derives carries.
+    the page it re-derives carries. `record` is `_run_state_for`'s.
     """
     root = Path(root)
-    state, state_rel = _run_state_for(root, run_id)
+    state, state_rel = _run_state_for(root, run_id, record)
     if portable:
         state = run_state.portable(state, root)
     generated_at = as_of or sdlc_md.now_iso8601()
@@ -4256,7 +4261,8 @@ def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict
         scope["signed_at"] = sig.get("signed_at") or "not recorded"
         scope["signed_fingerprint"] = sig.get("fingerprint") or "not recorded"
     rows["invalidation"] = []
-    if revalidation is not None and not revalidation.get("valid"):
+    if (revalidation is not None and not revalidation.get("valid")
+            and not revalidation.get("predates")):
         rows["invalidation"] = [{
             "signed_fingerprint": revalidation.get("signed_fingerprint"),
             "current_fingerprint": revalidation.get("fingerprint"),
@@ -4449,7 +4455,7 @@ def read_report(root, report_id: str) -> dict:
         raise ReportError(f"{_rel(Path(root), p)} could not be read: {exc}") from exc
 
 
-def _legacy_window_end(root, stored: dict) -> str | None:
+def _legacy_window_end(root, stored: dict, record: dict | None = None) -> str | None:
     """The bound a stored page was DERIVED under, for a page that records none.
 
     Pages filed before the bound was carried have to have it inferred, and the two cases are
@@ -4470,7 +4476,7 @@ def _legacy_window_end(root, stored: dict) -> str | None:
     gen = stored.get("generated_at")
     if stored.get("window_end"):
         return stored["window_end"]
-    state, _rel = _run_state_for(Path(root), stored.get("run_id"))
+    state, _rel = _run_state_for(Path(root), stored.get("run_id"), record)
     ended, g = _at(state.get("ended_at")), _at(gen)
     if ended and g and ended < g:
         return state["ended_at"]
@@ -4560,7 +4566,8 @@ def _run_signature(root, run_id: str | None, state: dict) -> tuple[dict, list]:
     return (accepted[2] if accepted else {}), problems
 
 
-def _signed_page(root, stored: dict, report_id: str) -> tuple[dict | None, str | None, list]:
+def _signed_page(root, stored: dict, report_id: str,
+                 record: dict | None = None) -> tuple[dict | None, str | None, list]:
     """`(page, commit, problems)`: the signed page as its signing commit holds it, or
     `(None, None, problems)` when there is nothing to anchor to.
 
@@ -4585,7 +4592,7 @@ def _signed_page(root, stored: dict, report_id: str) -> tuple[dict | None, str |
     if not (stored.get("signature") or {}).get("principal"):
         return None, None, []
     rid = sdlc_md.norm_id(report_id)     # the file asked about, whatever id its body claims
-    state, _state_rel = _run_state_for(Path(root), stored.get("run_id"))
+    state, _state_rel = _run_state_for(Path(root), stored.get("run_id"), record)
     sig, sig_problems = _run_signature(root, stored.get("run_id"), state)
     want = sig.get("fingerprint")
     if not sig.get("report") or not want:
@@ -4633,7 +4640,35 @@ def _signed_page(root, stored: dict, report_id: str) -> tuple[dict | None, str |
     return page, sha, problems
 
 
-def revalidate(root, report_id: str) -> dict:
+def _moved_only_by_projection(root, signed, current) -> bool:
+    """Is `current` the signed figure with its paths made portable, and nothing else changed?
+
+    Each whitespace-separated word of the signed figure that `run_state.portable` changes (an
+    absolute path, less a trailing `,` or `;`) is a path; every other word and every run of
+    whitespace must read the same, in order, and so must each path's trailing punctuation. The
+    paths are compared as a multiset of their projections: the record sorts the digests it
+    holds, not the paths they stand for. A figure with no such path never qualifies."""
+    if not isinstance(signed, str) or not isinstance(current, str):
+        return False
+    was, now = re.split(r"(\s+)", signed), re.split(r"(\s+)", current)
+    if len(was) != len(now):
+        return False
+    projected, found = [], []
+    for old, new in zip(was, now):
+        path, tail = old.rstrip(",;"), old[len(old.rstrip(",;")):]
+        digest = run_state.portable(path, root) if path else path
+        if digest == path:
+            if old != new:
+                return False
+            continue
+        if new[len(new.rstrip(",;")):] != tail:
+            return False
+        projected.append(digest)
+        found.append(new.rstrip(",;"))
+    return bool(projected) and sorted(projected) == sorted(found)
+
+
+def revalidate(root, report_id: str, record: dict | None = None) -> dict:
     """Is this report still true of the tree? Decided by RE-DERIVING it, never by counting
     writes since the signature.
 
@@ -4641,7 +4676,14 @@ def revalidate(root, report_id: str) -> dict:
     unrelated commit, so the marker stops carrying information within a day; a write to a batch
     unit's declared files invalidates on a changelog fragment that moves no figure. Re-derivation
     is the only reading that is itself re-derivable, which is the property the whole report
-    rests on. READ-ONLY: nothing on disk is touched.
+    rests on. READ-ONLY: nothing on disk is touched. `record` is `_run_state_for`'s: `migrate`
+    judges a record before it files it.
+
+    A page derived before run records were tracked (no `PORTABLE_PATHS` mark) names a path
+    outside the repository as it stood; the tracked record holds it only as a digest. When that
+    is ALL that moved, the page cannot be judged from the tracked record: the state carries
+    `predates`, saying so, and `valid` is False without the page reading INVALIDATED. Anything
+    else moved, or a page edited, still reads INVALIDATED or INVALID.
     """
     stored = read_report(root, report_id)
     if stored.get("schema") != SCHEMA:
@@ -4660,17 +4702,18 @@ def revalidate(root, report_id: str) -> dict:
     # THE SIGNED PAGE COMES FROM HISTORY, NOT FROM THE FILE. Its readings of moving sources are
     # replayed, so taking them from the file would let an edited page, fingerprint recomputed
     # and twin re-rendered, certify itself.
-    anchor, signed_in, anchor_problems = _signed_page(root, stored, report_id)
+    anchor, signed_in, anchor_problems = _signed_page(root, stored, report_id, record)
     basis = anchor or stored
+    _state, state_rel = _run_state_for(Path(root), basis.get("run_id"), record)
     # RE-DERIVED OVER THE SAME WINDOW AND THE SAME RUN. Passing the stored generation time is
     # what makes this a comparison of the tree against the page, rather than of one window
     # against a wider one: without it every commit made after the report - including the commit
     # that files it - entered the fresh figures and nothing else had to change for INVALIDATED
     # to appear. The run is the page's own, archived once the next run opens.
     fresh = build_report(root, basis.get("retro_id"), as_of=basis.get("generated_at"),
-                         window_end=_legacy_window_end(root, basis),
+                         window_end=_legacy_window_end(root, basis, record),
                          run_id=basis.get("run_id"), filed=anchor,
-                         portable=basis.get(PORTABLE_PATHS) == "portable")
+                         portable=basis.get(PORTABLE_PATHS) == "portable", record=record)
     was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(basis)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)
@@ -4707,20 +4750,30 @@ def revalidate(root, report_id: str) -> dict:
                   for c in changes] or [
             {"page": "json", "figure": "an unnamed figure",
              "detail": f"the filed figures digest to {digest}, not the {signed} recorded"}]
-    edited += anchor_problems + _lifecycle_edits(root, stored, fresh)
+    edited += anchor_problems + _lifecycle_edits(root, stored, fresh, record)
     twin_edits, twin_note = _twin_check(root, {**stored, "report_id": sdlc_md.norm_id(
         stored.get("report_id") or report_id)})
     edited += twin_edits
-    return {"valid": signed == current and not edited,
+    tracked = basis.get("run_id") and state_rel == _rel(
+        root, run_state.tracked_path(root, basis["run_id"]))
+    predates = None
+    if (signed != current and not edited and tracked
+            and basis.get(PORTABLE_PATHS) != "portable" and changes
+            and all(_moved_only_by_projection(root, c["signed"], c["current"])
+                    for c in changes)):
+        predates = (f"{stored.get('report_id') or report_id} predates tracked records: it names "
+                    f"{', '.join(c['key'] for c in changes)} by a path outside the repository, "
+                    f"which its tracked run record {state_rel} holds only as a digest, so it "
+                    f"cannot be re-derived from that record - the page stands as filed")
+    return {"valid": signed == current and not edited, "predates": predates,
             "report_id": stored.get("report_id") or report_id,
             "signed_fingerprint": signed, "fingerprint": current, "page_fingerprint": digest,
             "moved": [c["key"] for c in changes], "changes": changes, "edited": edited,
             "twin_note": twin_note, "signature": stored.get("signature"),
-            "archived": _run_state_for(Path(root), stored.get("run_id"))[1]
-            != _rel(root, run_state.path(root))}
+            "archived": state_rel != _rel(root, run_state.path(root))}
 
 
-def _lifecycle_edits(root, stored: dict, fresh: dict) -> list[dict]:
+def _lifecycle_edits(root, stored: dict, fresh: dict, record: dict | None = None) -> list[dict]:
     """The figures OUTSIDE_THE_DIGEST, checked against the run record instead of signed.
 
     The seal writes the run's end after the page, so neither figure is in the digest, but each
@@ -4732,7 +4785,7 @@ def _lifecycle_edits(root, stored: dict, fresh: dict) -> list[dict]:
     lesson store, the per-clone refusal log - so comparing them here reported every later close
     as a hand edit, which is what excluding them from the digest was meant to prevent.
     """
-    state, _state_rel = _run_state_for(Path(root), stored.get("run_id"))
+    state, _state_rel = _run_state_for(Path(root), stored.get("run_id"), record)
     ended, generated = _at(state.get("ended_at")), _at(stored.get("generated_at"))
 
     def lifecycle(report: dict) -> dict:
@@ -4938,6 +4991,9 @@ def status_line(state: dict | None) -> str | None:
     if state.get("valid") is None:
         return f"Report:       {rid} could not be re-derived ({state.get('reason')})"
     sig = state.get("signature") or {}
+    if state.get("predates"):
+        return (f"Report:       {rid} signed by {sig.get('principal') or 'nobody'}; not judged "
+                f"here - {state['predates']}")
     if state.get("valid"):
         if sig.get("principal"):
             return (f"Report:       {rid} signed by {sig['principal']} on "
@@ -5039,6 +5095,8 @@ def cmd_render(args: argparse.Namespace) -> int:
             page = _filed_twin(root, report, args.report, args.to)
         else:
             state = revalidate(root, args.report)
+            if state.get("predates"):
+                print(f"note: {state['predates']}", file=sys.stderr)
             page = (render_html(report, revalidation=state) if args.to == "html"
                     else render_markdown(report, revalidation=state))
     except ReportError as exc:
@@ -5060,6 +5118,9 @@ def cmd_check(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     rid = state["report_id"]
+    if state.get("predates"):
+        print(f"NOT JUDGED: {state['predates']}")
+        return 2
     if state["valid"]:
         print(f"VALID: {rid} re-derives to the fingerprint it records ({state['fingerprint']})")
         if state.get("twin_note"):

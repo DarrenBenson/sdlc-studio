@@ -1,0 +1,1370 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M39MC0",
+  "started_at": "2026-09-24T12:03:22Z",
+  "ended_at": "2026-09-24T20:56:51Z",
+  "outcome": "partial",
+  "goal": null,
+  "batch": [
+    "BG0742",
+    "US0890",
+    "US0892",
+    "US0893",
+    "US0894",
+    "US0895",
+    "US0896",
+    "US0897",
+    "US0898",
+    "US0899",
+    "US0901",
+    "US0902",
+    "US0903",
+    "US0906",
+    "US0907",
+    "US0908"
+  ],
+  "plan": "sha256:2e2f8b72a73b",
+  "handoff": "HO-0088",
+  "review_rounds": [],
+  "review_ceiling_overrides": [],
+  "session_token_baseline": {
+    "tokens": 58007610,
+    "source": "sha256:569cd260872e",
+    "at": "2026-09-24T12:03:23Z"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 58007610,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:03:23Z",
+      "kind": "open",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58022247,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:04:06Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58022247,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:04:07Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58030116,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:04:08Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58030116,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:04:10Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58086387,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:13:49Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58098513,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:14:57Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58105558,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:19:04Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58144693,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:19:42Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58188887,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:23:58Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58208512,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:27:15Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58219779,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:27:53Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58304084,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:33:03Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58367530,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:37:41Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58371874,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:38:06Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58454194,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:47:04Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58454194,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:49:08Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58505555,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:55:39Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58533549,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T12:56:19Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58586044,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T13:03:12Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58678798,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T13:20:24Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58728607,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T13:25:06Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58745881,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T13:28:38Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58808529,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T13:33:01Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58837608,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T13:36:17Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58846332,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T13:36:46Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58871980,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T13:37:28Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58901749,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T14:02:33Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 58985163,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T14:29:56Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 59041460,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T15:31:03Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 59115441,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T16:34:43Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 59119962,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T16:37:19Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 59119962,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T16:37:20Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 59395395,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T17:34:40Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 59442460,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T17:39:04Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 59849377,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T19:02:10Z",
+      "kind": "report",
+      "model": "mixed"
+    },
+    {
+      "tokens": 59883195,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-24T19:12:51Z",
+      "kind": "report",
+      "model": "mixed"
+    }
+  ],
+  "delegated_tokens": [
+    {
+      "tokens": 188344,
+      "agent": "plan: batch 2 inventory",
+      "note": "Sprint 3 planning agent, run before the run opened (2026-09-24)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T12:04:46Z"
+    },
+    {
+      "tokens": 188534,
+      "agent": "plan: commit-time measurement",
+      "note": "Sprint 3 planning agent, run before the run opened (2026-09-24)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T12:04:46Z"
+    },
+    {
+      "tokens": 167068,
+      "agent": "plan: backlog review",
+      "note": "Sprint 3 planning agent, run before the run opened (2026-09-24)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T12:04:46Z"
+    },
+    {
+      "tokens": 181149,
+      "agent": "plan: ratchet inventory",
+      "note": "Sprint 3 planning agent, run before the run opened (2026-09-24)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T12:04:46Z"
+    },
+    {
+      "tokens": 276476,
+      "agent": "plan: EP0262 stories (product seat)",
+      "note": "Sprint 3 planning agent, run before the run opened (2026-09-24)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T12:04:46Z"
+    },
+    {
+      "tokens": 270819,
+      "agent": "plan: EP0263 stories (product seat)",
+      "note": "Sprint 3 planning agent, run before the run opened (2026-09-24)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T12:04:46Z"
+    },
+    {
+      "tokens": 117278,
+      "agent": "plan: goal review (three seats)",
+      "note": "Sprint 3 planning agent, run before the run opened (2026-09-24)",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T12:04:46Z"
+    },
+    {
+      "tokens": 136645,
+      "agent": "build-US0894",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 119672,
+      "agent": "build-US0890",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 189338,
+      "agent": "build-BG0742",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 93698,
+      "agent": "review-US0890",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 149234,
+      "agent": "build-US0902",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 112986,
+      "agent": "review-US0894",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 122134,
+      "agent": "build-US0903",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 117675,
+      "agent": "review-BG0742",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 221455,
+      "agent": "build-US0900",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 225513,
+      "agent": "build-US0898",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 115685,
+      "agent": "review-US0902",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 101475,
+      "agent": "review-US0903-r1",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 14275,
+      "agent": "fix-US0903",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 138250,
+      "agent": "build-US0906",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 14606,
+      "agent": "review-US0903-r2",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 142004,
+      "agent": "review-US0900-r1",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 141529,
+      "agent": "review-US0898-r1",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 99014,
+      "agent": "review-US0906",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 67074,
+      "agent": "fix-US0898",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 68649,
+      "agent": "fix-US0900",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 236810,
+      "agent": "build-US0896",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 33888,
+      "agent": "review-US0898-r2",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 38408,
+      "agent": "review-US0900-r2",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 144086,
+      "agent": "build-US0908",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 176602,
+      "agent": "review-US0896-r1",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 261522,
+      "agent": "build-US0897",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 119854,
+      "agent": "review-US0908-r1",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 40231,
+      "agent": "fix-US0896",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 136944,
+      "agent": "build-US0892",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 40165,
+      "agent": "fix-US0908",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 11513,
+      "agent": "review-US0908-r2",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 28958,
+      "agent": "review-US0896-r2",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 108091,
+      "agent": "review-US0892-r1",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 177628,
+      "agent": "review-US0897",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 31042,
+      "agent": "fix-US0892",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 163930,
+      "agent": "build-US0893",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 24134,
+      "agent": "review-US0892-r2",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 143184,
+      "agent": "review-US0893",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 255700,
+      "agent": "build-US0895",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 18612,
+      "agent": "fix-US0895",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 220762,
+      "agent": "build-US0891",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 221616,
+      "agent": "review-US0895",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 139420,
+      "agent": "review-US0891-r1",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 78774,
+      "agent": "fix-US0891",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 55421,
+      "agent": "review-US0891-r2",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 307416,
+      "agent": "build-US0899",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 166560,
+      "agent": "review-US0899-r1",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 71572,
+      "agent": "fix-US0899",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 35351,
+      "agent": "review-US0899-r2",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 266075,
+      "agent": "build-US0901",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 227949,
+      "agent": "build-US0907",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 144705,
+      "agent": "review-US0901-r1",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 227418,
+      "agent": "review-US0907-r1",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 69999,
+      "agent": "fix-US0901",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 119479,
+      "agent": "fix-US0907",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 272608,
+      "agent": "rev2-US0907",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T17:36:19Z"
+    },
+    {
+      "tokens": 187287,
+      "agent": "rev2-US0901",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T18:35:58Z"
+    },
+    {
+      "tokens": 168357,
+      "agent": "build-US0905",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T18:35:58Z"
+    },
+    {
+      "tokens": 246345,
+      "agent": "build-US0904",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T18:35:58Z"
+    },
+    {
+      "tokens": 132096,
+      "agent": "rev1-US0905",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T18:35:58Z"
+    },
+    {
+      "tokens": 134029,
+      "agent": "rev1-US0904",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T18:35:58Z"
+    },
+    {
+      "tokens": 146046,
+      "agent": "fix-US0905",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T18:35:58Z"
+    },
+    {
+      "tokens": 56533,
+      "agent": "fix-US0904",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T18:35:58Z"
+    },
+    {
+      "tokens": 41000,
+      "agent": "rev2-US0905",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T18:35:58Z"
+    },
+    {
+      "tokens": 60000,
+      "agent": "rev2-US0904",
+      "note": "RUN-01M39MC0 delegated agent",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-24T18:35:58Z"
+    }
+  ],
+  "reopened": [],
+  "batch_changes": [
+    {
+      "action": "drop",
+      "id": "US0900",
+      "reason": "carried at the review cap: BG0756",
+      "at": "2026-09-24T13:00:48Z"
+    },
+    {
+      "action": "drop",
+      "id": "US0891",
+      "reason": "carried at the review cap: BG0759",
+      "at": "2026-09-24T15:29:29Z"
+    },
+    {
+      "action": "drop",
+      "id": "US0905",
+      "reason": "carried at the review cap: BG0760",
+      "at": "2026-09-24T18:27:39Z"
+    },
+    {
+      "action": "drop",
+      "id": "US0904",
+      "reason": "carried at the review cap: BG0761",
+      "at": "2026-09-24T18:31:35Z"
+    },
+    {
+      "action": "drop",
+      "id": "BG0754",
+      "reason": "Not delivered: its AC2 needs US0891, which was carried at the review cap (BG0759), and AC1 measured 93s against 90 at the close. It stays Open, ruled deferred in RETRO0123, and closes when BG0759 lands.",
+      "at": "2026-09-24T18:42:45Z"
+    }
+  ],
+  "batches": [],
+  "rulings": [
+    {
+      "id": "D0262",
+      "by": "persona",
+      "seat": "product",
+      "subject": "lessons:seed-ranking",
+      "kind": "ruling"
+    },
+    {
+      "id": "D0263",
+      "by": "persona",
+      "seat": "product",
+      "subject": "gates:enforced-advisory-lanes",
+      "kind": "ruling"
+    },
+    {
+      "id": "D0264",
+      "by": "persona",
+      "seat": "product",
+      "subject": "backlog:supersede-only-by-shipped-work",
+      "kind": "ruling"
+    }
+  ],
+  "base_ref": "9169d40340f57dbeaa6c2f9e3bd79275719a4d21",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-09-24T12:02:33Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "A commit clears in ninety seconds, and every commit lane left standing shows what it caught.",
+  "sprint_goal_review": {
+    "reviewed": true,
+    "status": "read",
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "product",
+        "achievable": "partial - clause 1 is real value to Maya, a commit she waits on, and the speed units reach it on an idle machine; clause 2's 'every constraint in the process' overclaims: the review and evidence gates (EP0263) are outside this batch, and lane yield is only measured from this run on",
+        "done_means": "Maya commits a hub-script change and waits 90s or less, and the close report shows, for every commit lane still standing, what it caught this run.",
+        "one_increment": "The sprint report shows a commit budget line under 90s beside a lane-yield table naming each remaining commit lane's catches.",
+        "note": "No unit adds an unearned constraint. All 19 stories leave their User Story block as template placeholders, so the persona trace is header-only. US0907 and US0908 serve neither clause. Clause 2 is machinery-facing.",
+        "clauses": {
+          "A commit clears in ninety seconds": "yes - serves Maya directly",
+          "every constraint in the process earns its place": "no - scoped to commit lanes by this batch, not the process"
+        },
+        "carried_from": "A commit clears in ninety seconds, and every constraint in the process earns its place."
+      }
+    ],
+    "goal": "A commit clears in ninety seconds, and every commit lane left standing shows what it caught.",
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 74,
+    "objected": false,
+    "objections": [],
+    "reviewed_at": "2026-09-24T09:13:44Z",
+    "change_type": "amendment",
+    "amended_from": "A commit clears in ninety seconds, and every constraint in the process earns its place.",
+    "requesting_seat": "product",
+    "needs_reconsult": [
+      "engineering",
+      "qa"
+    ],
+    "themed": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Fixed (bug), Done (story)",
+    "reason": null,
+    "units": [],
+    "types": [
+      "bug",
+      "story"
+    ],
+    "gate": "review.two_role_after",
+    "cutoff": 99999,
+    "basis": "no gate in this project caps this batch; the `done` rung's own terminal for each type present is: Fixed (bug), Done (story)"
+  },
+  "plan_snapshot": {
+    "units": {
+      "BG0742": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0754": {
+        "planned_points": 5,
+        "forecast_tokens": 1769050,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "US0890": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "US0891": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0892": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0893": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0894": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "US0895": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0896": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0897": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0898": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0899": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0900": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "US0901": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0902": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "US0903": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "US0904": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0905": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "US0906": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0907": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0908": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 353810,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 6.4,
+        "source": "fallback: 0 row(s) for claude-opus-5, under 3, so the latest rows of any single model: median of RETRO0028"
+      }
+    }
+  },
+  "token_forecast": 15921450,
+  "goal_content_review": [
+    {
+      "phase": "plan",
+      "goal": "A commit clears in ninety seconds, and every commit lane left standing shows what it caught.",
+      "answer": "yes",
+      "missing": "",
+      "shortfall": {},
+      "recorded_at": "2026-09-24T12:03:23Z"
+    }
+  ],
+  "unit_actuals": {
+    "US0902": {
+      "minutes": 28.95,
+      "tokens": 281837,
+      "started_at": "2026-09-24T12:04:06Z",
+      "start_tokens": 14637,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0890": {
+      "minutes": 15.58,
+      "tokens": 122446,
+      "started_at": "2026-09-24T12:04:07Z",
+      "start_tokens": 14637,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0894": {
+      "minutes": 19.83,
+      "tokens": 158771,
+      "started_at": "2026-09-24T12:04:08Z",
+      "start_tokens": 22506,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0742": {
+      "minutes": 23.72,
+      "tokens": 189663,
+      "started_at": "2026-09-24T12:04:10Z",
+      "start_tokens": 22506,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0898": {
+      "minutes": 42.5,
+      "tokens": 447162,
+      "started_at": "2026-09-24T12:13:49Z",
+      "start_tokens": 78777,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0900": {
+      "minutes": 0.0,
+      "tokens": 0,
+      "started_at": "2026-09-24T12:14:57Z",
+      "start_tokens": 90903,
+      "open": true,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0903": {
+      "minutes": 19.03,
+      "tokens": 266316,
+      "started_at": "2026-09-24T12:19:04Z",
+      "start_tokens": 97948,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0906": {
+      "minutes": 19.82,
+      "tokens": 245682,
+      "started_at": "2026-09-24T12:27:15Z",
+      "start_tokens": 200902,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0896": {
+      "minutes": 50.95,
+      "tokens": 378351,
+      "started_at": "2026-09-24T12:37:41Z",
+      "start_tokens": 359920,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0908": {
+      "minutes": 35.97,
+      "tokens": 274413,
+      "started_at": "2026-09-24T12:49:08Z",
+      "start_tokens": 446584,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0897": {
+      "minutes": 37.37,
+      "tokens": 302974,
+      "started_at": "2026-09-24T12:55:39Z",
+      "start_tokens": 497945,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0892": {
+      "minutes": 34.27,
+      "tokens": 285936,
+      "started_at": "2026-09-24T13:03:12Z",
+      "start_tokens": 578434,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0893": {
+      "minutes": 42.15,
+      "tokens": 222951,
+      "started_at": "2026-09-24T13:20:24Z",
+      "start_tokens": 671188,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0895": {
+      "minutes": 53.65,
+      "tokens": 147555,
+      "started_at": "2026-09-24T13:36:17Z",
+      "start_tokens": 829998,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0891": {
+      "minutes": 0.0,
+      "tokens": 0,
+      "started_at": "2026-09-24T13:36:46Z",
+      "start_tokens": 838722,
+      "open": true,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0899": {
+      "minutes": 63.67,
+      "tokens": 73981,
+      "started_at": "2026-09-24T15:31:03Z",
+      "start_tokens": 1033850,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0901": {
+      "minutes": 61.75,
+      "tokens": 322498,
+      "started_at": "2026-09-24T16:37:19Z",
+      "start_tokens": 1112352,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0907": {
+      "minutes": 57.33,
+      "tokens": 275433,
+      "started_at": "2026-09-24T16:37:20Z",
+      "start_tokens": 1112352,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    }
+  },
+  "review_base": {
+    "US0890": 0,
+    "US0894": 0,
+    "BG0742": 0,
+    "US0902": 0,
+    "US0903": 0,
+    "US0900": 0,
+    "US0898": 0,
+    "US0906": 0,
+    "US0896": 0,
+    "US0908": 0,
+    "US0892": 0,
+    "US0897": 0,
+    "US0893": 0,
+    "US0895": 0,
+    "US0891": 0,
+    "US0899": 0,
+    "US0901": 0,
+    "US0907": 0,
+    "US0905": 0,
+    "US0904": 0
+  },
+  "sprint_goal_verdict": {
+    "verdict": "partial",
+    "note": "Half one missed by 3s: a one-line gate.py commit measured 93s end to end against 90 (229s at the start), with its suites down to 43s; code commits this run cleared in 60-75s. The rest is the sequential pre-commit, as US0891 was carried (BG0759). Half two not delivered: US0904's lane-yield log was carried at the review cap on a one-character defect (BG0761). Deleted: the warning ratchet, verify ratchet, boundary roster and release-notes count pin, plus eight advisory lanes off the commit.",
+    "rounds": 0
+  },
+  "close_attempts": [
+    {
+      "at": "2026-09-24T18:56:20Z",
+      "outstanding": 0,
+      "stages": []
+    },
+    {
+      "at": "2026-09-24T19:07:53Z",
+      "outstanding": 0,
+      "stages": []
+    }
+  ],
+  "handoff_worklist": "sdlc-studio/.local/handoff-worklist.txt",
+  "handoff_remaining": 0,
+  "close_tree": "68c03b36df5b7b456263dec0a1cd36e31c27c046",
+  "report_gate_clear": [
+    "BG0742",
+    "US0890",
+    "US0892",
+    "US0893",
+    "US0894",
+    "US0895",
+    "US0896",
+    "US0897",
+    "US0898",
+    "US0899",
+    "US0901",
+    "US0902",
+    "US0903",
+    "US0906",
+    "US0907",
+    "US0908"
+  ],
+  "close_known_issues": [],
+  "report": "RPT0008",
+  "report_fingerprint": "ed21330f92c071cb",
+  "unanswered": [],
+  "unanswered_rulings_from": "RETRO0123",
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-09-24T20:56:51Z",
+    "report": "RPT0008",
+    "fingerprint": "ed21330f92c071cb"
+  },
+  "review_rows": {
+    "BG0742": [
+      "2a66579201a62678"
+    ],
+    "BG0754": [],
+    "US0890": [
+      "57a8fb8c114039ef"
+    ],
+    "US0891": [
+      "54c726414020f273",
+      "7e2c4ba7c1711946"
+    ],
+    "US0892": [
+      "13a2ef1873d34d77",
+      "fd08eabad16010de"
+    ],
+    "US0893": [
+      "debe7bff4bc1a009"
+    ],
+    "US0894": [
+      "83f5921e5af5b619"
+    ],
+    "US0895": [
+      "4d46e1a13db5e3d8"
+    ],
+    "US0896": [
+      "cda753fdfb41fe5d",
+      "a6d9eccea97398f1"
+    ],
+    "US0897": [
+      "143a641de41b398d"
+    ],
+    "US0898": [
+      "90ea1c98f9d75c77",
+      "00416ff34f700b76"
+    ],
+    "US0899": [
+      "106d5478ce1cf280",
+      "3ce4154f0da63be6"
+    ],
+    "US0900": [
+      "08d95bad45d669f0",
+      "b5034bba11298c8e"
+    ],
+    "US0901": [
+      "14d2a349f5be6d82",
+      "725c8963e3e3f16f"
+    ],
+    "US0902": [
+      "994cc05c3931f414"
+    ],
+    "US0903": [
+      "dd0940e16e54699c",
+      "229398e41fd359db"
+    ],
+    "US0904": [
+      "f0aff87f9797d756",
+      "dbad29146f779c76"
+    ],
+    "US0905": [
+      "ffa7c77b816915f4",
+      "c8d854f05f0b02e5"
+    ],
+    "US0906": [
+      "c9926fec8e314e1a"
+    ],
+    "US0907": [
+      "19c86bcf5177a0b5",
+      "977b734bc20ea066"
+    ],
+    "US0908": [
+      "c6c7ff75d02d324c",
+      "88885d754b7a9c56"
+    ]
+  },
+  "ci_runs": {
+    "source": "sdlc-studio/.local/ci-runs.json",
+    "runs": []
+  }
+}

@@ -1,6 +1,6 @@
 # CR-0599: The sprint signature is recorded in a tracked file, so any clone can verify a signed report
 
-> **Status:** Proposed
+> **Status:** Complete
 > **Priority:** High
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py

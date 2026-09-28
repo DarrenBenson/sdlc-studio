@@ -1,6 +1,6 @@
 # US0960: Every report signed before the tracked record checks valid in a clean clone once migrate files its record
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -20,14 +20,19 @@
 
 - **AC1:** Given a fixture project with a signed schema-2 report whose run record is only in `.local/run-archive`, when `migrate` runs without `--apply`, then it lists the record as a deterministic item and writes nothing, and with `--apply` it writes `sdlc-studio/reports/runs/<RUN-ID>.json`. Fails on: writing in a dry run, or reading only the live record and skipping archived runs
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py::SignedRecordMigrationTests::test_migrate_files_the_record_of_a_signed_report
+  - **Verified:** yes (2026-09-28)
 - **AC2:** Given the migrated fixture committed and cloned without `.local`, with a stub `gh` on PATH answering a push run inside the window, when `check` runs, then it exits 0. Fails on: filing the record without freezing its CI runs, so the clone re-reads the forge (RPT0010 read INVALIDATED that way: `dora_value[0]` signed 72, now 7)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py::SignedRecordMigrationTests::test_a_migrated_record_checks_in_a_clean_clone
+  - **Verified:** yes (2026-09-28)
 - **AC3:** Given a record already filed, when `migrate --apply` runs again, then the file is byte-identical. Fails on: re-freezing from today's ledger and forge, which moves a signed figure on every upgrade
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py::SignedRecordMigrationTests::test_migrate_never_rewrites_a_filed_record
+  - **Verified:** yes (2026-09-28)
 - **AC4:** Given a signed report whose frozen inputs would not re-derive to its fingerprint (a counted row superseded since), when `migrate` runs, then it names that report as needs-a-human and files nothing for it. Fails on: filing a record that turns a report VALID in the signing clone into INVALID in every clone
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py::SignedRecordMigrationTests::test_a_report_that_would_not_rederive_is_named_not_filed
+  - **Verified:** yes (2026-09-28)
 - **AC5:** Given this repository after the change, when a full-history clean clone of HEAD with a stub `gh` answering a push run in every window runs `check` on RPT0006-RPT0010, then each exits 0; US0941 AC5's Verify is re-pointed at this selector in the same commit. Fails on: the migration not run and committed here, or the `ci` job's depth-1 checkout (the test and CI would see no history)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py::TrackedRunRecordTests::test_this_repos_signed_reports_check_in_a_clean_clone
+  - **Verified:** yes (2026-09-28)
 
 ## Notes
 

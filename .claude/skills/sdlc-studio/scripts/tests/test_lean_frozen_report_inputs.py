@@ -168,12 +168,17 @@ class FrozenCiRunsTests(unittest.TestCase):
 
     def test_no_per_clone_ci_cache_remains(self) -> None:
         """AC3. Mutant: keep the per-clone cache as a second source beside the record - its
-        name in a script, or a preview that writes it."""
+        name in a script, or a preview that writes it.
+
+        One script may name it: `migrate`, which reads it once to freeze the runs a page signed
+        before 6.0 read onto that page's tracked record, and never writes it; test_migrate's
+        `test_migrate_reads_the_cache_once_and_never_writes_it_or_asks_the_forge` pins that on
+        a signed report (US0960). Nothing re-derives from it."""
         import sprint_report as sr  # noqa: PLC0415
         named = sorted(str(p.relative_to(SCRIPTS)) for p in SCRIPTS.rglob("*.py")
                        if "tests" not in p.relative_to(SCRIPTS).parts
                        and "ci-runs.json" in p.read_text(encoding="utf-8"))
-        self.assertEqual([], named, "a script still names the per-clone CI cache")
+        self.assertEqual(["migrate.py"], named, "a script re-derives from the per-clone CI cache")
         # An unfrozen preview reads the forge live and leaves nothing behind in `.local`.
         lean._fixture(self.root)
         self._forge([INSIDE])

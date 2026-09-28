@@ -23,6 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          # Full history: a signed report is re-derived from the commits inside its run's window
+          # and its signature read from the commit that filed it, and a depth-1 clone holds
+          # neither, so `check` there cannot judge (US0960 AC5).
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6

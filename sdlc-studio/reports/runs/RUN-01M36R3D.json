@@ -1,0 +1,548 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M36R3D",
+  "started_at": "2026-09-23T09:10:21Z",
+  "ended_at": "2026-09-23T23:01:09Z",
+  "outcome": "goal-reached",
+  "goal": null,
+  "batch": [
+    "US0868",
+    "US0869",
+    "US0870",
+    "US0871",
+    "US0872",
+    "US0873",
+    "US0874",
+    "US0875",
+    "US0876",
+    "US0877",
+    "US0878"
+  ],
+  "plan": "sha256:2e2f8b72a73b",
+  "handoff": "HO-0086",
+  "review_rounds": [],
+  "review_ceiling_overrides": [],
+  "session_token_baseline": {
+    "tokens": 48879853,
+    "source": "sha256:569cd260872e",
+    "at": "2026-09-23T09:10:21Z"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 48879853,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-23T09:10:21Z",
+      "kind": "open",
+      "model": "mixed"
+    },
+    {
+      "tokens": 50272844,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-23T15:34:43Z",
+      "kind": "report",
+      "model": "mixed"
+    },
+    {
+      "tokens": 50395966,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-23T16:09:37Z",
+      "kind": "report",
+      "model": "mixed"
+    },
+    {
+      "tokens": 50444683,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-23T16:40:15Z",
+      "kind": "report",
+      "model": "mixed"
+    },
+    {
+      "tokens": 50564672,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-23T17:14:18Z",
+      "kind": "report",
+      "model": "mixed"
+    },
+    {
+      "tokens": 50616780,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-23T17:51:17Z",
+      "kind": "report",
+      "model": "mixed"
+    }
+  ],
+  "delegated_tokens": [
+    {
+      "tokens": 470416,
+      "agent": "lane-A build",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 414487,
+      "agent": "lane-B build",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 304386,
+      "agent": "lane-C build",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 502960,
+      "agent": "lane-D build",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 132787,
+      "agent": "review US0874 r1+r2",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 128057,
+      "agent": "review US0869 r1+r2",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 164894,
+      "agent": "review US0872 r1+r2",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 144184,
+      "agent": "review US0873 r1+r2",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 101099,
+      "agent": "review US0871 r1+r2",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 208060,
+      "agent": "review US0875 r1+r2",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 165144,
+      "agent": "review US0877 r1+r2",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 120283,
+      "agent": "review US0868",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 122023,
+      "agent": "review US0870",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 196688,
+      "agent": "review US0876 r1+r2",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 154464,
+      "agent": "review US0878 r1+r2",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 287069,
+      "agent": "lane-B fix",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 257977,
+      "agent": "lane-D fix",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 210106,
+      "agent": "lane-C follow-up",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 408199,
+      "agent": "lane-A fix",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 103507,
+      "agent": "re-anchor artifact.py mutants",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    },
+    {
+      "tokens": 129735,
+      "agent": "re-anchor close_owed.py mutants",
+      "note": "subagent_tokens reported by the harness at the agent's final completion notice",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-23T15:35:38Z"
+    }
+  ],
+  "reopened": [],
+  "batch_changes": [],
+  "batches": [],
+  "base_ref": "4af3dfbc3182a20daea6c4864f7c0b1cd39b9a74",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-09-23T09:09:41Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "A sprint runs start to finish on its own, learns from itself, and hands you one page.",
+  "sprint_goal_review": {
+    "reviewed": true,
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "product",
+        "achievable": "yes",
+        "done_means": "the operator approves the plan once, is asked nothing else, and signs a one-page report answering estimate accuracy, delivered to plan and known issues",
+        "one_increment": "yes",
+        "note": "the run's own close must produce the page, or the goal is only claimed"
+      },
+      {
+        "seat": "engineering",
+        "achievable": "yes",
+        "done_means": "the loop's spine behaves as the lean process says: capped review, persona rulings, one-pass close, sign that checks the tree, calibrated forecasts",
+        "one_increment": "yes",
+        "note": "58 points is large; sprint.py carries 24 of them serially, so run file-disjoint lanes in parallel and integrate early"
+      },
+      {
+        "seat": "qa",
+        "achievable": "yes",
+        "done_means": "every unit's Verify selectors are green and each unit had one independent review of at most two rounds; the report's figures re-derive from run state",
+        "one_increment": "yes",
+        "note": "prove the one page on this run's real data, not only a fixture"
+      }
+    ],
+    "goal": "A sprint runs start to finish on its own, learns from itself, and hands you one page.",
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 71,
+    "objected": false,
+    "objections": [],
+    "reviewed_at": "2026-09-23T09:08:29Z",
+    "change_type": null,
+    "amended_from": null,
+    "requesting_seat": null,
+    "needs_reconsult": [],
+    "themed": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Done",
+    "reason": null,
+    "units": [],
+    "types": [
+      "story"
+    ],
+    "gate": "review.two_role_after",
+    "cutoff": 99999,
+    "basis": "no gate in this project caps this batch; the `done` rung's own terminal for each type present is: Done"
+  },
+  "token_forecast": 5661095,
+  "rulings": [
+    {
+      "id": "D0256",
+      "by": "persona",
+      "seat": "engineering",
+      "subject": "calibration.unrecorded-model",
+      "kind": "ruling"
+    },
+    {
+      "id": "D0257",
+      "by": "persona",
+      "seat": "product",
+      "subject": "close.stop-ship",
+      "kind": "ruling"
+    },
+    {
+      "id": "D0258",
+      "by": "persona",
+      "seat": "engineering",
+      "subject": "estimate.token-forecast",
+      "kind": "ruling"
+    },
+    {
+      "id": "D0259",
+      "by": "persona",
+      "seat": "qa",
+      "subject": "verify.superseded-criteria",
+      "kind": "ruling"
+    }
+  ],
+  "review_base": {
+    "US0868": 0,
+    "US0869": 0,
+    "US0870": 0,
+    "US0871": 0,
+    "US0872": 0,
+    "US0873": 0,
+    "US0874": 0,
+    "US0875": 0,
+    "US0876": 0,
+    "US0877": 0,
+    "US0878": 0
+  },
+  "plan_snapshot": {
+    "units": {
+      "US0868": {
+        "planned_points": 3,
+        "forecast_tokens": null,
+        "forecast_minutes": null,
+        "added": false
+      },
+      "US0869": {
+        "planned_points": 5,
+        "forecast_tokens": null,
+        "forecast_minutes": null,
+        "added": false
+      },
+      "US0870": {
+        "planned_points": 3,
+        "forecast_tokens": null,
+        "forecast_minutes": null,
+        "added": false
+      },
+      "US0871": {
+        "planned_points": 5,
+        "forecast_tokens": null,
+        "forecast_minutes": null,
+        "added": false
+      },
+      "US0872": {
+        "planned_points": 8,
+        "forecast_tokens": null,
+        "forecast_minutes": null,
+        "added": false
+      },
+      "US0873": {
+        "planned_points": 3,
+        "forecast_tokens": null,
+        "forecast_minutes": null,
+        "added": false
+      },
+      "US0874": {
+        "planned_points": 5,
+        "forecast_tokens": null,
+        "forecast_minutes": null,
+        "added": false
+      },
+      "US0875": {
+        "planned_points": 8,
+        "forecast_tokens": null,
+        "forecast_minutes": null,
+        "added": false
+      },
+      "US0876": {
+        "planned_points": 8,
+        "forecast_tokens": null,
+        "forecast_minutes": null,
+        "added": false
+      },
+      "US0877": {
+        "planned_points": 5,
+        "forecast_tokens": null,
+        "forecast_minutes": null,
+        "added": false
+      },
+      "US0878": {
+        "planned_points": 5,
+        "forecast_tokens": null,
+        "forecast_minutes": null,
+        "added": false
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": null,
+        "source": "backfilled at close from the plan's own forecast log (planned 2026-09-23T09:08:54Z): the plan predates US0870, so it printed one run-level token forecast of 5,661,095 (a fixed per-sprint term plus 47,613 per point) and no per-unit or minute forecast"
+      },
+      "minutes_per_point": {
+        "value": null,
+        "source": "not measured: no minute forecast existed when this run was planned"
+      }
+    },
+    "backfilled": true
+  },
+  "sprint_goal_verdict": {
+    "verdict": "achieved",
+    "note": "The run went from plan approval to this page without asking the operator anything: four seat rulings (D0256-D0259) answered its questions, each unit had one independent reviewer under the new cap, and the close ran in one pass. It learns from itself through a calibrated token rate measured from its own history and through ruling precedent; lesson graduation was scoped to Sprint 2 from the start.",
+    "rounds": 0
+  },
+  "close_attempts": [
+    {
+      "at": "2026-09-23T15:27:18Z",
+      "outstanding": 5,
+      "stages": [
+        "checklist",
+        "gate",
+        "goal-verdict",
+        "installed-copy"
+      ]
+    },
+    {
+      "at": "2026-09-23T16:03:42Z",
+      "outstanding": 2,
+      "stages": [
+        "checklist",
+        "installed-copy"
+      ]
+    },
+    {
+      "at": "2026-09-23T16:34:21Z",
+      "outstanding": 2,
+      "stages": [
+        "checklist",
+        "installed-copy"
+      ]
+    },
+    {
+      "at": "2026-09-23T17:06:52Z",
+      "outstanding": 2,
+      "stages": [
+        "checklist",
+        "installed-copy"
+      ]
+    },
+    {
+      "at": "2026-09-23T17:43:50Z",
+      "outstanding": 2,
+      "stages": [
+        "checklist",
+        "installed-copy"
+      ]
+    }
+  ],
+  "handoff_worklist": "sdlc-studio/.local/handoff-worklist.txt",
+  "handoff_remaining": 0,
+  "close_tree": "c2e1f88b763d925c03a89eea7e63390c221542fe",
+  "report_gate_clear": [
+    "US0868",
+    "US0869",
+    "US0870",
+    "US0871",
+    "US0872",
+    "US0873",
+    "US0874",
+    "US0875",
+    "US0876",
+    "US0877",
+    "US0878"
+  ],
+  "close_known_issues": [
+    {
+      "source": "checklist",
+      "detail": "tick-verification: Ticked criteria the tree supports - no ticked criteria found"
+    }
+  ],
+  "report": "RPT0006",
+  "report_fingerprint": "601f7a5c68719c2f",
+  "unanswered": [],
+  "unanswered_rulings_from": "RETRO0121",
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-09-23T23:01:09Z",
+    "report": "RPT0006",
+    "fingerprint": "601f7a5c68719c2f"
+  },
+  "review_rows": {
+    "US0868": [
+      "c92c8127c449dcfc"
+    ],
+    "US0869": [
+      "49326e4f0c0f358a",
+      "2c191cc4ee7701bc"
+    ],
+    "US0870": [
+      "170139c880408bec"
+    ],
+    "US0871": [
+      "e989ab186450564e",
+      "3cf3ce515b920a6f"
+    ],
+    "US0872": [
+      "2a8c101acd44920f",
+      "4f52da3b96405dec"
+    ],
+    "US0873": [
+      "a6e6d53d869c6c7d",
+      "b26ba7cc311488ea"
+    ],
+    "US0874": [
+      "2312618329846250",
+      "ea31d557d10d4962"
+    ],
+    "US0875": [
+      "869daf2861e7c48c",
+      "b53a07d3080dffcb"
+    ],
+    "US0876": [
+      "463fc24fa1f66b45",
+      "0bab68af6020a0cc"
+    ],
+    "US0877": [
+      "29ac344cdf6d1060",
+      "9b1bc18bf369a3ef"
+    ],
+    "US0878": [
+      "8b38d3bd9f770426",
+      "460342102ebb3962"
+    ]
+  },
+  "ci_runs": {
+    "source": "sdlc-studio/.local/ci-runs.json",
+    "runs": []
+  }
+}

@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 19 |
+| Proposed | 18 |
 | Approved | 0 |
 | In Progress | 0 |
-| Complete | 508 |
+| Complete | 509 |
 | Rejected | 21 |
 | Deferred | 0 |
 | Superseded | 52 |
@@ -96,7 +96,7 @@
 | [CR-0596](CR0596-prevent-or-retire-lesson-lc-006-absence-read.md) | Prevent or retire lesson LC-006 (absence read as an answer) | Proposed | Medium | Improvement | 2026-09-24 | -- |
 | [CR-0597](CR0597-prevent-or-retire-lesson-lc-008-constraint-added.md) | Prevent or retire lesson LC-008 (constraint added without retirement) | Proposed | Medium | Improvement | 2026-09-24 | -- |
 | [CR-0598](CR0598-prevent-or-retire-lesson-lc-003-mechanism-reaches.md) | Prevent or retire lesson LC-003 (mechanism reaches no caller) | Proposed | Medium | Improvement | 2026-09-25 | -- |
-| [CR-0599](CR0599-the-sprint-signature-is-recorded-in-a-tracked.md) | The sprint signature is recorded in a tracked file, so any clone can verify a signed report | Proposed | High | Feature | 2026-09-25 | US0959, US0960, BG0795, BG0788 |
+| [CR-0599](CR0599-the-sprint-signature-is-recorded-in-a-tracked.md) | The sprint signature is recorded in a tracked file, so any clone can verify a signed report | Complete | High | Feature | 2026-09-25 | US0959, US0960, BG0795, BG0788 |
 | [CR-0600](CR0600-prevent-or-retire-lesson-lc-004-premise-not.md) | Prevent or retire lesson LC-004 (premise not executed) | Proposed | Medium | Improvement | 2026-09-26 | -- |
 
 ## Archived Releases

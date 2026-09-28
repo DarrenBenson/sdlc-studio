@@ -23,6 +23,8 @@ def _load(name: str):
 
 
 sys.path.insert(0, str(_SCRIPTS))
+sys.path.insert(0, str(_SCRIPTS / "tests"))
+import gitutil  # noqa: E402 - confined, hermetic git for fixtures
 migrate = _load("migrate")
 
 
@@ -315,6 +317,275 @@ class ConformanceCutoffTests(unittest.TestCase):
             items = self._cutoffs(migrate.migrate(root))
             self.assertEqual(1, len(items))
             self.assertIn("soon", items[0]["detail"])
+
+
+#: The per-clone CI cache a pre-6.0 close read, and the shape `gh run list --json` answers.
+CI_CACHE = Path("sdlc-studio") / ".local" / "ci-runs.json"
+
+
+def _ci_run(rid: int, at: str, event: str = "push", conclusion: str = "success") -> dict:
+    return {"databaseId": rid, "event": event, "conclusion": conclusion, "headBranch": "main",
+            "headSha": f"{rid:07d}", "workflowName": "Lint", "createdAt": at, "updatedAt": at}
+
+
+#: The fixture run's window is 2026-09-20T08:00Z to 18:00Z.
+INSIDE = _ci_run(4242, "2026-09-20T09:00:00Z")
+BEFORE = _ci_run(1111, "2026-09-17T07:58:50Z")
+#: A run the cache gains later that moves no figure: DORA counts push-triggered runs alone.
+DISPATCHED = _ci_run(4343, "2026-09-20T10:00:00Z", event="workflow_dispatch")
+#: What the forge answers once the page is signed: a red push and a green one, both in the window.
+MOVED = [_ci_run(5151, "2026-09-20T11:00:00Z", conclusion="failure"),
+         _ci_run(5252, "2026-09-20T12:00:00Z")]
+#: A session outside the repository that wrote one meter reading and no closing one.
+UNCOVERED = {"tokens": 700, "source": "/home/someone/.claude/projects/-repo/9a8b7c6d.jsonl",
+             "at": "2026-09-20T09:00:00Z", "kind": "open", "model": "lean-model-7"}
+
+
+class SignedRecordMigrationTests(unittest.TestCase):
+    """US0960: `migrate --apply` files the tracked run record of a report signed before records
+    were tracked, frozen as the page read its inputs, so the report checks in any clone.
+
+    The fixture is a report as a pre-6.0 close filed it: derived with no `record_paths` mark,
+    its DORA read from the per-clone CI cache, signed through the seal's own signature writer
+    and committed, and its run record archived in `.local` once the next run opened. `gh` is a
+    stub whose answer each test sets."""
+
+    def setUp(self) -> None:
+        import os  # noqa: PLC0415
+        from unittest import mock  # noqa: PLC0415
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        base = Path(self.tmp.name)
+        self.bin = base / "bin"
+        self.bin.mkdir()
+        (base / "transcripts").mkdir()
+        self._forge([])
+        env = gitutil.git_env(PATH=f"{self.bin}{os.pathsep}{os.environ.get('PATH', '')}",
+                              SDLC_STUDIO_TRANSCRIPTS=str(base / "transcripts"))
+        patch = mock.patch.dict(os.environ, env, clear=True)
+        patch.start()
+        self.addCleanup(patch.stop)
+        self.root = base / "signer"
+        self.root.mkdir()
+
+    # --- the fixture ------------------------------------------------------------------------
+
+    @staticmethod
+    def _sr():
+        import importlib  # noqa: PLC0415 - bound at call time, as the suite loads it
+        return importlib.import_module("sprint_report")
+
+    def _forge(self, rows: list[dict]) -> None:
+        """What the stub `gh run list` answers from now on. Every call is logged in `gh.log`."""
+        import json  # noqa: PLC0415
+        gh = self.bin / "gh"
+        gh.write_text(f"#!/bin/sh\necho \"$*\" >> '{self.bin / 'gh.log'}'\n"
+                      f"cat <<'EOF'\n{json.dumps(rows)}\nEOF\n", encoding="utf-8")
+        gh.chmod(0o755)
+
+    def _git(self, *argv: str, cwd: Path | None = None):
+        return gitutil.git(list(argv), cwd or self.root, text=True)
+
+    def _commit(self, message: str) -> None:
+        self._git("add", "-A")
+        self._git("-c", "commit.gpgsign=false", "commit", "-q", "--allow-empty", "-m", message)
+
+    def _cache(self, rows: list[dict]) -> None:
+        import json  # noqa: PLC0415
+        (self.root / CI_CACHE).write_text(json.dumps(rows, indent=2) + "\n", encoding="utf-8")
+
+    def _signed_before_records_were_tracked(self, cache: list[dict] | None,
+                                            stamps: list[dict] = ()) -> str:
+        """A report filed, signed and committed the way a pre-6.0 close left it, and its run
+        archived when the next run opened. `cache` is the per-clone CI cache the close read,
+        or None for a clone that held none. Returns the report id."""
+        import contextlib  # noqa: PLC0415
+        import io  # noqa: PLC0415
+        import json  # noqa: PLC0415
+        from unittest import mock  # noqa: PLC0415
+        import sprint  # noqa: PLC0415 - the seal's own signature writer
+        import test_lean_report as leanrep  # noqa: PLC0415 - the one-page report's fixture
+        sr = self._sr()
+        leanrep.lean_run(self.root)
+        live = self.root / "sdlc-studio" / ".local" / "run-state.json"
+        state = json.loads(live.read_text(encoding="utf-8"))
+        state["session_token_stamps"] += list(stamps)
+        live.write_text(json.dumps(state, indent=2), encoding="utf-8")
+        (self.root / ".gitignore").write_text("sdlc-studio/.local/\n", encoding="utf-8")
+        if cache is not None:
+            self._cache(cache)
+        self._git("init", "-q", ".")
+        self._commit("the delivered batch")
+        # The DORA reader a pre-6.0 close ran: the per-clone cache whenever it exists.
+        read = (cache, CI_CACHE.as_posix()) if cache is not None else ([], "gh run list")
+        with mock.patch.object(sr, "_ci_runs", lambda *a, **k: read):
+            page = sr.build_report(self.root, leanrep.RETRO, portable=False)
+        rid = sr.file_report(self.root, page)
+        with contextlib.redirect_stdout(io.StringIO()):
+            sprint._write_the_signature(self.root, rid, "Maya Okafor")
+        self._commit("sign the report")
+        sr.run_state.archive(self.root)
+        sr.run_state.write(self.root, {"schema": 1, "run_id": "RUN-01LATERRUN",
+                                       "started_at": "2026-09-27T00:00:00Z",
+                                       "outcome": "running", "batch": ["US0005"]})
+        self.assertFalse(self._tracked().exists())
+        return rid
+
+    def _tracked(self, root: Path | None = None) -> Path:
+        return (root or self.root) / "sdlc-studio" / "reports" / "runs" / "RUN-01LEANREP.json"
+
+    def _check(self, root: Path, rid: str) -> tuple[int, str]:
+        import contextlib  # noqa: PLC0415
+        import io  # noqa: PLC0415
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = self._sr().main(["--root", str(root), "check", "--report", rid])
+        return rc, out.getvalue() + err.getvalue()
+
+    @staticmethod
+    def _records(res: dict) -> list[dict]:
+        return [d for d in res["deterministic"] if d.get("source") == "run-record"]
+
+    @staticmethod
+    def _named(res: dict) -> list[dict]:
+        return [h for h in res["needs_human"] if h.get("kind") == "run-record"]
+
+    # --- the criteria -----------------------------------------------------------------------
+
+    def test_migrate_files_the_record_of_a_signed_report(self) -> None:
+        """AC1. Mutants: write in a dry run; read only the live record, which names the next
+        run, so the archived run of the signed report is never found."""
+        import json  # noqa: PLC0415
+        rid = self._signed_before_records_were_tracked([INSIDE, BEFORE])
+        res = migrate.migrate(self.root)
+        self.assertEqual([(rid, "RUN-01LEANREP", False)],
+                         [(d["id"], d["run"], d["applied"]) for d in self._records(res)],
+                         res["deterministic"])
+        self.assertIn("sdlc-studio/reports/runs/RUN-01LEANREP.json", migrate.render(res))
+        self.assertFalse(self._tracked().exists(), "a dry run filed the record")
+        res = migrate.migrate(self.root, apply=True)
+        self.assertEqual([(rid, True)], [(d["id"], d["applied"]) for d in self._records(res)])
+        self.assertEqual([], self._named(res), res["needs_human"])
+        record = json.loads(self._tracked().read_text(encoding="utf-8"))
+        archived = self._sr().run_state.read_archived(self.root, "RUN-01LEANREP")
+        self.assertEqual(archived["signature"], record["signature"])
+        self.assertEqual(archived["ended_at"], record["ended_at"])
+        # Through the projection `sprint sign` files through: no absolute path is committed.
+        self.assertNotIn("/t/s1.jsonl", self._tracked().read_text(encoding="utf-8"))
+
+    def test_a_migrated_record_checks_in_a_clean_clone(self) -> None:
+        """AC2. Mutant: file the record without freezing the CI runs the page read, so the clone
+        re-derives DORA from no runs (RPT0010 read INVALIDATED that way: `dora_value[0]` signed
+        72, now 7). The forge answers other runs in the window by then; `check` must not read
+        it."""
+        import json  # noqa: PLC0415
+        rid = self._signed_before_records_were_tracked([INSIDE, BEFORE])
+        # The premise: a record that froze nothing re-derives DORA from no runs.
+        rc, out = self._check(self.root, rid)
+        self.assertEqual(1, rc, out)
+        self.assertIn("dora_value", out)
+        migrate.migrate(self.root, apply=True)
+        record = json.loads(self._tracked().read_text(encoding="utf-8"))
+        self.assertEqual({"source": CI_CACHE.as_posix(), "runs": [INSIDE]}, record["ci_runs"])
+        self.assertEqual({"US0001": 2, "US0002": 1, "US0003": 0, "US0004": 0, "US0005": 0},
+                         {u: len(ids) for u, ids in record["review_rows"].items()})
+        self._commit("migrate the signed history")
+        self._forge(MOVED)
+        rc, out = self._check(self.root, rid)
+        self.assertEqual(0, rc, out)
+        clone = Path(self.tmp.name) / "clean"
+        self._git("clone", "-q", f"file://{self.root}", str(clone), cwd=Path(self.tmp.name))
+        self.assertFalse((clone / "sdlc-studio" / ".local").exists())
+        rc, out = self._check(clone, rid)
+        self.assertEqual(0, rc, out)
+        self.assertIn(f"VALID: {rid}", out)
+
+    def test_migrate_never_rewrites_a_filed_record(self) -> None:
+        """AC3. Mutant: re-freeze from today's cache and ledger on every run - the cache has
+        gained a dispatched run inside the window since, which moves no figure, so the record
+        still verifies and would be rewritten."""
+        rid = self._signed_before_records_were_tracked([INSIDE, BEFORE])
+        migrate.migrate(self.root, apply=True)
+        filed = self._tracked().read_bytes()
+        self._cache([INSIDE, DISPATCHED, BEFORE])
+        self._forge(MOVED)
+        ledger = self.root / "sdlc-studio" / "reviews" / "critic-verdicts.md"
+        ledger.write_text(ledger.read_text(encoding="utf-8")
+                          + "| US0005 | APPROVE | a seat | author | 2026-09-27 | - | - | - |\n",
+                          encoding="utf-8")
+        res = migrate.migrate(self.root, apply=True)
+        self.assertEqual(filed, self._tracked().read_bytes(), "a filed record was rewritten")
+        self.assertEqual([], self._records(res))
+        self.assertEqual([], self._named(res))
+        rc, out = self._check(self.root, rid)
+        self.assertEqual(0, rc, out)
+
+    def test_a_report_that_would_not_rederive_is_named_not_filed(self) -> None:
+        """AC4. Mutant: file the frozen record without re-deriving the page from it - the
+        counted REJECT superseded since is no round by today's rule, so the filed record reads
+        US0001's rounds as 1, not the 2 signed, in every clone."""
+        import subprocess  # noqa: PLC0415
+        rid = self._signed_before_records_were_tracked([INSIDE, BEFORE])
+        proc = subprocess.run(
+            [sys.executable, str(_SCRIPTS / "critic.py"), "supersede", "--unit", "US0001",
+             "--date", "2026-09-20", "--verdict", "REJECT", "--reviewer", "a seat",
+             "--reason", "the reviewer mis-entered the verdict",
+             "--authorised-by", "Maya Okafor", "--boundary", "operator console",
+             "--root", str(self.root)],
+            capture_output=True, text=True, timeout=120)
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        for apply in (False, True):
+            res = migrate.migrate(self.root, apply=apply)
+            self.assertEqual([], self._records(res), f"apply={apply}")
+            named = self._named(res)
+            self.assertEqual([rid], [h["id"] for h in named], res["needs_human"])
+            self.assertIn("unit_rounds", named[0]["detail"])
+            self.assertIn("sprint_report.py check --report", named[0]["command"])
+            self.assertIn(rid, migrate.render(res))
+            self.assertFalse(self._tracked().exists(), f"apply={apply} filed the record")
+
+    def test_migrate_reads_the_cache_once_and_never_writes_it_or_asks_the_forge(self) -> None:
+        """BG0795 AC3 as it holds for migrate, the one script that names the per-clone cache.
+        On a signed report, with a cache and without one, `migrate --apply` leaves the cache's
+        bytes (or its absence) as they were and never calls `gh`. Mutants: write the cache when
+        it is absent; rewrite it; read the forge (`fetch_ci_runs`) for the runs to freeze."""
+        for label, cache in (("with a cache", [INSIDE, BEFORE]), ("without one", None)):
+            with self.subTest(label):
+                self.setUp()
+                rid = self._signed_before_records_were_tracked(cache)
+                before = (self.root / CI_CACHE).read_bytes() if cache is not None else None
+                (self.bin / "gh.log").unlink(missing_ok=True)
+                res = migrate.migrate(self.root, apply=True)
+                self.assertEqual([rid], [d["id"] for d in self._records(res)],
+                                 res["needs_human"])
+                after = (self.root / CI_CACHE).read_bytes() if (
+                    self.root / CI_CACHE).exists() else None
+                self.assertEqual(before, after, "migrate wrote the per-clone cache")
+                self.assertFalse((self.bin / "gh.log").exists(),
+                                 "migrate asked the forge: "
+                                 + ((self.bin / "gh.log").read_text(encoding="utf-8")
+                                    if (self.bin / "gh.log").exists() else ""))
+
+    def test_an_unmarked_page_naming_a_session_outside_the_repo_is_named_not_filed(
+            self) -> None:
+        """A page derived before records were tracked names an uncovered session by its path;
+        the tracked record holds it only as a digest, so the page could not be judged from it
+        in any clone. Mutant: file it projected anyway - the signing clone then reads the
+        tracked record and stops judging a page it judged VALID."""
+        rid = self._signed_before_records_were_tracked([BEFORE], stamps=[UNCOVERED])
+        rc, out = self._check(self.root, rid)
+        self.assertEqual(0, rc, f"the positive control: {out}")
+        page = self._sr().read_report(self.root, rid)
+        cost = next(s for s in page["sections"] if s["key"] == "cost")
+        self.assertIn(UNCOVERED["source"], cost["figures"]["token_coverage"]["value"])
+        res = migrate.migrate(self.root, apply=True)
+        self.assertEqual([], self._records(res))
+        named = self._named(res)
+        self.assertEqual([rid], [h["id"] for h in named], res["needs_human"])
+        self.assertIn("predates tracked records", named[0]["detail"])
+        self.assertFalse(self._tracked().exists())
+        rc, out = self._check(self.root, rid)
+        self.assertEqual(0, rc, out)
 
 
 if __name__ == "__main__":
