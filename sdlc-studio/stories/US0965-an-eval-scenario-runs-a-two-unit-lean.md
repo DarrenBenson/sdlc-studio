@@ -35,3 +35,4 @@ v6's headline is the lean sprint loop, yet none of the eight eval scenarios runs
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-28 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-09-28 | sdlc-studio v6 | AC3 met: scenario 09 run once headless against main ff9d9b9f (CLAUDE_CONFIG_DIR holding only that skill), graded by an independent grader in eval run v6-main: EB1-EB7 blocking all pass, FB1-FB6 not observed, EB8 advisory fail (token actual NOT MEASURED, v6.1). No blocking fail to file; D0280 clears v6.0.0 |
