@@ -17,6 +17,7 @@ Sprint 6 of the v6 release (D0272, D0278): the new work beside EP0266's docs. A 
 - [ ] [US0962: The migration to v6 is rehearsed on two real consuming projects, and the record is published](../stories/US0962-the-migration-to-v6-is-rehearsed-on-two.md)
 - [ ] [US0963: The eval scenarios run against v6, and the independence scenario grades v6's rule](../stories/US0963-the-eval-scenarios-run-against-v6-and-the.md)
 - [ ] [US0964: Every script's --help describes the v6 loop and no retired review step](../stories/US0964-every-script-s-help-describes-the-v6-loop.md)
+- [ ] [US0965: An eval scenario runs a two-unit lean sprint in a fresh project from plan to close, so v6's headline is measured, not asserted](../stories/US0965-an-eval-scenario-runs-a-two-unit-lean.md)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # Story Index
 
-**Last Updated:** 2026-09-27
+**Last Updated:** 2026-09-28
 
 ## Summary
 
@@ -10,14 +10,14 @@
 | Draft | 16 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 5 |
+| In Progress | 6 |
 | Review | 0 |
 | Done | 771 |
 | Won't Implement | 81 |
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **964** |
+| **Total** | **965** |
 
 ## All Stories
 
@@ -323,6 +323,7 @@
 | [US0962](US0962-the-migration-to-v6-is-rehearsed-on-two.md) | The migration to v6 is rehearsed on two real consuming projects, and the record is published | In Progress | EP0267 | 2026-09-27 | 2026-09-27 |
 | [US0963](US0963-the-eval-scenarios-run-against-v6-and-the.md) | The eval scenarios run against v6, and the independence scenario grades v6's rule | In Progress | EP0267 | 2026-09-27 | 2026-09-27 |
 | [US0964](US0964-every-script-s-help-describes-the-v6-loop.md) | Every script's --help describes the v6 loop and no retired review step | In Progress | EP0267 | 2026-09-27 | 2026-09-27 |
+| [US0965](US0965-an-eval-scenario-runs-a-two-unit-lean.md) | An eval scenario runs a two-unit lean sprint in a fresh project from plan to close, so v6's headline is measured, not asserted | In Progress | EP0267 | 2026-09-28 | 2026-09-28 |
 
 ## Archived Releases
 
