@@ -155,7 +155,7 @@ Updates:
 - Adds test case references
 - Updates story revision history
 
-The move to Fixed is the one-call close. Its reviewer is a separate context that did not write the fix (a fresh subagent or a person, never the author under another name), briefed with `critic.py brief --unit BG0001 --seat qa`; the close carries that reviewer's verdict and the fingerprint the brief printed. A `--verdict` without `--brief` is warned on stderr, not refused:
+The move to Fixed is the one-call close. Its reviewer is a separate context that did not write the fix (a fresh subagent or a person, never the author under another name), briefed with `critic.py brief --unit BG0001 --seat qa`; the close carries that reviewer's verdict and the fingerprint the brief printed. A `--verdict` without `--brief` is warned on stderr, not refused. Record the criteria first with `verify_ac.py run --id BG0001` (see `verify`): the close refuses a recorded red, not a missing run.
 
 ```bash
 python3 <skill>/scripts/transition.py set --id BG0001 --status Fixed --verdict approve --reviewer <R> --author <A> --brief <fingerprint>
@@ -168,7 +168,7 @@ Verify and close a bug fix (quick happy path).
 **What happens:**
 
 1. Reads bug and fix details
-2. Runs associated tests
+2. Runs the bug's criteria with `verify_ac.py run --id BG0001`, which stamps each green one `Verified` and records the result `transition.py` reads; a test run by hand records nothing
 3. Checks fix addresses root cause
 4. Updates status: Fixed → Closed (verified)
 5. Updates verification section
@@ -186,7 +186,7 @@ Close a bug with reason selection.
 **What happens:**
 
 1. Prompts for close reason:
-   - **Verified** - Fix confirmed working
+   - **Verified** - Fix confirmed working, its criteria recorded green by `verify_ac.py run --id BG0001` as in `verify` (a test run by hand records nothing)
    - **Rejected/Won't Fix** - Not a bug or won't address
 2. Updates status → Closed
 3. Records close reason

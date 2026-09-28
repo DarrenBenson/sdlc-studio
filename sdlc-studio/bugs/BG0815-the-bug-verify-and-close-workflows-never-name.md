@@ -1,6 +1,6 @@
 # BG0815: The bug verify and close workflows never name verify_ac.py, so an agent runs the tests by hand and the criterion is never recorded green
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/reference-bug.md, .claude/skills/sdlc-studio/help/bug.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_bug_verify_step.py, changelog.d/BG0815.md
@@ -26,6 +26,7 @@ Name `verify_ac.py` run --id BG{NNNN} in the bug verify workflow's run-tests ste
 
 - [ ] **AC1** Given reference-bug.md's verify and close workflows and help/bug.md's verify and close entries, then each names `verify_ac.py` run --id as the way a bug's criteria are recorded green before Fixed, and none tells the agent only to execute the tests. Fails on: the rc.1 wording, which says 'Execute tests listed in Tests Added' and never names the verifier
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_bug_verify_step.py::BugVerifyStepTests::test_the_verify_and_close_steps_name_the_verifier
+  - **Verified:** yes (2026-09-28)
 
 ## Revision History
 
