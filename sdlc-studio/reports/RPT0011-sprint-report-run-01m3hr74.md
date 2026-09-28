@@ -6,8 +6,8 @@ v6.0.0 ships: Maya and Jonah install, upgrade and learn it from docs and notes t
 
 **Verdict: Judged achieved** - All 55 batch units delivered, each by an independent review (BG0818 by operator-granted round 3, D0285/D0286); the install and upgrade paths are documented and rehearsed on copies of a v4.1 and a v2.4 project (US0955, US0962); a fresh agent ran a whole lean sprint from the docs alone (eval 09, D0280) and the independence eval passed on the final skill (06, D0282); the notes match the code and disclose 35 open Medium defects. v6.0.0 itself is tagged after this run is signed.
 
-> **Run:** 2026-09-27T15:40:33Z to open (29.2h)
-> **Verified on:** ba3e4313aad29977db5329b52ea28ab948d1df6b   **Fingerprint:** 61403431521eab55
+> **Run:** 2026-09-27T15:40:33Z to open (29.5h)
+> **Verified on:** d78ed7534a926bb4adb6ccc6268e9e0a26ef4fd2   **Fingerprint:** d5020f914fee321e
 
 ## Estimates
 
@@ -17,9 +17,9 @@ over forecast.
 
 | Measure | Forecast | Actual | Ratio | Over |
 | --- | --- | --- | --- | --- |
-| Points | 128 | 128 | 1.0x | 54 of 54 delivered unit(s) |
-| Minutes | 838.4 | 1749.8 | 2.09x | the whole run: forecast over 55 of 55 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
-| Tokens | 46,349,110 | 23,110,572 | 0.5x | the whole run: forecast over 55 of 55 unit(s) planned or added and not dropped; actual is the main-thread meter plus 100 delegated agent(s)' reported totals, split in the appendix |
+| Points | 131 | 131 | 1.0x | 55 of 55 delivered unit(s) |
+| Minutes | 838.4 | 1768.7 | 2.11x | the whole run: forecast over 55 of 55 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
+| Tokens | 46,349,110 | 23,169,594 | 0.5x | the whole run: forecast over 55 of 55 unit(s) planned or added and not dropped; actual is the main-thread meter plus 100 delegated agent(s)' reported totals, split in the appendix |
 
 Each cell names its source. A figure labelled agent minutes or agent tokens sums the agent
 totals tagged to that unit; an unlabelled one is measured over the unit's own open span. Spans of
@@ -90,14 +90,14 @@ above.
 | --- | --- | --- |
 | Planned | 41 | 102 |
 | Delivered of the plan | 41 | 102 |
-| Added mid-run and delivered | 13 of 14 added | 26 |
+| Added mid-run and delivered | 14 of 14 added | 29 |
 | Dropped | 0 | 0 |
-| Carried undelivered | 1 | 3 |
+| Carried undelivered | 0 | 0 |
 
 Points here are the sizes the plan recorded: a unit resized since keeps its planned size and
 shows its current size below, and an added unit is sized when it is added. Added units are work
 outside the plan and are never counted as delivering it. Points delivered at their current
-size, plan and added together: 128.
+size, plan and added together: 131.
 
 | Unit | Planned points | Points | Outcome | Review rounds |
 | --- | --- | --- | --- | --- |
@@ -150,7 +150,7 @@ size, plan and added together: 128.
 | US0965 | 3 | 3 | added - no reason recorded; delivered | 1 |
 | BG0815 | 1 | 1 | added - no reason recorded; delivered | 1 |
 | BG0816 | 2 | 2 | added - no reason recorded; delivered | 1 |
-| BG0818 | 3 | 3 | added - no reason recorded; carried, not delivered | 2 |
+| BG0818 | 3 | 3 | added - no reason recorded; delivered | 3 |
 | BG0819 | 1 | 1 | added - no reason recorded; delivered | 2 |
 | BG0820 | 2 | 2 | added - no reason recorded; delivered | 2 |
 | BG0821 | 2 | 2 | added - no reason recorded; delivered | 1 |
@@ -159,7 +159,7 @@ size, plan and added together: 128.
 
 ## Known issues handed over
 
-25 open finding(s) raised in the run, 7 close gap(s), 1 carried unit(s)
+25 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)
 
 | Issue | Priority | Detail |
 | --- | --- | --- |
@@ -188,14 +188,6 @@ size, plan and added together: 128.
 | BG0845 | Medium | migrate's conformance cutoff on a v4.1 project exempts the 98 units after the project's own adoption point, because a verdict row with no Author column never reads as independent |
 | CR0601 | Medium | A shipped command reports where a project's own docs still name retired v5 surface |
 | CR0602 | Medium | A run's token and minute actuals are measured without the operator stamping a baseline |
-| review-coverage | close gap | 54/55 unit(s) covered by an independent pass |
-| review-coverage | close gap | 1 unit(s) in this batch are covered by NO independent review: BG0818 |
-| review-coverage | close gap | finding placement: 0 raised at a batch boundary, 107 raised outside one, across 0/0 reviewed batch(es). A finding raised outside a batch is close work - 107 is the number this run drives to zero |
-| review-coverage | close gap | The close certifies that a review happened; it does not perform one. |
-| checklist | close gap | known-issues: 1 batch unit(s) the run cannot end over: BG0818 (Fixed) - unanswered delivery REJECT - findings NONE filed |
-| report-hold:terminal-gate | close gap | 1 batch unit(s) whose terminal gate is UNMET - BG0818: BG0818 -> Fixed blocked (1 requirement(s), all listed): BG0818 carries an unanswered delivery REJECT (qa-rev-a7755839's REJECT of 2026-09-28; qa-rev-a7755839's REJECT of 2026-09-28): 8 finding(s) outstanding - blocking: a non-UTF-8 AGENTS.md or prd.md now crashes init guided and status hint, because \_authored and carries\_doctrine read with strict UTF-8 inside stage\_output\_exists; non-blocking: generic template tokens such as {{version}} and {{date}} hold an authored document that quotes them, and the docstring over-claims; non-blocking: the fill-the-placeholders directive is untested; non-blocking: the AGENTS.md already present wording reads as if the user wrote a file init seeded .... A REJECT has two exits: a round-2 APPROVE from the reviewer who rejected, or carrying the unit at the review cap: that reviewer's round-2 REJECT, recorded in the open run, files the findings as a bug and drops the unit from the batch, so the run closes without it. A carried unit is still refused Done: it is delivered again in a later run and reaches Done on an APPROVE from the reviewer who rejected it (the same reviewer id). A ruling in a retro's `Known issues carried` table does not discharge it, and a `--force` waiver is recorded in the artefact's `Forced-override` field. Override with --force. |
-| report-hold:unanswered-review | close gap | 1 batch unit(s) whose review is unanswered - BG0818: Fixed - unanswered delivery REJECT |
-| BG0818 | carried unit | added and not delivered by this run |
 
 ## Sign-off
 
@@ -211,9 +203,9 @@ Signing records the principal, the date and this report's fingerprint against RU
 
 | Model | Tokens |
 | --- | --- |
-| mixed | 8,071,266 |
+| mixed | 8,130,288 |
 
-Total 23,110,572, of which delegated 15,039,306. Coverage: 1 session(s);
+Total 23,169,594, of which delegated 15,039,306. Coverage: 1 session(s);
 read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp.
 
 ### DORA
@@ -221,7 +213,7 @@ read from stamps, with the opening reading taken from the legacy session_token_b
 | Key | This run | Mapping | Elite band | Derived from |
 | --- | --- | --- | --- | --- |
 | Deployment frequency | 9 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up | on demand | forge runs 36477625660/36465997540/36462167048/36445135602/36438476889/36409909036/36356518304/36346337680/36336415797 - 9 push-triggered run(s) on main in the run window |
-| Lead time for changes | 28h 41m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 96 commit(s) |
+| Lead time for changes | 29h 12m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 98 commit(s) |
 | Change failure rate | 11% | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that did not conclude success | 0-15% | forge runs 36477625660/36465997540/36462167048/36445135602/36438476889/36409909036/36356518304/36346337680/36336415797 - 9 deployment(s); 1 failed on 0aa334cba0307a2bc58d3d8034f2e97e106b1f6f |
 | Time to restore | NOT MEASURED - no forge run data | the span from a push-triggered run concluding failure on main to the next push-triggered run concluding success | under an hour | no push-triggered CI run is readable for this run window |
 
@@ -235,7 +227,7 @@ read from stamps, with the opening reading taken from the legacy session_token_b
 ### Rulings
 
 Persona seats ruled 0 time(s), 0 of them by citing a
-precedent; the operator ruled 7 time(s).
+precedent; the operator ruled 8 time(s).
 
 ### Waivers in force
 

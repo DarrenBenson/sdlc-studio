@@ -191,4 +191,4 @@ it. Compare a fan-out sprint's rate with a single-thread sprint's only with that
 | RETRO0123 | 2026-09-24 | 17 | 0 | 17 | 32 | - | 13,090,970 | 11,610,466 | - | 362,827 | 0 | - | - | - | TOKENS_PER_POINT=353810 | out-of-sample | - | - | harness+supplied |
 | RETRO0124 | 2026-09-25 | 35 | 0 | 27 | 111 | - | 32,904,330 | 19,797,023 | - | 178,352 | 0 | - | - | - | TOKENS_PER_POINT=353810 | out-of-sample | - | - | harness+supplied |
 | RETRO0125 | 2026-09-26 | 37 | 0 | 29 | 102 | - | 26,181,940 | 18,791,718 | - | 184,233 | 0 | - | - | - | TOKENS_PER_POINT=353810 | out-of-sample | - | - | harness+supplied |
-| RETRO0126 | 2026-09-28 | 55 | 0 | 41 | 131 | - | 35,381,000 | 23,110,572 | - | 176,417 | 0 | - | - | - | TOKENS_PER_POINT=353810 | out-of-sample | mixed | - | harness+supplied |
+| RETRO0126 | 2026-09-28 | 55 | 0 | 41 | 131 | - | 35,381,000 | 23,110,572 | - | 176,417 | 0 | - | - | - | TOKENS_PER_POINT=353810 | out-of-sample | - | - | harness+supplied |

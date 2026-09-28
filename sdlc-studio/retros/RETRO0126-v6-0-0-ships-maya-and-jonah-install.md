@@ -105,7 +105,7 @@
 
 Review passes - read from the verdict ledger:
 
-  code review: 79 pass(es) over 55 unit(s), 25 rejected
+  code review: 80 pass(es) over 55 unit(s), 25 rejected
 Unmeasured: BG0682, BG0692, BG0725, BG0782, BG0783, BG0784, BG0785, BG0786, BG0788, BG0790, BG0792, BG0794, BG0795, BG0796, BG0797, BG0798, BG0799, BG0801, BG0802, BG0805, BG0806, BG0808, BG0809, US0924, US0926, US0952, US0953, US0954, US0955, US0956, US0957, US0959, US0960, US0961, US0962, US0963, US0964, BG0800, BG0803, BG0804, BG0807. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
 Unforecast: BG0810, BG0811, BG0812, BG0813, BG0814, US0965, BG0815, BG0816, BG0819, BG0820, BG0821, BG0822, BG0823, BG0818. No plan-time forecast was recorded for them, so they are excluded too. The estimate is NOT re-derived from today's constants: a number computed at judgement time, by the model being judged, is not a prediction.
 No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.

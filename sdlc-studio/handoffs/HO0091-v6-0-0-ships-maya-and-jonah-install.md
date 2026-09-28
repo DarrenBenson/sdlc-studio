@@ -11,20 +11,14 @@
 
 Every unit in the batch is terminal. There is no tail: close the run and plan the next batch normally.
 
-1 stop-ship question(s) were left unanswered - see below; a Done or Fixed unit among them is not in the worklist.
-
 ## Unanswered stop-ship questions
 
-- **BG0818** (Fixed) - unanswered delivery REJECT - findings NONE filed
-
-No retro's carried table could be read for RUN-01M3HR74, so no ruling answers any unit.
-
-ways out: a standing REJECT has two exits: a round-2 APPROVE from the reviewer who rejected, or carrying the unit at the review cap: that reviewer's round-2 REJECT, recorded in the open run, files the findings as a bug and drops the unit from the batch, so the run closes without it. A carried unit is still refused Done: it is delivered again in a later run and reaches Done on an APPROVE from the reviewer who rejected it (the same reviewer id) - no ruling or hand drop answers it; finish it, or rule it not-stop-ship, accepted-risk or deferred in the run's retro (`## Known issues carried`); or `sprint.py batch drop <id> --reason '<why>'`, which answers only a unit carrying no standing REJECT
+None: every batch unit is delivered, abandoned, ruled, dropped, parked or awaiting only a signature. No retro's carried table could be read for RUN-01M3HR74, so no ruling answers any unit.
 
 ## Appetite
 
 - **Declared:** wall-clock 5760 min, units 64 unit(s)
-- **Spent:** 1749.2 min, 55 unit(s) terminal
+- **Spent:** 1768.2 min, 55 unit(s) terminal
 - **Delivered:** 55 unit(s)
 - **Token forecast:** ~36,088,620 tokens - a plan-time estimate, never a gate (the total is transcript-measured but a LOWER BOUND - delegated spend is supplied, not observed)
 
@@ -86,7 +80,7 @@ ways out: a standing REJECT has two exits: a round-2 APPROVE from the reviewer w
 | [BG0821](../../sdlc-studio/bugs/BG0821-install-ps1-local-still-refreshes-every-personal-copy.md) | bug | Fixed | 2/2 AC(s) verified; critic APPROVE (qa-rev-ac1a5b2f) |
 | [BG0822](../../sdlc-studio/bugs/BG0822-the-close-sign-and-the-signed-report-still.md) | bug | Fixed | 2/2 AC(s) verified; critic APPROVE (qa-rev-ada8f560) |
 | [BG0823](../../sdlc-studio/bugs/BG0823-sprint-close-dry-run-reports-no-goal-no.md) | bug | Fixed | 2/2 AC(s) verified; critic APPROVE (qa-rev-a562d27e) |
-| [BG0818](../../sdlc-studio/bugs/BG0818-init-guided-treats-a-stage-s-own-drafted.md) | bug | Fixed | 2/2 AC(s) verified; critic REJECT (qa-rev-a7755839) |
+| [BG0818](../../sdlc-studio/bugs/BG0818-init-guided-treats-a-stage-s-own-drafted.md) | bug | Fixed | 2/2 AC(s) verified; critic APPROVE (qa-rev-a7755839) |
 
 ## Remaining (0)
 

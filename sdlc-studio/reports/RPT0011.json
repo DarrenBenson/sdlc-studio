@@ -3,8 +3,8 @@
   "report_id": "RPT0011",
   "run_id": "RUN-01M3HR74",
   "retro_id": "RETRO0126",
-  "generated_at": "2026-09-28T20:50:22Z",
-  "window_end": "2026-09-28T20:50:22Z",
+  "generated_at": "2026-09-28T21:09:16Z",
+  "window_end": "2026-09-28T21:09:16Z",
   "signature": null,
   "sections": [
     {
@@ -43,12 +43,12 @@
         },
         "duration_hours": {
           "key": "duration_hours",
-          "value": "29.2h",
+          "value": "29.5h",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "verified_sha": {
           "key": "verified_sha",
-          "value": "ba3e4313aad29977db5329b52ea28ab948d1df6b",
+          "value": "d78ed7534a926bb4adb6ccc6268e9e0a26ef4fd2",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -68,12 +68,12 @@
           },
           "est_forecast": {
             "key": "est_forecast",
-            "value": 128,
+            "value": 131,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 128,
+            "value": 131,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
@@ -83,7 +83,7 @@
           },
           "est_basis": {
             "key": "est_basis",
-            "value": "54 of 54 delivered unit(s)",
+            "value": "55 of 55 delivered unit(s)",
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -100,12 +100,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 1749.8,
+            "value": 1768.7,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "2.09x",
+            "value": "2.11x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -127,7 +127,7 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 23110572,
+            "value": 23169594,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
@@ -1753,12 +1753,12 @@
         },
         "added_delivered_units": {
           "key": "added_delivered_units",
-          "value": 13,
+          "value": 14,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "added_points": {
           "key": "added_points",
-          "value": 26,
+          "value": 29,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "dropped_units": {
@@ -1773,12 +1773,12 @@
         },
         "carried_units": {
           "key": "carried_units",
-          "value": 1,
+          "value": 0,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "carried_points": {
           "key": "carried_points",
-          "value": 3,
+          "value": 0,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "added_units": {
@@ -1788,8 +1788,8 @@
         },
         "points_delivered": {
           "key": "points_delivered",
-          "value": 128,
-          "source": "sdlc-studio/bugs/BG0682-artifact-py-revision-writes-a-bare-identifier-into.md, sdlc-studio/bugs/BG0692-gate-py-never-sets-the-boundary-suite-marker.md, sdlc-studio/bugs/BG0725-two-spellings-of-the-stop-ship-constant-and.md, sdlc-studio/bugs/BG0782-about-57-test-modules-commit-in-a-temporary.md, sdlc-studio/bugs/BG0783-review-rounds-are-write-dead-after-us0918-so.md, sdlc-studio/bugs/BG0784-a-seat-card-with-no-role-line-is.md, sdlc-studio/bugs/BG0785-migrate-leaves-a-v4-era-project-s-conformance.md, sdlc-studio/bugs/BG0786-flow-py-compute-takes-about-90-seconds-on.md, sdlc-studio/bugs/BG0788-signed-report-rounds-are-positional-so-a-hand.md, sdlc-studio/bugs/BG0790-an-installed-release-candidate-is-never-prompted-to.md, sdlc-studio/bugs/BG0792-us0940-ac1-s-own-verify-takes-about-three.md, sdlc-studio/bugs/BG0794-the-waiver-window-test-compares-a-utc-page.md, sdlc-studio/bugs/BG0795-the-sprint-report-reads-a-week-old-ci.md, sdlc-studio/bugs/BG0796-the-report-s-cost-row-reads-unattributed-while.md, sdlc-studio/bugs/BG0797-per-unit-minutes-and-tokens-are-recorded-only.md, sdlc-studio/bugs/BG0798-the-forecast-rate-never-re-fits-353-810.md, sdlc-studio/bugs/BG0799-a-first-sprint-s-report-hands-over-as.md, sdlc-studio/bugs/BG0801-the-known-issues-page-puts-its-ship-open.md, sdlc-studio/bugs/BG0802-artifact-new-type-bug-drops-its-verify-line.md, sdlc-studio/bugs/BG0805-verify-ac-stamps-passes-a-k-expression-whose.md, sdlc-studio/bugs/BG0806-tsd-staleness-is-never-judged-in-a-consuming.md, sdlc-studio/bugs/BG0808-init-records-no-project-version-so-a-fresh.md, sdlc-studio/bugs/BG0809-install-sh-local-rewrites-every-personal-copy-of.md, sdlc-studio/stories/US0924-the-shipped-docs-teach-only-the-surviving-review.md, sdlc-studio/stories/US0926-this-repository-runs-on-the-shipped-defaults-with.md, sdlc-studio/stories/US0952-an-upgrader-reads-every-v6-breaking-change-first.md, sdlc-studio/stories/US0953-the-v6-release-notes-lead-with-what-changed.md, sdlc-studio/stories/US0954-the-repository-s-front-door-describes-v6-and.md, sdlc-studio/stories/US0955-an-upgrading-project-follows-one-page-from-v5.md, sdlc-studio/stories/US0956-the-shipped-docs-teach-the-lean-loop-in.md, sdlc-studio/stories/US0957-the-white-paper-and-the-value-argument-describe.md, sdlc-studio/stories/US0959-a-signed-sprint-report-checks-in-any-full.md, sdlc-studio/stories/US0960-every-report-signed-before-the-tracked-record-checks.md, sdlc-studio/stories/US0961-a-verdict-recorded-against-a-brief-the-unit.md, sdlc-studio/stories/US0962-the-migration-to-v6-is-rehearsed-on-two.md, sdlc-studio/stories/US0963-the-eval-scenarios-run-against-v6-and-the.md, sdlc-studio/stories/US0964-every-script-s-help-describes-the-v6-loop.md, sdlc-studio/bugs/BG0800-the-close-s-pre-flight-lists-as-unmet.md, sdlc-studio/bugs/BG0803-sprint-plan-to-the-plan-or-design-rung.md, sdlc-studio/bugs/BG0804-the-report-s-lessons-section-cites-sdlc-studio.md, sdlc-studio/bugs/BG0807-the-us0942-ac5-stamp-test-resolves-the-whole.md, sdlc-studio/bugs/BG0810-the-one-runner-agreement-test-races-its-own.md, sdlc-studio/bugs/BG0811-a-root-level-file-with-no-listed-extension.md, sdlc-studio/bugs/BG0812-the-bug-close-path-teaches-a-named-verdict.md, sdlc-studio/bugs/BG0813-the-review-tier-corpus-test-samples-a-stride.md, sdlc-studio/bugs/BG0814-the-epic-and-story-workflows-three-amigos-step.md, sdlc-studio/stories/US0965-an-eval-scenario-runs-a-two-unit-lean.md, sdlc-studio/bugs/BG0815-the-bug-verify-and-close-workflows-never-name.md, sdlc-studio/bugs/BG0816-seven-skill-docs-still-call-the-three-amigos.md, sdlc-studio/bugs/BG0819-a-signed-sprint-report-s-verified-on-names.md, sdlc-studio/bugs/BG0820-a-unit-with-an-independent-approve-that-the.md, sdlc-studio/bugs/BG0821-install-ps1-local-still-refreshes-every-personal-copy.md, sdlc-studio/bugs/BG0822-the-close-sign-and-the-signed-report-still.md, sdlc-studio/bugs/BG0823-sprint-close-dry-run-reports-no-goal-no.md"
+          "value": 131,
+          "source": "sdlc-studio/bugs/BG0682-artifact-py-revision-writes-a-bare-identifier-into.md, sdlc-studio/bugs/BG0692-gate-py-never-sets-the-boundary-suite-marker.md, sdlc-studio/bugs/BG0725-two-spellings-of-the-stop-ship-constant-and.md, sdlc-studio/bugs/BG0782-about-57-test-modules-commit-in-a-temporary.md, sdlc-studio/bugs/BG0783-review-rounds-are-write-dead-after-us0918-so.md, sdlc-studio/bugs/BG0784-a-seat-card-with-no-role-line-is.md, sdlc-studio/bugs/BG0785-migrate-leaves-a-v4-era-project-s-conformance.md, sdlc-studio/bugs/BG0786-flow-py-compute-takes-about-90-seconds-on.md, sdlc-studio/bugs/BG0788-signed-report-rounds-are-positional-so-a-hand.md, sdlc-studio/bugs/BG0790-an-installed-release-candidate-is-never-prompted-to.md, sdlc-studio/bugs/BG0792-us0940-ac1-s-own-verify-takes-about-three.md, sdlc-studio/bugs/BG0794-the-waiver-window-test-compares-a-utc-page.md, sdlc-studio/bugs/BG0795-the-sprint-report-reads-a-week-old-ci.md, sdlc-studio/bugs/BG0796-the-report-s-cost-row-reads-unattributed-while.md, sdlc-studio/bugs/BG0797-per-unit-minutes-and-tokens-are-recorded-only.md, sdlc-studio/bugs/BG0798-the-forecast-rate-never-re-fits-353-810.md, sdlc-studio/bugs/BG0799-a-first-sprint-s-report-hands-over-as.md, sdlc-studio/bugs/BG0801-the-known-issues-page-puts-its-ship-open.md, sdlc-studio/bugs/BG0802-artifact-new-type-bug-drops-its-verify-line.md, sdlc-studio/bugs/BG0805-verify-ac-stamps-passes-a-k-expression-whose.md, sdlc-studio/bugs/BG0806-tsd-staleness-is-never-judged-in-a-consuming.md, sdlc-studio/bugs/BG0808-init-records-no-project-version-so-a-fresh.md, sdlc-studio/bugs/BG0809-install-sh-local-rewrites-every-personal-copy-of.md, sdlc-studio/stories/US0924-the-shipped-docs-teach-only-the-surviving-review.md, sdlc-studio/stories/US0926-this-repository-runs-on-the-shipped-defaults-with.md, sdlc-studio/stories/US0952-an-upgrader-reads-every-v6-breaking-change-first.md, sdlc-studio/stories/US0953-the-v6-release-notes-lead-with-what-changed.md, sdlc-studio/stories/US0954-the-repository-s-front-door-describes-v6-and.md, sdlc-studio/stories/US0955-an-upgrading-project-follows-one-page-from-v5.md, sdlc-studio/stories/US0956-the-shipped-docs-teach-the-lean-loop-in.md, sdlc-studio/stories/US0957-the-white-paper-and-the-value-argument-describe.md, sdlc-studio/stories/US0959-a-signed-sprint-report-checks-in-any-full.md, sdlc-studio/stories/US0960-every-report-signed-before-the-tracked-record-checks.md, sdlc-studio/stories/US0961-a-verdict-recorded-against-a-brief-the-unit.md, sdlc-studio/stories/US0962-the-migration-to-v6-is-rehearsed-on-two.md, sdlc-studio/stories/US0963-the-eval-scenarios-run-against-v6-and-the.md, sdlc-studio/stories/US0964-every-script-s-help-describes-the-v6-loop.md, sdlc-studio/bugs/BG0800-the-close-s-pre-flight-lists-as-unmet.md, sdlc-studio/bugs/BG0803-sprint-plan-to-the-plan-or-design-rung.md, sdlc-studio/bugs/BG0804-the-report-s-lessons-section-cites-sdlc-studio.md, sdlc-studio/bugs/BG0807-the-us0942-ac5-stamp-test-resolves-the-whole.md, sdlc-studio/bugs/BG0810-the-one-runner-agreement-test-races-its-own.md, sdlc-studio/bugs/BG0811-a-root-level-file-with-no-listed-extension.md, sdlc-studio/bugs/BG0812-the-bug-close-path-teaches-a-named-verdict.md, sdlc-studio/bugs/BG0813-the-review-tier-corpus-test-samples-a-stride.md, sdlc-studio/bugs/BG0814-the-epic-and-story-workflows-three-amigos-step.md, sdlc-studio/stories/US0965-an-eval-scenario-runs-a-two-unit-lean.md, sdlc-studio/bugs/BG0815-the-bug-verify-and-close-workflows-never-name.md, sdlc-studio/bugs/BG0816-seven-skill-docs-still-call-the-three-amigos.md, sdlc-studio/bugs/BG0818-init-guided-treats-a-stage-s-own-drafted.md, sdlc-studio/bugs/BG0819-a-signed-sprint-report-s-verified-on-names.md, sdlc-studio/bugs/BG0820-a-unit-with-an-independent-approve-that-the.md, sdlc-studio/bugs/BG0821-install-ps1-local-still-refreshes-every-personal-copy.md, sdlc-studio/bugs/BG0822-the-close-sign-and-the-signed-report-still.md, sdlc-studio/bugs/BG0823-sprint-close-dry-run-reports-no-goal-no.md"
         }
       },
       "rows": [
@@ -3134,12 +3134,12 @@
           },
           "unit_outcome": {
             "key": "unit_outcome",
-            "value": "added - no reason recorded; carried, not delivered",
+            "value": "added - no reason recorded; delivered",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "unit_rounds": {
             "key": "unit_rounds",
-            "value": 2,
+            "value": 3,
             "source": "sdlc-studio/reviews/critic-verdicts.md"
           }
         },
@@ -3287,7 +3287,7 @@
       "figures": {
         "findings_scan": {
           "key": "findings_scan",
-          "value": "25 open finding(s) raised in the run, 7 close gap(s), 1 carried unit(s)",
+          "value": "25 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -3716,142 +3716,6 @@
             "value": "A run's token and minute actuals are measured without the operator stamping a baseline",
             "source": "sdlc-studio/change-requests/CR0602-a-run-s-token-and-minute-actuals-are.md"
           }
-        },
-        {
-          "issue_id": {
-            "key": "issue_id",
-            "value": "review-coverage",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_priority": {
-            "key": "issue_priority",
-            "value": "close gap",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_detail": {
-            "key": "issue_detail",
-            "value": "54/55 unit(s) covered by an independent pass",
-            "source": "sdlc-studio/.local/run-state.json"
-          }
-        },
-        {
-          "issue_id": {
-            "key": "issue_id",
-            "value": "review-coverage",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_priority": {
-            "key": "issue_priority",
-            "value": "close gap",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_detail": {
-            "key": "issue_detail",
-            "value": "1 unit(s) in this batch are covered by NO independent review: BG0818",
-            "source": "sdlc-studio/.local/run-state.json"
-          }
-        },
-        {
-          "issue_id": {
-            "key": "issue_id",
-            "value": "review-coverage",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_priority": {
-            "key": "issue_priority",
-            "value": "close gap",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_detail": {
-            "key": "issue_detail",
-            "value": "finding placement: 0 raised at a batch boundary, 107 raised outside one, across 0/0 reviewed batch(es). A finding raised outside a batch is close work - 107 is the number this run drives to zero",
-            "source": "sdlc-studio/.local/run-state.json"
-          }
-        },
-        {
-          "issue_id": {
-            "key": "issue_id",
-            "value": "review-coverage",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_priority": {
-            "key": "issue_priority",
-            "value": "close gap",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_detail": {
-            "key": "issue_detail",
-            "value": "The close certifies that a review happened; it does not perform one.",
-            "source": "sdlc-studio/.local/run-state.json"
-          }
-        },
-        {
-          "issue_id": {
-            "key": "issue_id",
-            "value": "checklist",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_priority": {
-            "key": "issue_priority",
-            "value": "close gap",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_detail": {
-            "key": "issue_detail",
-            "value": "known-issues: 1 batch unit(s) the run cannot end over: BG0818 (Fixed) - unanswered delivery REJECT - findings NONE filed",
-            "source": "sdlc-studio/.local/run-state.json"
-          }
-        },
-        {
-          "issue_id": {
-            "key": "issue_id",
-            "value": "report-hold:terminal-gate",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_priority": {
-            "key": "issue_priority",
-            "value": "close gap",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_detail": {
-            "key": "issue_detail",
-            "value": "1 batch unit(s) whose terminal gate is UNMET - BG0818: BG0818 -> Fixed blocked (1 requirement(s), all listed): BG0818 carries an unanswered delivery REJECT (qa-rev-a7755839's REJECT of 2026-09-28; qa-rev-a7755839's REJECT of 2026-09-28): 8 finding(s) outstanding - blocking: a non-UTF-8 AGENTS.md or prd.md now crashes init guided and status hint, because \\_authored and carries\\_doctrine read with strict UTF-8 inside stage\\_output\\_exists; non-blocking: generic template tokens such as {{version}} and {{date}} hold an authored document that quotes them, and the docstring over-claims; non-blocking: the fill-the-placeholders directive is untested; non-blocking: the AGENTS.md already present wording reads as if the user wrote a file init seeded .... A REJECT has two exits: a round-2 APPROVE from the reviewer who rejected, or carrying the unit at the review cap: that reviewer's round-2 REJECT, recorded in the open run, files the findings as a bug and drops the unit from the batch, so the run closes without it. A carried unit is still refused Done: it is delivered again in a later run and reaches Done on an APPROVE from the reviewer who rejected it (the same reviewer id). A ruling in a retro's `Known issues carried` table does not discharge it, and a `--force` waiver is recorded in the artefact's `Forced-override` field. Override with --force.",
-            "source": "sdlc-studio/.local/run-state.json"
-          }
-        },
-        {
-          "issue_id": {
-            "key": "issue_id",
-            "value": "report-hold:unanswered-review",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_priority": {
-            "key": "issue_priority",
-            "value": "close gap",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_detail": {
-            "key": "issue_detail",
-            "value": "1 batch unit(s) whose review is unanswered - BG0818: Fixed - unanswered delivery REJECT",
-            "source": "sdlc-studio/.local/run-state.json"
-          }
-        },
-        {
-          "issue_id": {
-            "key": "issue_id",
-            "value": "BG0818",
-            "source": "sdlc-studio/bugs/BG0818-init-guided-treats-a-stage-s-own-drafted.md"
-          },
-          "issue_priority": {
-            "key": "issue_priority",
-            "value": "carried unit",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_detail": {
-            "key": "issue_detail",
-            "value": "added and not delivered by this run",
-            "source": "sdlc-studio/.local/run-state.json"
-          }
         }
       ],
       "not_measured": null
@@ -3890,7 +3754,7 @@
         },
         "tokens_total": {
           "key": "tokens_total",
-          "value": 23110572,
+          "value": 23169594,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "token_coverage": {
@@ -3913,7 +3777,7 @@
           },
           "model_tokens": {
             "key": "model_tokens",
-            "value": 8071266,
+            "value": 8130288,
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -3960,7 +3824,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "28h 41m",
+            "value": "29h 12m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -3975,7 +3839,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 96 commit(s)",
+            "value": "git history - first to last of 98 commit(s)",
             "source": "git log"
           }
         },
@@ -4081,7 +3945,7 @@
         },
         "operator_rulings": {
           "key": "operator_rulings",
-          "value": 7,
+          "value": 8,
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -4618,5 +4482,5 @@
     }
   ],
   "record_paths": "portable",
-  "fingerprint": "61403431521eab55"
+  "fingerprint": "d5020f914fee321e"
 }
