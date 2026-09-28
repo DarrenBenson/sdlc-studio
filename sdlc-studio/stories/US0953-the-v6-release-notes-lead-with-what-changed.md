@@ -1,6 +1,6 @@
 # US0953: The v6 release notes lead with what changed for the person using it
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,14 +19,19 @@
 
 - **AC1:** Given docs/release-notes-v6.0.0.md, then it opens with a one-sentence headline naming 6.0.0 as the current release, lists the themes (one plan, one review, one signature; the one-page report; the ceremony that caught nothing is gone; faster feedback; it learns from its own runs), links the CHANGELOG's 6.0.0 and 6.0.0-rc.1 sections and docs/existing-users.md, carries no release-candidate framing, and names no unit id outside its known-issues and sources passages. Fails on: the rc.1 notes copied with the version changed, which still say 'v5.1.0 remains the current stable release' and 'This is a release candidate'; notes composed from the fragments, which are id-laden
   - **Verify:** pytest tools/tests/test_lean_release_notes_v6.py::ReleaseNotesTests::test_the_notes_lead_with_themes_not_ids
+  - **Verified:** yes (2026-09-28)
 - **AC2:** Given the notes, then they carry an 'Upgrading from 6.0.0-rc.1' section (reinstall with `--version v6.0.0`, what changed since the candidate, and that an installed candidate is now prompted to move) and an 'Upgrading from 5.1' section whose steps are `migrate` then `migrate --apply`, with what each leaves to the reader. Fails on: notes that address only a 5.1 reader, leaving everyone who installed the candidate with no path
   - **Verify:** pytest tools/tests/test_lean_release_notes_v6.py::ReleaseNotesTests::test_both_upgrade_paths_are_given
+  - **Verified:** yes (2026-09-28)
 - **AC3:** Given every number in the notes, then its sentence or table row names its source (an RPT id, `gate_timing.py`, the back-to-basics review, the rehearsal record, the eval run) and no sentence claims the code got smaller. Fails on: the rc.1 notes' unsourced '82% of this repository's sprint units served its own machinery'; a 'two-thirds smaller' claim (production Python measured 81,671 lines at v5.1.0 and 81,785 at 013a46d0)
   - **Verify:** pytest tools/tests/test_lean_release_notes_v6.py::ReleaseNotesTests::test_every_figure_names_its_source
+  - **Verified:** yes (2026-09-28)
 - **AC4:** Given the notes, then they report the soak the candidate's notes promised: the migration rehearsed on two consuming projects (linking docs/upgrade-rehearsal-v6.md), the eval re-run (its result, and any scenario not run named as such), and the website project's lean sprint on the candidate, each with the findings it filed. Fails on: dropping a promise made in public ('the migration is rehearsed on two real consuming projects, with the record linked from the 6.0.0 notes'; 'the eval scenarios are re-run against v6 behaviour')
   - **Verify:** pytest tools/tests/test_lean_release_notes_v6.py::ReleaseNotesTests::test_the_soak_promises_are_reported
+  - **Verified:** yes (2026-09-28)
 - **AC5:** Given the notes, then `tools/check_links.py` and `tools/lint-style.sh` pass and the notes carry exactly one `**v6.0.0 discloses N open defects: N Medium, N Low.**` line for `known_issues.py write --release 6.0.0` to fill. Fails on: a broken anchor, an em dash, or a missing count line, which makes the cut refuse
   - **Verify:** shell python3 tools/check_links.py && bash tools/lint-style.sh && test "$(grep -cE '^\*\*v6\.0\.0 discloses [0-9]+ open defects' docs/release-notes-v6.0.0.md)" = 1
+  - **Verified:** yes (2026-09-28)
 
 ## Notes
 

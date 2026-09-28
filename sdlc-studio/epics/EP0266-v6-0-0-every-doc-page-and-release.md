@@ -1,6 +1,6 @@
 # EP0266: v6.0.0: every doc, page and release note describes the lean product
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -12,7 +12,7 @@ Sprint 6 of the v6 release (D0272): the release notes, breaking changes, README,
 ## Story Breakdown
 
 - [x] [US0952: An upgrader reads every v6 breaking change first](../stories/US0952-an-upgrader-reads-every-v6-breaking-change-first.md)
-- [ ] [US0953: The v6 release notes lead with what changed for the person using it](../stories/US0953-the-v6-release-notes-lead-with-what-changed.md)
+- [x] [US0953: The v6 release notes lead with what changed for the person using it](../stories/US0953-the-v6-release-notes-lead-with-what-changed.md)
 - [x] [US0954: The repository's front door describes v6 and teaches no retired surface](../stories/US0954-the-repository-s-front-door-describes-v6-and.md)
 - [x] [US0955: An upgrading project follows one page from v5 to v6](../stories/US0955-an-upgrading-project-follows-one-page-from-v5.md)
 - [x] [US0956: The shipped docs teach the lean loop in one place](../stories/US0956-the-shipped-docs-teach-the-lean-loop-in.md)
