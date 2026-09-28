@@ -2106,7 +2106,9 @@ def velocity_gaps(root, since: str | None = None) -> dict:
 
 #: The rate is the median of the most recent RATE_WINDOW usable rows for the model doing the
 #: work; below RATE_MIN_ROWS of them it falls back to the latest single-model rows of any model,
-#: and with none of those to the rows that record no model at all.
+#: and with none of those to the rows that record no model at all. Recency outranks the model:
+#: once RATE_MIN_ROWS rows recording no model are newer than every row that chain picked, the
+#: picked rows are stale and the newest rows are measured instead.
 RATE_WINDOW = 5
 RATE_MIN_ROWS = 3
 
@@ -2159,19 +2161,29 @@ def _rolling_median(rows: list[dict], per_point, model: str | None) -> tuple:
     """`(median, rows used, source)` for `model`, or `(None, [], None)` with no usable row.
 
     The chain: the model's own rows, then any single model's rows, then the rows that
-    record no model - a last resort, used only when no single-model row exists at all."""
-    usable = [(r, v) for r in rows if _single_model(r) and (v := per_point(r)) is not None]
-    mine = [u for u in usable if u[0]["model"] == model]
+    record no model. Recency outranks the chain: when RATE_MIN_ROWS or more rows recording no
+    model are newer than every row it picked, those newer rows are the rate. A model's rows
+    from before the record stopped naming models describe work no longer being done."""
+    rated = [(i, r, v) for i, r in enumerate(rows) if (v := per_point(r)) is not None]
+    usable = [u for u in rated if _single_model(u[1])]
+    unrec = [u for u in rated if _unrecorded(u[1])]
+    mine = [u for u in usable if u[1]["model"] == model]
     if len(mine) >= RATE_MIN_ROWS:
         pick, how = mine[-RATE_WINDOW:], f"measured on {model}"
     elif usable:
         pick = usable[-RATE_WINDOW:]
         how = (f"fallback: {len(mine)} row(s) for {model or 'no named model'}, under "
                f"{RATE_MIN_ROWS}, so the latest rows of any single model")
-    elif unrec := [(r, v) for r in rows if _unrecorded(r) and (v := per_point(r)) is not None]:
+    elif unrec:
         pick, how = unrec[-RATE_WINDOW:], "measured on unrecorded-model rows"
     else:
         return None, [], None
+    newer = [u for u in unrec if u[0] > pick[-1][0]]
+    if len(newer) >= RATE_MIN_ROWS:
+        how = (f"measured on the newest rows, which name no single model: {len(newer)} "
+               f"row(s) newer than {pick[-1][1]['id']} outrank the rows up to it")
+        pick = newer[-RATE_WINDOW:]
+    pick = [(r, v) for _, r, v in pick]
     used = [r for r, _ in pick]
     return (statistics.median(v for _, v in pick), used,
             f"{how}: median of {', '.join(r['id'] for r in used)}")
@@ -2185,7 +2197,9 @@ def measured_rate(root, model: str | None = None) -> dict:
     skipped and named, never fatal. Fewer than RATE_MIN_ROWS rows for that model fall back to
     the latest single-model rows of any model, and `source` says so. With no single-model row
     at all, the rows naming no model are measured as a last resort, and `source` says that
-    too. With no usable row there is NO rate - None, and the caller quotes its seed.
+    too. Whichever rows that picks, RATE_MIN_ROWS or more newer rows naming no model outrank
+    them, and `source` says the rows it measured name no single model. With no usable row
+    there is NO rate - None, and the caller quotes its seed.
     """
     project = telemetry.project_name(root)
     rows = velocity_history(root)

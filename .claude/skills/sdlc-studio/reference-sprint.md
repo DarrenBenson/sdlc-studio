@@ -524,8 +524,12 @@ stops measuring):
 
   **The rate is re-measured every plan from `VELOCITY.md`**: the median tokens per point of the
   working model's latest 5 rows, else any single model's latest 5 when it has under 3, else (a
-  named last resort) rows naming no model; `retro.minutes_per_point` follows the rule. Next the
-  per-unit evidence log (runner-driven), then the seed, quoted as one beside its out-of-sample test.
+  named last resort) rows naming no model; `retro.minutes_per_point` follows the rule. Recency
+  outranks that chain: 3 or more rows naming no model that are newer than every row it picked
+  replace them, as the median of the newest 5, and the source says they name no single model.
+  Next the per-unit evidence log (runner-driven), then the seed, quoted as one beside its
+  out-of-sample test. `estimate.tokens_per_point` in `.config.yaml` overrides all of these, and
+  the forecast basis names it an operator override beside the measured rate it replaced.
 
   **It prices the BUILD, and the plan says what it excludes:** the closing review, repair rounds
   and re-verification, orchestration, and delegated-agent spend the capture cannot yet see. Where

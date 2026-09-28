@@ -1,9 +1,9 @@
 # BG0798: The forecast rate never re-fits: 353,810 tokens per point has forecast about twice the measured spend for three sprints
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_forecast_rate.py, changelog.d/BG0798.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_forecast_rate.py, changelog.d/BG0798.md, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -25,8 +25,10 @@ At close, re-fit tokens and minutes per point from the last N runs' measured row
 
 - [ ] **AC1** Given VELOCITY rows whose newest three usable rows name no single model and whose older rows name the work model (this repository's shape: RETRO0123-RETRO0125 against RETRO0094, RETRO0119, RETRO0120), when the plan reads the tokens-per-point rate, then it is the median of the newest rows and the source says they name no single model. Fails on: HEAD's `_rolling_median`, which prefers the work model's rows however old (353,810 where the newest rows give 184,233)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_forecast_rate.py::ForecastRateTests::test_a_stale_model_s_rows_do_not_outrank_newer_rows
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC2** Given `estimate.tokens_per_point` set in the project config, when the plan forecasts, then that rate is used and the forecast basis names it an operator override. Fails on: the measured rate silently replacing the operator's figure, or the override applied without saying so
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_forecast_rate.py::ForecastRateTests::test_an_operator_rate_overrides_and_is_named
+  - **Verified:** yes (2026-09-28)
 
 ## Notes
 

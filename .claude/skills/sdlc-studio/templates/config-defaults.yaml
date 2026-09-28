@@ -275,6 +275,11 @@ capacity:
   minutes: 240    # wall-clock ceiling for the run; feeds the appetite breaker
   units: 8        # unit-count ceiling for the run; feeds the appetite breaker
 
+# Tokens-per-point override. Unset, the plan re-measures the rate from VELOCITY.md; set, it
+# prices the plan, and the forecast basis names it an operator override beside the measured rate.
+# estimate:
+#   tokens_per_point: 200000   # a plain integer; 1e5 reads as text and is ignored
+
 # Run appetite - the unattended-run circuit breaker (Shape Up's fixed timebox). A run declares
 # how much it may spend; the breaker (`loop_guard budget`) is evaluated at unit BOUNDARIES and
 # stops the run cleanly when the appetite is spent, distinct from a per-unit quarantine (its own

@@ -283,6 +283,7 @@ How much ONE sprint may cost. The single source for both the plan-time "does thi
 | `capacity.tokens` | 500000 | Token-forecast ceiling for the batch; a warning only, never a gate |
 | `capacity.minutes` | 240 | Wall-clock ceiling for the run; feeds the appetite breaker |
 | `capacity.units` | 8 | Unit-count ceiling for the run; feeds the appetite breaker |
+| `estimate.tokens_per_point` | unset | Operator override for the measured tokens-per-point rate; the plan prices with it and the forecast basis names it an override beside the measured rate it replaced. Write a plain integer (`200000`, not `1e5`, which YAML reads as text). A value that is not a finite number rounding to 1 or more (text, a boolean, `.nan`, `.inf`, `0`, `0.4`) is ignored, and the basis names it |
 
 `sprint plan` sizes the batch against these and flags an over-budget batch **at plan time** - while the operator can still cut it, instead of mid-run when the breaker halts the sprint. Over budget never refuses to plan: the token total IS transcript-measured, but only as a LOWER BOUND - delegated and sidechain spend is supplied rather than observed - and the forecast is `sum(Points) x a measured tokens-per-point rate`, so the plan quotes a plausible **range** rather than a bare number that reads as fact. The wall-clock and unit axes are the real breaker. 0 on an axis = unbounded.
 

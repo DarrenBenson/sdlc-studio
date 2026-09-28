@@ -44,6 +44,7 @@ import contextlib
 import fnmatch
 import io
 import json
+import math
 import os
 import re
 import subprocess
@@ -198,10 +199,36 @@ RATE_SEED = "seed"
 #: (`done`) rate - a design run that writes no code must not be priced as a build
 #: The build rung is unaffected.
 RATE_UNMEASURED_RUNG = "unmeasured-rung"
+#: The operator set the rate in `.config.yaml` (TOKENS_PER_POINT_KEY): it prices the plan, and
+#: the basis says so beside the measured rate it replaced.
+RATE_OVERRIDE = "operator-override"
+TOKENS_PER_POINT_KEY = "estimate.tokens_per_point"
 
 
 def tokens_per_point(repo_root: Path | str | None = None) -> dict:
-    """The tokens-per-point rate IN FORCE, MEASURED from this project's own evidence.
+    """The tokens-per-point rate IN FORCE: the operator's `estimate.tokens_per_point` when set,
+    else `_measured_tokens_per_point`. An override is named as one and carries the measured
+    rate it replaced; a value that is not a finite number rounding to 1 or more (text, a
+    bool, NaN, infinity, 0.4) is not applied, and the basis of the measured rate says it was
+    ignored."""
+    got = _measured_tokens_per_point(repo_root)
+    raw = None if repo_root is None else sdlc_md.project_override(repo_root, TOKENS_PER_POINT_KEY)
+    if raw is None:
+        return got
+    rate = (round(raw) if isinstance(raw, (int, float)) and not isinstance(raw, bool)
+            and math.isfinite(raw) else 0)
+    if rate < 1:
+        return {**got, "basis": f"{got['basis']}. `{TOKENS_PER_POINT_KEY}` ({raw!r}) in "
+                                f".config.yaml is not a number of at least 1 token and was "
+                                f"ignored"}
+    return {**got, "rate": rate, "source": RATE_OVERRIDE,
+            "basis": (f"operator override: `{TOKENS_PER_POINT_KEY}` is {rate:,} in "
+                      f".config.yaml. The measured rate it replaces is {got['rate']:,} "
+                      f"({got['source']}: {got['basis']})")}
+
+
+def _measured_tokens_per_point(repo_root: Path | str | None = None) -> dict:
+    """The tokens-per-point rate MEASURED from this project's own evidence.
 
     TWO SOURCES, ONE ANSWER, AND NEITHER IS EVER SILENTLY SUBSTITUTED FOR THE OTHER.
 
@@ -4016,6 +4043,7 @@ _RATE_STOOD_INSTEAD = {
     RATE_SEED: "the seed stands instead",
     RATE_FIXED_FIT: "the fitted fixed-term marginal stands instead",
     RATE_VELOCITY: "the velocity record's own surviving rate stands",
+    RATE_OVERRIDE: "the operator's override stands",
     RATE_UNMEASURED_RUNG: "nothing stands: this rung prices no marginal at all",
 }
 

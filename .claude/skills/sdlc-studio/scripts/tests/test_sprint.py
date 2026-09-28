@@ -2865,8 +2865,8 @@ class RowClassSurvivesRemeasurementTests(unittest.TestCase):
     reach back and change what a past plan forecast with."""
 
     #: This repo's own four rows carrying both a forecast and a sprint actual. Three record no
-    #: model, so the rate skips them; CR0373 will stamp them, and that stamp alone is the whole
-    #: trigger.
+    #: model and are newer than the stamped one, so they set the rate; CR0373 will stamp them,
+    #: and that stamp alone is the whole trigger.
     ROWS = ((28, 10, 250_000, 564_066), (60, 30, 750_000, 2_390_624),
             (61, 31, 775_000, 1_265_392), (65, 18, 400_000, 2_634_055))
 
@@ -2883,9 +2883,10 @@ class RowClassSurvivesRemeasurementTests(unittest.TestCase):
             sp = _load()
             self._record(root, stamped=False)
             before_rate, before = sp.tokens_per_point(root), sp.whole_sprint_excess(root)
-            # US0869: the unstamped rows are skipped, so the one stamped row sets the rate
+            # BG0798: the three unstamped rows are newer than the one stamped row, so they
+            # outrank it - the median of their own rates, not RETRO0028's
             self.assertEqual(before_rate["source"], "velocity-record")
-            self.assertEqual(before_rate["rate"], round(564_066 / 10))
+            self.assertEqual(before_rate["rate"], round(2_390_624 / 30))
             self.assertTrue(before["measured"])
             self.assertEqual(before["low"], 1.63)
             self.assertEqual(before["high"], 6.59)
