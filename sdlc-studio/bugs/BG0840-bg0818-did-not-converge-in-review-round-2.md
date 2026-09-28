@@ -31,3 +31,4 @@ Fix each finding above, then deliver BG0818 again in a later run.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-28 | sdlc-studio | Filed |
+| 2026-09-28 | sdlc-studio v6 | Its blocking finding (an unreadable AGENTS.md or prd.md crashing init guided and status hint) is answered by BG0818's bounded round 3 (D0285, D0286). Still open: a bare {{version}} in prose holds an authored document; a placeholder a template quotes only in a code span (trd.md's path token) can escape as authored. |

@@ -47,6 +47,14 @@ moves on. The stages, in order:
 6. **decompose** - break the PRD into epics and sized stories.
 7. **plan** - the first sprint plan - onboarding ends exactly where delivery begins.
 
+A stage ends when you confirm or skip it, or when the project already holds its finished output. A
+document still carrying its template's `{{placeholders}}` is a draft, not a finished output (quoting
+one in a code span or a fenced example does not count), so the stage that drafted it stays the
+resume point until you fill it in or confirm it. That covers the
+`AGENTS.md` that `init` seeds, too. An existing `AGENTS.md` with no lifecycle doctrine (framework
+boilerplate, say) leaves the **agents** stage open: it offers to append the starter's
+`## Operating doctrine` block and never rewrites your file.
+
 It works on both **greenfield** (nothing yet - each document is authored with you) and **brownfield**
 (existing code - the stack is detected and the documents are generated from what is already there)
 projects; the path is classified for you at the first stage. Progress is checkpointed, so you can

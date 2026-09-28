@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 30 |
-| In Progress | 5 |
-| Fixed | 668 |
+| Open | 31 |
+| In Progress | 4 |
+| Fixed | 669 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
 | Superseded | 28 |
-| **Total** | **840** |
+| **Total** | **841** |
 
 ## All Bugs
 
@@ -176,7 +176,7 @@
 | [BG0815](BG0815-the-bug-verify-and-close-workflows-never-name.md) | The bug verify and close workflows never name verify_ac.py, so an agent runs the tests by hand and the criterion is never recorded green | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0816](BG0816-seven-skill-docs-still-call-the-three-amigos.md) | Seven skill docs still call the Three Amigos by retired names, and AGENTS.md names a seat directory that does not exist | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0817](BG0817-the-bug-close-guidance-says-briefed-with-critic.md) | The bug-close guidance says briefed with critic.py brief but never says to hand the reviewer the brief whole, so agents relay a trimmed or broken brief | Open | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0818](BG0818-init-guided-treats-a-stage-s-own-drafted.md) | init guided treats a stage's own drafted scaffold, or any pre-existing file, as the stage done, so the resume point skips the stage it just drafted | In Progress | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0818](BG0818-init-guided-treats-a-stage-s-own-drafted.md) | init guided treats a stage's own drafted scaffold, or any pre-existing file, as the stage done, so the resume point skips the stage it just drafted | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0819](BG0819-a-signed-sprint-report-s-verified-on-names.md) | A signed sprint report's 'Verified on' names the run's base ref, the commit before any work, because nothing writes verified_sha | In Progress | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0820](BG0820-a-unit-with-an-independent-approve-that-the.md) | A unit with an independent APPROVE that the loop left at Ready or In Progress is handed over as an unanswered known issue, then sealed by sign | In Progress | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0821](BG0821-install-ps1-local-still-refreshes-every-personal-copy.md) | install.ps1 -Local still refreshes every personal copy of the skill, the defect BG0809 fixed only in install.sh | Fixed | Medium | 2026-09-28 | 2026-09-28 |
@@ -199,6 +199,7 @@
 | [BG0838](BG0838-retired-surface-excuses-a-live-retired-name-by.md) | retired_surface excuses a live retired name by the shape of its sentence, so a live instruction passes as history | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0839](BG0839-an-eval-worker-session-loads-the-personal-skill.md) | An eval worker session loads the personal skill ahead of the candidate copy, and nothing in the harness says so or prevents it | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0840](BG0840-bg0818-did-not-converge-in-review-round-2.md) | BG0818 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0841](BG0841-the-review-cap-has-no-per-unit-exception.md) | The review cap has no per-unit exception path, so an operator-granted extra round can only land by force | Open | Medium | 2026-09-28 | 2026-09-28 |
 
 ## Archived Releases
 

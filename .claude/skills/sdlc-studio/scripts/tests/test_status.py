@@ -1001,6 +1001,10 @@ class OnboardingHintFalsifiabilityTests(unittest.TestCase):
     a TRD, a TSD, personas and 218 epics, made `hint` answer `init guided` for twelve days.
     """
 
+    #: An AGENTS.md as the agents stage leaves it: pointing at the lifecycle doctrine. A bare
+    #: heading is framework boilerplate, which leaves the stage open (BG0818).
+    AGENTS_MD = "# AGENTS.md\n\nRead reference-doctrine.md before substantive work.\n"
+
     def _marked(self, root: Path, *pending: str) -> None:
         (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
         (root / "sdlc-studio" / ".local" / "onboarding.json").write_text(json.dumps(
@@ -1011,8 +1015,9 @@ class OnboardingHintFalsifiabilityTests(unittest.TestCase):
         """Create exactly what `init`'s own stage for `stage` produces."""
         (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
         if stage == "agents":
-            for name in ("AGENTS.md", "CLAUDE.md"):     # the stage writes BOTH
-                (root / name).write_text(f"# {name}\n", encoding="utf-8")
+            # the stage writes BOTH
+            (root / "AGENTS.md").write_text(self.AGENTS_MD, encoding="utf-8")
+            (root / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
         elif stage in ("prd", "trd", "tsd", "personas"):
             (root / "sdlc-studio" / f"{stage}.md").write_text(f"# {stage}\n", encoding="utf-8")
         elif stage == "decompose":
@@ -1057,13 +1062,12 @@ class OnboardingHintFalsifiabilityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._marked(root, "agents", "decompose")
-            (root / "AGENTS.md").write_text("# agents\n", encoding="utf-8")   # no CLAUDE.md
+            (root / "AGENTS.md").write_text(self.AGENTS_MD, encoding="utf-8")   # no CLAUDE.md
             state = json.loads(
                 (root / "sdlc-studio" / ".local" / "onboarding.json").read_text())
             self.assertEqual("agents", init.first_incomplete(state, root),
                              "half of the agents stage's output declared the whole stage done")
-            for name in ("AGENTS.md", "CLAUDE.md"):
-                (root / name).write_text("# x\n", encoding="utf-8")
+            (root / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
             eps = root / "sdlc-studio" / "epics"; eps.mkdir(parents=True, exist_ok=True)
             (eps / "EP0001-x.md").write_text("# EP0001: x\n", encoding="utf-8")  # no stories
             state = json.loads(

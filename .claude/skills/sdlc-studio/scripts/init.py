@@ -311,10 +311,82 @@ def stage_status(state: dict, name: str) -> str | None:
 #: The SINGLETON stages, whose output is `sdlc-studio/{name}.md` - the same path `_seed_singleton`
 #: writes, so the two cannot disagree about what a stage produces.
 _SINGLETON_STAGES = ("prd", "trd", "tsd", "personas")
+_PLACEHOLDER = re.compile(r"\{\{[^{}]*\}\}")
+# Where an authored document QUOTES a placeholder rather than leaving one unfilled: a fenced block,
+# or a code span holding nothing but the placeholder (`{{version}}`).
+_QUOTED = re.compile(r"^(```|~~~).*?^\1|`\{\{[^{}`]*\}\}`", re.MULTILINE | re.DOTALL)
+
+
+def _read(path: Path) -> str | None:
+    """A stage output's text for the draft and doctrine tests, or None when it cannot be read.
+    Decoded leniently: the tokens and markers they look for are ASCII. A project file in another
+    encoding, or one the process may not read, must never crash the orientation path that reads
+    it (`status`, `hint`, `init guided`); an unreadable output is simply not authored."""
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+
+
+def _unreadable(path: Path) -> str | None:
+    """Why `path` cannot be read as a UTF-8 text file, or None when it can (or is absent)."""
+    try:
+        path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None
+    except UnicodeDecodeError:
+        return "not valid UTF-8"
+    except OSError as exc:
+        return exc.strerror or type(exc).__name__
+    return None
+
+
+def _seeded(root: Path, template: Path) -> str:
+    """The body seeding writes from `template` for this project, as `_seed_singleton` and
+    `stage_agents` write it."""
+    return seed_text(template, seed_fields(root, date.today().isoformat()))
+
+
+def _draft_tokens(root: Path, template: Path) -> set[str]:
+    """The placeholders a freshly seeded file still carries: those `seed_text` leaves unfilled.
+    Derived from the seeded body, not the raw template, so a field seeding always fills
+    (`{{date}}`, the project name) or a token only in the guidance comment never marks a draft."""
+    return set(_PLACEHOLDER.findall(_seeded(root, template)))
+
+
+def _authored(root: Path, path: Path, template: Path) -> bool:
+    """Whether `path` exists and is no longer the draft `template` seeds: outside quoted code it
+    carries none of the placeholders a seeded copy still holds. A written document that quotes
+    `{{version}}` in a code span or a fenced example is authored, not unfilled."""
+    if not path.is_file():
+        return False
+    if not template.is_file():
+        return True
+    text = _read(path)
+    if text is None:
+        return False
+    text = _QUOTED.sub("", text)
+    return not any(tok in text for tok in _draft_tokens(root, template))
+
+
+def carries_doctrine(root: Path | str) -> bool:
+    """Whether AGENTS.md points at the lifecycle doctrine, asked of the same check `validate
+    instructions` makes (`no-doctrine-pointer`), so onboarding and the hygiene check cannot
+    disagree about what an instructions file must carry. A file that check cannot read leaves
+    the answer False - the stage stays open and says why - rather than crashing onboarding."""
+    import validate  # noqa: PLC0415 - deferred: only the agents stage needs it
+    root = Path(root)
+    if not (root / "AGENTS.md").is_file():
+        return False
+    try:
+        findings = validate.check_instructions(root)
+    except (OSError, UnicodeDecodeError):
+        return False
+    return not any(f["rule"] == "no-doctrine-pointer" for f in findings)
 
 
 def stage_output_exists(root: Path | str, stage: str) -> bool:
-    """Whether this stage's OUTPUT is already on disk.
+    """Whether this stage's OUTPUT is already on disk, AUTHORED rather than merely seeded.
 
     A marker records what somebody last clicked, not what the project contains, and until this
     existed nothing compared the two: a marker written once and abandoned outranked the whole
@@ -322,15 +394,25 @@ def stage_output_exists(root: Path | str, stage: str) -> bool:
     project holding a PRD, a TRD, a TSD, personas and 218 epics was told to go and onboard
     itself, and no state of the tree could dislodge it. A claim nothing can contradict is not a
     claim - and this is the orientation command, read before a reader knows enough to doubt it.
+
+    Existence alone was the opposite error: every file stage seeds its own output, so the run
+    that drafted the PRD named the TRD as next and the following run ticked the PRD from its
+    unfilled template. A file still carrying its template's placeholders is a draft awaiting
+    review, not the stage's output.
     """
     root = Path(root)
     if stage == "agents":
         # BOTH files the stage writes. Testing AGENTS.md alone declared the stage done for the
         # ordinary brownfield repo that has one and no CLAUDE.md, so the stage was skipped and
         # CLAUDE.md never drafted - the fail-OPEN direction this fix opened and has to close.
-        return all((root / dst).is_file() for _src, dst in AGENT_FILES)
+        # And an AGENTS.md of framework boilerplate is not this stage's output: without the
+        # doctrine the project's agents never learn the process.
+        return (all(_authored(root, root / dst, SKILL / "templates" / src)
+                    for src, dst in AGENT_FILES)
+                and carries_doctrine(root))
     if stage in _SINGLETON_STAGES:
-        return (root / SDLC / f"{stage}.md").is_file()
+        return _authored(root, root / SDLC / f"{stage}.md",
+                         SKILL / "templates" / "core" / f"{stage}.md")
     if stage == "decompose":
         # `epic`, THEN `story` - the stage directs both, so epics alone is half done.
         return (any((root / SDLC / "epics").glob("EP*.md"))
@@ -421,7 +503,21 @@ def stage_agents(root: Path | str, force: bool = False) -> dict:
             continue
         p.write_text(seed_text(st, fields), encoding="utf-8")
         created.append(dst)
-    return {"created": created, "skipped": skipped}
+    # A pre-existing AGENTS.md is the project's own and is never rewritten, so the stage OFFERS
+    # the doctrine it lacks rather than ticking a file the project's agents learn nothing from.
+    todo = []
+    unreadable = {dst: why for _src, dst in AGENT_FILES if (why := _unreadable(root / dst))}
+    for dst, why in unreadable.items():
+        fix = "re-save it as UTF-8" if why == "not valid UTF-8" else "make it a readable file"
+        todo.append(f"{dst} cannot be read ({why}) - {fix} so the doctrine check can read it")
+    if not unreadable and not carries_doctrine(root):
+        todo.append(f"AGENTS.md carries no lifecycle doctrine - append the `## Operating "
+                    f"doctrine` block from {starters[0][0]}, keeping your project sections")
+    if "AGENTS.md" not in unreadable and not _authored(root, root / "AGENTS.md", starters[0][0]):
+        todo.append("fill in the {{placeholders}} in AGENTS.md - the project specifics an agent "
+                    "cannot infer")
+    return {"created": created, "skipped": skipped,
+            **({"directive": "; ".join(todo)} if todo else {})}
 
 
 def _seed_singleton(root: Path | str, name: str) -> tuple[list[str], list[str]]:
@@ -496,6 +592,21 @@ def stage_plan(root: Path | str) -> dict:
             "directive": "plan your first sprint over the groomed backlog: `sprint plan`"}
 
 
+def _is_seed(root: Path, rel: str) -> bool:
+    """Whether the file at `rel` is still what seeding wrote (unfilled, or the seeded body as
+    written), so the runner says the tool drafted it rather than implying the user did."""
+    src = {dst: SKILL / "templates" / tmpl for tmpl, dst in AGENT_FILES}
+    src.update({f"{SDLC}/{s}.md": SKILL / "templates" / "core" / f"{s}.md"
+                for s in _SINGLETON_STAGES})
+    tmpl, path = src.get(rel), root / rel
+    if tmpl is None or not tmpl.is_file() or not path.is_file():
+        return False
+    text = _read(path)
+    if text is None:
+        return False
+    return not _authored(root, path, tmpl) or text.strip() == _seeded(root, tmpl).strip()
+
+
 # Per-stage draft actions, keyed by stage name. Each drafts its artefact (or, for the agent-driven
 # steps, points the operator at the command); the operator confirms to advance.
 STAGE_ACTIONS = {"agents": stage_agents, "prd": stage_prd, "trd": stage_trd, "tsd": stage_tsd,
@@ -545,7 +656,12 @@ def cmd_guided(args: argparse.Namespace) -> int:
         for f in drafted.get("created", []):
             print(f"  drafted {f} - review it, then `init guided --confirm` (or --skip)")
         for f in drafted.get("skipped", []):
-            print(f"  {f} already present - review it, then `init guided --confirm`")
+            why = _unreadable(root / f)
+            if why:
+                print(f"  {f} cannot be read ({why}) - the stage stays open until it can")
+                continue
+            how = "seeded from its template" if _is_seed(root, f) else "already present"
+            print(f"  {f} {how} - review it, then `init guided --confirm`")
         if drafted.get("directive"):
             print(f"  next: {drafted['directive']}")
     return 0
