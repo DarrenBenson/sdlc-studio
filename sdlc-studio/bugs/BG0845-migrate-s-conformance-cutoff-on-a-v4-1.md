@@ -1,4 +1,4 @@
-# BG0845: migrate's conformance cutoff on a v4.1 project exempts 98 units the project reviewed after its own adoption point, because a verdict row with no Author column never reads as independent
+# BG0845: migrate's conformance cutoff on a v4.1 project exempts the 98 units after the project's own adoption point, because a verdict row with no Author column never reads as independent
 
 > **Status:** Open
 > **Severity:** Medium

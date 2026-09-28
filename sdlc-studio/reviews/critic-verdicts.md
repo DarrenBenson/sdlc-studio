@@ -1387,6 +1387,7 @@ One row has been removed since adoption.
 | BG0822 | APPROVE | qa-rev-ada8f560 | builder-a213cd82 | 2026-09-28 | c36d31ca56c9 | full | [new] non-blocking: the AC1 fixture stubs the close chain so 11 of 28 changed lines, including the sign cascade's sign: prefix, are untested; [new] non-blocking: a stale comment near sprint.py 5057 still calls a partial or missed close stopped; [pre-existing] non-blocking: the preflight remedy and some docstrings still name the retired sign-off |
 | BG0819 | APPROVE | qa-rev-ada8f560 | builder-a213cd82 | 2026-09-28 | 087e1b32aedc | full | [new] non-blocking: no test covers the close stamping a null verified\_sha when git rev-parse HEAD fails; [pre-existing] non-blocking: an unanchored old signed page reads not recorded rather than its base ref |
 | BG0820 | APPROVE | qa-rev-a562d27e | builder-a213cd82 | 2026-09-28 | 6509c6bc5d8b | full | [pre-existing] non-blocking: a CR at Review, reachable only by hand edit, passes the close and sign leaves it at Review with no known-issue row; [new] non-blocking: a negation after the Review command survives the AC2 doc test |
+| US0962 | APPROVE | qa-rev-a46a5db9 | builder-a81e72b2 | 2026-09-28 | 449cf71f7ed0 | full | [new] non-blocking: finding 4 said the cutoff exempts 98 units reviewed, though only 49 hold an APPROVE, corrected at landing; [new] non-blocking: the record test checks shape, not figures, so figure-level lies survive; [new] non-blocking: the story's Notes say no pinned test though the Verify lines require one |
 
 ## Supersessions
 

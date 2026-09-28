@@ -21,3 +21,5 @@
 {"id": "BG0823", "type": "bug", "project": "sdlc-studio"}
 {"id": "BG0819", "type": "bug", "project": "sdlc-studio"}
 {"id": "BG0822", "type": "bug", "project": "sdlc-studio"}
+{"id": "US0962", "type": "story", "project": "sdlc-studio"}
+{"id": "EP0267", "type": "epic", "project": "sdlc-studio"}

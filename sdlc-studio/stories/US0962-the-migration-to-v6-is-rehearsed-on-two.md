@@ -1,6 +1,6 @@
 # US0962: The migration to v6 is rehearsed on two real consuming projects, and the record is published
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,8 +19,10 @@
 
 - **AC1:** Given scratch copies of two real consuming projects on this machine, one recording skill 4.1.0 (schema 2, 688 stories) and one recording 2.4.1 (schema 2, 594 stories, with frozen sign-off records), when `migrate` then `migrate --apply` run under the 6.0.0-rc.1 skill, then `docs/upgrade-rehearsal-v6.md` holds one table row per project, labelled by its recorded version and never by name, giving the version before and after, each command with its exit code, what `--apply` changed, what it left to a human, and the `validate.py check` and `gate.py` exit codes before and after. Fails on: a record written from the dry run alone
   - **Verify:** pytest tools/tests/test_lean_upgrade_rehearsal_record.py::UpgradeRehearsalRecordTests::test_each_project_row_records_both_commands_and_their_exit_codes
+  - **Verified:** yes (2026-09-28)
 - **AC2:** Given the record's Findings table, then every row carries a bug, change request or decision id that resolves in this workspace, filed with `file_finding.py`. Fails on: a refusal or failure described in prose with no owner, which the 6.0.0 notes would then have to disclose by hand
   - **Verify:** pytest tools/tests/test_lean_upgrade_rehearsal_record.py::UpgradeRehearsalRecordTests::test_every_finding_row_names_an_owner_that_resolves
+  - **Verified:** yes (2026-09-28)
 
 ## Notes
 
