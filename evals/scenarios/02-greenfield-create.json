@@ -2,8 +2,8 @@
   "id": "02-greenfield-create",
   "title": "Greenfield create path: PRD to epics to stories with correct artifacts",
   "regression_target": "Create-path workflow regressions from reference-epic.md / reference-story.md dedup and trims",
-  "setup": "Empty git repository. Provide a one-paragraph product brief (a CLI tool that tracks reading lists: add books, mark read, show stats). Skill installed. Run the worker through three prompts in one session: (1) '/sdlc-studio prd create' answering its questions tersely, (2) '/sdlc-studio epic', (3) '/sdlc-studio story'.",
-  "prompt": "See setup - three sequential commands with terse cooperative answers.",
+  "setup": "Git repository holding only BRIEF.md (a one-paragraph product brief: a CLI tool that tracks a reading list - add books, mark read, show stats) and a one-line README.md (the fixture). Commit it as the base. Skill installed. The worker runs three commands in one session: prd create, epic, story.",
+  "prompt": "BRIEF.md is the product brief for this repository. Using the sdlc-studio skill, run these three commands in order in this one session: /sdlc-studio prd create, then /sdlc-studio epic, then /sdlc-studio story. Where a step asks me a question, answer it tersely from BRIEF.md and say which answer you took; where BRIEF.md is silent, take the simplest option and say so. Do not wait for me between the three steps.",
   "expected_behaviours": [
     {
       "id": "EB1",
@@ -36,5 +36,11 @@
     "Skipping index file creation or deferring it to a later step",
     "Inventing status values outside the canonical vocabulary"
   ],
-  "grading_notes": "Grade EB4/EB5 from the transcript (the consultation and cohesion steps may be summarised rather than fully transcribed). Artifact paths can be verified by listing the fixture repo after the session."
+  "grading_notes": "Grade EB4/EB5 from the transcript (the consultation and cohesion steps may be summarised rather than fully transcribed). Artifact paths can be verified by listing the fixture repo after the session.",
+  "fixture": {
+    "files": {
+      "BRIEF.md": "# Product brief: readlog\n\nreadlog is a command-line tool for one person to track a reading list. You add a book (title, author, optional page count), mark it as reading or read (recording the date finished), list books by state, and see simple stats: books read this year, pages read this year, and the average days from starting to finishing. Data lives in one local JSON file; there is no account, sync or network access. The user is a keen reader comfortable in a terminal. Success is adding a book in under five seconds and trusting the yearly count.\n",
+      "README.md": "# readlog\n\nSee BRIEF.md.\n"
+    }
+  }
 }

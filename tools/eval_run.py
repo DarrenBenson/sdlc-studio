@@ -14,7 +14,8 @@ was manual ceremony around them is now deterministic:
             Takes an expected-behaviour id (EB1) or a forbidden-behaviour id (FB1,
             positional, printed by setup); on a forbidden id, fail means OBSERVED
             and always blocks the gate
-    report  summarise a run: exit 1 if any BLOCKING behaviour failed, else 0
+    report  summarise a run (every scenario on disk, or --scenario for one): exit 1 if any
+            BLOCKING behaviour failed or is ungraded, else 0
 
 Results land in evals/.results/<run>.json (repo-only, like evals/ itself).
 
@@ -137,7 +138,7 @@ def cmd_report(args: argparse.Namespace) -> int:
     # would skip all of its blocking behaviours and print a false 'gate pass'. A
     # wholly-ungraded scenario is not a pass - its blocking behaviours are ungraded.
     on_disk = {p.stem for p in SCENARIOS.glob("*.json")}
-    for sid in sorted(on_disk | set(data)):
+    for sid in sorted(on_disk | set(data)) if args.scenario is None else [args.scenario]:
         behaviours = data.get(sid, {})
         sc = load_scenario(sid)
         expected = {eb["id"] for eb in sc.get("expected_behaviours", [])}
@@ -185,6 +186,7 @@ def main(argv: list[str] | None = None) -> int:
     r.set_defaults(func=cmd_record)
     g = sub.add_parser("report", help="Summarise a run; exit 1 on any blocking failure.")
     g.add_argument("--run", required=True)
+    g.add_argument("--scenario", help="judge this one scenario only (an unknown id is an error)")
     g.set_defaults(func=cmd_report)
     args = p.parse_args(argv)
     try:

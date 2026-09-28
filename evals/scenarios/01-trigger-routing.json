@@ -2,7 +2,7 @@
   "id": "01-trigger-routing",
   "title": "Natural-language trigger routes to the skill without a slash command",
   "regression_target": "SKILL.md description rewrite degrading model-side invocation (Codex/Gemini rely on the description alone)",
-  "setup": "Empty git repository containing only a README.md with two sentences describing a toy product. Skill installed at the tool's skills directory. No sdlc-studio/ artifacts exist.",
+  "setup": "Git repository holding only README.md: two sentences describing a toy product (the fixture). Commit it as the base. Skill installed at the tool's skills directory. No sdlc-studio/ artifacts exist.",
   "prompt": "I need a proper requirements document for this product before we start building. Can you sort that out?",
   "expected_behaviours": [
     {
@@ -25,5 +25,10 @@
     "Writing a requirements document in an ad-hoc format that ignores the skill's PRD template entirely",
     "Claiming the skill or command does not exist"
   ],
-  "grading_notes": "EB1 passes if the transcript shows skill content loaded or skill-defined workflow followed. A clarifying question to the user about product scope is fine and does not fail anything."
+  "grading_notes": "EB1 passes if the transcript shows skill content loaded or skill-defined workflow followed. A clarifying question to the user about product scope is fine and does not fail anything.",
+  "fixture": {
+    "files": {
+      "README.md": "# Shelfie\n\nShelfie is a small web app that lets a household keep one shared list of the board games it owns and who borrowed which. It is aimed at families and flatshares, not collectors.\n"
+    }
+  }
 }

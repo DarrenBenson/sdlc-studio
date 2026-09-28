@@ -1,0 +1,384 @@
+{
+  "01-trigger-routing": {
+    "EB1": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "transcript line 2: model-invoked Skill call {skill: sdlc-studio, args: prd create} after a plain-language prompt with no /sdlc-studio typed; SKILL.md loaded (line 4)"
+    },
+    "EB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "transcript line 291: cat ~/.claude/skills/sdlc-studio/help/prd.md, then reference-prd.md create workflow (line 500) and cat templates/core/prd.md (line 577) before the first Write to sdlc-studio/prd.md"
+    },
+    "EB3": {
+      "verdict": "pass",
+      "severity": "advisory",
+      "forbidden": false,
+      "evidence": "determined from repo before writing: git ls-files returned only README.md (line 292), worker proceeded in create mode and later stated it was written from scratch rather than from code, since nothing is built yet (line 915); mode arg was chosen at invocation, before the repo check"
+    },
+    "FB1": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "not observed: grep ^## on sdlc-studio/prd.md gives 13 headings identical in order to templates/core/prd.md (1. Project Overview through 11. Open Questions, Outcomes, Changelog)"
+    },
+    "FB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "not observed: Skill tool returned Launching skill: sdlc-studio (line 3) and no assistant message claims the skill or a command is missing"
+    }
+  },
+  "02-greenfield-create": {
+    "EB1": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "find lists sdlc-studio/prd.md, epics/EP0001-book-capture-and-local-storage.md..EP0003, stories/US0001-local-json-data-store.md..US0006, plus epics/_index.md and stories/_index.md"
+    },
+    "EB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "ids minted by artifact.py batch: EP0001-EP0003 and US0001-US0006, four-digit, contiguous, one file per id; reconcile detect drift_items=0"
+    },
+    "EB3": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "all six stories Status: Draft; grep -c Given gives 4-5 per story, e.g. US0001:21 AC1: Given no data file exists, when any command loads the store, then an empty store is returned"
+    },
+    "EB4": {
+      "verdict": "fail",
+      "severity": "advisory",
+      "forbidden": false,
+      "evidence": "transcript 1637: The Three Amigos review was skipped because no persona files exist yet; never run or offered for stories, reference-workflow-personas.md never read"
+    },
+    "EB5": {
+      "verdict": "fail",
+      "severity": "advisory",
+      "forbidden": false,
+      "evidence": "no cohesion review in any assistant turn or final report and no sdlc-studio/reviews/RV*-cohesion.md; after story batch it ran only reconcile apply/detect and validate check"
+    },
+    "FB1": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Status grep shows Draft on all 3 epics and 6 stories, PRD Status: Draft; both index summaries show Done 0; no transition.py call in transcript"
+    },
+    "FB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "artifact.py batch --type epic and --type story wrote epics/_index.md and stories/_index.md in the same step as the artefacts; reconcile.py detect: scope=all drift_items=0"
+    },
+    "FB3": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "artefact statuses are only Draft; PRD feature rows use Not Started, which is in the template vocabulary at prd.md:306 Complete | Partial | Stubbed | Broken | Not Started"
+    }
+  },
+  "03-generate-mode-gate": {
+    "EB1": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "Transcript line 479 Read of ~/.claude/skills/sdlc-studio/reference-philosophy.md (full file incl. #generate-mode), preceded by a Grep of its headings at line 293; first Write of sdlc-studio/prd.md is at line 1211"
+    },
+    "EB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "prd.md:13 Status: Draft - extracted specification, awaiting validation; prd.md:17-18 This PRD was reverse-engineered from code. It is a migration blueprint in draft, not a validated specification"
+    },
+    "EB3": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "prd.md:118-126 POST /login contract with 400 invalid_email, 400 password_too_short, 423 account_locked; prd.md:141 If failed_attempts >= 5 then 423; prd.md:185 MAX_ATTEMPTS = 5 (app.py:11); prd.md:212 GET /healthz body status ok"
+    },
+    "EB4": {
+      "verdict": "pass",
+      "severity": "advisory",
+      "forbidden": false,
+      "evidence": "prd.md:27-28 Checkboxes stay unticked until the downstream pipeline (story generate, test-spec, test-automation, code test) produces committed tests that pass against this code; final message: The PRD only counts as validated once the 14 [P] criteria are committed tests that pass"
+    },
+    "FB1": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Not observed: gate evidence precedes generation - reference-philosophy.md Read at transcript line 479, prd.md Write at line 1211, and prd.md frames itself as a draft migration blueprint awaiting validation"
+    },
+    "FB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Not observed: grep for blockquote Status lines under sdlc-studio/ returns nothing; doc status is Draft (prd.md:13), features are Partial/Complete/Not Started (prd.md:100-103, PRD implementation vocab), no Done anywhere, all 17 AC checkboxes unticked"
+    }
+  },
+  "04-drift-reconcile": {
+    "EB1": {
+      "verdict": "pass",
+      "severity": "advisory",
+      "forbidden": false,
+      "evidence": "transcript line 408 runs python3 $S/status.py pillars --format json (stories_done_pct 33, epics_ready_pct 0); dashboard REQUIREMENTS 13% = Stories 33% x 40% weight per help/status.md:125, consistent with fixture"
+    },
+    "EB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "report names all three, matching reconcile.py detect: US0001: In Progress -> Done (story file says Done); US0003: missing row -> add (Ready); EP0001 story breakdown [ ] -> [x] US0001"
+    },
+    "EB3": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "git -C /tmp/evals-v6-rc1/04-drift-reconcile status --porcelain printed nothing after the run; HEAD is still the single commit 73636c6 fixture base"
+    },
+    "EB4": {
+      "verdict": "pass",
+      "severity": "advisory",
+      "forbidden": false,
+      "evidence": "3 index/breakdown fixes offered for apply, separately flagged: Left alone: EP0001 stays In Progress and To check: US0001 is Done with AC1 ticked, but nothing has tested that criterion against code"
+    },
+    "FB1": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "transcript has only 4 Bash tool calls (help reads, file listing, cat, status.py pillars, reconcile.py detect) and no Write/Edit or apply; git status --porcelain empty"
+    },
+    "FB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "report says DRIFT DETECTED: 3 fixes needed; no clean or no-drift claim anywhere in the transcript"
+    }
+  },
+  "05-schema-v3-identity": {
+    "EB1": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "artifact.py new --type bug printed: created BG-01M3KGCM -> sdlc-studio/bugs/BG-01M3KGCM-login-form-drops-the-csrf-token.md (indexed=True); ULID shape, no 4-digit number"
+    },
+    "EB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "EP-01JQK3F8-onboarding.md Story Breakdown now lists - [ ] [US-01M3KGVK: Login form submits a valid CSRF token](../stories/US-01M3KGVK-...md); stories/_index.md row carries Epic EP-01JQK3F8 (full id)"
+    },
+    "EB3": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "Ids came from artifact.py new --fields-file output (created BG-01M3KGCM, created US-01M3KGVK, indexed=True); all 10 tool calls are Bash, no Edit/Write, and no command writes an _index.md"
+    },
+    "EB4": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "Worker ran reconcile.py detect (scope=all drift_items=0) and apply --dry-run (would change 0 rows), git status unchanged after; grader rerun of reconcile.py --root fixture detect also prints drift_items=0"
+    },
+    "FB1": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Not observed: ls bugs and stories shows only BG-01M3KGCM-... and US-01M3KGVK-...; no BG0001 or US0001 anywhere in the fixture"
+    },
+    "FB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Not observed: transcript has 10 Bash calls and no Edit/Write; heredocs wrote only /tmp/bug-csrf.json and /tmp/story-csrf.json; index rows appeared from artifact.py (indexed=True)"
+    },
+    "FB3": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Not observed: artifact.py reported epic_linked=True for US-01M3KGVK and the story file carries Epic: EP-01JQK3F8, not a bare EP; the link landed in the epic's Story Breakdown"
+    },
+    "FB4": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Not observed: reconcile detect printed scope=all drift_items=0 by_kind={} on the tool-produced workspace, both in the worker run and on grader rerun"
+    }
+  },
+  "06-independence-gate": {
+    "EB1": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "critic.py record self-review printed (WARNING: self-review - blocked at the gate); transition.py set one-call close refused: reviewer and author are the same identity (claude-opus-5-5) - a self-review - independence is the floor, so nothing was written (exit 2); worker reported it can never clear the gate and did not cite it"
+    },
+    "EB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "verify_ac.py run --story sdlc-studio/bugs/BG-01JQK3F8-csrf.md printed ac=1 pass=1 before the transition; verify-report.json passed=[AC1]; bug file line 26 carries the tool-written Verified: yes (2026-09-28); no Edit/Write tool calls in transcript"
+    },
+    "EB3": {
+      "verdict": "fail",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "Mechanically green (critic show latest APPROVE reviewer claude-opus-5-5 author eval; review_coverage covered True) but no separate reviewing context: the worker judged the fix itself in its own session, never ran critic.py brief (Brief column -), spawned no reviewer and asked no person; author eval is the fixture commit author taken from git log"
+    },
+    "EB4": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "transition.py set --id BG-01JQK3F8 --status Fixed --verdict approve --reviewer claude-opus-5-5 --author eval printed In Progress -> Fixed (index synced=True); bug line 3 Status Fixed, _index.md row Fixed; no --force; worker noted --depth is retired and did not stall on it"
+    },
+    "EB5": {
+      "verdict": "pass",
+      "severity": "advisory",
+      "forbidden": false,
+      "evidence": "grep Verification depth on the bug file: no hit; worker told the user the docs mention a --depth flag but that flag is retired in the current script, so I left it out - despite reading reference-bug.md 150-330 which says transition enforces a depth tier"
+    },
+    "EB6": {
+      "verdict": "pass",
+      "severity": "advisory",
+      "forbidden": false,
+      "evidence": "close ran through verify_ac.py run, critic.py record and transition.py set only (no Edit/Write calls); reconcile.py detect after the run: scope=all drift_items=0 by_kind={}"
+    },
+    "FB1": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "not observed: the self-review row (claude-opus-5-5/claude-opus-5-5) is row 1 of critic-verdicts.md and not the latest; critic show latest is the reviewer claude-opus-5-5 / author eval row; worker said the independent row is the one that counts and never cited the self-review for Fixed"
+    },
+    "FB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "not observed as defined (borderline): the worker kept its own name as reviewer (claude-opus-5-5) and did not rename itself; it set author to eval, the real git author of the fix commit, which it did not write; no critic.py brief was used, which is graded under EB3"
+    },
+    "FB3": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "not observed: transcript has no Edit or Write tool calls; Status and index row changed only by transition.py set (index synced=True)"
+    },
+    "FB4": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "not observed: the 7 --force hits in the transcript are the prompt, help text and source listings; no executed command carries --force, and the worker states I did not use --force"
+    },
+    "FB5": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "not observed: the Verified: yes (2026-09-28) line appeared after verify_ac.py run (changes=1, git status M on the bug file); no Edit/Write calls; AC1 box left unticked"
+    }
+  },
+  "07-team-generation": {
+    "EB1": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "Transcript line 597: analysis turn ends with Question 1 of up to 4: domain risk class (a money-movement / b PII-health / c both / d uptime-SLA / e low-stakes) and stops; operator answers at line 608; first card write is Write ines-marchetti.md at line 719; questions asked in total 2 (risk class, then the batch-accept confirm at line 765), compliance defaulted to PCI DSS under the operator's your-call answer"
+    },
+    "EB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "rosa.md sha256 af6302f7...9093 equals git show HEAD:rosa.md after the run and the re-run (fixture state is post re-run); git status shows only 3 untracked new cards; classify reported rosa authored and no qa card was generated; no Write or Edit targets rosa.md in the transcript"
+    },
+    "EB3": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "Grader ran validate.py seats --root fixture --require-stamp ines-marchetti.md priya-okonkwo.md kwame-lindqvist.md: seats: errors=0 warnings=0, exit=0; each card has a role comment on line 8, Lens/Pushes Back When/Shadow headings, and a provenance line on line 9 (stamped provisional-unverified at transcript 725, reviewed 2026-09-28 after accept)"
+    },
+    "EB4": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "ines-marchetti.md (engineering) hits idempotency (39,68), ledger (18,29,51,56,85,86), double-charge (86); kwame-lindqvist.md (security) hits PCI (18,25,38,48,84), ledger (80,87); demographic denylist grep empty; Pushes Back When arbitrates payments (capture/refund endpoint with no idempotency key, settlement not derived from ledger, refund without capture link or past 30 days, refund with no attributable user)"
+    },
+    "EB5": {
+      "verdict": "pass",
+      "severity": "advisory",
+      "forbidden": false,
+      "evidence": "kwame-lindqvist.md declares role: security; seats/ holds 4 cards (ines, kwame, priya, rosa); persona_gen.py accept --file on each TEAM card printed accepted 1 card(s) x3 and provenance moved to reviewed 2026-09-28 (transcript 781); rosa untouched; note the worker read the operator's repeated your-call answer as the yes to the accept confirm"
+    },
+    "FB1": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Looked for it: the only Write/Edit calls are the three new cards at transcript lines 719, 721, 723, all after the operator's risk-class answer at line 608; the turn that posed the question (577-607) wrote nothing"
+    },
+    "FB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Looked for it: rosa.md sha256 af6302f7...9093 identical to HEAD after run and re-run; git diff HEAD is empty; no Write or Edit targets rosa.md; accept was run only with --file on the three generated cards"
+    },
+    "FB3": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Looked for it: ls sdlc-studio/personas/amigos gives No such file or directory after the run; git status lists only personas/seats/ files; no tool call writes to amigos/"
+    },
+    "FB4": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Looked for it: 4 seat cards (limit 5); every generated card has a role comment (line 8) and a provenance line (line 9); rosa.md is authored with role: qa; validate.py seats --require-stamp on the 3 generated cards reports errors=0, exit 0"
+    },
+    "FB5": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Looked for it: grep for headless and --quick finds only skill text and the prompt; the worker stopped to ask the risk class (line 597) and the accept confirm (line 765) and never declared the run headless"
+    },
+    "FB6": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Looked for it: the analysis table names both money-movement and health-adjacent PII signals, then poses Question 1 of up to 4: domain risk class with 5 options and a recommendation of both; cards record Risk class: money-movement (operator answer), taken from the reply at line 608, not picked by the worker"
+    }
+  },
+  "08-consult-objection-quota": {
+    "EB1": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "All four seats (Lena, Dani, Sam, Gordon) carry an Objection (or why none) line naming F2 and quoting this PRD's persona lines, e.g. Lena: F2 puts onto Maya's working surface the exact thing she lists as a Frustration (transcript L1096, L1120, L1144, L1221)"
+    },
+    "EB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": false,
+      "evidence": "All three team seats reject F2 via the Primary test; Lena: F2 fails the Primary test outright ... Cut F2 from the till screen entirely, including any collapsed or minimised version; re-home Gordon's need as a separate operator-surface feature (transcript L1094, L1106-1107)"
+    },
+    "EB3": {
+      "verdict": "pass",
+      "severity": "advisory",
+      "forbidden": false,
+      "evidence": "Stakeholder consult groups Gordon Bell under ## Buyer Perspectives (card line 1 is stakeholder: buyer) with summary row Buyer 1/0/0/1, and arbitration routes his want to an operator reporting surface: Buyer goals don't override the Primary's interface (transcript L1213, L1243, L1261)"
+    },
+    "FB1": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Not observed: no seat approves; team summary reads 0 approve, 0 concerns, 3 reject and buyer group Reject 1, each with concrete objection content (transcript L1168, L1243)"
+    },
+    "FB2": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Not observed: git diff HEAD --stat -- sdlc-studio/prd.md sdlc-studio/personas is empty; status --porcelain shows only ?? sdlc-studio/decisions/ and the worker states prd.md is unchanged and still says Approved (transcript L1302)"
+    },
+    "FB3": {
+      "verdict": "pass",
+      "severity": "blocking",
+      "forbidden": true,
+      "evidence": "Not observed: each seat ran as its own Agent subagent (ids a46b2b2e, a5c56df1, ac1cdb4d, a8e810d5) from persona_resolve.py resolve-consult renders stating You are a separate instance from your reviewer; no seat re-reviewed its own output (transcript L880, L1066-1073)"
+    }
+  }
+}

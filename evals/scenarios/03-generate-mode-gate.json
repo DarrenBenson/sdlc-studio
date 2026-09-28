@@ -2,7 +2,7 @@
   "id": "03-generate-mode-gate",
   "title": "Generate mode reads the philosophy gate and frames output as a migration blueprint",
   "regression_target": "reference-philosophy.md gate being skipped after SKILL.md routing changes; generated specs framed as documentation",
-  "setup": "Small fixture repo: a Python Flask app with two routes (login with validation and error responses, healthcheck), one SQLAlchemy model, and a couple of tests. No sdlc-studio/ artifacts. Skill installed.",
+  "setup": "Small fixture repo: a Python Flask app (app.py) with two routes (POST /login with email and password validation, a failed-attempt lockout and its error responses; GET /healthz), one SQLAlchemy model (models.py) and three tests (tests/test_app.py). No sdlc-studio/ artifacts. Commit it as the base. Skill installed.",
   "prompt": "/sdlc-studio prd generate",
   "expected_behaviours": [
     {
@@ -30,5 +30,14 @@
     "Producing the PRD without any evidence of the generate-mode gate",
     "Setting extracted feature statuses to Done"
   ],
-  "grading_notes": "EB1 is the heart of this scenario: the gate read must precede generation. If the transcript shows the philosophy content was already in context via SKILL.md routing and the worker explicitly applies the migration-blueprint framing, grade EB1 pass."
+  "grading_notes": "EB1 is the heart of this scenario: the gate read must precede generation. If the transcript shows the philosophy content was already in context via SKILL.md routing and the worker explicitly applies the migration-blueprint framing, grade EB1 pass.",
+  "fixture": {
+    "files": {
+      "app.py": "\"\"\"Tiny Flask app: login with validation, and a health check.\"\"\"\nfrom flask import Flask, jsonify, request\nfrom werkzeug.security import check_password_hash\n\nfrom models import User, db\n\napp = Flask(__name__)\napp.config[\"SQLALCHEMY_DATABASE_URI\"] = \"sqlite:///app.db\"\ndb.init_app(app)\n\nMAX_ATTEMPTS = 5\n\n\n@app.post(\"/login\")\ndef login():\n    body = request.get_json(silent=True) or {}\n    email = (body.get(\"email\") or \"\").strip().lower()\n    password = body.get(\"password\") or \"\"\n    if not email or \"@\" not in email:\n        return jsonify(error=\"invalid_email\"), 400\n    if len(password) < 8:\n        return jsonify(error=\"password_too_short\"), 400\n    user = User.query.filter_by(email=email).first()\n    if user is None:\n        return jsonify(error=\"invalid_credentials\"), 401\n    if user.failed_attempts >= MAX_ATTEMPTS:\n        return jsonify(error=\"account_locked\"), 423\n    if not check_password_hash(user.password_hash, password):\n        user.failed_attempts += 1\n        db.session.commit()\n        return jsonify(error=\"invalid_credentials\"), 401\n    user.failed_attempts = 0\n    db.session.commit()\n    return jsonify(ok=True, user_id=user.id), 200\n\n\n@app.get(\"/healthz\")\ndef healthz():\n    return jsonify(status=\"ok\"), 200\n",
+      "models.py": "from flask_sqlalchemy import SQLAlchemy\n\ndb = SQLAlchemy()\n\n\nclass User(db.Model):\n    id = db.Column(db.Integer, primary_key=True)\n    email = db.Column(db.String(255), unique=True, nullable=False)\n    password_hash = db.Column(db.String(255), nullable=False)\n    failed_attempts = db.Column(db.Integer, nullable=False, default=0)\n",
+      "tests/test_app.py": "import pytest\n\nfrom app import app\n\n\n@pytest.fixture\ndef client():\n    app.config[\"TESTING\"] = True\n    with app.test_client() as c:\n        yield c\n\n\ndef test_healthz(client):\n    assert client.get(\"/healthz\").get_json() == {\"status\": \"ok\"}\n\n\ndef test_login_rejects_bad_email(client):\n    r = client.post(\"/login\", json={\"email\": \"nope\", \"password\": \"longenough\"})\n    assert r.status_code == 400\n    assert r.get_json()[\"error\"] == \"invalid_email\"\n\n\ndef test_login_rejects_short_password(client):\n    r = client.post(\"/login\", json={\"email\": \"a@b.co\", \"password\": \"short\"})\n    assert r.status_code == 400\n",
+      "requirements.txt": "flask>=3.0\nflask-sqlalchemy>=3.1\npytest>=8.0\n",
+      "README.md": "# login-service\n\nA small Flask login service.\n"
+    }
+  }
 }

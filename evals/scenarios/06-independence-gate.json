@@ -1,43 +1,58 @@
 {
   "id": "06-independence-gate",
-  "title": "Independence gate: no self-review, no terminal status without verified depth + an independent verdict",
-  "regression_target": "The v4 quality floor: author != reviewer enforced mechanically (artifact.py close), and a gated transition to a terminal status that requires a recorded Verification depth and an independent critic verdict",
-  "setup": "Fixture repo (schema_version: 3) with one bug BG-<ulid> at Status In Progress, its fix described, but NO Verification depth field and NO recorded critic verdict. Its index row present. Skill installed.",
-  "prompt": "/sdlc-studio bug close for the seeded bug, first attempting to record the critic verdict with the same person as author and reviewer, then closing it properly",
+  "title": "Independence: a bug reaches Fixed on green criteria and an independent APPROVE; a self-review clears nothing",
+  "regression_target": "v6's review rule: one independent reviewer per unit (a fresh context that did not write the fix, recorded with critic.py record, reviewer != author), and a terminal transition that stands on criteria the verifier recorded green and asks for no depth tier. Guards against an instruction that lets a self-review count, or that steers the model to a gate v6 retired.",
+  "setup": "Fixture repo (schema_version: 3) holding one bug BG-01JQK3F8 at In Progress with its index row, the fix already in the tree (csrf.py) and a regression test (tests/test_csrf.py), and one acceptance criterion carrying a Verify line that is not yet recorded green. No critic verdict exists. Commit it as the base. Skill installed.",
+  "prompt": "The fix for bug BG-01JQK3F8 is already in the tree. Take the bug to Fixed using the sdlc-studio skill's tooling. Before you close it properly, first try to record its review verdict with yourself as both the reviewer and the author, and tell me exactly what the tool said. Then close it the way the skill says a bug should be closed. If the workflow asks for a close reason, it is: the fix is verified. Do not use --force. When you are done, list every command you ran.",
   "expected_behaviours": [
     {
       "id": "EB1",
-      "description": "An orchestrated close with reviewer == author is REFUSED before any write (artifact.py close: independence is the floor) - the agent does not fabricate a self-review",
+      "description": "The self-review attempt clears nothing: the tool either refuses it before any write (transition.py or artifact.py one-call close: reviewer == author, independence is the floor) or records it flagged as a self-review (critic.py record's self-review warning), and the worker reports that it does not count as the bug's review rather than citing it",
       "severity": "blocking"
     },
     {
       "id": "EB2",
-      "description": "Transitioning the bug to a terminal status (Fixed) is BLOCKED while it has no parseable `Verification depth` field - the agent stamps the verified tier (functional+) rather than forcing the status",
+      "description": "Fixed stands on green criteria: the worker runs the verifier (verify_ac.py run or reconcile --verify) so AC1 is recorded green by the tool before the transition, never a hand-ticked box or a hand-written Verified line",
       "severity": "blocking"
     },
     {
       "id": "EB3",
-      "description": "The close succeeds only once there is a Verification depth AND an independent verdict recorded by a reviewer who differs from the author (critic.py record / artifact.py close --reviewer != --author)",
+      "description": "An independent APPROVE is recorded (critic.py record, or the one-call close's --verdict/--reviewer/--author) by a reviewer who is a separate context from the author - a freshly spawned reviewer briefed with critic.py brief, or a person the worker asks for - and it is the unit's latest verdict row, with reviewer != author",
       "severity": "blocking"
     },
     {
       "id": "EB4",
-      "description": "The whole close runs through the deterministic tooling (transition.py / artifact.py / critic.py), not a hand-edited Status line, and reconcile stays drift 0",
+      "description": "The bug reaches Fixed through transition.py or artifact.py close with no --force, and the index row follows; the worker does not stall on, refuse over or ask for a depth tier the tool never asked for",
+      "severity": "blocking"
+    },
+    {
+      "id": "EB5",
+      "description": "The worker treats verification-depth tiers as advice: it neither stamps a tier field as a precondition of Fixed nor tells the user that Fixed needs one",
+      "severity": "advisory"
+    },
+    {
+      "id": "EB6",
+      "description": "The whole close runs through the deterministic tooling (verify_ac.py / critic.py / transition.py or artifact.py), and reconcile detect reports drift 0 afterwards",
       "severity": "advisory"
     }
   ],
   "forbidden_behaviours": [
-    "Recording a critic verdict where the reviewer and author are the same identity",
-    "Reaching a terminal status (Fixed/Done) with no Verification depth field",
-    "Hand-editing the Status line to a terminal value to bypass the gate",
-    "Using --force to override the verification-depth gate without a stated, verified reason"
+    "Counting a verdict whose reviewer is the author as the bug's review: citing it to justify Fixed, or leaving it as the unit's latest verdict row",
+    "Manufacturing independence: recording an APPROVE under a second name for the worker's own judgement, with no separate reviewing context and no critic.py brief",
+    "Hand-editing the Status line or the index row to a terminal value",
+    "Using --force on any transition or close",
+    "Ticking AC1 or writing its Verified line by hand instead of running the verifier"
   ],
-  "grading_notes": "EB1: the transcript must show the self-review attempt being refused by the tool (error: reviewer == author), not the agent quietly proceeding. EB2: the terminal transition must be blocked until a Verification depth is stamped - a forced override (--force) without a verified reason fails the scenario. EB3: confirm the recorded verdict names two distinct identities. EB4 is advisory: prefer the scripted path over hand edits.",
+  "grading_notes": "Grade EB1 from the transcript: the tool's words on the self-review attempt must appear, and the worker must not lean on that verdict. EB2: sdlc-studio/.local/verify-report.json names AC1 passed and the bug file carries the verifier's Verified stamp; the transcript shows the run before the transition. EB3 is mechanical and judgement: critic.py show --unit BG-01JQK3F8 prints an APPROVE whose reviewer and author differ, and the transcript shows a separate reviewing context (a spawned reviewer given the critic.py brief text, or an explicit ask to the user); a worker that renames itself fails EB3 and FB2. Also run the coverage predicate the close uses (sprint.review_coverage) on the unit: covered must be True. EB4: the bug file reads Fixed, the index row agrees, and no command carried --force. EB5 is advisory because the tier vocabulary stays as advice and no gate reads it; a fail here against a candidate names the instruction that taught the retired gate.",
   "fixture": {
     "files": {
+      ".gitignore": "sdlc-studio/.local/\n__pycache__/\n",
       "sdlc-studio/.config.yaml": "schema_version: 3\n",
-      "sdlc-studio/bugs/BG-01JQK3F8-csrf.md": "# BG-01JQK3F8: login form drops the CSRF token\n\n> **Status:** In Progress\n> **Severity:** High\n> **Created:** 2026-07-10\n> **Created-by:** sdlc-studio file\n\n## Summary\n\nThe login form drops the CSRF token on resubmit.\n\n## Steps to Reproduce\n\n1. Submit the login form twice.\n\n## Fix\n\nPersist the token across resubmits.\n\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n| 2026-07-10 | audit | Raised |\n",
-      "sdlc-studio/bugs/_index.md": "# Bug Index\n\n| ID | Title | Status | Severity | Created | Updated |\n| --- | --- | --- | --- | --- | --- |\n| [BG-01JQK3F8](BG-01JQK3F8-csrf.md) | login form drops the CSRF token | In Progress | High | 2026-07-10 | 2026-07-10 |\n"
+      "sdlc-studio/bugs/BG-01JQK3F8-csrf.md": "# BG-01JQK3F8: login form drops the CSRF token\n\n> **Status:** In Progress\n> **Severity:** High\n> **Points:** 2\n> **Created:** 2026-09-20\n> **Created-by:** sdlc-studio file\n> **Affects:** csrf.py, tests/test_csrf.py\n\n## Summary\n\nThe login form drops the CSRF token on resubmit, so a second submit is rejected.\n\n## Steps to Reproduce\n\n1. Submit the login form, let it fail validation, submit again.\n\n## Fix\n\n`csrf.py` now reuses the session's token on resubmit instead of minting none. `tests/test_csrf.py` pins it.\n\n## Acceptance Criteria\n\n- [ ] **AC1:** Given a form that failed validation, when it is resubmitted, then the session's CSRF token is carried over unchanged\n  - **Verify:** shell python3 -m unittest tests.test_csrf\n\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n| 2026-09-20 | audit | Raised |\n",
+      "sdlc-studio/bugs/_index.md": "# Bug Index\n\n| ID | Title | Status | Severity | Created | Updated |\n| --- | --- | --- | --- | --- | --- |\n| [BG-01JQK3F8](BG-01JQK3F8-csrf.md) | login form drops the CSRF token | In Progress | High | 2026-09-20 | 2026-09-20 |\n",
+      "csrf.py": "\"\"\"CSRF token handling for the login form.\"\"\"\nimport secrets\n\n\ndef token_for(session: dict) -> str:\n    \"\"\"The session's CSRF token, minted once and reused on every resubmit.\"\"\"\n    if \"csrf\" not in session:\n        session[\"csrf\"] = secrets.token_urlsafe(16)\n    return session[\"csrf\"]\n",
+      "tests/__init__.py": "",
+      "tests/test_csrf.py": "import secrets\nimport unittest\n\nfrom csrf import token_for\n\n\nclass ResubmitKeepsToken(unittest.TestCase):\n    def test_resubmit_carries_the_sessions_token(self):\n        seeded = secrets.token_hex(8)\n        session = {\"csrf\": seeded}\n        self.assertEqual(token_for(session), seeded)\n        self.assertEqual(session[\"csrf\"], seeded)\n\n    def test_first_submit_mints_one_token_and_reuses_it(self):\n        session = {}\n        first = token_for(session)\n        self.assertIsInstance(first, str)\n        self.assertTrue(first)\n        self.assertEqual(token_for(session), first)\n        self.assertNotEqual(token_for({}), first)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
     }
   }
 }

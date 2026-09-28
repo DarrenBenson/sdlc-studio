@@ -128,6 +128,36 @@ class EvalRunTests(unittest.TestCase):
         self.assertEqual(rc, 2)
         self.assertIn("no scenario", err)
 
+    def test_report_scenario_judges_that_scenario_alone(self) -> None:
+        # US0963: one run can cover some scenarios only (a re-run of one against a fix), so
+        # the gate must be askable per scenario. Mutant: the filter ignored, so the ungraded
+        # 98-other fails a report asked only about 99-test.
+        self._write(_scenario())
+        other = _scenario()
+        other["id"] = "98-other"
+        self._write(other)
+        self._main("record", "--scenario", "99-test", "--run", "r1",
+                   "--behaviour", "EB1", "--verdict", "pass", "--evidence", "ok")
+        rc, out, _ = self._main("report", "--run", "r1", "--scenario", "99-test")
+        self.assertEqual(rc, 0, out)
+        self.assertNotIn("98-other", out)
+        rc, out, _ = self._main("report", "--run", "r1", "--scenario", "98-other")
+        self.assertEqual(rc, 1, out)
+        self.assertIn("98-other EB1 [blocking]: UNGRADED", out)
+
+    def test_report_scenario_refuses_an_id_with_no_scenario(self) -> None:
+        # Mutant: a filter that skips non-matching ids judges nothing for a typo and passes.
+        self._write(_scenario())
+        self._main("record", "--scenario", "99-test", "--run", "r1",
+                   "--behaviour", "EB1", "--verdict", "pass", "--evidence", "ok")
+        rc, _, err = self._main("report", "--run", "r1", "--scenario", "99-tset")
+        self.assertEqual(rc, 2)
+        self.assertIn("no scenario", err)
+        # An empty id is no scenario either, not "every scenario" (a truthiness test did that).
+        rc, out, err = self._main("report", "--run", "r1", "--scenario", "")
+        self.assertEqual(rc, 2, out)
+        self.assertIn("no scenario", err)
+
 
 def _forbidden_scenario() -> dict:
     sc = _scenario()

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 12 |
+| Open | 13 |
 | In Progress | 0 |
 | Fixed | 667 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
 | Superseded | 28 |
-| **Total** | **816** |
+| **Total** | **817** |
 
 ## All Bugs
 
@@ -175,6 +175,7 @@
 | [BG0814](BG0814-the-epic-and-story-workflows-three-amigos-step.md) | The create path skips its two reviews: the Three Amigos step never says the seats ship with the skill, and the cohesion review is labelled Automatic though nothing runs it | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0815](BG0815-the-bug-verify-and-close-workflows-never-name.md) | The bug verify and close workflows never name verify_ac.py, so an agent runs the tests by hand and the criterion is never recorded green | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0816](BG0816-seven-skill-docs-still-call-the-three-amigos.md) | Seven skill docs still call the Three Amigos by retired names, and AGENTS.md names a seat directory that does not exist | Fixed | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0817](BG0817-the-bug-close-guidance-says-briefed-with-critic.md) | The bug-close guidance says briefed with critic.py brief but never says to hand the reviewer the brief whole, so agents relay a trimmed or broken brief | Open | Medium | 2026-09-28 | 2026-09-28 |
 
 ## Archived Releases
 

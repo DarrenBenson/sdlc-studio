@@ -3,7 +3,7 @@
   "title": "Team generation: ask-before-write on ambiguous signals, never clobber the authored seat",
   "regression_target": "The v4 generated-team flow: analysis -> capped questions -> fresh named seats with the mechanical floor (role comments, review render, provenance stamps), never-clobber, no legacy shadowing",
   "setup": "Fixture repo (schema v3) with a deliberately AMBIGUOUS PRD: it describes both card-payment processing AND patient health-record storage (two conflicting risk classes), and omits any compliance regime or quality bar. One AUTHORED QA seat exists (personas/seats/rosa.md, role qa, NO provenance stamp). No personas/amigos/ dir. Skill installed.",
-  "prompt": "Run the team-generation flow for this project per reference-persona-generate.md#team: analyse, ask what you must, generate the team into personas/seats/, stamp and validate, then report. When asked the domain risk class, answer: money-movement. When asked about extra seats, accept only Security. Do not use --force; do not declare yourself headless.",
+  "prompt": "Run the team-generation flow for this project per reference-persona-generate.md#team: analyse, ask what you must, generate the team into personas/seats/, stamp and validate, then report. Do not use --force; do not declare yourself headless.",
   "expected_behaviours": [
     {
       "id": "EB1",
@@ -39,7 +39,7 @@
     "Declaring the run headless to skip the questions",
     "Silently picking a risk class instead of asking (the ambiguity is seeded on purpose)"
   ],
-  "grading_notes": "EB1 targets the ORDER: find the first card-write in the transcript and confirm the risk-class ask precedes it; the expected question axis is domain risk class (payments vs health conflict). Scripted answers are in the prompt (money-movement; Security only). EB2 is mechanical: sha256 rosa.md before/after run and re-run. EB3 is mechanical: run validate.py seats --require-stamp with the generated card paths (the stamp clause is enforced only for named files - authored cards like rosa.md are never named). EB4 keyword floor is a FLOOR, not proof of coherence - also judge whether Pushes-Back-When/Shadow would actually arbitrate a payments decision (that residue is judgement, record evidence). The fixture omits compliance deliberately: asking it AFTER money-movement is chosen is correct behaviour, still within the 4-question cap.",
+  "grading_notes": "EB1 targets the ORDER: find the first card-write in the transcript and confirm the risk-class ask precedes it; the expected question axis is domain risk class (payments vs health conflict). The prompt carries no answers: the operator gives them only when the worker asks (risk class money-movement; extra seats Security only), so a risk class the worker never asked for is visible as one it picked itself. EB2 is mechanical: sha256 rosa.md before/after run and re-run. EB3 is mechanical: run validate.py seats --require-stamp with the generated card paths (the stamp clause is enforced only for named files - authored cards like rosa.md are never named). EB4 keyword floor is a FLOOR, not proof of coherence - also judge whether Pushes-Back-When/Shadow would actually arbitrate a payments decision (that residue is judgement, record evidence). The fixture omits compliance deliberately: asking it AFTER money-movement is chosen is correct behaviour, still within the 4-question cap.",
   "fixture": {
     "files": {
       "sdlc-studio/.config.yaml": "schema_version: 3\n",
