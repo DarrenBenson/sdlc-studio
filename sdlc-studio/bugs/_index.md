@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 15 |
-| In Progress | 1 |
+| Open | 12 |
+| In Progress | 4 |
 | Fixed | 660 |
 | Verified | 0 |
 | Closed | 87 |
@@ -83,7 +83,7 @@
 | [BG0722](BG0722-the-unruled-lens-catches-a-request-nobody-closed.md) | the unruled lens catches a request nobody closed, not the request everybody abandoned - the dominant accumulation path is still unguarded | Fixed | High | 2026-09-21 | 2026-09-21 |
 | [BG0723](BG0723-a-stated-count-in-source-or-test-prose.md) | a stated count in source or test prose is never checked against the tree it counts | Won't Fix | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0724](BG0724-check-spec-claims-reads-raw-text-so-a.md) | check_spec_claims reads raw text, so a claim inside a fenced code block is judged as a live claim | Superseded | Medium | 2026-09-21 | 2026-09-21 |
-| [BG0725](BG0725-two-spellings-of-the-stop-ship-constant-and.md) | two spellings of the stop-ship constant, and a hand-maintained verb list whose stale entries nothing can report | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0725](BG0725-two-spellings-of-the-stop-ship-constant-and.md) | two spellings of the stop-ship constant, and a hand-maintained verb list whose stale entries nothing can report | In Progress | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0726](BG0726-the-report-renders-no-declared-seat-without-asking.md) | the report renders NO DECLARED SEAT without asking whether the project declares any personas at all | Open | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0727](BG0727-check-script-tests-sweeps-two-fixed-globs-so.md) | check_script_tests sweeps two fixed globs, so a script in any other scripts subdirectory needs no test | Superseded | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0728](BG0728-a-unit-s-declared-affects-is-never-compared.md) | a unit's declared Affects is never compared with the files its delivering commit changed | Won't Fix | Medium | 2026-09-21 | 2026-09-21 |
@@ -156,13 +156,13 @@
 | [BG0795](BG0795-the-sprint-report-reads-a-week-old-ci.md) | The sprint report reads a week-old CI cache as current, so DORA's failure rate and restore time read no forge data | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0796](BG0796-the-report-s-cost-row-reads-unattributed-while.md) | The report's cost row reads unattributed while the same report measures the run's tokens | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0797](BG0797-per-unit-minutes-and-tokens-are-recorded-only.md) | Per-unit minutes and tokens are recorded only on an In Progress transition the lean loop never makes, and the report does not say why the column is empty | Fixed | Medium | 2026-09-27 | 2026-09-27 |
-| [BG0798](BG0798-the-forecast-rate-never-re-fits-353-810.md) | The forecast rate never re-fits: 353,810 tokens per point has forecast about twice the measured spend for three sprints | Open | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0798](BG0798-the-forecast-rate-never-re-fits-353-810.md) | The forecast rate never re-fits: 353,810 tokens per point has forecast about twice the measured spend for three sprints | In Progress | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0799](BG0799-a-first-sprint-s-report-hands-over-as.md) | A first sprint's report hands over, as known issues, the epic drift its own close settles, split into one row per line of reconcile's output | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0800](BG0800-the-close-s-pre-flight-lists-as-unmet.md) | The close's pre-flight lists as unmet the goal verdict the same invocation records and the review anchor the close writes itself | Fixed | Low | 2026-09-27 | 2026-09-27 |
 | [BG0801](BG0801-the-known-issues-page-puts-its-ship-open.md) | The known-issues page puts its ship-open paragraph under the oldest bar's history and states a Not carried count the corpus contradicts | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0802](BG0802-artifact-new-type-bug-drops-its-verify-line.md) | artifact new --type bug drops its --verify line and writes an unnamed criterion, so sprint plan refuses the bug it just filed | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0803](BG0803-sprint-plan-to-the-plan-or-design-rung.md) | sprint plan to the plan or design rung crashes in capacity_report on the default token budget | Fixed | Low | 2026-09-27 | 2026-09-27 |
-| [BG0804](BG0804-the-report-s-lessons-section-cites-sdlc-studio.md) | The report's Lessons section cites sdlc-studio/lessons.jsonl on a project that has none, when the bundled seed was read | Open | Low | 2026-09-27 | 2026-09-27 |
+| [BG0804](BG0804-the-report-s-lessons-section-cites-sdlc-studio.md) | The report's Lessons section cites sdlc-studio/lessons.jsonl on a project that has none, when the bundled seed was read | In Progress | Low | 2026-09-27 | 2026-09-27 |
 | [BG0805](BG0805-verify-ac-stamps-passes-a-k-expression-whose.md) | verify_ac stamps passes a -k expression whose dead term hides behind a live one, so eight stamped criteria verify nothing of what they claim | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0806](BG0806-tsd-staleness-is-never-judged-in-a-consuming.md) | TSD staleness is never judged in a consuming project and reports a false reason on every sprint plan | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0807](BG0807-the-us0942-ac5-stamp-test-resolves-the-whole.md) | The US0942 AC5 stamp test resolves the whole corpus before filtering, costing about 50 seconds of every commit that touches verify_ac.py | Fixed | Low | 2026-09-27 | 2026-09-27 |

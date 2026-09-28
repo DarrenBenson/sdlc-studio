@@ -1,6 +1,6 @@
 # BG0798: The forecast rate never re-fits: 353,810 tokens per point has forecast about twice the measured spend for three sprints
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_forecast_rate.py, changelog.d/BG0798.md

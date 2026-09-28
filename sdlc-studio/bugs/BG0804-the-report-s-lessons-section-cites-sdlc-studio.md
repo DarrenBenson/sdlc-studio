@@ -1,6 +1,6 @@
 # BG0804: The report's Lessons section cites sdlc-studio/lessons.jsonl on a project that has none, when the bundled seed was read
 
-> **Status:** Open
+> **Status:** In Progress
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

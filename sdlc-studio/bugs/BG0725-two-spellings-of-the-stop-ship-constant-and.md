@@ -1,6 +1,6 @@
 # BG0725: two spellings of the stop-ship constant, and a hand-maintained verb list whose stale entries nothing can report
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG0725.md
