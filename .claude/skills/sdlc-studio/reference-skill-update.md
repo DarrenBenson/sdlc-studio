@@ -33,7 +33,8 @@ runs `skill-update` to act on it. The check is on by default, opt-out via
    the user to confirm. Do **not** upgrade without an explicit yes.
 
 4. **On confirm, run the installer for the detected scope.** The installer replaces the
-   skill in place and sweeps every tool's copy to the same version:
+   skill in place and sweeps every tool's copy in that scope's reach to the same version (a
+   project install reaches only that project's tool directories, never the personal copies):
 
    | scope | command |
    | --- | --- |

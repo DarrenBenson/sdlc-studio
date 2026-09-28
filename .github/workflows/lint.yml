@@ -212,37 +212,44 @@ jobs:
       - name: install.ps1 - real local install with stale-copy sweep
         shell: pwsh
         run: |
-          # Pre-place a stale sdlc-studio copy where the sweep should find it.
-          $stale = Join-Path $HOME '.gemini/skills/sdlc-studio'
-          New-Item -ItemType Directory -Force (Join-Path $stale 'templates') | Out-Null
-          Set-Content -Path (Join-Path $stale 'SKILL.md') -Value "---`nname: sdlc-studio`n---`n"
-          Set-Content -Path (Join-Path $stale 'templates/version.yaml') -Value 'skill_version: "0.0.1"'
-
+          # Pre-place stale sdlc-studio copies: one in the project's own gemini dir, which a
+          # -Local sweep refreshes, and a personal one, which it must leave alone (BG0821).
+          function New-StaleCopy($dir) {
+            New-Item -ItemType Directory -Force (Join-Path $dir 'templates') | Out-Null
+            Set-Content -Path (Join-Path $dir 'SKILL.md') -Value "---`nname: sdlc-studio`n---`n"
+            Set-Content -Path (Join-Path $dir 'templates/version.yaml') -Value 'skill_version: "0.0.1"'
+          }
+          $personal = Join-Path $HOME '.gemini/skills/sdlc-studio'
+          New-StaleCopy $personal
           $proj = Join-Path $env:RUNNER_TEMP 'sdlc-smoke'
-          New-Item -ItemType Directory -Force $proj | Out-Null
+          $stale = Join-Path $proj '.gemini/skills/sdlc-studio'
+          New-StaleCopy $stale
+
           Push-Location $proj
           & "$env:GITHUB_WORKSPACE/install.ps1" -Target claude -Local
           if (-not (Test-Path '.claude/skills/sdlc-studio/SKILL.md')) {
             throw 'install.ps1 did not place SKILL.md'
           }
-          # The sweep must have refreshed the stale gemini copy.
           $swept = Get-Content (Join-Path $stale 'templates/version.yaml') -Raw
           if ($swept -match '0\.0\.1') {
-            throw 'sweep did not refresh the stale gemini copy'
+            throw 'sweep did not refresh the project''s stale gemini copy'
           }
-          Write-Host 'Windows install + sweep refresh OK'
+          $kept = Get-Content (Join-Path $personal 'templates/version.yaml') -Raw
+          if ($kept -notmatch '0\.0\.1') {
+            throw '-Local refreshed the personal gemini copy'
+          }
+          Write-Host 'Windows install + local sweep refresh OK, personal copy left alone'
           Pop-Location
 
       - name: install.ps1 - NoSweep leaves other copies alone
         shell: pwsh
         run: |
-          # Reset the gemini copy to a stale version, install with -NoSweep,
-          # and assert it was left untouched.
-          $stale = Join-Path $HOME '.gemini/skills/sdlc-studio'
+          # Reset the project's gemini copy to a stale version, install with -NoSweep, and
+          # assert it was left untouched (a -Local sweep would otherwise refresh it).
+          $proj = Join-Path $env:RUNNER_TEMP 'sdlc-smoke'
+          $stale = Join-Path $proj '.gemini/skills/sdlc-studio'
           Set-Content -Path (Join-Path $stale 'templates/version.yaml') -Value 'skill_version: "0.0.1"'
 
-          $proj = Join-Path $env:RUNNER_TEMP 'sdlc-smoke-nosweep'
-          New-Item -ItemType Directory -Force $proj | Out-Null
           Push-Location $proj
           & "$env:GITHUB_WORKSPACE/install.ps1" -Target claude -Local -NoSweep
           $kept = Get-Content (Join-Path $stale 'templates/version.yaml') -Raw

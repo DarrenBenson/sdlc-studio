@@ -537,17 +537,20 @@ sweep_stale() {
 
 # Claude Code loads a personal skill ahead of a project skill of the same name, so a --local
 # install under a personal copy is not the copy it runs. Named here, never changed: the personal
-# copy is the user's. $1 is the project copy's version when there is no copy to read it from.
+# copy is the user's. One directory reached by both paths (a --local install run from $HOME)
+# shadows nothing. $1 is the project copy's version when there is no copy to read it from.
 shadow_note() {
     local personal="$HOME/.claude/skills/$SKILL_NAME" project version="$1"
     if [[ ! -d "$personal" ]] || ! is_skill_copy "$personal"; then return 0; fi
+    personal=$(canon "$personal")
     project=$(target_dir claude local)
     if [[ -d "$project" ]]; then project=$(canon "$project"); else project="$PWD/$project"; fi
     project="$project/$SKILL_NAME"
+    if [[ -d "$project" && "$(canon "$project")" == "$personal" ]]; then return 0; fi
     if [[ "$DRY_RUN" != true ]] && is_skill_copy "$project"; then
         version=$(installed_version "$project")
     fi
-    warn "Claude Code loads the personal copy $(canon "$personal") ($(installed_version "$personal")) ahead of this project's copy $project ($version), so this project runs the personal one. Remove or update it to run this project's."
+    warn "Claude Code loads the personal copy $personal ($(installed_version "$personal")) ahead of this project's copy $project ($version), so this project runs the personal one. Remove or update it to run this project's."
 }
 
 print_list() {

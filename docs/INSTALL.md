@@ -134,10 +134,17 @@ build or dependency install is needed.
   reinstall rather than waiting for the prompt. Carrying a v5 project to v6 is a separate step,
   `migrate` then `migrate --apply`; see [existing users](existing-users.md).
 - **Stale-copy sweep**: after installing, the installer also refreshes every
-  other sdlc-studio copy it finds in the known tool locations (it never touches
-  a directory without an sdlc-studio `SKILL.md`), reporting each refresh as
-  `old -> new`. Skip this with `--no-sweep` (bash) or `-NoSweep` (PowerShell);
-  preview it with `--dry-run`.
+  other sdlc-studio copy it finds in the known tool locations within its reach
+  (it never touches a directory without an sdlc-studio `SKILL.md`), reporting
+  each refresh as `old -> new`. A global install reaches the personal and the
+  current project's tool directories; a local install (`--local` / `-Local`)
+  reaches only the project's, so pinning a version in one project never moves
+  the personal copies every other project loads. Skip the sweep with
+  `--no-sweep` (bash) or `-NoSweep` (PowerShell); preview it with `--dry-run`.
+- **A personal copy wins in Claude Code**: Claude Code loads a personal skill
+  ahead of a project skill of the same name, so a local install under a
+  personal copy warns, naming both paths and versions, and leaves the personal
+  copy as it is.
 - **Specific version**: `--version <tag>` (bash) or `-Version <tag>`
   (PowerShell), for example `--version v6.0.0-rc.1`.
 - **Uninstall**: `--uninstall` (bash) or `-Uninstall` (PowerShell), with the same

@@ -29,7 +29,8 @@ All three are named side by side in `reference-upgrade.md#three-upgrades`.
 
 1. Checks the installed version against the latest GitHub release (`version_check.py`).
 2. If newer, shows `installed -> latest` and the detected scope (user / project / agents).
-3. On your explicit confirm, runs the installer for that scope (sweeps every tool's copy).
+3. On your explicit confirm, runs the installer for that scope (a user install sweeps every
+   tool's copy; a project install sweeps only that project's and leaves the personal copies).
 4. Tells you to reload to activate; on decline, snoozes until a newer release.
 
 ## The startup notice

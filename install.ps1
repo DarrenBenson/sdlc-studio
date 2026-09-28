@@ -64,7 +64,8 @@ Options:
     -ListTargets    Print the target/directory map and what is detected
     -DryRun         Show what would be done without making changes
     -NoSweep        Skip refreshing sdlc-studio copies found in other tool
-                    locations (default: refresh them all)
+                    locations (default: refresh them all; -Local refreshes
+                    only this project's, never the personal copies)
     -Version VER    Install a specific version/tag (default: main)
     -Help           Show this help
 
@@ -135,6 +136,33 @@ Native alternatives (sdlc-studio is a standard skill):
     function Test-SkillCopy($dir) {
         $sm = Join-Path $dir 'SKILL.md'
         (Test-Path $sm) -and [bool](Select-String -Path $sm -Pattern '^name: sdlc-studio\s*$' -Quiet)
+    }
+
+    # The directory a path reaches, its final link or junction followed where PowerShell 7 reports
+    # the target (Windows PowerShell 5.1 compares the path as written).
+    function Get-RealPath($p) {
+        $item = Get-Item -LiteralPath $p -Force
+        if ($item.LinkType -and $item.ResolvedTarget) { return $item.ResolvedTarget }
+        $item.FullName
+    }
+
+    # Claude Code loads a personal skill ahead of a project skill of the same name, so a -Local
+    # install under a personal copy is not the copy it runs. Named here, never changed: the
+    # personal copy is the user's. One directory reached by both paths (a -Local install run from
+    # the home directory) shadows nothing. $version is the project copy's when none can be read.
+    function Show-ShadowNote($version) {
+        $personal = Join-Path $Map['claude'].global $SkillName
+        if (-not (Test-SkillCopy $personal)) { return }
+        $personal = Get-RealPath $personal
+        $project = Join-Path $Map['claude'].local $SkillName
+        if (Test-Path $project) {
+            $project = Get-RealPath $project
+            if ($project -eq $personal) { return }
+            if (-not $DryRun -and (Test-SkillCopy $project)) { $version = Get-InstalledVersion $project }
+        } else { $project = Join-Path (Get-Location).Path $project }
+        Write-Warn2 ("Claude Code loads the personal copy $personal ($(Get-InstalledVersion $personal)) " +
+            "ahead of this project's copy $project ($version), so this project runs the personal " +
+            "one. Remove or update it to run this project's.")
     }
 
     function Invoke-Note($t) {
@@ -283,15 +311,17 @@ Native alternatives (sdlc-studio is a standard skill):
             if (Test-Path $parent) { $installedDests += (Join-Path (Resolve-Path $parent).Path $SkillName) }
         }
 
-        # Refresh every sdlc-studio copy found in any known location that was
-        # not written this run, so no stale version lingers anywhere.
+        # Refresh every sdlc-studio copy found in a known location of the install's reach that was
+        # not written this run, so no stale version lingers. A -Local install reaches this project
+        # only: it pins a version here, and the personal copies are what every other project loads.
         if (-not $NoSweep) {
             Write-Host ''
             Write-Info 'Sweep: checking other tool locations for stale copies...'
             $newVer = if ($DryRun) { $Version } else { Get-InstalledVersion $SourceDir }
             $found = $false
+            $sweepScopes = if ($Local) { @('local') } else { @('global', 'local') }
             foreach ($t in $AllTargets) {
-                foreach ($sweepScope in @('global', 'local')) {
+                foreach ($sweepScope in $sweepScopes) {
                     $parent = $Map[$t].$sweepScope
                     if (-not $parent -or -not (Test-Path $parent)) { continue }
                     $parent = (Resolve-Path $parent).Path
@@ -316,6 +346,7 @@ Native alternatives (sdlc-studio is a standard skill):
             }
             if (-not $found) { Write-Info 'sweep: no other sdlc-studio copies found' }
         }
+        if ($Local -and $targets -contains 'claude') { Write-Host ''; Show-ShadowNote $Version }
 
         Write-Host ''
         if ($DryRun) {
