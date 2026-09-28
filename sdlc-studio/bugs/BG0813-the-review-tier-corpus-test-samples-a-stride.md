@@ -1,6 +1,6 @@
 # BG0813: The review-tier corpus test samples a stride of the live corpus, so every new artefact moves the sample and it goes red with no code change
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG0813.md
@@ -26,6 +26,7 @@ Walk the corpus in a fixed, stride-free order and stop as soon as both a light a
 
 - [ ] **AC1** Given this repository's corpus, when the test runs, then it passes as long as the corpus holds at least one light and one full unit among its first 150 in a fixed order, whatever artefacts were filed since. Fails on: the stride sample, which goes red when a filing shifts it onto 24 full units
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefTierTests::test_the_corpus_spans_more_than_one_band
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC2** Given a corpus mutant where every band maps to full (or every band to light), then the test still fails. Fails on: a rewrite that stops asserting both directions
 
 ## Revision History

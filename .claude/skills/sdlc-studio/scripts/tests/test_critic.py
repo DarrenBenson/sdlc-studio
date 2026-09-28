@@ -573,15 +573,23 @@ class BriefTierTests(unittest.TestCase):
                  + sorted((repo / "sdlc-studio" / "bugs").glob("BG*.md")))
         if len(units) < 100:
             self.skipTest("not enough corpus units to characterise the distribution")
-        units = units[::max(1, len(units) // 24)][:24]
+        # A FIXED walk, not a stride: a stride's sample moved with every artefact filed, and one
+        # filing shifted it onto 24 full units with no code change (BG0813). Walk in id order,
+        # interleaving stories and bugs so old bugs do not dominate, and stop as soon as both
+        # tiers are seen; the bound keeps a full walk near 4 s (`route.estimate` measured about 30 ms a unit).
+        stories = [u for u in units if u.name.startswith("US")]
+        bugs = [u for u in units if u.name.startswith("BG")]
+        walk = [u for pair in zip(stories, bugs) for u in pair]
         tiers = []
-        for u in units:
+        for u in walk[:150]:
             try:
                 band = route.estimate(repo, u)["difficulty_band"]
             except Exception:      # noqa: BLE001 - an unreadable unit is not this test's subject
                 continue
             tiers.append(mod.BAND_TIER.get(band, "full"))
-        self.assertGreaterEqual(len(tiers), 20, "too few units resolved to characterise")
+            if "light" in tiers and "full" in tiers:
+                break
+        self.assertGreaterEqual(len(tiers), 2, "too few units resolved to characterise")
         self.assertGreater(tiers.count("light"), 0,
                            f"no unit in {len(tiers)} bands light - the tiering is a no-op")
         self.assertGreater(tiers.count("full"), 0,
