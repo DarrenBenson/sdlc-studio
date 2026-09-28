@@ -47,6 +47,10 @@ Parse PRD and group features into Epics.
 2. Groups related features (5-8 per Epic)
 3. Creates Epic files with business context, scope, acceptance criteria
 4. Creates `sdlc-studio/epics/_index.md` registry
+5. Three Amigos review of each epic, each amigo seated with
+   `scripts/persona_resolve.py resolve --seat <product|engineering|qa> --render review`.
+   The seats ship with the skill, so it needs no project user personas; only `--skip-personas`
+   skips it
 
 **Grouping heuristics:**
 

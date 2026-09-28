@@ -31,6 +31,9 @@ SDLC Studio is model-invoked - say it in plain language:
 /sdlc-studio story implement --story US0024  # Execute full workflow
 ```
 
+`/sdlc-studio story` ends with two reviews you perform yourself: the cohesion review before the
+report, then the Three Amigos review (steps 7 and 8 of *What happens* below).
+
 ## Two Modes: Understand the Difference
 
 | Command | Input | Purpose |
@@ -47,9 +50,10 @@ See `reference-philosophy.md` for the complete philosophy.
 ## Prerequisites
 
 - Epics must exist in `sdlc-studio/epics/`
-- Personas must exist: the `sdlc-studio/personas/` registry (index.md +
+- User personas must exist: the `sdlc-studio/personas/` registry (index.md +
   per-persona cards, the Primary declared) or legacy `sdlc-studio/personas.md`
 - Run `/sdlc-studio epic` and `/sdlc-studio persona` first if missing
+- The Three Amigos seats are not user personas: they ship with the skill
 
 ## Actions
 
@@ -65,6 +69,11 @@ Break Epic acceptance criteria into atomic User Stories.
 4. Generates Stories with Given/When/Then acceptance criteria
 5. Updates Epic files with Story links
 6. Creates `sdlc-studio/stories/_index.md` registry
+7. Cohesion review: you check the stories cover the epic (no script runs it), then report
+8. Three Amigos review, each amigo seated with
+   `scripts/persona_resolve.py resolve --seat <product|engineering|qa> --render review`.
+   The seats ship with the skill, so it needs no project user personas; only `--skip-personas`
+   skips it
 
 **Breakdown heuristics:**
 
@@ -137,9 +146,10 @@ Review Story status based on codebase implementation.
 - Never auto-assign Done for brownfield
 - User confirms Done only after test validation
 
-### Story Cohesion Review (Automatic)
+### Story Cohesion Review
 
-After story generation, a cohesion review validates coverage of epic requirements.
+After writing the stories and before reporting, you review their cohesion against the epic. No
+script performs it.
 
 **What it checks:** AC coverage, edge case distribution, dependency cycles, story sizing, overlaps.
 

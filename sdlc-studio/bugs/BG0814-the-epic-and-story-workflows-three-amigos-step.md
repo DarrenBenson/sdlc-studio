@@ -1,9 +1,9 @@
 # BG0814: The create path skips its two reviews: the Three Amigos step never says the seats ship with the skill, and the cohesion review is labelled Automatic though nothing runs it
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/reference-epic.md, .claude/skills/sdlc-studio/reference-story.md, .claude/skills/sdlc-studio/help/epic.md, .claude/skills/sdlc-studio/help/story.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_create_path_reviews.py, changelog.d/BG0814.md
+> **Affects:** .claude/skills/sdlc-studio/reference-epic.md, .claude/skills/sdlc-studio/reference-story.md, .claude/skills/sdlc-studio/help/epic.md, .claude/skills/sdlc-studio/help/story.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_create_path_reviews.py, changelog.d/BG0814.md, .claude/skills/sdlc-studio/reference-workflow-personas.md
 > **Evidence:** US0963 eval run v6-rc1, scenario 02-greenfield-create EB4 and EB5 (advisory) fails; transcript /tmp/evals-v6-rc1/02-greenfield-create.transcript.txt lines 1637 and 2632; operator ruling D0279 (fix before the cut)
 > **Created:** 2026-09-28
 > **Created-by:** sdlc-studio file
@@ -28,13 +28,17 @@ Each Three Amigos step (reference-epic.md, reference-story.md, and the matching 
 
 - [ ] **AC1** Given the shipped epic and story workflows (reference-epic.md, reference-story.md, help/epic.md, help/story.md), then every Three Amigos step names `persona_resolve.py` resolve --seat with --render review and states the seats ship with the skill, so project personas are not a precondition. Fails on: the rc.1 wording, which names only the focus lists
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_create_path_reviews.py::CreatePathReviewTests::test_the_amigo_step_names_the_shipped_seats
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC2** Given a fresh git repository with no sdlc-studio/ tree, when each of the three seats named by the step is resolved with the command the step shows, then each prints its charter and exits 0. Fails on: a step naming a seat or flag the resolver refuses in an empty project
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_create_path_reviews.py::CreatePathReviewTests::test_the_named_seats_resolve_in_an_empty_project
+  - **Verified:** yes (2026-09-28)
 
 - [ ] **AC3** Given reference-story.md's story workflow, then the cohesion review is a numbered step before the Report step, is not labelled Automatic, and the Report step lists its findings. Fails on: the rc.1 order (Report, then an Automatic cohesion step)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_create_path_reviews.py::CreatePathReviewTests::test_the_cohesion_review_runs_before_the_report
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC4** Given help/story.md, then within its first 60 lines it names the cohesion review as part of /sdlc-studio story, and no heading calls it Automatic. Fails on: the rc.1 help, whose only mention is an '(Automatic)' heading at line 140
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_create_path_reviews.py::CreatePathReviewTests::test_the_story_help_names_the_cohesion_review_early
+  - **Verified:** yes (2026-09-28)
 
 ## Revision History
 
