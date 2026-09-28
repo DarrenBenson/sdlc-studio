@@ -82,7 +82,7 @@ the stamp from the decision entirely and judge every story and epic on its secti
 | Flag | Description |
 | --- | --- |
 | `annotate --id --field --value` | (transition.py) set/update one metadata field deterministically |
-| `set --verdict --reviewer --author` | (transition.py) one-call close: record the independent critic verdict too (reviewer != author refused up front) |
+| `set --verdict --reviewer --author --brief` | (transition.py) one-call close: record the independent critic verdict too (reviewer != author refused up front); `--brief` is the fingerprint `critic.py brief` printed for the separate reviewing context, and a verdict without it is warned, not refused |
 | `close --verdict --reviewer --author` | record the critic verdict in the same call (reviewer != author refused up front) |
 | `close --issues "<note>"` | the issues noted on the recorded verdict |
 

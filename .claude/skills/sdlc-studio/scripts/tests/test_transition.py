@@ -1405,11 +1405,14 @@ class OneCallCloseTests(unittest.TestCase):
         from contextlib import redirect_stdout
         with tempfile.TemporaryDirectory() as d:
             root = self._bug(Path(d))
-            with redirect_stdout(io.StringIO()):
+            err = io.StringIO()
+            with redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
                 rc = tr.main(["set", "--id", "BG0001", "--status", "Fixed",
                               "--verdict", "approve", "--reviewer", "Blake", "--author", "Alex",
                               "--root", str(root)])
             self.assertEqual(rc, 0)
+            # no --brief: the close lands, and says once which step it skipped (BG0812)
+            self.assertEqual(err.getvalue().count("critic.py brief"), 1, err.getvalue())
             text = (root / "sdlc-studio" / "bugs" / "BG0001-x.md").read_text(encoding="utf-8")
             self.assertIn("> **Status:** Fixed", text)
             log = (root / "sdlc-studio" / "reviews" / "critic-verdicts.md").read_text(encoding="utf-8")

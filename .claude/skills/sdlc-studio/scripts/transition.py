@@ -1445,6 +1445,21 @@ def _report_appetite(args) -> None:
           f"nobody pulls turns it into a suggestion.", file=sys.stderr)
 
 
+def _unbriefed_warning(root: Path, ids: list[str]) -> str:
+    """The one warning for a verdict given without --brief: nothing shows the reviewer was a
+    separate context briefed on the unit. Reported, never refused; a brief `critic.py brief`
+    noted here for the unit is named so the closer can pass it."""
+    import critic  # noqa: PLC0415 - deferred sibling, as in cmd_set
+    uid = ids[0] if len(ids) == 1 else "<id>"
+    noted = [f"{i} as {fp}" for i in ids if (fp := critic.noted_brief(root, i))]
+    seen = (f" A brief was printed here for {', '.join(noted)}; if that reviewer judged it, "
+            f"pass its fingerprint." if noted else "")
+    return (f"warning: this verdict carries no --brief, so nothing shows its reviewer was a "
+            f"separate context briefed on {', '.join(ids)}. Brief one with `critic.py brief "
+            f"--unit {uid} --seat qa` and close with --brief <fingerprint>.{seen} The "
+            f"transition is not refused for it.")
+
+
 def cmd_set(args: argparse.Namespace) -> int:
     # Natural positional form `set <ID> <STATUS>` maps onto --id/--status, so the obvious first
     # attempt works. The flags still work; giving the SAME value both ways is refused rather than
@@ -1477,17 +1492,18 @@ def cmd_set(args: argparse.Namespace) -> int:
     # written, and is withdrawn if the transition is refused.
     import critic  # noqa: PLC0415 - the verdict rules, and CarryFailed below
     reviewer, author = getattr(args, "reviewer", None), getattr(args, "author", None)
+    brief = (getattr(args, "brief", None) or "").strip()
     if args.verdict is not None:
         if args.verdict.upper() not in critic.VERDICTS:
             print(f"error: --verdict {args.verdict!r} is not a verdict - expected one of "
                   f"{', '.join(critic.VERDICTS)}. Nothing was written", file=sys.stderr)
             return 2
-    if reviewer or author:
+    if reviewer or author or brief:
         if not (reviewer and author and args.verdict):
             print("error: the one-call verdict needs --verdict, --reviewer AND --author "
-                  "together (or none, to skip recording one). To stamp an identity alone "
-                  "(e.g. an acceptance author) with no verdict, use `transition annotate`.",
-                  file=sys.stderr)
+                  "together (or none, to skip recording one); --brief rides on that verdict. "
+                  "To stamp an identity alone (e.g. an acceptance author) with no verdict, use "
+                  "`transition annotate`.", file=sys.stderr)
             return 2
         independent, why = critic.independence(reviewer, author)
         if not independent:
@@ -1516,7 +1532,7 @@ def cmd_set(args: argparse.Namespace) -> int:
             # unit is still at its from-status - a raise after the status write keeps it.
             start = _status_on_disk(args.root, aid)
             verdict = (critic.provisional_verdict(
-                args.root, aid, args.verdict, reviewer, author,
+                args.root, aid, args.verdict, reviewer, author, brief=brief,
                 pending=lambda a=aid, s=start: _status_on_disk(args.root, a) == s)
                 if reviewer and not args.dry_run else contextlib.nullcontext())
             with verdict:
@@ -1553,6 +1569,8 @@ def cmd_set(args: argparse.Namespace) -> int:
                 # progress line in the same stream as the successes it is contradicting.
                 stream = sys.stderr if isinstance(exc, SealedRunRefusal) else sys.stdout
                 print(f"  blocked  {aid}: {exc}", file=stream)
+    if reviewer and not brief:
+        print(_unbriefed_warning(args.root, ids), file=sys.stderr)
     if args.format == "json":
         print(json.dumps(results if len(ids) > 1 else results[0], indent=2))
     if len(ids) > 1:
@@ -1798,6 +1816,10 @@ def build_parser() -> argparse.ArgumentParser:
                                       "reviewer (must differ from --author)")
     s.add_argument("--author", help="one-call close: the authoring seat the reviewer judged "
                                     "(reviewer != author enforced before any write)")
+    s.add_argument("--brief", help="one-call close: the fingerprint `critic.py brief` printed "
+                                   "for the separate reviewing context, stored on the verdict "
+                                   "row as `critic.py record --brief` stores it. A --verdict "
+                                   "without it is warned, never refused")
     s.add_argument("--force", action="store_true",
                    help="bypass the forceable close gates (story->Done AC-verify, bug Verify, "
                         "request-terminal). Every gate it actually waives is named in a "

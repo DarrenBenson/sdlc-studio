@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 12 |
-| In Progress | 5 |
-| Fixed | 660 |
+| In Progress | 4 |
+| Fixed | 661 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -170,7 +170,7 @@
 | [BG0809](BG0809-install-sh-local-rewrites-every-personal-copy-of.md) | install.sh --local rewrites every personal copy of the skill, and the copy it installs is one Claude Code does not load | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0810](BG0810-the-one-runner-agreement-test-races-its-own.md) | The one-runner agreement test races its own fixture: two worker processes share one template directory | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0811](BG0811-a-root-level-file-with-no-listed-extension.md) | A root-level file with no listed extension drops out of a unit's Affects, so review scope and the plan's file checks never see it | Fixed | Medium | 2026-09-27 | 2026-09-27 |
-| [BG0812](BG0812-the-bug-close-path-teaches-a-named-verdict.md) | The bug-close path teaches a named verdict with no independent reviewing context, so an agent approves its own fix under another name | In Progress | High | 2026-09-28 | 2026-09-28 |
+| [BG0812](BG0812-the-bug-close-path-teaches-a-named-verdict.md) | The bug-close path teaches a named verdict with no independent reviewing context, so an agent approves its own fix under another name | Fixed | High | 2026-09-28 | 2026-09-28 |
 | [BG0813](BG0813-the-review-tier-corpus-test-samples-a-stride.md) | The review-tier corpus test samples a stride of the live corpus, so every new artefact moves the sample and it goes red with no code change | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0814](BG0814-the-epic-and-story-workflows-three-amigos-step.md) | The create path skips its two reviews: the Three Amigos step never says the seats ship with the skill, and the cohesion review is labelled Automatic though nothing runs it | In Progress | Medium | 2026-09-28 | 2026-09-28 |
 

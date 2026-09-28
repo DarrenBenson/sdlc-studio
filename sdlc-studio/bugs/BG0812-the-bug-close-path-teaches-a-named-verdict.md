@@ -1,6 +1,6 @@
 # BG0812: The bug-close path teaches a named verdict with no independent reviewing context, so an agent approves its own fix under another name
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/reference-bug.md, .claude/skills/sdlc-studio/help/bug.md, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_bug_close_review.py, changelog.d/BG0812.md, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/help/arguments.md, .claude/skills/sdlc-studio/scripts/critic.py
@@ -26,8 +26,10 @@ The bug-close guidance (reference-bug.md close workflow, help/bug.md, reference-
 
 - [ ] **AC1** Given the shipped bug-close guidance (reference-bug.md, help/bug.md, reference-scripts.md), then each place that shows a Fixed transition with a verdict says the reviewer is a separate context briefed with `critic.py brief` and shows the one-call close carrying `--brief <fingerprint>`. Fails on: the rc.1 wording, which names a reviewer and author and nothing else
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_bug_close_review.py::BugCloseReviewTests::test_the_close_guidance_names_the_brief
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC2** Given `transition.py set --status Fixed --verdict approve --reviewer R --author A` with no `--brief`, when it runs, then it still transitions but prints one stderr warning naming `critic.py brief`; with `--brief <fingerprint>` it prints none. Fails on: a silent close with no brief (rc.1), or refusing the close, which would add a gate this bug does not need
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_bug_close_review.py::BugCloseReviewTests::test_a_verdict_without_a_brief_is_warned
+  - **Verified:** yes (2026-09-28)
 
 ## Revision History
 

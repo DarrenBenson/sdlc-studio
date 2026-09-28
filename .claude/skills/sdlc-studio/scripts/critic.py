@@ -369,7 +369,7 @@ def _ledger_lock(path: Path):
 
 @contextlib.contextmanager
 def provisional_verdict(repo_root: Path | str, unit: str, verdict: str, reviewer: str,
-                        author: str, issues: str = "", pending=None):
+                        author: str, issues: str = "", pending=None, brief: str = ""):
     """Record a delivery verdict that stands only if the block's transition lands.
 
     `transition set --verdict` writes the verdict before the gated transition, because a gate
@@ -382,7 +382,7 @@ def provisional_verdict(repo_root: Path | str, unit: str, verdict: str, reviewer
     path = verdicts_path(repo_root)
     existed = path.exists()
     path, row = _write_verdict(repo_root, unit, verdict, reviewer, author, issues, "delivery",
-                               "", None, False)
+                               brief, None, False)
     try:
         yield path
     except BaseException:
@@ -2352,12 +2352,8 @@ def note_brief(root: Path | str, unit: str, seat: str, tier: str, fp: str,
         pass
 
 
-def rebrief_notice(root: Path | str, unit: str, fp: str) -> str | None:
-    """The warning for a verdict recorded against brief `fp` when the unit's Affects or criteria
-    have changed since that brief was printed, or None. A fingerprint no brief here noted (a
-    hand-written prompt, a brief taken in another clone) says nothing: it is stored, not judged.
-    """
-    uid = sdlc_md.norm_id(unit)
+def _noted_row(root: Path | str, uid: str, fp: str | None = None) -> dict | None:
+    """The last brief note for `uid` (with fingerprint `fp`, when given), or None."""
     try:
         # `replace`: a stray byte costs the line it sits on, never the record that asked
         lines = (Path(root) / BRIEF_NOTES_REL).read_text(encoding="utf-8",
@@ -2370,8 +2366,25 @@ def rebrief_notice(root: Path | str, unit: str, fp: str) -> str | None:
             row = json.loads(line)
         except ValueError:
             continue
-        if isinstance(row, dict) and row.get("fp") == fp and row.get("unit") == uid:
+        if (isinstance(row, dict) and row.get("unit") == uid and row.get("fp")
+                and fp in (None, row["fp"])):
             noted = row
+    return noted
+
+
+def noted_brief(root: Path | str, unit: str) -> str | None:
+    """The fingerprint of the last brief `critic.py brief` noted here for `unit`, or None."""
+    row = _noted_row(root, sdlc_md.norm_id(unit))
+    return str(row["fp"]) if row else None
+
+
+def rebrief_notice(root: Path | str, unit: str, fp: str) -> str | None:
+    """The warning for a verdict recorded against brief `fp` when the unit's Affects or criteria
+    have changed since that brief was printed, or None. A fingerprint no brief here noted (a
+    hand-written prompt, a brief taken in another clone) says nothing: it is stored, not judged.
+    """
+    uid = sdlc_md.norm_id(unit)
+    noted = _noted_row(root, uid, fp)
     if noted is None:
         return None
     try:

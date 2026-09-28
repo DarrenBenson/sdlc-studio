@@ -154,7 +154,10 @@ lists every script with a one-line summary; open the linked page for the full en
 - `init.py` - Deterministic greenfield initialiser - `init` is now an executable, not a manual
 - `decisions.py` - Project decisions log - the canonical home for load-bearing decisions, both
 - `transition.py` - Deterministic status transition + cascade. `set --id <ID> --status <new>` sets `Status`,
-  and the canonical one-call bug close is `set --id BGxxxx --status Fixed --verdict approve --reviewer <R> --author <A>` - independent verdict and gated transition in one call, every predictable refusal raised before any write,
+  and the canonical one-call bug close is `set --id BGxxxx --status Fixed --verdict approve --reviewer <R> --author <A> --brief <fingerprint>` -
+  independent verdict and gated transition in one call, every predictable refusal raised before any write.
+  The reviewer is a separate context that did not write the fix, briefed with `critic.py brief --unit BGxxxx --seat qa`;
+  `--brief` carries the fingerprint that brief printed. A `--verdict` without it is warned on stderr, never refused
 - `archive.py` - Index archival for large boards. `archive --type <t> --release <r>` moves a
 - `refine.py` - Decompose a request (RFC/CR) into an epic and stories, with the two-backlog links wired. `refine show --request <id>` surfaces the request's content and confirms it is refinable; `refine apply --request <id> --epic-title "..." --story "title|points[|affects]" ...` creates the epic (T-shirt sized from the point total, `Parent:` the request) and each story, writes the request's `Decomposed-into:`, rolls the epic's `Derived Point Total`, moves the request to its working status (In Progress / In Review), and surfaces `--question` items for a Three-Amigos consult. The automation of the hand-decomposition the two-backlog gates otherwise ask an operator to do, and the migration path for an upgrading project (an old childless CR becomes stories). Validates before minting: a non-request, an already-decomposed request, or an off-scale story point is refused and nothing is written.
 - `file_finding.py` - Deterministic Bug/CR/RFC filer for audit findings. Allocates a
