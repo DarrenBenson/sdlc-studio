@@ -53,5 +53,80 @@ class InstallSweepExitCode(unittest.TestCase):
             self.assertIn("SWEEP_RC=0", proc.stdout)
 
 
+def _skill(path: Path, version: str) -> Path:
+    """A minimal sdlc-studio skill tree: what `is_skill_copy` and `installed_version` read."""
+    (path / "templates").mkdir(parents=True)
+    (path / "SKILL.md").write_text("---\nname: sdlc-studio\n---\n", encoding="utf-8")
+    (path / "templates" / "version.yaml").write_text(f'skill_version: "{version}"\n',
+                                                     encoding="utf-8")
+    return path
+
+
+def _tree(path: Path) -> dict:
+    return {str(p.relative_to(path)): p.read_bytes() for p in sorted(path.rglob("*"))
+            if p.is_file()}
+
+
+class LocalSweepTests(unittest.TestCase):
+    """BG0809. `--local` pins a version in ONE project, so its sweep must not rewrite the
+    personal copies every other project loads; and Claude Code loads a personal skill ahead of
+    a project one of the same name, so a local install under a personal copy must say so.
+    MUTANTS: the sweep walks both scopes under --local; the sweep is dropped altogether (the
+    project's other local copies stop refreshing); the shadow note is never printed; it is
+    printed without a personal copy; it names neither version."""
+
+    def setUp(self) -> None:
+        import tempfile
+        base = Path(tempfile.mkdtemp(prefix="bg0809_"))
+        self.addCleanup(__import__("shutil").rmtree, base, True)
+        self.home, self.project = base / "home", base / "project"
+        self.project.mkdir(parents=True)
+        self.src = _skill(base / "src" / "sdlc-studio", "2.0.0")
+
+    def _install(self, *argv: str) -> subprocess.CompletedProcess:
+        self.home.mkdir(exist_ok=True)
+        return subprocess.run(
+            ["bash", str(INSTALL_SH), "--local", "--from", str(self.src), *argv],
+            cwd=self.project, capture_output=True, text=True, timeout=60,
+            env={"HOME": str(self.home), "PATH": "/usr/bin:/bin", "NO_COLOR": "1"})
+
+    def test_a_local_install_leaves_personal_copies(self) -> None:
+        personal = {
+            "claude, same version": _skill(self.home / ".claude/skills/sdlc-studio", "2.0.0"),
+            "opencode, older": _skill(self.home / ".config/opencode/skills/sdlc-studio", "1.0.0"),
+        }
+        for path in personal.values():      # a rewrite from the source would drop this file
+            (path / "personal-only.txt").write_text("mine\n", encoding="utf-8")
+        before = {k: _tree(p) for k, p in personal.items()}
+        # the positive control: a stale copy in ANOTHER of this project's tool dirs is still
+        # the sweep's business, so the sweep itself must not simply have gone
+        project_other = _skill(self.project / ".opencode/skills/sdlc-studio", "1.0.0")
+        cp = self._install("--target", "claude")
+        self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+        for label, path in personal.items():
+            self.assertEqual(_tree(path), before[label],
+                             f"--local rewrote the personal copy ({label}) at {path}:\n{cp.stdout}")
+        installed = self.project / ".claude/skills/sdlc-studio/templates/version.yaml"
+        self.assertIn('"2.0.0"', installed.read_text(encoding="utf-8"), cp.stdout)
+        self.assertIn('"2.0.0"', (project_other / "templates/version.yaml").read_text(
+            encoding="utf-8"), f"the project's own stale copy was not refreshed:\n{cp.stdout}")
+
+    def test_a_shadowed_local_install_is_named(self) -> None:
+        cp = self._install("--target", "claude")
+        self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+        self.assertNotIn("ahead of", cp.stdout + cp.stderr,
+                         "the shadow note printed with no personal copy")
+        personal = _skill(self.home / ".claude/skills/sdlc-studio", "1.5.0")
+        cp = self._install("--target", "claude")
+        self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+        project = (self.project / ".claude/skills/sdlc-studio").resolve()
+        notes = [ln for ln in (cp.stdout + cp.stderr).splitlines() if "ahead of" in ln]
+        self.assertEqual(len(notes), 1, cp.stdout + cp.stderr)
+        for part in ("Claude Code", str(personal.resolve()), "1.5.0", str(project), "2.0.0"):
+            self.assertIn(part, notes[0], notes[0])
+        self.assertLess(notes[0].index(str(personal.resolve())), notes[0].index("ahead of"),
+                        f"the note does not say the PERSONAL copy is the one loaded: {notes[0]}")
+
+
 if __name__ == "__main__":
     unittest.main()

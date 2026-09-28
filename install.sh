@@ -52,7 +52,8 @@ Options:
     --dry-run       Show what would be done without making changes
     --no-sweep      Skip refreshing sdlc-studio copies found in other
                     tool locations (default: refresh them all so no
-                    stale version lingers)
+                    stale version lingers; --local refreshes only this
+                    project's, never the personal copies)
     --allow-downgrade  Overwrite an install/copy that is NEWER than the version
                     being installed (default: refuse, so an install from an
                     older published release cannot silently downgrade newer
@@ -485,14 +486,16 @@ is_skill_copy() {
     [[ -f "$1/SKILL.md" ]] && grep -q '^name: sdlc-studio[[:space:]]*$' "$1/SKILL.md"
 }
 
-# Refresh every sdlc-studio copy found in any known location that was not
-# already written this run, so no stale version lingers anywhere.
+# Refresh every sdlc-studio copy found in a known location of the install's reach that was not
+# already written this run, so no stale version lingers. A --local install reaches this project
+# only: it pins a version here, and the personal copies are what every other project loads.
 sweep_stale() {
     local src="$1" done_list="$2"
-    local t scope parent dest old new_ver found=false
+    local t scope scopes="global local" parent dest old new_ver found=false
+    [[ "$INSTALL_MODE" == local ]] && scopes="local"
     if [[ "$DRY_RUN" == true ]]; then new_ver="$VERSION"; else new_ver=$(installed_version "$src"); fi
     for t in $ALL_TARGETS; do
-        for scope in global local; do
+        for scope in $scopes; do
             parent=$(target_dir "$t" "$scope")
             [[ -z "$parent" || ! -d "$parent" ]] && continue
             parent=$(canon "$parent")
@@ -530,6 +533,21 @@ sweep_stale() {
     if [[ "$found" == false ]]; then
         info "sweep: no other sdlc-studio copies found"
     fi
+}
+
+# Claude Code loads a personal skill ahead of a project skill of the same name, so a --local
+# install under a personal copy is not the copy it runs. Named here, never changed: the personal
+# copy is the user's. $1 is the project copy's version when there is no copy to read it from.
+shadow_note() {
+    local personal="$HOME/.claude/skills/$SKILL_NAME" project version="$1"
+    if [[ ! -d "$personal" ]] || ! is_skill_copy "$personal"; then return 0; fi
+    project=$(target_dir claude local)
+    if [[ -d "$project" ]]; then project=$(canon "$project"); else project="$PWD/$project"; fi
+    project="$project/$SKILL_NAME"
+    if [[ "$DRY_RUN" != true ]] && is_skill_copy "$project"; then
+        version=$(installed_version "$project")
+    fi
+    warn "Claude Code loads the personal copy $(canon "$personal") ($(installed_version "$personal")) ahead of this project's copy $project ($version), so this project runs the personal one. Remove or update it to run this project's."
 }
 
 print_list() {
@@ -601,6 +619,10 @@ main() {
         echo ""
         info "Sweep: checking other tool locations for stale copies..."
         sweep_stale "$SRC" "$installed_dests"
+    fi
+    if [[ "$INSTALL_MODE" == local && " $targets " == *" claude "* ]]; then
+        echo ""
+        shadow_note "$VERSION"
     fi
 
     echo ""
