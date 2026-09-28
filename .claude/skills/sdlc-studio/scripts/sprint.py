@@ -11157,8 +11157,8 @@ def build_parser() -> argparse.ArgumentParser:
     sg.add_argument("--report", default=None, metavar="RPTxxxx",
                     help="the report being signed (default: the one the run names)")
     sg.add_argument("--principal", default=None,
-                    help="the reviewer of record - refused when it is a unit's author or a "
-                         "reviewer recorded on it")
+                    help="the operator who signs the run - refused when it is a unit's author "
+                         "or a reviewer recorded on it")
     sg.add_argument("--author", default=None, help="the authoring seat, for the independence check")
     sg.add_argument("--retro", default=None, metavar="RETROxxxx")
     sg.add_argument("--root", default=".")
@@ -11305,12 +11305,12 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--root", default=".", help="Repo root (default: .)")
     g.set_defaults(func=cmd_goal_verdict)
 
-    gr = sub.add_parser(
-        "goal-review",
-        help="Record (or show) the review seats' verdict on the Sprint Goal, BEFORE the "
-             "plan: is it achievable by this batch, what does done mean for it, and does "
-             "the batch read as one increment. `sprint plan --write` refuses a stated goal "
-             "no seat has reviewed on a project that declares review seats.")
+    goal_review_help = (
+        "Record (or show) the review seats' read of the Sprint Goal, BEFORE the plan: is it "
+        "achievable by this batch, what does done mean for it, and does the batch read as one "
+        "increment. The read is advice printed with the plan, never a refusal: `sprint plan "
+        "--write` proceeds on a goal no seat has read, or one a seat objected to, and says so.")
+    gr = sub.add_parser("goal-review", help=goal_review_help, description=goal_review_help)
     gr.add_argument("action", choices=("record", "show", "brief"))
     gr.add_argument("--goal", default=None,
                     help="the Sprint Goal the seats reviewed, verbatim - a verdict carries "
@@ -11345,8 +11345,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     ro = sub.add_parser(
         "reopen",
-        help="Reopen a CLOSED run so evidence that belongs to it can still be recorded - the "
-             "sprint-level review a late sign-off needs, most often. A reason is mandatory and "
+        help="Reopen a CLOSED run so evidence that belongs to it can still be recorded - a "
+             "late review verdict, most often. A reason is mandatory and "
              "is recorded on the run; the archived close record is never rewritten.")
     ro.add_argument("--reason", required=True,
                     help="why the run is being reopened - an unattributable reopen makes every "
@@ -11399,7 +11399,7 @@ def build_parser() -> argparse.ArgumentParser:
     bt = sub.add_parser(
         "batch",
         help="Mutate an OPEN run's approved batch: `drop <id> --reason` pulls a unit (the "
-             "done-gate and sign-off lanes stop demanding it) or `add <id>` puts one in under "
+             "close and the run's signature stop counting it) or `add <id>` puts one in under "
              "the same gates. Drop judges THIS BATCH and is recorded - distinct from Deferred, a "
              "status on the WORK that leaves the unit gated. Every change lands in batch_changes.")
     bt.add_argument("action", choices=("drop", "add", "swap", "add-epic"))

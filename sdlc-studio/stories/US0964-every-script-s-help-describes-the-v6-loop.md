@@ -1,6 +1,6 @@
 # US0964: Every script's --help describes the v6 loop and no retired review step
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,8 +19,10 @@
 
 - **AC1:** Given the `--help` of every script in scripts/ and of each of its subcommands, then none names a surface from US0924's retired list, or a sign-off other than the run's signature, except to say it is retired. Fails on: HEAD's `sprint.py goal-review` ('`sprint plan --write` refuses a stated goal no seat has reviewed'), `sprint.py reopen` ('the sprint-level review a late sign-off needs'), `sprint.py batch` ('the done-gate and sign-off lanes'), `critic.py correct --boundary` ('held to the sign-off's own rule') and `mutation.py` ('Executable mutation-check gate'); and a scan of the top-level help only, which misses four of the five
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_help_text.py::HelpTextTests::test_no_help_names_a_retired_surface
+  - **Verified:** yes (2026-09-28)
 - **AC2:** Given `sprint.py goal-review --help`, then it says the seats' read of the goal is advice printed with the plan and never a refusal, as `sprint.goal_review_status` behaves. Fails on: HEAD's help, which tells an operator an unreviewed goal will be refused and so invites a review step v6 made advisory
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_help_text.py::HelpTextTests::test_goal_review_help_says_advice
+  - **Verified:** yes (2026-09-28)
 
 ## Notes
 

@@ -3285,8 +3285,13 @@ def build_parser() -> argparse.ArgumentParser:
                    help="parse VERDICT/ISSUES/BLOCKING from a file (or stdin with -), refusing a malformed block")
     r.add_argument("--reviewer", default="independent-critic")
     r.add_argument("--author",
-                   help="Authoring seat / delegation id that produced the diff (must differ from --reviewer).")
-    r.add_argument("--issues", default="")
+                   help="the authoring seat or delegation id that produced the diff; a "
+                        "self-review (the same id as --reviewer) is recorded with a warning "
+                        "and never counts as the unit's independent review")
+    r.add_argument("--issues", default="",
+                   help="the findings, separated by ';', each tagged with what this unit's "
+                        "diff did: [regression], [new] or [pre-existing]; an untagged finding "
+                        "is refused, and only [regression] and [new] block")
     r.add_argument("--brief", default="",
                    help="optional: the fingerprint `critic.py brief` printed for the prompt this "
                         "seat was given, stored on the row as given")
@@ -3352,7 +3357,8 @@ def build_parser() -> argparse.ArgumentParser:
                          "author, never the row's own author nor an in-session reviewer")
     sp.add_argument("--boundary", required=True,
                     help="the separate trust boundary the authoriser acted in (operator "
-                         "console, another human, CI) - held to the sign-off's own rule")
+                         "console, another human, CI) - held to the independence rule the "
+                         "run's signature is held to")
     sp.add_argument("--reviewer", default=None,
                     help="narrow the match when the unit has several rows that date")
     sp.add_argument("--verdict", default=None, help="narrow the match by the row's verdict")

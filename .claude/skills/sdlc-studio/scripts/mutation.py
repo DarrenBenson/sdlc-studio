@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""SDLC Studio mutation-check gate - the executable half of assertion integrity.
+"""SDLC Studio mutation probe - opt-in, the executable half of assertion integrity.
 
-`verify_ac` confirms an AC's tests PASS; this gate asks the complementary question:
+`verify_ac` confirms an AC's tests PASS; this probe asks the complementary question:
 would they FAIL if the feature broke? It applies a declared, bounded set of textual
 mutations to the changed surface, re-runs the mapped tests per mutation, and reports
 **killed** (test failed - it pins the behaviour) vs **survived** (test stayed green
@@ -2084,7 +2084,9 @@ def cmd_prefilter(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Executable mutation-check gate.")
+    p = argparse.ArgumentParser(description="Opt-in mutation probe: would the tests fail if the code "
+                                            "broke? No gate reads a run's result; only an "
+                                            "open `window` holds a commit.")
     sub = p.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("run", help="Mutate a surface and re-run its tests per mutation.")
     r.add_argument("--files", nargs="+", help="explicit target files")
