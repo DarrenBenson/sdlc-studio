@@ -1367,6 +1367,8 @@ One row has been removed since adoption.
 | US0964 | APPROVE | qa-rev-aefe97a3 | builder-a7c194d7 | 2026-09-28 | 292f58784e35 | full | [pre-existing] non-blocking: the remaining shared retirement words (removed, gone, no longer, frozen, before v6) and a comma clause still excuse a live mention, from US0924's RETIRED\_CONTEXT; [new] non-blocking: checking every match per line, not only the first, is not pinned by a test |
 | BG0812 | APPROVE | qa-rev-aefe97a3 | builder-a2e459d7 | 2026-09-28 | 44045de5a333 | full | [pre-existing] non-blocking: artifact.py close reaches Fixed with a verdict and no brief or warning, to be filed; [new] non-blocking: the --brief help and reference-scripts.md:160 say any --verdict without a brief is warned, but a telemetry-only --verdict is not; [new] non-blocking: --status=Fixed escapes the AC1 regex |
 | US0960 | APPROVE | qa-rev-US0960 | US0960-build | 2026-09-28 | b8f2437bd605 | full | [new] non-blocking: the length guard in \_moved\_only\_by\_projection is correct but no test pins it, a row in the word-by-word table would |
+| BG0804 | APPROVE | qa-rev-a2c47ccd | builder-a8cbd615 | 2026-09-28 | ff554e72a9cd | full | - |
+| BG0725 | APPROVE | qa-rev-a2c47ccd | builder-a8cbd615 | 2026-09-28 | be08f746c786 | full | [new] non-blocking: cycle\_drift's docstring still says all three buckets though it now returns four, corrected at landing |
 
 ## Supersessions
 

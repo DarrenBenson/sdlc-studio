@@ -3760,7 +3760,10 @@ def build_report(root, retro_id: str, as_of: str | None = None,
 WORKSPACE_PREFIXES = ("sdlc-studio/", ".claude/", "tools/", "docs/", "changelog.d/")
 
 NON_PATH_SOURCES = ("gh run list", "git log", "git history", "the session transcript",
-                    "forge run", "forge runs", "the harness meter", "no forge")
+                    "forge run", "forge runs", "the harness meter", "no forge",
+                    # `lessons.SEED_LABEL`'s lead: a project with no class store reads the seed
+                    # the skill ships, which lives in the install, not the workspace.
+                    "the skill's bundled seed")
 
 
 def _source_resolves(root: Path, src: str) -> bool:
@@ -3944,7 +3947,7 @@ def _lessons_section(root: Path, run_id: str | None) -> dict:
     """Each live lesson class, with its hits this run and in total, from the class store. Kept
     out of the digest (SECTIONS_OUTSIDE_THE_DIGEST): later closes move the store."""
     import lessons  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
-    rel = lessons.STORE_FILE
+    rel = lessons.store_source(root)
     try:
         live = [r for r in lessons.load_store(root) if r.get("state") in lessons.LIVE_STATES]
     except (OSError, ValueError) as exc:

@@ -1,6 +1,6 @@
 # BG0804: The report's Lessons section cites sdlc-studio/lessons.jsonl on a project that has none, when the bundled seed was read
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -24,6 +24,7 @@ Read the source label from `lessons.store_source().`
 
 - [ ] **AC1** Given a project with no `sdlc-studio/lessons.jsonl`, when the report's Lessons section is built, then every figure's source is the bundled seed's label, and with a store present it is `sdlc-studio/lessons.jsonl`. Fails on: citing `lessons.STORE_FILE` unconditionally (HEAD)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::LessonsSourceTests::test_the_lessons_section_cites_the_store_it_read
+  - **Verified:** yes (2026-09-28)
 
 ## Notes
 

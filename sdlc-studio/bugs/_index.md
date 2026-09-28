@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 12 |
-| In Progress | 4 |
-| Fixed | 661 |
+| In Progress | 3 |
+| Fixed | 662 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -162,7 +162,7 @@
 | [BG0801](BG0801-the-known-issues-page-puts-its-ship-open.md) | The known-issues page puts its ship-open paragraph under the oldest bar's history and states a Not carried count the corpus contradicts | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0802](BG0802-artifact-new-type-bug-drops-its-verify-line.md) | artifact new --type bug drops its --verify line and writes an unnamed criterion, so sprint plan refuses the bug it just filed | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0803](BG0803-sprint-plan-to-the-plan-or-design-rung.md) | sprint plan to the plan or design rung crashes in capacity_report on the default token budget | Fixed | Low | 2026-09-27 | 2026-09-27 |
-| [BG0804](BG0804-the-report-s-lessons-section-cites-sdlc-studio.md) | The report's Lessons section cites sdlc-studio/lessons.jsonl on a project that has none, when the bundled seed was read | In Progress | Low | 2026-09-27 | 2026-09-27 |
+| [BG0804](BG0804-the-report-s-lessons-section-cites-sdlc-studio.md) | The report's Lessons section cites sdlc-studio/lessons.jsonl on a project that has none, when the bundled seed was read | Fixed | Low | 2026-09-27 | 2026-09-27 |
 | [BG0805](BG0805-verify-ac-stamps-passes-a-k-expression-whose.md) | verify_ac stamps passes a -k expression whose dead term hides behind a live one, so eight stamped criteria verify nothing of what they claim | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0806](BG0806-tsd-staleness-is-never-judged-in-a-consuming.md) | TSD staleness is never judged in a consuming project and reports a false reason on every sprint plan | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0807](BG0807-the-us0942-ac5-stamp-test-resolves-the-whole.md) | The US0942 AC5 stamp test resolves the whole corpus before filtering, costing about 50 seconds of every commit that touches verify_ac.py | Fixed | Low | 2026-09-27 | 2026-09-27 |

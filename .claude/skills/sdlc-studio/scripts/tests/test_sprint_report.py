@@ -4692,5 +4692,30 @@ class WaiverDisclosureTests(ReportOfRecordBase):
         self.assertEqual(0, section["figures"]["waivers_count"]["value"])
 
 
+class LessonsSourceTests(ReportOfRecordBase):
+    """BG0804. A fresh project has no `sdlc-studio/lessons.jsonl`: `load_store` reads the bundled
+    seed, and the Lessons section cited the missing store for every figure regardless."""
+
+    @staticmethod
+    def _sources(section: dict) -> set[str]:
+        figs = list(section["figures"].values())
+        figs += [f for row in section["rows"] for f in row.values()]
+        return {f["source"] for f in figs}
+
+    def test_the_lessons_section_cites_the_store_it_read(self) -> None:
+        import lessons  # noqa: PLC0415 - the sibling the section reads
+        seeded = sr._lessons_section(self.root, "RUN-X")
+        self.assertTrue(seeded["rows"], "the seed carries live classes, so rows are built")
+        self.assertEqual({lessons.SEED_LABEL}, self._sources(seeded))
+
+        store = self.root / "sdlc-studio" / "lessons.jsonl"
+        store.parent.mkdir(parents=True)
+        store.write_text(json.dumps({"id": "LC-001", "class": "c", "state": "active",
+                                     "hits": [{"run": "RUN-X"}]}) + "\n", encoding="utf-8")
+        own = sr._lessons_section(self.root, "RUN-X")
+        self.assertEqual(1, len(own["rows"]))
+        self.assertEqual({"sdlc-studio/lessons.jsonl"}, self._sources(own))
+
+
 if __name__ == "__main__":
     unittest.main()
