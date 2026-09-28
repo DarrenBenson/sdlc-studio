@@ -5778,6 +5778,21 @@ def _prefill_retro(root, path, batch, state) -> None:
     retro.record_overage_in_retro(root, p)
 
 
+def _scaffold_run_retro(root, state) -> dict:
+    """Mint the run's retro (`artifact.meta_new`: allocated id, template, index row) with its
+    Batch and Goal filled from the run state. The close and its dry run both mint through here,
+    so the preview judges the retro the close would write: a bare scaffold names no batch, and
+    every checklist row that finds its run through the retro's units then read no goal, no units
+    and no start time for a run whose state holds all three."""
+    import artifact  # noqa: PLC0415 - deferred, like the chain's retro/handoff imports
+    # Through the shared helper: a Sprint Goal is a sentence, and an H1 keeping its full stop
+    # fails markdownlint MD026 and blocks the commit carrying this retro.
+    title = sdlc_md.heading_title(state.get("sprint_goal") or state.get("run_id") or "sprint retro")
+    res = artifact.meta_new(root, "retro", title)
+    _prefill_retro(root, res["path"], state.get("batch") or [], state)
+    return res
+
+
 def _resolve_retro(root, args, state) -> int | None:
     """Ensure the close has a retro to gate on, through the deterministic path.
 
@@ -5791,7 +5806,6 @@ def _resolve_retro(root, args, state) -> int | None:
     - `--retro` names a missing retro: refuse (the sequential allocator cannot mint a chosen id).
 
     Returns an exit code to stop the close, or None to continue (args.retro is then the id)."""
-    import artifact  # noqa: PLC0415 - deferred, like the chain's retro/handoff imports
     import reconcile  # noqa: PLC0415
     rid = (args.retro or "").strip()
     if rid:
@@ -5808,12 +5822,7 @@ def _resolve_retro(root, args, state) -> int | None:
     if prior and _retro_path(root, prior) is not None:
         disp, verb = prior, "already scaffolded"
     else:
-        # Through the shared helper: a Sprint Goal is a sentence, and an H1 keeping its
-        # full stop fails markdownlint MD026 and blocks the commit carrying this retro.
-        title = sdlc_md.heading_title(
-            state.get("sprint_goal") or state.get("run_id") or "sprint retro")
-        res = artifact.meta_new(root, "retro", title)
-        _prefill_retro(root, res["path"], state.get("batch") or [], state)
+        res = _scaffold_run_retro(root, state)
         disp, verb = res["id"], f"scaffolded (indexed={res['indexed']})"
         run_state.update(root, scaffolded_retro=disp)
     # Don't silently drop a --goal-verdict passed on the scaffold call: record it now so the
@@ -7392,7 +7401,8 @@ def close_dry_run(root, retro_id: str | None = None, goal_verdict: str | None = 
                          f"it could not be told which tree to read from",
                          "give the step an explicit `read_root=None` parameter")
                     continue
-                ok, detail, remedy = fn(scratch, rid, run_state.read(scratch) or state, **kw)
+                with _on_the_copy():
+                    ok, detail, remedy = fn(scratch, rid, run_state.read(scratch) or state, **kw)
             except Exception as exc:  # noqa: BLE001 - a step that explodes is UNEVALUATED
                 # Never "ok". A step whose probe failed for a reason peculiar to the copy has
                 # told us nothing about the real close, and calling that a pass is the single
@@ -7415,24 +7425,36 @@ def _dry_run_retro(scratch: Path, state: dict, note) -> str | None:
     then refuses on what it contains, so the content class cannot be reported by anything that
     declines to create one - which is why three closes in a row each discovered it separately.
     """
-    import artifact  # noqa: PLC0415 - deferred, like the chain's other siblings
-    title = state.get("sprint_goal") or state.get("run_id") or "dry run"
     try:
-        rc, out = _run_cli(artifact.main, ["new", "--type", "retro", "--title", str(title)[:120],
-                                           "--root", str(scratch)])
+        with _on_the_copy():
+            rid = _scaffold_run_retro(scratch, state)["file_id"]
     except Exception as exc:  # noqa: BLE001
         sdlc_md.debug("sprint._dry_run_retro", exc)
         note("retro-scaffold", "unevaluated", f"a retro could not be scaffolded ({exc})", "")
         return None
-    match = re.search(r"\bRETRO\d{4}\b", out or "")
-    if rc != 0 or not match:
-        note("retro-scaffold", "unevaluated",
-             f"a retro could not be scaffolded in the copy: {(out or '').strip()[:200]}", "")
-        return None
     note("retro-scaffold", "ok",
-         f"{match.group(0)} scaffolded IN THE COPY - the steps below judge the content `close` "
+         f"{rid} scaffolded IN THE COPY - the steps below judge the content `close` "
          f"would mint, so a content gap is reported before the real retro exists")
-    return match.group(0)
+    return rid
+
+
+#: The mark on every line a dry-run step prints while it acts on the scratch copy.
+COPY_MARK = "[copy]"
+
+
+@contextlib.contextmanager
+def _on_the_copy():
+    """Re-print, marked `COPY_MARK`, every line printed inside: a dry-run step acts on the
+    scratch copy, and its own `close: derived EP0001 terminal` read as a write to the real tree
+    that the preview never made."""
+    out, err = io.StringIO(), io.StringIO()
+    try:
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            yield
+    finally:
+        for buf, stream in ((out, sys.stdout), (err, sys.stderr)):
+            for line in buf.getvalue().splitlines():
+                print(f"{COPY_MARK} {line}", file=stream)
 
 
 def _dry_run_result(steps: list[dict], scratch) -> dict:

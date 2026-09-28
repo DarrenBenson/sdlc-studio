@@ -1,6 +1,6 @@
 # BG0823: sprint close --dry-run reports no goal, no units and no start time for a run whose state holds all three, and previews writes as done
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_close_dry_run_state.py, changelog.d/BG0823.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -26,8 +26,10 @@ Tie the preview's checklist to the open run (pass the run state to `sprint_repor
 
 - [ ] **AC1** Given an open run with a goal, a start time and two batch units, when `close --dry-run` runs, then its checklist names the goal and both units and dates the run. Fails on: HEAD's no goal / no units / no start time
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close_dry_run_state.py::CloseDryRunStateTests::test_the_preview_reads_the_open_run
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC2** Given the preview's reconcile step derives a parent on the copy, then its output line says it did so on the copy. Fails on: HEAD's bare `close: derived EP-... terminal`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close_dry_run_state.py::CloseDryRunStateTests::test_copy_actions_are_labelled
+  - **Verified:** yes (2026-09-28)
 
 ## Revision History
 
