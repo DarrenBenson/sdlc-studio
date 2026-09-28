@@ -109,12 +109,15 @@ its own terminal - `Done` for a story, `Fixed` for a bug - (AC-verify gated, cas
 and the request above it), then writes the run's one signature and its outcome, and stops. It does
 NOT run the close tail: a fact that moves after a signature is a fact the signature did not cover.
 A unit with no independent delivery APPROVE stops it before anything moves, naming the unit. The
-close names the same units first - one at Review as a known issue, one already moved to Done in
-the pre-flight's blocking `review-coverage` row - so the page you sign already shows them. A unit
+close names the same units first - one short of its terminal as a known issue, one already moved
+to Done in the pre-flight's blocking `review-coverage` row - so the page you sign already shows
+them. A story or bug with an independent APPROVE owes only the signature at any status short of
+its terminal, Ready included, so the close does not list it; `sign` moves no other kind, so a CR
+owes only the signature at Review and is listed anywhere else. A unit
 still rejected at the review round cap is not one of these: it was carried when its cap REJECT
 was recorded, its findings filed as a bug and the unit dropped from the batch, so neither the
-close nor the signature holds it. A batch unit with no independent APPROVE stays at Review and is
-handed over as a known issue. It is
+close nor the signature holds it. A batch unit with no independent APPROVE stays where it is and
+is handed over as a known issue. It is
 idempotent (a re-run resumes, skipping units already terminal), and it stops loudly at the first
 unit whose Done gate is red, leaving the completed units done. A principal the authoring session
 controls is refused BEFORE any of that, judged across the whole batch, so that refusal leaves

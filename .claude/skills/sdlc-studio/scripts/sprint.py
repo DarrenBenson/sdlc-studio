@@ -5339,10 +5339,10 @@ def seal_bar_unmet(root, uid: str) -> list[str]:
     `conformance` judges `critiqued` - an independent delivery APPROVE at the depth the unit's
     risk band demands. Empty when met.
 
-    ONE reader for the close and the seal. The close answers a Review unit that meets it (only
-    the signature is owed) and `sign` stops on a unit that does not, so the close names every
-    unit the signature will refuse: at Review as a known issue, already at Done in the
-    pre-flight's `review-coverage` row.
+    ONE reader for the close and the seal. The close answers a pre-terminal story or bug that
+    meets it (only the signature is owed) and `sign` stops on a unit that does not, so the close names
+    every unit the signature will refuse: short of its terminal as a known issue, already at
+    Done in the pre-flight's `review-coverage` row.
     """
     import conformance  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     return conformance.critiqued_unmet(root, sdlc_md.norm_id(uid))
@@ -5397,8 +5397,8 @@ def unanswered_units(root, state, retro_id=None) -> dict:
     approved or it was carried at the review cap (a drop `critic.carried_to` accepts): the
     REJECT's two exits (`critic.REJECT_EXITS`). Otherwise a unit is answered by its status:
     delivered-terminal or abandoned (a terminal reached by a ruling, derived and never listed),
-    at Review owing nothing but the run's signature (`seal_bar_unmet`, the bar `sprint sign`
-    stops on), at its run's rung-end status off the build rung, dropped, parked on a pending
+    owing nothing but the run's signature (`seal_bar_unmet`, the bar `sprint sign` stops on) -
+    a story or bug at any pre-terminal status, any other kind at Review - at its run's rung-end status off the build rung, dropped, parked on a pending
     decision or depending on one (`_parked_units`, the closure `blocked_by_pending` reads), or
     ruled not-stop-ship, accepted-risk or deferred in the carried table. `filed` names the bug a
     carry filed its findings to.
@@ -5472,13 +5472,17 @@ def unanswered_units(root, state, retro_id=None) -> dict:
                     and critic.coverage_state(root, uid) != critic.COVERAGE_APPROVED)
         why = [WHY_REJECT] if rejected else []
         review_why = ""
-        awaits_signature = False
-        if critic.is_awaiting_signoff(status):
-            # The seal's own bar, so the close lists exactly the Review units `sign` refuses: one
-            # that meets it owes only the run's signature, which is the step after this close.
-            if not seal_bar_unmet(root, uid):
-                awaits_signature = True
-            elif row or critic.sprint_covers_independently(
+        # The seal's own bar, at EVERY pre-terminal status for a kind `sign` moves: it seals a
+        # story or a bug (`_SIGNOFF_TERMINAL`) the loop left at Ready or In Progress as readily
+        # as one at Review, so one that meets the bar owes only the run's signature, the step
+        # after this close. Any other kind (a CR, say) is never moved by `sign`, so it awaits the
+        # signature only at a Review status, as it always did - otherwise the close would pass a
+        # unit the signature then leaves where it stood.
+        awaits_signature = (bool(kind) and not terminal
+                            and (kind in _SIGNOFF_TERMINAL or critic.is_awaiting_signoff(status))
+                            and not seal_bar_unmet(root, uid))
+        if not awaits_signature and critic.is_awaiting_signoff(status):
+            if row or critic.sprint_covers_independently(
                     root, uid, critic.sprint_review_for(root, uid)):
                 # A pass is on record - a delivery verdict, or a frozen batch review - and the
                 # bar is still unmet. The verdict ledger says a pass ran; the retired evidence

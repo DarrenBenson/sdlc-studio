@@ -100,7 +100,10 @@ links here rather than listing its own.
    contract). `sprint.py lane brief` hands the worker the unit's criteria, its files' history
    and the build-phase lessons; `verify_ac.py run --id <unit>` runs the criteria; and
    `sprint.py lane return` reports each criterion and marks the lane blocked when one did not
-   pass, whatever the lane claimed. A unit updates its own docs and commits green.
+   pass, whatever the lane claimed. A unit updates its own docs, commits green and moves to
+   Review (`transition.py set <id> Review`; a bug, whose type has no Review, stays In Progress).
+   The close and the signature judge a story or bug by its review, not its status: one left
+   short of Review with an independent APPROVE still owes only the signature.
 3. **Review.** One independent reviewer per unit, never the author. Brief the seat with
    `critic.py brief --unit <id> --seat engineering|product|qa` and record its verdict with
    `critic.py record`, each finding tagged `[regression]`, `[new]` or `[pre-existing]` (only the

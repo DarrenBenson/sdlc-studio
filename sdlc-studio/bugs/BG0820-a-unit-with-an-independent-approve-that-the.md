@@ -1,6 +1,6 @@
 # BG0820: A unit with an independent APPROVE that the loop left at Ready or In Progress is handed over as an unanswered known issue, then sealed by sign
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_awaiting_signature_status.py, changelog.d/BG0820.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -26,8 +26,10 @@ Judge the awaiting-signature case by the seal's own bar (`seal_bar_unmet`) at ev
 
 - [ ] **AC1** Given a batch unit at Ready carrying an independent delivery APPROVE, when the close lists unanswered units, then the unit is reported as awaiting the signature and not as unanswered. Fails on: HEAD, where only a Review-status unit can await the signature
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_awaiting_signature_status.py::AwaitingSignatureStatusTests::test_an_approved_ready_unit_awaits_the_signature
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC2** Given reference-sprint.md's loop, then the Build step names the transition to Review. Fails on: the rc.1 and HEAD wording, which never moves a unit to Review
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_awaiting_signature_status.py::AwaitingSignatureStatusTests::test_the_loop_moves_a_built_unit_to_review
+  - **Verified:** yes (2026-09-28)
 
 ## Revision History
 
