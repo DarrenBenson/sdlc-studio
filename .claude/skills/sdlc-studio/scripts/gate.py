@@ -14,6 +14,7 @@ the registry is injectable so the aggregation logic is testable without a full r
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import re
@@ -2144,24 +2145,26 @@ def run_gate(root: str = ".", only: list[str] | None = None,
                       f"run the standard gate"}]}
     results = []
     run_started = time.monotonic()
-    for name in selected:
-        lane_started = time.monotonic()
-        try:
-            r = registry[name](root)
-            results.append({"check": name, "count": r["count"], "blocking": r["blocking"],
-                            "status": "pass" if r["count"] == 0 else "fail",
-                            "detail": r.get("detail", ""),
-                            "seconds": round(time.monotonic() - lane_started, 3)})
-        except Exception as exc:  # noqa: BLE001 - one buggy check must not abort the whole gate
-            # A conventions shape error is the operator's config, not a buggy
-            # check: it silently disables whichever lane read it (reconcile's
-            # drift detection, most damagingly), so it must BLOCK - a green
-            # gate over a disabled lane is the false assurance class.
-            from lib.conventions import ConventionsError
-            blocking = isinstance(exc, ConventionsError) or name in BLOCKING_ON_ERROR
-            results.append({"check": name, "count": 1, "blocking": blocking, "status": "error",
-                            "detail": f"check raised{'' if blocking else ', skipped'}: {exc}",
-                            "seconds": round(time.monotonic() - lane_started, 3)})
+    with boundary_suite_env(boundary):
+        for name in selected:
+            lane_started = time.monotonic()
+            try:
+                r = registry[name](root)
+                results.append({"check": name, "count": r["count"], "blocking": r["blocking"],
+                                "status": "pass" if r["count"] == 0 else "fail",
+                                "detail": r.get("detail", ""),
+                                "seconds": round(time.monotonic() - lane_started, 3)})
+            except Exception as exc:  # noqa: BLE001 - one buggy check must not abort the gate
+                # A conventions shape error is the operator's config, not a buggy
+                # check: it silently disables whichever lane read it (reconcile's
+                # drift detection, most damagingly), so it must BLOCK - a green
+                # gate over a disabled lane is the false assurance class.
+                from lib.conventions import ConventionsError
+                blocking = isinstance(exc, ConventionsError) or name in BLOCKING_ON_ERROR
+                results.append({"check": name, "count": 1, "blocking": blocking,
+                                "status": "error",
+                                "detail": f"check raised{'' if blocking else ', skipped'}: {exc}",
+                                "seconds": round(time.monotonic() - lane_started, 3)})
     if downgraded:  # the document's downgrades, visible in the verdict - never silent
         results.append({"check": "dod-downgrades", "count": len(downgraded),
                         "blocking": False, "status": "warn",
@@ -2511,10 +2514,11 @@ def cmd_run_tests(args: argparse.Namespace) -> int:
     print(f"unit-tests: {len(selectors)} selected module(s) {how}; {deferred}")
     started = time.monotonic()
     rc = 0
-    for argv in run_tests_plan(selectors, parallel, args.root, commit=boundary is None):
-        code = subprocess.run(argv, cwd=args.root).returncode
-        if code not in (0, 5):
-            rc = code
+    with boundary_suite_env(boundary):
+        for argv in run_tests_plan(selectors, parallel, args.root, commit=boundary is None):
+            code = subprocess.run(argv, cwd=args.root).returncode
+            if code not in (0, 5):
+                rc = code
     print(f"unit-tests: finished in {time.monotonic() - started:.0f}s")
     return rc
 
@@ -2529,6 +2533,33 @@ BOUNDARIES = ("push", "release", "close")
 #: The environment spelling of `--boundary`, for a push hook or a release step that runs the
 #: gate through a wrapper it does not control the arguments of.
 BOUNDARY_ENV = "SDLC_GATE_BOUNDARY"
+
+#: The switch a `@boundary_only` test reads (`scripts/tests/boundary.py`): it executes only when
+#: this is "1" in its runner's environment, and skips otherwise.
+BOUNDARY_SUITE_ENV = "SDLC_STUDIO_BOUNDARY_SUITE"
+
+
+@contextlib.contextmanager
+def boundary_suite_env(boundary: str | None):
+    """Export `BOUNDARY_SUITE_ENV=1` to every runner spawned inside, at a push or release boundary.
+
+    Whatever route resolved the boundary - `--boundary`, `SDLC_GATE_BOUNDARY`, an in-process
+    caller - the lanes it binds run the tests deferred to it. When only the pre-push hook set the
+    switch, a hand-run release gate read a red marked test as skipped and passed. A close
+    and a commit's selection leave it as the caller had it, and so does the exit: the caller's
+    environment is restored whichever way the block ends."""
+    if boundary not in ("push", "release"):
+        yield
+        return
+    before = os.environ.get(BOUNDARY_SUITE_ENV)
+    os.environ[BOUNDARY_SUITE_ENV] = "1"
+    try:
+        yield
+    finally:
+        if before is None:
+            os.environ.pop(BOUNDARY_SUITE_ENV, None)
+        else:
+            os.environ[BOUNDARY_SUITE_ENV] = before
 
 
 class BoundaryError(ValueError):

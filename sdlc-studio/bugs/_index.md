@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 15 |
-| In Progress | 3 |
-| Fixed | 657 |
+| In Progress | 2 |
+| Fixed | 658 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -50,7 +50,7 @@
 | [BG0689](BG0689-the-release-tag-guard-never-reads-close-owed.md) | The release tag guard never reads close_owed's velocity half, so a retro owing its velocity row does not refuse the tag | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0690](BG0690-critic-py-repair-re-judges-stored-findings-through.md) | critic.py repair re-judges stored findings through the code-span guard, and its typed closure scanner unescapes any backslash before a greater-than sign | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0691](BG0691-changelog-py-shape-judges-unreadable-and-symlinked-fragments.md) | changelog.py shape judges unreadable and symlinked fragments differently in its two modes, and its git-failure refusals are unpinned | Open | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0692](BG0692-gate-py-never-sets-the-boundary-suite-marker.md) | gate.py never sets the boundary-suite marker itself, so SDLC_GATE_BOUNDARY=push reads [PASS] module-alone over a red boundary-only test | In Progress | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0692](BG0692-gate-py-never-sets-the-boundary-suite-marker.md) | gate.py never sets the boundary-suite marker itself, so SDLC_GATE_BOUNDARY=push reads [PASS] module-alone over a red boundary-only test | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0693](BG0693-testplan-derive-and-the-plan-review-brief-still.md) | testplan derive and the plan-review brief still name different unauthored sets: blank cells, table order and a criterion with no row | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0694](BG0694-tag-check-s-tests-pin-the-override-case.md) | tag-check's tests pin the override case, not the blocking predicate, so a later-day close-time repair can be refused again with the suite green | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0695](BG0695-conformance-s-ungroomed-nudge-counts-retired-skeletons-and.md) | conformance's ungroomed nudge counts retired skeletons and tells the user to groom Superseded and Won't Implement stories before planning them to Done | Fixed | Medium | 2026-09-15 | 2026-09-15 |

@@ -5613,5 +5613,86 @@ class VerifyTimeoutOverrideTests(unittest.TestCase):
                             f"ceiling of its own:\n{pages[bad]}")
 
 
+@unittest.skipUnless(importlib.util.find_spec("pytest"), "the suite lanes run pytest")
+class BoundaryMarkerExportTests(unittest.TestCase):
+    """BG0692. A `@boundary_only` test executes only when `SDLC_STUDIO_BOUNDARY_SUITE=1` is in
+    its runner's environment. The pre-push hook set it on its own gate invocations and nothing
+    else did, so a hand-run release gate, or `SDLC_GATE_BOUNDARY=push`, read a red marked test
+    as skipped and passed. The gate now exports the marker to its lanes whenever it resolves a
+    push or release boundary. MUTANTS: export it only for `--boundary` and not the environment
+    spelling; only in `run_gate` and not `--run-tests`; unconditionally; and leave it set in the
+    caller's environment after the lanes return."""
+
+    MARKER = "SDLC_STUDIO_BOUNDARY_SUITE"
+
+    def _fixture(self) -> pathlib.Path:
+        root = pathlib.Path(tempfile.mkdtemp(prefix="bg0692_"))
+        self.addCleanup(_shutil.rmtree, root, True)
+        tests = root / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"
+        tests.mkdir(parents=True)
+        (root / "sdlc-studio").mkdir()
+        _shutil.copy(pathlib.Path(__file__).resolve().parent / "boundary.py", tests)
+        (root / "pytest.ini").write_text(
+            "[pytest]\naddopts = --import-mode=importlib\nmarkers =\n"
+            "    serial_only: fixture\n    boundary_only: fixture\n", encoding="utf-8")
+        (tests / "test_red.py").write_text(
+            "import os, sys, unittest\nsys.path.insert(0, os.path.dirname(__file__))\n"
+            "from boundary import boundary_only\n\nclass T(unittest.TestCase):\n"
+            "    @boundary_only('a red test deferred to the boundary, for this fixture only')\n"
+            "    def test_red_marked(self):\n        self.fail('the marked test ran')\n",
+            encoding="utf-8")
+        return root
+
+    def _gate(self, root, *argv, **env_extra):
+        import subprocess  # noqa: PLC0415
+        env = {k: v for k, v in os.environ.items()
+               if k not in (self.MARKER, gate.BOUNDARY_ENV) and not k.startswith("PYTEST_")}
+        env.update(env_extra)
+        cp = subprocess.run([sys.executable, "-B", str(SCRIPT), "--root", str(root), *argv],
+                            cwd=root, env=env, capture_output=True, text=True, timeout=300,
+                            check=False)
+        return cp.returncode, cp.stdout + cp.stderr
+
+    def test_every_route_to_a_boundary_runs_the_marked_tests(self) -> None:
+        root = self._fixture()
+        module = ".claude/skills/sdlc-studio/scripts/tests/test_red.py"
+        routes = {
+            "--boundary release": ((("--boundary", "release", "--only", "full-suite")), {}),
+            "SDLC_GATE_BOUNDARY=push": ((("--only", "full-suite")), {gate.BOUNDARY_ENV: "push"}),
+            "--run-tests --boundary push": ((("--run-tests", module, "--boundary", "push")), {}),
+        }
+        for label, (argv, env) in routes.items():
+            with self.subTest(route=label):
+                rc, out = self._gate(root, *argv, **env)
+                self.assertNotEqual(rc, 0, f"{label} passed over a red boundary-only test:\n{out}")
+                self.assertIn("test_red_marked", out, f"{label} did not name the red test:\n{out}")
+                self.assertNotIn("skipped", out, f"{label} skipped the marked test:\n{out}")
+
+    def test_a_commit_selection_leaves_the_marked_tests_deferred(self) -> None:
+        root = self._fixture()
+        rc, out = self._gate(root, "--run-tests",
+                             ".claude/skills/sdlc-studio/scripts/tests/test_red.py")
+        self.assertEqual(rc, 0, f"a commit's selection ran the boundary-only test:\n{out}")
+        self.assertIn("1 skipped", out, out)
+        # In process: a lane sees the marker only at a push or release boundary, and the
+        # caller's environment is left as it was found.
+        seen = {}
+        def lane(boundary):
+            return lambda r: seen.__setitem__(boundary, os.environ.get(self.MARKER)) or {
+                "count": 0, "blocking": True, "detail": ""}
+        before = os.environ.pop(self.MARKER, None)
+        try:
+            for boundary in (None, "close", "push", "release"):
+                # `only`: a boundary registers its suite lanes beside the injected probe
+                gate.run_gate(".", only=["probe"], checks={"probe": lane(boundary)},
+                              boundary=boundary)
+                self.assertNotIn(self.MARKER, os.environ,
+                                 f"boundary={boundary}: the marker outlived the gate run")
+        finally:
+            if before is not None:
+                os.environ[self.MARKER] = before
+        self.assertEqual(seen, {None: None, "close": None, "push": "1", "release": "1"})
+
+
 if __name__ == "__main__":
     unittest.main()

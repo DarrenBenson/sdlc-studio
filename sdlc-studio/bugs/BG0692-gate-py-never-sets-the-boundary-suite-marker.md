@@ -1,6 +1,6 @@
 # BG0692: gate.py never sets the boundary-suite marker itself, so SDLC_GATE_BOUNDARY=push reads [PASS] module-alone over a red boundary-only test
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, changelog.d/BG0692.md
@@ -26,8 +26,10 @@ Have gate.py export `SDLC_STUDIO_BOUNDARY_SUITE`=1 into the lanes' environment w
 
 - [ ] **AC1** Given a failing test marked `boundary_only` and a caller environment without `SDLC_STUDIO_BOUNDARY_SUITE`, when `gate.py --boundary release` (or `SDLC_GATE_BOUNDARY=push`) runs its test lane, then the lane is red naming that test. Fails on: the marker exported only by the pre-push hook, so a hand-run release gate reads the test as skipped
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::BoundaryMarkerExportTests::test_every_route_to_a_boundary_runs_the_marked_tests
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC2** Given no boundary (a commit's selected run), then the marker is not exported and the marked test stays deferred. Fails on: exporting the marker unconditionally, which charges every commit the boundary tests
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::BoundaryMarkerExportTests::test_a_commit_selection_leaves_the_marked_tests_deferred
+  - **Verified:** yes (2026-09-28)
 
 ## Notes
 
