@@ -3,7 +3,7 @@
 > **Status:** In Progress
 > **Severity:** High
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/reference-bug.md, .claude/skills/sdlc-studio/help/bug.md, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_bug_close_review.py, changelog.d/BG0812.md, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
+> **Affects:** .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/reference-bug.md, .claude/skills/sdlc-studio/help/bug.md, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_bug_close_review.py, changelog.d/BG0812.md, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/help/arguments.md, .claude/skills/sdlc-studio/scripts/critic.py
 > **Evidence:** US0963 eval run v6-rc1, scenario 06-independence-gate EB3 (blocking) fail; transcript /tmp/evals-v6-rc1/06-independence-gate.transcript.txt; grader report 2026-09-28
 > **Created:** 2026-09-28
 > **Created-by:** sdlc-studio file

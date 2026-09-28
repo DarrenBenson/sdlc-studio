@@ -4,7 +4,7 @@
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py, sdlc-studio/reports/runs/RUN-01M36R3D.json, sdlc-studio/reports/runs/RUN-01M3891F.json, sdlc-studio/reports/runs/RUN-01M39MC0.json, sdlc-studio/reports/runs/RUN-01M3BK9Y.json, sdlc-studio/reports/runs/RUN-01M3CK1K.json, sdlc-studio/stories/US0941-a-report-maya-signed-still-validates-after-the.md, .github/workflows/lint.yml, changelog.d/US0960.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py, sdlc-studio/reports/runs/RUN-01M36R3D.json, sdlc-studio/reports/runs/RUN-01M3891F.json, sdlc-studio/reports/runs/RUN-01M39MC0.json, sdlc-studio/reports/runs/RUN-01M3BK9Y.json, sdlc-studio/reports/runs/RUN-01M3CK1K.json, sdlc-studio/stories/US0941-a-report-maya-signed-still-validates-after-the.md, .github/workflows/lint.yml, changelog.d/US0960.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_frozen_report_inputs.py
 > **Epic:** EP0267
 > **Parent:** CR0599
 > **Points:** 5
