@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0439: Settle every permission rule and eval harness at plan time, and run the evals each sprint for any guidance that changed.**
+- **L-0438: Give the review cap a recorded per-unit exception (BG0841), so an operator-granted round lands without a forced transition.**
+- **L-0437: Ship the loop as one command with automatic token capture (CR0602), so a run needs no orchestrator scripts and its report measures tokens.**
 - **L-0436: Open a unit when its lane starts, not at plan time, so per-unit time and tokens measure the work.**
 - **L-0435: Hand lane agents their shared contracts as code stubs, not prose: the one integration break and the orchestrator's token-sum error both...**
 - **L-0434: Sprint 2 deletes the gate lanes that cost the most and caught nothing here: the spec-claims timing claim, evidence-drift with the mutation...**
