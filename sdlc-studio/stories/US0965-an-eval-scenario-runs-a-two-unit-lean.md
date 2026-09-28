@@ -1,6 +1,6 @@
 # US0965: An eval scenario runs a two-unit lean sprint in a fresh project from plan to close, so v6's headline is measured, not asserted
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-09-28
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -25,6 +25,7 @@
   - **Verified:** yes (2026-09-28)
 - **AC3:** Given the scenario run once by a fresh headless worker (allowed to spawn subagents) against the skill on main, graded by an independent grader through `tools/eval_run.py record`, then the result is recorded in the v6 eval run with each behaviour's evidence, and every blocking fail is filed as a bug before the cut. Fails on: an unrecorded run, or a blocking fail left unfiled
   - **Verify:** manual the orchestrator runs the scenario headless, an independent grader records each behaviour, and blocking fails are filed (D0280)
+  - **Verified:** yes (2026-09-28, independent grader, eval run v6-main: EB1-EB7 pass, FB1-FB6 not observed, no blocking fail to file)
 
 ## Summary
 
