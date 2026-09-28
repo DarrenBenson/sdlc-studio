@@ -3311,18 +3311,41 @@ def parse_cutoff(value) -> int | None:
         "use a bare integer (103) or a prefixed id")
 
 
+#: A file extension: a dot, then a letter, then letters or digits (`.json`, `.mjs`, `.toml`), so
+#: a version string (`v1.2`) or an abbreviation (`e.g.`) is not one.
+_FILE_EXT = re.compile(r"\.[A-Za-z][A-Za-z0-9]*$")
+#: A dotfile: a leading dot then a name (`.gitignore`, `.env.local`).
+_DOTFILE = re.compile(r"\.[A-Za-z0-9][\w.-]*")
+#: Real files that carry no extension, matched case-insensitively.
+_EXTENSIONLESS_FILES = frozenset({"makefile", "dockerfile", "containerfile", "license",
+                                  "licence"})
+
+
+def _file_shaped(tok: str) -> bool:
+    """True when a slash-free token has the shape of a file name rather than prose: one word with
+    an extension, a dotfile, or a known extension-less name (`Makefile`, `Dockerfile`)."""
+    if not tok or any(ch.isspace() for ch in tok):
+        return False
+    return bool(_FILE_EXT.search(tok) or _DOTFILE.fullmatch(tok)
+                or tok.lower() in _EXTENSIONLESS_FILES)
+
+
 def affects_files(text: str) -> list[str]:
     """File paths a unit declares it will touch (its `Affects` field).
 
     Shared by the sprint planner (WSJF complexity seed) and the routing estimator
-    One parser, one behaviour. Tolerates trailing parentheticals and
-    backtick-wrapped paths; a token counts as a path when it contains a `/` or a
-    known source/doc extension."""
+    One parser, one behaviour. Tolerates parenthetical notes (commas inside them included)
+    and backtick-wrapped paths; a token counts as a path when it contains a `/` or has the
+    shape of a file name (`_file_shaped`), so a root `package.json` or `Makefile` is kept
+    and prose (`none`, `-`, a sentence) is not. Shape, not existence: a unit may declare a
+    root file it is about to create."""
     val = extract_field(text, "Affects") or ""
     files = []
-    for tok in val.split(","):
+    # Split on the commas outside parentheses: a note's own comma would otherwise cut a path
+    # and its note in two, and the path's half would keep the note's opening words.
+    for tok in re.split(r",(?![^()]*\))", val):
         tok = re.sub(r"\s*\(.*\)\s*$", "", tok.strip()).strip().strip("`").strip()
-        if tok and ("/" in tok or tok.endswith((".py", ".md", ".yaml", ".yml", ".sh"))):
+        if tok and ("/" in tok or _file_shaped(tok)):
             files.append(tok)
     return files
 

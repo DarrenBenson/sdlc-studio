@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 15 |
-| In Progress | 3 |
-| Fixed | 656 |
+| In Progress | 2 |
+| Fixed | 657 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -169,7 +169,7 @@
 | [BG0808](BG0808-init-records-no-project-version-so-a-fresh.md) | init records no project version, so a fresh project's first migrate reports work and its upgrade digest reads the range as unknown | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0809](BG0809-install-sh-local-rewrites-every-personal-copy-of.md) | install.sh --local rewrites every personal copy of the skill, and the copy it installs is one Claude Code does not load | In Progress | Medium | 2026-09-27 | 2026-09-27 |
 | [BG0810](BG0810-the-one-runner-agreement-test-races-its-own.md) | The one-runner agreement test races its own fixture: two worker processes share one template directory | Fixed | Medium | 2026-09-27 | 2026-09-27 |
-| [BG0811](BG0811-a-root-level-file-with-no-listed-extension.md) | A root-level file with no listed extension drops out of a unit's Affects, so review scope and the plan's file checks never see it | In Progress | Medium | 2026-09-27 | 2026-09-27 |
+| [BG0811](BG0811-a-root-level-file-with-no-listed-extension.md) | A root-level file with no listed extension drops out of a unit's Affects, so review scope and the plan's file checks never see it | Fixed | Medium | 2026-09-27 | 2026-09-27 |
 
 ## Archived Releases
 

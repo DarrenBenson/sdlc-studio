@@ -1,6 +1,6 @@
 # BG0811: A root-level file with no listed extension drops out of a unit's Affects, so review scope and the plan's file checks never see it
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_affects_root_files.py, changelog.d/BG0811.md, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py
@@ -26,8 +26,10 @@ Treat a token as a path when it contains `/`, or has a file extension (a dot fol
 
 - [ ] **AC1** Given an Affects line naming `astro.config.mjs, package.json, pyproject.toml, Makefile, src/x.ts`, when `affects_files` reads it in a repository where `Makefile` exists, then all five are returned. Fails on: HEAD's extension list, which returns only `src/x.ts`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_affects_root_files.py::AffectsRootFilesTests::test_root_files_are_kept
+  - **Verified:** yes (2026-09-28)
 - [ ] **AC2** Given an Affects line of `none` or `-`, or with a parenthetical note, then no prose token is returned as a path. Fails on: treating every comma-separated token as a path
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_affects_root_files.py::AffectsRootFilesTests::test_prose_is_not_a_path
+  - **Verified:** yes (2026-09-28)
 
 ## Revision History
 
