@@ -1,6 +1,6 @@
 # US0964: Every script's --help describes the v6 loop and no retired review step
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

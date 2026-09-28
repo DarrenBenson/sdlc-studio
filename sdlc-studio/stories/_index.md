@@ -7,10 +7,10 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 17 |
+| Draft | 16 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 4 |
+| In Progress | 5 |
 | Review | 0 |
 | Done | 771 |
 | Won't Implement | 81 |
@@ -322,7 +322,7 @@
 | [US0961](US0961-a-verdict-recorded-against-a-brief-the-unit.md) | A verdict recorded against a brief the unit has since outgrown says so | Done | EP0267 | 2026-09-27 | 2026-09-27 |
 | [US0962](US0962-the-migration-to-v6-is-rehearsed-on-two.md) | The migration to v6 is rehearsed on two real consuming projects, and the record is published | In Progress | EP0267 | 2026-09-27 | 2026-09-27 |
 | [US0963](US0963-the-eval-scenarios-run-against-v6-and-the.md) | The eval scenarios run against v6, and the independence scenario grades v6's rule | In Progress | EP0267 | 2026-09-27 | 2026-09-27 |
-| [US0964](US0964-every-script-s-help-describes-the-v6-loop.md) | Every script's --help describes the v6 loop and no retired review step | Draft | EP0267 | 2026-09-27 | 2026-09-27 |
+| [US0964](US0964-every-script-s-help-describes-the-v6-loop.md) | Every script's --help describes the v6 loop and no retired review step | In Progress | EP0267 | 2026-09-27 | 2026-09-27 |
 
 ## Archived Releases
 
