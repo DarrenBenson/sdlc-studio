@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, changelog.d/BG0844.md
-> **Evidence:** docs/upgrade-rehearsal-v6.md (US0962), git status after the before-checks on both copies; init.py step 3b writes sdlc-studio/.gitignore, project_upgrade does not
+> **Evidence:** docs/upgrade-rehearsal-v6.md (US0962), git status after the before-checks on both copies; init.py step 3b writes sdlc-studio/.gitignore, project_upgrade does not; field report 2026-09-29 (v5.0.1 to v6.0.0 upgrade under Copilot CLI): `sdlc-studio/.local/run-state.json` untracked and unignored after `migrate --apply`, which reported only the `.version` bump
 > **Created:** 2026-09-28
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

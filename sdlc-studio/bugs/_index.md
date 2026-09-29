@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 39 |
+| Open | 41 |
 | In Progress | 0 |
 | Fixed | 675 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
 | Superseded | 28 |
-| **Total** | **851** |
+| **Total** | **853** |
 
 ## All Bugs
 
@@ -210,6 +210,8 @@
 | [BG0849](BG0849-a-close-dry-run-mints-a-different-graduation.md) | A close dry run mints a different graduation change request id each time, so a retro cannot rule it before the close | Open | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0850](BG0850-a-carried-unit-s-discharge-approval-is-refused.md) | A carried unit's discharge approval is refused by the review cap that another reviewer's rounds filled | Open | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0851](BG0851-the-sprint-report-says-the-operator-ruled-nothing.md) | The sprint report says the operator ruled nothing and no gate stood down when both happened | Open | Medium | 2026-09-29 | 2026-09-29 |
+| [BG0852](BG0852-install-sh-treats-copilot-as-repo-scoped-only.md) | install.sh treats Copilot as repo-scoped only, so a Copilot CLI user following the quick start or --target auto gets no sdlc-studio and no hint why | Open | High | 2026-09-29 | 2026-09-29 |
+| [BG0853](BG0853-the-agent-instructions-template-names-the-claude-code.md) | The agent-instructions template names the Claude Code skill path, so an AGENTS.md seeded for Codex, Copilot, Gemini or Cursor points at files that do not exist there | Open | Medium | 2026-09-29 | 2026-09-29 |
 
 ## Archived Releases
 
