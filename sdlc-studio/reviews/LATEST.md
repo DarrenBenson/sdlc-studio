@@ -37,10 +37,10 @@
 
 ## What is owed
 
-- **The v6.0.0 cut, after the signature:** rename `[6.0.0]` to `[6.0.0-rc.1]`, re-point the
-  release notes' two CHANGELOG anchors, bump the version homes, `changelog-cut`, the README and
-  INSTALL pins, `known_issues write`, the release gate, forward-port (lifting the soak pin), and
-  the website's landing page and deploy (its own sprint).
+- **v6.0.0 is released** (tag on 7db9dc6c, the GitHub release marked Latest, 2026-09-29): the cut
+  surfaced two defects the release gate alone could see, both fixed before the tag (BG0846, BG0847).
+  The installed copy is forward-ported and the rc.1 soak pin removed. **Still owed: the website's
+  landing page and its deploy**, run as the website repository's own sprint.
 - **35 open Medium defects are disclosed in the notes**, 28 in code a user runs: the upgrade's
   four (BG0842-BG0845), the review brief's base ref and hand-over (BG0827, BG0817), a carried unit
   `sprint plan` cannot take (BG0829), ULID ids, retro run ids and token capture in the close
