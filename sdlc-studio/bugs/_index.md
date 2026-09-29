@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-28
+**Last Updated:** 2026-09-29
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Open | 35 |
-| In Progress | 0 |
+| In Progress | 1 |
 | Fixed | 673 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
 | Superseded | 28 |
-| **Total** | **845** |
+| **Total** | **846** |
 
 ## All Bugs
 
@@ -204,6 +204,7 @@
 | [BG0843](BG0843-migrate-names-no-engagement-floor-cutoff-so-a.md) | migrate names no engagement-floor cutoff, so a v4.1 project's gate fails the engagement floor on 349 shipped units before and after the upgrade and the report says nothing | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0844](BG0844-an-upgraded-project-never-gets-the-sdlc-studio.md) | An upgraded project never gets the sdlc-studio/.gitignore that init writes, so gate.py leaves runtime state in git status on every run | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0845](BG0845-migrate-s-conformance-cutoff-on-a-v4-1.md) | migrate's conformance cutoff on a v4.1 project exempts the 98 units after the project's own adoption point, because a verdict row with no Author column never reads as independent | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0846](BG0846-the-v6-release-notes-test-s-post-cut.md) | The v6 release notes test's post-cut control assumes the notes still carry the pre-cut links, so the v6.0.0 cut turns the tools suite red | In Progress | Medium | 2026-09-29 | 2026-09-29 |
 
 ## Archived Releases
 
