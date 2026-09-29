@@ -7,8 +7,9 @@ function returning its problems, run on the notes and on a control it must refus
 candidate's own notes, which are the plausible wrong answer (copied with the version changed).
 
 The notes are written before the release cut renames the CHANGELOG's `[6.0.0]` heading to
-`[6.0.0-rc.1]`, so the section links are judged against the layout the CHANGELOG has now: before
-the rename the candidate's entries sit under `[6.0.0]` and this release's under `[Unreleased]`.
+`[6.0.0-rc.1]`, and the cut re-points their section links, so the links are judged against the
+layout the CHANGELOG has at the time: before the rename the candidate's entries sit under
+`[6.0.0]` and this release's under `[Unreleased]`, after it each under its own heading.
 """
 # test-census-subject: docs/release-notes-v6.0.0.md
 from __future__ import annotations
@@ -121,6 +122,16 @@ def lead_problems(text: str, changelog: str) -> list[str]:
             continue
         problems += [f"unit id {m} under '{heading}'" for m in UNIT_ID.findall(sbody)]
     return problems
+
+
+def pre_cut(text: str) -> str:
+    """`text` with the cut's re-point reversed: the links to the candidate's own heading
+    (`#600-rc1---<date>`) back to its pre-rename `#600---<date>`, and the links to 6.0.0's heading
+    back to `#unreleased`. Text still in the pre-cut layout is returned unchanged."""
+    if not re.search(r"#600-rc1---\d{4}-\d{2}-\d{2}\)", text):
+        return text
+    text = re.sub(r"#600---\d{4}-\d{2}-\d{2}\)", "#unreleased)", text)
+    return re.sub(r"#600-rc1---(\d{4}-\d{2}-\d{2})\)", r"#600---\1)", text)
 
 
 def upgrade_problems(text: str) -> list[str]:
@@ -276,10 +287,15 @@ class ReleaseNotesTests(unittest.TestCase):
         self.assertFlags(lead(self.mutant("## What v6 is\n", "## What v6 is\n\nSee BG0790.\n")),
                          "unit id BG0790")
         self.assertEqual([], lead(self.text))
-        # The layout after the cut's rename: the links must follow it.
+        # The layout after the cut's rename: the links must follow it. The control is the notes
+        # as written before the cut, whichever layout the real notes are in now.
         cut = "## [Unreleased]\n\n## [6.0.0] - 2026-10-01\n\n## [6.0.0-rc.1] - 2026-09-26\n"
-        self.assertFlags(lead_problems(self.text, cut), "6.0.0-rc.1 section")
-        moved = (self.text.replace("#600---2026-09-26", "#600-rc1---2026-09-26")
+        before = pre_cut(self.text)
+        self.assertIn("](../CHANGELOG.md#600---2026-09-26)", before)
+        self.assertIn("](../CHANGELOG.md#unreleased)", before)
+        self.assertNotIn("#600-rc1---", before)
+        self.assertFlags(lead_problems(before, cut), "6.0.0-rc.1 section")
+        moved = (before.replace("#600---2026-09-26", "#600-rc1---2026-09-26")
                  .replace("#unreleased", "#600---2026-10-01"))
         self.assertEqual([], lead_problems(moved, cut))
 

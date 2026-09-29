@@ -41,10 +41,21 @@ _CHANGELOG = """# Changelog
 """
 
 
-def _installed(version: str):
-    """The running skill reports `version`, wherever init, migrate and upgrade ask."""
-    return unittest.mock.patch.object(version_check, "installed_version",
-                                      lambda *_a, **_k: version)
+def _installed(version: str) -> contextlib.ExitStack:
+    """The running skill reports `version`, wherever init, migrate and upgrade ask.
+
+    Each asks `installed_version` (the skill's SKILL.md) on the module object it holds: init
+    imports `version_check` as it runs, so reads whatever `sys.modules` holds then, and project
+    upgrade (migrate's too) reads the one bound when it was imported. A suite that loads a test
+    module installing its own copy in `sys.modules` makes those different objects, so patching
+    only this module's binding left init stamping the real SKILL.md's version (BG0846)."""
+    readers = (sys.modules["version_check"], project_upgrade.version_check,
+               migrate.project_upgrade.version_check)
+    stack = contextlib.ExitStack()
+    for mod in {id(m): m for m in readers}.values():
+        stack.enter_context(unittest.mock.patch.object(mod, "installed_version",
+                                                       lambda *_a, **_k: version))
+    return stack
 
 
 def _init(root: Path) -> None:
@@ -65,9 +76,10 @@ class InitVersionTests(unittest.TestCase):
 
     def test_init_stamps_the_skill_version(self) -> None:
         """Mutants: init writes no `.version` (HEAD); init stamps the version with its
-        pre-release suffix dropped, which `migrate` then reports as stale."""
+        pre-release suffix dropped, which `migrate` then reports as stale; a reader left on the
+        real SKILL.md, which only a version no release has carried shows in every layout."""
         real = version_check.installed_version(version_check.skill_root())
-        for installed in (real, "6.0.0-rc.1"):
+        for installed in (real, "6.0.0-rc.1", "9.9.9-rc.1"):
             with self.subTest(installed=installed), tempfile.TemporaryDirectory() as d, \
                     _installed(installed):
                 root = Path(d)

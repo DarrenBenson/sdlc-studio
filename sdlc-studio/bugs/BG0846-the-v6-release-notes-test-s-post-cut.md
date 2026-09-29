@@ -1,6 +1,6 @@
 # BG0846: The v6 release notes test's post-cut control assumes the notes still carry the pre-cut links, so the v6.0.0 cut turns the tools suite red
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_init_version.py, tools/tests/test_lean_release_notes_v6.py, changelog.d/BG0846.md
@@ -26,9 +26,11 @@ Build the control's pre-cut input from the notes by reversing the re-point (post
 
 - [ ] **AC1** Given the notes and CHANGELOG after the v6.0.0 cut, then `test_the_notes_lead_with_themes_not_ids` passes, and its control still flags a pre-cut variant of the notes (links to #600---2026-09-26 and #unreleased) against a post-cut CHANGELOG. Fails on: the control reading the real notes, which the cut has already re-pointed
   - **Verify:** pytest tools/tests/test_lean_release_notes_v6.py::ReleaseNotesTests::test_the_notes_lead_with_themes_not_ids
+  - **Verified:** yes (2026-09-29)
 
-- [ ] **AC2** Given the tree after the v6.0.0 cut (templates/version.yaml and SKILL.md at 6.0.0), then test_lean_init_version's two tests pass: each makes init, migrate and project upgrade read the version it simulates from the source init actually stamps from, not only from a mocked `installed_version`. Fails on: HEAD's tests, which pass only while templates/version.yaml happens to equal the mocked version (6.0.0-rc.1), so the cut turns them red
+- [ ] **AC2** Given the tree after the v6.0.0 cut (SKILL.md at 6.0.0), when test_lean_init_version runs in the same process as a module that loads its own copy of version_check (test_version_check under discovery), then its two tests pass: the simulated version reaches every copy of version_check that init, migrate and project upgrade actually call. Fails on: HEAD's tests, which patch only their own copy, so init stamps the real SKILL.md version and they pass only while SKILL.md equals the simulated 6.0.0-rc.1
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_init_version.py
+  - **Verified:** yes (2026-09-29)
 
 ## Revision History
 
@@ -36,3 +38,4 @@ Build the control's pre-cut input from the notes by reversing the re-point (post
 | --- | --- | --- |
 | 2026-09-29 | sdlc-studio | Filed |
 | 2026-09-29 | sdlc-studio v6 | Widened to test_lean_init_version (AC2): the skill suite on the cut tree failed its two tests for the same reason, a pre-cut assumption |
+| 2026-09-29 | sdlc-studio v6 | AC2 reworded to the real cause found by the builder: init, migrate and project upgrade read SKILL.md through version_check, and the tests patched a different module copy; templates/version.yaml is not read |
