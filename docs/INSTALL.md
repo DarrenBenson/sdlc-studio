@@ -146,7 +146,7 @@ build or dependency install is needed.
   personal copy warns, naming both paths and versions, and leaves the personal
   copy as it is.
 - **Specific version**: `--version <tag>` (bash) or `-Version <tag>`
-  (PowerShell), for example `--version v6.0.0-rc.1`.
+  (PowerShell), for example `--version v6.0.0`.
 - **Uninstall**: `--uninstall` (bash) or `-Uninstall` (PowerShell), with the same
   `--target` / scope you installed with. Preview first with `--dry-run`. The
   uninstall does not sweep other locations.
@@ -169,7 +169,7 @@ check mandatory. The example pins the current release; name any later tag the sa
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh \
-  | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.0.0-rc.1
+  | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.0.0
 ```
 
 ```powershell

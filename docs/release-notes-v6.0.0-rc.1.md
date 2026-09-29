@@ -42,7 +42,7 @@ rule is carried into the next plan, build and review.
 
 v6 retires 19 verbs, 20 flags, 11 config keys, 2 `[check:]` ids and 4 gate lanes, and changes 2
 defaults. The full inventory, each entry with its before, after and migration, is in
-[the 6.0.0 section of the CHANGELOG](../CHANGELOG.md#600---2026-09-26), under **Breaking**.
+[the 6.0.0-rc.1 section of the CHANGELOG](../CHANGELOG.md#600-rc1---2026-09-26), under **Breaking**.
 
 The ones most likely to meet you:
 
@@ -132,7 +132,7 @@ curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/insta
 ## What is in it
 
 Composed at the cut from `changelog.d/` by `release_cut.py changelog-cut`: 152 fragments, one
-per delivered unit, now the [6.0.0 section of the CHANGELOG](../CHANGELOG.md#600---2026-09-26).
+per delivered unit, now the [6.0.0-rc.1 section of the CHANGELOG](../CHANGELOG.md#600-rc1---2026-09-26).
 
 Three fixes landed after the cut and ship in this candidate, listed under the CHANGELOG's
 `[Unreleased]` heading until the v6.0.0 cut folds them in: `sprint sign` refuses a principal

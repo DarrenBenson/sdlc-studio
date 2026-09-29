@@ -11,6 +11,14 @@ decision.** A finding either reaches a terminal status with its own verifiers pa
 stays open under the triage target below, which one recorded decision rules for the whole list
 rather than a waiver per finding.
 
+**Medium and Low findings ship open, listed here by id, triaged to v6.1.** Each is a real
+defect with a reproduction and, in most cases, a proposed fix. None of them stops the
+lifecycle running. They are listed rather than closed, because closing a bug to make a
+release look clean is the practice this tool exists to prevent.
+
+Each id below is a file in `sdlc-studio/bugs/` in the source repository, carrying the
+evidence, the reproduction and the proposed fix in full.
+
 ## The bar v5.1 was held to, kept as history
 
 **Zero open High-severity bugs at the tag, and every Medium disposed of or ruled.** A
@@ -25,29 +33,15 @@ severity; it moved on 2026-08-11, because holding a release for findings that ar
 but not release-blocking had cost a month and was buying nothing a disclosure could not
 buy honestly.
 
-**Medium and Low findings ship open, listed here by id, triaged to v6.1.** Each is a real
-defect with a reproduction and, in most cases, a proposed fix. None of them stops the
-lifecycle running. They are listed rather than closed, because closing a bug to make a
-release look clean is the practice this tool exists to prevent.
-
-Each id below is a file in `sdlc-studio/bugs/` in the source repository, carrying the
-evidence, the reproduction and the proposed fix in full.
-
 ## Triaged to v6.1
 
 | Id | Severity | Finding |
 | --- | --- | --- |
-| `BG0682` | Medium | artifact.py revision writes a bare _identifier into the Revision History, which markdownlint refuses as MD037 |
 | `BG0691` | Medium | changelog.py shape judges unreadable and symlinked fragments differently in its two modes, and its git-failure refusals are unpinned |
-| `BG0692` | Medium | gate.py never sets the boundary-suite marker itself, so SDLC_GATE_BOUNDARY=push reads [PASS] module-alone over a red boundary-only test |
 | `BG0696` | Medium | critic.py's brief checks search the whole brief, so a unit's own text hides a dropped surface, and a REJECT marked as matching no brief can never b... |
 | `BG0701` | Medium | Run-ending routes still read different sets: stop records from the parked derivation, the boundary stop ignores --retro, and stop cannot see the re... |
-| `BG0705` | Medium | The Findings-filed-to line survives a reopen, is not reported in text output, and names only the filed subset of a partial repair |
 | `BG0706` | Medium | The coverage gate charges another unit's added lines to a unit sharing its file, and a coverage ruling is voided by any edit to that file |
-| `BG0708` | Medium | gate.py reads SDLC_VERIFY_TIMEOUT per call, so a previously hermetic suite now inherits whatever the environment sets |
 | `BG0712` | Medium | a local guard that tolerates what a criterion refuses lets a breach pass the commit and redden CI |
-| `BG0714` | Medium | 284 added lines of RUN-01M2SPNS are executed by no verifier in the run, and BG0706's proposed fix inherits most of the false charge |
-| `BG0725` | Medium | two spellings of the stop-ship constant, and a hand-maintained verb list whose stale entries nothing can report |
 | `BG0726` | Medium | the report renders NO DECLARED SEAT without asking whether the project declares any personas at all |
 | `BG0734` | Medium | the blockquote skip in check_versions is unreachable, so it guards nothing |
 | `BG0737` | Medium | the stale downgrade destroys an author's reason on a positive verdict, so the principle BG0733 shipped is violated on the sibling branch of the sam... |
@@ -55,22 +49,39 @@ evidence, the reproduction and the proposed fix in full.
 | `BG0740` | Medium | a gate stood down in prose rather than as a waiver row is invisible to the report's waiver disclosure, which is how the one the operator most neede... |
 | `BG0752` | Medium | Per-commit test selection skips hooks, test infrastructure and code reached through another script |
 | `BG0754` | Medium | A commit touching a widely imported script runs well over the 90-second budget |
-| `BG0782` | Medium | About 57 test modules commit in a temporary git repo with auto-maintenance on, the race BG0711 fixed in one |
-| `BG0783` | Medium | Review rounds are write-dead after US0918, so the ceiling and repair-regression readers of run-state rounds read nothing |
-| `BG0784` | Medium | A seat card with no role line is silently bypassed for the shipped card, and the unknown-seat refusal names the wrong seats |
-| `BG0785` | Medium | migrate leaves a v4-era project's conformance lane red on its pre-adoption stories and names no cutoff for them |
-| `BG0786` | Medium | flow.py compute takes about 90 seconds on this repository, so its CLI grammar control times out at 120 under load and reddens the push gate |
-| `BG0788` | Medium | Signed-report rounds are positional, so a hand-deleted verdict row goes unseen when a same-day later run re-reviewed the unit, and verdict rows car... |
-| `BG0790` | Medium | An installed release candidate is never prompted to move to its final release, because version comparison ignores the pre-release suffix |
-| `BG0792` | Medium | US0940 AC1's own Verify takes about three minutes, so the release gate's verify lane reads it red at the 120-second default |
+| `BG0817` | Medium | The bug-close guidance says briefed with critic.py brief but never says to hand the reviewer the brief whole, so agents relay a trimmed or broken b... |
+| `BG0824` | Medium | init guided's personas stage seeds the legacy flat personas.md, which the persona registry and sprint plan --serves never read |
+| `BG0825` | Medium | ULID ids are printed as their hyphenless comparison key, so plan, brief, carry and the signed report name ids no file carries |
+| `BG0826` | Medium | The scaffolded retro carries neither the run id nor a Known issues carried table, so the run's rulings cannot be found or written |
+| `BG0827` | Medium | The review brief asks the reviewer to judge origin 'at the base ref' but never names the base ref |
+| `BG0828` | Medium | The one-call closes do not check the review brief: artifact.py close records a verdict with no brief and no warning, and transition --brief accepts... |
+| `BG0829` | Medium | A unit carried at the review cap is filed as an ungroomed bug that sprint plan cannot take, and every carry prints that the operator was notified |
+| `BG0830` | Medium | A verdict or delegated-token record written after the seal lands on the sealed run without a warning |
+| `BG0831` | Medium | The configuration reference documents keys the code does not honour: sprint.split_above, review.policy carry-forward, and review.max_rounds |
+| `BG0832` | Medium | reference-review.md step 3a ships a private project's consultation cast as its example, names amigos with no resolver, and the neutrality lane miss... |
+| `BG0833` | Medium | The engagement floor judges a decomposed CR by its own criteria, so a CR reconcile derives Complete from planned children is refused as unplanned |
+| `BG0834` | Medium | persona generate --team lets a pre-supplied or headless default stand as an answer, so its report claims questions were asked and accepted when non... |
+| `BG0835` | Medium | Token capture looks for the session transcript in a directory named by replacing only '/', so a project path holding '.' or '_' reads NOT ATTRIBUTABLE |
+| `BG0836` | Medium | No command writes a lesson class's graduated state, so every graduation CR carries a criterion only a hand edit can meet |
+| `BG0837` | Medium | The pre-push gate judges the working tree, not the commits being pushed, so an uncommitted fix turns a red push green |
+| `BG0838` | Medium | retired_surface excuses a live retired name by the shape of its sentence, so a live instruction passes as history |
+| `BG0839` | Medium | An eval worker session loads the personal skill ahead of the candidate copy, and nothing in the harness says so or prevents it |
+| `BG0840` | Medium | BG0818 did not converge in review: round 2 REJECT findings |
+| `BG0841` | Medium | The review cap has no per-unit exception path, so an operator-granted extra round can only land by force |
+| `BG0842` | Medium | migrate reports 2 index drift items on a v4.1 project whose gate reconcile lane fails on 28, because project upgrade counts two of reconcile's nine... |
+| `BG0843` | Medium | migrate names no engagement-floor cutoff, so a v4.1 project's gate fails the engagement floor on 349 shipped units before and after the upgrade and... |
+| `BG0844` | Medium | An upgraded project never gets the sdlc-studio/.gitignore that init writes, so gate.py leaves runtime state in git status on every run |
+| `BG0845` | Medium | migrate's conformance cutoff on a v4.1 project exempts the 98 units after the project's own adoption point, because a verdict row with no Author co... |
 
-26 findings: 26 Medium, 0 Low.
+35 findings: 35 Medium, 0 Low.
 
 ## Not carried
 
-Three High findings were ruled `Won't Fix` on their own merits before this bar was set,
-and one was superseded by later work. They are not in the list above because they are not
-open, and a disclosure that pads its count is as misleading as one that trims it.
+4 findings at a barred severity were ruled `Won't Fix` on their own merits: `BG0124`,
+`BG0139`, `BG0583`, `BG0713`.
+
+They are not in the list above because they are not open, and a disclosure that pads
+its count is as misleading as one that trims it.
 
 ## How this list is kept
 

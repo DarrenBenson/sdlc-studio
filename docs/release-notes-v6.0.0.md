@@ -4,8 +4,8 @@
 review per unit and one signature, and the ceremony v5 wrapped round each unit is gone.**
 
 Every breaking change is listed, with its replacement, in the
-[6.0.0-rc.1 section of the CHANGELOG](../CHANGELOG.md#600---2026-09-26), and what 6.0.0 changed
-since the candidate is in the [6.0.0 section](../CHANGELOG.md#unreleased). If you already run SDLC
+[6.0.0-rc.1 section of the CHANGELOG](../CHANGELOG.md#600-rc1---2026-09-26), and what 6.0.0 changed
+since the candidate is in the [6.0.0 section](../CHANGELOG.md#600---2026-09-29). If you already run SDLC
 Studio on a project, [the existing-users page](existing-users.md) is the whole upgrade path.
 
 ## What changed for you
@@ -174,7 +174,7 @@ Three things it leaves to you, and names:
 v6 retires 19 verbs, 20 flags, 11 config keys, 2 `[check:]` ids and 4 gate lanes, and changes 2
 defaults (the CHANGELOG's inventory). Every one ships in 6.0.0 as it did in the candidate, each
 entry with its before, after and migration, in
-[the 6.0.0-rc.1 section of the CHANGELOG](../CHANGELOG.md#600---2026-09-26), under **Breaking**.
+[the 6.0.0-rc.1 section of the CHANGELOG](../CHANGELOG.md#600-rc1---2026-09-26), under **Breaking**.
 
 The ones most likely to meet you:
 

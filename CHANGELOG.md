@@ -7,8 +7,612 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.0.0] - 2026-09-29
+
+### Breaking
+
+- **Upgrading from 5.1: every breaking change listed under 6.0.0-rc.1 ships in 6.0.0.**
+  [That section's](CHANGELOG.md#600-rc1---2026-09-26) Breaking tables name each retired verb,
+  flag, config key, `[check:]` id and gate lane with what replaces it. Run `migrate` (a dry run) first, then `migrate --apply`: it removes the retired
+  config keys and `[check:]` tags and reports, without rewriting, each instruction-file line that
+  names a retired verb or key. Your own scripts and CI are yours to search against the tables.
+  `project upgrade` now prints the Breaking group first and in full; it used to come after up to
+  18 capped Added, Changed and Fixed entries, cut at the same cap.
+- **The 6.0.0-rc.1 section keeps its history, and its Breaking tables are the current word.**
+  Its Added, Changed and Fixed entries that add or fix plan review, the test plan, repair plans,
+  per-unit sign-off, depth tiers or mutation evidence describe machinery the same release then
+  removed. They record how it was built, not how v6 works.
+
+### Added
+
+- Eval scenario `09-lean-sprint` runs v6's headline end to end: a fresh agent in a consuming
+  project runs a two-story lean sprint from plan to close with the shipped skill alone, and
+  stops for the operator's signature. `tools/eval_run.py setup` builds the project as the
+  skill's own `init`, `artifact.py new` and `transition.py` made it: a small Python package with
+  a green suite, a PRD, one epic and two Ready stories whose `Verify:` lines fail until built.
+  Its blocking behaviours grade every step (the plan and its forecast, green criteria, one
+  independent reviewer per unit briefed with `critic.py brief` and recorded with `critic.py
+  record`, Done through `transition.py`, `sprint close` filing the report, the stop for the
+  signature), and it forbids the worker signing, hand-authored indexes or ids, and `--no-verify`.
+  v6.0.0 is gated on it (D0280) (US0965).
+- **The migration to v6 is rehearsed on two real projects, and the record is published.**
+  `docs/upgrade-rehearsal-v6.md` records `migrate` and `migrate --apply` run under 6.0.0-rc.1 on
+  scratch copies of a v4.1 project of 687 stories and a v2.4 project of 593 stories: both exit 0,
+  neither dry run writes a byte, a second run finds nothing more to apply, and the validate error
+  set is unchanged. The record gives, per project, what the apply changed, what it left to a human,
+  and the `validate.py check` and `gate.py` exit codes either side, with a note on why the gate's
+  diff-scoped lanes read differently after the apply. The four Medium defects it found are filed
+  (BG0842 to BG0845) and listed in its Findings table.
+- `critic.py record --brief F` says on stderr when the unit's Affects or criteria changed after
+  F was printed: it names the changed field, the fingerprint the unit's brief carries now, and
+  the `critic.py brief` command that re-briefs the seat (with `--rejoinder` when F was a
+  rejoinder). A brief whose tier was derived is derived again, since the widening can move the
+  unit's band, and the command then pins no tier. The row is recorded as before; nothing is
+  refused. `critic.py brief` notes each
+  brief it prints in the gitignored `sdlc-studio/.local/briefs.jsonl`, which is what record
+  reads back. A fingerprint no brief there noted is stored without comment, as before. This
+  retires the hand rule to re-brief whenever a fix round touches a new file (US0961).
+- `migrate --apply` files the tracked run record of each sprint report signed before records were
+  tracked, so the report checks in any full clone, not only the one that signed it. The record
+  comes from `.local` (the live record or the run archive) through the same projection
+  `sprint sign` files through, with the inputs a clean clone lacks frozen on it as the page read
+  them: the verdict rows its rounds count, and the CI runs inside its window from the per-clone
+  cache the page read DORA from. A record already filed is never rewritten.
+- A report is filed only when it re-derives from that record to the fingerprint it was signed
+  at; otherwise migrate names it as needs-a-human, with the figures that would move, and files
+  nothing, so no upgrade moves a signed page. A dry run lists each record and writes nothing.
+- `sprint_report.py check` no longer reads INVALIDATED a page derived before run records were
+  tracked when the only change is that paths outside the repository it names are held as
+  digests in the tracked record: every other word of each moved figure must read the same, in
+  order. It prints NOT JUDGED, says the page predates tracked records, and exits 2; `render`
+  still prints the page, with that note on stderr, and `status` says it is not judged here.
+  Anything else moved, a hand-edited page, a page carrying the portable mark, or a record not
+  read from the tracked copy is judged as before.
+- This repository's RPT0006-RPT0010 are migrated: each checks VALID at its signed fingerprint
+  in a full-history clone with no `.local`, whatever the forge answers, and US0941 AC5 runs
+  again. The `ci` job checks out full history, which `check` needs.
+- **The 6.0.0 release notes, `docs/release-notes-v6.0.0.md`.** They open with a one-sentence
+  headline and five themes (one plan, one review, one signature; the one-page report; the
+  ceremony that caught nothing is gone; faster feedback; it learns from its own runs), each
+  figure naming its source in its own sentence or row: an RPT id, `gate_timing.py`, the
+  back-to-basics review, the rehearsal record or the eval run. They give two upgrade paths: from
+  6.0.0-rc.1 (reinstall with `--version v6.0.0`, since the candidate's own version check reads
+  the release as equal and never offers it; what changed since the candidate) and from v5.1
+  (`migrate`, then `migrate --apply`, with what each leaves to the reader). They report the soak
+  the candidate's notes promised: the migration rehearsed on two consuming projects, every eval
+  scenario's result on the candidate and on 6.0.0's code, with those not re-run named, and the
+  website's lean sprint on the candidate, each with the findings it filed. Unit ids appear only in
+  the known-issues and sources passages.
+- `tools/tests/test_lean_release_notes_v6.py` checks the notes' structure against the
+  candidate's notes as the wrong answer, and derives what it can: the CHANGELOG sections the
+  notes must link from the CHANGELOG's own headings, before and after the cut renames
+  `[6.0.0]` to `[6.0.0-rc.1]`; the scenarios to report from `evals/scenarios/`; and the rehearsal
+  findings to name from the rehearsal record's Findings table.
+
+### Changed
+
+- Every script's `--help` describes the v6 loop. `sprint.py goal-review` now says, in its own
+  help and in the `sprint.py` summary, that the seats' read of the goal is advice printed with
+  the plan and never a refusal: it used to say `sprint plan --write` refuses a goal no seat has
+  reviewed, which the code stopped doing. `sprint.py reopen` and `sprint.py batch` no longer name
+  a late sign-off or sign-off lanes, `sprint.py sign --principal` is the operator who signs the
+  run, `critic.py correct --boundary` is held to the independence rule the run's signature is
+  held to, and `mutation.py` calls itself an opt-in probe rather than a gate: no gate reads a
+  run's result, and only an open `window` holds a commit.
+- `critic.py record --help` says what the command already enforces: each `--issues` finding
+  carries an origin tag (`[regression]`, `[new]` or `[pre-existing]`) and an untagged one is
+  refused, and a self-review is recorded with a warning and never counts as the unit's
+  independent review.
+- A test formats the help of every script's parser and each subcommand beneath it, in-process,
+  and fails on a line naming a surface from the shared retired list or a sign-off other than the
+  run's signature, unless the line says it is retired. A refusal beside the surface does not
+  excuse it, since a help line that says a retired step refuses teaches it as live.
+- The eval scenarios grade v6 and have been run against it. Scenario 06 no longer fails a
+  correct v6 skill for closing a bug without a depth field: it grades v6's review rule, where a
+  bug reaches Fixed on criteria the verifier recorded green and one independent
+  `critic.py record` APPROVE, a verdict whose reviewer is the author clears nothing, and no
+  depth tier is asked for. Its fixture carries the fix, a regression test and a criterion with
+  a `Verify:` line; the test seeds the session with a token it generates and asserts that token
+  comes back, and a fresh session must mint a token of its own, so it fails on the reported bug
+  (US0963).
+- Scenarios 01-04 gain a machine `fixture`, so `tools/eval_run.py setup` builds every scenario;
+  scenario 02's prompt is now one a fresh session can run; 07's prompt no longer hands over the
+  answers its blocking behaviours grade the worker for asking; 08's buyer is a stakeholder card
+  under `personas/stakeholders/` declaring `<!-- stakeholder: buyer -->`. `evals/README.md`
+  describes the v6 loop. `eval_run.py report --scenario <id>` judges one scenario of a run; an
+  unknown or empty id is an error, not a pass (US0963).
+- The eval record, committed as two runs (US0963):
+  - `v6-rc1`: 01-08 against the installed 6.0.0-rc.1, each in a fresh worker session graded by
+    a fresh grader session, run under the operator's own Claude Code config. 07 ran three times
+    and 08 twice before grading, the scenarios corrected between runs (07's prompt had handed
+    over the answers it grades the worker for asking; 08's buyer card declared no type). 06
+    FAILED one blocking behaviour: the worker approved the fix itself, with no separate
+    reviewer and no `critic.py brief`. It could have spawned one (08's rc.1 worker did spawn
+    subagents) but did not; rc.1's bug guidance named no separate reviewer (fixed in BG0812).
+    That fail stays on the record.
+  - `v6-main`: 09, and 06 re-run as one fresh final run on the final skill (main at 7e53a438)
+    and the final fixture, under a clean config holding only this release's skill. It passed 11
+    of 11 behaviours, with no forbidden behaviour observed; one caveat, filed as BG0817: the
+    worker relayed a trimmed brief to its reviewer, which the bug docs allow, since they say
+    "briefed with", not "verbatim".
+  - Three earlier attempts at re-running 06 are discarded as evidence. A first attempt loaded
+    the installed rc.1 skill beside the new one, so it did not measure the new skill alone. A
+    first clean run failed: the bug guidance named no verifier (fixed in BG0815), and the
+    fixture's test could not fail on the reported bug, so the independent reviewer rightly
+    rejected a correct fix. A second clean run passed every behaviour, but the fixture's test was
+    hardened again after it was graded, so it did not measure the fixture that ships.
+- A signed sprint report now checks in any full clone. `sprint sign` files the sealed run record
+  at `sdlc-studio/reports/runs/<RUN-ID>.json`, beside the page and in the seal commit, with every
+  absolute path made repo-relative or replaced by `sha256:<12 hex>`, so no home directory or
+  session transcript id is committed. `sprint_report.py check` reads the run from the live record
+  when it names the run, else the tracked record, else the `.local` archive.
+- A page filed from now on reads its run record through the same projection and is marked so
+  (`record_paths: portable`), so a session it names outside the repository reads the same in
+  every clone. A page filed before is re-derived from the record as it stands, so it still reads
+  as it was signed.
+- Once the tracked record is committed, the signature `check` judges against is read from its
+  committed history, never from `.local`. A later commit may change it only by carrying a
+  fingerprint and recording a reopen the earlier version did not; a stripped signature, a
+  re-pointed one with no reopen, and a signature change only the working copy carries are named
+  against the version first committed with the signature, and `check` exits 1.
+- `check` in a depth-1 clone exits 2 and says the history is shallow, instead of reading a
+  signed page INVALIDATED from the commits it cannot see.
+- The white paper is the v6 edition (`v6 · September 2026`). It describes the six-step loop,
+  one capped review per unit and one signature per run, and a new section 11, "The ratchet:
+  what was removed in v6, and why", cites its sources: 82% of the last 116 sprint units served
+  the machinery (the back-to-basics review, re-derived from the run archive at 79-85%), plan
+  review rejected 255 of 428 plans (the frozen plan-review ledger), and the 58 retired
+  surfaces of the CHANGELOG's 6.0.0 inventory. Its claims register drops the depth-gated
+  closes and the attestation ledger and cites `critic.py` and `sprint sign` instead
+  (US0957).
+- `docs/why-sdlc-studio.md` no longer describes verification-depth tiers, an attestation log
+  or an independent plan check as current; it names the v6 loop and says what v6 removed and
+  why.
+- `docs/whitepaper.pdf` is regenerated from the markdown. `tools/whitepaper_pdf.py` now
+  prints the cover's edition and date from the paper's own version line, where it had
+  `v4.0` and 10 July 2026 hard-coded, and its worked-example exhibit shows an independent
+  review and a signed run instead of a depth-gated close and an attestation ledger.
+- The sprint loop is taught in one place. `reference-sprint.md#the-loop` lists six steps - plan
+  and approve, build, review, close, sign, learn - each naming the command that performs it, and
+  the tranche audit, the triage STOP, "Reject -> repair" and the full-diff critic at the close
+  are gone from it. What happens when a unit stalls, a question needs the operator, or a close
+  exits with debt filed moves under `#inside-a-run`. `help/sprint.md` and
+  `help/getting-started.md` link the loop instead of listing their own versions of it
+  (US0956).
+- `reference-review.md` states the review round cap as 2, the value of
+  `critic.DEFAULT_REVIEW_CEILING`, overridable with `review.max_rounds`, and what carrying a
+  unit at the cap means: its findings filed as a bug and the unit dropped from the batch. A
+  round after a REJECT comes from the reviewer who rejected. One reviewer per unit is the floor,
+  and the sprint report marks a single-lens review as under-covered rather than refusing it;
+  the two-reviewer round both reference docs used to require is gone (US0396 AC1 retired, and
+  US0013 AC4, which pinned the tranche-audit step).
+- `help/retro.md` shows the Keep, Stop and Try retro, the limit of 3 Try items `retro.TRY_MAX`
+  holds, and how a Try item tagged with a failure class becomes a counted lesson; retros written
+  in the older shape keep their own rules.
+- The loop says what the signature records, as `sprint.SIGNED_OUTCOMES` maps it:
+  `goal-reached`, `partial` or `missed` from the goal verdict, never `stopped`, which belongs
+  to a run ended by `sprint stop`. `help/sprint.md` separates a unit carried at the review cap
+  (its findings filed as a bug, the unit dropped from the batch) from a batch unit with no
+  independent APPROVE (left at Review as a known issue). It also shows the origin tag each
+  `critic.py record --issues` finding carries (`[regression]` and `[new]` block,
+  `[pre-existing]` does not), and the `--authorised-by` a checklist waiver needs; both were
+  refused at runtime and undocumented where the commands were shown.
+- `test_lean_loop_docs.py` reads the loop's steps, the command surface, the cap and the Try
+  limit from the docs and the code, so a doc that restates a different loop or a number the
+  code does not hold is red.
+- `docs/existing-users.md` is the v6 upgrade page. It opens with "Upgrading to v6": run
+  `migrate`, then `migrate --apply`, add the `conformance.adopt_after` line `migrate` names, then
+  `gate.py`. It says what `--apply` removes and what it only reports, and maps every retired verb,
+  flag, config key and check id to what replaces it; no other section names one. A new section
+  covers a project last upgraded on v4 or earlier: `schema_version: 2` and every id are kept, and
+  each item `migrate` leaves to a human comes with its command. It gives the results of the
+  rehearsal on a v4.1 and a v2.4 project, names the four findings it filed (BG0842-BG0845), and
+  links docs/upgrade-rehearsal-v6.md for the detail. The page also tells anyone on the
+  `6.0.0-rc.1` candidate to reinstall, because that candidate's version check never offers its
+  final release. The v5.1 notes, the dormant `review.*` rows and the verification-depth
+  quality-floor row are gone (US0955).
+- The page's upgrade steps now run green end to end against a v4-era fixture, the gate step
+  included. The test follows the page's hand step, adding the cutoff line `migrate` named. The
+  page test no longer expects the gate to fail or pins the retired keys as dormant rows (US0955).
+- **The README, CONTRIBUTING and the install guide describe v6.** The README opens with
+  "New in 6" (one plan, one review per unit, one signature, and what a run learns), links the
+  release notes and the loop in `reference-sprint.md`, and names what v6 removed in one passage.
+  Its FAQ answer for upgrading gives the v5-to-v6 path (`migrate`, then `migrate --apply`) and
+  says an installed 6.0.0-rc.1 is not offered a later 6.0.0 by its version check, so it
+  reinstalls. The two-role review, the per-unit sign-off, verification-depth tiers as a gate, the
+  mutation-check gate, a plan-review gate on `code plan` and a hand-typed test count are gone.
+- **Every verified-install example pins the release the version homes declare.** README and
+  `docs/INSTALL.md` pinned `v5.1.0` and `v5.0.1`; both now pin the current tag, and no older
+  release is called the current one. CONTRIBUTING's paperwork rule names the
+  `changelog.d/<UNIT-ID>.md` fragment instead of a hand-edited `CHANGELOG.md` entry.
+- **`tools/tests/test_lean_public_docs_retired.py` checks the three pages** against the retired
+  surface imported from `retired_surface` (never a second list), outside a "Removed in v6"
+  passage, and ties each version example and the README's current release notes to
+  `check_versions.py`'s homes, so the release cut's version bump fails the module until they
+  move with it. `retired_surface` now also names the retired verification-depth gate: a depth
+  gate, or a unit that cannot reach Done or Fixed without a depth record. The tiers stay advice.
+- This repository runs on the shipped v6 defaults. `migrate --apply` removed its stand-down
+  keys (`review.two_role_after`, `review.signoff`, `review.require_brief_provenance`,
+  `review.line_coverage_after` and the `plan_review` block). It stripped the DoD's retired
+  `[check:]` tag and stamped `sdlc-studio/.version` `6.0.0-rc.1`. The comments that explained
+  those keys were pruned by hand, and so was `review.line_coverage: off`, which now equals the
+  default. A second `migrate` dry run reports nothing to apply. `AGENTS.md`'s review rule now
+  names one independent reviewer per unit, briefed with `critic.py brief`, and the operator
+  signing the run once with `sprint sign`; it no longer points reviewers at a panel (US0926).
+- **The shipped docs teach only the surviving review path.** Help, references and templates no
+  longer tell a reader to run a retired verb or flag (`verify_ac.py testplan probe` and `rule`,
+  `--phase delivery`, `new --target`, `set --depth`, `close --depth`, `verify_ac.py depth
+  --write`), to fill a `Verification target`, `Verification depth` or `Mutation-checked` field,
+  to hold a plan review, or to treat mutation testing as a gate. One reviewer's verdict decides a
+  unit, green `Verify:` selectors are the evidence, the operator signs the run once with `sprint
+  sign`, and `mutation` is an opt-in probe no gate reads. New projects' `AGENTS.md` (from
+  `templates/agent-instructions.md`) describes that path too.
+- **The story, planning, bug and Definition of Done templates lose the retired fields.** No
+  `Verification target` or `Mutation-checked` line on an AC, no tier legend, no `Mutation-checked`
+  bug checkbox, and no Done criterion asking for a later batch review; the bug template keeps the
+  practice of watching the regression test fail against the unfixed code.
+- **The verification-depth tiers stay, as advice.** smoke, functional, conversational, soak and
+  live remain the vocabulary for how far a feature was exercised, and
+  `reference-test-best-practices.md#verification-depth-tiers` says no gate reads them.
+- **`help/mutation.md` documents all four verbs** (`run`, `yield`, `window`, `prefilter`), and
+  `help/epic.md` points at `/sdlc-studio test-spec`, a verb that exists, not `test-plan`.
+- `gate.py --release` runs each verifier under a 300 s ceiling by default, the figure CI's corpus
+  verification uses, instead of 120 s. A 177 s verifier read green on CI and red in a local
+  release gate on the v6.0.0-rc.1 commit. `SDLC_VERIFY_TIMEOUT` still sets another ceiling, and
+  the release checklist template now says so (BG0792).
+
 ### Fixed
 
+- Two tests no longer turn red when a release is cut. The v6 release notes test's control now
+  builds its pre-cut notes by reversing the cut's re-point of the two CHANGELOG links, so it
+  still proves the missing-candidate-link flag once the real notes are re-pointed. The `init`
+  version tests now simulate the installed version on every module object `init`, `migrate` and
+  `project upgrade` actually read it from: another test module's copy of `version_check` in
+  `sys.modules` had left `init` stamping the real SKILL.md version, which went unseen only while
+  that version equalled the simulated one (BG0846).
+- `sprint close --dry-run` reads the open run. Its preview scaffolded the retro in the scratch
+  copy with no Batch line, so the checklist found no units, then no run record, and reported
+  `no goal to judge`, `no units` and `the run record carries no start time` for a run whose state
+  held all three, while the real close named the goal and both units moments later. The preview
+  now mints its retro through the close's own scaffold, Batch and Goal filled from the run state.
+  Every line a step prints while it acts on the scratch copy is marked `[copy]`, so the reconcile
+  step's `close: derived EP0001 terminal` no longer reads as a write to the real tree (BG0823).
+- The close, the signature and the signed page speak v6's sign-off words. The close's tail
+  prefixed its lines `apply-signoff:`, a flag v6 retired, so `apply-signoff: velocity row
+  recorded` read as sign output; it now says `close:`, and a parent derivation names its caller
+  (`close:` or `sign:`). The close's last line asks for `--principal "<the operator who signs>"`,
+  `sprint sign`'s refusals ask for the operator who signs, and the report's Sign-off table heads
+  the signature `Signed by` rather than `Reviewer of record`. The handoff step names the outcome
+  `sign` will write for the recorded verdict (`partial` or `missed`, not `stopped`), and says so
+  when no verdict is recorded rather than printing `from the None verdict`. `help/handoff.md`
+  lists the `partial`, `missed` and `closed-outstanding` outcomes (BG0822).
+- `install.ps1 -Local` sweeps only the current project's tool directories, as `install.sh --local`
+  has since BG0809. It walked the personal ones too, so pinning a version in one project on
+  Windows refreshed `~\.claude\skills\sdlc-studio` and every other personal copy, moving each
+  project that loads them. A `-Global` install sweeps as before (BG0821).
+- `install.ps1 -Local` for Claude Code now warns when a personal copy shadows the project copy,
+  naming both paths and both versions, and leaves the personal copy as it is (BG0821).
+- Neither installer warns that a copy shadows itself any more: a local install run from the home
+  directory, or under a personal copy that is a link to the project copy, reaches one directory
+  by both paths and prints no shadow warning (BG0821).
+- A batch story or bug with an independent delivery APPROVE that the loop left at Ready or In
+  Progress is no longer handed over by `sprint close` as an unanswered known issue. The close
+  judged "awaiting only the signature" at Review alone, while `sprint sign` seals any story or
+  bug that meets the review bar, so the two read different bars for one unit and the close listed
+  a unit the signature then moved to Done. The close now asks the seal's own bar at every
+  pre-terminal status for the kinds `sign` moves; any other kind (a CR) still awaits the
+  signature only at Review, and an unreviewed unit is still held. `sprint stop` reads the same
+  predicate, so it now stops without `--force` over such an approved Ready story or bug. The
+  loop's Build step in `reference-sprint.md` now names the move to Review
+  (`transition.py set <id> Review`), and `help/sprint.md` says which units the close lists
+  (BG0820).
+- A sprint report's `Verified on:` names the commit the close's gate ran against. The page
+  filled it from `verified_sha`, which nothing wrote, and fell back to the run's base ref, so
+  every report named the commit the run was planned from as the commit it was verified on.
+  `sprint close` now stamps the HEAD its gate ran against on the run state before it derives the
+  page, and a run with none recorded reads `not recorded`. A page signed before the stamp
+  existed named the base ref, and its run record holds no `verified_sha` key; re-deriving that
+  page against its signed copy reads the record's base ref again, so each page signed under the
+  old rule and anchored in its signing commit still reads VALID, and a rewritten base ref still
+  reads INVALIDATED (BG0819).
+- `init guided` no longer reads a stage's own drafted scaffold as that stage done. A document that
+  still carries a placeholder its seeded copy leaves unfilled is a draft, so the run that drafts
+  the PRD names `prd` as the resume point, and a second bare run leaves it pending instead of
+  ticking it from the unfilled template and drafting the TRD. A written document that quotes a
+  placeholder in a code span or a fenced example still counts as written. The same rule covers the
+  `AGENTS.md` that `init run` seeds: a fresh project's first `init guided` now stops at `agents`
+  and says the file was seeded from its template (BG0818).
+- An existing `AGENTS.md` without the lifecycle doctrine (the `validate instructions` doctrine
+  pointer) leaves the `agents` stage open, and the stage offers to append the starter's
+  `## Operating doctrine` block. The file is never rewritten. A stage output that cannot be read
+  (not valid UTF-8, permission denied, a directory in its place) keeps the stage open and is named
+  with the reason, rather than crashing `init guided` or `status hint` (BG0818, BG0840).
+- The bug fix, review, consult and chat workflows (`reference-bug.md`, `reference-review.md`,
+  `reference-consult.md`, `reference-chat.md`, `help/consult.md`, `help/persona.md`) name the Three
+  Amigos by the role labels the resolver prints (Product amigo, Engineering amigo, QA amigo), not
+  by Sarah Chen, Marcus Johnson and Priya Sharma, names no shipped seat carries. The bug fix step
+  names `scripts/persona_resolve.py resolve --seat <product|engineering|qa> --render review`, and
+  the consult team defaults name the seat `persona_resolve.py resolve-consult` picks (BG0816).
+- Where the full names stay as deliberate samples (the archetype seeds in `reference-persona.md`,
+  the sample `persona list` output, a single-persona consult and a single-persona chat), each sits
+  in a marked `sample-personas` region that says in plain text it is a sample persona, not an amigo
+  (BG0816). Hyphenated slugs such as `consult sarah-chen` in sample commands are not marked.
+- AGENTS.md's *Where things live* table named `.claude/skills/sdlc-studio/personas/seats/`, which
+  does not exist. It now names `templates/personas/amigos/`, where the shipped seats live, and this
+  repository's overriding cards in `sdlc-studio/personas/seats/` (BG0816).
+- **The bug verify and close guidance names the verifier.** `reference-bug.md`'s fix, verify and
+  close workflows and `help/bug.md`'s matching entries now say to record a bug's criteria with
+  `verify_ac.py run --id BG{NNNN}` before the move to Fixed. It runs each `Verify:` selector,
+  stamps each green criterion `Verified` and writes the verify-report `transition.py` reads. The
+  verify step used to say only "Execute tests listed in Tests Added", so an agent ran the tests by
+  hand and nothing was recorded. The close refuses a recorded red, not a missing run, and the
+  guidance now says so.
+- The Three Amigos step of `/sdlc-studio epic` and `/sdlc-studio story` (in `reference-epic.md`,
+  `reference-story.md`, `help/epic.md` and `help/story.md`) now names the command that seats each
+  amigo, `scripts/persona_resolve.py resolve --seat <product|engineering|qa> --render review`,
+  and says the seats ship with the skill, so the review needs no project user personas; only
+  `--skip-personas` skips it. A fresh agent in an empty repository had skipped the step as "no
+  persona files exist yet". The epic step's stakeholder part, which does need user personas, says
+  it is the only part skipped when there are none (BG0814).
+- The story cohesion review is no longer labelled Automatic, since no script runs it: it is step 7
+  of the story workflow, performed before the Report, and the Report (now step 8) carries its
+  findings. The story workflow's steps after 3b are numbered 4 to 9 instead of restarting.
+  `help/story.md` names the cohesion review and the Three Amigos review in its opening lines and
+  lists both in *What happens* (BG0814).
+- `reference-workflow-personas.md`, the per-seat focus lists those steps point to, names the same
+  resolver command where it introduces the amigos and says the seats ship with the skill. Its
+  per-workflow lists name the Product, Engineering and QA amigos, the role labels the resolver
+  prints, in place of three amigo names no shipped seat carries, and Story Create now runs after
+  step 8 (Report), which follows the step 7 cohesion review. Its examples and consultation
+  headings no longer say the Three Amigos review runs automatically: the agent runs it (BG0814).
+- The review-tier corpus test no longer goes red when an artefact is filed. It sampled every Nth
+  story and bug in the repository, so each filing moved the sample; one sprint's filings shifted it
+  onto 24 units that all band full, and it reported the tiering as a no-op with no code change. It
+  now walks the corpus in a fixed order, stories and bugs interleaved, and stops once it has seen a
+  light and a full unit (at most 150); a corpus mapped to one tier still fails it.
+- The bug-close guidance names the independent reviewing context it needs. `reference-bug.md`,
+  `help/bug.md` and the script catalogue's one-call close now say the reviewer is a separate
+  context that did not write the fix, briefed with `critic.py brief --unit <id> --seat qa`, and
+  show the close carrying that brief's fingerprint: `transition.py set --id <id> --status Fixed
+  --verdict approve --reviewer <R> --author <A> --brief <fingerprint>`. Before, the shipped close
+  named a reviewer and an author and nothing else, and a fresh session followed it to approve
+  its own fix under another name (BG0812).
+- `transition.py set` takes `--brief <fingerprint>` and stores it on the verdict row, as
+  `critic.py record --brief` does. A one-call verdict (`--verdict --reviewer --author`) given
+  without it prints one stderr warning after the transition, naming `critic.py brief` and any
+  brief `critic.py brief` noted in this clone for the unit; the transition still runs, so no
+  close is refused for it. A `--verdict` with no reviewer writes no verdict row and is not
+  warned. `--brief` without `--reviewer` and `--author` is a usage error, since there is no
+  verdict row to carry it (BG0812).
+- A root-level file a unit declares in its Affects stays in it. `sdlc_md.affects_files` kept a
+  slash-free token only when it ended in .py, .md, .yaml, .yml or .sh, so `package.json`,
+  `astro.config.mjs`, `pyproject.toml`, `Makefile` or `.gitignore` dropped out of the review
+  brief's diff scope, the plan's shared-file and delivery-mode checks and every other reader. A
+  slash-free token is now kept when it has the shape of a file name: one word with an extension
+  (a dot then a letter), a dotfile, or a known extension-less name (`Makefile`, `Dockerfile`,
+  `Containerfile`, `LICENSE`). Shape, not existence, so a root file the unit will create counts.
+- Prose is still not a path: `none`, `-`, `TBD`, a sentence and a version string (`v1.2`) are
+  dropped, and a parenthetical note holding a comma no longer cuts its path in two (the path
+  half used to keep the note's opening words). Over this repository's 3,038 artefacts, 23 gain a
+  root file and three completed or superseded CRs lose a note fragment from a path; nothing
+  else moves.
+- The one-runner agreement test no longer races its own fixture. The pair of test modules it
+  builds keeps a template directory in a module global; under the push's full-suite lane the two
+  modules run in separate worker processes, and one worker's teardown could delete the directory
+  the other was still asserting, so the push read red on scheduling alone and refused a push. The
+  template is now keyed to its process, which keeps the one-process sharing the test exists to
+  show (the `unittest discover` control still splits) and leaves two workers their own directory.
+- `install.sh --local` sweeps only the current project's tool directories. It walked the personal
+  ones too, so pinning a version in one project refreshed `~/.claude/skills/sdlc-studio` and every
+  other personal copy, moving each project that loads them. A `--global` install sweeps as before
+  (BG0809).
+- `install.sh --local` for Claude Code now says when a personal copy exists: Claude Code loads a
+  personal skill ahead of a project skill of the same name, so the project copy just installed is
+  not the one it runs. The warning names both paths and both versions; the personal copy is left
+  as it is (BG0809).
+- `init run` writes `sdlc-studio/.version`, in the shape `project upgrade --apply` writes, naming
+  the running skill's version with any pre-release suffix and the schema it seeded. A fresh
+  project's first `migrate` no longer reports a missing version file, and its first upgrade
+  names the range it crossed (6.0.0-rc.1 to 6.0.0, say) and lists what changed, instead of
+  "version range unknown" (BG0808).
+- The US0942 stamp test resolves only the stories and bugs whose Verify lines name a test module
+  US0942 edits, not every stamp in the corpus: 86 of 1775 artefacts on this tree, and about 5 s
+  instead of 64 s at load 6, against the 90 s commit budget. A stamp naming a deleted node in one
+  of those modules is still reported (BG0807).
+- `sprint plan` judges a consuming project's TSD against the project's own code: the last commit
+  to any path outside `sdlc-studio/`, so a backlog change never marks it stale. It compared the
+  TSD with the skill's scripts, which a consuming project does not hold, so every consumer's plan
+  printed `TSD staleness UNKNOWN` and a stale TSD was never flagged. The skill's own repository
+  still compares against its scripts, and a tree with no commit history for either side says
+  which one it lacks (BG0806).
+- `verify_ac.py stamps` resolves each top-level `or` term of a stamped `-k` selector on its own,
+  across every test file the selector names, and names a term that selects nothing, exiting 1.
+  It resolved the expression whole, so a live term hid a dead one and the stamp read green while
+  that part of the claim verified nothing. Terms are matched against collected node ids, so a
+  term naming a pytest marker reads as dead. The eight such terms in this repository are
+  repointed to the tests that replaced them (US0077, US0081, BG0264 x2, BG0555), restored
+  (BG0264's mixed target list test, deleted with no replacement), or retired with the claim they
+  stood for (US0062 AC1 is narrowed to bugs, since BG0756 made the evidence rule bug-only), and
+  `stamps --bugs` exits 0 (BG0805).
+- The sprint report's Lessons section cites the store it actually read. A project with no
+  `sdlc-studio/lessons.jsonl` of its own reads the skill's bundled seed, and every lesson figure
+  now names that seed instead of the missing project file; with a store present the figures
+  still cite `sdlc-studio/lessons.jsonl`. The report's source check accepts the seed as a
+  declared non-workspace source, so a fresh project's report of record still builds (BG0804).
+- `sprint.py plan --goal plan` and `--goal design` no longer crash with a `TypeError` in the
+  capacity report under the default 500,000 token budget. A rung that prices no tokens has no top
+  of band, so it is no longer compared with the budget, and the capacity line reads
+  `tokens unjudged/500,000 - within budget on units; this rung prices no tokens` rather than
+  formatting a missing figure (BG0803).
+- `artifact.py new --type bug` and `artifact.py batch --type bug` write each `--verify` beneath its
+  criterion, in the shape the finding filer writes and the runner reads: `- [ ] **AC1** <text>`
+  followed by `- **Verify:** <check>`. Before, the Verify was accepted and dropped at exit 0 and
+  the criterion was an unnamed bullet, so `sprint plan` refused the bug just filed as carrying no
+  executable Verify (BG0802).
+- `tools/known_issues.py write` places the "Medium and Low findings ship open" paragraph under the
+  bar in force, before the bars kept as history; it used to trail the oldest one, so it read as
+  part of the v5.0.0 bar. Its Not carried section is now derived from the corpus: every finding at
+  a barred severity that reached `Won't Fix` or `Superseded`, counted and named by id, and no such
+  section when there is none. The fixed sentence it replaces said three `Won't Fix` and one
+  superseded, where the corpus holds four `Won't Fix` Highs and none superseded (BG0801).
+- `sprint.py close --retro <R> --goal-verdict <v> --note <n>` no longer lists, in its pre-flight,
+  the goal verdict the same invocation records (the `[goal-verdict]` row and the checklist's
+  `goal-judged` row), nor the `review-current` lane when the only thing failing it is the review
+  anchor the close's own review-anchor step writes, which the gate step already does not count.
+  A first close on a fresh project printed four unmet prerequisites and then exited 0. A close
+  given no verdict, or a verdict with no `--note` (which it refuses), still lists it, and
+  `--file-and-close`, which records no verdict and writes no anchor, still lists and refuses on
+  both. `close --dry-run` reads the verdict it is given the same way, so preview and close agree
+  (BG0800).
+- `sprint.py close` no longer hands over, as known issues, the epic drift its own close settles.
+  The reconcile step now derives the parent epics (and the requests above them) of the run's
+  units before it reads drift, where only the tail did so, after the step and the report holds
+  had already recorded the epic as stale. A first sprint whose only epic completes now files a
+  report with no `epic-status-stale` row, where it carried five rows for that one item (BG0799).
+- The reconcile step carries one known issue per drift item, named by kind and id, from
+  reconcile's structured sweep. It split `reconcile detect`'s printed output per line, so its
+  `scope=` summary, `Guidance:` block and advisories each became a known issue. The index-drift
+  report hold is no longer carried beside the step's rows, which named each item a second time.
+- The plan's tokens-per-point rate now follows the newest sprints. It preferred the work model's
+  own VELOCITY rows however old, so once rows stopped recording a model the rate froze: this
+  repository planned three sprints at 353,810 tokens per point while they measured about half that.
+  When three or more rows naming no model are newer than every row the model chain picked, the rate
+  is the median of the newest of them (up to five), and its source says they name no single model.
+  On this repository that moves the rate from 353,810 to 178,352.
+- `estimate.tokens_per_point` in `sdlc-studio/.config.yaml` sets the rate by hand. The plan prices
+  with it, names it an operator override in the forecast basis, and quotes the measured rate it
+  replaced. It takes a plain integer; a value that is not a finite number rounding to 1 or more
+  (text, a boolean, `.nan`, `.inf`, `0`, `0.4`) is ignored and the basis names it. The key is
+  documented in `reference-config.md` and, commented out, in the shipped config defaults, and
+  `reference-sprint.md` states the recency rule and the override.
+- A sprint report's per-unit minutes and tokens come from the delegated agent totals tagged to
+  each unit. `retro.py accuracy --delegated-tokens N` takes `--delegated-unit ID` and
+  `--delegated-minutes M`; a unit's row sums its tagged records and labels them `agent tokens`
+  and `agent minutes`. Only an In Progress span was read before, and the lean loop moves a unit
+  from Draft to Done at landing, so every unit of a lean run read NOT MEASURED. A span on the
+  shared main-thread meter would also count the traffic of every unit open beside it.
+- A unit's agent minutes are stated only when every agent tagged to it reported minutes; a sum
+  over some of them would read as the unit's whole time. Otherwise the cell reads NOT MEASURED,
+  names how many reported and says an agent's minutes are recorded with its total when it
+  reports. Minutes must be a positive finite number.
+- The run's token total still counts each delegated record once, tagged or not. An In Progress
+  span stays a source where no agent total is tagged to the unit. The per-unit table's headers
+  now read Minutes and Tokens, since each cell's label names its source.
+- A unit with neither reads NOT MEASURED naming both missing sources and the command that records
+  a tagged total. `--delegated-unit` or `--delegated-minutes` without `--delegated-tokens` is a
+  usage error (exit 2) rather than a record that silently never lands, and a unit outside the
+  open run's batch is recorded with a warning on stderr.
+- The close checklist's cost row reads the run's measured token total: the main-thread meter plus
+  the delegated agents' reported totals, the figure the report's Estimates section states. It
+  read `unattributed - no harness-tracked sprint total` unless a total was supplied by hand, so a
+  report could measure 19.2M tokens in Estimates and list its cost as not measured in the
+  appendix. One helper now gives both readers the figure.
+- A total an operator records with `retro.py accuracy --tokens N --write` still overrides it,
+  and the row names it as supplied beside the measured total it replaces. The close's own
+  harness capture, written to the same velocity row, is not read as an override.
+- The sprint report's DORA rows read the forge again. The per-clone cache
+  `sdlc-studio/.local/ci-runs.json` was written once and then read on every later run, so a report
+  whose run began after the cache's newest row read no forge data, and a clone without the cache
+  read the live forge, whose answer moves a signed page. The cache is gone. `sprint close` now
+  fetches the CI runs fresh at PREPARE and records the ones created since the run opened on the
+  run record as `ci_runs`, with the source they were read from (`gh run list`, or why `gh` could
+  not answer). The page and every later `sprint_report.py check` read them from the record, which
+  the seal tracks, so any full clone re-derives DORA from the runs the page was built from.
+- Only an unfrozen preview of the open run (`sprint_report.py build`) reads the forge live;
+  `check` never does. A sealed record that froze no runs re-derives with none. A page signed
+  before this change that read CI runs inside its window therefore re-derives without them, and
+  `check` names its DORA rows as moved.
+- The waiver-window test no longer fails a push in the first five minutes of a UTC day. It
+  backdated the page five minutes from the wall clock, which put the page on the day before the
+  waiver; the page and the waiver are now made at a moment the test injects, and a second case
+  runs the same assertions at 00:02 UTC (BG0794).
+- **An installed release candidate is offered its final release.** Version comparison dropped a
+  pre-release suffix, so 6.0.0-rc.1 read as 6.0.0: an rc install was never prompted to upgrade,
+  the rc-to-final upgrade digest came back empty, and `migrate --apply` stamped an rc project
+  `6.0.0`. Versions now order by semver precedence (6.0.0 > 6.0.0-rc.10 > 6.0.0-rc.2 > 5.1.0), the
+  installed version, a project's `skill_version` stamp and a `## [6.0.0-rc.1]` CHANGELOG heading
+  all keep their suffix, and `migrate` stamps the exact version in both directions.
+- **`tools/check_versions.py --strict` compares full versions.** The release gate normalised
+  every home to its semver core, so a cut left with SKILL.md at 6.0.0-rc.1 beside 6.0.0 passed,
+  and that install would then offer the release to itself. `--strict` now names the home whose
+  suffix differs, and a CHANGELOG release heading must carry the tagged version's suffix; the
+  plain check still compares cores between releases.
+- A signed report's per-unit review rounds count verdict rows by identity, not by position. The
+  close (PREPARE) records on the run, per unit it lists, the identities of the rows its rounds
+  count (`review_rows`), and the page and every `sprint_report.py check` of it count the frozen
+  rows the ledger still holds. Deleting one of the run's own rows reads INVALID even after a
+  same-day later run re-reviewed the unit, which the positional bound read VALID; a supersession
+  recorded after the signature leaves the row, and the signed figure, in place; and a later
+  run's record is no longer needed in the clone doing the check.
+- A row's identity (`critic.row_identity`) is a digest of its eight parsed cells, `-` and empty
+  reading the same, so every historic row already has one and the ledger is not rewritten: no
+  Run column, and a table re-pad moves nothing. Duplicate rows are counted as a multiset. A run
+  record sealed before this change keeps the positional rule, so RPT0006-RPT0010 still check
+  VALID with their signed fingerprints.
+- `flow.py compute` reads delivered units' dates with one history read per delivered status
+  instead of one `git log -1 -G` per unit. On this repository that was 1,483 processes and about
+  45 seconds, and over 120 seconds under load; it is now three reads and about two seconds, with
+  byte-identical output. Every `sprint close` pays it twice, through the checklist and the
+  report's flow summary (BG0786).
+- **`migrate` names the conformance cutoff an upgraded project needs.** A v4-era project upgraded
+  with `migrate --apply` failed the gate's conformance lane on every story written before
+  executable criteria existed, and migrate's report said nothing about it. Migrate now asks the
+  conformance lane which units it would fail and reports, as a needs-a-human item, each of those
+  units with the stages it misses and the exact `conformance.adopt_after: <id>` line (the highest
+  failing id) that grandfathers them. It never writes the line: choosing the cutoff is a
+  judgement about the project's history, and the reasons let a human tell old history from a
+  recent breakage. A project whose existing cutoff already covers every failing unit gets no
+  item, so a cutoff is never proposed below one already set. The lane resolves stamped pytest
+  selectors by running the project's test collection, so migrate runs it with pytest's cache and
+  bytecode writes off, and a dry run still leaves the project byte-identical. Judging the whole
+  workspace adds the conformance lane's own run time to `migrate`.
+- **The v4-era upgrade rehearsal gates green, and reads the gate's exit status.**
+  `tools/rehearse-release.sh upgrade` applies the cutoff line migrate's report names, as an
+  upgrader would, and the conformance lane reports the units exempt (pre-adoption). The
+  `upgrade|conformance` row has left `tools/release-rehearsal-baseline.txt`, which now records no
+  known gap. With no baselined lane, a gate that exited non-zero before printing any lane would
+  have read as a pass, so the rehearsal now fails when `gate.py` exits non-zero and names no
+  failing lane.
+- `critic.py brief` says so on stderr when a project seat card named for the seat
+  (`personas/seats/qa.md`) carries no `<!-- role: -->` line: the card is named, and so is the
+  shipped card briefed in its place. A card that declares its role is used without a word, as
+  before. The warning lives in `persona_resolve.resolve_card`, so every reader of the resolver
+  hears it (BG0784).
+- The unknown-seat refusal lists the seats the project can brief, its declared roles beside the
+  shipped three, and names each card that declares no role, where it named a fixed
+  `engineering, qa, product` (BG0784).
+- **A goal-verdict note may name its review rounds.** `sprint goal-verdict` and `sprint close
+  --goal-verdict` refused any note that stated a round count, such as "two rounds of review
+  converged", against a run-level round ledger that has had no writer since `critic.py
+  sprint-review` was retired, so it always read 0. That ledger and every reader of it are
+  deleted: the goal verdict records its verdict and note with no `rounds` field, the ceiling
+  guard, repair-regression classifier, escalation brief and round-cost report go with it, the
+  close report's review-and-repair overhead component reads NOT CAPTURED, the closing-review
+  row no longer prints "over 0 round(s)", and `doc_freshness` drops its round-count check. The
+  per-unit cap (`review.max_rounds` through `critic.py record`) is unchanged.
+- Test runs turn automatic repository maintenance off for every fixture repository: the root
+  `conftest.py` (pytest) and `tools/skill-tests.sh` (unittest) append `maintenance.auto=false`
+  through `GIT_CONFIG_COUNT`/`KEY`/`VALUE`, after any entry the caller already set. From git 2.55
+  a fixture commit's detached `git maintenance run --auto` could still be writing into `.git`
+  while the temporary directory was removed, failing a green test on teardown (BG0782).
+- The sprint checklist's known-issues row reads stop-ship rulings through `retro.STOP_SHIP`
+  rather than two bare `"stop-ship"` literals, so the row and the gate cannot disagree about
+  which ruling holds the close if the constant's value ever changes. The checklist's drift guard
+  `cycle_drift()` now also reports a `stale` bucket: an entry in its list of non-ceremony verbs
+  naming a verb its script's parser no longer exposes. Before, the guard only subtracted the
+  list, so a retired verb stayed exempt forever; the two it had kept, `sprint checklist` and
+  `critic repair`, are removed (BG0725).
+- `gate.py` exports `SDLC_STUDIO_BOUNDARY_SUITE=1` to the runners its lanes spawn whenever it
+  resolves a push or release boundary, by `--boundary` or by `SDLC_GATE_BOUNDARY`, and so does
+  `gate.py --run-tests --boundary push|release`. Only the pre-push hook set it before, so a
+  release gate run by hand, or `SDLC_GATE_BOUNDARY=push`, read a red `@boundary_only` test as
+  skipped and passed. A commit's selection and a close leave it unset, and the caller's
+  environment is restored when the lanes return (BG0692).
+- `artifact.py revision` code-spans the bare identifiers in its note, so a Revision History row
+  naming `_check` and `_series` no longer reads as emphasis that markdownlint refuses (MD037). The
+  note goes through the shared prose escaper, which now also spans a leading-underscore name
+  with no second underscore. Text already inside a code span, an escaped `\_name`, and a name
+  after `/` or `#` (a URL path, link target or anchor) are left as written (BG0682).
 - **The boundary suite passes on a checkout with no `changelog.d/`.** A release cut consumes every
   fragment and a fresh clone carries no empty directory, so the boundary test that lists the
   fragments raised FileNotFoundError in CI on the cut commit, while the local gate, whose tree
@@ -26,7 +630,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   probes are now explicit `if` blocks: the hint still prints when the CLI is present and is
   silently omitted when it is not.
 
-## [6.0.0] - 2026-09-26
+## [6.0.0-rc.1] - 2026-09-26
 
 ### Breaking
 
