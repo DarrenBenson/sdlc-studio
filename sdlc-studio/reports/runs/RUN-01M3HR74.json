@@ -1,0 +1,3185 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M3HR74",
+  "started_at": "2026-09-27T15:40:33Z",
+  "ended_at": "2026-09-29T00:02:53Z",
+  "outcome": "goal-reached",
+  "goal": "done",
+  "batch": [
+    "BG0682",
+    "BG0692",
+    "BG0725",
+    "BG0782",
+    "BG0783",
+    "BG0784",
+    "BG0785",
+    "BG0786",
+    "BG0788",
+    "BG0790",
+    "BG0792",
+    "BG0794",
+    "BG0795",
+    "BG0796",
+    "BG0797",
+    "BG0798",
+    "BG0799",
+    "BG0801",
+    "BG0802",
+    "BG0805",
+    "BG0806",
+    "BG0808",
+    "BG0809",
+    "US0924",
+    "US0926",
+    "US0952",
+    "US0953",
+    "US0954",
+    "US0955",
+    "US0956",
+    "US0957",
+    "US0959",
+    "US0960",
+    "US0961",
+    "US0962",
+    "US0963",
+    "US0964",
+    "BG0800",
+    "BG0803",
+    "BG0804",
+    "BG0807",
+    "BG0810",
+    "BG0811",
+    "BG0812",
+    "BG0813",
+    "BG0814",
+    "US0965",
+    "BG0815",
+    "BG0816",
+    "BG0819",
+    "BG0820",
+    "BG0821",
+    "BG0822",
+    "BG0823",
+    "BG0818"
+  ],
+  "plan": "sdlc-studio/.local/sprint-plan.json",
+  "handoff": "HO-0091",
+  "review_rounds": [],
+  "review_ceiling_overrides": [],
+  "session_token_baseline": {
+    "tokens": 78511905,
+    "source": "sha256:569cd260872e",
+    "at": "2026-09-27T15:40:34Z"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 78511905,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T15:40:34Z",
+      "kind": "open",
+      "model": "mixed"
+    },
+    {
+      "tokens": 78736499,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T15:46:18Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 78741983,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T15:46:21Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 78741983,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T15:46:24Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 78741983,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T15:46:26Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 78741983,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T15:46:29Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 78741983,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T15:46:31Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 78741983,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T15:46:34Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 78909508,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T16:29:04Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 78914314,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T16:29:54Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 78995585,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T16:58:31Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79021718,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T17:00:34Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79059429,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T17:08:41Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79063240,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T17:09:23Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79064339,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T17:09:53Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79105595,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T17:22:24Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79112763,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T17:23:32Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79120533,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T17:23:35Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79120533,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T17:23:38Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79120533,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T17:23:41Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79168678,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T17:50:34Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79173714,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T17:51:22Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79178244,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T17:51:25Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79199755,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T17:56:32Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79215666,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T17:57:47Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79294418,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T18:24:47Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79294418,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T18:25:48Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79294418,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T18:26:51Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79330032,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T18:28:38Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79330032,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T18:28:41Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79367745,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T18:45:43Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79367745,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T18:47:47Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79429017,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T19:02:19Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79436879,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T19:03:36Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79445069,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T19:03:39Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79528533,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T19:29:06Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79569440,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T19:31:10Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79594702,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T19:33:14Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79594702,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T19:33:50Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79594702,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T19:34:35Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79603336,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T19:34:38Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79637237,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T19:46:41Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79637237,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T19:47:17Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79671810,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T20:06:06Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79671810,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T20:08:21Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79671810,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T20:08:24Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79674767,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T20:09:20Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79681976,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T20:09:23Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79681976,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T20:09:26Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79681976,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T20:09:29Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79705220,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T20:28:46Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79715771,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T20:30:24Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79722713,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T20:30:26Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79776848,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T20:54:00Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79791509,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T21:20:10Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79857801,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T21:32:54Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79943211,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T21:45:42Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79946405,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T21:47:11Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 79946405,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T21:49:02Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 80015996,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T21:56:11Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 80050344,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T21:58:23Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 80055915,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T21:58:26Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 80077476,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T21:59:32Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 80181437,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T22:26:00Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 80193314,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T22:27:59Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 80197380,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T22:28:02Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 80263615,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T22:38:00Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 80267438,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-27T22:38:43Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 80385788,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T07:51:35Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 82697825,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T07:53:06Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 82697825,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T07:55:04Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 82935121,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T08:33:53Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 83077943,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T08:48:23Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 83077943,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T08:50:20Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 83088716,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T08:54:21Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 83146225,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T09:18:45Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 83250933,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T09:28:19Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 83377703,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T09:30:32Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 83391211,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T09:30:35Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 83391211,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T09:30:38Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 83490449,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T09:39:51Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 83600994,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T09:53:15Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 83663746,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T10:10:12Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 83669246,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T10:12:19Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 83731961,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T10:15:41Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 83805177,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T10:21:34Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 83820036,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T10:22:34Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 84055625,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T10:43:24Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 84087338,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T10:48:00Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 84111559,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T10:54:45Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 84226765,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T11:07:44Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 84274117,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T11:15:02Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 84409911,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T14:38:38Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 85690858,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T14:55:17Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 85727755,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T15:09:06Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 85814089,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T15:21:03Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 85874633,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T16:24:34Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 85880381,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T16:24:37Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 85880381,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T16:24:41Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 85880381,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T16:24:44Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 85880381,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T16:24:48Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 85880381,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T16:24:51Z",
+      "kind": "unit-start",
+      "model": "mixed"
+    },
+    {
+      "tokens": 85999405,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T17:08:36Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 86185350,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T17:45:35Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 86240400,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T18:18:57Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 86251359,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T18:20:27Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 86254028,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T18:21:50Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 86259619,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T18:23:35Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 86349612,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T19:50:07Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 86409114,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T20:06:53Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 86531164,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T20:25:56Z",
+      "kind": "unit-end",
+      "model": "mixed"
+    },
+    {
+      "tokens": 86583171,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T20:50:22Z",
+      "kind": "report",
+      "model": "mixed"
+    },
+    {
+      "tokens": 86642193,
+      "source": "sha256:569cd260872e",
+      "at": "2026-09-28T21:09:16Z",
+      "kind": "report",
+      "model": "mixed"
+    }
+  ],
+  "delegated_tokens": [
+    {
+      "tokens": 199973,
+      "agent": "a07d72ad3",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:31:52Z",
+      "unit": "US0963",
+      "minutes": 3.5
+    },
+    {
+      "tokens": 299439,
+      "agent": "a0af9a550",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:31:57Z",
+      "unit": "US0959",
+      "minutes": 20.8
+    },
+    {
+      "tokens": 108998,
+      "agent": "a0cd1dfea",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:32:03Z",
+      "unit": "US0952",
+      "minutes": 11.1
+    },
+    {
+      "tokens": 108998,
+      "agent": "a0cd1dfea",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:32:08Z",
+      "unit": "US0954",
+      "minutes": 11.1
+    },
+    {
+      "tokens": 101366,
+      "agent": "a17f90f57",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:32:14Z",
+      "unit": "BG0692",
+      "minutes": 14.3
+    },
+    {
+      "tokens": 101366,
+      "agent": "a17f90f57",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:32:19Z",
+      "unit": "BG0809",
+      "minutes": 14.3
+    },
+    {
+      "tokens": 164982,
+      "agent": "a17fd7400",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:32:25Z",
+      "unit": "BG0799",
+      "minutes": 11.6
+    },
+    {
+      "tokens": 164982,
+      "agent": "a17fd7400",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:32:30Z",
+      "unit": "BG0800",
+      "minutes": 11.6
+    },
+    {
+      "tokens": 178139,
+      "agent": "a1893864f",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:32:36Z",
+      "unit": "BG0821",
+      "minutes": 34.3
+    },
+    {
+      "tokens": 203893,
+      "agent": "a1e3d2f4c",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:32:41Z",
+      "unit": "US0960",
+      "minutes": 28.8
+    },
+    {
+      "tokens": 95597,
+      "agent": "a213cd820",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:32:47Z",
+      "unit": "BG0819",
+      "minutes": 5.0
+    },
+    {
+      "tokens": 95597,
+      "agent": "a213cd820",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:32:52Z",
+      "unit": "BG0820",
+      "minutes": 5.0
+    },
+    {
+      "tokens": 95597,
+      "agent": "a213cd820",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:32:57Z",
+      "unit": "BG0822",
+      "minutes": 5.0
+    },
+    {
+      "tokens": 95597,
+      "agent": "a213cd820",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:33:03Z",
+      "unit": "BG0823",
+      "minutes": 5.0
+    },
+    {
+      "tokens": 229578,
+      "agent": "a2405f03a",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:33:08Z",
+      "unit": "BG0783",
+      "minutes": 15.7
+    },
+    {
+      "tokens": 187815,
+      "agent": "a28bc5a4c",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:33:14Z",
+      "unit": "BG0798",
+      "minutes": 21.1
+    },
+    {
+      "tokens": 246498,
+      "agent": "a2916e15b",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:33:19Z",
+      "unit": "US0965",
+      "minutes": 1.9
+    },
+    {
+      "tokens": 80085,
+      "agent": "a2c3cd81f",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:33:25Z",
+      "unit": "US0963",
+      "minutes": 1.5
+    },
+    {
+      "tokens": 66972,
+      "agent": "a2c47ccdd",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:33:30Z",
+      "unit": "BG0725",
+      "minutes": 6.6
+    },
+    {
+      "tokens": 66972,
+      "agent": "a2c47ccdd",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:33:36Z",
+      "unit": "BG0804",
+      "minutes": 6.6
+    },
+    {
+      "tokens": 186231,
+      "agent": "a2e459d78",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:33:42Z",
+      "unit": "BG0812",
+      "minutes": 89.1
+    },
+    {
+      "tokens": 262226,
+      "agent": "a324aba20",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:33:47Z",
+      "unit": "BG0785",
+      "minutes": 1.1
+    },
+    {
+      "tokens": 81573,
+      "agent": "a36f0076a",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:33:53Z",
+      "unit": "US0963",
+      "minutes": 1.1
+    },
+    {
+      "tokens": 128219,
+      "agent": "a443d9165",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:33:58Z",
+      "unit": "BG0815",
+      "minutes": 14.0
+    },
+    {
+      "tokens": 192299,
+      "agent": "a4668dc45",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:34:04Z",
+      "unit": "BG0814",
+      "minutes": 5.2
+    },
+    {
+      "tokens": 115126,
+      "agent": "a46a5db91",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:34:09Z",
+      "unit": "US0962",
+      "minutes": 4.6
+    },
+    {
+      "tokens": 113973,
+      "agent": "a4aec4524",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:34:15Z",
+      "unit": "BG0796",
+      "minutes": 8.3
+    },
+    {
+      "tokens": 113973,
+      "agent": "a4aec4524",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:34:20Z",
+      "unit": "BG0797",
+      "minutes": 8.3
+    },
+    {
+      "tokens": 129972,
+      "agent": "a4ff5ff14",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:34:25Z",
+      "unit": "BG0682",
+      "minutes": 9.7
+    },
+    {
+      "tokens": 129972,
+      "agent": "a4ff5ff14",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:34:31Z",
+      "unit": "BG0802",
+      "minutes": 9.7
+    },
+    {
+      "tokens": 113834,
+      "agent": "a562d27ea",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:34:36Z",
+      "unit": "BG0820",
+      "minutes": 9.6
+    },
+    {
+      "tokens": 113834,
+      "agent": "a562d27ea",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:34:42Z",
+      "unit": "BG0823",
+      "minutes": 9.6
+    },
+    {
+      "tokens": 67095,
+      "agent": "a5762a547",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:34:47Z",
+      "unit": "US0963",
+      "minutes": 1.7
+    },
+    {
+      "tokens": 145455,
+      "agent": "a5a5c4568",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:34:53Z",
+      "unit": "US0965",
+      "minutes": 8.4
+    },
+    {
+      "tokens": 403165,
+      "agent": "a6024b178",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:34:58Z",
+      "unit": "US0924",
+      "minutes": 1029.3
+    },
+    {
+      "tokens": 103627,
+      "agent": "a74f47b25",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:35:04Z",
+      "unit": "US0963",
+      "minutes": 2.4
+    },
+    {
+      "tokens": 174351,
+      "agent": "a7755839b",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:35:09Z",
+      "unit": "BG0818",
+      "minutes": 2.1
+    },
+    {
+      "tokens": 179205,
+      "agent": "a778bca2c",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:35:15Z",
+      "unit": "US0959",
+      "minutes": 15.4
+    },
+    {
+      "tokens": 104168,
+      "agent": "a782ecb1a",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:35:20Z",
+      "unit": "BG0788",
+      "minutes": 328.7
+    },
+    {
+      "tokens": 104168,
+      "agent": "a782ecb1a",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:35:26Z",
+      "unit": "BG0811",
+      "minutes": 328.7
+    },
+    {
+      "tokens": 89693,
+      "agent": "a7a729c8d",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:35:31Z",
+      "unit": "US0926",
+      "minutes": 7.5
+    },
+    {
+      "tokens": 89693,
+      "agent": "a7a729c8d",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:35:37Z",
+      "unit": "US0955",
+      "minutes": 7.5
+    },
+    {
+      "tokens": 216563,
+      "agent": "a7b5b0406",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:35:42Z",
+      "unit": "US0956",
+      "minutes": 372.7
+    },
+    {
+      "tokens": 216563,
+      "agent": "a7b5b0406",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:35:48Z",
+      "unit": "US0957",
+      "minutes": 372.7
+    },
+    {
+      "tokens": 198708,
+      "agent": "a7c194d7f",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:35:53Z",
+      "unit": "US0964",
+      "minutes": 17.1
+    },
+    {
+      "tokens": 150253,
+      "agent": "a7d7ed121",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:35:58Z",
+      "unit": "BG0785",
+      "minutes": 15.7
+    },
+    {
+      "tokens": 119610,
+      "agent": "a7de2847b",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:36:04Z",
+      "unit": "BG0815",
+      "minutes": 7.6
+    },
+    {
+      "tokens": 227571,
+      "agent": "a81e72b20",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:36:09Z",
+      "unit": "US0962",
+      "minutes": 12.9
+    },
+    {
+      "tokens": 354719,
+      "agent": "a82dd05d0",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:36:15Z",
+      "unit": "US0963",
+      "minutes": 1.3
+    },
+    {
+      "tokens": 310766,
+      "agent": "a8480b095",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:36:20Z",
+      "unit": "BG0782",
+      "minutes": 22.8
+    },
+    {
+      "tokens": 167340,
+      "agent": "a84c173a8",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:36:26Z",
+      "unit": "US0952",
+      "minutes": 10.1
+    },
+    {
+      "tokens": 167340,
+      "agent": "a84c173a8",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:36:31Z",
+      "unit": "US0954",
+      "minutes": 10.1
+    },
+    {
+      "tokens": 71229,
+      "agent": "a869f03d2",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:36:37Z",
+      "unit": "US0963",
+      "minutes": 1.5
+    },
+    {
+      "tokens": 74946,
+      "agent": "a8cbd6158",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:36:42Z",
+      "unit": "BG0725",
+      "minutes": 20.4
+    },
+    {
+      "tokens": 74946,
+      "agent": "a8cbd6158",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:36:48Z",
+      "unit": "BG0804",
+      "minutes": 20.4
+    },
+    {
+      "tokens": 89619,
+      "agent": "a8da2666c",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:36:53Z",
+      "unit": "BG0795",
+      "minutes": 7.0
+    },
+    {
+      "tokens": 89619,
+      "agent": "a8da2666c",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:36:59Z",
+      "unit": "BG0810",
+      "minutes": 7.0
+    },
+    {
+      "tokens": 378587,
+      "agent": "a8f551901",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:37:04Z",
+      "unit": "US0953",
+      "minutes": 4.7
+    },
+    {
+      "tokens": 125237,
+      "agent": "a90fe0709",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:37:10Z",
+      "unit": "BG0790",
+      "minutes": 17.9
+    },
+    {
+      "tokens": 133492,
+      "agent": "a92b4014b",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:37:15Z",
+      "unit": "US0956",
+      "minutes": 10.9
+    },
+    {
+      "tokens": 133492,
+      "agent": "a92b4014b",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:37:21Z",
+      "unit": "US0957",
+      "minutes": 10.9
+    },
+    {
+      "tokens": 89801,
+      "agent": "a933ac53f",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:37:26Z",
+      "unit": "BG0788",
+      "minutes": 11.8
+    },
+    {
+      "tokens": 89801,
+      "agent": "a933ac53f",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:37:32Z",
+      "unit": "BG0811",
+      "minutes": 11.8
+    },
+    {
+      "tokens": 160555,
+      "agent": "a960f318c",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:37:37Z",
+      "unit": "BG0790",
+      "minutes": 23.0
+    },
+    {
+      "tokens": 120751,
+      "agent": "a9c8281f0",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:37:42Z",
+      "unit": "BG0799",
+      "minutes": 8.5
+    },
+    {
+      "tokens": 120751,
+      "agent": "a9c8281f0",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:37:48Z",
+      "unit": "BG0800",
+      "minutes": 8.5
+    },
+    {
+      "tokens": 144889,
+      "agent": "a9f6e06e2",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:37:53Z",
+      "unit": "BG0816",
+      "minutes": 27.4
+    },
+    {
+      "tokens": 151529,
+      "agent": "aa6409b60",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:37:59Z",
+      "unit": "BG0796",
+      "minutes": 9.1
+    },
+    {
+      "tokens": 151529,
+      "agent": "aa6409b60",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:38:04Z",
+      "unit": "BG0797",
+      "minutes": 9.1
+    },
+    {
+      "tokens": 141312,
+      "agent": "ab06afd0e",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:38:10Z",
+      "unit": "US0926",
+      "minutes": 3.0
+    },
+    {
+      "tokens": 141312,
+      "agent": "ab06afd0e",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:38:15Z",
+      "unit": "US0955",
+      "minutes": 3.0
+    },
+    {
+      "tokens": 116382,
+      "agent": "ab7b3ad1d",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:38:21Z",
+      "unit": "BG0801",
+      "minutes": 9.2
+    },
+    {
+      "tokens": 116382,
+      "agent": "ab7b3ad1d",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:38:26Z",
+      "unit": "BG0805",
+      "minutes": 9.2
+    },
+    {
+      "tokens": 87511,
+      "agent": "ab83ed5d4",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:38:32Z",
+      "unit": "US0963",
+      "minutes": 2.4
+    },
+    {
+      "tokens": 191978,
+      "agent": "abea45fed",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:38:37Z",
+      "unit": "BG0816",
+      "minutes": 24.5
+    },
+    {
+      "tokens": 111930,
+      "agent": "ac1a5b2fc",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:38:43Z",
+      "unit": "BG0821",
+      "minutes": 8.1
+    },
+    {
+      "tokens": 103818,
+      "agent": "ac1dd2434",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:38:48Z",
+      "unit": "BG0692",
+      "minutes": 26.0
+    },
+    {
+      "tokens": 103818,
+      "agent": "ac1dd2434",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:38:54Z",
+      "unit": "BG0809",
+      "minutes": 26.0
+    },
+    {
+      "tokens": 130937,
+      "agent": "ac4f1c93b",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:38:59Z",
+      "unit": "BG0801",
+      "minutes": 433.7
+    },
+    {
+      "tokens": 130937,
+      "agent": "ac4f1c93b",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:39:04Z",
+      "unit": "BG0805",
+      "minutes": 433.7
+    },
+    {
+      "tokens": 250992,
+      "agent": "ac5600f73",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:39:10Z",
+      "unit": "BG0818",
+      "minutes": 21.4
+    },
+    {
+      "tokens": 94393,
+      "agent": "acaf43287",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:39:15Z",
+      "unit": "BG0784",
+      "minutes": 9.7
+    },
+    {
+      "tokens": 94393,
+      "agent": "acaf43287",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:39:21Z",
+      "unit": "US0961",
+      "minutes": 9.7
+    },
+    {
+      "tokens": 403671,
+      "agent": "ad216bf9d",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:39:26Z",
+      "unit": "US0960",
+      "minutes": 26.6
+    },
+    {
+      "tokens": 341304,
+      "agent": "ad3de36bb",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:39:32Z",
+      "unit": "BG0783",
+      "minutes": 3.8
+    },
+    {
+      "tokens": 107122,
+      "agent": "ad7ff7d46",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:39:37Z",
+      "unit": "BG0682",
+      "minutes": 9.0
+    },
+    {
+      "tokens": 107122,
+      "agent": "ad7ff7d46",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:39:43Z",
+      "unit": "BG0802",
+      "minutes": 9.0
+    },
+    {
+      "tokens": 98231,
+      "agent": "ada8f5600",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:39:48Z",
+      "unit": "BG0819",
+      "minutes": 2.5
+    },
+    {
+      "tokens": 98231,
+      "agent": "ada8f5600",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:39:54Z",
+      "unit": "BG0822",
+      "minutes": 2.5
+    },
+    {
+      "tokens": 111541,
+      "agent": "adacc6858",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:39:59Z",
+      "unit": "BG0784",
+      "minutes": 9.6
+    },
+    {
+      "tokens": 111541,
+      "agent": "adacc6858",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:40:05Z",
+      "unit": "US0961",
+      "minutes": 9.6
+    },
+    {
+      "tokens": 101111,
+      "agent": "addd55bfb",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:40:10Z",
+      "unit": "BG0782",
+      "minutes": 9.6
+    },
+    {
+      "tokens": 101111,
+      "agent": "addd55bfb",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:40:15Z",
+      "unit": "BG0786",
+      "minutes": 9.6
+    },
+    {
+      "tokens": 229493,
+      "agent": "ae599fcea",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:40:21Z",
+      "unit": "BG0795",
+      "minutes": 41.2
+    },
+    {
+      "tokens": 216250,
+      "agent": "ae86db3fa",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:40:26Z",
+      "unit": "US0924",
+      "minutes": 20.7
+    },
+    {
+      "tokens": 206311,
+      "agent": "aed6ec30d",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:40:32Z",
+      "unit": "US0953",
+      "minutes": 11.3
+    },
+    {
+      "tokens": 157754,
+      "agent": "aed98f626",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:40:37Z",
+      "unit": "BG0814",
+      "minutes": 13.7
+    },
+    {
+      "tokens": 117473,
+      "agent": "aefe97a31",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:40:43Z",
+      "unit": "BG0812",
+      "minutes": 3.3
+    },
+    {
+      "tokens": 117473,
+      "agent": "aefe97a31",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:40:48Z",
+      "unit": "US0964",
+      "minutes": 3.3
+    },
+    {
+      "tokens": 232970,
+      "agent": "af53adc74",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-09-28T20:40:54Z",
+      "unit": "BG0798",
+      "minutes": 17.3
+    }
+  ],
+  "reopened": [],
+  "batch_changes": [
+    {
+      "action": "add",
+      "id": "BG0810",
+      "at": "2026-09-27T19:29:05Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0811",
+      "at": "2026-09-27T21:52:50Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0812",
+      "at": "2026-09-28T08:32:52Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0813",
+      "at": "2026-09-28T09:18:44Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0814",
+      "at": "2026-09-28T09:39:50Z"
+    },
+    {
+      "action": "add",
+      "id": "US0965",
+      "at": "2026-09-28T09:53:14Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0815",
+      "at": "2026-09-28T10:43:23Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0816",
+      "at": "2026-09-28T11:15:01Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0818",
+      "at": "2026-09-28T16:24:33Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0819",
+      "at": "2026-09-28T16:24:37Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0820",
+      "at": "2026-09-28T16:24:40Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0821",
+      "at": "2026-09-28T16:24:43Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0822",
+      "at": "2026-09-28T16:24:47Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0823",
+      "at": "2026-09-28T16:24:50Z"
+    },
+    {
+      "action": "drop",
+      "id": "BG0818",
+      "reason": "carried at the review cap: BG0840",
+      "at": "2026-09-28T17:20:00Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0818",
+      "at": "2026-09-28T17:44:30Z"
+    }
+  ],
+  "batches": [],
+  "rulings": [
+    {
+      "id": "D0279",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0280",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0282",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0283",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0284",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0285",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0286",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0287",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    }
+  ],
+  "base_ref": "ff8117b2fc1094889a89323c61ccdf16d0e95446",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-09-27T15:39:42Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "v6.0.0 ships: Maya and Jonah install, upgrade and learn it from docs and notes that match the code.",
+  "sprint_goal_review": {
+    "reviewed": false,
+    "status": "not read",
+    "skipped": null,
+    "seats": [],
+    "goal": "v6.0.0 ships: Maya and Jonah install, upgrade and learn it from docs and notes that match the code.",
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 76,
+    "objected": false,
+    "objections": [],
+    "reviewed_goal": "Maya runs the lean loop on a fresh v6 project, and the release candidate ships.",
+    "reason": "the recorded review is of a different goal ('Maya runs the lean loop on a fresh v6 project, and the release candidate ships.'), so it says nothing about this one"
+  },
+  "reachable_end_state": {
+    "state": "Fixed (bug), Done (story)",
+    "types": [
+      "bug",
+      "story"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed (bug), Done (story)"
+  },
+  "plan_snapshot": {
+    "units": {
+      "BG0682": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0692": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0725": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0782": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0783": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0784": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0785": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0786": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0788": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0790": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0792": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0794": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0795": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0796": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0797": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0798": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0799": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0801": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0802": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0805": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0806": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0808": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0809": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0924": {
+        "planned_points": 5,
+        "forecast_tokens": 1769050,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "US0926": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0952": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0953": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0954": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0955": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0956": {
+        "planned_points": 5,
+        "forecast_tokens": 1769050,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "US0957": {
+        "planned_points": 5,
+        "forecast_tokens": 1769050,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "US0959": {
+        "planned_points": 5,
+        "forecast_tokens": 1769050,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "US0960": {
+        "planned_points": 5,
+        "forecast_tokens": 1769050,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "US0961": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0962": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0963": {
+        "planned_points": 5,
+        "forecast_tokens": 1769050,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "US0964": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0800": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0803": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0804": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0807": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0810": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": true
+      },
+      "BG0811": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": true
+      },
+      "BG0812": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": true
+      },
+      "BG0813": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": true
+      },
+      "BG0814": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": true
+      },
+      "US0965": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": true
+      },
+      "BG0815": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": true
+      },
+      "BG0816": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": true
+      },
+      "BG0818": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": true
+      },
+      "BG0819": {
+        "planned_points": 1,
+        "forecast_tokens": 353810,
+        "forecast_minutes": 6.4,
+        "added": true
+      },
+      "BG0820": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": true
+      },
+      "BG0821": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": true
+      },
+      "BG0822": {
+        "planned_points": 2,
+        "forecast_tokens": 707620,
+        "forecast_minutes": 12.8,
+        "added": true
+      },
+      "BG0823": {
+        "planned_points": 3,
+        "forecast_tokens": 1061430,
+        "forecast_minutes": 19.2,
+        "added": true
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 353810,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 6.4,
+        "source": "fallback: 0 row(s) for claude-opus-5, under 3, so the latest rows of any single model: median of RETRO0028"
+      }
+    }
+  },
+  "token_forecast": 36088620,
+  "unit_actuals": {
+    "BG0783": {
+      "minutes": 72.22,
+      "tokens": 259086,
+      "started_at": "2026-09-27T15:46:18Z",
+      "start_tokens": 224594,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0790": {
+      "minutes": 42.72,
+      "tokens": 167525,
+      "started_at": "2026-09-27T15:46:21Z",
+      "start_tokens": 230078,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0924": {
+      "minutes": 96.0,
+      "tokens": 363612,
+      "started_at": "2026-09-27T15:46:24Z",
+      "start_tokens": 230078,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0782": {
+      "minutes": 82.25,
+      "tokens": 317446,
+      "started_at": "2026-09-27T15:46:26Z",
+      "start_tokens": 230078,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0794": {
+      "minutes": 82.9,
+      "tokens": 321257,
+      "started_at": "2026-09-27T15:46:29Z",
+      "start_tokens": 230078,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0786": {
+      "minutes": 124.05,
+      "tokens": 426695,
+      "started_at": "2026-09-27T15:46:31Z",
+      "start_tokens": 230078,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0792": {
+      "minutes": 83.32,
+      "tokens": 322356,
+      "started_at": "2026-09-27T15:46:34Z",
+      "start_tokens": 230078,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0785": {
+      "minutes": 86.63,
+      "tokens": 285441,
+      "started_at": "2026-09-27T16:29:54Z",
+      "start_tokens": 402409,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0959": {
+      "minutes": 105.15,
+      "tokens": 346027,
+      "started_at": "2026-09-27T17:00:34Z",
+      "start_tokens": 509813,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0802": {
+      "minutes": 61.25,
+      "tokens": 181655,
+      "started_at": "2026-09-27T17:23:32Z",
+      "start_tokens": 600858,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0682": {
+      "minutes": 98.73,
+      "tokens": 308484,
+      "started_at": "2026-09-27T17:23:35Z",
+      "start_tokens": 608628,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0808": {
+      "minutes": 62.17,
+      "tokens": 173885,
+      "started_at": "2026-09-27T17:23:38Z",
+      "start_tokens": 608628,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0807": {
+      "minutes": 63.17,
+      "tokens": 173885,
+      "started_at": "2026-09-27T17:23:41Z",
+      "start_tokens": 608628,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0954": {
+      "minutes": 101.87,
+      "tokens": 420988,
+      "started_at": "2026-09-27T17:51:22Z",
+      "start_tokens": 661809,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0952": {
+      "minutes": 102.42,
+      "tokens": 416458,
+      "started_at": "2026-09-27T17:51:25Z",
+      "start_tokens": 666339,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0962": {
+      "minutes": 1552.33,
+      "tokens": 7133946,
+      "started_at": "2026-09-27T17:57:47Z",
+      "start_tokens": 703761,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0801": {
+      "minutes": 62.53,
+      "tokens": 239408,
+      "started_at": "2026-09-27T18:28:38Z",
+      "start_tokens": 818127,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0805": {
+      "minutes": 97.42,
+      "tokens": 341778,
+      "started_at": "2026-09-27T18:28:41Z",
+      "start_tokens": 818127,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0795": {
+      "minutes": 59.5,
+      "tokens": 269492,
+      "started_at": "2026-09-27T18:47:47Z",
+      "start_tokens": 855840,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0955": {
+      "minutes": 1503.28,
+      "tokens": 6972235,
+      "started_at": "2026-09-27T19:03:36Z",
+      "start_tokens": 924974,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0926": {
+      "minutes": 85.12,
+      "tokens": 260151,
+      "started_at": "2026-09-27T19:03:39Z",
+      "start_tokens": 933164,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0810": {
+      "minutes": 17.58,
+      "tokens": 108704,
+      "started_at": "2026-09-27T19:29:06Z",
+      "start_tokens": 1016628,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0784": {
+      "minutes": 79.42,
+      "tokens": 182146,
+      "started_at": "2026-09-27T19:34:35Z",
+      "start_tokens": 1082797,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0961": {
+      "minutes": 118.27,
+      "tokens": 254465,
+      "started_at": "2026-09-27T19:34:38Z",
+      "start_tokens": 1091431,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0796": {
+      "minutes": 71.82,
+      "tokens": 119699,
+      "started_at": "2026-09-27T20:08:21Z",
+      "start_tokens": 1159905,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0797": {
+      "minutes": 107.78,
+      "tokens": 344186,
+      "started_at": "2026-09-27T20:08:24Z",
+      "start_tokens": 1159905,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0799": {
+      "minutes": 96.37,
+      "tokens": 268444,
+      "started_at": "2026-09-27T20:09:20Z",
+      "start_tokens": 1162862,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0800": {
+      "minutes": 136.62,
+      "tokens": 499461,
+      "started_at": "2026-09-27T20:09:23Z",
+      "start_tokens": 1170071,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0803": {
+      "minutes": 97.75,
+      "tokens": 264429,
+      "started_at": "2026-09-27T20:09:26Z",
+      "start_tokens": 1170071,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0806": {
+      "minutes": 99.55,
+      "tokens": 264429,
+      "started_at": "2026-09-27T20:09:29Z",
+      "start_tokens": 1170071,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0956": {
+      "minutes": 127.6,
+      "tokens": 547844,
+      "started_at": "2026-09-27T20:30:24Z",
+      "start_tokens": 1203866,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0957": {
+      "minutes": 89.1,
+      "tokens": 354763,
+      "started_at": "2026-09-27T20:30:26Z",
+      "start_tokens": 1210808,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0788": {
+      "minutes": 593.2,
+      "tokens": 335444,
+      "started_at": "2026-09-27T21:58:23Z",
+      "start_tokens": 1538439,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0811": {
+      "minutes": 594.67,
+      "tokens": 2641910,
+      "started_at": "2026-09-27T21:58:26Z",
+      "start_tokens": 1544010,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0692": {
+      "minutes": 620.4,
+      "tokens": 2884629,
+      "started_at": "2026-09-27T22:27:59Z",
+      "start_tokens": 1681409,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0809": {
+      "minutes": 622.3,
+      "tokens": 2880563,
+      "started_at": "2026-09-27T22:28:02Z",
+      "start_tokens": 1685475,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0963": {
+      "minutes": 1002.33,
+      "tokens": 5546651,
+      "started_at": "2026-09-27T22:38:43Z",
+      "start_tokens": 1755533,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0960": {
+      "minutes": 140.62,
+      "tokens": 1034136,
+      "started_at": "2026-09-28T07:55:04Z",
+      "start_tokens": 4185920,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0812": {
+      "minutes": 98.43,
+      "tokens": 734125,
+      "started_at": "2026-09-28T08:33:53Z",
+      "start_tokens": 4423216,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0964": {
+      "minutes": 75.85,
+      "tokens": 575030,
+      "started_at": "2026-09-28T08:54:21Z",
+      "start_tokens": 4576811,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0813": {
+      "minutes": 9.57,
+      "tokens": 104708,
+      "started_at": "2026-09-28T09:18:45Z",
+      "start_tokens": 4634320,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0798": {
+      "minutes": 308.1,
+      "tokens": 1032208,
+      "started_at": "2026-09-28T09:30:32Z",
+      "start_tokens": 4865798,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0804": {
+      "minutes": 50.98,
+      "tokens": 413966,
+      "started_at": "2026-09-28T09:30:35Z",
+      "start_tokens": 4879306,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0725": {
+      "minutes": 51.93,
+      "tokens": 428825,
+      "started_at": "2026-09-28T09:30:38Z",
+      "start_tokens": 4879306,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0814": {
+      "minutes": 315.43,
+      "tokens": 2200409,
+      "started_at": "2026-09-28T09:39:51Z",
+      "start_tokens": 4978544,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0965": {
+      "minutes": 54.75,
+      "tokens": 486344,
+      "started_at": "2026-09-28T09:53:15Z",
+      "start_tokens": 5089089,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0815": {
+      "minutes": 24.33,
+      "tokens": 171140,
+      "started_at": "2026-09-28T10:43:24Z",
+      "start_tokens": 5543720,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "US0953": {
+      "minutes": 571.18,
+      "tokens": 2419605,
+      "started_at": "2026-09-28T10:54:45Z",
+      "start_tokens": 5599654,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0816": {
+      "minutes": 234.07,
+      "tokens": 1453638,
+      "started_at": "2026-09-28T11:15:02Z",
+      "start_tokens": 5762212,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0818": {
+      "minutes": 81.02,
+      "tokens": 310717,
+      "started_at": "2026-09-28T16:24:34Z",
+      "start_tokens": 7362728,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0819": {
+      "minutes": 117.22,
+      "tokens": 373647,
+      "started_at": "2026-09-28T16:24:37Z",
+      "start_tokens": 7368476,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0820": {
+      "minutes": 114.27,
+      "tokens": 360019,
+      "started_at": "2026-09-28T16:24:41Z",
+      "start_tokens": 7368476,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0821": {
+      "minutes": 43.87,
+      "tokens": 119024,
+      "started_at": "2026-09-28T16:24:44Z",
+      "start_tokens": 7368476,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0822": {
+      "minutes": 118.78,
+      "tokens": 379238,
+      "started_at": "2026-09-28T16:24:48Z",
+      "start_tokens": 7368476,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    },
+    "BG0823": {
+      "minutes": 115.6,
+      "tokens": 370978,
+      "started_at": "2026-09-28T16:24:51Z",
+      "start_tokens": 7368476,
+      "open": false,
+      "start_source": "sha256:569cd260872e"
+    }
+  },
+  "review_base": {
+    "BG0790": 0,
+    "BG0783": 0,
+    "US0924": 0,
+    "BG0782": 0,
+    "BG0794": 0,
+    "BG0792": 0,
+    "BG0786": 0,
+    "BG0785": 0,
+    "US0959": 0,
+    "BG0802": 0,
+    "BG0682": 0,
+    "BG0808": 0,
+    "BG0807": 0,
+    "US0954": 0,
+    "US0952": 0,
+    "BG0801": 0,
+    "BG0805": 0,
+    "BG0810": 0,
+    "BG0795": 0,
+    "US0955": 0,
+    "US0926": 0,
+    "BG0784": 0,
+    "US0961": 0,
+    "BG0796": 0,
+    "BG0797": 0,
+    "BG0799": 0,
+    "BG0800": 0,
+    "BG0803": 0,
+    "BG0806": 0,
+    "US0956": 0,
+    "US0957": 0,
+    "BG0788": 0,
+    "BG0811": 0,
+    "BG0692": 0,
+    "BG0809": 0,
+    "US0960": 0,
+    "BG0813": 0,
+    "BG0812": 0,
+    "US0964": 0,
+    "BG0804": 0,
+    "BG0725": 0,
+    "US0965": 0,
+    "BG0798": 0,
+    "BG0815": 0,
+    "BG0814": 0,
+    "US0963": 0,
+    "BG0816": 0,
+    "BG0818": 0,
+    "BG0821": 0,
+    "BG0820": 0,
+    "BG0823": 0,
+    "BG0819": 0,
+    "BG0822": 0,
+    "US0962": 0,
+    "US0953": 0
+  },
+  "sprint_goal_verdict": {
+    "verdict": "achieved",
+    "note": "All 55 batch units delivered, each by an independent review (BG0818 by operator-granted round 3, D0285/D0286); the install and upgrade paths are documented and rehearsed on copies of a v4.1 and a v2.4 project (US0955, US0962); a fresh agent ran a whole lean sprint from the docs alone (eval 09, D0280) and the independence eval passed on the final skill (06, D0282); the notes match the code and disclose 35 open Medium defects. v6.0.0 itself is tagged after this run is signed."
+  },
+  "scaffolded_retro": "RETRO-0126",
+  "close_attempts": [
+    {
+      "at": "2026-09-28T20:44:29Z",
+      "outstanding": 2,
+      "stages": [
+        "checklist",
+        "review-coverage"
+      ]
+    },
+    {
+      "at": "2026-09-28T21:03:25Z",
+      "outstanding": 0,
+      "stages": []
+    }
+  ],
+  "close_not_measured": [],
+  "handoff_worklist": "sdlc-studio/.local/handoff-worklist.txt",
+  "handoff_remaining": 0,
+  "close_tree": "eef869055f84a0db3aec3241bf825e50be2389eb",
+  "report_gate_clear": [
+    "BG0682",
+    "BG0692",
+    "BG0725",
+    "BG0782",
+    "BG0783",
+    "BG0784",
+    "BG0785",
+    "BG0786",
+    "BG0788",
+    "BG0790",
+    "BG0792",
+    "BG0794",
+    "BG0795",
+    "BG0796",
+    "BG0797",
+    "BG0798",
+    "BG0799",
+    "BG0800",
+    "BG0801",
+    "BG0802",
+    "BG0803",
+    "BG0804",
+    "BG0805",
+    "BG0806",
+    "BG0807",
+    "BG0808",
+    "BG0809",
+    "BG0810",
+    "BG0811",
+    "BG0812",
+    "BG0813",
+    "BG0814",
+    "BG0815",
+    "BG0816",
+    "BG0818",
+    "BG0819",
+    "BG0820",
+    "BG0821",
+    "BG0822",
+    "BG0823",
+    "US0924",
+    "US0926",
+    "US0952",
+    "US0953",
+    "US0954",
+    "US0955",
+    "US0956",
+    "US0957",
+    "US0959",
+    "US0960",
+    "US0961",
+    "US0962",
+    "US0963",
+    "US0964",
+    "US0965"
+  ],
+  "verified_sha": "d78ed7534a926bb4adb6ccc6268e9e0a26ef4fd2",
+  "close_known_issues": [],
+  "ci_runs": {
+    "source": "gh run list",
+    "runs": [
+      {
+        "conclusion": "success",
+        "createdAt": "2026-09-28T20:13:07Z",
+        "databaseId": 36477625660,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "3a9809932b34cc19daa76e77e59e020a332506e6",
+        "updatedAt": "2026-09-28T20:52:37Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-09-28T18:33:16Z",
+        "databaseId": 36465997540,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "5e45cbf92151e36d4ef7819540e8e88b63ac159f",
+        "updatedAt": "2026-09-28T19:20:55Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-09-28T18:00:37Z",
+        "databaseId": 36462167048,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "272496bb0a280e0237906c55ee4504c4a11fd583",
+        "updatedAt": "2026-09-28T18:46:00Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-09-28T15:38:36Z",
+        "databaseId": 36445135602,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "30a45a39e5fcf6a9cddf7be061f40cb3741fe7d6",
+        "updatedAt": "2026-09-28T16:23:59Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-09-28T14:46:16Z",
+        "databaseId": 36438476889,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "efe319e13f6a220d8746bd9fdcfbc0632c5c8461",
+        "updatedAt": "2026-09-28T15:17:26Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-09-28T10:54:06Z",
+        "databaseId": 36412423864,
+        "event": "schedule",
+        "headBranch": "main",
+        "headSha": "8848e987afe9f94347df250a3582bffc662fedeb",
+        "updatedAt": "2026-09-28T12:09:16Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-09-28T10:28:25Z",
+        "databaseId": 36409909036,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "8848e987afe9f94347df250a3582bffc662fedeb",
+        "updatedAt": "2026-09-28T11:13:34Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-09-27T22:47:52Z",
+        "databaseId": 36356518304,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "36995de68d72eaf80167386323af8ea703d44780",
+        "updatedAt": "2026-09-27T23:25:21Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-09-27T19:59:20Z",
+        "databaseId": 36346337680,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "db670eb99726b048a83fbbc03c94953365a630a1",
+        "updatedAt": "2026-09-27T20:42:34Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-09-27T17:17:58Z",
+        "databaseId": 36336415797,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "0aa334cba0307a2bc58d3d8034f2e97e106b1f6f",
+        "updatedAt": "2026-09-27T18:01:09Z",
+        "workflowName": "Lint"
+      }
+    ]
+  },
+  "review_rows": {
+    "BG0682": [
+      "64ac5e0de0b961aa",
+      "ca472b468349b0a8"
+    ],
+    "BG0692": [
+      "9c1e307e3a990eec"
+    ],
+    "BG0725": [
+      "3348dd92503e7326"
+    ],
+    "BG0782": [
+      "98019fe17d251f9b"
+    ],
+    "BG0783": [
+      "9625ff2fe16983c6",
+      "fabdb7c13b4eafb2"
+    ],
+    "BG0784": [
+      "26768a32efb34f2e"
+    ],
+    "BG0785": [
+      "af33f7aa273b020f",
+      "c3d63de3035e2238"
+    ],
+    "BG0786": [
+      "0c5dee5945f6a150",
+      "465ccea1303f7fe5"
+    ],
+    "BG0788": [
+      "d3a77f737b206832"
+    ],
+    "BG0790": [
+      "b9ee8c92ba511a47"
+    ],
+    "BG0792": [
+      "ab9df0a1fbead3e0"
+    ],
+    "BG0794": [
+      "1e2d7a8dbe3472d8"
+    ],
+    "BG0795": [
+      "cf764a854b35dc22"
+    ],
+    "BG0796": [
+      "25015b13d73354f6"
+    ],
+    "BG0797": [
+      "acad5bb721e268af",
+      "1325964995202ad7"
+    ],
+    "BG0798": [
+      "80318dd5142b861a",
+      "83beb0309e2f2bb7"
+    ],
+    "BG0799": [
+      "2cc33ca9deb51f1f"
+    ],
+    "BG0801": [
+      "0745782e36b623a0"
+    ],
+    "BG0802": [
+      "07428bb3d2fd6a6d"
+    ],
+    "BG0805": [
+      "9bb20f6352a30592",
+      "95cf5b1f17840a07"
+    ],
+    "BG0806": [
+      "a7d8eeed36821a01"
+    ],
+    "BG0808": [
+      "bb56f221c88dd5f2"
+    ],
+    "BG0809": [
+      "ef337f5c7b7c41ee"
+    ],
+    "US0924": [
+      "5f2158d1bb10ee49",
+      "1f9e1e7876b14548"
+    ],
+    "US0926": [
+      "6e6a0bbdd0b975dd"
+    ],
+    "US0952": [
+      "eb6e50394b6619d9",
+      "c4cb3c183d20a193"
+    ],
+    "US0953": [
+      "1a349f2ce7d97da3",
+      "d327385596e5b2ee"
+    ],
+    "US0954": [
+      "bcdcfc4298c18ffa",
+      "c1d045c28ca251cf"
+    ],
+    "US0955": [
+      "f1a2d3368fa91dfe",
+      "0ba578e75e6ac6a5"
+    ],
+    "US0956": [
+      "04f1f8ac0b5bcaf7",
+      "8d4c4cab4969672c"
+    ],
+    "US0957": [
+      "3d0aa2693b1e17b7"
+    ],
+    "US0959": [
+      "e2485cb446a75ddd",
+      "dbcb6055d9dc87d3"
+    ],
+    "US0960": [
+      "341e71cfbff4b714",
+      "6259d4ba60f6539d"
+    ],
+    "US0961": [
+      "66251e8f500d505d",
+      "453ec5d4b1a8cdd6"
+    ],
+    "US0962": [
+      "9a832b7eabd0cea9"
+    ],
+    "US0963": [
+      "de5c1bb7b04de99c",
+      "ff3a4ba11e5587c3"
+    ],
+    "US0964": [
+      "1d933ff2c106961c",
+      "7518ff61937b0ba7"
+    ],
+    "BG0800": [
+      "372c2512ce1cfc98",
+      "47ba6e8e6d99f5e6"
+    ],
+    "BG0803": [
+      "a13a97a5ed71ce90"
+    ],
+    "BG0804": [
+      "f1a1c25073be985d"
+    ],
+    "BG0807": [
+      "67562dc2c67ad7b9"
+    ],
+    "BG0810": [
+      "3de23a38ca7bf422"
+    ],
+    "BG0811": [
+      "bfb01e1739025db3"
+    ],
+    "BG0812": [
+      "d98dfaabcb03b7ae",
+      "3bd52984f20edb49"
+    ],
+    "BG0813": [
+      "56d38a99a377a0db"
+    ],
+    "BG0814": [
+      "590e58b56f84527e",
+      "8ac390d404a8e07a"
+    ],
+    "US0965": [
+      "26a2cf9b9f77554d"
+    ],
+    "BG0815": [
+      "15d8b794ecb97417"
+    ],
+    "BG0816": [
+      "b114781cc6779c98"
+    ],
+    "BG0818": [
+      "7055483fe63d6ca5",
+      "1a7e1d87495ce792",
+      "d51568493f286955"
+    ],
+    "BG0819": [
+      "76dc3afed533c1c0",
+      "c4c3e3694b717fff"
+    ],
+    "BG0820": [
+      "f93f56b0cedfa56a",
+      "391b97759eeb6e76"
+    ],
+    "BG0821": [
+      "9543cfd01feda1e3"
+    ],
+    "BG0822": [
+      "235ffbd28b5d4921"
+    ],
+    "BG0823": [
+      "4a7d07adbe45089e"
+    ]
+  },
+  "report": "RPT0011",
+  "report_fingerprint": "d5020f914fee321e",
+  "unanswered": [],
+  "unanswered_rulings_from": null,
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-09-29T00:02:53Z",
+    "report": "RPT0011",
+    "fingerprint": "d5020f914fee321e"
+  }
+}
