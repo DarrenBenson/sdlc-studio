@@ -1,6 +1,7 @@
 # CR-0603: Low-severity crs (consolidated)
 
 > **Status:** Proposed
+> **Size:** S
 > **Priority:** Low
 > **Type:** Improvement
 > **Date:** 2026-09-28
