@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 37 |
+| Open | 38 |
 | In Progress | 0 |
 | Fixed | 675 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
 | Superseded | 28 |
-| **Total** | **849** |
+| **Total** | **850** |
 
 ## All Bugs
 
@@ -208,6 +208,7 @@
 | [BG0847](BG0847-the-v6-existing-users-page-dropped-its-audit.md) | The v6 existing-users page dropped its audit --profile repo mention, so US0242's criterion that four surfaces name the audit on-ramp is red at the release gate | Fixed | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0848](BG0848-sprint-sign-invalidates-its-own-report-when-it.md) | sprint sign invalidates its own report when it moves an approved unit to Done | Open | High | 2026-09-29 | 2026-09-29 |
 | [BG0849](BG0849-a-close-dry-run-mints-a-different-graduation.md) | A close dry run mints a different graduation change request id each time, so a retro cannot rule it before the close | Open | Medium | 2026-09-29 | 2026-09-29 |
+| [BG0850](BG0850-a-carried-unit-s-discharge-approval-is-refused.md) | A carried unit's discharge approval is refused by the review cap that another reviewer's rounds filled | Open | Medium | 2026-09-29 | 2026-09-29 |
 
 ## Archived Releases
 
