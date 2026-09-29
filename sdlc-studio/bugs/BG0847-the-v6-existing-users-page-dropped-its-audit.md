@@ -1,6 +1,6 @@
 # BG0847: The v6 existing-users page dropped its audit --profile repo mention, so US0242's criterion that four surfaces name the audit on-ramp is red at the release gate
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** docs/existing-users.md, changelog.d/BG0847.md
@@ -26,6 +26,7 @@ Name `audit --profile repo` where it helps a v6 upgrader, for example as the zer
 
 - [ ] **AC1** Given docs/existing-users.md, then it names `audit --profile repo` in a sentence that tells an existing project's reader what the audit is for, and US0242 AC2's Verify passes. Fails on: the v6 page at 3a980993, which names it nowhere
   - **Verify:** shell test $(grep -l "audit --profile repo" README.md docs/why-sdlc-studio.md docs/existing-users.md .claude/skills/sdlc-studio/SKILL.md | wc -l) -eq 4
+  - **Verified:** yes (2026-09-29)
 
 ## Revision History
 

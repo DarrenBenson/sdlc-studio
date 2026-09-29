@@ -629,6 +629,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   installer after the skill was already in place, and the Next steps output was cut short. Both
   probes are now explicit `if` blocks: the hint still prints when the CLI is present and is
   silently omitted when it is not.
+- `docs/existing-users.md` names `audit --profile repo` again. The v6 rewrite dropped the v5
+  page's mention, so a Done criterion requiring the README, the why page, the upgrade page and
+  SKILL.md to each name the zero-setup audit went red at the release gate. One sentence after
+  the upgrade steps now offers it as the way to see where the codebase stands, before or after
+  the upgrade: a three-leg audit that puts every candidate through a refute panel and files what
+  it confirms as bugs and change requests (BG0847).
 
 ## [6.0.0-rc.1] - 2026-09-26
 

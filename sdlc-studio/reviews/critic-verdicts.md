@@ -1393,6 +1393,7 @@ One row has been removed since adoption.
 | US0953 | APPROVE | qa-rev-aed6ec30 | builder-a8f55190 | 2026-09-28 | 71ecfe2569b6 | full | [new] non-blocking: 7 are not in the shipped skill is slightly off since BG0838's helper and BG0752's gate.py ship, reworded at landing; [new] non-blocking: none of them stops the lifecycle rests on a hard-coded known-issues sentence, BG0833 is a waivable gate refusal |
 | BG0818 | APPROVE | qa-rev-a7755839 | builder-ac5600f7 | 2026-09-28 | acb059151b0a | full | [new] non-blocking: the OSError catch in carries\_doctrine is unreachable through the CLI and unpinned, defence in depth |
 | BG0846 | APPROVE | qa-rev-a8dc55e7 | builder-ab0afd2d | 2026-09-29 | 3d5f6a66ed41 | full | [new] non-blocking: migrate.project\_upgrade.version\_check in \_installed is always the same object as project\_upgrade.version\_check today, kept as defence for a future import change |
+| BG0847 | APPROVE | qa-rev-pair5 | US0955-build | 2026-09-29 | 8437bc1c4799 | full | [new] non-blocking: the sentence does not mention the audit's cost, which help/audit.md's pre-flight gate covers; [pre-existing] non-blocking: only US0242's release-time Verify guards this mention, the page's per-commit tests do not |
 
 ## Supersessions
 

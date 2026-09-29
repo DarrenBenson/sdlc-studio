@@ -40,6 +40,10 @@ gate.py
    judges only the diff). A lane that fails names its own remedy; an index `migrate` found drifted
    shows as a warning until `reconcile apply` regenerates it.
 
+To see where the codebase itself stands, before or after the upgrade, run `audit --profile repo`:
+a zero-setup, three-leg audit that puts every candidate finding through a refute panel and files
+what it confirms as bugs and change requests.
+
 **On the `6.0.0-rc.1` release candidate?** Reinstall. The candidate's version check reads a
 pre-release as equal to its final release, so it never offers you the final. Later releases order
 a pre-release below its final, so this happens once. Then run `migrate --apply` again: it restamps
