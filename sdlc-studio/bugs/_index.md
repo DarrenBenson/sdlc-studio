@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 35 |
+| Open | 37 |
 | In Progress | 0 |
 | Fixed | 675 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
 | Superseded | 28 |
-| **Total** | **847** |
+| **Total** | **849** |
 
 ## All Bugs
 
@@ -206,6 +206,8 @@
 | [BG0845](BG0845-migrate-s-conformance-cutoff-on-a-v4-1.md) | migrate's conformance cutoff on a v4.1 project exempts the 98 units after the project's own adoption point, because a verdict row with no Author column never reads as independent | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0846](BG0846-the-v6-release-notes-test-s-post-cut.md) | The v6 release notes test's post-cut control assumes the notes still carry the pre-cut links, so the v6.0.0 cut turns the tools suite red | Fixed | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0847](BG0847-the-v6-existing-users-page-dropped-its-audit.md) | The v6 existing-users page dropped its audit --profile repo mention, so US0242's criterion that four surfaces name the audit on-ramp is red at the release gate | Fixed | Medium | 2026-09-29 | 2026-09-29 |
+| [BG0848](BG0848-sprint-sign-invalidates-its-own-report-when-it.md) | sprint sign invalidates its own report when it moves an approved unit to Done | Open | High | 2026-09-29 | 2026-09-29 |
+| [BG0849](BG0849-a-close-dry-run-mints-a-different-graduation.md) | A close dry run mints a different graduation change request id each time, so a retro cannot rule it before the close | Open | Medium | 2026-09-29 | 2026-09-29 |
 
 ## Archived Releases
 
