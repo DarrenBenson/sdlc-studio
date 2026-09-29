@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-09-28
+**Last Updated:** 2026-09-29
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 21 |
+| Proposed | 22 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 509 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 52 |
 | Blocked | 0 |
-| **Total** | **603** |
+| **Total** | **604** |
 
 ## All Changes
 
@@ -101,6 +101,7 @@
 | [CR-0601](CR0601-a-shipped-command-reports-where-a-project-s.md) | A shipped command reports where a project's own docs still name retired v5 surface | Proposed | Medium | Improvement | 2026-09-28 | -- |
 | [CR-0602](CR0602-a-run-s-token-and-minute-actuals-are.md) | A run's token and minute actuals are measured without the operator stamping a baseline | Proposed | Medium | Improvement | 2026-09-28 | -- |
 | [CR-0603](CR0603-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | Proposed | Low | Improvement | 2026-09-28 | -- |
+| [CR-0604](CR0604-the-andon-cord-stops-the-run-on-an.md) | The andon cord stops the run on an irreversible action or an operating-domain exit | Proposed | Medium | Feature | 2026-09-29 | -- |
 
 ## Archived Releases
 
