@@ -28,6 +28,10 @@ import file_finding  # noqa: E402  (reuse ensure_index - the index helper)
 
 SKILL = Path(__file__).resolve().parent.parent
 SDLC = "sdlc-studio"
+#: The runtime-state ignore file `init` seeds at `sdlc-studio/.gitignore`. One definition: project
+#: upgrade seeds an existing project with the same bytes, so the two can never disagree.
+RUNTIME_STATE_GITIGNORE = ("# SDLC Studio runtime state (caches, verify reports, lessons) - "
+                           "derived, not source\n.local/\n")
 # The cross-cutting workspaces: not numbered artefact types, so they cannot be derived from
 # the type table and are named here. Every NUMBERED type's directory comes from the table.
 WORKSPACE_DIRS = ["retros", "handoffs", "decisions", "reviews", ".local"]
@@ -730,9 +734,7 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
 
     # 3b. gitignore the runtime-state dir so derived caches/reports/lessons are never committed
     #. Self-contained in sdlc-studio/ - never touches the project's own root .gitignore.
-    _write(f"{SDLC}/.gitignore",
-           "# SDLC Studio runtime state (caches, verify reports, lessons) - derived, not source\n"
-           ".local/\n")
+    _write(f"{SDLC}/.gitignore", RUNTIME_STATE_GITIGNORE)
 
     # 4. agent-instructions (tool-neutral starters; copied verbatim if absent)
     for src, dst in AGENT_FILES:

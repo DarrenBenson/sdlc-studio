@@ -1,6 +1,6 @@
 # BG0844: An upgraded project never gets the sdlc-studio/.gitignore that init writes, so gate.py leaves runtime state in git status on every run
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, changelog.d/BG0844.md
@@ -26,8 +26,10 @@ Add the `sdlc-studio/.gitignore` seed (the same content init writes, from one sh
 
 - [ ] **AC1** Given a fixture workspace with no `sdlc-studio/.gitignore`, when `migrate.py --apply` runs, then `sdlc-studio/.gitignore` exists with the content `init` writes and the dry run lists it as a deterministic upgrade without writing it. Fails on: today's upgrade, which never writes it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::RuntimeStateIgnoreTests::test_apply_seeds_the_runtime_state_gitignore
+  - **Verified:** yes (2026-09-30)
 - [ ] **AC2** Given a fixture git repository with a tracked file under `sdlc-studio/.local/`, when `migrate.py` runs, then a needs-a-human item names the tracked runtime state and the untracking command, and the file is still tracked afterwards. Fails on: silence, or an upgrade that untracks it for the user
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::RuntimeStateIgnoreTests::test_tracked_runtime_state_is_reported_not_untracked
+  - **Verified:** yes (2026-09-30)
 
 ## Revision History
 

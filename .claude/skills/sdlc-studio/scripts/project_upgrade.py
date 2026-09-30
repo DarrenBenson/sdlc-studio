@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import subprocess
 import sys
 from datetime import date
 from pathlib import Path
@@ -275,6 +277,91 @@ def instructions_seeds(root: Path | str, findings: list[dict] | None = None) -> 
             if not (root / s["target"]).exists() and (init.SKILL / s["template"]).is_file()]
 
 
+#: The untracking command the tracked-runtime-state item names. Reported, never run: it rewrites
+#: the git index, and what the project commits is the user's call.
+UNTRACK_RUNTIME_STATE = f"git rm -r --cached {init.SDLC}/.local"
+#: Shown when git cannot be asked, so the user can ask it by hand.
+_ASK_RUNTIME_STATE = f"git ls-files {init.SDLC}/.local"
+#: Dropped from a read-only git probe: a hook exports them, and `git -C` does not override
+#: them, so git would answer for that repository rather than `root` (as gate.py's hook probe).
+_GIT_REDIRECT_VARS = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE")
+
+
+def _runtime_dir_rules(text: str) -> tuple[bool, bool]:
+    """(ignored, re_included): whether an ignore file's lines ignore `.local/`, and whether any
+    line re-includes something under it (`!.local/...`), which is a deliberate project choice."""
+    ignored = re_included = False
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        negated = line.startswith("!")
+        body = line.lstrip("!").lstrip("/")
+        for tail in ("/**", "/*", "/"):
+            if body.endswith(tail):
+                body = body[: -len(tail)]
+                break
+        if negated and (body == ".local" or body.startswith(".local/")):
+            re_included = True
+        elif not negated and body == ".local":
+            ignored = True
+    return ignored, re_included
+
+
+def runtime_gitignore_plan(root: Path | str) -> dict:
+    """What `sdlc-studio/.gitignore` owes the runtime-state dir, decided once for audit and apply.
+
+    `{"write": text | None, "detail": str, "manual": str | None}`. Absent: seed init's content.
+    Present without a `.local/` rule: append init's content after the existing lines, which keeps
+    every one of them. Already ignoring it: nothing. A file that re-includes part of `.local/`, or
+    one that cannot be read, is never written; it is reported for a person instead.
+    """
+    gi = _sdlc(Path(root)) / ".gitignore"
+    rel = f"{init.SDLC}/.gitignore"
+    if not gi.exists():
+        return {"write": init.RUNTIME_STATE_GITIGNORE, "manual": None,
+                "detail": f"no {rel} - seed it (`.local/`: runtime caches, reports and run state "
+                          "stay out of git), as init does"}
+    try:
+        text = gi.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        return {"write": None, "detail": "",
+                "manual": f"{rel} could not be read ({exc}) - make sure it ignores `.local/`"}
+    ignored, re_included = _runtime_dir_rules(text)
+    if re_included:
+        return {"write": None, "detail": "",
+                "manual": f"{rel} re-includes part of `.local/` (a `!.local...` rule) - runtime "
+                          "state is derived; confirm that is intended (left as written)"}
+    if ignored:
+        return {"write": None, "detail": "", "manual": None}
+    sep = "\n" if text and not text.endswith("\n") else ""
+    return {"write": text + sep + init.RUNTIME_STATE_GITIGNORE, "manual": None,
+            "detail": f"{rel} does not ignore `.local/` - append the runtime-state rule init "
+                      "writes (existing lines kept)"}
+
+
+def tracked_runtime_state(root: Path | str) -> dict:
+    """Which files under `sdlc-studio/.local/` git tracks, told apart from the two cases that
+    are not an answer: `{"state": "not-git" | "clean" | "tracked" | "unreadable", "files": [...],
+    "reason": str}`. A workspace with no `.git` at or above it is not asked; a `.git` that git
+    cannot read is `unreadable`, never "nothing tracked"."""
+    root = Path(root).resolve()
+    if not any((p / ".git").exists() for p in (root, *root.parents)):
+        return {"state": "not-git", "files": [], "reason": ""}
+    env = {k: v for k, v in os.environ.items() if k not in _GIT_REDIRECT_VARS}
+    try:
+        r = subprocess.run(["git", "-C", str(root), "ls-files", "-z", "--", f"{init.SDLC}/.local"],
+                           capture_output=True, text=True, timeout=60, env=env)
+    except (OSError, subprocess.SubprocessError) as exc:
+        return {"state": "unreadable", "files": [], "reason": str(exc)}
+    if r.returncode != 0:
+        lines = r.stderr.strip().splitlines()
+        return {"state": "unreadable", "files": [],
+                "reason": lines[0] if lines else f"git exited {r.returncode}"}
+    files = sorted(f for f in r.stdout.split("\0") if f)
+    return {"state": "tracked" if files else "clean", "files": files, "reason": ""}
+
+
 def audit(root: Path | str) -> dict:
     """Findings split into auto-correctable vs needs-judgment. Read-only."""
     root = Path(root)
@@ -367,6 +454,27 @@ def audit(root: Path | str) -> dict:
         auto.append({"kind": "seed-instructions", "target": seed["target"],
                      "template": seed["template"],
                      "detail": f"no {seed['target']} - seed it from {seed['template']}"})
+    ignore = runtime_gitignore_plan(root)
+    if ignore["write"] is not None:
+        auto.append({"kind": "runtime-state-gitignore", "detail": ignore["detail"]})
+    elif ignore["manual"]:
+        manual.append({"kind": "runtime-state-gitignore", "detail": ignore["manual"]})
+    # An ignore rule does not untrack what is already committed. Untracking is the project's own
+    # commit, so tracked runtime state is reported with the command and never touched here.
+    tracked = tracked_runtime_state(root)
+    if tracked["state"] == "tracked":
+        files = tracked["files"]
+        shown = ", ".join(files[:10]) + (f" (+{len(files) - 10} more)" if len(files) > 10 else "")
+        manual.append({"kind": "tracked-runtime-state", "names": files,
+                       "detail": f"{len(files)} file(s) under {init.SDLC}/.local/ are tracked by "
+                                 f"git, so every run dirties the tree: {shown} - untrack them with "
+                                 f"`{UNTRACK_RUNTIME_STATE}` and commit (the files stay on disk; "
+                                 "the upgrade never runs this)"})
+    elif tracked["state"] == "unreadable":
+        manual.append({"kind": "runtime-state-unreadable",
+                       "detail": f"could not ask git whether {init.SDLC}/.local/ holds tracked "
+                                 f"files ({tracked['reason']}) - check with "
+                                 f"`{_ASK_RUNTIME_STATE}`"})
     # Neither a seedable finding (reported as auto above) nor an `info` acknowledgement - a
     # recorded opt-out is not a hygiene defect and must not be counted as one here either.
     residual = [f for f in instr
@@ -450,6 +558,11 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
         (root / seed["target"]).write_text(
             init.seed_text(init.SKILL / seed["template"], fields), encoding="utf-8")
         actions.append(f"seeded {seed['target']} from {seed['template']}")
+    # The runtime-state ignore file, from the same plan audit reports, so the two agree.
+    ignore = runtime_gitignore_plan(root)
+    if ignore["write"] is not None:
+        sdlc_md.atomic_write(sd / ".gitignore", ignore["write"])
+        actions.append(f"wrote {init.SDLC}/.gitignore (runtime state `.local/` ignored)")
     # Converged home: migrate legacy personas/amigos/ cards into
     # personas/seats/ mechanically - a role comment is ensured (from the filename stem for the
     # default-named cards), an existing seats/ filename is never overwritten (skip + report),

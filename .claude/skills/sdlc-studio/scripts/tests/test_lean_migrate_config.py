@@ -383,8 +383,9 @@ class MigrateConfigTests(unittest.TestCase):
             first = _snapshot(root)
             self.assertEqual({k for k in first if first[k] != before.get(k)},
                              {"sdlc-studio/.version", "sdlc-studio/.config.yaml",
-                              "sdlc-studio/definition-of-done.md"},
-                             "the first --apply writes the version, the config and the DoD only")
+                              "sdlc-studio/definition-of-done.md", "sdlc-studio/.gitignore"},
+                             "the first --apply writes the version, the config, the DoD and the "
+                             "runtime-state ignore file only")
             self.assertEqual(removals(dry), removals(applied),
                              "the dry run lists exactly the removals --apply makes")
             self.assertEqual(len(removals(dry)), 2 + len(RETIRED_IN_FIXTURE))
@@ -506,7 +507,9 @@ class MigrateConfigTests(unittest.TestCase):
             res = _cli(root, "--apply")
             after = _snapshot(root)
             changed = {k for k in before.keys() | after.keys() if before.get(k) != after.get(k)}
-            self.assertEqual(changed, {"sdlc-studio/.version"}, "only .version changes")
+            # The runtime-state ignore file is the other deterministic write (BG0844).
+            self.assertEqual(changed, {"sdlc-studio/.version", "sdlc-studio/.gitignore"},
+                             "only .version and the runtime-state ignore file change")
             self.assertEqual(_retired(res), [])
             self.assertEqual([h for h in res["needs_human"] if h["kind"] == "retired-surface"], [])
             self.assertEqual(checks(), results,

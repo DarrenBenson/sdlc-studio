@@ -12,6 +12,7 @@ from pathlib import Path
 
 SCR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCR))
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/, for the gitutil helper
 
 
 def _load():
@@ -1112,6 +1113,152 @@ class UpgradeDriftCountTests(unittest.TestCase):
             finally:
                 gate.reconcile_drift_tally = real
         self.assertEqual(len(calls), 1, calls)
+
+
+class RuntimeStateIgnoreTests(unittest.TestCase):
+    """BG0844. `init` writes `sdlc-studio/.gitignore` (`.local/`), the upgrade never did, so an
+    upgraded project's gate runs left runtime state untracked and unignored, and a project that
+    had committed `.local/` kept rewriting tracked files. The ignore file is deterministic; the
+    tracked files are judgement (untracking is the user's commit), so they are only reported.
+
+    Driven through `migrate.py`, the command an upgrader runs."""
+
+    RULE = "git rm -r --cached sdlc-studio/.local"
+
+    def _migrate(self, root: str, *extra: str) -> dict:
+        import migrate
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+            rc = migrate.main(["--root", root, "--format", "json", *extra])
+        self.assertEqual(rc, 0, buf.getvalue())
+        return json.loads(buf.getvalue())
+
+    @staticmethod
+    def _kinds(section: list[dict], kind: str) -> list[dict]:
+        return [x for x in section if x["kind"] == kind]
+
+    @staticmethod
+    def _init_gitignore() -> str:
+        """What `init` itself writes, read from a real init run, so the test pins the two
+        writers to one content rather than to a string it copied."""
+        import init
+        with tempfile.TemporaryDirectory() as d:
+            with contextlib.redirect_stdout(io.StringIO()):
+                init.init(Path(d))
+            return (Path(d) / "sdlc-studio" / ".gitignore").read_text(encoding="utf-8")
+
+    def _git_repo(self, d: str) -> None:
+        import gitutil
+        gitutil.git(["init", "-q"], d)
+
+    def test_apply_seeds_the_runtime_state_gitignore(self):
+        # Mutants: no seed at all (today), a seed whose content differs from init's, a dry run
+        # that writes, and a seed apply writes that the dry run never listed.
+        expected = self._init_gitignore()
+        self.assertIn(".local/", expected)
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED))
+            gi = sd / ".gitignore"
+            dry = self._migrate(d)
+            listed = self._kinds(dry["deterministic"], "runtime-state-gitignore")
+            self.assertEqual(len(listed), 1, dry["deterministic"])
+            self.assertFalse(listed[0]["applied"])
+            self.assertFalse(gi.exists(), "the dry run wrote the ignore file")
+
+            done = self._migrate(d, "--apply")
+            self.assertEqual(len(self._kinds(done["deterministic"], "runtime-state-gitignore")), 1)
+            self.assertTrue(gi.is_file(), "--apply did not write sdlc-studio/.gitignore")
+            self.assertEqual(gi.read_text(encoding="utf-8"), expected)
+            # Idempotent: the next run owes nothing.
+            again = self._migrate(d)
+            self.assertEqual(self._kinds(again["deterministic"], "runtime-state-gitignore"), [])
+
+    def test_tracked_runtime_state_is_reported_not_untracked(self):
+        # Mutants: silence, an item that omits the files or the command, and an upgrade that
+        # runs the untracking itself.
+        import gitutil
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED))
+            self._git_repo(d)
+            local = sd / ".local"
+            local.mkdir()
+            (local / "gate-cost.json").write_text("{}\n", encoding="utf-8")
+            (local / "run-state.json").write_text("{}\n", encoding="utf-8")
+            gitutil.git(["add", "-A"], d)
+            gitutil.git(["commit", "-q", "-m", "seed"], d)
+
+            for extra in ((), ("--apply",)):
+                out = self._migrate(d, *extra)
+                items = self._kinds(out["needs_human"], "tracked-runtime-state")
+                self.assertEqual(len(items), 1, (extra, out["needs_human"]))
+                detail = items[0]["detail"]
+                self.assertIn("sdlc-studio/.local/gate-cost.json", detail)
+                self.assertIn("sdlc-studio/.local/run-state.json", detail)
+                self.assertIn(self.RULE, detail)
+            tracked = gitutil.git(["ls-files", "sdlc-studio/.local"], d, text=True).stdout.split()
+        self.assertEqual(sorted(tracked), ["sdlc-studio/.local/gate-cost.json",
+                                           "sdlc-studio/.local/run-state.json"],
+                         "the upgrade untracked runtime state it must only report")
+
+    def test_untracked_runtime_state_in_a_git_workspace_is_not_reported(self):
+        # Mutant: reporting whatever sits on disk under .local/ rather than what git tracks.
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED))
+            self._git_repo(d)
+            (sd / ".local").mkdir()
+            (sd / ".local" / "gate-cost.json").write_text("{}\n", encoding="utf-8")
+            manual = pu.audit(d)["manual"]
+        self.assertEqual(self._kinds(manual, "tracked-runtime-state"), [])
+        self.assertEqual(self._kinds(manual, "runtime-state-unreadable"), [])
+
+    def test_a_non_git_workspace_is_not_asked_and_not_reported(self):
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED))
+            (sd / ".local").mkdir()
+            (sd / ".local" / "gate-cost.json").write_text("{}\n", encoding="utf-8")
+            manual = pu.audit(d)["manual"]
+        self.assertEqual(self._kinds(manual, "tracked-runtime-state"), [])
+        self.assertEqual(self._kinds(manual, "runtime-state-unreadable"), [])
+
+    def test_an_unreadable_git_is_named_not_read_as_nothing_tracked(self):
+        # LC-006: a `.git` git cannot read is not "nothing tracked". Mutant: treating any git
+        # failure as a clean answer.
+        with tempfile.TemporaryDirectory() as d:
+            _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED))
+            (Path(d) / ".git").write_text("gitdir: ./no-such-dir\n", encoding="utf-8")
+            manual = pu.audit(d)["manual"]
+        items = self._kinds(manual, "runtime-state-unreadable")
+        self.assertEqual(len(items), 1, manual)
+        self.assertIn("git ls-files sdlc-studio/.local", items[0]["detail"])
+
+    def test_an_existing_gitignore_without_the_runtime_dir_gains_it(self):
+        """The chosen behaviour for a present file (the criteria cover only an absent one): the
+        field report asked for the line, and appending it keeps every existing line. A file
+        that already ignores the dir is left byte-for-byte, and one that deliberately
+        re-includes it (`!.local/...`) is the project's call, reported and never edited."""
+        expected = self._init_gitignore()
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED))
+            gi = sd / ".gitignore"
+            gi.write_text("*.tmp", encoding="utf-8")        # no trailing newline, on purpose
+            self.assertEqual(len(self._kinds(pu.audit(d)["auto"], "runtime-state-gitignore")), 1)
+            self.assertEqual(gi.read_text(encoding="utf-8"), "*.tmp")   # audit wrote nothing
+            pu.apply(d)
+            self.assertEqual(gi.read_text(encoding="utf-8"), "*.tmp\n" + expected)
+            self.assertEqual(self._kinds(pu.audit(d)["auto"], "runtime-state-gitignore"), [])
+
+            for covered in ("/.local\n", "keep\n.local/**\n"):
+                gi.write_text(covered, encoding="utf-8")
+                self.assertEqual(self._kinds(pu.audit(d)["auto"], "runtime-state-gitignore"), [])
+                pu.apply(d)
+                self.assertEqual(gi.read_text(encoding="utf-8"), covered)
+
+            gi.write_text(".local/\n!.local/keep.json\n", encoding="utf-8")
+            au = pu.audit(d)
+            self.assertEqual(self._kinds(au["auto"], "runtime-state-gitignore"), [])
+            self.assertEqual(len(self._kinds(au["manual"], "runtime-state-gitignore")), 1, au)
+            pu.apply(d)
+            self.assertEqual(gi.read_text(encoding="utf-8"), ".local/\n!.local/keep.json\n")
 
 
 if __name__ == "__main__":
