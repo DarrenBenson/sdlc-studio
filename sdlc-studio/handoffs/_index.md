@@ -104,3 +104,4 @@ next `sprint plan --worklist` reads back.
 | [HO-0089](HO0089-run-01m3bk9y-closed-partial.md) | RUN-01M3BK9Y closed partial | 2026-09-25 |
 | [HO-0090](HO0090-maya-runs-the-lean-loop-on-a-fresh.md) | Maya runs the lean loop on a fresh v6 project, and the release candidate ships | 2026-09-26 |
 | [HO-0091](HO0091-v6-0-0-ships-maya-and-jonah-install.md) | v6.0.0 ships: Maya and Jonah install, upgrade and learn it from docs and notes that match the code | 2026-09-28 |
+| [HO-0092](HO0092-jonah-s-team-installs-v6-via-claude-code.md) | Jonah's team installs v6 via Claude Code or Copilot CLI; migrate predicts the gate's reconcile, conformance, validate and floor failures | 2026-09-30 |
