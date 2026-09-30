@@ -5350,6 +5350,22 @@ def seal_bar_unmet(root, uid: str) -> list[str]:
     return conformance.critiqued_unmet(root, sdlc_md.norm_id(uid))
 
 
+def awaits_only_signature(root, uid: str, kind: str, status: str) -> bool:
+    """True when the run's signature is the one step this pre-terminal unit still owes.
+
+    The seal's own bar (`seal_bar_unmet`) at EVERY pre-terminal status for a kind `sign` moves
+    (`_SIGNOFF_TERMINAL`: story, bug), and at a Review status only for any other kind, which
+    `sign` never moves. ONE predicate for every close reader that asks it - the unanswered-unit
+    hold and the `[status]` preflight - so the close never names a unit the signature seals.
+    `kind` and `status` are the caller's reading: the artefact type and its canonical status.
+    """
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    if not kind or sdlc_md.is_terminal_status(kind, status):
+        return False
+    return ((kind in _SIGNOFF_TERMINAL or critic.is_awaiting_signoff(status))
+            and not seal_bar_unmet(root, uid))
+
+
 def _carried_rulings(root: Path, state: dict, retro_id: str | None) -> tuple:
     """`(retro id or None, carried rows or None, why unreadable)` for the unanswered-unit hold.
 
@@ -5480,9 +5496,7 @@ def unanswered_units(root, state, retro_id=None) -> dict:
         # after this close. Any other kind (a CR, say) is never moved by `sign`, so it awaits the
         # signature only at a Review status, as it always did - otherwise the close would pass a
         # unit the signature then leaves where it stood.
-        awaits_signature = (bool(kind) and not terminal
-                            and (kind in _SIGNOFF_TERMINAL or critic.is_awaiting_signoff(status))
-                            and not seal_bar_unmet(root, uid))
+        awaits_signature = awaits_only_signature(root, uid, kind, status)
         if not awaits_signature and critic.is_awaiting_signoff(status):
             if row or critic.sprint_covers_independently(
                     root, uid, critic.sprint_review_for(root, uid)):
@@ -6596,8 +6610,10 @@ def _pre_delivery_status(root, unit: str) -> str:
     here: a project that adds its own pre-delivery status would be exempted by a name list, which
     is the enumeration failure this repository keeps meeting. A unit is pre-delivery when its
     status is neither TERMINAL nor AWAITING SIGN-OFF, and both predicates are asked of their one
-    owner - `sdlc_md.is_terminal_status` and `critic.is_awaiting_signoff`, the second being the
-    exact rule whose refusal message was the only one in the whole close chain that named this.
+    owner - `sdlc_md.is_terminal_status`, and `critic.is_awaiting_signoff` beside
+    `awaits_only_signature`, the close's own hold predicate. The status alone is not enough: a
+    story or bug with an independent delivery APPROVE owes only the signature at any
+    pre-terminal status, and a bug has no Review status to be moved to.
 
     Unreadable answers "" - cannot say is not the same as not delivered.
     """
@@ -6612,7 +6628,9 @@ def _pre_delivery_status(root, unit: str) -> str:
                                           sdlc_md.status_vocab(type_, Path(root)))
         if not status or sdlc_md.is_terminal_status(type_, status):
             return ""
-        return "" if critic.is_awaiting_signoff(status) else status
+        if critic.is_awaiting_signoff(status) or awaits_only_signature(root, unit, type_, status):
+            return ""
+        return status
     except Exception as exc:  # noqa: BLE001 - a read-only report never fails the preflight
         sdlc_md.debug("sprint._pre_delivery_status", exc)
         return ""
@@ -6850,9 +6868,38 @@ def undelivered_blockers(root, state) -> list:
                                f"{status!r}, which is neither terminal nor awaiting sign-off. "
                                f"Every review, sign-off and Done-gate blocker reported below "
                                f"for it is a consequence of this"),
-                    "remedy": (f"`transition.py set --id {unit} --status Review` (then the "
-                               f"sign-off steps), or move it to its type's terminal")})
+                    "remedy": _status_remedy(root, unit)})
     return out
+
+
+def _status_remedy(root, unit: str) -> str:
+    """What moves a delivered, untransitioned unit on, in transitions its type HAS.
+
+    The move to the type's review status when its vocabulary carries one (a story's Review).
+    A bug has none, and is answered by the independent review itself, which lets the signature
+    seal it where it stands (`awaits_only_signature`). Any other kind without one - a CR, which
+    `sign` never moves - is moved to its type's delivered terminal.
+    """
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in the close path
+    try:
+        found = sdlc_md.find_by_id(Path(root), unit)
+        type_ = found[1] if found else ""
+        vocab = sdlc_md.status_vocab(type_, Path(root))
+    except Exception as exc:  # noqa: BLE001 - a read-only report never fails the preflight
+        sdlc_md.debug("sprint._status_remedy", exc)
+        return "move it to its type's terminal"
+    review = next((s for s in vocab if critic.is_awaiting_signoff(s)), "")
+    if review:
+        return (f"`transition.py set --id {unit} --status {review}` (then the sign-off steps), "
+                f"or move it to its type's terminal")
+    if type_ in _SIGNOFF_TERMINAL:
+        return (f"record its independent review, `critic.py record --unit {unit} --verdict "
+                f"APPROVE --reviewer <who> --author <who>` ({type_} has no review status; "
+                f"`sprint.py sign` then moves it to {_SIGNOFF_TERMINAL[type_]})")
+    done = next((s for s in vocab if sdlc_md.is_delivered_terminal(type_, s)), "")
+    if done:
+        return f"`transition.py set --id {unit} --status {done}`, its type's terminal"
+    return "move it to its type's terminal"
 
 
 def coverage_blockers(root, state) -> list:

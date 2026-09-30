@@ -14282,6 +14282,98 @@ class DeliveredUnitLeftAtReadyTests(unittest.TestCase):
             self.assertIn("'Blocked'", rows[0]["detail"])
 
 
+class UndeliveredBlockerTests(unittest.TestCase):
+    """BG0859: the status preflight asks the seal's bar, as BG0820 made the close's hold ask it.
+
+    `_pre_delivery_status` asked the status alone, so every bug the loop left at In Progress with
+    an independent delivery APPROVE was a `[status]` row on the real close and a STOP on the dry
+    run, whose remedy named a Review status the bug vocabulary does not have. Driven through
+    `sprint.main`, both the real close and `--dry-run`, in a real git tree: the check needs the
+    run's base ref AND a commit in the run naming the unit, or nothing prints even at HEAD.
+    """
+
+    #: The approved bug, and the two controls the check must keep naming.
+    APPROVED, UNREVIEWED, SELF_APPROVED = "BG0101", "BG0102", "BG0103"
+
+    def _repo(self, d) -> Path:
+        root = Path(d)
+        (root / "src").mkdir()
+        (root / "src" / "widget.py").write_text("x = 1\n", encoding="utf-8")
+        bugs = root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True)
+        for uid in (self.APPROVED, self.UNREVIEWED, self.SELF_APPROVED):
+            (bugs / f"{uid}-x.md").write_text(
+                f"# {uid}: widget\n\n> **Status:** In Progress\n> **Severity:** Medium\n"
+                "> **Points:** 2\n> **Affects:** src/widget.py\n\n## Acceptance Criteria\n\n"
+                "### AC1: works\n- **Verify:** shell true\n", encoding="utf-8")
+        _close_retro(root)
+        _run(root, "init", "-q")
+        _run(root, "checkout", "-q", "-b", "main")
+        _run(root, "config", "user.email", "t@t")
+        _run(root, "config", "user.name", "t")
+        _run(root, "add", "-A")
+        _run(root, "commit", "-qm", "base")
+        base = _run(root, "rev-parse", "HEAD").stdout.strip()
+        _close_state(root, batch=[self.APPROVED, self.UNREVIEWED, self.SELF_APPROVED],
+                     base_ref=base, report=None)
+        for uid, reviewer in ((self.APPROVED, "Reviewer; agent; v1"),
+                              (self.SELF_APPROVED, "Builder; agent; v1")):
+            rec = subprocess.run(
+                [sys.executable, str(SCRIPT.parent / "critic.py"), "record", "--unit", uid,
+                 "--verdict", "approve", "--reviewer", reviewer, "--author",
+                 "Builder; agent; v1", "--root", str(root)],
+                capture_output=True, text=True, env=gitutil.git_env())
+            self.assertEqual(0, rec.returncode, rec.stderr)
+        for n, uid in enumerate((self.APPROVED, self.UNREVIEWED, self.SELF_APPROVED), 2):
+            (root / "src" / "widget.py").write_text(f"x = {n}\n", encoding="utf-8")
+            _run(root, "add", "-A")
+            _run(root, "commit", "-qm", f"fix({uid}): the widget")
+        self.assertEqual("", _run(root, "status", "--porcelain").stdout,
+                         "the fixture tree is dirty, so the real close would refuse first")
+        return root
+
+    def _close(self, root: Path, *extra: str) -> str:
+        """`sprint.py close` through its entry point: stdout and stderr, as one text."""
+        mod = _load()
+        out, err = io.StringIO(), io.StringIO()
+        with unittest.mock.patch.dict(os.environ, gitutil.git_env(), clear=True), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            mod.main(["close", "--retro", "RETRO0001", *extra, "--root", str(root)])
+        return out.getvalue() + err.getvalue()
+
+    @staticmethod
+    def _named(text: str, marker: str, uid: str) -> list[str]:
+        """The status rows naming `uid`, each with the remedy line under it."""
+        lines = text.splitlines()
+        return [f"{ln}\n{lines[i + 1] if i + 1 < len(lines) else ''}"
+                for i, ln in enumerate(lines) if f"{marker} {uid}:" in ln]
+
+    def test_an_approved_bug_in_progress_is_not_a_status_stop(self) -> None:
+        """AC1. MUTANTS: HEAD's status-only `critic.is_awaiting_signoff(status)`, which names the
+        approved bug on both outputs; exempting every bug, or every In Progress unit, or dropping
+        the status check, each of which stops naming the unreviewed bug; a predicate asking only
+        for an APPROVE on record rather than the seal's bar, which stops naming the self-approved
+        bug; and a remedy naming `--status Review`, a status the bug vocabulary does not have.
+        The real close's exit code is not asserted: its preflight never changes it."""
+        import re  # noqa: PLC0415 - local, as the module imports none
+        vocab = sprint.sdlc_md.status_vocab("bug")
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            outputs = {"dry run": (self._close(root, "--dry-run"), "STOP status:"),
+                       "real close": (self._close(root), "[status]")}
+            for label, (text, marker) in outputs.items():
+                with self.subTest(output=label):
+                    self.assertEqual([], self._named(text, marker, self.APPROVED),
+                                     f"the {label} names a bug the seal will move to Fixed")
+                    for control in (self.UNREVIEWED, self.SELF_APPROVED):
+                        rows = self._named(text, marker, control)
+                        self.assertEqual(1, len(rows), f"the {label} lost {control}:\n{text}")
+                        statuses = re.findall(r"--status ([A-Z][\w' ]*?)`", rows[0])
+                        self.assertNotIn("Review", statuses, rows[0])
+                        self.assertTrue(set(statuses) <= set(vocab),
+                                        f"the remedy names a status a bug lacks: {rows[0]}")
+
+
 class ADesignRungIsJudgedAgainstItsOwnProductTests(unittest.TestCase):
     """BG0582: the close chain must read the rung the run recorded, as the planner does.
 

@@ -1,6 +1,6 @@
 # BG0859: The close's status preflight stops every approved bug left In Progress and tells the operator to move it to Review, a status bugs do not have
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py,.claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG0859.md
@@ -31,6 +31,7 @@ Have `_pre_delivery_status` ask the same bar BG0820 gave the close (a story or b
 
 - [ ] **AC1** Given an open run with a recorded base ref whose batch holds a bug at In Progress with an independent delivery APPROVE and a commit in the run naming it, when `sprint.py close` runs for real and `sprint.py close --dry-run` runs, then neither output carries a `[status]` or `STOP status` line naming that bug; and a bug in the same batch at In Progress with no APPROVE is still named by both. Fails on: HEAD, whose preflight asks the status alone and prints both lines; on an assertion on the real close's exit code, which is 0 with the fix reverted; and on a fix that drops the status check, which stops naming the unapproved bug
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UndeliveredBlockerTests::test_an_approved_bug_in_progress_is_not_a_status_stop
+  - **Verified:** yes (2026-09-30)
 
 ## Revision History
 
