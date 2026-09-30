@@ -73,8 +73,10 @@ class InstallAtomicSwap(unittest.TestCase):
 
 
 class ResolveTargetsAuto(unittest.TestCase):
-    """CR0208: `--target auto` must not select copilot on a GLOBAL install (copilot is
-    repo-scoped only, so it would write .github/skills into the current directory)."""
+    """CR0208: a GLOBAL `--target auto` must never write `.github/skills` into the current
+    directory, an unrelated side effect of a per-user install. CR0208 kept that by excluding
+    copilot from a global auto; BG0852 gives copilot a personal folder (the one Copilot CLI
+    reads) and lets auto select it, so the intent is now pinned on the filesystem instead."""
 
     def _auto(self, mode: str) -> str:
         # source install.sh, pretend gh (copilot) and claude are both detected, then resolve
@@ -89,10 +91,26 @@ class ResolveTargetsAuto(unittest.TestCase):
                               env={"PATH": "/usr/bin:/bin", "HOME": "/nonexistent"}, timeout=30)
         return proc.stdout.strip()
 
-    def test_global_auto_excludes_copilot(self) -> None:
-        out = self._auto("global")
-        self.assertIn("claude", out)
-        self.assertNotIn("copilot", out)
+    def test_global_auto_never_writes_github_skills_in_cwd(self) -> None:
+        """AC5 (BG0852). MUTANTS: copilot:global points at `.github/skills` in the current
+        directory, or the old repo-scoped redirect comes back, so a global auto that selects
+        copilot writes there (the side effect CR0208 removed); copilot's global target is not
+        the personal folder. Both `gh` and `copilot` are on PATH and the cwd holds `.github`,
+        so every old and new copilot detection fires."""
+        from test_install_copilot_global import curated_path, installer_dir, run_install
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "project" / ".github").mkdir(parents=True)
+            proc = run_install(root, curated_path(root, ("gh", "copilot")), "--target", "auto")
+            out = proc.stdout + proc.stderr
+            self.assertEqual(proc.returncode, 0, out)
+            self.assertIn("copilot", next(ln for ln in out.splitlines() if "Targets:" in ln),
+                          f"precondition: auto did not select copilot:\n{out}")
+            self.assertFalse((root / "project" / ".github" / "skills").exists(),
+                             f"a global install wrote .github/skills into the cwd:\n{out}")
+            self.assertTrue((root / "home" / ".agents/skills/sdlc-studio/SKILL.md").is_file(),
+                            f"copilot's personal folder was not written:\n{out}")
+        self.assertEqual(installer_dir("copilot", "global"), "/HOME/.agents/skills")
 
     def test_local_auto_keeps_copilot(self) -> None:
         out = self._auto("local")

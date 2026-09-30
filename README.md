@@ -74,7 +74,7 @@ irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 
 | Codex | `~/.agents/skills` | `.agents/skills` | `$sdlc-studio`, `/skills` |
 | Gemini CLI | `~/.gemini/skills` | `.gemini/skills` | auto via description; `/skills` to confirm |
 | opencode | `~/.config/opencode/skills` | `.opencode/skills` | auto via skill tool |
-| Copilot | (repo-scoped) | `.github/skills` | from chat |
+| Copilot | `~/.agents/skills` | `.github/skills` | from chat; `copilot skill list` to confirm |
 | `agents` (generic) | `~/.agents/skills` | `.agents/skills` | read by Codex, Gemini, Copilot, Cursor |
 
 `--target claude,codex` picks tools; `--local` installs into the current project; `--list-targets` shows the map. The installer also refreshes any other copies it finds (opt out with `--no-sweep`). Full detail: [docs/INSTALL.md](docs/INSTALL.md).

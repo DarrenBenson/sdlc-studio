@@ -50,18 +50,21 @@ append it to the one-liner, e.g.
 | Codex | `codex` |
 | Gemini CLI | `gemini` |
 | opencode | `opencode` |
-| Copilot | `copilot` (with `--local`) |
+| Copilot CLI | `copilot` (the personal `~/.agents/skills`; with `--local`, the repo's `.github/skills`) |
 | Several at once | `gemini,codex` |
 | Codex + Gemini + Copilot + Cursor in one copy | `agents` (the generic `.agents/skills` dir) |
 | Every tool you have | `auto` |
 | Every supported tool | `all` |
 
 The generic `.agents/skills` directory is read by Codex, Gemini CLI, Copilot,
-and Cursor, so one `agents` install serves all four (`codex` and `agents`
-resolve to the same directory; the installer dedups). Claude Code does not
-read it - keep the `claude` target for Claude Code.
+and Cursor, so one `agents` install serves all four (`codex`, `copilot` and
+`agents` resolve to the same directory globally; the installer dedups). Claude
+Code does not read it - keep the `claude` target for Claude Code.
 
 `auto` detects a tool when its CLI is on `PATH` or its config directory exists.
+Copilot is detected by the `copilot` CLI or `~/.copilot`; `gh` and a `.github`
+folder count only for a `--local` install. The default install (Claude Code
+only) names any other tool it detects and the `--target` that would add it.
 `--list-targets` (`-ListTargets`) prints the full map and what was detected
 without installing anything.
 
@@ -73,13 +76,17 @@ without installing anything.
 | Codex | `~/.agents/skills/` | `.agents/skills/` |
 | Gemini CLI | `~/.gemini/skills/` | `.gemini/skills/` |
 | opencode | `~/.config/opencode/skills/` | `.opencode/skills/` |
-| Copilot | (repo-scoped) | `.github/skills/` |
+| Copilot | `~/.agents/skills/` | `.github/skills/` |
 
 Two of these are shared aliases: `~/.agents/skills/` is read by Codex, Gemini
 **and** opencode, and `~/.claude/skills/` is read by Claude Code and opencode.
-Copilot skills are repo-scoped, so `copilot` always installs into the project's
-`.github/skills/` (a `--global copilot` request is redirected there with a
-warning).
+Copilot CLI reads two personal folders, `~/.agents/skills/` and
+`~/.copilot/skills/`. `copilot` installs into `~/.agents/skills/` globally, so
+one copy serves Copilot CLI and the `agents` tools, and into the project's
+`.github/skills/` with `--local`. The installer never writes
+`~/.copilot/skills/`, but a global install refreshes a copy it finds there.
+`install.ps1` does not do this yet: a `-Global` copilot request there still goes
+to the project's `.github\skills`, so use `-Target agents` on Windows.
 
 ## Global vs local
 
@@ -159,7 +166,8 @@ After installing, start your tool in any project and check the skill loads:
 - Codex: mention `$sdlc-studio`, or run `/skills` to confirm it is listed
 - Gemini CLI: `/skills` to confirm discovery
 - opencode: it is discovered automatically via the skill tool
-- Copilot: it reads `.github/skills/` in the repo
+- Copilot CLI: `copilot skill list` shows it; it reads `~/.agents/skills/`,
+  `~/.copilot/skills/` and, in a repo, `.github/skills/`
 
 ## Verifying the download
 
@@ -222,7 +230,8 @@ touching other copies at all.
   e.g. `/skills reload`).
 - **`--target auto` skipped a tool**: detection keys off the CLI on `PATH` or the
   config directory. Name the tool explicitly with `--target <tool>` instead.
-- **Copilot**: skills live in the repo at `.github/skills/`; install with
-  `--local` from inside the project.
+- **Copilot CLI lists no sdlc-studio**: install with `--target copilot` (or
+  `agents`) into `~/.agents/skills/`, which Copilot CLI reads; `--local` installs
+  into the repo's `.github/skills/` instead.
 - **Windows piping**: `iex` cannot take arguments; download the script first (see
   [Windows](#windows)).

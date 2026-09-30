@@ -70,13 +70,13 @@ Targets (global / local skills directory):
     codex      ~/.agents/skills            .agents/skills
     gemini     ~/.gemini/skills            .gemini/skills
     opencode   ~/.config/opencode/skills   .opencode/skills
-    copilot    (repo-scoped)               .github/skills
+    copilot    ~/.agents/skills            .github/skills
     agents     ~/.agents/skills            .agents/skills
 
 The generic .agents/skills directory is read by Codex, Gemini CLI,
-Copilot, and Cursor - one "agents" install serves all four. Claude Code
-does not read it; keep the claude target for Claude Code. (codex and
-agents resolve to the same directory.)
+Copilot CLI, and Cursor - one "agents" install serves all four. Claude Code
+does not read it; keep the claude target for Claude Code. (codex, copilot
+and agents resolve to the same directory globally; it is installed once.)
 
 Examples:
     # Claude Code, globally (the classic one-liner)
@@ -143,7 +143,7 @@ target_dir() {
         gemini:local)    echo ".gemini/skills" ;;
         opencode:global) echo "$HOME/.config/opencode/skills" ;;
         opencode:local)  echo ".opencode/skills" ;;
-        copilot:global)  echo "" ;;   # repo-scoped only
+        copilot:global)  echo "$HOME/.agents/skills" ;;   # read by Copilot CLI (BG0852)
         copilot:local)   echo ".github/skills" ;;
         agents:global)   echo "$HOME/.agents/skills" ;;
         agents:local)    echo ".agents/skills" ;;
@@ -158,8 +158,12 @@ is_detected() {
         codex)    command -v codex  >/dev/null 2>&1 || [[ -d "$HOME/.codex" || -d "$HOME/.agents" ]] ;;
         gemini)   command -v gemini >/dev/null 2>&1 || [[ -d "$HOME/.gemini" ]] ;;
         opencode) command -v opencode >/dev/null 2>&1 || [[ -d "$HOME/.config/opencode" ]] ;;
-        copilot)  command -v gh >/dev/null 2>&1 || [[ -d ".github" ]] ;;
-        agents)   [[ -d "$HOME/.agents" ]] || command -v codex >/dev/null 2>&1 || command -v cursor >/dev/null 2>&1 ;;
+        # gh and a .github folder are repo signals, so they count only for a --local install: a
+        # global one must not be steered by the directory it happens to run from (CR0208).
+        copilot)  command -v copilot >/dev/null 2>&1 || [[ -d "$HOME/.copilot" ]] \
+                      || { [[ "$INSTALL_MODE" == local ]] && { command -v gh >/dev/null 2>&1 || [[ -d ".github" ]]; }; } ;;
+        agents)   [[ -d "$HOME/.agents" ]] || command -v codex >/dev/null 2>&1 || command -v cursor >/dev/null 2>&1 \
+                      || command -v copilot >/dev/null 2>&1 ;;
         *) return 1 ;;
     esac
 }
@@ -171,7 +175,7 @@ invoke_note() {
         codex)    echo "Codex: auto-discovered by description, or mention \$sdlc-studio / run /skills." ;;
         gemini)   echo "Gemini CLI: run /skills to confirm it is discovered; then it is used automatically." ;;
         opencode) echo "opencode: discovered automatically via the skill tool." ;;
-        copilot)  echo "Copilot: reads .github/skills in the repo; invoke from chat or via a slash command." ;;
+        copilot)  echo "Copilot: Copilot CLI reads ~/.agents/skills, and .github/skills in a repo; run \`copilot skill list\` to confirm, then invoke from chat." ;;
         agents)   echo "Generic .agents/skills: read by Codex, Gemini CLI, Copilot, and Cursor (one copy serves all four; Claude Code does NOT read it)." ;;
     esac
 }
@@ -192,6 +196,40 @@ native_hint() {
     esac
 }
 
+# Display name for the hint below.
+tool_name() {
+    case "$1" in
+        claude)   echo "Claude Code" ;;
+        codex)    echo "Codex" ;;
+        gemini)   echo "Gemini CLI" ;;
+        opencode) echo "opencode" ;;
+        copilot)  echo "Copilot CLI" ;;
+        agents)   echo "the tools reading .agents/skills (Cursor, Codex, Gemini CLI, Copilot CLI)" ;;
+    esac
+}
+
+# A default install serves Claude Code only. Name each other tool found on this host that it did
+# not install for, and the --target that would, so a Copilot CLI user following the quick start
+# is not left with no skill and no reason (BG0852). One tool per skills folder: copilot and agents
+# share ~/.agents/skills. Explicit `if`s, so a run that finds nothing still returns 0 under set -e.
+undetected_hint() {
+    local targets="$1" t dir names="" list="" seen=" "
+    for t in $targets; do seen="$seen$(target_dir "$t" "$INSTALL_MODE") "; done
+    for t in $ALL_TARGETS; do
+        dir=$(target_dir "$t" "$INSTALL_MODE")
+        if [[ -z "$dir" || "$seen" == *" $dir "* ]]; then continue; fi
+        if is_detected "$t"; then
+            seen="$seen$dir "
+            names="$names, $(tool_name "$t")"
+            list="$list,$t"
+        fi
+    done
+    if [[ -n "$list" ]]; then
+        echo ""
+        info "Detected but not installed for: ${names#, }. To add: --target ${targets// /,}$list (or --target auto)."
+    fi
+}
+
 # Resolve the requested target list into a clean, de-duplicated set.
 resolve_targets() {
     local raw="${1#,}" out="" t
@@ -204,10 +242,8 @@ resolve_targets() {
             auto)
                 local d
                 for d in $ALL_TARGETS; do
-                    # copilot is repo-scoped only (no global skills dir). On a global install,
-                    # auto must NOT select it, or it writes .github/skills into the current
-                    # directory - an unexpected, unrelated side effect of a global install.
-                    [[ "$d" == "copilot" && "$INSTALL_MODE" == "global" ]] && continue
+                    # Globally copilot resolves to ~/.agents/skills, never .github/skills in the
+                    # current directory, so auto may select it (CR0208, BG0852).
                     is_detected "$d" && expanded="$expanded $d"
                 done ;;
             claude|codex|gemini|opencode|copilot|agents) expanded="$expanded $t" ;;
@@ -491,41 +527,44 @@ is_skill_copy() {
 # only: it pins a version here, and the personal copies are what every other project loads.
 sweep_stale() {
     local src="$1" done_list="$2"
-    local t scope scopes="global local" parent dest old new_ver found=false
+    local t scope scopes="global local" parent dest old new_ver found=false parents=()
     [[ "$INSTALL_MODE" == local ]] && scopes="local"
     if [[ "$DRY_RUN" == true ]]; then new_ver="$VERSION"; else new_ver=$(installed_version "$src"); fi
     for t in $ALL_TARGETS; do
-        for scope in $scopes; do
-            parent=$(target_dir "$t" "$scope")
-            [[ -z "$parent" || ! -d "$parent" ]] && continue
-            parent=$(canon "$parent")
-            dest="$parent/$SKILL_NAME"
-            case " $done_list " in *" $dest "*) continue ;; esac
-            [[ -d "$dest" ]] || continue
-            if [[ "$(canon "$dest")" == "$(canon "$src")" ]]; then
-                info "sweep: skipping $dest (it IS the install source)"
-                continue
-            fi
-            done_list="$done_list $dest"
-            if ! is_skill_copy "$dest"; then
-                warn "sweep: skipping $dest (no sdlc-studio SKILL.md - not touching it)"
-                continue
-            fi
-            old=$(installed_version "$dest")
-            # Never silently downgrade a copy that is newer than what we are installing - the
-            # sweep spreading an older published release over a newer dev checkout is BG0100.
-            if [[ "$DRY_RUN" != true ]] && would_downgrade "$dest" "$new_ver"; then
-                continue
-            fi
-            found=true
-            if [[ "$DRY_RUN" == true ]]; then
-                info "[dry run] would refresh: $dest ($old -> $new_ver)"
-            elif ! swap_install "$parent" "$src"; then
-                error "refresh failed: could not copy to $dest ($old kept)"
-            else
-                success "refreshed: $dest ($old -> $new_ver)"
-            fi
-        done
+        for scope in $scopes; do parents+=("$(target_dir "$t" "$scope")"); done
+    done
+    # Copilot CLI also reads ~/.copilot/skills. The installer writes ~/.agents/skills, so a copy
+    # placed there by hand is reached only by naming the folder here (BG0852).
+    if [[ "$INSTALL_MODE" != local ]]; then parents+=("$HOME/.copilot/skills"); fi
+    for parent in "${parents[@]}"; do
+        [[ -z "$parent" || ! -d "$parent" ]] && continue
+        parent=$(canon "$parent")
+        dest="$parent/$SKILL_NAME"
+        case " $done_list " in *" $dest "*) continue ;; esac
+        [[ -d "$dest" ]] || continue
+        if [[ "$(canon "$dest")" == "$(canon "$src")" ]]; then
+            info "sweep: skipping $dest (it IS the install source)"
+            continue
+        fi
+        done_list="$done_list $dest"
+        if ! is_skill_copy "$dest"; then
+            warn "sweep: skipping $dest (no sdlc-studio SKILL.md - not touching it)"
+            continue
+        fi
+        old=$(installed_version "$dest")
+        # Never silently downgrade a copy that is newer than what we are installing - the
+        # sweep spreading an older published release over a newer dev checkout is BG0100.
+        if [[ "$DRY_RUN" != true ]] && would_downgrade "$dest" "$new_ver"; then
+            continue
+        fi
+        found=true
+        if [[ "$DRY_RUN" == true ]]; then
+            info "[dry run] would refresh: $dest ($old -> $new_ver)"
+        elif ! swap_install "$parent" "$src"; then
+            error "refresh failed: could not copy to $dest ($old kept)"
+        else
+            success "refreshed: $dest ($old -> $new_ver)"
+        fi
     done
     # An explicit `if` (not a trailing `&&` test): when $found is true this function's last
     # command must still return 0, or `set -e` aborts the installer after a successful sweep
@@ -585,10 +624,6 @@ main() {
     for t in $targets; do
         scope="$INSTALL_MODE"
         parent=$(target_dir "$t" "$scope")
-        if [[ -z "$parent" && "$t" == "copilot" ]]; then
-            warn "Copilot skills are repo-scoped; using ./.github/skills"
-            parent=$(target_dir copilot local)
-        fi
         [[ -z "$parent" ]] && { warn "no $scope dir for $t; skipping"; continue; }
         case " $resolved " in *":$parent "*) continue ;; esac   # codex/agents share a dir
         resolved="$resolved $t:$parent"
@@ -627,6 +662,7 @@ main() {
         echo ""
         shadow_note "$VERSION"
     fi
+    if [[ -z "$TARGETS_RAW" ]]; then undetected_hint "$targets"; fi
 
     echo ""
     if [[ "$DRY_RUN" == true ]]; then

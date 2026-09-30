@@ -128,5 +128,40 @@ class LocalSweepTests(unittest.TestCase):
                         f"the note does not say the PERSONAL copy is the one loaded: {notes[0]}")
 
 
+class SweepTests(unittest.TestCase):
+    """BG0852. Copilot CLI reads `~/.copilot/skills` as well as `~/.agents/skills`, and the
+    sweep walked only the folders the installer writes, so a copy placed in ~/.copilot/skills by
+    hand stayed stale with nothing said.
+    MUTANTS: the sweep never visits ~/.copilot/skills (the copy keeps 1.0.0); the install, not
+    the sweep, writes there (the --no-sweep control catches it); a --local sweep reaches it,
+    rewriting a personal copy from one project (BG0809's rule, the --local control)."""
+
+    def test_sweep_visits_copilot_personal_folder(self) -> None:
+        import tempfile
+        from test_install_copilot_global import curated_path, run_install
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            path = curated_path(root)
+            stale = _skill(root / "home/.copilot/skills/sdlc-studio", "1.0.0")
+            version = stale / "templates/version.yaml"
+
+            cp = run_install(root, path, "--target", "claude", "--no-sweep")
+            self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+            self.assertIn('"1.0.0"', version.read_text(encoding="utf-8"),
+                          f"the install itself wrote ~/.copilot/skills:\n{cp.stdout}")
+
+            cp = run_install(root, path, "--target", "claude", "--local")
+            self.assertEqual(cp.returncode, 0, cp.stdout + cp.stderr)
+            self.assertIn('"1.0.0"', version.read_text(encoding="utf-8"),
+                          f"a --local sweep rewrote a personal copy:\n{cp.stdout}")
+
+            cp = run_install(root, path, "--target", "claude")
+            out = cp.stdout + cp.stderr
+            self.assertEqual(cp.returncode, 0, out)
+            self.assertIn('"2.0.0"', version.read_text(encoding="utf-8"),
+                          f"the sweep left the ~/.copilot/skills copy stale:\n{out}")
+            self.assertIn(str(stale.resolve()), out, "the refresh is not named in the output")
+
+
 if __name__ == "__main__":
     unittest.main()

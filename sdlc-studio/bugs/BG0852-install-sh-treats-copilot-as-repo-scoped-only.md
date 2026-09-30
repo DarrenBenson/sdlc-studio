@@ -1,6 +1,6 @@
 # BG0852: install.sh treats Copilot as repo-scoped only, so a Copilot CLI user following the quick start or --target auto gets no sdlc-studio and no hint why
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** High
 > **Points:** 5
 > **Affects:** install.sh,README.md,docs/INSTALL.md,tools/tests/test_install_copilot_global.py,tools/tests/test_install_sweep.py,tools/tests/test_install_atomic.py, changelog.d/BG0852.md
@@ -26,14 +26,19 @@ Map `copilot:global` to `~/.agents/skills` (the folder Copilot shares with `agen
 
 - [ ] **AC1** Given a HOME with only a `copilot` executable on a curated PATH (no gh, codex, cursor, ~/.agents), when `install.sh --target auto --dry-run` runs globally, then it plans an install into a personal folder Copilot CLI reads (`~/.agents/skills` or `~/.copilot/skills`). Fails on: today's auto, which skips copilot globally and detects agents only by ~/.agents, codex or cursor
   - **Verify:** pytest tools/tests/test_install_copilot_global.py::CopilotGlobalTests::test_auto_selects_a_copilot_personal_folder
+  - **Verified:** yes (2026-09-30)
 - [ ] **AC2** Given the same host and the default target (claude only), when install.sh runs, then its output names Copilot CLI as detected-but-not-installed and the `--target` that would install for it. Fails on: silence
   - **Verify:** pytest tools/tests/test_install_copilot_global.py::CopilotGlobalTests::test_default_install_hints_an_undetected_copilot
+  - **Verified:** yes (2026-09-30)
 - [ ] **AC3** Given a stale sdlc-studio copy under `~/.copilot/skills`, when install.sh runs with the sweep on, then the copy is refreshed or named in the output. Fails on: a sweep that never visits ~/.copilot/skills
   - **Verify:** pytest tools/tests/test_install_sweep.py::SweepTests::test_sweep_visits_copilot_personal_folder
+  - **Verified:** yes (2026-09-30)
 - [ ] **AC4** README.md and docs/INSTALL.md no longer describe Copilot as repo-scoped only, and name the personal folder the installer uses. Fails on: the `(repo-scoped)` row surviving
   - **Verify:** pytest tools/tests/test_install_copilot_global.py::CopilotGlobalTests::test_docs_do_not_call_copilot_repo_scoped
+  - **Verified:** yes (2026-09-30)
 - [ ] **AC5** Given a global `install.sh --target auto` run from inside a directory holding a `.github` folder, then nothing is written under that directory's `.github/skills`, and copilot's global target is the personal folder. Fails on: a fix that re-enables copilot on a global auto by pointing it at `.github/skills` in the current directory (the side effect CR0208 removed)
   - **Verify:** pytest tools/tests/test_install_atomic.py::ResolveTargetsAuto::test_global_auto_never_writes_github_skills_in_cwd
+  - **Verified:** yes (2026-09-30)
 
 ## Revision History
 
