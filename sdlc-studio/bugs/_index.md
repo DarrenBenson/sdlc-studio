@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 38 |
+| Open | 41 |
 | In Progress | 8 |
 | Fixed | 675 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
 | Superseded | 28 |
-| **Total** | **858** |
+| **Total** | **861** |
 
 ## All Bugs
 
@@ -217,6 +217,9 @@
 | [BG0856](BG0856-bg0852-did-not-converge-in-review-round-2.md) | BG0852 did not converge in review: round 2 REJECT findings | In Progress | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0857](BG0857-an-unreadable-epics-directory-is-read-as-absence.md) | An unreadable epics directory is read as absence by reconcile's detectors, so the gate and migrate report a drift count with no mention that part of the workspace was never read | Open | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0858](BG0858-migrate-names-nothing-when-the-conformance-lane-fails.md) | migrate names nothing when the conformance lane fails only on ULID-id units or repo-wide failures, so a schema v3 project meets the failure at the gate unannounced | Open | Medium | 2026-09-30 | 2026-09-30 |
+| [BG0859](BG0859-the-close-s-status-preflight-stops-every-approved.md) | The close's status preflight stops every approved bug left In Progress and tells the operator to move it to Review, a status bugs do not have | Open | Medium | 2026-09-30 | 2026-09-30 |
+| [BG0860](BG0860-a-sprint-plan-preview-with-no-write-appends.md) | A sprint plan preview with no --write appends forecast rows to the tracked evidence log, so each dry run adds a duplicate forecast per unit | Open | Medium | 2026-09-30 | 2026-09-30 |
+| [BG0861](BG0861-nothing-opens-a-delivery-batch-since-us0918-so.md) | Nothing opens a delivery batch since US0918, so every finding is stamped raised outside a batch and the close's finding-placement figure is always empty | Open | Medium | 2026-09-30 | 2026-09-30 |
 
 ## Archived Releases
 
