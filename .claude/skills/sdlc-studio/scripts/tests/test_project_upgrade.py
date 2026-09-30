@@ -1,7 +1,10 @@
 """Unit tests for project_upgrade.py - migrate a consuming project to current conventions (CR0062)."""
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
+import json
 import sys
 import tempfile
 import unittest
@@ -985,6 +988,130 @@ class SchemaStampTests(unittest.TestCase):
             self.assertIn("schema_version: 2", text)  # not silently flipped to 3
             story = next((Path(d) / "sdlc-studio" / "stories").glob("US0001-*.md"))
             self.assertTrue(story.exists())  # ids untouched - still sequential
+
+
+class UpgradeDriftCountTests(unittest.TestCase):
+    """BG0842. `migrate` told an upgrader of 2 index drift items on a tree whose gate reconcile
+    lane then failed on 28: the upgrade summed `reconcile.detect_type` per type, two of the
+    sweep's sources, while the lane reads `reconcile.detect_all` less what it does not block on.
+
+    Both halves are read through the shipped entry points (`migrate.py --format json` and
+    `gate.py --only reconcile --format json`), because the defect was two callers disagreeing,
+    and a test of either function alone cannot see that."""
+
+    @staticmethod
+    def _write(path: Path, text: str) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+
+    @staticmethod
+    def _index(title: str, rows: str) -> str:
+        return f"# {title}\n\n| ID | Title | Status |\n| --- | --- | --- |\n" + rows
+
+    def _cli_json(self, main, argv: list[str]) -> tuple[int, dict]:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+            rc = main(argv)
+        return rc, json.loads(buf.getvalue())
+
+    def _gate_lane(self, root: str) -> tuple[int, dict]:
+        import gate
+        rc, out = self._cli_json(gate.main, ["--root", root, "--only", "reconcile",
+                                             "--format", "json"])
+        lanes = [c for c in out["checks"] if c["check"] == "reconcile"]
+        self.assertEqual(len(lanes), 1, out)
+        return rc, lanes[0]
+
+    def _migrate_drift_items(self, root: str) -> list[dict]:
+        import migrate
+        rc, out = self._cli_json(migrate.main, ["--root", root, "--format", "json"])
+        self.assertEqual(rc, 0, out)
+        return [h for h in out["needs_human"] if h["kind"] == "index-drift"]
+
+    def test_the_drift_count_is_the_gates_reconcile_count(self):
+        # Mutants this must fail on: the per-type sum (counts 1 here), and the per-type sum
+        # plus whichever ONE sweep-level detector somebody remembered (2). The gate counts 3.
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d)
+            # detect_type sees this one: an index row naming a story with no file.
+            self._write(sd / "stories" / "US0001-s.md",
+                        "# US0001: s\n\n> **Status:** In Progress\n> **Epic:** EP0001\n")
+            self._write(sd / "stories" / "_index.md", self._index(
+                "Stories", "| [US0001](US0001-s.md) | s | In Progress |\n"
+                           "| [US0002](US0002-gone.md) | g | Draft |\n"))
+            # Two kinds only the sweep assembles: a box ticked over a live unit (epic-breakdown)
+            # and a numbered retro with no retros index (meta-index).
+            self._write(sd / "epics" / "EP0001-e.md",
+                        "# EP0001: e\n\n> **Status:** In Progress\n\n## Story Breakdown\n\n"
+                        "- [x] US0001: s\n")
+            self._write(sd / "epics" / "_index.md",
+                        self._index("Epics", "| [EP0001](EP0001-e.md) | e | In Progress |\n"))
+            self._write(sd / "retros" / "RETRO0001-x.md",
+                        "# RETRO0001: x\n\n> **Date:** 2026-01-01\n")
+
+            rc, lane = self._gate_lane(d)
+            items = self._migrate_drift_items(d)
+        self.assertEqual((rc, lane["status"], lane["count"]), (1, "fail", 3),
+                         f"fixture must hold 3 blocking items the gate fails on: {lane}")
+        self.assertEqual(len(items), 1, items)
+        m = re.match(r"(\d+) index/status drift item", items[0]["detail"])
+        self.assertIsNotNone(m, items[0])
+        self.assertEqual(int(m.group(1)), lane["count"],
+                         f"migrate named {m.group(1)}, the gate's reconcile lane counts "
+                         f"{lane['count']}: {items[0]['detail']}")
+
+    def test_no_drift_names_no_item(self):
+        # The tree holds two drift items, neither of which the gate blocks on: an RFC whose
+        # derived close waits on an open decision (`blocked_by`) and an index row `settle`
+        # rewrites. Mutants: the raw sweep (2), a count excluding only the blocked item (1),
+        # one excluding only the settled item (1), and the per-type sum (1).
+        with tempfile.TemporaryDirectory() as d:
+            sd = _project(d)
+            self._write(sd / ".config.yaml", "two_backlog:\n  enforce: true\n")
+            self._write(sd / "rfcs" / "RFC0001-r.md",
+                        "# RFC0001: r\n\n> **Status:** In Review\n> **Decomposed-into:** CR0001\n"
+                        "\n## Decisions\n\n| ID | Question | Status |\n| --- | --- | --- |\n"
+                        "| D1 | should we | Open |\n")
+            self._write(sd / "rfcs" / "_index.md",
+                        self._index("RFCs", "| [RFC0001](RFC0001-r.md) | r | In Review |\n"))
+            self._write(sd / "change-requests" / "CR0001-x.md",
+                        "# CR-0001: c\n\n> **Status:** Complete\n> **Size:** M\n"
+                        "> **Parent:** RFC0001\n> **Decomposed-into:** US0001\n\n## Summary\n\nx\n")
+            self._write(sd / "change-requests" / "_index.md",
+                        self._index("CRs", "| [CR0001](CR0001-x.md) | c | Complete |\n"))
+            self._write(sd / "stories" / "US0001-s.md",
+                        "# US0001: s\n\n> **Status:** Done\n> **Parent:** CR0001\n> **Points:** 2\n")
+            self._write(sd / "stories" / "_index.md",   # the row lags the file: settle-only
+                        self._index("Stories", "| [US0001](US0001-s.md) | s | In Progress |\n"))
+
+            rc, lane = self._gate_lane(d)
+            items = self._migrate_drift_items(d)
+        # Reachability: both non-blocking kinds are really on the tree, or the over-count
+        # mutants above would pass for want of anything to over-count.
+        self.assertIn("awaiting another gate", lane["detail"], lane)
+        self.assertIn("status-mismatch x1", lane["detail"], lane)
+        self.assertEqual((rc, lane["status"], lane["count"]), (0, "pass", 0), lane)
+        self.assertEqual(items, [], "migrate named drift the gate does not block on")
+
+    def test_the_upgrade_reads_the_gates_own_helper(self):
+        """Structural half: equal numbers on two fixtures could be a coincidence of two
+        derivations. The count must come from the one public helper the lane itself calls."""
+        import gate
+        calls: list[str] = []
+        real = gate.reconcile_drift_tally
+
+        def spy(root):
+            calls.append(str(root))
+            return real(root)
+
+        with tempfile.TemporaryDirectory() as d:
+            _project(d)
+            gate.reconcile_drift_tally = spy
+            try:
+                pu.audit(d)
+            finally:
+                gate.reconcile_drift_tally = real
+        self.assertEqual(len(calls), 1, calls)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # BG0842: migrate reports 2 index drift items on a v4.1 project whose gate reconcile lane fails on 28, because project upgrade counts two of reconcile's nine drift sources
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, changelog.d/BG0842.md
@@ -26,8 +26,10 @@ Count drift in project upgrade from `reconcile.detect_all`, less what the gate i
 
 - [ ] **AC1** Given a fixture workspace whose drift includes a kind `reconcile.detect_type` does not return (e.g. an epic-breakdown or link-asymmetry item), when `migrate.py --format json` runs, then its index-drift needs-a-human item carries the same count the gate's reconcile lane reports on that tree. Fails on: the per-type sum, which omits the extra kind
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::UpgradeDriftCountTests::test_the_drift_count_is_the_gates_reconcile_count
+  - **Verified:** yes (2026-09-30)
 - [ ] **AC2** Given a fixture whose only drift is items the gate does not block on (a `blocked_by` item and a settle-only item), then migrate names no index-drift item, and the gate's reconcile lane passes on the same tree. Fails on: a count that includes blocked or settle-only items the gate does not block on
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::UpgradeDriftCountTests::test_no_drift_names_no_item
+  - **Verified:** yes (2026-09-30)
 
 ## Revision History
 

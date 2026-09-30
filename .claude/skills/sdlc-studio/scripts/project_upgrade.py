@@ -337,7 +337,11 @@ def audit(root: Path | str) -> dict:
                        "detail": f"overlap: review seat(s) and legacy amigo card(s) both cover "
                                  f"{', '.join(overlap)} - the resolver now prefers the seats/ "
                                  "card; `--apply` migrates or retires the legacy amigos/ copy"})
-    drift = sum(len(reconcile.detect_type(t, root)["drift"]) for t in sdlc_md.ARTIFACT_TYPES)
+    # The gate's own count, from the helper its reconcile lane reads: the full sweep less what
+    # it does not block on. A second derivation here once told an upgrader of 2 items on a tree
+    # the lane then failed on 28. Lazy import, as in `new_advisory_lanes`.
+    import gate
+    drift = gate.reconcile_drift_tally(root)["count"]
     if drift:
         # NOT auto-applied by upgrade: reconcile can be destructive on multi-schema / inline-row
         # projects. Review it deliberately with `/sdlc-studio reconcile`.

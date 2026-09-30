@@ -395,6 +395,22 @@ class GateRealWrapperTests(unittest.TestCase):
                          "the reconcile lane must take its drift from the shared sweep")
         self.assertIsNone(calls[0][1], "the lane judges the full default sweep, not a scope")
 
+    def test_the_lane_counts_what_the_shared_tally_counts(self) -> None:
+        """BG0842. `project upgrade` reports its drift count from `reconcile_drift_tally`, so
+        the lane must take its verdict from the same call or the two can drift apart again.
+        A stubbed tally proves the lane reads it rather than re-deriving a count of its own."""
+        with tempfile.TemporaryDirectory() as d:
+            real = gate.reconcile_drift_tally
+            gate.reconcile_drift_tally = lambda root: {
+                "count": 7, "blocked": 2, "settled": {"status-mismatch": 3}}
+            try:
+                res = gate._reconcile(d)
+            finally:
+                gate.reconcile_drift_tally = real
+        self.assertEqual(res["count"], 7, res)
+        self.assertIn("+2 awaiting another gate", res["detail"])
+        self.assertIn("status-mismatch x3", res["detail"])
+
     def test_gate_counts_a_derivable_request_that_apply_can_clear(self) -> None:
         """The kind is assembled in the sweep, not in `detect_type`, so the gate could not see
         it: `gate` reported PASS on a tree where `reconcile detect` exited 1, which is how the

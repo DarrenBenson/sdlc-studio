@@ -43,7 +43,15 @@ def _conformance(root: str, changed: bool = False,
     return {"count": n, "blocking": True, "detail": conformance.remedy_detail(result)}
 
 
-def _reconcile(root: str) -> dict:
+def reconcile_drift_tally(root: "str | Path") -> dict:
+    """The reconcile lane's count of blocking drift on `root`, with what it set aside:
+    `{"count": int, "blocked": int, "settled": {kind: n}}`.
+
+    Public, and the ONE derivation: the lane below and `project upgrade` (which `migrate`
+    reports) both read it, so the number an upgrader is told is the number the gate then
+    fails on. The upgrade once summed `reconcile.detect_type` per type, two of the sweep's
+    sources, and named 2 items on a tree whose lane failed on 28.
+    """
     import reconcile
     rr = Path(root).resolve()
     # ONE sweep, `reconcile.detect_all`, shared with `reconcile detect` itself - never a
@@ -84,6 +92,12 @@ def _reconcile(root: str) -> dict:
     for d in reconcile.settled_items(rr, [d for d in drift if not d.get("blocked_by")]):
         settled[d["kind"]] = settled.get(d["kind"], 0) + 1
     total -= sum(settled.values())
+    return {"count": total, "blocked": blocked, "settled": settled}
+
+
+def _reconcile(root: str) -> dict:
+    tally = reconcile_drift_tally(root)
+    total, blocked, settled = tally["count"], tally["blocked"], tally["settled"]
     detail = f"{total} drift item(s)"
     if blocked:
         detail += f" (+{blocked} awaiting another gate, not blocking)"
