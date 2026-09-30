@@ -194,6 +194,65 @@ class CopilotGlobalTests(unittest.TestCase):
                                   f"{block}")
 
 
+    def test_no_hint_when_a_folder_the_tool_reads_holds_a_copy(self) -> None:
+        """BG0856 AC1. MUTANT: c00784d1's hint, which looks for a copy only in the tool's
+        install target (~/.agents/skills for copilot), so a copy in ~/.copilot/skills - the other
+        folder Copilot CLI reads - is refreshed by the sweep and then called not installed for,
+        and following the hint makes Copilot load the skill twice. Run with the sweep on (the
+        repro) and off (the copy serves whatever its version)."""
+        for argv in ((), ("--no-sweep",)):
+            with self.subTest(argv=argv), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                skill_copy(root / "home/.copilot/skills/sdlc-studio", "1.0.0")
+                proc = run_install(root, curated_path(root, ("copilot",)), *argv)
+                out = proc.stdout + proc.stderr
+                self.assertEqual(proc.returncode, 0, out)
+                self.assertEqual([ln for ln in hint_lines(out) if "Copilot CLI" in ln], [], out)
+                self.assertFalse((root / "home/.agents").exists(), out)
+
+    def test_no_hint_for_a_tool_served_by_a_shared_folder(self) -> None:
+        """BG0856 AC2. MUTANT: a fix that special-cases ~/.copilot/skills instead of reading one
+        per-tool folder table: opencode reads ~/.claude/skills, which the default install just
+        wrote, and Gemini CLI reads ~/.agents/skills. The gemini control - the same stub with
+        no copy - proves the fixture can reach the hint, so silence cannot pass."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            proc = run_install(root, curated_path(root, ("opencode",)))
+            out = proc.stdout + proc.stderr
+            self.assertEqual(proc.returncode, 0, out)
+            self.assertEqual(hint_lines(out), [], out)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            skill_copy(root / "home/.agents/skills/sdlc-studio", "1.0.0")
+            proc = run_install(root, curated_path(root, ("gemini",)))
+            out = proc.stdout + proc.stderr
+            self.assertEqual(proc.returncode, 0, out)
+            self.assertEqual(hint_lines(out), [], out)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            proc = run_install(root, curated_path(root, ("gemini",)))
+            out = proc.stdout + proc.stderr
+            self.assertEqual(proc.returncode, 0, out)
+            self.assertEqual(len(hint_lines(out)), 1, f"control: no Gemini CLI hint:\n{out}")
+            self.assertIn("Gemini CLI", hint_lines(out)[0])
+
+    def test_hint_still_names_a_tool_with_no_copy_in_any_folder_it_reads(self) -> None:
+        """BG0856 AC3, the positive control. MUTANT: a fix that silences the hint whenever a
+        copy exists anywhere. Copies sit in folders Copilot CLI does not read (~/.gemini/skills,
+        ~/.config/opencode/skills, and the ~/.claude/skills the install writes)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            skill_copy(root / "home/.gemini/skills/sdlc-studio", "1.0.0")
+            skill_copy(root / "home/.config/opencode/skills/sdlc-studio", "1.0.0")
+            proc = run_install(root, curated_path(root, ("copilot",)))
+            out = proc.stdout + proc.stderr
+            self.assertEqual(proc.returncode, 0, out)
+            hints = hint_lines(out)
+            self.assertEqual(len(hints), 1, out)
+            self.assertIn("Copilot CLI", hints[0])
+            self.assertRegex(hints[0], r"--target claude,copilot \(", hints[0])
+
+
 def hint_lines(out: str) -> list[str]:
     return [ln for ln in out.splitlines() if "Detected but not installed for" in ln]
 
@@ -234,22 +293,27 @@ class UndetectedHintTests(unittest.TestCase):
             self.assertEqual(hint_lines(out), [], out)
 
     def test_local_hint_ignores_repo_signals(self) -> None:
-        """MUTANT: a --local default install names Copilot CLI from `gh` or a `.github` folder,
-        neither of which is Copilot CLI. The control: the copilot binary still earns the hint."""
+        """MUTANT: the hint reads is_detected, which --target auto uses, so on a --local default
+        install repo and shared-folder signals - `gh`, a `.github` folder, a bare ~/.agents -
+        name tools the host lacks. Since BG0856 Copilot CLI is served here either way (it reads
+        the project's .claude/skills, which the install writes), so the ~/.agents signal naming
+        Codex is what this fixture reaches. The control: a present tool that reads no folder the
+        local install writes still earns the hint (Gemini CLI)."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             (root / "project/.github").mkdir(parents=True)
+            (root / "home/.agents").mkdir(parents=True)
             proc = run_install(root, curated_path(root, ("gh",)), "--local", "--no-sweep")
             out = proc.stdout + proc.stderr
             self.assertEqual(proc.returncode, 0, out)
             self.assertEqual(hint_lines(out), [], out)
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            proc = run_install(root, curated_path(root, ("copilot",)), "--local", "--no-sweep")
+            proc = run_install(root, curated_path(root, ("gemini",)), "--local", "--no-sweep")
             out = proc.stdout + proc.stderr
             self.assertEqual(proc.returncode, 0, out)
             self.assertEqual(len(hint_lines(out)), 1, out)
-            self.assertIn("Copilot CLI", hint_lines(out)[0])
+            self.assertIn("Gemini CLI", hint_lines(out)[0])
 
     def test_no_hint_for_an_explicit_target(self) -> None:
         """MUTANT: the hint prints for any target list, not only the default. A user who named
@@ -263,19 +327,20 @@ class UndetectedHintTests(unittest.TestCase):
             self.assertEqual(hint_lines(out), [], out)
 
     def test_one_target_per_shared_folder(self) -> None:
-        """MUTANT: the hint stops de-duplicating by folder, so Copilot CLI and Cursor, which
-        both read ~/.agents/skills, add `copilot,agents` - two targets for one copy. Both tools
-        are still named."""
+        """MUTANT: the hint stops de-duplicating by install folder, so Codex and Copilot CLI,
+        whose targets both write ~/.agents/skills, add `codex,copilot` - two targets for one
+        copy. Both tools are still named. (Cursor served here before BG0856; it reads the
+        ~/.claude/skills the default install writes, so it is no longer hinted.)"""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            proc = run_install(root, curated_path(root, ("copilot", "cursor")), "--no-sweep")
+            proc = run_install(root, curated_path(root, ("codex", "copilot")), "--no-sweep")
             out = proc.stdout + proc.stderr
             self.assertEqual(proc.returncode, 0, out)
             hints = hint_lines(out)
             self.assertEqual(len(hints), 1, out)
+            self.assertIn("Codex", hints[0])
             self.assertIn("Copilot CLI", hints[0])
-            self.assertIn("Cursor", hints[0])
-            self.assertRegex(hints[0], r"--target claude,copilot \(", hints[0])
+            self.assertRegex(hints[0], r"--target claude,codex \(", hints[0])
 
 
 class CopilotDetectionTests(unittest.TestCase):

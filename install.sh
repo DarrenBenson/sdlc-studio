@@ -221,19 +221,54 @@ tool_present() {
     esac
 }
 
-# A default install serves Claude Code only. Name each other tool on this host that has no copy
-# of the skill, and the --target that would add one, so a Copilot CLI user following the quick
-# start is not left with no skill and no reason (BG0852). A folder already holding a copy -
-# installed earlier or refreshed by this run's sweep - is served, so it is not hinted. One target
-# per folder: copilot and agents (Cursor) share ~/.agents/skills, so both are named and one added.
+# Every skills folder each tool reads, one per line: its personal folders for a global install,
+# its project folders for a --local one. Wider than target_dir, which names the one folder this
+# installer writes. Sources: `copilot skill --help` (Copilot CLI 1.0.71); the skills docs of
+# opencode, Gemini CLI, Codex and Cursor (Cursor stands for the agents target).
+read_dirs() {
+    case "$1:$2" in
+        claude:global)   printf '%s\n' "$HOME/.claude/skills" ;;
+        claude:local)    printf '%s\n' ".claude/skills" ;;
+        codex:global)    printf '%s\n' "$HOME/.agents/skills" "$HOME/.codex/skills" ;;
+        codex:local)     printf '%s\n' ".agents/skills" ".codex/skills" ;;
+        gemini:global)   printf '%s\n' "$HOME/.gemini/skills" "$HOME/.agents/skills" ;;
+        gemini:local)    printf '%s\n' ".gemini/skills" ".agents/skills" ;;
+        opencode:global) printf '%s\n' "$HOME/.config/opencode/skills" "$HOME/.claude/skills" "$HOME/.agents/skills" ;;
+        opencode:local)  printf '%s\n' ".opencode/skills" ".claude/skills" ".agents/skills" ;;
+        copilot:global)  printf '%s\n' "$HOME/.copilot/skills" "$HOME/.agents/skills" ;;
+        copilot:local)   printf '%s\n' ".github/skills" ".agents/skills" ".claude/skills" ;;
+        agents:global)   printf '%s\n' "$HOME/.agents/skills" "$HOME/.cursor/skills" "$HOME/.claude/skills" "$HOME/.codex/skills" ;;
+        agents:local)    printf '%s\n' ".agents/skills" ".cursor/skills" ".claude/skills" ".codex/skills" ;;
+    esac
+}
+
+# Is the skill already where tool $1 reads it: a copy in any folder in read_dirs, or one this run
+# installs ($2, space-delimited install folders, so a dry run counts what it would write)?
+tool_served() {
+    local installing="$2" f
+    while IFS= read -r f; do
+        if [[ -n "$f" && ( -d "$f/$SKILL_NAME" || "$installing" == *" $f "* ) ]]; then return 0; fi
+    done <<READ_DIRS
+$(read_dirs "$1" "$INSTALL_MODE")
+READ_DIRS
+    return 1
+}
+
+# A default install serves Claude Code only. Name each other tool on this host that finds no copy
+# of the skill in any folder it reads, and the --target that would add one, so a Copilot CLI user
+# following the quick start is not left with no skill and no reason (BG0852). A copy anywhere the
+# tool reads - installed earlier, refreshed by this run's sweep, or written by this run - serves
+# it, so hinting it would only load the skill twice (BG0856). One target per install folder: codex
+# and copilot share ~/.agents/skills, so both are named and one added.
 # Explicit `if`s, so a run that finds nothing still returns 0 under set -e.
 undetected_hint() {
-    local targets="$1" t dir names="" list="" seen=" "
-    for t in $targets; do seen="$seen$(target_dir "$t" "$INSTALL_MODE") "; done
+    local targets="$1" t dir names="" list="" installing=" " seen
+    for t in $targets; do installing="$installing$(target_dir "$t" "$INSTALL_MODE") "; done
+    seen="$installing"
     for t in $ALL_TARGETS; do
         dir=$(target_dir "$t" "$INSTALL_MODE")
-        if [[ -z "$dir" || -d "$dir/$SKILL_NAME" || " $targets " == *" $t "* ]]; then continue; fi
-        if ! tool_present "$t"; then continue; fi
+        if [[ -z "$dir" || " $targets " == *" $t "* ]]; then continue; fi
+        if ! tool_present "$t" || tool_served "$t" "$installing"; then continue; fi
         names="$names, $(tool_name "$t")"
         if [[ "$seen" != *" $dir "* ]]; then
             seen="$seen$dir "

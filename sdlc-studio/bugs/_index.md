@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 42 |
-| In Progress | 3 |
+| Open | 41 |
+| In Progress | 4 |
 | Fixed | 675 |
 | Verified | 0 |
 | Closed | 87 |
@@ -214,7 +214,7 @@
 | [BG0853](BG0853-the-agent-instructions-template-names-the-claude-code.md) | The agent-instructions template names the Claude Code skill path, so an AGENTS.md seeded for Codex, Copilot, Gemini or Cursor points at files that do not exist there | Open | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0854](BG0854-nothing-runs-migrate-and-then-the-gate-on.md) | Nothing runs migrate and then the gate on one fixture, so migrate's report drifted from the gate's failing lanes on three lanes unseen | Open | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0855](BG0855-install-ps1-treats-copilot-as-repo-scoped-only.md) | install.ps1 treats Copilot as repo-scoped only, the Windows twin of BG0852 | Open | Medium | 2026-09-30 | 2026-09-30 |
-| [BG0856](BG0856-bg0852-did-not-converge-in-review-round-2.md) | BG0852 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-30 | 2026-09-30 |
+| [BG0856](BG0856-bg0852-did-not-converge-in-review-round-2.md) | BG0852 did not converge in review: round 2 REJECT findings | In Progress | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0857](BG0857-an-unreadable-epics-directory-is-read-as-absence.md) | An unreadable epics directory is read as absence by reconcile's detectors, so the gate and migrate report a drift count with no mention that part of the workspace was never read | Open | Medium | 2026-09-30 | 2026-09-30 |
 
 ## Archived Releases

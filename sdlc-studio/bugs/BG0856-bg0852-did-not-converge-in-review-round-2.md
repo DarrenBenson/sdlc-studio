@@ -1,6 +1,6 @@
 # BG0856: BG0852 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** install.sh,docs/INSTALL.md,tools/tests/test_install_copilot_global.py,changelog.d/BG0852.md,changelog.d/BG0856.md
@@ -25,10 +25,13 @@ In install.sh, count a copy in ANY folder a tool reads as served, not only the t
 
 - [ ] **AC1** Given a HOME with the `copilot` binary on a curated PATH and an sdlc-studio copy only in `~/.copilot/skills`, when the default `install.sh` runs, then no line names Copilot CLI as detected but not installed. Fails on: c00784d1's hint, which checks only the install target `~/.agents/skills`
   - **Verify:** pytest tools/tests/test_install_copilot_global.py::CopilotGlobalTests::test_no_hint_when_a_folder_the_tool_reads_holds_a_copy
+  - **Verified:** yes (2026-09-30)
 - [ ] **AC2** Given an `opencode` stub alone (the default install writes `~/.claude/skills`, which opencode reads), and separately a `gemini` stub with a copy in `~/.agents/skills`, when the default `install.sh` runs, then neither opencode nor Gemini CLI is hinted. Fails on: a fix that special-cases `~/.copilot/skills` rather than reading one per-tool folder table
   - **Verify:** pytest tools/tests/test_install_copilot_global.py::CopilotGlobalTests::test_no_hint_for_a_tool_served_by_a_shared_folder
+  - **Verified:** yes (2026-09-30)
 - [ ] **AC3** Given a HOME with the `copilot` binary and no sdlc-studio copy in any folder Copilot CLI reads, when the default `install.sh` runs, then the hint still names Copilot CLI and `--target claude,copilot`. Fails on: a fix that silences the hint whenever any copy exists anywhere
   - **Verify:** pytest tools/tests/test_install_copilot_global.py::CopilotGlobalTests::test_hint_still_names_a_tool_with_no_copy_in_any_folder_it_reads
+  - **Verified:** yes (2026-09-30)
 
 ## Revision History
 
