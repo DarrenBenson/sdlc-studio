@@ -26,8 +26,10 @@ In the seeded agent-instructions files, stop naming one tool's install path: def
 
 - [ ] **AC1** Given init seeding a scratch project, when the seeded AGENTS.md is read, then it names no literal skill install path (`.claude/skills/sdlc-studio`, `.agents/skills/sdlc-studio`, or their `~/` forms): every skill path goes through the `<skill>` placeholder, which the file defines once with the per-tool locations - that one definition line is the only place a literal install path may appear, and the seeded CLAUDE.md (read only by Claude Code, where `.claude/skills` is correct) is exempt. Fails on: today's template line 22, wherever the running skill is installed - the test reads the seeded text, so it cannot pass vacuously from a checkout whose skill sits under .claude/skills
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::AgentInstructionsSkillPathTests::test_seeded_agents_md_names_no_foreign_skill_path
+  - **Verified:** yes (2026-09-30)
 - [ ] **AC2** Given a workspace whose AGENTS.md names a literal tool-specific skill install path that is not under the project root, when `migrate.py --format json` runs, then a needs-a-human item names the line and its `<skill>` form, AGENTS.md is unchanged, and the answer is the same whether or not that path exists on the machine; a workspace vendoring the skill at that path under its own root gets no item, nor does CLAUDE.md naming a `.claude/skills` path, nor the placeholder's definition line. Fails on: silence, a rewrite, or a check that consults the machine's filesystem
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::AgentInstructionsSkillPathTests::test_unresolvable_skill_path_is_reported_not_rewritten
+  - **Verified:** yes (2026-09-30)
 
 ## Revision History
 

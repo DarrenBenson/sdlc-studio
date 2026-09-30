@@ -28,5 +28,7 @@ is a `CLAUDE.md` that imports `@AGENTS.md`.
    make a mistake?" If not, cut it. A bloated file gets ignored.
 
 The canonical file deliberately does **not** restate the sdlc-studio doctrine - it
-points at `.claude/skills/sdlc-studio/reference-doctrine.md` so the rules live in one
+points at `<skill>/reference-doctrine.md` so the rules live in one
 place and stay current as the skill updates.
+
+`<skill>` is the folder the skill is installed in for the reader's tool: `~/.claude/skills/sdlc-studio` (Claude Code), `~/.agents/skills/sdlc-studio` (Copilot CLI, Codex, Gemini CLI, Cursor), or the same path inside the repository for a project-local install. AGENTS.md is shared by every tool a team uses, so it names `<skill>` and defines it once rather than naming one tool's folder; `migrate` reports any line that does not.

@@ -745,5 +745,54 @@ class EveryTypeDirectoryGetsItsIndexTests(unittest.TestCase):
                               f"{type_} gets an index but no directory")
 
 
+
+class AgentInstructionsSkillPathTests(unittest.TestCase):
+    """BG0853. AGENTS.md is read by Codex, Copilot, Cursor and Gemini, whose skill lives under
+    `.agents/skills`, and the template told them to open `.claude/skills/sdlc-studio/...`.
+
+    Read from the SEEDED TEXT, never from where this checkout's skill sits, so the test cannot
+    pass because the path happens to exist here."""
+
+    #: Any literal install path of this skill: the Claude Code or `.agents` folder, bare, under
+    #: `~/`, or under an absolute prefix.
+    LITERAL = __import__("re").compile(r"\.(?:claude|agents)/skills/sdlc-studio")
+    #: The one line allowed to name them: the placeholder's own definition, which starts with it.
+    DEFINITION = __import__("re").compile(r"^\s*`<skill>`\s")
+
+    def _seeded(self, name: str) -> str:
+        with tempfile.TemporaryDirectory() as d:
+            with contextlib.redirect_stdout(io.StringIO()):
+                init.init(Path(d))
+            return (Path(d) / name).read_text(encoding="utf-8")
+
+    def test_seeded_agents_md_names_no_foreign_skill_path(self) -> None:
+        # Mutants: today's template (a literal path on the doctrine line), a template that drops
+        # the definition, and one that names the paths on a second, non-definition line.
+        lines = self._seeded("AGENTS.md").splitlines()
+        literal = [ln for ln in lines if self.LITERAL.search(ln)]
+        definitions = [ln for ln in lines if self.DEFINITION.match(ln)]
+        self.assertEqual([], [ln for ln in literal if ln not in definitions],
+                         "a literal skill install path outside the `<skill>` definition line")
+        self.assertEqual(1, len(definitions), definitions)
+        for where in ("~/.claude/skills/sdlc-studio", "~/.agents/skills/sdlc-studio"):
+            self.assertIn(where, definitions[0], "the definition names each tool's location")
+        text = "\n".join(lines)
+        self.assertIn("`<skill>/reference-doctrine.md`", text)
+        self.assertIn("python3 <skill>/scripts/artifact.py", text)
+
+    def test_the_seeded_claude_md_is_left_as_claude_codes_own(self) -> None:
+        # Exempt, and not rewritten: CLAUDE.md is read only by Claude Code.
+        self.assertIn("@AGENTS.md", self._seeded("CLAUDE.md"))
+
+    def test_the_seeded_agents_md_passes_the_skill_path_check(self) -> None:
+        # The template and the check that reports on it agree: a fresh seed is clean.
+        import validate  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            with contextlib.redirect_stdout(io.StringIO()):
+                init.init(Path(d))
+            rules = {f["rule"] for f in validate.check_instructions(Path(d))}
+        self.assertNotIn("foreign-skill-path", rules)
+
+
 if __name__ == "__main__":
     unittest.main()

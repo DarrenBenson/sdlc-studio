@@ -988,6 +988,41 @@ def working_model_opt_outs(root: Path) -> set[str]:
     return named & known
 
 
+#: A literal install path of this skill for one tool: the Claude Code or `.agents` folder, bare
+#: (project-local), under `~/` or `$HOME/`, or under an absolute prefix. AGENTS.md is read by every
+#: tool a team uses, and each installs the skill somewhere else, so such a path resolves only for
+#: one of them. The template writes `<skill>` instead and defines it once.
+_SKILL_PATH_RE = re.compile(
+    r"(?:~|\$HOME|\$\{HOME\})?(?:/[\w.@-]+)*/?\.(?:claude|agents)/skills/sdlc-studio(?![\w-])")
+#: The placeholder's own definition line, the one place the per-tool paths are named: it starts
+#: with the placeholder.
+_SKILL_DEFINITION_RE = re.compile(r"^\s*`<skill>`\s")
+
+
+def foreign_skill_paths(root: Path, text: str) -> list[dict]:
+    """The AGENTS.md lines that name a literal skill install path, each with its `<skill>` form:
+    `[{"line": n, "text": ..., "paths": [...], "suggestion": ...}]`.
+
+    Read from the text alone, so every clone gets the same answer whatever is installed on the
+    machine running it. The one exception is the project's OWN tree: a project-local path that
+    exists under `root` is a skill vendored in the repository (this one is), which resolves for
+    everyone who clones it, so it is not reported. The placeholder's definition line is exempt."""
+    out: list[dict] = []
+    for n, line in enumerate(text.splitlines(), start=1):
+        if _SKILL_DEFINITION_RE.match(line):
+            continue
+        paths = [m.group(0) for m in _SKILL_PATH_RE.finditer(line)
+                 if not (m.group(0).startswith(".") and (root / m.group(0)).is_dir())]
+        if not paths:
+            continue
+        suggestion = line
+        for path in sorted(set(paths), key=len, reverse=True):
+            suggestion = suggestion.replace(path, "<skill>")
+        out.append({"line": n, "text": line.strip(), "paths": paths,
+                    "suggestion": suggestion.strip()})
+    return out
+
+
 def check_instructions(root: Path) -> list[dict]:
     """Hygiene-check a project's agent-instructions files (AGENTS.md / CLAUDE.md).
 
@@ -1061,6 +1096,14 @@ def check_instructions(root: Path) -> list[dict]:
             f"(\"{spec['anchor']}\")",
             element=spec["key"], template_section=spec["section"],
             template_anchor=spec["anchor"])
+
+    # CLAUDE.md is not read: only Claude Code reads it, where `.claude/skills` is correct.
+    for hit in foreign_skill_paths(root, text):
+        add(SEVERITY_WARNING, "foreign-skill-path",
+            f"AGENTS.md line {hit['line']} names one tool's skill install path, which other tools "
+            f"do not have: \"{hit['text']}\" - write it as \"{hit['suggestion']}\" (`<skill>` is "
+            f"defined once in templates/agent-instructions.md); reported, never rewritten",
+            line=hit["line"], paths=hit["paths"], suggestion=hit["suggestion"])
 
     n_lines = text.count("\n") + 1
     if n_lines > 300:

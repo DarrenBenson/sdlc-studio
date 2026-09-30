@@ -1282,5 +1282,75 @@ class RuntimeStateIgnoreTests(unittest.TestCase):
             self.assertEqual(gi.read_text(encoding="utf-8"), ".local/\n!.local/keep.json\n")
 
 
+
+class AgentInstructionsSkillPathTests(unittest.TestCase):
+    """BG0853. An AGENTS.md naming one tool's skill install path points every other tool at
+    files that are not there. `migrate` reports each such line with its `<skill>` form and never
+    rewrites it; the answer comes from the text and the project's own tree, never from what is
+    installed on this machine."""
+
+    #: The field report's three lines.
+    LINES = ("1. Read `.claude/skills/sdlc-studio/reference-doctrine.md` before any work.",
+             "   `python3 ~/.claude/skills/sdlc-studio/scripts/artifact.py new --type bug`",
+             "   `python3 ~/.claude/skills/sdlc-studio/scripts/gate.py`")
+    FORMS = ("1. Read `<skill>/reference-doctrine.md` before any work.",
+             "`python3 <skill>/scripts/artifact.py new --type bug`",
+             "`python3 <skill>/scripts/gate.py`")
+
+    @staticmethod
+    def _workspace(d: str, agents_tail: str, vendored: bool = False) -> Path:
+        import init
+        root = Path(d)
+        with contextlib.redirect_stdout(io.StringIO()):
+            init.init(root)
+        with (root / "AGENTS.md").open("a", encoding="utf-8") as fh:
+            fh.write("\n## Local notes\n\n" + agents_tail)
+        with (root / "CLAUDE.md").open("a", encoding="utf-8") as fh:
+            fh.write("\nClaude Code reads `.claude/skills/sdlc-studio/SKILL.md` itself.\n")
+        if vendored:
+            (root / ".claude" / "skills" / "sdlc-studio").mkdir(parents=True)
+        return root
+
+    def _agents_details(self, root: Path, *extra: str) -> list[str]:
+        import migrate
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+            rc = migrate.main(["--root", str(root), "--format", "json", *extra])
+        self.assertEqual(0, rc, buf.getvalue())
+        return [h["detail"] for h in json.loads(buf.getvalue())["needs_human"]
+                if h["kind"] == "agents"]
+
+    def test_unresolvable_skill_path_is_reported_not_rewritten(self):
+        # Mutants: silence, a rewrite of AGENTS.md, a check that asks the machine whether the
+        # path exists (HOME holds the skill in one run and not the other), a check that also
+        # flags CLAUDE.md or the placeholder's own definition, and one that ignores vendoring.
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as bare, \
+                tempfile.TemporaryDirectory() as installed:
+            (Path(installed) / ".claude" / "skills" / "sdlc-studio").mkdir(parents=True)
+            root = self._workspace(d, "\n".join(self.LINES) + "\n")
+            agents = (root / "AGENTS.md").read_bytes()
+            answers = []
+            for home in (bare, installed):
+                with mock.patch.dict(os.environ, {"HOME": home}):
+                    answers.append(self._agents_details(root))
+                    answers.append(self._agents_details(root, "--apply"))
+            self.assertEqual(agents, (root / "AGENTS.md").read_bytes(), "AGENTS.md was rewritten")
+        self.assertEqual(1, len(answers[0]), answers[0])
+        self.assertTrue(all(a == answers[0] for a in answers),
+                        "the answer depends on what is installed on this machine")
+        detail = answers[0][0]
+        for line, form in zip(self.LINES, self.FORMS):
+            self.assertIn(line.strip(), detail)
+            self.assertIn(form, detail)
+        self.assertEqual(3, detail.count("[foreign-skill-path]"), detail)
+        self.assertNotIn("SKILL.md", detail, "CLAUDE.md is Claude Code's own file")
+
+        # A skill vendored under the project root is a real path there: no item at all.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._workspace(d, self.LINES[0] + "\n", vendored=True)
+            self.assertEqual([], self._agents_details(root))
+
+
 if __name__ == "__main__":
     unittest.main()

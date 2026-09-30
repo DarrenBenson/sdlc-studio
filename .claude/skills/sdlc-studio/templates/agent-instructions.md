@@ -17,9 +17,11 @@ should point to it rather than duplicate it.
 
 ## Operating doctrine
 
+`<skill>` below is the folder the sdlc-studio skill is installed in for your tool: `~/.claude/skills/sdlc-studio` (Claude Code), `~/.agents/skills/sdlc-studio` (Copilot CLI, Codex, Gemini CLI, Cursor), or `.claude/skills/sdlc-studio` / `.agents/skills/sdlc-studio` in this repository for a project-local install.
+
 This project runs on the **sdlc-studio** skill. Before substantive work:
 
-1. Read `.claude/skills/sdlc-studio/reference-doctrine.md` - the project-agnostic
+1. Read `<skill>/reference-doctrine.md` - the project-agnostic
    operating rules (the SDLC is the operating system; files are truth, indexes are
    derived; reconcile cadence; TDD by default).
 2. Read `sdlc-studio/reviews/LATEST.md` for current orientation.

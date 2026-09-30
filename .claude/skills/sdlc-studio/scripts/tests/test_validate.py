@@ -491,6 +491,46 @@ def _template_headings() -> set[str]:
     return set(re.findall(r"^#{2,}\s+(.*)$", _shipped_template(), re.M))
 
 
+class ForeignSkillPathTests(unittest.TestCase):
+    """BG0853: the shapes `foreign_skill_paths` reports and the ones it leaves alone."""
+
+    def _hits(self, text: str, vendored: str | None = None) -> list[dict]:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            if vendored:
+                (root / vendored).mkdir(parents=True)
+            return validate.foreign_skill_paths(root, text)
+
+    def test_every_install_form_is_reported_with_its_placeholder(self) -> None:
+        cases = {
+            "see `.agents/skills/sdlc-studio/help/gate.md`": "see `<skill>/help/gate.md`",
+            "run $HOME/.claude/skills/sdlc-studio/scripts/gate.py": "run <skill>/scripts/gate.py",
+            "run /home/u/.agents/skills/sdlc-studio/scripts/x.py": "run <skill>/scripts/x.py",
+            "cd ~/.claude/skills/sdlc-studio": "cd <skill>",
+        }
+        for line, form in cases.items():
+            hits = self._hits(line)
+            self.assertEqual(1, len(hits), line)
+            self.assertEqual(form, hits[0]["suggestion"], line)
+
+    def test_two_paths_on_one_line_are_both_replaced(self) -> None:
+        hits = self._hits("`~/.claude/skills/sdlc-studio/a` or `.agents/skills/sdlc-studio/b`")
+        self.assertEqual("`<skill>/a` or `<skill>/b`", hits[0]["suggestion"])
+
+    def test_the_definition_line_and_other_skills_are_not_reported(self) -> None:
+        text = ("`<skill>` is `~/.claude/skills/sdlc-studio` or `~/.agents/skills/sdlc-studio`.\n"
+                "Another skill: `~/.claude/skills/sdlc-studio-extra/x.md`.\n"
+                "Already right: `python3 <skill>/scripts/gate.py`.\n")
+        self.assertEqual([], self._hits(text))
+
+    def test_vendoring_exempts_only_the_project_local_path_it_backs(self) -> None:
+        line = "`.claude/skills/sdlc-studio/a.md`, `~/.claude/skills/sdlc-studio/b.md`, " \
+               "`.agents/skills/sdlc-studio/c.md`"
+        hits = self._hits(line, vendored=".claude/skills/sdlc-studio")
+        self.assertEqual(["~/.claude/skills/sdlc-studio", ".agents/skills/sdlc-studio"],
+                         hits[0]["paths"])
+
+
 class InstructionsTests(unittest.TestCase):
     def test_missing_agents_is_error(self) -> None:
         with tempfile.TemporaryDirectory() as d:
