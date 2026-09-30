@@ -1,6 +1,7 @@
 # SC0004: v5 run 3: an upgrading project is asked about its own history rather than silently forgiven
 
-> **Status:** Queued
+> **Status:** Withdrawn
+> **Withdrawn-because:** Stale v5-era charter: every unit it names is terminal (CR0497 Rejected; BG0497, BG0488, BG0522, BG0528 Fixed) and its scope query selects only discovery items sprint plan refuses. Cancelled at planning of the Jonah upgrade sprint, 2026-09-30, operator-approved.
 > **Queue rank:** 3
 > **Created:** 2026-08-09
 > **Created-by:** sdlc-studio new

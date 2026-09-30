@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** High
-> **Points:** 3
-> **Affects:** install.sh,install.ps1,README.md,docs/INSTALL.md,tools/tests/test_install_copilot_global.py,tools/tests/test_install_sweep.py, changelog.d/BG0852.md
+> **Points:** 5
+> **Affects:** install.sh,README.md,docs/INSTALL.md,tools/tests/test_install_copilot_global.py,tools/tests/test_install_sweep.py,tools/tests/test_install_atomic.py, changelog.d/BG0852.md
 > **Evidence:** Field report 2026-09-29 (Copilot CLI 1.0.89); `copilot skill --help` on this host (1.0.71); install.sh target_dir `copilot:global) echo ""`, resolve_targets auto skip, is_detected copilot/agents; README.md install table
 > **Created:** 2026-09-29
 > **Created-by:** sdlc-studio file
@@ -20,7 +20,7 @@ On a host with `copilot` on PATH and no `~/.agents`, `codex`, `cursor` or `gh`: 
 
 ## Proposed Fix
 
-Map `copilot:global` to `~/.agents/skills` (the folder Copilot shares with `agents`, so one copy serves both) in install.sh and install.ps1; let `--target auto` select it on a global install; add `command -v copilot` to the copilot and agents detections; include `~/.copilot/skills` in the sweep so a hand-placed copy is refreshed or named; when the default claude-only install detects Copilot CLI (or another supported tool) it did not install for, print one line naming the `--target` that would; correct the README and docs/INSTALL.md rows.
+Map `copilot:global` to `~/.agents/skills` (the folder Copilot shares with `agents`, so one copy serves both) in install.sh; let `--target auto` select it on a global install; add `command -v copilot` to the copilot and agents detections; include `~/.copilot/skills` in the sweep so a hand-placed copy is refreshed or named; when the default claude-only install detects Copilot CLI (or another supported tool) it did not install for, print one line naming the `--target` that would; correct the README and docs/INSTALL.md rows. `tools/tests/test_install_atomic.py::test_global_auto_excludes_copilot` (CR0208) asserts the opposite of AC1; its intent - a global install must never write `.github/skills` into the current directory - is kept by AC5, and the test is rewritten to it. install.ps1 carries the same mapping but cannot be exercised on a host without pwsh, so its parity is a separate unit (see Revision History).
 
 ## Acceptance Criteria
 
@@ -32,9 +32,12 @@ Map `copilot:global` to `~/.agents/skills` (the folder Copilot shares with `agen
   - **Verify:** pytest tools/tests/test_install_sweep.py::SweepTests::test_sweep_visits_copilot_personal_folder
 - [ ] **AC4** README.md and docs/INSTALL.md no longer describe Copilot as repo-scoped only, and name the personal folder the installer uses. Fails on: the `(repo-scoped)` row surviving
   - **Verify:** pytest tools/tests/test_install_copilot_global.py::CopilotGlobalTests::test_docs_do_not_call_copilot_repo_scoped
+- [ ] **AC5** Given a global `install.sh --target auto` run from inside a directory holding a `.github` folder, then nothing is written under that directory's `.github/skills`, and copilot's global target is the personal folder. Fails on: a fix that re-enables copilot on a global auto by pointing it at `.github/skills` in the current directory (the side effect CR0208 removed)
+  - **Verify:** pytest tools/tests/test_install_atomic.py::ResolveTargetsAuto::test_global_auto_never_writes_github_skills_in_cwd
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-29 | sdlc-studio | Filed |
+| 2026-09-30 | sprint planning | Regroomed after goal-review round 78 (product, engineering and QA seats): points 3 to 5; install.ps1 dropped from Affects (no pwsh on the build host, parity filed separately); test_install_atomic.py added, since its CR0208 test asserts the opposite of AC1; AC5 keeps CR0208's intent. |

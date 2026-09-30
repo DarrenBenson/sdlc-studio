@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/templates/agent-instructions.md,.claude/skills/sdlc-studio/templates/agent-instructions.README.md,.claude/skills/sdlc-studio/scripts/init.py,.claude/skills/sdlc-studio/scripts/project_upgrade.py,.claude/skills/sdlc-studio/scripts/tests/test_init.py,.claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, changelog.d/BG0853.md
+> **Affects:** .claude/skills/sdlc-studio/templates/agent-instructions.md,.claude/skills/sdlc-studio/templates/agent-instructions.README.md,.claude/skills/sdlc-studio/scripts/init.py,.claude/skills/sdlc-studio/scripts/validate.py,.claude/skills/sdlc-studio/scripts/tests/test_validate.py,.claude/skills/sdlc-studio/scripts/project_upgrade.py,.claude/skills/sdlc-studio/scripts/tests/test_init.py,.claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, changelog.d/BG0853.md
 > **Evidence:** Field report 2026-09-29; templates/agent-instructions.md:22; `grep -rl .claude/skills/sdlc-studio` over the skill's markdown returns 14 files
 > **Created:** 2026-09-29
 > **Created-by:** sdlc-studio file
@@ -20,13 +20,13 @@ Install with `install.sh --target agents` only (no Claude Code), run `init` in a
 
 ## Proposed Fix
 
-In the seeded agent-instructions files, stop naming one tool's install path: either define a `<skill>` placeholder once in the template (listing the per-tool locations) and write `<skill>/reference-doctrine.md`, `python3 <skill>/scripts/gate.py`, or have init resolve the running skill's own folder (it knows `__file__`) and write that path. Extend the agent-instructions hygiene check that migrate already reports through so an AGENTS.md/CLAUDE.md line naming a skill path that does not resolve is reported (never rewritten). The other 13 docs are reference prose and can follow in the same change or a CR.
+In the seeded agent-instructions files, stop naming one tool's install path: define a `<skill>` placeholder once in the template (listing the per-tool locations) and write `<skill>/reference-doctrine.md`, `python3 <skill>/scripts/gate.py`. Do NOT resolve init's `__file__` into the file: AGENTS.md is committed and shared, so one machine's absolute path would break every teammate on another tool. Extend the agent-instructions hygiene check (`validate.check_instructions`, which migrate already reports through) so an AGENTS.md/CLAUDE.md line naming a literal tool-specific skill install path is reported with its placeholder form, never rewritten. The check reads the text, not the machine, so every clone gets the same answer; a path that exists under the project root itself (a skill vendored in the repo, as in this repository) is not flagged. The other 13 docs are reference prose and can follow in the same change or a CR.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given init seeding a scratch project, when the seeded AGENTS.md is read, then it names no path under `.claude/skills/` unless the running skill is installed there. Fails on: the template's literal `.claude/skills/sdlc-studio/reference-doctrine.md`
+- [ ] **AC1** Given init seeding a scratch project, when the seeded AGENTS.md is read, then it names no literal skill install path (`.claude/skills/sdlc-studio`, `.agents/skills/sdlc-studio`, or their `~/` forms): every skill path goes through the `<skill>` placeholder, which the file defines once with the per-tool locations - that one definition line is the only place a literal install path may appear, and the seeded CLAUDE.md (read only by Claude Code, where `.claude/skills` is correct) is exempt. Fails on: today's template line 22, wherever the running skill is installed - the test reads the seeded text, so it cannot pass vacuously from a checkout whose skill sits under .claude/skills
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::AgentInstructionsSkillPathTests::test_seeded_agents_md_names_no_foreign_skill_path
-- [ ] **AC2** Given a workspace whose AGENTS.md names a skill path that does not resolve, when `migrate.py --format json` runs, then a needs-a-human item names the line, and AGENTS.md is unchanged. Fails on: silence, or a rewrite
+- [ ] **AC2** Given a workspace whose AGENTS.md names a literal tool-specific skill install path that is not under the project root, when `migrate.py --format json` runs, then a needs-a-human item names the line and its `<skill>` form, AGENTS.md is unchanged, and the answer is the same whether or not that path exists on the machine; a workspace vendoring the skill at that path under its own root gets no item, nor does CLAUDE.md naming a `.claude/skills` path, nor the placeholder's definition line. Fails on: silence, a rewrite, or a check that consults the machine's filesystem
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::AgentInstructionsSkillPathTests::test_unresolvable_skill_path_is_reported_not_rewritten
 
 ## Revision History
@@ -34,3 +34,5 @@ In the seeded agent-instructions files, stop naming one tool's install path: eit
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-29 | sdlc-studio | Filed |
+| 2026-09-30 | sprint planning | Regroomed after goal-review round 78 (product, engineering and QA seats): placeholder mandated (resolving `__file__` commits one machine's path); AC1 made non-vacuous from this checkout [LC-002]; AC2 made machine-independent with a vendored-skill carve-out; validate.py and its test added to Affects. |
+| 2026-09-30 | sprint planning | Finalised by hand after goal-review round 79 (two-round limit): the placeholder's definition line and CLAUDE.md are exempt from the no-literal-path rule (QA and engineering seats). |

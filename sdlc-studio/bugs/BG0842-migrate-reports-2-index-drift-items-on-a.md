@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, changelog.d/BG0842.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, changelog.d/BG0842.md
 > **Evidence:** docs/upgrade-rehearsal-v6.md (US0962), v4.1 row; project_upgrade.py plan(): drift = `sum(len(reconcile.detect_type(t, root)['drift']) ...)`; `gate.py` `_reconcile()`: `reconcile.detect_all`
 > **Created:** 2026-09-28
 > **Created-by:** sdlc-studio file
@@ -26,7 +26,7 @@ Count drift in project upgrade from `reconcile.detect_all`, less what the gate i
 
 - [ ] **AC1** Given a fixture workspace whose drift includes a kind `reconcile.detect_type` does not return (e.g. an epic-breakdown or link-asymmetry item), when `migrate.py --format json` runs, then its index-drift needs-a-human item carries the same count the gate's reconcile lane reports on that tree. Fails on: the per-type sum, which omits the extra kind
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::UpgradeDriftCountTests::test_the_drift_count_is_the_gates_reconcile_count
-- [ ] **AC2** Given a fixture with no drift, then migrate names no index-drift item. Fails on: a count that includes blocked or settle-only items the gate does not block on
+- [ ] **AC2** Given a fixture whose only drift is items the gate does not block on (a `blocked_by` item and a settle-only item), then migrate names no index-drift item, and the gate's reconcile lane passes on the same tree. Fails on: a count that includes blocked or settle-only items the gate does not block on
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::UpgradeDriftCountTests::test_no_drift_names_no_item
 
 ## Revision History
@@ -34,3 +34,4 @@ Count drift in project upgrade from `reconcile.detect_all`, less what the gate i
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-28 | sdlc-studio | Filed |
+| 2026-09-30 | sprint planning | Regroomed after goal-review round 78 (product, engineering and QA seats): gate.py and test_gate.py added (the shared helper is the gate lane's own, not the private gate._reconcile called from outside); AC2's fixture now holds the non-blocking kinds, so the plausible over-count is reachable [LC-002]. |

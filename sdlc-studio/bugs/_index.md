@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-09-29
+**Last Updated:** 2026-09-30
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 41 |
+| Open | 43 |
 | In Progress | 0 |
 | Fixed | 675 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
 | Superseded | 28 |
-| **Total** | **853** |
+| **Total** | **855** |
 
 ## All Bugs
 
@@ -212,6 +212,8 @@
 | [BG0851](BG0851-the-sprint-report-says-the-operator-ruled-nothing.md) | The sprint report says the operator ruled nothing and no gate stood down when both happened | Open | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0852](BG0852-install-sh-treats-copilot-as-repo-scoped-only.md) | install.sh treats Copilot as repo-scoped only, so a Copilot CLI user following the quick start or --target auto gets no sdlc-studio and no hint why | Open | High | 2026-09-29 | 2026-09-29 |
 | [BG0853](BG0853-the-agent-instructions-template-names-the-claude-code.md) | The agent-instructions template names the Claude Code skill path, so an AGENTS.md seeded for Codex, Copilot, Gemini or Cursor points at files that do not exist there | Open | Medium | 2026-09-29 | 2026-09-29 |
+| [BG0854](BG0854-nothing-runs-migrate-and-then-the-gate-on.md) | Nothing runs migrate and then the gate on one fixture, so migrate's report drifted from the gate's failing lanes on three lanes unseen | Open | Medium | 2026-09-30 | 2026-09-30 |
+| [BG0855](BG0855-install-ps1-treats-copilot-as-repo-scoped-only.md) | install.ps1 treats Copilot as repo-scoped only, the Windows twin of BG0852 | Open | Medium | 2026-09-30 | 2026-09-30 |
 
 ## Archived Releases
 
