@@ -326,15 +326,50 @@ def _conformance_cutoff(root: Path) -> list[dict]:
     if not failing:
         return []
     ids = [u["id"] for u in failing]
-    line = f"conformance.adopt_after: {max(ids, key=sdlc_md.id_number)}"
+    top = max(ids, key=sdlc_md.id_number)
+    line = f"conformance.adopt_after: {top}"
+    # Units whose ONLY unmet half is an APPROVE row that records no author (the ledger before its
+    # Author column) are counted apart: recording the author answers them, a cutoff need not.
+    # critic's own reader decides what the row says; the table is never re-parsed here.
+    import critic  # noqa: PLC0415 - needed only here
+
+    def approve_without_author(u: dict) -> bool:
+        if u["missing"] != ["critiqued"] or u.get("critiqued_missing") != [conformance.HALF_VERDICT]:
+            return False
+        v = critic.verdict_for(root, u["id"])
+        return (bool(v) and str(v.get("verdict") or "").upper() == critic.APPROVE
+                and critic.same_identity(v.get("author") or "", ""))
+
+    no_author = [u["id"] for u in failing if approve_without_author(u)]
+    other = [u for u in failing if u["id"] not in no_author]
     # Each unit's missing stages, so a human can tell old history from a recent breakage.
-    why = [f"{u['id']} ({conformance.missing_detail(u)})" for u in failing]
-    return [{"kind": "conformance-cutoff", "ids": ids, "line": line, "command": None,
-             "detail": f"the conformance lane would fail {len(ids)} unit(s): "
-                       f"{conformance._elide(why, 10)}. To grandfather them as pre-adoption "
-                       f"history, add `{line}` to sdlc-studio/.config.yaml (the `adopt_after` "
-                       f"key under `conformance:`) once you have checked none of them is new "
-                       f"work - every id at or below it is exempt"}]
+    why = [f"{u['id']} ({conformance.missing_detail(u)})" for u in other]
+    detail = f"the conformance lane would fail {len(ids)} unit(s): "
+    if no_author:
+        detail += (f"{len(no_author)} of them ({_named(no_author)}) with an APPROVE row that "
+                   f"records no author and nothing else unmet - recording each row's author, or "
+                   f"a reviewed `{critic.PRE_GATE}` author stamp, meets them without a cutoff")
+        if other:
+            detail += f"; the other {len(other)} ({_named(why)})"
+    else:
+        detail += _named(why)
+    existing = sdlc_md.project_override(root, "conformance.adopt_after")
+    if existing is None:
+        detail += (f". To grandfather them as pre-adoption history, add `{line}` to "
+                   f"sdlc-studio/.config.yaml (the `adopt_after` key under `conformance:`) once "
+                   f"you have checked none of them is new work - every id at or below it is "
+                   f"exempt")
+    else:
+        # Already set: these units come AFTER the project's own adoption point, so they are not
+        # pre-adoption history, and the key is raised rather than added.
+        detail += (f". The project already sets `conformance.adopt_after: {existing}` and these "
+                   f"units come after it. To exempt them anyway, raise `conformance.adopt_after` "
+                   f"from {existing} to {top} (`{line}`) in sdlc-studio/.config.yaml, only once "
+                   f"you have checked none of them is work the gate should still judge - every "
+                   f"id at or below it is exempt")
+    return [{"kind": "conformance-cutoff", "lane": "conformance", "ids": ids,
+             "approve_no_author": no_author, "other": [u["id"] for u in other], "line": line,
+             "command": None, "detail": detail}]
 
 
 #: The gate lane `_engagement_floor_cutoff` speaks for, carried on its item.

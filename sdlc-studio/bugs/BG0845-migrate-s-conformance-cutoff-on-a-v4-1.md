@@ -1,6 +1,6 @@
 # BG0845: migrate's conformance cutoff on a v4.1 project exempts the 98 units after the project's own adoption point, because a verdict row with no Author column never reads as independent
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_cutoff.py, changelog.d/BG0845.md, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py
@@ -26,8 +26,10 @@ Report only, no new check (LC-008). In `_conformance_cutoff`: when a cutoff is a
 
 - [ ] **AC1** Given a fixture that already sets `conformance.adopt_after` below its failing units, when `migrate.py --format json` runs, then the conformance item names the existing cutoff and the proposed one as a raise from it, and never tells the user to add the key. Fails on: today's 'add `conformance.adopt_after: ...`' wording
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_cutoff.py::MigrateCutoffTests::test_an_existing_cutoff_is_named_as_raised_not_added
+  - **Verified:** yes (2026-09-30)
 - [ ] **AC2** Given a fixture whose failing units include one with an APPROVE row in the five-column ledger (no Author) and one with no verdict row, then the conformance item counts them apart and names which is which. Fails on: one undifferentiated list
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_cutoff.py::MigrateCutoffTests::test_approve_rows_with_no_author_are_counted_apart
+  - **Verified:** yes (2026-09-30)
 
 ## Revision History
 
