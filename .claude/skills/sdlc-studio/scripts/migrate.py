@@ -337,6 +337,69 @@ def _conformance_cutoff(root: Path) -> list[dict]:
                        f"work - every id at or below it is exempt"}]
 
 
+#: The gate lane `_engagement_floor_cutoff` speaks for, carried on its item.
+_FLOOR_LANE = "engagement-floor"
+_FLOOR_NAMED = 10
+
+
+def _named(ids: list[str]) -> str:
+    return ", ".join(ids[:_FLOOR_NAMED]) + (f" (+{len(ids) - _FLOOR_NAMED} more)"
+                                            if len(ids) > _FLOOR_NAMED else "")
+
+
+def _engagement_floor_cutoff(root: Path) -> list[dict]:
+    """The `engagement_floor.adopt_after` line that grandfathers every shipped unit the
+    engagement-floor lane would fail, for a human, as `_conformance_cutoff` does for its lane:
+    named, never written. The lane's own `detect` decides which units fail, so a unit an existing
+    cutoff or a waiver already exempts is never named, and the line (the highest failing id) is
+    never below a failing unit. A cutoff that stops short is named as a raise from its value.
+
+    Nothing is proposed in `judgement` mode, where the lane never blocks. A forward cutoff fails
+    the lane as a config error, so the lane's own words are carried instead of a line. A v3 id
+    has no number `adopt_after` can reach, so such a unit is named with the per-unit remedies and
+    kept out of the line, which therefore always parses."""
+    import engagement_floor  # noqa: PLC0415 - the lane is needed only here
+
+    def item(ids: list[str], line: str | None, detail: str) -> list[dict]:
+        return [{"kind": "engagement-floor-cutoff", "lane": _FLOOR_LANE, "ids": ids,
+                 "line": line, "command": None, "detail": detail}]
+
+    try:
+        result = engagement_floor.detect(root)
+    except ValueError as exc:        # a malformed existing cutoff: the lane refuses it, loudly
+        return item([], None, f"the engagement-floor lane cannot read this project ({exc}), so "
+                              f"no `engagement_floor.adopt_after` cutoff can be proposed - fix "
+                              f"it, then re-run")
+    s = result["summary"]
+    if s["cutoff_forward"]:
+        return item([], None, f"the engagement-floor lane fails on its cutoff: "
+                              f"{engagement_floor.remedy_detail(result)}")
+    if result["mode"] == "judgement":
+        return []
+    failing = [u["id"] for u in result["units"] if u["violation"]]
+    if not failing:
+        return []
+    numbered = [i for i in failing if sdlc_md.id_number(i) is not None]
+    unnumbered = [i for i in failing if sdlc_md.id_number(i) is None]
+    detail = (f"the engagement-floor lane would fail {len(failing)} shipped unit(s) (no plan and "
+              f"not shown small): {_named(failing)}.")
+    line = None
+    if numbered:
+        line = f"engagement_floor.adopt_after: {max(numbered, key=sdlc_md.id_number)}"
+        top = line.split(": ", 1)[1]
+        verb = (f"raise `engagement_floor.adopt_after` from {s['cutoff']} to {top} (`{line}`) in"
+                if s["cutoff"] is not None else f"add `{line}` to")
+        detail += (f" To grandfather them as pre-adoption history, {verb} "
+                   f"sdlc-studio/.config.yaml (the `adopt_after` key under `engagement_floor:`) "
+                   f"once you have checked none of them is new work - every id at or below it "
+                   f"is exempt.")
+    if unnumbered:
+        detail += (f" {len(unnumbered)} of them ({_named(unnumbered)}) carry a v3 id, which no "
+                   f"cutoff can reach: {engagement_floor.REMEDY_ADD}; or "
+                   f"{engagement_floor.REMEDY_WAIVER}.")
+    return item(failing, line, detail)
+
+
 #: The per-clone CI cache a pre-6.0 close read DORA from whenever it existed. Read here only, to
 #: freeze the runs a signed page read onto its tracked record; nothing re-derives from it.
 _CI_CACHE = "sdlc-studio/.local/ci-runs.json"
@@ -508,6 +571,7 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
     # 6. the grandfathering cutoff, judged on the tree as it now stands: migrated under --apply,
     # as found on a dry run.
     needs_human += _conformance_cutoff(root)
+    needs_human += _engagement_floor_cutoff(root)
 
     # Terminal legacy-sized units are NOT needs-human work: a Closed/Fixed unit is never planned,
     # so re-sizing it changes nothing. Report them as a single historical count, never as an action.

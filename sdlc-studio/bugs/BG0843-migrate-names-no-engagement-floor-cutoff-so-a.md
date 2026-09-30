@@ -1,6 +1,6 @@
 # BG0843: migrate names no engagement-floor cutoff, so a v4.1 project's gate fails the engagement floor on 349 shipped units before and after the upgrade and the report says nothing
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py, changelog.d/BG0843.md
@@ -26,8 +26,10 @@ Mirror `_conformance_cutoff` for the engagement floor: ask the engagement-floor 
 
 - [ ] **AC1** Given a fixture whose engagement-floor lane fails N shipped units and which sets no `engagement_floor.adopt_after`, when `migrate.py --format json` runs (dry or --apply), then one needs-a-human item names the N units and the `engagement_floor.adopt_after: <highest failing id>` line, and `.config.yaml` is unchanged. Fails on: today's migrate, which names nothing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py::EngagementFloorCutoffTests::test_migrate_names_the_engagement_floor_cutoff
+  - **Verified:** yes (2026-09-30)
 - [ ] **AC2** Given the same fixture with an `engagement_floor.adopt_after` at or above every failing id, then migrate names no engagement-floor item. Fails on: a cutoff proposed below one already set
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py::EngagementFloorCutoffTests::test_a_cutoff_already_covering_every_unit_names_nothing
+  - **Verified:** yes (2026-09-30)
 
 ## Revision History
 

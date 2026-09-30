@@ -319,6 +319,142 @@ class ConformanceCutoffTests(unittest.TestCase):
             self.assertIn("soon", items[0]["detail"])
 
 
+class EngagementFloorCutoffTests(unittest.TestCase):
+    """BG0843: a v4.1 project's engagement-floor lane failed 349 shipped units before and after
+    `migrate --apply`, and migrate never mentioned the floor. It now asks the lane which units it
+    fails and names the `engagement_floor.adopt_after` line that grandfathers them, never writing
+    it. Read through `migrate.py --format json` and `gate.py`, the commands an upgrader runs."""
+
+    KIND = "engagement-floor-cutoff"
+
+    @staticmethod
+    def _fixture(root: Path, config_tail: str = "") -> None:
+        """BG0001 and BG0002 shipped with no plan and no Affects (the lane fails both); BG0003
+        and US0001 carry a criterion (it passes them), so the highest id is 3."""
+        _v4_era(root, config_tail)
+        for n in (1, 2):
+            _w(root, f"bugs/BG000{n}-b.md",
+               f"# BG000{n}: b\n\n> **Status:** Fixed\n> **Severity:** Low\n")
+        _w(root, "bugs/BG0003-p.md",
+           "# BG0003: p\n\n> **Status:** Fixed\n> **Severity:** Low\n\n"
+           "## Acceptance Criteria\n\n- [x] **AC1** given x, then y\n")
+
+    @staticmethod
+    def _cli_json(main, argv: list[str]) -> tuple[int, dict]:
+        import contextlib  # noqa: PLC0415
+        import io  # noqa: PLC0415
+        import json  # noqa: PLC0415
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+            rc = main(argv)
+        return rc, json.loads(buf.getvalue())
+
+    def _items(self, root: Path, *extra: str) -> list[dict]:
+        rc, out = self._cli_json(migrate.main, ["--root", str(root), "--format", "json", *extra])
+        self.assertEqual(0, rc, out)
+        return [h for h in out["needs_human"] if h["kind"] == self.KIND]
+
+    def _lane(self, root: Path) -> dict:
+        import gate  # noqa: PLC0415
+        _rc, out = self._cli_json(gate.main, ["--root", str(root), "--only", "engagement-floor",
+                                              "--format", "json"])
+        lanes = [c for c in out["checks"] if c["check"] == "engagement-floor"]
+        self.assertEqual(1, len(lanes), out)
+        return lanes[0]
+
+    def test_migrate_names_the_engagement_floor_cutoff(self) -> None:
+        # Mutants: silence (today), a cutoff below a failing unit (the lowest id), naming units
+        # the lane passes, and writing the line into .config.yaml.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            lane = self._lane(root)
+            self.assertEqual((lane["status"], lane["count"]), ("fail", 2), lane)
+            cfg = root / "sdlc-studio" / ".config.yaml"
+            before = cfg.read_bytes()
+            for extra in ((), ("--apply",)):
+                items = self._items(root, *extra)
+                self.assertEqual(1, len(items), extra)
+                item = items[0]
+                self.assertEqual(["BG0001", "BG0002"], item["ids"], extra)
+                self.assertEqual(lane["count"], len(item["ids"]))
+                self.assertEqual("engagement_floor.adopt_after: BG0002", item["line"])
+                self.assertEqual("engagement-floor", item["lane"])
+                self.assertIn("`engagement_floor.adopt_after: BG0002`", item["detail"])
+                self.assertIn("BG0001", item["detail"])
+                self.assertNotIn("BG0003", item["detail"])
+                self.assertEqual(before, cfg.read_bytes(), f"{extra}: migrate wrote the cutoff")
+
+    def test_a_cutoff_already_covering_every_unit_names_nothing(self) -> None:
+        # Mutant: judging the lane's would-violate kind rather than its live violation, which
+        # proposes a cutoff for units the existing one already exempts. Both cutoffs are at or
+        # above every failing id and at or below the highest id, so the lane passes on each.
+        for cutoff in ("BG0002", "3"):
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._fixture(root, f"\nengagement_floor:\n  adopt_after: {cutoff}\n")
+                lane = self._lane(root)
+                self.assertEqual((lane["status"], lane["count"]), ("pass", 0), lane)
+                self.assertIn("2 exempt unit(s) would violate", lane["detail"],
+                              "the over-proposing mutant needs exempt failures to reach")
+                for extra in ((), ("--apply",)):
+                    self.assertEqual([], self._items(root, *extra), (cutoff, extra))
+
+    def test_a_cutoff_below_a_failing_unit_is_named_as_a_raise(self) -> None:
+        # An existing cutoff that stops short: only the units above it are named, and the line
+        # reads as raising the value already set, not as adding a second key.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, "\nengagement_floor:\n  adopt_after: 1\n")
+            items = self._items(root)
+        self.assertEqual(1, len(items), items)
+        self.assertEqual(["BG0002"], items[0]["ids"])
+        self.assertEqual("engagement_floor.adopt_after: BG0002", items[0]["line"])
+        self.assertIn("raise `engagement_floor.adopt_after` from 1", items[0]["detail"])
+
+    def test_a_forward_cutoff_is_named_with_the_lanes_own_words(self) -> None:
+        # A cutoff above the highest id fails the lane as a config error; migrate must not read
+        # its zero violations as "nothing to say", nor propose a line on top of it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, "\nengagement_floor:\n  adopt_after: 9\n")
+            self.assertEqual("fail", self._lane(root)["status"])
+            items = self._items(root)
+        self.assertEqual(1, len(items), items)
+        self.assertIsNone(items[0]["line"])
+        self.assertIn("exceeds the highest existing id 3", items[0]["detail"])
+
+    def test_a_ulid_unit_is_named_without_a_line_it_could_not_parse(self) -> None:
+        # A v3 id has no number for `adopt_after` to reach, so no cutoff can cover it: it is
+        # named with the per-unit remedies, and the line covers only the numbered units.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            _w(root, "bugs/BG-01JQK3F8-u.md",
+               "# BG-01JQK3F8: u\n\n> **Status:** Fixed\n> **Severity:** Low\n")
+            items = self._items(root)
+        self.assertEqual(1, len(items), items)
+        self.assertEqual(["BG-01JQK3F8", "BG0001", "BG0002"], items[0]["ids"])
+        self.assertEqual("engagement_floor.adopt_after: BG0002", items[0]["line"])
+        self.assertIn("BG-01JQK3F8", items[0]["detail"])
+        self.assertIn("no cutoff can reach", items[0]["detail"])
+
+    def test_judgement_mode_and_an_unreadable_cutoff(self) -> None:
+        # `judgement` makes the lane advisory: nothing blocks, so nothing is proposed. A cutoff
+        # the lane refuses to parse is named rather than raised.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, "\nengagement_floor: judgement\n")
+            self.assertEqual([], self._items(root))
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root, "\nengagement_floor:\n  adopt_after: soon\n")
+            items = self._items(root)
+        self.assertEqual(1, len(items), items)
+        self.assertIn("soon", items[0]["detail"])
+        self.assertIsNone(items[0]["line"])
+
+
 #: The per-clone CI cache a pre-6.0 close read, and the shape `gh run list --json` answers.
 CI_CACHE = Path("sdlc-studio") / ".local" / "ci-runs.json"
 

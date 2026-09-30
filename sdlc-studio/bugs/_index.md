@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 41 |
-| In Progress | 4 |
+| Open | 40 |
+| In Progress | 5 |
 | Fixed | 675 |
 | Verified | 0 |
 | Closed | 87 |
@@ -201,7 +201,7 @@
 | [BG0840](BG0840-bg0818-did-not-converge-in-review-round-2.md) | BG0818 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0841](BG0841-the-review-cap-has-no-per-unit-exception.md) | The review cap has no per-unit exception path, so an operator-granted extra round can only land by force | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0842](BG0842-migrate-reports-2-index-drift-items-on-a.md) | migrate reports 2 index drift items on a v4.1 project whose gate reconcile lane fails on 28, because project upgrade counts two of reconcile's nine drift sources | In Progress | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0843](BG0843-migrate-names-no-engagement-floor-cutoff-so-a.md) | migrate names no engagement-floor cutoff, so a v4.1 project's gate fails the engagement floor on 349 shipped units before and after the upgrade and the report says nothing | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0843](BG0843-migrate-names-no-engagement-floor-cutoff-so-a.md) | migrate names no engagement-floor cutoff, so a v4.1 project's gate fails the engagement floor on 349 shipped units before and after the upgrade and the report says nothing | In Progress | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0844](BG0844-an-upgraded-project-never-gets-the-sdlc-studio.md) | An upgraded project never gets the sdlc-studio/.gitignore that init writes, so gate.py leaves runtime state in git status on every run | In Progress | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0845](BG0845-migrate-s-conformance-cutoff-on-a-v4-1.md) | migrate's conformance cutoff on a v4.1 project exempts the 98 units after the project's own adoption point, because a verdict row with no Author column never reads as independent | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0846](BG0846-the-v6-release-notes-test-s-post-cut.md) | The v6 release notes test's post-cut control assumes the notes still carry the pre-cut links, so the v6.0.0 cut turns the tools suite red | Fixed | Medium | 2026-09-29 | 2026-09-29 |
