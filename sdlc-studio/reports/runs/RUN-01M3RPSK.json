@@ -1,0 +1,508 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M3RPSK",
+  "started_at": "2026-09-30T08:17:59Z",
+  "ended_at": "2026-09-30T13:56:11Z",
+  "outcome": "goal-reached",
+  "goal": "done",
+  "batch": [
+    "BG0842",
+    "BG0844",
+    "BG0843",
+    "BG0845",
+    "BG0853",
+    "BG0854",
+    "BG0856"
+  ],
+  "plan": "sdlc-studio/.local/sprint-plan.json",
+  "handoff": "HO-0092",
+  "session_token_baseline": {
+    "tokens": 1064594,
+    "source": "sha256:1d4787a19476",
+    "at": "2026-09-30T08:17:59Z"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 1064594,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T08:17:59Z",
+      "kind": "open",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 1088375,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T08:22:10Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 1189282,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T08:44:47Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 1270406,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T09:12:46Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 1406613,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T09:43:11Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 1485524,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T10:00:01Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 1578556,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T10:22:09Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 1629604,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T10:47:35Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 1659819,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T11:05:02Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 2036528,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T12:39:33Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 2080928,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T12:55:56Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 2080928,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T12:55:57Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 2080928,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T12:55:58Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 2080928,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T12:55:58Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 2085671,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T12:55:59Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 2085671,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T12:56:00Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 2085671,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T12:56:01Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 2087812,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T13:08:14Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    }
+  ],
+  "delegated_tokens": [],
+  "reopened": [],
+  "batch_changes": [
+    {
+      "action": "drop",
+      "id": "BG0852",
+      "reason": "carried at the review cap: BG0856",
+      "at": "2026-09-30T09:16:11Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0856",
+      "at": "2026-09-30T09:42:09Z",
+      "reason": "Operator ruling 2026-09-30: BG0852 was carried at the review cap; its findings in BG0856 are groomed and delivered in this run as a fresh unit rather than a third review round"
+    }
+  ],
+  "batches": [],
+  "rulings": [
+    {
+      "id": "D0288",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    }
+  ],
+  "base_ref": "7edb2a2e0db13c66d416aaa36c0ca32a6796cac6",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-09-30T08:17:27Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "Jonah's team installs v6 via Claude Code or Copilot CLI; migrate predicts the gate's reconcile, conformance, validate and floor failures",
+  "sprint_goal_review": {
+    "reviewed": true,
+    "status": "read",
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "engineering",
+        "achievable": "no",
+        "done_means": "install.sh --target auto on a Copilot-CLI-only host installs into ~/.agents/skills and never writes .github/skills into the cwd; the default install names Copilot detected-not-installed; a seeded AGENTS.md names skill paths only through <skill>; after migrate --apply, a COMMITTED fixture failing reconcile, conformance, validate and engagement-floor has each lane named by migrate with the count gate.py --format json reports, and sdlc-studio/.local never appears in git status.",
+        "one_increment": "yes",
+        "note": "BG0852 test conflict CLOSED (AC5); install.ps1 MOVED to BG0855; BG0842 Affects CLOSED; BG0853 vacuous AC1 and validate.py CLOSED; new: exempt CLAUDE.md, where .claude/skills is correct. 'Exactly' MOVED to 'every': six of ten standard lanes have no migrate item. Blocking: BG0854 needs a lane field on migrate items (migrate.py outside its Affects; else a hand kind-to-lane map, LL0013) and a committed fixture; price it 3. Goal: Jonah's team installs v6 via Claude Code or Copilot CLI; migrate predicts the gate's reconcile, conformance, validate and floor failures.",
+        "carried_from": "Jonah's team installs v6 under Claude Code or Copilot CLI, and migrate names every lane the gate fails"
+      }
+    ],
+    "goal": "Jonah's team installs v6 via Claude Code or Copilot CLI; migrate predicts the gate's reconcile, conformance, validate and floor failures",
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 80,
+    "objected": true,
+    "objections": [
+      {
+        "seat": "engineering",
+        "achievable": "no",
+        "one_increment": "yes",
+        "note": "BG0852 test conflict CLOSED (AC5); install.ps1 MOVED to BG0855; BG0842 Affects CLOSED; BG0853 vacuous AC1 and validate.py CLOSED; new: exempt CLAUDE.md, where .claude/skills is correct. 'Exactly' MOVED to 'every': six of ten standard lanes have no migrate item. Blocking: BG0854 needs a lane field on migrate items (migrate.py outside its Affects; else a hand kind-to-lane map, LL0013) and a committed fixture; price it 3. Goal: Jonah's team installs v6 via Claude Code or Copilot CLI; migrate predicts the gate's reconcile, conformance, validate and floor failures."
+      }
+    ],
+    "reviewed_at": "2026-09-30T08:12:21Z",
+    "change_type": "amendment",
+    "amended_from": "Jonah's team installs v6 under Claude Code or Copilot CLI, and migrate names every lane the gate fails",
+    "requesting_seat": "engineering",
+    "needs_reconsult": [
+      "product",
+      "qa"
+    ],
+    "themed": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Fixed",
+    "types": [
+      "bug"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed"
+  },
+  "plan_snapshot": {
+    "units": {
+      "BG0842": {
+        "planned_points": 2,
+        "forecast_tokens": 356704,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0844": {
+        "planned_points": 2,
+        "forecast_tokens": 356704,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0843": {
+        "planned_points": 3,
+        "forecast_tokens": 535056,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0845": {
+        "planned_points": 3,
+        "forecast_tokens": 535056,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0853": {
+        "planned_points": 3,
+        "forecast_tokens": 535056,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0854": {
+        "planned_points": 3,
+        "forecast_tokens": 535056,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0852": {
+        "planned_points": 5,
+        "forecast_tokens": 891760,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "BG0856": {
+        "planned_points": 2,
+        "forecast_tokens": 356704,
+        "forecast_minutes": 12.8,
+        "added": true
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 178352,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 6.4,
+        "source": "fallback: 0 row(s) for claude-opus-5-5, under 3, so the latest rows of any single model: median of RETRO0028"
+      }
+    }
+  },
+  "token_forecast": 3745392,
+  "goal_content_review": [
+    {
+      "phase": "plan",
+      "goal": "Jonah's team installs v6 via Claude Code or Copilot CLI; migrate predicts the gate's reconcile, conformance, validate and floor failures",
+      "answer": "yes",
+      "missing": "",
+      "shortfall": {},
+      "recorded_at": "2026-09-30T08:17:59Z"
+    }
+  ],
+  "unit_actuals": {
+    "BG0852": {
+      "minutes": 0.0,
+      "tokens": 0,
+      "started_at": "2026-09-30T08:22:10Z",
+      "start_tokens": 23781,
+      "open": true,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0842": {
+      "minutes": 251.15,
+      "tokens": 891646,
+      "started_at": "2026-09-30T08:44:47Z",
+      "start_tokens": 124688,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0844": {
+      "minutes": 223.2,
+      "tokens": 810522,
+      "started_at": "2026-09-30T09:12:46Z",
+      "start_tokens": 205812,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0856": {
+      "minutes": 192.83,
+      "tokens": 679058,
+      "started_at": "2026-09-30T09:43:11Z",
+      "start_tokens": 342019,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0843": {
+      "minutes": 175.93,
+      "tokens": 595404,
+      "started_at": "2026-09-30T10:00:01Z",
+      "start_tokens": 420930,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0845": {
+      "minutes": 153.82,
+      "tokens": 502372,
+      "started_at": "2026-09-30T10:22:09Z",
+      "start_tokens": 513962,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0853": {
+      "minutes": 128.4,
+      "tokens": 456067,
+      "started_at": "2026-09-30T10:47:35Z",
+      "start_tokens": 565010,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0854": {
+      "minutes": 110.97,
+      "tokens": 425852,
+      "started_at": "2026-09-30T11:05:02Z",
+      "start_tokens": 595225,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    }
+  },
+  "lanes_in_flight": [],
+  "review_base": {
+    "BG0852": 0,
+    "BG0842": 0,
+    "BG0844": 0,
+    "BG0856": 0,
+    "BG0843": 0,
+    "BG0845": 0,
+    "BG0853": 0,
+    "BG0854": 0
+  },
+  "sprint_goal_verdict": {
+    "verdict": "achieved",
+    "note": "Copilot CLI now installs globally and is hinted only when no folder it reads holds a copy (BG0852 via BG0856); on a committed v4.1-shaped project migrate names reconcile 2, conformance 3, validate 4 and engagement-floor 2 exactly as gate.py then fails them (BG0854, over BG0842/43/44/45); seeded AGENTS.md names the skill through <skill> (BG0853). Disclosed: a schema v3 project whose conformance failures are ULID-only is not yet named (BG0858)."
+  },
+  "scaffolded_retro": "RETRO-0127",
+  "close_attempts": [
+    {
+      "at": "2026-09-30T12:34:38Z",
+      "outstanding": 7,
+      "stages": [
+        "status"
+      ]
+    },
+    {
+      "at": "2026-09-30T13:01:25Z",
+      "outstanding": 0,
+      "stages": []
+    }
+  ],
+  "close_not_measured": [],
+  "handoff_worklist": "sdlc-studio/.local/handoff-worklist.txt",
+  "handoff_remaining": 0,
+  "close_tree": "3c33eaf52f77d2af764a8f522ce4542e52665900",
+  "report_gate_clear": [
+    "BG0842",
+    "BG0843",
+    "BG0844",
+    "BG0845",
+    "BG0853",
+    "BG0854",
+    "BG0856"
+  ],
+  "verified_sha": "d05b882f5e40f527581ddee0a92f7b3a281cb627",
+  "close_known_issues": [],
+  "ci_runs": {
+    "source": "gh run list",
+    "runs": [
+      {
+        "conclusion": "success",
+        "createdAt": "2026-09-30T11:42:29Z",
+        "databaseId": 36710190700,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "104b8817f289f9c16638809c68befae90875e367",
+        "updatedAt": "2026-09-30T12:29:39Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-09-30T10:46:08Z",
+        "databaseId": 36704422675,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "acf7fc31224552ecf61fe9ef24fb11b3c3783c8b",
+        "updatedAt": "2026-09-30T11:23:34Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-09-30T09:59:17Z",
+        "databaseId": 36699593318,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "f35ff76962c14e439ac92347b03bc3e09f930bf1",
+        "updatedAt": "2026-09-30T10:46:06Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-09-30T08:27:17Z",
+        "databaseId": 36689796152,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "04325bdd376df4747f6440907d07bd2eb4fc6fd4",
+        "updatedAt": "2026-09-30T09:13:40Z",
+        "workflowName": "Lint"
+      }
+    ]
+  },
+  "review_rows": {
+    "BG0842": [
+      "918fe8bd9cdfeb3f"
+    ],
+    "BG0844": [
+      "9ad5693d8c81dc70"
+    ],
+    "BG0843": [
+      "d54e336665be88f1"
+    ],
+    "BG0845": [
+      "42589a9990d3dfce"
+    ],
+    "BG0853": [
+      "fd91010d05c3bd7c",
+      "f12bf215292fcf15"
+    ],
+    "BG0854": [
+      "139ad98dd5cfd2a9"
+    ],
+    "BG0852": [
+      "1aaae4286062363f",
+      "483e27c8667ebb9d"
+    ],
+    "BG0856": [
+      "2745d0276a522da3",
+      "abc4aec3ec75c6de"
+    ]
+  },
+  "report": "RPT0012",
+  "report_fingerprint": "023473f5406ef653",
+  "unanswered": [],
+  "unanswered_rulings_from": null,
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-09-30T13:56:11Z",
+    "report": "RPT0012",
+    "fingerprint": "023473f5406ef653"
+  }
+}
