@@ -243,11 +243,14 @@ read_dirs() {
 }
 
 # Is the skill already where tool $1 reads it: a copy in any folder in read_dirs, or one this run
-# installs ($2, space-delimited install folders, so a dry run counts what it would write)?
+# installs ($2, space-delimited install folders, so a dry run counts what it would write)? A copy
+# is what the sweep would call one (is_skill_copy): an empty or foreign sdlc-studio folder serves
+# nothing.
 tool_served() {
     local installing="$2" f
     while IFS= read -r f; do
-        if [[ -n "$f" && ( -d "$f/$SKILL_NAME" || "$installing" == *" $f "* ) ]]; then return 0; fi
+        if [[ -z "$f" ]]; then continue; fi
+        if [[ "$installing" == *" $f "* ]] || is_skill_copy "$f/$SKILL_NAME"; then return 0; fi
     done <<READ_DIRS
 $(read_dirs "$1" "$INSTALL_MODE")
 READ_DIRS

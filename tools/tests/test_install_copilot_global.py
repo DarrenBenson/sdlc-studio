@@ -294,11 +294,11 @@ class UndetectedHintTests(unittest.TestCase):
 
     def test_local_hint_ignores_repo_signals(self) -> None:
         """MUTANT: the hint reads is_detected, which --target auto uses, so on a --local default
-        install repo and shared-folder signals - `gh`, a `.github` folder, a bare ~/.agents -
-        name tools the host lacks. Since BG0856 Copilot CLI is served here either way (it reads
-        the project's .claude/skills, which the install writes), so the ~/.agents signal naming
-        Codex is what this fixture reaches. The control: a present tool that reads no folder the
-        local install writes still earns the hint (Gemini CLI)."""
+        install a bare ~/.agents names Codex, which the host lacks. The `gh` and `.github` in
+        this fixture cannot reach a Copilot CLI hint on --local (Copilot CLI reads the project's
+        .claude/skills, which the install writes), so they are pinned by the global test below,
+        not here. The control: a present tool that reads no folder the local install writes
+        still earns the hint (Gemini CLI)."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             (root / "project/.github").mkdir(parents=True)
@@ -341,6 +341,72 @@ class UndetectedHintTests(unittest.TestCase):
             self.assertIn("Codex", hints[0])
             self.assertIn("Copilot CLI", hints[0])
             self.assertRegex(hints[0], r"--target claude,codex \(", hints[0])
+
+
+class HintEvidenceTests(unittest.TestCase):
+    """BG0856 round 2. Each row of the read-folder table and each branch of the served check
+    is pinned by a fixture the wrong row or branch would answer differently."""
+
+    def _hints(self, stubs: tuple[str, ...], *argv: str, copies: tuple[str, ...] = (),
+               github: bool = False, empty: tuple[str, ...] = ()) -> list[str]:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for rel in copies:
+                skill_copy(root / rel / "sdlc-studio", "1.0.0")
+            for rel in empty:
+                (root / rel / "sdlc-studio").mkdir(parents=True)
+            if github:
+                (root / "project/.github").mkdir(parents=True)
+            proc = run_install(root, curated_path(root, stubs), *argv)
+            out = proc.stdout + proc.stderr
+            self.assertEqual(proc.returncode, 0, out)
+            return hint_lines(out)
+
+    def test_repo_signals_never_name_copilot_on_a_global_install(self) -> None:
+        """MUTANTS R3g and R3: tool_present copilot also answers to `gh` on PATH, or to a
+        `.github` folder in the cwd, so a global default install names Copilot CLI on a host
+        without it. The control: the copilot binary on the same fixture does earn the hint."""
+        self.assertEqual(self._hints(("gh",), "--no-sweep"), [])
+        self.assertEqual(self._hints((), "--no-sweep", github=True), [])
+        control = self._hints(("copilot",), "--no-sweep", github=True)
+        self.assertEqual(len(control), 1, control)
+        self.assertIn("Copilot CLI", control[0])
+
+    def test_a_dry_run_counts_what_it_would_install(self) -> None:
+        """MUTANT N4: the served check ignores the folders this run installs, so a dry run -
+        which writes nothing - hints opencode although the ~/.claude/skills it would write is
+        a folder opencode reads."""
+        self.assertEqual(self._hints(("opencode",), "--dry-run"), [])
+
+    def test_cursor_is_served_by_the_claude_folder(self) -> None:
+        """MUTANT N8: the agents (Cursor) row lacks ~/.claude/skills, so a default install
+        names Cursor although Cursor reads the folder it just wrote."""
+        self.assertEqual(self._hints(("cursor",), "--no-sweep"), [])
+
+    def test_local_install_serves_copilot_through_the_project_claude_folder(self) -> None:
+        """MUTANTS N6 and N7: the copilot:local row lacks .claude/skills, or the hint reads the
+        GLOBAL table on a --local install (~/.copilot/skills, ~/.agents/skills), so a --local
+        default install names Copilot CLI although it reads the .claude/skills just written."""
+        self.assertEqual(self._hints(("copilot",), "--local", "--no-sweep"), [])
+
+    def test_codex_is_served_by_its_own_folder(self) -> None:
+        """MUTANT N9: the codex row lacks ~/.codex/skills, so a copy there is ignored and Codex
+        is named. The control: codex with no copy anywhere it reads is named."""
+        self.assertEqual(self._hints(("codex",), "--no-sweep",
+                                     copies=("home/.codex/skills",)), [])
+        control = self._hints(("codex",), "--no-sweep")
+        self.assertEqual(len(control), 1, control)
+        self.assertIn("Codex", control[0])
+
+    def test_a_folder_that_is_not_a_skill_copy_does_not_serve(self) -> None:
+        """MUTANT: the served check tests only that an `sdlc-studio` directory exists, so an
+        empty one - which the sweep in the same run skips as 'no sdlc-studio SKILL.md' -
+        silences the hint. Both folders Copilot CLI reads are tried."""
+        for rel in ("home/.agents/skills", "home/.copilot/skills"):
+            with self.subTest(folder=rel):
+                hints = self._hints(("copilot",), empty=(rel,))
+                self.assertEqual(len(hints), 1, hints)
+                self.assertIn("Copilot CLI", hints[0])
 
 
 class CopilotDetectionTests(unittest.TestCase):
