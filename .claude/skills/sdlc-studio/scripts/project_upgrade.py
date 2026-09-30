@@ -432,7 +432,7 @@ def audit(root: Path | str) -> dict:
     if drift:
         # NOT auto-applied by upgrade: reconcile can be destructive on multi-schema / inline-row
         # projects. Review it deliberately with `/sdlc-studio reconcile`.
-        manual.append({"kind": "index-drift", "count": drift,
+        manual.append({"kind": "index-drift", "lane": "reconcile", "count": drift,
                        "detail": f"{drift} index/status drift item(s) - review with `/sdlc-studio reconcile` "
                                  "(not auto-applied by upgrade)"})
     # advisory dirs (report, not auto - see module docstring)
@@ -490,7 +490,7 @@ def audit(root: Path | str) -> dict:
     verrs = sum(1 for t in sdlc_md.ARTIFACT_TYPES for p in sdlc_md.artifact_files(t, root)
                 for v in validate.validate_file(p, t, root) if v["severity"] == "error")
     if verrs:
-        manual.append({"kind": "validate-errors", "count": verrs,
+        manual.append({"kind": "validate-errors", "lane": "validate", "count": verrs,
                        "detail": f"{verrs} validate error(s) - missing AC/Verify, status vocab, unfilled placeholders"})
     return {"auto": auto, "manual": manual}
 

@@ -310,9 +310,10 @@ def _conformance_cutoff(root: Path) -> list[dict]:
     os.environ["PYTEST_ADDOPTS"] = f"{opts} -p no:cacheprovider".strip()
     os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
     try:
-        units = conformance.detect_conformance(root)["units"]
+        result = conformance.detect_conformance(root)
     except ValueError as exc:        # a malformed existing cutoff: the lane refuses it, loudly
-        return [{"kind": "conformance-cutoff", "command": None,
+        return [{"kind": "conformance-cutoff", "lane": "conformance", "ids": [], "count": None,
+                 "command": None,
                  "detail": f"the conformance lane cannot read this project ({exc}), so no "
                            f"`conformance.adopt_after` cutoff can be proposed - fix it, then "
                            f"re-run"}]
@@ -322,6 +323,10 @@ def _conformance_cutoff(root: Path) -> list[dict]:
                 os.environ.pop(key, None)
             else:
                 os.environ[key] = value
+    units = result["units"]
+    # The lane's own count, as the gate's conformance lane takes it: every non-conformant unit
+    # plus each repo-wide failure, so an item's number is the one the gate then fails on.
+    lane_count = result["summary"]["nonconformant"] + result["summary"].get("global_failures", 0)
     failing = [u for u in units if not u["conformant"] and sdlc_md.id_number(u["id"]) is not None]
     if not failing:
         return []
@@ -367,7 +372,7 @@ def _conformance_cutoff(root: Path) -> list[dict]:
                    f"from {existing} to {top} (`{line}`) in sdlc-studio/.config.yaml, only once "
                    f"you have checked none of them is work the gate should still judge - every "
                    f"id at or below it is exempt")
-    return [{"kind": "conformance-cutoff", "lane": "conformance", "ids": ids,
+    return [{"kind": "conformance-cutoff", "lane": "conformance", "count": lane_count, "ids": ids,
              "approve_no_author": no_author, "other": [u["id"] for u in other], "line": line,
              "command": None, "detail": detail}]
 
@@ -395,20 +400,20 @@ def _engagement_floor_cutoff(root: Path) -> list[dict]:
     kept out of the line, which therefore always parses."""
     import engagement_floor  # noqa: PLC0415 - the lane is needed only here
 
-    def item(ids: list[str], line: str | None, detail: str) -> list[dict]:
-        return [{"kind": "engagement-floor-cutoff", "lane": _FLOOR_LANE, "ids": ids,
-                 "line": line, "command": None, "detail": detail}]
+    def item(ids: list[str], line: str | None, detail: str, count: int | None) -> list[dict]:
+        return [{"kind": "engagement-floor-cutoff", "lane": _FLOOR_LANE, "count": count,
+                 "ids": ids, "line": line, "command": None, "detail": detail}]
 
     try:
         result = engagement_floor.detect(root)
     except ValueError as exc:        # a malformed existing cutoff: the lane refuses it, loudly
         return item([], None, f"the engagement-floor lane cannot read this project ({exc}), so "
                               f"no `engagement_floor.adopt_after` cutoff can be proposed - fix "
-                              f"it, then re-run")
+                              f"it, then re-run", None)
     s = result["summary"]
     if s["cutoff_forward"]:
         return item([], None, f"the engagement-floor lane fails on its cutoff: "
-                              f"{engagement_floor.remedy_detail(result)}")
+                              f"{engagement_floor.remedy_detail(result)}", 1)   # the lane's count
     if result["mode"] == "judgement":
         return []
     failing = [u["id"] for u in result["units"] if u["violation"]]
@@ -432,7 +437,7 @@ def _engagement_floor_cutoff(root: Path) -> list[dict]:
         detail += (f" {len(unnumbered)} of them ({_named(unnumbered)}) carry a v3 id, which no "
                    f"cutoff can reach: {engagement_floor.REMEDY_ADD}; or "
                    f"{engagement_floor.REMEDY_WAIVER}.")
-    return item(failing, line, detail)
+    return item(failing, line, detail, s["violations"])
 
 
 #: The per-clone CI cache a pre-6.0 close read DORA from whenever it existed. Read here only, to
@@ -589,7 +594,10 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
 
     needs_human: list[dict] = []
     for m in au["manual"]:                       # conventions that need judgement (index drift, etc.)
-        needs_human.append({"kind": m["kind"], "detail": m["detail"], "command": None})
+        # The gate lane an item speaks for, and that lane's count, travel with it as the item
+        # set them: a reader compares them with the gate's own output, never through a map.
+        needs_human.append({"kind": m["kind"], "detail": m["detail"], "command": None,
+                            **{k: m[k] for k in ("lane", "count") if k in m}})
     needs_human += cfg_human + mentions
     for bucket in _HUMAN_ORDER:                  # the artefact-review sweep, per ceremony
         label, cmd = _HUMAN[bucket]

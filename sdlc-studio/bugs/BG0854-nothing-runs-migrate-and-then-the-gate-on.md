@@ -1,6 +1,6 @@
 # BG0854: Nothing runs migrate and then the gate on one fixture, so migrate's report drifted from the gate's failing lanes on three lanes unseen
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_gate_agree.py, changelog.d/BG0854.md
@@ -27,8 +27,10 @@ Give every migrate item that corresponds to a gate lane a `lane` field carrying 
 
 - [ ] **AC1** Given a committed git fixture shaped like the rehearsal's v4.1 project, when `migrate.py --apply --format json` runs, the apply is committed, and `gate.py --format json` runs, then the gate's failing blocking lanes include reconcile, conformance, validate and engagement-floor (asserted, so the test cannot pass on a fixture that fails none), and for every failing blocking lane the gate reports, a migrate item carries that lane in its `lane` field with the gate's count. Fails on: HEAD, where no migrate item carries a lane, reconcile disagrees (2 against the gate's count) and the engagement floor is unnamed; and on a run that skips the commit, where conformance and validate pass on the diff and go uncompared
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_gate_agree.py::MigrateGateAgreeTests::test_migrate_names_every_lane_the_gate_fails
+  - **Verified:** yes (2026-09-30)
 - [ ] **AC2** Given the same fixture as a git repository with no sdlc-studio/.gitignore, after both runs `git status --porcelain` names no path under sdlc-studio/.local. Fails on: HEAD, where gate.py leaves gate-cost.json untracked (BG0844)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_gate_agree.py::MigrateGateAgreeTests::test_migrate_then_gate_leaves_no_runtime_state_in_git_status
+  - **Verified:** yes (2026-09-30)
 
 ## Revision History
 

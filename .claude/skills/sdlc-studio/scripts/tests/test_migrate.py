@@ -317,6 +317,8 @@ class ConformanceCutoffTests(unittest.TestCase):
             items = self._cutoffs(migrate.migrate(root))
             self.assertEqual(1, len(items))
             self.assertIn("soon", items[0]["detail"])
+            # BG0854: the error item still names the lane it speaks for, with no ids to name.
+            self.assertEqual(("conformance", []), (items[0]["lane"], items[0]["ids"]))
 
 
 class EngagementFloorCutoffTests(unittest.TestCase):
@@ -378,6 +380,7 @@ class EngagementFloorCutoffTests(unittest.TestCase):
                 item = items[0]
                 self.assertEqual(["BG0001", "BG0002"], item["ids"], extra)
                 self.assertEqual(lane["count"], len(item["ids"]))
+                self.assertEqual(lane["count"], item["count"])      # BG0854: the gate's number
                 self.assertEqual("engagement_floor.adopt_after: BG0002", item["line"])
                 self.assertEqual("engagement-floor", item["lane"])
                 self.assertIn("`engagement_floor.adopt_after: BG0002`", item["detail"])
@@ -418,10 +421,12 @@ class EngagementFloorCutoffTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._fixture(root, "\nengagement_floor:\n  adopt_after: 9\n")
-            self.assertEqual("fail", self._lane(root)["status"])
+            lane = self._lane(root)
+            self.assertEqual("fail", lane["status"])
             items = self._items(root)
         self.assertEqual(1, len(items), items)
         self.assertIsNone(items[0]["line"])
+        self.assertEqual(lane["count"], items[0]["count"])            # BG0854: the gate's number
         self.assertIn("exceeds the highest existing id 3", items[0]["detail"])
 
     def test_a_ulid_unit_is_named_without_a_line_it_could_not_parse(self) -> None:
