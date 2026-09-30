@@ -199,28 +199,44 @@ native_hint() {
 # Display name for the hint below.
 tool_name() {
     case "$1" in
-        claude)   echo "Claude Code" ;;
         codex)    echo "Codex" ;;
         gemini)   echo "Gemini CLI" ;;
         opencode) echo "opencode" ;;
         copilot)  echo "Copilot CLI" ;;
-        agents)   echo "the tools reading .agents/skills (Cursor, Codex, Gemini CLI, Copilot CLI)" ;;
+        agents)   echo "Cursor" ;;
     esac
 }
 
-# A default install serves Claude Code only. Name each other tool found on this host that it did
-# not install for, and the --target that would, so a Copilot CLI user following the quick start
-# is not left with no skill and no reason (BG0852). One tool per skills folder: copilot and agents
-# share ~/.agents/skills. Explicit `if`s, so a run that finds nothing still returns 0 under set -e.
+# Is the tool itself on this host? Stricter than is_detected, which serves --target auto: a shared
+# folder (~/.agents) or a repo signal (gh, .github) is no evidence of a tool, and the hint below
+# must not name one the host lacks. Cursor is what the agents target stands for here.
+tool_present() {
+    case "$1" in
+        codex)    command -v codex >/dev/null 2>&1 || [[ -d "$HOME/.codex" ]] ;;
+        gemini)   command -v gemini >/dev/null 2>&1 || [[ -d "$HOME/.gemini" ]] ;;
+        opencode) command -v opencode >/dev/null 2>&1 || [[ -d "$HOME/.config/opencode" ]] ;;
+        copilot)  command -v copilot >/dev/null 2>&1 || [[ -d "$HOME/.copilot" ]] ;;
+        agents)   command -v cursor >/dev/null 2>&1 ;;
+        *) return 1 ;;
+    esac
+}
+
+# A default install serves Claude Code only. Name each other tool on this host that has no copy
+# of the skill, and the --target that would add one, so a Copilot CLI user following the quick
+# start is not left with no skill and no reason (BG0852). A folder already holding a copy -
+# installed earlier or refreshed by this run's sweep - is served, so it is not hinted. One target
+# per folder: copilot and agents (Cursor) share ~/.agents/skills, so both are named and one added.
+# Explicit `if`s, so a run that finds nothing still returns 0 under set -e.
 undetected_hint() {
     local targets="$1" t dir names="" list="" seen=" "
     for t in $targets; do seen="$seen$(target_dir "$t" "$INSTALL_MODE") "; done
     for t in $ALL_TARGETS; do
         dir=$(target_dir "$t" "$INSTALL_MODE")
-        if [[ -z "$dir" || "$seen" == *" $dir "* ]]; then continue; fi
-        if is_detected "$t"; then
+        if [[ -z "$dir" || -d "$dir/$SKILL_NAME" || " $targets " == *" $t "* ]]; then continue; fi
+        if ! tool_present "$t"; then continue; fi
+        names="$names, $(tool_name "$t")"
+        if [[ "$seen" != *" $dir "* ]]; then
             seen="$seen$dir "
-            names="$names, $(tool_name "$t")"
             list="$list,$t"
         fi
     done

@@ -108,15 +108,17 @@ def doc_blocks(text: str) -> list[str]:
 class CopilotGlobalTests(unittest.TestCase):
 
     def test_auto_selects_a_copilot_personal_folder(self) -> None:
-        """AC1. MUTANTS: auto skips copilot on a global install (today's `continue`);
-        copilot:global maps to nothing; neither copilot nor agents detection looks for the
-        `copilot` binary. Each leaves a copilot-only host with no personal folder planned
-        (today: "No installable targets resolved"). The control - the same host without the
-        stub - catches the opposite mutant, an auto that plans ~/.agents/skills always."""
+        """AC1. MUTANTS: auto skips copilot on a global install (today's `continue`) - the
+        Targets line loses copilot; copilot:global maps to nothing - copilot is skipped, and the
+        explicit `--target copilot` run plans no folder; neither copilot nor agents detection
+        looks for the `copilot` binary - "No installable targets resolved". The agents target
+        alone would still plan ~/.agents/skills, so the folder check by itself kills only the
+        last; the Targets and explicit-target checks kill the first two. The control - the same
+        host without the stub - catches an auto that plans ~/.agents/skills always."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            proc = run_install(root, curated_path(root, ("copilot",)),
-                               "--target", "auto", "--dry-run")
+            path = curated_path(root, ("copilot",))
+            proc = run_install(root, path, "--target", "auto", "--dry-run")
             out = proc.stdout + proc.stderr
             self.assertFalse((root / "home" / ".agents").exists(), "precondition: no ~/.agents")
             self.assertEqual(proc.returncode, 0, out)
@@ -126,6 +128,14 @@ class CopilotGlobalTests(unittest.TestCase):
             self.assertTrue(any(ln.rstrip().endswith(personal) for ln in planned),
                             f"auto planned no Copilot CLI personal folder:\n{out}")
             self.assertFalse((root / "project" / ".github").exists(), out)
+            targets = next(ln for ln in out.splitlines() if "Targets:" in ln)
+            self.assertIn("copilot", targets.split(), f"auto did not select copilot:\n{out}")
+            self.assertNotIn("skipping", out, out)
+            proc = run_install(root, path, "--target", "copilot", "--dry-run")
+            out = proc.stdout + proc.stderr
+            self.assertEqual(proc.returncode, 0, out)
+            self.assertIn(f"[dry run] would install to: {home}/.agents/skills/sdlc-studio", out,
+                          f"--target copilot planned no personal folder:\n{out}")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             proc = run_install(root, curated_path(root), "--target", "auto", "--dry-run")
@@ -182,6 +192,109 @@ class CopilotGlobalTests(unittest.TestCase):
                     self.assertIn(folder, block,
                                   f"{name}: says Copilot reads .github/skills, not {folder}: "
                                   f"{block}")
+
+
+def hint_lines(out: str) -> list[str]:
+    return [ln for ln in out.splitlines() if "Detected but not installed for" in ln]
+
+
+class UndetectedHintTests(unittest.TestCase):
+    """BG0852 round 2. The default install's hint names a tool only on evidence the tool is on
+    this host, and never one whose skills folder already holds a copy."""
+
+    def test_no_hint_for_a_folder_that_already_holds_a_copy(self) -> None:
+        """MUTANTS: the hint ignores a copy already in the tool's folder (installed earlier, or
+        refreshed by this run's sweep); a shared ~/.agents folder counts as Codex being present.
+        Repro 1: after `--target copilot`, the default run named Codex, which the host lacks.
+        Repro 2: a copy in ~/.gemini/skills was refreshed and then called not installed for."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            path = curated_path(root, ("copilot",))
+            first = run_install(root, path, "--target", "copilot")
+            self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+            proc = run_install(root, path)
+            out = proc.stdout + proc.stderr
+            self.assertEqual(proc.returncode, 0, out)
+            self.assertEqual(hint_lines(out), [], out)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            path = curated_path(root)
+            skill_copy(root / "home/.gemini/skills/sdlc-studio", "1.0.0")
+            proc = run_install(root, path)
+            out = proc.stdout + proc.stderr
+            self.assertEqual(proc.returncode, 0, out)
+            self.assertIn("refreshed:", out, "precondition: the sweep refreshed the gemini copy")
+            self.assertEqual(hint_lines(out), [], out)
+        with tempfile.TemporaryDirectory() as d:   # ~/.agents alone is no tool
+            root = Path(d)
+            (root / "home/.agents").mkdir(parents=True)
+            proc = run_install(root, curated_path(root), "--no-sweep")
+            out = proc.stdout + proc.stderr
+            self.assertEqual(proc.returncode, 0, out)
+            self.assertEqual(hint_lines(out), [], out)
+
+    def test_local_hint_ignores_repo_signals(self) -> None:
+        """MUTANT: a --local default install names Copilot CLI from `gh` or a `.github` folder,
+        neither of which is Copilot CLI. The control: the copilot binary still earns the hint."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "project/.github").mkdir(parents=True)
+            proc = run_install(root, curated_path(root, ("gh",)), "--local", "--no-sweep")
+            out = proc.stdout + proc.stderr
+            self.assertEqual(proc.returncode, 0, out)
+            self.assertEqual(hint_lines(out), [], out)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            proc = run_install(root, curated_path(root, ("copilot",)), "--local", "--no-sweep")
+            out = proc.stdout + proc.stderr
+            self.assertEqual(proc.returncode, 0, out)
+            self.assertEqual(len(hint_lines(out)), 1, out)
+            self.assertIn("Copilot CLI", hint_lines(out)[0])
+
+    def test_no_hint_for_an_explicit_target(self) -> None:
+        """MUTANT: the hint prints for any target list, not only the default. A user who named
+        `--target claude` chose; the control is AC2's default run on the same host."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            proc = run_install(root, curated_path(root, ("copilot",)), "--target", "claude",
+                               "--no-sweep")
+            out = proc.stdout + proc.stderr
+            self.assertEqual(proc.returncode, 0, out)
+            self.assertEqual(hint_lines(out), [], out)
+
+    def test_one_target_per_shared_folder(self) -> None:
+        """MUTANT: the hint stops de-duplicating by folder, so Copilot CLI and Cursor, which
+        both read ~/.agents/skills, add `copilot,agents` - two targets for one copy. Both tools
+        are still named."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            proc = run_install(root, curated_path(root, ("copilot", "cursor")), "--no-sweep")
+            out = proc.stdout + proc.stderr
+            self.assertEqual(proc.returncode, 0, out)
+            hints = hint_lines(out)
+            self.assertEqual(len(hints), 1, out)
+            self.assertIn("Copilot CLI", hints[0])
+            self.assertIn("Cursor", hints[0])
+            self.assertRegex(hints[0], r"--target claude,copilot \(", hints[0])
+
+
+class CopilotDetectionTests(unittest.TestCase):
+
+    def test_gh_and_github_detect_copilot_only_locally(self) -> None:
+        """MUTANT: `gh` or a `.github` folder counts toward copilot on a global install, so a
+        global auto is steered by the directory it runs from. The control: --local keeps them."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "project/.github").mkdir(parents=True)
+            path = curated_path(root, ("gh",))
+            rows = {}
+            for mode in ("--global", "--local"):
+                proc = run_install(root, path, mode, "--list-targets")
+                self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+                row = next(ln for ln in proc.stdout.splitlines()
+                           if ln.split()[:1] == ["copilot"])
+                rows[mode] = row.split()[-1]
+            self.assertEqual(rows, {"--global": "no", "--local": "yes"})
 
 
 if __name__ == "__main__":

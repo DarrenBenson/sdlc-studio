@@ -64,7 +64,8 @@ Code does not read it - keep the `claude` target for Claude Code.
 `auto` detects a tool when its CLI is on `PATH` or its config directory exists.
 Copilot is detected by the `copilot` CLI or `~/.copilot`; `gh` and a `.github`
 folder count only for a `--local` install. The default install (Claude Code
-only) names any other tool it detects and the `--target` that would add it.
+only) names any other tool it finds on the host with no copy of the skill, and
+the `--target` that would add it.
 `--list-targets` (`-ListTargets`) prints the full map and what was detected
 without installing anything.
 
