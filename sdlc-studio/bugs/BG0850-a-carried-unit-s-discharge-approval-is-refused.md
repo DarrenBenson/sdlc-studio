@@ -1,9 +1,9 @@
 # BG0850: A carried unit's discharge approval is refused by the review cap that another reviewer's rounds filled
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py, .claude/skills/sdlc-studio/reference-review.md, changelog.d/BG0850.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py, .claude/skills/sdlc-studio/reference-review.md, changelog.d/BG0850.md
 > **Created:** 2026-09-29
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -31,10 +31,13 @@ In `round_refusal`, admit past the cap one APPROVE on a CARRIED unit (its delive
 
 - [ ] **AC1** Given a unit carried at the cap in an open run by rev-a's two REJECTs, when `critic.py record --verdict APPROVE --reviewer rev-a` runs, then it exits 0, writes the row, and `transition.py set --status Fixed` then exits 0 with no `--force` and no Forced-override field. Fails on: HEAD, which refuses the APPROVE `at the cap of 2` and the transition on rev-a's unanswered REJECT
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py::CarriedDischargeTests::test_the_rejecting_reviewer_discharges_a_carried_unit
+  - **Verified:** yes (2026-09-30)
 - [ ] **AC2** Given that carried unit delivered again in a later run where rev-b recorded REJECT then APPROVE, when `critic.py record --verdict APPROVE --reviewer rev-a` runs, then it exits 0 and `transition.py set --status Fixed` exits 0. Fails on: a fix that admits the discharge only outside a run holding the unit, where the cap is counted from the unit's review base and rev-b's two rounds still fill it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py::CarriedDischargeTests::test_the_discharge_passes_after_another_reviewers_rounds
+  - **Verified:** yes (2026-09-30)
 - [ ] **AC3** Given the carried unit, when rev-b records an APPROVE past the cap, or rev-a records a REJECT past it, then `critic.py record` exits 2 and writes nothing, the refusal naming rev-a; and given a unit with two REJECTs from rev-a recorded while no run was open (nothing carried, no bug filed), rev-a's APPROVE is refused at the cap as today. Fails on: a fix that lifts the cap for any APPROVE on a unit whose last round is a REJECT, which writes rev-b's row and the never-carried unit's row
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py::CarriedDischargeTests::test_only_the_rejecting_reviewers_approve_on_a_carried_unit_passes
+  - **Verified:** yes (2026-09-30)
 
 ## Impact
 

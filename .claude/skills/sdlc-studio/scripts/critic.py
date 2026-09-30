@@ -350,7 +350,7 @@ def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, br
     if phase == "delivery":
         _mark_review_base(repo_root, unit)
     with _ledger_lock(path):
-        if phase == "delivery" and (why := round_refusal(repo_root, unit, reviewer)):
+        if phase == "delivery" and (why := round_refusal(repo_root, unit, reviewer, verdict)):
             raise ValueError(why)
         if not path.exists():
             sdlc_md.atomic_write(path, _header(phase))
@@ -1471,19 +1471,39 @@ def review_ceiling(repo_root: Path | str) -> int:
     return value if value > 0 else DEFAULT_REVIEW_CEILING
 
 
-def round_refusal(repo_root: Path | str, unit: str, reviewer: str) -> str | None:
-    """Why a further delivery verdict on `unit` by `reviewer` must not be written, or None.
+def round_refusal(repo_root: Path | str, unit: str, reviewer: str,
+                  verdict: str | None = None) -> str | None:
+    """Why a further delivery `verdict` on `unit` by `reviewer` must not be written, or None.
 
     Two rules: no round past the cap, and a round after a REJECT comes from the reviewer who
     rejected, because it re-checks that reviewer's findings. Shared by every command that
-    writes a delivery verdict, so the rules cannot differ between them."""
+    writes a delivery verdict, so the rules cannot differ between them.
+
+    ONE verdict passes the cap: on a CARRIED unit (`carried_by`), an APPROVE from a reviewer
+    whose REJECT still stands unanswered. It answers that REJECT, the carry's only exit
+    (`REJECT_EXITS`); refusing it left `--force` as the only way to close an approved unit.
+    Any other verdict past the cap - another reviewer's, a REJECT, or one on a unit never
+    carried - is refused, and on a carried unit the refusal names who can discharge it."""
     prior = delivery_rounds(repo_root, unit)
     cap = review_ceiling(repo_root)
     uid = sdlc_md.norm_id(unit)
     if len(prior) >= cap:
-        return (f"{uid} has {len(prior)} review round(s) recorded, at the cap of {cap} "
-                f"(`review.max_rounds`). A unit still rejected at the cap is carried as a known "
-                f"issue, not reviewed again")
+        at_cap = (f"{uid} has {len(prior)} review round(s) recorded, at the cap of {cap} "
+                  f"(`review.max_rounds`)")
+        bug = carried_by(repo_root, uid)
+        owed = [r.get("reviewer") or "" for r in
+                _unanswered_rejects(_live_verdict_rows(repo_root, uid, "delivery"))]
+        if bug and owed:
+            if (str(verdict or "").upper() == APPROVE
+                    and any(same_identity(w, reviewer or "") for w in owed)):
+                return None
+            names = ", ".join(dict.fromkeys(owed))
+            return (f"{at_cap}. {uid} was {CARRIED_REASON} ({bug} holds the findings), so the "
+                    f"one verdict past the cap it accepts is an APPROVE from {names}, whose "
+                    f"REJECT it carried: that APPROVE answers the REJECT and discharges the "
+                    f"carry. No other reviewer's verdict, and no further REJECT, is recorded")
+        return (f"{at_cap}. A unit still rejected at the cap is carried as a known issue, not "
+                f"reviewed again")
     last = prior[-1] if prior else None
     if (last and str(last.get("verdict") or "").upper() == REJECT
             and not same_identity(last.get("reviewer", ""), reviewer or "")):
@@ -1500,7 +1520,8 @@ REJECT_EXITS = ("a round-2 APPROVE from the reviewer who rejected, or carrying t
                 "findings as a bug and drops the unit from the batch, so the run closes without "
                 "it. A carried unit is still refused Done: it is delivered again in a later run "
                 "and reaches Done on an APPROVE from the reviewer who rejected it (the same "
-                "reviewer id)")
+                "reviewer id), which the review cap admits however many rounds that run "
+                "recorded")
 
 
 class CarryFailed(RuntimeError):
@@ -1569,17 +1590,41 @@ def carried_to(repo_root: Path | str, unit: str, reason: str,
     reason is `CARRIED_REASON: <bug>`, the unit's current delivery stands at the cap with a
     REJECT as its last round, and the bug is on disk: a hand drop worded like a carry answers
     no REJECT."""
-    prefix = f"{CARRIED_REASON}:"
-    reason = str(reason or "")
-    if not reason.startswith(prefix):
+    bug = _carry_bug(repo_root, reason)
+    if not bug:
         return None
     rounds = delivery_rounds(repo_root, unit, state)
     if (len(rounds) < review_ceiling(repo_root)
             or str(rounds[-1].get("verdict") or "").upper() != REJECT):
         return None
+    return bug
+
+
+def _carry_bug(repo_root: Path | str, reason: str) -> str | None:
+    """The bug a drop reason `CARRIED_REASON: <bug>` names, when that bug is on disk."""
+    prefix = f"{CARRIED_REASON}:"
+    reason = str(reason or "")
+    if not reason.startswith(prefix):
+        return None
     bug = sdlc_md.norm_id(reason[len(prefix):].strip())
     found = sdlc_md.find_by_id(repo_root, bug) if bug else None
     return bug if found and found[1] == "bug" else None
+
+
+def carried_by(repo_root: Path | str, unit: str) -> str | None:
+    """The bug the latest carry of `unit` at the review cap filed, or None when it was never
+    carried. Read from the open run's batch drops AND every archived run's, because the carry's
+    exit - the rejecting reviewer's APPROVE - often comes in a later run, whose own batch drops
+    nothing. The drop's reason must name a bug on disk (`_carry_bug`), so a hand drop worded
+    like a carry carries nothing."""
+    uid = sdlc_md.norm_id(unit)
+    bug = None
+    for record in [*run_state.archived(repo_root), run_state.read(repo_root) or {}]:
+        for change in record.get("batch_changes") or []:
+            if (isinstance(change, dict) and change.get("action") == "drop"
+                    and sdlc_md.norm_id(str(change.get("id") or "")) == uid):
+                bug = _carry_bug(repo_root, change.get("reason")) or bug
+    return bug
 
 
 # The ORIGIN axis: does this finding predate the run's base ref? `ORIGIN_REGRESSION` means "this

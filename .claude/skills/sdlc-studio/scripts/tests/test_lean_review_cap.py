@@ -333,5 +333,134 @@ class PerDeliveryRoundTests(_NoTranscripts):
                           transition._unanswered_delivery_reject(root, UNIT) or "")
 
 
+BUG = "BG0001"
+
+
+def _bug_workspace(d: str) -> Path:
+    """A bug at In Progress whose only criterion is ticked and executable, so the one thing that
+    can hold its move to Fixed is a delivery REJECT."""
+    root = Path(d)
+    bugs = root / "sdlc-studio" / "bugs"
+    bugs.mkdir(parents=True)
+    (bugs / f"{BUG}-a-bug.md").write_text(
+        f"# {BUG}: a bug\n\n> **Status:** In Progress\n> **Severity:** Medium\n"
+        "> **Points:** 2\n> **Affects:** src/unit.py\n\n## Acceptance Criteria\n\n"
+        "- [x] **AC1** the unit behaves\n  - **Verify:** shell true\n", encoding="utf-8")
+    (root / "src").mkdir()
+    (root / "src" / "unit.py").write_text("x = 1\n", encoding="utf-8")
+    (root / "sdlc-studio" / ".config.yaml").write_text(
+        "review:\n  require_brief_provenance: false\n", encoding="utf-8")
+    return root
+
+
+def _bug_record(root: Path, verdict: str, reviewer: str,
+                issues: str = "") -> tuple[int, str]:
+    argv = ["record", "--unit", BUG, "--verdict", verdict, "--reviewer", reviewer,
+            "--author", "builder", "--root", str(root)]
+    return _run(critic, argv + (["--issues", issues] if issues else []))
+
+
+def _bug_rows(root: Path) -> list[tuple[str, str]]:
+    return [(r["verdict"], r["reviewer"]) for r in critic.read_verdicts(root)
+            if sdlc_md.norm_id(r["unit"]) == BUG]
+
+
+def _bug_text(root: Path) -> str:
+    return (root / "sdlc-studio" / "bugs" / f"{BUG}-a-bug.md").read_text(encoding="utf-8")
+
+
+def _fixed(root: Path) -> tuple[int, str]:
+    return _run(transition, ["set", "--id", BUG, "--status", "Fixed", "--root", str(root)])
+
+
+class CarriedDischargeTests(_NoTranscripts):
+    """BG0850: the reviewer whose REJECT carried a unit at the cap can discharge it. Their
+    APPROVE was refused `at the cap`, and the transition then refused the unanswered REJECT,
+    so only `--force` moved an approved, merged unit on."""
+
+    def _carry(self, root: Path) -> None:
+        """rev-a's two REJECTs in an open run holding the unit, carrying it at the cap."""
+        run_state.open_run(root, batch=[BUG, "US0002"], goal="g")
+        self.assertEqual(0, _bug_record(root, "REJECT", "rev-a", "[new] drops a row")[0])
+        rc, out = _bug_record(root, "REJECT", "rev-a", "[new] still drops it")
+        self.assertEqual(0, rc, out)
+        drop = run_state.read(root)["batch_changes"][-1]
+        self.assertTrue(drop["reason"].startswith(critic.CARRIED_REASON),
+                        f"premise: the unit was not carried: {drop}")
+
+    def _later_run(self, root: Path) -> None:
+        """The carried unit delivered again in a later run, where rev-b took both rounds."""
+        run_state.update(root, outcome="goal-reached")
+        run_state.open_run(root, batch=[BUG], goal="g2")
+        self.assertEqual(0, _bug_record(root, "REJECT", "rev-b", "[new] another")[0])
+        self.assertEqual(0, _bug_record(root, "APPROVE", "rev-b")[0])
+        self.assertEqual(2, critic.review_rounds(root, BUG), "premise: rev-b filled the cap")
+
+    def _discharges(self, root: Path) -> None:
+        before = len(_bug_rows(root))
+        rc, out = _bug_record(root, "APPROVE", "rev-a")
+        self.assertEqual(0, rc, out)
+        self.assertEqual(before + 1, len(_bug_rows(root)), "the discharge wrote no row")
+        self.assertEqual(("APPROVE", "rev-a"), _bug_rows(root)[-1])
+        rc, out = _fixed(root)
+        self.assertEqual(0, rc, out)
+        text = _bug_text(root)
+        self.assertEqual("Fixed", sdlc_md.extract_field(text, "Status"), out)
+        self.assertNotIn("Forced-override", text)
+
+    def test_the_rejecting_reviewer_discharges_a_carried_unit(self) -> None:
+        """AC1. MUTANT: HEAD, which refuses rev-a's APPROVE `at the cap of 2` and then the
+        transition on rev-a's unanswered REJECT."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _bug_workspace(d)
+            self._carry(root)
+            self._discharges(root)
+            # The discharge answers the REJECT once; it is not a standing licence past the cap.
+            rc, out = _bug_record(root, "APPROVE", "rev-a")
+            self.assertEqual(2, rc, out)
+            self.assertIn("cap of 2", out)
+
+    def test_the_discharge_passes_after_another_reviewers_rounds(self) -> None:
+        """AC2. MUTANT: read the carry from the open run alone, so the later run, whose batch
+        drops nothing, finds no carry, and rev-b's two rounds still fill the cap."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _bug_workspace(d)
+            self._carry(root)
+            self._later_run(root)
+            self._discharges(root)
+
+    def test_only_the_rejecting_reviewers_approve_on_a_carried_unit_passes(self) -> None:
+        """AC3. MUTANTS: admit any APPROVE past the cap on a carried unit (rev-b's row is
+        written in the later run); admit any verdict from the rejecting reviewer (rev-a's REJECT
+        is written); admit the rejecting reviewer's APPROVE, or any APPROVE after a REJECT,
+        without a carry (the never-carried unit's row is written); a refusal that does not name
+        the reviewer who can discharge."""
+        for shape in ("carrying run", "later run"):
+            with self.subTest(shape=shape), tempfile.TemporaryDirectory() as d:
+                root = _bug_workspace(d)
+                self._carry(root)
+                if shape == "later run":
+                    self._later_run(root)
+                before = _bug_rows(root)
+                for verdict, reviewer in (("APPROVE", "rev-b"), ("REJECT", "rev-a")):
+                    rc, out = _bug_record(root, verdict, reviewer, "[new] x")
+                    self.assertEqual(2, rc, f"{reviewer}'s {verdict} passed: {out}")
+                    self.assertIn("rev-a", out)
+                    self.assertIn("carried at the review cap", out)
+                    self.assertEqual(before, _bug_rows(root), f"{reviewer}'s row was written")
+        # THE CONTROL: the same two REJECTs recorded with no run open carry nothing, and rev-a's
+        # APPROVE is refused at the cap as it always was.
+        with tempfile.TemporaryDirectory() as d:
+            root = _bug_workspace(d)
+            _bug_record(root, "REJECT", "rev-a", "[new] drops a row")
+            _bug_record(root, "REJECT", "rev-a", "[new] still drops it")
+            self.assertEqual(1, len(list((root / "sdlc-studio" / "bugs").glob("BG*.md"))),
+                             "premise: the REJECTs filed a bug, so the unit was carried")
+            rc, out = _bug_record(root, "APPROVE", "rev-a")
+            self.assertEqual(2, rc, out)
+            self.assertIn("cap of 2", out)
+            self.assertEqual(2, len(_bug_rows(root)), "the never-carried unit's row was written")
+
+
 if __name__ == "__main__":
     unittest.main()

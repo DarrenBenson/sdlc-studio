@@ -468,7 +468,11 @@ falls back to it), and `critic.py record` refuses a round past it. A REJECT at t
 **carries the unit**: `critic.py record` files the findings as a bug and drops the unit from
 the open run's batch, so the close no longer holds it and the run continues without it.
 Carrying releases the run, not the REJECT: the carried unit is still refused Done. It is delivered again in a later run and
-reaches Done on an APPROVE from the reviewer who rejected it (the same reviewer id). Nothing else
+reaches Done on an APPROVE from the reviewer who rejected it (the same reviewer id). That APPROVE
+is the one verdict the cap admits past it, on a carried unit only, and whether it comes in the
+carrying run or after another reviewer's rounds in a later one; any other reviewer's verdict,
+or a further REJECT, is refused there, and the refusal names the reviewer who can discharge
+the carry. Nothing else
 answers a REJECT - no repair record, ruling or hand drop, including a drop whose reason is
 worded like a carry - and until one of these happens the unit is refused Done and, while in a
 run's batch, held by its close.

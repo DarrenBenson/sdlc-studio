@@ -160,8 +160,10 @@ class PlanPhaseGoneTests(unittest.TestCase):
             self.assertEqual(0, r.returncode, r.stdout + r.stderr)
             self.assertIn("carried at the review cap", r.stdout)
             self.assertEqual(1, len(list((root / "sdlc-studio" / "bugs").glob("BG*.md"))))
-            r = _critic(root, "record", "--unit", UNIT, "--verdict", "APPROVE", "--reviewer",
-                        "rev-a", "--author", "builder")
+            # A further REJECT past the cap. Not an APPROVE: the rejecting reviewer's APPROVE of
+            # a carried unit is the one verdict the cap admits (BG0850).
+            r = _critic(root, "record", "--unit", UNIT, "--verdict", "REJECT", "--reviewer",
+                        "rev-a", "--author", "builder", "--issues", "[new] a third finding")
             self.assertEqual(2, r.returncode, r.stdout + r.stderr)
             import critic  # noqa: PLC0415
             rows = [x for x in critic.read_verdicts(root) if sdlc_md.norm_id(x["unit"]) == UNIT]
