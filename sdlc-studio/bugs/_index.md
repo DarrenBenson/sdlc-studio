@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 41 |
-| In Progress | 2 |
+| Open | 40 |
+| In Progress | 3 |
 | Fixed | 683 |
 | Verified | 0 |
 | Closed | 87 |
@@ -187,7 +187,7 @@
 | [BG0826](BG0826-the-scaffolded-retro-carries-neither-the-run-id.md) | The scaffolded retro carries neither the run id nor a Known issues carried table, so the run's rulings cannot be found or written | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0827](BG0827-the-review-brief-asks-the-reviewer-to-judge.md) | The review brief asks the reviewer to judge origin 'at the base ref' but never names the base ref | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0828](BG0828-the-one-call-closes-do-not-check-the.md) | The one-call closes do not check the review brief: artifact.py close records a verdict with no brief and no warning, and transition --brief accepts a fingerprint no brief printed | Open | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0829](BG0829-a-unit-carried-at-the-review-cap-is.md) | A unit carried at the review cap is filed as an ungroomed bug that sprint plan cannot take, and every carry prints that the operator was notified | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0829](BG0829-a-unit-carried-at-the-review-cap-is.md) | A unit carried at the review cap is filed as an ungroomed bug that sprint plan cannot take, and every carry prints that the operator was notified | In Progress | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0830](BG0830-a-verdict-or-delegated-token-record-written-after.md) | A verdict or delegated-token record written after the seal lands on the sealed run without a warning | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0831](BG0831-the-configuration-reference-documents-keys-the-code-does.md) | The configuration reference documents keys the code does not honour: sprint.split_above, review.policy carry-forward, and review.max_rounds | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0832](BG0832-reference-review-md-step-3a-ships-a-private.md) | reference-review.md step 3a ships a private project's consultation cast as its example, names amigos with no resolver, and the neutrality lane misses it | Open | Medium | 2026-09-28 | 2026-09-28 |

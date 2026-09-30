@@ -12593,16 +12593,19 @@ class EscalationTests(unittest.TestCase):
         self.assertFalse(esc, "a unanimous panel escalated")
 
     def test_escalation_notifies_rather_than_waits(self) -> None:
-        """MUTANT: return a reason that asks the operator to respond before continuing.
+        """MUTANT: return a reason that asks the operator to respond before continuing; or one
+        that claims the operator was notified, which nothing does (BG0829).
 
-        Pinned on the CONTRACT the reason states, because the difference between notifying and
+        Pinned on the CONTRACT the reason states, because the difference between continuing and
         waiting is invisible in a return value otherwise - and getting it wrong turns an
         unattended run into a silent hang.
         """
         sprint = _load()
         _esc, why = sprint.panel_escalation(["REJECT", "REJECT"], {})
-        self.assertIn("notified", why.lower(),
-                      "the escalation does not state that the operator is NOTIFIED")
+        self.assertIn("nothing waits on a reply", why.lower(),
+                      "the escalation does not state that the run continues")
+        self.assertNotIn("notified", why.lower(),
+                         "the escalation claims a notification that nothing sends")
         self.assertNotIn("waiting for", why.lower(),
                          "the escalation blocks on operator input, which unattended is a hang")
 

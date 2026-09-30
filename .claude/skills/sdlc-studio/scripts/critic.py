@@ -1396,9 +1396,10 @@ def review_rounds_across_ledgers(repo_root: Path | str, unit: str,
 def panel_escalation(rounds: list, seat_verdicts: dict) -> tuple[bool, str]:
     """Whether a unit must go to the operator, and why.
 
-    NOTIFIES, never waits. Human-in-the-lead means the decision reaches the operator; it does
-    not mean the machine blocks on input that will not arrive. An escalation that waits is
-    indistinguishable from a hang, and unattended that is exactly what it becomes.
+    Never waits. Human-in-the-lead means the decision reaches the operator; it does not mean the
+    machine blocks on input that will not arrive. An escalation that waits is indistinguishable
+    from a hang, and unattended that is exactly what it becomes. Nor does it claim to NOTIFY:
+    nothing sends it anywhere, so `escalation_notice` names where the operator reads it.
 
     Lives here, beside the ledgers it judges, so the command that records a round - `critic
     record`, the one verdict writer - consults one rule rather than a copy of it.
@@ -1426,8 +1427,8 @@ def panel_escalation(rounds: list, seat_verdicts: dict) -> tuple[bool, str]:
     rejects = sum(1 for v in verdicts if v == REJECT)
     if rejects >= PANEL_REJECT_LIMIT:
         return (True, f"the panel rejected this unit twice ({rejects} REJECTs) - the repair is "
-                      f"not converging. The operator is NOTIFIED and the run continues to its "
-                      f"handoff; nothing waits on a reply.")
+                      f"not converging. The run continues to its handoff; nothing waits on a "
+                      f"reply.")
     seats = {k: str(v).upper() for k, v in (seat_verdicts or {}).items() if v}
     if len(set(seats.values())) > 1:
         # The disagreement IS the signal. Resolving it by majority discards precisely the
@@ -1436,8 +1437,8 @@ def panel_escalation(rounds: list, seat_verdicts: dict) -> tuple[bool, str]:
         agree = sorted(k for k, v in seats.items() if v != REJECT)
         return (True, f"the panel split: {', '.join(dissent) or 'some seats'} rejected while "
                       f"{', '.join(agree) or 'others'} approved. The disagreement is the "
-                      f"finding, so it is not resolved by majority - the operator is NOTIFIED "
-                      f"with both sides named.")
+                      f"finding, so it is not resolved by majority - both sides are named here "
+                      f"for the operator.")
     return (False, "")
 
 
@@ -1446,11 +1447,28 @@ def escalation_notice(repo_root: Path | str, unit: str, phase: str = "delivery")
 
     Both recording commands call THIS rather than assembling the rounds themselves, because the
     defect being repaired was precisely that the caller assembled them from the wrong ledger.
+
+    It says where the operator READS it, because nothing sends it to them: a unit carried at
+    the cap is on the sprint report's `Dropped, held and carried over` row and in the bug that
+    holds its findings; any other escalation is in this output and the verdict ledger.
     """
     rounds = [str(r.get("verdict") or "")
               for r in review_rounds_across_ledgers(repo_root, unit, phase)]
     escalate, why = panel_escalation(rounds, seat_verdicts(repo_root, unit, phase))
-    return f"  ESCALATED to the operator - {sdlc_md.norm_id(unit)}: {why}" if escalate else ""
+    if not escalate:
+        return ""
+    uid = sdlc_md.norm_id(unit)
+    bug = carried_by(repo_root, uid) if phase == "delivery" else None
+    where = (f"The operator reads it on the sprint report, in its `{NOT_DELIVERED_ROW}` row, "
+             f"and in {bug}, which holds the findings; nothing is sent to them."
+             if bug else
+             f"Nothing sends it on: the operator reads it here and in the verdict ledger "
+             f"(`critic.py show --unit {uid}`).")
+    return f"  ESCALATED for the operator - {uid}: {why} {where}"
+
+
+#: The sprint report row a carried unit is listed on (`sprint_report._ck_not_delivered`).
+NOT_DELIVERED_ROW = "Dropped, held and carried over"
 
 
 # One reviewer, at most this many rounds per unit: round 1 reviews, round 2 re-checks the fixes.
@@ -1567,10 +1585,13 @@ def carry_at_cap(repo_root: Path | str, unit: str, row: dict) -> str | None:
     # `sprint plan` could not size or place, and a planned unit carries both.
     found = sdlc_md.find_by_id(repo_root, uid)
     text = sdlc_md.read_text_safe(found[0]) if found else ""
+    acs, verify = carried_criteria(uid, text, row)
     res = file_finding.file_finding(repo_root, "bug", f"{uid} did not converge in review: "
                                     f"round {row.get('round')} REJECT findings", {
         "affects": sdlc_md.extract_field(text, "Affects") or "",
         "points": sdlc_md.extract_field(text, "Points") or "",
+        "acs": acs,
+        "verify": verify,
         "severity": "Medium",
         "summary": (f"{uid} was rejected at round {row.get('round')}, the review cap, by "
                     f"{row.get('reviewer')}, so it was carried as a known issue rather than "
@@ -1581,6 +1602,32 @@ def carry_at_cap(repo_root: Path | str, unit: str, row: dict) -> str | None:
     bug = res["id"]
     run_state.drop_from_batch(repo_root, uid, f"{CARRIED_REASON}: {bug}")
     return bug
+
+
+#: How a carried finding's criterion is checked until its fix brings a test of its own.
+CARRIED_FINDING_CHECK = "manual - the independent review of the redelivery re-checks this finding"
+
+
+def carried_criteria(unit: str, text: str, row: dict) -> tuple[list[str], list[str]]:
+    """The carried bug's criteria and their verifiers, paired by position: `(acs, verify)`.
+
+    One criterion per finding of the carrying REJECT (its `;`-separated items, origin tag kept),
+    each stating that the finding no longer holds - what the reviewer found is what the bug is
+    about. Beneath them, the unit's own criteria (`verify_ac.criteria_blocks`, the one reader)
+    with their `Verify:` lines, which the redelivery must still pass: they make the bug
+    executable, so `sprint plan` takes it without hand grooming. A finding has no test of its own
+    until its fix is written, so its verifier says how it IS checked: `manual`, by the
+    independent review of the redelivery.
+    """
+    import verify_ac  # noqa: PLC0415 - needed only when a unit is carried
+    findings = [f for f in split_items(str(row.get("issues") or "").strip())
+                if f.strip(" -")]
+    acs = [f"The round {row.get('round')} REJECT finding no longer holds: {f}" for f in findings]
+    verify = [CARRIED_FINDING_CHECK] * len(acs)
+    for block in verify_ac.criteria_blocks(text):
+        acs.append(f"{unit} {block.ac_id} still passes: {block.title}")
+        verify.append(str(block.verifier or "").strip())
+    return acs, verify
 
 
 def carried_to(repo_root: Path | str, unit: str, reason: str,

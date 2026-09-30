@@ -1,6 +1,6 @@
 # BG0829: A unit carried at the review cap is filed as an ungroomed bug that sprint plan cannot take, and every carry prints that the operator was notified
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_carry_bug_groomed.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG0829.md
@@ -33,8 +33,10 @@ The `Raised-in-batch: none open` stamp is the same on every finding, carry or no
 
 - [ ] **AC1** Given a unit with two criteria, each with a `Verify:` line, carried at the cap in an open run by a round-2 REJECT listing two findings, when `critic.py record` writes that REJECT, then the filed bug carries one criterion per finding naming its text, the unit's two criteria with their `Verify:` lines, and the unit's Points and Affects, and `sprint.py breakdown` does not report it ungroomed. Fails on: HEAD, whose tool-derived criteria `breakdown` reports as derived-only; on copying only the findings, as criteria with no `Verify:` line, which `breakdown` reports as no-verifier; and on copying only the unit's criteria, which loses what the reviewer found
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_carry_bug_groomed.py::CarryBugGroomedTests::test_the_carried_bug_is_filed_groomed
+  - **Verified:** yes (2026-09-30)
 - [ ] **AC2** Given the same carry, when `critic.py record` prints the escalation, then no line claims the operator was notified, and the line names where the operator reads it. Fails on: HEAD's "The operator is NOTIFIED"
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_carry_bug_groomed.py::CarryBugGroomedTests::test_no_notification_is_claimed
+  - **Verified:** yes (2026-09-30)
 
 ## Revision History
 
