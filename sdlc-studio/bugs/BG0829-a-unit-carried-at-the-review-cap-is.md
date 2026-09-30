@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_carry_bug_groomed.py, changelog.d/BG0829.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
+> **Points:** 3
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_carry_bug_groomed.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG0829.md
 > **Evidence:** soak F40 (website project, round-2 REJECT); HEAD 7e53a438 critic.py carry_at_cap (~1535-1560) and panel_escalation (~1425-1440); sdlc-studio/bugs/BG0775 header
 > **Created:** 2026-09-28
 > **Created-by:** sdlc-studio file
@@ -16,17 +16,24 @@
 
 ## Steps to Reproduce
 
-Record a round-2 REJECT at the cap for a unit in an open run: read the filed bug's criteria, Verify lines, Raised-in-batch and title; read the record output.
+Re-run at HEAD 46cb9acf on 2026-09-30 in a throwaway git tree: US0001 (Points 3, Affects `src/unit.py`) with two criteria, each carrying a `Verify: pytest ...` line, in an open run's batch.
+
+1. `critic.py record --unit US0001 --verdict REJECT --reviewer rev-a --issues "[new] the parser drops a row"`.
+2. The same for round 2 with `--issues "[new] the parser still drops the last row; [new] AC2 test passes with the fix removed"`: `US0001 carried at the review cap: BG0001 holds the findings`, followed by `ESCALATED to the operator - US0001: ... The operator is NOTIFIED and the run continues to its handoff`.
+3. BG0001 carries the unit's Points and Affects, but its criteria are two tool-derived restatements ("The behaviour described is corrected: US0001 was rejected at round 2 ...", "The proposed fix lands, pinned by a test: Fix each finding above ...") with no Verify line. Its Proposed Fix reads "Fix each finding above, then deliver US0001 again in a later run".
+4. `sprint.py breakdown --bugs Open --stories Ready` in the tree: `BG0001 lacks Acceptance Criteria (every one tool-derived from the finding's own prose - restates the summary, so nothing states what passing is)`, under "`sprint plan` refuses a batch holding any of these".
+
+The `Raised-in-batch: none open` stamp is the same on every finding, carry or not, and belongs to BG0861's batch stamp; it is out of this unit's scope.
 
 ## Proposed Fix
 
-Carry the unit's own criteria and Verify lines onto the bug (they are what the redelivery must pass), spell the unit in its file form, stamp the open run as the raising batch, and say `the operator reads this on the report` instead of NOTIFIED.
+`carry_at_cap` files the bug groomed: one criterion per finding of the carrying REJECT (its semicolon-separated items, origin tag kept), each stating that finding no longer holds, and beneath them the unit's own criteria with their `Verify:` lines, which the redelivery must still pass; the unit's Points and Affects as today. `panel_escalation` says the operator reads the escalation on the report rather than claiming a notification nothing sends.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a unit with two criteria carried at the cap in an open run, then the filed bug carries both criteria with their Verify lines, names the run in Raised-in-batch, and `sprint plan` accepts it. Fails on: HEAD's placeholder criteria and `none open`
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_carry_bug_groomed.py::CarryBugGroomedTests::test_the_carried_bug_can_be_planned
-- [ ] **AC2** Given a carry, then the record output does not claim the operator was notified. Fails on: HEAD's NOTIFIED line
+- [ ] **AC1** Given a unit with two criteria, each with a `Verify:` line, carried at the cap in an open run by a round-2 REJECT listing two findings, when `critic.py record` writes that REJECT, then the filed bug carries one criterion per finding naming its text, the unit's two criteria with their `Verify:` lines, and the unit's Points and Affects, and `sprint.py breakdown` does not report it ungroomed. Fails on: HEAD, whose tool-derived criteria `breakdown` reports as derived-only; on copying only the findings, as criteria with no `Verify:` line, which `breakdown` reports as no-verifier; and on copying only the unit's criteria, which loses what the reviewer found
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_carry_bug_groomed.py::CarryBugGroomedTests::test_the_carried_bug_is_filed_groomed
+- [ ] **AC2** Given the same carry, when `critic.py record` prints the escalation, then no line claims the operator was notified, and the line names where the operator reads it. Fails on: HEAD's "The operator is NOTIFIED"
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_carry_bug_groomed.py::CarryBugGroomedTests::test_no_notification_is_claimed
 
 ## Revision History
@@ -34,3 +41,4 @@ Carry the unit's own criteria and Verify lines onto the bug (they are what the r
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-28 | sdlc-studio | Filed |
+| 2026-09-30 | sprint planning | Regroomed after goal review round 1: premise re-run at HEAD (derived-only criteria, `breakdown` refuses the carried bug; NOTIFIED printed); the Raised-in-batch clause dropped, since it rests on BG0861's batch stamp, out of this sprint; AC1 now pins a groomed filing (findings as criteria, the unit's criteria with their Verify lines, Points and Affects) through `breakdown`; Affects drops file_finding.py and test_file_finding.py, adds test_lean_review_cap.py and keeps test_sprint.py (it asserts NOTIFIED); Points 2 to 3. |

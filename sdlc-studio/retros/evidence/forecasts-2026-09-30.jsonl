@@ -7,3 +7,11 @@
 {"id": "BG0854", "tokens": 356704, "points": 2, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 178352}, "planned_at": "2026-09-30T08:08:14Z", "project": "sdlc-studio"}
 {"id": "BG0852", "tokens": 891760, "points": 5, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 178352}, "planned_at": "2026-09-30T08:08:14Z", "project": "sdlc-studio"}
 {"id": "BG0854", "tokens": 535056, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 178352}, "planned_at": "2026-09-30T08:11:58Z", "project": "sdlc-studio"}
+{"id": "BG0826", "tokens": 356704, "points": 2, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 178352}, "planned_at": "2026-09-30T23:00:36Z", "project": "sdlc-studio"}
+{"id": "BG0859", "tokens": 356704, "points": 2, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 178352}, "planned_at": "2026-09-30T23:00:36Z", "project": "sdlc-studio"}
+{"id": "BG0848", "tokens": 535056, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 178352}, "planned_at": "2026-09-30T23:00:36Z", "project": "sdlc-studio"}
+{"id": "BG0829", "tokens": 535056, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 178352}, "planned_at": "2026-09-30T23:00:36Z", "project": "sdlc-studio"}
+{"id": "BG0850", "tokens": 535056, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 178352}, "planned_at": "2026-09-30T23:00:36Z", "project": "sdlc-studio"}
+{"id": "BG0851", "tokens": 891760, "points": 5, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 178352}, "planned_at": "2026-09-30T23:00:36Z", "project": "sdlc-studio"}
+{"id": "BG0849", "tokens": 535056, "points": 3, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 178352}, "planned_at": "2026-09-30T23:00:36Z", "project": "sdlc-studio"}
+{"id": "BG0862", "tokens": 891760, "points": 5, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 178352}, "planned_at": "2026-09-30T23:00:36Z", "project": "sdlc-studio"}
