@@ -136,3 +136,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0124](RETRO0124-run-01m3bk9y-sprint-4-history-aware-review-and.md) | RUN-01M3BK9Y Sprint 4: history-aware review and the review paperwork deleted | 2026-09-25 | -- | -- |
 | [RETRO-0125](RETRO0125-run-01m3ck1k-sprint-5-the-lean-loop-runs.md) | RUN-01M3CK1K Sprint 5: the lean loop runs on a fresh v6 project and the release candidate is prepared | 2026-09-26 | -- | -- |
 | [RETRO-0126](RETRO0126-v6-0-0-ships-maya-and-jonah-install.md) | v6.0.0 ships: Maya and Jonah install, upgrade and learn it from docs and notes that match the code | 2026-09-28 | -- | -- |
+| [RETRO-0127](RETRO0127-jonah-s-team-installs-v6-via-claude-code.md) | Jonah's team installs v6 via Claude Code or Copilot CLI; migrate predicts the gate's reconcile, conformance, validate and floor failures | 2026-09-30 | -- | -- |
