@@ -3,8 +3,8 @@
   "report_id": "RPT0012",
   "run_id": "RUN-01M3RPSK",
   "retro_id": "RETRO0127",
-  "generated_at": "2026-09-30T12:39:33Z",
-  "window_end": "2026-09-30T12:39:33Z",
+  "generated_at": "2026-09-30T13:08:14Z",
+  "window_end": "2026-09-30T13:08:14Z",
   "signature": null,
   "sections": [
     {
@@ -43,12 +43,12 @@
         },
         "duration_hours": {
           "key": "duration_hours",
-          "value": "4.4h",
+          "value": "4.8h",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "verified_sha": {
           "key": "verified_sha",
-          "value": "7bff58aac5f5329e62c8c9c1f5e25f12e716a06a",
+          "value": "d05b882f5e40f527581ddee0a92f7b3a281cb627",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -100,12 +100,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 261.6,
+            "value": 290.2,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "2.27x",
+            "value": "2.52x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -127,12 +127,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 971934,
+            "value": 1023218,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "0.3x",
+            "value": "0.32x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -157,7 +157,7 @@
           },
           "eu_minutes": {
             "key": "eu_minutes",
-            "value": 0.0,
+            "value": 251.2,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "eu_forecast_tokens": {
@@ -167,7 +167,7 @@
           },
           "eu_tokens": {
             "key": "eu_tokens",
-            "value": 0,
+            "value": 891646,
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -184,7 +184,7 @@
           },
           "eu_minutes": {
             "key": "eu_minutes",
-            "value": 0.0,
+            "value": 223.2,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "eu_forecast_tokens": {
@@ -194,7 +194,7 @@
           },
           "eu_tokens": {
             "key": "eu_tokens",
-            "value": 0,
+            "value": 810522,
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -211,7 +211,7 @@
           },
           "eu_minutes": {
             "key": "eu_minutes",
-            "value": 0.0,
+            "value": 175.9,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "eu_forecast_tokens": {
@@ -221,7 +221,7 @@
           },
           "eu_tokens": {
             "key": "eu_tokens",
-            "value": 0,
+            "value": 595404,
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -238,7 +238,7 @@
           },
           "eu_minutes": {
             "key": "eu_minutes",
-            "value": 0.0,
+            "value": 153.8,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "eu_forecast_tokens": {
@@ -248,7 +248,7 @@
           },
           "eu_tokens": {
             "key": "eu_tokens",
-            "value": 0,
+            "value": 502372,
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -265,7 +265,7 @@
           },
           "eu_minutes": {
             "key": "eu_minutes",
-            "value": 0.0,
+            "value": 128.4,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "eu_forecast_tokens": {
@@ -275,7 +275,7 @@
           },
           "eu_tokens": {
             "key": "eu_tokens",
-            "value": 0,
+            "value": 456067,
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -292,7 +292,7 @@
           },
           "eu_minutes": {
             "key": "eu_minutes",
-            "value": 0.0,
+            "value": 111.0,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "eu_forecast_tokens": {
@@ -302,7 +302,7 @@
           },
           "eu_tokens": {
             "key": "eu_tokens",
-            "value": 0,
+            "value": 425852,
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -319,7 +319,7 @@
           },
           "eu_minutes": {
             "key": "eu_minutes",
-            "value": 0.0,
+            "value": 192.8,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "eu_forecast_tokens": {
@@ -329,7 +329,7 @@
           },
           "eu_tokens": {
             "key": "eu_tokens",
-            "value": 0,
+            "value": 679058,
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -626,28 +626,11 @@
       "figures": {
         "findings_scan": {
           "key": "findings_scan",
-          "value": "6 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)",
+          "value": "5 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
       "rows": [
-        {
-          "issue_id": {
-            "key": "issue_id",
-            "value": "BG0856",
-            "source": "sdlc-studio/bugs/BG0856-bg0852-did-not-converge-in-review-round-2.md"
-          },
-          "issue_priority": {
-            "key": "issue_priority",
-            "value": "Medium",
-            "source": "sdlc-studio/bugs/BG0856-bg0852-did-not-converge-in-review-round-2.md"
-          },
-          "issue_detail": {
-            "key": "issue_detail",
-            "value": "BG0852 did not converge in review: round 2 REJECT findings",
-            "source": "sdlc-studio/bugs/BG0856-bg0852-did-not-converge-in-review-round-2.md"
-          }
-        },
         {
           "issue_id": {
             "key": "issue_id",
@@ -771,7 +754,7 @@
         },
         "tokens_total": {
           "key": "tokens_total",
-          "value": 971934,
+          "value": 1023218,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "token_coverage": {
@@ -794,7 +777,7 @@
           },
           "model_tokens": {
             "key": "model_tokens",
-            "value": 971934,
+            "value": 1023218,
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -841,7 +824,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "4h 12m",
+            "value": "4h 36m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -856,7 +839,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 26 commit(s)",
+            "value": "git history - first to last of 28 commit(s)",
             "source": "git log"
           }
         },
@@ -1475,5 +1458,5 @@
     }
   ],
   "record_paths": "portable",
-  "fingerprint": "341149404ed2af89"
+  "fingerprint": "023473f5406ef653"
 }

@@ -6,8 +6,8 @@ Jonah's team installs v6 via Claude Code or Copilot CLI; migrate predicts the ga
 
 **Verdict: Judged achieved** - Copilot CLI now installs globally and is hinted only when no folder it reads holds a copy (BG0852 via BG0856); on a committed v4.1-shaped project migrate names reconcile 2, conformance 3, validate 4 and engagement-floor 2 exactly as gate.py then fails them (BG0854, over BG0842/43/44/45); seeded AGENTS.md names the skill through <skill> (BG0853). Disclosed: a schema v3 project whose conformance failures are ULID-only is not yet named (BG0858).
 
-> **Run:** 2026-09-30T08:17:59Z to open (4.4h)
-> **Verified on:** 7bff58aac5f5329e62c8c9c1f5e25f12e716a06a   **Fingerprint:** 341149404ed2af89
+> **Run:** 2026-09-30T08:17:59Z to open (4.8h)
+> **Verified on:** d05b882f5e40f527581ddee0a92f7b3a281cb627   **Fingerprint:** 023473f5406ef653
 
 ## Estimates
 
@@ -18,8 +18,8 @@ over forecast.
 | Measure | Forecast | Actual | Ratio | Over |
 | --- | --- | --- | --- | --- |
 | Points | 18 | 18 | 1.0x | 7 of 7 delivered unit(s) |
-| Minutes | 115.2 | 261.6 | 2.27x | the whole run: forecast over 7 of 7 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
-| Tokens | 3,210,336 | 971,934 | 0.3x | the whole run: forecast over 7 of 7 unit(s) planned or added and not dropped; actual is the run meter, a lower bound |
+| Minutes | 115.2 | 290.2 | 2.52x | the whole run: forecast over 7 of 7 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
+| Tokens | 3,210,336 | 1,023,218 | 0.32x | the whole run: forecast over 7 of 7 unit(s) planned or added and not dropped; actual is the run meter, a lower bound |
 
 Each cell names its source. A figure labelled agent minutes or agent tokens sums the agent
 totals tagged to that unit; an unlabelled one is measured over the unit's own open span. Spans of
@@ -28,13 +28,13 @@ above.
 
 | Unit | Forecast minutes | Minutes | Forecast tokens | Tokens |
 | --- | --- | --- | --- | --- |
-| BG0842 | 12.8 | 0.0 | 356,704 | 0 |
-| BG0844 | 12.8 | 0.0 | 356,704 | 0 |
-| BG0843 | 19.2 | 0.0 | 535,056 | 0 |
-| BG0845 | 19.2 | 0.0 | 535,056 | 0 |
-| BG0853 | 19.2 | 0.0 | 535,056 | 0 |
-| BG0854 | 19.2 | 0.0 | 535,056 | 0 |
-| BG0856 | 12.8 | 0.0 | 356,704 | 0 |
+| BG0842 | 12.8 | 251.2 | 356,704 | 891,646 |
+| BG0844 | 12.8 | 223.2 | 356,704 | 810,522 |
+| BG0843 | 19.2 | 175.9 | 535,056 | 595,404 |
+| BG0845 | 19.2 | 153.8 | 535,056 | 502,372 |
+| BG0853 | 19.2 | 128.4 | 535,056 | 456,067 |
+| BG0854 | 19.2 | 111.0 | 535,056 | 425,852 |
+| BG0856 | 12.8 | 192.8 | 356,704 | 679,058 |
 
 ## Delivered to plan
 
@@ -64,11 +64,10 @@ size, plan and added together: 18.
 
 ## Known issues handed over
 
-6 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)
+5 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)
 
 | Issue | Priority | Detail |
 | --- | --- | --- |
-| BG0856 | Medium | BG0852 did not converge in review: round 2 REJECT findings |
 | BG0857 | Medium | An unreadable epics directory is read as absence by reconcile's detectors, so the gate and migrate report a drift count with no mention that part of the workspace was never read |
 | BG0858 | Medium | migrate names nothing when the conformance lane fails only on ULID-id units or repo-wide failures, so a schema v3 project meets the failure at the gate unannounced |
 | BG0859 | Medium | The close's status preflight stops every approved bug left In Progress and tells the operator to move it to Review, a status bugs do not have |
@@ -89,9 +88,9 @@ Signing records the principal, the date and this report's fingerprint against RU
 
 | Model | Tokens |
 | --- | --- |
-| claude-opus-5-5 | 971,934 |
+| claude-opus-5-5 | 1,023,218 |
 
-Total 971,934, of which delegated NOT MEASURED - no delegated agent supplied a total, which is not the same fact as no work having been delegated. Coverage: 1 session(s);
+Total 1,023,218, of which delegated NOT MEASURED - no delegated agent supplied a total, which is not the same fact as no work having been delegated. Coverage: 1 session(s);
 read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp.
 
 ### DORA
@@ -99,7 +98,7 @@ read from stamps, with the opening reading taken from the legacy session_token_b
 | Key | This run | Mapping | Elite band | Derived from |
 | --- | --- | --- | --- | --- |
 | Deployment frequency | 4 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up | on demand | forge runs 36710190700/36704422675/36699593318/36689796152 - 4 push-triggered run(s) on main in the run window |
-| Lead time for changes | 4h 12m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 26 commit(s) |
+| Lead time for changes | 4h 36m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 28 commit(s) |
 | Change failure rate | 0% | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that did not conclude success | 0-15% | forge runs 36710190700/36704422675/36699593318/36689796152 - 4 deployment(s); 0 failed on none |
 | Time to restore | no restore needed | the span from a push-triggered run concluding failure on main to the next push-triggered run concluding success | under an hour | forge runs 36710190700/36704422675/36699593318/36689796152 - no push-triggered run on main concluded failure |
 

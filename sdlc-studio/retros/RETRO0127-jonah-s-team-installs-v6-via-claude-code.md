@@ -48,7 +48,11 @@
 
 **0 of 7 unit(s) measured; 6 of 7 forecast at plan time.**
 
-**971,934 tokens supplied, but no rate:** the batch has no delivered unit carrying Points, so there is no denominator. Size the delivered stories/bugs, or the rate stays uncomputable.
+**Sprint tokens/point: 53,996** (971,934 tokens over 18 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+
+**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
+
+  secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 
 Review passes - read from the verdict ledger:
 
@@ -64,4 +68,4 @@ Ratio is estimate / actual: above 1 the plan over-forecast, below 1 it under-for
 
 ## Handoff
 
-- [HO-0092](../handoffs/HO0092-jonah-s-team-installs-v6-via-claude-code.md) - 7 remaining item(s): 0 copilot-tail, 7 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.
+- [HO-0092](../handoffs/HO0092-jonah-s-team-installs-v6-via-claude-code.md) - 0 remaining item(s): 0 copilot-tail, 0 judgement. Pick up with `sprint plan --worklist sdlc-studio/.local/handoff-worklist.txt`.

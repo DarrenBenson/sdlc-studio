@@ -9,14 +9,7 @@
 
 ## Where to pick up
 
-7 of 7 unit(s) remain (0 suit copilot-assisted completion, 7 need human judgement). Plan them straight back in:
-
-```bash
-python3 "$CLAUDE_SKILL_DIR/scripts/sprint.py" plan \
-  --worklist sdlc-studio/.local/handoff-worklist.txt --order wsjf
-```
-
-Each item below names the pointer to start from: the failing AC, the check it stalled at, the blocker that stopped it, or the file it was to touch.
+Every unit in the batch is terminal. There is no tail: close the run and plan the next batch normally.
 
 ## Unanswered stop-ship questions
 
@@ -25,93 +18,25 @@ None: every batch unit is delivered, abandoned, ruled, dropped, parked or awaiti
 ## Appetite
 
 - **Declared:** wall-clock 5760 min, units 64 unit(s)
-- **Spent:** 261.1 min, 0 unit(s) terminal
-- **Delivered:** 0 unit(s)
+- **Spent:** 289.9 min, 7 unit(s) terminal
+- **Delivered:** 7 unit(s)
 - **Token forecast:** ~3,745,392 tokens - a plan-time estimate, never a gate (the total is transcript-measured but a LOWER BOUND - delegated spend is supplied, not observed)
 
-## Delivered (0)
+## Delivered (7)
 
-_Nothing was delivered in this run._
+| Unit | Type | Status | Evidence |
+| --- | --- | --- | --- |
+| [BG0842](../../sdlc-studio/bugs/BG0842-migrate-reports-2-index-drift-items-on-a.md) | bug | Fixed | 2/2 AC(s) verified; critic APPROVE (qa-seat reviewer (subagent a52cb751)) |
+| [BG0844](../../sdlc-studio/bugs/BG0844-an-upgraded-project-never-gets-the-sdlc-studio.md) | bug | Fixed | 2/2 AC(s) verified; critic APPROVE (qa-seat reviewer (subagent a0603a31)) |
+| [BG0843](../../sdlc-studio/bugs/BG0843-migrate-names-no-engagement-floor-cutoff-so-a.md) | bug | Fixed | 2/2 AC(s) verified; critic APPROVE (qa-seat reviewer (subagent a52cb751)) |
+| [BG0845](../../sdlc-studio/bugs/BG0845-migrate-s-conformance-cutoff-on-a-v4-1.md) | bug | Fixed | 2/2 AC(s) verified; critic APPROVE (qa-seat reviewer (subagent a52cb751)) |
+| [BG0853](../../sdlc-studio/bugs/BG0853-the-agent-instructions-template-names-the-claude-code.md) | bug | Fixed | 2/2 AC(s) verified; critic APPROVE (qa-seat reviewer (subagent a52cb751)) |
+| [BG0854](../../sdlc-studio/bugs/BG0854-nothing-runs-migrate-and-then-the-gate-on.md) | bug | Fixed | 2/2 AC(s) verified; critic APPROVE (qa-seat reviewer (subagent a37dc96c)) |
+| [BG0856](../../sdlc-studio/bugs/BG0856-bg0852-did-not-converge-in-review-round-2.md) | bug | Fixed | 3/3 AC(s) verified; critic APPROVE (qa-seat reviewer (subagent a37dc96c)) |
 
-## Remaining (7)
+## Remaining (0)
 
-### BG0842 (bug, In Progress) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/scripts/project_upgrade.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/gate.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_gate.py` - declared Affects
-- **file:** `changelog.d/BG0842.md` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0842-migrate-reports-2-index-drift-items-on-a.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:high, issue:already-satisfied
-
-### BG0844 (bug, In Progress) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/scripts/project_upgrade.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py` - declared Affects
-- **file:** `changelog.d/BG0844.md` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0844-an-upgraded-project-never-gets-the-sdlc-studio.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:medium, issue:already-satisfied
-
-### BG0843 (bug, In Progress) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/scripts/migrate.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_migrate.py` - declared Affects
-- **file:** `changelog.d/BG0843.md` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0843-migrate-names-no-engagement-floor-cutoff-so-a.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:medium, issue:already-satisfied
-
-### BG0845 (bug, In Progress) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/scripts/migrate.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_cutoff.py` - declared Affects
-- **file:** `changelog.d/BG0845.md` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_migrate.py` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0845-migrate-s-conformance-cutoff-on-a-v4-1.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:medium, issue:already-satisfied
-
-### BG0853 (bug, In Progress) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/templates/agent-instructions.md` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/templates/agent-instructions.README.md` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/init.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/validate.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_validate.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/project_upgrade.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_init.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py` - declared Affects
-- **file:** `changelog.d/BG0853.md` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0853-the-agent-instructions-template-names-the-claude-code.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:high, issue:already-satisfied
-
-### BG0854 (bug, In Progress) - judgement
-
-- **issue:** `unmet-deps: BG0842:In Progress, BG0843:In Progress, BG0844:In Progress, BG0845:In Progress` - tranche audit
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `.claude/skills/sdlc-studio/scripts/project_upgrade.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/migrate.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_migrate.py` - declared Affects
-- **file:** `.claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_gate_agree.py` - declared Affects
-- **file:** `changelog.d/BG0854.md` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0854-nothing-runs-migrate-and-then-the-gate-on.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:high, issue:unmet-deps, issue:already-satisfied
-
-### BG0856 (bug, In Progress) - judgement
-
-- **issue:** `already-satisfied` - tranche audit
-- **file:** `install.sh` - declared Affects
-- **file:** `docs/INSTALL.md` - declared Affects
-- **file:** `tools/tests/test_install_copilot_global.py` - declared Affects
-- **file:** `changelog.d/BG0852.md` - declared Affects
-- **file:** `changelog.d/BG0856.md` - declared Affects
-- **file:** `sdlc-studio/bugs/BG0856-bg0852-did-not-converge-in-review-round-2.md` - the unit itself
-- **Suitability:** judgement (confidence high) - seeded by difficulty:medium, issue:already-satisfied
+_Nothing remains: every unit in the batch reached a terminal status._
 
 ## Open decisions
 
