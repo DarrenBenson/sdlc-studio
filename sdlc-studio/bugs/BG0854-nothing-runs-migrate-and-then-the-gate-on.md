@@ -1,6 +1,6 @@
 # BG0854: Nothing runs migrate and then the gate on one fixture, so migrate's report drifted from the gate's failing lanes on three lanes unseen
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_gate_agree.py, changelog.d/BG0854.md

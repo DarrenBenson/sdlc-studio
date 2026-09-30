@@ -1,6 +1,6 @@
 # BG0843: migrate names no engagement-floor cutoff, so a v4.1 project's gate fails the engagement floor on 349 shipped units before and after the upgrade and the report says nothing
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py, changelog.d/BG0843.md

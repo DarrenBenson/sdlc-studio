@@ -1,6 +1,6 @@
 # BG0856: BG0852 did not converge in review: round 2 REJECT findings
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** install.sh,docs/INSTALL.md,tools/tests/test_install_copilot_global.py,changelog.d/BG0852.md,changelog.d/BG0856.md

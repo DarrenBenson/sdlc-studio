@@ -1,6 +1,6 @@
 # BG0845: migrate's conformance cutoff on a v4.1 project exempts the 98 units after the project's own adoption point, because a verdict row with no Author column never reads as independent
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_cutoff.py, changelog.d/BG0845.md, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py

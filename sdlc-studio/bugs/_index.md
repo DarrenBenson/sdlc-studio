@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 41 |
-| In Progress | 7 |
-| Fixed | 676 |
+| In Progress | 0 |
+| Fixed | 683 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -200,10 +200,10 @@
 | [BG0839](BG0839-an-eval-worker-session-loads-the-personal-skill.md) | An eval worker session loads the personal skill ahead of the candidate copy, and nothing in the harness says so or prevents it | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0840](BG0840-bg0818-did-not-converge-in-review-round-2.md) | BG0818 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0841](BG0841-the-review-cap-has-no-per-unit-exception.md) | The review cap has no per-unit exception path, so an operator-granted extra round can only land by force | Open | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0842](BG0842-migrate-reports-2-index-drift-items-on-a.md) | migrate reports 2 index drift items on a v4.1 project whose gate reconcile lane fails on 28, because project upgrade counts two of reconcile's nine drift sources | In Progress | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0843](BG0843-migrate-names-no-engagement-floor-cutoff-so-a.md) | migrate names no engagement-floor cutoff, so a v4.1 project's gate fails the engagement floor on 349 shipped units before and after the upgrade and the report says nothing | In Progress | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0844](BG0844-an-upgraded-project-never-gets-the-sdlc-studio.md) | An upgraded project never gets the sdlc-studio/.gitignore that init writes, so gate.py leaves runtime state in git status on every run | In Progress | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0845](BG0845-migrate-s-conformance-cutoff-on-a-v4-1.md) | migrate's conformance cutoff on a v4.1 project exempts the 98 units after the project's own adoption point, because a verdict row with no Author column never reads as independent | In Progress | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0842](BG0842-migrate-reports-2-index-drift-items-on-a.md) | migrate reports 2 index drift items on a v4.1 project whose gate reconcile lane fails on 28, because project upgrade counts two of reconcile's nine drift sources | Fixed | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0843](BG0843-migrate-names-no-engagement-floor-cutoff-so-a.md) | migrate names no engagement-floor cutoff, so a v4.1 project's gate fails the engagement floor on 349 shipped units before and after the upgrade and the report says nothing | Fixed | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0844](BG0844-an-upgraded-project-never-gets-the-sdlc-studio.md) | An upgraded project never gets the sdlc-studio/.gitignore that init writes, so gate.py leaves runtime state in git status on every run | Fixed | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0845](BG0845-migrate-s-conformance-cutoff-on-a-v4-1.md) | migrate's conformance cutoff on a v4.1 project exempts the 98 units after the project's own adoption point, because a verdict row with no Author column never reads as independent | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0846](BG0846-the-v6-release-notes-test-s-post-cut.md) | The v6 release notes test's post-cut control assumes the notes still carry the pre-cut links, so the v6.0.0 cut turns the tools suite red | Fixed | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0847](BG0847-the-v6-existing-users-page-dropped-its-audit.md) | The v6 existing-users page dropped its audit --profile repo mention, so US0242's criterion that four surfaces name the audit on-ramp is red at the release gate | Fixed | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0848](BG0848-sprint-sign-invalidates-its-own-report-when-it.md) | sprint sign invalidates its own report when it moves an approved unit to Done | Open | High | 2026-09-29 | 2026-09-29 |
@@ -211,10 +211,10 @@
 | [BG0850](BG0850-a-carried-unit-s-discharge-approval-is-refused.md) | A carried unit's discharge approval is refused by the review cap that another reviewer's rounds filled | Open | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0851](BG0851-the-sprint-report-says-the-operator-ruled-nothing.md) | The sprint report says the operator ruled nothing and no gate stood down when both happened | Open | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0852](BG0852-install-sh-treats-copilot-as-repo-scoped-only.md) | install.sh treats Copilot as repo-scoped only, so a Copilot CLI user following the quick start or --target auto gets no sdlc-studio and no hint why | Fixed | High | 2026-09-29 | 2026-09-29 |
-| [BG0853](BG0853-the-agent-instructions-template-names-the-claude-code.md) | The agent-instructions template names the Claude Code skill path, so an AGENTS.md seeded for Codex, Copilot, Gemini or Cursor points at files that do not exist there | In Progress | Medium | 2026-09-29 | 2026-09-29 |
-| [BG0854](BG0854-nothing-runs-migrate-and-then-the-gate-on.md) | Nothing runs migrate and then the gate on one fixture, so migrate's report drifted from the gate's failing lanes on three lanes unseen | In Progress | Medium | 2026-09-30 | 2026-09-30 |
+| [BG0853](BG0853-the-agent-instructions-template-names-the-claude-code.md) | The agent-instructions template names the Claude Code skill path, so an AGENTS.md seeded for Codex, Copilot, Gemini or Cursor points at files that do not exist there | Fixed | Medium | 2026-09-29 | 2026-09-29 |
+| [BG0854](BG0854-nothing-runs-migrate-and-then-the-gate-on.md) | Nothing runs migrate and then the gate on one fixture, so migrate's report drifted from the gate's failing lanes on three lanes unseen | Fixed | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0855](BG0855-install-ps1-treats-copilot-as-repo-scoped-only.md) | install.ps1 treats Copilot as repo-scoped only, the Windows twin of BG0852 | Open | Medium | 2026-09-30 | 2026-09-30 |
-| [BG0856](BG0856-bg0852-did-not-converge-in-review-round-2.md) | BG0852 did not converge in review: round 2 REJECT findings | In Progress | Medium | 2026-09-30 | 2026-09-30 |
+| [BG0856](BG0856-bg0852-did-not-converge-in-review-round-2.md) | BG0852 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0857](BG0857-an-unreadable-epics-directory-is-read-as-absence.md) | An unreadable epics directory is read as absence by reconcile's detectors, so the gate and migrate report a drift count with no mention that part of the workspace was never read | Open | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0858](BG0858-migrate-names-nothing-when-the-conformance-lane-fails.md) | migrate names nothing when the conformance lane fails only on ULID-id units or repo-wide failures, so a schema v3 project meets the failure at the gate unannounced | Open | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0859](BG0859-the-close-s-status-preflight-stops-every-approved.md) | The close's status preflight stops every approved bug left In Progress and tells the operator to move it to Review, a status bugs do not have | Open | Medium | 2026-09-30 | 2026-09-30 |

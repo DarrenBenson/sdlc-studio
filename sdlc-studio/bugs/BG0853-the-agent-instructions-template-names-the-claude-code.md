@@ -1,6 +1,6 @@
 # BG0853: The agent-instructions template names the Claude Code skill path, so an AGENTS.md seeded for Codex, Copilot, Gemini or Cursor points at files that do not exist there
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/templates/agent-instructions.md,.claude/skills/sdlc-studio/templates/agent-instructions.README.md,.claude/skills/sdlc-studio/scripts/init.py,.claude/skills/sdlc-studio/scripts/validate.py,.claude/skills/sdlc-studio/scripts/tests/test_validate.py,.claude/skills/sdlc-studio/scripts/project_upgrade.py,.claude/skills/sdlc-studio/scripts/tests/test_init.py,.claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, changelog.d/BG0853.md
