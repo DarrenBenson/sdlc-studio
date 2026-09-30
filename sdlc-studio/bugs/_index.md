@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 37 |
+| Open | 38 |
 | In Progress | 8 |
 | Fixed | 675 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
 | Superseded | 28 |
-| **Total** | **857** |
+| **Total** | **858** |
 
 ## All Bugs
 
@@ -216,6 +216,7 @@
 | [BG0855](BG0855-install-ps1-treats-copilot-as-repo-scoped-only.md) | install.ps1 treats Copilot as repo-scoped only, the Windows twin of BG0852 | Open | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0856](BG0856-bg0852-did-not-converge-in-review-round-2.md) | BG0852 did not converge in review: round 2 REJECT findings | In Progress | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0857](BG0857-an-unreadable-epics-directory-is-read-as-absence.md) | An unreadable epics directory is read as absence by reconcile's detectors, so the gate and migrate report a drift count with no mention that part of the workspace was never read | Open | Medium | 2026-09-30 | 2026-09-30 |
+| [BG0858](BG0858-migrate-names-nothing-when-the-conformance-lane-fails.md) | migrate names nothing when the conformance lane fails only on ULID-id units or repo-wide failures, so a schema v3 project meets the failure at the gate unannounced | Open | Medium | 2026-09-30 | 2026-09-30 |
 
 ## Archived Releases
 
