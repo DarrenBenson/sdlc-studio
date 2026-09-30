@@ -282,9 +282,6 @@ def instructions_seeds(root: Path | str, findings: list[dict] | None = None) -> 
 UNTRACK_RUNTIME_STATE = f"git rm -r --cached {init.SDLC}/.local"
 #: Shown when git cannot be asked, so the user can ask it by hand.
 _ASK_RUNTIME_STATE = f"git ls-files {init.SDLC}/.local"
-#: Dropped from a read-only git probe: a hook exports them, and `git -C` does not override
-#: them, so git would answer for that repository rather than `root` (as gate.py's hook probe).
-_GIT_REDIRECT_VARS = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE")
 
 
 def _runtime_dir_rules(text: str) -> tuple[bool, bool]:
@@ -348,7 +345,10 @@ def tracked_runtime_state(root: Path | str) -> dict:
     root = Path(root).resolve()
     if not any((p / ".git").exists() for p in (root, *root.parents)):
         return {"state": "not-git", "files": [], "reason": ""}
-    env = {k: v for k, v in os.environ.items() if k not in _GIT_REDIRECT_VARS}
+    # Every `GIT_*` variable is dropped, not a named list: a hook exports the ones that locate a
+    # repository, `git -C` does not override them, and git would then answer for that repository
+    # rather than `root`. Dropping the whole prefix covers any name a list would have to track.
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     try:
         r = subprocess.run(["git", "-C", str(root), "ls-files", "-z", "--", f"{init.SDLC}/.local"],
                            capture_output=True, text=True, timeout=60, env=env)

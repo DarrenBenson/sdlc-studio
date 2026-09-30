@@ -5,6 +5,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -1199,6 +1200,26 @@ class RuntimeStateIgnoreTests(unittest.TestCase):
         self.assertEqual(sorted(tracked), ["sdlc-studio/.local/gate-cost.json",
                                            "sdlc-studio/.local/run-state.json"],
                          "the upgrade untracked runtime state it must only report")
+
+    def test_an_inherited_repository_variable_does_not_redirect_the_probe(self):
+        # A commit hook exports the variables that locate a repository, and `git -C` does not
+        # override them. Mutant: probing with the inherited environment, which asks the OTHER
+        # repository (nothing tracked there) and reports this one as clean.
+        import gitutil
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as other:
+            sd = _project(d, version=(pu.CURRENT_SCHEMA, INSTALLED))
+            self._git_repo(d)
+            self._git_repo(other)
+            (sd / ".local").mkdir()
+            (sd / ".local" / "gate-cost.json").write_text("{}\n", encoding="utf-8")
+            gitutil.git(["add", "-A"], d)
+            gitutil.git(["commit", "-q", "-m", "seed"], d)
+            with mock.patch.dict(os.environ, {"GIT_DIR": str(Path(other) / ".git")}):
+                manual = pu.audit(d)["manual"]
+        items = self._kinds(manual, "tracked-runtime-state")
+        self.assertEqual(len(items), 1, manual)
+        self.assertEqual(items[0]["names"], ["sdlc-studio/.local/gate-cost.json"])
 
     def test_untracked_runtime_state_in_a_git_workspace_is_not_reported(self):
         # Mutant: reporting whatever sits on disk under .local/ rather than what git tracks.
