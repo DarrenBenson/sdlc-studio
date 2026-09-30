@@ -1348,7 +1348,9 @@ class AgentInstructionsSkillPathTests(unittest.TestCase):
 
         # A skill vendored under the project root is a real path there: no item at all.
         with tempfile.TemporaryDirectory() as d:
-            root = self._workspace(d, self.LINES[0] + "\n", vendored=True)
+            root = self._workspace(d, self.LINES[0] + "\n"
+                                   "Run `python3 ./.claude/skills/sdlc-studio/scripts/gate.py`.\n",
+                                   vendored=True)
             self.assertEqual([], self._agents_details(root))
 
 

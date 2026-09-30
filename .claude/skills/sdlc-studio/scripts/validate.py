@@ -988,15 +988,50 @@ def working_model_opt_outs(root: Path) -> set[str]:
     return named & known
 
 
-#: A literal install path of this skill for one tool: the Claude Code or `.agents` folder, bare
-#: (project-local), under `~/` or `$HOME/`, or under an absolute prefix. AGENTS.md is read by every
-#: tool a team uses, and each installs the skill somewhere else, so such a path resolves only for
-#: one of them. The template writes `<skill>` instead and defines it once.
+#: A literal install path of this skill for one tool: the Claude Code or `.agents` folder, bare or
+#: `./` (project-local), `../`, under `~`, `$HOME`, `"$HOME"`, `${HOME}` or `%USERPROFILE%`, under an
+#: absolute or drive-letter prefix, with `/` or `\` separators. AGENTS.md is read by every tool a
+#: team uses, and each installs the skill somewhere else, so such a path resolves only for one of
+#: them. The template writes `<skill>` instead and defines it once.
+#:
+#: A match starts only where a path can start - the line's start or a delimiter - so it never
+#: begins part-way through a URL, a relative prefix or a quoted variable; that is what keeps every
+#: suggestion a well-formed path and the vendoring exemption reachable. A URL to the skill's source
+#: is a link, not a path an agent opens, and never matches.
 _SKILL_PATH_RE = re.compile(
-    r"(?:~|\$HOME|\$\{HOME\})?(?:/[\w.@-]+)*/?\.(?:claude|agents)/skills/sdlc-studio(?![\w-])")
-#: The placeholder's own definition line, the one place the per-tool paths are named: it starts
-#: with the placeholder.
-_SKILL_DEFINITION_RE = re.compile(r"^\s*`<skill>`\s")
+    r"""(?<![^\s`'"(\[<{=,;|])"""                   # start of line or a delimiter
+    r"""(?P<prefix>"""
+    r"""~[/\\]"""
+    r"""|"?\$(?:HOME|\{HOME\})"?[/\\]"""
+    r"""|%(?:USERPROFILE|HOME)%[/\\]"""
+    r"""|[A-Za-z]:[/\\](?:[\w.@-]+[/\\])*"""        # a drive letter
+    r"""|/(?:[\w.@-]+/)*"""                         # an absolute POSIX path
+    r"""|(?:\.\.[/\\])+"""                          # outside the project
+    r"""|\.[/\\]"""                                 # `./`: project-local, like the bare form
+    r""")?"""
+    r"""(?P<dir>\.(?:claude|agents)[/\\]skills[/\\]sdlc-studio)(?![\w-])""")
+#: The placeholder's own definition line, the one place the per-tool paths are named: it states
+#: what `<skill>` IS. A line that merely starts with the token is not a definition.
+_SKILL_DEFINITION_RE = re.compile(r"^\s*`<skill>`\s+(?:below\s+)?(?:is|means|=)\s")
+#: Where the shipped definition line lives, quoted to a file that has none.
+_INSTRUCTIONS_TEMPLATE = Path(__file__).resolve().parent.parent / "templates" / "agent-instructions.md"
+
+
+def skill_definition_line() -> str | None:
+    """The template's `<skill>` definition line, or None when the template cannot be read."""
+    try:
+        text = _INSTRUCTIONS_TEMPLATE.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
+    return next((ln for ln in text.splitlines() if _SKILL_DEFINITION_RE.match(ln)), None)
+
+
+def _vendored(root: Path, prefix: str, directory: str) -> bool:
+    """A project-local path (bare or `./`) that exists under `root`: a skill vendored in the
+    repository resolves for everyone who clones it."""
+    if prefix not in ("", "./", ".\\"):
+        return False
+    return (root / directory.replace("\\", "/")).is_dir()
 
 
 def foreign_skill_paths(root: Path, text: str) -> list[dict]:
@@ -1011,14 +1046,18 @@ def foreign_skill_paths(root: Path, text: str) -> list[dict]:
     for n, line in enumerate(text.splitlines(), start=1):
         if _SKILL_DEFINITION_RE.match(line):
             continue
-        paths = [m.group(0) for m in _SKILL_PATH_RE.finditer(line)
-                 if not (m.group(0).startswith(".") and (root / m.group(0)).is_dir())]
-        if not paths:
+        hits = [m for m in _SKILL_PATH_RE.finditer(line)
+                if not _vendored(root, m.group("prefix") or "", m.group("dir"))]
+        if not hits:
             continue
-        suggestion = line
-        for path in sorted(set(paths), key=len, reverse=True):
-            suggestion = suggestion.replace(path, "<skill>")
-        out.append({"line": n, "text": line.strip(), "paths": paths,
+        # Each reported span, prefix and all, becomes `<skill>`; built by position so a second
+        # occurrence of the same text elsewhere on the line is never touched by accident.
+        suggestion, last = "", 0
+        for m in hits:
+            suggestion += line[last:m.start()] + "<skill>"
+            last = m.end()
+        suggestion += line[last:]
+        out.append({"line": n, "text": line.strip(), "paths": [m.group(0) for m in hits],
                     "suggestion": suggestion.strip()})
     return out
 
@@ -1104,6 +1143,17 @@ def check_instructions(root: Path) -> list[dict]:
             f"do not have: \"{hit['text']}\" - write it as \"{hit['suggestion']}\" (`<skill>` is "
             f"defined once in templates/agent-instructions.md); reported, never rewritten",
             line=hit["line"], paths=hit["paths"], suggestion=hit["suggestion"])
+    # A file written before `<skill>` was defined is told to write `<skill>` and never told what
+    # it means. Said once, with the template's own line, whenever the file uses or is told to use
+    # the placeholder and defines it nowhere.
+    uses_placeholder = "<skill>" in text or any(f["rule"] == "foreign-skill-path" for f in out)
+    if uses_placeholder and not any(_SKILL_DEFINITION_RE.match(ln) for ln in text.splitlines()):
+        definition = skill_definition_line()
+        add(SEVERITY_WARNING, "no-skill-definition",
+            "AGENTS.md uses (or is told to use) the `<skill>` placeholder but never defines it; "
+            + (f"add the template's definition line: \"{definition}\"" if definition else
+               "add the definition line from templates/agent-instructions.md (the template "
+               "could not be read here)"))
 
     n_lines = text.count("\n") + 1
     if n_lines > 300:

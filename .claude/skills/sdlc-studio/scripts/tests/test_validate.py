@@ -531,6 +531,84 @@ class ForeignSkillPathTests(unittest.TestCase):
                          hits[0]["paths"])
 
 
+class ForeignSkillPathBoundaryTests(unittest.TestCase):
+    """BG0853 round 2: a match may start only at the start of a path, never inside a URL or after
+    a relative, quoted or drive-letter prefix, and every suggestion is a well-formed path."""
+
+    VENDORED = ".claude/skills/sdlc-studio"
+    #: A `<skill>` glued to what came before it is the malformed shape round 1 wrote.
+    GLUED = re.compile(r"""[\w.:/\\"$%]<skill>""")
+
+    def _hits(self, text: str, vendored: bool = False) -> list[dict]:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            if vendored:
+                (root / self.VENDORED).mkdir(parents=True)
+            return validate.foreign_skill_paths(root, text)
+
+    def test_a_vendored_dot_slash_path_is_not_reported(self) -> None:
+        line = "Run `python3 ./.claude/skills/sdlc-studio/scripts/gate.py`."
+        self.assertEqual([], self._hits(line, vendored=True))
+        # ...and without the vendored copy it is a relative path to nothing: reported, cleanly.
+        hits = self._hits(line)
+        self.assertEqual("Run `python3 <skill>/scripts/gate.py`.", hits[0]["suggestion"])
+
+    def test_a_url_to_the_skill_source_is_not_an_install_path(self) -> None:
+        # Decided: a link is not a path an agent opens on disk, so it is not reported at all.
+        line = "Source: https://github.com/DarrenBenson/sdlc-studio/tree/main/.claude/skills/sdlc-studio"
+        self.assertEqual([], self._hits(line))
+        self.assertEqual([], self._hits(line, vendored=True))
+
+    def test_every_prefixed_form_gives_a_well_formed_suggestion(self) -> None:
+        cases = {
+            "read `../.claude/skills/sdlc-studio/x.md`": "read `<skill>/x.md`",
+            'run "$HOME"/.claude/skills/sdlc-studio/scripts/gate.py':
+                "run <skill>/scripts/gate.py",
+            "run C:/Users/u/.claude/skills/sdlc-studio/scripts/gate.py":
+                "run <skill>/scripts/gate.py",
+            "run C:\\Users\\u\\.claude\\skills\\sdlc-studio\\scripts\\gate.py":
+                "run <skill>\\scripts\\gate.py",
+            "see %USERPROFILE%\\.agents\\skills\\sdlc-studio\\help":
+                "see <skill>\\help",
+        }
+        for line, form in cases.items():
+            hits = self._hits(line, vendored=True)       # vendoring must not excuse any of them
+            self.assertEqual(1, len(hits), line)
+            self.assertEqual(form, hits[0]["suggestion"], line)
+            self.assertIsNone(self.GLUED.search(hits[0]["suggestion"]), hits[0]["suggestion"])
+
+    def test_only_the_definition_line_is_exempt(self) -> None:
+        line = "`<skill>` also run ~/.claude/skills/sdlc-studio/scripts/gate.py"
+        hits = self._hits(line)
+        self.assertEqual(1, len(hits), "a line merely starting with `<skill>` is not the definition")
+        self.assertEqual("`<skill>` also run <skill>/scripts/gate.py", hits[0]["suggestion"])
+        definition = ("`<skill>` below is the folder the sdlc-studio skill is installed in for "
+                      "your tool: `~/.claude/skills/sdlc-studio` (Claude Code).")
+        self.assertEqual([], self._hits(definition))
+
+    def test_a_file_without_the_definition_is_told_to_add_it(self) -> None:
+        # A file seeded before `<skill>` was defined gets the template's own definition line,
+        # quoted; a file that defines it does not.
+        template = (Path(validate.__file__).resolve().parent.parent / "templates"
+                    / "agent-instructions.md").read_text(encoding="utf-8")
+        wanted = next(ln for ln in template.splitlines() if ln.startswith("`<skill>` below is"))
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "AGENTS.md").write_text(
+                "# A\n\nRun `python3 ~/.claude/skills/sdlc-studio/scripts/gate.py`.\n",
+                encoding="utf-8")
+            notes = [f for f in validate.check_instructions(root)
+                     if f["rule"] == "no-skill-definition"]
+            self.assertEqual(1, len(notes))
+            self.assertIn(wanted, notes[0]["message"])
+            (root / "AGENTS.md").write_text(
+                f"# A\n\n{wanted}\n\nRun `python3 ~/.claude/skills/sdlc-studio/scripts/gate.py`.\n",
+                encoding="utf-8")
+            rules = {f["rule"] for f in validate.check_instructions(root)}
+        self.assertNotIn("no-skill-definition", rules)
+        self.assertIn("foreign-skill-path", rules)
+
+
 class InstructionsTests(unittest.TestCase):
     def test_missing_agents_is_error(self) -> None:
         with tempfile.TemporaryDirectory() as d:
