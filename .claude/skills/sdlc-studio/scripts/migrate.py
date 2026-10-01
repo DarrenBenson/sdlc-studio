@@ -561,20 +561,49 @@ def _signed_records(root: Path, apply: bool) -> tuple[list[dict], list[dict]]:
 
 
 def _sweep_inputs(root: Path) -> list[Path]:
-    """The workspace files the sweep's steps read as text and do not tolerate an undecodable
-    one in: `.config.yaml`, every artefact file of the pipeline and meta types (the audit's
-    validation, the sizing conversion, the conformance lane, reconcile), and each type's
-    `_index.md`. A file no step reads - a note under `reviews/`, runtime state under `.local/` -
-    is not one, so it never stops an upgrade. The Definition of Ready/Done and the instructions
-    files are read through readers that already tolerate an unreadable file, and are left out."""
+    """The files checked before the sweep starts, so each unreadable one is named by its path:
+    `.config.yaml`, every pipeline artefact file (`sdlc_md.ARTIFACT_TYPES`) and each pipeline
+    type's `_index.md`. It is not every file a step reads - a persona card, an instructions file
+    and `.version` are read too, and a step meeting one it cannot read is named as a failed step
+    (`_STEP_ERRORS`) instead. A file outside this set never stops the sweep here."""
     files = [root / "sdlc-studio" / ".config.yaml"]
     for type_, (rel, _prefix) in sdlc_md.ARTIFACT_TYPES.items():
         files += list(sdlc_md.artifact_files(type_, root))
         files.append(root / rel / "_index.md")
-    for type_, (rel, _prefix) in sdlc_md.META_TYPES.items():
-        files += [Path(p) for p, _rid in sdlc_md._meta_files(type_, root)]  # noqa: SLF001
-        files.append(root / rel / "_index.md")
     return sorted({f for f in files if f.is_file()})
+
+
+#: What a sweep step may raise on a file it reads: bytes that are not UTF-8, or a file that
+#: cannot be opened. Nothing broader is caught: any other exception is a defect in the step and
+#: surfaces as one.
+_STEP_ERRORS = (UnicodeDecodeError, OSError)
+
+
+class _Steps:
+    """Runs the sweep's steps in order, each inside a guard against `_STEP_ERRORS`. A step that
+    raises one is recorded as a `step-failed` needs-a-human item and its result is the default
+    given; `writing` turns False from then on, so under `--apply` no later step writes."""
+
+    def __init__(self, apply: bool) -> None:
+        self.apply = apply
+        self.failed: list[dict] = []
+
+    @property
+    def writing(self) -> bool:
+        return self.apply and not self.failed
+
+    def run(self, step: str, fn, default):
+        try:
+            return fn()
+        except _STEP_ERRORS as exc:
+            error = f"{type(exc).__name__}: {exc}"
+            self.failed.append({
+                "kind": "step-failed", "step": step, "error": error, "command": None,
+                "detail": f"the {step} step stopped on a file it reads ({error}) - check the "
+                          f"files the {step} step reads are readable UTF-8 text, then run "
+                          f"migrate again" + ("; nothing was written from this step on"
+                                              if self.apply else "")})
+            return default
 
 
 def _unreadable_files(root: Path) -> list[tuple[str, str]]:
@@ -596,15 +625,19 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
     `{applicable, applied, deterministic: [...], needs_human: [...], summary}`. `deterministic`
     lists what was (or would be) auto-applied - conventions/version from `project_upgrade` and
     sizing conversions from `migrate_v3`. `needs_human` lists every item that needs judgement, each
-    with the exact command. `apply` performs only the deterministic set."""
+    with the exact command. `apply` performs only the deterministic set. A step that meets a file
+    it cannot read is a `step-failed` item naming the step, and under `apply` no step after it
+    writes."""
     root = Path(repo_root)
     if not (root / "sdlc-studio").is_dir():
         return {"applicable": False, "applied": apply, "deterministic": [], "needs_human": [],
                 "frozen": [], "summary": {}}
     # A file the sweep reads that cannot be read as UTF-8 text stopped it with a traceback that
-    # named neither the file nor anything else in the report. The steps below read these files
-    # (`_sweep_inputs`), so they are found first and NAMED, and nothing is read past them or
-    # written - an upgrade applied over files its own readers cannot read is not deterministic.
+    # named neither the file nor anything else in the report. The config, the pipeline artefacts
+    # and their indexes (`_sweep_inputs`) are checked first and each unreadable one is NAMED, and
+    # then nothing is read past them or written - an upgrade applied over files its own readers
+    # cannot read is not deterministic. Any other file a step cannot read is caught by the step
+    # guard below and named as the step that failed.
     unreadable = _unreadable_files(root)
     if unreadable:
         needs = [{"kind": "unreadable", "path": rel, "command": None,
@@ -626,42 +659,61 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
     # `audit` classification keeps dry-run and apply agreeing on what is deterministic vs needs-human.
     # `audit` is honest about BG0150 (an unreadable install version -> a `manual` item, not `auto`),
     # so `auto` is a faithful preview of what apply will write.
-    au = project_upgrade.audit(root)
-    if apply:
-        project_upgrade.apply(root, with_reconcile=False, today=today,
-                              with_default_amigos=with_default_amigos)
+    # Each step runs inside `steps`' guard: one that meets a file it cannot read is named as a
+    # failed step rather than a traceback, and under --apply nothing is written from then on.
+    steps = _Steps(apply)
+
+    def conventions() -> dict:
+        au = project_upgrade.audit(root)
+        if steps.writing:
+            project_upgrade.apply(root, with_reconcile=False, today=today,
+                                  with_default_amigos=with_default_amigos)
+        return au
+
+    wrote_conventions = steps.writing
+    au = steps.run("conventions", conventions, {"auto": [], "manual": []})
 
     # 2. retired review surfaces. The DoD tags and config keys are removed line by line; the
     # instructions lines and the frozen ledgers are only reported.
-    tags, tag_rewrites = _retired_tags(root)
-    cfg_keys, cfg_human, cfg_rewrites = _retired_config(root)
-    mentions = _retired_mentions(root)   # read before the write, so its lines match a dry run
-    if apply:
-        for path, text in {**tag_rewrites, **cfg_rewrites}.items():
-            sdlc_md.atomic_write(path, text)
+    def retired() -> tuple:
+        tags, tag_rewrites = _retired_tags(root)
+        cfg_keys, cfg_human, cfg_rewrites = _retired_config(root)
+        mentions = _retired_mentions(root)   # read before the write, so its lines match a dry run
+        if steps.writing:
+            for path, text in {**tag_rewrites, **cfg_rewrites}.items():
+                sdlc_md.atomic_write(path, text)
+        return tags, cfg_keys, cfg_human, mentions
+
+    wrote_retired = steps.writing
+    tags, cfg_keys, cfg_human, mentions = steps.run("retired-surfaces", retired, ([], [], [], []))
 
     # 3. ids/sizing. Converts a container's legacy Effort/Points to a Size deterministically, and
     # reports the delivery units and undecomposed requests/issues it cannot convert safely.
-    sizing = migrate_v3.migrate_sizing(root, dry_run=not apply)
+    wrote_sizing = steps.writing
+    sizing = steps.run("sizing", lambda: migrate_v3.migrate_sizing(root, dry_run=not steps.writing),
+                       {"converted": []})
 
     # 4. the tracked run record of each report signed before records were tracked.
-    records, records_human = _signed_records(root, apply)
+    wrote_records = steps.writing
+    records, records_human = steps.run("signed-records",
+                                       lambda: _signed_records(root, steps.writing), ([], []))
 
     # 5. aggregate into one report. Deterministic = the conventions auto-fixes, the retired tags
-    # and keys removed, the sizing conversions and the run records; `applied` reflects the mode,
-    # and the classification is identical either way.
+    # and keys removed, the sizing conversions and the run records; each item's `applied` is
+    # whether its step wrote (the mode, until a step failed), and the classification is identical
+    # either way.
     deterministic: list[dict] = []
     for a in au["auto"]:
         deterministic.append({"source": "conventions", "kind": a["kind"],
-                              "detail": a["detail"], "applied": apply})
-    deterministic += [{**r, "applied": apply} for r in tags + cfg_keys]
+                              "detail": a["detail"], "applied": wrote_conventions})
+    deterministic += [{**r, "applied": wrote_retired} for r in tags + cfg_keys]
     converted_ids = set()
     for c in sizing["converted"]:
         converted_ids.add(c["id"])
         deterministic.append({"source": "sizing", "id": c["id"],
                               "detail": f"{c['id']}: Size {c['size']} (from {c['from']})",
-                              "applied": apply})
-    deterministic += records
+                              "applied": wrote_sizing})
+    deterministic += [{**r, "applied": wrote_records} for r in records]
 
     needs_human: list[dict] = []
     for m in au["manual"]:                       # conventions that need judgement (index drift, etc.)
@@ -684,14 +736,15 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
     needs_human += records_human
     # 6. the grandfathering cutoff, judged on the tree as it now stands: migrated under --apply,
     # as found on a dry run.
-    needs_human += _conformance_cutoff(root)
-    needs_human += _engagement_floor_cutoff(root)
+    needs_human += steps.run("conformance-cutoff", lambda: _conformance_cutoff(root), [])
+    needs_human += steps.run("engagement-floor-cutoff", lambda: _engagement_floor_cutoff(root), [])
 
     # Terminal legacy-sized units are NOT needs-human work: a Closed/Fixed unit is never planned,
     # so re-sizing it changes nothing. Report them as a single historical count, never as an action.
     terminal_sized = len(sizing.get("terminal_sized", []))
 
-    frozen = _frozen(root)
+    frozen = steps.run("frozen", lambda: _frozen(root), [])
+    needs_human += steps.failed
     return {"applicable": True, "applied": apply, "deterministic": deterministic,
             "needs_human": needs_human, "terminal_sized": terminal_sized, "frozen": frozen,
             "summary": {"deterministic": len(deterministic), "needs_human": len(needs_human),

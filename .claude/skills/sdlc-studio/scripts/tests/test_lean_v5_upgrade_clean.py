@@ -177,7 +177,8 @@ class UlidCutoffFailsClosedTests(unittest.TestCase):
 
 
 class MigrateReadsOnlyWhatItReadsTests(unittest.TestCase):
-    """US0974 round 1: the readability probe covers the files the sweep reads, and no other."""
+    """US0974 round 1: the readability probe covers the config, the pipeline artefacts and their
+    indexes, and a file no step reads is never one."""
 
     def test_a_bad_note_no_step_reads_does_not_stop_apply(self) -> None:
         """The reviewer's repro. MUTANT: probe every `*.md` under `sdlc-studio/` - a non-UTF-8
@@ -228,6 +229,65 @@ class MigrateReadsOnlyWhatItReadsTests(unittest.TestCase):
             self.assertEqual("sdlc-studio/stories/US0001-locked.md", item["path"])
             self.assertIn("PermissionError", item["detail"])
             self.assertNotIn("re-save it as UTF-8", item["detail"])
+
+
+#: Files a sweep step reads that the up-front probe does not cover: each stopped migrate with a
+#: traceback (round 2's repros). Relative to the project root.
+_STEP_READ_FILES = ("sdlc-studio/personas/maya.md", "AGENTS.md", "sdlc-studio/.version")
+
+
+class MigrateStepFailureIsNamedTests(unittest.TestCase):
+    """US0974 round 2: the probe covers only what AC3 names (pipeline artefacts, their indexes and
+    `.config.yaml`); a step that meets an unreadable file is named as a failed step instead."""
+
+    def test_a_step_reading_an_unreadable_file_is_named_not_a_traceback(self) -> None:
+        """The reviewer's three repros. MUTANTS: (1) the guard removed - a traceback and exit 1;
+        (2) the guard catching nothing - the same; (3) `--apply` writing after the failed step -
+        the later sizing step gives the legacy-Effort CR a Size line."""
+        for rel in _STEP_READ_FILES:
+            with self.subTest(rel), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _initialised(root)
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"# x\n\xff\xfe\n")
+                (root / "sdlc-studio" / ".config.yaml").unlink()
+                cr = root / "sdlc-studio" / "change-requests" / "CR0001-x.md"
+                cr.parent.mkdir(parents=True, exist_ok=True)
+                cr.write_text("# CR0001: legacy\n\n> **Status:** Approved\n> **Effort:** M\n",
+                              encoding="utf-8")
+                r = _cli(root, "migrate.py", "--apply", "--format", "json")
+                self.assertNotIn("Traceback", r.stderr, r.stderr)
+                self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+                failed = [h for h in json.loads(r.stdout)["needs_human"]
+                          if h.get("kind") == "step-failed"]
+                self.assertTrue(failed, r.stdout)
+                self.assertIn("UnicodeDecodeError", failed[0]["error"])
+                self.assertIn(failed[0]["step"], failed[0]["detail"])
+                self.assertFalse((root / "sdlc-studio" / ".config.yaml").exists(),
+                                 "--apply wrote after a step failed")
+                self.assertNotIn("Size", cr.read_text(encoding="utf-8"),
+                                 "a later step wrote after a step failed")
+                sized = [x for x in json.loads(r.stdout)["deterministic"]
+                         if x.get("source") == "sizing"]
+                self.assertEqual([False], [x["applied"] for x in sized], sized)
+
+    def test_a_corrupt_meta_file_does_not_stop_apply(self) -> None:
+        """Round 2's MOVED finding: no step reads a review or retro file. MUTANT: the meta types
+        put back into the probe - both are named unreadable and the config is not created."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _initialised(root)
+            (root / "sdlc-studio" / ".config.yaml").unlink()
+            (root / "sdlc-studio" / "reviews" / "RV0001-x.md").write_bytes(b"# RV0001\n\xff\n")
+            (root / "sdlc-studio" / "retros" / "RETRO0001-x.md").write_bytes(b"\xff\xfe\n")
+            r = _cli(root, "migrate.py", "--apply", "--format", "json")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            kinds = [h.get("kind") for h in json.loads(r.stdout)["needs_human"]]
+            self.assertNotIn("unreadable", kinds)
+            self.assertNotIn("step-failed", kinds)
+            self.assertTrue((root / "sdlc-studio" / ".config.yaml").is_file(),
+                            "--apply did not create the missing config")
 
 
 if __name__ == "__main__":
