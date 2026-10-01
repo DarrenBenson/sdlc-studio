@@ -7,6 +7,7 @@ to put it on every item it did not ask and never to report a default as answered
 """
 from __future__ import annotations
 
+# test-census-subject: .claude/skills/sdlc-studio/reference-persona-generate.md
 import re
 import unittest
 from pathlib import Path
