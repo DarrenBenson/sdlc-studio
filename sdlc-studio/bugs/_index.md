@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 29 |
+| Open | 27 |
 | In Progress | 3 |
-| Fixed | 700 |
+| Fixed | 702 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
@@ -234,8 +234,8 @@
 | [BG0873](BG0873-reconcile-reports-a-v3-keyed-handoff-file-as.md) | reconcile reports a v3-keyed handoff file as an orphan index row | Open | Low | 2026-10-01 | 2026-10-01 |
 | [BG0874](BG0874-us0978-did-not-converge-in-review-round-2.md) | US0978 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0875](BG0875-us0974-did-not-converge-in-review-round-2.md) | US0974 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
-| [BG0876](BG0876-npm-audit-reports-brace-expansion-and-markdown-it.md) | npm audit reports brace-expansion and markdown-it advisories in the dev lockfile | Open | High | 2026-10-01 | 2026-10-01 |
-| [BG0877](BG0877-four-more-places-still-print-a-schema-v3.md) | Four more places still print a schema v3 id as its hyphenless comparison key | Open | Low | 2026-10-01 | 2026-10-01 |
+| [BG0876](BG0876-npm-audit-reports-brace-expansion-and-markdown-it.md) | npm audit reports brace-expansion and markdown-it advisories in the dev lockfile | Fixed | High | 2026-10-01 | 2026-10-01 |
+| [BG0877](BG0877-four-more-places-still-print-a-schema-v3.md) | Four more places still print a schema v3 id as its hyphenless comparison key | Fixed | Low | 2026-10-01 | 2026-10-01 |
 | [BG0878](BG0878-config-py-show-prints-null-for-keys-whose.md) | config.py show prints null for keys whose default lives only in a reader's code | Open | Low | 2026-10-01 | 2026-10-01 |
 | [BG0879](BG0879-us0977-did-not-converge-in-review-round-2.md) | US0977 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0880](BG0880-bg0839-did-not-converge-in-review-round-2.md) | BG0839 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |

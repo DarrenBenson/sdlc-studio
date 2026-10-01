@@ -1,6 +1,6 @@
 # BG0876: npm audit reports brace-expansion and markdown-it advisories in the dev lockfile
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 1
 > **Affects:** package.json, package-lock.json, tools/tests/test_lean_dev_advisories_patched.py

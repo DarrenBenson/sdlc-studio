@@ -6,8 +6,8 @@ Every open finding closes: Maya and Jonah get honest commands, safe installs and
 
 **Verdict: Judged achieved** - Every unit the plan held closed: 40 of 40 approved by an independent QA seat (34 in the batch, 6 discharged by their rejecting reviewers after a carry at the cap), 34 of 34 batch units verify green. Honest commands: a CLI no longer reports success it did not get (US0969), ids print as their files spell them (BG0825, BG0877), docs and comments tell the truth (US0973). Safe installs and upgrades: install.sh takes the latest verified release (US0968), install and upgrade never damage a consumer's files (US0976), a v5 upgrade reads clean and names an unreadable file (US0974), migrate names retired surface in a project's own docs (US0975), js-yaml, brace-expansion and markdown-it held at patched releases (BG0866, BG0876). Leaner machinery: the handoff page, its writers and --require-handoff are retired for the signed report (US0967, US0978), the revert-check lane and batch-span API are gone (US0784, BG0861). Disclosed: 20 findings raised during the run (BG0870-BG0889, all groomed) stay open for the next sprint.
 
-> **Run:** 2026-10-01T10:19:17Z to open (9.4h)
-> **Verified on:** 7b53e3f2cc3c8c1f023c6da0d90a78be738d73e8   **Fingerprint:** ec0de12cc6f77a7c
+> **Run:** 2026-10-01T10:19:17Z to open (9.6h)
+> **Verified on:** 8d083c6848d5ab661d3bbbf8b2bf00634476b0bd   **Fingerprint:** 8cb2f1bb218180d9
 
 ## Estimates
 
@@ -18,8 +18,8 @@ over forecast.
 | Measure | Forecast | Actual | Ratio | Over |
 | --- | --- | --- | --- | --- |
 | Points | 65 | 65 | 1.0x | 34 of 34 delivered unit(s) |
-| Minutes | 416.0 | 566.8 | 1.36x | the whole run: forecast over 34 of 34 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
-| Tokens | 11,467,105 | 2,323,032 | 0.2x | the whole run: forecast over 34 of 34 unit(s) planned or added and not dropped; actual is the run meter, a lower bound |
+| Minutes | 416.0 | 575.6 | 1.38x | the whole run: forecast over 34 of 34 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
+| Tokens | 11,467,105 | 2,350,747 | 0.2x | the whole run: forecast over 34 of 34 unit(s) planned or added and not dropped; actual is the run meter, a lower bound |
 
 Each cell names its source. A figure labelled agent minutes or agent tokens sums the agent
 totals tagged to that unit; an unlabelled one is measured over the unit's own open span. Spans of
@@ -123,16 +123,14 @@ size, plan and added together: 65.
 
 ## Known issues handed over
 
-13 open finding(s) raised in the run, 2 close gap(s), 0 carried unit(s)
+11 open finding(s) raised in the run, 2 close gap(s), 0 carried unit(s)
 
 | Issue | Priority | Detail |
 | --- | --- | --- |
-| BG0876 | High | npm audit reports brace-expansion and markdown-it advisories in the dev lockfile |
 | BG0870 | Medium | The pre-push hook's fail-closed checkout and annotated-tag peel are unpinned, it runs the release lanes on a branch tip pushed beside a tag, and an interrupted push leaves a prunable worktree - not-stop-ship, ruled by Claude (orchestrator) |
 | BG0871 | Medium | The diff-scoped gate lanes judge nothing at the push boundary, because their scope is the working-tree diff, which is empty on a clean pushed commit - not-stop-ship, ruled by Claude (orchestrator) |
 | BG0872 | Medium | next_id.py allocate mints a sequential id on a schema v3 project, where artifact.py new mints a ULID - not-stop-ship, ruled by Claude (orchestrator) |
 | BG0873 | Low | reconcile reports a v3-keyed handoff file as an orphan index row - not-stop-ship, ruled by Claude (orchestrator) |
-| BG0877 | Low | Four more places still print a schema v3 id as its hyphenless comparison key |
 | BG0878 | Low | config.py show prints null for keys whose default lives only in a reader's code - not-stop-ship, ruled by Claude (orchestrator) |
 | BG0882 | Low | harness_project_slug does not truncate a long project path or map non-BMP characters as the harness does - not-stop-ship, ruled by Claude (orchestrator) |
 | BG0885 | Low | critic.py record writes a finding into critic-verdicts.md unescaped, so markdown-shaped text breaks the lint - not-stop-ship, ruled by Claude (orchestrator) |
@@ -157,9 +155,9 @@ Signing records the principal, the date and this report's fingerprint against RU
 
 | Model | Tokens |
 | --- | --- |
-| claude-opus-5-5 | 2,323,032 |
+| claude-opus-5-5 | 2,350,747 |
 
-Total 2,323,032, of which delegated NOT MEASURED - no delegated agent supplied a total, which is not the same fact as no work having been delegated. Coverage: 1 session(s);
+Total 2,350,747, of which delegated NOT MEASURED - no delegated agent supplied a total, which is not the same fact as no work having been delegated. Coverage: 1 session(s);
 read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp.
 
 ### DORA
@@ -167,7 +165,7 @@ read from stamps, with the opening reading taken from the legacy session_token_b
 | Key | This run | Mapping | Elite band | Derived from |
 | --- | --- | --- | --- | --- |
 | Deployment frequency | 9 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up | on demand | forge runs 36913650209/36909223880/36906324592/36902763151/36898472211/36890016236/36861303010/36853267621/36849337681 - 9 push-triggered run(s) on main in the run window |
-| Lead time for changes | 9h 11m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 110 commit(s) |
+| Lead time for changes | 9h 26m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 111 commit(s) |
 | Change failure rate | 11% | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that did not conclude success | 0-15% | forge runs 36913650209/36909223880/36906324592/36902763151/36898472211/36890016236/36861303010/36853267621/36849337681 - 9 deployment(s); 1 failed on 481ef5019fa3c6aa859678bd71e251856509e2d6 |
 | Time to restore | -4h 20m | the span from a push-triggered run concluding failure on main to the next push-triggered run concluding success | under an hour | forge runs 36890016236/36861303010 - red then green on main |
 
