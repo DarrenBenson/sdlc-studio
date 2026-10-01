@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
+> **Points:** 1
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_downgrade_keeps_reason.py, changelog.d/BG0737.md
 > **Evidence:** Found by the independent engineering seat at BG0733 round 3, 2026-09-22, and reported rather than held as blocking because exposure today is zero. Proved at both refs with BG0499 AC1's actual line under a red selector: at HEAD the line is untouched because the old pattern could not parse it; at the delivered ref it is replaced by the marked downgrade and the author's note is lost. The reviewer resolved all 15 annotated corpus lines and found every selector either manual or unresolvable, so none is downgraded on the next run - the trap is latent, not a live loss.
 > **Created:** 2026-09-22
 > **Created-by:** sdlc-studio file
@@ -27,8 +27,10 @@ Carry the existing reason through the downgrade - `no (<date>) - <the downgrade 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: BG0733 established that a derived verdict never overwrites a recorded one, and enforced it on the green path.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Carry the existing reason through the downgrade - `no (<date>) - <the downgrade note>; was: <the recorded reason>` - so the derived verdict records what it...
+- [ ] **AC1** Given a story criterion stamped `- **Verified:** yes (2026-08-03) - four tests, each driving a shipped main([...])` whose Verify selector is red, when `verify_ac.py run --story <story> --repo-root <root>`, then the run exits 1 and the line reads `- **Verified:** no (<today>) - downgraded by verify_ac - the selector was red at verification time; was: four tests, each driving a shipped main([...])`. Fails on: HEAD writes the downgrade and the author's reason exists nowhere
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_downgrade_keeps_reason.py::DowngradeKeepsReasonTests::test_a_red_run_keeps_the_recorded_reason
+- [ ] **AC2** Given `- **Verified:** yes (2026-01-01)` with no reason and a red selector, when the same run, then the line reads exactly `- **Verified:** no (<today>) - downgraded by verify_ac - the selector was red at verification time` with no `was:` clause. Fails on: appending '; was: ' unconditionally
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_downgrade_keeps_reason.py::DowngradeKeepsReasonTests::test_a_bare_yes_downgrades_unchanged
 
 ## Impact
 
@@ -39,3 +41,4 @@ The unit's own principle, enforced on one branch and broken on the other, which 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-22 | sdlc-studio | Filed |
+| 2026-10-01 | engineering seat (groomer) | Groomed under D0291 (backlog sweep 2026-10-01): criteria executed by the sweep's evidence agent replace the tool-derived ones; Points 3 -> 1 |

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 36 |
+| Open | 31 |
 | In Progress | 0 |
 | Fixed | 692 |
 | Verified | 0 |
 | Closed | 87 |
-| Won't Fix | 22 |
-| Superseded | 28 |
-| **Total** | **865** |
+| Won't Fix | 27 |
+| Superseded | 29 |
+| **Total** | **866** |
 
 ## All Bugs
 
@@ -49,12 +49,12 @@
 | [BG0688](BG0688-gate-require-close-still-counts-close-owed-s.md) | gate --require-close still counts close-owed's raw owed rows, refusing an override the tag guard and the detector now honour | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0689](BG0689-the-release-tag-guard-never-reads-close-owed.md) | The release tag guard never reads close_owed's velocity half, so a retro owing its velocity row does not refuse the tag | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0690](BG0690-critic-py-repair-re-judges-stored-findings-through.md) | critic.py repair re-judges stored findings through the code-span guard, and its typed closure scanner unescapes any backslash before a greater-than sign | Superseded | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0691](BG0691-changelog-py-shape-judges-unreadable-and-symlinked-fragments.md) | changelog.py shape judges unreadable and symlinked fragments differently in its two modes, and its git-failure refusals are unpinned | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0691](BG0691-changelog-py-shape-judges-unreadable-and-symlinked-fragments.md) | changelog.py shape judges unreadable and symlinked fragments differently in its two modes, and its git-failure refusals are unpinned | Won't Fix | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0692](BG0692-gate-py-never-sets-the-boundary-suite-marker.md) | gate.py never sets the boundary-suite marker itself, so SDLC_GATE_BOUNDARY=push reads [PASS] module-alone over a red boundary-only test | Fixed | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0693](BG0693-testplan-derive-and-the-plan-review-brief-still.md) | testplan derive and the plan-review brief still name different unauthored sets: blank cells, table order and a criterion with no row | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0694](BG0694-tag-check-s-tests-pin-the-override-case.md) | tag-check's tests pin the override case, not the blocking predicate, so a later-day close-time repair can be refused again with the suite green | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0695](BG0695-conformance-s-ungroomed-nudge-counts-retired-skeletons-and.md) | conformance's ungroomed nudge counts retired skeletons and tells the user to groom Superseded and Won't Implement stories before planning them to Done | Fixed | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0696](BG0696-critic-py-s-brief-checks-search-the-whole.md) | critic.py's brief checks search the whole brief, so a unit's own text hides a dropped surface, and a REJECT marked as matching no brief can never be retired | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0696](BG0696-critic-py-s-brief-checks-search-the-whole.md) | critic.py's brief checks search the whole brief, so a unit's own text hides a dropped surface, and a REJECT marked as matching no brief can never be retired | Won't Fix | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0697](BG0697-the-repair-plan-gate-fails-open-on-a.md) | The repair-plan gate fails open on a zero-finding plan, an unparseable config and an unreadable round file, and its refusals name no remedy or crash on malformed input | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0698](BG0698-repair-plan-rounds-can-be-overwritten-by-concurrent.md) | Repair-plan rounds can be overwritten by concurrent records, a re-record after approval counts as a failed round, and the escalation notice counts a repair-plan REJECT | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0699](BG0699-sprint-queue-show-s-not-materialised-line-is.md) | sprint queue show's not-materialised line is pinned by no test, and next, plan and queue show hold the discovery partition in separate copies | Won't Fix | Medium | 2026-09-15 | 2026-09-15 |
@@ -64,7 +64,7 @@
 | [BG0703](BG0703-the-unanswered-set-predicate-s-fail-closed-handlers.md) | The unanswered-set predicate's fail-closed handlers and the handoff behaviours around it survive mutants no test kills | Won't Fix | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0704](BG0704-the-done-guard-reads-a-filed-closure-naming.md) | The Done guard reads a filed closure naming the unit itself as a repair, and lists repaired findings as outstanding when the only APPROVE is the author's own | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0705](BG0705-the-findings-filed-to-line-survives-a-reopen.md) | The Findings-filed-to line survives a reopen, is not reported in text output, and names only the filed subset of a partial repair | Won't Fix | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0706](BG0706-the-coverage-gate-charges-another-unit-s-added.md) | The coverage gate charges another unit's added lines to a unit sharing its file, and a coverage ruling is voided by any edit to that file | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0706](BG0706-the-coverage-gate-charges-another-unit-s-added.md) | The coverage gate charges another unit's added lines to a unit sharing its file, and a coverage ruling is voided by any edit to that file | Won't Fix | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0707](BG0707-the-corpus-baseline-s-ci-run-line-is.md) | the corpus baseline's CI-run line is judged by shape alone, so a hand-typed run id reads as a re-measure | Won't Fix | Medium | 2026-09-16 | 2026-09-16 |
 | [BG0708](BG0708-gate-py-reads-sdlc-verify-timeout-per-call.md) | gate.py reads SDLC_VERIFY_TIMEOUT per call, so a previously hermetic suite now inherits whatever the environment sets | Won't Fix | Medium | 2026-09-16 | 2026-09-16 |
 | [BG0709](BG0709-the-pre-push-red-main-check-trusts-the.md) | the pre-push red-main check trusts the forge's ordering, so a stale first row demands acknowledgement of a two-month-old red | Fixed | Medium | 2026-09-16 | 2026-09-16 |
@@ -97,8 +97,8 @@
 | [BG0736](BG0736-spawned-column-is-the-one-drift-kind-reconcile.md) | spawned-column is the one drift kind reconcile can detect but never repair, so every decomposition leaves permanent drift the doctrine forbids fixing by hand | Fixed | High | 2026-09-21 | 2026-09-21 |
 | [BG0737](BG0737-the-stale-downgrade-destroys-an-author-s-reason.md) | the stale downgrade destroys an author's reason on a positive verdict, so the principle BG0733 shipped is violated on the sibling branch of the same function | Open | Medium | 2026-09-22 | 2026-09-22 |
 | [BG0738](BG0738-the-low-severity-consolidation-writes-a-consolidated-findings.md) | the low-severity consolidation writes a Consolidated Findings section with no blank line after the heading, so the commit that files a Low finding is refused by the markdown gate | Superseded | Medium | 2026-09-22 | 2026-09-22 |
-| [BG0739](BG0739-close-owed-reads-the-raised-in-batch-stamp.md) | close_owed reads the Raised-in-batch stamp by its last token while asserting it reads it exactly as sprint_report does, and the two now genuinely disagree | Open | Medium | 2026-09-22 | 2026-09-22 |
-| [BG0740](BG0740-a-gate-stood-down-in-prose-rather-than.md) | a gate stood down in prose rather than as a waiver row is invisible to the report's waiver disclosure, which is how the one the operator most needed went unnamed | Open | Medium | 2026-09-22 | 2026-09-22 |
+| [BG0739](BG0739-close-owed-reads-the-raised-in-batch-stamp.md) | close_owed reads the Raised-in-batch stamp by its last token while asserting it reads it exactly as sprint_report does, and the two now genuinely disagree | Won't Fix | Medium | 2026-09-22 | 2026-09-22 |
+| [BG0740](BG0740-a-gate-stood-down-in-prose-rather-than.md) | a gate stood down in prose rather than as a waiver row is invisible to the report's waiver disclosure, which is how the one the operator most needed went unnamed | Superseded | Medium | 2026-09-22 | 2026-09-22 |
 | [BG0741](BG0741-the-stale-lens-is-silenced-by-the-sweep.md) | the stale lens is silenced by the sweep's own audit rulings, and repairing it will make every abandoned request double-report on the same day | Won't Fix | Medium | 2026-09-22 | 2026-09-22 |
 | [BG0742](BG0742-ac5-style-corpus-coupled-tests-go-red-when.md) | AC5-style corpus-coupled tests go red when the backlog they measure is acted on, and two are red in this tree already | Fixed | Medium | 2026-09-22 | 2026-09-22 |
 | [BG0743](BG0743-a-signed-report-s-digest-covers-prose-that.md) | a signed report's digest covers prose that is edited in place, so an unrelated amendment to a decision rationale invalidates a signature over an unchanged run | Fixed | Medium | 2026-09-22 | 2026-09-22 |
@@ -198,7 +198,7 @@
 | [BG0837](BG0837-the-pre-push-gate-judges-the-working-tree.md) | The pre-push gate judges the working tree, not the commits being pushed, so an uncommitted fix turns a red push green | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0838](BG0838-retired-surface-excuses-a-live-retired-name-by.md) | retired_surface excuses a live retired name by the shape of its sentence, so a live instruction passes as history | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0839](BG0839-an-eval-worker-session-loads-the-personal-skill.md) | An eval worker session loads the personal skill ahead of the candidate copy, and nothing in the harness says so or prevents it | Open | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0840](BG0840-bg0818-did-not-converge-in-review-round-2.md) | BG0818 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0840](BG0840-bg0818-did-not-converge-in-review-round-2.md) | BG0818 did not converge in review: round 2 REJECT findings | Won't Fix | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0841](BG0841-the-review-cap-has-no-per-unit-exception.md) | The review cap has no per-unit exception path, so an operator-granted extra round can only land by force | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0842](BG0842-migrate-reports-2-index-drift-items-on-a.md) | migrate reports 2 index drift items on a v4.1 project whose gate reconcile lane fails on 28, because project upgrade counts two of reconcile's nine drift sources | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0843](BG0843-migrate-names-no-engagement-floor-cutoff-so-a.md) | migrate names no engagement-floor cutoff, so a v4.1 project's gate fails the engagement floor on 349 shipped units before and after the upgrade and the report says nothing | Fixed | Medium | 2026-09-28 | 2026-09-28 |
@@ -224,6 +224,7 @@
 | [BG0863](BG0863-an-unreadable-verdict-ledger-drops-unreviewed-units-from.md) | An unreadable verdict ledger drops unreviewed units from the close's status rows since BG0859, and the bug remedy is wrong for a bug that already has an APPROVE | Open | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0864](BG0864-transition-to-fixed-admits-a-bug-whose-verify.md) | transition to Fixed admits a bug whose Verify lines have never been run, so a carried bug with red or manual-only criteria reaches Fixed with nothing executed | Open | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0865](BG0865-the-signed-page-names-a-known-issue-s.md) | The signed page names a known issue's retro ruling only when it is STOP-SHIP, and a finding the close files falls outside the run window | Fixed | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0866](BG0866-package-lock-json-resolves-js-yaml-5-2.md) | package-lock.json resolves js-yaml 5.2.2 through markdownlint-cli 0.49.1, inside Dependabot alert 19's vulnerable range | Open | Medium | 2026-10-01 | 2026-10-01 |
 
 ## Archived Releases
 

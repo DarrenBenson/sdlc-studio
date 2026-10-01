@@ -60,3 +60,64 @@ what costs more than it returns. Every superseding commit below was checked on `
 - Lesson classes whose graduation CR closed: LC-002, LC-003, LC-006, LC-008 to `graduated`;
   LC-004 to `retired` (CR0600 rejected, nothing to fix). The lesson-graduation generator stays
   (D0252); a groomed story makes the class finish its own lifecycle.
+
+## CR0592 and CR0603 bullets
+
+CR0592's 72 bullets, numbered in file order, each executed at `5ec11117`; no script changed
+between that ref and `85042135`. The bucket is now empty.
+
+| Verdict | Bullets | Reason |
+| --- | --- | --- |
+| FIXED | #3, 4, 5, 7, 8, 10, 11, 12, 13, 29, 59 | shipped |
+| DUPLICATE | #39 | of #70 |
+| REJECT | #1, 2, 9, 14, 15, 16, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 36, 38, 40, 43, 45, 49, 50, 51, 52, 53, 55, 56, 57, 67, 68, 71, 72 | below cost, mutant or pin residue, or the fix would add a gate |
+| SEPARATE | #63 | BG0866 |
+| KEEP | #17, 20, 33, 44 | US0969, a CLI never reports success it did not get |
+| KEEP | #32, 46, 58 (objects half) | US0970, the finding writers keep what they were given |
+| KEEP | #58 (`type` key half) | US0805 |
+| KEEP | #47, 48, 61, 69 | US0971, a fresh project's first plan is quiet and correct |
+| KEEP | #30, 35, 41 | US0972, derived figures read honestly |
+| KEEP | #34, 37, 54, 62, 70 | US0973, docs and comments tell the truth |
+| KEEP | #31, 60, 64 | US0974, a v5 upgrade reads clean |
+| KEEP | CR0601 (merged) | US0975, migrate reports retired v5 surface in a project's own docs |
+| KEEP | #42, 65 (parts 1-2), 66 | US0976, install and upgrade never damage a consumer's files |
+| KEEP | #6 + graduation by close_pass | US0977, a lesson class finishes its lifecycle |
+
+CR0603: #4 is US0968; #1 (marker machinery), #2 (decision-log machinery) and #3 (a new flag)
+are rejected. The bucket is now empty.
+
+## Delivery bugs
+
+| ID | Verdict | Reason |
+| --- | --- | --- |
+| BG0691, BG0696, BG0706, BG0739, BG0840 | Won't Fix | below cost, or already fixed |
+| BG0740 | Superseded | by US0926 |
+| BG0737 | Groomed | 1 point; criteria executed by the sweep's evidence agent |
+
+## Surviving work
+
+Every unit below carries authored criteria with a Verify selector, Points, Affects and one
+premise executed at HEAD.
+
+| ID | Title | Points | Parent |
+| --- | --- | --- | --- |
+| US0759 | `config.py show --sources` marks each key in force as a skill default or project-set | 2 | EP0233 / CR0534 |
+| US0784 | The advisory `revert-check` gate lane is retired; the per-unit CLI stays | 2 | EP0239 / CR0552 |
+| US0804 | `verify_ac.py run --unit <id>` is accepted as an alias for `--id` | 1 | EP0244 / CR0559 |
+| US0805 | A `--fields-file` key spelled as the verb's own flag is accepted | 2 | EP0244 / CR0559 |
+| US0966 | `verify_ac.py run` names the near-miss node | 1 | EP0244 / CR0559 |
+| US0967 | The close writes no handoff; the next plan reads the signed report | 5 | EP0268 / CR0590 |
+| US0968 | With no `--version`, install.sh installs the latest verified release | 2 | EP0269 / CR0603 |
+| US0969 | A CLI never reports success it did not get | 3 | EP0270 / CR0592 |
+| US0970 | The finding writers keep every criterion and verifier they were given | 3 | EP0270 / CR0592 |
+| US0971 | A fresh project's first plan is quiet and correct | 3 | EP0270 / CR0592 |
+| US0972 | Derived figures read honestly | 3 | EP0270 / CR0592 |
+| US0973 | Docs and comments tell the truth | 2 | EP0270 / CR0592 |
+| US0974 | A v5 upgrade reads clean | 3 | EP0270 / CR0592 |
+| US0975 | migrate reports where a project's own docs name retired v5 surface | 3 | EP0270 / CR0592 |
+| US0976 | Install and upgrade never damage a consumer's files | 3 | EP0270 / CR0592 |
+| US0977 | A lesson class finishes its lifecycle | 2 | EP0270 / CR0592 |
+| BG0866 | js-yaml 5.2.2 sits inside Dependabot alert 19's range | 1 | - |
+| BG0737 | the stale downgrade destroys an author's reason | 1 | - |
+
+Total: 42 points.

@@ -1,6 +1,7 @@
 # CR-0603: Low-severity crs (consolidated)
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0269
 > **Size:** S
 > **Priority:** Low
 > **Type:** Improvement
@@ -21,13 +22,11 @@ Each finding here is Low-severity on its own; the batch is triaged, then actione
 
 ## Consolidated Findings
 
-- **The report marks a known-issue ruling made by the unit's own author**: In eval 09 the author ruled its own filed bug not-stop-ship in the retro's carried table, and nothing drew the operator's eye to it: sign prints only stop-ship rulings. The ruled-by column is on the page but an author ruling on its own defect reads the same as an independent ruling.
-- **A decision can supersede one ruling of an earlier multi-ruling decision**: `decisions.py add --supersedes D0279` marks the whole of D0279 superseded; its untouched rulings then read as void, so D0283 had to restate them. There is no clause-level supersession.
-- **A filer can keep one Low finding out of the consolidation CR**: With `triage.low_consolidation: true` (this repository; off by default for consumers) every Low finding is folded into CR0592. Twice this sprint a Low the batch needed as its own unit had to be re-rated or folded to escape it; there is no per-filing opt-out.
-- **The quick-start install should default to the latest verified release, not unverified main**: Field report (v5.0.1 to v6.0.0 upgrade): the README's one-line install tracks `main`, which publishes no `.sha256`, so the installer warns 'No published sha256 for main - installing unverified' and proceeds. This is documented and deliberate (README 'Installing in a sensitive environment?'), but the quick start is the path most new users take, so the common install is the unverified one and the verified path sits in a collapsed details block.
+Every bullet is dispositioned (#4 is US0968; #1-#3 rejected); the verdicts are in sdlc-studio/reviews/backlog-sweep-2026-10-01.md.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-28 | sdlc-studio | Consolidation opened |
+| 2026-10-01 | engineering seat (groomer) | Consolidated bullets emptied under D0291; verdicts recorded in the backlog sweep record |

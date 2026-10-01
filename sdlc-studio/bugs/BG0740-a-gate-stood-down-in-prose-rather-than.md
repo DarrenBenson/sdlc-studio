@@ -1,6 +1,8 @@
 # BG0740: a gate stood down in prose rather than as a waiver row is invisible to the report's waiver disclosure, which is how the one the operator most needed went unnamed
 
-> **Status:** Open
+> **Status:** Superseded
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
+> **Superseded by:** US0926
 > **Closes with:** US0926 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Severity:** Medium
 > **Points:** 3

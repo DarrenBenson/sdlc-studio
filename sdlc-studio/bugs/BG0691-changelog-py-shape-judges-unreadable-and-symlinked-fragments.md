@@ -1,6 +1,7 @@
 # BG0691: changelog.py shape judges unreadable and symlinked fragments differently in its two modes, and its git-failure refusals are unpinned
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/changelog.py, .claude/skills/sdlc-studio/scripts/tests/test_changelog.py, .githooks/pre-commit, AGENTS.md, changelog.d/BG0662.md

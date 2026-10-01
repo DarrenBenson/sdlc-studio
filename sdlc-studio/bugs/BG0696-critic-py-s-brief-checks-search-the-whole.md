@@ -1,6 +1,7 @@
 # BG0696: critic.py's brief checks search the whole brief, so a unit's own text hides a dropped surface, and a REJECT marked as matching no brief can never be retired
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Closes with:** US0923 closes part (2), brief provenance matching, only. Part (1), missing_practices and missing_claim_surfaces searching the whole brief, has no closing story and stays live, so this bug is not closed when that story ships (D0264, backlog sweep D0265)
 > **Severity:** Medium
 > **Points:** 5

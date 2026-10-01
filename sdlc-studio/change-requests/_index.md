@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 6 |
+| Proposed | 0 |
 | Approved | 0 |
-| In Progress | 0 |
+| In Progress | 6 |
 | Complete | 509 |
 | Rejected | 29 |
 | Deferred | 0 |
@@ -40,7 +40,7 @@
 | [CR-0530](CR0530-the-planner-reports-shared-file-clusters-not-the.md) | the planner reports shared-file clusters, not the parallelisable fraction, so nothing says whether agentic delivery is available at all | Rejected | Medium | Improvement | 2026-08-04 | EP0230 |
 | [CR-0531](CR0531-a-charter-s-scope-query-cannot-express-a.md) | a charter's scope query cannot express a decomposition, so the only queued charter's two scope fields disagree | Rejected | Medium | Improvement | 2026-08-04 | EP0231 |
 | [CR-0533](CR0533-a-production-hunk-whose-reversion-leaves-the-suite.md) | A production hunk whose reversion leaves the suite green is uncovered: make the gate prove coverage rather than assume it | Rejected | High | Improvement | 2026-08-05 | EP0232 |
-| [CR-0534](CR0534-a-project-s-configuration-is-a-surface-nobody.md) | a project's configuration is a surface nobody is introduced to and nobody revisits: the operator cannot see what is in force, what the default would have been, or which setting their own history says is wrong | Proposed | High | Improvement | 2026-08-06 | EP0233 |
+| [CR-0534](CR0534-a-project-s-configuration-is-a-surface-nobody.md) | a project's configuration is a surface nobody is introduced to and nobody revisits: the operator cannot see what is in force, what the default would have been, or which setting their own history says is wrong | In Progress | High | Improvement | 2026-08-06 | EP0233 |
 | [CR-0535](CR0535-a-refusing-verb-cannot-state-its-contract-until.md) | a refusing verb cannot state its contract until you trip it: 39 verbs refuse, 2 can be asked what they demand | Rejected | High | Improvement | 2026-08-06 | EP0210 |
 | [CR-0536](CR0536-the-spec-documents-do-not-learn-about-a.md) | the spec documents do not learn about a tool that ships, and the guards meant to catch that cannot fail | Rejected | High | Improvement | 2026-08-06 | EP0234 |
 | [CR-0539](CR0539-lane-check-reports-181-units-whose-criteria-never.md) | lane-check reports 181 units whose criteria never enter a shipped entry point | Rejected | Medium | process | 2026-08-08 | EP0235 |
@@ -53,14 +53,14 @@
 | [CR-0548](CR0548-derive-verification-depth-from-the-ledger-instead-of.md) | derive `Verification depth` from the ledger instead of authoring it - the field has been wrong on 5 of 6 units in one batch | Complete | High | enhancement | 2026-08-19 | EP0217 |
 | [CR-0550](CR0550-the-test-plan-gate-is-scoped-by-date.md) | The test-plan gate is scoped by DATE alone, so it cannot be narrowed to the units whose risk earns it | Rejected | High | Improvement | 2026-08-21 | EP0217 |
 | [CR-0551](CR0551-the-appetite-ceiling-measures-wall-clock-since-the.md) | The appetite ceiling measures WALL-CLOCK since the run opened, so a run left open overnight reports spend it never incurred | Rejected | High | Improvement | 2026-08-21 | EP0238 |
-| [CR-0552](CR0552-revert-check-mutates-the-live-working-tree-so.md) | revert-check mutates the live working tree, so a boundary gate rewrites files underneath anything else reading the repo | Proposed | High | Improvement | 2026-08-21 | EP0239 |
+| [CR-0552](CR0552-revert-check-mutates-the-live-working-tree-so.md) | revert-check mutates the live working tree, so a boundary gate rewrites files underneath anything else reading the repo | In Progress | High | Improvement | 2026-08-21 | EP0239 |
 | [CR-0553](CR0553-the-exemption-reason-floor-counts-characters-so-twelve.md) | The exemption reason floor counts characters, so twelve junk characters buy a blanket revert-check exemption | Rejected | Medium | Improvement | 2026-08-21 | EP0240 |
 | [CR-0554](CR0554-a-plan-row-whose-recorded-kill-node-is.md) | A plan row whose recorded kill node is not the criterion's own verifier is undetectable, though the ledger already holds both facts | Superseded | High | Improvement | 2026-08-24 | EP0241 |
 | [CR-0555](CR0555-the-expensive-half-of-the-test-plan-gate.md) | The expensive half of the test-plan gate fires before a diff exists, so move it to where one does instead of banding a signal that cannot discriminate | Superseded | High | Improvement | 2026-08-24 | EP0218 |
 | [CR-0556](CR0556-a-bug-reaches-a-terminal-status-with-no.md) | A bug reaches a terminal status with no independent judgement of its plan OR its code - the only gate is evidence it reports about itself | Superseded | High | Improvement | 2026-08-25 | EP0242 |
 | [CR-0557](CR0557-bg0463-s-twenty-batch-boundary-findings-need-re.md) | BG0463's twenty batch-boundary findings need re-triage against HEAD before any of them is engineered | Complete | Medium | Improvement | 2026-08-25 | EP0257 |
 | [CR-0558](CR0558-the-derived-depth-lane-checks-each-span-against.md) | the derived-depth lane checks each span against its own seal rather than re-deriving it, so a unit whose ledger evidence was evicted still passes | Superseded | High | enhancement | 2026-08-25 | EP0243 |
-| [CR-0559](CR0559-the-same-concept-is-named-three-ways-across.md) | the same concept is named three ways across the toolchain and twice inside one script, so every invocation is a guess the caller pays for in a refusal | Proposed | Medium | enhancement | 2026-08-26 | EP0244 |
+| [CR-0559](CR0559-the-same-concept-is-named-three-ways-across.md) | the same concept is named three ways across the toolchain and twice inside one script, so every invocation is a guess the caller pays for in a refusal | In Progress | Medium | enhancement | 2026-08-26 | EP0244 |
 | [CR-0560](CR0560-filing-a-finding-leaves-the-disclosure-page-stale.md) | filing a finding leaves the disclosure page stale, so the tree is red until somebody separately remembers to regenerate it | Superseded | Medium | enhancement | 2026-08-26 | EP0245 |
 | [CR-0561](CR0561-the-declared-python-3-10-floor-is-stated.md) | the declared Python 3.10 floor is stated in six shipped places and guarded nowhere, and one shipped script already violates it | Complete | High | enhancement | 2026-08-26 | EP0246 |
 | [CR-0562](CR0562-no-shipped-command-ticks-a-delivered-unit-s.md) | no shipped command ticks a delivered unit's acceptance criteria, so the close's tick-verification row can only be satisfied by hand-editing the artefact | Superseded | Medium | enhancement | 2026-08-28 | -- |
@@ -87,9 +87,9 @@
 | [CR-0587](CR0587-the-goal-review-asks-whether-a-sprint-goal.md) | the goal review asks whether a Sprint Goal is achievable, not whether it states value, so a shopping list passes | Superseded | High | Improvement | 2026-09-16 | -- |
 | [CR-0588](CR0588-run-state-readers-cannot-tell-a-field-that.md) | run_state readers cannot tell a field that is empty from a field the schema never had, so a typo reads as a state | Rejected | Medium | Improvement | 2026-09-17 | -- |
 | [CR-0589](CR0589-prepare-rehearses-the-seal-and-refuses-to-file.md) | PREPARE rehearses the seal, and refuses to file a report that cannot survive being signed | Superseded | High | Improvement | 2026-09-20 | -- |
-| [CR-0590](CR0590-the-report-absorbs-the-handoff-so-a-run.md) | the report absorbs the handoff, so a run ends with one page instead of two that must agree | Proposed | Medium | Improvement | 2026-09-20 | -- |
+| [CR-0590](CR0590-the-report-absorbs-the-handoff-so-a-run.md) | the report absorbs the handoff, so a run ends with one page instead of two that must agree | In Progress | Medium | Improvement | 2026-09-20 | EP0268 |
 | [CR-0591](CR0591-audit-the-41-in-progress-discovery-requests-against.md) | audit the 41 In-Progress discovery requests against HEAD and close what is dead | Complete | High | Improvement | 2026-09-20 | EP0257 |
-| [CR-0592](CR0592-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | Proposed | Low | Improvement | 2026-09-21 | -- |
+| [CR-0592](CR0592-low-severity-bugs-consolidated.md) | Low-severity bugs (consolidated) | In Progress | Low | Improvement | 2026-09-21 | EP0270 |
 | [CR-0593](CR0593-nothing-refuses-a-batch-unit-that-no-goal.md) | nothing refuses a batch unit that no goal clause covers, so a run can deliver work its own goal never tested | Superseded | Medium | Enhancement | 2026-09-22 | -- |
 | [CR-0594](CR0594-the-record-informs-the-work-goals-trace-to.md) | The record informs the work: goals trace to the PRD, and briefs carry the history of the files they touch | Complete | High | Improvement | 2026-09-24 | EP0264 |
 | [CR-0595](CR0595-prevent-or-retire-lesson-lc-002-criterion-words.md) | Prevent or retire lesson LC-002 (criterion words outrun the fixture) | Complete | Medium | Improvement | 2026-09-24 | US0945 |
@@ -100,7 +100,7 @@
 | [CR-0600](CR0600-prevent-or-retire-lesson-lc-004-premise-not.md) | Prevent or retire lesson LC-004 (premise not executed) | Rejected | Medium | Improvement | 2026-09-26 | -- |
 | [CR-0601](CR0601-a-shipped-command-reports-where-a-project-s.md) | A shipped command reports where a project's own docs still name retired v5 surface | Superseded | Medium | Improvement | 2026-09-28 | -- |
 | [CR-0602](CR0602-a-run-s-token-and-minute-actuals-are.md) | A run's token and minute actuals are measured without the operator stamping a baseline | Rejected | Medium | Improvement | 2026-09-28 | -- |
-| [CR-0603](CR0603-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | Proposed | Low | Improvement | 2026-09-28 | -- |
+| [CR-0603](CR0603-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | In Progress | Low | Improvement | 2026-09-28 | EP0269 |
 | [CR-0604](CR0604-the-andon-cord-stops-the-run-on-an.md) | The andon cord stops the run on an irreversible action or an operating-domain exit | Rejected | Medium | Feature | 2026-09-29 | -- |
 
 ## Archived Releases

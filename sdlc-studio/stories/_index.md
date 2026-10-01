@@ -1,14 +1,14 @@
 # Story Index
 
-**Last Updated:** 2026-09-28
+**Last Updated:** 2026-10-01
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 4 |
-| Ready | 0 |
+| Draft | 0 |
+| Ready | 16 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **965** |
+| **Total** | **977** |
 
 ## All Stories
 
@@ -124,7 +124,7 @@
 | [US0756](US0756-a-legitimately-uncovered-hunk-is-answerable-and-the.md) | A legitimately uncovered hunk is ANSWERABLE and the answer is recorded rather than assumed | Won't Implement | EP0232 | 2026-08-27 | 2026-08-27 |
 | [US0757](US0757-it-runs-at-the-batch-boundary-and-the.md) | It runs at the BATCH BOUNDARY, and the placement is a recorded decision | Won't Implement | EP0232 | 2026-08-27 | 2026-08-27 |
 | [US0758](US0758-an-uncovered-hunk-is-distinguished-from-one-whose.md) | An uncovered hunk is distinguished from one whose verifiers could not RUN | Won't Implement | EP0232 | 2026-08-27 | 2026-08-27 |
-| [US0759](US0759-a-command-prints-every-configuration-key-in-force.md) | A command prints every configuration key in force with its value, its source and its meaning | Draft | EP0233 | 2026-08-27 | 2026-08-27 |
+| [US0759](US0759-config-py-show-sources-marks-each-key-in.md) | `config.py show --sources` marks each key in force as a skill default or project-set | Ready | EP0233 | 2026-08-27 | 2026-08-27 |
 | [US0760](US0760-the-keys-that-are-project-judgements-are-named.md) | The keys that are project JUDGEMENTS are named as such and decided explicitly as numbered decisions | Won't Implement | EP0233 | 2026-08-27 | 2026-08-27 |
 | [US0761](US0761-the-retro-reads-the-run-s-measurements-against.md) | The retro reads the run's measurements against the settings that governed it and proposes changes | Won't Implement | EP0233 | 2026-08-27 | 2026-08-27 |
 | [US0762](US0762-a-proposal-is-never-applied-automatically-and-lands.md) | A proposal is never applied automatically and lands in the retro's findings table to be ruled on | Won't Implement | EP0233 | 2026-08-27 | 2026-08-27 |
@@ -149,7 +149,7 @@
 | [US0781](US0781-an-interval-that-cannot-be-classified-counts-as.md) | An interval that cannot be classified counts as SPENT - an unmeasurable gap is not a free one | Won't Implement | EP0238 | 2026-08-27 | 2026-08-27 |
 | [US0782](US0782-retro-accuracy-and-the-metrics-line-report-the.md) | `retro accuracy` and the Metrics line report the working figure with the calendar beside it | Superseded | EP0238 | 2026-08-27 | 2026-08-27 |
 | [US0783](US0783-a-run-whose-working-time-exceeds-the-ceiling.md) | A run whose WORKING time exceeds the ceiling still trips the breaker, shown against a fixture | Won't Implement | EP0238 | 2026-08-27 | 2026-08-27 |
-| [US0784](US0784-no-tracked-file-in-the-live-working-tree.md) | No tracked file in the live working tree changes at any point while the lane runs | Draft | EP0239 | 2026-08-27 | 2026-08-27 |
+| [US0784](US0784-the-advisory-revert-check-gate-lane-is-retired.md) | The advisory `revert-check` gate lane is retired; the per-unit `verify_ac.py revert-check` stays | Ready | EP0239 | 2026-08-27 | 2026-08-27 |
 | [US0785](US0785-the-lane-and-the-per-unit-cli-reach.md) | The lane and the per-unit CLI reach the same verdict for the same reason - one measurement | Superseded | EP0239 | 2026-08-27 | 2026-08-27 |
 | [US0786](US0786-a-file-absent-at-the-base-ref-is.md) | A file absent at the base ref is ABSENT from the isolated copy, not present and empty | Superseded | EP0239 | 2026-08-27 | 2026-08-27 |
 | [US0787](US0787-a-verifier-reads-current-tests-against-base-production.md) | A verifier reads CURRENT tests against BASE production files, and writes nothing that escapes | Superseded | EP0239 | 2026-08-27 | 2026-08-27 |
@@ -169,8 +169,8 @@
 | [US0801](US0801-a-unit-whose-stamped-derived-half-no-longer.md) | A unit whose stamped derived half no longer matches a fresh derivation is REPORTED with both fingerprints | Superseded | EP0243 | 2026-08-27 | 2026-08-27 |
 | [US0802](US0802-a-unit-whose-span-matches-a-fresh-derivation.md) | A unit whose span matches a fresh derivation is passed silently - the paired control | Superseded | EP0243 | 2026-08-27 | 2026-08-27 |
 | [US0803](US0803-an-eviction-of-a-unit-s-ledger-rows.md) | An eviction of a unit's ledger rows is visible from the lane's output alone | Superseded | EP0243 | 2026-08-27 | 2026-08-27 |
-| [US0804](US0804-every-verb-identifying-a-unit-accepts-unit-including.md) | Every verb identifying a unit accepts `--unit`, including `verify_ac run` where it is refused today | Draft | EP0244 | 2026-08-27 | 2026-08-27 |
-| [US0805](US0805-a-fields-file-document-whose-keys-are-spelled.md) | A `--fields-file` document whose keys are spelled as the verb's own flags is accepted | Draft | EP0244 | 2026-08-27 | 2026-08-27 |
+| [US0804](US0804-verify-ac-py-run-unit-id-is-accepted.md) | `verify_ac.py run --unit <id>` is accepted as an alias for `--id` | Ready | EP0244 | 2026-08-27 | 2026-08-27 |
+| [US0805](US0805-a-fields-file-key-spelled-as-the-verb.md) | A `--fields-file` key spelled as the verb's own flag (`ac`, `option`, `type`, `status`) is accepted as its canonical field | Ready | EP0244 | 2026-08-27 | 2026-08-27 |
 | [US0806](US0806-a-deprecated-alias-still-works-and-says-once.md) | A deprecated alias still works and says once that it is deprecated | Superseded | EP0244 | 2026-08-27 | 2026-08-27 |
 | [US0807](US0807-the-surface-reference-names-the-accepted-flags-and.md) | The surface reference names the accepted flags and document keys per verb | Superseded | EP0244 | 2026-08-27 | 2026-08-27 |
 | [US0808](US0808-a-filed-medium-or-low-finding-is-already.md) | A filed Medium or Low finding is already disclosed on `docs/known-issues.md` when the filer returns | Superseded | EP0245 | 2026-08-27 | 2026-08-27 |
@@ -324,6 +324,18 @@
 | [US0963](US0963-the-eval-scenarios-run-against-v6-and-the.md) | The eval scenarios run against v6, and the independence scenario grades v6's rule | Done | EP0267 | 2026-09-27 | 2026-09-27 |
 | [US0964](US0964-every-script-s-help-describes-the-v6-loop.md) | Every script's --help describes the v6 loop and no retired review step | Done | EP0267 | 2026-09-27 | 2026-09-27 |
 | [US0965](US0965-an-eval-scenario-runs-a-two-unit-lean.md) | An eval scenario runs a two-unit lean sprint in a fresh project from plan to close, so v6's headline is measured, not asserted | Done | EP0267 | 2026-09-28 | 2026-09-28 |
+| [US0966](US0966-verify-ac-py-run-names-the-near-miss.md) | `verify_ac.py run` names the near-miss node when a Verify selector's file is collected but its node is not | Ready | EP0244 | 2026-10-01 | 2026-10-01 |
+| [US0967](US0967-the-close-writes-no-handoff-the-next-plan.md) | The close writes no handoff; the next plan reads the last signed report's carried work | Ready | EP0268 | 2026-10-01 | 2026-10-01 |
+| [US0968](US0968-with-no-version-install-sh-installs-the-latest.md) | With no --version, install.sh installs the latest published release, verified against its .sha256 | Ready | EP0269 | 2026-10-01 | 2026-10-01 |
+| [US0969](US0969-a-cli-never-reports-success-it-did-not.md) | A CLI never reports success it did not get | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
+| [US0970](US0970-the-finding-writers-keep-every-criterion-and-verifier.md) | The finding writers keep every criterion and verifier they were given | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
+| [US0971](US0971-a-fresh-project-s-first-plan-is-quiet.md) | A fresh project's first plan is quiet and correct | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
+| [US0972](US0972-derived-figures-read-honestly.md) | Derived figures read honestly | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
+| [US0973](US0973-docs-and-comments-tell-the-truth.md) | Docs and comments tell the truth | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
+| [US0974](US0974-a-v5-upgrade-reads-clean.md) | A v5 upgrade reads clean | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
+| [US0975](US0975-migrate-reports-where-a-project-s-own-docs.md) | migrate reports where a project's own docs name retired v5 surface | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
+| [US0976](US0976-install-and-upgrade-never-damage-a-consumer-s.md) | Install and upgrade never damage a consumer's files | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
+| [US0977](US0977-a-lesson-class-finishes-its-lifecycle.md) | A lesson class finishes its lifecycle | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
 
 ## Archived Releases
 

@@ -1,7 +1,7 @@
 # EP0239: revert-check measures in an isolated copy, never in the live working tree
 
-> **Status:** Draft
-> **Derived Point Total:** 16
+> **Status:** Ready
+> **Derived Point Total:** 13
 > **Parent:** CR0552
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
@@ -14,7 +14,7 @@ Decomposed from CR0552. Delivers the work CR0552 requested.
 
 ## Story Breakdown
 
-- [ ] [US0784: No tracked file in the live working tree changes at any point while the lane runs](../stories/US0784-no-tracked-file-in-the-live-working-tree.md)
+- [ ] [US0784: No tracked file in the live working tree changes at any point while the lane runs](../stories/US0784-the-advisory-revert-check-gate-lane-is-retired.md)
 - [x] [US0785: The lane and the per-unit CLI reach the same verdict for the same reason - one measurement](../stories/US0785-the-lane-and-the-per-unit-cli-reach.md)
 - [x] [US0786: A file absent at the base ref is ABSENT from the isolated copy, not present and empty](../stories/US0786-a-file-absent-at-the-base-ref-is.md)
 - [x] [US0787: A verifier reads CURRENT tests against BASE production files, and writes nothing that escapes](../stories/US0787-a-verifier-reads-current-tests-against-base-production.md)
