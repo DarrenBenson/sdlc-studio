@@ -3097,10 +3097,12 @@ _EPIC_VIEW_HEADER = ["ID", "Title", "Status", "Points", "Owner"]
 
 
 def project_epic_view(repo_root: Path | str, type_: str = "story",
-                      dry_run: bool = False) -> list[str]:
+                      dry_run: bool = False) -> dict:
     """Derive the story index's `## Stories by Epic` view from the story files: one
     `### [<epic>: <title>](...)` table per epic, a row for each story under it. Returns the
-    story ids written (empty when the view already reads so, or is not one this writes).
+    `{"rows": [story ids whose row the view gained or changed], "rewrote": True}` when the
+    view was (or would be) rewritten, and `{}` when it already reads so or is not one this
+    writes. A rewrite that only moved the layout carries no rows and still says it rewrote.
 
     Only the story index has the view. Only a view made of headings and tables in the shipped
     columns is rewritten: a section carrying any other line, or a table of other columns, is a
@@ -3108,27 +3110,27 @@ def project_epic_view(repo_root: Path | str, type_: str = "story",
     one. Its own writer, beside `project_fields`: the derived-index lane does not
     judge this view, so an index laid out before it existed is not newly reported."""
     if type_ != "story":
-        return []
+        return {}
     root = Path(repo_root)
     index_path = root / sdlc_md.ARTIFACT_TYPES["story"][0] / "_index.md"
     original = sdlc_md.read_text_safe(index_path)
     if not original:
-        return []
+        return {}
     lines = original.splitlines()
     try:
         start = lines.index(_EPIC_VIEW_HEADING)
     except ValueError:
-        return []
+        return {}
     end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")),
                len(lines))
     body = lines[start + 1:end]
     if any(ln.strip() and not ln.lstrip().startswith(("|", "### ")) for ln in body):
-        return []
+        return {}
     headers = [sdlc_md.table_cells(body[i]) for i in range(len(body) - 1)
                if body[i].lstrip().startswith("|") and set(body[i + 1].replace("|", "").split())
                <= {"---"} and body[i + 1].strip()]
     if any(h != _EPIC_VIEW_HEADER for h in headers):
-        return []
+        return {}
     by_epic: dict[str, list[str]] = {}
     written: list[str] = []
     for path in sorted(sdlc_md.artifact_files("story", root)):
@@ -3137,13 +3139,14 @@ def project_epic_view(repo_root: Path | str, type_: str = "story",
             continue
         text = sdlc_md.read_text_safe(path)
         fv = _file_field_values(text)
-        title = _h1_title(text, rec).replace("|", "\\|")
+        title = _h1_title(text, rec)    # `join_row` escapes a cell's pipes; never twice
         epic = sdlc_md.norm_id(str(fv.get("epic") or "").strip()) or "No epic"
         row = sdlc_md.row_from_header(
             _EPIC_VIEW_HEADER, f"[{rec}]({path.name})", title, fv.get("status") or "--",
             {"points": fv.get("points") or "--"}, derived={"Owner": fv.get("owner") or "--"})
         by_epic.setdefault(epic, []).append(row)
-        written.append(rec)
+        if row not in body:                 # only a row the view did not already hold
+            written.append(rec)
     out: list[str] = []
     for epic in sorted(by_epic):
         hit = sdlc_md.find_by_id(root, epic) if epic != "No epic" else None
@@ -3159,11 +3162,11 @@ def project_epic_view(repo_root: Path | str, type_: str = "story",
     new = [*lines[:start + 1], "", *out] if out else [*lines[:start + 1], "", *body_tables(body)]
     new += lines[end:]
     if new == lines:
-        return []
+        return {}
     if not dry_run:
         sdlc_md.atomic_write(index_path, "\n".join(new) + ("\n" if original.endswith("\n")
                                                            else ""))
-    return written
+    return {"rows": written, "rewrote": True}
 
 
 def _h1_title(text: str, rid: str) -> str:
@@ -3781,10 +3784,11 @@ def cmd_apply(args: argparse.Namespace) -> int:
         for c in res["changes"]:
             print(f"{'WOULD set' if args.dry_run else 'set'} {type_} {c['id']}: {c['from']} -> {c['to']}")
             n += 1
-        if res.get("epic_view"):
+        view = res.get("epic_view") or {}
+        if view.get("rewrote"):
             print(f"{'WOULD derive' if args.dry_run else 'derived'} the Stories by Epic view "
-                  f"({len(res['epic_view'])} row(s))")
-            n += len(res["epic_view"])
+                  f"({len(view['rows'])} row(s) gained or changed)")
+            n += max(len(view["rows"]), 1)   # a layout-only rewrite still wrote the file
         for f in res.get("fields", []):
             # Counted, for the reason the restamp line below is announced: this pass rewrites
             # rows, and an apply reporting "changed 0 row(s)" while editing 105 of them is the

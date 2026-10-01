@@ -3379,13 +3379,12 @@ _FILE_EXT = re.compile(r"\.[A-Za-z][A-Za-z0-9]*$")
 #: A dotfile: a leading dot then a name (`.gitignore`, `.env.local`).
 _DOTFILE = re.compile(r"\.[A-Za-z0-9][\w.-]*")
 #: Real files that carry no extension, matched case-insensitively.
-_EXTENSIONLESS_FILES = frozenset({"makefile", "dockerfile", "containerfile", "license",
-                                  "licence"})
-#: The two shapes an extension-less root file takes: an upper-case name of five letters or
-#: more (`CODEOWNERS`, `VERSION`, `README`), and a capitalised word ending in `file`
-#: (`Gemfile`, `Procfile`, `Rakefile`). Letters only, so an id (`US0001`) is not one, and five or
-#: more, so a placeholder (`TBD`, `NONE`) is not one either.
-_EXTENSIONLESS_SHAPE = re.compile(r"[A-Z][A-Z_]{4,}|[A-Z][a-z]+file")
+#: A NAMED list rather than a shape: an upper-case shape also takes a placeholder (`UNKNOWN`,
+#: `PENDING`) for a file, and a unit whose blast radius is unknown then reads as declared.
+_EXTENSIONLESS_FILES = frozenset({
+    "makefile", "dockerfile", "containerfile", "license", "licence", "codeowners", "version",
+    "readme", "authors", "changelog", "notice", "procfile", "gemfile", "rakefile",
+    "jenkinsfile", "vagrantfile"})
 
 
 def _file_shaped(tok: str) -> bool:
@@ -3394,7 +3393,7 @@ def _file_shaped(tok: str) -> bool:
     if not tok or any(ch.isspace() for ch in tok):
         return False
     return bool(_FILE_EXT.search(tok) or _DOTFILE.fullmatch(tok)
-                or tok.lower() in _EXTENSIONLESS_FILES or _EXTENSIONLESS_SHAPE.fullmatch(tok))
+                or tok.lower() in _EXTENSIONLESS_FILES)
 
 
 def affects_files(text: str) -> list[str]:

@@ -57,7 +57,8 @@ class DerivedFiguresHonestTests(unittest.TestCase):
 
     def test_extensionless_root_files_are_read_as_files(self) -> None:
         """AC1. MUTANTS: (1) HEAD's fixed list - all four dropped and the unit reported as
-        lacking Affects; (2) any bare word taken as a file - `none` and an id would be paths."""
+        lacking Affects; (2) any bare word taken as a file - `none` and an id would be paths;
+        (3) an upper-case shape - a placeholder (`UNKNOWN`, `PENDING`) read as a file."""
         with tempfile.TemporaryDirectory() as d:
             root = _project(Path(d))
             _story(root, "US0001", "CODEOWNERS, VERSION, Gemfile, Procfile")
@@ -71,6 +72,8 @@ class DerivedFiguresHonestTests(unittest.TestCase):
                          sdlc_md.affects_files("> **Affects:** CODEOWNERS, VERSION, Gemfile, "
                                                "Procfile\n"))
         self.assertEqual([], sdlc_md.affects_files("> **Affects:** none, US0001, TBD\n"))
+        self.assertEqual([], sdlc_md.affects_files("> **Affects:** UNKNOWN, PENDING, "
+                                                   "TODO_LATER\n"))
 
     def test_dropped_tokens_are_named_not_called_absent(self) -> None:
         """AC2. MUTANT: HEAD's single wording - `declare no Affects` for a unit whose Affects
@@ -130,6 +133,51 @@ class DerivedFiguresHonestTests(unittest.TestCase):
                           sections[epic])
             other = next(e for e in epics if e != epic)
             self.assertNotIn(f"[{minted[title]}]", sections[other])
+
+    def test_the_view_escapes_once_and_counts_only_what_changed(self) -> None:
+        """US0972 round 1. MUTANTS: (1) the title escaped before `join_row` escapes it again -
+        `three \\\\| pipe` splits the cell; (2) every row in the view reported as changed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _project(Path(d))
+            r = _cli(root, "artifact.py", "new", "--type", "epic", "--title", "Alpha",
+                     "--format", "json")
+            epic = json.loads(r.stdout)["id"]
+            for title in ("three | pipe", "plain"):
+                r = _cli(root, "artifact.py", "new", "--type", "story", "--title", title,
+                         "--epic", epic)
+                self.assertEqual(0, r.returncode, r.stderr)
+            index = root / "sdlc-studio" / "stories" / "_index.md"
+            view = index.read_text(encoding="utf-8").split("## Stories by Epic")[1]
+            view = view.split("\n## ")[0]
+            self.assertIn("| three \\| pipe |", view)
+            self.assertNotIn("\\\\|", view)
+            r = _cli(root, "artifact.py", "new", "--type", "story", "--title", "third",
+                     "--epic", epic)
+            self.assertEqual(0, r.returncode, r.stderr)
+            sys.path.insert(0, str(_SCRIPTS))
+            import reconcile  # noqa: PLC0415
+            text = index.read_text(encoding="utf-8")
+            index.write_text(text.replace("| third |", "| stale |"), encoding="utf-8")
+            res = reconcile.project_epic_view(root, dry_run=True)
+        self.assertTrue(res["rewrote"])
+        self.assertEqual(1, len(res["rows"]), res)
+
+    def test_a_view_in_a_house_layout_is_left_as_written(self) -> None:
+        """US0972 round 1. MUTANT: the prose guard removed - a section carrying the project's own
+        line is rewritten."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _project(Path(d))
+            _story(root, "US0001", "src/a.py")
+            index = root / "sdlc-studio" / "stories" / "_index.md"
+            text = index.read_text(encoding="utf-8").replace(
+                "## Stories by Epic\n", "## Stories by Epic\n\nMaintained by hand each sprint.\n")
+            index.write_text(text, encoding="utf-8")
+            r = _cli(root, "reconcile.py", "apply")
+            self.assertEqual(0, r.returncode, r.stderr)
+            after = index.read_text(encoding="utf-8")
+        def section(s: str) -> str:
+            return s.split("## Stories by Epic")[1].split("## All Stories")[0]
+        self.assertEqual(section(text), section(after))
 
     def test_staleness_compares_instants_not_strings(self) -> None:
         """AC4. MUTANT: HEAD's string compare - `11:00+01:00` (10:00Z) reads later than
