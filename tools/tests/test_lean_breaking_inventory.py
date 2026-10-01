@@ -7,7 +7,10 @@ the 6.0.0 section with no breaking change at all. The 6.0.0 Breaking text is the
 after it; the candidate's is the `### Breaking` block under `## [6.0.0-rc.1]`, or under today's
 `## [6.0.0]` before the rename. Which retirements must be disclosed is read from the registries
 (`migrate._retired_verbs()`, `sdlc_md.RETIRED_CONFIG_KEYS`, `sdlc_md.RETIRED_CHECK_IDS`), never
-from a hand list, so a retirement registered later needs a Breaking line or this fails.
+from a hand list, so a retirement registered later needs a Breaking line or this fails. A
+retirement registered after 6.0.0 shipped is disclosed where the next release's Breaking text
+is written: a `changelog.d` fragment filed under `Breaking`, or `### Breaking` under
+`## [Unreleased]` once composed (`pending_breaking`), never by editing a shipped section.
 """
 from __future__ import annotations
 
@@ -72,6 +75,19 @@ def breaking_texts(root: Path) -> tuple[str, str, str, str]:
     return six, _block(rc_body, "Breaking"), rc_rest, check_links.slug(f"[6.0.0-rc.1]{rest}")
 
 
+def pending_breaking(root: Path) -> str:
+    """The next release's Breaking text: `changelog.d` fragments filed under `Breaking`, and the
+    `### Breaking` block under `## [Unreleased]`. Where a retirement registered after 6.0.0 is
+    disclosed - a shipped release's notes stay as shipped."""
+    rel = _releases((root / "CHANGELOG.md").read_text(encoding="utf-8"))
+    parts = [_block(rel.get("Unreleased", ("", ""))[1], "Breaking")]
+    for path in sorted((root / "changelog.d").glob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        if re.match(r"\s*<!--\s*section:\s*Breaking\s*-->", text):
+            parts.append(text)
+    return "\n".join(parts)
+
+
 def disclosure_problems(root: Path) -> list[str]:
     """What a 5.1 upgrader reading the 6.0.0 Breaking text would not be told."""
     six, rc, _rest, anchor = breaking_texts(root)
@@ -85,7 +101,7 @@ def disclosure_problems(root: Path) -> list[str]:
     plain, apply = re.search(r"`migrate`", lead), re.search(r"`migrate --apply`", lead)
     if not (plain and apply and plain.start() < apply.start()):
         problems.append("the lead does not say to run `migrate`, then `migrate --apply`")
-    both = f"{six}\n{rc}"
+    both = f"{six}\n{rc}\n{pending_breaking(root)}"
     sdlc_md = retired_surface.sdlc_md
     for label in retired_surface.migrate._retired_verbs():
         script, verb = label.split(" ")

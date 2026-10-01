@@ -94,6 +94,7 @@ as an argparse error; a retired key is ignored where it is still set.
 | `plan_review` (the block), `review.test_plan_after`, `review.plan_falsifiability`, `review.repair_plan_gate`, `review.repair_design_threshold`, `review.require_brief_provenance`, `quality.depth_parity_gate` | Read by nothing: `migrate --apply` removes them |
 | `artifact.py new --target`, `artifact.py close --depth`, `transition.py set --depth` | Drop the flag: an acceptance criterion's `Verify:` line is its proof |
 | `review.line_coverage_after` | Under `review.line_coverage: block` every unit is judged: set `report` to keep older units moving, or rule the uncovered lines with `verify_ac.py coverage rule`. `migrate --apply` removes the key |
+| `review.policy` | Nothing to choose: every project carries a unit whose REJECT stands at the review-round cap (`review.max_rounds`), filing its findings as a bug; `migrate --apply` removes the key |
 | `sprint.py preflight` | `sprint.py close --dry-run`; the close runs the same pre-flight first |
 | `sprint.py plan --goal-review-waived`, `sprint.py plan --override-goal-review` | Drop the flag: a seat's goal verdict is printed as advice and never refuses the plan |
 | `gate.py --require-close` | `close_owed.py detect`; `status` still reports an owed close |
