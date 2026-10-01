@@ -830,6 +830,18 @@ def _select_render(root: Path, type_: str, template: str | None):
     return _render_planning if template == PLANNING else _render
 
 
+def _rendered_template(root: Path, type_: str, template: str | None) -> str | None:
+    """The template `_select_render` renders with, as a reader should be told it: a project's
+    declared template by its path, else the `--template` tier."""
+    proj = conventions.template_for(type_, root)
+    if proj is None:
+        return template
+    try:
+        return proj.relative_to(root).as_posix()
+    except ValueError:
+        return str(proj)
+
+
 def _skill_root() -> Path:
     """The skill directory (…/sdlc-studio/), where templates live - this script is in scripts/."""
     return Path(__file__).resolve().parent.parent
@@ -1330,7 +1342,8 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             plan.append({"n": n, "file_id": file_id, "disp": disp,
                          "slug": slug, "path": path, "item": it})
         if dry_run:
-            return {"type": type_, "count": len(plan), "template": template, "dry_run": True,
+            return {"type": type_, "count": len(plan),
+                    "template": _rendered_template(root, type_, template), "dry_run": True,
                     "ids": [{"id": p["disp"], "path": str(p["path"]),
                              "epic": p["item"].get("epic")} for p in plan]}
         render = _select_render(root, type_, template)
@@ -1361,7 +1374,8 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
                 # here rather than left to a shared tail nobody notices is missing.
                 _refresh_epic_row(root, it.get("epic", ""))
             created.append({"id": p["disp"], "file_id": p["file_id"], "path": str(p["path"])})
-        return {"type": type_, "count": len(created), "template": template,
+        return {"type": type_, "count": len(created),
+                "template": _rendered_template(root, type_, template),
                 "created": created, "dry_run": False}
 
 

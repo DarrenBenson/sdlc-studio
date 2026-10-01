@@ -2900,8 +2900,11 @@ def fetch_ci_runs(root: Path) -> tuple[list[dict], str]:
         rows = json.loads(proc.stdout or "[]")
     except ValueError:
         return [], "gh run list - the answer is not JSON"
-    return ([r for r in rows if isinstance(r, dict)] if isinstance(rows, list) else [],
-            "gh run list")
+    if not isinstance(rows, list):
+        # An error object (`{"message": "HTTP 403"}`) is an answer the forge did not give, not a
+        # window with no runs.
+        return [], f"gh run list - the answer is not a list of runs ({type(rows).__name__})"
+    return [r for r in rows if isinstance(r, dict)], "gh run list"
 
 
 def freeze_ci_runs(root: Path) -> dict:

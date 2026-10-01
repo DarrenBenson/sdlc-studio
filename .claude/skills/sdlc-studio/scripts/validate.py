@@ -862,8 +862,14 @@ def cmd_check(args: argparse.Namespace) -> int:
     that decides the exit code. A scope that swallowed the finding would be worse than the slow
     check it saves, so nothing here removes a line from the report.
     """
-    targets = collect_targets(args)
     repo_root = sdlc_md.resolve_root(args)
+    if not args.file and not (Path(repo_root) / "sdlc-studio").is_dir():
+        # Nothing to check is not a clean check: `checked=0 errors=0` at exit 0 reads as a
+        # workspace that passed.
+        print(f"validate: no sdlc-studio/ workspace was found under {repo_root} - nothing was "
+              f"checked (run `init.py run`, or pass --root)", file=sys.stderr)
+        return 1
+    targets = collect_targets(args)
     scope = None
     if getattr(args, "changed", False) and not args.file:
         scope = changed_artifact_paths(repo_root, [args.type] if args.type else None)
