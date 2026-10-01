@@ -703,6 +703,16 @@ def disjoint_refusal(repo_root: Path | str, batch) -> "DisjointBatchError | None
                               close_attempts=state.get("close_attempts"), repo_root=repo_root)
 
 
+def harness_project_slug(repo_root: Path | str) -> str:
+    """The folder name the harness files a project's transcripts under, inside `projects/`.
+
+    The resolved path with EVERY character outside [A-Za-z0-9] mapped to `-` (`.` and `_`
+    included, `-` itself kept), so a repo at `my_app.v2` reads `-...-my-app-v2`; mapping `/`
+    alone missed it. One definition, read by the meter here and by anything that points the
+    meter at a transcript folder (the eval harness's worker command)."""
+    return re.sub(r"[^A-Za-z0-9-]", "-", str(Path(repo_root).resolve()))
+
+
 def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = None) -> dict:
     """The CURRENT session's harness-tracked token total, read from the transcript.
 
@@ -721,11 +731,7 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
     """
     d = transcripts_dir or os.environ.get(TRANSCRIPTS_ENV)
     if not d:
-        # The harness names the folder after the resolved path with EVERY character outside
-        # [A-Za-z0-9] mapped to `-` (`.` and `_` included, `-` itself kept), so a repo at
-        # `my_app.v2` reads `-...-my-app-v2`; mapping `/` alone missed it.
-        d = (Path.home() / ".claude" / "projects"
-             / re.sub(r"[^A-Za-z0-9-]", "-", str(Path(repo_root).resolve())))
+        d = Path.home() / ".claude" / "projects" / harness_project_slug(repo_root)
     d = Path(d)
     if not d.is_dir():
         return {"tokens": None, "reason": f"no harness transcript directory at {d}"}

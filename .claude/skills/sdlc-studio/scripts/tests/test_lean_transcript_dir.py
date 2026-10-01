@@ -54,6 +54,7 @@ class TranscriptDirTests(unittest.TestCase):
             encoding="utf-8")
         got = run_state.session_tokens(self.root)
         self.assertEqual(12, got.get("tokens"), got)
+        self.assertEqual(name, run_state.harness_project_slug(self.root))
 
     def test_an_explicit_directory_still_wins(self) -> None:
         """The env override and the argument are untouched by the derivation. MUTANT: derive
