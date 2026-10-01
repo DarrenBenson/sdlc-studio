@@ -2729,6 +2729,12 @@ def persona_registry(repo_root) -> PersonaRegistry:
     except OSError as exc:
         why = ("no persona registry at" if not path.exists() else f"cannot read ({exc.strerror})")
         return PersonaRegistry(str(path), False, f"{why} {path}", ())
+    except UnicodeDecodeError as exc:
+        # A registry saved in another encoding is unreadable, not absent and not a crash: every
+        # orientation command (`status`, `hint`, the review's legs) reads it.
+        return PersonaRegistry(str(path), False,
+                               f"cannot read {path} as UTF-8 text (byte {exc.start}) - re-save "
+                               f"it as UTF-8", ())
     entries: list[PersonaEntry] = []
     role: str | None = None
     seen_heading = False

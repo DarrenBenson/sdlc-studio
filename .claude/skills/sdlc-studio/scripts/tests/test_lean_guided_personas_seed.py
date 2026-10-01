@@ -80,6 +80,15 @@ class GuidedPersonasSeedTests(unittest.TestCase):
                    "--root", str(self.root), "--format", "json").stdout
         return next(e for e in sdlc_md.ID_SEARCH_RE.findall(out) if e.startswith("EP"))
 
+    def _guided_through_every_stage(self) -> None:
+        for _ in range(10):
+            state = json.loads(_cli("init.py", "guided", "--root", str(self.root),
+                                    "--format", "json").stdout)
+            if state["current"] is None:
+                return
+            _cli("init.py", "guided", "--root", str(self.root), "--confirm")
+        self.fail("guided onboarding never completed")
+
     def _hint(self) -> dict:
         return json.loads(_cli("status.py", "hint", "--root", str(self.root),
                                "--format", "json").stdout)
@@ -90,12 +99,7 @@ class GuidedPersonasSeedTests(unittest.TestCase):
         as personas present (HEAD's status.py:375) - the hint sticks on `persona` for every
         guided project. The seeded registry, still empty, is not personas: before it is filled
         the hint stays on `persona`, which is the honest answer."""
-        for _ in range(10):
-            state = json.loads(_cli("init.py", "guided", "--root", str(self.root),
-                                    "--format", "json").stdout)
-            if state["current"] is None:
-                break
-            _cli("init.py", "guided", "--root", str(self.root), "--confirm")
+        self._guided_through_every_stage()
         self.assertEqual("persona", self._hint()["next_command"])
         index = self.root / "sdlc-studio" / "personas" / "index.md"
         text = index.read_text(encoding="utf-8")
@@ -107,6 +111,35 @@ class GuidedPersonasSeedTests(unittest.TestCase):
         self.assertEqual("story", hint["next_command"], hint)
         legs = review_prep.required_legs(self.root)
         self.assertTrue(legs["personas"]["present"], legs["personas"])
+
+    def test_a_registry_that_is_not_utf8_is_named_not_a_crash(self) -> None:
+        """Round-2 repro: a Latin-1 `personas/index.md`. MUTANT: catch only OSError when the
+        registry is read - `status hint` and the review's legs then crash with a decode error."""
+        reg = self.root / "sdlc-studio" / "personas"
+        reg.mkdir(parents=True, exist_ok=True)
+        (reg / "index.md").write_bytes(b"# Personas\n\n## Primary\n\n- **Jos\xe9** - a user\n")
+        registry = sdlc_md.persona_registry(self.root)
+        self.assertFalse(registry.available)
+        self.assertIn(str(reg / "index.md"), registry.reason)
+        proc = subprocess.run([sys.executable, "-B", str(SCRIPTS / "status.py"), "hint",
+                               "--root", str(self.root)], capture_output=True, text=True,
+                              check=False, timeout=120)
+        self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+        self.assertFalse(review_prep.required_legs(self.root)["personas"]["present"])
+
+    def test_a_card_or_a_named_registry_is_present_and_an_empty_one_is_not(self) -> None:
+        """The two other branches of `personas present`. MUTANTS: drop the persona-card branch
+        (a project keeping only cards reads as having none); let the review's leg read the
+        registry's `available` rather than its `entries` (a seeded, empty registry is not
+        personas)."""
+        self._guided_through_every_stage()
+        self.assertFalse(review_prep.required_legs(self.root)["personas"]["present"],
+                         "an empty seeded registry counted as a present persona leg")
+        self._epic()
+        self.assertEqual("persona", self._hint()["next_command"])
+        card = self.root / "sdlc-studio" / "personas" / "maya-okafor.md"
+        card.write_text("# Maya Okafor\n", encoding="utf-8")
+        self.assertEqual("story", self._hint()["next_command"])
 
     def test_the_seeded_registry_reads_as_a_seed(self) -> None:
         """`_is_seed` maps the registry to its template, so the runner says the tool drafted it.
