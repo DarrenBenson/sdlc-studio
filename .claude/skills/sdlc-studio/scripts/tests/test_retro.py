@@ -2617,13 +2617,15 @@ class TheEstimateIsTheOneThatWasPredicted(unittest.TestCase):
         (self.root / "sdlc-studio" / "retros" / "RETRO9100-t.md").write_text(
             PLANNED_RETRO, encoding="utf-8")
 
-    def plan(self) -> int:
-        """The public path: `sprint plan`, exactly as an operator runs it."""
+    def plan(self, write: bool = True) -> int:
+        """The public path: `sprint plan`, exactly as an operator runs it. Written by default:
+        only the plan that opens the run records its forecast (BG0860), a preview none."""
         import sprint
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             rc = sprint.main(["plan", "--bugs", "Open", "--root", str(self.root),
-                              "--order", "wsjf", "--no-fetch", "--skip-personas"])
+                              "--order", "wsjf", "--no-fetch", "--skip-personas",
+                              *(["--write"] if write else [])])
         self.assertEqual(rc, 0, err.getvalue())
         return rc
 
@@ -2670,28 +2672,31 @@ class TheEstimateIsTheOneThatWasPredicted(unittest.TestCase):
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
             sprint.main(["plan", "--bugs", "Open", "--root", str(self.root),
                          "--order", "wsjf", "--no-fetch", "--skip-personas",
-                         "--format", "json"])
-        planned = json.loads(out.getvalue())["token_forecast"]["per_unit"]
+                         "--format", "json", "--write"])
+        # The written plan's own record of what it quoted (its stdout carries the run lines too).
+        planned = json.loads((self.root / "sdlc-studio" / ".local" / "sprint-plan.json")
+                             .read_text(encoding="utf-8"))["token_forecast"]["per_unit"]
         self.measure()
         res = self.accuracy()
         for u in res["units"]:
             self.assertEqual(u["estimate"], planned[u["id"]])
         self.assertEqual(res["batch"]["estimate"], sum(planned.values()))
 
-    def test_the_forecast_is_recorded_without_write(self) -> None:
-        """`--write` persists the plan artefact. The FORECAST is not optional: a forecast that
-        is only recorded when someone remembers a flag is a forecast that does not exist.
+    def test_the_written_plan_records_the_forecast_and_a_preview_does_not(self) -> None:
+        """The plan that opens the run records the forecast the retro judges; a preview
+        records nothing (BG0860), because the log keeps a unit's FIRST record and a preview's
+        row would win over the plan's own.
 
         And it is recorded where git can see it. A forecast written only to the gitignored
         `.local/` state dir does not exist for anyone but the machine that planned the sprint."""
         import telemetry as tel
-        self.plan()
+        self.plan(write=False)
         recorded = tel.forecasts_path(self.root)
-        self.assertTrue(recorded.exists(),
-                        "sprint plan must record its forecast whenever a plan is made")
+        self.assertFalse(recorded.exists(), "a preview recorded a forecast")
+        self.plan()
+        self.assertTrue(recorded.exists(), "the written plan recorded no forecast")
         self.assertNotIn(".local", recorded.parts)
         self.assertEqual(set(tel.forecasts(self.root)), {"BG0101", "BG0102"})
-        self.assertFalse((self.root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
 
     def test_a_replan_after_the_fact_cannot_rewrite_what_was_predicted(self) -> None:
         """First wins. Re-planning a batch once the work is done must not let the estimator
@@ -2701,8 +2706,11 @@ class TheEstimateIsTheOneThatWasPredicted(unittest.TestCase):
         self.measure()
         first = self.accuracy()["batch"]["estimate"]
         self.assertGreater(first, 0)
+        # A second written plan, in a run of its own, with a different rate, after the work is
+        # done. The first run's state is cleared so `--write` may open the second.
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").unlink()
         with mock.patch.object(sprint, "POINTS_RATE_SEED", 60_000):
-            self.plan()  # a second plan, with a different rate, after the work is done
+            self.plan()
         self.assertEqual(self.accuracy()["batch"]["estimate"], first,
                          "a later plan overwrote what was predicted before the work started")
 

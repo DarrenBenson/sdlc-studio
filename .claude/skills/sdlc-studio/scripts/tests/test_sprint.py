@@ -2562,12 +2562,40 @@ class PointsForecastTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()), \
                     contextlib.redirect_stderr(io.StringIO()):
                 sp.main(["plan", "--bugs", "Open", "--root", str(root), "--no-fetch",
-                         "--skip-personas"])
+                         "--skip-personas", "--write"])
             sys.path.insert(0, str(SCRIPT.parent))
             import telemetry
             rec = telemetry.forecasts(root)["BG0001"]
             self.assertEqual(rec["points"], 5)
             self.assertEqual(rec["tokens"], 5 * sp.POINTS_RATE_SEED)
+
+    def test_a_preview_writes_no_forecast_row(self) -> None:
+        """BG0860 AC1. A preview is not the plan: its row, recorded first, won over the plan's
+        own (first record wins), so a unit regroomed between preview and --write was forecast
+        at its old size. MUTANTS: (1) HEAD - the preview records its row; (2) neither records -
+        the written plan leaves no forecast to read (the positive control)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sp = _load()
+            _pointed_bug(root, 1, 3, status="Ready")
+            (root / "w.txt").write_text("BG0001\n", encoding="utf-8")
+            argv = ["plan", "--worklist", str(root / "w.txt"), "--root", str(root),
+                    "--no-fetch", "--skip-personas"]
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(0, sp.main(argv))
+            evidence = root / "sdlc-studio" / "retros" / "evidence"
+            self.assertEqual([], sorted(evidence.glob("forecasts-*.jsonl")))
+            bug = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
+            bug.write_text(bug.read_text(encoding="utf-8").replace("> **Points:** 3",
+                                                                   "> **Points:** 5"),
+                           encoding="utf-8")
+            err = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                self.assertEqual(0, sp.main([*argv, "--write"]), err.getvalue())
+            sys.path.insert(0, str(SCRIPT.parent))
+            import telemetry
+            self.assertEqual(5, telemetry.forecasts(root)["BG0001"]["points"])
 
 
 _VELOCITY_HEADER = (

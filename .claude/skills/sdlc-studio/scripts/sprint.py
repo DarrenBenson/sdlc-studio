@@ -4298,7 +4298,10 @@ def _render_token_forecast(data: dict) -> None:
         print(f"    NOT forecast (no Points, and nothing is invented for them): "
               f"{', '.join(tf['unpriced'])}")
     rec = data.get("forecast_record")
-    if rec and not rec.get("error"):
+    if rec and rec.get("preview"):
+        print("  forecast: a preview records nothing - the plan written with --write records "
+              "the forecast the retro judges")
+    elif rec and not rec.get("error"):
         n = len(rec.get("recorded", [])) + len(rec.get("already", []))
         print(f"  forecast recorded: {n} unit(s) at plan time, with the points and the rate that "
               f"produced them. The retro judges THIS number - it never re-derives one, and the "
@@ -9770,12 +9773,13 @@ def cmd_plan(args: argparse.Namespace) -> int:
         except run_state.DisjointBatchError as exc:
             print(str(exc), file=sys.stderr)
             return 2
-    # RECORD THE FORECAST. Unconditional on --write, because here is where the prediction is
-    # MADE: a forecast that depended on a flag is one the next retro finds missing, and it would
-    # then re-derive an "estimate" from the constants it is supposed to be judging. Under
-    # --write it now runs AFTER open_run accepted the batch, so a refusal records nothing.
+    # RECORD THE FORECAST, under --write only, AFTER open_run accepted the batch, so a refusal
+    # records nothing. A preview is not the plan: the forecast log keeps a unit's FIRST record,
+    # so a preview's row won over the plan's own, and a unit regroomed between preview and
+    # --write was judged at the size it no longer had.
     try:
-        data["forecast_record"] = record_forecast(args.root, data)
+        data["forecast_record"] = (record_forecast(args.root, data) if write
+                                   else {"recorded": [], "already": [], "preview": True})
     except OSError as exc:
         data["forecast_record"] = {"recorded": [], "already": [], "error": str(exc)}
         print(f"warning: the plan's token forecast could NOT be recorded ({exc}). This batch "
