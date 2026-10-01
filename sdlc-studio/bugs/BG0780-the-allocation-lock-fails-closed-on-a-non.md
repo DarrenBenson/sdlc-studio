@@ -29,7 +29,7 @@ Retry only on BlockingIOError and report the real errno otherwise; catch the tim
 - [ ] **AC2** Given a provisional verdict whose transition is refused while another process holds the lock past the timeout, when `critic.provisional_verdict` withdraws it, then the command exits non-zero naming both the transition's refusal and the provisional row it could not withdraw. Fails on: raising the timeout alone, which drops the refusal and says nothing was written
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lock_errors.py::LockErrorTests::test_a_stranded_provisional_row_is_named_with_the_refusal
   - **Verified:** yes (2026-09-25)
-- [ ] **AC3** Given the lock held past the timeout, when `file_finding.py file` attributes a finding to the open batch, or `sprint.py` stamps tokens, then a warning naming the lock goes to stderr while the primary write stands. Fails on: the timeout swallowed into a debug log only
+- [ ] **AC3** Given the lock held past the timeout, when `sprint.py` stamps tokens (the `file_finding` batch attribution was retired by BG0861), then a warning naming the lock goes to stderr while the primary write stands. Fails on: the timeout swallowed into a debug log only
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lock_errors.py::LockErrorTests::test_a_swallowed_timeout_warns_on_stderr
   - **Verified:** yes (2026-09-25)
 - [ ] **AC4** Given the lock held past the timeout, when a `sprint.py` verb that writes run state runs, then it prints one `error:` line naming the lock and exits non-zero, with no traceback. Fails on: letting `AllocationLockTimeout` escape as a traceback
