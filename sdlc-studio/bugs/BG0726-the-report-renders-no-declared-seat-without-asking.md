@@ -27,6 +27,7 @@ Remove the false label rather than add a phrase: render the seat parenthetical o
 
 - [ ] **AC1** Given a fixture with no persona cards and one APPROVE by `Priya Raman`, when `sprint_report.py --root <fixture> checklist --id RETRO9100 --format json` renders the `review-attribution` row, then the row names `US0001 by Priya Raman` and does not contain `NO DECLARED SEAT`; with a `personas/seats/qa.md` card declaring another person, a reviewer matching no seat still reads `NO DECLARED SEAT`. Fails on: HEAD renders `(NO DECLARED SEAT)` on the persona-less fixture
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_seat_label.py::SeatLabelTests::test_a_persona_less_project_is_not_reported_as_a_reviewer_omission
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

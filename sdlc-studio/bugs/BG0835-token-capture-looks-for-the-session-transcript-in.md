@@ -27,6 +27,7 @@ Map every character outside `[A-Za-z0-9]` to `-`, as the harness does (`-` itsel
 
 - [ ] **AC1** Given a repo root `/x/my_app.v2` holding a session transcript at `$HOME/.claude/projects/-x-my-app-v2/s.jsonl` (HOME pointed at a fixture), when `run_state.session_tokens(root)` runs with no `transcripts_dir` and no env override, then it reads that transcript and returns a token figure, not `no harness transcript directory`. Fails on: HEAD, which looks in `-x-my_app.v2`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_transcript_dir.py::TranscriptDirTests::test_dots_and_underscores_map_to_dashes
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

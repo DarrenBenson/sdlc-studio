@@ -27,6 +27,7 @@ Replace the step 3a example and the JSON sample's names with neutral sample role
 
 - [ ] **AC1** Given the shipped `reference-review.md`, when step 3a and the review JSON sample are read, then they name only sample roles (none of `Darren`, `Cora`, `Webapp Dev`, `HA`) and step 3a resolves the amigos through `persona_resolve.py`. Fails on: HEAD lines 279-281 and 803
   - **Verify:** pytest tools/tests/test_lean_review_consult_neutral.py::ReviewConsultNeutralTests::test_step_3a_names_sample_roles
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

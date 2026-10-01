@@ -27,6 +27,7 @@ Mirror BG0852's install.sh change in install.ps1 (copilot global to the personal
 
 - [ ] **AC1** Given a throwaway HOME and a PATH holding a `copilot` executable and no `gh`, when `install.ps1 -Target copilot -Global -DryRun` runs, then it plans an install into `$HOME/.agents/skills/sdlc-studio`, auto-detection selects copilot by the `copilot` binary, and the post-install note names `~/.agents/skills`. Where `pwsh` is absent, the test pins the same three claims on install.ps1's source (the copilot `global` entry, the detection line, the note) so the selector never passes on a skip. Fails on: HEAD's empty copilot global target, `gh`-based detection and repo-only note
   - **Verify:** pytest tools/tests/test_lean_install_ps1_local.py::InstallPs1CopilotTests::test_auto_selects_a_copilot_personal_folder
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

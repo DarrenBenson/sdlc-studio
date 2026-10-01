@@ -27,6 +27,7 @@ One instruction, no new record: Step 1's discoveries table gains a third mark, `
 
 - [ ] **AC1** Given the shipped `reference-persona-generate.md`, when Step 1 and Step 2 are read, then the discoveries table admits `defaulted` beside `inferred` and `unknown`, and Step 2 tells a headless run to mark each item it did not ask `defaulted` and never to report a default as answered or accepted. Fails on: HEAD, whose table admits only `inferred` and `unknown` and whose headless line says only `take the defaults`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_persona_generate_answers.py::PersonaGenerateAnswersTests::test_defaults_are_recorded_as_defaults
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

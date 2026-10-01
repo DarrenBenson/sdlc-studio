@@ -29,8 +29,10 @@ Carry the existing reason through the downgrade - `no (<date>) - <the downgrade 
 
 - [ ] **AC1** Given a story criterion stamped `- **Verified:** yes (2026-08-03) - four tests, each driving a shipped main([...])` whose Verify selector is red, when `verify_ac.py run --story <story> --repo-root <root>`, then the run exits 1 and the line reads `- **Verified:** no (<today>) - downgraded by verify_ac - the selector was red at verification time; was: four tests, each driving a shipped main([...])`. Fails on: HEAD writes the downgrade and the author's reason exists nowhere
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_downgrade_keeps_reason.py::DowngradeKeepsReasonTests::test_a_red_run_keeps_the_recorded_reason
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given `- **Verified:** yes (2026-01-01)` with no reason and a red selector, when the same run, then the line reads exactly `- **Verified:** no (<today>) - downgraded by verify_ac - the selector was red at verification time` with no `was:` clause. Fails on: appending '; was: ' unconditionally
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_downgrade_keeps_reason.py::DowngradeKeepsReasonTests::test_a_bare_yes_downgrades_unchanged
+  - **Verified:** yes (2026-10-01)
 
 ## Impact
 

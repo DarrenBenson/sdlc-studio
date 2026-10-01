@@ -28,6 +28,7 @@ Print the run's recorded base ref (`run_state.unit_run_base_ref`) in the diff-sc
 
 - [ ] **AC1** Given a fixture git tree whose open run records `base_ref` <sha> and holds BG0001 (Affects `a.py`), when `critic.py brief --unit BG0001 --seat qa --root <fixture>` runs, then the brief's diff-scope section prints `git diff <sha> -- a.py`; with no run open, the brief prints no `git diff` command and exits 0. Fails on: HEAD, which names no ref
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_base_ref.py::BriefBaseRefTests::test_the_brief_names_its_base_commit
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

@@ -26,6 +26,7 @@ Have the index row writer match the table's existing style (pad cells to the sep
 
 - [ ] **AC1** Given an index whose table header and separator are padded to aligned widths, when `transition.py set` changes one row's status, then `markdownlint-cli2` reports no MD060 on that index. Fails on: HEAD, which writes the row compact under the padded header
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_index_row_style.py::IndexRowStyleTests::test_a_synced_row_matches_a_padded_table
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

@@ -28,6 +28,7 @@ Retire, do not revive. Delete the delivery-batch span API nothing opens (`run_st
 
 - [ ] **AC1** Given a fixture open run with one batch unit and a bug filed during it by `file_finding.py`, when `sprint.py close --dry-run` runs, then its output carries no `finding placement` text, the bug still carries a `Raised-in-batch` stamp ending in an ISO-8601 timestamp, and `lib/run_state` exposes no `start_batch`, `open_batch` or `close_batch`. Fails on: HEAD prints 'finding placement: 0 raised at a batch boundary, N raised outside one' and keeps the uncalled span API
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_batch_span_retired.py::BatchSpanRetiredTests::test_the_close_reports_no_finding_placement_and_the_span_api_is_gone
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

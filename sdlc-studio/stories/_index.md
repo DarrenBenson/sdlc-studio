@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 12 |
+| Ready | 11 |
 | Planned | 0 |
 | In Progress | 2 |
 | Review | 0 |
-| Done | 781 |
+| Done | 782 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -329,7 +329,7 @@
 | [US0968](US0968-with-no-version-install-sh-installs-the-latest.md) | With no --version, install.sh installs the latest published release, verified against its .sha256 | Ready | EP0269 | 2026-10-01 | 2026-10-01 |
 | [US0969](US0969-a-cli-never-reports-success-it-did-not.md) | A CLI never reports success it did not get | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
 | [US0970](US0970-the-finding-writers-keep-every-criterion-and-verifier.md) | The finding writers keep every criterion and verifier they were given | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
-| [US0971](US0971-a-fresh-project-s-first-plan-is-quiet.md) | A fresh project's first plan is quiet and correct | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
+| [US0971](US0971-a-fresh-project-s-first-plan-is-quiet.md) | A fresh project's first plan is quiet and correct | Done | EP0270 | 2026-10-01 | 2026-10-01 |
 | [US0972](US0972-derived-figures-read-honestly.md) | Derived figures read honestly | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
 | [US0973](US0973-docs-and-comments-tell-the-truth.md) | Docs and comments tell the truth | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
 | [US0974](US0974-a-v5-upgrade-reads-clean.md) | A v5 upgrade reads clean | Done | EP0270 | 2026-10-01 | 2026-10-01 |

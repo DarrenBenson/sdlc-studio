@@ -1,6 +1,7 @@
 # BG0884: US0971 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
+> **Closed with findings in:** US0971's discharge: its rejecting reviewer's APPROVE answered every finding (RUN-01M3VF2J critic-verdicts)
 > **Discharge review 1:** REJECT by the rejecting reviewer (2026-10-01): a782e2e8 scrubbed every GIT_* variable, dropping GIT_CONFIG_GLOBAL/SYSTEM so the AC2 Verify reads the host's global git config - fix: reuse verify_ac._REPO_LOCATING_GIT_VARS
 > **Severity:** Medium
 > **Points:** 3
@@ -30,12 +31,16 @@ Fix each finding above, then deliver US0971 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC3** US0971 AC1 still passes: Given a project after `init.py run` with no `sdlc-studio/personas/seats/`, when `sprint.py plan --goal <text>` runs, then it does not print `no seat can review it` and names the shipped seats that would review the goal. Fails on: HEAD prints `goal review: UNREVIEWED - this project declares no review seats of its own`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_fresh_plan_quiet.py::FreshPlanQuietTests::test_a_fresh_project_is_offered_the_shipped_seats
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC4** US0971 AC2 still passes: Given a project after `init.py guided --skip` of the TSD stage and with no commit hook installed, when `sprint.py plan` runs, then it prints neither `test strategy: UNAVAILABLE` nor `execution policy DIVERGES`. Fails on: HEAD prints both on that project's first plan
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_fresh_plan_quiet.py::FreshPlanQuietTests::test_init_chosen_states_are_not_reported_as_divergence
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC5** US0971 AC3 still passes: Given a Superseded story carrying `Blocked by:` a Done story, beside a Blocked story with the same blocker, when `sprint.py plan` runs its blocker sweep, then only the Blocked story is proposed. Fails on: HEAD proposes the terminal unit (premise: 14 terminal units here)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_fresh_plan_quiet.py::FreshPlanQuietTests::test_the_blocker_sweep_skips_terminal_units
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC6** US0971 AC4 still passes: Given engineering judged a goal NOT achievable and the goal was amended with `sprint.py goal-review record --amend-from <prior> --requesting-seat engineering`, when `sprint.py plan --write` runs, then it prints no `judged the goal NOT achievable` advice from engineering. Fails on: HEAD carries engineering's verdict forward onto its own wording
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_fresh_plan_quiet.py::FreshPlanQuietTests::test_the_requesting_seats_verdict_is_discharged_by_its_amendment
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

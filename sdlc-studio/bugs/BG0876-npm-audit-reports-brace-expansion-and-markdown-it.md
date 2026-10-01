@@ -30,6 +30,7 @@ Hold both at patched versions with npm overrides, as BG0866 did for js-yaml, and
 - **When** the test reads every `brace-expansion` and `markdown-it` entry in it
 - **Then** no `brace-expansion` entry falls in 4.0.0-5.0.11 and every `markdown-it` entry is at 14.3.1 or later, and `package.json` holds the override that pins each
 - **Verify:** pytest tools/tests/test_lean_dev_advisories_patched.py::DevAdvisoriesPatchedTests::test_the_lockfile_resolves_patched_brace_expansion_and_markdown_it
+- **Verified:** yes (2026-10-01)
 - **Fails-on:** the lockfile at 9f992b78, which resolves brace-expansion in 4.0.0-5.0.11 and markdown-it below 14.3.1
 
 ## Revision History

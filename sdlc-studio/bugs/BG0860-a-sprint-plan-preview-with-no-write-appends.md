@@ -28,6 +28,7 @@ Record the forecast only when --write opens the run (`record_forecast` call at s
 
 - [ ] **AC1** Given a fixture with one Ready unit at 3 points, when `sprint.py plan --worklist <file>` runs without --write, the unit is regroomed to 5 points, and `sprint.py plan --worklist <file> --write` runs, then no forecasts-*.jsonl row exists after the preview and `telemetry.forecasts` reads the unit at 5 points after the write. Fails on: HEAD, which writes the preview's row and reads 3 points (first record wins)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PointsForecastTests::test_a_preview_writes_no_forecast_row
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

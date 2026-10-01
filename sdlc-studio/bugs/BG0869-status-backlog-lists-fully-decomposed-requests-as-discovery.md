@@ -26,6 +26,7 @@ List a request that has children separately from one awaiting refinement (e.g. '
 
 - [ ] **AC1** Given a CR at In Progress with a Decomposed-into epic and a CR at Proposed with none, when `status.py backlog` runs, then only the undecomposed CR is listed as awaiting refinement and the decomposed one is shown with its epic. Fails on: HEAD, which lists both as options to refine
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_status_decomposed_requests.py::StatusDecomposedRequestTests::test_a_decomposed_request_is_not_listed_as_awaiting_refinement
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

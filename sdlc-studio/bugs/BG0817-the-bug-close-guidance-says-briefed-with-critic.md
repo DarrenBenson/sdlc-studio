@@ -28,8 +28,10 @@ State in the bug fix and close steps that the reviewer receives the brief text w
 
 - [ ] **AC1** Given help/bug.md and reference-bug.md, when their fix and close steps are read, then each says the reviewer is given the brief text whole and names the `> brief.txt` hand-over. Fails on: HEAD's 'briefed with `critic.py brief`' alone
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_handover.py::BriefHandoverTests::test_the_close_steps_say_pass_the_brief_whole
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given a fixture bug, when `critic.py brief --unit BG0001 --seat qa --root <fixture> > brief.txt` runs as the guidance says, then brief.txt holds the brief and no `brief fingerprint:` line, and stderr carries the fingerprint the file's text hashes to (`critic.brief_fingerprint`). Fails on: a brief that printed its footer to stdout, which would put the footer into the file the reviewer reads
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_handover.py::BriefHandoverTests::test_a_redirected_brief_is_the_fingerprinted_text
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

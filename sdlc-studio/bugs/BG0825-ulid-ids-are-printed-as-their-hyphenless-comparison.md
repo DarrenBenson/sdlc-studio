@@ -28,8 +28,10 @@ Add one display helper that returns an id in its file's spelling (the stem's rec
 
 - [ ] **AC1** Given a schema v3 fixture unit `US-01ABCDEF`, when `critic.py brief --unit US-01ABCDEF --seat qa` prints its record footer, `sprint.py plan --worklist` prints its delivery-mode line, `critic.carry_at_cap` titles the carried bug and `sprint_report.py build` writes the issue table, then each prints `US-01ABCDEF`. Fails on: HEAD, which prints US01ABCDEF
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_id_display.py::IdDisplayTests::test_ulid_ids_print_in_file_spelling
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given a fixture run with no retro, when `sprint.py close` scaffolds RETRO0001-x.md, then the printed id, the `--retro` hint and run state's `scaffolded_retro` all read `RETRO0001`. Fails on: HEAD's RETRO-0001
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_id_display.py::IdDisplayTests::test_the_scaffolded_retro_id_matches_its_file
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

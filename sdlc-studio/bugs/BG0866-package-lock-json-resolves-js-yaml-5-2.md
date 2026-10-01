@@ -41,6 +41,7 @@ Add an npm `overrides` entry in package.json pinning js-yaml to ^5.4.1, regenera
 
 - [ ] **AC1** Given package.json and package-lock.json, when `tools/tests/test_lean_js_yaml_patched.py` reads the lockfile, then `node_modules/js-yaml` resolves to 5.4.1 or later (a semver compare, not a string match) and package.json carries the override that holds it there. Fails on: HEAD's lockfile resolves js-yaml 5.2.2
   - **Verify:** pytest tools/tests/test_lean_js_yaml_patched.py::JsYamlPatchedTests::test_the_lockfile_resolves_a_patched_js_yaml
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

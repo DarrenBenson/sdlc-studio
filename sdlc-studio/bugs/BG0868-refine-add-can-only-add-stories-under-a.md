@@ -26,6 +26,7 @@ Accept `--into EPxxxx` on `refine add`, as `refine apply` does, wiring the story
 
 - [ ] **AC1** Given a request already decomposed into an epic, when `refine.py add --request <id> --into <epic> --story 'title|1|<affects>'` runs, then the story is created under that epic with `Delivers: <request>` and no new epic is minted. Fails on: HEAD, which rejects --into
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_refine_add_into.py::RefineAddIntoTests::test_add_into_the_existing_epic
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

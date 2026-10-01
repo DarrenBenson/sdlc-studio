@@ -28,8 +28,10 @@ Once US0974 makes `conformance.adopt_after` accept a ULID id, `_conformance_cuto
 
 - [ ] **AC1** Given a schema v3 fixture whose only non-conformant unit is a Done story with a ULID id, when `migrate.py --format json --root <fixture>` runs, then it emits a `conformance-cutoff` item proposing `conformance.adopt_after: <that ULID id>` with the gate lane's count, and after writing that line `gate.py --only conformance` passes. Fails on: HEAD, which emits no conformance item
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_cutoff.py::MigrateCutoffTests::test_a_ulid_only_conformance_failure_is_still_named
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given a fixture whose conformance lane fails only on a repo-wide failure, when `migrate.py --format json` runs, then a `conformance-cutoff` item carries the lane's count and no `adopt_after` line. Fails on: HEAD's `if not failing: return []`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_cutoff.py::MigrateCutoffTests::test_a_repo_wide_only_failure_is_still_named
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

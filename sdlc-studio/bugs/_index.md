@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 30 |
+| Open | 29 |
 | In Progress | 3 |
-| Fixed | 699 |
+| Fixed | 700 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
@@ -242,7 +242,7 @@
 | [BG0881](BG0881-status-reports-no-personas-for-a-project-holding.md) | status reports no personas for a project holding only the personas/index.md registry | Superseded | Low | 2026-10-01 | 2026-10-01 |
 | [BG0882](BG0882-harness-project-slug-does-not-truncate-a-long.md) | harness_project_slug does not truncate a long project path or map non-BMP characters as the harness does | Open | Low | 2026-10-01 | 2026-10-01 |
 | [BG0883](BG0883-bg0824-did-not-converge-in-review-round-2.md) | BG0824 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
-| [BG0884](BG0884-us0971-did-not-converge-in-review-round-2.md) | US0971 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0884](BG0884-us0971-did-not-converge-in-review-round-2.md) | US0971 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0885](BG0885-critic-py-record-writes-a-finding-into-critic.md) | critic.py record writes a finding into critic-verdicts.md unescaped, so markdown-shaped text breaks the lint | Open | Low | 2026-10-01 | 2026-10-01 |
 | [BG0886](BG0886-the-done-gate-s-own-refusal-messages-still.md) | The done gate's own refusal messages still print a v3 id as its hyphenless comparison key | Open | Low | 2026-10-01 | 2026-10-01 |
 | [BG0887](BG0887-the-review-command-s-dashboard-and-json-show.md) | The review command's dashboard and JSON show a per-document health percentage that no code computes | Open | Low | 2026-10-01 | 2026-10-01 |

@@ -30,6 +30,7 @@ Print `sdlc_md.display_id` at those four sites, and pin the rejoinder footer and
 - **When** `critic.py brief --unit US-01ABCDEF --seat qa`, `critic.py brief --rejoinder`, `sprint.py plan` and `sprint.py close` run, and the close scaffolds the retro
 - **Then** the brief header, the rejoinder footer, the plan's lane-partition lines, the close's review-coverage and done-gate preflight lines and the retro's Batch line each print `US-01ABCDEF`, never `US01ABCDEF`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_id_display.py::IdDisplayTests::test_every_remaining_print_site_uses_the_file_spelling
+- **Verified:** yes (2026-10-01)
 - **Fails-on:** the current code, whose brief header, plan lane lines and close preflight lines print the hyphenless key
 
 ## Revision History

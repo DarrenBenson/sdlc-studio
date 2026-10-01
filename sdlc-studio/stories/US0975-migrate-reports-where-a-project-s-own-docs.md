@@ -37,8 +37,10 @@ $ python3 -c "import retired_surface; print(retired_surface.live_mentions(open('
 
 - [ ] **AC1** Given a fixture project whose README.md line 3 names `mutation.py register` and `sprint.py close --apply-signoff`, when `migrate.py --root <fixture>` runs, then its needs-a-human list names `README.md:3` with both retired names, and README.md is byte-identical afterwards, with and without `--apply`. Fails on: HEAD's migrate names no README line
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_retired_docs.py::MigrateRetiredDocsTests::test_migrate_names_each_retired_line_and_rewrites_nothing
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given the shipped skill with no CHANGELOG.md beside it, when `scripts/lib/retired_surface.py` is imported, then `live_mentions` finds a retired verb and a retired config key, and `scripts/tests/retired_surface.py` holds no second list of them. Fails on: HEAD's only copy lives under `scripts/tests/` and reads the repository's CHANGELOG
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_retired_docs.py::MigrateRetiredDocsTests::test_the_scanner_ships_and_needs_no_changelog
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

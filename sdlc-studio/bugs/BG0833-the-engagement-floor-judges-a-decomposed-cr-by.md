@@ -28,6 +28,7 @@ Remove the false refusal at its root: `_has_planning` counts a `Decomposed-into`
 
 - [ ] **AC1** Given a fixture CR0001 at Complete with a two-file Affects and `Decomposed-into: US0001, US0002` (both Done with ACs), when `engagement_floor.py --root <fixture> check` runs, then it exits 0 naming no violation; the same CR with the `Decomposed-into` line removed still exits 1 naming CR0001 `unplanned`. Fails on: HEAD, which exits 1 on the decomposed CR
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_engagement_decomposed.py::EngagementDecomposedTests::test_a_decomposed_request_passes_through_its_children
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 
