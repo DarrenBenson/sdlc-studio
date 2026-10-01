@@ -21,7 +21,7 @@
 
 - **Given** onboarding at the personas stage
 - **When** the stage runs
-- **Then** it seeds `sdlc-studio/personas.md` from the template (leaving an existing one untouched)
+- **Then** it seeds the persona registry `sdlc-studio/personas/index.md` from the template (leaving an existing one untouched)
   and directs growing the team from the PRD and risk signals (`persona generate --team`), which the
   operator then accepts or edits
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::GuidedInitTests::test_personas_stage_seeds_and_directs
@@ -40,3 +40,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-26 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-10-01 | engineering seat (builder) | AC1 amended under BG0824: the stage seeds the `personas/index.md` registry, no longer the legacy flat `personas.md` |

@@ -7,7 +7,7 @@ Related: help/story.md, reference-story.md
 # Story Registry
 
 **Last Updated:** {{last_updated}}
-**Personas Reference:** [User Personas](../personas.md)
+**Personas Reference:** [User Personas](../personas/index.md)
 
 ## Summary
 
@@ -37,5 +37,4 @@ Related: help/story.md, reference-story.md
 
 ## Notes
 
-- Stories are numbered globally (US0001, US0002, etc.)
 - Story points should be assigned during team refinement

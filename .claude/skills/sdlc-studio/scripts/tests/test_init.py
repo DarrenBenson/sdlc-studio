@@ -68,7 +68,8 @@ class InitTests(unittest.TestCase):
             repo = Path(d)
             init.init(repo, scaffold=True)
             for name in init.SINGLETONS:
-                self.assertTrue((repo / "sdlc-studio" / f"{name}.md").exists(), name)
+                self.assertTrue((repo / init._singleton(name)[1]).exists(), name)
+            self.assertTrue((repo / "sdlc-studio" / "personas" / "index.md").exists())
 
     def test_dry_run_writes_nothing(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -547,9 +548,17 @@ class GuidedInitTests(unittest.TestCase):
             root = Path(d)
             init.start_onboarding(root)
             r = init.stage_personas(root)
-            self.assertIn("sdlc-studio/personas.md", r["created"])
+            # BG0824: the registry v6 reads, never the legacy flat personas.md.
+            self.assertIn("sdlc-studio/personas/index.md", r["created"])
             self.assertIn("persona generate --team", r["directive"])
-            self.assertTrue((root / "sdlc-studio" / "personas.md").is_file())
+            self.assertTrue((root / "sdlc-studio" / "personas" / "index.md").is_file())
+            self.assertFalse((root / "sdlc-studio" / "personas.md").exists())
+            # an existing registry is left untouched
+            (root / "sdlc-studio" / "personas" / "index.md").write_text("mine\n", encoding="utf-8")
+            again = init.stage_personas(root)
+            self.assertEqual(["sdlc-studio/personas/index.md"], again["skipped"])
+            self.assertEqual("mine\n", (root / "sdlc-studio" / "personas" / "index.md")
+                             .read_text(encoding="utf-8"))
 
     def test_personas_stage_advances_to_decompose(self) -> None:
         with tempfile.TemporaryDirectory() as d:

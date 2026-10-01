@@ -312,9 +312,21 @@ def stage_status(state: dict, name: str) -> str | None:
     return next((s["status"] for s in state.get("stages", []) if s["name"] == name), None)
 
 
-#: The SINGLETON stages, whose output is `sdlc-studio/{name}.md` - the same path `_seed_singleton`
-#: writes, so the two cannot disagree about what a stage produces.
-_SINGLETON_STAGES = ("prd", "trd", "tsd", "personas")
+#: The SINGLETON stages and where each one's output lives: (template under `templates/`, path
+#: under `sdlc-studio/`). ONE table that `_seed_singleton`, the stage-done test, `_is_seed` and
+#: `--scaffold` all read, so they cannot disagree about what a stage produces. Personas seed the
+#: registry `sdlc_md.persona_registry` reads (`personas/index.md`), never the legacy flat
+#: `personas.md` that nothing in v6 reads as the registry.
+_SINGLETON_FILES = {"prd": ("core/prd.md", "prd.md"), "trd": ("core/trd.md", "trd.md"),
+                    "tsd": ("core/tsd.md", "tsd.md"),
+                    "personas": ("personas/persona-index-template.md", "personas/index.md")}
+_SINGLETON_STAGES = tuple(_SINGLETON_FILES)
+
+
+def _singleton(name: str) -> tuple[Path, str]:
+    """(template path, `sdlc-studio/`-relative output path) for a singleton stage."""
+    tmpl, rel = _SINGLETON_FILES[name]
+    return SKILL / "templates" / tmpl, f"{SDLC}/{rel}"
 _PLACEHOLDER = re.compile(r"\{\{[^{}]*\}\}")
 # Where an authored document QUOTES a placeholder rather than leaving one unfilled: a fenced block,
 # or a code span holding nothing but the placeholder (`{{version}}`).
@@ -415,8 +427,8 @@ def stage_output_exists(root: Path | str, stage: str) -> bool:
                     for src, dst in AGENT_FILES)
                 and carries_doctrine(root))
     if stage in _SINGLETON_STAGES:
-        return _authored(root, root / SDLC / f"{stage}.md",
-                         SKILL / "templates" / "core" / f"{stage}.md")
+        tmpl, rel = _singleton(stage)
+        return _authored(root, root / rel, tmpl)
     if stage == "decompose":
         # `epic`, THEN `story` - the stage directs both, so epics alone is half done.
         return (any((root / SDLC / "epics").glob("EP*.md"))
@@ -525,19 +537,19 @@ def stage_agents(root: Path | str, force: bool = False) -> dict:
 
 
 def _seed_singleton(root: Path | str, name: str) -> tuple[list[str], list[str]]:
-    """Seed `sdlc-studio/{name}.md` from the shipped template if absent (returned as `created`);
-    an existing one is left for the operator to edit (`skipped`). The shared draft mechanic for
-    the PRD/TRD/TSD stages."""
+    """Seed the singleton's output (`_SINGLETON_FILES`) from its shipped template if absent
+    (returned as `created`); an existing one is left for the operator to edit (`skipped`). The
+    shared draft mechanic for the PRD/TRD/TSD/personas stages."""
     root = Path(root)
-    tmpl = SKILL / "templates" / "core" / f"{name}.md"
-    dst = root / SDLC / f"{name}.md"
+    tmpl, rel = _singleton(name)
+    dst = root / rel
     if not tmpl.exists():
         return [], []
     if dst.exists():
-        return [], [f"{SDLC}/{name}.md"]
+        return [], [rel]
     dst.parent.mkdir(parents=True, exist_ok=True)
     dst.write_text(seed_text(tmpl, seed_fields(root, date.today().isoformat())), encoding="utf-8")
-    return [f"{SDLC}/{name}.md"], []
+    return [rel], []
 
 
 def stage_prd(root: Path | str) -> dict:
@@ -573,7 +585,7 @@ def stage_tsd(root: Path | str) -> dict:
 
 
 def stage_personas(root: Path | str) -> dict:
-    """The personas stage: seed the personas doc and direct growing a project-specific team from
+    """The personas stage: seed the persona registry (`personas/index.md`) and direct growing a project-specific team from
     the PRD and risk signals (`persona generate --team`). The team that will both build and review
     the work exists before the first sprint; the operator accepts or edits the generated seats."""
     created, skipped = _seed_singleton(root, "personas")
@@ -600,8 +612,7 @@ def _is_seed(root: Path, rel: str) -> bool:
     """Whether the file at `rel` is still what seeding wrote (unfilled, or the seeded body as
     written), so the runner says the tool drafted it rather than implying the user did."""
     src = {dst: SKILL / "templates" / tmpl for tmpl, dst in AGENT_FILES}
-    src.update({f"{SDLC}/{s}.md": SKILL / "templates" / "core" / f"{s}.md"
-                for s in _SINGLETON_STAGES})
+    src.update({_singleton(s)[1]: _singleton(s)[0] for s in _SINGLETON_STAGES})
     tmpl, path = src.get(rel), root / rel
     if tmpl is None or not tmpl.is_file() or not path.is_file():
         return False
@@ -774,9 +785,9 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
     # 6. singleton docs (opt-in)
     if scaffold:
         for name in SINGLETONS:
-            st = SKILL / "templates" / "core" / f"{name}.md"
+            st, rel = _singleton(name)
             if st.exists():
-                _write(f"{SDLC}/{name}.md", seed_text(st, fields))
+                _write(rel, seed_text(st, fields))
 
     return {"created": created, "skipped": skipped, "language": lang,
             "scaffold": scaffold, "dry_run": dry_run,

@@ -12,6 +12,18 @@ Personas for {{project_name}}. This index lists all active personas organised by
 
 ---
 
+The three sections below are the registry `sprint plan --serves` and the goal trace read: one
+bullet per persona, `- [Name](name.md) - one line on who they are`. A section left empty declares
+nobody yet.
+
+## Primary
+
+## Secondary
+
+## Negative
+
+---
+
 ## Team Personas
 
 Internal team members who create and review artefacts. Organised by Three Amigos perspective.

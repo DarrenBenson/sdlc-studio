@@ -1018,8 +1018,12 @@ class OnboardingHintFalsifiabilityTests(unittest.TestCase):
             # the stage writes BOTH
             (root / "AGENTS.md").write_text(self.AGENTS_MD, encoding="utf-8")
             (root / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
-        elif stage in ("prd", "trd", "tsd", "personas"):
+        elif stage in ("prd", "trd", "tsd"):
             (root / "sdlc-studio" / f"{stage}.md").write_text(f"# {stage}\n", encoding="utf-8")
+        elif stage == "personas":
+            # the registry, since BG0824 - never the legacy flat personas.md
+            reg = root / "sdlc-studio" / "personas"; reg.mkdir(parents=True, exist_ok=True)
+            (reg / "index.md").write_text("# personas\n\n## Primary\n", encoding="utf-8")
         elif stage == "decompose":
             for sub, name in (("epics", "EP0001-x.md"), ("stories", "US0001-x.md")):
                 d = root / "sdlc-studio" / sub; d.mkdir(parents=True, exist_ok=True)

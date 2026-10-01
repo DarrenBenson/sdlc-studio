@@ -66,7 +66,7 @@ until you reach that first plan.
 ```bash
 /sdlc-studio init                   # Create tree + indexes + config + agent-instructions
 /sdlc-studio init --detect          # Infer the stack from project files
-/sdlc-studio init --scaffold        # Also seed prd/trd/tsd/personas from templates
+/sdlc-studio init --scaffold        # Also seed prd/trd/tsd and the personas/index.md registry
 /sdlc-studio init --dry-run         # Preview every write (show config, confirm, then run)
 /sdlc-studio init --force           # Overwrite existing files
 ```
@@ -165,7 +165,7 @@ sdlc-studio/
 ├── prd.md          # (created later with /sdlc-studio prd)
 ├── trd.md          # (created later with /sdlc-studio trd)
 ├── tsd.md          # (created later with /sdlc-studio tsd)
-├── personas.md     # (created later with /sdlc-studio persona)
+├── personas/       # index.md registry (seeded by guided onboarding or --scaffold) + cards
 ├── epics/          # Epic documents
 ├── stories/        # User story documents
 ├── plans/          # Implementation plans
