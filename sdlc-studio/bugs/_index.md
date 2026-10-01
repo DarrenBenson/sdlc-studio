@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 19 |
+| Open | 21 |
 | In Progress | 0 |
 | Fixed | 692 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 30 |
-| **Total** | **867** |
+| **Total** | **869** |
 
 ## All Bugs
 
@@ -226,6 +226,8 @@
 | [BG0865](BG0865-the-signed-page-names-a-known-issue-s.md) | The signed page names a known issue's retro ruling only when it is STOP-SHIP, and a finding the close files falls outside the run window | Fixed | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0866](BG0866-package-lock-json-resolves-js-yaml-5-2.md) | package-lock.json resolves js-yaml 5.2.2 through markdownlint-cli 0.49.1, inside Dependabot alert 19's vulnerable range | Open | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0867](BG0867-a-status-transition-rewrites-an-index-row-in.md) | A status transition rewrites an index row in compact style under an aligned header, so markdownlint fails the index it just synced | Open | Low | 2026-10-01 | 2026-10-01 |
+| [BG0868](BG0868-refine-add-can-only-add-stories-under-a.md) | refine add can only add stories under a new epic, so a story for a request's existing epic is minted by hand | Open | Low | 2026-10-01 | 2026-10-01 |
+| [BG0869](BG0869-status-backlog-lists-fully-decomposed-requests-as-discovery.md) | status backlog lists fully decomposed requests as discovery options still to refine | Open | Low | 2026-10-01 | 2026-10-01 |
 
 ## Archived Releases
 

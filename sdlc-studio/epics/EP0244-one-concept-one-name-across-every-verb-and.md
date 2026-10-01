@@ -1,7 +1,7 @@
 # EP0244: One concept, one name, across every verb and every document key
 
 > **Status:** Ready
-> **Derived Point Total:** 8
+> **Derived Point Total:** 9
 > **Parent:** CR0559
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new

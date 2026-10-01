@@ -7,7 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/decisions.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_fields_file_flag_keys.py, changelog.d/US0805.md
 > **Epic:** EP0244
-> **Points:** 2
+> **Points:** 3
 > **Persona:** Maya Okafor
 
 ## User Story
@@ -46,6 +46,8 @@ exit=2
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_fields_file_flag_keys.py::FieldsFileFlagKeysTests::test_decisions_add_reads_status_from_the_document
 - [ ] **AC3** Given a fixture and a document carrying `"type": "bug"` with no `--type` flag, when `file_finding.py file --fields-file <doc> --dry-run --root <fixture>` runs, then it exits 0 and previews a bug; with neither a `type` key nor `--type` it still exits 2 naming `--type`. Fails on: HEAD exits 2 `the following arguments are required: --type`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_fields_file_flag_keys.py::FieldsFileFlagKeysTests::test_a_type_key_stands_in_for_the_type_flag
+- [ ] **AC4** Given a fixture and a document carrying `seat`, `subject`, `question`, `ruling` and `reason`, when `decisions.py rule --fields-file <doc> --root <fixture>` runs with no `--seat` or `--subject` flag, then the ruling is recorded under that seat and subject. Fails on: the current code, which refuses `seat` and `subject` as unknown fields and then demands both flags (found in the 2026-10-01 backlog sweep)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_fields_file_flag_keys.py::FieldsFileFlagKeysTests::test_decisions_rule_reads_seat_and_subject_from_the_document
 
 ## Revision History
 
@@ -55,3 +57,4 @@ exit=2
 | 2026-09-15 | backlog sweep 2026-09-15 | Backlog sweep 2026-09-15: a further instance - decisions.py add --fields-file refuses a 'status' key ('carries unknown field') although --status is a flag of the same verb, so CR0417's own AC1 never reached decisions.py. Hit while recording D0187-D0192. |
 | 2026-10-01 | sdlc-studio | Retitled: was "A `--fields-file` document whose keys are spelled as the verb's own flags is accepted" |
 | 2026-10-01 | engineering seat (groomer) | Groomed under D0291 (backlog sweep 2026-10-01): criteria authored, premise executed at HEAD 85042135, Points and Affects set |
+| 2026-10-01 | backlog sweep | AC4 added: `decisions.py rule` reads seat and subject from a fields file (hit during the sweep); points 2 to 3. |
