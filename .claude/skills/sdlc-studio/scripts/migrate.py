@@ -536,6 +536,22 @@ def _signed_records(root: Path, apply: bool) -> tuple[list[dict], list[dict]]:
     return det, human
 
 
+def _unreadable_files(root: Path) -> list[tuple[str, str]]:
+    """`(repo-relative path, why)` for each workspace Markdown or config file under
+    `sdlc-studio/` that cannot be read as UTF-8 text - the files every step of the sweep reads.
+    Runtime state under `.local/` is not the project's, and is skipped."""
+    out = []
+    store = root / "sdlc-studio"
+    for path in sorted([*store.rglob("*.md"), store / ".config.yaml"]):
+        if not path.is_file() or ".local" in path.relative_to(store).parts:
+            continue
+        try:
+            path.read_text(encoding="utf-8")  # bare-read-ok: the probe IS the read
+        except (UnicodeDecodeError, OSError) as exc:
+            out.append((path.relative_to(root).as_posix(), type(exc).__name__))
+    return out
+
+
 def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: bool = False,
             today: str | None = None) -> dict:
     """Run the upgrade sweep. Returns
@@ -547,6 +563,20 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
     if not (root / "sdlc-studio").is_dir():
         return {"applicable": False, "applied": apply, "deterministic": [], "needs_human": [],
                 "frozen": [], "summary": {}}
+    # A workspace file that cannot be read as UTF-8 text stopped the sweep with a traceback that
+    # named neither the file nor anything else in the report. Every step below reads the
+    # workspace, so the files are found first and NAMED, and nothing is read past them or
+    # written - an upgrade applied over files its own readers cannot read is not deterministic.
+    unreadable = _unreadable_files(root)
+    if unreadable:
+        needs = [{"kind": "unreadable", "path": rel, "command": None,
+                  "detail": f"{rel} could not be read as UTF-8 text ({why}) - re-save it as UTF-8, "
+                            f"then run migrate again; nothing else was examined or written"}
+                 for rel, why in unreadable]
+        return {"applicable": True, "applied": False, "deterministic": [], "needs_human": needs,
+                "terminal_sized": 0, "frozen": [],
+                "summary": {"deterministic": 0, "needs_human": len(needs), "terminal_sized": 0,
+                            "frozen": 0, "applied": False}}
 
     # 1. conventions + version. Classify from `audit()` in BOTH modes - never from `apply()`'s
     # free-text action strings, which mix real changes with advisories and warnings (the team-offer

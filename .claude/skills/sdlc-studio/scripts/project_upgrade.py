@@ -33,9 +33,6 @@ import init  # noqa: E402  (the agent-instructions seeding path - reused, never 
 # fallback, which is the legacy stamp for un-stamped workspaces. A hardcoded 2 here contradicted
 # init seeding 3 and would move an upgraded project to the wrong version.
 CURRENT_SCHEMA = sdlc_md.current_schema()
-# Dirs newer projects carry; absent ones are advisory (created on first use), not auto-made
-# (empty dirs do not persist in git, and guessing per-type index headers would over-reach).
-STANDARD_DIRS = ("change-requests", "rfcs", "decisions", "retros")
 # The v3.1 default amigo cards (templates/personas/amigos/, RFC0020). Installed into a project's
 # persona dir GREENFIELD ONLY - when no review seat already fills the role; never overwritten once
 # present.
@@ -435,11 +432,9 @@ def audit(root: Path | str) -> dict:
         manual.append({"kind": "index-drift", "lane": "reconcile", "count": drift,
                        "detail": f"{drift} index/status drift item(s) - review with `/sdlc-studio reconcile` "
                                  "(not auto-applied by upgrade)"})
-    # advisory dirs (report, not auto - see module docstring)
-    missing = [d for d in STANDARD_DIRS if not (sd / d).is_dir()]
-    if missing:
-        manual.append({"kind": "missing-dirs", "names": missing,
-                       "detail": f"no {', '.join(missing)} dir(s) - created when you first use them"})
+    # A standard directory not yet created (`retros/`, `rfcs/` ...) is not reported: the tool that
+    # first writes one creates it and its index, so it needs nobody, and listing it under
+    # needs-a-human meant an up-to-date project never read clean.
     signals = _old_persona_signals(sd)
     if validate.check_personas(root):
         signals.append("content-model drift: a flat persona is not well-formed against the Cooper "

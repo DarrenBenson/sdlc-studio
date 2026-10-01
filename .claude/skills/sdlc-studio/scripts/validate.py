@@ -735,9 +735,9 @@ def _ac_exempt(rec: str | None, repo_root: Path | None) -> bool:
     executable-AC discipline partway does not retroactively fail every shipped story."""
     if repo_root is None or rec is None:
         return False
-    cutoff_num = sdlc_md.parse_cutoff(sdlc_md.project_override(repo_root, "conformance.adopt_after"))
-    rid_num = sdlc_md.id_number(rec)
-    return cutoff_num is not None and rid_num is not None and rid_num <= cutoff_num
+    cutoff = sdlc_md.parse_cutoff(sdlc_md.project_override(repo_root, "conformance.adopt_after"),
+                                  allow_ulid=True)
+    return sdlc_md.cutoff_exempts(rec, cutoff)
 
 
 def changed_artifact_paths(repo_root: Path, types=None) -> set[Path] | None:

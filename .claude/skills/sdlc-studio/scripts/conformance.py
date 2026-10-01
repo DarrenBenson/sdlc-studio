@@ -525,11 +525,12 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
     narrow = ({sdlc_md.norm_id(x) for x in scope_ids} if scope_ids is not None else changed_ids)
     vocab = sdlc_md.status_vocab("story", root)
     # Adoption cutoff: a project that turns the gate on partway can set
-    # `conformance.adopt_after: US0360` (or the bare `360`) in .config.yaml so units up
-    # to and including that id are exempt (reported, not judged) - the discipline applies
-    # forward, not retroactively. parse_cutoff accepts both spellings and raises loud on a
-    # typo rather than silently dropping the cutoff.
-    cutoff_num = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "conformance.adopt_after"))
+    # `conformance.adopt_after: US0360` (or the bare `360`, or on schema v3 an id such as
+    # `BG-01KX95QP`) in .config.yaml so units up to and including that id are exempt (reported,
+    # not judged) - the discipline applies forward, not retroactively. parse_cutoff accepts every
+    # spelling and raises loud on a typo rather than silently dropping the cutoff.
+    cutoff_num = sdlc_md.parse_cutoff(sdlc_md.project_override(root, "conformance.adopt_after"),
+                                      allow_ulid=True)
     # The story-level Definition of Done, when the project declares one, decides whether the
     # review stage is REQUIRED: a DoD without `review.critic-approve` downgrades the critic
     # stage to human judgement (reported per unit, never silent).
@@ -664,8 +665,7 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
             # would report an untouched unit as missing a stage nobody looked at, which is the
             # mirror image of the failure the scope exists to avoid.
             required = [s for s in required if s not in UNJUDGED_WHEN_SCOPED]
-        rid_num = sdlc_md.id_number(rid)
-        exempt = cutoff_num is not None and rid_num is not None and rid_num <= cutoff_num
+        exempt = sdlc_md.cutoff_exempts(rid, cutoff_num)
         all_missing = [] if exempt else [s for s in required if not stages[s]]
         # A waived stage is REPORTED as waived, naming the decision, and is not charged as a
         # fault. Applied before the global/per-unit split, so waiving a repo-wide stage clears
