@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 29 |
+| Open | 30 |
 | In Progress | 3 |
 | Fixed | 699 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **888** |
+| **Total** | **889** |
 
 ## All Bugs
 
@@ -247,6 +247,7 @@
 | [BG0886](BG0886-the-done-gate-s-own-refusal-messages-still.md) | The done gate's own refusal messages still print a v3 id as its hyphenless comparison key | Open | Low | 2026-10-01 | 2026-10-01 |
 | [BG0887](BG0887-the-review-command-s-dashboard-and-json-show.md) | The review command's dashboard and JSON show a per-document health percentage that no code computes | Open | Low | 2026-10-01 | 2026-10-01 |
 | [BG0888](BG0888-help-gate-md-says-the-commit-msg-hook.md) | help/gate.md says the commit-msg hook snippet degrades honestly with no script, but it blocks | Open | Low | 2026-10-01 | 2026-10-01 |
+| [BG0889](BG0889-a-padded-index-table-holding-a-wide-character.md) | A padded index table holding a wide character still fails MD060 after a row in it is rewritten | Open | Low | 2026-10-01 | 2026-10-01 |
 
 ## Archived Releases
 

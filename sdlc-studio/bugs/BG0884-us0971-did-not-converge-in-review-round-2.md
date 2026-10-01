@@ -1,6 +1,7 @@
 # BG0884: US0971 did not converge in review: round 2 REJECT findings
 
 > **Status:** Open
+> **Discharge review 1:** REJECT by the rejecting reviewer (2026-10-01): a782e2e8 scrubbed every GIT_* variable, dropping GIT_CONFIG_GLOBAL/SYSTEM so the AC2 Verify reads the host's global git config - fix: reuse verify_ac._REPO_LOCATING_GIT_VARS
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/blocker_sweep.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_fresh_plan_quiet.py, changelog.d/US0971.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_blocker_sweep.py
