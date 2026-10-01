@@ -174,6 +174,10 @@ def _leg_path(base: Path, leg: str) -> tuple[Path, bool]:
         files = [p for p in pdir.glob("*.md") if p.name not in PERSONA_INDEX_NAMES] if pdir.is_dir() else []
         if files:
             return pdir, True
+        # The registry naming anyone is personas present, as `status` counts it: init's guided
+        # flow seeds `personas/index.md`, never the flat file.
+        if sdlc_md.persona_registry(base.parent).entries:
+            return pdir / "index.md", True
         pmd = base / "personas.md"
         return pmd, pmd.exists()
     p = base / f"{leg}.md"

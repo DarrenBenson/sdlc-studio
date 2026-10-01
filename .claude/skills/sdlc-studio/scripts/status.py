@@ -115,6 +115,25 @@ def count_by_status(type_: str, repo_root: Path) -> dict:
     return {"total": total, "by_status": counts}
 
 
+#: The persona registry's own index files - an index is not a persona.
+PERSONA_INDEX_NAMES = frozenset({"index.md", "_index.md"})
+
+
+def personas_present(repo_root: Path | str) -> bool:
+    """Whether the project declares any persona, wherever it keeps them: the registry
+    (`personas/index.md`) naming at least one, a persona card under `personas/`, or the legacy
+    flat `personas.md`. A seeded registry with no entries declares nobody - that is the honest
+    "no personas yet". Reading `personas.md` alone sent every project whose registry init's
+    guided flow seeds back to the persona rung for ever."""
+    base = Path(repo_root) / "sdlc-studio"
+    if (base / "personas.md").exists():
+        return True
+    pdir = base / "personas"
+    if pdir.is_dir() and any(p.name not in PERSONA_INDEX_NAMES for p in pdir.glob("*.md")):
+        return True
+    return bool(sdlc_md.persona_registry(repo_root).entries)
+
+
 BACKLOG_TYPES: tuple[str, ...] = ("cr", "story", "epic", "bug", "rfc", "issue")
 
 
@@ -372,7 +391,7 @@ def gather(repo_root: Path, *, run=_UNSET) -> dict:
         "run": open_run(repo_root) if run is _UNSET else run,
         "requirements": {
             "prd": (base / "prd.md").exists(),
-            "personas": (base / "personas.md").exists(),
+            "personas": personas_present(repo_root),
             "epics": epics,
             "stories": stories,
             "epics_ready_pct": _pct_done(epics, ("Ready", "Approved", "Done")),
