@@ -2861,6 +2861,15 @@ def cmd_run(args: argparse.Namespace) -> int:
                 stderr_lines = fail["stderr"].splitlines()
                 for line in stderr_lines[:3]:
                     print(f"          | {line}")
+            # Only a node pytest did NOT find gets a hint: asked about a real node that failed
+            # an assertion, the near-miss reader answers with that node itself.
+            if "not found" in (fail["stderr"] or ""):
+                try:
+                    hint = selector_near_miss(fail["verifier"], cwd=repo_root)
+                except Exception:  # noqa: BLE001 - a hint must never displace the FAIL
+                    hint = None
+                if hint:
+                    print(f"          hint: {hint}")
 
     # Write the report in dry-run too (to a distinct path, so the live report is
     # not clobbered) and append the run to the history log.
