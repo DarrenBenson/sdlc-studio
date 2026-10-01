@@ -39,7 +39,7 @@ function Invoke-Install {
         codex    = @{ global = (Join-Path $HOME '.agents\skills');          local = '.agents\skills' }
         gemini   = @{ global = (Join-Path $HOME '.gemini\skills');          local = '.gemini\skills' }
         opencode = @{ global = (Join-Path $HOME '.config\opencode\skills'); local = '.opencode\skills' }
-        copilot  = @{ global = '';                                          local = '.github\skills' }
+        copilot  = @{ global = (Join-Path $HOME '.agents\skills');          local = '.github\skills' }
         agents   = @{ global = (Join-Path $HOME '.agents\skills');          local = '.agents\skills' }
     }
 
@@ -98,7 +98,9 @@ Native alternatives (sdlc-studio is a standard skill):
             'codex'    { [bool](Get-Command codex    -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME '.codex')) -or (Test-Path (Join-Path $HOME '.agents')) }
             'gemini'   { [bool](Get-Command gemini   -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME '.gemini')) }
             'opencode' { [bool](Get-Command opencode -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME '.config\opencode')) }
-            'copilot'  { [bool](Get-Command gh       -ErrorAction SilentlyContinue) -or (Test-Path '.github') }
+            # gh and a .github folder are repo signals, so they count only for a -Local install: a
+            # global one must not be steered by the directory it happens to run from.
+            'copilot'  { [bool](Get-Command copilot  -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $HOME '.copilot')) -or ($Scope -eq 'local' -and ([bool](Get-Command gh -ErrorAction SilentlyContinue) -or (Test-Path '.github'))) }
             'agents'   { (Test-Path (Join-Path $HOME '.agents')) -or [bool](Get-Command codex -ErrorAction SilentlyContinue) -or [bool](Get-Command cursor -ErrorAction SilentlyContinue) }
             default    { $false }
         }
@@ -171,7 +173,7 @@ Native alternatives (sdlc-studio is a standard skill):
             'codex'    { 'Codex: auto-discovered by description, or mention $sdlc-studio / run /skills.' }
             'gemini'   { 'Gemini CLI: run /skills to confirm discovery; then it is used automatically.' }
             'opencode' { 'opencode: discovered automatically via the skill tool.' }
-            'copilot'  { 'Copilot: reads .github/skills in the repo; invoke from chat.' }
+            'copilot'  { 'Copilot: Copilot CLI reads ~/.agents/skills, and .github/skills in a repo; run `copilot skill list` to confirm, then invoke from chat.' }
             'agents'   { 'Generic .agents/skills: read by Codex, Gemini CLI, Copilot, and Cursor (Claude Code does NOT read it).' }
         }
     }
@@ -200,10 +202,6 @@ Native alternatives (sdlc-studio is a standard skill):
     $resolved = [ordered]@{}
     foreach ($t in $targets) {
         $dir = $Map[$t].$Scope
-        if (-not $dir -and $t -eq 'copilot') {
-            Write-Warn2 'Copilot skills are repo-scoped; using .\.github\skills'
-            $dir = $Map['copilot'].local
-        }
         if (-not $dir) { Write-Warn2 "no $Scope dir for $t; skipping"; continue }
         if ($resolved.Values -contains $dir) { continue }   # codex/agents share a dir
         $resolved[$t] = $dir

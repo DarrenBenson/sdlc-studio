@@ -142,5 +142,69 @@ class InstallPs1LocalTests(unittest.TestCase):
         self.assertEqual(_notes(out), [], f"install.ps1 warned through a link:\n{out}")
 
 
+class InstallPs1CopilotTests(unittest.TestCase):
+    """BG0855: install.ps1 treats Copilot as BG0852 made install.sh do - a global install goes to
+    the personal `~/.agents/skills` folder Copilot CLI reads, auto-detection selects copilot by
+    the `copilot` binary (gh and a .github folder are repo signals, counted only for -Local),
+    and the post-install note names `~/.agents/skills`.
+
+    The note prints only after a real install, so it is pinned on the source in every run; the
+    plan and the detection run for real wherever pwsh is on PATH, and are pinned on the source
+    where it is not, so the selector never passes on a skip."""
+
+    def setUp(self) -> None:
+        base = Path(tempfile.mkdtemp(prefix="bg0855_"))
+        self.addCleanup(shutil.rmtree, base, True)
+        self.base = base.resolve()
+        self.home, self.project = self.base / "home", self.base / "project"
+        self.home.mkdir()
+        self.project.mkdir()
+        self.ps1 = INSTALL_PS1.read_text(encoding="utf-8")
+
+    def _run(self, *argv: str) -> str:
+        """install.ps1 as a user runs it, with a PATH holding a `copilot` and no `gh`."""
+        stubs = self.base / "bin"
+        stubs.mkdir(exist_ok=True)
+        copilot = stubs / "copilot"
+        copilot.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        copilot.chmod(0o755)
+        env = {**os.environ, "HOME": str(self.home), "PATH": str(stubs), "NO_COLOR": "1",
+               "POWERSHELL_TELEMETRY_OPTOUT": "1", "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+               "DOTNET_NOLOGO": "1"}
+        cp = subprocess.run([PWSH, "-NoProfile", "-NonInteractive", "-File", str(INSTALL_PS1),
+                             "-DryRun", *argv], cwd=self.project, env=env,
+                            capture_output=True, text=True, timeout=120)
+        out = cp.stdout + cp.stderr
+        self.assertEqual(0, cp.returncode, out)
+        return out
+
+    def test_auto_selects_a_copilot_personal_folder(self) -> None:
+        """AC1. MUTANTS: HEAD's empty copilot global target (the install falls back to
+        .github/skills); detection by `gh` or a .github folder (a host with only `copilot` is not
+        detected); the repo-only note."""
+        entry = re.search(r"^\s*copilot\s*=\s*@\{\s*global\s*=\s*(.*?);", self.ps1, re.M)
+        self.assertIsNotNone(entry, "install.ps1 has no copilot map entry")
+        self.assertEqual("(Join-Path $HOME '.agents\\skills')", entry.group(1).strip())
+        detect = re.search(r"^\s*'copilot'\s*\{(.*)\}\s*$",
+                           self.ps1.split("function Test-Detected")[1].split("function ")[0], re.M)
+        self.assertIsNotNone(detect, "Test-Detected has no copilot case")
+        self.assertIn("Get-Command copilot", detect.group(1))
+        for repo_signal in ("Get-Command gh", "Test-Path '.github'"):
+            if repo_signal in detect.group(1):
+                self.assertRegex(detect.group(1), r"\$Scope -eq 'local'.*" + re.escape(repo_signal),
+                                 f"{repo_signal} selects copilot for a global install")
+        note = re.search(r"^\s*'copilot'\s*\{\s*'([^']*)'",
+                         self.ps1.split("function Invoke-Note")[1], re.M)
+        self.assertIsNotNone(note, "Invoke-Note has no copilot note")
+        self.assertIn("~/.agents/skills", note.group(1))
+        if not PWSH:
+            return
+        out = self._run("-Target", "copilot", "-Global")
+        self.assertIn(f"would install to: {self.home / '.agents/skills/sdlc-studio'}", out)
+        out = self._run("-Target", "auto")
+        self.assertRegex(out, re.compile(r"Targets: copilot\s*$", re.M),
+                         "auto did not select copilot, and copilot alone, by its binary")
+
+
 if __name__ == "__main__":
     unittest.main()
