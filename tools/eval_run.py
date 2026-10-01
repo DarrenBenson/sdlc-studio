@@ -9,7 +9,10 @@ was manual ceremony around them is now deterministic:
             and print the worker prompt. Writes into --dir as given (a colliding
             relpath in a non-empty dir is overwritten - use a fresh scratch dir);
             a scenario without a spec degrades honestly: it prints the prose setup
-            and exits 1 so the gap is visible
+            and exits 1 so the gap is visible. It also builds `<dir>.claude-config`
+            holding this working tree's skill and prints the worker command with
+            CLAUDE_CONFIG_DIR set to it, so the worker loads the candidate skill and
+            not the operator's personal copy
     record  append one graded behaviour verdict (pass/fail + evidence) for a run.
             Takes an expected-behaviour id (EB1) or a forbidden-behaviour id (FB1,
             positional, printed by setup); on a forbidden id, fail means OBSERVED
@@ -29,12 +32,33 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
+import shutil
 import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 SCENARIOS = REPO / "evals" / "scenarios"
 RESULTS = REPO / "evals" / ".results"
+#: The candidate skill: this working tree's copy, not whatever is installed.
+SKILL_SRC = REPO / ".claude" / "skills" / "sdlc-studio"
+
+
+def build_config_dir(dest: Path) -> Path:
+    """`<dest>.claude-config/skills/sdlc-studio`, copied fresh from the candidate skill.
+
+    Under `claude -p` a personal `~/.claude/skills/sdlc-studio` is NOT outranked by a project
+    copy of the same name, so a worker run from the fixture loaded the operator's personal skill.
+    Pointing `CLAUDE_CONFIG_DIR` here gives the worker this skill and no other. A sibling of the
+    fixture, not inside it, so the worker's transcripts never show in the fixture's `git status`.
+    Never copies a credential: the operator copies one in for the run and deletes it after."""
+    config = Path(f"{dest}.claude-config")
+    skill = config / "skills" / "sdlc-studio"
+    if skill.exists():
+        shutil.rmtree(skill)
+    shutil.copytree(SKILL_SRC, skill,
+                    ignore=shutil.ignore_patterns(".local", "__pycache__", ".pytest_cache"))
+    return config
 
 
 def load_scenario(sid: str) -> dict:
@@ -83,10 +107,15 @@ def cmd_setup(args: argparse.Namespace) -> int:
               f"  {sc.get('setup', '(no setup text)')}", file=sys.stderr)
         return 1
     created = build_fixture(sc, dest)
+    config = build_config_dir(dest)
     print(f"fixture: {len(created)} file(s) under {dest}")
+    print(f"skill: the candidate skill under {config / 'skills' / 'sdlc-studio'}")
     print("\n--- WORKER PROMPT (fresh session, skill installed) ---")
     print(f"Fixture root: {dest}")
     print(sc["prompt"])
+    print(f"\n--- WORKER COMMAND (run in {dest}; copy ~/.claude/.credentials.json into "
+          f"{config}, mode 600, and delete it after the run) ---")
+    print(f"CLAUDE_CONFIG_DIR={shlex.quote(str(config))} claude -p {shlex.quote(sc['prompt'])}")
     print("\n--- GRADE AGAINST (behaviour: severity) ---")
     for eb in sc.get("expected_behaviours", []):
         print(f"  {eb['id']} ({eb['severity']}): {eb['description']}")

@@ -25,7 +25,14 @@ Each scenario runs as **setup**, **worker**, **grader**, **record**:
    such as "the dry run wrote nothing" can be proved with `git status`.
 2. **Worker session.** A fresh agent session (no carried context) started
    in the fixture directory with the candidate skill installed. Send the
-   printed prompt verbatim. Save the full transcript.
+   printed prompt verbatim. Save the full transcript. Run it with the
+   command `setup` prints, `CLAUDE_CONFIG_DIR=<dir>.claude-config claude -p ...`:
+   under `claude -p` a personal `~/.claude/skills/sdlc-studio` is not
+   outranked by a project copy, so without it the worker can load your
+   installed skill instead of the candidate. `setup` copies this working
+   tree's skill into that directory and never a credential: copy
+   `~/.claude/.credentials.json` in yourself (mode 600) and delete it after
+   the run.
 3. **Grader session.** A second fresh session. Give it the transcript,
    the fixture directory and the behaviours `setup` printed. It grades
    every expected behaviour (`EB1`...) `pass` or `fail`, and every
