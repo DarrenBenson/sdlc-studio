@@ -65,10 +65,10 @@ def _story(root: Path, sid: str, status: str = "Ready") -> None:
        f"- **Verify:** shell true\n")
 
 
-def _bug(root: Path, bid: str) -> None:
+def _bug(root: Path, bid: str, status: str = "Open") -> None:
     _w(root, f"src/{bid.lower()}.py", "x = 1\n")
     _w(root, f"sdlc-studio/bugs/{bid}-x.md",
-       f"# {bid}: x\n\n> **Status:** Open\n> **Severity:** Medium\n> **Points:** 2\n"
+       f"# {bid}: x\n\n> **Status:** {status}\n> **Severity:** Medium\n> **Points:** 2\n"
        f"> **Affects:** src/{bid.lower()}.py\n\n## Acceptance Criteria\n\n### AC1: it works\n\n"
        f"- **Verify:** shell true\n")
 
@@ -96,8 +96,9 @@ class ReportReplacesHandoffTests(unittest.TestCase):
     """AC1-AC3."""
 
     def test_the_close_and_sign_write_no_handoff(self) -> None:
-        """AC1. MUTANTS: (1) keep the close's `handoff` chain step - it generates HO0001, its
-        worklist and `state["handoff"]`; (2) keep sign's refresh of a recorded handoff; (3) keep
+        """AC1. MUTANTS: (1) keep the close's `handoff` chain step - before US0978 it generated
+        HO0001, its worklist and `state["handoff"]`, and since then the step still runs and is
+        named on the close's output; (2) keep sign's refresh of a recorded handoff; (3) keep
         the checklist's `handoff` row."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -150,7 +151,12 @@ class ReportReplacesHandoffTests(unittest.TestCase):
             retro.write_text(text, encoding="utf-8")
             _commit(root, "retro")
             retro_id = retro.name.split("-", 1)[0]
-            _ok(root, "sprint.py", "close", "--retro", retro_id)
+            closed = _cli(root, "sprint.py", "close", "--retro", retro_id)
+            self.assertEqual(0, closed.returncode, closed.stdout + closed.stderr)
+            # No chain step is the handoff's: with the writer retired (US0978) a restored step
+            # could write nothing, so the step itself is what must be absent from the chain.
+            self.assertNotRegex(closed.stdout + closed.stderr, r"close \[\d+/\d+\] handoff",
+                                "the close still runs a handoff step")
             _commit(root, "closed")
             signed = _ok(root, "sprint.py", "sign", "--principal", "the operator")
             self.assertIn("sealed", signed, "premise: the run was not signed:\n" + signed)
@@ -179,11 +185,14 @@ class ReportReplacesHandoffTests(unittest.TestCase):
         """AC2. MUTANTS: (1) the notice reads `state["handoff"]` only - it names nothing; (2) read
         the newest report whether signed or not - it names RPT0002; (3) take every row id,
         `checklist` close gap included - `--worklist` refuses an id with no artefact; (4) drop the
-        report branch from `--worklist` - it reads `RPT0001` as a missing file."""
+        report branch from `--worklist` - it reads `RPT0001` as a missing file; (5) read the
+        OLDEST signed report (`reverse=False`) - it names RPT0000, so the fixture holds two."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _bug(root, "BG0002")
             _story(root, "US0003")
+            _bug(root, "BG0001")
+            _report(root, "RPT0000", "RUN-0", ["BG0001"], signed=True)   # an earlier signed run
             _report(root, "RPT0001", "RUN-A", ["BG0002", "checklist", "US0003"], signed=True)
             _report(root, "RPT0002", "RUN-B", ["BG0009"], signed=False)   # filed, not signed
 
@@ -203,6 +212,72 @@ class ReportReplacesHandoffTests(unittest.TestCase):
             self.assertIn("batch: 2 unit(s)", w.stdout, w.stdout)
             for uid in ("BG0002", "US0003"):
                 self.assertIn(uid, w.stdout, f"--worklist RPT0001 did not plan {uid}")
+
+    def test_a_handed_over_item_closed_since_is_counted_not_planned(self) -> None:
+        """AC2's open filter. MUTANT: drop `_still_open`'s terminal test - the Fixed bug is named
+        in the notice and planned by `--worklist`."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, "BG0002")
+            _bug(root, "BG0004", status="Fixed")
+            _report(root, "RPT0001", "RUN-A", ["BG0002", "BG0004"], signed=True)
+            r = _plan(root, "--bugs", "Open")
+            notice = next((ln for ln in r.stderr.splitlines() if "RPT0001" in ln), "")
+            self.assertIn("BG0002", notice, r.stderr)
+            self.assertNotIn("BG0004", notice, "a handed-over item closed since was named open")
+            self.assertIn("1 since closed", notice, notice)
+            w = _plan(root, "--worklist", "RPT0001")
+            self.assertEqual(0, w.returncode, w.stdout + w.stderr)
+            self.assertIn("batch: 1 unit(s)", w.stdout, w.stdout)
+            self.assertNotIn("BG0004", w.stdout, "--worklist planned an item closed since")
+
+    def test_worklist_reads_only_the_last_signed_report_with_something_open(self) -> None:
+        """`--worklist RPTxxxx` refuses rather than plans a smaller batch than the page. MUTANTS:
+        (1) drop the not-last-signed refusal - an older report's items are planned; (2) drop the
+        nothing-still-open refusal - the plan proceeds over an empty report batch."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, "BG0002")
+            _bug(root, "BG0004", status="Fixed")
+            _report(root, "RPT0001", "RUN-A", ["BG0002"], signed=True)
+            _report(root, "RPT0002", "RUN-B", ["BG0004"], signed=True)
+            old = _plan(root, "--worklist", "RPT0001")
+            self.assertNotEqual(0, old.returncode, "an older signed report was planned:\n"
+                                + old.stdout)
+            self.assertIn("RPT0001: not the last signed report (RPT0002 is)", old.stderr)
+            done = _plan(root, "--worklist", "RPT0002")
+            self.assertNotEqual(0, done.returncode, "a report with nothing open was planned:\n"
+                                + done.stdout)
+            self.assertIn("RPT0002: it hands over nothing still open", done.stderr)
+
+    def test_the_waived_units_notice_reads_only_an_ended_unsigned_run(self) -> None:
+        """MUTANTS: (1) drop the same-run guard - a signed run's waived units are named again
+        beside the report that already hands them over; (2) drop the outcome-in-CLOSED test -
+        an open run's record is read as an ended one. The boundary-stop path is the control: an
+        ended `blocked` run names its units as left unanswered, not waived by a forced stop."""
+        def notice(state: dict, signed_run: str | None) -> str:
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _story(root, "US0004")
+                _w(root, "sdlc-studio/.local/run-state.json", json.dumps(
+                    {"schema": 1, "run_id": "RUN-X", "started_at": "2026-10-01T00:00:00Z",
+                     "ended_at": None, "goal": "done", "batch": ["US0004"], "handoff": None,
+                     "unanswered": [{"unit": "US0004", "status": "Ready",
+                                     "why": "unfinished and not ruled"}], **state}))
+                if signed_run:
+                    _report(root, "RPT0001", signed_run, ["US0004"], signed=True)
+                r = _plan(root, "--stories", "Ready")
+                return "\n".join(ln for ln in r.stderr.splitlines() if "ended over" in ln)
+        stopped = {"outcome": "stopped", "stop": {"cause": "operator"}}
+        self.assertIn("waived by the forced stop", notice(stopped, None), "premise: AC3's line")
+        self.assertEqual("", notice(stopped, "RUN-X"),
+                         "a signed run's waived units were named again beside its report")
+        self.assertEqual("", notice({"outcome": "running"}, None),
+                         "an open run's record was read as an ended run's")
+        blocked = notice({"outcome": "blocked", "stop": {"cause": "close-gate"}}, None)
+        self.assertIn("US0004 ", blocked + " ", blocked)
+        self.assertIn("left unanswered when it ended blocked", blocked)
+        self.assertNotIn("forced", blocked)
 
     def test_a_forced_stops_waived_units_reach_the_next_plan(self) -> None:
         """AC3. MUTANTS: (1) read only the signed report - a forced stop files none, so nothing is

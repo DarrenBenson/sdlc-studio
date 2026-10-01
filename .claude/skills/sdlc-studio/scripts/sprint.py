@@ -4568,7 +4568,7 @@ def cmd_goal_verdict(args: argparse.Namespace) -> int:
 # --- sprint close: the close ceremony as one deterministic chain --------------------
 # The close was the last big hand-carried ceremony (~12 sequenced steps, each a skippable
 # seam under a less careful run). This orchestrates the deterministic chain - goal-verdict,
-# retro validate + extract, lessons summary, the close gate, handoff, reconcile - stopping
+# retro validate + extract, lessons summary, the close gate, reconcile - stopping
 # LOUDLY at the first failing gate with the remedy named, and ends by PRINTING the sign-off
 # decision brief composed from the committed records. Judgement stays outside: the retro's
 # content, the goal-verdict's note, and the signature itself remain human/agent work - the
@@ -4722,7 +4722,7 @@ def _close_lessons_summary(root, retro_id, state):
 # ---------------------------------------------------------------------------
 # The close must stop invalidating itself
 # ---------------------------------------------------------------------------
-# `sprint close` writes the review anchor and the handoff, which makes them newer than the
+# `sprint close` writes the review anchor, which makes it newer than the
 # anchor's last review, which fails the review-currency lane on the next attempt. Committing
 # that paperwork is another change, so the close chases a target it is moving itself:
 # RUN-01KYHVWK took four attempts and about sixteen minutes of test execution to record a
@@ -4828,7 +4828,7 @@ def record_close_finding(root, artefact_id: str, path: str) -> dict:
     except (run_state.RunStateError, OSError) as exc:
         sdlc_md.debug("sprint.record_close_finding", exc)
         print(f"warning: {artefact_id} was filed during the close but could NOT be recorded as "
-              f"carried ({exc}) - name it in the handoff by hand", file=sys.stderr)
+              f"carried ({exc}) - name it in the retro's known issues by hand", file=sys.stderr)
     record_close_output(root, row["path"])
     return row
 
@@ -4853,8 +4853,9 @@ def close_own_output(root, state) -> set[str]:
 
     Almost all of it is RECORDED rather than inferred, because the failure direction of a
     hand-written list here is over-exemption, and an over-wide review carve-out is a hole.
-    Two entries are structural rather than recorded - the anchor the close stamps and the
-    handoff it generates - because those are the close's contract, not an optional step.
+    One entry is structural rather than recorded - the anchor the close stamps - because it is
+    the close's contract, not an optional step. A handoff a run recorded before US0967 retired
+    the close's handoff step is still read here, so an older run's own output stays exempt.
     """
     out = {ANCHOR_REL}
     for p in ((state or {}).get(CLOSE_OUTPUT_KEY) or []):
@@ -4956,8 +4957,8 @@ def close_surface_hash(root, exclude) -> str | None:
 
     The SET is the gate's own measurement (`gate.surface_files`), so there is one definition
     of what a test reads and this cannot drift from it. The subtraction is what makes a close
-    retry answerable at all: the surface includes the workspace, so stamping the anchor and
-    generating the handoff would otherwise change the surface the close is asking about, and
+    retry answerable at all: the surface includes the workspace, so stamping the anchor
+    would otherwise change the surface the close is asking about, and
     the answer would be "changed" on every attempt for reasons the close created itself.
 
     None is UNKNOWN, never "unchanged": the caller runs the gate on it. An unhashable
@@ -5512,9 +5513,9 @@ def _close_checklist(root, retro, state, read_root=None):
     """The compulsory checklist, as a chain step. Refuses on an unanswered item, naming it.
 
     Placed after the retro and lessons steps and before the gate, because the rows it reads are
-    produced by everything up to here; the two rows the close itself discharges (the sign-off
-    fan-out, the handoff) are reported and never held, or the chain would refuse on the step it
-    is on its way to perform.
+    produced by everything up to here; a row the close itself discharges (`discharged_by:
+    close`) is reported and never held, or the chain would refuse on the step it is on its way
+    to perform.
 
     A checklist nothing enforces is the state this was built from: the seat ceremony was
     compulsory in prose and was skipped twice in one session without a warning being printed.
@@ -8907,8 +8908,8 @@ def cmd_close(args: argparse.Namespace) -> int:
     for name in _REPORT_HOLDS:
         if name not in {h["hold"] for h in held}:
             print(f"close: report hold {name}: passed")
-    # The tail is PREPARE's, not SEAL's. The velocity row, the handoff re-render and the final
-    # reconcile all CHANGE FACTS the report states, so they run BEFORE the page is derived and
+    # The tail is PREPARE's, not SEAL's. The velocity row and the final
+    # reconcile both CHANGE FACTS the report states, so they run BEFORE the page is derived and
     # long before anyone signs it. They rode inside `--apply-signoff` before, which is precisely
     # how RUN-01M2JA6J spent two hours writing facts after its operator had already said yes.
     # ADVISORY here, and the reason is recorded rather than smoothed over: the tail's velocity
@@ -9233,7 +9234,7 @@ def cmd_sign(args: argparse.Namespace) -> int:
     Everything that can change a fact ran in PREPARE. This writes the terminal transitions and
     the cascades they imply, then the run's own signature and its outcome - and stops. No
     per-unit sign-off row is written: the operator signs the run once. It does NOT run
-    `_apply_signoff_tail`: the velocity row, the handoff re-render and the final reconcile are
+    `_apply_signoff_tail`: the velocity row and the final reconcile are
     PREPARE's, because a fact that moves after a signature is a fact the signature did not cover
     (D0213, RUN-01M2JA6J's own two hours).
     """
@@ -10007,7 +10008,7 @@ def _boundary_close_down(root, index: int, args: argparse.Namespace) -> tuple[in
 
     Delegates to `sprint close` rather than re-implementing it, so a rolling cycle closes
     through exactly the chain a hand-run sprint closes through - retro validate and extract,
-    lessons summary, gate, handoff, reconcile - and cannot quietly become a weaker close."""
+    lessons summary, gate, reconcile - and cannot quietly become a weaker close."""
     argv = ["close", "--root", str(root), "--retro", args.retro]
     if getattr(args, "goal_verdict", None):
         argv += ["--goal-verdict", args.goal_verdict, "--note", getattr(args, "note", "") or ""]
@@ -11165,7 +11166,7 @@ def build_parser() -> argparse.ArgumentParser:
     sg.set_defaults(func=cmd_sign)
 
     cl = sub.add_parser("close", help="Run the close ceremony as one deterministic chain "
-                                      "(goal-verdict, retro, lessons, gate, handoff, reconcile), "
+                                      "(goal-verdict, retro, lessons, gate, reconcile), "
                                       "then file the report `sprint sign` seals.")
     cl.add_argument("--retro", default=None, metavar="RETROxxxx",
                     help="the batch retro this close validates and gates on. Omit it and close "

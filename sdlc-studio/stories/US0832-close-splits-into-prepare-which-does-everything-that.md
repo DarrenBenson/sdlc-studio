@@ -40,7 +40,7 @@ than gating (US0834 owns the gating).
 - **Given** THE PREPARED RUN, open
 - **When** `sprint.py close --retro RETRO0001` runs through `main` - PREPARE takes no principal, because it signs nothing
 - **Then** it exits 0; every unit's terminal gate is recorded CLEAR and no unit has moved (`transition.requirements` returns no unmet requirement for each, and each unit's Status is unchanged on disk); `run_state.read(root)` still returns an OPEN run - no `closed_at`, no archived record under `.local/run-archive/` - carrying a `report` field naming an id whose JSON exists on disk; and the last line of stdout is the `sprint.py sign --report <id> --principal ...` command, named as the only action left
-- **Mutant:** leave the `handoff` chain step closing the run object - the chain still runs, every unit still transitions, and the only thing that breaks is that SEAL has no open run to seal, which no assertion about the chain would catch
+- **Mutant:** let a chain step close the run object (`run_state.close_run` from inside the chain, as the retired `handoff` step once could) - the chain still runs, every unit still transitions, and the only thing that breaks is that SEAL has no open run to seal, which no assertion about the chain would catch
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PrepareAndSealTests::test_prepare_runs_every_fact_changing_step_and_leaves_the_run_open
 - **Verified:** yes (2026-09-18)
 
@@ -84,7 +84,7 @@ than gating (US0834 owns the gating).
 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
-| AC1 | `sprint.py _close_handoff`: restore `--outcome` to the handoff chain step, so PREPARE ends the run - the chain still runs and every unit still transitions, and the only break is that SEAL has no open run to seal | PREPARE runs every step that can change a fact and leaves the run OPEN with a report to sign |
+| AC1 | `sprint.py cmd_close`: call `run_state.close_run` from inside the chain, so PREPARE ends the run - the chain still runs and every unit still transitions, and the only break is that SEAL has no open run to seal | PREPARE runs every step that can change a fact and leaves the run OPEN with a report to sign |
 | AC2 | `sprint.py cmd_sign`: pass `tail=True` to `_apply_signoff`, so the velocity row, the handoff re-render and the final reconcile run AFTER the signature | SEAL writes the signature and only what the signature entails |
 | AC3 | `sprint.py cmd_close`: keep `--apply-signoff` as an alias that calls `sign`, so the old path survives in every operator's fingers, help file and runbook row | `close --apply-signoff` no longer signs, and names `sign` instead |
 | AC4 | `sprint.py _file_the_report`: return the report the run already names instead of re-deriving it, so a late fix between two prepares is invisible and the operator signs over facts that have moved | PREPARE is re-runnable after a late fix, and the second run re-derives rather than reuses |

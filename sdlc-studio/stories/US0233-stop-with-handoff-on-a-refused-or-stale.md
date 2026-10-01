@@ -16,11 +16,11 @@
 
 ## Acceptance Criteria
 
-### AC1: A refused plan stops the run with a handoff
+### AC1: A refused plan stops the run, and the run record says why
 
 - **Given** a boundary whose regenerated batch is refused by the breakdown gate (ungroomed or oversized units)
 - **When** the rolling loop reaches that boundary
-- **Then** the batch does not execute, a handoff is written naming the refusal and the number of cycles left unrun, and run-state closes with a non-running outcome
+- **Then** the batch does not execute, the run record's `stop` and the stop's own output name the refusal (`refused-plan`) and the number of cycles left unrun, no handoff is written (US0967), and run-state closes with a non-running outcome
 - **Verify:** shell python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_sprint_rolling.py -k RefusedPlanHandoffTests
 - **Verified:** yes (2026-07-19)
 

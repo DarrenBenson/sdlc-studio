@@ -53,17 +53,17 @@ THE WAIVED LISTS, read from `cmd_stop` and probed on THE RUN's shapes: `cmd_stop
 
 - **Given** THE RUN, open, carrying a rolling `policy` with one cycle unrun, and `_boundary_close_down` patched to return a failed close so the boundary stops with cause `close-gate`
 - **When** `sprint.py boundary --retro RETRO0001 --no-fetch` runs through `main`
-- **Then** the stop completes rather than refusing: THE RECORD's outcome is `blocked`, its `stop.cause` is `close-gate`, and its `unanswered` unit ids equal the literal set; and the handoff named by `stop.handoff` carries THE SECTION, whose ids equal the literal set
-- **Mutant:** leave `_boundary_stop` writing only the stop record - it generates its handoff without `--outcome` and closes the run itself, so generate's write never reaches it
+- **Then** the stop completes rather than refusing: THE RECORD's outcome is `blocked`, its `stop.cause` is `close-gate`, and its `unanswered` unit ids equal the literal set; the stop records no handoff (US0967), and its stderr names the same literal set after `left unanswered:`
+- **Mutant:** leave `_boundary_stop` writing only the stop record - the unanswered set then never reaches THE RECORD or the stop's output
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EveryRunEndReadsThePredicateTests::test_a_boundary_stop_records_and_names_the_unanswered_units
 - **Verified:** yes (2026-09-16)
 
 ### AC5: THE ANSWERED RUN ends by every route as today - the paired control
 
-- **Given** THE ANSWERED RUN, in four fresh copies, `close_preflight` patched as above in the first, and in the third AC4's rolling `policy` with one cycle unrun plus `_boundary_close_down` patched to return a failed close as in AC4 - without the policy `boundary` refuses rc 2 "no rolling policy" before any stop
-- **When** it is ended by `close --retro RETRO0001 --file-and-close`, `stop --force`, `boundary --retro RETRO0001 --no-fetch` and `handoff.py generate --outcome budget-spent`, one route per copy
-- **Then** --file-and-close exits 0, files exactly one CR for the goal-verdict blocker and closes `closed-outstanding`; stop --force exits 0 at `stopped`; the boundary closes `blocked`; generate exits 0 at `budget-spent`; in all four THE RECORD's `unanswered` equals `[]`; and THE SECTION in the boundary's and generate's handoffs names no batch id
-- **Mutant:** let a route read its own reader - each of the four holds a unit this batch has answered (US0105 ruled, US0107 parked, US0108 depending on it)
+- **Given** THE ANSWERED RUN, in three fresh copies, `close_preflight` patched as above in the first, and in the third AC4's rolling `policy` with one cycle unrun plus `_boundary_close_down` patched to return a failed close as in AC4 - without the policy `boundary` refuses rc 2 "no rolling policy" before any stop
+- **When** it is ended by `close --retro RETRO0001 --file-and-close`, `stop --force` and `boundary --retro RETRO0001 --no-fetch`, one route per copy (`handoff.py generate --outcome`, the fourth route, was retired by US0978)
+- **Then** --file-and-close exits 0, files exactly one CR for the goal-verdict blocker and closes `closed-outstanding`; stop --force exits 0 at `stopped`; the boundary closes `blocked`; and in all three THE RECORD's `unanswered` equals `[]`
+- **Mutant:** let a route read its own reader - each of the three holds a unit this batch has answered (US0105 ruled, US0107 parked, US0108 depending on it)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EveryRunEndReadsThePredicateTests::test_an_answered_batch_ends_by_every_route
 - **Verified:** yes (2026-09-16)
 

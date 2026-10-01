@@ -28,9 +28,9 @@
 
 ### AC2: a stage that did not run is NAMED, never omitted
 
-- **Given** a run that skipped the pre-plan goal review and produced no handoff
+- **Given** a run that skipped the pre-plan goal review and recorded no closing review (the handoff row this once used was retired with the handoff step, US0967)
 - **When** the report is composed
-- **Then** both stages appear as not-run and are named in the rendered page, because a checklist that omits what did not happen certifies exactly the state this repo filed CR0503 about: a compulsory ceremony bypassed with nothing printed
+- **Then** both stages are named in the rendered page - the closing review as not-run, the goal review as past its window - because a checklist that omits what did not happen certifies exactly the state this repo filed CR0503 about: a compulsory ceremony bypassed with nothing printed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SprintChecklistStageTests::test_a_stage_that_did_not_run_is_named_not_omitted
 - **Verified:** yes (2026-07-30)
 
