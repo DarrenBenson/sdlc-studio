@@ -19,7 +19,7 @@
 ## Acceptance Criteria
 
 The split is judged by what each half WRITES, never by what its help text claims. PREPARE is
-`sprint.py close` under its existing name - the ten `_CLOSE_CHAIN` steps, the handoff re-render,
+`sprint.py close` under its existing name - the `_CLOSE_CHAIN` steps,
 the velocity row and the final reconcile. It fans out NOTHING: under D0213 the run carries ONE
 signature, so the per-unit sign-off rows, the terminal transitions and the parent epic and
 request cascades all belong to SEAL, which applies them from the single principal it is given.
@@ -49,7 +49,7 @@ than gating (US0834 owns the gating).
 - **Given** THE PREPARED RUN after AC1's PREPARE, with the bytes of every tracked path under the fixture root recorded, and a `closed_at` marker absent
 - **When** `sprint.py sign --report <the report id> --principal "Darren Benson"` runs through `main`
 - **Then** it exits 0 and every path whose bytes differ is one the SIGNATURE entails: the run state and its archived copy, the report's own two files, the review anchor's close-status block, each batch unit's Status line and its index row, the handoff the run names, the velocity row, and the parent epic and request whose children are now resolved. Nothing else differs, and in particular SEAL does not run the close TAIL (`_apply_signoff_tail`): no gate re-run, no retro edit, no changelog, no final reconcile. The velocity row and the handoff ARE written, by `_cascade_after_signature` and not by the tail, because both are consequences of the transitions the signature just made - the velocity row counts DELIVERED units by status, which exist only because of it, and the handoff describes those statuses and would otherwise permanently describe the world one moment before the signature. D0213 puts the fan-out in SEAL and its consequences with it; what it does not put there is the tail
-- **Mutant:** call `_apply_signoff_tail` from `sign` as `_apply_signoff` does today - the velocity row, the handoff re-render and the final reconcile then run after the signature, which is the two hours RUN-01M2JA6J spent after the operator had already said yes
+- **Mutant:** call `_apply_signoff_tail` from `sign` as `_apply_signoff` does today - the velocity row and the final reconcile then run after the signature, which is the two hours RUN-01M2JA6J spent after the operator had already said yes
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PrepareAndSealTests::test_seal_writes_the_signature_and_only_what_it_entails
 - **Verified:** yes (2026-09-18)
 
@@ -85,7 +85,7 @@ than gating (US0834 owns the gating).
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
 | AC1 | `sprint.py cmd_close`: call `run_state.close_run` from inside the chain, so PREPARE ends the run - the chain still runs and every unit still transitions, and the only break is that SEAL has no open run to seal | PREPARE runs every step that can change a fact and leaves the run OPEN with a report to sign |
-| AC2 | `sprint.py cmd_sign`: pass `tail=True` to `_apply_signoff`, so the velocity row, the handoff re-render and the final reconcile run AFTER the signature | SEAL writes the signature and only what the signature entails |
+| AC2 | `sprint.py cmd_sign`: pass `tail=True` to `_apply_signoff`, so the velocity row and the final reconcile run AFTER the signature | SEAL writes the signature and only what the signature entails |
 | AC3 | `sprint.py cmd_close`: keep `--apply-signoff` as an alias that calls `sign`, so the old path survives in every operator's fingers, help file and runbook row | `close --apply-signoff` no longer signs, and names `sign` instead |
 | AC4 | `sprint.py _file_the_report`: return the report the run already names instead of re-deriving it, so a late fix between two prepares is invisible and the operator signs over facts that have moved | PREPARE is re-runnable after a late fix, and the second run re-derives rather than reuses |
 | AC5 | `sprint.py cmd_close`: restore the `_draw_report` and `_tell_the_operator` calls, so the close prints two further accounts of the run beside the page being signed | PREPARE prints no second account of the run |
