@@ -105,3 +105,4 @@ next `sprint plan --worklist` reads back.
 | [HO-0090](HO0090-maya-runs-the-lean-loop-on-a-fresh.md) | Maya runs the lean loop on a fresh v6 project, and the release candidate ships | 2026-09-26 |
 | [HO-0091](HO0091-v6-0-0-ships-maya-and-jonah-install.md) | v6.0.0 ships: Maya and Jonah install, upgrade and learn it from docs and notes that match the code | 2026-09-28 |
 | [HO-0092](HO0092-jonah-s-team-installs-v6-via-claude-code.md) | Jonah's team installs v6 via Claude Code or Copilot CLI; migrate predicts the gate's reconcile, conformance, validate and floor failures | 2026-09-30 |
+| [HO-0093](HO0093-maya-signs-without-a-re-close-a-report.md) | Maya signs, without a re-close, a report that checks VALID and names every operator ruling and carry | 2026-10-01 |
