@@ -2,31 +2,30 @@
 > **RUN-01M3RPSK closed goal-reached.** 7 unit(s) in the batch. **The run is SIGNED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
-> **RUN-01M3RPSK, the Jonah upgrade sprint: achieved.** Goal: "Jonah's team installs v6 via
-> Claude Code or Copilot CLI; migrate predicts the gate's reconcile, conformance, validate and
-> floor failures." 7 of 7 batch units approved by one independent QA seat each, two of them in
-> round 2 (BG0853, BG0856). BG0852 was carried at the cap into BG0856 (operator ruling), then
-> moved to Fixed by a recorded override (D0288) because the cap refused its reviewer's at-HEAD
-> APPROVE (BG0850).
+> **RUN-01M3T8N1, the close seals first time: achieved.** Goal: "Maya signs, without a re-close,
+> a report that checks VALID and names every operator ruling and carry." 9 of 9 units approved
+> by one independent QA seat each, all in round 1. BG0865 was added mid-run on the operator's
+> ruling, after BG0862's end-to-end test proved the signed page never stated a non-STOP-SHIP
+> ruling. BG0841 and BG0860/BG0861 were deferred at the goal review.
 
 ## What landed
 
-- **Copilot CLI gets the skill (BG0852, BG0856).** `install.sh` installs Copilot globally into
-  `~/.agents/skills`, `--target auto` selects it, and the default install names a detected tool
-  only when no folder it reads holds a copy (one `read_dirs` table). install.ps1 is BG0855.
-- **migrate predicts the gate (BG0842, BG0843, BG0844, BG0845, BG0854).** One reconcile tally
-  shared with the gate; the engagement-floor and conformance cutoffs named, an existing cutoff
-  worded as a raise, author-less APPROVE rows counted apart; the `.gitignore` for `.local/` seeded;
-  every item carries the gate's lane and count. On a committed v4.1-shaped project migrate and
-  the gate agree on all four lanes (3/2/4/2), and git status stays clean.
-- **AGENTS.md names the skill through `<skill>` (BG0853)**; migrate reports a line that names one
-  tool's install folder, never rewriting it.
+- **The seal no longer invalidates its own page (BG0848, the High).** The close settles every
+  open unit span at one moment and meter reading, so `sign` moves nothing the page digests.
+  The workaround RUN-01M3RPSK needed (units moved to terminal before the close) is retired.
+- **The page names every ruling (BG0851, BG0865, BG0849).** A resolved decision counts as an
+  operator ruling, every in-window forced override is listed (dropped units included), each
+  known issue carries its retro ruling and who made it, and a graduation CR is ruled by class.
+- **Carries close cleanly (BG0850, BG0829).** The rejecting reviewer discharges a carried unit
+  past the cap, and the carried bug is filed with runnable criteria.
+- **The close stops lying about approved bugs (BG0859)** and the retro scaffold names its run
+  and carries the known-issues table (BG0826).
+- **BG0862 proves it end to end**: one unstubbed close, sign and check, VALID first time;
+  reverting any of seven fixes fails a named assertion.
 
 ## What is owed
 
-- **Filed from this run:** BG0855 (install.ps1), BG0857 (unreadable dirs read as absence), BG0858
-  (ULID-only conformance failures unnamed), BG0859 (the close stops approved bugs and names a
-  Review status bugs lack), BG0860 (a plan preview writes forecast rows), BG0861 (nothing opens a
-  delivery batch since US0918), and eleven Lows on CR0592.
-- **BG0850** is now the way a carried unit's approval is refused; this run paid it once.
+- **Filed from this run:** BG0863 (an unreadable ledger drops status rows, a regression the
+  reviewer ruled non-blocking), BG0864 (Fixed admits a bug whose Verify never ran), and Lows
+  on CR0592. BG0841, BG0860 and BG0861 remain deferred.
 - **Push** the close commits; the installed copy is forward-ported.
