@@ -30,7 +30,7 @@ what costs more than it returns. Every superseding commit below was checked on `
 | CR0588 | Rejected | a strict run-state reader API for a one-off, with no recurrence |
 | CR0600 | Rejected | its hits are a stale test comment and a commit credit; nothing worth fixing |
 | CR0602 | Rejected | the minutes forecast already ships (RPT0013); the transcript-path half is open BG0835 |
-| CR0604 | Complete | D0290: one paragraph in `reference-sprint.md`; no derived domain record, no refusal |
+| CR0604 | Rejected | D0290: the rule ships as one paragraph in `reference-sprint.md`; no stop-detection machinery, derived domain record or refusal is built |
 | CR0534 | Decomposed | US0759 reshaped: `config show --sources` (2 pts) |
 | CR0552 | Decomposed | US0784 reshaped: retire the advisory revert-check lane (2 pts, a deletion) |
 | CR0559 | Decomposed | US0804 `--unit` (1), US0805 flag-spelled `--fields-file` keys (2), near-miss hint (1) |
@@ -44,7 +44,7 @@ what costs more than it returns. Every superseding commit below was checked on `
 | ID | Verdict | Reason |
 | --- | --- | --- |
 | RFC0058 | Accepted | D3, D5 and D6 declined or closed (no consult gate or artefact); US0838 Won't Implement |
-| RFC0060 | Accepted when CR0604 completes | WS2 (US0866) Won't Implement under D0290; WS4 shipped as doc |
+| RFC0060 | Accepted | WS2 (US0866) Won't Implement and WS4 (CR0604) documented under D0290; WS1 superseded, WS3 shipped as `decisions.py rule` |
 | RFC0009 | Accepted | the non-vocabulary status "Accepted (partially superseded)" normalised |
 | RFC0030 | unchanged | already Accepted, terminal (D0027 "build on demand") |
 | EP0258 | Superseded | all six stories were Superseded; it read Done |

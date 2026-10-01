@@ -1,6 +1,7 @@
 # CR-0604: The andon cord stops the run on an irreversible action or an operating-domain exit
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0290: the run stops only for an irreversible action or acting outside the repository and the approved batch, documented in reference-sprint.md; no stop-detection machinery is built. D0291, discovery backlog sweep 2026-10-01
 > **Parent:** RFC0060
 > **Priority:** Medium
 > **Type:** Feature

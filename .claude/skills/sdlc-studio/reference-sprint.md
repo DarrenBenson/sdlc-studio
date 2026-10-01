@@ -159,6 +159,10 @@ escalation appends a ledger entry, and the close records `tier_recommended` agai
 
 ### A question only the operator can answer
 
+The run stops for exactly two things: an irreversible action (a push, a tag, a release, a
+deletion outside the batch) or acting outside its operating domain, which is this repository
+and the approved batch. Everything else is decided inside the run.
+
 The run does not stop for a question a seat can answer: put it to the seat that owns it
 (`persona_resolve.py resolve --seat <seat>`). A unit only the operator can decide is set aside
 without halting the batch: `sprint.py decision defer --unit USxxxx --question "..." --option

@@ -265,7 +265,7 @@ gate_budget:
 triage:
   enabled: true
   session_cap: 20
-  low_consolidation: true
+  low_consolidation: false
 
 # D0128: raised from the default 4 because BG0516 made four close rounds unactionable -
 # the close reported an unattributable refusal while the gate named its failing lane.
