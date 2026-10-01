@@ -175,9 +175,11 @@ After installing, start your tool in any project and check the skill loads:
 
 ## Verifying the download
 
-The default install tracks `main`, which is a moving branch with no published digest: the
-installer says so and proceeds. If you need the download verified, pin a tag and make the
-check mandatory. The example pins the current release; name any later tag the same way.
+The default install fetches the latest published release and verifies it against its
+published digest. If the release cannot be looked up (offline, rate-limited), the installer
+says so and falls back to `main`, a moving branch with no published digest, and proceeds
+unverified; `--version main` asks for `main` by name. If you need the download verified,
+pin a tag and make the check mandatory. The example pins the current release; name any later tag the same way.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh \

@@ -79,7 +79,7 @@ irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 
 
 `--target claude,codex` picks tools; `--local` installs into the current project; `--list-targets` shows the map. The installer also refreshes any other copies it finds (opt out with `--no-sweep`). Full detail: [docs/INSTALL.md](docs/INSTALL.md).
 
-**Installing in a sensitive environment?** The default install tracks `main`, which publishes no `.sha256` sidecar, so the installer warns and proceeds unverified. Pin a tagged release and make the checksum mandatory instead:
+**Installing in a sensitive environment?** The default install fetches the latest published release and verifies it against its `.sha256` sidecar; if the release cannot be looked up (offline, rate-limited) it falls back to `main`, which publishes no sidecar, and proceeds unverified with a warning. To make that fallback impossible, pin a tagged release and make the checksum mandatory:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.0.0

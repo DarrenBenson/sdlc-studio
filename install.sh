@@ -62,7 +62,9 @@ Options:
                     the published release - the dev-testing path (e.g.
                     --from .claude/skills/sdlc-studio inside the source repo).
                     The same identity and downgrade guards apply
-    --version VER   Install a specific version/tag (default: main)
+    --version VER   Install a specific version/tag, or `main` for the moving
+                    branch (default: the latest published release, or main
+                    when it cannot be looked up)
     --help, -h      Show this help
 
 Targets (global / local skills directory):
@@ -104,6 +106,7 @@ SWEEP=true
 ALLOW_DOWNGRADE=false
 LOCAL_SRC=""
 VERSION="$BRANCH"
+VERSION_GIVEN=false
 TARGETS_RAW=""
 
 while [[ $# -gt 0 ]]; do
@@ -125,6 +128,7 @@ while [[ $# -gt 0 ]]; do
         --version)
             VERSION="${2:-}"
             if [[ -z "$VERSION" ]]; then error "--version requires a value"; exit 2; fi
+            VERSION_GIVEN=true
             shift 2 ;;
         *) error "Unknown option: $1"; echo "Run with --help for usage." >&2; exit 2 ;;
     esac
@@ -329,6 +333,18 @@ trap cleanup EXIT
 fetch_stdout() {
     if command -v curl >/dev/null 2>&1; then curl -fsSL "$1" 2>/dev/null
     else wget -qO- "$1" 2>/dev/null; fi
+}
+
+# The tag of the latest published release (GitHub's releases/latest skips pre-releases), or
+# empty when it cannot be looked up - offline, rate-limited, or a reply naming no plain tag. A
+# tag goes into download URLs, so anything but [A-Za-z0-9._-] is treated as no answer.
+latest_release_tag() {
+    local api="https://api.github.com/repos/$REPO/releases/latest" body tag
+    if command -v curl >/dev/null 2>&1; then body=$(curl -fsSL --max-time 15 "$api" 2>/dev/null) || body=""
+    else body=$(wget -qO- -T 15 "$api" 2>/dev/null) || body=""; fi
+    tag=$(printf '%s\n' "$body" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
+    [[ "$tag" =~ ^[A-Za-z0-9._-]+$ ]] && echo "$tag"
+    return 0
 }
 
 # sha256 of a file, or empty if no hasher is on PATH.
@@ -666,6 +682,18 @@ main() {
     echo ""
 
     if [[ "$LIST_TARGETS" == true ]]; then print_list; exit 0; fi
+
+    # No --version: install the latest published release, which goes down the tagged path and
+    # is verified against its published sha256. `main` publishes none, so it is installed only
+    # when asked for by name, or when the lookup fails (an offline machine still installs).
+    if [[ "$UNINSTALL" == false && -z "$LOCAL_SRC" && "$VERSION_GIVEN" == false ]]; then
+        local latest; latest=$(latest_release_tag)
+        if [[ -n "$latest" ]]; then
+            VERSION="$latest"
+        else
+            warn "could not resolve the latest release (offline or rate-limited?) - installing $BRANCH"
+        fi
+    fi
 
     local targets; targets=$(resolve_targets "$TARGETS_RAW")
     info "Targets: $targets"
