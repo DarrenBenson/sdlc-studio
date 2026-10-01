@@ -8,6 +8,7 @@ by nothing. The span API, the filer's attribution to it and the clause are delet
 Driven through the shipped CLIs (`file_finding.py`, `sprint.py close --dry-run`) in a throwaway
 project tree.
 """
+# test-census-subject: .claude/skills/sdlc-studio/scripts/lib/run_state.py
 from __future__ import annotations
 
 import json
