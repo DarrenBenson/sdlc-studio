@@ -7,6 +7,7 @@ shipped CLI as a subprocess against a throwaway tree.
 """
 from __future__ import annotations
 
+# test-census-subject: .claude/skills/sdlc-studio/scripts/status.py
 import subprocess
 import sys
 import tempfile
