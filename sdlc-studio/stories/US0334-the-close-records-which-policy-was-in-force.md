@@ -26,8 +26,8 @@ open, months later and without asking anyone
 - **Then** it records the policy resolved at close time, not the one configured when the run
   opened, because a policy changed mid-run would otherwise be reported as the one that
   governed decisions it never governed
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CarryForwardCloseTests::test_the_close_records_the_policy_resolved_at_close_time
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by BG0831: the carry-forward review policy and its key `review.policy` were deleted: every project carries a unit whose REJECT stands at the round cap (`review.max_rounds`), filing its findings
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0831
 
 ### AC2: the carried findings are listed, and an empty list is distinguishable from none
 
@@ -35,8 +35,8 @@ open, months later and without asking anyone
 - **When** each is rendered
 - **Then** the first lists both by id and the second says plainly that nothing was carried,
   so a reader can tell a clean close from one whose list was dropped
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CarryForwardCloseTests::test_a_close_carrying_nothing_is_distinguishable_from_a_dropped_list
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by BG0831: the carry-forward review policy and its key `review.policy` were deleted: every project carries a unit whose REJECT stands at the round cap (`review.max_rounds`), filing its findings
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0831
 
 ## Revision History
 

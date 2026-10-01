@@ -2074,20 +2074,6 @@ def is_independent(verdict: dict | None) -> bool:
     return independence(verdict.get("reviewer", ""), verdict.get("author", ""))[0]
 
 
-# EP0113: the carry-forward review policy lives in its own module; re-exported here so the
-# review-policy discipline is reachable through the critic surface the tests and gate use.
-try:
-    import carry_forward as _carry_forward  # noqa: E402
-    review_policy = _carry_forward.review_policy
-    validate_carried = _carry_forward.validate_carried
-    reject_carries_forward = _carry_forward.reject_carries_forward
-    is_narrative_downgrade = _carry_forward.is_narrative_downgrade
-    REVIEW_POLICIES = _carry_forward.POLICIES
-    PolicyError = _carry_forward.PolicyError
-except ImportError:  # pragma: no cover - partial install
-    _carry_forward = None
-
-
 def is_pre_gate(verdict: dict | None) -> bool:
     """True for a unit closed BEFORE the independence gate, under the prior
     risk-scaled policy (which permitted light-tier self-review). Marked by the

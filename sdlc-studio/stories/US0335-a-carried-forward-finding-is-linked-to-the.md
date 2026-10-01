@@ -26,8 +26,8 @@ is closed
 - **When** it is written
 - **Then** it carries both unit ids, and a finding naming none is refused rather than filed
   unattached
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::CarriedFindingLinkTests::test_a_carried_finding_naming_no_unit_is_refused
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by BG0831: the carry-forward review policy and its key `review.policy` were deleted: every project carries a unit whose REJECT stands at the round cap (`review.max_rounds`), filing its findings
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0831
 
 ### AC2: the link survives the close of the sprint that produced it
 
@@ -36,8 +36,8 @@ is closed
 - **Then** it still resolves to those units, so closing the run does not strand it - the
   failure mode the goal verdict already demonstrates, where a judgement outlives the state
   that explains it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::CarriedFindingLinkTests::test_a_carried_finding_still_resolves_after_its_sprint_closes
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by BG0831: the carry-forward review policy and its key `review.policy` were deleted: every project carries a unit whose REJECT stands at the round cap (`review.max_rounds`), filing its findings
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0831
 
 ## Revision History
 

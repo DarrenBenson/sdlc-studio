@@ -118,8 +118,8 @@ plan_review:
 #: The REPO_CONFIG lines `--apply` must remove (1-based): each retired key's own line, and the
 #: `plan_review` block with its children, the blank line between two of them included. Every other
 #: line is kept verbatim, the comment above each removed key among them.
-REMOVED_LINES = {11, 14, 15, 16, 18, 19, 25, 31, 32, 33, 34, 35, 36}
-RETIRED_IN_FIXTURE = ("plan_review", "review.test_plan_after", "review.two_role_after",
+REMOVED_LINES = {9, 11, 14, 15, 16, 18, 19, 25, 31, 32, 33, 34, 35, 36}
+RETIRED_IN_FIXTURE = ("plan_review", "review.policy", "review.test_plan_after", "review.two_role_after",
                       "review.signoff", "review.mutation_evidence", "review.line_coverage_after",
                       "review.require_brief_provenance", "quality.depth_parity_gate")
 
@@ -480,7 +480,7 @@ class MigrateConfigTests(unittest.TestCase):
             _w(root, "sdlc-studio/.version", VERSION)
             _w(root, "sdlc-studio/.config.yaml",
                "# v4 consuming project\nschema_version: 2\nconformance:\n  adopt_after: 1   "
-               "# grandfathered\n\nreview:\n  policy: block\n")
+               "# grandfathered\n\nreview:\n  blocking_priority: high\n")
             _w(root, "sdlc-studio/definition-of-done.md",
                "# Definition of Done\n\n## Story\n\n- [ ] Criteria pass [check: story.verify-ac]"
                "\n- [ ] A human-judged item")

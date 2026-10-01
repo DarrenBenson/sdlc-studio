@@ -25,8 +25,8 @@ about the choice
 - **Given** a project declaring no review policy
 - **When** a REJECT is recorded
 - **Then** it blocks exactly as it does now, so an upgrading project sees no change
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ReviewPolicyTests::test_an_undeclared_policy_blocks_exactly_as_today
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by BG0831: the carry-forward review policy and its key `review.policy` were deleted: every project carries a unit whose REJECT stands at the round cap (`review.max_rounds`), filing its findings
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0831
 
 ### AC2: under carry-forward a REJECT no longer blocks the sprint
 
@@ -34,8 +34,8 @@ about the choice
 - **When** the sprint proceeds to close
 - **Then** it is not blocked by the verdict, and `sprint_covers_independently` accepts the
   sprint review as evidence despite the REJECT
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::ReviewPolicyTests::test_a_reject_under_carry_forward_does_not_block_the_close
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by BG0831: the carry-forward review policy and its key `review.policy` were deleted: every project carries a unit whose REJECT stands at the round cap (`review.max_rounds`), filing its findings
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0831
 
 ### AC3: an unrecognised policy value is refused, never defaulted
 
@@ -44,8 +44,8 @@ about the choice
 - **Then** it is refused and names the accepted values, rather than silently falling back to
   the default - a typo that quietly selects blocking is survivable, but one that quietly
   selects carry-forward ships a sprint nobody meant to ship
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::ReviewPolicyTests::test_an_unrecognised_policy_is_refused_not_defaulted
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by BG0831: the carry-forward review policy and its key `review.policy` were deleted: every project carries a unit whose REJECT stands at the round cap (`review.max_rounds`), filing its findings
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0831
 
 ## Revision History
 

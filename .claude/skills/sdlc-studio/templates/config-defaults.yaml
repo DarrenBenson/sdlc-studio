@@ -53,10 +53,6 @@ review:
     - critical      # Must address before merge
     - important     # Should address
     - suggestion    # Consider addressing
-  # The review policy (EP0113): `block` (default) holds a REJECT until it clears; `carry-forward`
-  # files the findings and ships, as reference-review.md already allows for a missing leg.
-  # Unrecognised values are refused, never defaulted.
-  policy: block
   # What an ADDED LINE the unit's own verifiers never executed does to a terminal transition
   # (`verify_ac run --coverage`, measured at the transition itself, never read from a prior report):
   #   off     (default)  collect nothing, print nothing
@@ -71,11 +67,12 @@ review:
   # P0..P3 are both covered. An unrecognised value falls back to this default rather than to an
   # empty floor: a floor nobody configured must not silently become no floor at all.
   blocking_priority: high
-  # `review.max_rounds` is DELIBERATELY ABSENT, and adding it back is the repair to avoid. One
-  # key was read by two consumers with different defaults - the close-attempt cap and the
-  # review-round ceiling - so no single value was correct for both, and setting it to suit one
-  # loosened or tightened the other. With the key absent each consumer takes its own default.
-  # Splitting it into two keys is the open work; re-adding the single key is not.
+  # `review.max_rounds` is the review-round cap, and it is deliberately absent here: its only
+  # reader is critic.py (`critic.review_ceiling`), which owns the default of 2
+  # (`critic.DEFAULT_REVIEW_CEILING`), so declaring it here would give it a second source.
+  # `critic.py record` refuses a delivery round past the cap, and a REJECT at the cap carries
+  # the unit. A project sets it in its own .config.yaml.
+
   # Requirements/spec documents (schema v3 only). A delivery diff that edits one of these
   # without a citing AC is an UNTRACED spec edit - the critic charter treats it as a blocking
   # finding: falsifying the source of truth is the worst propagation of a bad

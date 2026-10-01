@@ -214,11 +214,13 @@ review:
 
 | Setting | Default | Notes |
 | --- | --- | --- |
-| `review.policy` | `block` | `carry-forward` files a REJECT's findings and ships instead of holding until clean; every finding must be filed or explicitly waived |
+| `review.max_rounds` | `2` | The review-round cap: `critic.py record` refuses a delivery round past it, and a REJECT at the cap carries the unit (its findings filed as a bug, the unit dropped from the run's batch). Its only reader is `critic.py`; a value that is not a positive whole number falls back to `2`. See `reference-review.md` |
 
 ### Review gate cutoffs {#review-cutoffs}
 
-Every `review.*` setting is declared with its default in `templates/config-defaults.yaml`.
+Every other `review.*` setting is declared with its default in `templates/config-defaults.yaml`.
+The carry-forward review policy is retired: every project carries a unit at the round cap, and
+`migrate` removes the policy's key.
 `review.two_role_after` and `review.test_plan_after` are retired: one independent APPROVE
 decides a unit, and the operator signs the run once at `sprint sign`. `review.line_coverage_after`
 is retired too: line coverage is `off` unless a project opts in, and `review.line_coverage: block`
@@ -260,7 +262,7 @@ lessons:
 | Setting | Default | Notes |
 | --- | --- | --- |
 | `sprint.breakdown` | `enforce` | Default-on, NOT advisory. `enforce`: `sprint plan` REFUSES a batch holding a unit that declares no `Affects` or no `Points:` - and refuses a unit above the split threshold, since above it the estimate is not worth having. It names each ungroomed unit, says what it lacks, and exits non-zero **without printing a plan** - a plan over unsized units is false authority. `judgement`: the lane reports and does not block, the same shape as the engagement floor and the lessons loop. Omission is not an escape - with no config at all the gate BLOCKS, and an unknown mode falls back to `enforce`. `sprint.py breakdown` reports the same census, read-only. See `reference-sprint.md#breakdown` |
-| `sprint.split_above` | `8` | The `Points:` value above which the gate refuses a unit and demands it be split. A point is a stable unit of cost up to here and breaks beyond it, so above it decomposition is a triage decision, not an estimation one. Tighten to `5` for smaller units. |
+| `sprint.points_split_above` | `8` | The `Points:` value above which the gate refuses a unit and demands it be split. A point is a stable unit of cost up to here and breaks beyond it, so above it decomposition is a triage decision, not an estimation one. Tighten to `5` for smaller units. |
 
 ---
 

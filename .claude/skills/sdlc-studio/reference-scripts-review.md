@@ -17,17 +17,6 @@ own epic and should be split or re-scoped. Heuristic and read-only; false positi
 expected (the operator decides); never auto-edits. Run by the authoring loop's closing
 consistency pass.
 
-### `carry_forward.py`
-
-The carry-forward review policy (EP0113 / CR0404). A REJECT blocks unless a project declares
-`review.policy: carry-forward`, under which the findings are filed and the sprint ships - the
-same fail-forward idiom `reference-review.md` mandates for a missing review leg. `review_policy`
-resolves the declared policy (unrecognised values refused, never defaulted); `validate_carried`
-refuses a close unless every finding is filed or explicitly waived with a reason, and refuses a
-narrative downgrade; `reject_carries_forward` answers whether a REJECT carries; `conformance`
-and `sprint` read it so the close records the policy in force and lists the findings carried,
-each naming the units it was found against so it cannot be orphaned.
-
 ### `spec_guard.py`
 
 Spec-edit guard (schema v3 only, dormant on v2). A delivery must not silently falsify the

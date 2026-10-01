@@ -7564,53 +7564,6 @@ class CloseCostRecordingTests(ClosePreflightTests):
             self.assertIsNotNone(mod.reusable_close_verdict(root, "abc"))
 
 
-class CarryForwardCloseTests(unittest.TestCase):
-    """US0334: the close records the policy in force and lists the findings carried."""
-
-    def _sprint(self):
-        import importlib.util, sys
-        from pathlib import Path
-        base = Path(__file__).resolve().parent.parent
-        for name in ("carry_forward", "sprint"):
-            spec = importlib.util.spec_from_file_location(name, base / f"{name}.py")
-            m = importlib.util.module_from_spec(spec); sys.modules[name] = m
-            spec.loader.exec_module(m)
-        return sys.modules["sprint"]
-
-    def _root(self, policy):
-        d = Path(tempfile.mkdtemp(prefix="cf_close_"))
-        (d / "sdlc-studio").mkdir(parents=True)
-        (d / "sdlc-studio" / ".config.yaml").write_text(f"review:\n  policy: {policy}\n")
-        return d
-
-    def test_the_close_records_the_policy_resolved_at_close_time(self) -> None:
-        sprint = self._sprint()
-        d = self._root("carry-forward")
-        try:
-            rec = sprint.carry_forward_close_record(d, carried=[{"ref": "BG9001"}])
-            self.assertEqual(rec["policy"], "carry-forward")
-            # resolved from the config NOW, not carried from run-open: flip it and re-read
-            (d / "sdlc-studio" / ".config.yaml").write_text("review:\n  policy: block\n")
-            self.assertEqual(sprint.carry_forward_close_record(d)["policy"], "block")
-        finally:
-            shutil.rmtree(d, ignore_errors=True)
-
-    def test_a_close_carrying_nothing_is_distinguishable_from_a_dropped_list(self) -> None:
-        sprint = self._sprint()
-        d = self._root("carry-forward")
-        try:
-            two = sprint.carry_forward_close_record(d, carried=[{"ref": "BG9001"}, {"ref": "BG9002"}])
-            none = sprint.carry_forward_close_record(d, carried=[])
-            self.assertEqual(two["carried_count"], 2)
-            self.assertEqual([c["ref"] for c in two["carried"]], ["BG9001", "BG9002"])
-            # an empty list is a real, present, EMPTY list - not an absent/dropped one
-            self.assertEqual(none["carried_count"], 0)
-            self.assertEqual(none["carried"], [])
-            self.assertIn("carried", none)
-        finally:
-            shutil.rmtree(d, ignore_errors=True)
-
-
 #: Two whole-sprint velocity rows, same model: enough for the project's own rate to replace the
 #: seed.
 _FIXED_ROWS_CANDIDATE = [

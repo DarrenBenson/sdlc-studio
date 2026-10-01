@@ -53,8 +53,8 @@ script joins the family classified rather than silently.
 | --- | --- |
 | anchored | 64 |
 | unanchored | 1 |
-| non-root | 5 |
-| **total** | **70** |
+| non-root | 4 |
+| **total** | **69** |
 
 These counts are now PARSED by the guard and held to the measurement. They were not before, which
 is how the block came to claim 5 anchored / 59 unanchored while the family measured otherwise: a
@@ -82,7 +82,6 @@ re-export.
 | `backfill_authorship.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `backlog_triage.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `blocker_sweep.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
-| `carry_forward.py` | non-root | library module with no CLI at all; its caller passes the resolved root |
 | `changelog.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `close_owed.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `command_audit.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |

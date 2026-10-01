@@ -3211,6 +3211,8 @@ RETIRED_CONFIG_KEYS = {
     "review.repair_design_threshold": "read only by the retired repair-plan gate",
     "quality.depth_parity_gate": "the depth-parity check is retired: a story reaches Done on its "
                                  "criteria",
+    "review.policy": "the carry-forward policy is retired: every project carries a unit whose "
+                     "REJECT stands at the round cap (`review.max_rounds`), filing its findings",
 }
 CHECK_TAG_RE = re.compile(r"\[check:\s*([a-z0-9.-]+)\s*\]")
 # A bracketed token shaped like a check tag (the word `check` on a word boundary, any case)

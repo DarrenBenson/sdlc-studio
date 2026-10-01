@@ -213,8 +213,8 @@ class ReviewKeysAreDeclaredTests(unittest.TestCase):
     #: Read by the code but deliberately NOT declared, each with the reason. An exemption with no
     #: reason is the one the next author deletes or silently re-adds.
     DELIBERATELY_ABSENT = {
-        "max_rounds": "one key read by two consumers with different defaults - splitting it is "
-                      "the open work, and re-adding the single key is the repair to avoid",
+        "max_rounds": "its only reader, critic.py, owns the default (`DEFAULT_REVIEW_CEILING`), "
+                      "so declaring it here would give it a second source (BG0831)",
     }
 
     def _keys_the_code_reads(self) -> set:
@@ -232,9 +232,9 @@ class ReviewKeysAreDeclaredTests(unittest.TestCase):
         DERIVED from the scripts rather than from a list here: an inventory nobody updates
         exempts whichever key is added next, which is the shape this repository keeps meeting."""
         keys = self._keys_the_code_reads()
-        # A floor against an empty scan, not a count to keep: EP0263 deletes review keys, so the
-        # number falls by design. Four still proves the scan found the review block.
-        self.assertGreater(len(keys), 3,
+        # A floor against an empty scan, not a count to keep: EP0263 and BG0831 delete review
+        # keys, so the number falls by design. Three still proves the scan found the review block.
+        self.assertGreater(len(keys), 2,
                            f"only {len(keys)} review keys were found - the scan is looking in the "
                            f"wrong place and would pass on an empty defaults file")
         declared = DEFAULTS.read_text(encoding="utf-8")
@@ -246,10 +246,10 @@ class ReviewKeysAreDeclaredTests(unittest.TestCase):
                          f"itself the single source of truth declares none of them: {missing}")
 
     #: The readers each deliberately absent key's note must name. The reason the absence is
-    #: deliberate IS that more than one consumer reads the key, so a note naming neither is a bare
+    #: deliberate is WHO reads the key and owns its default, so a note naming no reader is a bare
     #: assertion, and the next author re-adds the key.
     ABSENT_KEY_CONSUMERS = {
-        "max_rounds": ("close-attempt cap", "review-round ceiling"),
+        "max_rounds": ("critic.py",),
     }
 
     @staticmethod

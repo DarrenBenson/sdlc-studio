@@ -33,16 +33,16 @@ from pathlib import Path
 SCRIPTS = Path(__file__).resolve().parent.parent
 
 #: Scripts that are NOT command-line entry points and are exempt from carrying `build_parser`.
-#: One entry, and it earns it structurally: `carry_forward.py` has no `main`, no `__main__`
-#: guard and no `ArgumentParser` anywhere in it - it is a policy library that other modules
-#: import. Writing a parser for it to satisfy a blanket rule would be inventing a surface, which
-#: is the opposite of enumerating one.
+#: Empty: the one library it held, `carry_forward.py`, was deleted with the review policy it
+#: carried. An entry earns its place structurally - no `main`, no `__main__` guard and no
+#: `ArgumentParser` - because writing a parser for a library to satisfy a blanket rule would be
+#: inventing a surface, which is the opposite of enumerating one.
 #:
 #: `autosprint.py` is deliberately ABSENT from this list. It is a deprecated alias that
 #: re-exports `sprint`'s `build_parser` by name, so `getattr` finds one and it is not an
 #: exception at all - listing it here would make the exemption set wrong on the day it was
 #: written.
-NON_CLI = ("carry_forward.py",)
+NON_CLI: tuple[str, ...] = ()
 
 
 @dataclass

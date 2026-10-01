@@ -1149,114 +1149,6 @@ class NeutralBriefTests(unittest.TestCase):
                 mod.neutral_brief(root, "US0001", "qa")), [])
 
 
-
-
-
-class ReviewPolicyTests(unittest.TestCase):
-    """US0332: a project declares a review policy: block-on-REJECT or carry-forward."""
-
-    def _cf(self):
-        import importlib.util, sys
-        from pathlib import Path
-        spec = importlib.util.spec_from_file_location(
-            "carry_forward", Path(__file__).resolve().parent.parent / "carry_forward.py")
-        m = importlib.util.module_from_spec(spec); sys.modules["carry_forward"] = m
-        spec.loader.exec_module(m); return m
-
-    def _root(self, policy=None):
-        d = Path(tempfile.mkdtemp(prefix="cf_policy_"))
-        (d / "sdlc-studio").mkdir(parents=True)
-        if policy is not None:
-            (d / "sdlc-studio" / ".config.yaml").write_text(f"review:\n  policy: {policy}\n")
-        return d
-
-    def test_an_undeclared_policy_blocks_exactly_as_today(self) -> None:
-        cf = self._cf()
-        d = self._root(None)
-        try:
-            self.assertEqual(cf.review_policy(d), "block")
-            self.assertFalse(cf.reject_carries_forward(d, []))
-        finally:
-            shutil.rmtree(d, ignore_errors=True)
-
-    def test_an_unrecognised_policy_is_refused_not_defaulted(self) -> None:
-        cf = self._cf()
-        d = self._root("carryforward")  # a plausible typo
-        try:
-            with self.assertRaises(cf.PolicyError):
-                cf.review_policy(d)
-        finally:
-            shutil.rmtree(d, ignore_errors=True)
-
-
-class CarryForwardTests(unittest.TestCase):
-    """US0333: under carry-forward every finding is FILED or explicitly WAIVED."""
-
-    def _cf(self):
-        import importlib.util, sys
-        from pathlib import Path
-        spec = importlib.util.spec_from_file_location(
-            "carry_forward", Path(__file__).resolve().parent.parent / "carry_forward.py")
-        m = importlib.util.module_from_spec(spec); sys.modules["carry_forward"] = m
-        spec.loader.exec_module(m); return m
-
-    def _root(self):
-        d = Path(tempfile.mkdtemp(prefix="cf_"))
-        (d / "sdlc-studio").mkdir(parents=True)
-        (d / "sdlc-studio" / ".config.yaml").write_text("review:\n  policy: carry-forward\n")
-        return d
-
-    def _file_bug(self, d, bid="BG9001"):
-        bugs = d / "sdlc-studio" / "bugs"; bugs.mkdir(parents=True, exist_ok=True)
-        (bugs / f"{bid}-carried.md").write_text(
-            f"# {bid}: a carried finding\n\n> **Status:** Open\n> **Found-against:** US0001\n")
-        return bid
-
-    def test_an_unfiled_finding_blocks_the_close_under_carry_forward(self) -> None:
-        cf = self._cf(); d = self._root()
-        try:
-            bid = self._file_bug(d)
-            # two filed, one neither filed nor waived
-            findings = [{"ref": bid, "units": ["US0001"]}, {"ref": "", "waiver": ""}]
-            with self.assertRaises(cf.PolicyError):
-                cf.reject_carries_forward(d, findings)
-            # all handled -> carries forward
-            self.assertTrue(cf.reject_carries_forward(
-                d, [{"ref": bid, "units": ["US0001"]}]))
-        finally:
-            shutil.rmtree(d, ignore_errors=True)
-
-    def test_a_ref_that_resolves_to_no_artefact_is_refused(self) -> None:
-        # US0333 AC1: a carried finding must be a real filed artefact, not a sentence. A ref
-        # that resolves to nothing on disk is refused - without this a claimed-but-absent
-        # finding would pass as handled.
-        cf = self._cf(); d = self._root()
-        try:
-            with self.assertRaises(cf.PolicyError):
-                cf.validate_carried(d, [{"ref": "BG9999", "units": ["US0001"]}])
-        finally:
-            shutil.rmtree(d, ignore_errors=True)
-
-    def test_a_waiver_without_a_reason_is_refused(self) -> None:
-        cf = self._cf(); d = self._root()
-        try:
-            with self.assertRaises(cf.PolicyError):
-                cf.validate_carried(d, [{"ref": "", "waiver": "   "}])
-            cf.validate_carried(d, [{"ref": "", "waiver": "out of scope, tracked in Q3"}])
-        finally:
-            shutil.rmtree(d, ignore_errors=True)
-
-    def test_a_finding_cannot_be_resolved_by_narrative_downgrade(self) -> None:
-        cf = self._cf(); d = self._root()
-        try:
-            for bad in ("downgrade to optional", "just an observation really", "soften to a note"):
-                with self.subTest(bad=bad):
-                    with self.assertRaises(cf.PolicyError):
-                        cf.validate_carried(d, [{"ref": "", "waiver": bad}])
-        finally:
-            shutil.rmtree(d, ignore_errors=True)
-
-
 REFERENCE_REVIEW = Path(__file__).resolve().parents[2] / "reference-review.md"
 
 
@@ -3114,13 +3006,12 @@ class ReviewRepairTests(unittest.TestCase):
                       "the docstring does not mention the REJECT shape that now also covers")
         self.assertIn("UNTAGGED", doc.upper(),
                       "the docstring does not say an untagged finding never qualifies")
-        # All THREE sites, not just the one this test started with. The rule is restated in
-        # two other modules, and pinning only the canonical copy leaves the same drift free to
-        # recur in the places it actually recurred - which is the whole reason a second copy
-        # of a rule is a liability. Flagged by the confirmation pass; cheap, so closed here.
+        # Every site, not just the one this test started with. The rule was restated in two
+        # other modules (carry_forward.py is deleted, so sprint.py remains), and pinning only the
+        # canonical copy leaves the same drift free to recur in the places it actually recurred -
+        # which is the whole reason a second copy of a rule is a liability.
         scripts = Path(__file__).resolve().parent.parent
-        for rel, needle in (("sprint.py", "sprint_covers_independently` is THE predicate"),
-                            ("carry_forward.py", "sprint_covers_independently`")):
+        for rel, needle in (("sprint.py", "sprint_covers_independently` is THE predicate"),):
             text = (scripts / rel).read_text(encoding="utf-8")
             i = text.find(needle)
             self.assertGreater(i, 0, f"{rel} no longer restates the coverage rule - if the "

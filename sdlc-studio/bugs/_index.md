@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 21 |
-| In Progress | 2 |
+| Open | 20 |
+| In Progress | 3 |
 | Fixed | 692 |
 | Verified | 0 |
 | Closed | 87 |
@@ -189,7 +189,7 @@
 | [BG0828](BG0828-the-one-call-closes-do-not-check-the.md) | The one-call closes do not check the review brief: artifact.py close records a verdict with no brief and no warning, and transition --brief accepts a fingerprint no brief printed | Won't Fix | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0829](BG0829-a-unit-carried-at-the-review-cap-is.md) | A unit carried at the review cap is filed as an ungroomed bug that sprint plan cannot take, and every carry prints that the operator was notified | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0830](BG0830-a-verdict-or-delegated-token-record-written-after.md) | A verdict or delegated-token record written after the seal lands on the sealed run without a warning | Won't Fix | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0831](BG0831-the-configuration-reference-documents-keys-the-code-does.md) | The configuration reference documents keys the code does not honour: sprint.split_above, review.policy carry-forward, and review.max_rounds | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0831](BG0831-the-configuration-reference-documents-keys-the-code-does.md) | The configuration reference documents keys the code does not honour: sprint.split_above, review.policy carry-forward, and review.max_rounds | In Progress | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0832](BG0832-reference-review-md-step-3a-ships-a-private.md) | reference-review.md step 3a ships a private project's consultation cast as its example, names amigos with no resolver, and the neutrality lane misses it | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0833](BG0833-the-engagement-floor-judges-a-decomposed-cr-by.md) | The engagement floor judges a decomposed CR by its own criteria, so a CR reconcile derives Complete from planned children is refused as unplanned | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0834](BG0834-persona-generate-team-lets-a-pre-supplied-or.md) | persona generate --team lets a pre-supplied or headless default stand as an answer, so its report claims questions were asked and accepted when none was | Open | Medium | 2026-09-28 | 2026-09-28 |

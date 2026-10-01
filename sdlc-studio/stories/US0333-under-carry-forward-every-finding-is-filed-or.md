@@ -25,16 +25,16 @@ mechanical rather than a matter of intent
 - **When** the close runs
 - **Then** it refuses and names the third, so the policy changes what blocks - the verdict
   no longer does, the unfiled finding still does
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarryForwardTests::test_an_unfiled_finding_blocks_the_close_under_carry_forward
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by BG0831: the carry-forward review policy and its key `review.policy` were deleted: every project carries a unit whose REJECT stands at the round cap (`review.max_rounds`), filing its findings
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0831
 
 ### AC2: a waiver requires a reason and is refused without one
 
 - **Given** a finding waived with an empty reason
 - **When** the waiver is recorded
 - **Then** it is refused, matching the treatment a missing review leg already gets
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarryForwardTests::test_a_waiver_without_a_reason_is_refused
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by BG0831: the carry-forward review policy and its key `review.policy` were deleted: every project carries a unit whose REJECT stands at the round cap (`review.max_rounds`), filing its findings
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0831
 
 ### AC3: narrative downgrade is refused in both directions
 
@@ -43,8 +43,8 @@ mechanical rather than a matter of intent
 - **When** either is recorded
 - **Then** both are refused, since `reference-review.md` already forbids resolving a missing
   leg by narrative downgrade and a carried finding gets the same two exits and no third
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarryForwardTests::test_a_finding_cannot_be_resolved_by_narrative_downgrade
-- **Verified:** yes (2026-07-23)
+- **Verify:** manual - retired by BG0831: the carry-forward review policy and its key `review.policy` were deleted: every project carries a unit whose REJECT stands at the round cap (`review.max_rounds`), filing its findings
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0831
 
 ## Revision History
 

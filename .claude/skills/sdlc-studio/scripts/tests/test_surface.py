@@ -24,8 +24,8 @@ class BuildParserCoverageTests(unittest.TestCase):
 
         Mutant: remove `build_parser` from one converted script, leaving its inline parser in
         `main()` - the first assertion names it.
-        Mutant: add a `build_parser` to `carry_forward.py`, so a library counts as a CLI
-        surface - the second assertion names it, and a one-way check would not.
+        Mutant: list a library in `NON_CLI` and add a `build_parser` to it, so a library counts
+        as a CLI surface - the second assertion names it, and a one-way check would not.
         Mutant: list `autosprint.py` as exempt - it re-exports `sprint`'s, so `getattr` finds
         one, and the exemption set would be wrong on the day it was written.
         """
