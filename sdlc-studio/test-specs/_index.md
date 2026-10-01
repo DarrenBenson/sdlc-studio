@@ -2,10 +2,10 @@
 
 ## Summary by Epic
 
-| Spec                                                               | Epic   | Cases | Automated | Status |
+| Spec | Epic | Cases | Automated | Status |
 | ------------------------------------------------------------------ | ------ | ----- | --------- | ------ |
-| [TS0001](TS0001-ep0010-ac-coverage-token-economy-learning-loop.md) | EP0010 | 28    | 0         | Ready  |
-| [TS0002](TS0002-mutation-check-gate-test-spec.md)                  | EP0011 | 14    | 0         | Ready  |
+| [TS0001](TS0001-ep0010-ac-coverage-token-economy-learning-loop.md) | EP0010 | 28 | 0 | Complete |
+| [TS0002](TS0002-mutation-check-gate-test-spec.md) | EP0011 | 14 | 0 | Complete |
 
 ## Coverage Summary
 

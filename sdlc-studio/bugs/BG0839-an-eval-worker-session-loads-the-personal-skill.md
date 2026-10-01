@@ -1,9 +1,10 @@
 # BG0839: An eval worker session loads the personal skill ahead of the candidate copy, and nothing in the harness says so or prevents it
 
 > **Status:** Open
+> **Groomed:** 2026-10-01 (D0291) - premise reproduced at HEAD: `grep -rn CLAUDE_CONFIG_DIR tools/ evals/` finds nothing; `eval_run.py setup` prints `--- WORKER PROMPT (fresh session, skill installed) ---` and evals/README.md step 2 says only `with the candidate skill installed`. Narrowed: setup always prints the isolated command, so the personal-copy diff warning is dropped (one more check, no extra value), and setup copies no credentials
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** tools/eval_run.py, evals/README.md, tools/tests/test_lean_eval_isolation.py, changelog.d/BG0839.md, tools/tests/test_eval_run.py
+> **Affects:** tools/eval_run.py, evals/README.md, tools/tests/test_lean_eval_isolation.py, tools/tests/test_eval_run.py, changelog.d/BG0839.md
 > **Evidence:** eval harness note (/tmp/evals-v6-final 06 run); HEAD 7e53a438 grep: no CLAUDE_CONFIG_DIR in tools/ or evals/
 > **Created:** 2026-09-28
 > **Created-by:** sdlc-studio file
@@ -20,11 +21,11 @@ With a personal copy installed, run a scenario worker per evals/README.md: the t
 
 ## Proposed Fix
 
-`eval_run.py setup` prints the worker command with an isolated `CLAUDE_CONFIG_DIR` holding only the candidate skill, and warns when a personal copy differs from it; the README says so.
+`eval_run.py setup` also builds `<dir>.claude-config/skills/sdlc-studio` (a sibling of the fixture, so its transcripts never dirty the fixture's `git status`) from the candidate skill (the working tree's `.claude/skills/sdlc-studio`) and prints the worker command as `CLAUDE_CONFIG_DIR=<dir>.claude-config claude -p ...`. evals/README.md step 2 says why (a personal copy outranks a project copy under `claude -p`) and that the operator copies `~/.claude/.credentials.json` into that directory, mode 600, and deletes it after the run; setup never copies a credential.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a personal skill copy that differs from the candidate, when `eval_run.py setup` runs, then it prints a worker command with an isolated `CLAUDE_CONFIG_DIR` and a warning naming both paths. Fails on: HEAD
+- [ ] **AC1** Given a scenario with a fixture spec, when `eval_run.py setup --scenario <id> --dir <scratch>` runs, then `<scratch>.claude-config/skills/sdlc-studio/SKILL.md` exists, nothing is written under `<scratch>` beyond the fixture, no credential file is written, and stdout carries a worker command beginning `CLAUDE_CONFIG_DIR=<scratch>.claude-config`. Fails on: HEAD, which builds no config directory and prints no command
   - **Verify:** pytest tools/tests/test_lean_eval_isolation.py::EvalIsolationTests::test_setup_isolates_the_candidate_skill
 
 ## Revision History

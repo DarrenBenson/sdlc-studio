@@ -1,6 +1,7 @@
 # BG0857: An unreadable epics directory is read as absence by reconcile's detectors, so the gate and migrate report a drift count with no mention that part of the workspace was never read
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py,.claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, changelog.d/BG0857.md

@@ -1,6 +1,8 @@
 # BG0836: No command writes a lesson class's graduated state, so every graduation CR carries a criterion only a hand edit can meet
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
+> **Duplicate of:** US0977
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/help/lessons.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_lesson_graduation.py, changelog.d/BG0836.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py

@@ -12,6 +12,8 @@
 
 ## Summary
 
+> **Groomed:** 2026-10-01 (D0291) - premise reproduced at HEAD: `critic.py brief --unit BG-01M3KS98 --seat qa` on a fixture prints `critic.py record --unit BG01M3KS98`; this repository's run state records `scaffolded_retro: RETRO-0128` for the file `RETRO0128-maya-signs-...md`.
+
 `sdlc_md.norm_id` is a comparison key (`US-01M3HR7A` -> `US01M3HR7A`) and is printed as the id in user-facing output: the plan's delivery-mode line, `critic.py brief`'s record footer (critic.py ~2996, ~3025), the carried-at-cap bug's title and slug (`critic.carry_at_cap)`, the retro's Batch line, and the signed report's issue table (eval 09 RPT0001 lists `BG01M3KS98`, whose file is BG-01M3KS98-...). A reader who searches for the printed id finds nothing. The close prints the opposite drift for sequential meta ids: `retro RETRO-0001 scaffolded ... --retro RETRO-0001` while the file is RETRO0001-.... On schema v3, the v6 init default, every user sees it.
 
 ## Steps to Reproduce
@@ -24,9 +26,9 @@ Add one display helper that returns an id in its file's spelling (the stem's rec
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a schema v3 unit `US-01ABCDEF`, when the brief footer, the plan's delivery-mode line, a carried bug's title and the report's issue table name it, then each prints `US-01ABCDEF`. Fails on: HEAD, which prints US01ABCDEF
+- [ ] **AC1** Given a schema v3 fixture unit `US-01ABCDEF`, when `critic.py brief --unit US-01ABCDEF --seat qa` prints its record footer, `sprint.py plan --worklist` prints its delivery-mode line, `critic.carry_at_cap` titles the carried bug and `sprint_report.py build` writes the issue table, then each prints `US-01ABCDEF`. Fails on: HEAD, which prints US01ABCDEF
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_id_display.py::IdDisplayTests::test_ulid_ids_print_in_file_spelling
-- [ ] **AC2** Given a retro file RETRO0001-x.md scaffolded by the close, then the close's printed id and its `--retro` hint match the file's spelling. Fails on: HEAD's RETRO-0001
+- [ ] **AC2** Given a fixture run with no retro, when `sprint.py close` scaffolds RETRO0001-x.md, then the printed id, the `--retro` hint and run state's `scaffolded_retro` all read `RETRO0001`. Fails on: HEAD's RETRO-0001
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_id_display.py::IdDisplayTests::test_the_scaffolded_retro_id_matches_its_file
 
 ## Revision History
@@ -34,3 +36,4 @@ Add one display helper that returns an id in its file's spelling (the stem's rec
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-28 | sdlc-studio | Filed |
+| 2026-10-01 | backlog value pass (D0291) | Groomed: premise executed at HEAD; criteria name the shipped CLIs; Points 3 kept |

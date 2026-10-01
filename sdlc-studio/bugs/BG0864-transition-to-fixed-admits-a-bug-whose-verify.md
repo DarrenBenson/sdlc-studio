@@ -1,6 +1,7 @@
 # BG0864: transition to Fixed admits a bug whose Verify lines have never been run, so a carried bug with red or manual-only criteria reaches Fixed with nothing executed
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py,.claude/skills/sdlc-studio/scripts/tests/test_transition.py, changelog.d/BG0864.md

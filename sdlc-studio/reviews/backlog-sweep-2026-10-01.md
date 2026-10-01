@@ -121,3 +121,31 @@ premise executed at HEAD.
 | BG0737 | the stale downgrade destroys an author's reason | 1 | - |
 
 Total: 42 points.
+
+## Delivery bugs, value pass (every open bug re-executed at HEAD `de4470fa`)
+
+Kept, groomed with runnable criteria and a `Groomed:` evidence line (29 pts): BG0726 (1),
+BG0817 (1), BG0825 (3), BG0827 (1), BG0833 (1), BG0860 (2), BG0861 (3, as the retirement of
+the dead batch-span code), BG0824 (2), BG0831 (3), BG0832 (1), BG0834 (1), BG0835 (1, takes
+CR0602's transcript half), BG0837 (3), BG0839 (2), BG0855 (2), BG0858 (2, depends on US0974),
+plus BG0737 (1) and BG0866 (1) groomed earlier today.
+
+| Closed | Status | Reason |
+| --- | --- | --- |
+| BG0701 | Won't Fix | the cause half fixed by US0876 (`5dfee925`); the handoff half goes with US0967; the rest is rolling-run edge consistency, below cost under D0290 |
+| BG0828 | Won't Fix | the fix adds warnings and fingerprint validation; US0923 made a verdict record with or without a brief |
+| BG0830 | Won't Fix | the fix is a new refusal guard on a sealed run |
+| BG0863 | Won't Fix | only a corrupted ledger reaches it; the dry run already reports the gap and the real close raises |
+| BG0864 | Won't Fix | the fix adds a refusal; accepting a missing run is the documented contract (help/bug.md) |
+| BG0712 | Won't Fix | the fix makes the budget guard refuse five files today; 110 lines of headroom remain |
+| BG0734 | Won't Fix | a harmless two-line dead branch; delete it the next time the file is edited |
+| BG0752 | Won't Fix | widening per-commit selection slows every commit; the push runs the full suite |
+| BG0754 | Won't Fix | all six of its own fixes shipped; the residue is the hub selection's size, unmeasurable as a test |
+| BG0838 | Won't Fix | tightens a doc-scanning guard (new refusals); its installed-copy half is US0975 |
+| BG0857 | Won't Fix | a chmod-000 workspace directory is contrived; the fix adds a new failure |
+| BG0836 | Won't Fix | duplicate of US0977 |
+| BG0841 | Superseded | BG0850 (`bb098240`) discharges carried units; raising `max_rounds` under a recorded decision stays the way through |
+
+Also closed: SC0001 (charter) Withdrawn - its scope (CR0507 Superseded, CR0510 Complete) is
+finished; TS0001 and TS0002 Complete - their epics EP0010 and EP0011 are Done. US0759 and
+US0969 now use `review.max_rounds` as their example key, since BG0831 retires `review.policy`.

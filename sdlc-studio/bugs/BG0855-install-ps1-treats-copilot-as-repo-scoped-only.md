@@ -1,9 +1,10 @@
 # BG0855: install.ps1 treats Copilot as repo-scoped only, the Windows twin of BG0852
 
 > **Status:** Open
+> **Groomed:** 2026-10-01 (D0291) - premise reproduced at HEAD by source (no `pwsh` on this host; `command -v pwsh` is empty): install.ps1:42 `copilot = @{ global = ''`, :101 detects copilot by `gh` or `.github`, :174 `Copilot: reads .github/skills in the repo`, while install.sh:146 maps `copilot:global` to `$HOME/.agents/skills` (BG0852). The Verify runs install.ps1 for real wherever `pwsh` is on PATH (CI) and falls back to pinning the source here, as test_lean_install_ps1_local.py already does for BG0821
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** install.ps1,tools/tests/test_lean_install_ps1_local.py, changelog.d/BG0855.md
+> **Affects:** install.ps1, tools/tests/test_lean_install_ps1_local.py, changelog.d/BG0855.md
 > **Evidence:** install.ps1:42,101,174; goal review round 78 engineering seat
 > **Created:** 2026-09-30
 > **Created-by:** sdlc-studio file
@@ -24,7 +25,7 @@ Mirror BG0852's install.sh change in install.ps1 (copilot global to the personal
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a HOME with only a copilot executable on PATH, when install.ps1 runs a global auto install in dry-run, then it plans an install into ~/.agents/skills. Fails on: today's empty copilot global target
+- [ ] **AC1** Given a throwaway HOME and a PATH holding a `copilot` executable and no `gh`, when `install.ps1 -Target copilot -Global -DryRun` runs, then it plans an install into `$HOME/.agents/skills/sdlc-studio`, auto-detection selects copilot by the `copilot` binary, and the post-install note names `~/.agents/skills`. Where `pwsh` is absent, the test pins the same three claims on install.ps1's source (the copilot `global` entry, the detection line, the note) so the selector never passes on a skip. Fails on: HEAD's empty copilot global target, `gh`-based detection and repo-only note
   - **Verify:** pytest tools/tests/test_lean_install_ps1_local.py::InstallPs1CopilotTests::test_auto_selects_a_copilot_personal_folder
 
 ## Revision History

@@ -1,6 +1,6 @@
 # TS0002: Mutation-check gate test spec
 
-> **Status:** Ready
+> **Status:** Complete
 > **Epic:** EP0011
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new

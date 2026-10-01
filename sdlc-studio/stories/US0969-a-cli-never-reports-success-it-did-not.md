@@ -40,7 +40,7 @@ exit=0
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a fixture project, when `config.py show --key nonexistent.key --root <fixture>` runs, then it exits 1 and names `nonexistent.key` as absent, while `config.py show --key review.policy` still prints its value and exits 0. Fails on: HEAD prints `null` and exits 0
+- [ ] **AC1** Given a fixture project, when `config.py show --key nonexistent.key --root <fixture>` runs, then it exits 1 and names `nonexistent.key` as absent, while `config.py show --key review.max_rounds` still prints its value and exits 0. Fails on: HEAD prints `null` and exits 0
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_cli_no_false_success.py::CliNoFalseSuccessTests::test_an_absent_config_key_is_named_not_printed_as_null
 - [ ] **AC2** Given an empty directory, when `validate.py check --root <dir>` runs, then it exits 1 and says no `sdlc-studio/` workspace was found. Fails on: HEAD prints `checked=0 errors=0 warnings=0` and exits 0
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_cli_no_false_success.py::CliNoFalseSuccessTests::test_validate_on_a_directory_with_no_workspace_says_so

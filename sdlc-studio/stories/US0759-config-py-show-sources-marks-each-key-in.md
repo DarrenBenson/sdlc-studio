@@ -33,7 +33,7 @@ exit=2
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a fixture project whose `sdlc-studio/.config.yaml` sets `coverage.unit: 75`, when `config.py show --sources --root <fixture>` runs, then it exits 0 and prints one line per leaf key naming the dotted key, its value and `project` for `coverage.unit` and `default` for a key the file does not set (e.g. `review.policy`). Fails on: HEAD exits 2 `unrecognized arguments: --sources`
+- [ ] **AC1** Given a fixture project whose `sdlc-studio/.config.yaml` sets `coverage.unit: 75`, when `config.py show --sources --root <fixture>` runs, then it exits 0 and prints one line per leaf key naming the dotted key, its value and `project` for `coverage.unit` and `default` for a key the file does not set (e.g. `review.max_rounds`). Fails on: HEAD exits 2 `unrecognized arguments: --sources`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_show_sources.py::ConfigShowSourcesTests::test_a_project_key_and_a_default_key_are_marked
 - [ ] **AC2** Given that fixture, which sets one leaf of the `coverage` section, when `config.py show --sources` runs, then only `coverage.unit` reads `project` and its sibling `coverage.integration` reads `default`. Fails on: marking a whole section `project` when any one of its leaves is set
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_show_sources.py::ConfigShowSourcesTests::test_a_sibling_of_an_overridden_leaf_stays_default

@@ -1,6 +1,7 @@
 # BG0838: retired_surface excuses a live retired name by the shape of its sentence, so a live instruction passes as history
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/retired_surface.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_retired.py, evals/scenarios/09-lean-sprint.json, .claude/skills/sdlc-studio/scripts/tests/test_lean_retired_marker.py, changelog.d/BG0838.md

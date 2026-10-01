@@ -1,6 +1,7 @@
 # BG0712: a local guard that tolerates what a criterion refuses lets a breach pass the commit and redden CI
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** tools/check_budgets.py, tools/tests/test_check_budgets.py, .githooks/pre-commit

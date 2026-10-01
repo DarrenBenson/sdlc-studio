@@ -1,6 +1,7 @@
 # SC0001: run 3: the close costs less than it returns
 
-> **Status:** Queued
+> **Status:** Withdrawn
+> **Withdrawn-because:** Stale: its scope (CR0507 Superseded, CR0510 Complete) is finished and its query (--crs Proposed) now selects nothing; closed in the 2026-10-01 backlog sweep (D0291).
 > **Queue rank:** 7
 > **Created:** 2026-08-04
 > **Created-by:** sdlc-studio new

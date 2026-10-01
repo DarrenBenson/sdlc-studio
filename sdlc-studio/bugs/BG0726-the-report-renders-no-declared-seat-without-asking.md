@@ -2,14 +2,16 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
+> **Points:** 1
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_seat_label.py, changelog.d/BG0726.md
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
 > **Raised-in-batch:** none open - raised outside a delivery batch
 
 ## Summary
+
+> **Groomed:** 2026-10-01 (D0291) - premise reproduced at HEAD: a fixture with no persona cards and one APPROVE by 'Priya Raman' renders `US0001 by Priya Raman (NO DECLARED SEAT)` in the review-attribution row; `init` writes no seat cards, so every fresh v6 project reads this.
 
 BG0463 claim 18, still true. `critic.py`'s own docstring requires callers to distinguish a project with NO PERSONAS from a reviewer with no seat, and `critic._seat_drift_warning` does exactly that - it is the one compliant caller. `sprint_report.py:1941` renders `seat or 'NO DECLARED SEAT'` and asks nothing, so on a project that has declared no personas every reviewer is labelled as having failed to declare a seat. The label accuses the reviewer of an omission that belongs to the project's configuration.
 
@@ -19,20 +21,16 @@ BG0463 claim 18, still true. `critic.py`'s own docstring requires callers to dis
 
 ## Proposed Fix
 
-Have the renderer ask `critic._declared_reviewers` (or the same predicate `_seat_drift_warning` uses) before labelling, and render a distinct phrase - `no seats declared on this project` - when the project declares none. Pin both branches.
+Remove the false label rather than add a phrase: render the seat parenthetical only when `critic._declared_reviewers` returns any seat (the predicate `_seat_drift_warning` already asks). On a project that declares none, the row reads `US0001 by Priya Raman`. Nothing new is reported.
 
 ## Acceptance Criteria
 
-### AC1: a project that declares no personas is labelled differently from a reviewer with no seat
-
-- **Given** two workspaces - one declaring persona cards where a reviewer records no seat, and one declaring no personas at all
-- **When** the report renders its reviewer rows
-- **Then** the first reads NO DECLARED SEAT and the second reads a distinct phrase naming the project's configuration, so the label never accuses a reviewer of an omission that is not theirs
-- **Mutant:** in `.claude/skills/sdlc-studio/scripts/sprint_report.py`, render `seat or 'NO DECLARED SEAT'` without asking whether any persona is declared - every reviewer on a persona-less project is then reported as having failed to declare a seat
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SeatLabelTests::test_a_persona_less_project_is_not_reported_as_a_reviewer_omission
+- [ ] **AC1** Given a fixture with no persona cards and one APPROVE by `Priya Raman`, when `sprint_report.py --root <fixture> checklist --id RETRO9100 --format json` renders the `review-attribution` row, then the row names `US0001 by Priya Raman` and does not contain `NO DECLARED SEAT`; with a `personas/seats/qa.md` card declaring another person, a reviewer matching no seat still reads `NO DECLARED SEAT`. Fails on: HEAD renders `(NO DECLARED SEAT)` on the persona-less fixture
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_seat_label.py::SeatLabelTests::test_a_persona_less_project_is_not_reported_as_a_reviewer_omission
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-09-21 | sdlc-studio | Filed |
+| 2026-10-01 | backlog value pass (D0291) | Groomed: premise executed at HEAD; fix re-scoped to dropping the false label (no new phrase); Points 2 to 1; Affects gains the lean test and changelog fragment |

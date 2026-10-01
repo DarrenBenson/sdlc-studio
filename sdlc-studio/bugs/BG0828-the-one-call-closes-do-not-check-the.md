@@ -1,6 +1,7 @@
 # BG0828: The one-call closes do not check the review brief: artifact.py close records a verdict with no brief and no warning, and transition --brief accepts a fingerprint no brief printed
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/help/arguments.md, .claude/skills/sdlc-studio/help/help.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_one_call_close_brief.py, changelog.d/BG0828.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py

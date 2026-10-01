@@ -1,9 +1,10 @@
 # BG0832: reference-review.md step 3a ships a private project's consultation cast as its example, names amigos with no resolver, and the neutrality lane misses it
 
 > **Status:** Open
+> **Groomed:** 2026-10-01 (D0291) - premise reproduced at HEAD: reference-review.md:279-281 lists `Darren (scope, priorities), Cora (API shape, errors), Webapp Dev ..., HA ...` and line 803 `"stale": ["Webapp Dev"]`; `check_neutrality.py` prints `no blocklisted project names` and exits 0. Narrowed to the doc fix: AC2 (widen the neutrality lane) dropped as a new refusal (D0291), and help/consult.md:56 holds (Sarah Chen is in persona-index-template only, not an amigo card)
 > **Severity:** Medium
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/help/consult.md, tools/check_neutrality.py, tools/tests/test_lean_review_consult_neutral.py, changelog.d/BG0832.md, tools/tests/test_check_neutrality.py
+> **Affects:** .claude/skills/sdlc-studio/reference-review.md, tools/tests/test_lean_review_consult_neutral.py, changelog.d/BG0832.md
 > **Evidence:** BG0816 builder hand-back and review; HEAD 7e53a438 reference-review.md lines 279-280 and 799
 > **Created:** 2026-09-28
 > **Created-by:** sdlc-studio file
@@ -20,14 +21,12 @@ Read reference-review.md step 3a; run tools/`check_neutrality.py`: exit 0.
 
 ## Proposed Fix
 
-Replace the example with neutral sample roles, name the resolver where the step means the amigos, correct help/consult.md:56, and add the leaked names' shape (a consultation guide's cast) to the neutrality lane's fixture.
+Replace the step 3a example and the JSON sample's names with neutral sample roles (e.g. a product owner, an API consumer, an operator), and name `persona_resolve.py resolve-consult` where the step means the amigos. No lane is widened.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given the shipped skill docs, then step 3a's example names only sample roles and the step resolves amigos through `persona_resolve.` Fails on: HEAD lines 279-280
+- [ ] **AC1** Given the shipped `reference-review.md`, when step 3a and the review JSON sample are read, then they name only sample roles (none of `Darren`, `Cora`, `Webapp Dev`, `HA`) and step 3a resolves the amigos through `persona_resolve.py`. Fails on: HEAD lines 279-281 and 803
   - **Verify:** pytest tools/tests/test_lean_review_consult_neutral.py::ReviewConsultNeutralTests::test_step_3a_names_sample_roles
-- [ ] **AC2** Given a doc carrying a consultation-guide cast line, when `check_neutrality` runs, then it fails naming the line. Fails on: HEAD, which passes
-  - **Verify:** pytest tools/tests/test_lean_review_consult_neutral.py::ReviewConsultNeutralTests::test_the_neutrality_lane_catches_a_cast_line
 
 ## Revision History
 

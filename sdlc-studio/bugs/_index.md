@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 31 |
+| Open | 19 |
 | In Progress | 0 |
 | Fixed | 692 |
 | Verified | 0 |
 | Closed | 87 |
-| Won't Fix | 27 |
-| Superseded | 29 |
-| **Total** | **866** |
+| Won't Fix | 39 |
+| Superseded | 30 |
+| **Total** | **867** |
 
 ## All Bugs
 
@@ -59,7 +59,7 @@
 | [BG0698](BG0698-repair-plan-rounds-can-be-overwritten-by-concurrent.md) | Repair-plan rounds can be overwritten by concurrent records, a re-record after approval counts as a failed round, and the escalation notice counts a repair-plan REJECT | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0699](BG0699-sprint-queue-show-s-not-materialised-line-is.md) | sprint queue show's not-materialised line is pinned by no test, and next, plan and queue show hold the discovery partition in separate copies | Won't Fix | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0700](BG0700-the-doctrine-stop-ship-guard-passes-inverted-sentences.md) | The doctrine stop-ship guard passes inverted sentences and a second rule under the same anchor | Won't Fix | Medium | 2026-09-15 | 2026-09-15 |
-| [BG0701](BG0701-run-ending-routes-still-read-different-sets-stop.md) | Run-ending routes still read different sets: stop records from the parked derivation, the boundary stop ignores --retro, and stop cannot see the retro the close names | Open | Medium | 2026-09-15 | 2026-09-15 |
+| [BG0701](BG0701-run-ending-routes-still-read-different-sets-stop.md) | Run-ending routes still read different sets: stop records from the parked derivation, the boundary stop ignores --retro, and stop cannot see the retro the close names | Won't Fix | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0702](BG0702-the-unanswered-set-s-ways-out-are-picked.md) | The unanswered set's ways out are picked by substring and offer dead ends for a stop-ship ruling, and the set is rendered and recorded in drifting copies | Superseded | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0703](BG0703-the-unanswered-set-predicate-s-fail-closed-handlers.md) | The unanswered-set predicate's fail-closed handlers and the handoff behaviours around it survive mutants no test kills | Won't Fix | Medium | 2026-09-15 | 2026-09-15 |
 | [BG0704](BG0704-the-done-guard-reads-a-filed-closure-naming.md) | The Done guard reads a filed closure naming the unit itself as a repair, and lists repaired findings as outstanding when the only APPROVE is the author's own | Superseded | Medium | 2026-09-15 | 2026-09-15 |
@@ -70,7 +70,7 @@
 | [BG0709](BG0709-the-pre-push-red-main-check-trusts-the.md) | the pre-push red-main check trusts the forge's ordering, so a stale first row demands acknowledgement of a two-month-old red | Fixed | Medium | 2026-09-16 | 2026-09-16 |
 | [BG0710](BG0710-the-close-prints-the-run-s-cost-before.md) | the close prints the run's cost before the step that captures it, so every close reports the sprint as not attributable | Superseded | Medium | 2026-09-16 | 2026-09-16 |
 | [BG0711](BG0711-test-complexity-s-temporary-git-fixture-races-its.md) | test_complexity's temporary git fixture races its own cleanup on CI, reddening main on a teardown rather than a failure | Fixed | Medium | 2026-09-17 | 2026-09-17 |
-| [BG0712](BG0712-a-local-guard-that-tolerates-what-a-criterion.md) | a local guard that tolerates what a criterion refuses lets a breach pass the commit and redden CI | Open | Medium | 2026-09-17 | 2026-09-17 |
+| [BG0712](BG0712-a-local-guard-that-tolerates-what-a-criterion.md) | a local guard that tolerates what a criterion refuses lets a breach pass the commit and redden CI | Won't Fix | Medium | 2026-09-17 | 2026-09-17 |
 | [BG0713](BG0713-the-per-unit-coverage-gate-charges-a-unit.md) | the per-unit coverage gate charges a unit for its batch siblings' added lines in a shared file | Won't Fix | High | 2026-09-18 | 2026-09-18 |
 | [BG0714](BG0714-284-added-lines-of-run-01m2spns-are-executed.md) | 284 added lines of RUN-01M2SPNS are executed by no verifier in the run, and BG0706's proposed fix inherits most of the false charge | Won't Fix | Medium | 2026-09-18 | 2026-09-18 |
 | [BG0715](BG0715-the-close-attributes-every-finding-raised-outside-a.md) | the close attributes every finding raised outside a delivery batch to whichever run is open, because it dates them by the last word of a prose stamp | Fixed | High | 2026-09-18 | 2026-09-18 |
@@ -92,7 +92,7 @@
 | [BG0731](BG0731-filing-a-low-severity-finding-recreates-the-consolidation.md) | filing a Low-severity finding recreates the consolidation bucket that was just ruled not to be a change request | Fixed | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0732](BG0732-the-derived-only-corpus-ceiling-is-an-absolute.md) | the derived-only corpus ceiling is an absolute count, so a run that files findings breaches it without the detector over-reaching | Superseded | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0733](BG0733-a-verified-line-reading-partial-or-no-is.md) | a Verified line reading PARTIAL or no is treated exactly like yes, so an honest self-report of a miss is laundered into a green | Fixed | High | 2026-09-21 | 2026-09-21 |
-| [BG0734](BG0734-the-blockquote-skip-in-check-versions-is-unreachable.md) | the blockquote skip in check_versions is unreachable, so it guards nothing | Open | Medium | 2026-09-21 | 2026-09-21 |
+| [BG0734](BG0734-the-blockquote-skip-in-check-versions-is-unreachable.md) | the blockquote skip in check_versions is unreachable, so it guards nothing | Won't Fix | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0735](BG0735-the-checklist-s-authority-field-is-carried-on.md) | the checklist's authority field is carried on 22 rows and read by no renderer | Superseded | Medium | 2026-09-21 | 2026-09-21 |
 | [BG0736](BG0736-spawned-column-is-the-one-drift-kind-reconcile.md) | spawned-column is the one drift kind reconcile can detect but never repair, so every decomposition leaves permanent drift the doctrine forbids fixing by hand | Fixed | High | 2026-09-21 | 2026-09-21 |
 | [BG0737](BG0737-the-stale-downgrade-destroys-an-author-s-reason.md) | the stale downgrade destroys an author's reason on a positive verdict, so the principle BG0733 shipped is violated on the sibling branch of the same function | Open | Medium | 2026-09-22 | 2026-09-22 |
@@ -110,9 +110,9 @@
 | [BG0749](BG0749-thirty-stamped-criteria-on-older-units-point-at.md) | Thirty stamped criteria on older units point at tests this sprint made skipped stubs | Fixed | Medium | 2026-09-23 | 2026-09-23 |
 | [BG0750](BG0750-a-same-day-waiver-flips-a-filed-sprint.md) | A same-day waiver flips a filed sprint report INVALID | Fixed | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0751](BG0751-open-findings-in-a-sprint-report-use-an.md) | Open findings in a sprint report use an inclusive window end | Fixed | Medium | 2026-09-24 | 2026-09-24 |
-| [BG0752](BG0752-per-commit-test-selection-skips-hooks-test-infrastructure.md) | Per-commit test selection skips hooks, test infrastructure and code reached through another script | Open | Medium | 2026-09-24 | 2026-09-24 |
+| [BG0752](BG0752-per-commit-test-selection-skips-hooks-test-infrastructure.md) | Per-commit test selection skips hooks, test infrastructure and code reached through another script | Won't Fix | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0753](BG0753-the-test-suite-leaks-temporary-directories-into-tmp.md) | The test suite leaks temporary directories into /tmp | Fixed | Medium | 2026-09-24 | 2026-09-24 |
-| [BG0754](BG0754-a-commit-touching-a-widely-imported-script-runs.md) | A commit touching a widely imported script runs well over the 90-second budget | Open | Medium | 2026-09-24 | 2026-09-24 |
+| [BG0754](BG0754-a-commit-touching-a-widely-imported-script-runs.md) | A commit touching a widely imported script runs well over the 90-second budget | Won't Fix | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0755](BG0755-artifact-py-batch-ignores-a-story-s-role.md) | artifact.py batch ignores a story's role, capability and benefit, and its default template leaves a page of placeholders | Fixed | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0756](BG0756-us0900-did-not-converge-in-review-round-2.md) | US0900 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-24 | 2026-09-24 |
 | [BG0757](BG0757-repo-map-py-build-crashes-on-python-3.md) | repo_map.py build crashes on Python 3.10 when a source file holds a null byte | Fixed | Medium | 2026-09-24 | 2026-09-24 |
@@ -186,20 +186,20 @@
 | [BG0825](BG0825-ulid-ids-are-printed-as-their-hyphenless-comparison.md) | ULID ids are printed as their hyphenless comparison key, so plan, brief, carry and the signed report name ids no file carries | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0826](BG0826-the-scaffolded-retro-carries-neither-the-run-id.md) | The scaffolded retro carries neither the run id nor a Known issues carried table, so the run's rulings cannot be found or written | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0827](BG0827-the-review-brief-asks-the-reviewer-to-judge.md) | The review brief asks the reviewer to judge origin 'at the base ref' but never names the base ref | Open | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0828](BG0828-the-one-call-closes-do-not-check-the.md) | The one-call closes do not check the review brief: artifact.py close records a verdict with no brief and no warning, and transition --brief accepts a fingerprint no brief printed | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0828](BG0828-the-one-call-closes-do-not-check-the.md) | The one-call closes do not check the review brief: artifact.py close records a verdict with no brief and no warning, and transition --brief accepts a fingerprint no brief printed | Won't Fix | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0829](BG0829-a-unit-carried-at-the-review-cap-is.md) | A unit carried at the review cap is filed as an ungroomed bug that sprint plan cannot take, and every carry prints that the operator was notified | Fixed | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0830](BG0830-a-verdict-or-delegated-token-record-written-after.md) | A verdict or delegated-token record written after the seal lands on the sealed run without a warning | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0830](BG0830-a-verdict-or-delegated-token-record-written-after.md) | A verdict or delegated-token record written after the seal lands on the sealed run without a warning | Won't Fix | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0831](BG0831-the-configuration-reference-documents-keys-the-code-does.md) | The configuration reference documents keys the code does not honour: sprint.split_above, review.policy carry-forward, and review.max_rounds | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0832](BG0832-reference-review-md-step-3a-ships-a-private.md) | reference-review.md step 3a ships a private project's consultation cast as its example, names amigos with no resolver, and the neutrality lane misses it | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0833](BG0833-the-engagement-floor-judges-a-decomposed-cr-by.md) | The engagement floor judges a decomposed CR by its own criteria, so a CR reconcile derives Complete from planned children is refused as unplanned | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0834](BG0834-persona-generate-team-lets-a-pre-supplied-or.md) | persona generate --team lets a pre-supplied or headless default stand as an answer, so its report claims questions were asked and accepted when none was | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0835](BG0835-token-capture-looks-for-the-session-transcript-in.md) | Token capture looks for the session transcript in a directory named by replacing only '/', so a project path holding '.' or '_' reads NOT ATTRIBUTABLE | Open | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0836](BG0836-no-command-writes-a-lesson-class-s-graduated.md) | No command writes a lesson class's graduated state, so every graduation CR carries a criterion only a hand edit can meet | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0836](BG0836-no-command-writes-a-lesson-class-s-graduated.md) | No command writes a lesson class's graduated state, so every graduation CR carries a criterion only a hand edit can meet | Won't Fix | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0837](BG0837-the-pre-push-gate-judges-the-working-tree.md) | The pre-push gate judges the working tree, not the commits being pushed, so an uncommitted fix turns a red push green | Open | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0838](BG0838-retired-surface-excuses-a-live-retired-name-by.md) | retired_surface excuses a live retired name by the shape of its sentence, so a live instruction passes as history | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0838](BG0838-retired-surface-excuses-a-live-retired-name-by.md) | retired_surface excuses a live retired name by the shape of its sentence, so a live instruction passes as history | Won't Fix | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0839](BG0839-an-eval-worker-session-loads-the-personal-skill.md) | An eval worker session loads the personal skill ahead of the candidate copy, and nothing in the harness says so or prevents it | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0840](BG0840-bg0818-did-not-converge-in-review-round-2.md) | BG0818 did not converge in review: round 2 REJECT findings | Won't Fix | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0841](BG0841-the-review-cap-has-no-per-unit-exception.md) | The review cap has no per-unit exception path, so an operator-granted extra round can only land by force | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0841](BG0841-the-review-cap-has-no-per-unit-exception.md) | The review cap has no per-unit exception path, so an operator-granted extra round can only land by force | Superseded | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0842](BG0842-migrate-reports-2-index-drift-items-on-a.md) | migrate reports 2 index drift items on a v4.1 project whose gate reconcile lane fails on 28, because project upgrade counts two of reconcile's nine drift sources | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0843](BG0843-migrate-names-no-engagement-floor-cutoff-so-a.md) | migrate names no engagement-floor cutoff, so a v4.1 project's gate fails the engagement floor on 349 shipped units before and after the upgrade and the report says nothing | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0844](BG0844-an-upgraded-project-never-gets-the-sdlc-studio.md) | An upgraded project never gets the sdlc-studio/.gitignore that init writes, so gate.py leaves runtime state in git status on every run | Fixed | Medium | 2026-09-28 | 2026-09-28 |
@@ -215,16 +215,17 @@
 | [BG0854](BG0854-nothing-runs-migrate-and-then-the-gate-on.md) | Nothing runs migrate and then the gate on one fixture, so migrate's report drifted from the gate's failing lanes on three lanes unseen | Fixed | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0855](BG0855-install-ps1-treats-copilot-as-repo-scoped-only.md) | install.ps1 treats Copilot as repo-scoped only, the Windows twin of BG0852 | Open | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0856](BG0856-bg0852-did-not-converge-in-review-round-2.md) | BG0852 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-30 | 2026-09-30 |
-| [BG0857](BG0857-an-unreadable-epics-directory-is-read-as-absence.md) | An unreadable epics directory is read as absence by reconcile's detectors, so the gate and migrate report a drift count with no mention that part of the workspace was never read | Open | Medium | 2026-09-30 | 2026-09-30 |
+| [BG0857](BG0857-an-unreadable-epics-directory-is-read-as-absence.md) | An unreadable epics directory is read as absence by reconcile's detectors, so the gate and migrate report a drift count with no mention that part of the workspace was never read | Won't Fix | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0858](BG0858-migrate-names-nothing-when-the-conformance-lane-fails.md) | migrate names nothing when the conformance lane fails only on ULID-id units or repo-wide failures, so a schema v3 project meets the failure at the gate unannounced | Open | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0859](BG0859-the-close-s-status-preflight-stops-every-approved.md) | The close's status preflight stops every approved bug left In Progress and tells the operator to move it to Review, a status bugs do not have | Fixed | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0860](BG0860-a-sprint-plan-preview-with-no-write-appends.md) | A sprint plan preview with no --write appends forecast rows to the tracked evidence log, so each dry run adds a duplicate forecast per unit | Open | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0861](BG0861-nothing-opens-a-delivery-batch-since-us0918-so.md) | Nothing opens a delivery batch since US0918, so every finding is stamped raised outside a batch and the close's finding-placement figure is always empty | Open | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0862](BG0862-nothing-runs-the-unstubbed-close-sign-and-check.md) | Nothing runs the unstubbed close, sign and check on one run holding a carry, a ruling and a forced override | Fixed | Medium | 2026-09-30 | 2026-09-30 |
-| [BG0863](BG0863-an-unreadable-verdict-ledger-drops-unreviewed-units-from.md) | An unreadable verdict ledger drops unreviewed units from the close's status rows since BG0859, and the bug remedy is wrong for a bug that already has an APPROVE | Open | Medium | 2026-10-01 | 2026-10-01 |
-| [BG0864](BG0864-transition-to-fixed-admits-a-bug-whose-verify.md) | transition to Fixed admits a bug whose Verify lines have never been run, so a carried bug with red or manual-only criteria reaches Fixed with nothing executed | Open | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0863](BG0863-an-unreadable-verdict-ledger-drops-unreviewed-units-from.md) | An unreadable verdict ledger drops unreviewed units from the close's status rows since BG0859, and the bug remedy is wrong for a bug that already has an APPROVE | Won't Fix | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0864](BG0864-transition-to-fixed-admits-a-bug-whose-verify.md) | transition to Fixed admits a bug whose Verify lines have never been run, so a carried bug with red or manual-only criteria reaches Fixed with nothing executed | Won't Fix | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0865](BG0865-the-signed-page-names-a-known-issue-s.md) | The signed page names a known issue's retro ruling only when it is STOP-SHIP, and a finding the close files falls outside the run window | Fixed | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0866](BG0866-package-lock-json-resolves-js-yaml-5-2.md) | package-lock.json resolves js-yaml 5.2.2 through markdownlint-cli 0.49.1, inside Dependabot alert 19's vulnerable range | Open | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0867](BG0867-a-status-transition-rewrites-an-index-row-in.md) | A status transition rewrites an index row in compact style under an aligned header, so markdownlint fails the index it just synced | Open | Low | 2026-10-01 | 2026-10-01 |
 
 ## Archived Releases
 
