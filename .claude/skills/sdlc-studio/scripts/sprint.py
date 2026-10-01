@@ -11057,6 +11057,10 @@ def cmd_decision(args) -> int:
                       if sdlc_md.norm_id(u) != sdlc_md.norm_id(entry.get("unit") or "")]
     run_state.update(root, pending_decisions=pending, resolved_decisions=resolved,
                      deferred_units=still_deferred)
+    # The operator answered a question the run could not, so it is counted as an operator
+    # ruling, as `decisions.py add --by operator` counts one; the report's Rulings read it.
+    run_state.record_ruling(root, None, "operator",
+                            subject=f"{entry['unit']}: {args.choice}", kind="ruling")
     if not pending:
         # The last question is answered, so the run can work again: close the idle interval
         # here, at the moment it could have resumed, rather than estimating it later.

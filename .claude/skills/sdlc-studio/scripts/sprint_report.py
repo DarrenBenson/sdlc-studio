@@ -3751,7 +3751,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         _rulings_section(state, state_rel),
         # Bounded at both ends by the run's own window, like DORA, so a decision taken before
         # or after the run cannot move a signed page.
-        _waivers_section(root, _iso(end), _iso(start), readings["waivers"]),
+        _waivers_section(root, _iso(end), _iso(start), readings["waivers"],
+                         units=_units_ever_in_batch(state)),
         _lane_yield_section(root, state, start, end),
         _lessons_section(root, state.get("run_id")),
         _unmeasured_section(state, state_rel),
@@ -3928,10 +3929,75 @@ def _waivers_in_force(root: Path | str, window_end: str | None,
     return out, undated
 
 
+#: The artefact field `transition.py set --force` stamps: `<date>: --force waived N gate(s) on
+#: <status> - <the refusals it waived>`.
+FORCED_OVERRIDE_FIELD = "Forced-override"
+_FORCED_OVERRIDE_RE = re.compile(r"^\s*(\d{4}-\d{2}-\d{2})\s*:\s*(.+?)\s*$", re.DOTALL)
+#: How much of a waived gate's refusal a row quotes; the artefact holds the rest.
+_OVERRIDE_REASON_CHARS = 240
+
+
+def _units_ever_in_batch(state: dict) -> list[str]:
+    """Every unit the run's batch held at any point: the batch as it stands, then each unit a
+    batch change named - a unit dropped (carried at the cap, say) was still the run's work."""
+    out: list[str] = []
+    for uid in [*(state.get("batch") or []),
+                *(c.get("id") for c in state.get("batch_changes") or [] if isinstance(c, dict))]:
+        nid = sdlc_md.norm_id(str(uid or ""))
+        if nid and nid not in out:
+            out.append(nid)
+    return out
+
+
+def _forced_overrides_in_window(root: Path | str, units: list[str], window_end: str,
+                                window_start: str, on_page: dict | None) -> list[dict]:
+    """A gate stood down by `transition.py set --force` on a unit the run's batch held, as a
+    waiver row: each unit whose `Forced-override` field is dated inside the run's window.
+
+    The field carries a date only, so it is placed by the date rule `_waivers_in_force` keeps
+    for a date-only waiver. And the field MOVES: a later `--force` on the same day, after the
+    seal, writes a date the window still contains. So a filed page's reading is replayed whole
+    (`_page_readings`): re-deriving it lists exactly the overrides it listed, as it read them,
+    and a page filed before this section listed overrides lists none."""
+    hi, lo = window_end[:10], window_start[:10]
+    out = []
+    for uid in units:
+        if on_page is not None:
+            filed = on_page.get(uid)
+            if isinstance(filed, dict) and all(isinstance(filed.get(k), dict) for k in (
+                    "waiver_id", "waiver_subject", "waiver_reason", "waiver_date")):
+                out.append({k: dict(filed[k]) for k in (
+                    "waiver_id", "waiver_subject", "waiver_reason", "waiver_date")})
+            continue
+        hit = sdlc_md.find_by_id(Path(root), uid)
+        if not hit:
+            continue
+        m = _FORCED_OVERRIDE_RE.match(
+            sdlc_md.extract_field(sdlc_md.read_text_safe(hit[0]), FORCED_OVERRIDE_FIELD) or "")
+        if not m or not lo <= m.group(1) <= hi:
+            continue
+        what, _sep, why = m.group(2).partition(" - ")
+        why = why.strip() or "no refusal recorded"
+        if len(why) > _OVERRIDE_REASON_CHARS:
+            why = why[:_OVERRIDE_REASON_CHARS].rstrip() + " ..."
+        rel = _rel(Path(root), hit[0])
+        out.append({"waiver_id": fig("waiver_id", uid, rel),
+                    "waiver_subject": fig("waiver_subject",
+                                          f"{FORCED_OVERRIDE_FIELD}: {what.strip()}", rel),
+                    "waiver_reason": fig("waiver_reason", why, rel),
+                    "waiver_date": fig("waiver_date", m.group(1), rel)})
+    return out
+
+
 def _waivers_section(root: Path | str, window_end: str | None,
-                     window_start: str | None = None, on_page: dict | None = None) -> dict:
+                     window_start: str | None = None, on_page: dict | None = None,
+                     units: list[str] | None = None) -> dict:
     """The waivers section, ALWAYS present. An absent section reads as "not checked", and the
-    whole point is that the signer can tell that apart from "nothing stood down"."""
+    whole point is that the signer can tell that apart from "nothing stood down".
+
+    Two sources, each a gate that did not hold: an accepted waiver in the decision log
+    (`_waivers_in_force`), and a `--force` override on a unit the batch held
+    (`_forced_overrides_in_window`)."""
     rel = "sdlc-studio/decisions.md"
     if not window_end or not window_start:
         # A read that could not be BOUNDED is not a clean sheet. Emitting the affirmative note
@@ -3943,6 +4009,9 @@ def _waivers_section(root: Path | str, window_end: str | None,
                             "the run record carries no usable window, so the waivers in force "
                             "could not be bounded - which is NOT the same as none standing down"))
     rows, undated = _waivers_in_force(root, window_end, window_start, on_page)
+    rows += _forced_overrides_in_window(root, units or [], window_end, window_start, on_page)
+    # The note's wording is unchanged: it is in the digest, and a page signed before overrides
+    # were listed must re-derive to the words it was signed with.
     note = ("no gate stood down for this seal - the log was read and carries no accepted waiver "
             "dated inside this report's window" if not rows else
             f"{len(rows)} gate(s) were not holding when this page was derived")

@@ -35,13 +35,17 @@ The signed RPT0012 (RUN-01M3RPSK) splits the same way. Rulings reads "the operat
 
 - [ ] **AC1** Given an open run in which the operator resolves a deferred decision with `sprint.py decision resolve`, when `sprint_report.py build` derives the report, then Rulings reads "the operator ruled 1 time(s)", and 2 once a `decisions.py add --by operator` follows in the same run. Fails on: HEAD, where the resolve writes no ruling and the section reads 0 (NOT MEASURED on a run state with no `rulings` list)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_operator_interventions.py::OperatorInterventionTests::test_a_resolved_decision_counts_as_an_operator_ruling
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given an open run in which a batch unit and a unit dropped from the batch are each moved with `transition.py set --force`, and a third batch unit carries a Forced-override dated before the run's start day, when `sprint_report.py build` derives the report, then Waivers in force lists the two in-window units with the gate each waived, omits the third, and does not read "no gate stood down". Fails on: HEAD, which reads "no gate stood down"; on the filed fix (batch units only), which omits the dropped unit, the RPT0012 shape; and on listing every Forced-override field whatever its date, which lists the third
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_operator_interventions.py::OperatorInterventionTests::test_every_forced_override_in_the_window_is_listed
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC3** Given a run closed with `sprint.py close` and sealed with `sprint.py sign`, when a unit the run dropped from its batch, still at Review with unverified ACs, is then moved to Done with `transition.py set --force` on the same day, then `sprint_report.py check --report` still prints VALID. Fails on: a re-derivation that places the date-only Forced-override against the window without replaying the filed page's reading, which lists the late override and prints INVALIDATED
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_operator_interventions.py::OperatorInterventionTests::test_an_override_after_the_seal_does_not_move_the_signed_page
+  - **Verified:** yes (2026-10-01)
 
 - [ ] **AC4** Given this repository's signed RPT0012, whose run (RUN-01M3RPSK) carried D0288 in its rulings and BG0852's Forced-override dated 2026-09-30 inside its window on a unit dropped from its batch, when `sprint_report.py check --report RPT0012` runs after the change, then it still prints VALID, as it does at HEAD. Fails on: a new counting rule applied to a page signed before it, which lists BG0852's override on the re-derivation, a row the signed page does not hold, and prints INVALIDATED
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_operator_interventions.py::OperatorInterventionTests::test_a_page_signed_before_the_rule_still_checks_valid
+  - **Verified:** yes (2026-10-01)
 
 ## Impact
 
