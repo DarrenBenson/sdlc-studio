@@ -18,6 +18,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -130,6 +131,13 @@ class ReportReplacesHandoffTests(unittest.TestCase):
                 _ok(root, "critic.py", "record", "--unit", carried, "--verdict", "REJECT",
                     "--reviewer", "qa seat", "--author", "engineering seat",
                     "--issues", "[new] the gadget is missing")
+            # The carry stamps its bug to the second, and the report places a finding in the
+            # half-open window [start, end): a close in the same second as the carry would leave
+            # the finding off the page. A real close comes later than the carry, so the clock is
+            # let past the carry's second rather than slept a fixed time.
+            carried_at = int(time.time())
+            while int(time.time()) <= carried_at:
+                time.sleep(0.02)
             _commit(root, "delivered")
             handoffs = root / "sdlc-studio" / "handoffs"
             before = sorted(p.name for p in handoffs.rglob("*")) if handoffs.exists() else []
