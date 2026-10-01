@@ -13,6 +13,7 @@ Every test drives the shipped CLI in a throwaway tree and reads nothing of this 
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -105,6 +106,128 @@ class V5UpgradeCleanTests(unittest.TestCase):
             self.assertIn("sdlc-studio/stories/US0001-x.md", unreadable[0]["detail"])
             self.assertEqual(b"# US0001: x\n\n> **Status:** Draft\n\xff\xfe\n", bad.read_bytes(),
                              "migrate rewrote the file it could not read")
+
+
+def _cutoff_project(root: Path, *ids: str) -> None:
+    (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-studio" / ".config.yaml").write_text(
+        "schema_version: 3\nconformance:\n  adopt_after: BG-01KX95QP\n", encoding="utf-8")
+    for sid in ids:
+        _story(root, sid)
+
+
+class UlidCutoffFailsClosedTests(unittest.TestCase):
+    """US0974 round 1. A v3 suffix is six timestamp characters and two random ones, so ids in
+    the cutoff's own ~17-minute bucket do not sort by when they were minted."""
+
+    def test_a_ulid_cutoff_judges_every_other_id_in_its_own_bucket(self) -> None:
+        """MUTANTS: (1) compare the whole suffix (`suffix <= cutoff`) - `US-01KX95AA`, minted in
+        the cutoff's bucket and sorting below it by its random pair, is exempt; (2) exempt the
+        whole bucket - `US-01KX95ZZ` is exempt; (3) drop the earlier-bucket exemption."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cutoff_project(root, "US-01KX94ZZ", "US-01KX95AA", "US-01KX95QP", "US-01KX95ZZ",
+                            "US-01KX96AA")
+            r = _cli(root, "conformance.py", "check", "--format", "json")
+            exempt = {u["id"]: u["exempt"] for u in json.loads(r.stdout)["units"]}
+        self.assertEqual({"US-01KX94ZZ": True,       # an earlier bucket
+                          "US-01KX95AA": False,      # the cutoff's bucket, random pair below
+                          "US-01KX95QP": True,       # the cutoff itself
+                          "US-01KX95ZZ": False,      # the cutoff's bucket, random pair above
+                          "US-01KX96AA": False},     # a later bucket
+                         exempt)
+
+    def test_a_sequential_id_under_a_ulid_cutoff_is_exempt(self) -> None:
+        """The migration case: a project's sequential ids predate its v3 ids. MUTANT: return
+        False for a sequential id under a v3 cutoff."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cutoff_project(root, "US0103", "US-01KZ00AA")
+            r = _cli(root, "conformance.py", "check", "--format", "json")
+            exempt = {u["id"]: u["exempt"] for u in json.loads(r.stdout)["units"]}
+        self.assertEqual({"US0103": True, "US-01KZ00AA": False}, exempt)
+
+    def test_only_a_dashed_id_is_read_as_a_v3_suffix(self) -> None:
+        """MUTANT: make the dash optional in the v3 pattern - a dashless key (`US01KX94ZZ`) is
+        read as a suffix and exempted, and a long sequential id could be too."""
+        sys.path.insert(0, str(SCRIPTS))
+        from lib import sdlc_md  # noqa: PLC0415
+        cutoff = sdlc_md.parse_cutoff("BG-01KX95QP", allow_ulid=True)
+        self.assertTrue(sdlc_md.cutoff_exempts("US-01KX94ZZ", cutoff), "premise: dashed, earlier")
+        self.assertFalse(sdlc_md.cutoff_exempts("US01KX94ZZ", cutoff),
+                         "a dashless key was read as a v3 suffix")
+        self.assertTrue(sdlc_md.cutoff_exempts("US0123456", cutoff),
+                        "a 7-digit sequential id is read as sequential, and exempt")
+
+    def test_migrate_reads_a_ulid_cutoff_through_the_validate_lane(self) -> None:
+        """The validate lane's no-AC exemption reads the same key. MUTANT: restore the strict
+        `parse_cutoff` there - migrate then dies on `ValueError` over a story with no AC."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cutoff_project(root)
+            st = root / "sdlc-studio" / "stories"
+            st.mkdir(parents=True, exist_ok=True)
+            (st / "US-01KX90AA-no-ac.md").write_text(
+                "# US-01KX90AA: no ac\n\n> **Status:** Done\n> **Epic:** EP-01KX00AA\n",
+                encoding="utf-8")
+            r = _cli(root, "migrate.py", "--format", "json")
+            self.assertNotIn("Traceback", r.stderr, r.stderr)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            json.loads(r.stdout)
+
+
+class MigrateReadsOnlyWhatItReadsTests(unittest.TestCase):
+    """US0974 round 1: the readability probe covers the files the sweep reads, and no other."""
+
+    def test_a_bad_note_no_step_reads_does_not_stop_apply(self) -> None:
+        """The reviewer's repro. MUTANT: probe every `*.md` under `sdlc-studio/` - a non-UTF-8
+        `reviews/notes.md` stops `--apply`, and the missing config is never created."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _initialised(root)
+            (root / "sdlc-studio" / ".config.yaml").unlink()
+            (root / "sdlc-studio" / "reviews" / "notes.md").write_bytes(b"# notes\n\xff\xfe\n")
+            (root / "sdlc-studio" / ".local").mkdir(exist_ok=True)
+            (root / "sdlc-studio" / ".local" / "scratch.md").write_bytes(b"\xff\xfe\n")
+            r = _cli(root, "migrate.py", "--apply", "--format", "json")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            report = json.loads(r.stdout)
+            self.assertEqual([], [h for h in report["needs_human"] if h.get("kind") == "unreadable"])
+            self.assertTrue((root / "sdlc-studio" / ".config.yaml").is_file(),
+                            "--apply did not create the missing config")
+
+    def test_an_unreadable_config_is_named(self) -> None:
+        """MUTANT: leave `.config.yaml` out of the probe - it is not named."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _initialised(root)
+            (root / "sdlc-studio" / ".config.yaml").write_bytes(b"schema_version: 3\n\xff\xfe\n")
+            r = _cli(root, "migrate.py", "--format", "json")
+            self.assertNotIn("Traceback", r.stderr, r.stderr)
+            paths = [h.get("path") for h in json.loads(r.stdout)["needs_human"]
+                     if h.get("kind") == "unreadable"]
+            self.assertEqual(["sdlc-studio/.config.yaml"], paths)
+
+    @unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0, "root opens any file")
+    def test_a_file_that_cannot_be_opened_is_named_with_its_own_remedy(self) -> None:
+        """MUTANTS: (1) catch only `UnicodeDecodeError` - a `PermissionError` is a traceback;
+        (2) tell it to re-save as UTF-8, a remedy that does not apply."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _initialised(root)
+            story = root / "sdlc-studio" / "stories" / "US0001-locked.md"
+            story.write_text("# US0001: locked\n\n> **Status:** Draft\n", encoding="utf-8")
+            story.chmod(0)
+            try:
+                r = _cli(root, "migrate.py", "--format", "json")
+            finally:
+                story.chmod(0o644)       # before the directory is removed
+            self.assertNotIn("Traceback", r.stderr, r.stderr)
+            item = next(h for h in json.loads(r.stdout)["needs_human"]
+                        if h.get("kind") == "unreadable")
+            self.assertEqual("sdlc-studio/stories/US0001-locked.md", item["path"])
+            self.assertIn("PermissionError", item["detail"])
+            self.assertNotIn("re-save it as UTF-8", item["detail"])
 
 
 if __name__ == "__main__":

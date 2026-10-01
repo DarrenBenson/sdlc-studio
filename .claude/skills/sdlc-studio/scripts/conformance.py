@@ -780,8 +780,9 @@ def detect_conformance(repo_root: Path | str, changed: bool = False,
 # gate so an operator does not have to already know they exist. Not the remediation
 # per-stage hints (those are per-unit); these are the two whole-batch levers.
 REMEDY_CUTOFF = ("set `conformance.adopt_after` in sdlc-studio/.config.yaml to grandfather "
-                 "pre-adoption ids forward-only (accepts a bare id `103` or prefixed `US0103`; "
-                 "ids <= it are exempt)")
+                 "pre-adoption ids forward-only (accepts a bare id `103`, a prefixed `US0103`, "
+                 "or on schema v3 an id such as `BG-01KX95QP`; ids <= it are exempt, and under "
+                 "a v3 cutoff ids minted in an earlier timestamp bucket and the cutoff itself)")
 REMEDY_BACKFILL = ("run `verify_ac` and back-annotate `- **Verified:**` to clear the "
                    "per-unit debt")
 

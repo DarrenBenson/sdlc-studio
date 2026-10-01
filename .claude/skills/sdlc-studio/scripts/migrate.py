@@ -299,7 +299,10 @@ def _conformance_cutoff(root: Path) -> list[dict]:
     fail, for a human: the cutoff is a judgement about the project's history, so it is named,
     never written. The lane itself decides which units fail, so a cutoff already covering them
     leaves nothing to name, and the one named (the highest failing id) is never below a failing
-    unit. A ULID id has no number for a cutoff to reach, so it is left to the lane's report.
+    unit. Only a sequential id is proposed: a v3 id can be a cutoff, but it exempts by its
+    timestamp bucket and, within the cutoff's own bucket, only itself (`sdlc_md.cutoff_exempts`),
+    so the highest failing v3 id would not cover a same-bucket unit - that is left to the lane's
+    report.
 
     The lane resolves a stamped pytest selector by running the project's `pytest --collect-only`,
     so the call runs with pytest's cache and Python's bytecode writes off, restored after: a
@@ -536,15 +539,29 @@ def _signed_records(root: Path, apply: bool) -> tuple[list[dict], list[dict]]:
     return det, human
 
 
+def _sweep_inputs(root: Path) -> list[Path]:
+    """The workspace files the sweep's steps read as text and do not tolerate an undecodable
+    one in: `.config.yaml`, every artefact file of the pipeline and meta types (the audit's
+    validation, the sizing conversion, the conformance lane, reconcile), and each type's
+    `_index.md`. A file no step reads - a note under `reviews/`, runtime state under `.local/` -
+    is not one, so it never stops an upgrade. The Definition of Ready/Done and the instructions
+    files are read through readers that already tolerate an unreadable file, and are left out."""
+    files = [root / "sdlc-studio" / ".config.yaml"]
+    for type_, (rel, _prefix) in sdlc_md.ARTIFACT_TYPES.items():
+        files += list(sdlc_md.artifact_files(type_, root))
+        files.append(root / rel / "_index.md")
+    for type_, (rel, _prefix) in sdlc_md.META_TYPES.items():
+        files += [Path(p) for p, _rid in sdlc_md._meta_files(type_, root)]  # noqa: SLF001
+        files.append(root / rel / "_index.md")
+    return sorted({f for f in files if f.is_file()})
+
+
 def _unreadable_files(root: Path) -> list[tuple[str, str]]:
-    """`(repo-relative path, why)` for each workspace Markdown or config file under
-    `sdlc-studio/` that cannot be read as UTF-8 text - the files every step of the sweep reads.
-    Runtime state under `.local/` is not the project's, and is skipped."""
+    """`(repo-relative path, why)` for each of the sweep's inputs (`_sweep_inputs`) that cannot
+    be read as UTF-8 text: `UnicodeDecodeError` for bytes that are not UTF-8, the OS error's
+    name for a file that cannot be opened at all."""
     out = []
-    store = root / "sdlc-studio"
-    for path in sorted([*store.rglob("*.md"), store / ".config.yaml"]):
-        if not path.is_file() or ".local" in path.relative_to(store).parts:
-            continue
+    for path in _sweep_inputs(root):
         try:
             path.read_text(encoding="utf-8")  # bare-read-ok: the probe IS the read
         except (UnicodeDecodeError, OSError) as exc:
@@ -563,15 +580,18 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
     if not (root / "sdlc-studio").is_dir():
         return {"applicable": False, "applied": apply, "deterministic": [], "needs_human": [],
                 "frozen": [], "summary": {}}
-    # A workspace file that cannot be read as UTF-8 text stopped the sweep with a traceback that
-    # named neither the file nor anything else in the report. Every step below reads the
-    # workspace, so the files are found first and NAMED, and nothing is read past them or
+    # A file the sweep reads that cannot be read as UTF-8 text stopped it with a traceback that
+    # named neither the file nor anything else in the report. The steps below read these files
+    # (`_sweep_inputs`), so they are found first and NAMED, and nothing is read past them or
     # written - an upgrade applied over files its own readers cannot read is not deterministic.
     unreadable = _unreadable_files(root)
     if unreadable:
         needs = [{"kind": "unreadable", "path": rel, "command": None,
-                  "detail": f"{rel} could not be read as UTF-8 text ({why}) - re-save it as UTF-8, "
-                            f"then run migrate again; nothing else was examined or written"}
+                  "detail": (f"{rel} could not be read as UTF-8 text ({why}) - re-save it as "
+                             f"UTF-8" if why == "UnicodeDecodeError" else
+                             f"{rel} could not be opened ({why}) - make it readable (its "
+                             f"permissions, or remove it if it is not an artefact)")
+                            + ", then run migrate again; nothing else was examined or written"}
                  for rel, why in unreadable]
         return {"applicable": True, "applied": False, "deterministic": [], "needs_human": needs,
                 "terminal_sized": 0, "frozen": [],

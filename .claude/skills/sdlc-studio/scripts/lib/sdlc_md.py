@@ -3314,9 +3314,10 @@ def parse_cutoff(value, allow_ulid: bool = False) -> int | str | None:
     (lesson LL0008). The cutoff is the highest id treated as legacy: ids <= it are exempt.
 
     `allow_ulid` admits a schema v3 id (`BG-01KX95QP`) as well, for a caller that compares
-    through `cutoff_exempts`: the cutoff is then its ULID suffix, upper-cased, which sorts by
-    the moment it was minted. Without it a ULID still raises, so a caller comparing numbers is
-    never handed a string.
+    through `cutoff_exempts`: the cutoff is then the id's suffix, upper-cased (`01KX95QP`). Its
+    first six characters are a timestamp bucket (`short_ulid`: 30 bits of milliseconds, about
+    17 minutes a bucket) and the rest are random, so only the bucket orders ids. Without
+    `allow_ulid` a v3 id still raises, so a caller comparing numbers is never handed a string.
     """
     if value is None:
         return None
@@ -3337,21 +3338,38 @@ def parse_cutoff(value, allow_ulid: bool = False) -> int | str | None:
         "use a bare integer (103) or a prefixed id")
 
 
+#: The leading characters of a v3 id suffix that encode its mint time (`short_ulid`).
+ULID_BUCKET_CHARS = 6
+
+
 def cutoff_exempts(record_id: str, cutoff: int | str | None) -> bool:
     """Whether `record_id` falls at or before an adoption `cutoff` from `parse_cutoff`, and is
-    exempt. A numeric cutoff compares a sequential id's number. A ULID cutoff compares a v3
-    id's suffix as Crockford base32, which sorts by the moment the id was minted, whatever its
-    type prefix; a sequential id under a ULID cutoff was minted before the project's v3 ids
-    and is exempt. An id of neither shape is never exempt."""
+    exempt. Fails closed wherever the order is unknown.
+
+    A numeric cutoff compares a sequential id's number: `<=` is exempt.
+
+    A v3 cutoff (`01KX95QP`) compares only the TIMESTAMP BUCKET, the first six characters of a
+    v3 suffix, because the last two are random and order nothing. An id minted in a strictly
+    earlier bucket is exempt. In the cutoff's own bucket only the cutoff id itself is exempt;
+    any other id there is judged, since nothing says whether it came before or after. A later
+    bucket is judged. The id must carry the dash a v3 id is written with, so a long
+    sequential id is never read as a suffix.
+
+    A sequential id under a v3 cutoff is exempt: on a project migrated to schema v3 its
+    sequential ids predate every v3 id. That assumption fails where sequential ids are still
+    minted on a v3 project (`next_id.py allocate`), which is a separate defect."""
     if cutoff is None:
         return False
     rid = str(record_id or "").strip()
     if isinstance(cutoff, int):
         n = id_number(rid)
         return n is not None and n <= cutoff
-    m = re.fullmatch(r"[A-Za-z]{1,6}-?([" + _CROCKFORD + r"]{8,})", rid, re.IGNORECASE)
-    if m:   # 8+ chars: a v3 suffix (a sequential number is 4-7 digits, `id_number`)
-        return m.group(1).upper()[:len(cutoff)] <= cutoff
+    m = re.fullmatch(r"[A-Za-z]{1,6}-([" + _CROCKFORD + r"]{8,})", rid, re.IGNORECASE)
+    if m:
+        suffix, k = m.group(1).upper(), ULID_BUCKET_CHARS
+        if suffix[:k] != cutoff[:k]:
+            return suffix[:k] < cutoff[:k]
+        return suffix == cutoff
     return id_number(rid) is not None
 
 
