@@ -1625,8 +1625,9 @@ def cmd_revalidate(args: argparse.Namespace) -> int:
 # the stable class code (`LC-001`) a Try item or a finding cites; `class` is its short name;
 # `recorded_source` is the document that recorded it (`retro:RETRO0012`). A hit is
 # {run, unit, source}. A row is never deleted: the close moves it to `graduating` (with the
-# `cr` asking for its path to be fixed) or `retired`, and the fix landing moves it to
-# `graduated`.
+# `cr` asking for its path to be fixed) or `retired`; when that CR closes, the close moves the row
+# to `graduated` if the CR shipped (Complete or Superseded) and to `retired` if it was Rejected,
+# since nothing was fixed. A retired class's next repeat puts it back in force.
 
 STORE_FILE = "sdlc-studio/lessons.jsonl"
 #: The generic classes bundled with the skill (D0261). A project with no store of its own reads
@@ -1824,8 +1825,9 @@ def _graduation_cr(row: dict, run: str) -> tuple[str, dict]:
                f"\n\nHits:\n\n" + "\n".join(f"- {h}" for h in hits))
     return (f"Prevent or retire lesson {row['id']} ({row.get('class')})", {
         "summary": summary, "priority": "Medium", "ctype": "Improvement", "size": "M",
-        # The row moves to `graduated` when the fix lands. Where the fix lands is a grooming
-        # decision the close cannot make, so it is not guessed here.
+        # The row moves to `graduated` when this CR closes Complete or Superseded, and to
+        # `retired` when it is Rejected. Where the fix lands is a grooming decision the close
+        # cannot make, so it is not guessed here.
         "affects": STORE_FILE,
         "impact": (f"Every lane and review the class reaches: each repeat of {row['id']} has "
                    f"cost a review round, {n} so far."),
@@ -1838,8 +1840,9 @@ def _graduation_cr(row: dict, run: str) -> tuple[str, dict]:
                 "Any check this CR proposes names the lane, refusal, baseline or pin it "
                 "retires, and ships only in exchange for it; a check that retires nothing is "
                 "not added.",
-                f"Once the path is fixed, {row['id']} reads `graduated` in {STORE_FILE}; a class "
-                f"that no longer describes a live failure reads `retired` instead."],
+                f"Once the path is fixed and this CR closes Complete, {row['id']} reads "
+                f"`graduated` in {STORE_FILE}; a class that no longer describes a live failure "
+                f"is Rejected here instead, and the close then retires it until it recurs."],
         # The lean run opens no batch span, so without this the filer stamps the CR as raised
         # outside any batch, although the close of `run` raised it.
         "_batch": f"{run} close, {sdlc_md.now_iso8601()}"})
@@ -1853,30 +1856,38 @@ def recent_runs(repo_root, run: str) -> list[str]:
     return [r["run_id"] for r in run_state.archived(repo_root) if r["run_id"] != run] + [run]
 
 
-def _graduation_cr_closed(repo_root, row: dict) -> str:
-    """`<CR> <status>` when `row` is `graduating` and the CR it filed is at a terminal status,
-    else "". The CR's own vocabulary decides what terminal means, never a list kept here."""
+#: The terminal statuses of a graduation CR that mean its fix SHIPPED, so the class graduates.
+#: Any other terminal status (Rejected) fixed nothing, and the class retires instead: a retired
+#: class is revived by its next repeat, a graduated one by nothing.
+SHIPPED_CR_STATUSES = frozenset({"Complete", "Superseded"})
+
+
+def _graduation_cr_closed(repo_root, row: dict) -> tuple[str, str] | None:
+    """`(<CR id>, <status>)` when `row` is `graduating` and the CR it filed is at a terminal
+    status, else None. The CR's own vocabulary decides what terminal means."""
     if row.get("state") != "graduating" or not row.get("cr"):
-        return ""
+        return None
     found = sdlc_md.find_by_id(repo_root, str(row["cr"]))
     if not found:
-        return ""
+        return None
     path, type_ = found
     status = sdlc_md.canonical_status(
         sdlc_md.extract_field(sdlc_md.read_text_safe(Path(path)), "Status"),
         sdlc_md.status_vocab(type_, repo_root))
     if not status or not sdlc_md.is_terminal_status(type_, status):
-        return ""
-    return f"{sdlc_md.extract_record_id(Path(path).stem) or row['cr']} {status}"
+        return None
+    return sdlc_md.extract_record_id(Path(path).stem) or str(row["cr"]), status
 
 
 def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
     """What the close does to the store, with no operator step: count each REJECT this run
     recorded that cites a class as a hit (a hit on a retired class puts it back in force), file
     ONE CR for a class repeated GRADUATE_AT times after it was recorded (the row then reads
-    `graduating`), move a `graduating` class whose CR reached a terminal status to `graduated`,
-    and retire an active class quiet for the last QUIET_RUNS runs. Idempotent: a re-run close
-    adds no hit, files no CR and moves nothing twice.
+    `graduating`), close a `graduating` class whose CR reached a terminal status - `graduated`
+    when the CR shipped (Complete or Superseded), `retired` when it was Rejected - and retire an
+    active class quiet for the last QUIET_RUNS runs. A class hit in this close stays
+    `graduating` this close: the repeat is evidence the fix has not held. Idempotent: a re-run
+    close adds no hit, files no CR and moves nothing twice.
 
     Quiet is judged on the last QUIET_RUNS runs THIS clone's archive knows, and only once it
     knows more runs than that, so a fresh clone retires nothing. The archive is per clone while
@@ -1887,13 +1898,16 @@ def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
     left the digest. A retirement made on another clone's evidence is undone by the next
     repeat: a hit on a retired class puts it back in force (`add_hit`).
 
-    Returns `{hits, unknown, reactivated, graduating: [(code, cr)], graduated, retired, errors}`."""
+    Returns `{hits, unknown, reactivated, graduating: [(code, cr)], graduated, retired,
+    closed_by: {code: "<CR> <status>"}, errors}`; a class retired by a Rejected CR is in
+    `retired` and `closed_by`."""
     res = {"hits": 0, "unknown": [], "reactivated": [], "graduating": [], "graduated": [],
-           "retired": [], "errors": []}
+           "retired": [], "closed_by": {}, "errors": []}
     rows = load_store(repo_root)
     if not rows:
         return res
     import critic  # noqa: PLC0415 - deferred: the ledger reader is only needed at close
+    hit_now: set[str] = set()
     for code, unit, finding in critic.cited_lessons(repo_root, state or {}):
         row = find_class(rows, code)
         if row is None:
@@ -1902,6 +1916,7 @@ def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
         was = row.get("state")
         if add_hit(row, run, unit, f"critic:{run}", finding):
             res["hits"] += 1
+            hit_now.add(row["id"])
             if was == "retired":
                 res["reactivated"].append(row["id"])
     known = recent_runs(repo_root, run)
@@ -1914,11 +1929,17 @@ def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
             row["state"], row["retired_run"] = "retired", run
             res["retired"].append(row["id"])
     for row in rows:
-        closed = _graduation_cr_closed(repo_root, row)
-        if closed:
+        closed = None if row["id"] in hit_now else _graduation_cr_closed(repo_root, row)
+        if not closed:
+            continue
+        cr, status = closed
+        res["closed_by"][row["id"]] = f"{cr} {status}"
+        if status in SHIPPED_CR_STATUSES:
             row["state"] = "graduated"
             res["graduated"].append(row["id"])
-            res.setdefault("graduated_by", {})[row["id"]] = closed
+        else:
+            row["state"], row["retired_run"] = "retired", run
+            res["retired"].append(row["id"])
     if res["hits"] or res["retired"] or res["graduated"]:
         save_store(repo_root, rows)
     import file_finding  # noqa: PLC0415 - deferred: the filer imports the world, this does not
@@ -1946,10 +1967,14 @@ def close_pass_line(res: dict) -> str:
     if res.get("reactivated"):
         parts.append(f"hit again, back in force: {', '.join(res['reactivated'])}")
     parts += [f"{code} graduating -> {cr}" for code, cr in res["graduating"]]
-    parts += [f"{code} graduated ({res.get('graduated_by', {}).get(code, '')})"
+    closed_by = res.get("closed_by") or {}
+    parts += [f"{code} graduated ({closed_by.get(code, '')})"
               for code in res.get("graduated") or ()]
-    if res["retired"]:
-        parts.append(f"quiet for {QUIET_RUNS} runs, retired {', '.join(res['retired'])}")
+    parts += [f"{code} retired ({closed_by[code]}, nothing fixed)"
+              for code in res["retired"] if code in closed_by]
+    quiet = [code for code in res["retired"] if code not in closed_by]
+    if quiet:
+        parts.append(f"quiet for {QUIET_RUNS} runs, retired {', '.join(quiet)}")
     return "lessons: " + "; ".join(parts)
 
 

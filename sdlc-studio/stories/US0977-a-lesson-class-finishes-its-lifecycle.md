@@ -36,7 +36,7 @@ $ grep -n '"graduated"' .claude/skills/sdlc-studio/scripts/lessons.py
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a fixture whose `lessons.jsonl` holds a `graduating` class whose `cr` names a CR at a terminal status, when `lessons.close_pass` runs (as `sprint.py close` runs it), then `lessons.py --root <fixture> classes` shows that class `graduated`, and a `graduating` class whose CR is still open is unchanged. Fails on: HEAD leaves both `graduating`
+- [ ] **AC1** Given a fixture whose `lessons.jsonl` holds a `graduating` class whose `cr` names a CR at a terminal status, when `lessons.close_pass` runs (as `sprint.py close` runs it), then `lessons.py --root <fixture> classes` shows the class `graduated` when its CR is Complete or Superseded (the fix shipped) and `retired` when its CR is Rejected (nothing was fixed, so a later repeat revives it), and a `graduating` class whose CR is still open is unchanged. Fails on: HEAD leaves all of them `graduating`; graduating on any terminal status, which graduates a Rejected CR's class for good
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lesson_lifecycle.py::LessonLifecycleTests::test_a_class_graduates_when_its_cr_closes
 - [ ] **AC2** Given an `active` class whose `recorded_run` and hit runs are absent from this clone's run archive, and no hit in the last `QUIET_RUNS` runs this clone knows, when `lessons.close_pass` runs, then the class is `retired`; a class with a hit in those runs stays `active`. Fails on: HEAD keeps the unknown-run class `active` because its recording run is in no known window
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lesson_lifecycle.py::LessonLifecycleTests::test_a_class_recorded_in_another_clone_retires_when_quiet
@@ -47,3 +47,4 @@ $ grep -n '"graduated"' .claude/skills/sdlc-studio/scripts/lessons.py
 | --- | --- | --- |
 | 2026-10-01 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-01 | engineering seat (groomer) | Groomed under D0291 (backlog sweep 2026-10-01): criteria authored, premise executed at HEAD 85042135, Points and Affects set |
+| 2026-10-01 | engineering seat (builder) | AC1 amended on the round-1 REJECT and the engineering seat's ruling (D0291 hand rulings, D0264): a Rejected CR retires its class rather than graduating it |
