@@ -86,7 +86,10 @@ class ConfigKeysReadTests(unittest.TestCase):
         self.assertNotEqual(0, r.returncode, "an 8-point unit planned under a ceiling of 5:\n" + out)
         self.assertIn("BG0001", r.stderr, out)
         self.assertNotIn("lacks Points", r.stderr, "refused as unsized, not as over the threshold")
-        self.assertIn("5", r.stderr, "the refusal does not name the configured ceiling")
+        # The ceiling as the refusal states it: a bare "5" is satisfied by any temp path.
+        self.assertIn("are above 5 points", r.stderr, "the refusal does not name the ceiling")
+        self.assertRegex(r.stderr, r"BG0001\s+8 points\s+\(ceiling 5\)",
+                         "the refused unit is not named against the configured ceiling")
         self.assertNotIn("batch:", r.stdout, "a plan was printed for a refused batch")
         control = plan(5)
         self.assertEqual(0, control.returncode, "a unit at the ceiling was refused:\n"

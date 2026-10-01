@@ -31,6 +31,11 @@ _spec = importlib.util.spec_from_file_location("check_links_for_inventory",
 check_links = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(check_links)
 
+_cspec = importlib.util.spec_from_file_location(
+    "changelog_for_inventory", REPO / ".claude" / "skills" / "sdlc-studio" / "scripts" / "changelog.py")
+_changelog = importlib.util.module_from_spec(_cspec)
+_cspec.loader.exec_module(_changelog)
+
 FRAGMENT = Path("changelog.d") / "US0952.md"
 _RELEASE = re.compile(r"^## \[([^\]]+)\](.*)$", re.M)
 
@@ -76,11 +81,18 @@ def breaking_texts(root: Path) -> tuple[str, str, str, str]:
 
 
 def pending_breaking(root: Path) -> str:
-    """The next release's Breaking text: `changelog.d` fragments filed under `Breaking`, and the
-    `### Breaking` block under `## [Unreleased]`. Where a retirement registered after 6.0.0 is
-    disclosed - a shipped release's notes stay as shipped."""
+    """The Breaking text written after 6.0.0, where a retirement registered after 6.0.0 is
+    disclosed - a shipped release's notes stay as shipped. Before the next cut it is
+    `changelog.d` fragments filed under `Breaking` and the `### Breaking` block under
+    `## [Unreleased]`; after it, the `### Breaking` block of every released section above
+    `## [6.0.0]`. Reading only the pending text made a retirement disclosed today read as
+    undisclosed the moment the release that discloses it was cut."""
     rel = _releases((root / "CHANGELOG.md").read_text(encoding="utf-8"))
-    parts = [_block(rel.get("Unreleased", ("", ""))[1], "Breaking")]
+    parts = []
+    for version, (_head, body) in rel.items():     # file order: newest first
+        if version == "6.0.0":
+            break
+        parts.append(_block(body, "Breaking"))
     for path in sorted((root / "changelog.d").glob("*.md")):
         text = path.read_text(encoding="utf-8")
         if re.match(r"\s*<!--\s*section:\s*Breaking\s*-->", text):
@@ -148,6 +160,33 @@ class BreakingInventoryTests(unittest.TestCase):
                                            f"- a Sprint 6 fix\n\n", 1)
         self.assertTrue(disclosure_problems(self._tree(rename_only, None)),
                         "the cut's rename alone read as a disclosed 6.0.0 section")
+
+    def test_a_retirement_disclosed_after_6_0_0_stays_disclosed_after_the_next_cut(self) -> None:
+        """BG0831 round-1 REJECT. MUTANT: `pending_breaking` reads only `## [Unreleased]` and the
+        Breaking fragments - the cut moves them into a released section and consumes the
+        fragment, so `review.policy`, disclosed today, reads as undisclosed at the tag push.
+
+        The cut is the real one on a copy: `changelog.compose --apply` folds every pending
+        fragment into `[Unreleased]` and deletes it, then `[Unreleased]` is released."""
+        names = [n for n in retired_surface.sdlc_md.RETIRED_CONFIG_KEYS if n == "review.policy"]
+        self.assertTrue(names, "premise: review.policy is a registered retirement")
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root, True)
+        shutil.copy(REPO / "CHANGELOG.md", root / "CHANGELOG.md")
+        shutil.copytree(REPO / "changelog.d", root / "changelog.d")
+        self.assertNotIn("retired `review.policy` has no Breaking line",
+                         disclosure_problems(root), "premise: disclosed before the cut")
+        _changelog.compose(root, apply=True)
+        self.assertFalse(list((root / "changelog.d").glob("*.md")), "the cut consumed nothing")
+        text = (root / "CHANGELOG.md").read_text(encoding="utf-8")
+        top = "## [Unreleased]\n"
+        self.assertEqual(1, text.count(top))
+        (root / "CHANGELOG.md").write_text(
+            text.replace(top, f"{top}\n## [6.0.1] - 2026-10-02\n", 1), encoding="utf-8")
+        self.assertEqual("", _block(_releases((root / "CHANGELOG.md").read_text(
+            encoding="utf-8"))["Unreleased"][1], "Breaking"), "premise: Unreleased is empty")
+        self.assertEqual([], [p for p in disclosure_problems(root) if "review.policy" in p],
+                         "a retirement disclosed before the cut reads as undisclosed after it")
 
     def test_superseded_entries_are_flagged(self) -> None:
         """AC3. MUTANTS: the flag sentence dropped from the fragment; the rc.1 history deleted
