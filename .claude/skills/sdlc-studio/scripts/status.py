@@ -208,12 +208,34 @@ def cmd_backlog(args: argparse.Namespace) -> int:
     # Two backlogs (dual-track): the DISCOVERY backlog is the options funnel - a request is not
     # committed work until it is decomposed; counting it as backlog overstates what is ready to
     # deliver. The DELIVERY backlog is the sized work. Split so the two are never conflated.
+    # A discovery item WITH children is delivered through them, not awaiting refinement - the
+    # child test `discovery_awaiting` applies. It is listed apart, with its children, so the
+    # refine heading counts only what still needs refining and no open request drops out.
+    delivering: list[tuple[str, str, list[str]]] = []
+    with sdlc_md.corpus_cache():
+        for t in types:
+            if not sdlc_md.is_discovery(t) or not (data.get(t) or {}).get("count"):
+                continue
+            v = data[t]
+            for st in list(v["by_status"]):
+                keep = []
+                for rid in v["by_status"][st]:
+                    kids = [cid for cid, _ in sdlc_md.children_of(root, rid)]
+                    if kids:
+                        delivering.append((rid, st, kids))
+                    else:
+                        keep.append(rid)
+                v["count"] -= len(v["by_status"][st]) - len(keep)
+                if keep:
+                    v["by_status"][st] = keep
+                else:
+                    del v["by_status"][st]
     for label, hint, is_disc in (
             ("Discovery backlog", "options - refine requests / triage issues before it is work", True),
             ("Delivery backlog", "sized work, ready to deliver", False)):
         present = [t for t in types
                    if sdlc_md.is_discovery(t) == is_disc and (data.get(t) or {}).get("count")]
-        if not present:
+        if not present and not (is_disc and delivering):
             continue
         subtotal = sum(data[t]["count"] for t in present)
         print(f"\n{label} ({hint}): {subtotal}")
@@ -222,6 +244,11 @@ def cmd_backlog(args: argparse.Namespace) -> int:
             print(f"  {t}: {v['count']}")
             for st, ids in sorted(v["by_status"].items()):
                 print(f"    {st}: {', '.join(ids)}")
+        if is_disc and delivering:
+            print(f"  in delivery via their children (decomposed, nothing to refine): "
+                  f"{len(delivering)}")
+            for rid, st, kids in sorted(delivering, key=lambda d: sdlc_md.norm_id(d[0])):
+                print(f"    {rid} ({st}) -> {', '.join(kids)}")
     return 0
 
 
