@@ -11745,14 +11745,13 @@ def _hook_installed(root) -> bool:
     `HOOK_PATHS` location (the tracked `.githooks/`, and `.git/hooks` when git cannot be asked).
     Whether it can be read is a separate question - this asks only whether one exists.
 
-    The repository-locating `GIT_*` variables a hook exports are dropped, so git answers for
-    `root` rather than for the repository whose hook is running."""
+    Every `GIT_*` variable is dropped, as `project_upgrade.tracked_runtime_state` drops them: a
+    hook exports the ones that locate a repository, `git -C` does not override them, and git
+    would then answer for the repository whose hook is running rather than for `root`."""
     root = Path(root)
     if any((root / rel).is_file() for rel in HOOK_PATHS):
         return True
-    env = {k: v for k, v in os.environ.items()
-           if k not in ("GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE",
-                        "GIT_PREFIX", "GIT_OBJECT_DIRECTORY")}
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     try:
         r = subprocess.run(["git", "-C", str(root), "rev-parse", "--git-path", "hooks"],
                            capture_output=True, text=True, timeout=10, env=env)  # nosec B603 B607
