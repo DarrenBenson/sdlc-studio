@@ -9,6 +9,7 @@ it is installed.
 """
 from __future__ import annotations
 
+# test-census-subject: .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py
 import re
 import subprocess
 import sys
