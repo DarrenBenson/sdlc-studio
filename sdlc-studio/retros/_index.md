@@ -138,3 +138,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0126](RETRO0126-v6-0-0-ships-maya-and-jonah-install.md) | v6.0.0 ships: Maya and Jonah install, upgrade and learn it from docs and notes that match the code | 2026-09-28 | -- | -- |
 | [RETRO-0127](RETRO0127-jonah-s-team-installs-v6-via-claude-code.md) | Jonah's team installs v6 via Claude Code or Copilot CLI; migrate predicts the gate's reconcile, conformance, validate and floor failures | 2026-09-30 | -- | -- |
 | [RETRO-0128](RETRO0128-maya-signs-without-a-re-close-a-report.md) | Maya signs, without a re-close, a report that checks VALID and names every operator ruling and carry | 2026-10-01 | -- | -- |
+| [RETRO-0129](RETRO0129-every-open-finding-closes-maya-and-jonah-get.md) | Every open finding closes: Maya and Jonah get honest commands, safe installs and upgrades, and leaner sprint machinery | 2026-10-01 | -- | -- |
