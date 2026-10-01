@@ -1,6 +1,6 @@
 # BG0862: Nothing runs the unstubbed close, sign and check on one run holding a carry, a ruling and a forced override
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_run_end_to_end.py, changelog.d/BG0862.md

@@ -1,6 +1,6 @@
 # BG0851: The sprint report says the operator ruled nothing and no gate stood down when both happened
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_operator_interventions.py, changelog.d/BG0851.md

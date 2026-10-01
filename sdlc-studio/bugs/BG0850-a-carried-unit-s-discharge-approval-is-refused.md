@@ -1,6 +1,6 @@
 # BG0850: A carried unit's discharge approval is refused by the review cap that another reviewer's rounds filled
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py, .claude/skills/sdlc-studio/reference-review.md, changelog.d/BG0850.md

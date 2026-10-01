@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 36 |
-| In Progress | 9 |
-| Fixed | 683 |
+| In Progress | 0 |
+| Fixed | 692 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
@@ -184,10 +184,10 @@
 | [BG0823](BG0823-sprint-close-dry-run-reports-no-goal-no.md) | sprint close --dry-run reports no goal, no units and no start time for a run whose state holds all three, and previews writes as done | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0824](BG0824-init-guided-s-personas-stage-seeds-the-legacy.md) | init guided's personas stage seeds the legacy flat personas.md, which the persona registry and sprint plan --serves never read | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0825](BG0825-ulid-ids-are-printed-as-their-hyphenless-comparison.md) | ULID ids are printed as their hyphenless comparison key, so plan, brief, carry and the signed report name ids no file carries | Open | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0826](BG0826-the-scaffolded-retro-carries-neither-the-run-id.md) | The scaffolded retro carries neither the run id nor a Known issues carried table, so the run's rulings cannot be found or written | In Progress | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0826](BG0826-the-scaffolded-retro-carries-neither-the-run-id.md) | The scaffolded retro carries neither the run id nor a Known issues carried table, so the run's rulings cannot be found or written | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0827](BG0827-the-review-brief-asks-the-reviewer-to-judge.md) | The review brief asks the reviewer to judge origin 'at the base ref' but never names the base ref | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0828](BG0828-the-one-call-closes-do-not-check-the.md) | The one-call closes do not check the review brief: artifact.py close records a verdict with no brief and no warning, and transition --brief accepts a fingerprint no brief printed | Open | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0829](BG0829-a-unit-carried-at-the-review-cap-is.md) | A unit carried at the review cap is filed as an ungroomed bug that sprint plan cannot take, and every carry prints that the operator was notified | In Progress | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0829](BG0829-a-unit-carried-at-the-review-cap-is.md) | A unit carried at the review cap is filed as an ungroomed bug that sprint plan cannot take, and every carry prints that the operator was notified | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0830](BG0830-a-verdict-or-delegated-token-record-written-after.md) | A verdict or delegated-token record written after the seal lands on the sealed run without a warning | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0831](BG0831-the-configuration-reference-documents-keys-the-code-does.md) | The configuration reference documents keys the code does not honour: sprint.split_above, review.policy carry-forward, and review.max_rounds | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0832](BG0832-reference-review-md-step-3a-ships-a-private.md) | reference-review.md step 3a ships a private project's consultation cast as its example, names amigos with no resolver, and the neutrality lane misses it | Open | Medium | 2026-09-28 | 2026-09-28 |
@@ -206,10 +206,10 @@
 | [BG0845](BG0845-migrate-s-conformance-cutoff-on-a-v4-1.md) | migrate's conformance cutoff on a v4.1 project exempts the 98 units after the project's own adoption point, because a verdict row with no Author column never reads as independent | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0846](BG0846-the-v6-release-notes-test-s-post-cut.md) | The v6 release notes test's post-cut control assumes the notes still carry the pre-cut links, so the v6.0.0 cut turns the tools suite red | Fixed | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0847](BG0847-the-v6-existing-users-page-dropped-its-audit.md) | The v6 existing-users page dropped its audit --profile repo mention, so US0242's criterion that four surfaces name the audit on-ramp is red at the release gate | Fixed | Medium | 2026-09-29 | 2026-09-29 |
-| [BG0848](BG0848-sprint-sign-invalidates-its-own-report-when-it.md) | sprint sign invalidates its own report when it moves an approved unit to Done | In Progress | High | 2026-09-29 | 2026-09-29 |
-| [BG0849](BG0849-a-close-dry-run-mints-a-different-graduation.md) | A close dry run mints a different graduation change request id each time, so a retro cannot rule it before the close | In Progress | Medium | 2026-09-29 | 2026-09-29 |
-| [BG0850](BG0850-a-carried-unit-s-discharge-approval-is-refused.md) | A carried unit's discharge approval is refused by the review cap that another reviewer's rounds filled | In Progress | Medium | 2026-09-29 | 2026-09-29 |
-| [BG0851](BG0851-the-sprint-report-says-the-operator-ruled-nothing.md) | The sprint report says the operator ruled nothing and no gate stood down when both happened | In Progress | Medium | 2026-09-29 | 2026-09-29 |
+| [BG0848](BG0848-sprint-sign-invalidates-its-own-report-when-it.md) | sprint sign invalidates its own report when it moves an approved unit to Done | Fixed | High | 2026-09-29 | 2026-09-29 |
+| [BG0849](BG0849-a-close-dry-run-mints-a-different-graduation.md) | A close dry run mints a different graduation change request id each time, so a retro cannot rule it before the close | Fixed | Medium | 2026-09-29 | 2026-09-29 |
+| [BG0850](BG0850-a-carried-unit-s-discharge-approval-is-refused.md) | A carried unit's discharge approval is refused by the review cap that another reviewer's rounds filled | Fixed | Medium | 2026-09-29 | 2026-09-29 |
+| [BG0851](BG0851-the-sprint-report-says-the-operator-ruled-nothing.md) | The sprint report says the operator ruled nothing and no gate stood down when both happened | Fixed | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0852](BG0852-install-sh-treats-copilot-as-repo-scoped-only.md) | install.sh treats Copilot as repo-scoped only, so a Copilot CLI user following the quick start or --target auto gets no sdlc-studio and no hint why | Fixed | High | 2026-09-29 | 2026-09-29 |
 | [BG0853](BG0853-the-agent-instructions-template-names-the-claude-code.md) | The agent-instructions template names the Claude Code skill path, so an AGENTS.md seeded for Codex, Copilot, Gemini or Cursor points at files that do not exist there | Fixed | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0854](BG0854-nothing-runs-migrate-and-then-the-gate-on.md) | Nothing runs migrate and then the gate on one fixture, so migrate's report drifted from the gate's failing lanes on three lanes unseen | Fixed | Medium | 2026-09-30 | 2026-09-30 |
@@ -217,13 +217,13 @@
 | [BG0856](BG0856-bg0852-did-not-converge-in-review-round-2.md) | BG0852 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0857](BG0857-an-unreadable-epics-directory-is-read-as-absence.md) | An unreadable epics directory is read as absence by reconcile's detectors, so the gate and migrate report a drift count with no mention that part of the workspace was never read | Open | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0858](BG0858-migrate-names-nothing-when-the-conformance-lane-fails.md) | migrate names nothing when the conformance lane fails only on ULID-id units or repo-wide failures, so a schema v3 project meets the failure at the gate unannounced | Open | Medium | 2026-09-30 | 2026-09-30 |
-| [BG0859](BG0859-the-close-s-status-preflight-stops-every-approved.md) | The close's status preflight stops every approved bug left In Progress and tells the operator to move it to Review, a status bugs do not have | In Progress | Medium | 2026-09-30 | 2026-09-30 |
+| [BG0859](BG0859-the-close-s-status-preflight-stops-every-approved.md) | The close's status preflight stops every approved bug left In Progress and tells the operator to move it to Review, a status bugs do not have | Fixed | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0860](BG0860-a-sprint-plan-preview-with-no-write-appends.md) | A sprint plan preview with no --write appends forecast rows to the tracked evidence log, so each dry run adds a duplicate forecast per unit | Open | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0861](BG0861-nothing-opens-a-delivery-batch-since-us0918-so.md) | Nothing opens a delivery batch since US0918, so every finding is stamped raised outside a batch and the close's finding-placement figure is always empty | Open | Medium | 2026-09-30 | 2026-09-30 |
-| [BG0862](BG0862-nothing-runs-the-unstubbed-close-sign-and-check.md) | Nothing runs the unstubbed close, sign and check on one run holding a carry, a ruling and a forced override | In Progress | Medium | 2026-09-30 | 2026-09-30 |
+| [BG0862](BG0862-nothing-runs-the-unstubbed-close-sign-and-check.md) | Nothing runs the unstubbed close, sign and check on one run holding a carry, a ruling and a forced override | Fixed | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0863](BG0863-an-unreadable-verdict-ledger-drops-unreviewed-units-from.md) | An unreadable verdict ledger drops unreviewed units from the close's status rows since BG0859, and the bug remedy is wrong for a bug that already has an APPROVE | Open | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0864](BG0864-transition-to-fixed-admits-a-bug-whose-verify.md) | transition to Fixed admits a bug whose Verify lines have never been run, so a carried bug with red or manual-only criteria reaches Fixed with nothing executed | Open | Medium | 2026-10-01 | 2026-10-01 |
-| [BG0865](BG0865-the-signed-page-names-a-known-issue-s.md) | The signed page names a known issue's retro ruling only when it is STOP-SHIP, and a finding the close files falls outside the run window | In Progress | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0865](BG0865-the-signed-page-names-a-known-issue-s.md) | The signed page names a known issue's retro ruling only when it is STOP-SHIP, and a finding the close files falls outside the run window | Fixed | Medium | 2026-10-01 | 2026-10-01 |
 
 ## Archived Releases
 

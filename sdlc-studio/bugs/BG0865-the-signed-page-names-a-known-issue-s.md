@@ -1,6 +1,6 @@
 # BG0865: The signed page names a known issue's retro ruling only when it is STOP-SHIP, and a finding the close files falls outside the run window
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_known_issue_rulings.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG0865.md

@@ -1,6 +1,6 @@
 # BG0849: A close dry run mints a different graduation change request id each time, so a retro cannot rule it before the close
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_graduation_ruling.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/BG0849.md

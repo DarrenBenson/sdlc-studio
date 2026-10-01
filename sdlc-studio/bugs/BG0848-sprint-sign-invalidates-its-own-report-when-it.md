@@ -1,6 +1,6 @@
 # BG0848: sprint sign invalidates its own report when it moves an approved unit to Done
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_sign.py, changelog.d/BG0848.md

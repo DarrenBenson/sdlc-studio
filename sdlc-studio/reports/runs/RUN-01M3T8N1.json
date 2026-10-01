@@ -1,0 +1,504 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M3T8N1",
+  "started_at": "2026-09-30T23:00:50Z",
+  "ended_at": "2026-10-01T07:48:43Z",
+  "outcome": "goal-reached",
+  "goal": "done",
+  "batch": [
+    "BG0826",
+    "BG0859",
+    "BG0848",
+    "BG0829",
+    "BG0850",
+    "BG0851",
+    "BG0849",
+    "BG0862",
+    "BG0865"
+  ],
+  "plan": "sdlc-studio/.local/sprint-plan.json",
+  "handoff": "HO-0093",
+  "session_token_baseline": {
+    "tokens": 3820693,
+    "source": "sha256:1d4787a19476",
+    "at": "2026-09-30T23:00:50Z"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 3820693,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T23:00:50Z",
+      "kind": "open",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 3834294,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T23:09:46Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 3849107,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T23:27:23Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 3896896,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-09-30T23:42:06Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 3941891,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T00:10:03Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 3964680,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T00:27:17Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 4031118,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T01:01:02Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 4055830,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T01:19:49Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 4102460,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T01:48:08Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 6053210,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T06:02:47Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 6146157,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T07:01:41Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 6146157,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T07:06:56Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 6178487,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T07:45:12Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    }
+  ],
+  "delegated_tokens": [],
+  "reopened": [],
+  "batch_changes": [
+    {
+      "action": "add",
+      "id": "BG0865",
+      "at": "2026-10-01T06:02:46Z",
+      "reason": "Operator ruling 2026-10-01: BG0862 proved the signed page never states a non-STOP-SHIP retro ruling and a close-filed graduation CR falls outside the window, so the goal 'names every operator ruling and carry' needs this page change; added rather than rewording the goal"
+    }
+  ],
+  "batches": [],
+  "rulings": [
+    {
+      "id": "D0289",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    }
+  ],
+  "base_ref": "46cb9acf6e95b73d18962d69e78c0faad502e97a",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-09-30T23:00:15Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "Maya signs, without a re-close, a report that checks VALID and names every operator ruling and carry",
+  "sprint_goal_review": {
+    "reviewed": true,
+    "status": "read",
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "product",
+        "achievable": "yes",
+        "done_means": "On a run holding approved units at Review and In Progress, a carry, a decision resolve and a forced override, Maya closes with no hand transition (the retro-scaffold stop files no report), signs, and the first check prints VALID; the page names each carry with its ruling, each operator ruling, each in-window override and any graduation CR by lesson class. BG0862 proves this without stubs.",
+        "one_increment": "yes",
+        "note": "BG0849 missing CLOSED; BG0860/0861 riders CLOSED; eu_tokens CLOSED; 'every ruling and carry' MOVED to BG0862, whose fixture has no graduating lesson class (non-blocking, BG0849 AC1 covers it at unit level). Risk: BG0862 depends on all seven, so any carry fails the goal."
+      },
+      {
+        "seat": "qa",
+        "achievable": "no",
+        "done_means": "BG0862 AC1 and AC2 green on one unstubbed run; the fixture also graduates a lesson ruled by its LC class in the retro (BG0849) and the page names that ruling; the test asserts exactly one report exists across both closes and that it is the one signed and checked VALID.",
+        "one_increment": "yes",
+        "note": "Stubbed chain CLOSED; carry+ruling+override on one page CLOSED; BG0826 header-only CLOSED; BG0860/0861 CLOSED; eu_tokens CLOSED; cap-raise ruling OVER-CLAIMED; BG0859 MOVED - the real close's preflight never changes the exit code (sprint.py:7500), so AC1 passes reverted. Blocking [LC-002]: the fixture graduates no lesson, so BG0849 and 'every ruling' pass reverted; nothing asserts the scaffolding close files no report."
+      },
+      {
+        "seat": "engineering",
+        "achievable": "yes",
+        "done_means": "test_lean_signed_run_end_to_end.py (BG0862) green with no stubs on a fixture holding approved units at Review and In Progress, a carry discharged by its rejecting reviewer, a decision resolve, a forced override on a dropped unit and a graduating lesson on schema 3; bare close scaffolds the retro with run id and carried table; close --retro reports nothing UNRULED; one sign then check prints VALID naming ruling, carry and override; RPT0012 still VALID.",
+        "one_increment": "yes",
+        "note": "(a) MOVED (BG0861 stays in backlog); (b)(c)(e)(f) CLOSED; (d) OVER-CLAIMED on BG0859 blocking, order CLOSED. Open: BG0849's Lesson class header needs file_finding.py outside Affects - join through the lesson store's class-to-CR link instead [LC-008]; BG0862 must say where the dropped discharged carried unit ends (the seal moves batch units only); land BG0826 before BG0849 and BG0849 after BG0851."
+      }
+    ],
+    "goal": "Maya signs, without a re-close, a report that checks VALID and names every operator ruling and carry",
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 82,
+    "objected": true,
+    "objections": [
+      {
+        "seat": "qa",
+        "achievable": "no",
+        "one_increment": "yes",
+        "note": "Stubbed chain CLOSED; carry+ruling+override on one page CLOSED; BG0826 header-only CLOSED; BG0860/0861 CLOSED; eu_tokens CLOSED; cap-raise ruling OVER-CLAIMED; BG0859 MOVED - the real close's preflight never changes the exit code (sprint.py:7500), so AC1 passes reverted. Blocking [LC-002]: the fixture graduates no lesson, so BG0849 and 'every ruling' pass reverted; nothing asserts the scaffolding close files no report."
+      }
+    ],
+    "reviewed_at": "2026-09-30T16:12:49Z",
+    "change_type": "material",
+    "amended_from": "The operator signs a close that checks VALID first time, with every ruling and carry on the page",
+    "requesting_seat": null,
+    "needs_reconsult": [],
+    "themed": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Fixed",
+    "types": [
+      "bug"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed"
+  },
+  "plan_snapshot": {
+    "units": {
+      "BG0826": {
+        "planned_points": 2,
+        "forecast_tokens": 356704,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0859": {
+        "planned_points": 2,
+        "forecast_tokens": 356704,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0848": {
+        "planned_points": 3,
+        "forecast_tokens": 535056,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0829": {
+        "planned_points": 3,
+        "forecast_tokens": 535056,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0850": {
+        "planned_points": 3,
+        "forecast_tokens": 535056,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0851": {
+        "planned_points": 5,
+        "forecast_tokens": 891760,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "BG0849": {
+        "planned_points": 3,
+        "forecast_tokens": 535056,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0862": {
+        "planned_points": 5,
+        "forecast_tokens": 891760,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "BG0865": {
+        "planned_points": 3,
+        "forecast_tokens": 535056,
+        "forecast_minutes": 19.2,
+        "added": true
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 178352,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 6.4,
+        "source": "fallback: 0 row(s) for claude-opus-5-5, under 3, so the latest rows of any single model: median of RETRO0028"
+      }
+    }
+  },
+  "token_forecast": 4637152,
+  "goal_content_review": [
+    {
+      "phase": "plan",
+      "goal": "Maya signs, without a re-close, a report that checks VALID and names every operator ruling and carry",
+      "answer": "yes",
+      "missing": "",
+      "shortfall": {},
+      "recorded_at": "2026-09-30T23:00:50Z"
+    }
+  ],
+  "unit_actuals": {
+    "BG0859": {
+      "minutes": 471.92,
+      "tokens": 2311863,
+      "started_at": "2026-09-30T23:09:46Z",
+      "start_tokens": 13601,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0850": {
+      "minutes": 454.3,
+      "tokens": 2297050,
+      "started_at": "2026-09-30T23:27:23Z",
+      "start_tokens": 28414,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0829": {
+      "minutes": 439.58,
+      "tokens": 2249261,
+      "started_at": "2026-09-30T23:42:06Z",
+      "start_tokens": 76203,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0826": {
+      "minutes": 411.63,
+      "tokens": 2204266,
+      "started_at": "2026-10-01T00:10:03Z",
+      "start_tokens": 121198,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0848": {
+      "minutes": 394.4,
+      "tokens": 2181477,
+      "started_at": "2026-10-01T00:27:17Z",
+      "start_tokens": 143987,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0851": {
+      "minutes": 360.65,
+      "tokens": 2115039,
+      "started_at": "2026-10-01T01:01:02Z",
+      "start_tokens": 210425,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0849": {
+      "minutes": 341.87,
+      "tokens": 2090327,
+      "started_at": "2026-10-01T01:19:49Z",
+      "start_tokens": 235137,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0862": {
+      "minutes": 313.55,
+      "tokens": 2043697,
+      "started_at": "2026-10-01T01:48:08Z",
+      "start_tokens": 281767,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0865": {
+      "minutes": 58.9,
+      "tokens": 92947,
+      "started_at": "2026-10-01T06:02:47Z",
+      "start_tokens": 2232517,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    }
+  },
+  "lanes_in_flight": [],
+  "review_base": {
+    "BG0859": 0,
+    "BG0850": 0,
+    "BG0829": 0,
+    "BG0826": 0,
+    "BG0848": 0,
+    "BG0851": 0,
+    "BG0849": 0,
+    "BG0865": 0,
+    "BG0862": 0
+  },
+  "sprint_goal_verdict": {
+    "verdict": "achieved",
+    "note": "BG0862 runs the shipped close, retro, close, sign and check unstubbed on a schema 3 run holding a carry discharged by its rejecting reviewer (BG0850), a resolved decision and a forced override on a dropped unit (BG0851), and a lesson ruled by class (BG0849): one report, VALID first time with no unit moved by hand (BG0848, BG0859), every ruling named on the page (BG0865), retro scaffolded with its run and table (BG0826); the carried bug is now plannable (BG0829). The real proof is this close: no units were moved by hand before it."
+  },
+  "scaffolded_retro": "RETRO-0128",
+  "close_attempts": [
+    {
+      "at": "2026-10-01T07:01:41Z",
+      "outstanding": 0,
+      "stages": []
+    },
+    {
+      "at": "2026-10-01T07:39:56Z",
+      "outstanding": 0,
+      "stages": []
+    }
+  ],
+  "close_not_measured": [],
+  "handoff_worklist": "sdlc-studio/.local/handoff-worklist.txt",
+  "handoff_remaining": 0,
+  "close_tree": "3d5cd5d56eb2706d20dcd6c75c6ad55115c7988d",
+  "report_gate_clear": [
+    "BG0826",
+    "BG0829",
+    "BG0848",
+    "BG0849",
+    "BG0850",
+    "BG0851",
+    "BG0859",
+    "BG0862",
+    "BG0865"
+  ],
+  "verified_sha": "8e9ced50335cf74881030b05ee8717661d568896",
+  "close_known_issues": [],
+  "ci_runs": {
+    "source": "gh run list",
+    "runs": [
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-01T06:45:11Z",
+        "databaseId": 36826457564,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "83172fd065ac11c665d0984ef51a84d12886286d",
+        "updatedAt": "2026-10-01T07:33:05Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-01T01:47:28Z",
+        "databaseId": 36802767721,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "392d9f838739e6b9bf4c05589499062326598a8f",
+        "updatedAt": "2026-10-01T02:35:34Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-01T00:59:36Z",
+        "databaseId": 36798908986,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "730edb7990d15067297715b3e0b8a2f4bca22561",
+        "updatedAt": "2026-10-01T01:45:19Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-01T00:09:58Z",
+        "databaseId": 36794772826,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "5eb5101b47ca10133d387598114fa7a25f3c920d",
+        "updatedAt": "2026-10-01T00:58:24Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-09-30T23:09:36Z",
+        "databaseId": 36789601166,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "62af4d6dbf73e70451b8a80e02febd63367872eb",
+        "updatedAt": "2026-09-30T23:39:28Z",
+        "workflowName": "Lint"
+      }
+    ]
+  },
+  "review_rows": {
+    "BG0826": [
+      "7eda90dba6b5586e"
+    ],
+    "BG0859": [
+      "d3cc0d38c573b082"
+    ],
+    "BG0848": [
+      "cb0b41ccc866e0df"
+    ],
+    "BG0829": [
+      "ce467a1601976fa7"
+    ],
+    "BG0850": [
+      "03045b938ef9af02"
+    ],
+    "BG0851": [
+      "3ed525767a322e1f"
+    ],
+    "BG0849": [
+      "4c073998fdfb1d2f"
+    ],
+    "BG0862": [
+      "c2ecc42371ffcdb4"
+    ],
+    "BG0865": [
+      "ea597dcf9927feab"
+    ]
+  },
+  "report": "RPT0013",
+  "report_fingerprint": "6760a4722fa13a99",
+  "unanswered": [],
+  "unanswered_rulings_from": "RETRO0128",
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-10-01T07:48:43Z",
+    "report": "RPT0013",
+    "fingerprint": "6760a4722fa13a99"
+  }
+}

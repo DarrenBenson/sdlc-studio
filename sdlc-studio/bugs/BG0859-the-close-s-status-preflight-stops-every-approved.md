@@ -1,6 +1,6 @@
 # BG0859: The close's status preflight stops every approved bug left In Progress and tells the operator to move it to Review, a status bugs do not have
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py,.claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG0859.md
