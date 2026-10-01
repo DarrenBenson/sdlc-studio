@@ -1788,9 +1788,10 @@ def batch_history(repo_root: Path | str) -> list[dict]:
 def record_forecast(repo_root: Path | str, data: dict) -> dict:
     """RECORD what this plan predicted, per unit, WHEN it predicted it.
 
-    Unconditional - not behind `--write`. A forecast that is only written when someone
-    remembers a flag is a forecast that does not exist, and the retro is then left to
-    re-derive one from whatever the constants say by then. That is not a prediction, and a
+    Called by the plan that opens the run (`--write`) and by each rolling cycle, never by a
+    preview: a unit's FIRST record wins on read, so a preview's row would be the one the retro
+    judges, at whatever size the unit had before it was regroomed. What is recorded is never
+    re-derived later from whatever the constants say by then: that is not a prediction, and a
     loop built on it cannot falsify its own estimator.
 
     Each record carries the number, the POINTS it was priced from, and the CONSTANTS that

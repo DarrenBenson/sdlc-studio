@@ -2693,6 +2693,8 @@ class TheEstimateIsTheOneThatWasPredicted(unittest.TestCase):
         self.plan(write=False)
         recorded = tel.forecasts_path(self.root)
         self.assertFalse(recorded.exists(), "a preview recorded a forecast")
+        self.assertFalse((self.root / "sdlc-studio" / ".local" / "sprint-plan.json").exists(),
+                         "a preview wrote the plan artefact")
         self.plan()
         self.assertTrue(recorded.exists(), "the written plan recorded no forecast")
         self.assertNotIn(".local", recorded.parts)

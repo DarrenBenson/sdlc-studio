@@ -2581,9 +2581,11 @@ class PointsForecastTests(unittest.TestCase):
             (root / "w.txt").write_text("BG0001\n", encoding="utf-8")
             argv = ["plan", "--worklist", str(root / "w.txt"), "--root", str(root),
                     "--no-fetch", "--skip-personas"]
-            with contextlib.redirect_stdout(io.StringIO()), \
-                    contextlib.redirect_stderr(io.StringIO()):
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
                 self.assertEqual(0, sp.main(argv))
+            self.assertIn("a preview records nothing", out.getvalue())
+            self.assertNotIn("forecast recorded:", out.getvalue())
             evidence = root / "sdlc-studio" / "retros" / "evidence"
             self.assertEqual([], sorted(evidence.glob("forecasts-*.jsonl")))
             bug = root / "sdlc-studio" / "bugs" / "BG0001-x.md"
