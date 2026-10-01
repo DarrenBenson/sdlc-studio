@@ -1066,6 +1066,11 @@ FIELDS_FILE_KEYS: tuple[str, ...] = (*COMMON_FIELDS_FILE_KEYS,
                                      "mutation_run", "mutation_target", "evidence",
                                      "lens", "profile", "audit_run", "detector_for_lens")
 
+#: A document key spelled as the repeatable flag it stands in for (`--ac`, `--option`), read as
+#: the canonical plural field. Only where the canonical key is accepted and absent: a document
+#: carrying both spellings keeps the flag spelling unknown, so it is refused as before.
+FLAG_KEY_ALIASES: dict[str, str] = {"ac": "acs", "option": "options"}
+
 #: The `--fields-file` spelling that means "read the document from stdin" - the family
 #: convention, so no writer grows its own.
 STDIN_FIELDS_FILE = "-"
@@ -1311,6 +1316,9 @@ def load_fields_file(path: Path | str, allowed: tuple[str, ...] = FIELDS_FILE_KE
     if not isinstance(data, dict):
         raise ValueError(f"--fields-file {p} holds {type(data).__name__}, not a JSON object of "
                          f"field names - e.g. {{\"title\": \"...\", \"steps\": \"...\"}}")
+    for flag_key, field in FLAG_KEY_ALIASES.items():
+        if flag_key in data and flag_key not in allowed and field in allowed and field not in data:
+            data[field] = data.pop(flag_key)
     unknown = sorted(k for k in data if k not in allowed)
     if unknown:
         raise ValueError(f"--fields-file {p} carries unknown field(s): {', '.join(unknown)} - "
@@ -2186,6 +2194,10 @@ def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields:
     return {"id": disp_id, "file_id": file_id, "path": str(path), "indexed": indexed}
 
 
+#: The types `file` mints, from `--type` or a document's `type` key.
+FILE_TYPES: tuple[str, ...] = ("bug", "cr", "rfc")
+
+
 def cmd_file(args: argparse.Namespace) -> int:
     flags = {"severity": args.severity, "priority": args.priority, "ctype": args.ctype,
              "summary": args.summary, "steps": args.steps, "fix": args.fix,
@@ -2215,7 +2227,9 @@ def cmd_file(args: argparse.Namespace) -> int:
     # file is data, and warning about it would train the reader to ignore the warning.
     report_shell_hazards(flags)
     try:
-        from_file = load_fields_file(args.fields_file) if args.fields_file else {}
+        # `type` stands in for the `--type` flag, so the document can be the whole invocation.
+        from_file = (load_fields_file(args.fields_file, (*FIELDS_FILE_KEYS, "type"))
+                     if args.fields_file else {})
         # The prose resolution that follows the loader. This command reads the document itself
         # rather than through `resolve_prose_fields` - it carries typed keys the shared resolver's
         # callers do not - so the rule is applied here by its own call, over the free-text half of
@@ -2225,6 +2239,13 @@ def cmd_file(args: argparse.Namespace) -> int:
     except ValueError as exc:
         print(f"file refused: {exc}", file=sys.stderr)
         return 1
+    type_ = args.type or from_file.pop("type", None)
+    if type_ not in FILE_TYPES:
+        print(f"file_finding.py file: error: --type must be one of {', '.join(FILE_TYPES)} "
+              f"(got {type_!r}) - pass --type, or a \"type\" key in the --fields-file document",
+              file=sys.stderr)
+        return 2
+    from_file.pop("type", None)              # an explicit --type wins over the document
     fields = {**from_file, **flags}          # an explicit flag wins over the document
     title = fields.pop("title", None)
     if not title:
@@ -2232,7 +2253,7 @@ def cmd_file(args: argparse.Namespace) -> int:
               "--fields-file document", file=sys.stderr)
         return 1
     try:
-        result = file_finding(args.root, args.type, title, fields, dry_run=args.dry_run)
+        result = file_finding(args.root, type_, title, fields, dry_run=args.dry_run)
     except (ValueError, FileExistsError) as exc:
         # a refusal is a message, not a traceback - the reason and the fix, on stderr
         # (exit 1: the same code the top-level guard has always given refusals)
@@ -2291,7 +2312,8 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Deterministic Bug/CR/RFC finding filer.")
     sub = p.add_subparsers(dest="cmd", required=True)
     f = sub.add_parser("file", help="File one structured artifact from a finding.")
-    f.add_argument("--type", required=True, choices=("bug", "cr", "rfc"))
+    f.add_argument("--type", choices=FILE_TYPES,
+                   help="required unless the --fields-file document carries a \"type\" key")
     f.add_argument("--fields-file", dest="fields_file", metavar="FINDING.json",
                    help="THE RECOMMENDED PATH. A JSON object of the same field names, read "
                         "straight off disk so no value ever crosses a shell. Use it for any "

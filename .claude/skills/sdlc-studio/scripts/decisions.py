@@ -624,13 +624,16 @@ def list_decisions(root: Path | str, status: str | None = None) -> list[dict]:
 PROSE_KEYS: tuple[str, ...] = ("decision", "rationale")
 
 
-def resolve_prose(args: argparse.Namespace, keys: tuple[str, ...] = PROSE_KEYS) -> dict:
+def resolve_prose(args: argparse.Namespace, keys: tuple[str, ...] = PROSE_KEYS,
+                  optional: tuple[str, ...] = ()) -> dict:
     """The ruling's prose, from the `--fields-file` document or the flags, through the ONE
-    shared loader. Raises ValueError when a required field is in neither."""
+    shared loader. Raises ValueError when a required field is in neither. `optional` names the
+    verb's other flags a document may carry in their flag spelling (`status`, `seat`); an
+    explicit flag still wins over the document."""
     import file_finding  # noqa: PLC0415 - the shared prose-fields loader, as elsewhere
     fields = file_finding.resolve_prose_fields(
         getattr(args, "fields_file", None),
-        {k: getattr(args, k, None) for k in keys}, allowed=keys)
+        {k: getattr(args, k, None) for k in (*keys, *optional)}, allowed=(*keys, *optional))
     missing = [k for k in keys if not file_finding.prose_value(fields, k)]
     if missing:
         raise ValueError(f"no {'/'.join(missing)} - pass --{missing[0]}, or a "
@@ -647,14 +650,21 @@ def add_fields_file_arg(sp: argparse.ArgumentParser, keys: tuple[str, ...]) -> N
                          "document from stdin")
 
 
+#: The statuses `add` records, from `--status` or a document's `status` key.
+ADD_STATUSES: tuple[str, ...] = ("accepted", "superseded", "revisited")
+
+
 def cmd_add(args: argparse.Namespace) -> int:
     try:
-        fields = resolve_prose(args)
+        fields = resolve_prose(args, optional=("status", "supersedes"))
+        status = fields.get("status", "accepted")
+        if status not in ADD_STATUSES:
+            raise ValueError(f"status {status!r} is not one of {', '.join(ADD_STATUSES)}")
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
-    r = add(args.root, fields["decision"], fields["rationale"], args.status,
-            args.supersedes or "")
+    r = add(args.root, fields["decision"], fields["rationale"], status,
+            fields.get("supersedes", ""))
     _count(args.root, r["id"], args.by)
     print(json.dumps(r, indent=2) if args.format == "json"
           else f"recorded {r['id']} ({r['status']}) on {r['date']}")
@@ -712,8 +722,16 @@ def cmd_rule(args: argparse.Namespace) -> int:
         # Read by name, so the dead-flag audit sees each flag consumed.
         fields = resolve_prose(argparse.Namespace(
             fields_file=args.fields_file, question=args.question, ruling=args.ruling,
-            reason=args.reason), RULING_KEYS)
-        r = rule(args.root, args.seat, args.subject, fields["question"], fields["ruling"],
+            reason=args.reason, seat=args.seat, subject=args.subject), RULING_KEYS,
+            optional=("seat", "subject"))
+        import file_finding  # noqa: PLC0415 - the shared presence test, as in resolve_prose
+        absent = [k for k in ("seat", "subject") if not file_finding.prose_value(fields, k)]
+        if absent:
+            print(f"decisions.py rule: error: the following arguments are required: "
+                  f"{', '.join('--' + k for k in absent)} (or a \"{absent[0]}\" key in the "
+                  f"--fields-file document)", file=sys.stderr)
+            return 2
+        r = rule(args.root, fields["seat"], fields["subject"], fields["question"], fields["ruling"],
                  fields["reason"], cites=args.cites or "", differs=args.differs or "")
     except PrecedentRefused as exc:
         print(f"rule refused: {exc}", file=sys.stderr)
@@ -771,7 +789,8 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--decision", help="required unless the --fields-file document carries one")
     a.add_argument("--rationale", help="required unless the --fields-file document carries one")
     add_fields_file_arg(a, PROSE_KEYS)
-    a.add_argument("--status", default="accepted", choices=("accepted", "superseded", "revisited"))
+    a.add_argument("--status", choices=ADD_STATUSES,
+                   help="default accepted; a --fields-file document may carry it as \"status\"")
     a.add_argument("--supersedes", default="", help="the D-id this replaces, if any")
     a.add_argument("--root", default=".")
     a.add_argument("--format", choices=("text", "json"), default="text")
@@ -816,8 +835,10 @@ def build_parser() -> argparse.ArgumentParser:
     wv.set_defaults(func=cmd_waive)
     ru = sub.add_parser("rule", help="Record a persona seat's binding ruling on a subject, or "
                                      "cite the precedent that already answers it.")
-    ru.add_argument("--seat", required=True, help="the seat ruling (engineering, qa, product)")
-    ru.add_argument("--subject", required=True, help="the subject key, e.g. deps:action-pins")
+    ru.add_argument("--seat", help="the seat ruling (engineering, qa, product); required "
+                                   "unless the --fields-file document carries one")
+    ru.add_argument("--subject", help="the subject key, e.g. deps:action-pins; required unless "
+                                      "the --fields-file document carries one")
     ru.add_argument("--question", help="the question being answered")
     ru.add_argument("--ruling", help="the answer")
     ru.add_argument("--reason", help="why")
