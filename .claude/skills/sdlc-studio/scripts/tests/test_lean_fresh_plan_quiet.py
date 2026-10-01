@@ -180,9 +180,33 @@ class FreshPlanQuietTests(unittest.TestCase):
             hook = other / ".git" / "hooks" / "pre-commit"
             hook.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
             root = _project(Path(d) / "root")
-            with mock.patch.dict(os.environ, {"GIT_DIR": str(other / ".git")}):
+            with mock.patch.dict(os.environ, {"GIT_DIR": str(other / ".git"),
+                                              "GIT_CONFIG_GLOBAL": "/dev/null",
+                                              "GIT_CONFIG_SYSTEM": "/dev/null"}):
                 self.assertFalse(sprint._hook_installed(root))
             self.assertTrue(sprint._hook_installed(other))
+
+    def test_a_host_global_hooks_path_does_not_reach_a_confined_run(self) -> None:
+        """US0971 carry (BG0884). A host whose global config sets `core.hooksPath` to a
+        directory holding a pre-commit must not decide the answer for a fixture confined to
+        `GIT_CONFIG_GLOBAL=/dev/null`. MUTANT: drop every `GIT_*` variable before asking git -
+        the host's global config is read and AC2's own Verify reports DIVERGES."""
+        with tempfile.TemporaryDirectory() as d:
+            home = Path(d)
+            hooks = home / "hooks"
+            hooks.mkdir()
+            (hooks / "pre-commit").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            (home / ".gitconfig").write_text(f"[core]\n\thooksPath = {hooks}\n",
+                                             encoding="utf-8")
+            env = {k: v for k, v in os.environ.items()
+                   if k not in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM")}
+            r = subprocess.run(
+                [sys.executable, "-m", "unittest",
+                 "test_lean_fresh_plan_quiet.FreshPlanQuietTests."
+                 "test_init_chosen_states_are_not_reported_as_divergence"],
+                cwd=Path(__file__).resolve().parent, env={**env, "HOME": str(home)},
+                capture_output=True, text=True, timeout=300)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
 
     def test_the_requesting_seats_fresh_objection_stays_visible(self) -> None:
         """US0971 round 1. Only a CARRIED verdict is discharged. MUTANT: `discharged` ignoring

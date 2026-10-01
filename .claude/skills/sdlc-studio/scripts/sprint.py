@@ -11745,13 +11745,16 @@ def _hook_installed(root) -> bool:
     `HOOK_PATHS` location (the tracked `.githooks/`, and `.git/hooks` when git cannot be asked).
     Whether it can be read is a separate question - this asks only whether one exists.
 
-    Every `GIT_*` variable is dropped, as `project_upgrade.tracked_runtime_state` drops them: a
-    hook exports the ones that locate a repository, `git -C` does not override them, and git
-    would then answer for the repository whose hook is running rather than for `root`."""
+    The variables that LOCATE a repository are dropped (`verify_ac._REPO_LOCATING_GIT_VARS`, the
+    one pinned list): a hook exports them, `git -C` does not override them, and git would then
+    answer for the repository whose hook is running rather than for `root`. Every other `GIT_*`
+    variable passes through, so a caller's `GIT_CONFIG_GLOBAL` or `GIT_CONFIG_NOSYSTEM` still
+    decides which config is read rather than the host's own."""
     root = Path(root)
     if any((root / rel).is_file() for rel in HOOK_PATHS):
         return True
-    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    import verify_ac  # noqa: PLC0415 - the one pinned list of repo-locating variables
+    env = {k: v for k, v in os.environ.items() if k not in verify_ac._REPO_LOCATING_GIT_VARS}
     try:
         r = subprocess.run(["git", "-C", str(root), "rev-parse", "--git-path", "hooks"],
                            capture_output=True, text=True, timeout=10, env=env)  # nosec B603 B607
