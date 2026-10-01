@@ -1,6 +1,7 @@
 # BG0824: init guided's personas stage seeds the legacy flat personas.md, which the persona registry and sprint plan --serves never read
 
 > **Status:** Open
+> **Supersedes:** BG0881
 > **Groomed:** 2026-10-01 (D0291) - premise reproduced at HEAD: `init.py guided` to the personas stage leaves `sdlc-studio/personas.md` and no `sdlc-studio/personas/`, while `persona_registry` reads only `personas/index.md`
 > **Severity:** Medium
 > **Points:** 2

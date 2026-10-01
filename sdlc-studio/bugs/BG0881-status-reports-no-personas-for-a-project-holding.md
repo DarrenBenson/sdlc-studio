@@ -1,6 +1,7 @@
 # BG0881: status reports no personas for a project holding only the personas/index.md registry
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG0824 (35fcdee7 and 56e76452): status and review_prep count the personas registry
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py
