@@ -7,6 +7,7 @@ at a fixture and the env override is cleared, so the default derivation is what 
 """
 from __future__ import annotations
 
+# test-census-subject: .claude/skills/sdlc-studio/scripts/lib/run_state.py
 import json
 import os
 import sys
