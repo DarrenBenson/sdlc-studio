@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 40 |
-| In Progress | 4 |
+| Open | 39 |
+| In Progress | 5 |
 | Fixed | 683 |
 | Verified | 0 |
 | Closed | 87 |
@@ -206,7 +206,7 @@
 | [BG0845](BG0845-migrate-s-conformance-cutoff-on-a-v4-1.md) | migrate's conformance cutoff on a v4.1 project exempts the 98 units after the project's own adoption point, because a verdict row with no Author column never reads as independent | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0846](BG0846-the-v6-release-notes-test-s-post-cut.md) | The v6 release notes test's post-cut control assumes the notes still carry the pre-cut links, so the v6.0.0 cut turns the tools suite red | Fixed | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0847](BG0847-the-v6-existing-users-page-dropped-its-audit.md) | The v6 existing-users page dropped its audit --profile repo mention, so US0242's criterion that four surfaces name the audit on-ramp is red at the release gate | Fixed | Medium | 2026-09-29 | 2026-09-29 |
-| [BG0848](BG0848-sprint-sign-invalidates-its-own-report-when-it.md) | sprint sign invalidates its own report when it moves an approved unit to Done | Open | High | 2026-09-29 | 2026-09-29 |
+| [BG0848](BG0848-sprint-sign-invalidates-its-own-report-when-it.md) | sprint sign invalidates its own report when it moves an approved unit to Done | In Progress | High | 2026-09-29 | 2026-09-29 |
 | [BG0849](BG0849-a-close-dry-run-mints-a-different-graduation.md) | A close dry run mints a different graduation change request id each time, so a retro cannot rule it before the close | Open | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0850](BG0850-a-carried-unit-s-discharge-approval-is-refused.md) | A carried unit's discharge approval is refused by the review cap that another reviewer's rounds filled | In Progress | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0851](BG0851-the-sprint-report-says-the-operator-ruled-nothing.md) | The sprint report says the operator ruled nothing and no gate stood down when both happened | Open | Medium | 2026-09-29 | 2026-09-29 |

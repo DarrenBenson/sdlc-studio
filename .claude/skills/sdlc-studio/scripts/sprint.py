@@ -8937,6 +8937,14 @@ def cmd_close(args: argparse.Namespace) -> int:
     # THE ATTEMPT IS COUNTED HERE, after every early refusal: a close refused for a missing
     # goal, retro or verdict has not attempted anything.
     _record_close_attempt(root, pre)
+    # THE CLOSE IS THE MOMENT THE PAGE MEASURES. Each unit the sign will move has its open In
+    # Progress span settled here, on one meter reading, before anything derives from the run:
+    # the page then states the span to the close, and the sign's terminal move finds nothing
+    # open to close or stamp, so the page it seals still re-derives.
+    if settled := run_state.settle_open_spans(
+            root, _batch_story_units(root, state.get("batch") or [])):
+        print(f"close: measured to the close the open span of {', '.join(settled)}")
+        state = run_state.read(root) or state
     # ONE PASS. A step that fails is recorded as a known issue for the report and the chain runs
     # on; the report is the page that hands those issues over, so a gap no longer stops it.
     known: list[dict] = []

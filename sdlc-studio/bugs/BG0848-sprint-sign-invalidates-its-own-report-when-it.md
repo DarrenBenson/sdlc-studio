@@ -1,6 +1,6 @@
 # BG0848: sprint sign invalidates its own report when it moves an approved unit to Done
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_sign.py, changelog.d/BG0848.md
@@ -48,8 +48,10 @@ The criteria are unit-level. Their tests drive `sprint.py close` with the close-
 
 - [ ] **AC1** Given a run whose batch holds an approved story at Review and an approved bug at In Progress, each with an In Progress span opened inside the run and its ACs verified, and a token meter whose usage grows between the close and the sign, when `sprint.py close`, a commit, `sprint.py sign` with the real seal and then `sprint_report.py check --report` run in turn, then the sign moves both units (Done and Fixed) and `check` prints VALID. Fails on: HEAD, which prints INVALIDATED on `eu_minutes`, `eu_tokens`, `tokens_total`, `model_tokens` and `est_actual`; on a fix that freezes `eu_minutes` only, which leaves `eu_tokens` and the run total moving (the RPT0012 shape); and on a fix that freezes only stories at Review, which leaves the bug's rows moving
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_sign.py::SealedReportStaysValidTests::test_a_unit_the_sign_moves_leaves_the_page_valid
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given the same run, opened with a meter baseline so both spans start on a reading, with the unit clock advanced and the meter grown between the span's start and the close, when `sprint.py close` files the report, then each unit's `eu_minutes` is the span's elapsed minutes at the close (greater than 0) and its `eu_tokens` is the meter's growth between the span's start and the close (greater than 0), and the sealed page after `sprint.py sign` carries the same two values. Fails on: HEAD, which files 0.0 minutes and 0 tokens for an open span; and on a fix that drops `eu_minutes` and `eu_tokens` from the fingerprint, which passes AC1 while the page still reads 0
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_sign.py::SealedReportStaysValidTests::test_the_page_measures_an_open_span_to_the_close
+  - **Verified:** yes (2026-10-01)
 
 ## Impact
 

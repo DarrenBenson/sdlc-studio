@@ -261,8 +261,113 @@ class StopShipSignTests(unittest.TestCase):
             self.assertEqual("goal-reached", _read(root)["outcome"])
 
 
+#: The unit clock's start, for the spans the sign-moves tests open inside the run.
+_T0 = "2026-09-30T09:00:00Z"
+#: The close's moment on that clock: ten minutes into each span.
+_AT_CLOSE = "2026-09-30T09:10:00Z"
+
+
+class _SignMovesRun:
+    """BG0848's run: an approved story at Review and an approved bug at In Progress, each with
+    an In Progress span opened inside the run on a meter baseline, its criterion verified, in a
+    committed git tree whose transcript the test grows between steps."""
+
+    UNITS = {"US0101": ("stories", "Ready", "Review"), "BG0101": ("bugs", "Open", "In Progress")}
+
+    def __init__(self, d: str) -> None:
+        import test_lean_close as lean  # noqa: PLC0415 - the close fixture, shared
+        self.lean = lean
+        self.root = Path(d) / "repo"
+        self.transcripts = Path(d) / "transcripts"
+        self.transcripts.mkdir()
+        self.root.mkdir()
+        self.env = {**gitutil.git_env(), run_state.TRANSCRIPTS_ENV: str(self.transcripts)}
+
+    def spend(self, tokens: int) -> None:
+        """One usage record on the session transcript: the meter grows by `tokens`."""
+        with (self.transcripts / "session.jsonl").open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"message": {"model": "m", "usage": {
+                "input_tokens": tokens, "output_tokens": 0}}}) + "\n")
+
+    def _cli(self, name: str, *argv: str, clock: str = _T0) -> str:
+        out = io.StringIO()
+        with unittest.mock.patch.object(run_state, "_unit_clock", lambda: clock), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+            rc = self.lean._live(name).main([*argv, "--root", str(self.root)])
+        assert rc == 0, f"{name} {' '.join(argv)} exited {rc}:\n{out.getvalue()}"
+        return out.getvalue()
+
+    def _commit(self, message: str) -> None:
+        for argv in (["add", "-A"], ["commit", "-q", "-m", message]):
+            subprocess.run(["git", "-C", str(self.root), *argv], env=self.env, check=True,
+                           capture_output=True)
+
+    def build(self) -> None:
+        """Up to the close: spans opened at `_T0`, the meter grown 5000 inside them."""
+        root = self.root
+        for uid, (folder, start, _end) in self.UNITS.items():
+            d = root / "sdlc-studio" / folder
+            d.mkdir(parents=True, exist_ok=True)
+            head = "> **Severity:** Medium\n" if folder == "bugs" else "> **Epic:** EP0001\n"
+            (d / f"{uid}-x.md").write_text(
+                f"# {uid}: x\n\n> **Status:** {start}\n{head}> **Points:** 3\n\n"
+                "## Acceptance Criteria\n\n- [ ] **AC1** it works\n"
+                "  - **Verify:** shell true\n", encoding="utf-8")
+        self.lean._retro(root)
+        (root / ".gitignore").write_text("sdlc-studio/.local/\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(root), "init", "-q"], env=self.env, check=True,
+                       capture_output=True)
+        self._commit("base")
+        self.spend(1000)
+        run_state.open_run(root, batch=list(self.UNITS), goal="done")
+        run_state.update(root, sprint_goal="the page the sign seals stays valid",
+                         sprint_goal_verdict={"verdict": "achieved", "note": "it did"})
+        for uid, (_folder, _start, end) in self.UNITS.items():
+            self._cli("transition", "set", "--id", uid, "--status", "In Progress", "--force")
+            if end != "In Progress":
+                self._cli("transition", "set", "--id", uid, "--status", end, "--force")
+        self.spend(5000)
+        for uid in self.UNITS:
+            self._cli("verify_ac", "run", "--id", uid)
+            self._cli("critic", "record", "--unit", uid, "--verdict", "approve", "--reviewer",
+                      "Reviewer; agent; v1", "--author", "Builder; agent; v1")
+        self._commit("the work")
+
+    def close(self) -> str:
+        """`sprint.py close` at `_AT_CLOSE`, chain stubbed green; the paperwork committed."""
+        with unittest.mock.patch.object(run_state, "_unit_clock", lambda: _AT_CLOSE):
+            rc, out, err = self.lean._close(self.root)
+        assert rc == 0, out + err
+        self._commit("close paperwork")
+        return run_state.read(self.root)["report"]
+
+    def sign(self, report: str) -> str:
+        """`sprint.py sign` with the real seal, after the meter has grown again."""
+        self.spend(3000)
+        with unittest.mock.patch.object(run_state, "_unit_clock",
+                                        lambda: "2026-09-30T10:00:00Z"), \
+                unittest.mock.patch.object(sprint, "_principal_refusals", lambda *a, **k: []):
+            rc, out, err = _run(self.root, "sign", "--report", report, "--principal", "Darren")
+        assert rc == 0, out + err
+        return out
+
+    def unit_rows(self, report: str) -> dict:
+        """The page's per-unit actuals: `{unit: (eu_minutes, eu_tokens)}`."""
+        page = self.lean._live("sprint_report").read_report(self.root, report)
+        sec = next(s for s in page["sections"] if s["key"] == "estimates")
+        return {r["unit_id"]["value"]: (r["eu_minutes"]["value"], r["eu_tokens"]["value"])
+                for r in sec.get("unit_rows") or []}
+
+    def status(self, uid: str) -> str:
+        folder = self.UNITS[uid][0]
+        text = (self.root / "sdlc-studio" / folder / f"{uid}-x.md").read_text(encoding="utf-8")
+        return run_state.sdlc_md.extract_field(text, "Status") or ""
+
+
 class SealedReportStaysValidTests(unittest.TestCase):
-    """Finding 5: a partial or missed run, once sealed, still re-derives to its fingerprint."""
+    """Finding 5: a partial or missed run, once sealed, still re-derives to its fingerprint.
+    BG0848: and the sign's move of an approved unit to its terminal status moves nothing the
+    page it has just sealed digests."""
 
     def test_a_sealed_partial_or_missed_report_still_checks_valid(self) -> None:
         """Mutant: judge a figure the seal moves (the outcome, the end time) into the digest."""
@@ -287,6 +392,36 @@ class SealedReportStaysValidTests(unittest.TestCase):
                     check = sprint_report.revalidate(root, "RPT0001")
                 self.assertTrue(check["valid"], check["changes"])
 
+
+    def test_a_unit_the_sign_moves_leaves_the_page_valid(self) -> None:
+        """AC1. MUTANTS: HEAD, which leaves both spans open at the close, so the sign's moves
+        close them and stamp the meter (INVALIDATED on eu_minutes, eu_tokens, tokens_total,
+        model_tokens, est_actual); settling minutes only, which leaves eu_tokens and the run
+        total moving; settling only stories, which leaves the bug's rows moving."""
+        with tempfile.TemporaryDirectory() as d:
+            run = _SignMovesRun(d)
+            with unittest.mock.patch.dict(os.environ, run.env, clear=True):
+                run.build()
+                report = run.close()
+                out = run.sign(report)
+                self.assertIn("2 moved to their terminal status", out)
+                self.assertEqual(("Done", "Fixed"), (run.status("US0101"), run.status("BG0101")))
+                check = run.lean._live("sprint_report").revalidate(run.root, report)
+            self.assertTrue(check["valid"], check["changes"])
+
+    def test_the_page_measures_an_open_span_to_the_close(self) -> None:
+        """AC2. MUTANTS: HEAD, which files 0.0 minutes and 0 tokens for an open span; dropping
+        eu_minutes and eu_tokens from the fingerprint, which keeps the page valid at 0."""
+        with tempfile.TemporaryDirectory() as d:
+            run = _SignMovesRun(d)
+            with unittest.mock.patch.dict(os.environ, run.env, clear=True):
+                run.build()
+                report = run.close()
+                filed = run.unit_rows(report)
+                # Ten minutes on the unit clock, and the 5000 the meter grew inside the spans.
+                self.assertEqual({"US0101": (10.0, 5000), "BG0101": (10.0, 5000)}, filed)
+                run.sign(report)
+                self.assertEqual(filed, run.unit_rows(report), "the sealed page moved")
 
 if __name__ == "__main__":
     unittest.main()

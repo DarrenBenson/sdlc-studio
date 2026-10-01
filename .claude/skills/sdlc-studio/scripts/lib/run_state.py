@@ -203,21 +203,76 @@ def record_unit_actual(repo_root: Path | str, unit_id: str, status: str,
             if not isinstance(total, int):
                 entry["tokens"] = None
         else:
-            elapsed = sdlc_md.parse_iso8601(now) - sdlc_md.parse_iso8601(entry["started_at"])
-            entry["minutes"] = round(entry["minutes"] + elapsed.total_seconds() / 60, 2)
-            start = entry.get("start_tokens")
-            same_meter = bool(stamp and entry.get("start_source")
-                              and stamp.get("source") == entry["start_source"])
-            entry["tokens"] = (entry["tokens"] + max(0, total - start)
-                               if same_meter and all(isinstance(v, int)
-                                                     for v in (entry["tokens"], start, total))
-                               else None)
-            entry["open"] = False
+            entry = _closed_span(entry, now, total, stamp)
         actuals[uid] = entry
         state[UNIT_ACTUALS] = actuals
         return state
 
     return (_mutate(repo_root, apply).get(UNIT_ACTUALS) or {}).get(uid)
+
+
+def _closed_span(entry: dict, now: str, total, stamp: dict | None) -> dict:
+    """`entry` with its open span closed at `now`: the span's minutes and, when the reading at
+    `now` is on the meter the span started on, its tokens, added to the entry's own. The ONE
+    rule for ending a span, shared by a terminal move and the close's settle."""
+    entry = dict(entry)
+    elapsed = sdlc_md.parse_iso8601(now) - sdlc_md.parse_iso8601(entry["started_at"])
+    entry["minutes"] = round((entry.get("minutes") or 0.0) + elapsed.total_seconds() / 60, 2)
+    entry.setdefault("tokens", 0)
+    start = entry.get("start_tokens")
+    same_meter = bool(stamp and entry.get("start_source")
+                      and stamp.get("source") == entry["start_source"])
+    entry["tokens"] = (entry["tokens"] + max(0, total - start)
+                       if same_meter and all(isinstance(v, int)
+                                             for v in (entry["tokens"], start, total))
+                       else None)
+    entry["open"] = False
+    return entry
+
+
+def settle_open_spans(repo_root: Path | str, unit_ids) -> list[str]:
+    """Close, at this one moment, the open In Progress span of each of `unit_ids` in the open
+    run, on ONE reading of the meter. Returns the units settled; nothing is written, and no
+    stamp taken, when none of them has a span open.
+
+    The close calls it for the units it leaves for `sprint sign` to move. The report it files
+    then measures each span to the close, and the sign's terminal move finds no span open, so
+    `record_unit_actual` records nothing and stamps nothing: the page the signature seals
+    re-derives to the figures it was filed with. Left open, the sign's move closed each span
+    and stamped the meter, and the signed page read INVALIDATED on the unit rows and the run's
+    token total."""
+    wanted = {sdlc_md.norm_id(u) for u in unit_ids or []}
+
+    def open_units(state: dict) -> list[str]:
+        if state.get("outcome") != RUNNING or not state.get("run_id"):
+            return []
+        batch = {sdlc_md.norm_id(b) for b in (state.get("batch") or [])}
+        return sorted(u for u, e in (state.get(UNIT_ACTUALS) or {}).items()
+                      if sdlc_md.norm_id(u) in wanted & batch
+                      and isinstance(e, dict) and e.get("open") and e.get("started_at"))
+
+    if not open_units(read(repo_root)):
+        return []
+    stamp = _stamp(repo_root, "unit-end")
+    now = _unit_clock()
+    settled: list[str] = []
+
+    def apply(state: dict) -> dict:
+        units = open_units(state)
+        if not units:
+            return state
+        if stamp:
+            state[TOKEN_STAMPS] = list(state.get(TOKEN_STAMPS) or []) + [stamp]
+        total = run_token_total(state)["tokens"]
+        actuals = dict(state.get(UNIT_ACTUALS) or {})
+        for uid in units:
+            actuals[uid] = _closed_span(actuals[uid], now, total, stamp)
+            settled.append(uid)
+        state[UNIT_ACTUALS] = actuals
+        return state
+
+    _mutate(repo_root, apply)
+    return settled
 
 
 # --- lean loop: review rounds per delivery (EP0260) ---
