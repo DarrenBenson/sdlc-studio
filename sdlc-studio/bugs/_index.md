@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 37 |
-| In Progress | 7 |
+| Open | 36 |
+| In Progress | 8 |
 | Fixed | 683 |
 | Verified | 0 |
 | Closed | 87 |
@@ -220,7 +220,7 @@
 | [BG0859](BG0859-the-close-s-status-preflight-stops-every-approved.md) | The close's status preflight stops every approved bug left In Progress and tells the operator to move it to Review, a status bugs do not have | In Progress | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0860](BG0860-a-sprint-plan-preview-with-no-write-appends.md) | A sprint plan preview with no --write appends forecast rows to the tracked evidence log, so each dry run adds a duplicate forecast per unit | Open | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0861](BG0861-nothing-opens-a-delivery-batch-since-us0918-so.md) | Nothing opens a delivery batch since US0918, so every finding is stamped raised outside a batch and the close's finding-placement figure is always empty | Open | Medium | 2026-09-30 | 2026-09-30 |
-| [BG0862](BG0862-nothing-runs-the-unstubbed-close-sign-and-check.md) | Nothing runs the unstubbed close, sign and check on one run holding a carry, a ruling and a forced override | Open | Medium | 2026-09-30 | 2026-09-30 |
+| [BG0862](BG0862-nothing-runs-the-unstubbed-close-sign-and-check.md) | Nothing runs the unstubbed close, sign and check on one run holding a carry, a ruling and a forced override | In Progress | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0863](BG0863-an-unreadable-verdict-ledger-drops-unreviewed-units-from.md) | An unreadable verdict ledger drops unreviewed units from the close's status rows since BG0859, and the bug remedy is wrong for a bug that already has an APPROVE | Open | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0864](BG0864-transition-to-fixed-admits-a-bug-whose-verify.md) | transition to Fixed admits a bug whose Verify lines have never been run, so a carried bug with red or manual-only criteria reaches Fixed with nothing executed | Open | Medium | 2026-10-01 | 2026-10-01 |
 
