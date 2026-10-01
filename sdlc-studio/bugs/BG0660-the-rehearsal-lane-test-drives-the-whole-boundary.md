@@ -28,7 +28,7 @@ Scope the invocation to the lane under test. `gate.py --only release-rehearsal -
 
 ## Acceptance Criteria
 
-- [x] **AC1** Given the reporting check for the release-rehearsal lane, when it drives the gate, then the output carries that lane and NEITHER of the other two the push boundary binds. The existing assertions - the lane failed, it named its greenfield half, it recorded a duration - all pass on an unscoped run too, so none of them can say whether the check pays for one lane or for all of them, which is the whole of this bug
+- [x] **AC1** Given the reporting check for the release-rehearsal lane, when it drives the gate, then the output carries that lane and not module-alone, the other heavy boundary lane (revert-check was retired by US0784). The existing assertions - the lane failed, it named its greenfield half, it recorded a duration - all pass on an unscoped run too, so none of them can say whether the check pays for one lane or for all of them, which is the whole of this bug
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReleaseRehearsalLaneTests::test_the_check_pays_for_one_lane_and_not_the_whole_boundary
   - **Verified:** yes (2026-09-10)
 - [x] **AC2** Given the same check scoped, when it runs, then the lane still FAILS, still names the half that broke and still records its duration. The paired control: a scope so narrow that the lane never runs satisfies AC1 perfectly and measures nothing

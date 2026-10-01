@@ -78,7 +78,7 @@ review:
   # EVIDENCE apparatus, most of them manufactured by the mutation registration ledger rather than
   # found in the code. That run cost 525,434 tokens per point against a 44,427 forecast.
   # Round 3 onward FILES its findings rather than holding the batch, which is what
-  # `policy: carry-forward` above already says and which a cap of 6 contradicted in practice.
+  # the retired carry-forward policy (BG0831) said, and which a cap of 6 contradicted in practice.
   # NOT relaxed by this, stated so nobody reads it as a general loosening: two-role review is
   # untouched, and the authoring-time rule that a criterion names a production change its own
   # test dies on still applies at every band - that rule is what caught round 1's defect. Only

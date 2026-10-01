@@ -20,7 +20,7 @@
 - **AC1:** Given a fixture test marked `boundary_only` that writes a marker file when it runs, when `gate.py --run-tests` runs a commit's selection containing it, then the marker is not written, and when the push boundary's full-suite lane runs, it is - the commit excludes the marker and the push includes it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py::BoundaryOnlyTests::test_the_commit_skips_boundary_only_and_the_push_runs_it
   - **Verified:** yes (2026-09-24)
-- **AC2:** Given `test_gate.py`, then the live-repository tests the measurement named (`GateRealWrapperTests::test_real_wrappers_run_and_shape`, `RevertCheckLaneTests::test_the_lane_runs_at_the_boundary_and_not_per_commit`, the `ModuleAloneLaneTests` push-boundary test and the slow `DocSurfaceApplicabilityTests` case) are collected by `pytest -m boundary_only`, and pytest.ini registers the marker beside `serial_only`
+- **AC2:** Given `test_gate.py`, then the live-repository tests the measurement named (`GateRealWrapperTests::test_real_wrappers_run_and_shape` (`RevertCheckLaneTests` was retired with its lane by US0784), the `ModuleAloneLaneTests` push-boundary test and the slow `DocSurfaceApplicabilityTests` case) are collected by `pytest -m boundary_only`, and pytest.ini registers the marker beside `serial_only`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py::BoundaryOnlyTests::test_the_live_repository_tests_are_boundary_only
   - **Verified:** yes (2026-09-24)
 
