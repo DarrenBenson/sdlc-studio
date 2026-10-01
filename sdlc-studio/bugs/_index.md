@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 39 |
-| In Progress | 5 |
+| Open | 38 |
+| In Progress | 6 |
 | Fixed | 683 |
 | Verified | 0 |
 | Closed | 87 |
@@ -209,7 +209,7 @@
 | [BG0848](BG0848-sprint-sign-invalidates-its-own-report-when-it.md) | sprint sign invalidates its own report when it moves an approved unit to Done | In Progress | High | 2026-09-29 | 2026-09-29 |
 | [BG0849](BG0849-a-close-dry-run-mints-a-different-graduation.md) | A close dry run mints a different graduation change request id each time, so a retro cannot rule it before the close | Open | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0850](BG0850-a-carried-unit-s-discharge-approval-is-refused.md) | A carried unit's discharge approval is refused by the review cap that another reviewer's rounds filled | In Progress | Medium | 2026-09-29 | 2026-09-29 |
-| [BG0851](BG0851-the-sprint-report-says-the-operator-ruled-nothing.md) | The sprint report says the operator ruled nothing and no gate stood down when both happened | Open | Medium | 2026-09-29 | 2026-09-29 |
+| [BG0851](BG0851-the-sprint-report-says-the-operator-ruled-nothing.md) | The sprint report says the operator ruled nothing and no gate stood down when both happened | In Progress | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0852](BG0852-install-sh-treats-copilot-as-repo-scoped-only.md) | install.sh treats Copilot as repo-scoped only, so a Copilot CLI user following the quick start or --target auto gets no sdlc-studio and no hint why | Fixed | High | 2026-09-29 | 2026-09-29 |
 | [BG0853](BG0853-the-agent-instructions-template-names-the-claude-code.md) | The agent-instructions template names the Claude Code skill path, so an AGENTS.md seeded for Codex, Copilot, Gemini or Cursor points at files that do not exist there | Fixed | Medium | 2026-09-29 | 2026-09-29 |
 | [BG0854](BG0854-nothing-runs-migrate-and-then-the-gate-on.md) | Nothing runs migrate and then the gate on one fixture, so migrate's report drifted from the gate's failing lanes on three lanes unseen | Fixed | Medium | 2026-09-30 | 2026-09-30 |
