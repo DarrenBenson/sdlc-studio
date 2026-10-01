@@ -6,8 +6,8 @@ Maya signs, without a re-close, a report that checks VALID and names every opera
 
 **Verdict: Judged achieved** - BG0862 runs the shipped close, retro, close, sign and check unstubbed on a schema 3 run holding a carry discharged by its rejecting reviewer (BG0850), a resolved decision and a forced override on a dropped unit (BG0851), and a lesson ruled by class (BG0849): one report, VALID first time with no unit moved by hand (BG0848, BG0859), every ruling named on the page (BG0865), retro scaffolded with its run and table (BG0826); the carried bug is now plannable (BG0829). The real proof is this close: no units were moved by hand before it.
 
-> **Run:** 2026-09-30T23:00:50Z to open (8.1h)
-> **Verified on:** 001ddc5131ca62115f49ebe230790fc9f3937c59   **Fingerprint:** 439d9fa814d6d4d2
+> **Run:** 2026-09-30T23:00:50Z to open (8.7h)
+> **Verified on:** 8e9ced50335cf74881030b05ee8717661d568896   **Fingerprint:** 6760a4722fa13a99
 
 ## Estimates
 
@@ -18,8 +18,8 @@ over forecast.
 | Measure | Forecast | Actual | Ratio | Over |
 | --- | --- | --- | --- | --- |
 | Points | 29 | 29 | 1.0x | 9 of 9 delivered unit(s) |
-| Minutes | 185.6 | 486.1 | 2.62x | the whole run: forecast over 9 of 9 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
-| Tokens | 5,172,208 | 2,325,464 | 0.45x | the whole run: forecast over 9 of 9 unit(s) planned or added and not dropped; actual is the run meter, a lower bound |
+| Minutes | 185.6 | 524.4 | 2.83x | the whole run: forecast over 9 of 9 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
+| Tokens | 5,172,208 | 2,357,794 | 0.46x | the whole run: forecast over 9 of 9 unit(s) planned or added and not dropped; actual is the run meter, a lower bound |
 
 Each cell names its source. A figure labelled agent minutes or agent tokens sums the agent
 totals tagged to that unit; an unlabelled one is measured over the unit's own open span. Spans of
@@ -89,9 +89,9 @@ Signing records the principal, the date and this report's fingerprint against RU
 
 | Model | Tokens |
 | --- | --- |
-| claude-opus-5-5 | 2,325,464 |
+| claude-opus-5-5 | 2,357,794 |
 
-Total 2,325,464, of which delegated NOT MEASURED - no delegated agent supplied a total, which is not the same fact as no work having been delegated. Coverage: 1 session(s);
+Total 2,357,794, of which delegated NOT MEASURED - no delegated agent supplied a total, which is not the same fact as no work having been delegated. Coverage: 1 session(s);
 read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp.
 
 ### DORA
@@ -99,7 +99,7 @@ read from stamps, with the opening reading taken from the legacy session_token_b
 | Key | This run | Mapping | Elite band | Derived from |
 | --- | --- | --- | --- | --- |
 | Deployment frequency | 5 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up | on demand | forge runs 36826457564/36802767721/36798908986/36794772826/36789601166 - 5 push-triggered run(s) on main in the run window |
-| Lead time for changes | 7h 57m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 24 commit(s) |
+| Lead time for changes | 8h 35m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 26 commit(s) |
 | Change failure rate | 0% | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that did not conclude success | 0-15% | forge runs 36826457564/36802767721/36798908986/36794772826/36789601166 - 5 deployment(s); 0 failed on none |
 | Time to restore | no restore needed | the span from a push-triggered run concluding failure on main to the next push-triggered run concluding success | under an hour | forge runs 36826457564/36802767721/36798908986/36794772826/36789601166 - no push-triggered run on main concluded failure |
 
@@ -113,7 +113,7 @@ read from stamps, with the opening reading taken from the legacy session_token_b
 ### Rulings
 
 Persona seats ruled 0 time(s), 0 of them by citing a
-precedent; the operator ruled 0 time(s).
+precedent; the operator ruled 1 time(s).
 
 ### Waivers in force
 

@@ -3,8 +3,8 @@
   "report_id": "RPT0013",
   "run_id": "RUN-01M3T8N1",
   "retro_id": "RETRO0128",
-  "generated_at": "2026-10-01T07:06:56Z",
-  "window_end": "2026-10-01T07:06:56Z",
+  "generated_at": "2026-10-01T07:45:12Z",
+  "window_end": "2026-10-01T07:45:12Z",
   "signature": null,
   "sections": [
     {
@@ -43,12 +43,12 @@
         },
         "duration_hours": {
           "key": "duration_hours",
-          "value": "8.1h",
+          "value": "8.7h",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "verified_sha": {
           "key": "verified_sha",
-          "value": "001ddc5131ca62115f49ebe230790fc9f3937c59",
+          "value": "8e9ced50335cf74881030b05ee8717661d568896",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -100,12 +100,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 486.1,
+            "value": 524.4,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "2.62x",
+            "value": "2.83x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -127,12 +127,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 2325464,
+            "value": 2357794,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "0.45x",
+            "value": "0.46x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -801,7 +801,7 @@
         },
         "tokens_total": {
           "key": "tokens_total",
-          "value": 2325464,
+          "value": 2357794,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "token_coverage": {
@@ -824,7 +824,7 @@
           },
           "model_tokens": {
             "key": "model_tokens",
-            "value": 2325464,
+            "value": 2357794,
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -871,7 +871,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "7h 57m",
+            "value": "8h 35m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -886,7 +886,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 24 commit(s)",
+            "value": "git history - first to last of 26 commit(s)",
             "source": "git log"
           }
         },
@@ -991,7 +991,7 @@
         },
         "operator_rulings": {
           "key": "operator_rulings",
-          "value": 0,
+          "value": 1,
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -1532,5 +1532,5 @@
     }
   ],
   "record_paths": "portable",
-  "fingerprint": "439d9fa814d6d4d2"
+  "fingerprint": "6760a4722fa13a99"
 }

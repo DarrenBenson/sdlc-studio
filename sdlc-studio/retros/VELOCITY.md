@@ -193,4 +193,4 @@ it. Compare a fan-out sprint's rate with a single-thread sprint's only with that
 | RETRO0125 | 2026-09-26 | 37 | 0 | 29 | 102 | - | 26,181,940 | 18,791,718 | - | 184,233 | 0 | - | - | - | TOKENS_PER_POINT=353810 | out-of-sample | - | - | harness+supplied |
 | RETRO0126 | 2026-09-28 | 55 | 0 | 41 | 131 | - | 35,381,000 | 23,110,572 | - | 176,417 | 0 | - | - | - | TOKENS_PER_POINT=353810 | out-of-sample | - | - | harness+supplied |
 | RETRO0127 | 2026-09-30 | 7 | 0 | 6 | 18 | - | 2,675,280 | 971,934 | - | 53,996 | 0 | - | - | - | TOKENS_PER_POINT=178352 | out-of-sample | - | - | harness |
-| RETRO0128 | 2026-10-01 | 9 | 0 | 8 | - | 29 | 4,637,152 | 2,325,464 | - | - | 0 | - | - | - | TOKENS_PER_POINT=178352 | out-of-sample | claude-opus-5-5 | - | harness |
+| RETRO0128 | 2026-10-01 | 9 | 0 | 8 | - | 29 | 4,637,152 | 2,325,464 | - | - | 0 | - | - | - | TOKENS_PER_POINT=178352 | out-of-sample | - | - | harness |
