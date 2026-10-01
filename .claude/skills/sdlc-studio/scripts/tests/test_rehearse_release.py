@@ -361,7 +361,8 @@ class UpgradeRehearsalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             clone = _clone(d)
             migrate = clone / ".claude" / "skills" / "sdlc-studio" / "scripts" / "migrate.py"
-            original = _mutate(migrate, "    needs_human += _conformance_cutoff(root)\n", "")
+            original = _mutate(migrate, "    needs_human += steps.run(\"conformance-cutoff\", "
+                               "lambda: _conformance_cutoff(root), [])\n", "")
             r = _run("upgrade", cwd=clone)
             self.assertNotEqual(0, r.returncode, "the rehearsal passed on a migrate that names no "
                                                  "cutoff, so it does not read the one it applies")
