@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 19 |
+| Open | 21 |
 | In Progress | 2 |
 | Fixed | 692 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 30 |
-| **Total** | **869** |
+| **Total** | **871** |
 
 ## All Bugs
 
@@ -228,6 +228,8 @@
 | [BG0867](BG0867-a-status-transition-rewrites-an-index-row-in.md) | A status transition rewrites an index row in compact style under an aligned header, so markdownlint fails the index it just synced | Open | Low | 2026-10-01 | 2026-10-01 |
 | [BG0868](BG0868-refine-add-can-only-add-stories-under-a.md) | refine add can only add stories under a new epic, so a story for a request's existing epic is minted by hand | Open | Low | 2026-10-01 | 2026-10-01 |
 | [BG0869](BG0869-status-backlog-lists-fully-decomposed-requests-as-discovery.md) | status backlog lists fully decomposed requests as discovery options still to refine | Open | Low | 2026-10-01 | 2026-10-01 |
+| [BG0870](BG0870-the-pre-push-hook-s-fail-closed-checkout.md) | The pre-push hook's fail-closed checkout and annotated-tag peel are unpinned, it runs the release lanes on a branch tip pushed beside a tag, and an interrupted push leaves a prunable worktree | Open | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0871](BG0871-the-diff-scoped-gate-lanes-judge-nothing-at.md) | The diff-scoped gate lanes judge nothing at the push boundary, because their scope is the working-tree diff, which is empty on a clean pushed commit | Open | Medium | 2026-10-01 | 2026-10-01 |
 
 ## Archived Releases
 
