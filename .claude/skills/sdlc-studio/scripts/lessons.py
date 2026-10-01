@@ -1853,22 +1853,43 @@ def recent_runs(repo_root, run: str) -> list[str]:
     return [r["run_id"] for r in run_state.archived(repo_root) if r["run_id"] != run] + [run]
 
 
+def _graduation_cr_closed(repo_root, row: dict) -> str:
+    """`<CR> <status>` when `row` is `graduating` and the CR it filed is at a terminal status,
+    else "". The CR's own vocabulary decides what terminal means, never a list kept here."""
+    if row.get("state") != "graduating" or not row.get("cr"):
+        return ""
+    found = sdlc_md.find_by_id(repo_root, str(row["cr"]))
+    if not found:
+        return ""
+    path, type_ = found
+    status = sdlc_md.canonical_status(
+        sdlc_md.extract_field(sdlc_md.read_text_safe(Path(path)), "Status"),
+        sdlc_md.status_vocab(type_, repo_root))
+    if not status or not sdlc_md.is_terminal_status(type_, status):
+        return ""
+    return f"{sdlc_md.extract_record_id(Path(path).stem) or row['cr']} {status}"
+
+
 def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
     """What the close does to the store, with no operator step: count each REJECT this run
     recorded that cites a class as a hit (a hit on a retired class puts it back in force), file
     ONE CR for a class repeated GRADUATE_AT times after it was recorded (the row then reads
-    `graduating`), and retire an active class quiet for the last QUIET_RUNS runs. Idempotent: a
-    re-run close adds no hit and files no CR.
+    `graduating`), move a `graduating` class whose CR reached a terminal status to `graduated`,
+    and retire an active class quiet for the last QUIET_RUNS runs. Idempotent: a re-run close
+    adds no hit, files no CR and moves nothing twice.
 
-    Quiet is judged on runs THIS clone's archive knows. The archive is per clone while the store
-    is committed, so a class recorded or hit in another clone's run names a run this archive has
-    never seen; that run is not known to be old, and the class stays active until a clone that
-    knows it judges it. Only a recording and hits all in archived runs older than the last
-    QUIET_RUNS retire a class.
+    Quiet is judged on the last QUIET_RUNS runs THIS clone's archive knows, and only once it
+    knows more runs than that, so a fresh clone retires nothing. The archive is per clone while
+    the store is committed, so a class recorded or hit in another clone's run names a run this
+    archive has never seen; that run is not in this clone's window, and a class none of whose
+    runs is in the window retires. Before US0977 an unknown run kept a class active for ever,
+    which is how a class recorded in another clone (or under a label that names no run) never
+    left the digest. A retirement made on another clone's evidence is undone by the next
+    repeat: a hit on a retired class puts it back in force (`add_hit`).
 
-    Returns `{hits, unknown, reactivated, graduating: [(code, cr)], retired, errors}`."""
-    res = {"hits": 0, "unknown": [], "reactivated": [], "graduating": [], "retired": [],
-           "errors": []}
+    Returns `{hits, unknown, reactivated, graduating: [(code, cr)], graduated, retired, errors}`."""
+    res = {"hits": 0, "unknown": [], "reactivated": [], "graduating": [], "graduated": [],
+           "retired": [], "errors": []}
     rows = load_store(repo_root)
     if not rows:
         return res
@@ -1883,13 +1904,22 @@ def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
             res["hits"] += 1
             if was == "retired":
                 res["reactivated"].append(row["id"])
-    old = set(recent_runs(repo_root, run)[:-QUIET_RUNS])
+    known = recent_runs(repo_root, run)
+    window = set(known[-QUIET_RUNS:])
     for row in rows:
-        if (row.get("state") == "active" and row.get("recorded_run") in old
-                and all(h.get("run") in old for h in row.get("hits") or ())):
+        if row.get("state") != "active" or len(known) <= QUIET_RUNS:
+            continue
+        named = {row.get("recorded_run")} | {h.get("run") for h in row.get("hits") or ()}
+        if not (named & window):
             row["state"], row["retired_run"] = "retired", run
             res["retired"].append(row["id"])
-    if res["hits"] or res["retired"]:
+    for row in rows:
+        closed = _graduation_cr_closed(repo_root, row)
+        if closed:
+            row["state"] = "graduated"
+            res["graduated"].append(row["id"])
+            res.setdefault("graduated_by", {})[row["id"]] = closed
+    if res["hits"] or res["retired"] or res["graduated"]:
         save_store(repo_root, rows)
     import file_finding  # noqa: PLC0415 - deferred: the filer imports the world, this does not
     for row in rows:
@@ -1916,6 +1946,8 @@ def close_pass_line(res: dict) -> str:
     if res.get("reactivated"):
         parts.append(f"hit again, back in force: {', '.join(res['reactivated'])}")
     parts += [f"{code} graduating -> {cr}" for code, cr in res["graduating"]]
+    parts += [f"{code} graduated ({res.get('graduated_by', {}).get(code, '')})"
+              for code in res.get("graduated") or ()]
     if res["retired"]:
         parts.append(f"quiet for {QUIET_RUNS} runs, retired {', '.join(res['retired'])}")
     return "lessons: " + "; ".join(parts)

@@ -128,10 +128,11 @@ The close then acts on the store, with no operator step:
 | --- | --- |
 | a REJECT this run recorded cites a class (`[new] the mutant never landed [LC-003]`) | adds a hit `{run, unit, source: critic:<run>, finding}`, once per run and unit; a hit on a retired class, cited or named again in a Try item, puts it back in force |
 | a class has recurred twice after the run that recorded it (distinct run and unit; a hit naming no unit is one of its run's unit hits) | files one CR, `Prevent or retire lesson <id> (<class>)`, stamped with the closing run, naming the class, its rule and each hit with its finding text; its first criterion asks for the code path each hit names to be fixed, and any check it proposes must name the lane, refusal, baseline or pin it retires. The row reads `graduating` with the CR id |
-| an active class was recorded and hit only in runs this clone's archive holds, all older than the last five (closing run last) | retires it; a run the archive does not know, such as another clone's, keeps the class active |
+| a `graduating` class's CR is at a terminal status in its own vocabulary (`Complete`, `Rejected`, `Superseded`) | moves the row to `graduated`; a CR still open leaves it `graduating` |
+| an active class was neither recorded nor hit in the last five runs this clone's archive knows (closing run last), and the archive knows more than five | retires it; a run the archive does not know, such as another clone's, is outside that window, and the class's next hit puts it back in force |
 
-A `graduating` class is still injected and is never filed again; it reads `graduated` when
-its fix lands. The sprint report's appendix lists each active or graduating class with its
+A `graduating` class is still injected and is never filed again; it reads `graduated` at the
+first close after its CR reaches a terminal status. The sprint report's appendix lists each active or graduating class with its
 hits this run and in total. That section is outside the report's fingerprint, because every
 later close moves the store and a signed page must not move with it.
 

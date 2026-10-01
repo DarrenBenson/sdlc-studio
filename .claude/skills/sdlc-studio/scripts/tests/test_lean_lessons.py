@@ -804,27 +804,29 @@ class GraduationTests(_GraduationWorkspace):
         self._close(state)
         self.assertEqual("active", self._by_id()["LC-001"]["state"])
 
-    def test_a_run_another_clone_holds_keeps_a_class_active(self) -> None:
-        """The store is committed and the run archive is per clone. MUTANT: judge the window
-        by membership of the last five runs - LC-007, recorded in a run only clone B holds,
-        and LC-008, hit in clone B's latest run, retire on clone A at once, and retirement is
-        not undone by anything but a new repeat."""
+    def test_each_clone_judges_quiet_on_the_runs_it_knows(self) -> None:
+        """The store is committed and the run archive is per clone. A run this clone has never
+        seen is not in its window, so a class quiet for a full window here retires whichever
+        clone recorded it (US0977): LC-007 and LC-008 on clone A, LC-009 on clone B. MUTANT:
+        HEAD, where an unknown run kept the class active for ever. MUTANT: count an unknown run
+        as inside the window - LC-008, hit in a run only clone B holds, then never retires on
+        clone A. Clone B knows LC-008's hit in RUN-B6, inside its window, so it stays there."""
         store = [self._row("LC-007", "RUN-B1"),
                  self._row("LC-008", "RUN-1", _hit("RUN-B6", "US0001")),
                  self._row("LC-009", "RUN-1", _hit("RUN-2", "US0002"))]
         self._store(*store)
         self._archive("RUN-1", "RUN-2", "RUN-3", "RUN-4", "RUN-5", "RUN-6")
         detail = self._close(self._state("RUN-7"))
-        self.assertEqual({"LC-007": "active", "LC-008": "active", "LC-009": "retired"},
+        self.assertEqual({"LC-007": "retired", "LC-008": "retired", "LC-009": "retired"},
                          {k: r["state"] for k, r in self._by_id().items() if k in
                           ("LC-007", "LC-008", "LC-009")}, detail)
-        # Clone B knows RUN-B1 and judges LC-007 there; it has never seen RUN-1, so LC-008 and
-        # LC-009 stay as the store it was given has them.
+        # Clone B knows RUN-B1 and RUN-B6. LC-008's hit in RUN-B6 is inside its last five, so the
+        # class stays active there; LC-009 names only runs clone B has never seen.
         self.root = self._workspace()
         self._store(*store)
         self._archive("RUN-B1", "RUN-B2", "RUN-B3", "RUN-B4", "RUN-B5", "RUN-B6")
         self._close(self._state("RUN-B7"))
-        self.assertEqual({"LC-007": "retired", "LC-008": "active", "LC-009": "active"},
+        self.assertEqual({"LC-007": "retired", "LC-008": "active", "LC-009": "retired"},
                          {k: r["state"] for k, r in self._by_id().items() if k in
                           ("LC-007", "LC-008", "LC-009")})
 
