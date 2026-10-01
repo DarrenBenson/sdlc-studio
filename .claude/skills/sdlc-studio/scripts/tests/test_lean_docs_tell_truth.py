@@ -32,11 +32,23 @@ def _run(*argv: str) -> str:
 class DocsTellTruthTests(unittest.TestCase):
 
     def test_status_help_claims_no_health_score(self) -> None:
-        """AC1. MUTANT: HEAD's `Health score: Weighted average` line in the pillar section."""
+        """AC1. MUTANTS: (1) HEAD's `Health score: Weighted average` line in the pillar section;
+        (2) a pillar header or the `--brief` line showing one percentage for the pillar, which a
+        weighted score is the only way to produce; (3) reference-tsd.md, which status.md points
+        to, computing health scores or citing status.md's formula."""
         text = _read("help/status.md")
         self.assertNotRegex(text, r"(?i)health score")
         self.assertNotRegex(text, r"(?i)weighted average")
         self.assertIn("per-type percentage", text)
+        pillar = re.compile(r"^(📋|💻|🧪|🔍) [A-Z]+.*\d+%\s*$", re.M)
+        for rel in ("help/status.md", "reference-tsd.md"):
+            self.assertEqual([], pillar.findall(_read(rel)), rel)
+        brief = next(ln for ln in text.splitlines() if ln.startswith("SDLC: "))
+        self.assertNotRegex(brief, r"(📋|💻|🧪|🔍) \d+%")
+        tsd = _read("reference-tsd.md")
+        self.assertNotRegex(tsd, r"(?i)health score")
+        self.assertNotIn("full formula", tsd)
+        self.assertNotIn('"health":', tsd)
 
     def test_examples_and_guides_match_the_tools(self) -> None:
         """AC2. MUTANTS: (1) the waiver example without `--rationale`; (2) help/sprint.md saying
@@ -75,6 +87,12 @@ class DocsTellTruthTests(unittest.TestCase):
         for ln in commands:
             self.assertIn("$CLAUDE_SKILL_DIR/scripts/", ln)
             self.assertNotIn(".claude/skills/", ln)
+        # Each snippet SETS the variable it names, or a copied snippet runs `python3 /scripts/...`.
+        self.assertIn("- name: SDLC gate\n  env:\n    CLAUDE_SKILL_DIR: .claude/skills/sdlc-studio\n",
+                      wiring)
+        self.assertIn("  variables:\n    CLAUDE_SKILL_DIR: .claude/skills/sdlc-studio\n", wiring)
+        self.assertEqual(2, wiring.count(
+            'CLAUDE_SKILL_DIR="${CLAUDE_SKILL_DIR:-.claude/skills/sdlc-studio}"\npython3 '))
         help_text = " ".join(_run(str(SCRIPTS / "critic.py"), "record", "--help").split())
         self.assertIn("\\;", help_text)
 

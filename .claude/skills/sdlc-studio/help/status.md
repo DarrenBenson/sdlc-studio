@@ -75,23 +75,23 @@ The status command displays an at-a-glance dashboard with four pillars:
                       SDLC STATUS
 ══════════════════════════════════════════════════════════
 
-📋 REQUIREMENTS (PRD Status)        ▓▓▓▓▓▓▓▓░░ 85%
+📋 REQUIREMENTS (PRD Status)
    ✅ PRD: 14 features defined
    ✅ Personas: 4 documented
-   ⚠️ Epics: 2/3 Ready (1 Draft)
-   ✅ Stories: 12/12 Done
+   ⚠️ Epics: 3 (67% ready+, 1 Draft)
+   ✅ Stories: 12 (100% done)
 
-💻 CODE (TRD Status)                ▓▓▓▓▓▓▓▓▓░ 90%
+💻 CODE (TRD Status)
    ✅ TRD: Architecture documented
    ✅ Lint: Passing
    ⚠️ TODOs: 5 remaining
 
-🧪 TESTS (TSD Status)               ▓▓▓▓▓▓▓▓▓░ 94%
+🧪 TESTS (TSD Status)
    ✅ Backend (1,027 tests):        ▓▓▓▓▓▓▓▓▓░ 90%
    ✅ Frontend:                     ▓▓▓▓▓▓▓▓▓░ 90%
    ✅ E2E (7/7 features):           ▓▓▓▓▓▓▓▓▓▓ 100%
 
-🔍 REVIEWS                          ▓▓▓▓▓▓▓▓░░ 80%
+🔍 REVIEWS
    ✅ PRD: Reviewed (2026-01-15)
    ✅ TRD: Reviewed (2026-01-18)
    ⚠️ EP0001: 3 stories changed since review
@@ -260,7 +260,7 @@ Resume:
 With `--brief` flag, shows single-line summary:
 
 ```text
-SDLC: 📋 85% | 💻 90% | 🧪 94% | 🔍 80% | ▶️ /sdlc-studio epic review --epic EP0001
+SDLC: 📋 epics 3 (67% ready+), stories 12 (100% done) | 💻 TRD yes | 🧪 TSD yes | 🔍 2 to re-review | ▶️ /sdlc-studio epic review --epic EP0001
 ```
 
 ## Data Sources

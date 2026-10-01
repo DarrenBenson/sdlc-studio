@@ -5,7 +5,7 @@
 > **Created:** 2026-10-01
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/help/status.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/help/gate.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/reference-agentic-lessons.md, .claude/skills/sdlc-studio/scripts/persona_resolve.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_docs_tell_truth.py, changelog.d/US0973.md
+> **Affects:** .claude/skills/sdlc-studio/help/status.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/help/gate.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/reference-agentic-lessons.md, .claude/skills/sdlc-studio/reference-tsd.md, .claude/skills/sdlc-studio/scripts/persona_resolve.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_docs_tell_truth.py, changelog.d/US0973.md
 > **Epic:** EP0270
 > **Points:** 2
 > **Persona:** Maya Okafor
@@ -54,3 +54,4 @@ The drifting files are reference-agentic-lessons.md, reference-review.md and ref
 | --- | --- | --- |
 | 2026-10-01 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-01 | engineering seat (groomer) | Groomed under D0291 (backlog sweep 2026-10-01): criteria authored, premise executed at HEAD 85042135, Points and Affects set |
+| 2026-10-01 | engineering seat (builder) | Affects widened to reference-tsd.md: round-1 review ruled option (b), its status workflow's health-score step contradicted the corrected help/status.md |
