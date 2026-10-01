@@ -1,6 +1,7 @@
 # BG0879: US0977 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
+> **Closed with findings in:** US0977's discharge: its rejecting reviewer's APPROVE answered every finding (RUN-01M3VF2J critic-verdicts)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lesson_lifecycle.py, changelog.d/US0977.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py
@@ -33,8 +34,10 @@ Fix each finding above, then deliver US0977 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC5** US0977 AC1 still passes: Given a fixture whose `lessons.jsonl` holds a `graduating` class whose `cr` names a CR at a terminal status, when `lessons.close_pass` runs (as `sprint.py close` runs it), then `lessons.py --root <fixture> classes` shows the class `graduated` when its CR is Complete or Superseded (the fix shipped) and `retired` when its CR is Rejected (nothing was fixed, so a later repeat revives it), and a `graduating` class whose CR is still open is unchanged. Fails on: HEAD leaves all of them `graduating`; graduating on any terminal status, which graduates a Rejected CR's class for good
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lesson_lifecycle.py::LessonLifecycleTests::test_a_class_graduates_when_its_cr_closes
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC6** US0977 AC2 still passes: Given an `active` class whose `recorded_run` and hit runs are absent from this clone's run archive, and no hit in the last `QUIET_RUNS` runs this clone knows, when `lessons.close_pass` runs, then the class is `retired`; a class with a hit in those runs stays `active`. Fails on: HEAD keeps the unknown-run class `active` because its recording run is in no known window
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lesson_lifecycle.py::LessonLifecycleTests::test_a_class_recorded_in_another_clone_retires_when_quiet
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

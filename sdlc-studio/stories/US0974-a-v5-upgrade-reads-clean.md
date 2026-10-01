@@ -1,6 +1,6 @@
 # US0974: A v5 upgrade reads clean
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0592
 > **Created:** 2026-10-01
 > **Created-by:** sdlc-studio new
@@ -39,10 +39,13 @@ exit=1
 
 - [ ] **AC1** Given a schema v3 fixture whose config sets `conformance.adopt_after: BG-01KX95QP`, when `conformance.py check --root <fixture>` runs, then it raises no `ValueError` and exempts a unit whose ULID sorts at or before the cutoff. Fails on: HEAD `parse_cutoff('BG-01KX95QP')` raises `ValueError`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v5_upgrade_clean.py::V5UpgradeCleanTests::test_a_ulid_cutoff_is_accepted
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given an up-to-date fixture with no `sdlc-studio/retros/`, when `migrate.py --root <fixture>` runs, then the missing directory is not listed under needs-a-human. Fails on: HEAD lists `no retros dir(s) - created when you first use them` there
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v5_upgrade_clean.py::V5UpgradeCleanTests::test_an_unused_standard_dir_needs_no_human
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC3** Given a story file holding non-UTF-8 bytes, when `migrate.py --format json --root <fixture>` runs, then stdout parses as JSON naming that file as unreadable and no traceback is printed. Fails on: HEAD exits 1 with `UnicodeDecodeError` and empty stdout (premise)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v5_upgrade_clean.py::V5UpgradeCleanTests::test_an_unreadable_story_is_named_in_the_json
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

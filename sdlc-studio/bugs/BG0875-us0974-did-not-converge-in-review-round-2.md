@@ -1,6 +1,7 @@
 # BG0875: US0974 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
+> **Closed with findings in:** US0974's discharge: its rejecting reviewer's APPROVE answered every finding (RUN-01M3VF2J critic-verdicts)
 > **Discharge review 1:** REJECT by the rejecting reviewer (2026-10-01): a failed step was reported as writing nothing after writing, and the unreadable file was not named; answered in b7afec00
 > **Severity:** Medium
 > **Points:** 3
@@ -40,10 +41,13 @@ Fix each finding above, then deliver US0974 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC8** US0974 AC1 still passes: Given a schema v3 fixture whose config sets `conformance.adopt_after: BG-01KX95QP`, when `conformance.py check --root <fixture>` runs, then it raises no `ValueError` and exempts a unit whose ULID sorts at or before the cutoff. Fails on: HEAD `parse_cutoff('BG-01KX95QP')` raises `ValueError`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v5_upgrade_clean.py::V5UpgradeCleanTests::test_a_ulid_cutoff_is_accepted
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC9** US0974 AC2 still passes: Given an up-to-date fixture with no `sdlc-studio/retros/`, when `migrate.py --root <fixture>` runs, then the missing directory is not listed under needs-a-human. Fails on: HEAD lists `no retros dir(s) - created when you first use them` there
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v5_upgrade_clean.py::V5UpgradeCleanTests::test_an_unused_standard_dir_needs_no_human
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC10** US0974 AC3 still passes: Given a story file holding non-UTF-8 bytes, when `migrate.py --format json --root <fixture>` runs, then stdout parses as JSON naming that file as unreadable and no traceback is printed. Fails on: HEAD exits 1 with `UnicodeDecodeError` and empty stdout (premise)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v5_upgrade_clean.py::V5UpgradeCleanTests::test_an_unreadable_story_is_named_in_the_json
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

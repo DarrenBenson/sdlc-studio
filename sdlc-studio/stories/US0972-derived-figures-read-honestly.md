@@ -37,12 +37,16 @@ $ python3 -c "import sdlc_md; print(sdlc_md.affects_files('CODEOWNERS, VERSION, 
 
 - [ ] **AC1** Given a unit whose Affects line reads `CODEOWNERS, VERSION, Gemfile, Procfile`, when `sprint.py breakdown` reads it, then all four are taken as files. Fails on: HEAD `affects_files` returns `[]` for them
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_derived_figures_honest.py::DerivedFiguresHonestTests::test_extensionless_root_files_are_read_as_files
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given a two-unit batch where one unit's every Affects token is unrecognised, when `sprint.py plan` explains its delivery mode, then it names those tokens as not recognised rather than saying the unit declares no Affects. Fails on: HEAD prints `declare no Affects` (sprint.py:2346)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_derived_figures_honest.py::DerivedFiguresHonestTests::test_dropped_tokens_are_named_not_called_absent
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC3** Given stories minted by `artifact.py batch` under two epics, when `reconcile.py apply` runs, then the story index's `Stories by Epic` table holds a row for every story under its epic. Fails on: HEAD leaves the table at its header and reports `changed 0 row(s)`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_derived_figures_honest.py::DerivedFiguresHonestTests::test_reconcile_fills_the_stories_by_epic_table
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC4** Given a fixture repository whose code was last committed at `11:00+01:00` and whose TSD at `10:30+00:00` the same day, when `sprint.tsd_staleness` reads them, then the TSD is current. Fails on: HEAD's string compare calls it stale
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_derived_figures_honest.py::DerivedFiguresHonestTests::test_staleness_compares_instants_not_strings
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

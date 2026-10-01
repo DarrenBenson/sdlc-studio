@@ -41,12 +41,16 @@ The drifting files are reference-agentic-lessons.md, reference-review.md and ref
 
 - [ ] **AC1** Given help/status.md, when it is read, then it describes `status.py pillars` as printing counts and per-type percentages and claims no weighted health score. Fails on: HEAD help/status.md:125
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_docs_tell_truth.py::DocsTellTruthTests::test_status_help_claims_no_health_score
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given the skill, when `docgen.py reading-guides --check` runs, then it reports 0 drift items; reference-sprint.md's `decisions.py waive` example carries `--rationale`; help/sprint.md no longer says the close refuses on `unanswered`; and `persona_resolve.py resolve --render build` alone prints no sentence pointing at a contract above. Fails on: HEAD's 3 drift items and reference-sprint.md:210
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_docs_tell_truth.py::DocsTellTruthTests::test_examples_and_guides_match_the_tools
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC3** Given sprint.py and lib/run_state.py, when each is read, then `ReviewLedgerError` is neither defined nor caught, and project_upgrade.py says init writes `.version`. Fails on: HEAD's catches at sprint.py:4525, 5851 and 8924
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_docs_tell_truth.py::DocsTellTruthTests::test_no_dead_ledger_error_handler_remains
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC4** Given help/gate.md's CI and hook snippets, when each is read, then each names its script through `$CLAUDE_SKILL_DIR`; and `critic.py record --help` names `\;` as the way to keep a semicolon inside one finding. Fails on: HEAD help/gate.md:300, 308, 315 and 336, and a `critic.py record --help` silent on `\;`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_docs_tell_truth.py::DocsTellTruthTests::test_copied_snippets_run_and_the_escape_is_named
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

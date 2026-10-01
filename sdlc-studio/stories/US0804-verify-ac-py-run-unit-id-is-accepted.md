@@ -35,6 +35,7 @@ exit=2
 
 - [ ] **AC1** Given a fixture story US0001 whose one Verify line passes, when `verify_ac.py run --unit US0001 --dry-run --root <fixture>` runs, then it exits 0 and prints the same `ac=1 pass=1` line that `--id US0001` prints. Fails on: HEAD exits 2 `unrecognized arguments: --unit`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_verify_run_unit_alias.py::VerifyRunUnitAliasTests::test_unit_runs_the_same_story_as_id
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

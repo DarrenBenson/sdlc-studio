@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 15 |
+| Ready | 12 |
 | Planned | 0 |
 | In Progress | 2 |
 | Review | 0 |
-| Done | 778 |
+| Done | 781 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -332,11 +332,11 @@
 | [US0971](US0971-a-fresh-project-s-first-plan-is-quiet.md) | A fresh project's first plan is quiet and correct | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
 | [US0972](US0972-derived-figures-read-honestly.md) | Derived figures read honestly | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
 | [US0973](US0973-docs-and-comments-tell-the-truth.md) | Docs and comments tell the truth | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
-| [US0974](US0974-a-v5-upgrade-reads-clean.md) | A v5 upgrade reads clean | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
+| [US0974](US0974-a-v5-upgrade-reads-clean.md) | A v5 upgrade reads clean | Done | EP0270 | 2026-10-01 | 2026-10-01 |
 | [US0975](US0975-migrate-reports-where-a-project-s-own-docs.md) | migrate reports where a project's own docs name retired v5 surface | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
 | [US0976](US0976-install-and-upgrade-never-damage-a-consumer-s.md) | Install and upgrade never damage a consumer's files | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
-| [US0977](US0977-a-lesson-class-finishes-its-lifecycle.md) | A lesson class finishes its lifecycle | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
-| [US0978](US0978-the-handoff-writers-and-the-require-handoff-gate.md) | The handoff writers and the require-handoff gate are retired; old handoff files stay readable | Ready | EP0268 | 2026-10-01 | 2026-10-01 |
+| [US0977](US0977-a-lesson-class-finishes-its-lifecycle.md) | A lesson class finishes its lifecycle | Done | EP0270 | 2026-10-01 | 2026-10-01 |
+| [US0978](US0978-the-handoff-writers-and-the-require-handoff-gate.md) | The handoff writers and the require-handoff gate are retired; old handoff files stay readable | Done | EP0268 | 2026-10-01 | 2026-10-01 |
 
 ## Archived Releases
 

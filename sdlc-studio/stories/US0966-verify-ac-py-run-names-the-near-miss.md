@@ -39,8 +39,10 @@ did you mean tests/test_probe.py::ProbeTests::test_alpha
 
 - [ ] **AC1** Given a fixture whose test file collects `ProbeTests::test_alpha` and a story whose Verify line names `ProbTests::test_alpha`, when `verify_ac.py run --story <story> --dry-run --root <fixture>` runs, then the FAIL block for AC1 carries `did you mean tests/test_probe.py::ProbeTests::test_alpha`. Fails on: HEAD prints only pytest's `not found` lines
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_run_near_miss_hint.py::RunNearMissHintTests::test_a_mistyped_class_names_the_collected_node
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given the same fixture with a Verify line naming the real node of a test that fails on an assertion, when `verify_ac.py run` reports it FAIL, then no `did you mean` line is printed. Fails on: printing a hint on every FAIL rather than only on a node that was not found
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_run_near_miss_hint.py::RunNearMissHintTests::test_a_failing_real_node_gets_no_hint
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

@@ -1,6 +1,7 @@
 # BG0874: US0978 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
+> **Closed with findings in:** US0978's discharge: its rejecting reviewer's APPROVE answered every finding (RUN-01M3VF2J critic-verdicts)
 > **Discharge review 1:** REJECT by the rejecting reviewer (2026-10-01): trd.md:322 and prd.md:533 still described handoff creation; answered in the next fix(US0978) commit
 > **Severity:** Medium
 > **Points:** 3
@@ -36,8 +37,10 @@ Fix each finding above, then deliver US0978 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC6** US0978 AC1 still passes: Given the shipped CLIs, when `gate.py --require-handoff HO0001` and `artifact.py new --type handoff --title x --dry-run` run, then both exit 2 as unknown, `handoff.py --help` lists no `generate` verb, and `reference-sprint.md` names no handoff the close writes. Fails on: HEAD accepts `--require-handoff` (gate.py:2803), `artifact.py new --type handoff --dry-run` would create HO-0094, and reference-sprint.md:187 reads "The close writes a handoff for every run"
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_replaces_handoff.py::ReportReplacesHandoffTests::test_the_handoff_writers_and_gate_are_retired
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC7** US0978 AC2 still passes: Given a fixture holding an HO file and its `handoffs/_index.md` row from before this change, when `reconcile.py detect` runs, then it exits 0 reporting no handoff drift and both files are byte-identical afterwards. Fails on: a deletion that drops `handoff` from `sdlc_md.ARTIFACT_TYPES`, which orphans the 94 HO files already in this repository
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_replaces_handoff.py::ReportReplacesHandoffTests::test_old_handoffs_stay_readable_and_unrewritten
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

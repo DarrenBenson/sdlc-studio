@@ -1,6 +1,7 @@
 # BG0880: BG0839 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
+> **Closed with findings in:** BG0839's discharge: its rejecting reviewer's APPROVE answered every finding (RUN-01M3VF2J critic-verdicts)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** tools/eval_run.py, evals/README.md, tools/tests/test_lean_eval_isolation.py, tools/tests/test_eval_run.py, changelog.d/BG0839.md
@@ -31,6 +32,7 @@ Fix each finding above, then deliver BG0839 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC4** BG0839 AC1 still passes: Given a scenario with a fixture spec, when `eval_run.py setup --scenario <id> --dir <scratch>` runs, then `<scratch>.claude-config/skills/sdlc-studio/SKILL.md` exists, nothing is written under `<scratch>` beyond the fixture, no credential file is written, and stdout carries a worker command beginning `CLAUDE_CONFIG_DIR=<scratch>.claude-config`. Fails on: HEAD, which builds no config directory and prints no command
   - **Verify:** pytest tools/tests/test_lean_eval_isolation.py::EvalIsolationTests::test_setup_isolates_the_candidate_skill
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

@@ -39,10 +39,13 @@ skill_version: "6.0.0"
 
 - [ ] **AC1** Given an initialised fixture whose `.version` records `skill_version: "5.0.0"`, when `init.py run --force --root <fixture>` runs, then `.version` still records `5.0.0`. Fails on: HEAD rewrites it to `6.0.0` (premise)
   - **Verify:** pytest tools/tests/test_lean_consumer_files_preserved.py::ConsumerFilesPreservedTests::test_init_force_keeps_the_version_record
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given a fixture whose `sdlc-studio/.gitignore` uses CRLF, and a second whose `.gitignore` is a symlink, when `migrate.py --apply --root <fixture>` appends the runtime-dir rule, then the first keeps CRLF on every line and the second stays a symlink whose target now holds the rule. Fails on: HEAD writes LF and replaces the symlink with a regular file
   - **Verify:** pytest tools/tests/test_lean_consumer_files_preserved.py::ConsumerFilesPreservedTests::test_the_gitignore_append_keeps_endings_and_links
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC3** Given `HOME` pointed at a fixture whose `.agents/skills/sdlc-studio/` holds only `notes.txt`, when `bash install.sh --target copilot --from <skill dir>` runs, then `notes.txt` survives and the installer prints the sweep's `no sdlc-studio SKILL.md - not touching it` warning for that folder. Fails on: HEAD removes `notes.txt` and exits 0
   - **Verify:** pytest tools/tests/test_lean_consumer_files_preserved.py::ConsumerFilesPreservedTests::test_an_explicit_install_skips_a_foreign_folder
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

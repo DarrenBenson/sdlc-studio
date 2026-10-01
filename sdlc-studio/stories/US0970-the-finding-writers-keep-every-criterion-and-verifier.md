@@ -41,12 +41,16 @@ $ grep AC1 sdlc-studio/bugs/BG-01M3VAF0-probe-obj-acs.md
 
 - [ ] **AC1** Given a fixture, when `file_finding.py file --type cr --fields-file <doc>` runs with two `acs` and two `verify` entries, and when `artifact.py new --type cr --ac a --verify <s1> --ac b --verify <s2>` runs, then each CR carries both Verify lines, each under its own criterion. Fails on: HEAD writes both criteria with no Verify line at exit 0
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_finding_writer_keeps_input.py::FindingWriterKeepsInputTests::test_a_cr_keeps_its_verify_lines
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given `verify` with one more entry than `acs`, or a blank `verify` entry, when either writer runs, then it exits non-zero naming the unpaired or blank verifier and writes nothing. Fails on: HEAD mis-pairs it and exits 0
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_finding_writer_keeps_input.py::FindingWriterKeepsInputTests::test_an_unpaired_verifier_is_named_not_mis_paired
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC3** Given a document whose `acs` list holds `{"id": "AC1", "text": "Given x then y", "verify": "pytest t.py::A::test_b"}`, when `file_finding.py file --type bug --fields-file <doc>` runs, then AC1 reads `Given x then y` and carries `Verify: pytest t.py::A::test_b`. Fails on: HEAD writes the object's repr as the criterion text (premise)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_finding_writer_keeps_input.py::FindingWriterKeepsInputTests::test_criterion_objects_are_read_as_text_and_verify
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC4** Given a test class holding `test_x`, when `file_finding.py file` names `ThatClass::test_x_in_slug_form` as a Verify selector, then it files the finding as a not-yet-written test; a one-letter typo of `test_x` in the same class is still refused with `did you mean`. Fails on: HEAD refuses `AmigoNameTests::test_no_amigo_passage_names_a_retired_seat_in_slug_form` as a near miss
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_finding_writer_keeps_input.py::FindingWriterKeepsInputTests::test_an_extended_test_name_files_as_new
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

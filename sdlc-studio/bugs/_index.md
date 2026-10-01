@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 34 |
+| Open | 29 |
 | In Progress | 3 |
-| Fixed | 692 |
+| Fixed | 699 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **886** |
+| **Total** | **888** |
 
 ## All Bugs
 
@@ -182,7 +182,7 @@
 | [BG0821](BG0821-install-ps1-local-still-refreshes-every-personal-copy.md) | install.ps1 -Local still refreshes every personal copy of the skill, the defect BG0809 fixed only in install.sh | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0822](BG0822-the-close-sign-and-the-signed-report-still.md) | The close, sign and the signed report still speak the retired v5 sign-off vocabulary, and the close misstates the outcome sign will write | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0823](BG0823-sprint-close-dry-run-reports-no-goal-no.md) | sprint close --dry-run reports no goal, no units and no start time for a run whose state holds all three, and previews writes as done | Fixed | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0824](BG0824-init-guided-s-personas-stage-seeds-the-legacy.md) | init guided's personas stage seeds the legacy flat personas.md, which the persona registry and sprint plan --serves never read | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0824](BG0824-init-guided-s-personas-stage-seeds-the-legacy.md) | init guided's personas stage seeds the legacy flat personas.md, which the persona registry and sprint plan --serves never read | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0825](BG0825-ulid-ids-are-printed-as-their-hyphenless-comparison.md) | ULID ids are printed as their hyphenless comparison key, so plan, brief, carry and the signed report name ids no file carries | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0826](BG0826-the-scaffolded-retro-carries-neither-the-run-id.md) | The scaffolded retro carries neither the run id nor a Known issues carried table, so the run's rulings cannot be found or written | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0827](BG0827-the-review-brief-asks-the-reviewer-to-judge.md) | The review brief asks the reviewer to judge origin 'at the base ref' but never names the base ref | Open | Medium | 2026-09-28 | 2026-09-28 |
@@ -197,7 +197,7 @@
 | [BG0836](BG0836-no-command-writes-a-lesson-class-s-graduated.md) | No command writes a lesson class's graduated state, so every graduation CR carries a criterion only a hand edit can meet | Won't Fix | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0837](BG0837-the-pre-push-gate-judges-the-working-tree.md) | The pre-push gate judges the working tree, not the commits being pushed, so an uncommitted fix turns a red push green | In Progress | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0838](BG0838-retired-surface-excuses-a-live-retired-name-by.md) | retired_surface excuses a live retired name by the shape of its sentence, so a live instruction passes as history | Won't Fix | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0839](BG0839-an-eval-worker-session-loads-the-personal-skill.md) | An eval worker session loads the personal skill ahead of the candidate copy, and nothing in the harness says so or prevents it | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0839](BG0839-an-eval-worker-session-loads-the-personal-skill.md) | An eval worker session loads the personal skill ahead of the candidate copy, and nothing in the harness says so or prevents it | Fixed | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0840](BG0840-bg0818-did-not-converge-in-review-round-2.md) | BG0818 did not converge in review: round 2 REJECT findings | Won't Fix | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0841](BG0841-the-review-cap-has-no-per-unit-exception.md) | The review cap has no per-unit exception path, so an operator-granted extra round can only land by force | Superseded | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0842](BG0842-migrate-reports-2-index-drift-items-on-a.md) | migrate reports 2 index drift items on a v4.1 project whose gate reconcile lane fails on 28, because project upgrade counts two of reconcile's nine drift sources | Fixed | Medium | 2026-09-28 | 2026-09-28 |
@@ -232,19 +232,21 @@
 | [BG0871](BG0871-the-diff-scoped-gate-lanes-judge-nothing-at.md) | The diff-scoped gate lanes judge nothing at the push boundary, because their scope is the working-tree diff, which is empty on a clean pushed commit | Open | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0872](BG0872-next-id-py-allocate-mints-a-sequential-id.md) | next_id.py allocate mints a sequential id on a schema v3 project, where artifact.py new mints a ULID | Open | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0873](BG0873-reconcile-reports-a-v3-keyed-handoff-file-as.md) | reconcile reports a v3-keyed handoff file as an orphan index row | Open | Low | 2026-10-01 | 2026-10-01 |
-| [BG0874](BG0874-us0978-did-not-converge-in-review-round-2.md) | US0978 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-01 | 2026-10-01 |
-| [BG0875](BG0875-us0974-did-not-converge-in-review-round-2.md) | US0974 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0874](BG0874-us0978-did-not-converge-in-review-round-2.md) | US0978 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0875](BG0875-us0974-did-not-converge-in-review-round-2.md) | US0974 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0876](BG0876-npm-audit-reports-brace-expansion-and-markdown-it.md) | npm audit reports brace-expansion and markdown-it advisories in the dev lockfile | Open | High | 2026-10-01 | 2026-10-01 |
 | [BG0877](BG0877-four-more-places-still-print-a-schema-v3.md) | Four more places still print a schema v3 id as its hyphenless comparison key | Open | Low | 2026-10-01 | 2026-10-01 |
 | [BG0878](BG0878-config-py-show-prints-null-for-keys-whose.md) | config.py show prints null for keys whose default lives only in a reader's code | Open | Low | 2026-10-01 | 2026-10-01 |
-| [BG0879](BG0879-us0977-did-not-converge-in-review-round-2.md) | US0977 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-01 | 2026-10-01 |
-| [BG0880](BG0880-bg0839-did-not-converge-in-review-round-2.md) | BG0839 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0879](BG0879-us0977-did-not-converge-in-review-round-2.md) | US0977 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0880](BG0880-bg0839-did-not-converge-in-review-round-2.md) | BG0839 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0881](BG0881-status-reports-no-personas-for-a-project-holding.md) | status reports no personas for a project holding only the personas/index.md registry | Superseded | Low | 2026-10-01 | 2026-10-01 |
 | [BG0882](BG0882-harness-project-slug-does-not-truncate-a-long.md) | harness_project_slug does not truncate a long project path or map non-BMP characters as the harness does | Open | Low | 2026-10-01 | 2026-10-01 |
-| [BG0883](BG0883-bg0824-did-not-converge-in-review-round-2.md) | BG0824 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0883](BG0883-bg0824-did-not-converge-in-review-round-2.md) | BG0824 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0884](BG0884-us0971-did-not-converge-in-review-round-2.md) | US0971 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0885](BG0885-critic-py-record-writes-a-finding-into-critic.md) | critic.py record writes a finding into critic-verdicts.md unescaped, so markdown-shaped text breaks the lint | Open | Low | 2026-10-01 | 2026-10-01 |
 | [BG0886](BG0886-the-done-gate-s-own-refusal-messages-still.md) | The done gate's own refusal messages still print a v3 id as its hyphenless comparison key | Open | Low | 2026-10-01 | 2026-10-01 |
+| [BG0887](BG0887-the-review-command-s-dashboard-and-json-show.md) | The review command's dashboard and JSON show a per-document health percentage that no code computes | Open | Low | 2026-10-01 | 2026-10-01 |
+| [BG0888](BG0888-help-gate-md-says-the-commit-msg-hook.md) | help/gate.md says the commit-msg hook snippet degrades honestly with no script, but it blocks | Open | Low | 2026-10-01 | 2026-10-01 |
 
 ## Archived Releases
 

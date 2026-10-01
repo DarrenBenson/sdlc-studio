@@ -1,6 +1,6 @@
 # BG0839: An eval worker session loads the personal skill ahead of the candidate copy, and nothing in the harness says so or prevents it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Groomed:** 2026-10-01 (D0291) - premise reproduced at HEAD: `grep -rn CLAUDE_CONFIG_DIR tools/ evals/` finds nothing; `eval_run.py setup` prints `--- WORKER PROMPT (fresh session, skill installed) ---` and evals/README.md step 2 says only `with the candidate skill installed`. Narrowed: setup always prints the isolated command, so the personal-copy diff warning is dropped (one more check, no extra value), and setup copies no credentials
 > **Severity:** Medium
 > **Points:** 2

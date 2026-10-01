@@ -15,7 +15,7 @@ Decomposed from CR0590. Delivers the work CR0590 requested.
 ## Story Breakdown
 
 - [ ] [US0967: The close writes no handoff; the next plan reads the last signed report's carried work](../stories/US0967-the-close-writes-no-handoff-the-next-plan.md)
-- [ ] [US0978: The handoff writers and the require-handoff gate are retired; old handoff files stay readable](../stories/US0978-the-handoff-writers-and-the-require-handoff-gate.md)
+- [x] [US0978: The handoff writers and the require-handoff gate are retired; old handoff files stay readable](../stories/US0978-the-handoff-writers-and-the-require-handoff-gate.md)
 
 ## Revision History
 

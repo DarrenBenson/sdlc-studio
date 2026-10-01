@@ -1,6 +1,7 @@
 # BG0883: BG0824 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
+> **Closed with findings in:** BG0824's discharge: its rejecting reviewer's APPROVE answered every finding (RUN-01M3VF2J critic-verdicts)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/init.py, .claude/skills/sdlc-studio/templates/personas/persona-index-template.md, .claude/skills/sdlc-studio/templates/indexes/story.md, .claude/skills/sdlc-studio/help/init.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_guided_personas_seed.py, changelog.d/BG0824.md, .claude/skills/sdlc-studio/scripts/tests/test_init.py
@@ -29,8 +30,10 @@ Fix each finding above, then deliver BG0824 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC3** BG0824 AC1 still passes: Given a fresh project after `init.py run`, when `init.py guided --root <fixture>` reaches the personas stage, then it seeds `sdlc-studio/personas/index.md` with Primary, Secondary and Negative headings, `sdlc_md.persona_registry(<fixture>)` reads it as available (zero entries until filled), and no `sdlc-studio/personas.md` is created. Fails on: HEAD, which seeds `sdlc-studio/personas.md` and leaves `personas/` absent, so the registry reads `no persona registry at ...`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_guided_personas_seed.py::GuidedPersonasSeedTests::test_the_registry_is_seeded
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC4** BG0824 AC2 still passes: Given the shipped `templates/indexes/story.md`, when `artifact.py batch --type story` renders the story index in a fixture, then its personas link points at `../personas/index.md` and it carries no `US0001, US0002` numbering note. Fails on: HEAD's `[User Personas](../personas.md)` link (line 10) and numbering note (line 40)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_guided_personas_seed.py::GuidedPersonasSeedTests::test_the_story_index_links_the_registry
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

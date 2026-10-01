@@ -42,12 +42,16 @@ exit=2
 
 - [ ] **AC1** Given a fixture and a document carrying `ac` and `option` lists, when `file_finding.py file --type bug --fields-file <doc> --dry-run --root <fixture>` runs, then it exits 0 and the previewed bug carries those criteria exactly as an `acs` document would. Fails on: HEAD exits 1 `carries unknown field(s): ac`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_fields_file_flag_keys.py::FieldsFileFlagKeysTests::test_ac_and_option_map_to_acs_and_options
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given a fixture and a document carrying `decision`, `rationale` and `"status": "revisited"`, when `decisions.py add --fields-file <doc> --root <fixture>` runs, then it exits 0 and the recorded row's status is `revisited`. Fails on: HEAD exits 2 `carries unknown field(s): status`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_fields_file_flag_keys.py::FieldsFileFlagKeysTests::test_decisions_add_reads_status_from_the_document
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC3** Given a fixture and a document carrying `"type": "bug"` with no `--type` flag, when `file_finding.py file --fields-file <doc> --dry-run --root <fixture>` runs, then it exits 0 and previews a bug; with neither a `type` key nor `--type` it still exits 2 naming `--type`. Fails on: HEAD exits 2 `the following arguments are required: --type`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_fields_file_flag_keys.py::FieldsFileFlagKeysTests::test_a_type_key_stands_in_for_the_type_flag
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC4** Given a fixture and a document carrying `seat`, `subject`, `question`, `ruling` and `reason`, when `decisions.py rule --fields-file <doc> --root <fixture>` runs with no `--seat` or `--subject` flag, then the ruling is recorded under that seat and subject. Fails on: the current code, which refuses `seat` and `subject` as unknown fields and then demands both flags (found in the 2026-10-01 backlog sweep)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_fields_file_flag_keys.py::FieldsFileFlagKeysTests::test_decisions_rule_reads_seat_and_subject_from_the_document
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

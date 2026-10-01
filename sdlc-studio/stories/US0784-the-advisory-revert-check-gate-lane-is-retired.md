@@ -38,8 +38,10 @@ $ cat sdlc-studio/.local/revert-check-yield.json
 
 - [ ] **AC1** Given this repository, when `gate.py --boundary release --only no-such-lane` runs, then the valid-lane list it prints does not name `revert-check`, and `verify_ac.py revert-check --help` still exits 0. Fails on: HEAD lists `revert-check` among the release lanes (gate.py:2115)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_revert_lane_retired.py::RevertLaneRetiredTests::test_the_release_boundary_registers_no_revert_check_lane
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given the shipped `gate.py`, `.githooks/pre-push`, `tools/enable-hooks.sh` and `help/gate.md`, when each is read, then none names the `revert-check` lane or `revert-check-yield.json`. Fails on: HEAD gate.py:792 (`_REVERT_YIELD_REL`) and pre-push:151 (the release cost note naming the lane)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_revert_lane_retired.py::RevertLaneRetiredTests::test_no_shipped_file_names_the_lane_or_its_yield_file
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

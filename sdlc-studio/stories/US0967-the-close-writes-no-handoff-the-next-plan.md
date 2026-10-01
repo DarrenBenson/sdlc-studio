@@ -47,10 +47,13 @@ The handoff the plan reads says nothing is carried; the signed report hands over
 
 - [ ] **AC1** Given a fixture run with one carried unit and one open finding raised inside it, when `sprint.py close` and then `sprint.py sign` run, then nothing is written under `sdlc-studio/handoffs/`, no `.local/handoff-worklist.txt` exists, run state's `handoff` stays null, and `sprint_report.py checklist` lists no handoff step. Fails on: HEAD's close step `_close_handoff` runs `handoff.py generate`, which minted HO-0093 at RUN-01M3T8N1's close
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_replaces_handoff.py::ReportReplacesHandoffTests::test_the_close_and_sign_write_no_handoff
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given a fixture whose last signed report RPT0001 hands over BG0002 (an open finding) and US0003 (a carried unit), when `sprint.py plan --stories Ready` runs, then its last-run notice names RPT0001, BG0002 and US0003; and `sprint.py plan --worklist RPT0001` plans BG0002 and US0003. Fails on: HEAD reads the notice from `state["handoff"]` only, so in this repository it says `nothing carried over` while RPT0013 hands over three findings
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_replaces_handoff.py::ReportReplacesHandoffTests::test_the_plan_reads_the_signed_reports_handed_over_ids
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC3** Given a fixture run ended by `sprint.py stop --force --reason x` over an unanswered unit US0004, when the next `sprint.py plan --stories Ready` runs, then its notice names US0004 as waived by the forced stop. Fails on: HEAD's `pending_handoff` returns None when run state has no `handoff`, and `stop` writes none, so the plan names nothing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_replaces_handoff.py::ReportReplacesHandoffTests::test_a_forced_stops_waived_units_reach_the_next_plan
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 
