@@ -39,6 +39,28 @@ def _load(name: str):
 
 class CliNoFalseSuccessTests(unittest.TestCase):
 
+    def test_an_absent_config_key_is_named_not_printed_as_null(self) -> None:
+        """AC1. MUTANTS: (1) HEAD - `null` at exit 0; (2) every key refused, so the declared
+        `review.blocking_priority` no longer prints (the positive control); (3) a key the
+        project sets to null read as absent."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            subprocess.run(["git", "init", "-q", str(root)], env=gitutil.git_env(), check=True)
+            self.assertEqual(0, _cli(root, "init.py", "run").returncode)
+            r = _cli(root, "config.py", "show", "--key", "nonexistent.key")
+            self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+            self.assertIn("nonexistent.key", r.stderr)
+            self.assertNotIn("null", r.stdout)
+            r = _cli(root, "config.py", "show", "--key", "review.blocking_priority")
+            self.assertEqual(0, r.returncode, r.stderr)
+            self.assertEqual('"high"', r.stdout.strip())
+            cfg = root / "sdlc-studio" / ".config.yaml"
+            cfg.write_text(cfg.read_text(encoding="utf-8") + "\nprobe:\n  unset: null\n",
+                           encoding="utf-8")
+            r = _cli(root, "config.py", "show", "--key", "probe.unset")
+            self.assertEqual(0, r.returncode, r.stderr)
+            self.assertEqual("null", r.stdout.strip())
+
     def test_validate_on_a_directory_with_no_workspace_says_so(self) -> None:
         """AC2. MUTANTS: (1) HEAD - `checked=0 errors=0 warnings=0` at exit 0; (2) the check
         refusing a real workspace too (the positive control: a fresh project exits 0)."""

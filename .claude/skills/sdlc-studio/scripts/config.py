@@ -174,7 +174,18 @@ def cmd_show(args: argparse.Namespace) -> int:
             print(f"{source:<7} {dotted} = {json.dumps(val, default=_json_default)}")
         return 0
     if args.key:
-        print(json.dumps(get(args.root, args.key), default=_json_default))
+        # Walked here rather than through `get`, whose `default` cannot tell a key the config
+        # sets to null from one it never declares: printing `null` at exit 0 for a misspelt key
+        # reads as a key that is set.
+        cur = load_config(args.root)
+        for part in args.key.split("."):
+            if not isinstance(cur, dict) or part not in cur:
+                print(f"config: no key `{args.key}` - neither config-defaults.yaml nor the "
+                      f"project's .config.yaml declares it (`config.py show --sources` lists "
+                      f"the keys that are)", file=sys.stderr)
+                return 1
+            cur = cur[part]
+        print(json.dumps(cur, default=_json_default))
     else:
         print(json.dumps(load_config(args.root), indent=2, default=_json_default))
     return 0
