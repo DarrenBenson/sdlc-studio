@@ -223,15 +223,17 @@ def _retired_verbs() -> dict[str, str]:
     return retired_surface.retired_verbs()
 
 
-#: Files the docs scan never reads: history names retired surface on purpose, and the agent
-#: instructions are read line by line by `_retired_mentions` above it.
-_DOCS_SKIPPED = {"CHANGELOG.md", "AGENTS.md", "CLAUDE.md"}
+#: Root files the docs scan leaves to `_retired_mentions` above it, which reads them line by line.
+_DOCS_SKIPPED = {"AGENTS.md", "CLAUDE.md"}
+#: History names retired surface on purpose: a changelog or release notes at any depth, and
+#: anything under a `releases/` folder.
+_HISTORY_DOC = re.compile(r"(?i)^(?:changelog[^/]*|release[-_ ]?notes[^/]*)\.md$")
 
 
 def _project_docs(root: Path) -> list[Path]:
     """The project's own markdown: the files git tracks when the project is a git work tree,
     else every `.md` under it, less `sdlc-studio/`, any installed skill copy, hidden folders,
-    `node_modules` and `_DOCS_SKIPPED`."""
+    `node_modules`, history (`_HISTORY_DOC`, a `releases/` folder) and `_DOCS_SKIPPED`."""
     rels: list[str] = []
     if (root / ".git").exists():
         # Every `GIT_*` variable is dropped: a hook exports the ones that locate a repository,
@@ -250,6 +252,7 @@ def _project_docs(root: Path) -> list[Path]:
     for rel in sorted(set(rels)):
         parts = rel.split("/")
         if (parts[0] == "sdlc-studio" or parts[-1] in _DOCS_SKIPPED and len(parts) == 1
+                or _HISTORY_DOC.match(parts[-1]) or "releases" in parts[:-1]
                 or "node_modules" in parts or any(p.startswith(".") for p in parts[:-1])
                 or "/skills/sdlc-studio/" in f"/{rel}"):
             continue

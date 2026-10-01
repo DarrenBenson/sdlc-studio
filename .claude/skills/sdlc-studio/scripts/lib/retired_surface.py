@@ -1,20 +1,20 @@
-"""The v5 surface v6 retired, as ONE list: what `migrate` reports in a project's own docs, and
-what every shipped-doc test of this repository imports.
+"""The v5 surface v6 retired that a consuming project's docs can still TEACH, as one list: what
+`migrate` reports in a project's own docs, and the base this repository's doc tests build on.
 
-Verbs, config keys and check ids are derived from the code that refuses them: each script's
-`RETIRED_VERBS` (read with `ast`, so no script is imported), `sdlc_md.RETIRED_CONFIG_KEYS` and
-`sdlc_md.RETIRED_CHECK_IDS`, so a registry entry added later is read here without an edit. The
-retired flags are read from the CHANGELOG's `#### Retired flags` tables when a CHANGELOG sits
-beside the skill (an installed copy ships one) or at the root of the repository holding it; with
-none, the flags are simply not listed and everything else still is. This module holds only what
-no registry carries: the verbs whose script or parser was deleted outright, and the retired
-phrases.
+Only command-shaped surface ships here, because a consumer's prose is not this skill's: a
+`<script>.py <retired verb>` (each script's `RETIRED_VERBS`, read with `ast`, so no script is
+imported), a retired flag on the same line as its own script (from the CHANGELOG's `#### Retired
+flags` tables when a CHANGELOG sits beside the skill or at the root of the repository holding
+it; with none, no flags), and the retired config keys and check ids (`sdlc_md.RETIRED_CONFIG_KEYS`,
+`sdlc_md.RETIRED_CHECK_IDS`). A phrase such as "plan review", or a bare `--depth`, means
+something else in a consumer's docs; those are judged only by this repository's own doc tests
+(`scripts/tests/retired_surface.py`), which add them.
 
     from lib import retired_surface
     hits = retired_surface.live_mentions(text)   # [(line number, label, line)]
 
-The tier vocabulary (smoke, functional, conversational, soak, live) and the
-`#verification-depth-tiers` anchor are advice no gate reads, so they are not listed.
+A mention is excused when its clause says the surface is retired, and a table row when its
+table's header does ("Retired in v6", "replaces"): a table of what replaced what is history.
 """
 from __future__ import annotations
 
@@ -85,71 +85,31 @@ def changelog_flags(path: Path | None) -> list[str]:
     return out
 
 
-def _live_flags() -> set[str]:
-    """Every flag a shipped script still declares with a literal `add_argument("--x"`."""
-    found: set[str] = set()
-    for script in SCRIPTS_DIR.glob("*.py"):
-        found.update(re.findall(r'add_argument\(\s*"(--[\w-]+)"', script.read_text(encoding="utf-8")))
-    return found
+def _flag_parts(label: str) -> tuple[str | None, list[str], str]:
+    """(script stem, verbs, flag pattern) of a CHANGELOG retired-flag label such as
+    `sprint.py close --apply-signoff` or `critic.py brief|record --phase`."""
+    tokens = label.split()
+    script = tokens.pop(0)[:-3] if tokens[0].endswith(".py") else None
+    verbs = tokens.pop(0).split("|") if tokens and not tokens[0].startswith("-") else []
+    flag = r"[ =]".join(re.escape(tok) for tok in tokens) + r"(?![\w-])"
+    return script, verbs, flag
 
 
-def flags(labels: list[str] | None = None) -> dict[str, str]:
-    """The retired flags, label -> pattern, from `labels` (default: this skill's CHANGELOG
-    tables). A flag no live parser declares is retired wherever it appears; one a live verb
-    still declares elsewhere is matched only beside its retired verb, inside the same code span."""
+def consumer_flags(labels: list[str] | None = None) -> dict[str, str]:
+    """The retired flags as a consumer's docs would TEACH them, label -> pattern: the flag on
+    the same line as its own script (and verb, when the label names one). A label naming no
+    script is not shipped; `--depth` alone is any tool's flag. `labels` defaults to this
+    skill's CHANGELOG tables."""
     labels = changelog_flags(changelog_path()) if labels is None else labels
-    live = _live_flags() if labels else set()
     out: dict[str, str] = {}
     for label in labels:
-        tokens = label.split()
-        script = tokens.pop(0)[:-3] if tokens[0].endswith(".py") else None
-        verbs = tokens.pop(0).split("|") if tokens and not tokens[0].startswith("-") else []
-        flag = r"[ =]".join(re.escape(tok) for tok in tokens) + r"(?![\w-])"
-        if tokens[0] not in live:
-            out[label] = rf"(?<![\w-]){flag}"
-        elif verbs:
-            lead = rf"(?:\b{re.escape(script)}{_PY}\s+|`)" if script else "`"
-            out[label] = rf"{lead}(?:{'|'.join(map(re.escape, verbs))})\b[^`\n]*?{flag}"
-        else:
-            out[label] = rf"\b{re.escape(script)}{_PY}\s[^`\n]*?{flag}"
+        script, verbs, flag = _flag_parts(label)
+        if script is None:
+            continue
+        verb = rf"\s+(?:{'|'.join(map(re.escape, verbs))})\b" if verbs else r"\b"
+        out[label] = rf"\b{re.escape(script)}{_PY}{verb}[^\n]*?{flag}"
     return out
 
-
-#: Verbs with no registry to derive from: the script, or the subparser, was deleted outright.
-#: A deleted script is labelled as one, never by its bare file name, so this shipped module
-#: carries no string a load-by-name could import.
-DELETED_VERBS: dict[str, str] = {
-    "plan_review.py (deleted script)": r"\bplan_review\.py\b",
-    "repair_plan.py (deleted script)": r"\brepair_plan\.py\b",
-    "validate.py warning-ratchet": r"\bwarning-ratchet\b",
-}
-
-#: The retired concepts a reader would follow as prose rather than type as a command. The run's
-#: signer is still its reviewer of record (`sprint sign --principal`); only one approving each
-#: unit is retired.
-PHRASES: dict[str, str] = {
-    # The two-role shape: a reviewer filing findings as evidence, beside a signer who approves.
-    "two-role review": r"\btwo-role\b|(?i:\bfindings as evidence\b)",
-    "a reviewer of record approving each unit":
-        r"(?i:\breviewer[- ]of[- ]record\b[^\n]*\b(?:each|every|per)[- ]unit\b"
-        r"|\b(?:each|every|per)[- ]unit\b[^\n]*\breviewer[- ]of[- ]record\b)"
-        r"|\bunits hold at Review\b",
-    "the Verification depth and Verification target fields":
-        r"\bVerification (?:depth|target)\b(?![- ]tiers?\b)",
-    "Mutation-checked": r"\bMutation-checked\b",
-    # The tiers stay as advice; a gate on them, or a unit held from Done or Fixed by them, is gone.
-    "the verification-depth gate":
-        r"(?i)(?<![#\w-])(?:verification[- ])?depth(?:[- ](?:gate|parity)\b"
-        r"|\b[^\n]*\b(?:cannot|can.t|may not|must not)\s+reach\b)"
-        r"|\b(?:cannot|can.t|may not|must not)\s+reach\b[^\n]*(?<![#\w-])(?:verification[- ])?depth\b",
-    "plan review as a step": r"(?i)\bplan[- ]review\b",
-    "batch review": r"(?i)\bbatch review\b",
-    "the sign-off brief": r"(?i)\bsign-?off (?:decision )?brief\b|\bsign-off chain\b"
-                          r"|\bseat's sign-off\b",
-    "a repair plan": r"(?i)\brepair[- ]plan\b",
-    "a mutation gate, ledger or evidence":
-        r"(?i)\bmutation(?:-check)?[- ](?:gate|ledger|evidence)\b",
-}
 
 #: Words saying the surface named beside them is retired, so naming it there teaches nothing.
 #: They excuse a mention only inside its own clause (`_CLAUSE_BREAK`), so an unrelated
@@ -157,6 +117,9 @@ PHRASES: dict[str, str] = {
 RETIRED_CONTEXT = re.compile(
     r"(?i)retir|\brefuse[sd]?\b|\bremoved\b|\bdeleted\b|\bgone\b|no longer|any ?more\b"
     r"|read by nothing|\bfrozen\b|\bbefore v6\b")
+
+#: A table header saying its rows are history: what was retired, or what replaces it.
+HISTORY_HEADER = re.compile(r"(?i)retir|\breplace|\bbefore v6\b")
 
 #: Where a clause ends inside a sentence: a semicolon, a spaced hyphen, or a comma before a
 #: conjunction that opens a new clause ("..., and so are X" continues the one before it).
@@ -183,11 +146,25 @@ def derived() -> dict[str, str]:
 
 
 def surfaces(flag_patterns: dict[str, str] | None = None) -> dict[str, re.Pattern]:
-    """Every retired surface, label -> compiled pattern: the derived half, the flags
-    (`flag_patterns`, default this skill's CHANGELOG's) and the lists above."""
-    flag_patterns = flags() if flag_patterns is None else flag_patterns
-    return {label: re.compile(rx)
-            for label, rx in {**derived(), **flag_patterns, **DELETED_VERBS, **PHRASES}.items()}
+    """Every shipped retired surface, label -> compiled pattern: the derived half and the
+    flags (`flag_patterns`, default `consumer_flags()`)."""
+    flag_patterns = consumer_flags() if flag_patterns is None else flag_patterns
+    return {label: re.compile(rx) for label, rx in {**derived(), **flag_patterns}.items()}
+
+
+def _table_headers(lines: list[str]) -> dict[int, str]:
+    """{0-based line index of a table data row: its table's header line}, for every table."""
+    out: dict[int, str] = {}
+    header = None
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if not s.startswith("|"):
+            header = None
+        elif header is None and i + 1 < len(lines) and sdlc_md.SEP_ROW_RE.match(lines[i + 1]):
+            header = line
+        elif header is not None and not sdlc_md.SEP_ROW_RE.match(line):
+            out[i] = header
+    return out
 
 
 def _clause(text: str, starts: list[int], pos: int) -> str:
@@ -206,15 +183,18 @@ def _clause(text: str, starts: list[int], pos: int) -> str:
 def live_mentions(text: str, pats: dict[str, re.Pattern] | None = None
                   ) -> list[tuple[int, str, str]]:
     """(line number, surface label, line) for each line naming a retired surface in a clause
-    that does not say it is retired. A clause wrapped from the line before counts; an unrelated
+    that does not say it is retired, outside a table whose header says its rows are history. A clause wrapped from the line before counts; an unrelated
     clause or sentence beside it on the same line does not."""
     pats = surfaces() if pats is None else pats
     lines = text.splitlines(keepends=True)
+    headers = _table_headers([ln.rstrip("\n") for ln in lines])
     starts = [m.end() for m in _SENTENCE_START.finditer(text)]
     out = []
     offset = 0
     for i, line in enumerate(lines):
         at, offset = offset, offset + len(line)
+        if i in headers and HISTORY_HEADER.search(headers[i]):
+            continue                                    # a row of a what-was-retired table
         for label, rx in pats.items():
             m = rx.search(line)
             if not m:

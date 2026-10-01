@@ -8,6 +8,7 @@ for a human, never rewriting it.
 """
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
@@ -19,6 +20,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gitutil  # noqa: E402 - confined git for the fixture repo
 
 SCRIPTS = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(SCRIPTS))
+from lib import retired_surface as shipped  # noqa: E402
 
 _README = ("# My project\n\n"
            "After review run `mutation.py register` then `sprint.py close --apply-signoff`.\n"
@@ -61,9 +64,11 @@ class MigrateRetiredDocsTests(unittest.TestCase):
                 self.assertEqual(before, readme.read_bytes(), "migrate rewrote the README")
 
     def test_a_git_project_is_scanned_by_what_it_tracks(self) -> None:
-        """In a git work tree the scan reads the TRACKED markdown, and never the skill copy, the
-        CHANGELOG or `sdlc-studio/`. MUTANTS: walk the tree regardless (the untracked scratch note
-        is reported); read the CHANGELOG (history names retired surface on purpose)."""
+        """In a git work tree the scan reads the TRACKED markdown, and never the skill copy,
+        `sdlc-studio/`, `node_modules`, a changelog or release notes at any depth, or a
+        `releases/` folder. MUTANTS: walk the tree regardless (the untracked scratch note is
+        reported); skip a CHANGELOG at the root only (the nested one is reported); pass a
+        hook's `GIT_DIR` through (git lists the other repository's files instead)."""
         root = self.base / "g"
         root.mkdir()
         self.assertEqual(0, _py(str(SCRIPTS / "init.py"), "run", "--root", str(root)).returncode)
@@ -71,18 +76,55 @@ class MigrateRetiredDocsTests(unittest.TestCase):
         (root / "docs").mkdir()
         (root / "docs" / "guide.md").write_text(line, encoding="utf-8")
         (root / "CHANGELOG.md").write_text(line, encoding="utf-8")
+        for rel in ("pkg/CHANGELOG.md", "docs/release-notes-v1.md", "docs/releases/v1.md",
+                    "sdlc-studio/notes.md", "node_modules/x/README.md"):
+            (root / rel).parent.mkdir(parents=True, exist_ok=True)
+            (root / rel).write_text(line, encoding="utf-8")
         skill = root / ".claude" / "skills" / "sdlc-studio"
         skill.mkdir(parents=True)
         (skill / "SKILL.md").write_text(line, encoding="utf-8")
         gitutil.git(["init", "-q"], root)
         gitutil.git(["add", "-A"], root)
         (root / "scratch.md").write_text(line, encoding="utf-8")       # untracked
-        proc = _py(str(SCRIPTS / "migrate.py"), "--root", str(root))
+        other = self.base / "other"
+        other.mkdir()
+        gitutil.git(["init", "-q"], other)
+        env = {**gitutil.git_env(), "GIT_DIR": str(other / ".git")}
+        proc = subprocess.run([sys.executable, "-B", str(SCRIPTS / "migrate.py"), "--root",
+                               str(root)], capture_output=True, text=True, check=False,
+                              timeout=300, env=env)
         out = proc.stdout + proc.stderr
         self.assertEqual(0, proc.returncode, out)
         self.assertIn("docs/guide.md:1", out)
-        for skipped in ("scratch.md:1", "CHANGELOG.md:1", "SKILL.md:1"):
+        for skipped in ("scratch.md:1", "CHANGELOG.md:1", "SKILL.md:1", "release-notes-v1.md:1",
+                        "releases/v1.md:1", "sdlc-studio/notes.md:1", "node_modules"):
             self.assertNotIn(skipped, out)
+
+    def test_ordinary_prose_and_common_flags_are_not_surface(self) -> None:
+        """Round-1 repro. Only command-shaped surface ships. MUTANTS: ship the repo-strict
+        PHRASES (a consumer's 'plan review' is flagged); ship the bare retired flags
+        (`git clone --depth 1`, `docker run --phase x` are flagged). The positive controls:
+        the flag beside its own script, and the retired verb, are still found."""
+        for line in ("We hold a plan review with the tech lead.", "git clone --depth 1 url",
+                     "docker run --phase x", "Write a repair plan, then a batch review."):
+            with self.subTest(line=line):
+                self.assertEqual([], shipped.live_mentions(line + "\n"))
+        found = shipped.live_mentions("Run `sprint.py close --apply-signoff` now.\n")
+        self.assertIn("sprint.py close --apply-signoff", [h[1] for h in found])
+        self.assertIn("mutation.py register",
+                      [h[1] for h in shipped.live_mentions("Then `mutation.py register`.\n")])
+
+    def test_a_table_of_what_was_retired_is_history(self) -> None:
+        """A row is judged with its table's header as context. MUTANT: judge each row alone -
+        every row of a "Retired in v6 | Use instead" table is reported. The control: the same
+        row under an ordinary header is still found."""
+        row = "| `mutation.py register` | measure with `mutation.py run` |\n"
+        history = "| Retired in v6 | Use instead |\n| --- | --- |\n" + row
+        replaces = "| Old | What replaces it |\n| --- | --- |\n" + row
+        ordinary = "| Step | How |\n| --- | --- |\n" + row
+        self.assertEqual([], shipped.live_mentions(history))
+        self.assertEqual([], shipped.live_mentions(replaces))
+        self.assertEqual([3], [h[0] for h in shipped.live_mentions(ordinary)])
 
     def test_the_scanner_ships_and_needs_no_changelog(self) -> None:
         """AC2. A copy of the shipped scripts with no CHANGELOG beside the skill: the scanner
@@ -102,14 +144,11 @@ class MigrateRetiredDocsTests(unittest.TestCase):
         proc = _py("-c", probe, str(skill / "scripts"), cwd=self.base)
         self.assertEqual("True", proc.stdout.strip(), proc.stdout + proc.stderr)
         helper = (SCRIPTS / "tests" / "retired_surface.py").read_text(encoding="utf-8")
-        sys.path.insert(0, str(SCRIPTS))
-        try:
-            from lib import retired_surface as shipped  # noqa: PLC0415
-        finally:
-            sys.path.remove(str(SCRIPTS))
-        for label, pattern in {**shipped.DELETED_VERBS, **shipped.PHRASES}.items():
-            self.assertNotIn(pattern, helper, f"the test helper keeps its own copy of {label!r}")
-        self.assertNotIn("RETIRED_VERBS = {", helper)
+        self.assertNotIn("RETIRED_VERBS", helper.replace("`RETIRED_VERBS`", ""),
+                         "the test helper reads the verb registries itself")
+        self.assertIn("derived = _shipped.derived", helper)
+        for key in shipped.sdlc_md.RETIRED_CONFIG_KEYS:
+            self.assertNotIn(f'"{key}"', helper, f"the test helper lists {key!r} itself")
 
 
 if __name__ == "__main__":

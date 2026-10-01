@@ -15,7 +15,9 @@ Related: reference-upgrade.md
 > Moving a v5 project to v6, `migrate --apply` also removes the retired review tags from the
 > Definition of Done and the retired review keys from `.config.yaml`, leaving every other line as
 > written; it reports each `AGENTS.md` or `CLAUDE.md` line that still names a retired key or verb,
-> and lists the frozen review ledgers as history. See `reference-upgrade.md#migrate`.
+> and each line of the project's own docs that still teaches a retired command (a retired verb or
+> flag beside its script, a retired key or check id), by file and line and never rewritten; it
+> lists the frozen review ledgers as history. See `reference-upgrade.md#migrate`.
 
 Upgrade a project's **artifact document shape** from legacy (v1) to modular (v2) schema. This is one
 of three "upgrade" surfaces - see `reference-upgrade.md#three-upgrades` for `skill-update` (the
