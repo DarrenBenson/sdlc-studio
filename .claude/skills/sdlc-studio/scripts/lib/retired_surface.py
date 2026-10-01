@@ -116,9 +116,11 @@ def flags(labels: list[str] | None = None) -> dict[str, str]:
 
 
 #: Verbs with no registry to derive from: the script, or the subparser, was deleted outright.
+#: A deleted script is labelled as one, never by its bare file name, so this shipped module
+#: carries no string a load-by-name could import.
 DELETED_VERBS: dict[str, str] = {
-    "plan_review.py": r"\bplan_review\.py\b",
-    "repair_plan.py": r"\brepair_plan\.py\b",
+    "plan_review.py (deleted script)": r"\bplan_review\.py\b",
+    "repair_plan.py (deleted script)": r"\brepair_plan\.py\b",
     "validate.py warning-ratchet": r"\bwarning-ratchet\b",
 }
 
