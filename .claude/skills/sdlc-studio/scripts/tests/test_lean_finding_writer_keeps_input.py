@@ -5,6 +5,7 @@ paired a surplus or blank verifier with the wrong criterion, wrote an `acs` obje
 repr, and refused a new test whose name extends an existing method as a typo. Every case runs the
 shipped CLI in a temporary `init run` project holding one small test module.
 """
+# test-census-subject: .claude/skills/sdlc-studio/scripts/file_finding.py
 from __future__ import annotations
 
 import json
