@@ -151,7 +151,7 @@ class LessonLifecycleTests(unittest.TestCase):
         self._store(self._row("LC-001", "RUN-1", state="graduating", cr="CR0001"))
         cite = [("LC-001", "US0009", "[new] again [LC-001]")]
         state = {"run_id": "RUN-2", "batch": []}
-        with mock.patch.object(critic, "cited_lessons", return_value=cite):
+        with mock.patch("critic.cited_lessons", return_value=cite):
             first = lessons.close_pass(self.root, "RUN-2", state)
             second = lessons.close_pass(self.root, "RUN-2", state)
         self.assertEqual((1, 0), (first["hits"], second["hits"]))
@@ -162,8 +162,11 @@ class LessonLifecycleTests(unittest.TestCase):
         held. MUTANT: graduate whatever this close recorded - LC-001 graduates with a fresh hit."""
         self._cr("CR0001", "Complete")
         self._store(self._row("LC-001", "RUN-1", state="graduating", cr="CR0001"))
-        with mock.patch.object(critic, "cited_lessons",
-                               return_value=[("LC-001", "US0009", "[new] again [LC-001]")]):
+        # Patch by name: close_pass does `import critic` at call time, which resolves
+        # sys.modules["critic"]; other modules in one discovery run replace that entry, so a
+        # patch on this module's own loaded object can miss the one close_pass reads.
+        with mock.patch("critic.cited_lessons",
+                        return_value=[("LC-001", "US0009", "[new] again [LC-001]")]):
             res = lessons.close_pass(self.root, "RUN-2", {"run_id": "RUN-2", "batch": []})
         self.assertEqual(1, res["hits"])
         self.assertEqual({"LC-001": "graduating"}, self._classes())
