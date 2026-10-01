@@ -59,12 +59,17 @@ class InstallAtomicSwap(unittest.TestCase):
             parent = root / "target"
             (parent / "sdlc-studio").mkdir(parents=True)
             (parent / "sdlc-studio" / "marker.txt").write_text("PREVIOUS-INSTALL\n")
+            # A previous INSTALL, so the copy is attempted: a folder holding no sdlc-studio
+            # SKILL.md is the user's and is skipped before any copy (US0976).
+            (parent / "sdlc-studio" / "SKILL.md").write_text("---\nname: sdlc-studio\n---\n")
             script = DRIVER.replace("__INSTALL_SH__", str(INSTALL_SH))
             proc = subprocess.run(
                 ["bash", "-c", script],
                 env={"SRC": str(src), "PARENT": str(parent), "PATH": "/usr/bin:/bin"},
                 capture_output=True, text=True, timeout=30,
             )
+            self.assertNotIn("not touching it", proc.stdout + proc.stderr,
+                             "the fixture never reached the copy, so this proves nothing")
             self.assertIn("PREVIOUS-INSTALL", proc.stdout,
                           msg="the previous install was destroyed by a failed copy:\n"
                           + proc.stdout + proc.stderr)

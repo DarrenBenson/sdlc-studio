@@ -302,6 +302,31 @@ def _runtime_dir_rules(text: str) -> tuple[bool, bool]:
     return ignored, re_included
 
 
+def _write_consumer_file(path: Path, text: str) -> None:
+    """Write a file the project owns, keeping what it is: through a symlink to the link's target
+    (the link stays a link), and byte for byte, so the line endings `text` carries are the ones
+    on disk on every platform. Atomic, as `sdlc_md.atomic_write`, keeping the file's mode."""
+    import tempfile  # noqa: PLC0415 - only this write needs it
+    target = Path(os.path.realpath(path))
+    fd, tmp = tempfile.mkstemp(dir=str(target.parent), prefix=".tmp-", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(text.encode("utf-8"))
+        try:
+            os.chmod(tmp, os.stat(target).st_mode & 0o777)
+        except FileNotFoundError:
+            cur = os.umask(0o022)
+            os.umask(cur)
+            os.chmod(tmp, 0o666 & ~cur)
+        os.replace(tmp, str(target))
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
 def runtime_gitignore_plan(root: Path | str) -> dict:
     """What `sdlc-studio/.gitignore` owes the runtime-state dir, decided once for audit and apply.
 
@@ -317,7 +342,9 @@ def runtime_gitignore_plan(root: Path | str) -> dict:
                 "detail": f"no {rel} - seed it (`.local/`: runtime caches, reports and run state "
                           "stay out of git), as init does"}
     try:
-        text = gi.read_text(encoding="utf-8")
+        # Bytes, not universal newlines: the append is written in the file's own line endings,
+        # so a CRLF file gains lines rather than becoming a whole-file diff.
+        text = gi.read_bytes().decode("utf-8")
     except (OSError, UnicodeDecodeError) as exc:
         return {"write": None, "detail": "",
                 "manual": f"{rel} could not be read ({exc}) - make sure it ignores `.local/`"}
@@ -328,8 +355,9 @@ def runtime_gitignore_plan(root: Path | str) -> dict:
                           "state is derived; confirm that is intended (left as written)"}
     if ignored:
         return {"write": None, "detail": "", "manual": None}
-    sep = "\n" if text and not text.endswith("\n") else ""
-    return {"write": text + sep + init.RUNTIME_STATE_GITIGNORE, "manual": None,
+    nl = "\r\n" if "\r\n" in text else "\n"
+    sep = nl if text and not text.endswith("\n") else ""
+    return {"write": text + sep + init.RUNTIME_STATE_GITIGNORE.replace("\n", nl), "manual": None,
             "detail": f"{rel} does not ignore `.local/` - append the runtime-state rule init "
                       "writes (existing lines kept)"}
 
@@ -556,7 +584,7 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
     # The runtime-state ignore file, from the same plan audit reports, so the two agree.
     ignore = runtime_gitignore_plan(root)
     if ignore["write"] is not None:
-        sdlc_md.atomic_write(sd / ".gitignore", ignore["write"])
+        _write_consumer_file(sd / ".gitignore", ignore["write"])
         actions.append(f"wrote {init.SDLC}/.gitignore (runtime state `.local/` ignored)")
     # Converged home: migrate legacy personas/amigos/ cards into
     # personas/seats/ mechanically - a role comment is ensured (from the filename stem for the

@@ -520,6 +520,12 @@ install_to() {
     if [[ -d "$dest" && "$(canon "$dest")" == "$(canon "$src")" ]]; then
         info "skipping $dest: it IS the --from source"; return 0
     fi
+    # A folder holding something that is not an sdlc-studio copy is the user's, not ours to
+    # replace: skipped as the sweep skips it. An empty folder holds nothing and is installed into.
+    if [[ -d "$dest" ]] && ! is_skill_copy "$dest" && [[ -n "$(ls -A "$dest" 2>/dev/null)" ]]; then
+        warn "skipping $dest (no sdlc-studio SKILL.md - not touching it)"
+        return 0
+    fi
     if would_downgrade "$dest" "$(installed_version "$src")"; then
         return 0   # refused: a downgrade of newer local work is a skip, not a failure
     fi

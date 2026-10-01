@@ -7,7 +7,8 @@
   3. seeds the config, a `.gitignore` for the runtime-state dir, and the agent-instructions files,
   4. with `--scaffold`, seeds the singleton docs (prd/trd/tsd/personas).
 
-Idempotent: never overwrites an existing file (reported and skipped) unless `--force`.
+Idempotent: never overwrites an existing file (reported and skipped) unless `--force`, and
+never `sdlc-studio/.version` even then - it records the version the project was created at.
 Config is load-bearing and stack detection is a guess on greenfield, so `--dry-run`
 previews every write (the workflow shows it and confirms once) before a real run - the
 non-judgement steps (tree, indexes, agent-instructions) need no confirmation. Pure stdlib.
@@ -738,7 +739,12 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
     import project_upgrade  # noqa: PLC0415 - it imports this module; deferred to break the cycle
     import version_check  # noqa: PLC0415
     installed = version_check.installed_version(version_check.skill_root())
-    if installed:
+    if (root / SDLC / ".version").exists():
+        # The record of the version the project was created at - or last upgraded to by
+        # `project upgrade`, which owns it. `--force` re-seeds scaffolding; it never rewrites
+        # this, or the version check would compare against a version the project never ran.
+        skipped.append(f"{SDLC}/.version")
+    elif installed:
         _write(f"{SDLC}/.version", project_upgrade._VERSION.format(
             schema=project_upgrade._effective_schema(root), prev="null", today=today,
             skill=installed))
@@ -839,7 +845,8 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--root", default=".")
     r.add_argument("--detect", action="store_true", help="infer the stack from project files")
     r.add_argument("--scaffold", action="store_true", help="also seed prd/trd/tsd/personas")
-    r.add_argument("--force", action="store_true", help="overwrite existing files")
+    r.add_argument("--force", action="store_true",
+                   help="overwrite existing files (never sdlc-studio/.version, the version record)")
     r.add_argument("--dry-run", action="store_true", dest="dry_run", help="preview; write nothing")
     r.add_argument("--accept-tailoring", action="store_true", dest="accept_tailoring",
                    help="apply the stack-derived DoR/DoD tailoring suggestions (with "
