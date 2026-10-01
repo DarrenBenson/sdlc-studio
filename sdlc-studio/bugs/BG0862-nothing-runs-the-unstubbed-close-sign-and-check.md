@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_run_end_to_end.py, changelog.d/BG0862.md
-> **Depends on:** BG0859, BG0848, BG0851, BG0850, BG0826, BG0829, BG0849
+> **Depends on:** BG0859, BG0848, BG0851, BG0850, BG0826, BG0829, BG0849, BG0865
 > **Evidence:** RUN-01M3RPSK: RPT0012 re-closed after d05b882f moved seven approved bugs by hand; goal review round 1, 2026-09-30 (QA seat: every close test stubs the chain with `_green_steps`)
 > **Created:** 2026-09-30
 > **Created-by:** sdlc-studio file

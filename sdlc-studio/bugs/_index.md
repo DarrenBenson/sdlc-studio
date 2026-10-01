@@ -7,13 +7,13 @@
 | Status | Count |
 | --- | --- |
 | Open | 36 |
-| In Progress | 8 |
+| In Progress | 9 |
 | Fixed | 683 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
 | Superseded | 28 |
-| **Total** | **864** |
+| **Total** | **865** |
 
 ## All Bugs
 
@@ -223,6 +223,7 @@
 | [BG0862](BG0862-nothing-runs-the-unstubbed-close-sign-and-check.md) | Nothing runs the unstubbed close, sign and check on one run holding a carry, a ruling and a forced override | In Progress | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0863](BG0863-an-unreadable-verdict-ledger-drops-unreviewed-units-from.md) | An unreadable verdict ledger drops unreviewed units from the close's status rows since BG0859, and the bug remedy is wrong for a bug that already has an APPROVE | Open | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0864](BG0864-transition-to-fixed-admits-a-bug-whose-verify.md) | transition to Fixed admits a bug whose Verify lines have never been run, so a carried bug with red or manual-only criteria reaches Fixed with nothing executed | Open | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0865](BG0865-the-signed-page-names-a-known-issue-s.md) | The signed page names a known issue's retro ruling only when it is STOP-SHIP, and a finding the close files falls outside the run window | In Progress | Medium | 2026-10-01 | 2026-10-01 |
 
 ## Archived Releases
 
