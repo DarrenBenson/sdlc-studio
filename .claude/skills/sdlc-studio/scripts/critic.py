@@ -20,6 +20,7 @@ import argparse
 import contextlib
 import json
 import re
+import shlex
 import sys
 from pathlib import Path
 
@@ -2511,6 +2512,14 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> st
     affects = sdlc_md.affects_files(text)
     scope = (", ".join(affects) if affects
              else "(no Affects declared - derive the scope from git status)")
+    # THE BASE COMMIT. "At the base ref" names nothing a reviewer can run; the run that holds
+    # this unit recorded one, so the brief prints the exact command. No run naming the unit, no
+    # command - a ref from a run about other work is not this unit's base.
+    base = run_state.unit_run_base_ref(root, unit)
+    if base:
+        files = " ".join(shlex.quote(a) for a in affects)
+        scope += (f"\nDiff against the run's base commit: git diff {base}"
+                  + (f" -- {files}" if files else ""))
     full_tier = tier == "full"
     depth = ("Full adversarial pass: try to make each test FAIL (mutations), probe "
              "boundaries and silent-failure paths, verify claims by EXECUTION, not reading."
