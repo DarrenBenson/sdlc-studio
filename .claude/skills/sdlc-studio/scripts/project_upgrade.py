@@ -148,10 +148,10 @@ def _read_version(root: Path) -> tuple[int | None, str | None]:
 
 def _effective_schema(root: Path) -> int:
     """The project's true schema: the `.version` value if it has one, else the authoritative
-    `sdlc_md.schema_version` (`.config.yaml`, default 2). A fresh project (e.g. from `init`, which
-    writes `.config.yaml` but no `.version`) has its schema in `.config.yaml` only, so reading
-    `.version` alone would misreport it as unknown - the source split that made a fresh v3 project
-    look like it still needed the v2 to v3 migration."""
+    `sdlc_md.schema_version` (`.config.yaml`, default 2). `init` writes `.version`, but a project
+    whose `.version` is missing (deleted, or never stamped by an older init) has its schema in
+    `.config.yaml` only, so reading `.version` alone would misreport it as unknown - the source
+    split that made a v3 project look like it still needed the v2 to v3 migration."""
     sv, _ = _read_version(root)
     return sv if sv is not None else sdlc_md.schema_version(root)
 
@@ -176,7 +176,7 @@ def detect(root: Path | str) -> dict:
 def migration_walk(root: Path | str) -> list[dict]:
     """The v2 -> v3 schema migration presented as a directed sequence, not a single opaque
     step. Empty for a project already on schema 3+ (read from the authoritative `.config.yaml`,
-    not just `.version` - a fresh v3 project has no `.version` yet). Each step is {step, detail};
+    not just `.version`, which a project may lack). Each step is {step, detail};
     the schema flip itself is the deliberate `migrate_v3` id migration, never a routine auto-apply."""
     if _effective_schema(Path(root)) >= 3:
         return []

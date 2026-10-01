@@ -41,8 +41,8 @@ SDLC Studio is model-invoked - say it in plain language:
 
 ## Pre-flight: Version Check
 
-**First tool call:** `Glob: sdlc-studio/.version` (the schema may also live in
-`sdlc-studio/.config.yaml` - a fresh v3 project has only the config file)
+**First tool call:** `Glob: sdlc-studio/.version` (`init` writes it; the schema also lives in
+`sdlc-studio/.config.yaml`, which is read when `.version` is missing)
 
 | Result | Action |
 | --- | --- |
@@ -122,7 +122,8 @@ Tracks specification completeness:
 | Epics | `sdlc-studio/epics/EP*.md` | % in Ready/Done status |
 | Stories | `sdlc-studio/stories/US*.md` | % in Done status |
 
-**Health score:** Weighted average (PRD 20%, Personas 10%, Epics 30%, Stories 40%)
+`status.py pillars` prints these as counts and per-type percentages (`epics=N (P% ready+)`,
+`stories=N (P% done)`); it computes no weighted score across them.
 
 **Exemptions:** Project-level documents (PRD, TRD, TSD, Personas, Brand Guide) are exempt from lifecycle status checks. See `reference-outputs.md` → [Project-Level Document Exemptions](../reference-outputs.md#project-level-exemptions).
 
@@ -137,8 +138,6 @@ Tracks implementation quality:
 | TODOs | Grep source directories | Count of TODO/FIXME |
 | Type check | `mypy` / `tsc --noEmit` | Pass/Fail (if configured) |
 
-**Health score:** TRD exists 30%, Lint pass 35%, No critical TODOs 35%
-
 ### 🧪 Tests (TSD Status)
 
 Tracks test coverage and quality:
@@ -149,8 +148,6 @@ Tracks test coverage and quality:
 | Backend coverage | `.coverage` or TSD | Actual % vs 90% target |
 | Frontend coverage | `coverage/lcov.info` or TSD | Actual % vs 90% target |
 | E2E features | `e2e/*.spec.ts` | Spec files vs features |
-
-**Health score:** TSD 10%, Backend coverage 30%, Frontend coverage 30%, E2E coverage 30%
 
 ### 🔍 Reviews
 
@@ -178,17 +175,7 @@ If `.local/review-state.json` does not exist, the status dashboard MUST NOT repo
 5. Report findings based on discovered reviews
 6. **Recommend creating review-state.json** by running `/sdlc-studio review` to establish proper tracking
 
-**Health score calculation:**
-
-```text
-Review Health % =
-  PRD reviewed (10%)
-  + TRD reviewed (10%)
-  + TSD reviewed (10%)
-  + Epics with current reviews (40%)
-  + Stories with current reviews (30%)
-  × Stale penalty (0.9 if anything needs re-review)
-```
+Reported as which reviews exist and which are stale; no weighted score is computed.
 
 **Stale detection:**
 

@@ -292,26 +292,35 @@ probe a suite (see [mutation](mutation.md)). `--only mutation` is refused as an 
 
 ## CI wiring (the gate is the mechanism; these are just examples)
 
+Each example names its script through `$CLAUDE_SKILL_DIR`, the skill's install directory, so it
+runs wherever your tool installed the skill (`install.sh --list-targets` names them). Set it
+in the job or the hook, for example `CLAUDE_SKILL_DIR=.claude/skills/sdlc-studio`.
+
 ### GitHub Actions
 
 ```yaml
 - name: SDLC gate
-  run: python3 .claude/skills/sdlc-studio/scripts/gate.py --root .
+  env:
+    CLAUDE_SKILL_DIR: .claude/skills/sdlc-studio
+  run: python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --root .
 ```
 
 ### GitLab CI
 
 ```yaml
 sdlc-gate:
+  variables:
+    CLAUDE_SKILL_DIR: .claude/skills/sdlc-studio
   script:
-    - python3 .claude/skills/sdlc-studio/scripts/gate.py --root .
+    - python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --root .
 ```
 
 ### Generic shell / pre-commit hook
 
 ```bash
 # .git/hooks/pre-commit  (or any Jenkins/Buildkite/CircleCI step)
-python3 .claude/skills/sdlc-studio/scripts/gate.py --root . || {
+CLAUDE_SKILL_DIR="${CLAUDE_SKILL_DIR:-.claude/skills/sdlc-studio}"
+python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --root . || {
   echo "SDLC gate failed - fix drift/conformance before committing"; exit 1; }
 ```
 
@@ -332,7 +341,8 @@ project's own commit-msg hook:
 
 ```bash
 # .git/hooks/commit-msg  ($1 is the message file git passes in)
-python3 .claude/skills/sdlc-studio/scripts/engagement_floor.py check-commit-msg --strict "$1"
+CLAUDE_SKILL_DIR="${CLAUDE_SKILL_DIR:-.claude/skills/sdlc-studio}"
+python3 "$CLAUDE_SKILL_DIR/scripts/engagement_floor.py" check-commit-msg --strict "$1"
 ```
 
 It degrades honestly: with no git, no script, or an unparseable message it exits

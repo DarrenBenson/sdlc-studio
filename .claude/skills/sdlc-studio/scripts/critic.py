@@ -3396,7 +3396,8 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--issues", default="",
                    help="the findings, separated by ';', each tagged with what this unit's "
                         "diff did: [regression], [new] or [pre-existing]; an untagged finding "
-                        "is refused, and only [regression] and [new] block")
+                        "is refused, and only [regression] and [new] block. Write \\; to keep "
+                        "a semicolon inside one finding")
     r.add_argument("--brief", default="",
                    help="optional: the fingerprint `critic.py brief` printed for the prompt this "
                         "seat was given, stored on the row as given")

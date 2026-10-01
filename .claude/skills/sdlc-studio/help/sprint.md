@@ -309,7 +309,8 @@ decision, owed its adversarial pass, or carrying a standing REJECT. Stopping ove
 would leave units nobody ruled on. `--force` overrides that refusal and
 answers nothing. It writes two lists onto the run record, and they answer different questions:
 `could_have_proceeded` is the work the stop parked, which the pending decisions did not block;
-`unanswered` is the stop-ship questions it waived, the set the close would have refused on.
+`unanswered` is the stop-ship questions it waived, the set a close records on the report as
+known issues.
 Each is printed under its own label, and the next `sprint plan` names the waived units. Every
 route that ends a run records `unanswered` the same way - a boundary stop too - and
 `close --file-and-close`

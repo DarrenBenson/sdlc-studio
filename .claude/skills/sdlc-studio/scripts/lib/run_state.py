@@ -358,11 +358,6 @@ class DisjointBatchError(RuntimeError):
         super().__init__("\n".join(lines))
 
 
-class ReviewLedgerError(ValueError):
-    """Nothing in this module raises it since the close-review round ledger and its checks were
-    deleted; kept only because `sprint.py`'s goal-verdict callers still name it in an `except`."""
-
-
 def path(repo_root: Path | str) -> Path:
     return Path(repo_root) / REL
 

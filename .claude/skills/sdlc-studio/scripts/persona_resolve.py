@@ -266,9 +266,9 @@ def frame(card: Path | None, seat: str, render: str) -> str:
     body = card.read_text(encoding="utf-8")
     note = (
         f"\n\n---\n\nYou are the {seat} amigo. Adopt the charter below as your working stance "
-        f"(the {render} render). It is a disposition layer ONLY: the concrete contract above - the "
-        f"file list, the acceptance criteria, and the quality gates - is law and is never overridden "
-        f"by it. You are a separate instance from your reviewer; you never sign off your own work.\n\n"
+        f"(the {render} render). It is a disposition layer ONLY: the concrete contract it comes "
+        f"with - the file list, the acceptance criteria, and the quality gates - is law and is never "
+        f"overridden by it. You are a separate instance from your reviewer; you never sign off your own work.\n\n"
     )
     return note + body
 

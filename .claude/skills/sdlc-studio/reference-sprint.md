@@ -209,8 +209,8 @@ judgement recorded in the retro's `## Known issues carried` table: an open findi
 reads UNRULED, and a `stop-ship` ruling is listed first and printed by `sprint sign`, where the
 signer decides. An unanswered item is a known issue on the report, not a refusal; closing
 without it on purpose is a recorded waiver (`decisions.py waive --subject
-rule:sprint-checklist:<item> --authorised-by "<who>"`; a checklist waiver naming nobody is
-refused). A stage added to the cycle with no row fails
+rule:sprint-checklist:<item> --rationale "<why>" --authorised-by "<who>"`; a checklist waiver
+naming nobody is refused). A stage added to the cycle with no row fails
 `sprint_report.cycle_drift()`.
 
 ### The close gate's learning lanes
