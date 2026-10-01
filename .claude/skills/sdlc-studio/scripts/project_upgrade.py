@@ -337,6 +337,19 @@ def runtime_gitignore_plan(root: Path | str) -> dict:
     """
     gi = _sdlc(Path(root)) / ".gitignore"
     rel = f"{init.SDLC}/.gitignore"
+    if gi.is_symlink():
+        # The write goes through the link to its target. A target whose folder is missing (a
+        # dangling link) or not writable cannot take it, and finding that out mid-write stopped
+        # the whole conventions step; it is one file a person has to look at, so it is reported
+        # here, in the plan audit and apply share, and the rest of the step runs.
+        target = Path(os.path.realpath(gi))
+        why = ("its folder does not exist" if not target.parent.is_dir()
+               else "its folder is not writable" if not os.access(target.parent, os.W_OK)
+               else "")
+        if why:
+            return {"write": None, "detail": "",
+                    "manual": f"{rel} is a link to {target}, which cannot be written ({why}) - "
+                              "make sure the file it names ignores `.local/`"}
     if not gi.exists():
         return {"write": init.RUNTIME_STATE_GITIGNORE, "manual": None,
                 "detail": f"no {rel} - seed it (`.local/`: runtime caches, reports and run state "
