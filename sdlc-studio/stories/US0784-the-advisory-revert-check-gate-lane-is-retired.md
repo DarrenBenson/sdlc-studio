@@ -6,7 +6,7 @@
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/help/gate.md, .githooks/pre-push, tools/enable-hooks.sh, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_revert_lane_retired.py, changelog.d/US0784.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/help/gate.md, .githooks/pre-push, tools/enable-hooks.sh, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_revert_lane_retired.py, changelog.d/US0784.md, tools/tests/test_pre_push_hook.py, tools/tests/test_lean_push.py
 > **Epic:** EP0239
 > **Points:** 2
 > **Persona:** Maya Okafor
@@ -48,3 +48,4 @@ $ cat sdlc-studio/.local/revert-check-yield.json
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-01 | sdlc-studio | Retitled: was 'No tracked file in the live working tree changes at any point while the lane runs' |
 | 2026-10-01 | engineering seat (groomer) | Groomed under D0291 (backlog sweep 2026-10-01): criteria authored, premise executed at HEAD 85042135, Points and Affects set |
+| 2026-10-01 | sprint planning | Goal review round 1 (engineering seat): Affects completed; the per-unit verify_ac revert-check name stays. |

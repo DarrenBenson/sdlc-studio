@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 16 |
+| Ready | 17 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **977** |
+| **Total** | **978** |
 
 ## All Stories
 
@@ -336,6 +336,7 @@
 | [US0975](US0975-migrate-reports-where-a-project-s-own-docs.md) | migrate reports where a project's own docs name retired v5 surface | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
 | [US0976](US0976-install-and-upgrade-never-damage-a-consumer-s.md) | Install and upgrade never damage a consumer's files | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
 | [US0977](US0977-a-lesson-class-finishes-its-lifecycle.md) | A lesson class finishes its lifecycle | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
+| [US0978](US0978-the-handoff-writers-and-the-require-handoff-gate.md) | The handoff writers and the require-handoff gate are retired; old handoff files stay readable | Ready | EP0268 | 2026-10-01 | 2026-10-01 |
 
 ## Archived Releases
 
