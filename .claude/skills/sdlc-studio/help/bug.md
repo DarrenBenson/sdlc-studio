@@ -155,7 +155,7 @@ Updates:
 - Adds test case references
 - Updates story revision history
 
-The move to Fixed is the one-call close. Its reviewer is a separate context that did not write the fix (a fresh subagent or a person, never the author under another name), briefed with `critic.py brief --unit BG0001 --seat qa`; the close carries that reviewer's verdict and the fingerprint the brief printed. A `--verdict` without `--brief` is warned on stderr, not refused. Record the criteria first with `verify_ac.py run --id BG0001` (see `verify`): the close refuses a recorded red, not a missing run.
+The move to Fixed is the one-call close. Its reviewer is a separate context that did not write the fix (a fresh subagent or a person, never the author under another name), given the brief whole: `critic.py brief --unit BG0001 --seat qa > brief.txt` writes the brief to the file and its fingerprint footer to stderr, and the file's text, unedited and not summarised, is the reviewer's prompt; the close carries that reviewer's verdict and the fingerprint the brief printed. A `--verdict` without `--brief` is warned on stderr, not refused. Record the criteria first with `verify_ac.py run --id BG0001` (see `verify`): the close refuses a recorded red, not a missing run.
 
 ```bash
 python3 <skill>/scripts/transition.py set --id BG0001 --status Fixed --verdict approve --reviewer <R> --author <A> --brief <fingerprint>
