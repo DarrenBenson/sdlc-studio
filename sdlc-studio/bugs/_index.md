@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 39 |
+| Open | 40 |
 | In Progress | 4 |
 | Fixed | 683 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 22 |
 | Superseded | 28 |
-| **Total** | **863** |
+| **Total** | **864** |
 
 ## All Bugs
 
@@ -222,6 +222,7 @@
 | [BG0861](BG0861-nothing-opens-a-delivery-batch-since-us0918-so.md) | Nothing opens a delivery batch since US0918, so every finding is stamped raised outside a batch and the close's finding-placement figure is always empty | Open | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0862](BG0862-nothing-runs-the-unstubbed-close-sign-and-check.md) | Nothing runs the unstubbed close, sign and check on one run holding a carry, a ruling and a forced override | Open | Medium | 2026-09-30 | 2026-09-30 |
 | [BG0863](BG0863-an-unreadable-verdict-ledger-drops-unreviewed-units-from.md) | An unreadable verdict ledger drops unreviewed units from the close's status rows since BG0859, and the bug remedy is wrong for a bug that already has an APPROVE | Open | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0864](BG0864-transition-to-fixed-admits-a-bug-whose-verify.md) | transition to Fixed admits a bug whose Verify lines have never been run, so a carried bug with red or manual-only criteria reaches Fixed with nothing executed | Open | Medium | 2026-10-01 | 2026-10-01 |
 
 ## Archived Releases
 
