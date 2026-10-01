@@ -31,10 +31,13 @@ Then: a bare `sprint.py close`, which scaffolds the retro with the run id and th
 
 - [ ] **AC1** Given that run, when the bare `sprint.py close`, the table filled, `sprint.py close --retro`, a commit, `sprint.py sign` and `sprint_report.py check --report` run in turn, with no stubbed chain step or seal, then: the second close, the sign and the check exit 0; `check` prints VALID; exactly one sprint report exists under `sdlc-studio/reports/` across both closes (the bare close files none), and it is the report the sign sealed and the check read. Fails on: HEAD, whose check prints INVALIDATED on the unit and run token rows (BG0848); a test that stubs `_green_steps` or `_seal_units`, which never reaches the moves the sign makes; and a flow that files the report twice
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_run_end_to_end.py::SignedRunEndToEndTests::test_close_sign_check_is_valid_first_time
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given the same run, when the carried unit's rejecting reviewer records the discharge APPROVE and `transition.py set --status Fixed` runs with no `--force`, then the transition exits 0 and the unit carries no Forced-override field; and after the sign, every batch unit is terminal while no batch unit was transitioned by the test before the close. Fails on: HEAD, where `critic.py record` refuses the APPROVE at the cap and the transition names the unanswered REJECT (BG0850); and on a flow that reaches Fixed with `--force`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_run_end_to_end.py::SignedRunEndToEndTests::test_the_carried_unit_ends_through_its_own_gate
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC3** Given the same signed page, when it is read, then it names the carried unit with its bug and the retro's ruling on that bug; names the graduation CR with the ruling the retro gave its LC class, and no UNRULED row; reads 'the operator ruled 1 time(s)' for the one `sprint decision resolve`; and lists the dropped unit's Forced-override under Waivers in force. Fails on: HEAD, whose page reads no operator ruling, 'no gate stood down for this seal' (BG0851) and the graduation CR UNRULED (BG0849)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_run_end_to_end.py::SignedRunEndToEndTests::test_the_signed_page_names_every_ruling_carry_and_override
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 
