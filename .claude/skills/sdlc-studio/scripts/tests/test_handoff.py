@@ -627,7 +627,7 @@ class WorklistTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
             # A GROOMED unit, so no later gate refuses the plan first: the run-state guard is
-            # the only thing between this `--write` and the wreckage being overwritten.
+            # what turns the unreadable state into a clean exit 2 rather than a traceback.
             (root / "src").mkdir()
             (root / "src" / "a.py").write_text("x = 1\n", encoding="utf-8")
             sd = root / "sdlc-studio" / "stories"
