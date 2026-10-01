@@ -451,9 +451,13 @@ def _max_judged_id(root: Path) -> int:
 
 def _has_planning(text: str) -> bool:
     """The floor is satisfied by any planning artefact: an acceptance criterion, an executable
-    `Verify:` expression, or a linked plan (PL). Broad on purpose - the floor's target is a unit
-    with NO planning trace at all, not one whose planning is shaped unusually."""
+    `Verify:` expression, a linked plan (PL), or a `Decomposed-into` line naming the children it
+    was refined into - refine's decomposition IS the request's planning pass, and each child is
+    judged on its own. Broad on purpose - the floor's target is a unit with NO planning
+    trace at all, not one whose planning is shaped unusually."""
     if sdlc_md.count_acs(text) > 0:
+        return True
+    if sdlc_md.decomposed_ids(text):
         return True
     if any(sdlc_md.VERIFY_RE.match(ln) for ln in text.splitlines()):
         return True
