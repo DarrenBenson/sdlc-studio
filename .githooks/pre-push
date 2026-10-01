@@ -19,6 +19,7 @@ skill=".claude/skills/sdlc-studio/scripts"
 zero="0000000000000000000000000000000000000000"
 boundary=""
 tag_shas=""
+commits=""                                         # each distinct pushed commit, judged once (BG0837)
 while read -r _local_ref local_sha remote_ref _remote_sha; do
   [ -z "${local_sha:-}" ] && continue
   [ "$local_sha" = "$zero" ] && continue           # a deletion pushes nothing to gate
@@ -26,6 +27,8 @@ while read -r _local_ref local_sha remote_ref _remote_sha; do
     refs/tags/*) boundary="release"; tag_shas="$tag_shas $local_sha" ;;
     *) [ "$boundary" = "release" ] || boundary="push" ;;
   esac
+  commit="$(git rev-parse --verify -q "$local_sha^{commit}" || echo "$local_sha")"   # an annotated tag peels to its commit
+  case " $commits " in *" $commit "*) ;; *) commits="$commits $commit" ;; esac
 done
 [ -z "$boundary" ] && exit 0
 
@@ -154,37 +157,88 @@ if [ -z "$cost" ]; then
   fi
 fi
 echo "pre-push: $cost. Bypass once with: git push --no-verify" >&2
-# Scrubbed exactly as the commit hooks scrub their suite lanes, and for the same reason: git
-# hands a pre-push hook the pushing repository's locations, and the gate's rehearsal lane builds
-# git repositories of its own - unscrubbed, every one of them is steered at this clone. The
-# scrub is written out on each invocation so the list is pinned where it is used. The gate's
-# stdout is sent to stderr: git shows a pusher the hook's stderr, and the refusal below says
-# "see the lane named above", so the lane name has to be on the stream the refusal is on.
-#
-# SDLC_STUDIO_BOUNDARY_SUITE=1 on BOTH invocations, and only here: it is what makes a
-# `@boundary_only` test execute rather than skip (scripts/tests/boundary.py): the full-suite lane's
-# runner, and at a tag module-alone's per-module interpreters, inherit it from the gate. Without it
-# the push boundary ran none of the tests deferred to it, and CI was the first thing to see one go
-# red.
-t0=$SECONDS
-if [ "$boundary" = "release" ]; then
-  /usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
-     -u GIT_INDEX_VERSION -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
-     -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
-     -u GIT_PREFIX SDLC_STUDIO_BOUNDARY_SUITE=1 python3 "$skill/gate.py" --boundary release 1>&2
-  rc=$?
-else
-  /usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
-     -u GIT_INDEX_VERSION -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
-     -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
-     -u GIT_PREFIX SDLC_STUDIO_BOUNDARY_SUITE=1 python3 "$skill/gate.py" --boundary push 1>&2
-  rc=$?
-fi
-python3 tools/gate_timing.py record --suite "boundary-$boundary" --seconds "$((SECONDS - t0))" >/dev/null 2>&1 || true
-if [ "$rc" -ne 0 ]; then
-  echo "pre-push: the $boundary boundary gate refused this push - see the lane named above." >&2
-  echo "  re-run: SDLC_STUDIO_BOUNDARY_SUITE=1 python3 $skill/gate.py --boundary $boundary" >&2
-  echo "  bypass once (emergency only): git push --no-verify" >&2
-  exit "$rc"
-fi
+
+# --- judge the PUSHED commit, never the working tree (BG0837) ------------------------------
+# The gate once ran in the pusher's working tree, so an uncommitted fix turned a red push green
+# (CI, checking out the commit, went red) and an uncommitted red edit refused a green push. Each
+# distinct pushed commit is checked out into a temporary worktree and judged there; the pusher's
+# tree is neither refused for being dirty nor touched. The worktree borrows two untracked things
+# from this clone by symlink: `node_modules` (markdownlint, which the suite runs or skips), and
+# `sdlc-studio/.local`, so the gate reads and writes the same runtime state it always did - the
+# timings, the cost record, and the red full-suite log the refusal below points at. Both links
+# are unlinked BEFORE the tree is deleted, and the tree is deleted on every exit, red or green.
+# Done with git and python3 only: the fixture PATH holds nothing else.
+wt_parent=""
+drop_worktree() {
+  [ -n "$wt_parent" ] || return 0
+  python3 - "$wt_parent" <<'PY' 2>/dev/null
+import os, shutil, sys
+parent = sys.argv[1]
+for link in ("tree/node_modules", "tree/sdlc-studio/.local"):   # the clone's own state: unlink, never descend
+    path = os.path.join(parent, link)
+    if os.path.islink(path):
+        os.unlink(path)
+shutil.rmtree(parent, ignore_errors=True)
+PY
+  git worktree prune >/dev/null 2>&1
+  wt_parent=""
+}
+trap drop_worktree EXIT
+trap 'exit 130' INT TERM HUP
+for commit in $commits; do
+  wt_parent="$(python3 -c 'import tempfile; print(tempfile.mkdtemp(prefix="sdlc-pre-push."))')" || exit 1
+  wt="$wt_parent/tree"
+  if ! git -c core.hooksPath=/dev/null worktree add -q --detach "$wt" "$commit" 1>&2; then
+    echo "pre-push: could not check out commit $commit to judge it (see above) - the push is refused until it can" >&2
+    echo "  bypass once (emergency only): git push --no-verify" >&2
+    exit 1
+  fi
+  python3 - "$repo_root" "$wt" <<'PY' || { echo "pre-push: could not link this clone's node_modules and sdlc-studio/.local into $wt" >&2; exit 1; }
+import os, sys
+root, tree = sys.argv[1], sys.argv[2]
+if os.path.isdir(os.path.join(root, "node_modules")) and not os.path.lexists(os.path.join(tree, "node_modules")):
+    os.symlink(os.path.join(root, "node_modules"), os.path.join(tree, "node_modules"))
+if os.path.isdir(os.path.join(root, "sdlc-studio")) and not os.path.lexists(os.path.join(tree, "sdlc-studio", ".local")):
+    os.makedirs(os.path.join(root, "sdlc-studio", ".local"), exist_ok=True)
+    os.makedirs(os.path.join(tree, "sdlc-studio"), exist_ok=True)
+    os.symlink(os.path.join(root, "sdlc-studio", ".local"), os.path.join(tree, "sdlc-studio", ".local"))
+PY
+  echo "pre-push: judging commit $commit in a clean checkout - uncommitted changes are not part of this push" >&2
+  # Scrubbed exactly as the commit hooks scrub their suite lanes, and for the same reason: git
+  # hands a pre-push hook the pushing repository's locations, and the gate's rehearsal lane builds
+  # git repositories of its own - unscrubbed, every one of them is steered at this clone. The
+  # scrub is written out on each invocation so the list is pinned where it is used. The gate's
+  # stdout is sent to stderr: git shows a pusher the hook's stderr, and the refusal below says
+  # "see the lane named above", so the lane name has to be on the stream the refusal is on.
+  #
+  # SDLC_STUDIO_BOUNDARY_SUITE=1 on BOTH invocations, and only here: it is what makes a
+  # `@boundary_only` test execute rather than skip (scripts/tests/boundary.py): the full-suite
+  # lane's runner, and at a tag module-alone's per-module interpreters, inherit it from the gate.
+  # Without it the push boundary ran none of the tests deferred to it, and CI was the first thing
+  # to see one go red.
+  t0=$SECONDS
+  cd "$wt"
+  if [ "$boundary" = "release" ]; then
+    /usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
+       -u GIT_INDEX_VERSION -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
+       -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
+       -u GIT_PREFIX SDLC_STUDIO_BOUNDARY_SUITE=1 python3 "$skill/gate.py" --boundary release 1>&2
+    rc=$?
+  else
+    /usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
+       -u GIT_INDEX_VERSION -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
+       -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
+       -u GIT_PREFIX SDLC_STUDIO_BOUNDARY_SUITE=1 python3 "$skill/gate.py" --boundary push 1>&2
+    rc=$?
+  fi
+  cd "$repo_root"
+  drop_worktree
+  python3 tools/gate_timing.py record --suite "boundary-$boundary" --seconds "$((SECONDS - t0))" >/dev/null 2>&1 || true
+  if [ "$rc" -ne 0 ]; then
+    echo "pre-push: the $boundary boundary gate refused commit $commit - see the lane named above." >&2
+    echo "  re-run: SDLC_STUDIO_BOUNDARY_SUITE=1 python3 $skill/gate.py --boundary $boundary" >&2
+    echo "  bypass once (emergency only): git push --no-verify" >&2
+    exit "$rc"
+  fi
+done
 exit 0

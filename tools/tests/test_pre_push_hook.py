@@ -128,6 +128,9 @@ class _Clone:
                 data["boundary-push"] = timings
             (local / "gate-timings.json").write_text(json.dumps(data), encoding="utf-8")
         (self.clone / "README.md").write_text("fixture\n", encoding="utf-8")
+        # Runtime state is untracked, as in the real repository, so the hook's temporary worktree
+        # (BG0837) borrows this clone's `.local` rather than a committed copy of it.
+        (self.clone / ".gitignore").write_text("sdlc-studio/.local/\n", encoding="utf-8")
         _git(self.clone, "add", "-A")
         _git(self.clone, "commit", "-q", "-m", "seed")
         self.argv = self.tmp / "gate-argv.txt"
@@ -610,14 +613,15 @@ MARKED_SENTINEL = "MARKED-TEST-EXECUTED-7f3a91"
 
 #: The gate at the hook's path: record the argv the hook handed it, then exec the TRACKED gate
 #: with that argv plus only the root and the one lane that runs the tests at that boundary -
-#: `full-suite` at a push, `module-alone` at a tag - so the chain under test is the real one.
+#: `full-suite` at a push, `module-alone` at a tag - so the chain under test is the real one. The
+#: root is the directory the hook runs it in: the checkout of the pushed commit (BG0837).
 FORWARDING_SHIM = textwrap.dedent('''
     import os, sys
     from pathlib import Path
     Path(os.environ["STUB_ARGV"]).open("a").write(" ".join(sys.argv[1:]) + "\\n")
     lane = "full-suite" if "push" in sys.argv[1:] else "module-alone"
     os.execv(sys.executable, [sys.executable, {gate!r}, *sys.argv[1:],
-                              "--root", {root!r}, "--only", lane])
+                              "--root", ".", "--only", lane])
 ''').lstrip()
 
 MARKED_RED = textwrap.dedent('''
@@ -665,13 +669,15 @@ class BoundaryMarkerReachesThePushTests(unittest.TestCase):
             (fx.clone / "sdlc-studio").mkdir(exist_ok=True)       # the tracked gate refuses a root with none
             scripts = fx.clone / ".claude" / "skills" / "sdlc-studio" / "scripts"
             (scripts / "gate.py").write_text(
-                FORWARDING_SHIM.format(gate=str(TRACKED_SCRIPTS / "gate.py"), root=str(fx.clone)),
+                FORWARDING_SHIM.format(gate=str(TRACKED_SCRIPTS / "gate.py")),
                 encoding="utf-8")
             tests = scripts / "tests"
             tests.mkdir()
             shutil.copy(TRACKED_SCRIPTS / "tests" / "boundary.py", tests / "boundary.py")
             marked = tests / "test_marked_fixture.py"
             marked.write_text(MARKED_RED.format(sentinel=MARKED_SENTINEL), encoding="utf-8")
+            _git(fx.clone, "add", "-A")         # the hook judges the pushed commit, so commit it (BG0837)
+            _git(fx.clone, "commit", "-q", "-m", "the shim and a red marked test")
             _git(fx.clone, "tag", "v0.0.1")
 
             log = fx.clone / "sdlc-studio" / ".local" / "boundary-suite-last.log"
@@ -700,6 +706,9 @@ class BoundaryMarkerReachesThePushTests(unittest.TestCase):
             # behind, deleted between the pushes so EACH boundary proves its own execution.
             ran = fx.clone / "marked-test-ran.txt"
             marked.write_text(MARKED_GREEN.format(ran=str(ran)), encoding="utf-8")
+            _git(fx.clone, "add", "-A")
+            _git(fx.clone, "commit", "-q", "-m", "the marked test green")
+            _git(fx.clone, "tag", "-f", "v0.0.1")      # the refused tag never reached the remote
             for refspec, boundary, lane in (("main", "push", "full-suite"), ("v0.0.1", "release", "module-alone")):
                 with self.subTest(control=boundary):
                     ran.unlink(missing_ok=True)
@@ -707,7 +716,7 @@ class BoundaryMarkerReachesThePushTests(unittest.TestCase):
                     self.assertEqual(0, r.returncode, f"the green control's {boundary} push was refused:\n{r.stderr}")
                     self.assertIn(f"[PASS] {lane}", r.stderr, r.stderr)
                     self.assertTrue(ran.exists(), f"the marked test was skipped at {boundary}, not executed")
-            self.assertEqual(1, fx.remote_count(), "the green control's branch push did not land")
+            self.assertEqual(3, fx.remote_count(), "the green control's branch push did not land")
             self.assertIn("v0.0.1", _git(fx.remote, "tag", "-l").stdout, "the green control's tag did not land")
         finally:
             fx.cleanup()

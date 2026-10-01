@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 21 |
-| In Progress | 0 |
+| Open | 20 |
+| In Progress | 1 |
 | Fixed | 692 |
 | Verified | 0 |
 | Closed | 87 |
@@ -195,7 +195,7 @@
 | [BG0834](BG0834-persona-generate-team-lets-a-pre-supplied-or.md) | persona generate --team lets a pre-supplied or headless default stand as an answer, so its report claims questions were asked and accepted when none was | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0835](BG0835-token-capture-looks-for-the-session-transcript-in.md) | Token capture looks for the session transcript in a directory named by replacing only '/', so a project path holding '.' or '_' reads NOT ATTRIBUTABLE | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0836](BG0836-no-command-writes-a-lesson-class-s-graduated.md) | No command writes a lesson class's graduated state, so every graduation CR carries a criterion only a hand edit can meet | Won't Fix | Medium | 2026-09-28 | 2026-09-28 |
-| [BG0837](BG0837-the-pre-push-gate-judges-the-working-tree.md) | The pre-push gate judges the working tree, not the commits being pushed, so an uncommitted fix turns a red push green | Open | Medium | 2026-09-28 | 2026-09-28 |
+| [BG0837](BG0837-the-pre-push-gate-judges-the-working-tree.md) | The pre-push gate judges the working tree, not the commits being pushed, so an uncommitted fix turns a red push green | In Progress | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0838](BG0838-retired-surface-excuses-a-live-retired-name-by.md) | retired_surface excuses a live retired name by the shape of its sentence, so a live instruction passes as history | Won't Fix | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0839](BG0839-an-eval-worker-session-loads-the-personal-skill.md) | An eval worker session loads the personal skill ahead of the candidate copy, and nothing in the harness says so or prevents it | Open | Medium | 2026-09-28 | 2026-09-28 |
 | [BG0840](BG0840-bg0818-did-not-converge-in-review-round-2.md) | BG0818 did not converge in review: round 2 REJECT findings | Won't Fix | Medium | 2026-09-28 | 2026-09-28 |
