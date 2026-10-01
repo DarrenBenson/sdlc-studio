@@ -12,8 +12,7 @@ replacement.
 
 The close chain's steps that delegate to another module (retro, lessons, gate, reconcile)
 are stubbed, as `test_sprint_rolling.py` stubs them: those modules have their own suites, and
-what is under test here is the chain's own control flow. `handoff` runs for real, because it
-is the step that closes the run object - the state every assertion below reads.
+what is under test here is the chain's own control flow. `review-anchor` runs for real.
 
 `test_the_suite_kills_a_loop_control_mutant` is the anti-vacuity proof. It copies the scripts
 tree, makes the chain loop swallow a failing step at the CALL SITE, and re-runs the loop test
@@ -65,11 +64,11 @@ autosprint, sprint_at_load = _load_alias()
 run_state = sprint_at_load.run_state
 
 #: The chain steps that delegate to another module, stubbed green - DERIVED from the chain
-#: minus the two that deliberately run for real, so a step added to the ceremony is stubbed by
-#: default instead of silently reddening this suite. `handoff` and `review-anchor` are the
-#: stated exceptions; keeping them as an exclusion list rather than an inclusion list is what
-#: makes the intent survive a new step.
-_RUNS_FOR_REAL = ("handoff", "review_anchor")
+#: minus the one that deliberately runs for real, so a step added to the ceremony is stubbed by
+#: default instead of silently reddening this suite. `review-anchor` is the stated exception;
+#: keeping it as an exclusion list rather than an inclusion list is what makes the intent survive
+#: a new step. (The `handoff` step is retired, US0967.)
+_RUNS_FOR_REAL = ("review_anchor",)
 _DELEGATING = tuple(s.replace("-", "_") for s in sprint_at_load._CLOSE_CHAIN
                     if s.replace("-", "_") not in _RUNS_FOR_REAL)
 
@@ -293,7 +292,7 @@ class PrimaryPathTests(unittest.TestCase):
                              "and a run ended here can no longer be signed over its report")
             self.assertTrue(run_state.is_open(root), "PREPARE closed the run it is preparing")
             self.assertTrue(prepared.get("report"), "PREPARE filed no report to be signed over")
-            self.assertTrue(prepared.get("handoff"), "no handoff recorded against the run")
+            self.assertIsNone(prepared.get("handoff"), "the close recorded a handoff (US0967)")
             self.assertEqual(prepared["sprint_goal_verdict"]["verdict"], "achieved")
 
             # ...and the SEAL refuses this fixture, which is the gate working rather than a
@@ -341,12 +340,11 @@ class PrimaryPathTests(unittest.TestCase):
                           f"retro-extract: 1 known issue(s)", out)
             self.assertIn("fix the fixture failure", out)
             # the steps after the failure all run
-            for name in ("lessons-summary", "gate", "handoff", "reconcile", "review-anchor"):
+            for name in ("lessons-summary", "gate", "reconcile", "review-anchor"):
                 self.assertIn(f"close [{chain.index(name) + 1}/{len(chain)}] {name}", out)
             state = run_state.read(root)
             self.assertIn({"source": "retro-extract", "detail": "retro-extract failed"},
                           state["close_known_issues"])
-            self.assertTrue(state.get("handoff"))
 
     def test_the_suite_kills_a_loop_control_mutant(self) -> None:
         """AC3: the loop test is bound to the loop, not merely running over it.

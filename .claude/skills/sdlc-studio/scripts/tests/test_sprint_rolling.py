@@ -685,7 +685,7 @@ class NextCyclePreviewTests(unittest.TestCase):
 # --- US0233: stop with a handoff, never execute an ungated plan ----------------------
 
 class RefusedPlanHandoffTests(unittest.TestCase):
-    """AC1: a batch the breakdown gate refuses stops the run with a handoff."""
+    """AC1: a batch the breakdown gate refuses stops the run, recorded on the run."""
 
     def test_an_ungroomed_next_batch_stops_the_run(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -701,7 +701,9 @@ class RefusedPlanHandoffTests(unittest.TestCase):
             self.assertEqual(state["stop"]["cause"], "refused-plan")
             self.assertIn(state["outcome"], run_state.CLOSED)
 
-    def test_the_handoff_names_the_cause_and_the_cycles_left_unrun(self) -> None:
+    def test_the_stop_names_the_cause_and_the_cycles_left_unrun(self) -> None:
+        """The run record and the stop's own output carry the cause and the cycles unrun; no
+        handoff is written (US0967) - the next plan reads the run record."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             rid = _ready_cycle(root, bugs=(1,))
@@ -711,16 +713,13 @@ class RefusedPlanHandoffTests(unittest.TestCase):
                 rc, out = _boundary(root, "--retro", rid, "--no-fetch")
             self.assertNotEqual(rc, 0, out)
             stop = run_state.read(root)["stop"]
+            self.assertEqual(stop["cause"], "refused-plan")
             self.assertEqual(stop["cycles_unrun"], 1)
-            hid = stop["handoff"]
-            self.assertTrue(hid, f"no handoff recorded on the stop: {stop}")
-            # the display id carries a hyphen (HO-0001); the file stem does not (HO0001-...)
-            docs = list((root / "sdlc-studio" / "handoffs")
-                        .glob(f"{hid.replace('-', '')}-*.md"))
-            self.assertEqual(len(docs), 1, f"handoff {hid} was not written")
-            text = docs[0].read_text(encoding="utf-8")
-            self.assertIn("refused-plan", text)
-            self.assertIn("1 cycle", text)
+            self.assertNotIn("handoff", stop, "the boundary stop wrote a handoff")
+            self.assertFalse(list((root / "sdlc-studio" / "handoffs").glob("HO*.md")),
+                             "a handoff document was written")
+            self.assertIn("refused-plan", out)
+            self.assertIn("1 cycle(s) of the policy were not run", out)
 
 
 class UngatedPlanNeverExecutesTests(unittest.TestCase):

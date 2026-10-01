@@ -777,18 +777,6 @@ class WorklistTests(unittest.TestCase):
             self.assertIn("not valid JSON", err.getvalue())
             self.assertEqual(len(p.read_text(encoding="utf-8")), 40)  # not overwritten
 
-    def test_sprint_plan_surfaces_the_open_handoff(self) -> None:
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            _handoff_index(root)
-            _story(root, 2, status="In Progress")
-            handoff.generate(root, title="close", batch=["US0002"], outcome=run_state.BLOCKED)
-            pending = sprint.pending_handoff(root)
-            self.assertIsNotNone(pending)
-            self.assertEqual(pending["id"], "HO-0001")
-            self.assertEqual(pending["remaining"], 1)
-            self.assertTrue(Path(pending["worklist"]).exists())
-
 
 # --------------------------------------------------------------------------- the gate lane
 class GateLaneTests(unittest.TestCase):

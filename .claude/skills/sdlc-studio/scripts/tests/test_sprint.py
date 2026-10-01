@@ -4038,34 +4038,6 @@ class CloseRealChainTests(unittest.TestCase):
             self.assertIn("not found", err.getvalue())
             self.assertIn("artifact.py new --type retro", err.getvalue())  # the remedy
 
-    def test_derived_outcome_from_partial_verdict_is_stopped(self) -> None:
-        # AC3: the handoff outcome derives from the recorded verdict, never a default -
-        # a partial goal must not close the run as goal-reached.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _close_state(root, sprint_goal_verdict={"verdict": "partial", "note": "half"})
-            _close_story(root)
-            mod = _load()
-            # run the REAL _close_handoff against a stubbed handoff module so the
-            # derived outcome is observable without a full gate-passing workspace
-            import types
-            calls: dict = {}
-
-            def fake_main(argv):
-                calls["argv"] = argv
-                return 0
-            with unittest.mock.patch.dict(sys.modules, {"handoff": types.SimpleNamespace(main=fake_main)}):
-                ok, detail, _ = mod._close_handoff(root, "RETRO0001",
-                                                   json.loads((root / "sdlc-studio" / ".local" /
-                                                               "run-state.json").read_text()))
-            self.assertTrue(ok)
-            # US0832: PREPARE's handoff step passes NO outcome - an outcome is what ENDS a run
-            # and ending it is SEAL's. The derivation itself is unchanged and still tested, in
-            # PrepareAndSealTests, where `sign` writes `stopped` for a partial verdict.
-            self.assertNotIn("--outcome", calls["argv"],
-                             "PREPARE ended the run: SEAL then has no open run to seal")
-            self.assertIn("--retro", calls["argv"])
-
     def test_run_cli_handles_string_systemexit(self) -> None:
         mod = _load()
 
@@ -5224,7 +5196,7 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
                     self.assertIn("none outstanding", detail.splitlines()[0],
                                   "tree b must leave nothing else to refuse the step")
         self.assertEqual(("review-coverage", "retro-validate", "retro-extract", "retro-accuracy",
-                          "lessons-summary", "checklist", "gate", "handoff", "reconcile",
+                          "lessons-summary", "checklist", "gate", "reconcile",
                           "review-anchor"), mod._CLOSE_CHAIN,
                          "the hold is part of the stop-ship step, not a new chain step")
 
@@ -5968,11 +5940,12 @@ class EveryRunEndReadsThePredicateTests(unittest.TestCase):
             self.assertEqual("blocked", record.get("outcome"),
                              f"the stop did not complete:\n{err}")
             self.assertEqual("close-gate", stop.get("cause"), record)
-            text = _ua_handoff_text(mod, root, stop.get("handoff"))
+            self.assertNotIn("handoff", stop, "the boundary stop wrote a handoff (US0967)")
         literal = {"US0101", "US0103", "US0109", "US0110", "US0111", "US0112", "US0115",
                    "US0117", "BG0101"}
         self.assertEqual(literal, _ua_record_ids(record))
-        self.assertEqual(literal, _ua_section_ids(text, universe), text)
+        named = err.split("left unanswered:", 1)[-1]
+        self.assertEqual(literal, _ua_ids(named, universe), err)
 
     def test_an_answered_batch_ends_by_every_route(self) -> None:
         """MUTANT: a route reads its own reader - `_file_and_close` refuses whenever
@@ -6017,9 +5990,7 @@ class EveryRunEndReadsThePredicateTests(unittest.TestCase):
                 record = mod.run_state.read_archived(root, _UA_RUN)
                 self.assertEqual(outcome, record.get("outcome"), err)
                 self.assertEqual([], record.get("unanswered", "absent"), record)
-                if route == "boundary":
-                    text = _ua_handoff_text(mod, root, (record.get("stop") or {}).get("handoff"))
-                elif route == "generate":
+                if route == "generate":   # the boundary stop writes no handoff (US0967)
                     text = _ua_handoff_text(mod, root, record.get("handoff"))
                 if text is not None:
                     self.assertEqual(set(), _ua_section_ids(text, universe), text)
@@ -6357,27 +6328,6 @@ class ApplySignoffTailTests(unittest.TestCase):
             self.assertEqual(after["outcome"], "goal-reached")
             self.assertEqual(after["ended_at"], "2026-07-19T09:00:00Z", "ended_at was moved")
 
-    def test_a_plain_close_also_corrects_a_stale_outcome(self) -> None:
-        """The promotion must not be reachable only through `--apply-signoff`.
-
-        `_close_handoff` short-circuits when a handoff already exists AND the outcome is
-        terminal - the branch a re-run takes - and that skip covered the outcome as well as
-        the artefact. That is exactly how the run this bug was filed from kept `stopped`:
-        it had a handoff and a stale terminal outcome, so nothing re-derived it.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            state = _close_state(root, outcome="stopped", handoff="HO0009",
-                                 sprint_goal_verdict={"verdict": "achieved", "note": "n"})
-            mod = _load()
-            with contextlib.redirect_stdout(io.StringIO()), \
-                    contextlib.redirect_stderr(io.StringIO()):
-                ok, _msg, _ = mod._close_handoff(root, "RETRO0001", state)
-            self.assertTrue(ok)
-            after = json.loads(
-                (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))
-            self.assertEqual(after["outcome"], "goal-reached")
-
     def test_a_close_whose_goal_was_not_achieved_is_not_promoted(self) -> None:
         """The promotion must follow the VERDICT, not the fact that a close ran.
 
@@ -6688,141 +6638,6 @@ class ApplySignoffOverSweepTests(unittest.TestCase):
             self.assertEqual(mod._derive_parent_epics(root, []), [])
             self.assertEqual(mod._derive_parent_epics(root, None), [])
             self.assertNotEqual(self._status(root, "EP0002"), "Done")
-
-
-class ApplySignoffRefreshesHandoffTests(unittest.TestCase):
-    """BG0191: the chain writes the handoff at step 5, the cascade transitions at the tail, so
-    the document listed as remaining the very units the close had just completed."""
-
-    def _handoff(self, root: Path, hid: str = "HO0001") -> Path:
-        d = root / "sdlc-studio" / "handoffs"
-        d.mkdir(parents=True, exist_ok=True)
-        p = d / f"{hid}-a-run.md"
-        p.write_text(
-            f"# {hid}: a run\n\n> **Date:** 2026-07-16\n> **Created-by:** sdlc-studio new\n"
-            "> **Run:** RUN-TEST0001 (started 2026-07-16T00:00:00Z)\n"
-            "> **Outcome:** goal-reached\n> **Batch source:** run-state.json\n\n"
-            "## Where to pick up\n\n1 of 1 unit(s) remain. Plan them straight back in:\n\n"
-            "## Delivered (0)\n\n_Nothing was delivered in this run._\n\n"
-            "## Remaining (1)\n\n- US0101\n\n## Open decisions\n\n_None._\n\n"
-            "## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
-            "| 2026-07-16 | sdlc-studio | Created |\n", encoding="utf-8")
-        return p
-
-    def test_the_handoff_is_rewritten_after_the_cascade(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _close_state(root, scaffolded_retro="RETRO0001", handoff="HO0001")
-            _signoffable_story(root)
-            _close_retro(root)
-            path = self._handoff(root)
-            mod = _load()
-            rc, out, err = _run_apply_signoff(root, mod)
-            self.assertEqual(rc, 0, err)
-            text = path.read_text(encoding="utf-8")
-            self.assertIn("## Remaining (0)", text)
-            self.assertIn("## Delivered (1)", text)
-
-    def test_the_tail_reports_the_refresh(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _close_state(root, scaffolded_retro="RETRO0001", handoff="HO0001")
-            _signoffable_story(root)
-            _close_retro(root)
-            self._handoff(root)
-            mod = _load()
-            rc, out, err = _run_apply_signoff(root, mod)
-            self.assertEqual(rc, 0, err)
-            self.assertIn("HO0001 refreshed", out)
-
-    def test_the_worklist_no_longer_carries_the_delivered_unit(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _close_state(root, scaffolded_retro="RETRO0001", handoff="HO0001")
-            _signoffable_story(root)
-            _close_retro(root)
-            self._handoff(root)
-            mod = _load()
-            rc, out, err = _run_apply_signoff(root, mod)
-            self.assertEqual(rc, 0, err)
-            wl = root / "sdlc-studio" / ".local" / "handoff-worklist.txt"
-            self.assertNotIn("US0101", wl.read_text(encoding="utf-8"))
-
-    def test_the_revision_history_survives_the_rewrite(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _close_state(root, scaffolded_retro="RETRO0001", handoff="HO0001")
-            _signoffable_story(root)
-            _close_retro(root)
-            path = self._handoff(root)
-            mod = _load()
-            _run_apply_signoff(root, mod)
-            text = path.read_text(encoding="utf-8")
-            self.assertIn("## Revision History", text)
-            self.assertIn("2026-07-16 | sdlc-studio | Created", text)
-            self.assertIn("# HO0001: a run", text)  # id and title, not a new artefact
-
-    def test_the_rewrite_leaves_no_doubled_blank_line(self) -> None:
-        # render_body already terminates its last section, so joining the kept Revision
-        # History onto it produced two blank lines and the markdown gate (MD012) refused the
-        # commit. A generated document must not need hand-fixing after every refresh.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _close_state(root, scaffolded_retro="RETRO0001", handoff="HO0001")
-            _signoffable_story(root)
-            _close_retro(root)
-            path = self._handoff(root)
-            mod = _load()
-            _run_apply_signoff(root, mod)
-            text = path.read_text(encoding="utf-8")
-            self.assertNotIn("\n\n\n", text)
-            self.assertTrue(text.endswith("\n"))
-
-    def test_a_missing_handoff_file_is_reported_not_silently_skipped(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _close_state(root, scaffolded_retro="RETRO0001", handoff="HO0009")
-            _signoffable_story(root)
-            _close_retro(root)
-            mod = _load()
-            rc, out, err = _run_apply_signoff(root, mod)
-            self.assertEqual(rc, 0, err)  # a stale handoff must not lose the close
-            self.assertIn("HO0009", out + err)
-            self.assertIn("not refreshed", out + err)
-
-    def test_the_refresh_is_scoped_to_the_passed_run_not_whatever_run_is_open(self) -> None:
-        # The handoff belongs to the run being closed. `build` defaults to the run state on
-        # disk, so an unscoped refresh re-renders a CLOSED run's handoff against whichever
-        # run happens to be open - which is how a hand-run refresh overwrote a shipped
-        # handoff with the next sprint's batch.
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _close_state(root, scaffolded_retro="RETRO0001", handoff="HO0001",
-                         batch=["US0102"])          # what is OPEN on disk
-            _signoffable_story(root)                # US0101, about to go Done
-            _close_retro(root)
-            path = self._handoff(root)
-            mod = _load()
-            closing_state = dict(_close_state(root, scaffolded_retro="RETRO0001",
-                                              handoff="HO0001", batch=["US0102"]))
-            closing_state["batch"] = ["US0101"]     # the run being CLOSED
-            buf = io.StringIO()
-            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
-                mod._apply_signoff_tail(root, closing_state, units=["US0101"])
-            text = path.read_text(encoding="utf-8")
-            self.assertIn("US0101", text)
-            self.assertNotIn("US0102", text)
-
-    def test_a_run_with_no_handoff_recorded_does_nothing(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _close_state(root, scaffolded_retro="RETRO0001", handoff=None)
-            _signoffable_story(root)
-            _close_retro(root)
-            mod = _load()
-            rc, out, err = _run_apply_signoff(root, mod)
-            self.assertEqual(rc, 0, err)
-            self.assertNotIn("refreshed", out)
 
 
 def _quiet_brief(root, units):
@@ -11282,15 +11097,15 @@ class CloseDryRunTests(unittest.TestCase):
         with unittest.mock.patch.object(
                 sprint, "close_preflight",
                 lambda *_a, **_k: {"ready": True, "blockers": [], "gate_ran": True}), \
-                unittest.mock.patch.object(sprint, "_close_handoff", explode):
+                unittest.mock.patch.object(sprint, "_close_reconcile", explode):
             result = sprint.close_dry_run(root, "RETRO9991")
         steps = {s["step"]: s for s in result["steps"]}
-        self.assertEqual("unevaluated", steps["handoff"]["status"],
+        self.assertEqual("unevaluated", steps["reconcile"]["status"],
                          "a step whose probe raised is reported as something other than "
                          "unevaluated")
-        self.assertIn("blew up", steps["handoff"]["detail"])
+        self.assertIn("blew up", steps["reconcile"]["detail"])
         self.assertFalse(result["clean"], "an unanswered step is not a passing one")
-        self.assertIn("handoff", [s["step"] for s in result["unevaluated"]])
+        self.assertIn("reconcile", [s["step"] for s in result["unevaluated"]])
         report = sprint.dry_run_report(result)
         self.assertIn("UNEVALUATED", report)
         self.assertNotIn("CLEAN", report)
@@ -16556,59 +16371,6 @@ class ContainerGradingTests(unittest.TestCase):
                     self.assertNotIn(cid, ung, ung[:400])
 
 
-class HandoffTitleTests(unittest.TestCase):
-    """BG0617: the handoff was titled from the AMBITION, whatever the verdict said.
-
-    `_close_handoff` read `state["sprint_goal"]` unconditionally, so a run closing PARTIAL minted
-    a handoff whose H1, filename slug and index row all asserted the goal the verdict had just
-    denied. The verdict was available at title time all along - it is a plain read of the same
-    `state` dict, three lines below.
-
-    AC1 and AC4 are structurally COUPLED: one title string reaches `artifact.meta_new`, so no
-    mutant can fail the slug without failing the H1. AC4 still earns its place as an oracle over
-    two surfaces the H1 assertion never reads.
-    """
-
-    _GOAL = "Every instrument reports only what its evidence supports"
-
-    def _title_for(self, verdict):
-        """The title `_close_handoff` composes, exercised through the real module."""
-        sprint = _load()
-        state = {"sprint_goal": self._GOAL, "run_id": "RUN-INERT",
-                 "sprint_goal_verdict": {"verdict": verdict}}
-        captured = {}
-
-        def _fake_run_cli(fn, argv):
-            captured["argv"] = argv
-            return 0, ""
-
-        real = sprint._run_cli
-        sprint._run_cli = _fake_run_cli
-        try:
-            sprint._close_handoff(Path("/nonexistent"), "RETRO0001", state)
-        finally:
-            sprint._run_cli = real
-        argv = captured.get("argv") or []
-        return argv[argv.index("--title") + 1] if "--title" in argv else None
-
-    def test_a_partial_close_does_not_title_the_handoff_with_the_goal(self) -> None:
-        # AC1. The narrowing this invites is `verdict == "missed"`, four lines under the title,
-        # which would leave `partial` still borrowing the goal - and partial is the case a real
-        # run hit.
-        for verdict in ("partial", "missed"):
-            with self.subTest(verdict=verdict):
-                title = self._title_for(verdict)
-                self.assertIsNotNone(title)
-                self.assertNotIn(self._GOAL, title, f"{verdict} still asserted the goal")
-                self.assertIn(verdict, title)
-
-    def test_a_goal_reached_close_still_titles_from_the_goal(self) -> None:
-        # AC2. The paired control: the claim is true there, and the title is the one place to
-        # make it. Green at HEAD by design - the over-correction is what it catches.
-        self.assertEqual(self._GOAL, self._title_for("achieved"))
-
-
-
 class LoopConvergenceTests(unittest.TestCase):
     """BG0635: the close's convergence series counted rows the same pre-flight called advisory.
 
@@ -16842,19 +16604,16 @@ class PrepareAndSealTests(unittest.TestCase):
         return rc, out.getvalue(), err.getvalue()
 
     def test_prepare_runs_every_fact_changing_step_and_leaves_the_run_open(self):
-        """AC1. MUTANT: leave the `handoff` chain step closing the run object - the chain still
-        runs and every unit still transitions, and the only thing that breaks is that SEAL has
-        no open run to seal, which no assertion about the chain would catch."""
+        """AC1. MUTANT: let a chain step close the run object - the chain still runs and every
+        unit still transitions, and the only thing that breaks is that SEAL has no open run to
+        seal, which no assertion about the chain would catch. (The `handoff` step that once did
+        this is retired, US0967.)"""
         with tempfile.TemporaryDirectory() as d:
             root, mod = self._prepared(d), _load()
             steps = []
-            # `handoff` runs FOR REAL: it is the step that used to end the run, so a stub of it
-            # would leave this criterion asserting over a step that never executed.
-            rc, out, err = self._close(root, mod, record=steps, real=("handoff",))
+            rc, out, err = self._close(root, mod, record=steps)
             self.assertEqual(rc, 0, err)
             self.assertTrue(steps, "no chain step ran - PREPARE must do the fact-changing work")
-            self.assertTrue((mod.run_state.read(root) or {}).get("handoff"),
-                            "the real handoff step did not run - the mutant it guards is unseen")
             state = mod.run_state.read(root)
             self.assertEqual(state.get("outcome"), "running",
                              "PREPARE closed the run: SEAL then has no open run to seal")

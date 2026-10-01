@@ -21,8 +21,8 @@
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close_housekeeping.py::CloseHousekeepingTests::test_the_close_forward_ports_where_the_tool_exists
   - **Verified:** yes (2026-09-24)
 - **AC2:** Given a run whose close already filed a handover, when the close runs again, then it refreshes that handover in place and writes no new HO file
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close_housekeeping.py::CloseHousekeepingTests::test_a_rerun_close_refreshes_its_own_handover
-  - **Verified:** yes (2026-09-24)
+  - **Verify:** manual - retired by US0967: the close and `sprint.py sign` write no handoff, so the close's handoff step, the plan's handoff notice and their tests were deleted; the next `sprint plan` reads the last signed report's handed-over items
+  - **Verified:** manual (2026-10-01) - retired, superseded by US0967
 
 ## Revision History
 

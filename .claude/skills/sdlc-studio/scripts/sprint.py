@@ -1054,7 +1054,10 @@ def _worklist_units(root: Path, worklist: str) -> tuple[list[dict], dict[str, se
     """The documented tranche-file batch source: one unit id per line (markdown
     bullets and `#` comment/heading lines are tolerated). Every id must resolve to
     an artifact on disk - a silent skip would ship a smaller tranche than approved."""
-    lines = Path(worklist).read_text(encoding="utf-8").splitlines()
+    if REPORT_ID_RE.fullmatch(str(worklist).strip().upper()) and not Path(worklist).is_file():
+        lines = report_worklist_ids(root, str(worklist))
+    else:
+        lines = Path(worklist).read_text(encoding="utf-8").splitlines()
     wanted: list[str] = []
     for ln in lines:
         ln = ln.strip().lstrip("-*").strip()
@@ -3265,28 +3268,92 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
 GOALS = ("triage", "plan", "design", "done")  # the goal ladder a run is driven along
 
 
-def pending_handoff(repo_root: Path | str) -> dict | None:
-    """The handoff the LAST run left, when it left one - so the plan that follows a stopped
-    run starts from its tail instead of re-deriving it. None when there is no handoff, or
-    its worklist is gone.
+#: A report id as `--worklist` accepts it in place of a file: `RPT` and its number.
+REPORT_ID_RE = re.compile(r"RPT\d+")
 
-    `remaining` is what the handoff NAMES; `plannable` is what `--worklist` can resolve
-    (a remaining unit with no file on disk is named in the document and cannot be planned).
-    The two are reported separately: collapsing them would understate the tail."""
-    state = run_state.read(repo_root)
-    hid, rel = state.get("handoff"), state.get("handoff_worklist")
-    if not hid or not rel:
-        return None
-    path = Path(rel)
-    if not path.is_absolute():
-        path = Path(repo_root) / rel
-    if not path.exists():
-        return None
-    ids = [ln for ln in path.read_text(encoding="utf-8").splitlines()
-           if ln.strip() and not ln.strip().startswith("#")]
-    return {"id": hid, "worklist": str(path), "plannable": len(ids),
-            "remaining": state.get("handoff_remaining", len(ids)),
-            "outcome": state.get("outcome")}
+
+def last_signed_report(repo_root: Path | str) -> dict | None:
+    """The newest SIGNED report's id, run and the artefact ids its `Known issues handed over`
+    section lists, or None when no report is signed. Read from the report's JSON of record, the
+    page the operator signed: the open findings raised in the run and the carried units. A close
+    gap's row (named for its source, not an artefact) is not work to plan and is left out."""
+    import sprint_report  # noqa: PLC0415 - deferred sibling, as everywhere else in this module
+    for path in sorted(sprint_report.report_dir(repo_root).glob("RPT*.json"), reverse=True):
+        try:
+            stored = json.loads(path.read_text(encoding="utf-8"))  # bare-read-ok: own record
+        except (OSError, ValueError):
+            continue
+        if not (stored.get("signature") or {}).get("principal"):
+            continue
+        ids: list[str] = []
+        for section in stored.get("sections") or []:
+            if section.get("key") != "known_issues":
+                continue
+            for row in section.get("rows") or []:
+                value = str(((row.get("issue_id") or {}).get("value")) or "").strip()
+                if sdlc_md.ID_SEARCH_RE.fullmatch(value):
+                    ids.append(sdlc_md.norm_id(value))
+        return {"id": path.stem, "run_id": stored.get("run_id"),
+                "ids": list(dict.fromkeys(ids))}
+    return None
+
+
+def _still_open(root: Path, ids: list[str]) -> list[str]:
+    """The ids that resolve to an artefact on disk whose status is not terminal for its type."""
+    out = []
+    for uid in ids:
+        hit = sdlc_md.find_by_id(root, uid)
+        if not hit:
+            continue
+        path, kind = Path(hit[0]), hit[1]
+        status = (sdlc_md.extract_field(sdlc_md.read_text_safe(path) or "", "Status") or "").strip()
+        if not sdlc_md.is_terminal_status(kind, status):
+            out.append(uid)
+    return out
+
+
+def report_worklist_ids(repo_root: Path | str, report_id: str) -> list[str]:
+    """`--worklist RPT<n>`: the still-open ids that signed report handed over. Refused when the
+    report is not the last signed one, or hands over nothing still open - a batch quietly
+    smaller than the page it was planned from is the failure `--worklist` refuses elsewhere."""
+    last = last_signed_report(repo_root)
+    rid = report_id.strip().upper()
+    if not last or last["id"] != rid:
+        raise ValueError(f"--worklist {rid}: not the last signed report"
+                         + (f" ({last['id']} is)" if last else " (no report is signed)"))
+    ids = _still_open(Path(repo_root), last["ids"])
+    if not ids:
+        raise ValueError(f"--worklist {rid}: it hands over nothing still open")
+    return ids
+
+
+def last_run_notice(repo_root: Path | str) -> list[str]:
+    """The plan's notice of what the last run left: the units a forced stop waived, read from the
+    run record because a stopped run files no report, and the open work the last signed report
+    handed over. `[]` when there is neither. The signed report is the run's one account of what
+    is carried, so the plan reads it rather than a second document that could disagree."""
+    root = Path(repo_root)
+    state = run_state.read(root)
+    report = last_signed_report(root)
+    lines = []
+    waived = [str(u.get("unit")) for u in (state.get("unanswered") or [])
+              if isinstance(u, dict) and u.get("unit")]
+    if (waived and state.get("outcome") in run_state.CLOSED
+            and not (report and report["run_id"] == state.get("run_id"))):
+        how = ("waived by the forced stop"
+               if (state.get("stop") or {}).get("cause") == STOP_OPERATOR
+               else f"left unanswered when it ended {state.get('outcome')}")
+        lines.append(f"last run: {state.get('run_id')} ended over {len(waived)} unit(s) {how}: "
+                     f"{', '.join(waived)} - no report was filed, so they are named here")
+    if report:
+        still = _still_open(root, report["ids"])
+        closed = len(report["ids"]) - len(still)
+        since = f" ({closed} since closed or not on disk)" if closed else ""
+        lines.append(f"last run: {report['id']} (signed, {report['run_id']}) handed over "
+                     + (f"{len(still)} open item(s): {', '.join(still)}{since} - plan them with "
+                        f"--worklist {report['id']}" if still else
+                        f"nothing still open{since}"))
+    return lines
 
 
 def batch_selection_message() -> str:
@@ -3365,22 +3432,6 @@ def run_opened_line(state: dict, appetite: dict) -> str:
     goal_field = f'sprint-goal="{sprint_goal}"' if sprint_goal else "sprint-goal=unset"
     return (f"opened run {state['run_id']} (rung={state.get('goal') or 'unset'}, {goal_field}, "
             f"appetite {appetite['minutes']:g}min/{appetite['units']}units)")
-
-
-def handoff_line(pending: dict) -> str:
-    """The one-line handoff notice the plan prints for the last run's tail. A ZERO-remaining
-    handoff states nothing carried over and offers no `--worklist`: a clean close should read as
-    good news, not a false action item sitting above the warnings that actually need reading. A
-    non-zero one is unchanged - it names the count and the worklist to plan them from."""
-    if int(pending.get("remaining") or 0) == 0:
-        return (f"handoff: the last run ({pending['outcome']}) left {pending['id']} with "
-                f"nothing carried over - its backlog is clear")
-    extra = ("" if pending["plannable"] == pending["remaining"]
-             else f" ({pending['plannable']} of them plannable; the rest have no "
-                  f"artefact file - see the handoff)")
-    return (f"handoff: the last run ({pending['outcome']}) left {pending['id']} with "
-            f"{pending['remaining']} remaining item(s){extra} - plan them with "
-            f"--worklist {pending['worklist']}")
 
 
 def build_authoring_plan(repo_root: Path | str, prd_path: str) -> dict:
@@ -5028,46 +5079,6 @@ def _close_gate(root, retro_id, state):
          "re-run sprint close")
 
 
-def _close_handoff(root, retro_id, state):
-    if state.get("handoff") and state.get("outcome") in run_state.CLOSED:
-        # The handoff already exists, so it is not regenerated - but this branch used to
-        # return without looking at the OUTCOME, and it is the branch a re-run of a close
-        # takes. A run that stopped earlier and then closed with an achieved verdict kept
-        # `stopped` for exactly this reason: the skip covered the outcome as well as the
-        # artefact. Reconcile the outcome with the verdict here, so a plain `sprint close`
-        # corrects it and not only `--apply-signoff`.
-        _finalise_outcome(root, state)
-        return True, f"already generated ({state['handoff']}) - skipped", ""
-    import handoff  # noqa: PLC0415
-    # The outcome is DERIVED from the recorded goal-verdict, never defaulted: each verdict maps to
-    # the outcome sign writes (SIGNED_OUTCOMES), and only a run with no verdict reads `stopped`.
-    verdict = (state.get("sprint_goal_verdict") or {}).get("verdict")
-    outcome = SIGNED_OUTCOMES.get(verdict, run_state.STOPPED)
-    # ...and the TITLE follows the outcome, not the ambition. The goal was the title
-    # unconditionally, so a run that closed PARTIAL minted a handoff whose H1, filename slug and
-    # index row all asserted the thing the verdict had just denied - and all three derive from
-    # this one string, so getting it wrong is wrong in three places at once. A goal-reached run
-    # keeps the goal, because there the claim is true and the title is the one place to make it.
-    goal = state.get("sprint_goal")
-    # ONE decision, not two: an earlier draft branched and then repeated the goal inside the
-    # else, so a mutant deleting the first branch fell through to the same answer and the
-    # control could not see it.
-    title = (goal if outcome == run_state.GOAL_REACHED and goal
-             else f"{state.get('run_id') or 'sprint'} closed {verdict or 'without a verdict'}")
-    # NO `--outcome`: an outcome is what ENDS a run, and under US0832 ending it belongs to
-    # SEAL. `generate` without one writes the document and records its id, leaving the run
-    # open for `sign` - which is the seam this split needed and the only one handoff offers.
-    rc, out = _run_cli(handoff.main, ["generate", "--title", title,
-                                      "--retro", retro_id, "--root", str(root)])
-    if rc != 0:
-        return False, out, "`handoff.py generate` must write the handoff - see its output"
-    verb = "refreshed" if out.startswith("refreshed") else "generated"
-    return True, (f"handoff {verb}; the run stays OPEN for `sprint.py sign`, which writes "
-                  f"the {outcome} outcome "
-                  + (f"from the {verdict} verdict" if verdict else
-                     "- no goal verdict is recorded")), ""
-
-
 def _close_reconcile(root, retro_id, state):
     # The close SETTLES what it owns before it reads drift: a parent of this run's units whose
     # every child is now terminal is derived here, not only in the tail, or the report hands over
@@ -5587,7 +5598,7 @@ def _close_checklist(root, retro, state, read_root=None):
 # call time so a test can patch one step without rebuilding the table.
 _CLOSE_CHAIN = ("review-coverage", "retro-validate", "retro-extract", "retro-accuracy",
                 "lessons-summary", "checklist",
-                "gate", "handoff", "reconcile", "review-anchor")
+                "gate", "reconcile", "review-anchor")
 
 #: The machine-maintained status block inside the review anchor. DELIMITED, because the anchor is
 #: a hand-written document a fresh context is told to read first: the close must refresh the facts
@@ -6249,26 +6260,6 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
     import reconcile  # noqa: PLC0415
     import retro  # noqa: PLC0415
     _derive_close_parents(root, units, "close")
-    # The chain wrote the handoff one step BEFORE this cascade transitioned anything, so the
-    # document and its worklist described units as remaining that the close then completed.
-    # Re-render it here, against this run's own batch, so the tail reports the state the close
-    # actually left. Scoped explicitly: `build` would otherwise default to whatever run is open.
-    hid = (state.get("handoff") or "").strip()
-    if hid:
-        import handoff  # noqa: PLC0415
-        try:
-            rep = handoff.refresh(root, hid, batch=state.get("batch") or None)
-        except Exception as exc:  # noqa: BLE001 - a stale handoff must not lose the close
-            print(f"close: {hid} NOT refreshed ({exc}) - it still describes the "
-                  f"state before this cascade", file=sys.stderr)
-        else:
-            if rep is None:
-                print(f"close: {hid} has no file on disk - not refreshed",
-                      file=sys.stderr)
-            else:
-                s = rep["summary"]
-                print(f"close: {hid} refreshed - {s['delivered']} delivered, "
-                      f"{s['remaining']} remaining")
     # The run-state field is set only when THIS close scaffolded the retro. A retro made
     # the documented way (`artifact.py new --type retro`) never sets it, so fall back to
     # the id the close was given. With neither, say so - a close that skips the
@@ -6323,7 +6314,7 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
     # them to Done, and conformance requires evidence at Done that Review does not. So a close
     # could print `gate: ok` and still leave the tree red - which is what happened, and the next
     # person to commit inherited a failure they did not cause and had to prove was not theirs.
-    # Same defect class as the handoff refresh above: a step reporting a superseded state.
+    # A step reporting a superseded state is the defect class this ordering exists to avoid.
     # The anchor is stamped by the chain's review-anchor step and re-stamped by `sign`, the one
     # step that changes what it says: the tail signs nothing.
     _finalise_outcome(root, state)
@@ -8880,8 +8871,6 @@ def cmd_close(args: argparse.Namespace) -> int:
             print(detail or "    failed with no detail", file=sys.stderr)
             if remedy:
                 print(f"  remedy: {remedy}", file=sys.stderr)
-        if name == "handoff":
-            state = run_state.read(root) or state  # the handoff closes the run object
     # A carried lesson violated anyway is reported HERE, on both close paths, before the brief or
     # the sign-off fan-out: the operator is about to decide, and a repeat is evidence for that
     # decision. Never blocking - see `_close_lesson_repeats`.
@@ -9135,9 +9124,8 @@ def _cascade_after_signature(root, state, units) -> None:
 
     SEAL has just transitioned each batch unit, so three things follow from that and could not
     have been true before it: the parent epics whose children are now all terminal, the requests
-    above them whose children are now all resolved, and the handoff document, which describes
-    unit statuses and would otherwise permanently describe the world as it was one moment before
-    the signature. It is NOT `_apply_signoff_tail`: the velocity row and the final reconcile
+    above them whose children are now all resolved, and the velocity row, which counts delivered
+    units by status. It is NOT `_apply_signoff_tail`: the velocity row and the final reconcile
     change facts the report states, so they run in PREPARE, before anyone signs.
     """
     derived = _derive_parent_epics(root, units, "sign")
@@ -9165,21 +9153,6 @@ def _cascade_after_signature(root, state, units) -> None:
             print("sign: velocity row recorded")
     except Exception as exc:  # noqa: BLE001 - a missing row must not lose a written signature
         print(f"sign: velocity row NOT recorded ({exc})", file=sys.stderr)
-    hid = (state.get("handoff") or "").strip()
-    if not hid:
-        return
-    import handoff  # noqa: PLC0415
-    try:
-        rep = handoff.refresh(root, hid, batch=state.get("batch") or None)
-    except Exception as exc:  # noqa: BLE001 - a stale handoff must not lose the seal
-        print(f"sign: {hid} NOT refreshed ({exc}) - it still describes the state before "
-              f"this signature", file=sys.stderr)
-        return
-    if rep is None:
-        print(f"sign: {hid} has no file on disk - not refreshed", file=sys.stderr)
-    else:
-        s = rep["summary"]
-        print(f"sign: {hid} refreshed - {s['delivered']} delivered, {s['remaining']} remaining")
 
 
 def _principal_refusals(root, state, principal: str | None, author_default: str | None) -> list:
@@ -9628,17 +9601,18 @@ def cmd_plan(args: argparse.Namespace) -> int:
         print(f"blocker sweep: {len(sweep['now_unblocked'])} newly-unblocked unit(s) "
               f"({', '.join(sweep['now_unblocked'])}) - propose Blocked -> Ready via the gated "
               f"transition, then re-plan to include them", file=sys.stderr)
-    # the last run's tail, surfaced where the next batch is chosen. A handoff the operator
-    # has to remember to open is a handoff that goes unread. An UNREADABLE run state stops
-    # the plan rather than being shrugged off: `--write` would otherwise overwrite the
-    # wreckage with a blank record, losing the previous run's id, batch and outcome.
+    # The last run's tail, surfaced where the next batch is chosen: what its signed report
+    # handed over, and what a forced stop waived. An UNREADABLE run state stops the plan rather
+    # than being shrugged off: `--write` would otherwise overwrite the wreckage with a blank
+    # record, losing the previous run's id, batch and outcome.
     try:
-        pending = pending_handoff(Path(args.root))
+        notice = last_run_notice(Path(args.root))
     except run_state.RunStateError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
-    if pending and str(worklist or "") != pending["worklist"]:
-        print(handoff_line(pending), file=sys.stderr)
+    for line in notice:
+        if not (worklist and str(worklist).strip().upper() in line):
+            print(line, file=sys.stderr)
     epics, rc = _validate_epic_scope(args, worklist, kinds)
     if rc is not None:
         return rc
@@ -9920,12 +9894,6 @@ STOP_CAUSES = ("close-gate", "origin-drift", "refused-plan")
 #: Optional conditions an operator can add on top of the mandatory three.
 OPTIONAL_STOP_CONDITIONS = ("empty-backlog",)
 
-_STOP_TITLES = {
-    "close-gate": "boundary stop: close-gate - the cycle would not close",
-    "origin-drift": "boundary stop: origin-drift - local is behind origin under --strict",
-    "refused-plan": "boundary stop: refused-plan - the next batch is not plannable",
-}
-
 #: The boundary's four steps, in the order they must happen. Close the cycle before
 #: reading the backlog it changed; fetch before regenerating from it; regenerate before
 #: previewing; preview before anything executes.
@@ -9987,34 +9955,25 @@ def _render_policy(policy: dict) -> None:
 
 
 def _boundary_stop(root, cause: str, detail: str, remedy: str) -> int:
-    """STOP the rolling run at a boundary, leaving a handoff that says why.
+    """STOP the rolling run at a boundary, recording why on the run.
 
     The one stop path, shared by all three causes. Each cause could have grown its own -
     and then each would have drifted, and the operator returning to a stopped run would
     find a different quality of record depending on which gate happened to fire.
 
     What it guarantees, whichever cause fired: the next cycle's batch does NOT execute
-    (nothing opens it), a handoff names the cause and the cycles left unrun, and the run
-    ends recorded. The handoff is its own document even when the cycle already wrote one at
-    its close: that one says what the cycle delivered, this one says why the RUN stopped and
-    what is left - different questions, and the second is the one nobody can reconstruct."""
+    (nothing opens it), the run record names the cause, the cycles left unrun and the units
+    left unanswered, and the run ends recorded. No handoff is written: the next `sprint plan`
+    reads the unanswered units from the run record (`last_run_notice`)."""
     if cause not in STOP_CAUSES:
         raise ValueError(f"unknown boundary stop cause {cause!r} - expected one of "
                          f"{', '.join(STOP_CAUSES)}")
     state = run_state.read(root)
     cycle = state.get("cycle") or {}
     index, unrun = int(cycle.get("index") or 1), int(cycle.get("remaining") or 0)
-    title = f"{_STOP_TITLES[cause]} ({unrun} cycle(s) unrun after cycle {index})"
-    import handoff  # noqa: PLC0415 - deferred, as everywhere else in this module
-    rc, out = _run_cli(handoff.main, ["generate", "--title", title, "--root", str(root)])
-    hid = run_state.read(root).get("handoff") if rc == 0 else None
-    if rc != 0:
-        print(f"warning: the boundary handoff could NOT be written ({out}) - the stop is "
-              f"recorded on run-state, but there is no document to return to", file=sys.stderr)
-    # The handoff above is generated without --outcome, so its record of the unanswered units
-    # never reaches this stop: the stop records the predicate's set itself, before the close
-    # below archives the record. Reported, never a refusal - a boundary that has already failed
-    # its close-down must still end recorded.
+    # The stop records the predicate's set itself, before the close below archives the record.
+    # Reported, never a refusal - a boundary that has already failed its close-down must still
+    # end recorded.
     ua, ua_error = None, ""
     try:
         ua = unanswered_units(root, run_state.read(root))
@@ -10024,19 +9983,18 @@ def _boundary_stop(root, cause: str, detail: str, remedy: str) -> int:
               f"records it as unknown, never as none", file=sys.stderr)
     held = ua["unanswered"] if ua else None
     run_state.update(root, stop={"cause": cause, "detail": detail, "remedy": remedy,
-                                 "cycle": index, "cycles_unrun": unrun, "handoff": hid,
+                                 "cycle": index, "cycles_unrun": unrun,
                                  "stopped_at": sdlc_md.now_iso8601()},
                      **unanswered_record(ua, ua_error))
     # A cycle whose close completed is ALREADY closed, with the outcome its goal-verdict
     # earned; overwriting that with `blocked` would relabel delivered work as a failure. Only
     # a run still running is closed here - and then `blocked` is the honest word.
     if run_state.read(root).get("outcome") == run_state.RUNNING:
-        run_state.close_run(root, run_state.BLOCKED, handoff=hid)
+        run_state.close_run(root, run_state.BLOCKED)
     else:
         run_state.archive(root)          # re-archive so the stop is in the kept record
     print(f"boundary STOPPED ({cause}) after cycle {index}: {detail}", file=sys.stderr)
-    print(f"  {unrun} cycle(s) of the policy were not run; handoff {hid or '(none)'}",
-          file=sys.stderr)
+    print(f"  {unrun} cycle(s) of the policy were not run", file=sys.stderr)
     if held:
         print(f"  {len(held)} stop-ship question(s) left unanswered: {unanswered_rows(held)}",
               file=sys.stderr)
@@ -11113,8 +11071,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--stories", metavar="STATUS", action="append",
                    help="Stories with this Status (e.g. Ready); repeatable and combinable")
     p.add_argument("--worklist", metavar="PATH",
-                   help="tranche file: one unit id per line (bullets/comments tolerated); "
-                        "a complete batch source, not combinable with status queries")
+                   help="tranche file: one unit id per line (bullets/comments tolerated), or "
+                        "the last signed report's id (RPTxxxx) to plan the open items it "
+                        "handed over; a complete batch source, not combinable with status "
+                        "queries")
     p.add_argument("--prd", metavar="PATH", help="Greenfield authoring: bootstrap from a PRD")
     p.add_argument("--export-lanes", dest="export_lanes", metavar="DIR",
                    help="write the report-only lane partition as one worklist per lane into DIR "

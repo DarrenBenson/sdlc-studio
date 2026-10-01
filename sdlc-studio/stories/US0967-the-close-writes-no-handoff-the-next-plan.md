@@ -1,6 +1,6 @@
 # US0967: The close writes no handoff; the next plan reads the last signed report's carried work
 
-> **Status:** Ready
+> **Status:** In Progress
 > **Delivers:** CR0590
 > **Created:** 2026-10-01
 > **Created-by:** sdlc-studio new

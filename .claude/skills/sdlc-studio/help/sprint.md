@@ -69,7 +69,7 @@ elapsed the run-state cannot know. Read-only.
 **The compulsory checklist is part of that report, not a second document.** It carries one row per
 STAGE of the cycle - the pre-plan reconcile, the goal's seat review, the grooming gate, the run
 opening, the review verdicts, the ticked criteria the tree supports, the goal verdict, the retro,
-the lessons, the handoff - plus the figures a close otherwise re-derives by hand: planned against
+the lessons - plus the figures a close otherwise re-derives by hand: planned against
 delivered, what was dropped or held or carried over and why, scope creep as a count and a ratio, who
 reviewed what under which seat and over how many lenses, the impediments still standing, the known
 issues carried, and the cost. Every row but one is DERIVED from the tree, because a checklist that
@@ -98,7 +98,7 @@ particular is a decision with no decider. What still stops it: no sprint goal,
 no goal verdict, no retro, and an uncommitted change to a file a batch unit declares.
 
 **The close is in two halves, and the signature is the second one.** `close` is PREPARE: it runs
-every step that can change a fact - the ten-step chain, the handoff, the velocity row, the
+every step that can change a fact - the nine-step chain, the velocity row, the
 reconcile - files the report you are going to sign, and leaves the run OPEN. What moves after that
 page is derived is only what the SIGNATURE ITSELF entails: the terminal transitions and the
 cascades they imply. Nothing else does, and the page is written so that none
@@ -158,7 +158,7 @@ next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
 
 | Flag | Description | Default |
 | --- | --- | --- |
-| `<batch>` | status queries (`--bugs`/`--crs`/`--stories <status>` - **combinable** into one mixed tranche), `--worklist <file>` (ids one per line), `--epic EPxxxx`, or a **PRD path** (greenfield authoring) | required |
+| `<batch>` | status queries (`--bugs`/`--crs`/`--stories <status>` - **combinable** into one mixed tranche), `--worklist <file>` (ids one per line) or `--worklist RPTxxxx` (the open items the last signed report handed over), `--epic EPxxxx`, or a **PRD path** (greenfield authoring) | required |
 | `--goal` | `triage` (plan) / `plan` (sprint plan) / `design` (Ready, estimated backlog) / `done` (delivered) | `done` |
 | `--sprint-goal TEXT` | the Sprint Goal - one sentence of user value, 20 words or fewer (a longer goal is refused at plan; a run already open is never refused over its goal), judged at the closing review (`sprint goal-verdict --verdict achieved\|partial\|missed --note "..."`) and shown on the sprint report. Prompted interactively when absent; never invented | none |
 | `--serves O-ID\|PERSONA` | (with `plan`, repeatable) the PRD outcome (from the PRD's `## Outcomes` section, `- **O1:** ...`) or persona card the Sprint Goal serves; naming one as a whole word in the goal traces it too. The plan prints `goal serves: ...`, or `goal serves: NONE` naming what the goal could serve when it serves none or only a Negative persona - advice, never a refusal. Nothing is printed when the project has no outcomes and no persona cards | none |
@@ -280,7 +280,7 @@ python3 <skill>/scripts/sprint.py batch add-epic --epic EP0010 --status Ready
 # overage rather than a run that fitted
 python3 <skill>/scripts/sprint.py appetite resize --units 16 --reason "an epic joined the batch"
 
-# end a run that will not reach its goal - the handoff records what is carried
+# end a run that will not reach its goal - the next plan names what it waived
 python3 <skill>/scripts/sprint.py stop --reason "the dependency slipped"
 
 # resume a stopped run rather than minting a fresh one over the same work
@@ -306,12 +306,13 @@ Dropping judges THIS batch; Deferred judges the work.
 `stop` ends a run that will not reach its goal, and refuses while any batch unit is
 unanswered - the close's own test: unfinished and not ruled, dropped or parked on a pending
 decision, owed its adversarial pass, or carrying a standing REJECT. Stopping over live work
-would leave the handoff naming units nobody ruled on. `--force` overrides that refusal and
+would leave units nobody ruled on. `--force` overrides that refusal and
 answers nothing. It writes two lists onto the run record, and they answer different questions:
 `could_have_proceeded` is the work the stop parked, which the pending decisions did not block;
 `unanswered` is the stop-ship questions it waived, the set the close would have refused on.
-Each is printed under its own label. Every route that ends a run records `unanswered` the same
-way - a boundary stop and `handoff generate --outcome` too - and `close --file-and-close`
+Each is printed under its own label, and the next `sprint plan` names the waived units. Every
+route that ends a run records `unanswered` the same way - a boundary stop and
+`handoff generate --outcome` too - and `close --file-and-close`
 refuses rather than record it, because filing defers ceremony debt and a stop-ship question is
 answered, never filed.
 

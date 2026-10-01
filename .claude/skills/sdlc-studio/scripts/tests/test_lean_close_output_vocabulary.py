@@ -129,26 +129,6 @@ class CloseOutputVocabularyTests(unittest.TestCase):
             self.assertIn("close: EP0001 not derived", err.getvalue())
             self.assertNotRegex(err.getvalue(), RETIRED)
 
-    def test_the_handoff_step_names_the_signed_outcome(self) -> None:
-        """AC2. MUTANT: HEAD's `GOAL_REACHED if achieved else STOPPED`, which names `stopped`
-        for a partial verdict and prints `from the None verdict` with none recorded."""
-        sprint = _live("sprint")
-        for verdict, outcome in (("partial", "partial"), ("missed", "missed"),
-                                 ("achieved", "goal-reached"), (None, "stopped")):
-            with self.subTest(verdict=verdict), tempfile.TemporaryDirectory() as d:
-                root = Path(d)
-                _fixture(root)
-                state = _edit_state(root, sprint_goal_verdict=(
-                    {"verdict": verdict, "note": "judged"} if verdict else None))
-                self.assertEqual(outcome, sprint.SIGNED_OUTCOMES.get(verdict, "stopped"))
-                with contextlib.redirect_stdout(io.StringIO()):
-                    ok, detail, _remedy = sprint._close_handoff(root, lean.RETRO, state)
-                self.assertTrue(ok, detail)
-                self.assertIn(f"which writes the {outcome} outcome", detail)
-                self.assertNotIn("None", detail)
-                if verdict:
-                    self.assertIn(f"from the {verdict} verdict", detail)
-
     def test_sign_refusals_name_the_operator(self) -> None:
         """The signature's refusals ask for the operator who signs. MUTANT: HEAD's `the reviewer
         of record must sit outside the author's control`."""

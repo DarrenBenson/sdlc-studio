@@ -28,8 +28,8 @@ Rename the tail's prefix to `close:`, the principal hint and refusals to `the op
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close_output_vocabulary.py::CloseOutputVocabularyTests::test_no_retired_sign_off_words_in_close_output
   - **Verified:** yes (2026-09-28)
 - [ ] **AC2** Given a partial goal verdict, when the handoff step reports, then it names the partial outcome sign will write. Fails on: HEAD's `stopped outcome from the partial verdict`
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close_output_vocabulary.py::CloseOutputVocabularyTests::test_the_handoff_step_names_the_signed_outcome
-  - **Verified:** yes (2026-09-28)
+  - **Verify:** manual - retired by US0967: the close and `sprint.py sign` write no handoff, so the close's handoff step, the plan's handoff notice and their tests were deleted; the next `sprint plan` reads the last signed report's handed-over items
+  - **Verified:** manual (2026-10-01) - retired, superseded by US0967
 
 ## Revision History
 

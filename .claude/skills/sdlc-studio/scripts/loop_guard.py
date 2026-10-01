@@ -242,8 +242,9 @@ def cmd_budget(args: argparse.Namespace) -> int:
     if v["exhausted"]:
         print(f"appetite SPENT (reason={v['reason']}): {v['elapsed_minutes']} min elapsed"
               f"{f'/{minutes} budget' if minutes else ''}, {done} unit(s) done"
-              f"{f'/{units} budget' if units else ''} -> stop cleanly, generate the handoff "
-              f"(handoff generate --outcome budget-spent); units keep their true status")
+              f"{f'/{units} budget' if units else ''} -> stop cleanly: close the run and sign "
+              f"its report (sprint.py close, then sprint.py sign), which hands over what is left; "
+              f"units keep their true status")
         return BUDGET_EXIT
     if not minutes and not units:
         print(f"no appetite declared - run is unbounded ({v['elapsed_minutes']} min, "

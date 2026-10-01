@@ -1763,17 +1763,17 @@ class SprintChecklistStageTests(ChecklistBase):
                             f"say' - the one thing a stage that never ran must not read as")
 
     def test_a_stage_that_did_not_run_is_named_not_omitted(self) -> None:
-        # No goal-review record and a run that stopped short with no handoff.
-        ck = self._ck(outcome="blocked", handoff=None)
+        # No goal-review record and a run that stopped short with no closing review.
+        ck = self._ck(outcome="blocked")
         text = sr.render_checklist(ck)
         # `goal-seat-reviewed` is enforced at `sprint plan`, so at a close it is EXPIRED
         # rather than NOT RUN (US0591) - still NAMED, which is what this test is about, and
         # still carrying the command that should have enforced it.
         self.assertEqual(self._row(ck, "goal-seat-reviewed")["state"], sr.EXPIRED)
-        self.assertEqual(self._row(ck, "handoff")["state"], sr.NOT_RUN)
+        self.assertEqual(self._row(ck, "closing-review")["state"], sr.NOT_RUN)
         self.assertIn("goal-seat-reviewed",
                       " ".join(ck["outstanding"] + ck["expired"]) + " " + text)
-        self.assertIn("Handoff", text)
+        self.assertIn("Closing full-diff review", text)
         self.assertIn("NOT RUN", text)
 
     def test_the_stage_set_and_the_cycle_cannot_drift_apart(self) -> None:
@@ -2410,11 +2410,17 @@ class SprintChecklistAuthorityTests(ChecklistBase):
         self.assertIn("cost", ck["outstanding"])
 
     def test_the_close_does_not_deadlock_on_what_it_is_about_to_do(self) -> None:
-        """The handoff is produced BY the close. Holding the chain on it makes the only exit the
-        step it blocks, which is a deadlock, not a gate."""
-        ck = self._ck(outcome="blocked", handoff=None)
-        self.assertNotIn("handoff", ck["outstanding"])
-        self.assertIn("handoff", ck["pending_in_close"])
+        """An item the close itself produces (`discharged_by: close`) is reported, never held:
+        holding the chain on it makes the only exit the step it blocks, which is a deadlock, not
+        a gate. No shipped row is discharged by the close since the handoff row was retired
+        (US0967), so the mechanism is driven through a row marked so here."""
+        import unittest.mock  # noqa: PLC0415
+        marked = tuple({**item, "discharged_by": "close"} if item["id"] == "closing-review"
+                       else item for item in sr.CHECKLIST)
+        with unittest.mock.patch.object(sr, "CHECKLIST", marked):
+            ck = self._ck(outcome="blocked")
+        self.assertNotIn("closing-review", ck["outstanding"])
+        self.assertIn("closing-review", ck["pending_in_close"])
         self.assertIn("discharge", sr.render_checklist(ck))
 
     def test_a_waiver_naming_NO_REAL_ITEM_is_refused(self) -> None:
@@ -3091,7 +3097,7 @@ class ChecklistRosterTests(unittest.TestCase):
     EXPECTED = (
         "reconciled-before-plan", "goal-seat-reviewed", "batch-groomed", "run-opened",
         "closing-review", "tick-verification", "goal-judged",
-        "retro", "lessons", "handoff", "planned-vs-delivered", "not-delivered",
+        "retro", "lessons", "planned-vs-delivered", "not-delivered",
         "scope-creep", "coverage-consistency", "doc-surface",
         "review-attribution", "impediments", "known-issues", "cost",
     )

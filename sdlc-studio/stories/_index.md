@@ -8,9 +8,9 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 16 |
+| Ready | 15 |
 | Planned | 0 |
-| In Progress | 1 |
+| In Progress | 2 |
 | Review | 0 |
 | Done | 778 |
 | Won't Implement | 92 |
@@ -325,7 +325,7 @@
 | [US0964](US0964-every-script-s-help-describes-the-v6-loop.md) | Every script's --help describes the v6 loop and no retired review step | Done | EP0267 | 2026-09-27 | 2026-09-27 |
 | [US0965](US0965-an-eval-scenario-runs-a-two-unit-lean.md) | An eval scenario runs a two-unit lean sprint in a fresh project from plan to close, so v6's headline is measured, not asserted | Done | EP0267 | 2026-09-28 | 2026-09-28 |
 | [US0966](US0966-verify-ac-py-run-names-the-near-miss.md) | `verify_ac.py run` names the near-miss node when a Verify selector's file is collected but its node is not | Ready | EP0244 | 2026-10-01 | 2026-10-01 |
-| [US0967](US0967-the-close-writes-no-handoff-the-next-plan.md) | The close writes no handoff; the next plan reads the last signed report's carried work | Ready | EP0268 | 2026-10-01 | 2026-10-01 |
+| [US0967](US0967-the-close-writes-no-handoff-the-next-plan.md) | The close writes no handoff; the next plan reads the last signed report's carried work | In Progress | EP0268 | 2026-10-01 | 2026-10-01 |
 | [US0968](US0968-with-no-version-install-sh-installs-the-latest.md) | With no --version, install.sh installs the latest published release, verified against its .sha256 | Ready | EP0269 | 2026-10-01 | 2026-10-01 |
 | [US0969](US0969-a-cli-never-reports-success-it-did-not.md) | A CLI never reports success it did not get | Ready | EP0270 | 2026-10-01 | 2026-10-01 |
 | [US0970](US0970-the-finding-writers-keep-every-criterion-and-verifier.md) | The finding writers keep every criterion and verifier they were given | Ready | EP0270 | 2026-10-01 | 2026-10-01 |

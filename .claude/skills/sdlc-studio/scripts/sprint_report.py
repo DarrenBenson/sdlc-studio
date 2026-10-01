@@ -932,12 +932,6 @@ CHECKLIST = (
     {"id": "lessons", "kind": STAGE, "authority": DERIVED,
      "title": "Lessons extracted from the batch", "command": "lessons summary",
      "resolver": "_ck_lessons"},
-    # `discharged_by: close` - a compulsory item the CLOSE ITSELF produces, so it is reported
-    # like every other row but never held against a close that has not got there yet. A gate
-    # whose only exit is the step it blocks is not a gate, it is a deadlock.
-    {"id": "handoff", "kind": STAGE, "authority": DERIVED, "discharged_by": "close",
-     "title": "Handoff, when the run stopped short of its goal", "command": "handoff generate",
-     "resolver": "_ck_handoff"},
     {"id": "planned-vs-delivered", "kind": FIGURE, "authority": DERIVED,
      "title": "Planned against delivered", "command": "sprint report",
      "resolver": "_ck_planned_vs_delivered"},
@@ -1558,21 +1552,6 @@ def close_report(summary: dict) -> str:
     return "\n".join(lines)
 
 
-def _ck_handoff(ctx: dict) -> tuple:
-    run = ctx["run"] or {}
-    outcome = str(run.get("outcome") or "")
-    if outcome in ("", run_state.RUNNING, run_state.GOAL_REACHED):
-        return (RAN, "not owed",
-                "a run that reached its goal owes a retro, not a handoff"
-                if outcome == run_state.GOAL_REACHED else
-                "the run is still open, so no handoff is owed yet")
-    if not run.get("handoff"):
-        return (NOT_RUN, f"owed ({outcome})",
-                "the run stopped short of its goal and left no handoff, so the tail is "
-                "scattered across hints, the ledger and the retro")
-    return (RAN, str(run["handoff"]), "")
-
-
 def _ck_planned_vs_delivered(ctx: dict) -> tuple:
     planned = ctx["planned"]
     if not planned:
@@ -2154,6 +2133,9 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
             "expired": [r["id"] for r in rows if r["state"] == EXPIRED],
             "not_measured": [r["id"] for r in rows if r["state"] == UNMEASURABLE],
             "outstanding": [r["id"] for r in unmet if not r.get("discharged_by")],
+            # `discharged_by: close` marks a compulsory item the CLOSE ITSELF produces: reported
+            # like every other row but never held against a close that has not got there yet. A
+            # gate whose only exit is the step it blocks is not a gate, it is a deadlock.
             "pending_in_close": [r["id"] for r in unmet if r.get("discharged_by") == "close"],
             **_known_issue_rulings(ctx)}
 

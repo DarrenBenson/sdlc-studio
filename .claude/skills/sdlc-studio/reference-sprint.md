@@ -124,7 +124,7 @@ links here rather than listing its own.
    "..."` then records the goal verdict and runs the chain - review coverage, the retro's
    validation and extraction, estimate against actual, the lessons summary, the compulsory
    checklist, the close gate (`gate.py --require-retro --require-review`, which runs the
-   conformance, reconcile and lessons lanes), the handoff, the reconcile and the review anchor -
+   conformance, reconcile and lessons lanes), the reconcile and the review anchor -
    then draws the sprint report and files it: the one page you sign. A failing step is printed with its remedy and handed
    over as a known issue on the report; the close does not refuse over it. What still stops it:
    no sprint goal, no goal verdict, no retro, and an uncommitted change to a file a batch unit
@@ -184,11 +184,12 @@ a recorded waiver that answers none.
 
 ### The handoff and the run object
 
-The close writes a handoff for every run (`handoff.py generate`): a join over evidence the run
-already produced (loop state, the verify report, conformance, the run state) that invents
-nothing. It names every non-terminal unit with a pointer to start from, records the open
-decisions, and emits `.local/handoff-worklist.txt`, which `sprint plan --worklist` reads back;
-`sprint plan` surfaces a pending handoff unasked. For a run that stopped short of its goal -
+The signed report is the run's one account of what is left: its `Known issues handed over`
+section lists every open finding raised in the run and every carried unit. The close and `sign`
+write no handoff. The next `sprint plan` names, unasked, the last signed report and the open
+items it handed over, and `sprint plan --worklist RPTxxxx` plans them; an item closed since is
+counted, not planned. A run ended by `sprint.py stop --force` files no report, so the plan names
+the units that stop waived from the run record's `unanswered` list. For a run that stopped short of its goal -
 budget spent, a unit blocked, an operator stop - `gate.py --require-handoff HOxxxx` fails
 unless the handoff exists and a retro links it.
 
@@ -581,8 +582,8 @@ to go unattended. The appetite is that ceiling (Shape Up's fixed timebox: appeti
   harness-independent, neither self-reported. When the appetite is spent it exits **4** (a distinct code); the loop
   stops cleanly, the current unit is never abandoned mid-implementation.
 - **Not quarantine:** budget-exhausted has its OWN exit code (4, vs quarantine's 3) and marks nothing - the units keep
-  their true status rather than being flipped Blocked. The loop then generates the handoff with `--outcome
-  budget-spent`, which reports the appetite declared vs spent vs delivered and names what remains.
+  their true status rather than being flipped Blocked. The loop then closes the run and signs its report, which
+  hands over what remains.
 - **Never auto-extended:** a spent appetite is not topped up mid-run. Extending it is an
   explicit operator action - a fresh `sprint plan --write` opens a new run with a new
   appetite and a new clock.
@@ -634,15 +635,15 @@ run state, and REFUSES an incomplete one rather than defaulting it: below one cy
 Every later cycle plans under that record, never under whatever the CLI defaults to at 3am.
 
 `sprint.py boundary --retro RETROxxxx [--strict] [--no-fetch]` then crosses one boundary as four ordered gates:
-**close-down** (this cycle's full close chain - retro validate and extract, lessons summary, gate, handoff, reconcile -
+**close-down** (this cycle's full close chain - retro validate and extract, lessons summary, gate, reconcile -
 reported against the cycle it closed), **fetch** (fetch and compare against origin's default branch at EVERY boundary,
 not only the first plan), **regenerate** (reselect the batch from the live backlog under the policy, absorbing the
 lessons the close has just written), and **preview** (a dry run of the batch, order, forecast and capacity, printed
 before anything executes).
 
 **Three causes stop the run:** a close-down that does not complete (`close-gate`), divergence from origin under
-`--strict` (`origin-drift`), and a regenerated batch the breakdown gate refuses (`refused-plan`). Each writes a handoff
-naming the cause and the number of cycles left unrun, records the stop on the run state, and executes no unit of the
+`--strict` (`origin-drift`), and a regenerated batch the breakdown gate refuses (`refused-plan`). Each records the stop
+on the run state - the cause, the number of cycles left unrun and the units left unanswered - and executes no unit of the
 next cycle's batch - a stale or ungated plan never runs. Each cycle mints its own `run_id`, forecast, sprint goal,
 verdict and retro, and its record is archived to `sdlc-studio/.local/run-archive/<run_id>.json` before the next cycle
 overwrites the live file, so an N-cycle run reads back as N auditable sprints rather than one blurred session.
@@ -723,7 +724,7 @@ ceiling and leaves the standing pair alone, so a raise registers as an over-comm
 close rather than producing a run that appears to have fitted.
 
 A control with no recorded reason is a change the close cannot explain. `stop` ends a run that
-will not reach its goal and writes the handoff; `reopen` resumes it rather than minting a fresh
+will not reach its goal and records what it waived; `reopen` resumes it rather than minting a fresh
 run over the same work, which would re-attribute the delivery.
 
 ## Nothing is fixed during a close {#close-fixed-point}

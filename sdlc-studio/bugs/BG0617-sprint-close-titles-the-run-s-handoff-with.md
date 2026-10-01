@@ -26,11 +26,11 @@ Title the handoff from the OUTCOME, not the ambition. The verdict is already AVA
 ## Acceptance Criteria
 
 - [x] **AC1** Given a run closing PARTIAL or MISSED, when the handoff is minted, then its title states the OUTCOME and does not assert the goal the verdict just denied - the title is composed at `sprint.py`:5238, which reads `sprint_goal` unconditionally while the verdict sits in the same `state` dict three lines below
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::HandoffTitleTests::test_a_partial_close_does_not_title_the_handoff_with_the_goal
-  - **Verified:** yes (2026-08-28)
+  - **Verify:** manual - retired by US0967: the close and `sprint.py sign` write no handoff, so the close's handoff step, the plan's handoff notice and their tests were deleted; the next `sprint plan` reads the last signed report's handed-over items
+  - **Verified:** manual (2026-10-01) - retired, superseded by US0967
 - [x] **AC2** Given a run closing GOAL-REACHED, when the handoff is minted, then its title DOES carry the goal - not "may", which every behaviour satisfies including the over-correction this row exists to catch. The claim is true there and the title is the one place it can be made
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::HandoffTitleTests::test_a_goal_reached_close_still_titles_from_the_goal
-  - **Verified:** yes (2026-08-28)
+  - **Verify:** manual - retired by US0967: the close and `sprint.py sign` write no handoff, so the close's handoff step, the plan's handoff notice and their tests were deleted; the next `sprint plan` reads the last signed report's handed-over items
+  - **Verified:** manual (2026-10-01) - retired, superseded by US0967
 - [x] **AC3** Given a run that DROPPED a unit, when the `Where to pick up` SECTION is generated, then it names that unit. The assertion is scoped to that section on purpose: `render_body` already emits a `Closed without delivery` section naming dropped units, so an unscoped test is green at HEAD and pins nothing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::HandoffTitleTests::test_the_pick_up_section_names_a_dropped_unit
   - **Verified:** yes (2026-08-28)

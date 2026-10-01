@@ -135,11 +135,11 @@ class OnePassCloseTests(unittest.TestCase):
                 "| [RETRO-0001](RETRO0001-lean.md) | lean | 2026-09-23 |\n", ""), encoding="utf-8")
             with unittest.mock.patch.object(_live("sprint_report"), "checklist",
                                             lambda *a, **k: _UNANSWERED):
-                rc, out, err = _close(root, real=("checklist", "handoff"))
+                rc, out, err = _close(root, real=("checklist",))
             self.assertEqual(0, rc, err)
             state = _read(root)
             self.assertTrue(state.get("report"), "no report was filed")
-            self.assertTrue(state.get("handoff"), "no handover was filed")
+            self.assertIsNone(state.get("handoff"), "the close filed a handover (US0967)")
             self.assertIn("RETRO0001-lean.md", index.read_text(), "the retro was not filed")
             report = _live("sprint_report").read_report(root, state["report"])
             self.assertEqual("RETRO0001", report["retro_id"], "the report is not the retro's")
@@ -265,7 +265,7 @@ class KnownIssueDetailTests(unittest.TestCase):
                                             lambda *a, **k: _STOP_SHIP):
                 # review-coverage runs first and fails, so the stop-ship row is not first by
                 # chain order - only the ordering rule can put it there
-                rc, _out, err = _close(root, real=("review-coverage", "checklist", "handoff"))
+                rc, _out, err = _close(root, real=("review-coverage", "checklist"))
             self.assertEqual(0, rc, err)
             state = _read(root)
             issues = state["close_known_issues"]

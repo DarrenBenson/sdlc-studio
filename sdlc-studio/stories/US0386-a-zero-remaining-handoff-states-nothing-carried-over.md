@@ -22,24 +22,24 @@
 - **Given** the last run closed with 0 remaining items
 - **When** sprint plan prints the handoff line
 - **Then** it states that nothing carried over and offers no `--worklist` command
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff_line.py::HandoffLine::test_zero_remaining_states_nothing_carried_over
-- **Verified:** yes (2026-07-25)
+- **Verify:** manual - retired by US0967: the close and `sprint.py sign` write no handoff, so the close's handoff step, the plan's handoff notice and their tests were deleted; the next `sprint plan` reads the last signed report's handed-over items
+- **Verified:** manual (2026-10-01) - retired, superseded by US0967
 
 ### AC2: a non-zero handoff is unchanged
 
 - **Given** the last run left 1 or more remaining items
 - **When** sprint plan prints the handoff line
 - **Then** the existing line is unchanged, naming the count and the worklist path
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff_line.py::HandoffLine::test_nonzero_remaining_names_count_and_worklist
-- **Verified:** yes (2026-07-25)
+- **Verify:** manual - retired by US0967: the close and `sprint.py sign` write no handoff, so the close's handoff step, the plan's handoff notice and their tests were deleted; the next `sprint plan` reads the last signed report's handed-over items
+- **Verified:** manual (2026-10-01) - retired, superseded by US0967
 
 ### AC3: the boundary is pinned two-sided
 
 - **Given** the boundary between zero and one remaining item
 - **When** the tests run
 - **Then** both the zero-case suppression and the non-zero retention are asserted in one test, so a future change cannot make the zero case reappear or suppress the non-zero one
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff_line.py::HandoffLine::test_boundary_pinned_both_sides
-- **Verified:** yes (2026-07-25)
+- **Verify:** manual - retired by US0967: the close and `sprint.py sign` write no handoff, so the close's handoff step, the plan's handoff notice and their tests were deleted; the next `sprint plan` reads the last signed report's handed-over items
+- **Verified:** manual (2026-10-01) - retired, superseded by US0967
 
 ## Revision History
 

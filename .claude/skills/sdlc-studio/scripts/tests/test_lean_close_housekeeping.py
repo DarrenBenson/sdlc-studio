@@ -104,69 +104,17 @@ class CloseHousekeepingTests(unittest.TestCase):
             self.assertFalse(lean._read(root)["close_known_issues"])
             self.assertNotIn("forward-port", out + err)
 
-    def test_a_rerun_close_refreshes_its_own_handover(self) -> None:
-        """Mutants: `generate` always mints through `meta_new`; the refresh keeps the stale body
-        or the stale title; a new run reuses the previous run's handover."""
-        # The close's tail re-renders the handover as well, so it is held still here: the body
-        # this test reads is the one the handoff STEP wrote, or a stale-body mutant hides.
-        tail = unittest.mock.patch.object(lean._live("sprint"), "_apply_signoff_tail",
-                                          lambda *a, **k: 0)
-        with tempfile.TemporaryDirectory() as d, tail:
-            root = Path(d)
-            lean._fixture(root)
-            rc, _out, err = lean._close(root, real=("handoff",))
-            self.assertEqual(0, rc, err)
-            first = lean._read(root)["handoff"]
-            self.assertTrue(first, "the first close filed no handover")
-            [name] = _handovers(root)
-            doc = root / "sdlc-studio" / "handoffs" / name
-            doc.write_text(doc.read_text(encoding="utf-8").replace(
-                "## Where to pick up", "## Where to pick up\n\nSTALE-SENTINEL"), encoding="utf-8")
-
-            rc, _out, err = lean._close(root, real=("handoff",))
-            self.assertEqual(0, rc, err)
-            self.assertEqual([name], _handovers(root), "the re-run filed a second HO file")
-            self.assertEqual(first, lean._read(root)["handoff"])
-            text = doc.read_text(encoding="utf-8")
-            self.assertNotIn("STALE-SENTINEL", text, "the handover was not refreshed")
-            self.assertIn("RUN-LEAN0001", text)
-            index = (root / "sdlc-studio" / "handoffs" / "_index.md").read_text(encoding="utf-8")
-            self.assertEqual(1, index.count(name), index)
-
-            # the verdict moved between closes, so the refreshed title follows it
-            state_file = root / "sdlc-studio" / ".local" / "run-state.json"
-            state = json.loads(state_file.read_text(encoding="utf-8"))
-            state["sprint_goal_verdict"] = {"verdict": "partial", "note": "not all of it"}
-            state_file.write_text(json.dumps(state), encoding="utf-8")
-            rc, _out, err = lean._close(root, real=("handoff",))
-            self.assertEqual(0, rc, err)
-            [renamed] = _handovers(root)
-            self.assertEqual(first, lean._read(root)["handoff"])
-            h1 = (root / "sdlc-studio" / "handoffs" / renamed).read_text(
-                encoding="utf-8").splitlines()[0]
-            self.assertIn("RUN-LEAN0001 closed partial", h1)
-
-            # a NEW run still gets a new handover
-            lean._state(root, run_id="RUN-LEAN0002")
-            rc, _out, err = lean._close(root, real=("handoff",))
-            self.assertEqual(0, rc, err)
-            self.assertEqual(2, len(_handovers(root)))
-            self.assertNotEqual(first, lean._read(root)["handoff"])
-
     def test_only_the_open_runs_own_handover_is_refreshed(self) -> None:
         """Mutants: `_open_handoff` refreshes a handover the state names although the run has
         ended (a sealed run's handover is a record), or although the document records a
-        different run."""
-        tail = unittest.mock.patch.object(lean._live("sprint"), "_apply_signoff_tail",
-                                          lambda *a, **k: 0)
+        different run. The first handover is generated directly: the close writes none since
+        US0967."""
         for label, over in (("sealed", {"outcome": "goal-reached"}),
                             ("another run's", {"run_id": "RUN-LEAN0002"})):
-            with self.subTest(label), tempfile.TemporaryDirectory() as d, tail:
+            with self.subTest(label), tempfile.TemporaryDirectory() as d:
                 root = Path(d)
                 lean._fixture(root)
-                rc, _out, err = lean._close(root, real=("handoff",))
-                self.assertEqual(0, rc, err)
-                first = lean._read(root)["handoff"]
+                first = lean._live("handoff").generate(root, "first")["id"]
                 [name] = _handovers(root)
                 before = (root / "sdlc-studio" / "handoffs" / name).read_text(encoding="utf-8")
                 lean._state(root, handoff=first, **over)
