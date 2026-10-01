@@ -15,6 +15,8 @@ import unittest
 from pathlib import Path
 
 _SCRIPTS = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gitutil  # noqa: E402
 FILER = _SCRIPTS / "file_finding.py"
 ARTIFACT = _SCRIPTS / "artifact.py"
 
@@ -30,7 +32,8 @@ CR = {"title": "a request", "summary": "s", "priority": "Low"}
 
 
 def _project(root: Path) -> Path:
-    subprocess.run(["git", "init", "-q", str(root)], check=True, capture_output=True)
+    subprocess.run(["git", "init", "-q", str(root)], env=gitutil.git_env(), check=True,
+                   capture_output=True)
     subprocess.run([sys.executable, str(_SCRIPTS / "init.py"), "--root", str(root), "run"],
                    check=True, capture_output=True, text=True)
     (root / "tests").mkdir()
