@@ -150,6 +150,10 @@ CARRIED_SECTION = "Carried lessons"
 # rather than half-parsed, because "carried" and "nobody looked" reading the same is the whole
 # failure this section exists to end.
 KNOWN_ISSUES_SECTION = "Known issues carried"
+#: The table's columns, in the row grammar's order: THE one statement of its header. The close's
+#: scaffold writes it (`fill_run_scaffold`) and `carried_issues` skips it by its first cell, so
+#: the header a retro is born with is the one its reader reads.
+KNOWN_ISSUES_COLUMNS = ("id", "ruling", "ruled by", "date")
 
 #: The rulings a carried issue may hold. `stop-ship` is the one that must be able to stop
 #: something: a ruling that changes nothing is a note.
@@ -318,13 +322,14 @@ def carried_issues(text: str, *, root=None) -> list[dict]:
         if "<!-- example -->" in line or PLACEHOLDER_RE.search(line):
             continue
         cells = sdlc_md.table_cells(line)
-        if not cells or cells[0].lower() in ("issue", "id") or set(cells[0]) <= {"-", ":", " "}:
+        first = _known_issue_cell(cells, "id") if cells else ""
+        if not cells or first.lower() in ("issue", "id") or set(first) <= {"-", ":", " "}:
             continue
-        uid = sdlc_md.norm_id(ARTEFACT_ID_RE.search(cells[0]).group(1)) \
-            if ARTEFACT_ID_RE.search(cells[0]) else ""
-        ruling = (cells[1] if len(cells) > 1 else "").strip().lower()
-        who = (cells[2] if len(cells) > 2 else "").strip()
-        date = (cells[3] if len(cells) > 3 else "").strip()
+        hit = ARTEFACT_ID_RE.search(first)
+        uid = sdlc_md.norm_id(hit.group(1)) if hit else ""
+        ruling = _known_issue_cell(cells, "ruling").lower()
+        who = _known_issue_cell(cells, "ruled by")
+        date = _known_issue_cell(cells, "date")
         status, terminal, unreadable = None, False, False
         if root is not None and uid:
             status, unreadable, res_type = _artefact_status(root, uid)
@@ -345,6 +350,30 @@ def carried_issues(text: str, *, root=None) -> list[dict]:
                     "ok": not why, "why": why,
                     "status": status, "terminal": terminal, "unreadable": unreadable})
     return out
+
+
+def _known_issue_cell(cells: list[str], column: str) -> str:
+    """One carried row's cell, found by its column in `KNOWN_ISSUES_COLUMNS`, or "" when the
+    row is short."""
+    i = KNOWN_ISSUES_COLUMNS.index(column)
+    return cells[i].strip() if len(cells) > i else ""
+
+
+def known_issues_table() -> str:
+    """The empty `## Known issues carried` table: its header and separator, from
+    `KNOWN_ISSUES_COLUMNS`. Empty is an answer here - no carried issue was ruled on - so
+    `validate` asks nothing of it."""
+    return (f"| {' | '.join(KNOWN_ISSUES_COLUMNS)} |\n"
+            f"| {' | '.join('---' for _ in KNOWN_ISSUES_COLUMNS)} |")
+
+
+def fill_run_scaffold(text: str, run_id: str) -> str:
+    """The retro template's run slots filled: `{{run_id}}`, which is how a reader without
+    `--retro` finds the run's retro (`sprint._carried_rulings`), `-` for a retro made outside a
+    run; and `{{known_issues_table}}`, the table a stop-ship ruling is recorded in. Called by
+    `artifact._render_meta`, the one renderer of the template."""
+    return (text.replace("{{run_id}}", run_id or "-")
+            .replace("{{known_issues_table}}", known_issues_table()))
 
 
 def _artefact_status(root, uid: str) -> tuple[str | None, bool, str | None]:

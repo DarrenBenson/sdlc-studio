@@ -956,7 +956,10 @@ def _render_meta(type_: str, disp: str, title: str, today: str, f: dict | None =
             text = re.sub(r"^<!--.*?-->\n+", "", text, count=1, flags=re.DOTALL)
             text = text.replace("RETRO-{{retro_id}}", disp)
             text = text.replace("{{sprint_title}}", title).replace("{{date}}", today)
-            return text
+            # The run it belongs to and the empty carried table, through the module that reads
+            # them back, so the header a retro is born with is the one `carried_issues` parses.
+            import retro  # noqa: PLC0415 - deferred; only a retro render needs it
+            return retro.fill_run_scaffold(text, str(f.get("run_id") or ""))
     # A review records sign-offs, so its authorship of record must survive the scaffold path:
     # stamp Raised-by from the resolved --author and write the real name into the revision row
     # through the SAME writer _render uses, never a literal `{{author}}`.

@@ -5782,7 +5782,10 @@ def _retro_path(root, rid: str):
 def _prefill_retro(root, path, batch, state) -> None:
     """Fill the scaffolded retro's objective front-matter (Batch/Goal) from run state - the
     close already holds them, so the author never re-transcribes what the run recorded. The
-    narrative placeholders (Delivered, Lessons, ...) are left for the author to fill."""
+    Run line and the empty Known issues carried table are rendered with the scaffold
+    (`retro.fill_run_scaffold`, given the run id by `_scaffold_run_retro`). The narrative
+    placeholders (Keep, Stop, Try) are left for the author to fill."""
+    import retro  # noqa: PLC0415 - deferred, like the chain's other retro imports
     p = Path(path)
     text = p.read_text(encoding="utf-8")
     text = text.replace("{{batch}}", ", ".join(batch) or "-")
@@ -5790,7 +5793,6 @@ def _prefill_retro(root, path, batch, state) -> None:
     sdlc_md.atomic_write(p, text)
     # A run accepted over its standing appetite records the over-commitment in the retro, so a
     # later reader asking why it overran finds the trace. No-op for a within-appetite run.
-    import retro  # noqa: PLC0415 - deferred, like the chain's other retro imports
     retro.record_overage_in_retro(root, p)
 
 
@@ -5804,7 +5806,7 @@ def _scaffold_run_retro(root, state) -> dict:
     # Through the shared helper: a Sprint Goal is a sentence, and an H1 keeping its full stop
     # fails markdownlint MD026 and blocks the commit carrying this retro.
     title = sdlc_md.heading_title(state.get("sprint_goal") or state.get("run_id") or "sprint retro")
-    res = artifact.meta_new(root, "retro", title)
+    res = artifact.meta_new(root, "retro", title, {"run_id": str(state.get("run_id") or "")})
     _prefill_retro(root, res["path"], state.get("batch") or [], state)
     return res
 

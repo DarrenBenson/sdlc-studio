@@ -62,11 +62,13 @@ class ThreeLineRetroTests(unittest.TestCase):
 
     def test_the_retro_scaffold_is_keep_stop_try(self) -> None:
         """AC1. MUTANT: leave any of the old sections (Delivered, Lessons, Actions raised) in
-        the template - the scaffold then asks for more than three lines again."""
+        the template - the scaffold then asks for more than three lines again. The fourth
+        section, the Known issues carried table, asks for nothing: empty is an answer (BG0826)."""
         res = artifact.meta_new(self.root, "retro", "a sprint", {"date": "2026-09-23"})
         path = Path(res["path"])
         text = path.read_text(encoding="utf-8")
-        self.assertEqual(["Keep", "Stop", "Try"], list(retro.sections(text)))
+        self.assertEqual(["Keep", "Stop", "Try", retro.KNOWN_ISSUES_SECTION],
+                         list(retro.sections(text)))
         # Filling the three - and the batch the scaffold asks for - is all it takes.
         filled = (text.replace("{{batch}}", "US0001").replace("{{keep}}", "small units")
                   .replace("{{stop}}", "plan review").replace("{{try}}", "a round cap"))

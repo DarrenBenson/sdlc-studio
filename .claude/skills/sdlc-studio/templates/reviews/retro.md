@@ -9,11 +9,15 @@ when the close extracts it. Name its failure class so a repeat is counted, not r
 `[new: class name] Rule sentence. What to do differently.` records a new class, injected at
 plan, build and review (`[new: class name | build, review]` narrows it). The estimates,
 delivery against plan and known issues are on the sprint report; the retro does not repeat them.
-Related: reference-sprint.md, help/retro.md
+Known issues carried: one row per open finding the run carries, with its stop-ship ruling
+(stop-ship, not-stop-ship, accepted-risk or deferred), who ruled and when. Empty when nothing is
+carried. `sprint close` fills the Run line and the table's header.
+Related: reference-sprint.md, help/retro.md, help/sprint.md
 -->
 # RETRO-{{retro_id}}: {{sprint_title}}
 
 > **Date:** {{date}}
+> **Run:** {{run_id}}
 > **Batch:** {{batch}}
 
 ## Keep
@@ -27,3 +31,7 @@ Related: reference-sprint.md, help/retro.md
 ## Try
 
 - {{try}}
+
+## Known issues carried
+
+{{known_issues_table}}
