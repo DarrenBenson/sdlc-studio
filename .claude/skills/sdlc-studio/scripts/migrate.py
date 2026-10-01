@@ -579,14 +579,36 @@ def _sweep_inputs(root: Path) -> list[Path]:
 _STEP_ERRORS = (UnicodeDecodeError, OSError)
 
 
+def _undecodable_candidates(root: Path) -> list[str]:
+    """Repo-relative paths, among the files a sweep step may read, that cannot be read as UTF-8
+    text: `sdlc-studio/**/*.md` and `*.yaml` outside `.local/`, `sdlc-studio/.version`, and
+    `AGENTS.md`, `CLAUDE.md` and `.version` at the root. A diagnostic, run once after a step has
+    failed, so the item can name the file its error did not."""
+    sd = root / "sdlc-studio"
+    paths = [*sd.rglob("*.md"), *sd.rglob("*.yaml"), sd / ".version",
+             root / "AGENTS.md", root / "CLAUDE.md", root / ".version"]
+    out = []
+    for path in sorted({p for p in paths
+                        if p.is_file() and ".local" not in p.relative_to(root).parts}):
+        try:
+            path.read_text(encoding="utf-8")  # bare-read-ok: the scan IS the read
+        except (UnicodeDecodeError, OSError):
+            out.append(path.relative_to(root).as_posix())
+    return out
+
+
 class _Steps:
     """Runs the sweep's steps in order, each inside a guard against `_STEP_ERRORS`. A step that
     raises one is recorded as a `step-failed` needs-a-human item and its result is the default
-    given; `writing` turns False from then on, so under `--apply` no later step writes."""
+    given; `writing` turns False from then on, so under `--apply` no later step writes. A step
+    can fail part-way: what it wrote before the failure stays written, and is not rolled back
+    or listed. The item names the undecodable files a scan finds, since the error does not."""
 
-    def __init__(self, apply: bool) -> None:
+    def __init__(self, root: Path, apply: bool) -> None:
+        self.root = root
         self.apply = apply
         self.failed: list[dict] = []
+        self._files: list[str] | None = None
 
     @property
     def writing(self) -> bool:
@@ -597,12 +619,20 @@ class _Steps:
             return fn()
         except _STEP_ERRORS as exc:
             error = f"{type(exc).__name__}: {exc}"
+            if self._files is None:
+                self._files = _undecodable_candidates(self.root)
+            found = (f"the files that cannot be read are {', '.join(self._files)}"
+                     if self._files else
+                     "no unreadable file was found among the workspace's markdown, YAML and "
+                     "instructions files, so the step's error is all that is known")
+            wrote = ("; anything the step wrote before it stopped stays written (see "
+                     "`git status`), and no step after it wrote anything" if self.apply else "")
             self.failed.append({
-                "kind": "step-failed", "step": step, "error": error, "command": None,
-                "detail": f"the {step} step stopped on a file it reads ({error}) - check the "
-                          f"files the {step} step reads are readable UTF-8 text, then run "
-                          f"migrate again" + ("; nothing was written from this step on"
-                                              if self.apply else "")})
+                "kind": "step-failed", "step": step, "error": error, "files": list(self._files),
+                "command": None,
+                "detail": f"the {step} step stopped part-way on a file it reads ({error}); "
+                          f"{found} - re-save them as UTF-8 text or make them readable, then "
+                          f"run migrate again{wrote}"})
             return default
 
 
@@ -660,8 +690,8 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
     # `audit` is honest about BG0150 (an unreadable install version -> a `manual` item, not `auto`),
     # so `auto` is a faithful preview of what apply will write.
     # Each step runs inside `steps`' guard: one that meets a file it cannot read is named as a
-    # failed step rather than a traceback, and under --apply nothing is written from then on.
-    steps = _Steps(apply)
+    # failed step rather than a traceback, and under --apply no step after it writes.
+    steps = _Steps(root, apply)
 
     def conventions() -> dict:
         au = project_upgrade.audit(root)
@@ -700,8 +730,9 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
 
     # 5. aggregate into one report. Deterministic = the conventions auto-fixes, the retired tags
     # and keys removed, the sizing conversions and the run records; each item's `applied` is
-    # whether its step wrote (the mode, until a step failed), and the classification is identical
-    # either way.
+    # whether its step ran in write mode (the mode, until a step failed). A step that failed
+    # part-way lists no items at all, though it may have written before it stopped - its
+    # step-failed item says so. The classification is identical either way.
     deterministic: list[dict] = []
     for a in au["auto"]:
         deterministic.append({"source": "conventions", "kind": a["kind"],

@@ -264,6 +264,8 @@ class MigrateStepFailureIsNamedTests(unittest.TestCase):
                 self.assertTrue(failed, r.stdout)
                 self.assertIn("UnicodeDecodeError", failed[0]["error"])
                 self.assertIn(failed[0]["step"], failed[0]["detail"])
+                self.assertIn(rel, failed[0]["files"], failed[0])
+                self.assertIn(rel, failed[0]["detail"])
                 self.assertFalse((root / "sdlc-studio" / ".config.yaml").exists(),
                                  "--apply wrote after a step failed")
                 self.assertNotIn("Size", cr.read_text(encoding="utf-8"),
@@ -271,6 +273,31 @@ class MigrateStepFailureIsNamedTests(unittest.TestCase):
                 sized = [x for x in json.loads(r.stdout)["deterministic"]
                          if x.get("source") == "sizing"]
                 self.assertEqual([False], [x["applied"] for x in sized], sized)
+
+    def test_a_step_failing_after_it_wrote_says_so_and_names_the_file(self) -> None:
+        """Round 3's repro: the conventions step writes the config and moves one amigo card
+        before it reads the undecodable one. MUTANTS: (1) the detail claiming nothing was
+        written; (2) no scan after the failure - `files` empty and the card unnamed; (3) the
+        scan skipping `personas/` - the same."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _initialised(root)
+            (root / "sdlc-studio" / ".config.yaml").unlink()
+            amigos = root / "sdlc-studio" / "personas" / "amigos"
+            amigos.mkdir(parents=True)
+            (amigos / "a-eng.md").write_text("# Engineering\n\n> **Role:** engineering\n",
+                                             encoding="utf-8")
+            (amigos / "b-qa.md").write_bytes(b"# QA\n\xff\xfe\n")
+            r = _cli(root, "migrate.py", "--apply", "--format", "json")
+            self.assertNotIn("Traceback", r.stderr, r.stderr)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            item = next(h for h in json.loads(r.stdout)["needs_human"]
+                        if h.get("kind") == "step-failed")
+            wrote = (root / "sdlc-studio" / ".config.yaml").exists()
+        self.assertTrue(wrote, "premise: the step wrote the config before it failed")
+        self.assertEqual(["sdlc-studio/personas/amigos/b-qa.md"], item["files"])
+        self.assertNotIn("nothing was written", item["detail"])
+        self.assertIn("stays written", item["detail"])
 
     def test_a_corrupt_meta_file_does_not_stop_apply(self) -> None:
         """Round 2's MOVED finding: no step reads a review or retro file. MUTANT: the meta types
