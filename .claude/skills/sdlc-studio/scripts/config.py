@@ -163,7 +163,9 @@ def _project_override(repo_root: Path | str) -> dict:
 def cmd_show(args: argparse.Namespace) -> int:
     """Print the resolved config, or a single dotted key. Both paths take `_json_default`, so a
     date prints whether it is the key's value or nested under it. `--sources` prints one
-    `<source> <dotted key> = <value>` line per leaf instead, under `--key` when one is given."""
+    `<source> <dotted key> = <value>` line per leaf that config-defaults.yaml or the project's
+    .config.yaml declares, under `--key` when one is given. A default that lives only in its
+    reader's code is in neither file, so it is not listed."""
     if getattr(args, "sources", False):
         for dotted, val, source in _leaf_sources(load_config(args.root),
                                                  _project_override(args.root)):
@@ -184,8 +186,9 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("show", help="Print resolved config (or a single --key).")
     s.add_argument("--key", help="Dotted key, e.g. coverage.unit")
     s.add_argument("--sources", action="store_true",
-                   help="one line per key in force, marked `default` (the skill's "
-                        "config-defaults.yaml) or `project` (sdlc-studio/.config.yaml)")
+                   help="one line per key that config-defaults.yaml or the project's "
+                        ".config.yaml declares, marked `default` or `project`; a default that "
+                        "lives only in its reader's code is not listed")
     s.add_argument("--root", default=".", help="Repo root (default: .)")
     s.set_defaults(func=cmd_show)
     sdlc_md.add_global_root(parser)

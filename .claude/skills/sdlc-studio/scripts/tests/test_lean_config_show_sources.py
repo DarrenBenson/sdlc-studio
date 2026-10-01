@@ -4,9 +4,9 @@
 line per merged leaf naming where its value came from. Each test drives the shipped CLI as a
 subprocess against a throwaway project; nothing reads this repository's own `.config.yaml`.
 
-`review.max_rounds`, the example AC1 names, has no entry in `config-defaults.yaml` (critic.py
-owns its default, BG0831), so it is not a key in force there; the default-key case is pinned on
-`review.blocking_priority`, which the defaults file does set.
+A default that lives only in its reader's code (`review.max_rounds`, owned by critic.py) is in
+neither file and is not listed; AC1's default-key example is `review.blocking_priority`, which
+`config-defaults.yaml` declares.
 """
 from __future__ import annotations
 
@@ -66,6 +66,18 @@ class ConfigShowSourcesTests(unittest.TestCase):
         self.assertEqual("default", src["coverage.integration"][0])
         self.assertEqual("default", src["coverage.e2e"][0])
         self.assertEqual(["coverage.unit"], [k for k, (s, _) in src.items() if s == "project"])
+
+    def test_key_narrows_the_lines_to_that_key_or_section(self) -> None:
+        """`--key` under `--sources` keeps the key and the leaves below it, and nothing that
+        merely shares its spelling. MUTANT: drop the `--key` filter - every leaf prints.
+        MUTANT: match on a bare prefix - `--key cov` then prints the coverage section."""
+        section = _show(self.root, "--sources", "--key", "coverage")
+        self.assertEqual(0, section.returncode, section.stderr)
+        self.assertEqual({"coverage.unit", "coverage.integration", "coverage.e2e"},
+                         set(_sources(section.stdout)), section.stdout)
+        leaf = _show(self.root, "--sources", "--key", "coverage.unit")
+        self.assertEqual({"coverage.unit": ("project", "75")}, _sources(leaf.stdout))
+        self.assertEqual("", _show(self.root, "--sources", "--key", "cov").stdout)
 
     def test_plain_show_is_unchanged(self) -> None:
         """AC3. MUTANT: carry sources into the plain `show` output. Pinned to HEAD's own

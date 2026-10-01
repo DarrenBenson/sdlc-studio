@@ -33,7 +33,7 @@ exit=2
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a fixture project whose `sdlc-studio/.config.yaml` sets `coverage.unit: 75`, when `config.py show --sources --root <fixture>` runs, then it exits 0 and prints one line per leaf key naming the dotted key, its value and `project` for `coverage.unit` and `default` for a key the file does not set (e.g. `review.max_rounds`). Fails on: HEAD exits 2 `unrecognized arguments: --sources`
+- [ ] **AC1** Given a fixture project whose `sdlc-studio/.config.yaml` sets `coverage.unit: 75`, when `config.py show --sources --root <fixture>` runs, then it exits 0 and prints one line per leaf key naming the dotted key, its value and `project` for `coverage.unit` and `default` for a key `config-defaults.yaml` declares and the file does not set (e.g. `review.blocking_priority`). Fails on: HEAD exits 2 `unrecognized arguments: --sources`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_show_sources.py::ConfigShowSourcesTests::test_a_project_key_and_a_default_key_are_marked
 - [ ] **AC2** Given that fixture, which sets one leaf of the `coverage` section, when `config.py show --sources` runs, then only `coverage.unit` reads `project` and its sibling `coverage.integration` reads `default`. Fails on: marking a whole section `project` when any one of its leaves is set
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_show_sources.py::ConfigShowSourcesTests::test_a_sibling_of_an_overridden_leaf_stays_default
@@ -51,3 +51,4 @@ Derive the source per leaf by walking the parsed project file against the merged
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-01 | sdlc-studio | Retitled: was 'A command prints every configuration key in force with its value, its source and its meaning' |
 | 2026-10-01 | engineering seat (groomer) | Groomed under D0291 (backlog sweep 2026-10-01): criteria authored, premise executed at HEAD 85042135, Points and Affects set |
+| 2026-10-01 | engineering seat (builder) | AC1's default-key example amended from `review.max_rounds` (no `config-defaults.yaml` entry; critic.py owns its default) to `review.blocking_priority`, on the round-1 REJECT |
