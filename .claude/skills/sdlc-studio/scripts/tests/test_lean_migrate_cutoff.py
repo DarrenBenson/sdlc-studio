@@ -69,8 +69,62 @@ def _v41(root: Path, cutoff: str = "US0002", rows: str = "", extra: dict | None 
     reconcile.apply_type("story", root)
 
 
+#: A schema v3 Done story whose criterion is verified: conformant once an independent APPROVE
+#: is recorded and its index row exists.
+V3_STORY = "US-01M3VEK2"
+
+
+def _v3(root: Path, approved: bool) -> None:
+    """A fresh `init run` project (schema v3) holding one Done ULID story, its index reconciled,
+    and an independent APPROVE when `approved`."""
+    subprocess.run([sys.executable, str(_SCRIPTS / "init.py"), "--root", str(root), "run"],
+                   check=True, capture_output=True, text=True)
+    _w(root, f"stories/{V3_STORY}-s.md",
+       f"# {V3_STORY}: s\n\n> **Status:** Done\n> **Epic:** EP-01M3VEK0\n\n"
+       "## Acceptance Criteria\n\n- [x] **AC1** given x, when y, then z\n"
+       "  - **Verify:** shell true\n  - **Verified:** yes (2026-01-01)\n")
+    if approved:
+        _load("critic").record_verdict(root, V3_STORY, "APPROVE", reviewer="qa seat",
+                                       author="builder", issues="none")
+    import reconcile  # noqa: PLC0415
+    reconcile.apply_type("story", root)
+
+
 class MigrateCutoffTests(unittest.TestCase):
     KIND = "conformance-cutoff"
+
+    def test_a_ulid_only_conformance_failure_is_still_named(self) -> None:
+        """BG0858 AC1. MUTANTS: (1) HEAD's `id_number` filter - a ULID-only failure names
+        nothing; (2) propose the highest SEQUENTIAL id only - no line; (3) a line the lane does
+        not accept - the gate still fails after it is written."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _v3(root, approved=False)
+            lane = self._lane(root)
+            self.assertEqual("fail", lane["status"], "premise: the lane fails on the ULID story")
+            item = self._item(root)
+            self.assertEqual(f"conformance.adopt_after: {V3_STORY}", item["line"])
+            self.assertEqual(lane["count"], item["count"])
+            cfg = root / "sdlc-studio" / ".config.yaml"
+            cfg.write_text(cfg.read_text(encoding="utf-8") + "\nconformance:\n  adopt_after: "
+                           + V3_STORY + "\n", encoding="utf-8")
+            self.assertEqual("pass", self._lane(root)["status"],
+                             "the proposed cutoff did not clear the lane it was proposed for")
+
+    def test_a_repo_wide_only_failure_is_still_named(self) -> None:
+        """BG0858 AC2. MUTANT: HEAD's `if not failing: return []` - the lane fails on a missing
+        story index and migrate names nothing."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _v3(root, approved=True)
+            (root / "sdlc-studio" / "stories" / "_index.md").unlink()
+            lane = self._lane(root)
+            self.assertEqual("fail", lane["status"],
+                             "premise: the repo-wide failure fails the lane")
+            item = self._item(root)
+            self.assertEqual(lane["count"], item["count"])
+            self.assertIsNone(item.get("line"), item)
+            self.assertNotIn("adopt_after:", item["detail"], item["detail"])
 
     def _item(self, root: Path) -> dict:
         buf = io.StringIO()

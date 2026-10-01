@@ -299,10 +299,11 @@ def _conformance_cutoff(root: Path) -> list[dict]:
     fail, for a human: the cutoff is a judgement about the project's history, so it is named,
     never written. The lane itself decides which units fail, so a cutoff already covering them
     leaves nothing to name, and the one named (the highest failing id) is never below a failing
-    unit. Only a sequential id is proposed: a v3 id can be a cutoff, but it exempts by its
-    timestamp bucket and, within the cutoff's own bucket, only itself (`sdlc_md.cutoff_exempts`),
-    so the highest failing v3 id would not cover a same-bucket unit - that is left to the lane's
-    report.
+    unit. A failing v3 id is proposed as readily as a sequential one: the cutoff is then the
+    highest failing v3 id, which also exempts every sequential id, but a v3 cutoff exempts by its
+    timestamp bucket and, within its own bucket, only itself (`sdlc_md.cutoff_exempts`), so any
+    failing unit it still leaves judged is named. A lane failing only on a repo-wide condition
+    (a missing story index) is named with its count and fix and no line: no cutoff is the answer.
 
     The lane resolves a stamped pytest selector by running the project's `pytest --collect-only`,
     so the call runs with pytest's cache and Python's bytecode writes off, restored after: a
@@ -330,12 +331,26 @@ def _conformance_cutoff(root: Path) -> list[dict]:
     # The lane's own count, as the gate's conformance lane takes it: every non-conformant unit
     # plus each repo-wide failure, so an item's number is the one the gate then fails on.
     lane_count = result["summary"]["nonconformant"] + result["summary"].get("global_failures", 0)
-    failing = [u for u in units if not u["conformant"] and sdlc_md.id_number(u["id"]) is not None]
+    failing = [u for u in units if not u["conformant"]
+               and (sdlc_md.id_number(u["id"]) is not None or sdlc_md.is_v3_id(u["id"]))]
+    # Each repo-wide failure, with its fix: a cutoff is not what answers it.
+    repo_wide = "; ".join(f"REPO-WIDE {g['stage']}: {g['reason']} (fix: {g['remedy']})"
+                          for g in result.get("globals", []))
     if not failing:
-        return []
+        if not lane_count:
+            return []
+        return [{"kind": "conformance-cutoff", "lane": "conformance", "count": lane_count,
+                 "ids": [], "approve_no_author": [], "other": [], "line": None, "command": None,
+                 "detail": f"the conformance lane would fail on a repo-wide condition, not on any "
+                           f"unit, so no cutoff is proposed: "
+                           f"{repo_wide or 'see gate.py --only conformance'}"}]
     ids = [u["id"] for u in failing]
-    top = max(ids, key=sdlc_md.id_number)
+    v3 = [i for i in ids if sdlc_md.is_v3_id(i)]
+    top = (max(v3, key=lambda i: i.split("-", 1)[1].upper()) if v3
+           else max(ids, key=sdlc_md.id_number))
     line = f"conformance.adopt_after: {top}"
+    cut = sdlc_md.parse_cutoff(top, allow_ulid=True)
+    uncovered = [i for i in ids if not sdlc_md.cutoff_exempts(i, cut)]
     # Units whose ONLY unmet half is an APPROVE row that records no author (the ledger before its
     # Author column) are counted apart: recording the author answers them, a cutoff need not.
     # critic's own reader decides what the row says; the table is never re-parsed here.
@@ -375,6 +390,12 @@ def _conformance_cutoff(root: Path) -> list[dict]:
                    f"from {existing} to {top} (`{line}`) in sdlc-studio/.config.yaml, only once "
                    f"you have checked none of them is work the gate should still judge - every "
                    f"id at or below it is exempt")
+    if uncovered:
+        detail += (f". {top} is a v3 id, which exempts only itself within its own timestamp "
+                   f"bucket, so {_named(uncovered)} would still be judged after it")
+    if repo_wide:
+        detail += (f". The lane also fails on a repo-wide condition a cutoff does not answer: "
+                   f"{repo_wide}")
     return [{"kind": "conformance-cutoff", "lane": "conformance", "count": lane_count, "ids": ids,
              "approve_no_author": no_author, "other": [u["id"] for u in other], "line": line,
              "command": None, "detail": detail}]
