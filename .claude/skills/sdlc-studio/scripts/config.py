@@ -134,9 +134,43 @@ def _json_default(value):
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serialisable")
 
 
+def _leaf_sources(merged: dict, override: dict, prefix: str = ""):
+    """(dotted key, value, "project" | "default") for every LEAF of the merged config.
+
+    Judged per leaf, never per section: a project setting `coverage.unit` sets that leaf, and
+    its siblings still come from the defaults. A list or a scalar is a leaf, as `_deep_merge`
+    treats it - the project's value replaces the default's whole."""
+    for key, val in merged.items():
+        dotted = f"{prefix}{key}"
+        mine = override.get(key, _ABSENT) if isinstance(override, dict) else _ABSENT
+        if isinstance(val, dict) and val:
+            yield from _leaf_sources(val, mine if isinstance(mine, dict) else {}, dotted + ".")
+        else:
+            yield dotted, val, ("default" if mine is _ABSENT else "project")
+
+
+_ABSENT = object()
+
+
+def _project_override(repo_root: Path | str) -> dict:
+    """The project's own `.config.yaml`, parsed, or {} when it has none."""
+    path = Path(repo_root) / "sdlc-studio" / ".config.yaml"
+    if not path.exists():
+        return {}
+    return _yaml().safe_load(path.read_text(encoding="utf-8")) or {}
+
+
 def cmd_show(args: argparse.Namespace) -> int:
     """Print the resolved config, or a single dotted key. Both paths take `_json_default`, so a
-    date prints whether it is the key's value or nested under it."""
+    date prints whether it is the key's value or nested under it. `--sources` prints one
+    `<source> <dotted key> = <value>` line per leaf instead, under `--key` when one is given."""
+    if getattr(args, "sources", False):
+        for dotted, val, source in _leaf_sources(load_config(args.root),
+                                                 _project_override(args.root)):
+            if args.key and dotted != args.key and not dotted.startswith(args.key + "."):
+                continue
+            print(f"{source:<7} {dotted} = {json.dumps(val, default=_json_default)}")
+        return 0
     if args.key:
         print(json.dumps(get(args.root, args.key), default=_json_default))
     else:
@@ -149,6 +183,9 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("show", help="Print resolved config (or a single --key).")
     s.add_argument("--key", help="Dotted key, e.g. coverage.unit")
+    s.add_argument("--sources", action="store_true",
+                   help="one line per key in force, marked `default` (the skill's "
+                        "config-defaults.yaml) or `project` (sdlc-studio/.config.yaml)")
     s.add_argument("--root", default=".", help="Repo root (default: .)")
     s.set_defaults(func=cmd_show)
     sdlc_md.add_global_root(parser)

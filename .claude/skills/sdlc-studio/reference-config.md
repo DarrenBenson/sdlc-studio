@@ -92,6 +92,13 @@ Project-level configuration for customising SDLC Studio behaviour.
 
 Project config only needs to specify values that differ from defaults.
 
+`config.py show` prints the merged configuration as JSON. `config.py show --sources` prints
+one line per key in force instead, `<source> <dotted key> = <value>`, where the source is
+`project` for a leaf `.config.yaml` sets and `default` for one it does not; a project that sets
+`coverage.unit` leaves `coverage.integration` reading `default`. A key with no entry in
+`config-defaults.yaml` (such as `review.max_rounds`, whose default its reader owns) appears only
+when the project sets it. `--key` narrows the lines to that key or section.
+
 **PyYAML dependency (graceful):** parsing `.config.yaml` needs PyYAML (`pip install pyyaml`).
 Without it, the scripts do not crash: `config.get` degrades to the built-in default with a
 one-line stderr warning, so a stdlib-only machine runs on the defaults. A project that ships a
