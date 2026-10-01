@@ -28,11 +28,12 @@ import ast
 import json
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import sdlc_md  # noqa: E402
+from lib import retired_surface, sdlc_md  # noqa: E402
 import critic  # noqa: E402
 import project_upgrade  # noqa: E402
 import migrate_v3  # noqa: E402
@@ -217,24 +218,65 @@ def _retired_config(root: Path) -> tuple[list[dict], list[dict], dict[Path, str]
 
 
 def _retired_verbs() -> dict[str, str]:
-    """`<script>.py <verb>` -> why, from each script's own `RETIRED_VERBS` registry, read with
-    `ast` so no script is imported for it. A reason built from a name, not a literal, is left to
-    the verb's own refusal, which names what replaced it."""
-    out: dict[str, str] = {}
-    for script in sorted(Path(__file__).resolve().parent.glob("*.py")):
-        src = script.read_text(encoding="utf-8")
-        if "\nRETIRED_VERBS = {" not in src:
+    """`<script>.py <verb>` -> why, from each script's own `RETIRED_VERBS` registry - the shipped
+    scanner's reading, `retired_surface.retired_verbs`, so the two never disagree."""
+    return retired_surface.retired_verbs()
+
+
+#: Files the docs scan never reads: history names retired surface on purpose, and the agent
+#: instructions are read line by line by `_retired_mentions` above it.
+_DOCS_SKIPPED = {"CHANGELOG.md", "AGENTS.md", "CLAUDE.md"}
+
+
+def _project_docs(root: Path) -> list[Path]:
+    """The project's own markdown: the files git tracks when the project is a git work tree,
+    else every `.md` under it, less `sdlc-studio/`, any installed skill copy, hidden folders,
+    `node_modules` and `_DOCS_SKIPPED`."""
+    rels: list[str] = []
+    if (root / ".git").exists():
+        # Every `GIT_*` variable is dropped: a hook exports the ones that locate a repository,
+        # `git -C` does not override them, and git would then list that repository's files.
+        env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        try:
+            proc = subprocess.run(["git", "-C", str(root), "ls-files", "-z", "--", "*.md"],
+                                  capture_output=True, text=True, check=False, timeout=60, env=env)
+        except (OSError, subprocess.SubprocessError):
+            proc = None
+        if proc is not None and proc.returncode == 0:
+            rels = [r for r in proc.stdout.split("\0") if r]
+    if not rels:
+        rels = [p.relative_to(root).as_posix() for p in root.rglob("*.md")]
+    out = []
+    for rel in sorted(set(rels)):
+        parts = rel.split("/")
+        if (parts[0] == "sdlc-studio" or parts[-1] in _DOCS_SKIPPED and len(parts) == 1
+                or "node_modules" in parts or any(p.startswith(".") for p in parts[:-1])
+                or "/skills/sdlc-studio/" in f"/{rel}"):
             continue
-        for node in ast.parse(src).body:
-            if not (isinstance(node, ast.Assign) and isinstance(node.value, ast.Dict) and any(
-                    getattr(t, "id", "") == "RETIRED_VERBS" for t in node.targets)):
-                continue
-            for key, value in zip(node.value.keys, node.value.values):
-                try:
-                    why = ast.literal_eval(value)
-                except ValueError:
-                    why = f"running `{script.name} {key.value}` names what replaced it"
-                out[f"{script.name} {key.value}"] = why
+        out.append(root / rel)
+    return out
+
+
+def _retired_doc_mentions(root: Path) -> list[dict]:
+    """Each line of the project's own docs (`_project_docs`) naming a retired surface in a
+    clause that does not say it is retired, by the shipped scanner, one item per line naming
+    every surface on it. Reported for a person, never rewritten: the words are the project's."""
+    pats = retired_surface.surfaces()
+    out: list[dict] = []
+    for path in _project_docs(root):
+        text = sdlc_md.read_text_safe(path)
+        if not text:
+            continue
+        rel = path.relative_to(root).as_posix()
+        by_line: dict[int, list[str]] = {}
+        for n, label, _line in retired_surface.live_mentions(text, pats):
+            by_line.setdefault(n, []).append(label)
+        for n, labels in sorted(by_line.items()):
+            names = ", ".join(f"`{label}`" for label in labels)
+            out.append({"kind": "retired-surface", "file": rel, "line": n, "surface": labels,
+                        "detail": f"{rel}:{n} names the retired {names} - edit it by judgement "
+                                  f"(migrate never rewrites a project's own docs)",
+                        "command": None})
     return out
 
 
@@ -708,7 +750,7 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
     def retired() -> tuple:
         tags, tag_rewrites = _retired_tags(root)
         cfg_keys, cfg_human, cfg_rewrites = _retired_config(root)
-        mentions = _retired_mentions(root)   # read before the write, so its lines match a dry run
+        mentions = _retired_mentions(root) + _retired_doc_mentions(root)   # read before the write
         if steps.writing:
             for path, text in {**tag_rewrites, **cfg_rewrites}.items():
                 sdlc_md.atomic_write(path, text)
