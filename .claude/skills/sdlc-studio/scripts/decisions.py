@@ -656,7 +656,10 @@ ADD_STATUSES: tuple[str, ...] = ("accepted", "superseded", "revisited")
 
 def cmd_add(args: argparse.Namespace) -> int:
     try:
-        fields = resolve_prose(args, optional=("status", "supersedes"))
+        # Read by name, so the dead-flag audit sees each flag consumed.
+        fields = resolve_prose(argparse.Namespace(
+            fields_file=args.fields_file, decision=args.decision, rationale=args.rationale,
+            status=args.status, supersedes=args.supersedes), optional=("status", "supersedes"))
         status = fields.get("status", "accepted")
         if status not in ADD_STATUSES:
             raise ValueError(f"status {status!r} is not one of {', '.join(ADD_STATUSES)}")

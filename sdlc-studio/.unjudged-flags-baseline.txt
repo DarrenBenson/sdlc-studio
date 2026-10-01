@@ -5,8 +5,6 @@
 # The set may only SHRINK. Removing a line is one-way: the check judges that destination
 # from then on. Adding one requires deciding that the hole is legitimate, which is the
 # decision that was previously being made silently by an unrelated escape.
-.claude/skills/sdlc-studio/scripts/decisions.py:decision
-.claude/skills/sdlc-studio/scripts/decisions.py:rationale
 .claude/skills/sdlc-studio/scripts/ledger.py:decision
 .claude/skills/sdlc-studio/scripts/ledger.py:rationale
 .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py:format
