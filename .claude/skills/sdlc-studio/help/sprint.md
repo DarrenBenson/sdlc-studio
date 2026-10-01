@@ -79,7 +79,9 @@ The exception is the carried known issues. Whether an open defect stops the ship
 it is recorded in the retro's `## Known issues carried` table (`| id | ruling | ruled by | date |`,
 ruling one of `stop-ship`, `not-stop-ship`, `accepted-risk`, `deferred`) and read back here. An open
 finding with no row is reported UNRULED: "we carried it" and "nobody looked" must never read the
-same. A `stop-ship` ruling does not refuse the close or the seal - the signer decides - but it
+same. A lesson's graduation CR is ruled by its class code (`| LC-002 | not-stop-ship | ... |`): its
+own id is minted when the close files it, so no retro can name it ahead, and the row rules the CR
+the lesson store links to that class. An unruled graduation CR names its class. A `stop-ship` ruling does not refuse the close or the seal - the signer decides - but it
 cannot be missed: the report lists every STOP-SHIP known issue first, marked, and `sprint sign`
 prints each one before it seals.
 

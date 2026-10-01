@@ -1,6 +1,6 @@
 # BG0849: A close dry run mints a different graduation change request id each time, so a retro cannot rule it before the close
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_graduation_ruling.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/BG0849.md
@@ -32,8 +32,10 @@ Let a retro rule a graduation CR by its lesson class, through the link the lesso
 
 - [ ] **AC1** Given a schema 3 run whose close graduates LC-900 and whose retro's `## Known issues carried` table rules `LC-900` as not-stop-ship, when `sprint.py close --dry-run` and then `sprint.py close` run, then neither reports the graduation CR UNRULED, the known-issues row the close records counts it ruled, and the lesson store's LC-900 row names the CR the close filed. Fails on: HEAD, where the close reports `UNRULED CR01M3...` because the retro's row id matches nothing; on a fix that keeps ids stable only within one process, which the dry run's scratch copy never shares; and on a join that reads the CR's title for the class, which a CR retitled in grooming defeats (the test retitles it)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_graduation_ruling.py::GraduationRulingTests::test_a_retro_rules_the_graduation_cr_by_its_class
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given the same run with no row for LC-900, when `sprint.py close` runs, then the graduation CR is still reported UNRULED, and the row names both the CR's id and LC-900. Fails on: a fix that drops graduation CRs from the known issues, which hides a CR nobody ruled; and on HEAD's row, which names the id alone
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_graduation_ruling.py::GraduationRulingTests::test_an_unruled_graduation_cr_names_its_class
+  - **Verified:** yes (2026-10-01)
 
 ## Impact
 

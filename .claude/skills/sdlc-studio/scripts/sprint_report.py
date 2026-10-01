@@ -1868,7 +1868,12 @@ def _ck_known_issues(ctx: dict) -> tuple:
                 "the scan ran and this sprint left no finding open - a scan that could NOT "
                 "run reports unreadable above, so this row means what it says")
     if unruled or broken:
-        bits = [f"UNRULED {u}" for u in unruled] + broken
+        # A graduation CR is named with its lesson class, the stable name a retro rules it by:
+        # its own id is minted at the close, so the row is the first place a reader meets it.
+        classes = {cr: code for code, cr in retro.graduation_crs(ctx["root"]).items()}
+        bits = [f"UNRULED {u}" + (f" (the {classes[u]} graduation CR - rule it as {classes[u]} "
+                                  f"in the retro's carried table)" if u in classes else "")
+                for u in unruled] + broken
         return (UNANSWERED, f"{len(unruled)} unruled, {len(broken)} malformed row(s)",
                 "; ".join(bits[:12]) + " - an open finding nobody ruled on is not a carried "
                 "issue, it is one nobody looked at")

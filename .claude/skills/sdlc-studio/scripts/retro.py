@@ -327,6 +327,14 @@ def carried_issues(text: str, *, root=None) -> list[dict]:
             continue
         hit = ARTEFACT_ID_RE.search(first)
         uid = sdlc_md.norm_id(hit.group(1)) if hit else ""
+        # A lesson CLASS code rules the CR its graduation filed, through the store's own link:
+        # on a ULID project that CR's id is minted at filing, so no retro can name it ahead of
+        # the close, while the class code is stable. Not graduated yet, the row rules the code.
+        lesson = "" if hit else first.strip().upper()
+        if lesson and not lessons.CLASS_CODE_RE.match(lesson):
+            lesson = ""
+        if lesson:
+            uid = (graduation_crs(root).get(lesson) if root is not None else None) or lesson
         ruling = _known_issue_cell(cells, "ruling").lower()
         who = _known_issue_cell(cells, "ruled by")
         date = _known_issue_cell(cells, "date")
@@ -346,10 +354,24 @@ def carried_issues(text: str, *, root=None) -> list[dict]:
             # distinction this section exists for is between a judgement somebody made and one
             # nobody did. An anonymous row is the second wearing the first's clothes.
             why = "records no ruler, so nobody can be asked why"
-        out.append({"id": uid, "ruling": ruling, "by": who, "date": date,
+        out.append({"id": uid, "lesson_class": lesson, "ruling": ruling, "by": who, "date": date,
                     "ok": not why, "why": why,
                     "status": status, "terminal": terminal, "unreadable": unreadable})
     return out
+
+
+def graduation_crs(root) -> dict[str, str]:
+    """`{lesson class code: the CR its graduation filed}`, from the lesson store's own link
+    (`lessons.close_pass` writes `cr` on the class's row when it files the CR). Empty when the
+    store holds no such link, or cannot be read: an unread link rules nothing, so a graduation
+    CR stays UNRULED rather than passing as ruled."""
+    try:
+        rows = lessons.load_store(root)
+    except (OSError, ValueError) as exc:
+        sdlc_md.debug("retro.graduation_crs", exc)
+        return {}
+    return {str(r["id"]).upper(): sdlc_md.norm_id(str(r["cr"])) for r in rows
+            if isinstance(r, dict) and r.get("cr")}
 
 
 def _known_issue_cell(cells: list[str], column: str) -> str:
