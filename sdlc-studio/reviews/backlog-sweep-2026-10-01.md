@@ -45,7 +45,7 @@ what costs more than it returns. Every superseding commit below was checked on `
 | --- | --- | --- |
 | RFC0058 | Accepted | D3, D5 and D6 declined or closed (no consult gate or artefact); US0838 Won't Implement |
 | RFC0060 | Accepted | WS2 (US0866) Won't Implement and WS4 (CR0604) documented under D0290; WS1 superseded, WS3 shipped as `decisions.py rule` |
-| RFC0009 | Accepted | the non-vocabulary status "Accepted (partially superseded)" normalised |
+| RFC0009 | unchanged | its `Accepted (partially superseded)` status is deliberate and pinned by tools/tests/test_supersession_records.py; the tooling already reads it as Accepted. Normalising it was reverted |
 | RFC0030 | unchanged | already Accepted, terminal (D0027 "build on demand") |
 | EP0258 | Superseded | all six stories were Superseded; it read Done |
 | US0707, US0722, US0730, US0732, US0745, US0777, US0783 | Won't Implement | children of the requests closed above |

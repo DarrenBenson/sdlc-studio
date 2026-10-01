@@ -1,6 +1,6 @@
 # RFC-0009: Code-complexity signals for estimation, token budgeting, refactor-first and test risk
 
-> **Status:** Accepted
+> **Status:** Accepted (partially superseded)
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-20
