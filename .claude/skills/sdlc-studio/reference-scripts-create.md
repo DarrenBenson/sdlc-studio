@@ -260,7 +260,9 @@ clarification); `refine add` (a later slice) does NOT re-run it - the request's 
 once. `refine add --request <id> --epic-title "..." --story ...` appends a FURTHER epic to an ALREADY-
 decomposed request - for a large request delivered in slices, one epic per sprint; the append is
 de-duped and order-preserving so an earlier slice is never lost (`apply` mints the first epic, `add`
-each later one).
+each later one). `refine add --request <id> --into EPxxxx --story ...` adds stories to an existing open
+epic instead, usually one the request is already decomposed into: each story takes `Epic:` and
+`Delivers:` as under `apply --into`, no epic is minted, and the epic is listed once.
 
 ### `triage.py`
 

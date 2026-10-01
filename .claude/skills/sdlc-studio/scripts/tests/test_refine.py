@@ -769,9 +769,10 @@ class BreakdownFileTests(unittest.TestCase):
                            for p in (root / "sdlc-studio" / "epics").glob("EP*.md"))
             self.assertTrue(any("Second slice" in e for e in epics))
 
-    def test_add_refuses_a_breakdown_that_names_an_into_target(self) -> None:
-        # `add` mints a further epic and has no --into; a file carrying one describes a
-        # different command, so it is refused rather than quietly ignored.
+    def test_add_takes_an_into_target_from_a_breakdown(self) -> None:
+        # BG0868: `add` accepts `--into`, so a breakdown file's `into` is honoured the same way:
+        # the story lands in that existing epic and no further epic is minted. MUTANT: drop the
+        # file's `into` on the `add` path - a breakdown with no `epic-title` is then refused.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _cr(root, "CR0001", ["the request is satisfied"])
@@ -780,9 +781,9 @@ class BreakdownFileTests(unittest.TestCase):
                 {"into": "EP0001", "stories": [{"title": "B", "points": 3}]}))
             rc, msg = self._cli(["add", "--request", "CR0001", "--root", str(root),
                                  "--breakdown", str(bd)])
-            self.assertEqual(rc, 2)
-            self.assertIn("no `into` target", msg)
-            self.assertEqual([t for t, _, _ in self._units(root)], ["A"])
+            self.assertEqual(rc, 0, msg)
+            self.assertEqual([t for t, _, _ in self._units(root)], ["A", "B"])
+            self.assertEqual(1, len(list((root / "sdlc-studio" / "epics").glob("EP*.md"))))
 
     def test_a_missing_or_unreadable_breakdown_is_named(self) -> None:
         with tempfile.TemporaryDirectory() as d:

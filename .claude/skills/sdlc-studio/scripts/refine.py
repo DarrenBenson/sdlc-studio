@@ -826,15 +826,18 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
             "dry_run": False, "seeded_notes": seeded_notes}
 
 
-def refine_add(repo_root: Path | str, request_id: str, epic_title: str,
-               stories: list[tuple[str, int, str | None]], dry_run: bool = False) -> dict:
-    """Append a FURTHER epic + stories to an ALREADY-decomposed request.
+def refine_add(repo_root: Path | str, request_id: str, epic_title: str | None,
+               stories: list[tuple[str, int, str | None]], dry_run: bool = False,
+               into_epic: str | None = None) -> dict:
+    """Append a FURTHER epic + stories to an ALREADY-decomposed request, or, with `into_epic`,
+    add the stories to an existing open epic (usually one the request is already decomposed into).
 
     The inverse precondition of `refine` (apply): a request delivered in slices - one epic per
     sprint - grows its Decomposed-into over several refines, so `add` requires the request to be
-    decomposed already and APPENDS (never clobbers) the new epic to its existing children. Shares
-    apply's up-front validation and atomic mint (`_decompose`), so a bad breakdown or a mid-create
-    failure mints nothing. Does NOT re-move the request status - it is already working."""
+    decomposed already and APPENDS (never clobbers) the epic to its existing children, de-duped,
+    so adding into an epic it already names lists it once. Shares apply's up-front validation and
+    atomic mint (`_decompose` / `_decompose_into`), so a bad breakdown, a bad `--into` target or a
+    mid-create failure mints nothing. Does NOT re-move the request status - it is already working."""
     root = Path(repo_root)
     hit = sdlc_md.find_by_id(root, request_id)
     if not hit:
@@ -848,10 +851,17 @@ def refine_add(repo_root: Path | str, request_id: str, epic_title: str,
                          f"epic; `refine add` appends a further one to an already-decomposed request.")
     if not stories:
         raise ValueError("refine add needs at least one --story.")
-    if not epic_title:
+    if into_epic and epic_title:
+        raise ValueError("refine add takes EITHER --epic-title (mint a further epic) OR --into "
+                         "EPxxxx (add to an existing epic), not both")
+    if into_epic:
+        _validate_into_target(root, into_epic)   # refuse a bad target BEFORE anything is minted
+    elif not epic_title:
         raise ValueError("refine add needs an epic title - `--epic-title` or an `epic-title` "
-                         "key in the `--breakdown` file.")
-    sdlc_md.require_single_line("epic title", epic_title)
+                         "key in the `--breakdown` file - or an existing epic to add to with "
+                         "`--into EPxxxx`.")
+    else:
+        sdlc_md.require_single_line("epic title", epic_title)
     for title, _, _ in stories:
         sdlc_md.require_single_line("story title", title)
     # Same Affects-at-refine rule as `apply` (US0410): resolve each added story's Affects against
@@ -866,14 +876,19 @@ def refine_add(repo_root: Path | str, request_id: str, epic_title: str,
     rid = sdlc_md.extract_record_id(rpath.stem) or request_id
     total = sum(p for _, p, _ in stories)
     if dry_run:
-        return {"request": rid, "epic": "(dry-run)", "epic_size": _tshirt_for(total),
+        return {"request": rid, "epic": into_epic or "(dry-run)", "epic_size": _tshirt_for(total),
                 "stories": [t for t, _, _ in stories], "points": total,
                 "existing_epics": existing, "dry_run": True, "seeded_notes": seeded_notes}
-    epic_id, story_ids = _decompose(root, rid, rpath, epic_title, stories, total,
-                                    existing_children=existing)
+    if into_epic:
+        epic_id, story_ids = _decompose_into(root, rid, rpath, into_epic, stories, total,
+                                             existing_children=existing)
+    else:
+        epic_id, story_ids = _decompose(root, rid, rpath, epic_title, stories, total,
+                                        existing_children=existing)
     return {"request": rid, "epic": epic_id, "epic_size": _tshirt_for(total),
             "stories": story_ids, "points": total, "existing_epics": existing,
-            "all_epics": [*existing, epic_id], "dry_run": False,
+            "all_epics": sdlc_md.decomposed_ids(rpath.read_text(encoding="utf-8")),
+            "dry_run": False,
             "seeded_notes": seeded_notes}
 
 
@@ -1166,12 +1181,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
 def cmd_add(args: argparse.Namespace) -> int:
     try:
         stories, epic_title, into_epic = breakdown_inputs(args)
-        if into_epic:
-            # `add` APPENDS a further epic; it has no --into, so a breakdown carrying one is
-            # describing a different command. Refused rather than silently ignored.
-            raise ValueError("`refine add` mints a further epic and takes no `into` target - "
-                             "use `refine apply --into` to decompose into an existing epic")
-        result = refine_add(args.root, args.request, epic_title, stories, dry_run=args.dry_run)
+        result = refine_add(args.root, args.request, epic_title, stories, dry_run=args.dry_run,
+                            into_epic=into_epic)
     except (ValueError, FileNotFoundError) as exc:
         print(f"refine add refused: {exc}", file=sys.stderr)
         return 2
@@ -1232,6 +1243,11 @@ def build_parser() -> argparse.ArgumentParser:
     ad.add_argument("--epic-title", dest="epic_title",
                     help="title for the new epic to append (or an `epic-title` key in the "
                          "--breakdown file)")
+    ad.add_argument("--into", dest="into_epic", metavar="EPxxxx",
+                    help="add the stories to this existing OPEN epic (usually one the request is "
+                         "already decomposed into) instead of minting a further one; each story "
+                         "takes `Epic:` and `Delivers:` as under `apply --into`. A terminal, "
+                         "non-epic, or unknown target is refused with nothing minted")
     ad.add_argument("--story", action="append", metavar="TITLE|POINTS[|AFFECTS]",
                     help="a story in the new epic: 'title|points' or 'title|points|affects'. "
                          "Affects may be a path list, `inherit`, or `inherit:paths`; a story left "
@@ -1239,7 +1255,7 @@ def build_parser() -> argparse.ArgumentParser:
                          "Repeatable; points on the Fibonacci scale.")
     ad.add_argument("--breakdown", metavar="FILE",
                     help="read the whole breakdown from a JSON or YAML file instead of repeated "
-                         "--story flags (same shape as `apply`, without `into`); validated "
+                         "--story flags (same shape as `apply`); validated "
                          "whole before anything is minted. Not combinable with --story")
     ad.add_argument("--dry-run", action="store_true", help="validate and report; mint nothing")
     ad.add_argument("--root", default=".")
