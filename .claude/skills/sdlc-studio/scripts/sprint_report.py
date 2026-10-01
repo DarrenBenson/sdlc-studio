@@ -1707,6 +1707,9 @@ def _ck_review_attribution(ctx: dict) -> tuple:
     # Approved, rejected and never opened are three different facts, so the unreviewed bucket
     # is split below by whether a verdict exists.
     states = critic.coverage_counts(ctx["root"], units)
+    # A seat-less reviewer is an omission only where the project declares seats: with none
+    # declared there is no seat to stand in, so the row names the reviewer and claims nothing.
+    seats_declared = bool(critic._declared_reviewers(ctx["root"]))  # noqa: SLF001
     covered, rejected, uncovered, reviewers = [], [], [], set()
     # UNCOVERED comes from the shared reading, not from a second walk of the verdict ledger.
     # This row and the closing-review row above were each deciding the same question their own
@@ -1733,7 +1736,8 @@ def _ck_review_attribution(ctx: dict) -> tuple:
         who = (v.get("reviewer") or "").strip()
         reviewers.add(who)
         seat = critic.seat_for(ctx["root"], who) if who else None
-        label = f"{uid} by {who or 'unnamed'} ({seat or 'NO DECLARED SEAT'})"
+        label = f"{uid} by {who or 'unnamed'}" + (f" ({seat or 'NO DECLARED SEAT'})"
+                                                  if seats_declared else "")
         (covered if str(v.get("verdict") or "").strip().upper() == "APPROVE"
          else rejected).append(label)
     # The reviewers of the batch as a whole count too: a full-diff pass covers every unit at
