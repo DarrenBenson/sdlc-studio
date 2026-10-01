@@ -27,8 +27,10 @@ Each scenario runs as **setup**, **worker**, **grader**, **record**:
    in the fixture directory with the candidate skill installed. Send the
    printed prompt verbatim. Save the full transcript. Run it with the
    command `setup` prints, `CLAUDE_CONFIG_DIR=<dir>.claude-config
-   SDLC_STUDIO_TRANSCRIPTS=<dir>.claude-config/projects claude -p ...` (the
-   second variable points the token meter at the worker's transcripts):
+   SDLC_STUDIO_TRANSCRIPTS=<dir>.claude-config/projects/<slug> claude -p ...`,
+   where `<slug>` is the fixture's path with every character outside
+   `[A-Za-z0-9]` turned into `-`, the folder the worker's transcripts land in
+   (the second variable points the token meter at them):
    under `claude -p` a personal `~/.claude/skills/sdlc-studio` is not
    outranked by a project copy, so without it the worker can load your
    installed skill instead of the candidate. `setup` copies this working

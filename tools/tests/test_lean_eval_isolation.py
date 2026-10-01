@@ -14,6 +14,8 @@ import importlib.util
 import io
 import json
 import os
+import shlex
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -23,6 +25,8 @@ REPO = Path(__file__).resolve().parents[2]
 _spec = importlib.util.spec_from_file_location("eval_run_bg0839", REPO / "tools" / "eval_run.py")
 eval_run = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(eval_run)
+sys.path.insert(0, str(REPO / ".claude" / "skills" / "sdlc-studio" / "scripts"))
+from lib import run_state  # noqa: E402
 
 _SCENARIO = {"id": "99-isolation", "setup": "prose", "prompt": "Run the thing; say 'done'.",
              "fixture": {"files": {"README.md": "# fixture\n", "sdlc-studio/.config.yaml": "a: 1\n"}},
@@ -85,8 +89,42 @@ class EvalIsolationTests(unittest.TestCase):
         lines = out.getvalue().splitlines()
         self.assertTrue(any(ln.startswith(f"CLAUDE_CONFIG_DIR={config} ") for ln in lines),
                         out.getvalue())
-        self.assertTrue(any(f"SDLC_STUDIO_TRANSCRIPTS={config / 'projects'} " in ln
-                            for ln in lines), "the token meter is not pointed at the worker")
+
+    def test_the_meter_is_pointed_at_the_worker_transcripts(self) -> None:
+        """Round-2 repro. The worker writes `<config>/projects/<slug>/*.jsonl`, the slug being
+        the fixture's path with every character outside [A-Za-z0-9] turned into `-` (spelled out
+        here, not read from the code under test). MUTANT: print `<config>/projects` - the meter
+        globs `*.jsonl` directly in it and finds nothing."""
+        self._fake_skill()
+        scratch = self.root / "fx_1.v2"
+        rc, out, err = self._setup(str(scratch))
+        self.assertEqual(0, rc, err)
+        command = next(ln for ln in out.splitlines() if ln.startswith("CLAUDE_CONFIG_DIR="))
+        env = dict(tok.split("=", 1) for tok in shlex.split(command) if "=" in tok
+                   and tok.split("=", 1)[0].isupper())
+        slug = str(scratch.resolve())
+        for ch in "/._":
+            slug = slug.replace(ch, "-")
+        worker = Path(f"{scratch.resolve()}.claude-config") / "projects" / slug
+        worker.mkdir(parents=True)
+        (worker / "s.jsonl").write_text(
+            json.dumps({"message": {"usage": {"input_tokens": 9}}}) + "\n", encoding="utf-8")
+        with mock.patch.dict(os.environ,
+                             {"SDLC_STUDIO_TRANSCRIPTS": env["SDLC_STUDIO_TRANSCRIPTS"]}):
+            got = run_state.session_tokens(scratch)
+        self.assertEqual(9, got.get("tokens"), got)
+
+    def test_a_dir_whose_parent_is_not_made_yet_is_built(self) -> None:
+        """Round-2 repro: scenario 09's `--dir /tmp/evals-v6/09-lean-sprint` on a host with no
+        `/tmp/evals-v6`. MUTANT: check the config's own parent for write access - a path that
+        does not exist is not writable, so the documented command is refused."""
+        self._fake_skill()
+        scratch = self.root / "not-yet" / "09-lean-sprint"
+        rc, out, err = self._setup(str(scratch))
+        self.assertEqual(0, rc, out + err)
+        self.assertTrue((self.root / "not-yet" / "09-lean-sprint.claude-config" / "skills" /
+                         "sdlc-studio" / "SKILL.md").is_file())
+        self.assertEqual(sorted(_SCENARIO["fixture"]["files"]), self._fixture_files(scratch))
 
     def test_a_relative_dot_dir_puts_the_config_beside_the_fixture(self) -> None:
         """Round-1 repro. MUTANT: build the config from the unresolved `--dir` - `.` names
@@ -135,6 +173,21 @@ class EvalIsolationTests(unittest.TestCase):
         self.assertIn("symlink", err)
         self.assertEqual("mine\n", (kept / "SKILL.md").read_text(encoding="utf-8"))
         self.assertFalse((self.root / "fx").exists())
+
+    def test_a_symlinked_skills_folder_is_never_rebuilt_through(self) -> None:
+        """The refusal covers every level, not only the leaf. MUTANT: check the skill folder
+        alone - a link at `skills/` passes and the rebuild deletes the kept copy through it."""
+        self._fake_skill()
+        kept = self.root / "home" / ".claude" / "skills"
+        (kept / "sdlc-studio").mkdir(parents=True)
+        (kept / "sdlc-studio" / "SKILL.md").write_text("mine\n", encoding="utf-8")
+        config = self.root / "fx.claude-config"
+        config.mkdir()
+        (config / "skills").symlink_to(kept, target_is_directory=True)
+        rc, out, err = self._setup(str(self.root / "fx"))
+        self.assertEqual(2, rc, out + err)
+        self.assertIn(f"{config / 'skills'} is a symlink", err)
+        self.assertEqual("mine\n", (kept / "sdlc-studio" / "SKILL.md").read_text(encoding="utf-8"))
 
     def test_the_rebuild_is_fresh_filtered_and_credential_free(self) -> None:
         """MUTANTS: copy over the old folder (a stale file survives); drop the ignore list

@@ -43,6 +43,8 @@ SCENARIOS = REPO / "evals" / "scenarios"
 RESULTS = REPO / "evals" / ".results"
 #: The candidate skill: this working tree's copy, not whatever is installed.
 SKILL_SRC = REPO / ".claude" / "skills" / "sdlc-studio"
+sys.path.insert(0, str(SKILL_SRC / "scripts"))
+from lib import run_state  # noqa: E402 - the meter's own folder rule, never a copy of it
 
 
 def config_dir(dest: Path) -> Path:
@@ -57,8 +59,13 @@ def config_problem(config: Path) -> str | None:
     `--dir /tmp/` names `/tmp.claude-config`), and a symlink anywhere from `config` down to the
     skill folder, which the fresh rebuild would otherwise delete through - possibly an operator's
     own `~/.claude/skills/sdlc-studio`."""
-    if not os.access(config.parent, os.W_OK):
-        return (f"cannot create {config}: {config.parent} is not writable - pass a --dir "
+    # The nearest EXISTING ancestor decides: a --dir whose parent is not made yet (scenario
+    # 09's /tmp/evals-v6/09-lean-sprint) is created beneath it, as the fixture is.
+    anchor = config.parent
+    while not anchor.exists() and anchor != anchor.parent:
+        anchor = anchor.parent
+    if not os.access(anchor, os.W_OK):
+        return (f"cannot create {config}: {anchor} is not writable - pass a --dir "
                 f"below a writable directory")
     for p in (config, config / "skills", config / "skills" / "sdlc-studio"):
         if p.is_symlink():
@@ -145,10 +152,12 @@ def cmd_setup(args: argparse.Namespace) -> int:
     print(sc["prompt"])
     print(f"\n--- WORKER COMMAND (run in {dest}; copy ~/.claude/.credentials.json into "
           f"{config}, mode 600, and delete it after the run) ---")
-    # The worker's transcripts land under the config dir's projects/, so the token meter is
-    # pointed there too, or it reads the operator's own sessions instead of the worker's.
+    # The worker's transcripts land in <config>/projects/<the fixture's folder name>, by the
+    # harness's own naming rule, which the meter reads `*.jsonl` from directly - so the
+    # variable names that folder, built by the meter's own rule.
+    transcripts = config / "projects" / run_state.harness_project_slug(dest)
     print(f"CLAUDE_CONFIG_DIR={shlex.quote(str(config))} "
-          f"SDLC_STUDIO_TRANSCRIPTS={shlex.quote(str(config / 'projects'))} "
+          f"SDLC_STUDIO_TRANSCRIPTS={shlex.quote(str(transcripts))} "
           f"claude -p {shlex.quote(sc['prompt'])}")
     print("\n--- GRADE AGAINST (behaviour: severity) ---")
     for eb in sc.get("expected_behaviours", []):
