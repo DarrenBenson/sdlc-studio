@@ -11738,15 +11738,24 @@ HOOK_PATHS = (".githooks/pre-commit", ".githooks/commit-msg",
               ".git/hooks/pre-commit", ".git/hooks/commit-msg")
 
 def _hook_installed(root) -> bool:
-    """Whether any commit hook FILE exists: at a `HOOK_PATHS` location, or as `pre-commit` or
-    `commit-msg` under the directory `git config core.hooksPath` names (husky's layout). Whether
-    it can be read is a separate question - this asks only whether one would run."""
+    """Whether a commit hook FILE exists that git would run, or that the repository tracks: a
+    `pre-commit` or `commit-msg` in the hooks directory git itself resolves for `root`
+    (`git rev-parse --git-path hooks`, which applies `core.hooksPath` - husky's layout - expands
+    a `~` in it, and finds a linked worktree's hooks in the common directory), or at a
+    `HOOK_PATHS` location (the tracked `.githooks/`, and `.git/hooks` when git cannot be asked).
+    Whether it can be read is a separate question - this asks only whether one exists.
+
+    The repository-locating `GIT_*` variables a hook exports are dropped, so git answers for
+    `root` rather than for the repository whose hook is running."""
     root = Path(root)
     if any((root / rel).is_file() for rel in HOOK_PATHS):
         return True
+    env = {k: v for k, v in os.environ.items()
+           if k not in ("GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE",
+                        "GIT_PREFIX", "GIT_OBJECT_DIRECTORY")}
     try:
-        r = subprocess.run(["git", "config", "--get", "core.hooksPath"], cwd=str(root),
-                           capture_output=True, text=True, timeout=10)  # nosec B603 B607
+        r = subprocess.run(["git", "-C", str(root), "rev-parse", "--git-path", "hooks"],
+                           capture_output=True, text=True, timeout=10, env=env)  # nosec B603 B607
     except (OSError, subprocess.SubprocessError):
         return False
     hooks = r.stdout.strip() if r.returncode == 0 else ""

@@ -8,11 +8,13 @@ for. Every case runs the shipped CLI in a temporary project.
 """
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 _SCRIPTS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -130,6 +132,57 @@ class FreshPlanQuietTests(unittest.TestCase):
                     hook.parent.mkdir()
                     hook.write_bytes(b"#!/bin/sh\n\xff\xfe pytest\n")
                 self.assertIn("execution policy DIVERGES", _plan(root))
+
+    def test_a_hook_git_resolves_elsewhere_still_diverges(self) -> None:
+        """US0971 round 2. The hooks directory is the one git resolves, not a fixed path.
+        MUTANTS: read `core.hooksPath` as a plain string and the hook paths relative to the root
+        - (a) in a linked worktree, where `.git` is a file and the hooks live in the common
+        dir, and (b) under `core.hooksPath = ~`, which git expands, the hook goes silent."""
+        with tempfile.TemporaryDirectory() as d:
+            main = _project(Path(d) / "main")
+            gitutil.git(["add", "-A"], main)
+            gitutil.git(["commit", "-qm", "base"], main)
+            hook = main / ".git" / "hooks" / "pre-commit"     # after the commit it would run on
+            hook.write_text("#!/bin/sh\npytest\n", encoding="utf-8")
+            hook.chmod(0o755)
+            gitutil.git(["worktree", "add", "-q", str(Path(d) / "wt")], main)
+            wt = Path(d) / "wt"
+            self.assertTrue((wt / ".git").is_file(), "the fixture is not a linked worktree")
+            self.assertIn("execution policy DIVERGES", _plan(wt))
+        with tempfile.TemporaryDirectory() as d:
+            root = _project(Path(d) / "p")
+            home = Path(d) / "home"
+            home.mkdir()
+            (home / "pre-commit").write_text("#!/bin/sh\npytest\n", encoding="utf-8")
+            gitutil.git(["config", "core.hooksPath", "~"], root)
+            # a `commit-msg` alone is a hook too. MUTANT: look for `pre-commit` only.
+            for name in ("pre-commit", "commit-msg"):
+                if name == "commit-msg":
+                    (home / "pre-commit").rename(home / "commit-msg")
+                r = subprocess.run(
+                    [sys.executable, str(SPRINT), "plan", "--stories", "Ready", "--no-fetch",
+                     "--root", str(root)], cwd=root, env=gitutil.git_env(HOME=str(home)),
+                    capture_output=True, text=True, timeout=300)
+                self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+                self.assertIn("execution policy DIVERGES", r.stdout + r.stderr, name)
+        # the negative control: a plain project with no hook anywhere stays quiet
+        with tempfile.TemporaryDirectory() as d:
+            self.assertNotIn("execution policy DIVERGES", _plan(_project(Path(d))))
+
+    def test_a_hooks_git_dir_does_not_answer_for_the_root(self) -> None:
+        """Run from inside another repository's hook, `GIT_DIR` names that repository; git must
+        still answer for `root`. MUTANT: pass the environment through - the other repository's
+        hook is read as this project's."""
+        import loader  # noqa: PLC0415 - the module under test, in process for the env patch
+        sprint = loader.load_script("sprint")
+        with tempfile.TemporaryDirectory() as d:
+            other = _project(Path(d) / "other")
+            hook = other / ".git" / "hooks" / "pre-commit"
+            hook.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            root = _project(Path(d) / "root")
+            with mock.patch.dict(os.environ, {"GIT_DIR": str(other / ".git")}):
+                self.assertFalse(sprint._hook_installed(root))
+            self.assertTrue(sprint._hook_installed(other))
 
     def test_the_requesting_seats_fresh_objection_stays_visible(self) -> None:
         """US0971 round 1. Only a CARRIED verdict is discharged. MUTANT: `discharged` ignoring
