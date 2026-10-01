@@ -375,7 +375,7 @@ def _criteria_body(type_: str, f: dict) -> str:
     if type_ == "bug":
         return file_finding.criteria_block(
             "bug", {"acs": acs, "verify": _verifiers_of(f)}) + "\n" if acs else ""
-    return "".join(f"- [ ] {a}\n" for a in acs)
+    return file_finding.checklist_block(acs, _verifiers_of(f)) + "\n" if acs else ""
 
 
 #: The User Story block's three lines and the field each is written from.
@@ -541,9 +541,7 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
                 _text(f, "summary", "{{what this epic groups}}") +
                 "\n\n## Story Breakdown\n\n_No stories yet._\n" + ac_body + rev)
     if type_ == "cr":
-        acs = _list(f, "acs")
-        ac_body = ("".join(f"- [ ] {a}\n" for a in acs) if acs
-                   else file_finding.NO_CR_CRITERIA + "\n")
+        ac_body = _criteria_body("cr", f) or file_finding.NO_CR_CRITERIA + "\n"
         return (head + f"> **Priority:** {f.get('priority', 'Medium')}\n"
                 f"> **Type:** {f.get('ctype', 'Feature')}\n" + _sizing_line("cr", f) + "\n"
                 "## Summary\n\n" + _text(f, "summary", "{{what changes and why}}") +
@@ -1068,6 +1066,9 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
                              f"a child is never minted against a missing parent")
         _parent_path = _found[0]
         _parent = sdlc_md.norm_id(_parent)
+    # A criterion object is read as its text and verifier, by the filer's own rule, before
+    # anything is allocated or written.
+    f = file_finding.criteria_objects(f)
     # Refuse a field that would break out of its metadata line, index cell or bullet BEFORE
     # anything is allocated or written - a half-created artefact carrying injected lines is
     # worse than no artefact. One guard, every field, at the top of the one create path.
@@ -1540,6 +1541,11 @@ def cmd_new(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     f = {**from_file, **f}                   # an explicit flag wins over the document
+    try:
+        file_finding.check_verify_pairing(f)  # every verifier typed pairs with a criterion
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     # `--template` carries an argparse default, so it is always present and would otherwise
     # override a template named in the document; the document wins unless the flag was typed.
     if args.template == MINIMAL and "template" in from_file:

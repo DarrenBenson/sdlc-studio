@@ -496,6 +496,8 @@ def _classify_selector(verify_ac, root: Path, expr: str) -> tuple[bool, str]:
             # is scoped to the named class, so a class the file does not collect - the
             # not-yet-written test - has no candidates and files.
             hint = verify_ac.selector_near_miss(expr, cwd=root)
+            if hint and _extends_a_sibling(verify_ac, root, node_target, _file):
+                return (False, "")
             return (True, hint) if hint else (False, "")
         if (root / target).exists():
             return (False, f"{target} exists but will not collect here")
@@ -518,6 +520,19 @@ def _classify_selector(verify_ac, root: Path, expr: str) -> tuple[bool, str]:
         # correct refusal - and hid a NameError through a whole test run.
         sdlc_md.debug("file_finding.classify_selector", exc)
         return (True, "")
+
+
+def _extends_a_sibling(verify_ac, root: Path, node_target: str, test_file: str) -> bool:
+    """Whether a node the file does not collect is a NEW test named by extending a method of
+    the same class (`test_x` collected, `test_x_in_slug_form` named), and so not a typo. A name
+    collected anywhere in the file is never new, so the wrong-class near miss is still refused,
+    and a one-letter slip extends nothing."""
+    head, _, leaf = node_target.rpartition("::")
+    nodes = verify_ac._collect_nodes(test_file, root) or []  # noqa: SLF001 - the one collector
+    if any(n.rpartition("::")[2] == leaf for n in nodes):
+        return False
+    siblings = [n.rpartition("::")[2] for n in nodes if n.rpartition("::")[0] == head]
+    return any(leaf.startswith(f"{s}_") for s in siblings)
 
 
 def check_verify_selectors(repo_root: Path | str, fields: dict) -> list[tuple[str, str]]:
@@ -1328,6 +1343,92 @@ def load_fields_file(path: Path | str, allowed: tuple[str, ...] = FIELDS_FILE_KE
     return {k: v for k, v in data.items() if v is not None}
 
 
+def check_verify_pairing(fields: dict) -> None:
+    """Refuse a `verify` entry that pairs with no criterion, before anything is written. Run on
+    what an author typed (`file_finding.py file`, `artifact.py new`): a library caller passing a
+    blank entry as "no verifier at this position" is read positionally by `criteria_block`.
+
+    `verify` pairs positionally with `acs`, so a blank entry (meant as "no verifier here") was
+    skipped and every verifier after it moved up one criterion, and a surplus entry was carried
+    by nothing - both at exit 0. Fewer verifiers than criteria stays legal: the criteria past the
+    last verifier carry none, which `report_unverifiable_criteria` reports."""
+    verify = fields.get("verify")
+    if not verify:
+        return
+    if isinstance(verify, str):
+        verify = [verify]
+    blank = [n for n, v in enumerate(verify, 1) if v is None or not str(v).strip()]
+    if blank:
+        raise ValueError(
+            f"verify[{blank[0]}] is blank - `verify` pairs positionally with `acs`, so a blank "
+            f"entry shifts every verifier after it onto the wrong criterion. List the criteria "
+            f"that carry a verifier first, or give each one its own")
+    acs = fields.get("acs") or []
+    if isinstance(acs, str):
+        acs = [acs]
+    count = sum(1 for a in acs
+                if (str(a.get("text", "")) if isinstance(a, dict) else str(a)).strip())
+    if len(verify) > count:
+        spare = [str(v) for v in verify[count:]]
+        raise ValueError(
+            f"{len(spare)} verifier(s) pair with no criterion: {', '.join(spare)} - `verify` "
+            f"pairs positionally with `acs`, and there are {count} criteria. Add the criterion "
+            f"each one checks, or drop it")
+
+
+#: The keys a criterion OBJECT in `acs` may carry: `{"id": "AC1", "text": ..., "verify": ...}`.
+CRITERION_OBJECT_KEYS: tuple[str, ...] = ("id", "text", "verify")
+
+
+def criteria_objects(fields: dict) -> dict:
+    """`fields` with each criterion object in `acs` read as its `text`, and its `verify` placed
+    at the same position of the `verify` list. A plain string criterion is left as it is.
+
+    An object used to reach the renderer as `str(obj)`, so the criterion read as Python repr
+    text with no Verify line. An object missing its text, carrying a key outside
+    `CRITERION_OBJECT_KEYS`, or carrying a verifier while the document also has a `verify` list
+    is refused: there is no one reading of it to store."""
+    acs = fields.get("acs")
+    if not isinstance(acs, (list, tuple)) or not any(isinstance(a, dict) for a in acs):
+        return fields
+    texts, sels = [], []
+    for n, a in enumerate(acs, 1):
+        if not isinstance(a, dict):
+            texts.append(a)
+            sels.append("")
+            continue
+        unknown = sorted(k for k in a if k not in CRITERION_OBJECT_KEYS)
+        if unknown:
+            raise ValueError(f"acs[{n}] carries unknown key(s): {', '.join(unknown)} - a "
+                             f"criterion object takes {', '.join(CRITERION_OBJECT_KEYS)}")
+        text, sel = a.get("text"), a.get("verify", "")
+        if not isinstance(text, str) or not text.strip():
+            raise ValueError(f"acs[{n}] has no `text` - a criterion object states its "
+                             f"criterion as text")
+        if not isinstance(sel, str):
+            raise ValueError(f"acs[{n}] `verify` is {type(sel).__name__}, not text")
+        texts.append(text)
+        sels.append(sel.strip())
+    if not any(sels):
+        return {**fields, "acs": texts}
+    if fields.get("verify"):
+        raise ValueError("criterion objects in `acs` carry their own `verify` and the document "
+                         "also has a `verify` list - give each criterion's verifier once")
+    return {**fields, "acs": texts, "verify": sels}
+
+
+def checklist_block(acs: list, verifiers: list) -> str:
+    """A plain `- [ ]` criteria checklist (a CR's, an epic's) with each positional verifier
+    beneath its criterion, VERBATIM: a selector is executed, so it is never markdown-safed."""
+    rows = []
+    for n, a in enumerate(acs):
+        rows.append(f"- [ ] {a}")
+        sel = str(verifiers[n]).strip() if n < len(verifiers) else ""
+        if sel:
+            rows.append(f"  - **Verify:** {sel}")
+    return "\n".join(rows)
+
+
 def report_unverifiable_criteria(fields: dict) -> str:
     """The warning for an AUTHORED criterion carrying no verifier, or `""`. Never raises.
 
@@ -1929,8 +2030,10 @@ def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
     if type_ == "cr":
         # normalise: an AC supplied with its own leading checkbox ('- [ ] x',
         # '-[x] y') is not doubled into '- [ ] - [ ] x'
-        stripped = (re.sub(r"^\s*-\s*\[[ xX]\]\s*", "", a) for a in f.get("acs") or [])
-        acs = "\n".join(f"- [ ] {a}" for a in stripped) or NO_CR_CRITERIA
+        stripped = [re.sub(r"^\s*-\s*\[[ xX]\]\s*", "", a) for a in f.get("acs") or []]
+        verifiers = f.get("verify") or []
+        acs = checklist_block(stripped, [verifiers] if isinstance(verifiers, str) else verifiers)
+        acs = acs or NO_CR_CRITERIA
         impact = f"## Impact\n\n{f['impact']}\n\n" if f.get("impact") else ""
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Proposed'}\n> **Priority:** {f['priority']}\n"
@@ -2031,6 +2134,8 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     if missing:
         raise ValueError(f"{type_} finding missing required field(s): {', '.join(missing)} "
                          "- the filer refuses to write a hollow artifact")
+    # A criterion object is read as its text and verifier before anything is allocated.
+    fields = criteria_objects(fields)
     # Refuse a field that would break out of its metadata line, index cell or bullet before
     # anything is allocated or written - the same guard the general creator runs, from the
     # same authority, so neither path is an escape hatch for the other.
@@ -2247,6 +2352,11 @@ def cmd_file(args: argparse.Namespace) -> int:
         return 2
     from_file.pop("type", None)              # an explicit --type wins over the document
     fields = {**from_file, **flags}          # an explicit flag wins over the document
+    try:
+        check_verify_pairing(fields)
+    except ValueError as exc:
+        print(f"file refused: {exc}", file=sys.stderr)
+        return 1
     title = fields.pop("title", None)
     if not title:
         print("file refused: no title - pass --title, or a \"title\" key in the "
