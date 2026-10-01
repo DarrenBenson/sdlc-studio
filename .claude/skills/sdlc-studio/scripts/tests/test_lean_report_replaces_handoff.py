@@ -1,4 +1,5 @@
-"""US0967: the close writes no handoff; the next plan reads the last signed report's carried work.
+"""US0967 and US0978: the close writes no handoff; the next plan reads the last signed report's carried
+work; the handoff writers and the require-handoff gate are retired; old handoff files stay readable.
 
 The signed report's "Known issues handed over" section already lists every open finding raised in
 the run and every carried unit. The handoff restated it and could disagree with it: after
@@ -218,6 +219,63 @@ class ReportReplacesHandoffTests(unittest.TestCase):
             notice = next((ln for ln in r.stderr.splitlines() if "US0004" in ln), "")
             self.assertTrue(notice, "the next plan does not name the waived unit:\n" + r.stderr)
             self.assertIn("waived by the forced stop", notice, notice)
+
+    def test_the_handoff_writers_and_gate_are_retired(self) -> None:
+        """US0978 AC1. MUTANTS: (1) keep `gate.py --require-handoff` - it is accepted; (2) keep
+        `handoff` among `artifact.py new`'s types - the dry run would mint an HO id; (3) keep the
+        `generate` verb on `handoff.py`; (4) keep reference-sprint.md's account of a handoff the
+        close writes, or of the gate and verb that served it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            gate = _cli(root, "gate.py", "--require-handoff", "HO0001")
+            self.assertEqual(2, gate.returncode, gate.stdout + gate.stderr)
+            self.assertIn("unrecognized arguments: --require-handoff", gate.stderr)
+            new = _cli(root, "artifact.py", "new", "--type", "handoff", "--title", "x",
+                       "--dry-run")
+            self.assertEqual(2, new.returncode, new.stdout + new.stderr)
+            self.assertIn("invalid choice: 'handoff'", new.stderr)
+            self.assertFalse((root / "sdlc-studio" / "handoffs").exists(),
+                             "the refused create wrote under handoffs/")
+            helped = _cli(root, "handoff.py", "--help")
+            self.assertEqual(0, helped.returncode, helped.stderr)
+            self.assertIn("show", helped.stdout, "premise: the read-only verb is listed")
+            self.assertNotIn("generate", helped.stdout, "handoff.py still lists `generate`")
+        reference = (_SCRIPTS.parent / "reference-sprint.md").read_text(encoding="utf-8")
+        for stale in ("close writes a handoff", "handoff.py generate", "--require-handoff"):
+            self.assertNotIn(stale, reference, f"reference-sprint.md still names {stale!r}")
+
+    def test_old_handoffs_stay_readable_and_unrewritten(self) -> None:
+        """US0978 AC2. MUTANTS: (1) drop `handoff` from `sdlc_md.META_TYPES` - reconcile stops
+        reading the handoffs index, so the control's missing row goes unreported; (2) a
+        reconcile that rewrites the index or the HO file - the bytes move."""
+        ho = ("# HO-0001: A run that stopped short\n\n> **Date:** 2026-07-16\n"
+              "> **Created-by:** sdlc-studio new\n> **Outcome:** blocked\n\n"
+              "## Where to pick up\n\n- US0001 - its file\n\n## Revision History\n\n"
+              "| Date | Author | Change |\n| --- | --- | --- |\n"
+              "| 2026-07-16 | sdlc-studio | Generated at the run close (`handoff generate`) |\n")
+        index = ("# Handoff Index\n\n**Last Updated:** 2026-07-16\n\n"
+                 "Run-close handoff guides, one per run.\n\n| ID | Title | Date |\n"
+                 "| --- | --- | --- |\n| [HO-0001](HO0001-a-run.md) | A run that stopped short | "
+                 "2026-07-16 |\n")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            files = [_w(root, "sdlc-studio/handoffs/HO0001-a-run.md", ho),
+                     _w(root, "sdlc-studio/handoffs/_index.md", index)]
+            before = [f.read_bytes() for f in files]
+            r = _cli(root, "reconcile.py", "detect", "--format", "json")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            drift = [x for x in json.loads(r.stdout).get("drift") or []
+                     if "HO" in json.dumps(x)]
+            self.assertEqual([], drift, "an old handoff and its row read as drift")
+            self.assertEqual(before, [f.read_bytes() for f in files],
+                             "reading the old handoff rewrote it or its index")
+            # The control: reconcile still READS the handoffs index - a second HO file with no
+            # row is reported - so the clean reading above is a measurement, not a blind spot.
+            _w(root, "sdlc-studio/handoffs/HO0002-unindexed.md", ho.replace("0001", "0002"))
+            c = _cli(root, "reconcile.py", "detect", "--format", "json")
+            self.assertIn("HO", json.dumps(json.loads(c.stdout).get("drift") or []),
+                          "reconcile no longer reads the handoffs index:\n" + c.stdout)
 
 
 if __name__ == "__main__":

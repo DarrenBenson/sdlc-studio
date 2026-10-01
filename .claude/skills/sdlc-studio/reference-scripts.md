@@ -123,7 +123,7 @@ Every script in `scripts/`:
     `file_finding.resolve_prose_fields` is the one loader, so every
     prose-taking writer shares a path instead of growing its own:
     `file_finding.py file`, `artifact.py new`, `critic.py supersede`,
-    `decisions.py add|promote|waive`, `handoff.py generate`,
+    `decisions.py add|promote|waive`,
     `ledger.py record`, `lessons.py add|revalidate`,
     `close_owed.py baseline` and `sprint.py goal-verdict|goal-review`.
     Each takes `--fields-file FIELDS.json`, and `--fields-file -` reads the

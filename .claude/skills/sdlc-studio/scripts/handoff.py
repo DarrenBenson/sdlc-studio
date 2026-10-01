@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""The handoff guide - the remaining-work artefact an agentic run owes a human at its close.
+"""The remaining-work join a run's handoff guide was built from, read-only.
 
-A run that stops (goal reached, budget spent, or blocked) leaves its tail scattered across
-hints, the decisions log and the retro, so the person who picks it up has no single "here
-is where you start" document. `generate` writes one, and it is a JOIN over evidence that
-already exists rather than new instrumentation:
+No command writes a handoff any more: the signed sprint report hands over the open findings
+and carried units, and the next `sprint plan` reads them from it (`--worklist RPTxxxx`). The
+HO files already written stay on disk and in `handoffs/_index.md`, resolvable and reconciled.
+What remains here is the JOIN over evidence that already exists, which `show` prints and
+`status.py` reads through `remaining_count`:
 
   quarantined units + failure signatures  <- .local/loop-state.json  (loop_guard)
   failing / unproven ACs                  <- .local/verify-report.json (verify_ac)
@@ -21,9 +22,6 @@ Two properties are load-bearing:
   with no file on disk is reported as remaining-and-missing, never dropped; a unit the loop
   quarantined is reported even if it was never in the approved batch. A handoff that
   silently loses an item is worse than no handoff.
-* **The tail is machine-readable.** `generate` emits a worklist file, so the next
-  `sprint plan --worklist <file>` reads the remaining work back as a batch. No fourth batch
-  source; the documented one is reused.
 
 The suitability tag (copilot-tail vs judgement) is seeded deterministically from the
 difficulty band, the quarantine reason, the stage the unit stalled at, and the tranche
@@ -32,35 +30,23 @@ model refines it, and every tag carries the reasons it was derived from, so it c
 argued with rather than merely believed.
 
 Subcommands:
-  generate   Build the handoff, create it via the artifact machinery, emit the worklist.
-  show       Print the join (JSON) without creating anything.
+  show       Print the join without creating anything.
 """
 from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import run_state, sdlc_md  # noqa: E402
-import artifact  # noqa: E402  (the meta-artifact creator: id + index row)
 import readiness  # noqa: E402  (per-unit readiness issues)
 import conformance  # noqa: E402  (the stage a unit stalled at)
 import critic  # noqa: E402  (delivery evidence: the recorded verdict)
 import decisions  # noqa: E402  (the project decisions log)
 import loop_guard  # noqa: E402  (quarantine verdicts + failure signatures)
 import route  # noqa: E402  (the difficulty band that seeds the suitability tag)
-
-TYPE = "handoff"
-WORKLIST_REL = Path("sdlc-studio") / ".local" / "handoff-worklist.txt"
-
-
-# The H1 title rule lives in lib.sdlc_md beside the other shared writers: the retro
-# scaffold builds a heading from the same Sprint Goal, and keeping a private copy here is
-# how that path stayed broken after this one was fixed.
-_heading_title = sdlc_md.heading_title
 
 COPILOT_TAIL = "copilot-tail"
 JUDGEMENT = "judgement"
@@ -498,7 +484,7 @@ def build(repo_root: Path | str, batch: list[str] | None = None,
     ua, ua_error = None, ""
     try:
         ua = sprint.unanswered_units(root, {**state, "batch": list(ids)}, retro)
-    except Exception as exc:  # noqa: BLE001 - a report degrades; the handoff is still written
+    except Exception as exc:  # noqa: BLE001 - the join degrades and says so; it never dies
         ua_error = f"{type(exc).__name__}: {exc}"
     unanswered = ua["unanswered"] if ua else None
     return {
@@ -516,469 +502,14 @@ def build(repo_root: Path | str, batch: list[str] | None = None,
         "unanswered_ways_out": (sprint.unanswered_ways_out(unanswered, ua["rulings_from"],
                                                            state.get("run_id"))
                                 if unanswered else ""),
-        # The fields a generate that ENDS the run writes onto it - the same shape every other
-        # route that ends a run records.
-        "unanswered_record": sprint.unanswered_record(ua, ua_error),
         "open_decisions": _open_decisions(root, ids),
         "appetite": _appetite(root, state, ids, len(delivered)),
         "summary": {"total": len(units), "delivered": len(delivered),
                     "dropped": len(dropped), "remaining": len(remaining), **tags},
-        "worklist": str(WORKLIST_REL),
     }
 
 
-# --------------------------------------------------------------------------- render
-def _plannable(report: dict) -> list[str]:
-    """The remaining ids `sprint plan --worklist` can actually resolve. A missing unit is
-    NOT written - the planner refuses a worklist id with no file, and a worklist that
-    aborts the next plan helps nobody. It stays named in the document, which is the durable
-    record."""
-    return [u["id"] for u in report["remaining"] if u["path"]]
-
-
-def _worklist_text(report: dict, disp: str) -> str:
-    lines = [f"# {disp}: the remaining work from the last run "
-             f"({report['summary']['remaining']} item(s))",
-             "# plan it: sprint.py plan --worklist sdlc-studio/.local/handoff-worklist.txt"]
-    missing = [u["id"] for u in report["remaining"] if not u["path"]]
-    if missing:
-        lines.append(f"# not planned (no artefact file on disk): {', '.join(missing)}")
-    lines += _plannable(report)
-    return "\n".join(lines) + "\n"
-
-
-def _unit_table(units: list[dict], empty: str) -> str:
-    if not units:
-        return f"{empty}\n"
-    rows = ["| Unit | Type | Status | Evidence |", "| --- | --- | --- | --- |"]
-    for u in units:
-        link = f"[{u['id']}](../../{u['path']})" if u["path"] else u["id"]
-        evidence = "; ".join(u.get("evidence") or []) or "no verifier or verdict on record"
-        rows.append(sdlc_md.join_row([link, u["type"] or "?", u["status"], evidence]))
-    return "\n".join(rows) + "\n"
-
-
-def _remaining_body(report: dict) -> str:
-    if not report["remaining"]:
-        return "_Nothing remains: every unit in the batch reached a terminal status._\n"
-    out: list[str] = []
-    for u in report["remaining"]:
-        s = u["suitability"]
-        head = f"### {u['id']} ({u['type'] or 'unknown type'}, {u['status']}) - {s['tag']}"
-        out.append(head)
-        out.append("")
-        for p in u["pointers"]:
-            detail = f" - {p['detail']}" if p.get("detail") else ""
-            out.append(f"- **{p['kind']}:** `{p['ref']}`{detail}")
-        out.append(f"- **Suitability:** {s['tag']} (confidence {s['confidence']}) "
-                   f"- seeded by {', '.join(s['reasons'])}")
-        out.append("")
-    return "\n".join(out)
-
-
-def _decisions_body(report: dict) -> str:
-    if not report["open_decisions"]:
-        return ("_None recorded._ Rulings made during the run live in the tranche ledger "
-                "(`sdlc-studio/decisions/`); settled decisions belong in "
-                "`sdlc-studio/decisions.md`.\n")
-    out = ["| Ref | Decision | Where |", "| --- | --- | --- |"]
-    for d in report["open_decisions"]:
-        out.append(sdlc_md.join_row([d["ref"], d["decision"],
-                                     f"{d['source']} (`{d['path']}`)"]))
-    return "\n".join(out) + "\n"
-
-
-def _pickup_body(report: dict) -> str:
-    s = report["summary"]
-    if not report["remaining"]:
-        # A DROPPED unit is terminal, so `remaining` is empty and this branch is taken - but the
-        # tail is not empty in the sense a reader needs. "Plan the next batch normally" told the
-        # next session there was nothing to pick up, on a run whose whole story was that a unit
-        # had been closed without delivery. Name them, then say the rest is clear.
-        dropped = [u for u in report.get("dropped") or [] if u.get("id")]
-        if dropped:
-            named = ", ".join(
-                f"{u['id']}" + (f" ({u['dropped']})" if isinstance(u.get("dropped"), str)
-                                and u["dropped"] not in ("", "1", "True") else "")
-                for u in dropped)
-            return (f"No unit is still open, but {len(dropped)} was closed WITHOUT delivery and "
-                    f"is not carried forward by this handoff: {named}. Decide whether it is "
-                    f"re-filed or abandoned before planning the next batch.\n")
-        return ("Every unit in the batch is terminal. There is no tail: close the run and "
-                "plan the next batch normally.\n")
-    lines = [
-        f"{s['remaining']} of {s['total']} unit(s) remain "
-        f"({s[COPILOT_TAIL]} suit copilot-assisted completion, {s[JUDGEMENT]} need human "
-        f"judgement). Plan them straight back in:",
-        "",
-        "```bash",
-        'python3 "$CLAUDE_SKILL_DIR/scripts/sprint.py" plan \\',
-        f"  --worklist {report['worklist']} --order wsjf",
-        "```",
-        "",
-        "Each item below names the pointer to start from: the failing AC, the check it "
-        "stalled at, the blocker that stopped it, or the file it was to touch.",
-    ]
-    return "\n".join(lines) + "\n"
-
-
-def _appetite_body(report: dict) -> str:
-    """The appetite line, rendered only when the run declared one (or carried a forecast):
-    what was budgeted, what it spent, what it delivered. The token line is a forecast,
-    labelled so - a run's appetite is wall-clock and units, never a token gate."""
-    ap = report.get("appetite")
-    if not ap:
-        return ""
-    d, sp = ap["declared"], ap["spent"]
-    mins = f"{d['minutes']:g} min" if d["minutes"] else "unbounded"
-    units = f"{d['units']} unit(s)" if d["units"] else "unbounded"
-    out = ["\n## Appetite\n",
-           f"- **Declared:** wall-clock {mins}, units {units}",
-           f"- **Spent:** {sp['minutes']:g} min, {sp['units']} unit(s) terminal",
-           f"- **Delivered:** {ap['delivered']} unit(s)"]
-    if ap.get("token_forecast"):
-        out.append(f"- **Token forecast:** ~{ap['token_forecast']:,} tokens - a plan-time "
-                   f"estimate, never a gate (the total is transcript-measured but a LOWER "
-                   f"BOUND - delegated spend is supplied, not observed)")
-    return "\n".join(out) + "\n"
-
-
-def _unanswered_body(report: dict) -> str:
-    """The batch units the run cannot end over, one bullet each with its status, why it is held
-    and where its findings went, then which retro's rulings were read and the ways out. Its own
-    section: Delivered and Remaining name batch ids too, so a reader must be able to tell a
-    stop-ship question from a list of open work. A predicate that failed, or a tree with no run,
-    never reads as "none"."""
-    held = report.get("unanswered")
-    if held is None:
-        return ("**Could not be computed** "
-                f"({report.get('unanswered_error') or 'no reason recorded'}). This is not a "
-                "clean result: no batch unit was judged answered, and the close and "
-                "`sprint.py stop` refuse until the set can be read.\n")
-    run_id = (report.get("run") or {}).get("run_id")
-    rid = report.get("unanswered_rulings_from")
-    if not run_id:
-        read = ("No run is recorded (`sprint plan --write` opens one), so no retro is tied to "
-                "this batch and no ruling was read.")
-    elif rid:
-        read = f"Rulings read from {rid}'s `## Known issues carried` for {run_id}."
-    else:
-        read = (f"No retro's carried table could be read for {run_id}, so no ruling answers "
-                f"any unit.")
-    if not held:
-        if not run_id:
-            return f"{read} No batch unit is held, but this is not a run's account.\n"
-        return ("None: every batch unit is delivered, abandoned, ruled, dropped, parked or "
-                f"awaiting only a signature. {read}\n")
-    rows = [f"- **{h['unit']}** ({h['status']}) - {h['why']} - findings "
-            + (f"filed to {', '.join(h['filed'])}" if h.get("filed") else "NONE filed")
-            for h in held]
-    return "\n".join(rows) + f"\n\n{read}\n\n{report.get('unanswered_ways_out') or ''}\n"
-
-
-def _unanswered_note(report: dict) -> str:
-    """One id-free sentence under `Where to pick up` when the set is non-empty, so a pickup that
-    reads "nothing remains" cannot sit above a stop-ship question the worklist does not carry."""
-    held = report.get("unanswered")
-    if not held:
-        return ""
-    return (f"\n{len(held)} stop-ship question(s) were left unanswered - see below; a Done or "
-            f"Fixed unit among them is not in the worklist.\n")
-
-
-def render_body(report: dict) -> str:
-    """The generated body. Every section is filled from the join - there is no authoring
-    scaffold here, and so no `{{placeholder}}` that a renderer could fail to substitute.
-
-    `Closed without delivery` is rendered only when there IS one: a unit dropped
-    (Won't Implement / Rejected / Withdrawn) is neither remaining work nor a success, and
-    folding it into Delivered would be the tool claiming an outcome it did not reach.
-    `Unanswered stop-ship questions` is rendered always, directly after the pickup, so its
-    absence never reads as none."""
-    s = report["summary"]
-    dropped = (f"\n## Closed without delivery ({s['dropped']})\n\n"
-               + _unit_table(report["dropped"], "")) if s["dropped"] else ""
-    return (
-        "## Where to pick up\n\n" + _pickup_body(report) + _unanswered_note(report) +
-        "\n## Unanswered stop-ship questions\n\n" + _unanswered_body(report) +
-        _appetite_body(report) +
-        f"\n## Delivered ({s['delivered']})\n\n"
-        + _unit_table(report["delivered"], "_Nothing was delivered in this run._")
-        + dropped +
-        f"\n## Remaining ({s['remaining']})\n\n" + _remaining_body(report) +
-        "\n## Open decisions\n\n" + _decisions_body(report)
-    )
-
-
-def _meta_lines(report: dict) -> list[tuple[str, str]]:
-    """The head fields: the run's identity and how it ended. An unopened run says so rather
-    than wearing a start time nobody recorded."""
-    run = report.get("run") or {}
-    run_id = run.get("run_id")
-    started = run.get("started_at")
-    if run_id:
-        ident = f"{run_id} (started {started})" if started else run_id
-    else:
-        ident = "not recorded - the run was not opened via `sprint plan --write`"
-    lines = [("Run", ident), ("Outcome", report.get("outcome") or "not recorded")]
-    if run.get("goal"):
-        lines.append(("Goal", run["goal"]))
-    lines.append(("Batch source", report["batch_source"]))
-    return lines
-
-
-# --------------------------------------------------------------------------- retro link
-def _find_retro(root: Path, retro_id: str) -> Path:
-    """The retro file for an id in either spelling (`RETRO0021` / `RETRO-0021`). Raises when
-    it does not exist - a handoff must never claim a link it did not make, so this is
-    checked BEFORE anything is written."""
-    stem = str(retro_id).replace("-", "").upper()
-    d = root / "sdlc-studio" / "retros"
-    hits = sorted(d.glob(f"{stem}*.md")) if d.is_dir() else []
-    if not hits:
-        raise ValueError(f"retro {retro_id} not found under sdlc-studio/retros/ - create it "
-                         f"first (`artifact new --type retro`), then link the handoff to it")
-    return hits[0]
-
-
-def _link_from_retro(retro_path: Path, disp: str, file_name: str, report: dict) -> None:
-    """Write the handoff link into the retro's `## Handoff` section (replacing it when one
-    is already there, so a re-generated handoff never stacks a second)."""
-    s = report["summary"]
-    text = retro_path.read_text(encoding="utf-8")
-    # Follow the document, never a hardcoded marker. MD004 defaults to `consistent`, so a dash
-    # written into an asterisk retro makes the very next commit uncommittable - and the close
-    # has already reported success by then.
-    mark = sdlc_md.document_bullet(text)
-    body = (f"{mark} [{disp}](../handoffs/{file_name}) - {s['remaining']} remaining item(s): "
-            f"{s[COPILOT_TAIL]} copilot-tail, {s[JUDGEMENT]} judgement. Pick up with "
-            f"`sprint plan --worklist {report['worklist']}`.\n")
-    # Exactly one newline at the end: a Handoff section at the foot of the retro otherwise leaves
-    # a trailing blank line, and markdownlint (MD012) refuses the next commit.
-    new = artifact._put_section(text, ("Handoff",), body)
-    sdlc_md.atomic_write(retro_path, new.rstrip("\n") + "\n")
-
-
-# --------------------------------------------------------------------------- generate
-def _ensure_index(root: Path, today: str) -> bool:
-    """Create `sdlc-studio/handoffs/_index.md` from the shipped template when it is missing,
-    so the first handoff in a project is INDEXED rather than becoming reconcile drift the
-    operator then has to clear by hand. Idempotent; never clobbers an existing index."""
-    import re
-    idx = root / "sdlc-studio" / "handoffs" / "_index.md"
-    if idx.exists():
-        return False
-    tmpl = Path(__file__).resolve().parent.parent / "templates" / "indexes" / f"{TYPE}.md"
-    if not tmpl.exists():
-        return False
-    text = re.sub(r"^<!--.*?-->\n+", "", tmpl.read_text(encoding="utf-8"),
-                  count=1, flags=re.DOTALL)
-    text = text.replace("{{last_updated}}", today)
-    lines = [ln for ln in text.splitlines() if "{{" not in ln]  # drop the sample row
-    idx.parent.mkdir(parents=True, exist_ok=True)
-    sdlc_md.atomic_write(idx, "\n".join(lines).rstrip() + "\n")
-    return True
-
-
-def generate(repo_root: Path | str, title: str, batch: list[str] | None = None,
-             outcome: str | None = None, retro: str | None = None,
-             dry_run: bool = False) -> dict:
-    """Build the join, create the handoff through the artifact machinery (tool-allocated id,
-    index row), emit the worklist the next plan reads, link it from the retro, and close the
-    run state with its outcome."""
-    root = Path(repo_root)
-    title = _heading_title(title)   # strip trailing punctuation so the H1 passes MD026
-    # The named retro reaches the predicate too, so the close's handoff step reads the carried
-    # table its checklist step read.
-    report = build(root, batch=batch, outcome=outcome, retro=retro)
-    retro_path = _find_retro(root, retro) if retro else None  # refuse before any write
-    if dry_run:
-        return {"id": None, "path": None, "dry_run": True, "indexed": None,
-                "retro_linked": bool(retro_path), "worklist": str(root / WORKLIST_REL),
-                "report": report}
-    _ensure_index(root, sdlc_md.now_date())
-    # ONE HANDOVER PER RUN. A re-run close re-generates, and minting every time filed five
-    # handovers for one run. The open run's own handover is refreshed in place instead - same id,
-    # same index row - and only a run with none is allocated one.
-    existing = _open_handoff(root)
-    if existing is None:
-        res = artifact.meta_new(root, TYPE, title,
-                                {"body": render_body(report), "meta": _meta_lines(report)})
-    else:
-        hid, path = existing
-        if _h1_title(path) != title:
-            # the title follows the verdict, which a re-run close may have changed
-            artifact.retitle(root, hid, title)
-            path = _handoff_path(root, hid)
-        _rewrite(path, hid, report)
-        res = {"id": hid, "path": str(path), "indexed": False, "refreshed": True}
-    worklist = root / WORKLIST_REL
-    worklist.parent.mkdir(parents=True, exist_ok=True)
-    sdlc_md.atomic_write(worklist, _worklist_text(report, res["id"]))
-    if retro_path is not None:
-        _link_from_retro(retro_path, res["id"], Path(res["path"]).name, report)
-    run_state.update(root, handoff_worklist=str(WORKLIST_REL),
-                     handoff_remaining=report["summary"]["remaining"])
-    if outcome:
-        # This call ENDS the run, so it records what the run ended over - before `close_run`
-        # archives the record. Reported, never a refusal. A mid-run snapshot ends nothing and
-        # records nothing, so the field always means "the set this run ended with".
-        run_state.update(root, **report["unanswered_record"])
-        run_state.close_run(root, outcome, handoff=res["id"])
-    else:
-        run_state.update(root, handoff=res["id"])
-    return {**res, "dry_run": False, "retro_linked": retro_path is not None,
-            "worklist": str(worklist), "report": report}
-
-
-def _recorded_run_id(text: str) -> str:
-    """The run id a handoff document already claims, or "" when it records none.
-
-    The head renders `> **Run:** RUN-XXXX (started ...)`, and an unopened run renders a
-    sentence instead - so only a leading token that looks like a run id counts.
-    """
-    for line in text.splitlines():
-        if line.startswith("> **Run:**"):
-            token = line.split("**Run:**", 1)[1].strip().split()[0] if line.split(
-                "**Run:**", 1)[1].strip() else ""
-            return token if token.upper().startswith("RUN-") else ""
-    return ""
-
-
-def refresh(repo_root: Path | str, handoff_id: str, batch: list[str] | None = None) -> dict | None:
-    """Re-render an EXISTING handoff after the close cascade moved units terminal.
-
-    The close chain writes the handoff at step 5, but `--apply-signoff` transitions the run's
-    units to Done at the tail, one step later. The document was therefore a snapshot taken
-    just before the work it describes finished: units the close was about to complete were
-    listed as remaining, and the worklist the next `sprint plan --worklist` reads carried
-    them forward as outstanding work.
-
-    Rewrites the same artefact in place - same id, same index row, same retro link, same RUN -
-    so the handoff describes the state the close actually left behind. Returns None when the id
-    has no file, so a caller can report the gap instead of assuming a refresh happened.
-
-    A handoff belongs to a run. The re-render draws the unit list from `batch` but everything
-    else from ambient run state, so refreshing one run's handoff while a DIFFERENT run is open
-    would re-stamp it with the other run's identity and overwrite the shared worklist. That is
-    refused rather than done quietly: the caller is refreshing the wrong document, and a
-    handoff wearing another run's id misdirects whoever picks the work up.
-    """
-    root = Path(repo_root)
-    path = _handoff_path(root, handoff_id)
-    if path is None:
-        return None
-    existing = path.read_text(encoding="utf-8")
-    doc_run = _recorded_run_id(existing)
-    open_run_id = ((run_state.read(root) or {}).get("run_id") or "").strip()
-    if doc_run and open_run_id and doc_run != open_run_id:
-        raise ValueError(
-            f"{handoff_id} belongs to {doc_run} but the open run is {open_run_id} - refusing to "
-            f"re-stamp it with another run's identity; close or clear the open run first")
-    report = build(root, batch=batch)
-    _rewrite(path, handoff_id, report)
-    sdlc_md.atomic_write(root / WORKLIST_REL, _worklist_text(report, handoff_id))
-    run_state.update(root, handoff_remaining=report["summary"]["remaining"])
-    return report
-
-
-def _handoff_path(root: Path, handoff_id: str) -> Path | None:
-    """The file holding `handoff_id`, or None."""
-    norm = sdlc_md.norm_id(handoff_id)
-    return next((p for p in sorted((root / "sdlc-studio" / "handoffs").glob("*.md"))
-                 # `split("-")[0]` on a v3 key `HO-<ulid>-slug` yields `HO`, so the comparison
-                 # never matched and the reader was blind to every v3 handoff. `stem_record_id`
-                 # is the shared parse for families outside `ARTIFACT_TYPES` - which handoffs
-                 # are, so `extract_record_id` returns None here and would be a second defect.
-                 if p.is_file()
-                 and sdlc_md.norm_id(sdlc_md.stem_record_id(p.stem) or "") == norm), None)
-
-
-def _open_handoff(root: Path) -> tuple[str, Path] | None:
-    """The OPEN run's own handover as `(id, path)`, or None.
-
-    Open means the run state names a handover, the run has not ended (a sealed run's handover
-    is a record, never rewritten), and the document on disk records this same run id.
-    """
-    state = run_state.read(root) or {}
-    hid = (state.get("handoff") or "").strip()
-    run_id = (state.get("run_id") or "").strip()
-    if not hid or not run_id or state.get("outcome") in run_state.CLOSED:
-        return None
-    path = _handoff_path(root, hid)
-    if path is None or _recorded_run_id(path.read_text(encoding="utf-8")) != run_id:
-        return None
-    return hid, path
-
-
-def _h1_title(path: Path) -> str:
-    first = path.read_text(encoding="utf-8").splitlines()[:1]
-    return first[0].split(":", 1)[1].strip() if first and ":" in first[0] else ""
-
-
-def _rewrite(path: Path, handoff_id: str, report: dict) -> None:
-    """Re-render a handover in place from `report`, keeping its H1, Date, Created-by and
-    Revision History."""
-    lines = path.read_text(encoding="utf-8").splitlines()
-    # Keep the H1 and the Revision History; regenerate everything the join owns.
-    head = lines[0] if lines and lines[0].startswith("# ") else f"# {handoff_id}"
-    tail_at = next((i for i, ln in enumerate(lines)
-                    if ln.strip().lower().startswith("## revision history")), None)
-    tail = "\n".join(lines[tail_at:]) if tail_at is not None else ""
-    meta = "\n".join(f"> **{k}:** {v}" for k, v in _meta_lines(report))
-    date = next((ln for ln in lines if ln.startswith("> **Date:**")), "")
-    created = next((ln for ln in lines if ln.startswith("> **Created-by:**")), "")
-    head_block = "\n".join(x for x in (date, created, meta) if x)
-    body = f"{head}\n\n{head_block}\n\n{render_body(report)}\n"
-    if tail:
-        body += f"\n{tail}\n"
-    # `render_body` already terminates its last section, so joining the kept tail onto it
-    # produced two blank lines and the markdown gate (MD012) refused the commit. Collapse any
-    # run of blank lines to one - a generated document must not need hand-fixing after every
-    # refresh.
-    body = re.sub(r"\n{3,}", "\n\n", body)
-    sdlc_md.atomic_write(path, body)
-
-
 # --------------------------------------------------------------------------- CLI
-def cmd_generate(args: argparse.Namespace) -> int:
-    import file_finding  # noqa: PLC0415 - the shared prose-fields loader, as elsewhere
-    try:
-        fields = file_finding.resolve_prose_fields(
-            getattr(args, "fields_file", None), {"title": args.title}, allowed=("title",))
-    except ValueError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return 2
-    title = file_finding.prose_value(fields, "title")
-    if not title:
-        print("error: no title - pass --title, or a \"title\" key in the --fields-file "
-              "document", file=sys.stderr)
-        return 2
-    ids = sdlc_md.resolve_ids(args)
-    try:
-        r = generate(args.root, title, batch=ids or None, outcome=args.outcome,
-                     retro=args.retro, dry_run=args.dry_run)
-    except ValueError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return 2
-    if args.format == "json":
-        print(json.dumps(r, indent=2))
-    else:
-        s = r["report"]["summary"]
-        verb = ("would generate" if r["dry_run"] else
-                "refreshed" if r.get("refreshed") else "generated")
-        print(f"{verb} handoff {r['id'] or '(dry run)'}: {s['delivered']} delivered, "
-              f"{s['remaining']} remaining ({s[COPILOT_TAIL]} {COPILOT_TAIL}, "
-              f"{s[JUDGEMENT]} {JUDGEMENT})")
-        if not r["dry_run"]:
-            print(f"  {r['path']}")
-            print(f"  worklist -> {r['worklist']} (sprint plan --worklist)")
-    if not r["retro_linked"]:
-        print("warning: this handoff is not linked from a retro - pass --retro RETROxxxx; "
-              "`gate --require-handoff` fails until a retro links it", file=sys.stderr)
-    return 0
-
-
 def cmd_show(args: argparse.Namespace) -> int:
     ids = sdlc_md.resolve_ids(args)
     try:
@@ -999,28 +530,11 @@ def cmd_show(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="The run-close handoff guide (remaining work).")
+    p = argparse.ArgumentParser(description="The remaining-work join a handoff guide was "
+                                            "built from, printed without writing anything. "
+                                            "No command writes a handoff: the signed sprint "
+                                            "report hands over the remaining work.")
     sub = p.add_subparsers(dest="cmd", required=True)
-    g = sub.add_parser("generate", help="Create the handoff artefact + the worklist "
-                                        "the next sprint plan reads.")
-    g.add_argument("--title", help="what this run was (required unless the --fields-file "
-                                   "document carries a title)")
-    g.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
-                   help="read the title from a JSON object ({\"title\": \"...\"}) instead of "
-                        "--title, so prose carrying shell metacharacters is stored verbatim "
-                        "rather than interpreted by the shell; `-` reads the document from "
-                        "stdin")
-    g.add_argument("--outcome", choices=run_state.CLOSED,
-                   help="how the run ended; closes the run state")
-    g.add_argument("--retro", metavar="RETROxxxx",
-                   help="link the handoff from this retro (the close gate requires it)")
-    sdlc_md.add_ids_argument(g, help_="the batch this run was approved to do; defaults to "
-                                      "the recorded run state, then the persisted sprint plan")
-    g.add_argument("--root", default=".")
-    g.add_argument("--dry-run", action="store_true", dest="dry_run",
-                   help="preview; write nothing")
-    sdlc_md.add_format_arg(g)
-    g.set_defaults(func=cmd_generate)
     s = sub.add_parser("show", help="Print the join without creating anything.")
     sdlc_md.add_ids_argument(s, help_="the batch to join over (default: the run state)")
     s.add_argument("--root", default=".")

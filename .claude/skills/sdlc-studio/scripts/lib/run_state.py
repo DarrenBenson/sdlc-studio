@@ -11,7 +11,7 @@ later that must bound a run's appetite.
 
 This is the object: run-local (`sdlc-studio/.local/run-state.json`, gitignored like the
 rest of `.local/`), opened when the batch is approved (`sprint plan --write`) and closed
-when the run stops (`handoff generate`).
+when the run stops (`sprint.py sign`, `stop`, or a rolling run's boundary).
 
 Three properties are load-bearing, and each exists because breaking it loses work:
 
@@ -33,7 +33,7 @@ Extensible by contract: `update()` MERGES, and nothing here drops a key it does 
 recognise. A later capability adds its own fields (an appetite ceiling, a spend counter)
 without touching this module, and a close preserves them.
 
-A library, not a command: the writers are `sprint.py` and `handoff.py`.
+A library, not a command: the writer is `sprint.py`.
 """
 from __future__ import annotations
 

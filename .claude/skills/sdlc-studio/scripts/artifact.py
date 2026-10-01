@@ -869,7 +869,7 @@ def _wire_story_to_epic(root: Path, epic_id: str, disp: str, title: str,
     if ep is None:
         return False
     text = ep.read_text(encoding="utf-8")
-    # The sibling of the handoff appender, and it carried the same assumption. Fixing one
+    # The sibling of the retired handoff appender, and it carried the same assumption. Fixing one
     # instance of a class and leaving the other is the enumerated-list failure this repository
     # keeps meeting, so both read the document rather than naming a marker.
     line = (f"{sdlc_md.document_bullet(text)} [ ] "
@@ -923,32 +923,21 @@ def _refresh_epic_row(root: Path, epic_id: str) -> list[str]:
 
 
 # Meta-artifacts: tool-created, outside the status machinery (no status vocab, no
-# transition gate, no conformance stage). A handoff belongs here for the same reason a
-# retro does - it is a generated record OF a run, not a unit of work that moves through one.
-# Derived from `sdlc_md.META_TYPES`, never re-typed. A delivery review found this literal
-# surviving as a FOURTH copy of the same three names inside the change filed to abolish
-# hand-copies - and it is the creator half of the creator/resolver pair BG0619 exists to
-# keep in step, so it is the copy that matters most.
-META = tuple(sdlc_md.META_TYPES)
+# transition gate, no conformance stage) - a generated record OF a run, not a unit of work
+# that moves through one. Derived from `sdlc_md.META_TYPES`, never re-typed. A delivery review
+# found this literal surviving as a FOURTH copy of the same names inside the change filed to
+# abolish hand-copies - and it is the creator half of the creator/resolver pair BG0619 exists
+# to keep in step, so it is the copy that matters most. The one subtraction is the handoff: no
+# command writes one since the signed report carries the handed-over work, so it is not
+# creatable here, while `META_TYPES` keeps it so the HO files already on disk still resolve
+# and reconcile.
+META = tuple(t for t in sdlc_md.META_TYPES if t != "handoff")
 
 
 def _render_meta(type_: str, disp: str, title: str, today: str, f: dict | None = None) -> str:
     """Retro renders from the shipped retro template (id/title/date filled, the
-    rest left as authoring scaffold); review gets a minimal findings scaffold; a handoff
-    renders the GENERATED body its caller supplies (there is no authoring scaffold to
-    fill - every section is derived from the run, and an unsupplied body says so plainly
-    rather than leaving a placeholder nothing will ever substitute)."""
+    rest left as authoring scaffold); review gets a minimal findings scaffold."""
     f = f or {}
-    if type_ == "handoff":
-        meta = "".join(f"> **{k}:** {v}\n" for k, v in (f.get("meta") or []))
-        body = f.get("body") or (
-            "## Where to pick up\n\n_Not generated._ A handoff is a JOIN over the run's own "
-            "evidence: run `handoff generate` at the close so this document names what "
-            "remains, with each item's pointer and suitability tag.\n")
-        return (f"# {disp}: {title}\n\n> **Date:** {today}\n"
-                f"> **Created-by:** sdlc-studio new\n{meta}\n{body}"
-                f"\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
-                f"| {today} | sdlc-studio | Generated at the run close (`handoff generate`) |\n")
     if type_ == "retro":
         tmpl = Path(__file__).resolve().parent.parent / "templates" / "reviews" / "retro.md"
         if tmpl.exists():

@@ -26,8 +26,8 @@ Normalise the trailing whitespace where the section is written, not at each call
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a retro whose `## Handoff` section is the last in the file, when `handoff._link_from_retro` writes the handoff link, then the file ends with exactly one newline (fixed by US0877, 6729b4f3, handoff.py:759)
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_retro.py::RetroTailTests::test_linking_the_handoff_leaves_exactly_one_newline
-  - **Verified:** yes (2026-09-25)
+  - **Verify:** manual - retired by US0978: the handoff writers (`handoff.py generate` and refresh, the retro link) and `gate.py --require-handoff` were deleted with their tests; the signed report hands over the remaining work and `sprint plan --worklist RPTxxxx` plans it
+  - **Verified:** manual (2026-10-01) - retired, superseded by US0978
 
 ## Revision History
 

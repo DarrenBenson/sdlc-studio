@@ -32,11 +32,11 @@ Title the handoff from the OUTCOME, not the ambition. The verdict is already AVA
   - **Verify:** manual - retired by US0967: the close and `sprint.py sign` write no handoff, so the close's handoff step, the plan's handoff notice and their tests were deleted; the next `sprint plan` reads the last signed report's handed-over items
   - **Verified:** manual (2026-10-01) - retired, superseded by US0967
 - [x] **AC3** Given a run that DROPPED a unit, when the `Where to pick up` SECTION is generated, then it names that unit. The assertion is scoped to that section on purpose: `render_body` already emits a `Closed without delivery` section naming dropped units, so an unscoped test is green at HEAD and pins nothing
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::HandoffTitleTests::test_the_pick_up_section_names_a_dropped_unit
-  - **Verified:** yes (2026-08-28)
+  - **Verify:** manual - retired by US0978: the handoff writers (`handoff.py generate` and refresh, the retro link) and `gate.py --require-handoff` were deleted with their tests; the signed report hands over the remaining work and `sprint plan --worklist RPTxxxx` plans it
+  - **Verified:** manual (2026-10-01) - retired, superseded by US0978
 - [x] **AC4** Given a run closing PARTIAL, when the handoff is minted, then its filename SLUG and its `_index.md` row do NOT contain the goal string, and both carry the outcome-derived title. Asserting they match the H1 is not an oracle: `handoff.py`:662 passes ONE title to `artifact.meta_new` and all three surfaces derive from it, so they agree at HEAD and after any fix. The Impact names three lying surfaces and the slug is derived from the title through `artifact.meta_new`, so a fix that changes the rendered heading alone leaves two of the three asserting the denied goal
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::HandoffTitleTests::test_the_slug_and_the_index_row_do_not_carry_the_denied_goal
-  - **Verified:** yes (2026-08-28)
+  - **Verify:** manual - retired by US0978: the handoff writers (`handoff.py generate` and refresh, the retro link) and `gate.py --require-handoff` were deleted with their tests; the signed report hands over the remaining work and `sprint plan --worklist RPTxxxx` plans it
+  - **Verified:** manual (2026-10-01) - retired, superseded by US0978
 
 ## Impact
 

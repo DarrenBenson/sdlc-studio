@@ -46,8 +46,8 @@ THE WAIVED LISTS, read from `cmd_stop` and probed on THE RUN's shapes: `cmd_stop
 - **When** `handoff.py generate --title "run ended early" --outcome budget-spent` runs through `handoff.main`
 - **Then** it exits 0 - it reports and never refuses; THE RECORD's outcome is `budget-spent` and its `unanswered` unit ids equal the literal set; and the handoff document it wrote carries THE SECTION, whose ids - parsed from that section alone - equal the literal set
 - **Mutant:** fill the record from the handoff report's own Remaining list, `_classify`'s non-terminal units
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EveryRunEndReadsThePredicateTests::test_handoff_outcome_records_and_names_the_unanswered_units
-- **Verified:** yes (2026-09-16)
+- **Verify:** manual - retired by US0978: the handoff writers (`handoff.py generate` and refresh, the retro link) and `gate.py --require-handoff` were deleted with their tests; the signed report hands over the remaining work and `sprint plan --worklist RPTxxxx` plans it
+- **Verified:** manual (2026-10-01) - retired, superseded by US0978
 
 ### AC4: a boundary stop reports THE RUN's unanswered units and still closes it
 
@@ -73,8 +73,8 @@ THE WAIVED LISTS, read from `cmd_stop` and probed on THE RUN's shapes: `cmd_stop
 - **When** in (i) `handoff.refresh(root, <the generated handoff id>, batch=<the run's batch>)` runs - the call the apply-signoff tail makes; and in (ii) `handoff.py generate --title "mid-run snapshot"` runs through `handoff.main` without `--outcome`
 - **Then** in (i) the refreshed document still carries THE SECTION, whose ids - parsed from that section alone - equal the literal set; in (ii) generate exits 0, the run's outcome is still `running`, the live run state (`run_state.read`) carries `handoff_remaining` - the positive control that generate's shared state update ran - and carries no `unanswered` key, so the field is written only on a path that ends the run
 - **Mutant:** render the section only inside the body `generate` builds, so the re-render after the close's sign-offs drops it
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::EveryRunEndReadsThePredicateTests::test_the_section_survives_refresh_and_a_mid_run_generate_records_nothing
-- **Verified:** yes (2026-09-16)
+- **Verify:** manual - retired by US0978: the handoff writers (`handoff.py generate` and refresh, the retro link) and `gate.py --require-handoff` were deleted with their tests; the signed report hands over the remaining work and `sprint plan --worklist RPTxxxx` plans it
+- **Verified:** manual (2026-10-01) - retired, superseded by US0978
 
 ## Test Plan
 

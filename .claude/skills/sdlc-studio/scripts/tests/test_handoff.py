@@ -1,11 +1,11 @@
-"""Unit tests for handoff.py + lib/run_state.py (RED first - neither exists yet).
+"""Unit tests for handoff.py's read-only join + lib/run_state.py.
 
-The class these lock: a run that stops short of its goal must hand a human a single
-document naming EVERY remaining item, each with a pointer (file / AC / check) and a
-suitability tag, and the next sprint must be able to read it back as a batch. A handoff
-that silently omits a remaining item is worse than no handoff (LL0008), so the omission
-cases are the load-bearing tests here: a batch id with no file on disk, and a quarantined
-unit that was never in the approved batch, both still appear.
+The class these lock: the join names EVERY remaining item, each with a pointer (file / AC /
+check) and a suitability tag. A join that silently omits a remaining item is worse than none
+(LL0008), so the omission cases are the load-bearing tests here: a batch id with no file on
+disk, and a quarantined unit that was never in the approved batch, both still appear. No
+command writes a handoff since US0978; the HO files already written stay resolvable and
+reconciled (`RegistrationTests`).
 """
 from __future__ import annotations
 
@@ -36,7 +36,6 @@ def _load(name: str):
 handoff = _load("handoff")
 artifact = _load("artifact")
 next_id = _load("next_id")
-gate = _load("gate")
 sprint = _load("sprint")
 reconcile = _load("reconcile")
 
@@ -81,13 +80,16 @@ def _handoff_index(root: Path) -> Path:
     return idx
 
 
-def _retro(root: Path, num: int = 21) -> Path:
-    d = root / "sdlc-studio" / "retros"
-    d.mkdir(parents=True, exist_ok=True)
-    p = d / f"RETRO{num:04d}-a-sprint.md"
-    p.write_text(f"# RETRO-{num:04d}: a sprint\n\n> **Date:** 2026-07-13\n\n"
-                 f"## Delivered\n\n- US0001\n\n## Lessons\n\n- something\n", encoding="utf-8")
-    return p
+def _old_handoff(root: Path) -> Path:
+    """An HO file and its index row as `handoff generate` wrote them before US0978 retired it."""
+    _handoff_index(root)
+    idx = root / "sdlc-studio" / "handoffs" / "_index.md"
+    idx.write_text(idx.read_text(encoding="utf-8").rstrip("\n")
+                   + "\n| [HO-0001](HO0001-close.md) | close | 2026-07-13 |\n", encoding="utf-8")
+    ho = root / "sdlc-studio" / "handoffs" / "HO0001-close.md"
+    ho.write_text("# HO-0001: close\n\n> **Date:** 2026-07-13\n> **Created-by:** sdlc-studio new\n"
+                  "\n## Where to pick up\n\n- US0002 - its file\n", encoding="utf-8")
+    return ho
 
 
 def _loop_state(root: Path, units: dict) -> None:
@@ -340,8 +342,6 @@ class BuildTests(unittest.TestCase):
             item = r["remaining"][0]
             self.assertIn("verify:unproven", [p["ref"] for p in item["pointers"]])
             self.assertIn("pytest tests/b.py", json.dumps(item["pointers"]))
-            gen = handoff.generate(root, title="c", batch=["US0002"], outcome=run_state.BLOCKED)
-            self.assertIn("US0002", Path(gen["worklist"]).read_text(encoding="utf-8"))
 
     def test_a_terminal_unit_with_STALE_acs_is_not_delivered_and_never_reads_green(self) -> None:
         """F2: `stale` was a pointer for remaining units and IGNORED in delivery evidence, so
@@ -356,7 +356,6 @@ class BuildTests(unittest.TestCase):
             r = handoff.build(root, batch=["US0001"])
             self.assertEqual(r["delivered"], [])
             self.assertEqual([x["id"] for x in r["remaining"]], ["US0001"])
-            self.assertNotIn("2/2 AC(s) verified", handoff.render_body(r))
 
     def test_superseded_is_closed_without_delivery_not_delivered(self) -> None:
         """F2: `Superseded` sat in the delivered set because `audit.MET` is a
@@ -408,15 +407,6 @@ class BuildTests(unittest.TestCase):
             self.assertEqual(r["remaining"], [])
             self.assertEqual(r["summary"]["delivered"], 1)
             self.assertEqual(r["summary"]["dropped"], 1)
-            body = handoff.render_body(r)
-            self.assertIn("## Closed without delivery (1)", body)
-            # The DELIVERED table specifically. This asserted "nowhere earlier in the
-            # document", which was a proxy for the same thing until BG0617 made the
-            # pick-up section name a dropped unit - correctly, since a run that dropped one
-            # has a tail even though nothing is still open. Narrowed to its own claim
-            # rather than relaxed: a dropped unit must not be reported as DELIVERED.
-            delivered = body.split("## Delivered")[1].split("\n\n##")[0]
-            self.assertNotIn("US0002", delivered, delivered)
 
     def test_a_failed_attempt_under_the_cap_still_shows_its_signature(self) -> None:
         """The guardrail thresholds are CLI flags. A unit that failed once has a signature
@@ -525,342 +515,23 @@ class BuildTests(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- generate
-class GenerateTests(unittest.TestCase):
-    def test_generate_is_tool_created_indexed_and_leaves_no_placeholder(self) -> None:
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            _handoff_index(root)
-            _story(root, 1, status="Done")
-            _story(root, 2, status="In Progress")
-            r = handoff.generate(root, title="run close", batch=["US0001", "US0002"],
-                                 outcome=run_state.BLOCKED)
-            self.assertEqual(r["id"], "HO-0001")
-            self.assertTrue(r["indexed"])
-            text = Path(r["path"]).read_text(encoding="utf-8")
-            self.assertNotIn("{{", text)          # L-0005: no leaked placeholder
-            self.assertIn("US0002", text)         # the remaining unit
-            self.assertIn("US0001", text)         # ...and the delivered one, with evidence
-            self.assertIn("HO-0001", text)
-            self.assertTrue(any(tag in text for tag in handoff.TAGS), "no suitability tag")
-            index = (root / "sdlc-studio" / "handoffs" / "_index.md").read_text(encoding="utf-8")
-            self.assertIn("[HO-0001](HO0001", index)   # the row is tool-appended
-
-    def test_generate_title_from_a_goal_sentence_yields_an_h1_without_trailing_punctuation(self) -> None:
-        # BG0179: the Sprint Goal sentence ends in a full stop; the H1 built from it must not,
-        # or markdownlint MD026 blocks the close commit in the generator's own repo.
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            _handoff_index(root)
-            _story(root, 2, status="In Progress")
-            r = handoff.generate(root, title="Close the run and prove every gate ran.",
-                                 batch=["US0002"], outcome=run_state.BLOCKED)
-            h1 = Path(r["path"]).read_text(encoding="utf-8").splitlines()[0]
-            self.assertTrue(h1.startswith("# HO-0001:"))
-            self.assertFalse(h1.rstrip()[-1] in ".,;:!?…",
-                             f"H1 ends in punctuation (MD026): {h1!r}")
-
-    def test_generate_bootstraps_a_missing_index_rather_than_minting_drift(self) -> None:
-        """A project's FIRST handoff must not land as reconcile drift the operator then
-        clears by hand: the index is created from the shipped template, and the row lands."""
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            _story(root, 2, status="In Progress")          # no handoffs/_index.md at all
-            r = handoff.generate(root, title="first", batch=["US0002"],
-                                 outcome=run_state.BLOCKED)
-            idx = root / "sdlc-studio" / "handoffs" / "_index.md"
-            self.assertTrue(idx.exists())
-            self.assertNotIn("{{", idx.read_text(encoding="utf-8"))
-            self.assertTrue(r["indexed"])
-            self.assertEqual(reconcile.meta_index_drift(root), [])
-
-    def test_generate_closes_the_run_with_its_outcome_and_handoff_id(self) -> None:
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            _handoff_index(root)
-            _story(root, 2, status="In Progress")
-            run_state.open_run(root, batch=["US0002"], goal="done")
-            r = handoff.generate(root, title="stopped short",
-                                 outcome=run_state.BUDGET_SPENT)
-            st = run_state.read(root)
-            self.assertEqual(st["outcome"], run_state.BUDGET_SPENT)
-            self.assertEqual(st["handoff"], r["id"])
-            self.assertTrue(st["ended_at"])
-
-    def test_generate_links_the_handoff_from_the_retro(self) -> None:
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            _handoff_index(root)
-            retro = _retro(root, 21)
-            _story(root, 2, status="In Progress")
-            r = handoff.generate(root, title="close", batch=["US0002"],
-                                 outcome=run_state.BLOCKED, retro="RETRO0021")
-            self.assertTrue(r["retro_linked"])
-            text = retro.read_text(encoding="utf-8")
-            self.assertIn("## Handoff", text)
-            self.assertIn(r["id"], text)
-
-    def test_linking_a_retro_that_does_not_exist_is_refused_before_any_write(self) -> None:
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            _handoff_index(root)
-            _story(root, 2, status="In Progress")
-            with self.assertRaises(ValueError):
-                handoff.generate(root, title="close", batch=["US0002"],
-                                 outcome=run_state.BLOCKED, retro="RETRO9999")
-            self.assertEqual(list((root / "sdlc-studio" / "handoffs").glob("HO*.md")), [])
-
-    def test_the_retro_link_is_idempotent(self) -> None:
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            _handoff_index(root)
-            retro = _retro(root, 21)
-            _story(root, 2, status="In Progress")
-            handoff.generate(root, title="a", batch=["US0002"], outcome=run_state.BLOCKED,
-                             retro="RETRO0021")
-            handoff.generate(root, title="b", batch=["US0002"], outcome=run_state.BLOCKED,
-                             retro="RETRO0021")
-            self.assertEqual(retro.read_text(encoding="utf-8").count("## Handoff"), 1)
 
 
 # --------------------------------------------------------------------------- AC2: read back
-class RefreshRunIdentityTests(unittest.TestCase):
-    """BG0198: a handoff belongs to a run, so refreshing it must not adopt another run's identity.
-
-    `refresh` scopes the UNIT LIST via `build(root, batch=batch)`, but `build` reads
-    `run_state.read(root)` unconditionally. Refreshing a closed run's handoff while a
-    DIFFERENT run is open therefore rewrote its Run / Outcome / Goal / Batch-source lines
-    with the other run's identity - the docstring promises "same id, same index row, same
-    retro link", and the run is part of that identity.
-    """
-
-    def test_refresh_refuses_when_the_open_run_is_not_the_handoff_s_run(self) -> None:
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            _handoff_index(root)
-            _story(root, 1, status="Done")
-            _story(root, 2, status="In Progress")
-            first = run_state.open_run(root, batch=["US0001", "US0002"], goal="done")
-            rec = handoff.generate(root, title="the first run", batch=["US0001", "US0002"],
-                                   outcome=run_state.BLOCKED)
-            before = Path(rec["path"]).read_text(encoding="utf-8")
-            self.assertIn(first["run_id"], before)
-
-            # A different run is opened; the earlier handoff is refreshed out of band.
-            second = run_state.open_run(root, batch=["US0002"], goal="design")
-            self.assertNotEqual(first["run_id"], second["run_id"])
-
-            with self.assertRaises(ValueError) as cm:
-                handoff.refresh(root, rec["id"], batch=["US0001", "US0002"])
-            msg = str(cm.exception)
-            self.assertIn(first["run_id"], msg)
-            self.assertIn(second["run_id"], msg)
-
-            after = Path(rec["path"]).read_text(encoding="utf-8")
-            self.assertEqual(before, after, "the document must be left untouched on refusal")
-            self.assertNotIn(second["run_id"], after)
-
-    def test_refresh_proceeds_when_the_open_run_is_the_handoff_s_own(self) -> None:
-        """The path the close actually takes must keep working."""
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            _handoff_index(root)
-            _story(root, 1, status="Done")
-            _story(root, 2, status="In Progress")
-            state = run_state.open_run(root, batch=["US0001", "US0002"], goal="done")
-            rec = handoff.generate(root, title="the only run", batch=["US0001", "US0002"],
-                                   outcome=run_state.BLOCKED)
-            rep = handoff.refresh(root, rec["id"], batch=["US0001", "US0002"])
-            self.assertIsNotNone(rep)
-            self.assertIn(state["run_id"],
-                          Path(rec["path"]).read_text(encoding="utf-8"))
-
-
-class RefreshReadsBothKeySchemasTests(unittest.TestCase):
-    """BG0452, the call site its own sweep missed. `refresh` located the document with
-    `stem.split("-")[0]`, which yields the bare type prefix `HO` for a v3 key
-    `HO-<ulid>-slug` - so the id never matched, `refresh` returned None, and the caller read
-    that as "no such handoff" for every key the product now mints by DEFAULT.
-
-    The bug that named this file in its own Affects and its Proposed Fix repaired three OTHER
-    readers and substituted a fourth site it had never named. An independent seat found this
-    one still carrying the defect, which is why a sweep is stated as a set of call sites and
-    then checked, rather than declared done."""
-
-    def test_a_v3_handoff_key_resolves_through_refresh_and_the_gate(self) -> None:
-        """Driven through the PRODUCTION entry points, because the first attempt at this test
-        re-implemented `refresh`'s locator inline - under a docstring claiming it did not - so
-        the repaired line had zero cover and the mutant that found the defect survived the whole
-        module. That is the same defect BG0442 was filed for, reproduced inside BG0442's own
-        repair commit. A verifier that does not execute the code its criterion is about tests
-        its own copy of the answer."""
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            _handoff_index(root)
-            _story(root, 1, status="Done")
-            _story(root, 2, status="In Progress")
-            run_state.open_run(root, batch=["US0001", "US0002"], goal="done")
-            rec = handoff.generate(root, title="a run", batch=["US0001", "US0002"],
-                                   outcome=run_state.BLOCKED)
-
-            # Re-key the document to the v3 schema the product now mints by default.
-            v3 = "HO-01JQZ0000000000000000000"
-            old = Path(rec["path"])
-            new = old.with_name(f"{v3}-a-run.md")
-            new.write_text(old.read_text(encoding="utf-8").replace(rec["id"], v3),
-                           encoding="utf-8")
-            old.unlink()
-
-            self.assertIsNotNone(handoff.refresh(root, v3, batch=["US0001", "US0002"]),
-                                 "refresh could not find a v3-keyed handoff - the locator is "
-                                 "splitting the stem on its first hyphen")
-
-            # ...and the gate lane that BLOCKS a close on a missing handoff sees it too.
-            retro = _retro(root)
-            retro.write_text(retro.read_text(encoding="utf-8")
-                             + f"\n[{v3}](../handoffs/{new.name})\n", encoding="utf-8")
-            got = gate._handoff_present(root, v3)
-            self.assertEqual(0, got["count"],
-                             f"the gate reports a linked handoff missing: {got['detail']}")
-            self.assertIn("linked", got["detail"])
-
-
-class WorklistTests(unittest.TestCase):
-    def test_generate_emits_a_worklist_the_next_sprint_plan_reads(self) -> None:
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            _handoff_index(root)
-            _story(root, 1, status="Done")
-            _story(root, 2, status="In Progress")
-            _cr(root, 3, status="Proposed")
-            r = handoff.generate(root, title="close", batch=["US0001", "US0002", "CR0003"],
-                                 outcome=run_state.BUDGET_SPENT)
-            wl = Path(r["worklist"])
-            self.assertTrue(wl.exists())
-            plan = sprint.build_plan(root, worklist=str(wl), order="priority")
-            self.assertEqual(sorted(u["id"] for u in plan["batch"]), ["CR0003", "US0002"])
-
-    def test_a_missing_unit_is_not_planned_but_is_never_silently_dropped(self) -> None:
-        """`sprint plan --worklist` refuses an id with no file on disk, so an unresolvable
-        id must not be a plannable LINE - it would abort the next plan. It is still named,
-        as a comment in the worklist and as an item in the handoff: unplannable is a fact
-        to report, not an item to lose."""
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            _handoff_index(root)
-            _story(root, 2, status="In Progress")
-            r = handoff.generate(root, title="close", batch=["US0002", "US0404"],
-                                 outcome=run_state.BLOCKED)
-            wl = Path(r["worklist"]).read_text(encoding="utf-8")
-            plannable = [ln.strip() for ln in wl.splitlines()
-                         if ln.strip() and not ln.strip().startswith("#")]
-            self.assertEqual(plannable, ["US0002"])
-            self.assertIn("US0404", wl)                       # named, as a comment
-            self.assertIn("US0404", Path(r["path"]).read_text(encoding="utf-8"))
-            plan = sprint.build_plan(root, worklist=r["worklist"], order="priority")
-            self.assertEqual([u["id"] for u in plan["batch"]], ["US0002"])
-
-    def test_sprint_plan_refuses_cleanly_on_an_unreadable_run_state(self) -> None:
-        """F4, at the other writer: `plan --write` would overwrite the wreckage with a blank
-        record. It stops instead - loudly, and without a traceback."""
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            _story(root, 2, status="Ready")
-            run_state.open_run(root, batch=["US0002"], goal="done")
-            p = run_state.path(root)
-            p.write_text(p.read_text(encoding="utf-8")[:40], encoding="utf-8")
-            err = io.StringIO()
-            args = sprint.build_parser().parse_args(
-                ["plan", "--stories", "Ready", "--write", "--root", str(root)])
-            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
-                rc = sprint.cmd_plan(args)
-            self.assertEqual(rc, 2)
-            self.assertIn("not valid JSON", err.getvalue())
-            self.assertEqual(len(p.read_text(encoding="utf-8")), 40)  # not overwritten
 
 
 # --------------------------------------------------------------------------- the gate lane
-class GateLaneTests(unittest.TestCase):
-    def _project(self, root: Path) -> None:
-        (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
-
-    def test_require_handoff_fails_when_the_handoff_is_absent(self) -> None:
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            self._project(root)
-            r = gate.run_gate(str(root), checks={}, require_handoff="HO0001")
-            self.assertFalse(r["ok"])
-            lane = next(c for c in r["checks"] if c["check"] == "handoff")
-            self.assertEqual(lane["status"], "fail")
-
-    def test_require_handoff_fails_when_no_retro_links_it(self) -> None:
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            self._project(root)
-            _handoff_index(root)
-            _story(root, 2, status="In Progress")
-            handoff.generate(root, title="close", batch=["US0002"], outcome=run_state.BLOCKED)
-            r = gate.run_gate(str(root), checks={}, require_handoff="HO0001")
-            self.assertFalse(r["ok"])
-            lane = next(c for c in r["checks"] if c["check"] == "handoff")
-            self.assertIn("no retro links", lane["detail"])
-
-    def test_require_handoff_passes_when_present_and_linked(self) -> None:
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            self._project(root)
-            _handoff_index(root)
-            _retro(root, 21)
-            _story(root, 2, status="In Progress")
-            handoff.generate(root, title="close", batch=["US0002"],
-                             outcome=run_state.BLOCKED, retro="RETRO0021")
-            r = gate.run_gate(str(root), checks={}, require_handoff="HO-0001")
-            self.assertTrue(r["ok"], r["checks"])
-
-    def test_deselecting_the_bound_handoff_lane_is_refused(self) -> None:
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            self._project(root)
-            r = gate.run_gate(str(root), checks={"a": lambda _r: {"count": 0, "blocking": True,
-                                                                  "detail": ""}},
-                              require_handoff="HO0001", skip=["handoff"])
-            self.assertFalse(r["ok"])
-            self.assertEqual(r["checks"][0]["check"], "selection")
-            self.assertIn("handoff", r["checks"][0]["detail"])
-
-    def test_a_bare_mention_of_the_id_does_not_satisfy_the_link_check(self) -> None:
-        """F5: the lane was a substring scan, so a retro whose prose DENIES the handoff
-        exists ("we never wrote HO-0001") passed it. The link is a markdown link to the
-        handoff file - that is the shape the writer emits, and the shape a reader can
-        follow, so that is the shape the gate checks."""
-        with tempfile.TemporaryDirectory() as t:
-            root = Path(t)
-            self._project(root)
-            _handoff_index(root)
-            retro = _retro(root, 21)
-            _story(root, 2, status="In Progress")
-            handoff.generate(root, title="close", batch=["US0002"], outcome=run_state.BLOCKED)
-            with retro.open("a", encoding="utf-8") as fh:
-                fh.write("\nThe run stopped early; we never wrote HO-0001.\n")
-            r = gate.run_gate(str(root), checks={}, require_handoff="HO0001")
-            self.assertFalse(r["ok"], "a prose mention passed as a link")
-            lane = next(c for c in r["checks"] if c["check"] == "handoff")
-            self.assertIn("no retro links", lane["detail"])
-
-    def test_the_handoff_lane_blocks_on_error(self) -> None:
-        self.assertIn("handoff", gate.BLOCKING_ON_ERROR)
-
-    def test_the_handoff_lane_is_absent_from_the_standard_gate(self) -> None:
-        self.assertNotIn("handoff", gate.DEFAULT_CHECKS)
 
 
 # --------------------------------------------------------------------------- registration
 class RegistrationTests(unittest.TestCase):
-    """`handoff` is a META artefact - tool-created, outside the status machinery - so it
-    must be registered everywhere the other meta types are, and nowhere the pipeline types
-    are (no status vocab, no validator walk)."""
+    """`handoff` is a META artefact - outside the status machinery - so the HO files already
+    written resolve and reconcile wherever the other meta types do, and nowhere the pipeline
+    types are (no status vocab, no validator walk). No command creates one (US0978), so it is
+    not among `artifact.py new`'s types."""
 
     def test_handoff_is_a_meta_type_not_a_pipeline_type(self) -> None:
-        self.assertIn("handoff", artifact.META)
+        self.assertNotIn("handoff", artifact.META, "a handoff is creatable again (US0978)")
         self.assertIn("handoff", next_id.META_TYPES)
         self.assertNotIn("handoff", sdlc_md.ARTIFACT_TYPES)
         self.assertNotIn("handoff", artifact.SPEC)
@@ -872,9 +543,7 @@ class RegistrationTests(unittest.TestCase):
         transition = _load("transition")
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
-            _handoff_index(root)
-            _story(root, 2, status="In Progress")
-            handoff.generate(root, title="close", batch=["US0002"], outcome=run_state.BLOCKED)
+            _old_handoff(root)
             with self.assertRaises(ValueError) as ctx:
                 transition.transition(root, "HO0001", "Done")
             self.assertIn("meta-artifact", str(ctx.exception))
@@ -883,9 +552,7 @@ class RegistrationTests(unittest.TestCase):
     def test_reconcile_covers_the_handoff_index(self) -> None:
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
-            _handoff_index(root)
-            _story(root, 2, status="In Progress")
-            handoff.generate(root, title="close", batch=["US0002"], outcome=run_state.BLOCKED)
+            _old_handoff(root)
             self.assertEqual(reconcile.meta_index_drift(root), [])
             # an un-indexed handoff file is drift the meta lane reports, like a retro's
             (root / "sdlc-studio" / "handoffs" / "HO0009-hand.md").write_text(
@@ -893,336 +560,6 @@ class RegistrationTests(unittest.TestCase):
             drift = reconcile.meta_index_drift(root)
             self.assertEqual([d["id"] for d in drift], ["HO-0009"])
             self.assertEqual(drift[0]["kind"], "missing-row")
-
-
-class HandoffBulletFollowsTheDocumentTests(unittest.TestCase):
-    """BG0590: the close appended a DASH bullet to the retro whatever the document used.
-
-    Three of this repository's 105 retros are asterisk-styled - RETRO0102, RETRO0103 and
-    RETRO0104 - and the close wrote into one of them, so `sprint close` exited 0 and then
-    left the tree refused by the repo's own markdown lane:
-    `MD004/ul-style Unordered list style [Expected: asterisk; Actual: dash]`. The close
-    succeeds and THEN makes the tree uncommittable, which is the worst ordering - the operator
-    has already been told the run closed.
-
-    Every test here runs the REAL markdownlint over the result rather than asserting the
-    string. A test asserting a marker passes on the defect just as happily as on the fix, and
-    the claim being made is about a linter's verdict, not about a character.
-    """
-
-    RETRO = ("# RETRO0001: t\n\n> **Status:** Draft\n\n## What went well\n\n"
-             "{m} the first thing\n{m} the second thing\n\n## Handoff\n\n")
-
-    def _report(self) -> dict:
-        return {"summary": {"remaining": 12, handoff.COPILOT_TAIL: 3, handoff.JUDGEMENT: 9},
-                "worklist": "sdlc-studio/.local/worklist.md"}
-
-    def _append(self, root: Path, marker: str) -> Path:
-        rp = root / "RETRO0001-t.md"
-        rp.write_text(self.RETRO.format(m=marker), encoding="utf-8")
-        handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
-        return rp
-
-    @classmethod
-    def _run_lint(cls, path: Path) -> tuple[bool, str]:
-        try:
-            r = subprocess.run(["npx", "--no-install", "markdownlint-cli", str(path)],
-                               capture_output=True, text=True, timeout=120)
-        except (OSError, subprocess.TimeoutExpired) as exc:
-            return False, str(exc)
-        return True, r.stdout + r.stderr
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        """POSITIVE CONTROL, or the whole class is inert.
-
-        `npx --no-install` fails two different ways. A missing BINARY raises OSError, which the
-        first cut caught. A missing PACKAGE exits non-zero with `npm ERR! 404` on stderr - no
-        exception - so the helper returned that text and `assertNotIn("MD004", ...)` passed
-        against a linter that had never run. A review proved it by breaking the package name:
-        five passed, zero skipped. Both this helper's docstring and the unit's `Verification
-        depth` claimed "skipped, never faked", which was the opposite of the truth.
-
-        So: lint a known-bad file first and require MD004 in the output. A detector's SILENCE is
-        only evidence once it has been shown able to speak.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            bad = Path(d) / "bad.md"
-            bad.write_text("# t\n\n* a\n\n- b\n", encoding="utf-8")
-            ran, out = cls._run_lint(bad)
-        if not ran:
-            raise unittest.SkipTest(f"markdownlint unavailable: {out}")
-        if "MD004" not in out:
-            raise unittest.SkipTest(
-                "markdownlint did not report MD004 on a known-bad file, so it is not really "
-                f"running here and its silence proves nothing. Output was: {out[:200]}")
-
-    def _lint(self, path: Path) -> str:
-        """The real lane, after `setUpClass` has proved it can detect MD004."""
-        ran, out = self._run_lint(path)
-        self.assertTrue(ran, f"markdownlint stopped working mid-class: {out}")
-        return out
-
-    def test_an_asterisk_retro_stays_clean(self) -> None:
-        """AC1. MUTANT: hardcode `-` in `_link_from_retro` again. The observed failure."""
-        with tempfile.TemporaryDirectory() as d:
-            rp = self._append(Path(d), "*")
-            self.assertIn("* [HO-0059]", rp.read_text(encoding="utf-8"))
-            self.assertNotIn("MD004", self._lint(rp))
-
-    def test_a_dash_retro_stays_clean(self) -> None:
-        """AC2. MUTANT: hardcode `*` instead.
-
-        The fix must FOLLOW the document, not swap one hardcoded bullet for another - which
-        would satisfy AC1 perfectly while breaking every dash-styled consuming project.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            rp = self._append(Path(d), "-")
-            self.assertIn("- [HO-0059]", rp.read_text(encoding="utf-8"))
-            self.assertNotIn("MD004", self._lint(rp))
-
-    def test_the_sibling_appender_follows_the_document(self) -> None:
-        """AC3. MUTANT: hardcode `-` in `artifact._wire_story_to_epic`.
-
-        `artifact.py` carries the same assumption, writing `- [ ] [US...]` into an epic. Fixing
-        one instance of a class and leaving the other is the enumerated-list failure this
-        repository keeps meeting, and the filing's own `Affects` had to be corrected for the
-        same reason.
-        """
-        artifact = _load("artifact")
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            ed = root / "sdlc-studio" / "epics"
-            ed.mkdir(parents=True)
-            ep = ed / "EP0001-e.md"
-            ep.write_text("# EP0001: e\n\n> **Status:** Draft\n\n## Story Breakdown\n\n"
-                          "* [ ] [US0009: prior](../stories/US0009-p.md)\n", encoding="utf-8")
-            self.assertTrue(
-                artifact._wire_story_to_epic(root, "EP0001", "US0001", "t", "US0001", "t"))
-            self.assertIn("* [ ] [US0001: t]", ep.read_text(encoding="utf-8"))
-            self.assertNotIn("MD004", self._lint(ep))
-
-    def test_a_bullet_inside_fenced_code_is_not_the_documents_style(self) -> None:
-        """AC5. MUTANT: drop the fence skip from `document_bullet`.
-
-        A retro that quotes a dash-bulleted command transcript in a fenced block still has an
-        asterisk document style, and MD004 agrees - a fenced block is not a list. Reading the
-        first marker anywhere in the file takes the illustration as the rule and writes the
-        wrong bullet into a document that looked, to the naive reader, entirely consistent.
-        Found by a mutant that SURVIVED the first four tests.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            rp = Path(d) / "RETRO0001-t.md"
-            rp.write_text("# RETRO0001: t\n\n> **Status:** Draft\n\n## Evidence\n\n"
-                          "```text\n- a quoted transcript line\n- another\n```\n\n"
-                          "## What went well\n\n* the real list\n\n## Handoff\n\n",
-                          encoding="utf-8")
-            handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
-            self.assertIn("* [HO-0059]", rp.read_text(encoding="utf-8"))
-            self.assertNotIn("MD004", self._lint(rp))
-
-    def test_a_blockquoted_list_sets_the_documents_style(self) -> None:
-        """AC6. MUTANT: drop the blockquote strip from `document_bullet`.
-
-        markdownlint parses a list inside a blockquote AS A LIST - verified against the tool,
-        not assumed - so a retro whose only list is a quoted reviewer verdict has an asterisk
-        style, and a helper blind to it answers the default and writes a dash. A review
-        reproduced exactly that end to end through the shipped CLI: the retro linted clean
-        before the close and carried an MD004 error after it, which is the ordering this unit
-        exists to remove.
-
-        The asymmetry with fenced blocks is the point: quoted lists count, fenced ones do not.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            rp = Path(d) / "RETRO0001-t.md"
-            rp.write_text("# RETRO0001: t\n\n> **Status:** Draft\n\n## Verdict\n\n"
-                          "> * the first finding\n> * the second\n\n## Handoff\n\n",
-                          encoding="utf-8")
-            handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
-            self.assertIn("* [HO-0059]", rp.read_text(encoding="utf-8"))
-            self.assertNotIn("MD004", self._lint(rp))
-
-    def test_the_first_marker_wins_not_the_last(self) -> None:
-        """AC7. MUTANT: return the LAST matching marker rather than the first.
-
-        MD004 defaults to `consistent`, which takes the FIRST list marker as the rule. The
-        docstring says so and nothing pinned it - a review mutated it to the last and 327 tests
-        stayed green. A mixed document is the only one that can tell them apart.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            rp = Path(d) / "RETRO0001-t.md"
-            rp.write_text("# RETRO0001: t\n\n> **Status:** Draft\n\n## Mixed\n\n"
-                          "* the first marker in the file\n\n- a later, different one\n\n"
-                          "## Handoff\n\n", encoding="utf-8")
-            handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
-            self.assertIn("* [HO-0059]", rp.read_text(encoding="utf-8"))
-
-    def test_a_plus_bulleted_document_is_followed_too(self) -> None:
-        """AC8. MUTANT: drop `+` from the marker class.
-
-        CommonMark has three unordered markers and MD004 judges all three. Dropping one is the
-        enumerated-list failure this repository keeps meeting, and nothing covered it.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            rp = Path(d) / "RETRO0001-t.md"
-            rp.write_text("# RETRO0001: t\n\n> **Status:** Draft\n\n## Notes\n\n"
-                          "+ a plus bullet\n\n## Handoff\n\n", encoding="utf-8")
-            handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
-            self.assertIn("+ [HO-0059]", rp.read_text(encoding="utf-8"))
-
-    def test_a_spaced_thematic_break_is_not_a_list_marker(self) -> None:
-        """AC9. MUTANT: drop the thematic-break guard from `document_bullet`.
-
-        `* * *` and `- - -` match the item pattern - a marker, whitespace, then a non-space -
-        but markdownlint counts neither as a list. Reading one as the style writes the wrong
-        bullet into a document that was consistent, which is the failure this whole unit
-        exists to remove, reintroduced by its own first repair. A review reproduced it: a
-        dash-styled retro carrying `* * *` received an asterisk handoff bullet and MD004
-        refused the file, where the pre-fix code had linted clean.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            rp = Path(d) / "RETRO0001-t.md"
-            # THE BREAK COMES FIRST, or the guard is never reached and this test passes on
-            # the defect - which it did, until a mutant survived it.
-            rp.write_text("# RETRO0001: t\n\n> **Status:** Draft\n\n## Notes\n\n"
-                          "* * *\n\n- a dash bullet\n\n## Handoff\n\n", encoding="utf-8")
-            handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
-            self.assertIn("- [HO-0059]", rp.read_text(encoding="utf-8"))
-            self.assertNotIn("MD004", self._lint(rp))
-
-    def test_a_bullet_indented_as_code_does_not_set_the_style(self) -> None:
-        """AC10. MUTANT: relax the leading-space bound from `^ {0,3}` to `^ *`.
-
-        Four spaces is an indented code block, not a list. Same class as the fenced block AC5
-        was added for after a survivor, and a review found this sibling equally unpinned.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            rp = Path(d) / "RETRO0001-t.md"
-            rp.write_text("# RETRO0001: t\n\n> **Status:** Draft\n\n## Sample\n\n"
-                          "    * a bullet inside an indented code block\n\n"
-                          "## Notes\n\n- the real list\n\n## Handoff\n\n", encoding="utf-8")
-            handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
-            self.assertIn("- [HO-0059]", rp.read_text(encoding="utf-8"))
-
-    def test_the_shipped_cli_writes_the_documents_bullet(self) -> None:
-        """AC11. MUTANT: hardcode a dash in `_link_from_retro` again.
-
-        THE WIRING TEST. `verify_ac lane-check` reported this unit as changing a command while
-        none of its verifiers entered the shipped entry point - every other test here calls
-        `_link_from_retro` directly. `handoff.py generate` is what the close actually invokes,
-        and the defect this unit fixes was OBSERVED through that command, not through the
-        library.
-        """
-        import subprocess  # noqa: PLC0415 - the point is to leave this process
-        script = Path(__file__).resolve().parents[1] / "handoff.py"
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            rd = root / "sdlc-studio" / "retros"
-            rd.mkdir(parents=True)
-            (root / "sdlc-studio" / ".local").mkdir(parents=True)
-            rp = rd / "RETRO0001-t.md"
-            rp.write_text("# RETRO0001: t\n\n> **Status:** Draft\n\n## What went well\n\n"
-                          "* the first thing\n\n## Handoff\n\n", encoding="utf-8")
-            # `--ids` is required: a handoff over no batch would report a clean close it never
-            # checked, which the command refuses outright.
-            r = subprocess.run([sys.executable, "-B", str(script), "generate",
-                                "--root", str(root), "--retro", "RETRO0001",
-                                "--ids", "US0001", "--title", "t"],
-                               capture_output=True, text=True)
-            after = rp.read_text(encoding="utf-8")
-            page = r.stdout + r.stderr
-        self.assertIn("* [HO", after, page + "\n---\n" + after)
-        self.assertNotIn("\n- [HO", after, after)
-
-    def test_nothing_outside_the_handoff_section_changes(self) -> None:
-        """AC4. MUTANT: normalise every bullet in the file to the document's style.
-
-        That satisfies AC1 and AC2 perfectly while silently reformatting the operator's prose -
-        a writer that rewrites what it was not asked to touch is a worse defect than the one
-        being fixed, and the retro is a document a human authored.
-        """
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            rp = root / "RETRO0001-t.md"
-            before = ("# RETRO0001: t\n\n> **Status:** Draft\n\n## What went well\n\n"
-                      "* the first thing\n- a deliberately mixed line\n\n## Handoff\n\n")
-            rp.write_text(before, encoding="utf-8")
-            handoff._link_from_retro(rp, "HO-0059", "HO0059-x.md", self._report())
-            after = rp.read_text(encoding="utf-8")
-            head = before.split("## Handoff")[0]
-            self.assertEqual(head, after.split("## Handoff")[0],
-                             "the appender rewrote prose outside its own section")
-            # The TAIL as well. AC4 says "every byte outside that section"; comparing only the
-            # head left content after the appended section unchecked - a review found it.
-            tail = "\n## After\n\n- a later bullet\n"
-            rp.write_text(before + tail, encoding="utf-8")
-            handoff._link_from_retro(rp, "HO-0060", "HO0060-x.md", self._report())
-            self.assertIn(tail.strip(), rp.read_text(encoding="utf-8"))
-
-
-class HandoffTitleTests(unittest.TestCase):
-    """BG0617, the handoff-side half: the pick-up section and the surfaces derived from the title."""
-
-    def _report(self, *, dropped=(), remaining=()):
-        units = []
-        for uid in dropped:
-            units.append({"id": uid, "title": "a dropped unit", "terminal": True,
-                          "dropped": "premise did not reproduce", "status": "Closed",
-                          "suitability": {"tag": handoff.JUDGEMENT, "why": "-"}, "pointer": "-"})
-        for uid in remaining:
-            units.append({"id": uid, "title": "an open unit", "terminal": False,
-                          "dropped": "", "status": "In Progress",
-                          "suitability": {"tag": handoff.JUDGEMENT, "why": "-"}, "pointer": "-"})
-        s = {"total": len(units), "remaining": len(remaining), "dropped": len(dropped),
-             handoff.COPILOT_TAIL: 0, handoff.JUDGEMENT: len(remaining)}
-        return {"units": units, "dropped": [u for u in units if u["dropped"]],
-                "remaining": [u for u in units if not u["terminal"]],
-                "summary": s, "worklist": "sdlc-studio/.local/handoff-worklist.txt"}
-
-    def test_the_pick_up_section_names_a_dropped_unit(self) -> None:
-        # AC3. Scoped to the PICK-UP section: `render_body` already emits a separate
-        # `Closed without delivery` heading, so an unscoped assertion is green at HEAD and
-        # pins nothing. A dropped unit is terminal, so `remaining` is empty and the
-        # unconditional "plan the next batch normally" branch is the one that fires.
-        body = handoff._pickup_body(self._report(dropped=["BG0901"]))
-        self.assertIn("BG0901", body, body)
-        self.assertNotIn("plan the next batch normally", body, body)
-
-    def test_a_clean_run_still_says_there_is_no_tail(self) -> None:
-        # The paired control: with nothing dropped and nothing remaining, the unconditional
-        # line is correct and must survive.
-        body = handoff._pickup_body(self._report())
-        self.assertIn("plan the next batch normally", body, body)
-
-    def test_the_slug_and_the_index_row_do_not_carry_the_denied_goal(self) -> None:
-        # AC4. The H1, the filename slug and the index row all derive from ONE title string, so
-        # this is an oracle over two surfaces the H1 assertion never reads. Asserted against a
-        # SLUGIFIED distinctive token that survives truncation: `slug` lowercases and hyphenates
-        # and the filename is cut short, so a raw substring test is vacuously true.
-        goal = "Every instrument reports only what its evidence supports"
-        token = sdlc_md.slug(goal).split("-")[0]
-        outcome_title = "RUN-INERT closed partial"
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "sdlc-studio" / "handoffs").mkdir(parents=True)
-            (root / "sdlc-studio" / ".config.yaml").write_text(
-                "schema_version: 3\n", encoding="utf-8")
-            (root / "sdlc-studio" / "handoffs" / "_index.md").write_text(
-                "# Handoffs\n\n| ID | Title | Date |\n| --- | --- | --- |\n", encoding="utf-8")
-            # Driven through `handoff.generate`, NOT `artifact.meta_new` directly: the title
-            # reaches the three surfaces through generate, so a test calling meta_new bypasses
-            # exactly the wiring this criterion exists to pin.
-            (root / "sdlc-studio" / ".local").mkdir(parents=True, exist_ok=True)
-            (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
-            (root / "sdlc-studio" / "stories" / "US0001-a.md").write_text(
-                "# US0001: a\n\n> **Status:** Done\n", encoding="utf-8")
-            res = handoff.generate(root, outcome_title, batch=["US0001"],
-                                   outcome=run_state.GOAL_REACHED)
-            name = Path(res["path"]).name
-            index = (root / "sdlc-studio" / "handoffs" / "_index.md").read_text(encoding="utf-8")
-            self.assertNotIn(token, name, name)
-            self.assertNotIn(goal, index, index)
-            self.assertIn("closed-partial", name, name)
 
 
 class ClassifyUnreadableTests(unittest.TestCase):

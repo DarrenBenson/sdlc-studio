@@ -1744,7 +1744,7 @@ SAFE_INPUT_WRITERS = {"file_finding.py", "artifact.py",
                       # gained --fields-file (shared file_finding.resolve_prose_fields loader):
                       "critic.py", "close_owed.py", "sprint.py",
                       # ...and the four the six original flag spellings could not see at all:
-                      "decisions.py", "lessons.py", "ledger.py", "handoff.py",
+                      "decisions.py", "lessons.py", "ledger.py",
                       # ...and verify_ac.py, whose `coverage rule --reason` gained --fields-file (US0816):
                       "verify_ac.py"}
 
@@ -1783,7 +1783,6 @@ LATE_FOUND_PROSE_SPELLINGS = {
     "decisions.py": ("--rationale",),
     "lessons.py": ("--body", "--reason"),
     "ledger.py": ("--rationale",),
-    "handoff.py": ("--title",),
 }
 
 
@@ -2544,9 +2543,9 @@ class SuppliedContentLandsTests(unittest.TestCase):
                 self.assertIn(c, body)
 
     def test_every_supplied_field_lands_for_every_non_meta_type(self) -> None:
-        """The property, asserted over the whole matrix rather than one example. `retro`,
-        `review` and `handoff` are excluded because they route through `meta_new` and never
-        reach this renderer at all."""
+        """The property, asserted over the whole matrix rather than one example. The meta
+        types are excluded because they route through `meta_new` and never reach this
+        renderer at all."""
         fields = {"summary": "zebra alpha summary", "steps": "quokka steps",
                   "fix": "narwhal fix", "impact": "ocelot impact", "acs": ["dingo one"],
                   "options": ["puffin one"], "recommendation": "lemur rec"}

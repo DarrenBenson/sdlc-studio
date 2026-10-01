@@ -50,7 +50,7 @@ FILE_TYPES = ("bug", "cr", "rfc")
 # The meta types (retro/review/handoff) bootstrap their own `_index.md` on first create, from
 # the same index templates and the same shared writer as the pipeline types - so their fresh
 # index must lint clean too. Kept beside NEW_TYPES so neither family goes unguarded.
-META_TYPES = ("retro", "review", "handoff")
+META_TYPES = ("retro", "review")   # handoff: no longer creatable (US0978)
 
 # The rules a CREATOR owns: it holds (or can derive) every input they need, so none of
 # them may fire on a freshly minted artefact - filled or not.
@@ -338,7 +338,7 @@ class MarkdownlintRoundTripTests(unittest.TestCase):
                         self.assertEqual(idx_errs, "", f"{type_}/{template} _index.md:\n{idx_errs}")
 
     def test_created_meta_indexes_are_lint_clean(self) -> None:
-        """The meta types (retro/review/handoff) bootstrap their first `_index.md` from the same
+        """The creatable meta types (retro/review) bootstrap their first `_index.md` from the same
         templates through the same writer as the pipeline types - so that fresh index must lint
         clean too. Without this leg a regression to a meta index template escapes the guard."""
         for type_ in META_TYPES:

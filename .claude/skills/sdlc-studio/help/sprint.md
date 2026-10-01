@@ -311,8 +311,8 @@ answers nothing. It writes two lists onto the run record, and they answer differ
 `could_have_proceeded` is the work the stop parked, which the pending decisions did not block;
 `unanswered` is the stop-ship questions it waived, the set the close would have refused on.
 Each is printed under its own label, and the next `sprint plan` names the waived units. Every
-route that ends a run records `unanswered` the same way - a boundary stop and
-`handoff generate --outcome` too - and `close --file-and-close`
+route that ends a run records `unanswered` the same way - a boundary stop too - and
+`close --file-and-close`
 refuses rather than record it, because filing defers ceremony debt and a stop-ship question is
 answered, never filed.
 

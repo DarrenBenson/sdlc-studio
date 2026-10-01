@@ -265,13 +265,14 @@ class FieldsFileTypeTests(unittest.TestCase):
 
     def test_the_four_shipped_commands_refuse_by_name_and_never_traceback(self) -> None:
         """AC3. Each module's COMMAND, driven as a subprocess. The fifth, `validate.py
-        warning-ratchet --stamp`, was deleted with the warning ratchet (US0896).
+        warning-ratchet --stamp`, was deleted with the warning ratchet (US0896), and the sixth,
+        `handoff.py generate`, with the handoff writers (US0978).
 
         MUTANT (one per module): bypass the shared loader and read the JSON directly at that
         command's call site. The refusal asserted here is the LOADER'S, so a command that stops
-        consulting it fails this test whatever else it prints - `decisions.py` and `handoff.py`
-        both refuse a boolean today for the wrong reason ("no rationale", "no title"), which is
-        a refusal that names a key the document carries.
+        consulting it fails this test whatever else it prints - `decisions.py` refuses a boolean
+        for the wrong reason ("no rationale") without it, which is a refusal that names a key
+        the document carries.
         """
         import subprocess  # noqa: PLC0415 - the shipped entry point, not the library behind it
         scripts = Path(__file__).resolve().parent.parent
@@ -280,7 +281,6 @@ class FieldsFileTypeTests(unittest.TestCase):
              ["record", "--tranche", "CR0020"]),
             ("decisions.py", "rationale", {"decision": "a ruling", "rationale": False},
              ["add"]),
-            ("handoff.py", "title", {"title": 0}, ["generate", "--dry-run"]),
             ("file_finding.py", "impact",
              {"title": "t", "summary": "s", "severity": "Medium", "steps": "1. a", "fix": "f",
               "impact": False, "affects": "scripts/a.py", "points": 3},
@@ -308,7 +308,6 @@ class FieldsFileTypeTests(unittest.TestCase):
             ("ledger", 0, {"decision": "a ruling", "rationale": "why it was taken"},
              ["record", "--tranche", "CR0020"]),
             ("decisions", 0, {"decision": "a ruling", "rationale": "why it was taken"}, ["add"]),
-            ("handoff", 2, {"title": "a handoff"}, ["generate", "--dry-run"]),
             ("file_finding", 0,
              {"title": "t", "summary": "a summary", "severity": "Medium",
               "steps": "1. run it", "fix": "repair it", "impact": "an impact",
@@ -338,8 +337,6 @@ class FieldsFileTypeTests(unittest.TestCase):
                 output = out.getvalue() + err.getvalue()
                 self.assertNotIn("not text", output)
                 self.assertEqual(expected, rc, output)
-                if module == "handoff":     # the one refusal that is about something else
-                    self.assertIn("no batch to hand over", output)
 
     def test_a_new_or_empty_guard_is_refused_by_the_repository_check(self) -> None:
         """AC4. A new `.get(...) or ""` on a fields-file consumer is REFUSED by the sweep.

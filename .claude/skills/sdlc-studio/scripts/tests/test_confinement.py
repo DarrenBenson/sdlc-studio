@@ -204,11 +204,6 @@ WRITER_CASES: dict[str, WriterCase] = {
         argv=("record", "--tranche", "T1", "--decision", "x", "--rationale", "y"),
         targets=frozenset({"sdlc-studio/decisions/T1.md"}),
     ),
-    "handoff.py": WriterCase(
-        argv=("generate", "--title", "probe run", "--outcome", "goal-reached", "--id", "US0001"),
-        targets=frozenset({"sdlc-studio/handoffs/HO0001-probe-run.md",
-                           "sdlc-studio/handoffs/_index.md"}),
-    ),
     "retro.py": WriterCase(
         argv=("extract", "--id", "RETRO0001"),
         local_target="sdlc-studio/.local/lessons.md",

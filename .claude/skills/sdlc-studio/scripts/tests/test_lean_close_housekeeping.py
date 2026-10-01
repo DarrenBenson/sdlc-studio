@@ -53,10 +53,6 @@ def _calls(tools: Path) -> list[str]:
     return log.read_text(encoding="utf-8").split() if log.exists() else []
 
 
-def _handovers(root: Path) -> list[str]:
-    return sorted(p.name for p in (root / "sdlc-studio" / "handoffs").glob("HO*.md"))
-
-
 class CloseHousekeepingTests(unittest.TestCase):
 
     def test_the_close_forward_ports_where_the_tool_exists(self) -> None:
@@ -103,26 +99,6 @@ class CloseHousekeepingTests(unittest.TestCase):
             self.assertEqual(0, rc, err)
             self.assertFalse(lean._read(root)["close_known_issues"])
             self.assertNotIn("forward-port", out + err)
-
-    def test_only_the_open_runs_own_handover_is_refreshed(self) -> None:
-        """Mutants: `_open_handoff` refreshes a handover the state names although the run has
-        ended (a sealed run's handover is a record), or although the document records a
-        different run. The first handover is generated directly: the close writes none since
-        US0967."""
-        for label, over in (("sealed", {"outcome": "goal-reached"}),
-                            ("another run's", {"run_id": "RUN-LEAN0002"})):
-            with self.subTest(label), tempfile.TemporaryDirectory() as d:
-                root = Path(d)
-                lean._fixture(root)
-                first = lean._live("handoff").generate(root, "first")["id"]
-                [name] = _handovers(root)
-                before = (root / "sdlc-studio" / "handoffs" / name).read_text(encoding="utf-8")
-                lean._state(root, handoff=first, **over)
-                res = lean._live("handoff").generate(root, "next")
-                self.assertNotEqual(first, res["id"], f"{label} handover was reused")
-                self.assertEqual(2, len(_handovers(root)))
-                self.assertEqual(before, (root / "sdlc-studio" / "handoffs" / name).read_text(
-                    encoding="utf-8"), f"{label} handover was rewritten")
 
 
 if __name__ == "__main__":

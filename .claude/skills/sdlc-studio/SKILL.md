@@ -247,7 +247,7 @@ approach decisions. The full index is in `help/references.md`.
 | `triage` | Decompose an Issue into the bugs that deliver its fix (mirror of `refine`) |
 | `project` | Project-level orchestration across all epics |
 | `sprint` | Goal-Driven Development loop: a prioritised batch driven along the goal ladder `triage -> plan -> design -> done` |
-| `handoff` | The run-close handoff guide: what remains, per item, with its pointer and a copilot-tail / judgement tag |
+| `handoff` | The remaining-work join, read-only (`show`): what remains, per item, with its pointer and a copilot-tail / judgement tag |
 | `plan` | Claude Code plan-file lifecycle (list, archive) |
 | `decisions` | Project decisions log (the project spine + delegated-agent handoff): `add` / `list` / `promote` |
 | `retro` | Sprint retro: what the batch taught and what changes because of it - the close gate reads its content |

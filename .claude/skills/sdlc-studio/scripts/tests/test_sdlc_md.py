@@ -1298,7 +1298,11 @@ class CreatorResolverAgreementTests(unittest.TestCase):
         """
         import subprocess  # noqa: PLC0415
         creator = Path(__file__).resolve().parent.parent / "artifact.py"
-        types = sorted(set(sdlc_md.ARTIFACT_TYPES) | set(sdlc_md.META_TYPES))
+        # The creator's OWN accepted types: the pipeline specs plus the creatable meta types.
+        # `handoff` stays in `META_TYPES` so the HO files already written resolve, and is not
+        # creatable since US0978, so it is read from the creator rather than from the map.
+        made = _load("artifact_for_creator_census", "artifact.py")
+        types = sorted(set(made.SPEC) | set(made.META))
         self.assertGreaterEqual(len(types), 10, "the type census collapsed - check the maps")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

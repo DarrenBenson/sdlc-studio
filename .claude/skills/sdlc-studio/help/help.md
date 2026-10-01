@@ -150,7 +150,7 @@ The delivery loop, and the independent look at what it produced.
 | Command | Description |
 | --- | --- |
 | `/sdlc-studio sprint <batch> --goal <rung>` | Goal-Driven Development loop: drive a prioritised tranche along the **goal ladder** `triage -> plan -> design -> done` (cumulative stop-points; natural language maps to the furthest rung). The primary delivery workflow |
-| `/sdlc-studio handoff generate` / `show` | The run-close handoff guide: the single "here is where you pick up" document a run that stopped short of its goal owes a human - every remaining item with its pointer (file / AC / check) and a suitability tag (copilot-tail vs judgement), plus a worklist the next `sprint plan --worklist` reads back |
+| `/sdlc-studio handoff show` | The remaining-work join, read-only: every remaining item with its pointer (file / AC / check) and a suitability tag (copilot-tail vs judgement). No command writes a handoff; the signed report hands over the carried work and `sprint plan --worklist RPTxxxx` plans it |
 | `/sdlc-studio review` | Unified PRD, TRD, TSD review |
 | `/sdlc-studio review --quick` | Fast review using cached data |
 | `/sdlc-studio review --focus {doc}` | Review specific document (prd, trd, tsd) |

@@ -2032,7 +2032,6 @@ class BoundLaneRegistryTests(unittest.TestCase):
     MODES = [
         ("require_retro", ["retro", "lessons-summary", "lessons-validity"]),
         ("require_lessons", ["lessons-summary", "lessons-validity"]),
-        ("require_handoff", ["handoff"]),
         ("release", ["verify", "review-legs"]),
     ]
 

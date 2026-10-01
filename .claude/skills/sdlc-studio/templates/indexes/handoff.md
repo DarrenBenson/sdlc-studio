@@ -12,9 +12,8 @@ Run-close handoff guides, one per run that stopped short of its goal (budget spe
 blocked, an operator stop). Each names what was delivered with its evidence and every
 remaining item with a pointer to start from - the failing AC, the check it stalled at, the
 blocker, or the file - plus a `copilot-tail` / `judgement` suitability tag and the open
-decisions. Generated, never hand-authored: `handoff generate` joins the run's own evidence,
-allocates the id and appends the row here. It is linked from the batch retro and emits the
-worklist the next `sprint plan --worklist` reads back.
+decisions. No command writes a new one: a run now ends with its signed sprint report, which
+hands over the remaining work. The guides already here stay readable, indexed and unrewritten.
 
 | ID | Title | Date |
 | --- | --- | --- |

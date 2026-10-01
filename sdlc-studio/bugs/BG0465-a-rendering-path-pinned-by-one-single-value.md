@@ -60,8 +60,8 @@ Add `stem_record_id` to the shared library: the same two key schemas as `extract
 - **Given** a v2 handoff key and a v3 `HO-<ulid>-slug` key
 - **When** the document is located by id
 - **Then** both resolve, because `split("-")[0]` yields the bare prefix `HO` for the v3 form and `extract_record_id` returns None for a family outside `ARTIFACT_TYPES` - so reaching for either alone is a defect, and the shared `stem_record_id` is the one idiom that answers for every family
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::RefreshReadsBothKeySchemasTests::test_a_v3_handoff_key_resolves_through_refresh_and_the_gate
-- **Verified:** yes (2026-07-31)
+- **Verify:** manual - retired by US0978: the handoff writers (`handoff.py generate` and refresh, the retro link) and `gate.py --require-handoff` were deleted with their tests; the signed report hands over the remaining work and `sprint plan --worklist RPTxxxx` plans it
+- **Verified:** manual (2026-10-01) - retired, superseded by US0978
 
 ## Revision History
 

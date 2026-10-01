@@ -5771,7 +5771,6 @@ class AbandonedUnitIsNotFannedToDoneTests(unittest.TestCase):
 _UA_GOAL_VERDICT_ONLY = {"ready": False, "blockers": [
     {"stage": "goal-verdict", "detail": "the Sprint Goal is unjudged",
      "remedy": "`sprint.py goal-verdict ...`"}]}
-_UA_SECTION = "## Unanswered stop-ship questions"
 
 
 def _ua_close_extras(root: Path) -> None:
@@ -5808,30 +5807,6 @@ def _ua_boundary(mod, root: Path) -> tuple:
         return _ua_cli(mod, root, "boundary", "--retro", "RETRO0001", "--no-fetch")
 
 
-def _ua_handoff_cli(root: Path, *argv: str) -> tuple:
-    import handoff
-    out, err = io.StringIO(), io.StringIO()
-    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-        rc = handoff.main(["generate", *argv, "--root", str(root)])
-    return rc, out.getvalue(), err.getvalue()
-
-
-def _ua_handoff_text(mod, root: Path, hid: str | None) -> str:
-    """The handoff document `hid` names - exactly one file, or the test has no document."""
-    want = mod.sdlc_md.norm_id(hid or "")
-    docs = [p for p in sorted((root / "sdlc-studio" / "handoffs").glob("*.md"))
-            if want and mod.sdlc_md.norm_id(mod.sdlc_md.stem_record_id(p.stem) or "") == want]
-    assert len(docs) == 1, f"handoff {hid!r}: {docs}"
-    return docs[0].read_text(encoding="utf-8")
-
-
-def _ua_section_ids(text: str, universe) -> set:
-    """The ids of `universe` that THE SECTION alone names: Delivered and Remaining name batch ids
-    too, so a whole-document match would pass with the section gone."""
-    assert text.count(_UA_SECTION) == 1, f"THE SECTION is not in the document once:\n{text}"
-    return _ua_ids(text.split(_UA_SECTION, 1)[1].split("\n## ", 1)[0], universe)
-
-
 def _ua_record_ids(record: dict) -> set:
     """THE RECORD's `unanswered` unit ids - tolerating a bare-id list or a handoff row, so a
     mutant that stores either fails the comparison rather than crashing before it."""
@@ -5842,9 +5817,9 @@ def _ua_record_ids(record: dict) -> set:
 
 class EveryRunEndReadsThePredicateTests(unittest.TestCase):
     """US0823 (D0193): every route that can end a run - --file-and-close, stop --force, a
-    boundary stop, handoff generate --outcome - reads `sprint.unanswered_units` and nothing else.
-    --file-and-close refuses over an unanswered unit; the others end the run and record the set
-    on the archived run record, and the handoff names it in a section of its own.
+    boundary stop - reads `sprint.unanswered_units` and nothing else. --file-and-close refuses
+    over an unanswered unit; the others end the run and record the set on the archived run
+    record. (`handoff generate --outcome` was a fourth route, retired with the writers, US0978.)
 
     THE RUN is US0626 AC5's `_ua_ac5_run`, whose predicate set is `_UA_AC5_SET`; THE ANSWERED RUN
     is the same builder restricted to `_UA_ANSWERED_UNITS`, whose set is empty."""
@@ -5902,27 +5877,6 @@ class EveryRunEndReadsThePredicateTests(unittest.TestCase):
         self.assertNotIn("unanswered", record["stop"],
                          "a top-level field of THE RECORD, not a field inside `stop`")
 
-    def test_handoff_outcome_records_and_names_the_unanswered_units(self) -> None:
-        """MUTANT: delete the `unanswered` write from `generate`'s --outcome path; record
-        `report["remaining"]` in place of `report["unanswered"]`; drop THE SECTION from
-        `render_body`; raise ValueError in `generate` over a non-empty set before `close_run`;
-        write the field after `close_run`, so the archive is taken before it."""
-        mod = _load()
-        universe = set(_UA_AC5_UNITS)
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _ua_ac5_run(root, mod)
-            rc, _out, err = _ua_handoff_cli(root, "--title", "run ended early",
-                                            "--outcome", "budget-spent")
-            record = mod.run_state.read_archived(root, _UA_RUN)
-            self.assertEqual(0, rc, err)
-            text = _ua_handoff_text(mod, root, record.get("handoff"))
-        self.assertEqual("budget-spent", record.get("outcome"), record)
-        literal = {"US0101", "US0103", "US0109", "US0110", "US0111", "US0112", "US0115",
-                   "US0117", "BG0101"}
-        self.assertEqual(literal, _ua_record_ids(record))
-        self.assertEqual(literal, _ua_section_ids(text, universe), text)
-
     def test_a_boundary_stop_records_and_names_the_unanswered_units(self) -> None:
         """MUTANT: leave `_boundary_stop` writing only the stop record; fill `unanswered` from
         `_remaining_units`; return 2 before `close_run` over a non-empty set, leaving the run
@@ -5951,11 +5905,12 @@ class EveryRunEndReadsThePredicateTests(unittest.TestCase):
         """MUTANT: a route reads its own reader - `_file_and_close` refuses whenever
         `handoff.remaining_count` is non-zero; `cmd_stop` records every batch unit whose ledger
         holds a REJECT verdict word; `_boundary_stop` records the handoff's remaining ids;
-        `generate` records `sprint._remaining_units`. Each holds a unit this batch answered."""
+        Each holds a unit this batch answered. (`handoff generate` was the fourth route, retired
+        with the handoff writers, US0978.)"""
         mod = _load()
         universe = set(_UA_AC5_UNITS)
         ends = {"file-and-close": "closed-outstanding", "stop": "stopped",
-                "boundary": "blocked", "generate": "budget-spent"}
+                "boundary": "blocked"}
         for route, outcome in ends.items():
             with self.subTest(route=route), tempfile.TemporaryDirectory() as d:
                 root = Path(d)
@@ -5968,7 +5923,6 @@ class EveryRunEndReadsThePredicateTests(unittest.TestCase):
                                      set(mod._remaining_units(root, state)))
                 walked = set(state["batch"]) | {c.get("id") for c in state["batch_changes"]}
                 self.assertEqual(set(), walked & _UA_AC5_SET)
-                text = None
                 if route == "file-and-close":
                     rc, _out, err = _ua_file_and_close(mod, root)
                     self.assertEqual(0, rc, err)
@@ -5979,51 +5933,13 @@ class EveryRunEndReadsThePredicateTests(unittest.TestCase):
                     rc, _out, err = _ua_cli(mod, root, "stop", "--force", "--reason",
                                             "operator parks the run")
                     self.assertEqual(0, rc, err)
-                elif route == "boundary":
+                else:
                     _ua_rolling(mod, root)
                     rc, _out, err = _ua_boundary(mod, root)
                     self.assertEqual(1, rc, err)
-                else:
-                    rc, _out, err = _ua_handoff_cli(root, "--title", "run ended early",
-                                                    "--outcome", "budget-spent")
-                    self.assertEqual(0, rc, err)
                 record = mod.run_state.read_archived(root, _UA_RUN)
                 self.assertEqual(outcome, record.get("outcome"), err)
                 self.assertEqual([], record.get("unanswered", "absent"), record)
-                if route == "generate":   # the boundary stop writes no handoff (US0967)
-                    text = _ua_handoff_text(mod, root, record.get("handoff"))
-                if text is not None:
-                    self.assertEqual(set(), _ua_section_ids(text, universe), text)
-
-    def test_the_section_survives_refresh_and_a_mid_run_generate_records_nothing(self) -> None:
-        """MUTANT: append THE SECTION to the body `generate` passes to `artifact.meta_new`
-        instead of rendering it in `render_body`, so `refresh`'s re-render drops it; move the
-        `unanswered` write out of `generate`'s `if outcome:` branch onto the shared update."""
-        mod = _load()
-        import handoff
-        universe = set(_UA_AC5_UNITS)
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            state = _ua_ac5_run(root, mod)
-            rc, _out, err = _ua_handoff_cli(root, "--title", "run ended early",
-                                            "--outcome", "budget-spent")
-            self.assertEqual(0, rc, err)
-            hid = mod.run_state.read(root)["handoff"]
-            self.assertIsNotNone(handoff.refresh(root, hid, batch=state["batch"]),
-                                 "refresh found no document to re-render")
-            refreshed = _ua_handoff_text(mod, root, hid)
-        self.assertEqual({"US0101", "US0103", "US0109", "US0110", "US0111", "US0112", "US0115",
-                          "US0117", "BG0101"}, _ua_section_ids(refreshed, universe), refreshed)
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _ua_ac5_run(root, mod)
-            rc, _out, err = _ua_handoff_cli(root, "--title", "mid-run snapshot")
-            live = mod.run_state.read(root)
-        self.assertEqual(0, rc, err)
-        self.assertEqual("running", live["outcome"])
-        self.assertIn("handoff_remaining", live, "generate's shared state update did not run")
-        self.assertNotIn("unanswered", live, "a generate that ends no run recorded the set")
-
 
 class StopRecordTests(unittest.TestCase):
     """US0300/CR0378: a stop is expensive and its cost was invisible, so nothing pushed back

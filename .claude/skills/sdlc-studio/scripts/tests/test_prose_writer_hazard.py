@@ -123,21 +123,9 @@ def _lessons_repo(d):
     (d / "sdlc-studio" / ".local").mkdir(parents=True)
 
 
-def _handoff_repo(d):
-    hd = d / "sdlc-studio" / "handoffs"
-    hd.mkdir(parents=True)
-    (hd / "_index.md").write_text("# Handoff Index\n\n**Last Updated:** 2026-07-24\n\n"
-                                  "| ID | Title | Date |\n| --- | --- | --- |\n",
-                                  encoding="utf-8")
-    st = d / "sdlc-studio" / "stories"
-    st.mkdir(parents=True)
-    (st / "US0002-story-2.md").write_text(
-        "# US0002: story 2\n\n> **Status:** In Progress\n\n## Acceptance Criteria\n\n"
-        "- **AC1:** it works\n  - **Verify:** pytest tests/test_x.py\n", encoding="utf-8")
-
-
-#: The four writers US0361 converts: (module, repo setup, the flag carrying its free prose, the
-#: argv that reaches that flag, the fields-file argv, the document's other required keys).
+#: The writers US0361 converts: (module, repo setup, the flag carrying its free prose, the
+#: argv that reaches that flag, the fields-file argv, the document's other required keys). The
+#: fourth, `handoff generate`, was retired with the handoff writers (US0978).
 #: Enumerated rather than represented by one example - a shared loader adopted in three of four
 #: writers is exactly the drift this sweep exists to refuse.
 REMAINING_WRITERS = [
@@ -155,14 +143,8 @@ REMAINING_WRITERS = [
      lambda d, src: ["record", "--tranche", "CR0001", "--decision", "a ruling",
                      "--fields-file", src, "--root", str(d)],
      {}),
-    ("handoff", _handoff_repo, "--title",
-     lambda d, prose: ["generate", "--title", prose, "--ids", "US0002", "--root", str(d)],
-     lambda d, src: ["generate", "--fields-file", src, "--ids", "US0002", "--root", str(d)],
-     {}),
 ]
 
-#: A title is slugged into a filename and stripped of trailing punctuation for the H1, so the
-#: handoff's prose is checked without either.
 PROSE = "run `git status` and $(whoami) - a swallowed command"
 
 

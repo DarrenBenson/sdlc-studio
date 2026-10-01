@@ -498,7 +498,7 @@ def _hook_enabled(root: str) -> dict:
 BLOCKING_ON_ERROR = {
     "conformance", "reconcile", "index-derived", "validate",
     "integrity", "duplicate-id", "doc-coverage", "retro", "verify",
-    "lessons-summary", "lessons-validity", "handoff", "review-legs",
+    "lessons-summary", "lessons-validity", "review-legs",
     "engagement-floor", "review-current", "window",
     "changelog-fragments", "module-alone", "full-suite",
 }
@@ -1424,57 +1424,6 @@ def _review_current(root: str) -> dict:
     return {"count": 0, "blocking": True, "detail": "reviews/LATEST.md is current with all artefacts"}
 
 
-def _handoff_present(root: str, handoff_id: str) -> dict:
-    """Blocking close-gate check: a run that stopped short of its goal must leave the
-    handoff, and a retro must LINK it.
-
-    Both halves are the check. A handoff nobody links is a document nobody opens - the
-    person picking the work up reads the retro, and the retro is where the pointer belongs.
-    Presence alone would let the gate certify a handoff that is, in practice, invisible.
-    """
-    rr = Path(root)
-    stem = str(handoff_id).replace("-", "").upper()
-    d = rr / "sdlc-studio" / "handoffs"
-    # Match on the document's own PARSED key, not on a glob built by stripping hyphens out of
-    # the id. `HO-<ulid>` stripped to `HO<ulid>` globs `HO<ulid>*.md` and matches nothing on
-    # disk, so this lane reported "missing handoff" - blocking - over a handoff that existed
-    # and was linked from its retro. The same defect BG0452 swept out of three readers, in a
-    # fourth wearing a different idiom, in the one place whose verdict stops a close.
-    norm = sdlc_md.norm_id(str(handoff_id))
-    hits = sorted(p for p in d.glob("*.md")
-                  if p.is_file()
-                  and sdlc_md.norm_id(sdlc_md.stem_record_id(p.stem) or "") == norm
-                  ) if d.is_dir() else []
-    if not hits:
-        return {"count": 1, "blocking": True,
-                "detail": f"missing handoff {handoff_id} - a run that stopped short of its "
-                          f"goal owes one (`handoff generate --outcome <how it ended>`)"}
-    retros = rr / "sdlc-studio" / "retros"
-    # Both derived from the document that was actually FOUND. Built from the hyphen-stripped
-    # id instead, the link pattern searched for `HO<ulid>` while the retro links
-    # `HO-<ulid>-slug.md`, so a correctly linked v3 handoff reported "exists but no retro
-    # links it" - the refusal one step further down the same lane.
-    disp = sdlc_md.stem_record_id(hits[0].stem) or str(handoff_id)
-    stem = hits[0].stem
-    # A LINK, not a mention. A substring scan for the id passes on a retro whose prose
-    # DENIES the handoff exists ("we never wrote HO-0001") - it would certify the very
-    # absence it is meant to catch. The check is the markdown link shape the writer emits
-    # and a reader can actually follow: a link whose target is the handoff file.
-    import re
-    link_re = re.compile(rf"\[[^\]]*\]\([^)]*{re.escape(stem)}[^)]*\.md\)", re.IGNORECASE)
-    linked = [p.name for p in (sorted(retros.glob("RETRO*.md")) if retros.is_dir() else [])
-              if link_re.search(p.read_text(encoding="utf-8"))]
-    if not linked:
-        return {"count": 1, "blocking": True,
-                "detail": f"handoff {disp} exists but no retro links it (a markdown link to "
-                          f"the handoff file - a bare mention of the id is not a link a "
-                          f"reader can follow) - regenerate with `handoff generate --retro "
-                          f"RETROxxxx`, so the person picking the work up finds it from the "
-                          f"retro they read"}
-    return {"count": 0, "blocking": True,
-            "detail": f"handoff {disp} present, linked from {', '.join(linked)}"}
-
-
 def _lessons_summary(root: str) -> dict:
     """Blocking close-gate lane: the committed LESSONS-SUMMARY.md must be the digest of the
     CURRENT lessons log. Summarising the sprint's lessons was doctrine - prose four steps long,
@@ -1791,7 +1740,6 @@ BOUND_LANE_SUBJECT = {
     "retro": "the sprint close's learning loop",
     "lessons-summary": "the sprint close's learning loop",
     "lessons-validity": "the sprint close's learning loop",
-    "handoff": "the remaining-work handoff",
     "review-current": "the sprint close's review currency",
 }
 
@@ -1902,7 +1850,7 @@ def run_gate(root: str = ".", only: list[str] | None = None,
              skip: list[str] | None = None, checks: dict | None = None,
              require_retro: str | None = None, release: bool = False,
              allow_external: bool = False,
-             require_lessons: bool = False, require_handoff: str | None = None,
+             require_lessons: bool = False,
              require_review: bool = False,
              conformance_scope: "set[str] | None" = None,
              record_cost: bool = False, boundary: str | None = None) -> dict:
@@ -1954,9 +1902,6 @@ def run_gate(root: str = ".", only: list[str] | None = None,
             bound.extend(LESSONS_CLOSE_CHECKS)
         else:
             downgraded.append("close.lessons")
-    if require_handoff:  # a run that stopped short: the handoff must exist AND be linked
-        registry["handoff"] = lambda r, _hid=require_handoff: _handoff_present(r, _hid)
-        bound.append("handoff")
     if require_review:  # close-gate review leg: LATEST.md must be current with the artefacts
         if _dod_enforced(sprint_dod, "close.review"):
             registry["review-current"] = _review_current
@@ -2045,7 +1990,7 @@ def run_gate(root: str = ".", only: list[str] | None = None,
             "detail": f"deselecting the bound lane(s) {', '.join(dropped)} proves nothing "
                       f"about {what} - that verdict will not be printed over them. Drop the "
                       f"--skip/--only that excludes them, or drop the mode flag "
-                      f"(--release/--require-retro/--require-lessons/--require-handoff) and "
+                      f"(--release/--require-retro/--require-lessons) and "
                       f"run the standard gate"}]}
     results = []
     run_started = time.monotonic()
@@ -2642,7 +2587,6 @@ def cmd_gate(args: argparse.Namespace) -> int:
                       require_retro=getattr(args, "require_retro", None), release=release,
                       allow_external=getattr(args, "allow_external", False),
                       require_lessons=getattr(args, "require_lessons", False),
-                      require_handoff=getattr(args, "require_handoff", None),
                       require_review=getattr(args, "require_review", False),
                       record_cost=True)
     if args.format == "json":
@@ -2690,11 +2634,6 @@ def build_parser() -> argparse.ArgumentParser:
                    help="The lessons half of the close gate on its own: fail on a stale "
                         "LESSONS-SUMMARY.md (regenerate it with `lessons summary`) or on an open "
                         "lesson past its validity horizon (`lessons revalidate`)")
-    p.add_argument("--require-handoff", dest="require_handoff", metavar="HOxxxx",
-                   help="Run-close gate for a run that stopped SHORT of its goal: fail "
-                        "unless this handoff exists in sdlc-studio/handoffs/ and a retro "
-                        "links it (`handoff generate --outcome <how it ended> --retro "
-                        "RETROxxxx`). Deselecting the `handoff` lane under it is refused")
     p.add_argument("--require-review", dest="require_review", action="store_true",
                    help="The review half of the sprint close: fail unless reviews/LATEST.md is at "
                         "least as new as every artefact (run `review` to refresh it). Currency, "

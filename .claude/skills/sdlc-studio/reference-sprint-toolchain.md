@@ -63,7 +63,7 @@ Read this at plan time. `sprint plan` prints it.
 | Close (PREPARE) | `sprint.py close --retro <id>` | transitioning units by hand |
 | Sign the prepared run (SEAL) | `sprint.py sign --report <RPTxxxx> --principal <who>` | `close --apply-signoff`, which is refused |
 | End a run that will not reach its goal | `sprint.py stop --reason <why>` | abandoning it and opening a fresh one |
-| Write the handoff | `handoff.py generate --title <t>` | prose about what is left |
+| Hand over what is left | the signed report's `Known issues handed over`; `sprint.py plan --worklist <RPTxxxx>` plans it | prose about what is left |
 | Discharge the close-owed ledger | `gate.py --require-retro <id>` | an advisory nobody clears |
 | Re-baseline what a retro accounts for | `close_owed.py baseline --note <why>` | a ledger that never returns to zero |
 | Take the backlog census | `status.py points` | counting artefacts by hand |
