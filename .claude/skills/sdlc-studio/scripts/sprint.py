@@ -11745,6 +11745,25 @@ _MOMENT_LABELS = {"per_commit": "per commit", "at_close": "at close",
 HOOK_PATHS = (".githooks/pre-commit", ".githooks/commit-msg",
               ".git/hooks/pre-commit", ".git/hooks/commit-msg")
 
+def _hook_installed(root) -> bool:
+    """Whether any commit hook FILE exists: at a `HOOK_PATHS` location, or as `pre-commit` or
+    `commit-msg` under the directory `git config core.hooksPath` names (husky's layout). Whether
+    it can be read is a separate question - this asks only whether one would run."""
+    root = Path(root)
+    if any((root / rel).is_file() for rel in HOOK_PATHS):
+        return True
+    try:
+        r = subprocess.run(["git", "config", "--get", "core.hooksPath"], cwd=str(root),
+                           capture_output=True, text=True, timeout=10)  # nosec B603 B607
+    except (OSError, subprocess.SubprocessError):
+        return False
+    hooks = r.stdout.strip() if r.returncode == 0 else ""
+    if not hooks:
+        return False
+    base = Path(hooks) if Path(hooks).is_absolute() else root / hooks
+    return any((base / name).is_file() for name in ("pre-commit", "commit-msg"))
+
+
 #: Evidence that the hook DECIDES whether to run the suites from what the commit touched.
 _HOOK_SELECTS = ("--suite-decision", "suites_needed")
 
@@ -11925,9 +11944,11 @@ def execution_policy(root) -> dict:
                 "pct": (cost["seconds"] - ceiling) / ceiling * 100.0}
     hook = hook_per_commit_mode(root)
     # No hook installed and no per-commit mode the project declared: the declaration is the
-    # shipped default and nothing was ever set against it, so there is nothing to reconcile.
+    # shipped default and nothing was ever set against it, so there is nothing to reconcile. A
+    # hook that EXISTS but could not be read (non-UTF-8, empty, or under `core.hooksPath`)
+    # still runs, so it stays UNRECONCILED.
     defaulted = sdlc_md.project_override(root, "test_execution.per_commit") is None
-    if hook["mode"] == "unknown" and not hook["read"] and defaulted:
+    if hook["mode"] == "unknown" and defaulted and not _hook_installed(root):
         divergence = None
     elif hook["mode"] == "unknown":
         divergence = (f"the policy declares per-commit `{declared['per_commit']}` and the "

@@ -112,5 +112,43 @@ class FreshPlanQuietTests(unittest.TestCase):
         self.assertIn("qa", advice[0])
 
 
+    def test_an_installed_hook_that_cannot_be_read_still_diverges(self) -> None:
+        """US0971 round 1. A hook that exists but is not read at the fixed paths still runs.
+        MUTANT: the suppression keyed on `not hook["read"]` - a husky hook under
+        `core.hooksPath`, and a non-UTF-8 `.githooks/pre-commit`, go silent."""
+        for case in ("husky", "non-utf8"):
+            with self.subTest(case), tempfile.TemporaryDirectory() as d:
+                root = _project(Path(d))
+                if case == "husky":
+                    hook = root / ".husky" / "pre-commit"
+                    subprocess.run(["git", "config", "core.hooksPath", ".husky"], cwd=root,
+                                   env=gitutil.git_env(), check=True)
+                    hook.parent.mkdir()
+                    hook.write_text("#!/bin/sh\nnpm test\n", encoding="utf-8")
+                else:
+                    hook = root / ".githooks" / "pre-commit"
+                    hook.parent.mkdir()
+                    hook.write_bytes(b"#!/bin/sh\n\xff\xfe pytest\n")
+                self.assertIn("execution policy DIVERGES", _plan(root))
+
+    def test_the_requesting_seats_fresh_objection_stays_visible(self) -> None:
+        """US0971 round 1. Only a CARRIED verdict is discharged. MUTANT: `discharged` ignoring
+        `carried_from` - the requesting seat's fresh NO on the amended goal is hidden."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _project(Path(d))
+            r = _cli(root, "sprint.py", "goal-review", "record", "--goal", "ship everything",
+                     "--seat", "engineering|no|all of it|yes|too large for one sprint")
+            self.assertEqual(0, r.returncode, r.stderr)
+            r = _cli(root, "sprint.py", "goal-review", "record", "--goal", "ship the core",
+                     "--amend-from", "ship everything", "--requesting-seat", "engineering",
+                     "--seat", "engineering|no|the core|yes|still too large")
+            self.assertEqual(0, r.returncode, r.stderr)
+            out = _plan(root, "--sprint-goal", "ship the core", "--write")
+        advice = [ln for ln in out.splitlines() if "judged the goal NOT achievable" in ln]
+        self.assertEqual(1, len(advice), advice)
+        self.assertIn("engineering", advice[0])
+        self.assertIn("still too large", advice[0])
+
+
 if __name__ == "__main__":
     unittest.main()
