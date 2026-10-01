@@ -4319,7 +4319,9 @@ def build_parser() -> argparse.ArgumentParser:
     sel.add_argument("--story", "--file", dest="story",
                      help="Single story file - or a story ID (an id-shaped value that is "
                           "not a real path resolves under --dir)")
-    sel.add_argument("--id", help="Single story by id, e.g. US0001 (resolved under --dir)")
+    sel.add_argument("--id", "--unit", dest="id",
+                     help="Single story by id, e.g. US0001 (resolved under --dir); `--unit` is "
+                          "an alias, as on `revert-check`")
     sel.add_argument("--ids", action="append", metavar="US0001,US0003",
                      help="Scope the run to these story ids (comma-separated, repeatable, "
                           "case-insensitive); an id with no story file is an error")
