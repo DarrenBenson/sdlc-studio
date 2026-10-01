@@ -1096,6 +1096,39 @@ def selector_near_miss(expr: str, cwd=None) -> str | None:
     return None
 
 
+#: The node a pytest FAIL names as not found: pytest's own line, or the `--batch` cache's.
+_NOT_FOUND_RE = re.compile(r"(?:ERROR: not found: |no such test node: )(\S+?::\S+)")
+
+
+def _not_found_hints(fail: dict, repo_root: Path) -> list[str]:
+    """The near-miss hint for each node a pytest FAIL reports as not found, in order.
+
+    Read from pytest's own `not found` lines, never from the selector: a multi-node selector's
+    first argument may be a node that exists, and the near-miss reader answers a real node with
+    itself. Only a pytest FAIL is read - the recorded-not-verified FAIL's text is the author's
+    own reason, which may say "not found" about anything. Best-effort: [] when nothing is
+    confident, and a hint never displaces the FAIL."""
+    if fail.get("kind") != "pytest":
+        return []
+    hints: list[str] = []
+    root = Path(repo_root).resolve()
+    for target in _NOT_FOUND_RE.findall(fail.get("stderr") or ""):
+        path, _, node = target.partition("::")
+        p = Path(path)
+        if p.is_absolute():
+            try:
+                path = p.resolve().relative_to(root).as_posix()
+            except ValueError:
+                continue
+        try:
+            hint = selector_near_miss(f"pytest {path}::{node}", cwd=repo_root)
+        except Exception:  # noqa: BLE001 - a hint must never displace the FAIL
+            hint = None
+        if hint and hint not in hints:
+            hints.append(hint)
+    return hints
+
+
 def _uncollectable_because_absent(test_file: str, cwd=None) -> str:
     """The path this tree does not hold that stops `test_file` collecting, or `""`.
 
@@ -2867,15 +2900,8 @@ def cmd_run(args: argparse.Namespace) -> int:
                 stderr_lines = fail["stderr"].splitlines()
                 for line in stderr_lines[:3]:
                     print(f"          | {line}")
-            # Only a node pytest did NOT find gets a hint: asked about a real node that failed
-            # an assertion, the near-miss reader answers with that node itself.
-            if "not found" in (fail["stderr"] or ""):
-                try:
-                    hint = selector_near_miss(fail["verifier"], cwd=repo_root)
-                except Exception:  # noqa: BLE001 - a hint must never displace the FAIL
-                    hint = None
-                if hint:
-                    print(f"          hint: {hint}")
+            for hint in _not_found_hints(fail, repo_root):
+                print(f"          hint: {hint}")
 
     # Write the report in dry-run too (to a distinct path, so the live report is
     # not clobbered) and append the run to the history log.
