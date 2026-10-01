@@ -11,6 +11,7 @@ above 5.4.1 and 5.4.10 above 5.4.9.
 """
 from __future__ import annotations
 
+# test-census-subject: package-lock.json
 import json
 import re
 import unittest
