@@ -2021,7 +2021,13 @@ def verify_story(
                 report.flips.append({"ac": block.ac_id, "old_state": "yes", "new_state": "no"})
                 report.changed += 1
                 if not dry_run:
-                    pending.append((block, f"no ({sdlc_md.now_date()}) - {_DOWNGRADE_NOTE}"))
+                    # The downgrade records what it replaced, as a flip's `old_state` does: the
+                    # author's reason on the positive verdict is carried after the mark, never
+                    # dropped. The mark stays first, so the next green run still reads the line
+                    # as this tool's own and clears it.
+                    was = block.verified_reason.strip()
+                    pending.append((block, f"no ({sdlc_md.now_date()}) - {_DOWNGRADE_NOTE}"
+                                           + (f"; was: {was}" if was else "")))
 
     # Apply write-backs BOTTOM-UP: an insertion shifts every line below it, so
     # applying top-down from one parse compounds a one-line drift per prior
