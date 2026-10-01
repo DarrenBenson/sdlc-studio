@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 30 |
+| Open | 31 |
 | In Progress | 3 |
 | Fixed | 692 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 30 |
-| **Total** | **881** |
+| **Total** | **882** |
 
 ## All Bugs
 
@@ -240,6 +240,7 @@
 | [BG0879](BG0879-us0977-did-not-converge-in-review-round-2.md) | US0977 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0880](BG0880-bg0839-did-not-converge-in-review-round-2.md) | BG0839 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0881](BG0881-status-reports-no-personas-for-a-project-holding.md) | status reports no personas for a project holding only the personas/index.md registry | Open | Low | 2026-10-01 | 2026-10-01 |
+| [BG0882](BG0882-harness-project-slug-does-not-truncate-a-long.md) | harness_project_slug does not truncate a long project path or map non-BMP characters as the harness does | Open | Low | 2026-10-01 | 2026-10-01 |
 
 ## Archived Releases
 
