@@ -1773,9 +1773,26 @@ def norm_id(rec: str) -> str:
 
     Files often use one id format and an index another (e.g. `CR0001` on disk
     vs `CR-0001` in a table). Both normalise to `CR0001` so they match instead
-    of being treated as two different records.
+    of being treated as two different records. A KEY, never a display: it drops the dash a
+    schema v3 id is spelled with, so print an id through `display_id`.
     """
     return re.sub(r"[^A-Za-z0-9]", "", rec).upper()
+
+
+def display_id(repo_root, rec_id: str) -> str:
+    """`rec_id` in its artefact file's spelling - the record id at the start of the file's stem
+    (`US-01ABCDEF`, `RETRO0001`) - for every id printed or written into prose, a title or a
+    slug. `norm_id` is the comparison key and drops a v3 id's dash, so a reader searching for a
+    printed key found no file. An id no file carries is returned as given."""
+    rid = str(rec_id or "").strip()
+    if not rid:
+        return rid
+    try:
+        hit = find_by_id(repo_root, rid)
+    except (OSError, ValueError) as exc:
+        debug("sdlc_md.display_id", exc)
+        hit = None
+    return (any_record_id(Path(hit[0]).stem) or rid) if hit else rid
 
 
 def canonical_status(raw: str | None, vocab: list[str]) -> str | None:

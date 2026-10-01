@@ -2752,7 +2752,9 @@ def _page_readings(page: dict | None) -> dict:
     findings: dict[str, dict] = {}
     for row in rows.get("known_issues", []):
         if val(row, "issue_priority") not in ("carried unit", "close gap", "STOP-SHIP"):
-            findings.setdefault(val(row, "issue_id"), row)
+            # Keyed by the comparison key: a page prints an id in its file's spelling, and a
+            # page signed before that printed the key itself; both must replay.
+            findings.setdefault(sdlc_md.norm_id(str(val(row, "issue_id") or "")), row)
     return {"points": {val(r, "unit_id"): val(r, "unit_points")
                        for r in rows.get("delivered", []) if "unit_points" in r},
             "findings": findings,
@@ -3535,7 +3537,8 @@ def _finding_row(root: Path, uid: str,
                 or sdlc_md.extract_field(text, "Priority") or "").strip()
     head = re.search(r"(?m)^#\s+[^:\n]+:\s*(.+)$", text)
     rank = _priority_rank(priority)
-    return rank, {"issue_id": fig("issue_id", uid, rel),
+    shown = (sdlc_md.any_record_id(path.stem) or uid) if path else uid   # the file's spelling
+    return rank, {"issue_id": fig("issue_id", shown, rel),
                   "issue_priority": (fig("issue_priority", priority, rel) if priority else
                                      unmeasured("issue_priority", rel, "no priority recorded")),
                   "issue_detail": fig("issue_detail",
@@ -3581,7 +3584,7 @@ def _known_issues_section(root: Path, state: dict, state_rel: str, ledger: list[
             + [row for row, stop in gap_rows if not stop])
     carried = [u for u in ledger if not u["dropped"] and not u["delivered"]]
     for u in carried:
-        rows.append({"issue_id": fig("issue_id", u["id"], u["rel"]),
+        rows.append({"issue_id": fig("issue_id", sdlc_md.display_id(root, u["id"]), u["rel"]),
                      "issue_priority": fig("issue_priority", "carried unit", state_rel),
                      "issue_detail": fig("issue_detail",
                                          f"{'added' if u['added'] else 'planned'} and not "

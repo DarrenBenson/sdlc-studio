@@ -315,8 +315,11 @@ class SignedRunEndToEndTests(unittest.TestCase):
         self.assertIn(cr, page, "the page does not name the graduation CR")
         # The retro's rulings themselves, each on its Known issues row of the page the operator
         # signs (BG0865): the carry's bug, and the graduation CR ruled by its lesson class.
+        # Each id as its file spells it (BG0825): the dash a schema v3 id carries is optional
+        # here, so the row is found whichever spelling the source handed the test.
         for finding in (sdlc_md_id(run.carry_bug), sdlc_md_id(cr)):
-            self.assertRegex(page, rf"(?m)^\| {finding} \| [^|]+ \| .* - not-stop-ship, ruled by "
+            spelled = re.sub(r"^([A-Z]+)", r"\1-?", finding)
+            self.assertRegex(page, rf"(?m)^\| {spelled} \| [^|]+ \| .* - not-stop-ship, ruled by "
                                    rf"Maya \|$", f"{finding}'s ruling is not on the page")
 
 

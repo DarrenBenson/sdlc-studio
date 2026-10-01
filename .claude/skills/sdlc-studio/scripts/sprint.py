@@ -2318,7 +2318,7 @@ def delivery_mode_offer(repo_root: Path | str, batch: list[dict]) -> dict:
     undeclared: list[str] = []
     for it in batch:
         text = Path(it["path"]).read_text(encoding="utf-8")
-        uid = sdlc_md.norm_id(it["id"])
+        uid = sdlc_md.display_id(root, it["id"])    # printed in the offer, so its file's spelling
         if not _affects_files(text):
             undeclared.append(uid)
         units.append((uid, _unit_files(root, text)))
@@ -5717,7 +5717,7 @@ def _prefill_retro(root, path, batch, state) -> None:
     import retro  # noqa: PLC0415 - deferred, like the chain's other retro imports
     p = Path(path)
     text = p.read_text(encoding="utf-8")
-    text = text.replace("{{batch}}", ", ".join(batch) or "-")
+    text = text.replace("{{batch}}", ", ".join(sdlc_md.display_id(root, b) for b in batch) or "-")
     text = text.replace("{{goal}}", state.get("sprint_goal") or "-")
     sdlc_md.atomic_write(p, text)
     # A run accepted over its standing appetite records the over-commitment in the retro, so a
@@ -5770,7 +5770,10 @@ def _resolve_retro(root, args, state) -> int | None:
         disp, verb = prior, "already scaffolded"
     else:
         res = _scaffold_run_retro(root, state)
-        disp, verb = res["id"], f"scaffolded (indexed={res['indexed']})"
+        # The id the FILE carries (`RETRO0001`), not the allocator's display form
+        # (`RETRO-0001`): it is printed as the `--retro` to pass back and recorded on the run.
+        disp = sdlc_md.any_record_id(Path(res["path"]).stem) or res["id"]
+        verb = f"scaffolded (indexed={res['indexed']})"
         run_state.update(root, scaffolded_retro=disp)
     # Don't silently drop a --goal-verdict passed on the scaffold call: record it now so the
     # re-run reuses it (the goal-verdict block below runs only once the retro is supplied).

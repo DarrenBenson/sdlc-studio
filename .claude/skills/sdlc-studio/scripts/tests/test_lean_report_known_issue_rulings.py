@@ -124,7 +124,11 @@ class KnownIssueRulingTests(unittest.TestCase):
         rows = json.loads((root / "sdlc-studio" / "lessons.jsonl").read_text(
             encoding="utf-8").splitlines()[0])
         cr = rows["cr"]
-        listed = _known_issues(root)
+        # By comparison key: the page prints each id in its file's spelling (BG0825), and the
+        # lessons log records the CR's key.
+        norm = lean._live("sprint").sdlc_md.norm_id
+        listed = {norm(k): v for k, v in _known_issues(root).items()}
+        cr = norm(cr)
         self.assertIn(cr, listed, f"the close's own graduation CR is not on the page: {listed}")
         self.assertTrue(listed[cr].endswith(" - deferred, ruled by Maya"), listed[cr])
         self.assertNotIn("BG0901", listed, "a finding another run filed in that second is listed")

@@ -1585,19 +1585,22 @@ def carry_at_cap(repo_root: Path | str, unit: str, row: dict) -> str | None:
     # `sprint plan` could not size or place, and a planned unit carries both.
     found = sdlc_md.find_by_id(repo_root, uid)
     text = sdlc_md.read_text_safe(found[0]) if found else ""
-    acs, verify = carried_criteria(uid, text, row)
-    res = file_finding.file_finding(repo_root, "bug", f"{uid} did not converge in review: "
+    # Named in its file's spelling: `uid` is the comparison key, and a title, slug or prose
+    # naming it would name an id no file carries.
+    disp = sdlc_md.display_id(repo_root, unit)
+    acs, verify = carried_criteria(disp, text, row)
+    res = file_finding.file_finding(repo_root, "bug", f"{disp} did not converge in review: "
                                     f"round {row.get('round')} REJECT findings", {
         "affects": sdlc_md.extract_field(text, "Affects") or "",
         "points": sdlc_md.extract_field(text, "Points") or "",
         "acs": acs,
         "verify": verify,
         "severity": "Medium",
-        "summary": (f"{uid} was rejected at round {row.get('round')}, the review cap, by "
+        "summary": (f"{disp} was rejected at round {row.get('round')}, the review cap, by "
                     f"{row.get('reviewer')}, so it was carried as a known issue rather than "
                     f"reviewed again. The findings still open: {issues}"),
-        "steps": f"1. Read the round {row.get('round')} REJECT of {uid} in the verdict ledger.",
-        "fix": f"Fix each finding above, then deliver {uid} again in a later run.",
+        "steps": f"1. Read the round {row.get('round')} REJECT of {disp} in the verdict ledger.",
+        "fix": f"Fix each finding above, then deliver {disp} again in a later run.",
     })
     bug = res["id"]
     run_state.drop_from_batch(repo_root, uid, f"{CARRIED_REASON}: {bug}")
@@ -3072,7 +3075,7 @@ def cmd_brief(args: argparse.Namespace) -> int:
             print(f"\nreview tier: {tier} ({how})\n"
                   f"brief fingerprint: {fp}\n"
                   f"  record the verdict with:  critic.py record --unit "
-                  f"{sdlc_md.norm_id(args.unit)} --verdict <APPROVE|REJECT> "
+                  f"{sdlc_md.display_id(args.root, args.unit)} --verdict <APPROVE|REJECT> "
                   f"--brief {fp} --tier {tier}"
                   f"{' --tier-explicit' if explicit else ''} ...", file=sys.stderr)
         else:
@@ -3101,7 +3104,7 @@ def cmd_brief(args: argparse.Namespace) -> int:
             print(f"\nreview tier: {tier} ({how})\n"
                   f"brief fingerprint: {fp}\n"
                   f"  record the verdict with:  critic.py record --unit "
-                  f"{sdlc_md.norm_id(args.unit)} --verdict <APPROVE|REJECT> "
+                  f"{sdlc_md.display_id(args.root, args.unit)} --verdict <APPROVE|REJECT> "
                   f"--brief {fp} --tier {tier}"
                   f"{' --tier-explicit' if explicit else ''} ...", file=sys.stderr)
     except (OSError, ValueError) as exc:
