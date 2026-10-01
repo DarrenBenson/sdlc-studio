@@ -1,6 +1,8 @@
 # CR-0601: A shipped command reports where a project's own docs still name retired v5 surface
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
+> **Superseded by:** CR0592
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

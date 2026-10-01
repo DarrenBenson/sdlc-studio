@@ -1,6 +1,8 @@
 # CR-0563: verify_ac run prints the near-miss hint when a collected file's node is absent, so the RED first run of a mistyped selector names what was meant
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
+> **Superseded by:** CR0559
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

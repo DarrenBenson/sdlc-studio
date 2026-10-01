@@ -1,6 +1,8 @@
 # CR-0597: Prevent or retire lesson LC-008 (constraint added without retirement)
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
+> **Superseded by:** BG0760
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

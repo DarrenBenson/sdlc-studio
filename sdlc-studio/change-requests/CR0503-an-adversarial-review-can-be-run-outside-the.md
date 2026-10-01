@@ -1,6 +1,8 @@
 # CR-0503: an adversarial review can be run outside the seat ceremony, losing every standing practice, and nothing detects that it was
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
+> **Superseded by:** US0923
 > **Closes with:** US0923 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Decomposed-into:** EP0222
 > **Priority:** High

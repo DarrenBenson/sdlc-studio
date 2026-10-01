@@ -1,6 +1,6 @@
 # EP0225: A delegated review cannot begin against a tree the unit is not in
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Derived Point Total:** 6
 > **Parent:** CR0509
 > **Created:** 2026-08-27
@@ -14,7 +14,7 @@ Decomposed from CR0509. Delivers the work CR0509 requested.
 
 ## Story Breakdown
 
-- [ ] [US0722: `critic.py brief` REFUSES when the working tree does not contain the unit, naming base found and base needed](../stories/US0722-critic-py-brief-refuses-when-the-working-tree.md)
+- [x] [US0722: `critic.py brief` REFUSES when the working tree does not contain the unit, naming base found and base needed](../stories/US0722-critic-py-brief-refuses-when-the-working-tree.md)
 - [x] [US0723: A verdict records the base commit the review was measured against](../stories/US0723-a-verdict-records-the-base-commit-the-review.md)
 - [x] [US0724: `reference-review.md` states the base contract, so it is in the doctrine and not only in the tool](../stories/US0724-reference-review-md-states-the-base-contract-so.md)
 

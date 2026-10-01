@@ -1,6 +1,7 @@
 # US0866: the sprint plan records its operational design domain: the files it may touch, the artefacts it may create, the statuses it may set and the budget it may spend
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0290 (operating domain is the repository plus the approved batch, no derived record or plan refusal) and D0291, discovery backlog sweep 2026-10-01
 > **Delivers:** RFC0060
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio new

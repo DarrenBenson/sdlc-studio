@@ -1,6 +1,7 @@
 # US0774: A project with no release automation of its own inherits a working release step
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Delivers:** CR0545
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new

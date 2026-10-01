@@ -1,6 +1,8 @@
 # CR-0524: a review verdict separates a broken feature from evidence that cannot fail
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
+> **Superseded by:** US0918
 > **Closes with:** US0918 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Decomposed-into:** EP0227
 > **Created:** 2026-08-02

@@ -1,6 +1,7 @@
 # CR-0588: run_state readers cannot tell a field that is empty from a field the schema never had, so a typo reads as a state
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

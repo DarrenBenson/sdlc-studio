@@ -1,6 +1,7 @@
 # US0730: A verdict distinguishes a unit that does not work from one whose evidence cannot fail
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Closes with:** US0918 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0524
 > **Created:** 2026-08-27

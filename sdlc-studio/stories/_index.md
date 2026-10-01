@@ -7,13 +7,13 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 15 |
+| Draft | 4 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
 | Done | 778 |
-| Won't Implement | 81 |
+| Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
@@ -72,7 +72,7 @@
 | [US0704](US0704-a-partial-or-missed-verdict-is-releasable-only.md) | A partial or missed verdict is releasable only as an explicitly recorded operator decision | Superseded | EP0221 | 2026-08-27 | 2026-08-27 |
 | [US0705](US0705-the-defect-judgement-reports-its-own-lower-bound.md) | The defect judgement reports its own LOWER BOUND when unfiled findings exist | Won't Implement | EP0221 | 2026-08-27 | 2026-08-27 |
 | [US0706](US0706-a-project-with-no-adopted-definition-of-done.md) | A project with no adopted definition-of-done inherits the clause from the shipped template | Won't Implement | EP0221 | 2026-08-27 | 2026-08-27 |
-| [US0707](US0707-an-evidence-or-verdict-row-records-how-it.md) | An evidence or verdict row records HOW it was obtained, and marks a row not produced through `brief` | Draft | EP0222 | 2026-08-27 | 2026-08-27 |
+| [US0707](US0707-an-evidence-or-verdict-row-records-how-it.md) | An evidence or verdict row records HOW it was obtained, and marks a row not produced through `brief` | Won't Implement | EP0222 | 2026-08-27 | 2026-08-27 |
 | [US0708](US0708-brief-gains-a-review-kind-beside-seat-each.md) | `brief` gains a review KIND beside `--seat`, each emitting the standing practices for that kind | Won't Implement | EP0222 | 2026-08-27 | 2026-08-27 |
 | [US0709](US0709-the-missing-practice-refusal-extends-to-every-kind.md) | The missing-practice refusal extends to every kind, with a test per kind that strips one practice | Won't Implement | EP0222 | 2026-08-27 | 2026-08-27 |
 | [US0710](US0710-a-round-run-with-one-reviewer-or-two.md) | A round run with one reviewer, or two on the same lens, is RECORDED as such | Superseded | EP0222 | 2026-08-27 | 2026-08-27 |
@@ -87,7 +87,7 @@
 | [US0719](US0719-a-sprint-closes-with-open-defects-as-the.md) | A sprint closes WITH open defects as the normal case, needing no waiver | Superseded | EP0224 | 2026-08-27 | 2026-08-27 |
 | [US0720](US0720-a-verdict-is-judged-on-the-revision-it.md) | A verdict is judged on the revision it was given for, so a repaired REJECT does not gate for ever | Superseded | EP0224 | 2026-08-27 | 2026-08-27 |
 | [US0721](US0721-the-close-s-own-cost-is-measured-and.md) | The close's own cost is measured and reported beside the delivery's | Superseded | EP0224 | 2026-08-27 | 2026-08-27 |
-| [US0722](US0722-critic-py-brief-refuses-when-the-working-tree.md) | `critic.py brief` REFUSES when the working tree does not contain the unit, naming base found and base needed | Draft | EP0225 | 2026-08-27 | 2026-08-27 |
+| [US0722](US0722-critic-py-brief-refuses-when-the-working-tree.md) | `critic.py brief` REFUSES when the working tree does not contain the unit, naming base found and base needed | Won't Implement | EP0225 | 2026-08-27 | 2026-08-27 |
 | [US0723](US0723-a-verdict-records-the-base-commit-the-review.md) | A verdict records the base commit the review was measured against | Won't Implement | EP0225 | 2026-08-27 | 2026-08-27 |
 | [US0724](US0724-reference-review-md-states-the-base-contract-so.md) | `reference-review.md` states the base contract, so it is in the doctrine and not only in the tool | Won't Implement | EP0225 | 2026-08-27 | 2026-08-27 |
 | [US0725](US0725-a-unit-reaching-review-past-the-span-threshold.md) | A unit reaching Review past the span threshold is REPORTED by the command that transitions it | Superseded | EP0226 | 2026-08-27 | 2026-08-27 |
@@ -95,9 +95,9 @@
 | [US0727](US0727-sprint-status-states-the-open-span-without-anyone.md) | `sprint status` states the open span without anyone running the close | Superseded | EP0226 | 2026-08-27 | 2026-08-27 |
 | [US0728](US0728-the-report-is-advisory-until-its-yield-is.md) | The report is advisory until its yield is measured, on the terms claim-drift and lane-check shipped under | Superseded | EP0226 | 2026-08-27 | 2026-08-27 |
 | [US0729](US0729-a-run-with-every-unit-covered-stays-silent.md) | A run with every unit covered stays silent, so the signal does not become noise | Superseded | EP0226 | 2026-08-27 | 2026-08-27 |
-| [US0730](US0730-a-verdict-distinguishes-a-unit-that-does-not.md) | A verdict distinguishes a unit that does not work from one whose evidence cannot fail | Draft | EP0227 | 2026-08-27 | 2026-08-27 |
+| [US0730](US0730-a-verdict-distinguishes-a-unit-that-does-not.md) | A verdict distinguishes a unit that does not work from one whose evidence cannot fail | Won't Implement | EP0227 | 2026-08-27 | 2026-08-27 |
 | [US0731](US0731-evidence-debt-is-recorded-against-the-criterion-it.md) | Evidence debt is recorded against the CRITERION it attaches to, naming the surviving mutant | Superseded | EP0227 | 2026-08-27 | 2026-08-27 |
-| [US0732](US0732-the-batch-summary-reports-the-two-counts-separately.md) | The batch summary reports the two counts separately | Draft | EP0227 | 2026-08-27 | 2026-08-27 |
+| [US0732](US0732-the-batch-summary-reports-the-two-counts-separately.md) | The batch summary reports the two counts separately | Won't Implement | EP0227 | 2026-08-27 | 2026-08-27 |
 | [US0733](US0733-a-unit-carrying-evidence-debt-is-still-refused.md) | A unit carrying evidence debt is still refused a terminal status until it is cleared or deferred with a reason | Superseded | EP0227 | 2026-08-27 | 2026-08-27 |
 | [US0734](US0734-the-seat-briefs-tell-a-reviewer-which-verdict.md) | The seat briefs tell a reviewer which verdict fits which finding, calibrated on RUN-01KYZKY5 | Superseded | EP0227 | 2026-08-27 | 2026-08-27 |
 | [US0735](US0735-drift-is-reported-at-a-point-before-the.md) | Drift is reported at a point BEFORE the close, with the point chosen and priced | Superseded | EP0228 | 2026-08-27 | 2026-08-27 |
@@ -110,12 +110,12 @@
 | [US0742](US0742-the-guidance-states-that-an-artefact-records-belief.md) | The guidance states that an artefact records BELIEF and history records what happened | Superseded | EP0229 | 2026-08-27 | 2026-08-27 |
 | [US0743](US0743-reading-the-artefact-corpus-in-bulk-is-explicitly.md) | Reading the artefact corpus in bulk is explicitly NOT the instruction, and the row says so | Superseded | EP0229 | 2026-08-27 | 2026-08-27 |
 | [US0744](US0744-whether-critic-py-brief-gains-an-author-facing.md) | Whether `critic.py brief` gains an author-facing form is decided and recorded either way | Superseded | EP0229 | 2026-08-27 | 2026-08-27 |
-| [US0745](US0745-sprint-breakdown-reports-the-number-of-independent-components.md) | `sprint breakdown` reports the number of INDEPENDENT components over the declared Affects graph | Draft | EP0230 | 2026-08-27 | 2026-08-27 |
+| [US0745](US0745-sprint-breakdown-reports-the-number-of-independent-components.md) | `sprint breakdown` reports the number of INDEPENDENT components over the declared Affects graph | Won't Implement | EP0230 | 2026-08-27 | 2026-08-27 |
 | [US0746](US0746-it-reports-the-concentration-the-largest-component-in.md) | It reports the CONCENTRATION: the largest component in units and points, and its share of the batch | Superseded | EP0230 | 2026-08-27 | 2026-08-27 |
 | [US0747](US0747-the-two-measures-are-distinguished-in-the-wording.md) | The two measures are distinguished in the wording, because they answer different questions | Superseded | EP0230 | 2026-08-27 | 2026-08-27 |
 | [US0748](US0748-a-runbook-row-names-the-command-so-the.md) | A runbook row names the command, so the parallelisable question has a command behind it | Won't Implement | EP0230 | 2026-08-27 | 2026-08-27 |
 | [US0749](US0749-the-agentic-safety-rule-is-unchanged-and-is.md) | The `--agentic` safety rule is UNCHANGED and is not made the default | Won't Implement | EP0230 | 2026-08-27 | 2026-08-27 |
-| [US0750](US0750-a-charter-s-scope-query-can-select-the.md) | A charter's scope query can select the units a request was decomposed into | Draft | EP0231 | 2026-08-27 | 2026-08-27 |
+| [US0750](US0750-a-charter-s-scope-query-can-select-the.md) | A charter's scope query can select the units a request was decomposed into | Won't Implement | EP0231 | 2026-08-27 | 2026-08-27 |
 | [US0751](US0751-the-vocabulary-stays-sprint-plan-s-own-parsed.md) | The vocabulary stays `sprint plan`'s own, parsed by the same code | Superseded | EP0231 | 2026-08-27 | 2026-08-27 |
 | [US0752](US0752-sc0001-s-query-and-its-prose-rule-agree.md) | SC0001's query and its prose rule agree, pinned by a test | Won't Implement | EP0231 | 2026-08-27 | 2026-08-27 |
 | [US0753](US0753-a-charter-whose-query-cannot-be-reconciled-with.md) | A charter whose query cannot be reconciled with its rule is REPORTED at materialise time | Won't Implement | EP0231 | 2026-08-27 | 2026-08-27 |
@@ -139,16 +139,16 @@
 | [US0771](US0771-a-unit-under-construction-sees-its-own-lane.md) | A unit under construction sees its OWN lane-check line at delivery, not the corpus total | Won't Implement | EP0235 | 2026-08-27 | 2026-08-27 |
 | [US0772](US0772-a-tag-whose-release-is-missing-any-of.md) | A tag whose Release is missing any of its four assets is REFUSED at the release boundary | Superseded | EP0236 | 2026-08-27 | 2026-08-27 |
 | [US0773](US0773-the-check-ships-as-release-cut-py-rather.md) | The check ships as `release_cut.py` rather than in repo-only `tools/` | Won't Implement | EP0236 | 2026-08-27 | 2026-08-27 |
-| [US0774](US0774-a-project-with-no-release-automation-of-its.md) | A project with no release automation of its own inherits a working release step | Draft | EP0236 | 2026-08-27 | 2026-08-27 |
+| [US0774](US0774-a-project-with-no-release-automation-of-its.md) | A project with no release automation of its own inherits a working release step | Won't Implement | EP0236 | 2026-08-27 | 2026-08-27 |
 | [US0775](US0775-a-unit-outside-the-batch-reaching-terminal-is.md) | A unit outside the batch reaching terminal is REPORTED, naming the command that would add it | Superseded | EP0237 | 2026-08-27 | 2026-08-27 |
 | [US0776](US0776-a-unit-in-the-batch-reaching-terminal-reports.md) | A unit IN the batch reaching terminal reports nothing - the prompt must not fire on the normal path | Superseded | EP0237 | 2026-08-27 | 2026-08-27 |
-| [US0777](US0777-the-close-reports-units-delivered-outside-the-batch.md) | The close reports units delivered outside the batch as a non-blocking row naming each id | Draft | EP0237 | 2026-08-27 | 2026-08-27 |
+| [US0777](US0777-the-close-reports-units-delivered-outside-the-batch.md) | The close reports units delivered outside the batch as a non-blocking row naming each id | Won't Implement | EP0237 | 2026-08-27 | 2026-08-27 |
 | [US0778](US0778-the-appetite-reports-working-time-derived-from-the.md) | The appetite reports WORKING time, derived from the evidence the run itself leaves | Superseded | EP0238 | 2026-08-27 | 2026-08-27 |
 | [US0779](US0779-an-idle-interval-is-excluded-and-the-exclusion.md) | An idle interval is excluded and the exclusion is NAMED rather than silent | Superseded | EP0238 | 2026-08-27 | 2026-08-27 |
 | [US0780](US0780-both-figures-are-reported-working-and-calendar-so.md) | Both figures are reported, working and calendar, so neither can stand in for the other | Superseded | EP0238 | 2026-08-27 | 2026-08-27 |
 | [US0781](US0781-an-interval-that-cannot-be-classified-counts-as.md) | An interval that cannot be classified counts as SPENT - an unmeasurable gap is not a free one | Won't Implement | EP0238 | 2026-08-27 | 2026-08-27 |
 | [US0782](US0782-retro-accuracy-and-the-metrics-line-report-the.md) | `retro accuracy` and the Metrics line report the working figure with the calendar beside it | Superseded | EP0238 | 2026-08-27 | 2026-08-27 |
-| [US0783](US0783-a-run-whose-working-time-exceeds-the-ceiling.md) | A run whose WORKING time exceeds the ceiling still trips the breaker, shown against a fixture | Draft | EP0238 | 2026-08-27 | 2026-08-27 |
+| [US0783](US0783-a-run-whose-working-time-exceeds-the-ceiling.md) | A run whose WORKING time exceeds the ceiling still trips the breaker, shown against a fixture | Won't Implement | EP0238 | 2026-08-27 | 2026-08-27 |
 | [US0784](US0784-no-tracked-file-in-the-live-working-tree.md) | No tracked file in the live working tree changes at any point while the lane runs | Draft | EP0239 | 2026-08-27 | 2026-08-27 |
 | [US0785](US0785-the-lane-and-the-per-unit-cli-reach.md) | The lane and the per-unit CLI reach the same verdict for the same reason - one measurement | Superseded | EP0239 | 2026-08-27 | 2026-08-27 |
 | [US0786](US0786-a-file-absent-at-the-base-ref-is.md) | A file absent at the base ref is ABSENT from the isolated copy, not present and empty | Superseded | EP0239 | 2026-08-27 | 2026-08-27 |
@@ -196,7 +196,7 @@
 | [US0835](US0835-the-report-json-of-record-is-derived-from.md) | the report JSON of record is derived from the run's own artefacts, every figure carrying its source | Done | EP0255 | 2026-09-16 | 2026-09-16 |
 | [US0836](US0836-the-markdown-twin-and-the-html-rendering-are.md) | the Markdown twin and the HTML rendering are generated from the shipped templates, and a section with no data renders NOT MEASURED by name | Done | EP0255 | 2026-09-16 | 2026-09-16 |
 | [US0837](US0837-the-report-opens-with-the-sprint-goal-verbatim.md) | the report opens with the sprint goal verbatim and carries DORA's four keys with this project's mapping stated | Done | EP0255 | 2026-09-16 | 2026-09-16 |
-| [US0838](US0838-refine-runs-a-stakeholder-consult-over-the-epic.md) | refine runs a stakeholder consult over the epic and its stories and records it as an artefact naming the units it covered | Draft | EP0256 | 2026-09-16 | 2026-09-16 |
+| [US0838](US0838-refine-runs-a-stakeholder-consult-over-the-epic.md) | refine runs a stakeholder consult over the epic and its stories and records it as an artefact naming the units it covered | Won't Implement | EP0256 | 2026-09-16 | 2026-09-16 |
 | [US0839](US0839-a-risk-trigger-derived-from-affects-and-unit.md) | a risk trigger derived from Affects and unit type names which units still owe a consult, and most bugs skip without a reason | Won't Implement | EP0256 | 2026-09-16 | 2026-09-16 |
 | [US0840](US0840-a-consult-artefact-carries-each-persona-s-verdict.md) | a consult artefact carries each persona's verdict and a disposition per finding, so a consult can be counted rather than remembered | Superseded | EP0256 | 2026-09-16 | 2026-09-16 |
 | [US0841](US0841-an-unanswered-stakeholder-reject-is-reported-at-the.md) | an unanswered stakeholder Reject is reported at the close, holding nothing, and the operator rules it | Won't Implement | EP0256 | 2026-09-16 | 2026-09-16 |
@@ -224,7 +224,7 @@
 | [US0863](US0863-sprint-close-derives-the-goal-verdict-from-the.md) | `sprint close` derives the goal verdict from the clause results, and `--goal-verdict` becomes an override that must carry its justification | Superseded | EP0258 | 2026-09-21 | 2026-09-21 |
 | [US0864](US0864-a-derived-verdict-that-contradicts-the-author-s.md) | a derived verdict that contradicts the author's note is filed as a finding naming both, and the close is not refused | Superseded | EP0258 | 2026-09-21 | 2026-09-21 |
 | [US0865](US0865-the-report-of-record-carries-every-goal-clause.md) | the report of record carries every goal clause with its own verdict and evidence, and counts operator rulings against persona rulings | Superseded | EP0258 | 2026-09-21 | 2026-09-21 |
-| [US0866](US0866-the-sprint-plan-records-its-operational-design-domain.md) | the sprint plan records its operational design domain: the files it may touch, the artefacts it may create, the statuses it may set and the budget it may spend | Draft | EP0259 | 2026-09-21 | 2026-09-21 |
+| [US0866](US0866-the-sprint-plan-records-its-operational-design-domain.md) | the sprint plan records its operational design domain: the files it may touch, the artefacts it may create, the statuses it may set and the budget it may spend | Won't Implement | EP0259 | 2026-09-21 | 2026-09-21 |
 | [US0867](US0867-plan-time-refusal-rejects-a-goal-clause-whose.md) | plan-time refusal rejects a goal clause whose check reaches outside the declared domain, naming the clause and the path that left it | Superseded | EP0259 | 2026-09-21 | 2026-09-21 |
 | [US0868](US0868-a-sprint-goal-is-one-memorable-sentence-and.md) | A sprint goal is one memorable sentence, and its seat read advises rather than blocks | Done | EP0260 | 2026-09-23 | 2026-09-23 |
 | [US0869](US0869-estimates-are-calibrated-from-the-project-s-own.md) | Estimates are calibrated from the project's own runs, not a seed constant | Done | EP0260 | 2026-09-23 | 2026-09-23 |

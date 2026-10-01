@@ -1,6 +1,7 @@
 # CR-0602: A run's token and minute actuals are measured without the operator stamping a baseline
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

@@ -1,6 +1,6 @@
 # RFC-0058: Stakeholder feedback shapes the work: when, how often and at what cost the stakeholder personas are consulted
 
-> **Status:** In Review
+> **Status:** Accepted
 > **Decomposed-into:** EP0256
 > **Created:** 2026-09-15
 > **Created-by:** sdlc-studio new
@@ -96,10 +96,10 @@ Record every consult as an artefact under `sdlc-studio/reviews/` naming the unit
 | --- | --- | --- |
 | D1 | **RULED 2026-09-16 (operator):** at REFINE, per epic or CR - one consult over the epic and its stories before grooming, where feedback becomes criteria rather than rework. `plan` does not carry a second gate; a unit filed outside refine is reached by D2's trigger instead | Settled |
 | D2 | **RULED 2026-09-16 (operator):** RISK-TRIGGERED - a unit is consulted when it touches the running system, changes what a user reads or is told, originates in a stakeholder concern, or belongs to an epic no consult has covered. Derived from `Affects` and the unit type, so most bugs (defects against settled intent) skip without a reason | Settled |
-| D3 | What a consult artefact must carry for the gate to count it (units covered, verdicts, per-finding disposition) | Open |
+| D3 | What a consult artefact must carry for the gate to count it | **DECLINED 2026-10-01 (D0291, discovery sweep):** no consult gate or consult artefact is built - the advisory stakeholder step already ships in `reference-epic.md` and `reference-story.md`, and a gated artefact is the constraint ratchet the 2026-09-23 reset retired (US0838 Won't Implement). |
 | D4 | **RULED 2026-09-16 (operator):** INFORMS, and the operator rules. A stakeholder Reject holds no gate, but it must be ANSWERED in writing - folded into delivery, filed with an id, or declined with a reason - and an unanswered one is reported at the close. Consistent with D0194: the operator rules, the personas inform | Settled |
-| D5 | **PARTLY RULED 2026-09-17 (operator):** provenance and age are RECORDED - each card carries when it was authored, from what evidence, and when it was last revisited, and every consult artefact and yield figure carries the oldest card's age with the validity caveat (US0847). No refresh process is built yet, and whether a real stakeholder may stand in for a persona is still open | Open |
-| D6 | How consult yield is measured (findings per consult, share folded or filed, cost against seat rounds) and when the requirement is revisited | Open |
+| D5 | **PARTLY RULED 2026-09-17 (operator):** provenance and age are RECORDED - each card carries when it was authored, from what evidence, and when it was last revisited, and every consult artefact and yield figure carries the oldest card's age with the validity caveat (US0847). No refresh process is built yet, and whether a real stakeholder may stand in for a persona is still open | **CLOSED 2026-10-01 (D0291):** the recorded provenance stands; no refresh process or stand-in rule is built (no consult gate exists to need one). |
+| D6 | How consult yield is measured and when the requirement is revisited | **DECLINED 2026-10-01 (D0291, discovery sweep):** no consult gate or consult artefact is built - the advisory stakeholder step already ships in `reference-epic.md` and `reference-story.md`, and a gated artefact is the constraint ratchet the 2026-09-23 reset retired (US0838 Won't Implement). |
 
 ## Evidence
 

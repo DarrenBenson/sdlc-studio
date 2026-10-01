@@ -1,6 +1,7 @@
 # US0923: A review verdict records without brief provenance
 
 > **Status:** Done
+> **Supersedes:** CR0503
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

@@ -1,6 +1,6 @@
 # EP0258: WS1: the sprint goal becomes a contract the close can test, and the verdict is derived rather than asserted
 
-> **Status:** Done
+> **Status:** Superseded
 > **Derived Point Total:** 29
 > **Parent:** RFC0060
 > **Created:** 2026-09-21

@@ -1,6 +1,7 @@
 # US0745: `sprint breakdown` reports the number of INDEPENDENT components over the declared Affects graph
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Merged from:** US0746, US0747 (backlog sweep 2026-09-24, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0530
 > **Created:** 2026-08-27

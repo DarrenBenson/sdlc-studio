@@ -1,6 +1,7 @@
 # CR-0592: Low-severity bugs (consolidated)
 
 > **Status:** Proposed
+> **Supersedes:** CR0601
 > **Size:** S
 > **Priority:** Low
 > **Type:** Improvement

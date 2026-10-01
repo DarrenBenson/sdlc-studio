@@ -1,6 +1,7 @@
 # CR-0509: A review worktree opens at a stale base, so every delegated reviewer's first act is discovering the units under review do not exist yet
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Decomposed-into:** EP0225
 > **Priority:** High
 > **Type:** Improvement

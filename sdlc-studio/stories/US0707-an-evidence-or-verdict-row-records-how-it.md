@@ -1,6 +1,7 @@
 # US0707: An evidence or verdict row records HOW it was obtained, and marks a row not produced through `brief`
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Closes with:** US0923 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0503
 > **Created:** 2026-08-27

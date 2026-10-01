@@ -1,6 +1,7 @@
 # US0732: The batch summary reports the two counts separately
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Closes with:** US0918 (D0264: superseded only once it ships; backlog sweep D0265, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0524
 > **Created:** 2026-08-27

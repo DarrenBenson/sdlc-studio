@@ -1,6 +1,7 @@
 # CR-0600: Prevent or retire lesson LC-004 (premise not executed)
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

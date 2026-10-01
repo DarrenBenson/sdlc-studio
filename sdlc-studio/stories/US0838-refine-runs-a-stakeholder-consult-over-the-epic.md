@@ -1,6 +1,7 @@
 # US0838: refine runs a stakeholder consult over the epic and its stories and records it as an artefact naming the units it covered
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Delivers:** RFC0058
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new

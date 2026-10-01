@@ -1,6 +1,7 @@
 # CR-0530: the planner reports shared-file clusters, not the parallelisable fraction, so nothing says whether agentic delivery is available at all
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Decomposed-into:** EP0230
 > **Priority:** Medium
 > **Type:** Improvement

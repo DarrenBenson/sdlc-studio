@@ -1,6 +1,6 @@
 # EP0237: A run notices work it delivered that its batch never named
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Derived Point Total:** 8
 > **Parent:** CR0546
 > **Created:** 2026-08-27
@@ -16,7 +16,7 @@ Decomposed from CR0546. Delivers the work CR0546 requested.
 
 - [x] [US0775: A unit outside the batch reaching terminal is REPORTED, naming the command that would add it](../stories/US0775-a-unit-outside-the-batch-reaching-terminal-is.md)
 - [x] [US0776: A unit IN the batch reaching terminal reports nothing - the prompt must not fire on the normal path](../stories/US0776-a-unit-in-the-batch-reaching-terminal-reports.md)
-- [ ] [US0777: The close reports units delivered outside the batch as a non-blocking row naming each id](../stories/US0777-the-close-reports-units-delivered-outside-the-batch.md)
+- [x] [US0777: The close reports units delivered outside the batch as a non-blocking row naming each id](../stories/US0777-the-close-reports-units-delivered-outside-the-batch.md)
 
 ## Acceptance Criteria (Epic Level)
 

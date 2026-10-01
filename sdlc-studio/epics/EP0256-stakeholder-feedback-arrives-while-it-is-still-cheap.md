@@ -1,6 +1,6 @@
 # EP0256: Stakeholder feedback arrives while it is still cheap to act on
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Derived Point Total:** 37
 > **Parent:** RFC0058
 > **Created:** 2026-09-16
@@ -14,7 +14,7 @@ Decomposed from RFC0058. Delivers the work RFC0058 requested.
 
 ## Story Breakdown
 
-- [ ] [US0838: refine runs a stakeholder consult over the epic and its stories and records it as an artefact naming the units it covered](../stories/US0838-refine-runs-a-stakeholder-consult-over-the-epic.md)
+- [x] [US0838: refine runs a stakeholder consult over the epic and its stories and records it as an artefact naming the units it covered](../stories/US0838-refine-runs-a-stakeholder-consult-over-the-epic.md)
 - [x] [US0839: a risk trigger derived from Affects and unit type names which units still owe a consult, and most bugs skip without a reason](../stories/US0839-a-risk-trigger-derived-from-affects-and-unit.md)
 - [x] [US0840: a consult artefact carries each persona's verdict and a disposition per finding, so a consult can be counted rather than remembered](../stories/US0840-a-consult-artefact-carries-each-persona-s-verdict.md)
 - [x] [US0841: an unanswered stakeholder Reject is reported at the close, holding nothing, and the operator rules it](../stories/US0841-an-unanswered-stakeholder-reject-is-reported-at-the.md)

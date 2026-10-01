@@ -1,6 +1,7 @@
 # US0936: The mutation ledger verbs are retired and a mutation run reports its yield only
 
 > **Status:** Done
+> **Supersedes:** CR0598
 > **Created:** 2026-09-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

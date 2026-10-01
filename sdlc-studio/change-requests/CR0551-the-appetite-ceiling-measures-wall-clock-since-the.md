@@ -1,6 +1,7 @@
 # CR-0551: The appetite ceiling measures WALL-CLOCK since the run opened, so a run left open overnight reports spend it never incurred
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Decomposed-into:** EP0238
 > **Priority:** High
 > **Type:** Improvement

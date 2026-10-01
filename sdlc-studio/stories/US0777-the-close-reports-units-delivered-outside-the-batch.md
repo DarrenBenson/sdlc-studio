@@ -1,6 +1,7 @@
 # US0777: The close reports units delivered outside the batch as a non-blocking row naming each id
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Merged from:** US0775, US0776 (backlog sweep 2026-09-24, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0546
 > **Created:** 2026-08-27

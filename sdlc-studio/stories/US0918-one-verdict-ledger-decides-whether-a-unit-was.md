@@ -1,6 +1,7 @@
 # US0918: One verdict ledger decides whether a unit was reviewed
 
 > **Status:** Done
+> **Supersedes:** CR0524
 > **Created:** 2026-09-24
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

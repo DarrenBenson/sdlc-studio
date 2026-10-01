@@ -1,6 +1,6 @@
 # EP0230: The planner answers whether a batch is parallelisable, rather than which files collide
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Derived Point Total:** 12
 > **Parent:** CR0530
 > **Created:** 2026-08-27
@@ -14,7 +14,7 @@ Decomposed from CR0530. Delivers the work CR0530 requested.
 
 ## Story Breakdown
 
-- [ ] [US0745: `sprint breakdown` reports the number of INDEPENDENT components over the declared Affects graph](../stories/US0745-sprint-breakdown-reports-the-number-of-independent-components.md)
+- [x] [US0745: `sprint breakdown` reports the number of INDEPENDENT components over the declared Affects graph](../stories/US0745-sprint-breakdown-reports-the-number-of-independent-components.md)
 - [x] [US0746: It reports the CONCENTRATION: the largest component in units and points, and its share of the batch](../stories/US0746-it-reports-the-concentration-the-largest-component-in.md)
 - [x] [US0747: The two measures are distinguished in the wording, because they answer different questions](../stories/US0747-the-two-measures-are-distinguished-in-the-wording.md)
 - [x] [US0748: A runbook row names the command, so the parallelisable question has a command behind it](../stories/US0748-a-runbook-row-names-the-command-so-the.md)

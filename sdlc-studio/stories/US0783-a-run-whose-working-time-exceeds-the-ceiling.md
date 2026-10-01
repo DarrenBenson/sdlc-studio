@@ -1,6 +1,7 @@
 # US0783: A run whose WORKING time exceeds the ceiling still trips the breaker, shown against a fixture
 
-> **Status:** Draft
+> **Status:** Won't Implement
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Delivers:** CR0551
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new

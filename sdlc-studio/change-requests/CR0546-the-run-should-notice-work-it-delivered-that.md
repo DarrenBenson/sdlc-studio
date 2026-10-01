@@ -1,6 +1,7 @@
 # CR-0546: the run should notice work it delivered that its batch never named
 
-> **Status:** Proposed
+> **Status:** Rejected
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
 > **Decomposed-into:** EP0237
 > **Priority:** High
 > **Type:** Improvement

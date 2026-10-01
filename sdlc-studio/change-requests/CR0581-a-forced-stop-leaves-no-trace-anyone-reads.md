@@ -1,6 +1,8 @@
 # CR-0581: A forced stop leaves no trace anyone reads, needs no reason or principal, and shares the outcome word stopped with two other endings
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
+> **Superseded by:** CR0590
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

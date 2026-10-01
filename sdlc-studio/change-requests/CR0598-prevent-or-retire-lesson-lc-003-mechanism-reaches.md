@@ -1,6 +1,8 @@
 # CR-0598: Prevent or retire lesson LC-003 (mechanism reaches no caller)
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Closed with findings in:** D0291, discovery backlog sweep 2026-10-01 (sdlc-studio/reviews/backlog-sweep-2026-10-01.md)
+> **Superseded by:** US0936
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

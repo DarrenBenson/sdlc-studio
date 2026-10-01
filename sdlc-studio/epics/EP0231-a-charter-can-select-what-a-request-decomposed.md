@@ -1,6 +1,6 @@
 # EP0231: A charter can select what a request decomposed into, and says so when it cannot
 
-> **Status:** Draft
+> **Status:** Superseded
 > **Derived Point Total:** 12
 > **Parent:** CR0531
 > **Created:** 2026-08-27
@@ -14,7 +14,7 @@ Decomposed from CR0531. Delivers the work CR0531 requested.
 
 ## Story Breakdown
 
-- [ ] [US0750: A charter's scope query can select the units a request was decomposed into](../stories/US0750-a-charter-s-scope-query-can-select-the.md)
+- [x] [US0750: A charter's scope query can select the units a request was decomposed into](../stories/US0750-a-charter-s-scope-query-can-select-the.md)
 - [x] [US0751: The vocabulary stays `sprint plan`'s own, parsed by the same code](../stories/US0751-the-vocabulary-stays-sprint-plan-s-own-parsed.md)
 - [x] [US0752: SC0001's query and its prose rule agree, pinned by a test](../stories/US0752-sc0001-s-query-and-its-prose-rule-agree.md)
 - [x] [US0753: A charter whose query cannot be reconciled with its rule is REPORTED at materialise time](../stories/US0753-a-charter-whose-query-cannot-be-reconciled-with.md)
