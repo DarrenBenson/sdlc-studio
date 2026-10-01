@@ -279,7 +279,7 @@ class ThePushBoundaryHasAHookTests(unittest.TestCase):
         """AC4. MUTANTS: (1) print nothing before invoking the gate; (2) print the estimate only
         when history exists, so the first push announces nothing; (3) never record the
         boundary's duration after the gate; (4) announce the tag's heavy lanes on a branch push
-        (US0881); (5) drop the three lane names from the tag's literal."""
+        (US0881); (5) drop the two lane names from the tag's literal."""
         seeded = _Clone(timings=[700.0, 720.0])
         try:
             r = seeded.push(rc=1)
@@ -311,8 +311,8 @@ class ThePushBoundaryHasAHookTests(unittest.TestCase):
             _git(bare.clone, "tag", "v0.0.1")
             tag = bare.push("v0.0.1", rc=1).stderr
             self.assertIn("about fifteen minutes", tag, "with no history the tag literal was not printed:\n" + tag)
-            self.assertIn("release-rehearsal, revert-check and module-alone", tag,
-                          "the tag literal does not name the three lanes:\n" + tag)
+            self.assertIn("release-rehearsal and module-alone", tag,
+                          "the tag literal does not name the two lanes:\n" + tag)
         finally:
             bare.cleanup()
 

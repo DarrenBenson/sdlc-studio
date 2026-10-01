@@ -786,12 +786,6 @@ def _release_rehearsal(root: str) -> dict:
     return {"count": 1, "blocking": True, "detail": why.replace("rehearsal FAILED: ", "")}
 
 
-#: Where the advisory revert-check lane accumulates what it has examined and what it would have
-#: refused. Under `.local/`, which is gitignored: the first version of the claim-drift
-#: accumulator wrote to a TRACKED path and dirtied the working tree on every commit.
-_REVERT_YIELD_REL = "sdlc-studio/.local/revert-check-yield.json"
-
-
 def _clip_reason(text: str, limit: int = 300) -> str:
     """A refusal's reason line, clipped at a WORD boundary past `limit` - never mid-path, since a
     path cut in half sends the reader to a file that does not exist."""
@@ -953,109 +947,6 @@ def _module_alone(root: str) -> dict:
         return {"count": len(failed), "blocking": True,
                 "detail": f"{len(failed)} module(s) red when run alone - {'; '.join(failed)} - {summary}"}
     return {"count": 0, "blocking": True, "detail": summary}
-
-
-def _revert_check(root: str) -> dict:
-    """ADVISORY boundary lane: units whose own verifiers stay green with the change reverted.
-
-    Bound at the release (tag) boundary only, on `release-rehearsal`'s precedent. Reverting
-    and re-running a unit's selectors costs minutes, and a lane whose cost is paid on every push
-    gets switched off - and then it guards nothing.
-
-    ADVISORY while its yield is measured. A new blocking check on a gate already over budget
-    earns its place on a number rather than on an assertion, which is the term the claim-drift
-    lane shipped under. The yield is recorded so that number exists to argue from.
-    """
-    import verify_ac as _va  # noqa: PLC0415 - deferred; it owns the check
-    from lib import run_state as _rs  # noqa: PLC0415
-    root = Path(root)
-    base = (_rs.base_ref(root) or "").strip()
-    batch = [str(b) for b in ((_rs.read(root) or {}).get("batch") or [])]
-    if not base or not batch:
-        return {"count": 0, "blocking": False,
-                "detail": "N/A (no open run with a base ref and a batch to examine)"}
-    examined, refused, named, crashed, set_aside = 0, [], [], [], []
-    skipped = {"reported": 0, "error": 0}   # units the check could not MEASURE - counted, so an
-    for uid in batch:                        # absence can say why rather than merely that
-        try:
-            res = _va.revert_check(root, uid, base)
-        except Exception as exc:  # noqa: BLE001 - an advisory lane never breaks the gate
-            # A CRASH IS NOT A CLEAN RUN. Swallowing this into `named` and then dropping
-            # `named` on the no-refusal path made a lane that failed on every unit print
-            # "0 unit(s) examined, none stayed green" - an absence reading as a pass, which
-            # is the rule `verify_ac.revert_check` enforces four times over and this lane,
-            # its own caller, did not hold. It also silently biased the yield figure that the
-            # decision to make this lane blocking is supposed to rest on.
-            crashed.append(f"{uid}: {exc}")
-            continue
-        if res.get("status") in ("error", "reported"):
-            skipped[res["status"]] += 1
-            # NAMED, not only counted. A count says the method set something aside; only the id
-            # says which unit a reader must judge by other means - every test-only unit lands
-            # here, and a line that drops them hands that blind spot to nobody.
-            reason = res["status"]
-            first = (str((res.get("errors") or [""])[0]).removeprefix(f"{uid}: ")
-                     if reason == "error" else "")
-            set_aside.append(f"{uid} ({reason}: {first})" if first else f"{uid} ({reason})")
-            continue  # not a measurement of this unit's evidence; `revert-check` reports it
-        examined += 1
-        if res.get("status") == "refused":
-            refused.append(uid)
-            named.append(f"{uid}: green after the revert - {', '.join(res.get('green') or [])}")
-    _record_revert_yield(root, examined, len(refused))
-    # An ABSENCE is never rendered as a property of the empty set. "0 unit(s) examined, none
-    # stayed green" and "0 examined and clean" are both literally true over nothing and both
-    # read as a clean bill; the lane says what happened instead - that it measured nothing,
-    # and why - and a crash still leads, on the crashed branch's own reasoning.
-    # Every set-aside unit is named on every path, each with its reason, and never truncated:
-    # the examined count excludes them, so this is the only place a reader learns which.
-    aside = (f"; set aside, not judged: {', '.join(set_aside)}" if set_aside else "")
-    absence = (f"no unit was examined, so this lane measured nothing "
-               f"({skipped['reported']} reported, {skipped['error']} in error){aside}")
-    if not refused:
-        if crashed:
-            # The failure leads. Appending it after the reassuring half of a sentence still
-            # lets a reader skim past a run that measured nothing.
-            tail = f"{examined} examined and clean{aside}" if examined else absence
-            detail = (f"{len(crashed)} unit(s) could not be examined at all - "
-                      + _first_three(crashed) + f"; {tail}")
-        elif examined:
-            detail = f"{examined} unit(s) examined, none stayed green without its change{aside}"
-        else:
-            detail = absence
-        return {"count": 0, "blocking": False, "detail": detail}
-    detail = (f"{examined} examined, {len(refused)} would be refused - "
-              + _first_three(named) + aside)
-    if crashed:
-        detail += f"; {len(crashed)} could not be examined - " + _first_three(crashed)
-    return {"count": len(refused), "blocking": False, "detail": detail}
-
-
-def _first_three(items: list) -> str:
-    """The first three, and a count of what was dropped.
-
-    A silent truncation reads as "that was all of them", so a batch with four or more refused
-    units would quietly under-deliver the lane's own promise to name each one.
-    """
-    head = "; ".join(items[:3])
-    return head + (f" (+{len(items) - 3} more)" if len(items) > 3 else "")
-
-
-def _record_revert_yield(root: Path, examined: int, refused: int) -> None:
-    """Accumulate what the lane looked at and what it would have refused."""
-    try:
-        path = Path(root) / _REVERT_YIELD_REL
-        path.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            rec = json.loads(path.read_text(encoding="utf-8"))  # bare-read-ok: own accumulator
-        except (OSError, ValueError):
-            rec = {}
-        rec = {"runs": int(rec.get("runs", 0)) + 1,
-               "examined": int(rec.get("examined", 0)) + examined,
-               "would_refuse": int(rec.get("would_refuse", 0)) + refused}
-        path.write_text(json.dumps(rec, indent=2), encoding="utf-8")
-    except OSError:
-        pass
 
 
 #: The standard gate: the lanes a plain run, and so every commit, pays for.
@@ -2112,7 +2003,6 @@ def run_gate(root: str = ".", only: list[str] | None = None,
         registry["full-suite"] = _full_suite
     if boundary == "release":
         registry["release-rehearsal"] = _release_rehearsal
-        registry["revert-check"] = _revert_check
         registry["module-alone"] = _module_alone
     # The sprint close scopes conformance to the BATCH it owns. On a clean tree the diff scope is
     # empty, so the default lane judges the whole workspace and blocks an in-batch close on another

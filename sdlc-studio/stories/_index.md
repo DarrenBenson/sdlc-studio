@@ -8,9 +8,9 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 17 |
+| Ready | 16 |
 | Planned | 0 |
-| In Progress | 0 |
+| In Progress | 1 |
 | Review | 0 |
 | Done | 778 |
 | Won't Implement | 92 |
@@ -149,7 +149,7 @@
 | [US0781](US0781-an-interval-that-cannot-be-classified-counts-as.md) | An interval that cannot be classified counts as SPENT - an unmeasurable gap is not a free one | Won't Implement | EP0238 | 2026-08-27 | 2026-08-27 |
 | [US0782](US0782-retro-accuracy-and-the-metrics-line-report-the.md) | `retro accuracy` and the Metrics line report the working figure with the calendar beside it | Superseded | EP0238 | 2026-08-27 | 2026-08-27 |
 | [US0783](US0783-a-run-whose-working-time-exceeds-the-ceiling.md) | A run whose WORKING time exceeds the ceiling still trips the breaker, shown against a fixture | Won't Implement | EP0238 | 2026-08-27 | 2026-08-27 |
-| [US0784](US0784-the-advisory-revert-check-gate-lane-is-retired.md) | The advisory `revert-check` gate lane is retired; the per-unit `verify_ac.py revert-check` stays | Ready | EP0239 | 2026-08-27 | 2026-08-27 |
+| [US0784](US0784-the-advisory-revert-check-gate-lane-is-retired.md) | The advisory `revert-check` gate lane is retired; the per-unit `verify_ac.py revert-check` stays | In Progress | EP0239 | 2026-08-27 | 2026-08-27 |
 | [US0785](US0785-the-lane-and-the-per-unit-cli-reach.md) | The lane and the per-unit CLI reach the same verdict for the same reason - one measurement | Superseded | EP0239 | 2026-08-27 | 2026-08-27 |
 | [US0786](US0786-a-file-absent-at-the-base-ref-is.md) | A file absent at the base ref is ABSENT from the isolated copy, not present and empty | Superseded | EP0239 | 2026-08-27 | 2026-08-27 |
 | [US0787](US0787-a-verifier-reads-current-tests-against-base-production.md) | A verifier reads CURRENT tests against BASE production files, and writes nothing that escapes | Superseded | EP0239 | 2026-08-27 | 2026-08-27 |

@@ -30,20 +30,20 @@ Name every set-aside unit by id, with its reason (`reported` or `error`), on eve
 The rendered form each criterion reads is `<uid> (reported)` for a unit `verify_ac.revert_check` set aside as reported, and `<uid> (error` (optionally followed by the unit's first error text, then `)`) for one it could not measure - the id and its reason in one parenthesised token, so an id printed without its reason, or with the other reason, does not match.
 
 - [ ] **AC1** With one unit examined and clean and one test-only unit in the batch, the revert-check lane's line still leads with `1 unit(s) examined` and names the test-only unit as `<uid> (reported)`, while the examined unit's id carries no set-aside token
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckSetAsideUnitsTests::test_a_reported_unit_is_named_beside_an_examined_one
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0784: the advisory revert-check gate lane, its yield accumulator and its tests were deleted; the per-unit `verify_ac.py revert-check --unit` stays
+  - **Verified:** manual (2026-10-01) - retired, superseded by US0784
 - [ ] **AC2** With the examined unit REFUSED (green after the revert) and one test-only unit beside it, the line `gate.py --boundary push --only revert-check` prints on a two-unit fixture workspace names the refused unit as today and ALSO names the test-only unit as `<uid> (reported)`
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckSetAsideUnitsTests::test_a_reported_unit_is_named_beside_a_refused_one
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0784: the advisory revert-check gate lane, its yield accumulator and its tests were deleted; the per-unit `verify_ac.py revert-check --unit` stays
+  - **Verified:** manual (2026-10-01) - retired, superseded by US0784
 - [ ] **AC3** With one unit examined and one unit the check could not measure, the line names the errored unit as `<uid> (error` and never as `<uid> (reported)`
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckSetAsideUnitsTests::test_an_errored_unit_is_named_beside_an_examined_one
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0784: the advisory revert-check gate lane, its yield accumulator and its tests were deleted; the per-unit `verify_ac.py revert-check --unit` stays
+  - **Verified:** manual (2026-10-01) - retired, superseded by US0784
 - [ ] **AC4** On the two paths no criterion above reaches - zero units examined (one reported, one errored), and one unit whose check crashed beside one examined unit and one reported unit - the line names every set-aside unit by id with its reason, and the zero-examined line still leads with `no unit was examined`
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckSetAsideUnitsTests::test_set_aside_units_are_named_on_the_absence_and_crash_paths
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0784: the advisory revert-check gate lane, its yield accumulator and its tests were deleted; the per-unit `verify_ac.py revert-check --unit` stays
+  - **Verified:** manual (2026-10-01) - retired, superseded by US0784
 - [ ] **AC5** Over a batch of one clean unit, one reported unit and one errored unit, the examined figure handed to `_record_revert_yield` is exactly 1 and the line leads with `1 unit(s) examined` - the paired control, true today; it asserts the recorder's argument, never a substring that `11 unit(s)` would also carry
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::RevertCheckSetAsideUnitsTests::test_set_aside_units_are_not_counted_examined
-  - **Verified:** yes (2026-09-15)
+  - **Verify:** manual - retired by US0784: the advisory revert-check gate lane, its yield accumulator and its tests were deleted; the per-unit `verify_ac.py revert-check --unit` stays
+  - **Verified:** manual (2026-10-01) - retired, superseded by US0784
 
 ## Impact
 

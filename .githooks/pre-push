@@ -4,7 +4,7 @@
 # git hands this hook one line per ref on stdin - `<local ref> <local sha> <remote ref> <remote
 # sha>`. A tag ref is the RELEASE boundary, a branch ref is the PUSH boundary, and a deletion
 # (all-zero local sha) runs no gate at all. A push runs the full suite ONCE plus the core gate
-# lanes; `release` adds release-rehearsal, revert-check and module-alone, so a push carrying both
+# lanes; `release` adds release-rehearsal and module-alone, so a push carrying both
 # a branch and a tag runs the gate ONCE, at `release`. One literal invocation per boundary below.
 #
 # The cost is announced BEFORE it is paid: minutes rather than seconds, and a guard whose cost
@@ -149,9 +149,9 @@ cost="$(python3 tools/gate_timing.py estimate --suite "boundary-$boundary" --war
 if [ -z "$cost" ]; then
   # No run recorded for this boundary yet (the first push is the one this hook exists for). A
   # measured literal: the full suite across every core is about four and a half minutes here, and
-  # the tag's three lanes add about ten more.
+  # the tag's two lanes add about ten more.
   if [ "$boundary" = "release" ]; then
-    cost="boundary-release: no run recorded yet - expect about fifteen minutes (the full suite plus release-rehearsal, revert-check and module-alone)"
+    cost="boundary-release: no run recorded yet - expect about fifteen minutes (the full suite plus release-rehearsal and module-alone)"
   else
     cost="boundary-push: no run recorded yet - expect about five minutes (the full suite once, plus the core gate lanes)"
   fi

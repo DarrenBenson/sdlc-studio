@@ -13,7 +13,7 @@
 #                 rebase replay, pass untouched. It then runs the unit suites, which sit
 #                 here rather than in pre-commit because git writes the commit message
 #                 after pre-commit has run: a message defect must not cost a full suite.
-#   - pre-push    the BOUNDARY lanes (release-rehearsal, revert-check): a branch ref is the push
+#   - pre-push    the BOUNDARY lanes (release-rehearsal, module-alone): a branch ref is the push
 #                 boundary, a tag ref the release boundary. Minutes per push, announced first;
 #                 D0180 records the ruling to pay it.
 #

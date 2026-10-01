@@ -88,9 +88,8 @@ runs a selection: in parallel under pytest-xdist, the `serial_only` tests after,
 `boundary_only` tests a commit leaves out included. It blocks, names each failing test, and keeps
 the whole output in `sdlc-studio/.local/boundary-suite-last.log`.
 
-Three lanes bind at the release boundary and nowhere else, because each costs minutes a push
+Two lanes bind at the release boundary and nowhere else, because each costs minutes a push
 should not pay: `release-rehearsal` drives a greenfield init and a v4 upgrade end to end;
-`revert-check` (advisory) re-runs each batch unit's verifiers with its change reverted;
 `module-alone` runs every skill test module alone under `unittest` in a fresh interpreter from
 the repository root, in parallel, with the `serial_only` partition after - the run that sees a
 module passing only because a sibling imported a name first. A hung module is named after

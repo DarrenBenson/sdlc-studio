@@ -1,6 +1,6 @@
 # US0784: The advisory `revert-check` gate lane is retired; the per-unit `verify_ac.py revert-check` stays
 
-> **Status:** Ready
+> **Status:** In Progress
 > **Merged from:** US0785, US0786, US0787 (backlog sweep 2026-09-24, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0552
 > **Created:** 2026-08-27

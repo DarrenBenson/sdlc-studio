@@ -37,7 +37,7 @@ WORKFLOW = REPO / ".github" / "workflows" / "lint.yml"
 SKILL_TESTS_REL = ".claude/skills/sdlc-studio/scripts/tests"
 
 #: The lanes that cost minutes each and bind at the tag only.
-HEAVY_LANES = ("module-alone", "release-rehearsal", "revert-check")
+HEAVY_LANES = ("module-alone", "release-rehearsal")   # revert-check retired (US0784)
 
 #: A test module that appends one line to a counter file each time it runs.
 COUNTING_TEST = textwrap.dedent('''

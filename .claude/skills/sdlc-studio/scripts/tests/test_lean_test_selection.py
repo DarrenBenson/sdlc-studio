@@ -460,7 +460,6 @@ def test_tree():
 LIVE_REPOSITORY_TESTS = (
     "GateRealWrapperTests::test_real_wrappers_run_and_shape",
     "GateRealWrapperTests::test_the_real_gate_runs_once_per_class",
-    "RevertCheckLaneTests::test_the_lane_runs_at_the_boundary_and_not_per_commit",
     "ModuleAloneLaneTests::test_the_push_boundary_runs_every_module_alone_and_names_the_one_"
     "that_fails",
     "DocSurfaceApplicabilityTests::test_doc_surface_still_measures_the_skill_repo_and_a_bare_tree",
