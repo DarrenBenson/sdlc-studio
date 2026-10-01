@@ -532,7 +532,13 @@ def _extends_a_sibling(verify_ac, root: Path, node_target: str, test_file: str) 
     if any(n.rpartition("::")[2] == leaf for n in nodes):
         return False
     siblings = [n.rpartition("::")[2] for n in nodes if n.rpartition("::")[0] == head]
-    return any(leaf.startswith(f"{s}_") for s in siblings)
+    extended = [s for s in siblings if leaf.startswith(f"{s}_")]
+    # A near miss of any sibling it does NOT extend is still a typo, whatever else it extends:
+    # `test_names_a_retried_seat` extends `test_names` and misspells `test_names_a_retired_seat`.
+    # The cutoff is the one `verify_ac.selector_near_miss` refuses at.
+    import difflib  # noqa: PLC0415 - local: only reached on a refusal path
+    others = [s for s in siblings if s not in extended]
+    return bool(extended) and not difflib.get_close_matches(leaf, others, n=1, cutoff=0.6)
 
 
 def check_verify_selectors(repo_root: Path | str, fields: dict) -> list[tuple[str, str]]:

@@ -135,5 +135,52 @@ class FindingWriterKeepsInputTests(unittest.TestCase):
             self.assertIn("did you mean", typo.stderr)
 
 
+    def test_artifact_keeps_a_criterion_objects_blank_verifier_in_place(self) -> None:
+        """Round 1's repro. MUTANTS: (1) artifact's `_verifiers_of` skipping blanks - B's
+        verifier is written under A, at exit 0, for a CR and a bug alike; (2) a story writing an
+        empty `Verify:` line for the blank slot."""
+        doc = {"acs": [{"text": "crit A"}, {"text": "crit B", "verify": "shell echo B"}]}
+        for type_, extra in (("cr", {}), ("bug", {"severity": "Low", "points": 1,
+                                                   "affects": "tests/test_amigo.py",
+                                                   "steps": "r", "fix": "f"}),
+                            ("story", {})):
+            with self.subTest(type_), tempfile.TemporaryDirectory() as d:
+                root = _project(Path(d))
+                if type_ == "story":
+                    r = _new(root, "epic", "--title", "an epic", "--format", "json")
+                    extra = {"epic": json.loads(r.stdout)["id"]}
+                path = root / "doc.json"
+                path.write_text(json.dumps({**doc, **extra, "title": f"a {type_}",
+                                            "summary": "s"}), encoding="utf-8")
+                r = _new(root, type_, "--fields-file", str(path))
+                self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+                made = _written(root, {"cr": "change-requests", "bug": "bugs",
+                                       "story": "stories"}[type_])[0]
+                text = made.read_text(encoding="utf-8")
+                lines = text.splitlines()
+                a = next(i for i, ln in enumerate(lines) if "crit A" in ln)
+                b = next(i for i, ln in enumerate(lines) if "crit B" in ln)
+                self.assertNotIn("Verify", lines[a + 1], text)
+                self.assertEqual("  - **Verify:** shell echo B", lines[b + 1], text)
+
+    def test_a_near_miss_of_a_longer_sibling_is_refused_whatever_it_extends(self) -> None:
+        """Round 1's regression. MUTANTS: (1) `_extends_a_sibling` judging only the prefix - a
+        typo of `test_names_a_retired_seat` that extends `test_names` files as a new test;
+        (2) the exemption granted with no sibling extended - a node hung below a collected
+        test (`::test_b::extra`) files as new."""
+        module = ("import unittest\n\n\nclass NameTests(unittest.TestCase):\n"
+                  "    def test_names(self):\n        pass\n\n"
+                  "    def test_names_a_retired_seat(self):\n        pass\n")
+        for typo in ("test_names_a_retried_seat", "test_names_a_retired_seats",
+                     "test_names::extra"):
+            with self.subTest(typo), tempfile.TemporaryDirectory() as d:
+                root = _project(Path(d))
+                (root / "tests" / "test_names.py").write_text(module, encoding="utf-8")
+                r = _file(root, "bug", {**BUG, "acs": ["given a then b"], "verify": [
+                    f"pytest tests/test_names.py::NameTests::{typo}"]})
+                self.assertNotEqual(0, r.returncode, r.stdout)
+                self.assertIn("did you mean", r.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

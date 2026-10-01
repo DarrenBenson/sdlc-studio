@@ -143,13 +143,15 @@ def _verifiers_of(f: dict) -> list[str]:
     inject a second directive line into the AC block, and only the first is the one anyone read.
     That refusal is the shared one (`require_single_line`), so a Verify expression and every
     other single-line field are judged by one rule and one character class.
+
+    Positional, as `file_finding.criteria_block` reads it: a blank entry stays an empty slot
+    (a criterion with no verifier), so the verifiers after it keep their own criteria. Every
+    renderer writes no Verify line for an empty slot.
     """
     out: list[str] = []
     for i, v in enumerate((f.get("verify") or []), 1):
         s = str(v)
-        if not s.strip():
-            continue
-        out.append(sdlc_md.require_single_line(f"verify[{i}]", s.strip()))
+        out.append(sdlc_md.require_single_line(f"verify[{i}]", s.strip()) if s.strip() else "")
     return out
 
 
@@ -359,7 +361,7 @@ def _story_acs(f: dict) -> str:
     out: list[str] = []
     for i, a in enumerate(acs, 1):
         out.append(f"- **AC{i}:** {a}\n")
-        if i <= len(verifies):
+        if i <= len(verifies) and verifies[i - 1]:
             out.append(f"  - **Verify:** {verifies[i - 1]}\n")
     return "".join(out)
 
