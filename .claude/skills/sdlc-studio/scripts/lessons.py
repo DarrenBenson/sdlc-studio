@@ -1885,9 +1885,10 @@ def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
     ONE CR for a class repeated GRADUATE_AT times after it was recorded (the row then reads
     `graduating`), close a `graduating` class whose CR reached a terminal status - `graduated`
     when the CR shipped (Complete or Superseded), `retired` when it was Rejected - and retire an
-    active class quiet for the last QUIET_RUNS runs. A class hit in this close stays
-    `graduating` this close: the repeat is evidence the fix has not held. Idempotent: a re-run
-    close adds no hit, files no CR and moves nothing twice.
+    active class quiet for the last QUIET_RUNS runs. A class with a hit recorded in this run -
+    by a cited REJECT, by a retro Try item the close's extract lifted, or on an earlier pass of
+    this same close - stays `graduating`: the repeat is evidence the fix has not held.
+    Idempotent: a re-run close adds no hit, files no CR and moves nothing twice.
 
     Quiet is judged on the last QUIET_RUNS runs THIS clone's archive knows, and only once it
     knows more runs than that, so a fresh clone retires nothing. The archive is per clone while
@@ -1919,6 +1920,10 @@ def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
             hit_now.add(row["id"])
             if was == "retired":
                 res["reactivated"].append(row["id"])
+    # Every class this run hit, whichever path recorded the hit - a REJECT just above, a retro
+    # Try item the close's extract lifted before this pass, or an earlier pass of this same close
+    # (a re-run adds no hit, but the class was still hit this run).
+    hit_now |= {r["id"] for r in rows if any(h.get("run") == run for h in r.get("hits") or ())}
     known = recent_runs(repo_root, run)
     window = set(known[-QUIET_RUNS:])
     for row in rows:

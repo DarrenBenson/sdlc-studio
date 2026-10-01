@@ -23,6 +23,7 @@ import loader  # noqa: E402
 
 lessons = loader.load_script("lessons")
 critic = loader.load_script("critic")
+sprint = loader.load_script("sprint")
 SCRIPTS = Path(__file__).resolve().parent.parent
 
 _CR = ("# {cid}: a graduation request\n\n> **Status:** {status}\n> **Priority:** Medium\n"
@@ -99,9 +100,62 @@ class LessonLifecycleTests(unittest.TestCase):
         self.assertIn("LC-001 graduated (CR0001 Complete)", line)
         self.assertIn("LC-004 retired (CR0004 Rejected, nothing fixed)", line)
         self.assertNotIn("quiet for", line, "a Rejected CR's retirement read as a quiet one")
+        rows = {r["id"]: r for r in lessons.load_store(self.root)}
+        self.assertEqual("RUN-2", rows["LC-004"].get("retired_run"))
         # A re-run close finds nothing more to move.
         again = self._close("RUN-2")
         self.assertEqual(([], []), (again.get("graduated"), again.get("retired")))
+
+    def test_a_graduation_alone_is_saved(self) -> None:
+        """The store is written when the only move is a graduation. MUTANT: leave `graduated`
+        out of the save condition - the close reports LC-001 graduated and the file still reads
+        `graduating`."""
+        self._cr("CR0001", "Complete")
+        self._store(self._row("LC-001", "RUN-1", state="graduating", cr="CR0001"))
+        res = self._close("RUN-2")
+        self.assertEqual(["LC-001"], res["graduated"])
+        self.assertEqual({"LC-001": "graduated"}, self._classes())
+
+    def _retro(self, *tries: str) -> None:
+        d = self.root / "sdlc-studio" / "retros"
+        d.mkdir(parents=True, exist_ok=True)
+        body = ["# RETRO-0001: a sprint", "", "> **Date:** 2026-10-01", "> **Batch:** US0001",
+                "", "## Keep", "", "- small units", "", "## Stop", "", "- nothing", "",
+                "## Try", ""] + [f"- {t}" for t in tries] + [""]
+        (d / "RETRO0001-a-sprint.md").write_text("\n".join(body), encoding="utf-8")
+
+    def _sprint_close(self, run: str) -> str:
+        """The close's extract-then-close_pass step, as `sprint close` runs it."""
+        state = {"run_id": run, "batch": [], "outcome": "running"}
+        ok, detail, remedy = sprint._close_retro_extract(self.root, "RETRO0001", state)
+        self.assertTrue(ok, f"{detail}\n{remedy}")
+        return detail
+
+    def test_a_try_item_hit_lifted_by_the_close_keeps_it_graduating(self) -> None:
+        """A retro Try item naming the class is a repeat recorded in this run, by the close's own
+        extract before the pass. MUTANT: count only the REJECTs the pass itself cites - LC-001
+        then graduates on the very close that recorded it recurring."""
+        self._cr("CR0001", "Complete")
+        self._store(self._row("LC-001", "RUN-1", state="graduating", cr="CR0001"))
+        self._retro("[LC-001] it came back on US0001")
+        self._sprint_close("RUN-A")
+        rows = {r["id"]: r for r in lessons.load_store(self.root)}
+        self.assertIn("RUN-A", [h["run"] for h in rows["LC-001"]["hits"]],
+                      "the extract did not record the Try item as a hit, so this proves nothing")
+        self.assertEqual({"LC-001": "graduating"}, self._classes())
+
+    def test_a_rerun_close_keeps_a_class_it_kept_graduating(self) -> None:
+        """Idempotence. MUTANT: judge only hits this pass ADDED - the re-run adds none, so the
+        second pass of the same close graduates the class the first pass kept."""
+        self._cr("CR0001", "Complete")
+        self._store(self._row("LC-001", "RUN-1", state="graduating", cr="CR0001"))
+        cite = [("LC-001", "US0009", "[new] again [LC-001]")]
+        state = {"run_id": "RUN-2", "batch": []}
+        with mock.patch.object(critic, "cited_lessons", return_value=cite):
+            first = lessons.close_pass(self.root, "RUN-2", state)
+            second = lessons.close_pass(self.root, "RUN-2", state)
+        self.assertEqual((1, 0), (first["hits"], second["hits"]))
+        self.assertEqual({"LC-001": "graduating"}, self._classes())
 
     def test_a_class_hit_in_the_closing_run_stays_graduating(self) -> None:
         """A repeat in the very close that would graduate the class is evidence the fix has not
