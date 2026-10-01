@@ -149,6 +149,51 @@ class IdDisplayTests(unittest.TestCase):
                                .read_text(encoding="utf-8"))
             self.assertEqual("RETRO0001", state.get("scaffolded_retro"))
 
+    def test_every_remaining_print_site_uses_the_file_spelling(self) -> None:
+        """BG0877 AC1. MUTANTS, each printing `US01ABCDEF`, an id no file carries: (1) the brief
+        header from `norm_id`; (2) the lane partition from `norm_id`; (3) the review-coverage
+        preflight listing the run's keys; (4) the done-gate preflight naming the run's key;
+        (5) the rejoinder footer and (6) the retro Batch line, both right today, regressed."""
+        key = "US01ABCDEF"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _v3_project(root)
+            brief = _cli(root, "critic.py", "brief", "--unit", UNIT, "--seat", "qa")
+            self.assertEqual(0, brief.returncode, brief.stdout + brief.stderr)
+            header = next(ln for ln in brief.stdout.splitlines()
+                          if ln.startswith("Unit under review:"))
+            self.assertIn(f"Unit under review: {UNIT} ", header)
+
+            prior = _w(root, "prior.txt", "VERDICT: REJECT\nISSUES: [new] it does not work\n"
+                                          "BLOCKING: the failing case\n")
+            again = _cli(root, "critic.py", "brief", "--unit", UNIT, "--seat", "qa",
+                         "--rejoinder", str(prior))
+            self.assertEqual(0, again.returncode, again.stdout + again.stderr)
+            footer = next(ln for ln in again.stderr.splitlines() if "critic.py record" in ln)
+            self.assertIn(f"--unit {UNIT} ", footer)
+
+            worklist = _w(root, "worklist.txt", f"{UNIT}\n{OTHER}\n")
+            plan = _cli(root, "sprint.py", "plan", "--worklist", str(worklist), "--no-fetch",
+                        "--skip-personas")
+            lanes = [ln for ln in plan.stdout.splitlines() if ln.strip().startswith("lane ")]
+            self.assertTrue(lanes, plan.stdout)
+            self.assertIn(UNIT, "\n".join(lanes))
+            self.assertNotIn(key, "\n".join(lanes))
+
+            _open_run(root, [key])
+            close = _cli(root, "sprint.py", "close")
+            out = close.stdout + close.stderr
+            pre = [ln for ln in out.splitlines()
+                   if "[review-coverage]" in ln or "[done-gate" in ln]
+            self.assertEqual(2, len({ln.split("]")[0] for ln in pre}), out)
+            for ln in pre:
+                self.assertIn(UNIT, ln)
+                self.assertNotIn(key, ln)
+            [retro] = list((root / "sdlc-studio" / "retros").glob("RETRO*.md"))
+            batch = next(ln for ln in retro.read_text(encoding="utf-8").splitlines()
+                         if ln.startswith("> **Batch:**"))
+            self.assertEqual(f"> **Batch:** {UNIT}", batch)
+
 
 if __name__ == "__main__":
     unittest.main()

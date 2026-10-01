@@ -2401,7 +2401,7 @@ def lane_partition(repo_root: Path | str, batch: list[dict]) -> dict:
     files_by_unit: dict[str, list[str]] = {}
     for it in batch:
         text = Path(it["path"]).read_text(encoding="utf-8")
-        uid = sdlc_md.norm_id(it["id"])
+        uid = sdlc_md.display_id(root, it["id"])    # printed and exported: the file's spelling
         if not _affects_files(text):
             unplaceable.append(uid)
             continue
@@ -6877,7 +6877,7 @@ def coverage_blockers(root, state) -> list:
         return []
     return [{"stage": "review-coverage",
              "detail": (f"{len(missing)} of {len(batch)} unit(s) are covered by no independent "
-                        f"review: {', '.join(missing[:8])}"
+                        f"review: {', '.join(sdlc_md.display_id(root, u) for u in missing[:8])}"
                         f"{', ...' if len(missing) > 8 else ''}"),
              "remedy": ("review each one and record its delivery verdict with "
                         "`critic.py record --units <ids> --reviewer <who> --author <who> "
@@ -7222,7 +7222,10 @@ def _done_gate_preflight(root: Path, state: dict) -> list[dict]:
     """
     import artifact  # noqa: PLC0415
     out: list[dict] = []
-    for unit in _batch_story_units(root, state.get("batch") or []):
+    for key in _batch_story_units(root, state.get("batch") or []):
+        # The gate's own refusal echoes the id it is handed, so it is handed the file's
+        # spelling: the run stores comparison keys.
+        unit = sdlc_md.display_id(root, key)
         try:
             artifact.close(root, unit, dry_run=True)
         except (ValueError, OSError) as exc:

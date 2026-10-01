@@ -2537,6 +2537,8 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> st
     shared = _shared_selector_block(path)
     unit_id = sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or unit)
     title = sdlc_md.extract_h1_title(text) or unit_id
+    # Printed in the file's spelling; `unit_id` stays the comparison key the reads below take.
+    shown = sdlc_md.extract_record_id(path.stem) or unit
     # THE FILES' HISTORY: the delivered units that changed them and what their reviews caught,
     # so the seat looks first for a repeat the record already holds.
     import reconcile  # noqa: PLC0415 - sibling; the corpus walk is the already-delivered lane's
@@ -2548,7 +2550,7 @@ overrides them.
 
 Repo root: {root.resolve()}
 
-Unit under review: {unit_id} - {title}
+Unit under review: {shown} - {title}
 Artefact: {path}
 
 Diff scope (the unit's declared Affects - inspect with git diff/status on these paths):
