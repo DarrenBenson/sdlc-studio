@@ -68,12 +68,8 @@ conformance:
   adopt_after: 82
 
 review:
-  # D0129: a REJECT files its findings and the run SHIPS, rather than holding until the tree is
-  # clean. Adopted on RUN-01KZ79C1, where two seats REJECTed a 10-unit batch on 11 real findings
-  # and `block` would have held six delivered gate fixes hostage to a sprint's worth of repair.
-  # Every finding must still be filed or explicitly waived - nothing is discarded. Revisit once
-  # CR0510 (ceremony by blast radius) and EP0207 (test-plan-before-code) are in force.
-  policy: carry-forward
+  # review.policy (D0129 carry-forward) was retired by BG0831: nothing read it; a REJECT at
+  # the round cap carries the unit regardless.
   # D0146 (2026-08-21) CUTS this from 6 to 2, superseding D0132's raise, and the reason is a
   # measurement rather than a preference. D0132 raised it to 6 saying "revisit if a run reaches 6";
   # RUN-01M0CT8P reached 5 delivery rounds on 6 units, and the marginal yield of those rounds is

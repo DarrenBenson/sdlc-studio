@@ -25,12 +25,15 @@ Document `sprint.points_split_above`; retire `review.policy` (the lean loop carr
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a fixture whose `.config.yaml` sets `sprint.points_split_above: 5`, when `sprint.py plan` is given a 6-point unit, then it is refused as over the split threshold, and reference-config.md documents `sprint.points_split_above` with no `sprint.split_above` row. Fails on: HEAD's reference-config.md:263 documenting `sprint.split_above`, a key `points_split_above()` never reads (it returns 8 with `split_above: 5` set)
+- [ ] **AC1** Given a fixture whose `.config.yaml` sets `sprint.points_split_above: 5`, when `sprint.py plan` is given an 8-point unit (on the points scale and over 5), then it is refused as over the split threshold while a 5-point unit plans, and reference-config.md documents `sprint.points_split_above` with no `sprint.split_above` row. Fails on: HEAD's reference-config.md:263 documenting `sprint.split_above`, a key `points_split_above()` never reads (it returns 8 with `split_above: 5` set)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_the_documented_split_key_is_the_one_read
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given a fixture whose `.config.yaml` sets `review.policy: carry-forward`, when `migrate.py --apply --root <fixture>` runs, then the key is removed as retired (it is in `sdlc_md.RETIRED_CONFIG_KEYS`), `carry_forward.py` no longer ships, and no reference-*.md, help/ page or config-defaults.yaml documents `review.policy`. Fails on: HEAD, which keeps the key, ships `carry_forward.py` with no caller outside tests, and documents `carry-forward` as filing findings and shipping
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_review_policy_is_retired_not_documented
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC3** Given templates/config-defaults.yaml, when it is read, then its `review.max_rounds` comment names critic.py's review-round cap as the only reader and no longer says two consumers read it. Fails on: HEAD line 74's two-consumer comment
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_max_rounds_comment_names_one_reader
+  - **Verified:** yes (2026-10-01)
 
 ## Notes
 
