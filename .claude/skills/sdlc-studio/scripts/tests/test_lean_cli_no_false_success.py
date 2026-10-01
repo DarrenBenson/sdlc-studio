@@ -5,6 +5,7 @@
 `artifact.py batch` named the `--template` flag's value while a project-declared template
 rendered the stories. Each runs the shipped entry point in a temporary tree.
 """
+# test-census-subject: .claude/skills/sdlc-studio/scripts/validate.py
 from __future__ import annotations
 
 import importlib.util
