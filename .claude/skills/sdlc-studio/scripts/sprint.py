@@ -5236,7 +5236,6 @@ def _close_review_coverage(root, retro, state):
     one. Stated exactly, because an independent reviewer caught the stronger claim being false.
     """
     batch = [u for u in (sdlc_md.norm_id(x) for x in (state.get("batch") or [])) if u]
-    placement = _finding_placement(root)
     if not batch:
         dropped = [c.get("id") for c in (state.get("batch_changes") or [])
                    if c.get("action") == "drop" and c.get("id")]
@@ -5245,15 +5244,14 @@ def _close_review_coverage(root, retro, state):
                f"({', '.join(str(d) for d in dropped[:8])}"
                f"{', ...' if len(dropped) > 8 else ''}) - nothing is left to review, but a "
                f"batch emptied by drops is not a batch that passed review")
-        return True, f"{why}; {placement}", ""
+        return True, why, ""
     missing = uncovered_units(root, batch)
     covered = f"{len(batch) - len(missing)}/{len(batch)} unit(s) covered by an independent pass"
     if not missing:
-        return True, f"{covered}; {placement}", ""
+        return True, covered, ""
     detail = (f"  {covered}\n"
               f"  {len(missing)} unit(s) in this batch are covered by NO independent review: "
               f"{', '.join(missing)}\n"
-              f"  {placement}\n"
               f"  The close certifies that a review happened; it does not perform one.")
     remedy = ("review each uncovered unit and record its delivery verdict - "
               f"`critic.py record --units {','.join(missing[:6])}"
@@ -5261,72 +5259,6 @@ def _close_review_coverage(root, retro, state):
               "--verdict APPROVE`. A self-review does not clear this: the reviewer must differ "
               "from the author.")
     return False, detail, remedy
-
-
-def _finding_placement(root) -> str:
-    """Where this run's findings were raised: at a batch boundary, or at the close.
-
-    The Sprint Goal this mechanism serves says defects are found INSIDE the sprint. That claim
-    is only falsifiable if the split is recorded, so it is reported whether or not the coverage
-    step refuses."""
-    try:
-        spans = run_state.batches(root)
-    except Exception as exc:  # noqa: BLE001 - a reporting clause must never fail a close
-        sdlc_md.debug("sprint._finding_placement", exc)
-        return "finding placement: UNREADABLE"
-    raised = sum(len(s.get("findings_raised") or []) for s in spans)
-    reviewed = sum(1 for s in spans if s.get("reviewed_at"))
-    # BOTH numbers, or the claim is not falsifiable. The first version printed only the
-    # in-batch count beside a sentence naming "the number this run drives to zero" - which was
-    # the OTHER number, and it appeared nowhere. The line read identically for 0 close-time
-    # findings and for 10,000.
-    outside = _findings_outside_batches(root, spans)
-    return (f"finding placement: {raised} raised at a batch boundary, {outside} raised "
-            f"outside one, across {reviewed}/{len(spans)} reviewed batch(es). A finding "
-            f"raised outside a batch is close work - {outside} is the number this run "
-            f"drives to zero")
-
-
-def _findings_outside_batches(root, spans) -> int:
-    """Findings this run raised that no batch span claims. Counted from the run's own
-    artefacts rather than inferred, so the figure cannot be a constant."""
-    # NO function-local `import run_state`. The module is `lib/run_state.py`, already bound at
-    # module scope; the local statement shadowed that binding and always raised ImportError,
-    # because lib/run_state.py opens with a relative import no top-level import can satisfy. The
-    # blanket except then returned 0 and the diagnostic went to `sdlc_md.debug`, a no-op unless
-    # SDLC_DEBUG=1 - so this was unreachable code returning a constant, silently, on every run,
-    # under a line reading "the number this run drives to zero".
-    try:
-        state = run_state.read(root)
-    except Exception as exc:  # noqa: BLE001 - a reporting clause never fails a close
-        sdlc_md.debug("sprint._findings_outside_batches", exc)
-        return 0
-    claimed = {sdlc_md.norm_id(f) for s in spans for f in (s.get("findings_raised") or [])}
-    started = state.get("started_at") or ""
-    outside = 0
-    for type_ in ("bug", "cr"):
-        for path in sdlc_md.artifact_files(type_, Path(root)):
-            uid = sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or "")
-            if not uid or uid in claimed:
-                continue
-            text = sdlc_md.read_text_safe(path)
-            raised_in = (sdlc_md.extract_field(text, "Raised-in-batch") or "")
-            if not raised_in.startswith("none open"):
-                continue
-            # SCOPED to this run's window. `started` used only to be truthy-tested, never
-            # compared, so the count was every unstamped finding in the repo - the line reading
-            # "this run" was really "this repo, ever", and replacing the whole condition with
-            # `True` changed the number while every test stayed green. A finding created before
-            # the run opened is somebody else's backlog, not this close's work.
-            created = (sdlc_md.extract_field(text, "Created") or "").strip()
-            if not started or not created:
-                # Unanswerable, so COUNTED. This number is one the run is judged against, and
-                # of the two ways to be wrong only one flatters the run being measured. An
-                # over-count is visible and arguable; an under-count reads as a clean sprint.
-                outside += 1
-            elif created[:10] >= started[:10]:
-                outside += 1
-    return outside
 
 
 #: Why a batch unit is unanswered. Fixed wording, because the close and `stop` print the same

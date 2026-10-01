@@ -26,7 +26,6 @@ from unittest import mock
 SCRIPTS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS))
 import critic  # noqa: E402
-import file_finding  # noqa: E402
 import sprint  # noqa: E402
 from lib import run_state, sdlc_md  # noqa: E402
 
@@ -125,21 +124,7 @@ class LockBusyEaccesTests(unittest.TestCase):
     def test_the_lock_warnings_do_not_advise_a_retry(self) -> None:
         """AC2. MUTANT: append the timeout's generic remedy ('so nothing was written; retry once
         it finishes') to a warning raised after the write landed, where a retry duplicates."""
-        with self.subTest(writer="file_finding attribution"):
-            run_state.open_run(self.root, goal="a goal", batch=["US0001"])
-            run_state.start_batch(self.root, ["US0001"])
-            with mock.patch.object(run_state, "note_finding", side_effect=_timed_out):
-                rc, _out, err = _run(file_finding.main, [
-                    "file", "--type", "bug", "--title", "a defect", "--severity", "High",
-                    "--summary", "s", "--steps", "x", "--fix", "y", "--affects", "src/x.py",
-                    "--points", "3", "--root", str(self.root)])
-            self.assertEqual(rc, 0, err)
-            self.assertEqual(len(list((self.root / "sdlc-studio" / "bugs").glob("BG*.md"))), 1,
-                             "premise: the finding was filed")
-            warned = [ln for ln in err.splitlines() if ln.startswith("warning:")]
-            self.assertEqual(len(warned), 1, err)
-            self._assert_no_retry(warned[0])
-
+        run_state.open_run(self.root, goal="a goal", batch=["US0001"])
         with self.subTest(writer="critic stranded row"):
             held = mock.patch.object(critic, "_ledger_lock", side_effect=_timed_out)
             err = io.StringIO()

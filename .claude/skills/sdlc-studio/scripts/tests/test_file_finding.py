@@ -2007,9 +2007,9 @@ class TheFilerCannotMintAFenceItsOwnGateRefusesTests(unittest.TestCase):
 
 
 class AFindingIsPricedWhereTheWorkWasTests(unittest.TestCase):
-    """US0561 (CR0500). A finding raised while a delivery batch is open is that batch's work.
-    Without the stamp, every finding reads as close overhead whenever it was actually raised,
-    and the claim 'defects are found inside the sprint' cannot be checked at all."""
+    """US0561 (CR0500), as BG0861 left it: the delivery-batch span is retired, and the
+    `Raised-in-batch` stamp records where a finding was raised - the run a caller names, or a
+    stated absence carrying the moment of filing, which the report and `close_owed` read."""
 
     FIELDS = {"title": "a defect", "summary": "s", "severity": "Medium", "points": 2,
               "affects": "a.py", "evidence": "e", "acs": ["one"], "steps": "s", "fix": "f"}
@@ -2029,47 +2029,6 @@ class AFindingIsPricedWhereTheWorkWasTests(unittest.TestCase):
             res = ff.file_finding(root, "bug", f.pop("title"), f)
         return Path(res["path"]).read_text(encoding="utf-8")
 
-    def test_a_finding_records_the_open_batch(self) -> None:
-        from lib import run_state
-        root = self._repo()
-        run_state.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
-        run_state.start_batch(root, ["US0001"])
-        text = self._file(root)
-        stamped = sdlc_md.extract_field(text, "Raised-in-batch") or ""
-        self.assertTrue(stamped and "none open" not in stamped,
-                        f"the finding was not attributed to the open batch: {stamped!r}")
-        self.assertIn("BG0001", run_state.open_batch(root)["findings_raised"],
-                      "the batch span does not carry the finding raised against it")
-
-    def test_the_filer_attributes_through_the_real_path(self) -> None:
-        """M11 from the guard review: making `_attribute_to_open_batch` always return None
-        SURVIVED, because no test covered attribution THROUGH the filer - only the run_state
-        helper underneath it. This asserts the span itself gained the id."""
-        from lib import run_state
-        root = self._repo()
-        run_state.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
-        run_state.start_batch(root, ["US0001"])
-        self._file(root)
-        self.assertIn("BG0001", run_state.open_batch(root)["findings_raised"],
-                      "the filer did not record the finding against the open batch")
-
-    def test_filing_is_not_ten_seconds_slower_for_the_attribution(self) -> None:
-        """The attribution took the SAME advisory lock the filer already holds. flock is
-        per open-file-description, so the process contended with itself for the whole 10s
-        timeout on every filing - and `allocation_lock` then proceeds UNSERIALISED, losing
-        the very serialisation it exists for. Measured, because a comment cannot fail."""
-        import time
-        from lib import run_state
-        root = self._repo()
-        run_state.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
-        run_state.start_batch(root, ["US0001"])
-        start = time.monotonic()
-        self._file(root)
-        elapsed = time.monotonic() - start
-        self.assertLess(elapsed, 3.0,
-                        f"filing took {elapsed:.1f}s - the attribution is re-entering the "
-                        f"allocation lock the filer already holds")
-
     def test_filing_never_fabricates_a_run_state(self) -> None:
         """`_mutate` persists whatever its callback returns, so seeding a blank record minted
         a run state on the first filing in a project that had never opened one - breaking
@@ -2082,34 +2041,27 @@ class AFindingIsPricedWhereTheWorkWasTests(unittest.TestCase):
         self.assertFalse(state.exists(),
                          "filing a finding minted a run state in a project with no run")
 
-    def test_an_open_span_beats_the_callers_run_stamp(self) -> None:
-        """MUTANT: let a caller's `_batch` run stamp win over the open span - a finding raised
-        inside a delivery batch is then priced as close overhead."""
-        from lib import run_state
+    def test_a_callers_run_stamp_is_written_as_given(self) -> None:
+        """MUTANT: ignore a caller's `_batch` and always stamp 'none open' - a finding the close
+        files for its run then loses the run id `sprint_report` joins it on."""
         root = self._repo()
-        run_state.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
-        run_state.start_batch(root, ["US0001"])
         with contextlib.redirect_stdout(io.StringIO()), quiet.diagnostics():
             f = dict(self.FIELDS, _batch="RUN-X close, 2026-09-24T00:00:00Z")
             res = ff.file_finding(root, "bug", f.pop("title"), f)
         stamped = sdlc_md.extract_field(Path(res["path"]).read_text(encoding="utf-8"),
                                         "Raised-in-batch") or ""
-        self.assertTrue(stamped and "RUN-X" not in stamped and "none open" not in stamped,
-                        f"the caller's stamp beat the open span: {stamped!r}")
+        self.assertEqual("RUN-X close, 2026-09-24T00:00:00Z", stamped)
 
-    def test_no_open_batch_is_stated_not_guessed(self) -> None:
+    def test_an_absence_is_stated_with_the_moment_of_filing(self) -> None:
         """An absence stated is evidence; an absence omitted is indistinguishable from an
-        attribution nobody made. Attributing to the last CLOSED span would price a close-time
-        finding as batch work and invert the very measurement this exists to take."""
+        attribution nobody made. MUTANTS: omit the stamp; stamp 'none open' with no moment, which
+        `sprint_report` and `close_owed` read the filing time from."""
         from lib import run_state
         root = self._repo()
-        run_state.open_run(root, goal="a goal", batch=["US0001"])  # a batch is scoped to a run
-        run_state.start_batch(root, ["US0001"])
-        run_state.close_batch(root, reviewer="reviewer-a", author="author-b", verdict="APPROVE")
-        text = self._file(root)
-        stamped = sdlc_md.extract_field(text, "Raised-in-batch") or ""
-        self.assertIn("none open", stamped,
-                      f"a finding raised outside any batch was attributed to one: {stamped!r}")
+        run_state.open_run(root, goal="a goal", batch=["US0001"])
+        stamped = sdlc_md.extract_field(self._file(root), "Raised-in-batch") or ""
+        self.assertRegex(stamped, r"^none open - raised outside a delivery batch, "
+                                  r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 
 
 def _load_audit_cost():

@@ -52,8 +52,8 @@ Add `stem_record_id` to the shared library: the same two key schemas as `extract
 - **Given** the line's two counts - findings raised at a batch boundary, and findings raised outside one - varied independently
 - **When** the line is rendered
 - **Then** each moves with its own input and neither stands in for the other, because pinning one leaves the other free to be a constant: hardcoding the out-of-batch count survived the whole module and hardcoding the in-batch count survived its own selector, the same defect twice on the two halves of one sentence
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FindingPlacementIsMeasuredNotConstantTests::test_BOTH_rendered_numbers_move_with_their_own_input
-- **Verified:** yes (2026-07-31)
+- **Verify:** manual - retired by BG0861: nothing has opened a delivery-batch span since US0918, so the span API, the filer's attribution to it and the close's finding-placement clause were deleted
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0861
 
 ### AC2: the handoff locator resolves both key schemas, through the production entry points
 

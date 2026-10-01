@@ -28,7 +28,6 @@ from unittest import mock
 SCRIPTS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS))
 import critic  # noqa: E402
-import file_finding  # noqa: E402
 import sprint  # noqa: E402
 import transition  # noqa: E402
 from lib import run_state, sdlc_md  # noqa: E402
@@ -180,33 +179,11 @@ class LockErrorTests(unittest.TestCase):
         self.assertIn(_lock_file(self.root), stranded[0], "the lock is not named")
 
     def test_a_swallowed_timeout_warns_on_stderr(self) -> None:
-        """AC3. MUTANT: swallow the timeout into a debug log in either best-effort writer, so
-        the CLI prints success while the attribution or the token stamp was never written."""
-        with self.subTest(writer="file_finding attribution"):
-            run_state.open_run(self.root, goal="a goal", batch=["US0001"])
-            run_state.start_batch(self.root, ["US0001"])
-            real_note = run_state.note_finding
-
-            def held_note(*args, **kwargs):
-                self.holder.start()
-                return real_note(*args, **kwargs)
-
-            with mock.patch.object(run_state, "note_finding", side_effect=held_note):
-                rc, _out, err = _run(file_finding.main, [
-                    "file", "--type", "bug", "--title", "a defect", "--severity", "High",
-                    "--summary", "s", "--steps", "x", "--fix", "y", "--affects", "src/x.py",
-                    "--points", "3", "--root", str(self.root)])
-            self.holder.stop()
-            self.assertEqual(rc, 0, err)
-            filed = [p for p in (self.root / "sdlc-studio" / "bugs").glob("BG*.md")]
-            self.assertEqual(len(filed), 1, "the primary write, the filed bug, must stand")
-            self.assertEqual(run_state.open_batch(self.root)["findings_raised"], [],
-                             "premise: the attribution was not written")
-            warned = [ln for ln in err.splitlines() if ln.startswith("warning:")]
-            self.assertTrue(warned and _lock_file(self.root) in warned[0],
-                            f"no stderr warning naming the lock: {err!r}")
-
+        """AC3. MUTANT: swallow the timeout into a debug log in the best-effort token stamp, so
+        the CLI prints success while the stamp was never written. (The filer's batch attribution,
+        the other best-effort writer, is retired.)"""
         with self.subTest(writer="sprint token stamp"):
+            run_state.open_run(self.root, goal="a goal", batch=["US0001"])
             before = run_state.read(self.root).get(run_state.TOKEN_STAMPS) or []
 
             def held_stamp(root, kind, transcripts_dir=None):

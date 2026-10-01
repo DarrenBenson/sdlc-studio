@@ -1827,41 +1827,6 @@ _LANDABLE = (
 )
 
 
-def _open_batch_key(root) -> str | None:
-    """The open delivery batch's key, READ-ONLY - safe to call while the allocation lock is
-    held, because it takes no lock of its own.
-
-    Best-effort: a project with no run state, or a corrupt one, still files findings. A filer
-    that refused because a ledger could not be read would make the attribution more important
-    than the finding."""
-    try:
-        from lib import run_state  # noqa: PLC0415 - deferred sibling, as elsewhere here
-        span = run_state.open_batch(root)
-        return span.get("opened_at") if span else None
-    except Exception as exc:  # noqa: BLE001 - attribution must never block a filing
-        sdlc_md.debug("file_finding._open_batch_key", exc)
-        return None
-
-
-def _attribute_to_open_batch(root, finding_id: str) -> str | None:
-    """Record this finding against the open delivery batch, OUTSIDE the allocation lock.
-
-    Kept separate from the read above because it WRITES, and writing takes the same advisory
-    lock the filer holds while allocating the id. Calling it from inside that lock made the
-    process contend with itself for the full 10-second timeout on every filing. A timeout
-    here warns on stderr: the filing stands, and only its batch attribution is missing."""
-    try:
-        from lib import run_state  # noqa: PLC0415 - deferred sibling, as elsewhere here
-        return run_state.note_finding(root, finding_id)
-    except sdlc_md.AllocationLockTimeout as exc:  # the filing stands; the gap is said aloud
-        print(f"warning: {finding_id} is filed but not attributed to the open batch - "
-              f"{exc.reason}", file=sys.stderr)
-        return None
-    except Exception as exc:  # noqa: BLE001 - attribution must never block a filing
-        sdlc_md.debug("file_finding._attribute_to_open_batch", exc)
-        return None
-
-
 def _land_unhomed(body: str, f: dict) -> str:
     """Append a section for every supplied prose field this type's renderer has no home for.
 
@@ -2152,9 +2117,6 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
                 child_id = sdlc_md.norm_id(result["id"])
                 if child_id not in existing:
                     sdlc_md.write_decomposed(parent_path, [*existing, child_id])
-        # OUTSIDE the lock, deliberately - the batch record is not part of the id allocation,
-        # and writing it takes the same advisory lock. See `_attribute_to_open_batch`.
-        _attribute_to_open_batch(root, result.get("id") or "")
     if warnings:
         result["duplicate_warnings"] = warnings
     return result
@@ -2201,18 +2163,14 @@ def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields:
     # NAME (the typed triple is the `Raised-by` field's job), so an unattributed filing still
     # names whoever raised it - the invoking agent - rather than a literal or a blank cell.
     fields = {**fields, "_raised_by": raised_by, "author": sdlc_md.authorship_name(raised_by)}
-    # US0561: a finding raised while a delivery batch is open is that batch's work, so its
-    # cost is priced where the work was rather than as close overhead. The absence is STATED,
-    # never guessed: with no batch open the field says so, because silently attributing to the
-    # last-closed span is exactly the misattribution this exists to remove.
-    # A caller filing for a run whose batch span is closed, or was never opened (the close), names
-    # the run itself in `_batch`; the open span, when there is one, still wins.
-    # The absence carries the MOMENT of filing: `Created` is only a date, so a finding filed later
-    # on a report's own day could not be told from one filed before it, and entered the report's
-    # re-derivation alone. The moment is the stamp's last token, where every reader looks for it.
-    batch_key = _open_batch_key(root) or fields.get("_batch")
-    fields = {**fields, "_batch": batch_key or ("none open - raised outside a delivery batch, "
-                                                f"{sdlc_md.now_iso8601()}")}
+    # WHERE a finding was raised (US0561). A caller filing for a run (the close) names the run
+    # itself in `_batch`; otherwise the stamp states the absence and carries the MOMENT of filing:
+    # `Created` is only a date, so a finding filed later on a report's own day could not be told
+    # from one filed before it, and entered the report's re-derivation alone. The moment is the
+    # stamp's last token, where `sprint_report` and `close_owed` look for it. The delivery-batch
+    # span the stamp once named is retired: nothing opened one any more.
+    fields = {**fields, "_batch": fields.get("_batch") or (
+        f"none open - raised outside a delivery batch, {sdlc_md.now_iso8601()}")}
     sdlc_md.atomic_write(path, _render(type_, disp_id, title, today, fields, create_status))
     triage_noise.record_creation(root)  # count this minted finding against the session budget
     # One shared header-driven row builder for both create paths: read the index's

@@ -20,8 +20,8 @@
 
 ### AC1: A finding filed while a batch is open records that batch and run on the artefact, so its cost is attributable to the batch that caused it rather than to the close
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::AFindingIsPricedWhereTheWorkWasTests::test_a_finding_records_the_open_batch
-- **Verified:** yes (2026-07-29)
+- **Verify:** manual - retired by BG0861: nothing has opened a delivery-batch span since US0918, so the span API, the filer's attribution to it and the close's finding-placement clause were deleted
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0861
 
 ### AC2: The batch span carries the ids raised against it, so the batch can be read back as work-plus-findings rather than work alone
 
@@ -30,7 +30,7 @@
 
 ### AC3: A finding filed with NO open batch is recorded as such rather than silently attributed to the last one - an absence is stated, never guessed
 
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::AFindingIsPricedWhereTheWorkWasTests::test_no_open_batch_is_stated_not_guessed
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::AFindingIsPricedWhereTheWorkWasTests::test_an_absence_is_stated_with_the_moment_of_filing
 - **Verified:** yes (2026-07-29)
 
 ## Revision History

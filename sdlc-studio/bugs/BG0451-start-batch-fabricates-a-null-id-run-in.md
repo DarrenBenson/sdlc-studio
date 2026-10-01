@@ -52,24 +52,24 @@ Pin BOTH halves. A test that `start_batch` refuses with no run, and a test that 
 - **Given** a project that has never opened a run
 - **When** `start_batch` is called
 - **Then** it refuses naming the reason, and `read` still returns {} - both halves asserted, because a guard that raises AFTER writing would pass a test checking only the exception; the previous behaviour minted a run whose id was null, breaking read's documented never-fabricated invariant
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DeliveryBatchSpanTests::test_starting_a_batch_with_no_run_open_is_REFUSED_and_writes_nothing
-- **Verified:** yes (2026-07-30)
+- **Verify:** manual - retired by BG0861: nothing has opened a delivery-batch span since US0918, so the span API, the filer's attribution to it and the close's finding-placement clause were deleted
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0861
 
 ### AC2: a batch span survives the next plan of the same run
 
 - **Given** an open run carrying a batch span
 - **When** the run is re-planned
 - **Then** the span is unchanged - this was the data-loss half and no test covered it: `_is_spent` read the null id as spent, so the next `sprint plan --write` replaced the state and took the span with it, leaving every finding's `Raised-in-batch` key pointing at nothing
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DeliveryBatchSpanTests::test_a_span_SURVIVES_the_next_plan_of_the_same_run
-- **Verified:** yes (2026-07-30)
+- **Verify:** manual - retired by BG0861: nothing has opened a delivery-batch span since US0918, so the span API, the filer's attribution to it and the close's finding-placement clause were deleted
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0861
 
 ### AC3: the sibling guard on note_finding still holds, proven on its own runless fixture
 
 - **Given** a project with no run, built by the test itself rather than inherited
 - **When** a finding is attributed
 - **Then** it returns None and writes no file - the shared fixture now opens a run, so this test builds its own; the two guards are siblings and the second was introduced by the commit that repaired the first
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DeliveryBatchSpanTests::test_note_finding_never_fabricates_a_run
-- **Verified:** yes (2026-07-30)
+- **Verify:** manual - retired by BG0861: nothing has opened a delivery-batch span since US0918, so the span API, the filer's attribution to it and the close's finding-placement clause were deleted
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0861
 
 ## Revision History
 

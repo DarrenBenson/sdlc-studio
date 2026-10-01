@@ -61,24 +61,24 @@ Worth noting during refine: even with the import repaired, the loop applies no r
 - **Given** a run carrying a finding no batch span claims
 - **When** the placement metric is computed
 - **Then** it returns the real count - the function-local `import run_state` shadowed the module-scope binding and always raised, a blanket except returned 0, and the diagnostic went to a debug channel that is a no-op unless `SDLC_DEBUG=1`
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FindingPlacementIsMeasuredNotConstantTests::test_a_finding_raised_outside_every_batch_is_COUNTED
-- **Verified:** yes (2026-07-30)
+- **Verify:** manual - retired by BG0861: nothing has opened a delivery-batch span since US0918, so the span API, the filer's attribution to it and the close's finding-placement clause were deleted
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0861
 
 ### AC2: the count is ZERO when nothing was raised outside
 
 - **Given** a run whose findings were all raised at a batch boundary
 - **When** the metric is computed
 - **Then** it returns zero - the control that makes AC1 mean anything, since a function returning a constant passes any single-value assertion, which is exactly how this went unnoticed
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FindingPlacementIsMeasuredNotConstantTests::test_the_count_is_ZERO_when_nothing_was_raised_outside
-- **Verified:** yes (2026-07-30)
+- **Verify:** manual - retired by BG0861: nothing has opened a delivery-batch span since US0918, so the span API, the filer's attribution to it and the close's finding-placement clause were deleted
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0861
 
 ### AC3: the computed number reaches the LINE that reports it
 
 - **Given** two findings raised outside any batch
 - **When** the placement line is rendered
 - **Then** it states the real figure - the line reads "the number this run drives to zero", and it read identically for 0 close-time findings and for 10,000. A number computed and not rendered is a number nobody reads
-- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::FindingPlacementIsMeasuredNotConstantTests::test_the_reported_LINE_carries_the_computed_number
-- **Verified:** yes (2026-07-30)
+- **Verify:** manual - retired by BG0861: nothing has opened a delivery-batch span since US0918, so the span API, the filer's attribution to it and the close's finding-placement clause were deleted
+- **Verified:** manual (2026-10-01) - retired, superseded by BG0861
 
 ## Revision History
 

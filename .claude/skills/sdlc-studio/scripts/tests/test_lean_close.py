@@ -238,9 +238,9 @@ class KnownIssueDetailTests(unittest.TestCase):
                        and "missing section" in i["detail"]]
             self.assertGreaterEqual(len(missing), 2, issues)
             self.assertEqual(len(missing), len(set(missing)), "one row per section")
-            # the full step detail is printed, not only the rows: the placement line is neither
-            # the step's first line nor its last
-            self.assertIn("finding placement:", err)
+            # the full step detail is printed, not only the rows: its first and last lines both
+            self.assertIn("covered by an independent pass", err)
+            self.assertIn("The close certifies that a review happened", err)
 
     def test_the_handover_is_claimed_only_when_the_report_was_filed(self) -> None:
         """Mutant: print "handed over on the report" whether or not a report was filed."""
