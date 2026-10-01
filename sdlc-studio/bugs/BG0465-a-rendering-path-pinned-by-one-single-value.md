@@ -58,10 +58,9 @@ Add `stem_record_id` to the shared library: the same two key schemas as `extract
 ### AC2: the handoff locator resolves both key schemas, through the production entry points
 
 - **Given** a v2 handoff key and a v3 `HO-<ulid>-slug` key
-- **When** the document is located by id
+- **When** the document is located by id (`sdlc_md.find_by_id`, which an old handoff is read through now no command writes one)
 - **Then** both resolve, because `split("-")[0]` yields the bare prefix `HO` for the v3 form and `extract_record_id` returns None for a family outside `ARTIFACT_TYPES` - so reaching for either alone is a defect, and the shared `stem_record_id` is the one idiom that answers for every family
-- **Verify:** manual - retired by US0978: the handoff writers (`handoff.py generate` and refresh, the retro link) and `gate.py --require-handoff` were deleted with their tests; the signed report hands over the remaining work and `sprint plan --worklist RPTxxxx` plans it
-- **Verified:** manual (2026-10-01) - retired, superseded by US0978
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_handoff.py::HandoffKeysResolveInBothSchemasTests::test_an_old_handoff_resolves_under_both_key_schemas
 
 ## Revision History
 

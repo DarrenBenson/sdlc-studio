@@ -591,5 +591,119 @@ class ClassifyUnreadableTests(unittest.TestCase):
                 p.chmod(0o644)
 
 
+class HandoffKeysResolveInBothSchemasTests(unittest.TestCase):
+    """BG0465 AC2, restored by US0978's round 1 against the reader that survives the writer.
+
+    The HO files already written stay readable: an old handoff is located by id through
+    `sdlc_md.find_by_id`, whose meta resolver reads the stem with `stem_record_id`
+    (`_STEM_ID_RE`). `stem.split("-")[0]` yields the bare prefix `HO` for a v3 key
+    `HO-<ulid>-slug`, and `extract_record_id` answers only `ARTIFACT_TYPES`, so both key schemas
+    are located here, through the production lookup."""
+
+    def test_an_old_handoff_resolves_under_both_key_schemas(self) -> None:
+        """MUTANT: drop the `_V3_SUFFIX` alternative from `_STEM_ID_RE` - the v3 key no longer
+        resolves, so an old v3 handoff reads as missing."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            _handoff_index(root)
+            d = root / "sdlc-studio" / "handoffs"
+            v3 = "HO-01JQZ0000000000000000000"
+            (d / f"{v3}-a-run.md").write_text(f"# {v3}: a run\n\n> **Date:** 2026-07-13\n",
+                                              encoding="utf-8")
+            (d / "HO0001-close.md").write_text("# HO-0001: close\n\n> **Date:** 2026-07-13\n",
+                                               encoding="utf-8")
+            for rid, stem in ((v3, f"{v3}-a-run"), ("HO0001", "HO0001-close")):
+                with self.subTest(key=rid):
+                    hit = sdlc_md.find_by_id(root, rid)
+                    self.assertIsNotNone(hit, f"{rid} did not resolve")
+                    self.assertEqual((stem, "handoff"), (Path(hit[0]).stem, hit[1]))
+
+
+class WorklistTests(unittest.TestCase):
+    def test_sprint_plan_refuses_cleanly_on_an_unreadable_run_state(self) -> None:
+        """F4, at the other writer: `plan --write` would overwrite the wreckage with a blank
+        record. It stops instead - loudly, and without a traceback. MUTANT: replace `cmd_plan`'s
+        `return 2` on `RunStateError` - the plan proceeds over an unreadable run state."""
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            # A GROOMED unit, so no later gate refuses the plan first: the run-state guard is
+            # the only thing between this `--write` and the wreckage being overwritten.
+            (root / "src").mkdir()
+            (root / "src" / "a.py").write_text("x = 1\n", encoding="utf-8")
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0002-s.md").write_text(
+                "# US0002: s\n\n> **Status:** Ready\n> **Epic:** EP0001\n> **Points:** 2\n"
+                "> **Affects:** src/a.py\n\n## Acceptance Criteria\n\n### AC1: works\n\n"
+                "- **Verify:** shell true\n", encoding="utf-8")
+            run_state.open_run(root, batch=["US0002"], goal="done")
+            p = run_state.path(root)
+            p.write_text(p.read_text(encoding="utf-8")[:40], encoding="utf-8")
+            err = io.StringIO()
+            args = sprint.build_parser().parse_args(
+                ["plan", "--stories", "Ready", "--write", "--no-fetch", "--skip-personas",
+                 "--root", str(root)])
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+                rc = sprint.cmd_plan(args)
+            self.assertEqual(rc, 2)
+            self.assertIn("not valid JSON", err.getvalue())
+            self.assertEqual(len(p.read_text(encoding="utf-8")), 40)  # not overwritten
+
+
+class DocumentBulletFollowsTheDocumentTests(unittest.TestCase):
+    """BG0590 AC3 and AC5-AC10, restored by US0978's round 1 against the code that survives the
+    retired retro link: `sdlc_md.document_bullet`, which reads the unordered-list marker a
+    document already uses (MD004 `consistent` takes the FIRST), and `artifact._wire_story_to_epic`,
+    the epic appender that writes with it. A hardcoded marker makes the next commit uncommittable
+    wherever the document disagrees."""
+
+    def test_the_sibling_appender_follows_the_document(self) -> None:
+        """AC3. MUTANT: hardcode `- [ ] ` in `artifact._wire_story_to_epic`."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            ed = root / "sdlc-studio" / "epics"
+            ed.mkdir(parents=True)
+            ep = ed / "EP0001-e.md"
+            ep.write_text("# EP0001: e\n\n> **Status:** Draft\n\n## Story Breakdown\n\n"
+                          "* [ ] [US0009: prior](../stories/US0009-p.md)\n", encoding="utf-8")
+            self.assertTrue(
+                artifact._wire_story_to_epic(root, "EP0001", "US0001", "t", "US0001", "t"))
+            text = ep.read_text(encoding="utf-8")
+            self.assertIn("* [ ] [US0001: t]", text)
+            self.assertNotIn("- [ ] [US0001", text)
+
+    def _bullet(self, body: str) -> str:
+        return sdlc_md.document_bullet("# RETRO0001: t\n\n> **Status:** Draft\n\n" + body)
+
+    def test_a_bullet_inside_fenced_code_is_not_the_documents_style(self) -> None:
+        """AC5. MUTANTS: drop the fence skip; return the default - a fenced dash is not a list."""
+        self.assertEqual("*", self._bullet("## Evidence\n\n```text\n- a quoted transcript line\n"
+                                           "- another\n```\n\n## What went well\n\n"
+                                           "* the real list\n"))
+
+    def test_a_blockquoted_list_sets_the_documents_style(self) -> None:
+        """AC6. MUTANT: drop the blockquote strip - a quoted list IS a list to markdownlint."""
+        self.assertEqual("*", self._bullet("## Verdict\n\n> * the first finding\n> * the second\n"))
+
+    def test_the_first_marker_wins_not_the_last(self) -> None:
+        """AC7. MUTANT: return the LAST matching marker rather than the first."""
+        self.assertEqual("*", self._bullet("## Mixed\n\n* the first marker in the file\n\n"
+                                           "- a later, different one\n"))
+
+    def test_a_plus_bulleted_document_is_followed_too(self) -> None:
+        """AC8. MUTANT: drop `+` from the marker class."""
+        self.assertEqual("+", self._bullet("## Notes\n\n+ a plus bullet\n"))
+
+    def test_a_spaced_thematic_break_is_not_a_list_marker(self) -> None:
+        """AC9. MUTANT: drop the thematic-break guard - the break comes first, so a guard that is
+        never reached would read `*` from it."""
+        self.assertEqual("-", self._bullet("## Notes\n\n* * *\n\n- a dash bullet\n"))
+
+    def test_a_bullet_indented_as_code_does_not_set_the_style(self) -> None:
+        """AC10. MUTANT: relax the leading-space bound from `^ {0,3}` to `^ *`."""
+        self.assertEqual("-", self._bullet("## Sample\n\n    * a bullet inside an indented "
+                                           "code block\n\n## Notes\n\n- the real list\n"))
+
+
 if __name__ == "__main__":
     unittest.main()

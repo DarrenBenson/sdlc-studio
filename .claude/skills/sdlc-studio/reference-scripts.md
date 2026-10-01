@@ -281,9 +281,10 @@ lists every script with a one-line summary; open the linked page for the full en
   the run record in `sdlc-studio/.local/` is not versioned, so verifying a signature needs the
   signing clone's run record. The lessons and lane-yield appendices are shown as filed and never
   checked
-- `handoff.py` - The run-close handoff guide: a JOIN over the run's own evidence naming every
-  remaining item with its pointer (file / AC / check) and a copilot-tail vs judgement tag; emits the
-  worklist the next `sprint plan --worklist` reads. `lib/run_state.py` holds the run object it closes
+- `handoff.py` - The remaining-work join, read-only (`show`): a JOIN over the run's own evidence
+  naming every remaining item with its pointer (file / AC / check) and a copilot-tail vs judgement
+  tag. It writes nothing: the signed report hands over the remaining work, and `sprint plan
+  --worklist RPTxxxx` plans it. `status.py` reads its remaining count
 - `route.py` - Difficulty-aware model-tier routing, **advisory - no gate reads a tier**, no model API ever called (ids are ...
 - `config.py` - Merged per-project configuration reader. Layers `templates/config-defaults.yaml` under the project's `sdlc-s...
 - `loop_guard.py` - The sprint deterministic guardrails. The iteration cap, the repetition-breaker (repeated failure signature),...

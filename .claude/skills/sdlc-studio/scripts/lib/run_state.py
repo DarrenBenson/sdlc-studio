@@ -33,7 +33,8 @@ Extensible by contract: `update()` MERGES, and nothing here drops a key it does 
 recognise. A later capability adds its own fields (an appetite ceiling, a spend counter)
 without touching this module, and a close preserves them.
 
-A library, not a command: the writer is `sprint.py`.
+A library, not a command: `sprint.py` opens, closes and seals the run, and `critic.py`, `sprint_report.py`,
+`decisions.py`, `retro.py` and `transition.py` record fields on it.
 """
 from __future__ import annotations
 

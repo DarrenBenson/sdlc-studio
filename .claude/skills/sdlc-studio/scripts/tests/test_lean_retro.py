@@ -207,9 +207,6 @@ class OneReportPerRunTests(unittest.TestCase):
         self.assertEqual(signature["fingerprint"], signed["fingerprint"])
         self.assertFalse(sr.read_report(self.root, again).get("signature"))
 
-class RetroTailTests(unittest.TestCase):
-    """MUTANT: write the retro with the section helper's tail untouched - a Handoff section at
-    the foot of the retro leaves a trailing blank line, and markdownlint refuses the commit."""
 
 if __name__ == "__main__":
     unittest.main()

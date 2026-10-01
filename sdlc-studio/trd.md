@@ -174,7 +174,7 @@ at the sprint close, where it reports and never blocks, and constitution and pro
 in the default sweep for a project that sets them to block. Bound lanes attach to a
 specific obligation and cannot be skipped or excluded away: `--require-retro` (the
 retro's content, plus the lessons summary and validity), `--require-review` (review
-currency, not presence), `--require-handoff`, and `--release`, which EXECUTES every
+currency, not presence), and `--release`, which EXECUTES every
 story's `Verify:` expression rather than reading a stored report that could carry a
 stale green. The gate writes nothing, so it is hook-safe. Its lanes are the
 mechanism behind ADR-006 through ADR-011: a lane is how a rule stops being prose.
@@ -245,8 +245,7 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
    files; `archive.py` relocates a type's terminal index rows into its `archive/`
    sub-index; `lessons.py add --global` writes a lesson; `decisions.py` appends to the
    decisions ledger; `retro.py` writes the batch retro artefact and the committed
-   `VELOCITY.md` history row; `handoff.py` writes the handoff artefact, its index and the
-   worklist; `persona_gen.py` writes the generated seat and stakeholder cards with their
+   `VELOCITY.md` history row; `persona_gen.py` writes the generated seat and stakeholder cards with their
    provenance stamp (ADR-009); `critic record` appends to the committed verdict, evidence
    and sign-off logs. This list names the load-bearing writers, not all of them -
    `reference-scripts.md` is the authoritative catalogue of the script write surface.
@@ -445,7 +444,7 @@ a half-written decomposition never certifies clean.
 | File | Writer | Purpose |
 | --- | --- | --- |
 | `project-state.json` | project orchestration | Tracks `project plan` / `project implement` progress and dependency order. [MEDIUM] |
-| `run-state.json` | `sprint.py` / `handoff.py` | A run's identity, batch, resolved appetite and outcome, written under a lock. The breaker reads back the ceiling the plan stamped, so plan and run cannot disagree. [HIGH] |
+| `run-state.json` | `sprint.py`, with `critic.py`, `sprint_report.py`, `decisions.py`, `retro.py` and `transition.py` recording fields on it | A run's identity, batch, resolved appetite and outcome, written under a lock. The breaker reads back the ceiling the plan stamped, so plan and run cannot disagree. [HIGH] |
 | `review-state.json` | review workflow | Review cadence and verdict state. [MEDIUM] |
 | `review-queue.json` | review workflow | Pending review inputs. [MEDIUM] |
 | `wsjf-inputs.json` | the review seats (via the plan-rung consult) | Per-unit value / time-criticality / risk-reduction / size scores feeding the WSJF order. [HIGH] |
