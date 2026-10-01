@@ -530,7 +530,7 @@ one machine can read is not evidence.
 ### Relationships and Constraints
 
 Hierarchical traceability: PRD → CR/Epic → Story → Plan/Test Spec/Workflow/Bug,
-with RFC above CR for unsettled design and Retro/Review/Handoff closing a run.
+with RFC above CR for unsettled design and Retro/Review/Report closing a run (Handoff before US0978).
 Link fields are required per type (see `reference-outputs.md#traceability`).
 
 ### Storage Mechanisms

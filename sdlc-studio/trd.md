@@ -320,8 +320,10 @@ divergence from the PRD's data-architecture wording. [HIGH]
 | workflow | `sdlc-studio/workflows` | `WF` |
 
 Retro (`RETRO`), review (`RV`) and handoff (`HO`) artefacts sit outside this
-registry - they are sequential-only meta artefacts created through `artifact.py`'s
-`meta_new` path, with their own index files and a reconcile `meta` lane. They carry
+registry - they are sequential-only meta artefacts with their own index files and a
+reconcile `meta` lane. Retros and reviews are created through `artifact.py`'s
+`meta_new` path; handoffs are no longer created (US0978), and the existing `HO` files
+stay readable and indexed. They carry
 no status/count block, which is why they need a separate lane rather than the
 pipeline census.
 
