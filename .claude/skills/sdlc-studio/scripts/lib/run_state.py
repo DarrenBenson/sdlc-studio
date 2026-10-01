@@ -721,7 +721,11 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
     """
     d = transcripts_dir or os.environ.get(TRANSCRIPTS_ENV)
     if not d:
-        d = Path.home() / ".claude" / "projects" / str(Path(repo_root).resolve()).replace("/", "-")
+        # The harness names the folder after the resolved path with EVERY character outside
+        # [A-Za-z0-9] mapped to `-` (`.` and `_` included, `-` itself kept), so a repo at
+        # `my_app.v2` reads `-...-my-app-v2`; mapping `/` alone missed it.
+        d = (Path.home() / ".claude" / "projects"
+             / re.sub(r"[^A-Za-z0-9-]", "-", str(Path(repo_root).resolve())))
     d = Path(d)
     if not d.is_dir():
         return {"tokens": None, "reason": f"no harness transcript directory at {d}"}
