@@ -535,6 +535,69 @@ def iter_tables(text: str, header_predicate=None):
         yield current
 
 
+_UNESCAPED_PIPE = re.compile(r"(?<!\\)\|")
+
+
+def _raw_cells(line: str) -> list[str] | None:
+    """A row's cells as WRITTEN (escapes kept), or None when the line is not a `|...|` row."""
+    s = line.strip()
+    if len(s) < 2 or not s.startswith("|") or not s.endswith("|") or s.endswith("\\|"):
+        return None
+    return [c.strip() for c in _UNESCAPED_PIPE.split(s[1:-1])]
+
+
+def align_padded_tables(text: str) -> str:
+    """Re-align every table written in the ALIGNED style, so a row a writer added or rewrote
+    compact (`join_row`) lines up with the rest instead of breaking markdownlint's MD060.
+
+    A table is aligned when its header and separator rows put their pipes in the same columns
+    and the header pads a cell beyond one space; a compact table is left exactly as it is. The
+    whole table is re-measured, so a new value wider than its column widens the column rather
+    than spilling past it; no column is narrowed. Cells keep their escapes and the separator keeps its `:` alignment
+    markers. Fenced examples are never touched (the tables come from `iter_tables`)."""
+    lines = text.splitlines()
+    changed = False
+    for table in list(iter_tables(text)):
+        h = (table.get("header_line") or 0) - 1
+        if h < 0 or h + 1 >= len(lines) or not SEP_ROW_RE.match(lines[h + 1]):
+            continue
+        head, sep = lines[h], lines[h + 1]
+        pipes = [m.start() for m in _UNESCAPED_PIPE.finditer(head)]
+        if pipes != [m.start() for m in _UNESCAPED_PIPE.finditer(sep)]:
+            continue
+        if not any(len(seg) > len(seg.strip()) + 2
+                   for seg in _UNESCAPED_PIPE.split(head.strip()[1:-1])):
+            continue                                    # compact: nothing to align to
+        end = h + 2
+        while end < len(lines) and _raw_cells(lines[end]) is not None:
+            end += 1
+        rows = [_raw_cells(lines[i]) for i in [h, *range(h + 2, end)]]
+        marks = _raw_cells(sep)
+        if any(r is None or len(r) != len(marks) for r in rows):
+            continue                                    # ragged: not ours to reflow
+        # Never narrower than the separator already is: the table's own widths are kept, and
+        # a column grows only for a value that no longer fits.
+        widths = [max(3, len(marks[j]), *(len(r[j]) for r in rows)) for j in range(len(marks))]
+
+        def rule(mark: str, w: int) -> str:
+            left, right = mark.startswith(":"), mark.endswith(":")
+            return (":" if left else "") + "-" * (w - left - right) + (":" if right else "")
+
+        def render(cells: list[str]) -> str:
+            return "| " + " | ".join(c.ljust(w) for c, w in zip(cells, widths)) + " |"
+
+        indent = head[:len(head) - len(head.lstrip())]
+        new = [indent + render(rows[0]), indent + "| " + " | ".join(
+            rule(m, w) for m, w in zip(marks, widths)) + " |"]
+        new += [indent + render(r) for r in rows[1:]]
+        if new != lines[h:end]:
+            lines[h:end] = new
+            changed = True
+    if not changed:
+        return text
+    return "\n".join(lines) + ("\n" if text.endswith("\n") else "")
+
+
 # -----------------------------------------------------------------------------
 # Single-line values: the refusal every writer of a metadata line, a table cell,
 # or a one-line bullet shares
