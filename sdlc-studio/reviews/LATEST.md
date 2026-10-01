@@ -2,30 +2,34 @@
 > **RUN-01M3T8N1 closed goal-reached.** 9 unit(s) in the batch. **The run is SIGNED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
-> **RUN-01M3T8N1, the close seals first time: achieved.** Goal: "Maya signs, without a re-close,
-> a report that checks VALID and names every operator ruling and carry." 9 of 9 units approved
-> by one independent QA seat each, all in round 1. BG0865 was added mid-run on the operator's
-> ruling, after BG0862's end-to-end test proved the signed page never stated a non-STOP-SHIP
-> ruling. BG0841 and BG0860/BG0861 were deferred at the goal review.
+> **RUN-01M3VF2J, the whole groomed backlog in one run: achieved.** Goal: "Every open finding
+> closes: Maya and Jonah get honest commands, safe installs and upgrades, and leaner sprint
+> machinery." 40 of 40 units approved by one independent QA seat each (34 in the batch, six
+> discharged by their rejecting reviewer after a carry at the round cap); 34 of 34 verify
+> green. Run unattended under D0290 in two file-disjoint build lanes.
 
 ## What landed
 
-- **The seal no longer invalidates its own page (BG0848, the High).** The close settles every
-  open unit span at one moment and meter reading, so `sign` moves nothing the page digests.
-  The workaround RUN-01M3RPSK needed (units moved to terminal before the close) is retired.
-- **The page names every ruling (BG0851, BG0865, BG0849).** A resolved decision counts as an
-  operator ruling, every in-window forced override is listed (dropped units included), each
-  known issue carries its retro ruling and who made it, and a graduation CR is ruled by class.
-- **Carries close cleanly (BG0850, BG0829).** The rejecting reviewer discharges a carried unit
-  past the cap, and the carried bug is filed with runnable criteria.
-- **The close stops lying about approved bugs (BG0859)** and the retro scaffold names its run
-  and carries the known-issues table (BG0826).
-- **BG0862 proves it end to end**: one unstubbed close, sign and check, VALID first time;
-  reverting any of seven fixes fails a named assertion.
+- **Honest commands.** No CLI reports success it did not get (US0969); ids print as their files
+  spell them (BG0825, BG0877); `config show --sources` (US0759); `verify_ac run --unit` and the
+  near-miss hint (US0804, US0966); a fields-file key spelled as the verb's flag (US0805); the
+  finding writers keep every criterion and verifier (US0970); docs and comments tell the truth
+  (US0973); derived figures read honestly (US0972); a fresh project's first plan is quiet but
+  still reports a hook that diverges, including through a worktree or `~` hooksPath (US0971).
+- **Safe installs and upgrades.** install.sh takes the latest verified release (US0968);
+  install and upgrade never damage a consumer's files (US0976); a v5 upgrade reads clean and a
+  failed migrate step names its unreadable file (US0974); migrate names retired surface in a
+  project's own docs (US0975); install.ps1 targets Copilot globally (BG0855); js-yaml,
+  brace-expansion and markdown-it held at patched releases (BG0866, BG0876, npm audit 0).
+- **Leaner machinery.** The signed report replaces the handoff page; its writers and
+  `gate.py --require-handoff` are retired (US0967, US0978); the revert-check gate lane and the
+  batch-span API are gone (US0784, BG0861); `review.policy` retired and disclosed (BG0831);
+  the pre-push gate judges the pushed commit in its own worktree (BG0837).
 
 ## What is owed
 
-- **Filed from this run:** BG0863 (an unreadable ledger drops status rows, a regression the
-  reviewer ruled non-blocking), BG0864 (Fixed admits a bug whose Verify never ran), and Lows
-  on CR0592. BG0841, BG0860 and BG0861 remain deferred.
-- **Push** the close commits; the installed copy is forward-ported.
+- **Filed from this run, all groomed for the next sprint:** BG0870-BG0873, BG0878, BG0882,
+  BG0885-BG0889. One more (`.py` optional in the retired-surface scan) is filed after the close,
+  as the run hit its 20-finding triage cap.
+- Review was the run's cost centre: 17 of 40 units rejected in round 1 and six carried at the
+  cap, every blocking finding real; see RETRO0129.
