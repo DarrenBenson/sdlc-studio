@@ -40,7 +40,7 @@ exit=0
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a fixture project, when `config.py show --key nonexistent.key --root <fixture>` runs, then it exits 1 and names `nonexistent.key` as absent, while `config.py show --key review.max_rounds` still prints its value and exits 0. Fails on: HEAD prints `null` and exits 0
+- [ ] **AC1** Given a fixture project, when `config.py show --key nonexistent.key --root <fixture>` runs, then it exits 1 and names `nonexistent.key` as absent, while `config.py show --key review.blocking_priority`, a key `config-defaults.yaml` declares, still prints its value and exits 0 (a default living only in a reader's code is BG0878). Fails on: HEAD prints `null` and exits 0
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_cli_no_false_success.py::CliNoFalseSuccessTests::test_an_absent_config_key_is_named_not_printed_as_null
 - [ ] **AC2** Given an empty directory, when `validate.py check --root <dir>` runs, then it exits 1 and says no `sdlc-studio/` workspace was found. Fails on: HEAD prints `checked=0 errors=0 warnings=0` and exits 0
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_cli_no_false_success.py::CliNoFalseSuccessTests::test_validate_on_a_directory_with_no_workspace_says_so
@@ -55,3 +55,4 @@ exit=0
 | --- | --- | --- |
 | 2026-10-01 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-01 | engineering seat (groomer) | Groomed under D0291 (backlog sweep 2026-10-01): criteria authored, premise executed at HEAD 85042135, Points and Affects set |
+| 2026-10-01 | engineering seat (orchestrator) | AC1's present-key example moved from review.max_rounds (default lives in critic.py, BG0878) to review.blocking_priority, as US0759's AC1 was |

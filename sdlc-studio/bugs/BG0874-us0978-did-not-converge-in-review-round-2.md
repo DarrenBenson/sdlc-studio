@@ -1,6 +1,7 @@
 # BG0874: US0978 did not converge in review: round 2 REJECT findings
 
 > **Status:** Open
+> **Discharge review 1:** REJECT by the rejecting reviewer (2026-10-01): trd.md:322 and prd.md:533 still described handoff creation; answered in the next fix(US0978) commit
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/handoff.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/reference-scripts-domain.md, .claude/skills/sdlc-studio/help/handoff.md, .claude/skills/sdlc-studio/help/help.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_replaces_handoff.py, .claude/skills/sdlc-studio/scripts/tests/test_handoff.py, .claude/skills/sdlc-studio/scripts/tests/test_handoff_line.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_ledger.py, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py

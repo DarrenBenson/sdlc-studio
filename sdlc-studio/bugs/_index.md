@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 27 |
+| Open | 30 |
 | In Progress | 3 |
 | Fixed | 692 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 30 |
-| **Total** | **878** |
+| **Total** | **881** |
 
 ## All Bugs
 
@@ -237,6 +237,9 @@
 | [BG0876](BG0876-npm-audit-reports-brace-expansion-and-markdown-it.md) | npm audit reports brace-expansion and markdown-it advisories in the dev lockfile | Open | High | 2026-10-01 | 2026-10-01 |
 | [BG0877](BG0877-four-more-places-still-print-a-schema-v3.md) | Four more places still print a schema v3 id as its hyphenless comparison key | Open | Low | 2026-10-01 | 2026-10-01 |
 | [BG0878](BG0878-config-py-show-prints-null-for-keys-whose.md) | config.py show prints null for keys whose default lives only in a reader's code | Open | Low | 2026-10-01 | 2026-10-01 |
+| [BG0879](BG0879-us0977-did-not-converge-in-review-round-2.md) | US0977 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0880](BG0880-bg0839-did-not-converge-in-review-round-2.md) | BG0839 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0881](BG0881-status-reports-no-personas-for-a-project-holding.md) | status reports no personas for a project holding only the personas/index.md registry | Open | Low | 2026-10-01 | 2026-10-01 |
 
 ## Archived Releases
 

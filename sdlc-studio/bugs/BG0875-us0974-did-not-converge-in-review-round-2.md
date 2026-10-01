@@ -1,6 +1,7 @@
 # BG0875: US0974 did not converge in review: round 2 REJECT findings
 
 > **Status:** Open
+> **Discharge review 1:** REJECT by the rejecting reviewer (2026-10-01): a failed step was reported as writing nothing after writing, and the unreadable file was not named; answered in b7afec00
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_v5_upgrade_clean.py, changelog.d/US0974.md, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py
