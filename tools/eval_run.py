@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shlex
 import shutil
 import sys
@@ -44,6 +45,28 @@ RESULTS = REPO / "evals" / ".results"
 SKILL_SRC = REPO / ".claude" / "skills" / "sdlc-studio"
 
 
+def config_dir(dest: Path) -> Path:
+    """`<dest>.claude-config`, beside the fixture. `dest` must be resolved: `.` would otherwise
+    name `..claude-config` INSIDE the fixture, which a scenario's `git add -A` stages."""
+    return Path(f"{dest}.claude-config")
+
+
+def config_problem(config: Path) -> str | None:
+    """Why `config` cannot be built safely, or None. Checked BEFORE the fixture is written, so a
+    refusal leaves nothing half-made. Two cases: its parent cannot be written (a top-level
+    `--dir /tmp/` names `/tmp.claude-config`), and a symlink anywhere from `config` down to the
+    skill folder, which the fresh rebuild would otherwise delete through - possibly an operator's
+    own `~/.claude/skills/sdlc-studio`."""
+    if not os.access(config.parent, os.W_OK):
+        return (f"cannot create {config}: {config.parent} is not writable - pass a --dir "
+                f"below a writable directory")
+    for p in (config, config / "skills", config / "skills" / "sdlc-studio"):
+        if p.is_symlink():
+            return (f"{p} is a symlink - refusing to rebuild through it (it may reach a skill "
+                    f"you keep); remove the link or pass another --dir")
+    return None
+
+
 def build_config_dir(dest: Path) -> Path:
     """`<dest>.claude-config/skills/sdlc-studio`, copied fresh from the candidate skill.
 
@@ -52,7 +75,10 @@ def build_config_dir(dest: Path) -> Path:
     Pointing `CLAUDE_CONFIG_DIR` here gives the worker this skill and no other. A sibling of the
     fixture, not inside it, so the worker's transcripts never show in the fixture's `git status`.
     Never copies a credential: the operator copies one in for the run and deletes it after."""
-    config = Path(f"{dest}.claude-config")
+    config = config_dir(dest)
+    problem = config_problem(config)
+    if problem:
+        raise ValueError(problem)
     skill = config / "skills" / "sdlc-studio"
     if skill.exists():
         shutil.rmtree(skill)
@@ -100,12 +126,16 @@ def forbidden_behaviours(scenario: dict) -> dict[str, str]:
 
 def cmd_setup(args: argparse.Namespace) -> int:
     sc = load_scenario(args.scenario)
-    dest = Path(args.dir)
+    dest = Path(args.dir).resolve()
     if "fixture" not in sc:
         print(f"{args.scenario}: no machine-readable fixture spec - follow the prose setup "
               f"by hand, then file a fixture spec so the next run is deterministic:\n"
               f"  {sc.get('setup', '(no setup text)')}", file=sys.stderr)
         return 1
+    problem = config_problem(config_dir(dest))
+    if problem:
+        print(f"setup refused: {problem}", file=sys.stderr)
+        return 2
     created = build_fixture(sc, dest)
     config = build_config_dir(dest)
     print(f"fixture: {len(created)} file(s) under {dest}")
@@ -115,7 +145,11 @@ def cmd_setup(args: argparse.Namespace) -> int:
     print(sc["prompt"])
     print(f"\n--- WORKER COMMAND (run in {dest}; copy ~/.claude/.credentials.json into "
           f"{config}, mode 600, and delete it after the run) ---")
-    print(f"CLAUDE_CONFIG_DIR={shlex.quote(str(config))} claude -p {shlex.quote(sc['prompt'])}")
+    # The worker's transcripts land under the config dir's projects/, so the token meter is
+    # pointed there too, or it reads the operator's own sessions instead of the worker's.
+    print(f"CLAUDE_CONFIG_DIR={shlex.quote(str(config))} "
+          f"SDLC_STUDIO_TRANSCRIPTS={shlex.quote(str(config / 'projects'))} "
+          f"claude -p {shlex.quote(sc['prompt'])}")
     print("\n--- GRADE AGAINST (behaviour: severity) ---")
     for eb in sc.get("expected_behaviours", []):
         print(f"  {eb['id']} ({eb['severity']}): {eb['description']}")

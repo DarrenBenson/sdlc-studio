@@ -13,9 +13,11 @@ import contextlib
 import importlib.util
 import io
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 REPO = Path(__file__).resolve().parents[2]
 _spec = importlib.util.spec_from_file_location("eval_run_bg0839", REPO / "tools" / "eval_run.py")
@@ -40,6 +42,30 @@ class EvalIsolationTests(unittest.TestCase):
         eval_run.SCENARIOS = scenarios
         self.addCleanup(setattr, eval_run, "SCENARIOS", old)
 
+    def _setup(self, dest: str) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = eval_run.main(["setup", "--scenario", "99-isolation", "--dir", dest])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _fake_skill(self) -> Path:
+        """A small candidate skill holding the runtime folders the copy must leave behind."""
+        src = self.root / "candidate" / "sdlc-studio"
+        for sub in (".local", "__pycache__", "scripts"):
+            (src / sub).mkdir(parents=True)
+        (src / "SKILL.md").write_text("---\nname: sdlc-studio\n---\n", encoding="utf-8")
+        (src / ".local" / "state.json").write_text("{}", encoding="utf-8")
+        (src / "__pycache__" / "x.pyc").write_bytes(b"\0")
+        (src / "scripts" / "tool.py").write_text("", encoding="utf-8")
+        patch = mock.patch.object(eval_run, "SKILL_SRC", src)
+        patch.start()
+        self.addCleanup(patch.stop)
+        return src
+
+    def _fixture_files(self, scratch: Path) -> list[str]:
+        return sorted(p.relative_to(scratch).as_posix() for p in scratch.rglob("*")
+                      if p.is_file())
+
     def test_setup_isolates_the_candidate_skill(self) -> None:
         """AC1. MUTANT: HEAD, which builds no config directory and prints no command. MUTANT:
         build the config inside the fixture - its files then show in the fixture's git status.
@@ -59,6 +85,76 @@ class EvalIsolationTests(unittest.TestCase):
         lines = out.getvalue().splitlines()
         self.assertTrue(any(ln.startswith(f"CLAUDE_CONFIG_DIR={config} ") for ln in lines),
                         out.getvalue())
+        self.assertTrue(any(f"SDLC_STUDIO_TRANSCRIPTS={config / 'projects'} " in ln
+                            for ln in lines), "the token meter is not pointed at the worker")
+
+    def test_a_relative_dot_dir_puts_the_config_beside_the_fixture(self) -> None:
+        """Round-1 repro. MUTANT: build the config from the unresolved `--dir` - `.` names
+        `..claude-config`, INSIDE the fixture, which a scenario's `git add -A` stages."""
+        self._fake_skill()
+        scratch = self.root / "fx"
+        scratch.mkdir()
+        cwd = os.getcwd()
+        os.chdir(scratch)
+        self.addCleanup(os.chdir, cwd)
+        rc, out, err = self._setup(".")
+        self.assertEqual(0, rc, err)
+        self.assertTrue((self.root / "fx.claude-config" / "skills" / "sdlc-studio" /
+                         "SKILL.md").is_file(), out)
+        self.assertEqual(sorted(_SCENARIO["fixture"]["files"]), self._fixture_files(scratch))
+        self.assertEqual([], [p.name for p in scratch.iterdir() if "claude-config" in p.name])
+
+    def test_an_unwritable_parent_is_refused_before_the_fixture(self) -> None:
+        """A top-level `--dir /tmp/` names `/tmp.claude-config`, under an unwritable `/`.
+        MUTANT: check nothing first - the fixture is written, then a PermissionError traceback."""
+        if os.geteuid() == 0:                       # pragma: no cover - root writes anywhere
+            self.skipTest("root can write any directory")
+        self._fake_skill()
+        locked = self.root / "locked"
+        locked.mkdir()
+        locked.chmod(0o555)
+        self.addCleanup(locked.chmod, 0o755)
+        rc, out, err = self._setup(str(locked / "fx"))
+        self.assertEqual(2, rc, out + err)
+        self.assertEqual(1, len(err.strip().splitlines()), err)
+        self.assertIn(str(locked / "fx.claude-config"), err)
+        self.assertFalse((locked / "fx").exists(), "the fixture was written before the refusal")
+
+    def test_a_symlinked_skill_folder_is_never_rebuilt_through(self) -> None:
+        """MUTANT: rmtree the existing skill folder whatever it is - a link to a skill the
+        operator keeps is deleted through."""
+        self._fake_skill()
+        kept = self.root / "home" / ".claude" / "skills" / "sdlc-studio"
+        kept.mkdir(parents=True)
+        (kept / "SKILL.md").write_text("mine\n", encoding="utf-8")
+        skills = self.root / "fx.claude-config" / "skills"
+        skills.mkdir(parents=True)
+        (skills / "sdlc-studio").symlink_to(kept, target_is_directory=True)
+        rc, out, err = self._setup(str(self.root / "fx"))
+        self.assertEqual(2, rc, out + err)
+        self.assertIn("symlink", err)
+        self.assertEqual("mine\n", (kept / "SKILL.md").read_text(encoding="utf-8"))
+        self.assertFalse((self.root / "fx").exists())
+
+    def test_the_rebuild_is_fresh_filtered_and_credential_free(self) -> None:
+        """MUTANTS: copy over the old folder (a stale file survives); drop the ignore list
+        (`.local` and `__pycache__` are copied); copy a credential from HOME into the config."""
+        self._fake_skill()
+        home = self.root / "home"
+        (home / ".claude").mkdir(parents=True)
+        (home / ".claude" / ".credentials.json").write_text('{"token": "x"}', encoding="utf-8")
+        scratch = str(self.root / "fx")
+        skill = self.root / "fx.claude-config" / "skills" / "sdlc-studio"
+        with mock.patch.dict(os.environ, {"HOME": str(home)}):
+            self.assertEqual(0, self._setup(scratch)[0])
+            (skill / "stale.md").write_text("old\n", encoding="utf-8")
+            self.assertEqual(0, self._setup(scratch)[0])
+        self.assertFalse((skill / "stale.md").exists(), "the rebuild kept a stale file")
+        self.assertTrue((skill / "scripts" / "tool.py").is_file())
+        self.assertFalse((skill / ".local").exists())
+        self.assertFalse((skill / "__pycache__").exists())
+        config = self.root / "fx.claude-config"
+        self.assertEqual([], [p for p in config.rglob("*") if "credential" in p.name.lower()])
 
 
 if __name__ == "__main__":

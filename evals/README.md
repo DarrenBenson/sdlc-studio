@@ -26,7 +26,9 @@ Each scenario runs as **setup**, **worker**, **grader**, **record**:
 2. **Worker session.** A fresh agent session (no carried context) started
    in the fixture directory with the candidate skill installed. Send the
    printed prompt verbatim. Save the full transcript. Run it with the
-   command `setup` prints, `CLAUDE_CONFIG_DIR=<dir>.claude-config claude -p ...`:
+   command `setup` prints, `CLAUDE_CONFIG_DIR=<dir>.claude-config
+   SDLC_STUDIO_TRANSCRIPTS=<dir>.claude-config/projects claude -p ...` (the
+   second variable points the token meter at the worker's transcripts):
    under `claude -p` a personal `~/.claude/skills/sdlc-studio` is not
    outranked by a project copy, so without it the worker can load your
    installed skill instead of the candidate. `setup` copies this working
