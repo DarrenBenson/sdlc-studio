@@ -186,6 +186,8 @@ class ReportReplacesHandoffTests(unittest.TestCase):
                 self.assertIn(uid, notice, f"the notice does not name {uid}:\n{notice}")
             self.assertNotIn("RPT0002", r.stderr, "the notice read an unsigned report")
             self.assertNotIn("checklist", notice, "a close gap was named as plannable work")
+            self.assertNotIn("since closed", notice,
+                             "a close gap's row was counted as a handed-over item since closed")
 
             w = _plan(root, "--worklist", "RPT0001")
             self.assertEqual(0, w.returncode, w.stdout + w.stderr)
