@@ -2316,11 +2316,16 @@ def delivery_mode_offer(repo_root: Path | str, batch: list[dict]) -> dict:
     root = Path(repo_root)
     units: list[tuple[str, list[str]]] = []
     undeclared: list[str] = []
+    unrecognised: dict[str, list[str]] = {}
     for it in batch:
         text = Path(it["path"]).read_text(encoding="utf-8")
         uid = sdlc_md.display_id(root, it["id"])    # printed in the offer, so its file's spelling
         if not _affects_files(text):
-            undeclared.append(uid)
+            dropped = sdlc_md.unrecognised_affects(text)
+            if dropped:
+                unrecognised[uid] = dropped
+            else:
+                undeclared.append(uid)
         units.append((uid, _unit_files(root, text)))
     all_ids = [u for u, _ in units]
     tooling = {uid: _build_tooling_hits(files) for uid, files in units}
@@ -2329,11 +2334,18 @@ def delivery_mode_offer(repo_root: Path | str, batch: list[dict]) -> dict:
     if len(units) <= 1:
         groups = [[u] for u in all_ids]
         reason = "a one-unit batch has nothing to parallelise; delivered sequentially"
-    elif undeclared:
+    elif undeclared or unrecognised:
         groups = [sorted(all_ids)]
-        reason = (f"unit(s) {', '.join(sorted(undeclared))} declare no Affects, so their blast "
-                  f"radius is unknown; delivered sequentially rather than risk an undeclared "
-                  f"overlap")
+        said = []
+        if undeclared:
+            said.append(f"unit(s) {', '.join(sorted(undeclared))} declare no Affects")
+        if unrecognised:
+            said.append("the Affects of " + "; ".join(
+                f"{uid} ({', '.join(f'`{t}`' for t in toks)})"
+                for uid, toks in sorted(unrecognised.items()))
+                + " are not recognised as file paths")
+        reason = (f"{' and '.join(said)}, so their blast radius is unknown; delivered "
+                  f"sequentially rather than risk an undeclared overlap")
     elif coupled:
         named = "; ".join(f"{uid} touches {', '.join(tooling[uid])}" for uid in coupled)
         groups = [sorted(all_ids)]
@@ -12168,9 +12180,20 @@ def tsd_staleness(root) -> dict:
                 "why": f"no commit history for "
                        f"{'sdlc-studio/tsd.md' if not tsd else what} - staleness unknown, "
                        f"which is not the same as fresh"}
-    return {"known": True, "stale": code > tsd, "tsd_at": tsd, "code_at": code,
+    # Compared as INSTANTS: `%cI` keeps each commit's own offset, so `11:00+01:00` (10:00Z)
+    # compares later than `10:30Z` as a string while being earlier in time.
+    from datetime import datetime  # noqa: PLC0415
+    try:
+        def _at(s: str) -> datetime:   # 3.10 reads no `Z` suffix; it is +00:00
+            return datetime.fromisoformat(s[:-1] + "+00:00" if s.endswith("Z") else s)
+        stale = _at(code) > _at(tsd)
+    except ValueError:
+        return {"known": False, "stale": False,
+                "why": f"a commit time could not be read ({code!r}, {tsd!r}) - staleness "
+                       f"unknown, which is not the same as fresh"}
+    return {"known": True, "stale": stale, "tsd_at": tsd, "code_at": code,
             "why": (f"{what} changed at {code} and the TSD was last revised at {tsd}"
-                    if code > tsd else "")}
+                    if stale else "")}
 
 
 if __name__ == "__main__":

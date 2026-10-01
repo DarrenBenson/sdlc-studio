@@ -3381,6 +3381,11 @@ _DOTFILE = re.compile(r"\.[A-Za-z0-9][\w.-]*")
 #: Real files that carry no extension, matched case-insensitively.
 _EXTENSIONLESS_FILES = frozenset({"makefile", "dockerfile", "containerfile", "license",
                                   "licence"})
+#: The two shapes an extension-less root file takes: an upper-case name of five letters or
+#: more (`CODEOWNERS`, `VERSION`, `README`), and a capitalised word ending in `file`
+#: (`Gemfile`, `Procfile`, `Rakefile`). Letters only, so an id (`US0001`) is not one, and five or
+#: more, so a placeholder (`TBD`, `NONE`) is not one either.
+_EXTENSIONLESS_SHAPE = re.compile(r"[A-Z][A-Z_]{4,}|[A-Z][a-z]+file")
 
 
 def _file_shaped(tok: str) -> bool:
@@ -3389,7 +3394,7 @@ def _file_shaped(tok: str) -> bool:
     if not tok or any(ch.isspace() for ch in tok):
         return False
     return bool(_FILE_EXT.search(tok) or _DOTFILE.fullmatch(tok)
-                or tok.lower() in _EXTENSIONLESS_FILES)
+                or tok.lower() in _EXTENSIONLESS_FILES or _EXTENSIONLESS_SHAPE.fullmatch(tok))
 
 
 def affects_files(text: str) -> list[str]:
@@ -3401,15 +3406,27 @@ def affects_files(text: str) -> list[str]:
     shape of a file name (`_file_shaped`), so a root `package.json` or `Makefile` is kept
     and prose (`none`, `-`, a sentence) is not. Shape, not existence: a unit may declare a
     root file it is about to create."""
+    return [tok for tok in _affects_tokens(text) if "/" in tok or _file_shaped(tok)]
+
+
+def _affects_tokens(text: str) -> list[str]:
+    """Every non-empty token of a unit's `Affects` field, notes and backticks stripped."""
     val = extract_field(text, "Affects") or ""
-    files = []
+    out = []
     # Split on the commas outside parentheses: a note's own comma would otherwise cut a path
     # and its note in two, and the path's half would keep the note's opening words.
     for tok in re.split(r",(?![^()]*\))", val):
         tok = re.sub(r"\s*\(.*\)\s*$", "", tok.strip()).strip().strip("`").strip()
-        if tok and ("/" in tok or _file_shaped(tok)):
-            files.append(tok)
-    return files
+        if tok:
+            out.append(tok)
+    return out
+
+
+def unrecognised_affects(text: str) -> list[str]:
+    """The `Affects` tokens `affects_files` does not take as paths, in order: what a unit
+    declared that was read as prose, so a reader can say "not recognised" rather than "none"."""
+    files = set(affects_files(text))
+    return [tok for tok in _affects_tokens(text) if tok not in files]
 
 
 def loaded_skill_dir() -> Path:

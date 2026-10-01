@@ -348,7 +348,8 @@ class CloseDriftTests(unittest.TestCase):
             text = index.read_text(encoding="utf-8")
             # the row AND its summary count, so the one drift item is the row's stale status
             edits = {f"| {eid} | In Progress |": f"| {eid} | Draft |",
-                     "| Draft | 0 |": "| Draft | 1 |", "| In Progress | 1 |": "| In Progress | 0 |"}
+                     "\n| Draft | 0 |\n": "\n| Draft | 1 |\n",
+                     "\n| In Progress | 1 |\n": "\n| In Progress | 0 |\n"}
             for old, new in edits.items():
                 self.assertEqual(1, text.count(old), text)
                 text = text.replace(old, new)

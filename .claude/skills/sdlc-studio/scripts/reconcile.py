@@ -3087,7 +3087,100 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False,
     # never called - so `apply` could report success over an index it had not finished
     # deriving, and the next `detect` would disagree with it.
     result["fields"] = project_fields(repo_root, type_, dry_run=dry_run)["drift"]
+    result["epic_view"] = project_epic_view(root, type_, dry_run=dry_run)
     return result
+
+
+#: The story index's per-epic view, and the header its tables carry.
+_EPIC_VIEW_HEADING = "## Stories by Epic"
+_EPIC_VIEW_HEADER = ["ID", "Title", "Status", "Points", "Owner"]
+
+
+def project_epic_view(repo_root: Path | str, type_: str = "story",
+                      dry_run: bool = False) -> list[str]:
+    """Derive the story index's `## Stories by Epic` view from the story files: one
+    `### [<epic>: <title>](...)` table per epic, a row for each story under it. Returns the
+    story ids written (empty when the view already reads so, or is not one this writes).
+
+    Only the story index has the view. Only a view made of headings and tables in the shipped
+    columns is rewritten: a section carrying any other line, or a table of other columns, is a
+    project's own layout and is left as written; an index with no such section is not given
+    one. Its own writer, beside `project_fields`: the derived-index lane does not
+    judge this view, so an index laid out before it existed is not newly reported."""
+    if type_ != "story":
+        return []
+    root = Path(repo_root)
+    index_path = root / sdlc_md.ARTIFACT_TYPES["story"][0] / "_index.md"
+    original = sdlc_md.read_text_safe(index_path)
+    if not original:
+        return []
+    lines = original.splitlines()
+    try:
+        start = lines.index(_EPIC_VIEW_HEADING)
+    except ValueError:
+        return []
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")),
+               len(lines))
+    body = lines[start + 1:end]
+    if any(ln.strip() and not ln.lstrip().startswith(("|", "### ")) for ln in body):
+        return []
+    headers = [sdlc_md.table_cells(body[i]) for i in range(len(body) - 1)
+               if body[i].lstrip().startswith("|") and set(body[i + 1].replace("|", "").split())
+               <= {"---"} and body[i + 1].strip()]
+    if any(h != _EPIC_VIEW_HEADER for h in headers):
+        return []
+    by_epic: dict[str, list[str]] = {}
+    written: list[str] = []
+    for path in sorted(sdlc_md.artifact_files("story", root)):
+        rec = sdlc_md.extract_record_id(path.stem)
+        if not rec:
+            continue
+        text = sdlc_md.read_text_safe(path)
+        fv = _file_field_values(text)
+        title = _h1_title(text, rec).replace("|", "\\|")
+        epic = sdlc_md.norm_id(str(fv.get("epic") or "").strip()) or "No epic"
+        row = sdlc_md.row_from_header(
+            _EPIC_VIEW_HEADER, f"[{rec}]({path.name})", title, fv.get("status") or "--",
+            {"points": fv.get("points") or "--"}, derived={"Owner": fv.get("owner") or "--"})
+        by_epic.setdefault(epic, []).append(row)
+        written.append(rec)
+    out: list[str] = []
+    for epic in sorted(by_epic):
+        hit = sdlc_md.find_by_id(root, epic) if epic != "No epic" else None
+        if hit:
+            efile = Path(hit[0])
+            shown = sdlc_md.extract_record_id(efile.stem) or epic
+            etitle = _h1_title(sdlc_md.read_text_safe(efile), shown)
+            out.append(f"### [{shown}: {etitle}](../epics/{efile.name})")
+        else:
+            out.append(f"### {epic}")
+        out += ["", "| " + " | ".join(_EPIC_VIEW_HEADER) + " |",
+                "|" + " --- |" * len(_EPIC_VIEW_HEADER), *by_epic[epic], ""]
+    new = [*lines[:start + 1], "", *out] if out else [*lines[:start + 1], "", *body_tables(body)]
+    new += lines[end:]
+    if new == lines:
+        return []
+    if not dry_run:
+        sdlc_md.atomic_write(index_path, "\n".join(new) + ("\n" if original.endswith("\n")
+                                                           else ""))
+    return written
+
+
+def _h1_title(text: str, rid: str) -> str:
+    """An artefact's H1 with its own `<id>: ` prefix removed, in either id schema, or `rid`."""
+    m = re.search(r"^#\s+(.+?)\s*$", text or "", re.M)
+    head = m.group(1) if m else ""
+    lead, sep, rest = head.partition(": ")
+    if sep and sdlc_md.norm_id(lead) == sdlc_md.norm_id(rid):
+        head = rest
+    return head.strip() or rid
+
+
+def body_tables(body: list[str]) -> list[str]:
+    """A view with no story to show keeps what it held, its surrounding blank lines trimmed."""
+    while body and not body[0].strip():
+        body = body[1:]
+    return body
 
 
 #: Every key `apply_type` sets when the index is not a fixed point of `apply` - i.e. every way
@@ -3688,6 +3781,10 @@ def cmd_apply(args: argparse.Namespace) -> int:
         for c in res["changes"]:
             print(f"{'WOULD set' if args.dry_run else 'set'} {type_} {c['id']}: {c['from']} -> {c['to']}")
             n += 1
+        if res.get("epic_view"):
+            print(f"{'WOULD derive' if args.dry_run else 'derived'} the Stories by Epic view "
+                  f"({len(res['epic_view'])} row(s))")
+            n += len(res["epic_view"])
         for f in res.get("fields", []):
             # Counted, for the reason the restamp line below is announced: this pass rewrites
             # rows, and an apply reporting "changed 0 row(s)" while editing 105 of them is the
