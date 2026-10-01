@@ -27,8 +27,10 @@ Run the boundary gate in a temporary `git worktree` checked out at the pushed ti
 
 - [ ] **AC1** Given a fixture clone whose committed stub `gate.py` exits 1 and whose working-tree copy is edited to exit 0, uncommitted, when `git push` runs the tracked pre-push hook, then the push is refused, and the working-tree edit is still present afterwards. Fails on: HEAD, which runs the working-tree stub and lets the push through
   - **Verify:** pytest tools/tests/test_lean_prepush_pushed_commit.py::PrePushPushedCommitTests::test_the_gate_judges_the_pushed_commit
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given the same clone with the stub committed green and a red edit left uncommitted, when `git push` runs the hook, then the push goes through. Fails on: HEAD, which refuses on the uncommitted red edit; and on a fix that refuses any dirty tree
   - **Verify:** pytest tools/tests/test_lean_prepush_pushed_commit.py::PrePushPushedCommitTests::test_an_uncommitted_red_edit_does_not_refuse_a_green_commit
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 
