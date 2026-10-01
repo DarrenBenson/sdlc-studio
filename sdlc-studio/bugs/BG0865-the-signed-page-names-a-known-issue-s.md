@@ -26,10 +26,13 @@ Give each Known issues row the ruling the retro recorded for it (ruling, ruled b
 
 - [ ] **AC1** Given a run whose retro rules a carried bug not-stop-ship and an open finding accepted-risk, when the close files the report, then each of those Known issues rows names its ruling and who ruled it. Fails on: HEAD, whose rows carry no ruling unless STOP-SHIP
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_known_issue_rulings.py::KnownIssueRulingTests::test_each_known_issue_names_its_retro_ruling
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC2** Given a close that files a graduation CR, then that CR is listed in the page's Known issues. Fails on: HEAD's [start, end) window, which excludes a finding filed at the close's own instant
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_known_issue_rulings.py::KnownIssueRulingTests::test_a_finding_the_close_files_is_on_the_page
+  - **Verified:** yes (2026-10-01)
 - [ ] **AC3** Given this repository's signed RPT0011 and RPT0012, when `sprint_report.py check` runs after the change, then both print VALID. Fails on: a fix that re-derives old pages' rows with the new ruling column
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_known_issue_rulings.py::KnownIssueRulingTests::test_signed_pages_stay_valid
+  - **Verified:** yes (2026-10-01)
 
 ## Revision History
 

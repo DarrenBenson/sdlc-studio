@@ -2005,12 +2005,41 @@ def _in_run(when: str, started: str | None, ended: str | None) -> bool:
     return _in_window(_as_utc(when), _at(_as_utc(started)), _at(_as_utc(ended or "")))
 
 
-def _open_findings(root: Path, run: dict | None) -> tuple[list[str], list[str]]:
+#: A run id as a `Raised-in-batch` stamp names one (`RUN-01M3...`, `RUN-LEAN0001`).
+_STAMP_RUN_RE = re.compile(r"(?<![\w-])RUN-[A-Z0-9]+(?![\w-])")
+
+
+def _raised_at_the_close(stamp: str, when: str, run_id: str | None, started: str | None,
+                         ended: str | None) -> bool:
+    """A finding this run's own CLOSE raised at the window's closing instant: its moment is the
+    window's end, and its stamp names this run's close (`<run id> close, <moment>`, as a
+    lesson's graduation CR is stamped) and no other run.
+
+    The page's window is half-open, and the close files its graduation CR in the very second it
+    derives the page, so the CR dropped off the page that should list it. The end stays open to
+    every other stamp: one naming another run (opened in that same second) is never this run's,
+    and any other finding may have been filed after the page in its own second, which is what
+    the half-open end exists to keep out of an unsigned page's re-derivation. Only the close
+    stamps `<run id> close`, and it files before it derives, so the page and every
+    re-derivation place the CR alike."""
+    if not ended or len(when) == 10:
+        return False
+    moment, end = _at(_as_utc(when)), _at(_as_utc(ended))
+    if moment is None or end is None or moment != end or not _in_run(when, started, None):
+        return False
+    return bool(run_id) and bool(re.search(
+        rf"(?<![\w-]){re.escape(str(run_id))} close\b", stamp or "")) and set(
+        _STAMP_RUN_RE.findall(stamp or "")) == {str(run_id)}
+
+
+def _open_findings(root: Path, run: dict | None,
+                   at_the_close: bool = False) -> tuple[list[str], list[str]]:
     """`(filed during the run, of those the ones still open)`, by artefact id.
 
     Joined on the `Raised-in-batch` stamp `file_finding` writes, so a finding counts against
     the run that produced it rather than against whatever happened to be open when someone
-    last edited the file.
+    last edited the file. `at_the_close` also counts a finding this run raised at the window's
+    closing instant (`_raised_at_the_close`): the page's derivation asks it.
     """
     if not run or not run.get("started_at"):
         # None, not []. An empty result and a scan that could not run are different facts, and
@@ -2059,7 +2088,9 @@ def _open_findings(root: Path, run: dict | None) -> tuple[list[str], list[str]]:
             # A moment is placed in the half-open `[start, end)` the DORA figures use: with the
             # end inclusive, a finding stamped in the page's own generation second entered the
             # re-derivation and not the page, so `check` read INVALID on a page nobody touched.
-            if not _in_run(when, started, ended):
+            if not _in_run(when, started, ended) and not (
+                    at_the_close and _raised_at_the_close(stamp, when, run.get("run_id"),
+                                                          started, ended)):
                 continue
             filed.append(uid)
             status = (sdlc_md.extract_field(text, "Status") or "").strip()
@@ -3502,7 +3533,18 @@ def _priority_rank(priority: str) -> int:
                 len(critic.PRIORITY_TIERS))
 
 
-def _finding_row(root: Path, uid: str) -> tuple[int, dict]:
+def _retro_rulings(root: Path, retro_id: str | None) -> dict:
+    """`{finding id: (ruling, who ruled)}` from the run's retro's `## Known issues carried`
+    table, through `retro.carried_issues` - the one reader, which resolves a lesson class to its
+    graduation CR. Only well-formed rows rule; an unreadable retro rules nothing."""
+    rows = _carried_issues(root, retro_id) if retro_id else None
+    return {r["id"]: (r["ruling"], r["by"]) for r in rows or [] if r.get("ok") and r.get("id")}
+
+
+def _finding_row(root: Path, uid: str,
+                 ruling: tuple[str, str] | None = None) -> tuple[int, dict]:
+    """One open finding as a Known issues row; with `ruling`, the detail ends with the retro's
+    ruling and who made it, in the words the operator reads: `- not-stop-ship, ruled by Maya`."""
     found = sdlc_md.find_by_id(root, uid)
     path = Path(found[0]) if found else None
     text = sdlc_md.read_text_safe(path) if path else ""
@@ -3515,26 +3557,33 @@ def _finding_row(root: Path, uid: str) -> tuple[int, dict]:
                   "issue_priority": (fig("issue_priority", priority, rel) if priority else
                                      unmeasured("issue_priority", rel, "no priority recorded")),
                   "issue_detail": fig("issue_detail",
-                                      head.group(1).strip() if head else uid, rel)}
+                                      (head.group(1).strip() if head else uid)
+                                      + (f" - {ruling[0]}, ruled by {ruling[1]}"
+                                         if ruling else ""), rel)}
 
 
 def _known_issues_section(root: Path, state: dict, state_rel: str, ledger: list[dict],
                           start: str | None, end: str | None,
-                          on_page: dict | None = None) -> dict:
+                          on_page: dict | None = None, rulings: dict | None = None) -> dict:
     """STOP-SHIP rulings the close recorded, first and marked, so the signer cannot miss one;
-    then open findings raised inside the run's window, most severe first; then the other gaps
+    then open findings raised inside the run's window, most severe first, each naming the
+    ruling the retro gave it and who ruled (`rulings`, `_retro_rulings`); then the other gaps
     the close recorded; then the units carried undelivered.
 
     Re-deriving a filed page, its own reading is replayed (`_page_readings`): the findings it
-    lists that were raised in the window, each as the page read it, so closing, re-grading or
-    reopening one later does not move the page."""
-    raised, still_open = _open_findings(root, {"started_at": start, "ended_at": end})
+    lists that were raised in the window, each as the page read it - its ruling included - so
+    closing, re-grading or reopening one later, or editing the retro, does not move the page,
+    and a page filed before rulings were named keeps the rows it was signed with."""
+    raised, still_open = _open_findings(root, {"started_at": start, "ended_at": end,
+                                               "run_id": state.get("run_id")},
+                                        at_the_close=True)
 
     def replayed(uid: str) -> tuple[int, dict]:
         row = {k: dict(f) if isinstance(f, dict) else f for k, f in on_page[uid].items()}
         priority = (row.get("issue_priority") or {}).get("value")
         return _priority_rank("" if priority in (None, NOT_MEASURED) else str(priority)), row
-    ranked = sorted([_finding_row(root, uid) for uid in still_open or []] if on_page is None
+    ranked = sorted([_finding_row(root, uid, (rulings or {}).get(uid))
+                     for uid in still_open or []] if on_page is None
                     else [replayed(uid) for uid in raised or [] if uid in on_page],
                     key=lambda pair: (pair[0], pair[1]["issue_id"]["value"]))
     gaps = state.get("close_known_issues")
@@ -3748,7 +3797,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                            else None),
         _delivered_section(root, state_rel, ledger),
         _known_issues_section(root, state, state_rel, ledger,
-                              state.get("started_at"), _iso(end), readings["findings"]),
+                              state.get("started_at"), _iso(end), readings["findings"],
+                              rulings=_retro_rulings(root, retro_id)),
         _signoff_section(state_rel),
         _cost_section(state, state_rel, tokens),
         _dora_section(root, start, end, *_ci_runs(root, state, state_rel, run_id)),
