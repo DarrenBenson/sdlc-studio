@@ -16,6 +16,7 @@ import json
 import os
 import re
 import sys
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple, TypeVar
@@ -546,16 +547,31 @@ def _raw_cells(line: str) -> list[str] | None:
     return [c.strip() for c in _UNESCAPED_PIPE.split(s[1:-1])]
 
 
-def align_padded_tables(text: str) -> str:
-    """Re-align every table written in the ALIGNED style, so a row a writer added or rewrote
-    compact (`join_row`) lines up with the rest instead of breaking markdownlint's MD060.
+def _width_is_not_len(cell: str) -> bool:
+    """Whether a cell holds a character whose display width is not one column: an east-asian
+    wide or full-width character, a combining mark, or a format character (zero-width joiners,
+    variation selectors - the parts of an emoji). Display width is not computed here; a table
+    holding any such cell is left exactly as written."""
+    return any(unicodedata.east_asian_width(ch) in ("W", "F") or unicodedata.combining(ch)
+               or unicodedata.category(ch) in ("Mn", "Me", "Cf") for ch in cell)
 
-    A table is aligned when its header and separator rows put their pipes in the same columns
-    and the header pads a cell beyond one space; a compact table is left exactly as it is. The
-    whole table is re-measured, so a new value wider than its column widens the column rather
-    than spilling past it; no column is narrowed. Cells keep their escapes and the separator keeps its `:` alignment
-    markers. Fenced examples are never touched (the tables come from `iter_tables`)."""
+
+def align_padded_tables(text: str, original: str | None = None) -> str:
+    """Re-align a table written in the ALIGNED style around a row a writer added or rewrote
+    compact (`join_row`), so it lines up with the rest instead of breaking markdownlint's MD060.
+
+    Only a table holding a line that `original` (the text before the write) does not hold is
+    touched; every other table is left byte for byte, and with no `original` every aligned table
+    is a candidate. A table is aligned when its header and separator rows put their pipes in the
+    same columns and the header pads a cell beyond one space; a compact table is left as it is.
+    The table is re-measured, so a new value wider than its column widens the column; no column
+    is narrowed. A table whose rows do not all have the separator's cell count, or holding any
+    cell whose display width is not its length (`_width_is_not_len`), is left alone: widths are
+    measured in characters, which is what MD060 measures only for those. Cells keep their
+    escapes, the separator its `:` markers, an indented table its indent; fenced examples are
+    never touched (the tables come from `iter_tables`)."""
     lines = text.splitlines()
+    before = None if original is None else set(original.splitlines())
     changed = False
     for table in list(iter_tables(text)):
         h = (table.get("header_line") or 0) - 1
@@ -571,10 +587,14 @@ def align_padded_tables(text: str) -> str:
         end = h + 2
         while end < len(lines) and _raw_cells(lines[end]) is not None:
             end += 1
+        if before is not None and all(ln in before for ln in lines[h:end]):
+            continue                                    # nothing written into this table
         rows = [_raw_cells(lines[i]) for i in [h, *range(h + 2, end)]]
         marks = _raw_cells(sep)
         if any(r is None or len(r) != len(marks) for r in rows):
             continue                                    # ragged: not ours to reflow
+        if any(_width_is_not_len(c) for r in rows for c in r):
+            continue                                    # widths here are not lengths
         # Never narrower than the separator already is: the table's own widths are kept, and
         # a column grows only for a value that no longer fits.
         widths = [max(3, len(marks[j]), *(len(r[j]) for r in rows)) for j in range(len(marks))]

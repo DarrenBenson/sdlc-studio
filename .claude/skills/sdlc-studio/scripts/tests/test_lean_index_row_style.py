@@ -103,6 +103,60 @@ class IndexRowStyleTests(unittest.TestCase):
         compact = "| Abc | Def |\n| --- | --- |\n| a longer value | x |\n"
         self.assertEqual(compact, sdlc_md.align_padded_tables(compact))
 
+    def _lint(self) -> None:
+        if not MDL.is_file():                       # pragma: no cover - npm install not run
+            return
+        proc = subprocess.run([str(MDL), str(self.index)], capture_output=True, text=True)
+        self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+
+    def test_an_untouched_wide_character_table_is_left_byte_for_byte(self) -> None:
+        """Round-1 repro. A compact data table, a padded Glossary holding CJK (lint-clean,
+        aligned by display width) and a padded Totals table with a right-aligned count, neither
+        touched by the write. MUTANT: reflow every aligned table in the index - Totals is
+        re-rendered (and, without the wide-character skip, the Glossary breaks MD060)."""
+        glossary = ("## Glossary\n\n| Term   | Meaning    |\n| ------ | ---------- |\n"
+                    "| 用語   | a term     |\n| plain  | not a term |\n\n"
+                    "## Totals\n\n| Kind      | Count |\n| --------- | ----: |\n"
+                    "| specs     |     2 |\n")
+        self.index.write_text(_INDEX.replace(
+            "| ID                       | Title       | Epic   | Status |\n"
+            "| ------------------------ | ----------- | ------ | ------ |\n"
+            "| [TS0001](TS0001-spec.md) | first spec  | EP0010 | Draft  |\n"
+            "| [TS0002](TS0002-spec.md) | second spec | EP0010 | Draft  |\n",
+            "| ID | Title | Epic | Status |\n| --- | --- | --- | --- |\n"
+            "| [TS0001](TS0001-spec.md) | first spec | EP0010 | Draft |\n"
+            "| [TS0002](TS0002-spec.md) | second spec | EP0010 | Draft |\n") + "\n" + glossary,
+            encoding="utf-8")
+        self._lint()
+        self._set("TS0001", "Complete")
+        text = self.index.read_text(encoding="utf-8")
+        self.assertIn("| [TS0001](TS0001-spec.md) | first spec | EP0010 | Complete |", text)
+        self.assertTrue(text.endswith(glossary), text)
+        self._lint()
+
+    def test_a_table_holding_a_wide_character_is_left_alone(self) -> None:
+        """Its widths cannot be measured in characters, so it is not reflowed even when a row
+        in it was rewritten. MUTANT: drop the wide-character skip - the table is re-padded by
+        character count, which is not what MD060 measures."""
+        spec = self.index.parent / "TS0002-spec.md"
+        spec.write_text(spec.read_text(encoding="utf-8").replace("second spec", "第二の仕様"),
+                        encoding="utf-8")
+        self.index.write_text(_INDEX.replace("| second spec |", "| 第二の仕様  |"),
+                              encoding="utf-8")
+        before = self.index.read_text(encoding="utf-8").splitlines()
+        self._set("TS0001", "Complete")
+        after = self.index.read_text(encoding="utf-8").splitlines()
+        changed = [(a, b) for a, b in zip(before, after) if a != b]
+        self.assertEqual(["| [TS0001](TS0001-spec.md) | first spec | EP0010 | Complete |"],
+                         [b for a, b in changed if a.startswith("| [TS0001]")], changed)
+        self.assertEqual([], [b for a, b in changed if a.startswith(("| ID", "| ---", "| [TS0002]"))])
+
+    def test_a_ragged_table_is_left_alone(self) -> None:
+        """A row with more cells than the separator is not a table this can reflow. MUTANT:
+        drop the ragged check - the extra cell is lost or the row re-padded wrongly."""
+        text = ("| Name   | Value |\n| ------ | ----- |\n| a | b | extra |\n")
+        self.assertEqual(text, sdlc_md.align_padded_tables(text))
+
 
 if __name__ == "__main__":
     unittest.main()

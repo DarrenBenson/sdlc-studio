@@ -3079,9 +3079,10 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False,
     if (result["changes"] or result["counts_updated"] or result["pruned"]
             or result["stamped"]) and not dry_run:
         text = "\n".join(lines) + ("\n" if original.endswith("\n") else "")
-        # A row rewritten or appended above is written compact; a table kept in the aligned
-        # style is re-aligned around it, or the index fails markdownlint MD060.
-        sdlc_md.atomic_write(index_path, sdlc_md.align_padded_tables(text))
+        # A row rewritten or appended above is written compact; the aligned-style table it
+        # sits in is re-aligned around it, or the index fails markdownlint MD060. Tables this
+        # write did not touch are left byte for byte.
+        sdlc_md.atomic_write(index_path, sdlc_md.align_padded_tables(text, original))
     # ... then the file-owned CELLS, from the same authority `detect` counts. Run after the
     # write above because it re-reads the index: a row this pass appended must have its cells
     # projected too, or `apply` would leave behind exactly the drift `detect` had just
