@@ -80,6 +80,9 @@ def sweep(root: Path | str, manifest: Path | str | None = None) -> dict:
                 signals.append("depends-on")
             if not signals:
                 continue
+            # A retired unit keeps its historical `Blocked by:` line; it is not work to unblock.
+            if status and sdlc_md.is_terminal_status(type_, status):
+                continue
             resolved = [xrepo.resolve(r, rr, repos) for r in refs]
             genuinely_blocked = status == _BLOCKED or blocked_by
             unit = {"id": rec, "type": type_, "status": status or "Unknown",

@@ -2984,6 +2984,17 @@ def project_seats(repo_root: Path | str) -> list[str]:
     return sorted(r for r in roles if r)
 
 
+def review_seats(repo_root: Path | str) -> tuple[list[str], bool]:
+    """`(roles, shipped)`: the seats that review a goal on this project. Its own seats when it
+    declares any; otherwise the skill's shipped seats, which `persona_resolve` and `critic.py
+    brief` already fall back to, with `shipped` True so a reader can say which."""
+    own = project_seats(repo_root)
+    if own:
+        return own, False
+    import persona_resolve  # noqa: PLC0415 - deferred sibling, as in project_seats
+    return sorted(persona_resolve.SEATS), True
+
+
 def _norm_goal(goal: str | None) -> str:
     """A goal compared as text: whitespace collapsed, case folded. Two spellings of one
     sentence are one goal; two different sentences are never the same review."""
@@ -3045,9 +3056,10 @@ def goal_review_status(repo_root: Path | str, sprint_goal: str | None,
     goal no seat looked at is never recorded as approved.
     """
     root = Path(repo_root)
+    available, shipped = review_seats(root)
     base = {"reviewed": False, "status": "not read", "skipped": None, "seats": [],
-            "goal": sprint_goal,
-            "available_seats": project_seats(root), "rounds": 0,
+            "goal": sprint_goal, "shipped_seats": shipped,
+            "available_seats": available, "rounds": 0,
             "objected": False, "objections": []}
     if skip_personas:
         return {**base, "skipped": "--skip-personas",
@@ -3066,10 +3078,21 @@ def goal_review_status(repo_root: Path | str, sprint_goal: str | None,
         # (a tooling sweep, a bug-fix clearance, an audit remediation) legitimately is not. Folding
         # them into one blocking test refused every themed sprint and, worse, REPORTED those seats
         # as having judged the goal unachievable when they had judged the opposite.
+        # A verdict carried forward from the requesting seat was given on the wording it asked
+        # to change, so the amendment it requested answers its objection: it is DISCHARGED, not
+        # read as advice against the new wording.
+        requester = str(latest.get("requesting_seat") or "").strip()
+
+        def discharged(s: dict) -> bool:
+            return bool(requester and s.get("carried_from")
+                        and str(s.get("seat") or "").strip() == requester)
+
         objections = [{"seat": s.get("seat"), "achievable": s.get("achievable"),
                        "one_increment": s.get("one_increment"), "note": s.get("note", "")}
                       for s in seats
-                      if verdict_polarity(s.get("achievable")) == "no"]
+                      if verdict_polarity(s.get("achievable")) == "no" and not discharged(s)]
+        answered = [s.get("seat") for s in seats
+                    if verdict_polarity(s.get("achievable")) == "no" and discharged(s)]
         themed = [{"seat": s.get("seat"), "one_increment": s.get("one_increment"),
                    "note": s.get("note", "")}
                   for s in seats
@@ -3085,14 +3108,14 @@ def goal_review_status(repo_root: Path | str, sprint_goal: str | None,
                 "needs_reconsult": needs_reconsult,
                 # `themed` is ADVICE the operator reads, never a gate: it is surfaced so that
                 # separating the two answers loses no information.
-                "themed": themed,
+                "themed": themed, "discharged": answered,
                 "objected": bool(objections), "objections": objections, "reason": None}
-    if not base["available_seats"]:
-        # The gate demands a review of seats that EXIST; this project has none of its own.
-        return {**base, "reason": "this project declares no review seats of its own "
-                                  "(sdlc-studio/personas/seats/), so no seat can review it"}
     if not seats:
-        return {**base, "reason": "no seat verdict is recorded for any goal"}
+        who = (f"the shipped {', '.join(available)} seats review it, as this project declares "
+               f"no review seats of its own (sdlc-studio/personas/seats/)" if shipped
+               else f"its seats are {', '.join(available)}")
+        return {**base, "reason": f"no seat verdict is recorded for any goal - {who} "
+                                  f"(`sprint.py goal-review record`)"}
     return {**base, "reviewed_goal": latest.get("goal"),
             "reason": f"the recorded review is of a different goal ({latest.get('goal')!r}), "
                       f"so it says nothing about this one"}
@@ -3655,6 +3678,9 @@ def _render_goal_review(data: dict) -> None:
             print(f"    advice from {o.get('seat')}: judged the goal NOT achievable"
                   + (f" - {o['note']}" if o.get("note") else "")
                   + " (advice for the operator approving this plan; the plan is not refused)")
+        for seat in review.get("discharged") or []:
+            print(f"    {seat}: its objection to the prior wording is answered by the amendment "
+                  f"it requested")
         themed = review.get("themed") or []
         if themed and not review.get("objected"):
             # Surfaced as ADVICE so separating it from achievability loses no information: the
@@ -5817,7 +5843,8 @@ def _print_test_strategy(args, data) -> None:
     answers, which is the class EP0071 spent a sprint repairing.
     """
     root = getattr(args, "root", ".")
-    stale = tsd_staleness(root)
+    # A TSD the operator chose not to write has no staleness to report.
+    stale = {"known": True} if tsd_declined(root) else tsd_staleness(root)
     if stale.get("stale"):
         print(f"  test strategy: the TSD is STALE - {stale['why']}. The areas below are derived "
               f"from a document the code has moved past; re-read it before trusting them.",
@@ -10802,7 +10829,8 @@ def cmd_goal_review(args) -> int:
     # Report each answer as the answer it actually is. Saying "judged it NOT achievable" over a
     # seat that judged it achievable is a false statement about a recorded verdict, and it is the
     # sentence the operator reads when deciding whether to override.
-    objected = [s["seat"] for s in seats if verdict_polarity(s.get("achievable")) == "no"]
+    objected = [s["seat"] for s in seats if verdict_polarity(s.get("achievable")) == "no"
+                and s not in carried]
     themed_seats = [s["seat"] for s in seats
                     if verdict_polarity(s.get("one_increment")) == "no"]
     tail = (f" - {len(objected)} seat(s) judged it NOT achievable ({', '.join(objected)}); "
@@ -11578,6 +11606,21 @@ def tsd_levels(root) -> dict[str, set[str]]:
     return out
 
 
+def tsd_declined(root) -> bool:
+    """Whether the operator skipped the TSD stage at `init guided` and no TSD has been written
+    since: a choice init recorded, not a document that went missing."""
+    if (Path(root) / "sdlc-studio" / "tsd.md").is_file():
+        return False
+    try:
+        import init  # noqa: PLC0415 - the onboarding checkpoint's own reader
+        state = init.read_onboarding(root) or {}
+    except Exception as exc:  # noqa: BLE001 - a checkpoint read must never break planning
+        sdlc_md.debug("sprint.tsd_declined", exc)
+        return False
+    return any(isinstance(s, dict) and s.get("name") == "tsd" and s.get("status") == "skipped"
+               for s in state.get("stages") or [])
+
+
 def _band_for(title: str) -> str:
     for key, band in TSD_PROOF_BAND.items():
         if title.startswith(key):
@@ -11598,6 +11641,11 @@ def test_strategy(root, batch: list[str]) -> dict:
     # obligations could not be derived still pays for every suite run it triggers.
     execution = execution_policy(root)
     if not levels:
+        if tsd_declined(root):
+            return {"available": False, "declined": True, "areas": [], "units": {},
+                    "gaps": [], "execution": execution,
+                    "why": "the TSD stage was skipped at init, so this project declares no "
+                           "test strategy and no proof obligation is derived from one"}
         return {"available": False, "areas": [], "units": {}, "gaps": [],
                 "execution": execution,
                 "why": "no `## Test Levels` section in sdlc-studio/tsd.md - the strategy could "
@@ -11623,6 +11671,9 @@ def render_test_strategy(strat: dict) -> list[str]:
     """The plan block. A batch that touches NO risk area says so explicitly: an empty section is
     indistinguishable from a lane that did not run, which is the reporting failure this project
     has already had to repair once."""
+    if strat.get("declined"):
+        return [f"  test strategy: none declared - {strat.get('why')}",
+                *render_execution_policy(strat.get("execution") or {})]
     if not strat.get("available"):
         return [f"  test strategy: UNAVAILABLE - {strat.get('why')}",
                 *render_execution_policy(strat.get("execution") or {})]
@@ -11857,7 +11908,12 @@ def execution_policy(root) -> dict:
         over = {"seconds": cost["seconds"], "ceiling": ceiling,
                 "pct": (cost["seconds"] - ceiling) / ceiling * 100.0}
     hook = hook_per_commit_mode(root)
-    if hook["mode"] == "unknown":
+    # No hook installed and no per-commit mode the project declared: the declaration is the
+    # shipped default and nothing was ever set against it, so there is nothing to reconcile.
+    defaulted = sdlc_md.project_override(root, "test_execution.per_commit") is None
+    if hook["mode"] == "unknown" and not hook["read"] and defaulted:
+        divergence = None
+    elif hook["mode"] == "unknown":
         divergence = (f"the policy declares per-commit `{declared['per_commit']}` and the "
                       f"hook could not be read ({hook['why']}), so the two are UNRECONCILED")
     elif hook["mode"] != declared["per_commit"]:
