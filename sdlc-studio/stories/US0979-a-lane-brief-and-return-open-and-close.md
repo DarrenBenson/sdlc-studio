@@ -1,6 +1,6 @@
 # US0979: A lane brief and return open and close the unit's span
 
-> **Status:** Ready
+> **Status:** In Progress
 > **Delivers:** CR0605
 > **Created:** 2026-10-02
 > **Created-by:** sdlc-studio new
