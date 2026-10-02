@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 26 |
+| Open | 27 |
 | In Progress | 0 |
 | Fixed | 729 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **912** |
+| **Total** | **913** |
 
 ## All Bugs
 
@@ -271,6 +271,7 @@
 | [BG0910](BG0910-the-close-pre-flight-s-live-checklist-read.md) | The close pre-flight's live checklist read is unpinned | Open | Low | 2026-10-02 | 2026-10-02 |
 | [BG0911](BG0911-the-goal-verdict-s-note-can-quote-figures.md) | The goal verdict's note can quote figures the filed page contradicts, and the close says nothing | Open | Medium | 2026-10-02 | 2026-10-02 |
 | [BG0912](BG0912-the-close-files-a-report-for-sign-off.md) | The close files a report for sign-off without putting the readable page in front of the operator | Open | Medium | 2026-10-02 | 2026-10-02 |
+| [BG0913](BG0913-each-re-close-moves-the-run-s-window.md) | Each re-close moves the run's window end and token meter, so work after the first close counts as run cost | Open | Medium | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 
