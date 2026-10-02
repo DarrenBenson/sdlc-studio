@@ -182,6 +182,27 @@ class LaneDelegatedTokensTests(unittest.TestCase):
         self.assertIn("US0102", ratio["reason"])
         self.assertNotIn("US0101", ratio["reason"])
 
+    def test_a_briefed_unit_without_a_total_withholds_the_ratio(self) -> None:
+        """US0980 round 1, the reviewer's repro. MUTANT: check only the DELIVERED units, while
+        the forecast sums every live unit, so US0102 - briefed, returned blocked with no total
+        and carried - leaves a ratio over a partial actual (0.64x). Every live unit that was
+        briefed or carries a span must have supplied its builder's total."""
+        ws = self.ws
+        p = ws.root / "sdlc-studio" / "stories" / "US0102-x.md"
+        p.write_text(p.read_text(encoding="utf-8").replace("src/a.py", "src/missing.py"),
+                     encoding="utf-8")                    # US0102's criterion is red
+        ws.spend(5000)
+        ws.deliver("US0101", "--tokens", "250000", "--minutes", "40")
+        rc, out = ws.lane("brief", "--units", "US0102", at=T0)
+        self.assertEqual(0, rc, out)
+        rc, out = ws.lane("return", "--units", "US0102", at=T0 + timedelta(minutes=9))
+        self.assertEqual(1, rc, out)                      # blocked, and no total supplied
+        ratio = ws.tokens_row(ws.page())["est_ratio"]
+        self.assertEqual("NOT MEASURED", ratio["value"], "a ratio over a partial actual")
+        self.assertIn("delegated spend not measured for every unit", ratio["reason"])
+        self.assertIn("US0102", ratio["reason"])
+        self.assertNotIn("US0101", ratio["reason"])
+
     def test_agent_minutes_take_precedence_over_the_lane_span(self) -> None:
         """AC3 (D0298). MUTANTS: sum the agent's minutes and the span (47); take the span over
         the agent (7); drop the label, so 40 reads as a span. Control: US0102, returned with no
@@ -214,9 +235,15 @@ class LaneDelegatedTokensTests(unittest.TestCase):
         self.assertEqual(0, rc, out)
         self.assertIn("WARNING", out)
         self.assertEqual([], rs.delegated_records(rs.read(ws.root)))
-        rc, out = ws.lane("return", "--units", "US0101", "--tokens", "0",
-                          at=T0 + timedelta(minutes=7))
-        self.assertEqual(2, rc, "a zero total is a malformed value, refused by the parser")
+        for flag, value in (("--tokens", "0"), ("--tokens", "-5"), ("--minutes", "0"),
+                            ("--minutes", "-3"), ("--minutes", "nan")):
+            with self.subTest(flag=flag, value=value):
+                totals = (("--tokens", "9000") if flag == "--minutes" else ()) + (flag, value)
+                rc, out = ws.lane("return", "--units", "US0101", *totals,
+                                  at=T0 + timedelta(minutes=7))
+                self.assertEqual(2, rc, f"{flag} {value} is a malformed value (D0302): {out}")
+                self.assertIn(f"argument {flag}", out)
+        self.assertEqual([], rs.delegated_records(rs.read(ws.root)))
 
     def test_a_page_filed_before_the_rule_re_derives_its_ratio(self) -> None:
         """RPT0006-RPT0014 were signed with a ratio over a partial actual. MUTANTS: apply the

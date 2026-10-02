@@ -3477,19 +3477,22 @@ def _run_tokens_actual(state: dict, run_tokens: dict) -> tuple:
     return tokens + delegated, agents
 
 
-def _tokens_ratio_withheld(state: dict, delivered: list[dict]) -> str | None:
+def _tokens_ratio_withheld(state: dict, live: list[dict]) -> str | None:
     """Why the Estimates tokens ratio is withheld, or None when it can be stated.
 
-    The forecast covers every unit's work and the main-thread meter cannot see a delegated
-    agent's spend, so the actual is whole only when every delivered unit's agents supplied
-    theirs. Over a partial actual the ratio understates the run - RPT0014's 0.2x - and a ratio
-    over the units that did supply would compare a part of the actual with all of the forecast
-    or a part of the forecast with a meter shared by every unit. Neither is stated."""
+    The forecast sums every live unit (planned or added, not dropped), and the main-thread
+    meter cannot see a delegated agent's spend, so the actual is whole only when every live unit
+    that did work supplied its agents' totals: each one delivered or carrying a span, which a
+    lane brief opens, so a unit briefed and returned blocked or never returned is one of them. A
+    live unit nobody started spent nothing, so it owes none. Over a partial actual the ratio
+    understates the run - RPT0014's 0.2x - and a ratio over the units that did supply would
+    compare a part of the actual with all of the forecast. Neither is stated."""
     howto = "each lane records its builder's total with `sprint lane return --tokens N`"
     if not run_state.delegated_total(state):
         return (f"withheld - no delegated spend was supplied, so the actual is the main-thread "
                 f"meter alone, which cannot see a delegated agent's spend; {howto}")
-    missing = [u["id"] for u in delivered if not u["agent_tokens"]]
+    missing = [u["id"] for u in live
+               if (u["delivered"] or u["spanned"]) and not u["agent_tokens"]]
     if missing:
         return (f"withheld - delegated spend not measured for every unit: "
                 f"{', '.join(missing)} supplied no agent total, so the actual undercounts the "
@@ -3541,7 +3544,7 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
         state_rel, "no token forecast is recorded",
         run_tokens.get("reason") or ("the run meter read no spend between its readings"
                                      if tokens == 0 else "no token actual was recorded"),
-        withheld=_tokens_ratio_withheld(state, delivered) if ratio_rule else None))
+        withheld=_tokens_ratio_withheld(state, live) if ratio_rule else None))
 
     def cell(key, value, why, label=None):
         if _num(value):
