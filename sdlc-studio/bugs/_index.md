@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 24 |
+| Open | 26 |
 | In Progress | 5 |
 | Fixed | 724 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **910** |
+| **Total** | **912** |
 
 ## All Bugs
 
@@ -269,6 +269,8 @@
 | [BG0908](BG0908-close-steps-hand-over-their-status-and-prose.md) | Close steps hand over their status and prose lines as known issues | Open | Low | 2026-10-02 | 2026-10-02 |
 | [BG0909](BG0909-bg0895-did-not-converge-in-review-round-2.md) | BG0895 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-02 | 2026-10-02 |
 | [BG0910](BG0910-the-close-pre-flight-s-live-checklist-read.md) | The close pre-flight's live checklist read is unpinned | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0911](BG0911-the-goal-verdict-s-note-can-quote-figures.md) | The goal verdict's note can quote figures the filed page contradicts, and the close says nothing | Open | Medium | 2026-10-02 | 2026-10-02 |
+| [BG0912](BG0912-the-close-files-a-report-for-sign-off.md) | The close files a report for sign-off without putting the readable page in front of the operator | Open | Medium | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 

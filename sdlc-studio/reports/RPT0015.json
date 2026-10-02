@@ -3,8 +3,8 @@
   "report_id": "RPT0015",
   "run_id": "RUN-01M3Y7DP",
   "retro_id": "RETRO0130",
-  "generated_at": "2026-10-02T15:10:39Z",
-  "window_end": "2026-10-02T15:10:39Z",
+  "generated_at": "2026-10-02T16:44:56Z",
+  "window_end": "2026-10-02T16:44:56Z",
   "signature": null,
   "sections": [
     {
@@ -23,7 +23,7 @@
         },
         "goal_verdict_note": {
           "key": "goal_verdict_note",
-          "value": "8 of 8 units approved by an independent QA seat (BG0895 discharged by its rejecting reviewer after a carry), every batch unit verifies green. This run's own page measures what RPT0014 could not: every unit carries an agent total from its lane return (builder) and the run carries the reviewers' spend, so tokens read 1.87M against a 1.28M forecast (1.46x) where RPT0014 printed 0.2x; a discharged carry counts as delivered (BG0890); time to restore pairs by creation and reads no restore needed for a run with no red (BG0891); the header names its window end (BG0893); a close gap holds only failures (BG0894); a batch finding no longer moves a signed page and the checklist agrees with the page on a re-close (BG0895); velocity rows keep their model (BG0892). Disclosed, out of scope at the goal review: the minutes ratio compares wall-clock with active work (BG0898) and the minutes rate still falls back to a July row (BG0907).",
+          "value": "8 of 8 units approved by an independent QA seat (BG0895 discharged by its rejecting reviewer after a carry), every batch unit verifies green. This run's own page measures what RPT0014 could not: every unit carries an agent total from its lane return (builder) and the run carries the reviewers' spend, so tokens read 2.17M against a 1.28M forecast (1.69x), 1.53M of it the builders and reviewers, where RPT0014 printed 0.2x; a discharged carry counts as delivered (BG0890); time to restore pairs by creation and reads no restore needed for a run with no red (BG0891); the header names its window end (BG0893); a close gap holds only failures (BG0894); a batch finding no longer moves a signed page and the checklist agrees with the page on a re-close (BG0895); velocity rows keep their model (BG0892). Disclosed, out of scope at the goal review: the minutes ratio compares wall-clock with active work (BG0898) and the minutes rate still falls back to a July row (BG0907).",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "run_id": {
@@ -38,17 +38,17 @@
         },
         "ended_at": {
           "key": "ended_at",
-          "value": "2026-10-02T15:10:39Z",
+          "value": "2026-10-02T16:44:56Z",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "duration_hours": {
           "key": "duration_hours",
-          "value": "3.4h",
+          "value": "4.9h",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "verified_sha": {
           "key": "verified_sha",
-          "value": "bce6f654e259cd2a55e6b55422045d39aa7df3f2",
+          "value": "e04cf69d658e5a2088ad357e5a761d8ffdbc644b",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -100,12 +100,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 202.1,
+            "value": 296.4,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "1.97x",
+            "value": "2.89x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -127,12 +127,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 2170461,
+            "value": 4920336,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "1.69x",
+            "value": "3.84x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -915,7 +915,7 @@
         },
         "tokens_total": {
           "key": "tokens_total",
-          "value": 2170461,
+          "value": 4920336,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "token_coverage": {
@@ -938,7 +938,7 @@
           },
           "model_tokens": {
             "key": "model_tokens",
-            "value": 642284,
+            "value": 3392159,
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -958,7 +958,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": 3,
+            "value": 4,
             "source": "gh run list"
           },
           "dora_mapping": {
@@ -973,7 +973,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "forge runs 37020451101/37016645468/37003594324 - 3 push-triggered run(s) on main in the run window",
+            "value": "forge runs 37025767700/37020451101/37016645468/37003594324 - 4 push-triggered run(s) on main in the run window",
             "source": "gh run list"
           }
         },
@@ -985,7 +985,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "3h 13m",
+            "value": "4h 49m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -1000,7 +1000,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 34 commit(s)",
+            "value": "git history - first to last of 36 commit(s)",
             "source": "git log"
           }
         },
@@ -1027,7 +1027,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "forge runs 37020451101/37016645468/37003594324 - 3 deployment(s); 0 failed on none",
+            "value": "forge runs 37025767700/37020451101/37016645468/37003594324 - 4 deployment(s); 0 failed on none",
             "source": "gh run list"
           }
         },
@@ -1054,7 +1054,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "forge runs 37020451101/37016645468/37003594324 - no push-triggered run on main concluded failure",
+            "value": "forge runs 37025767700/37020451101/37016645468/37003594324 - no push-triggered run on main concluded failure",
             "source": "gh run list"
           }
         }
@@ -1488,5 +1488,5 @@
   "restore_pairing": "next-success-after-failure",
   "discharged_carry": "delivered",
   "findings_scan": "delivered-batch-units-excluded",
-  "fingerprint": "2bf8c07d3e6892de"
+  "fingerprint": "b876e218da58edf6"
 }
