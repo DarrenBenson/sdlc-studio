@@ -1,6 +1,6 @@
 # BG0897: The boundary control in test_cli_grammar goes red when the corpus holds no open cross-epic reference, so a seal blocks the push
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py
