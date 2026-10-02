@@ -292,18 +292,25 @@ class UnitActualsTests(unittest.TestCase):
         self.assertIn("cannot be added afterwards", minutes["reason"])
 
     def test_minutes_from_some_of_a_unit_s_agents_are_not_its_minutes(self) -> None:
-        """MUTANT: sum minutes over the records that carry them while tokens sum every record,
-        so 12 minutes from one agent of two reads as the unit's time beside both agents'
-        tokens."""
+        """MUTANT: sum minutes over the records that carry them, unlabelled, while tokens sum
+        every record, so 12 minutes from one agent of two reads as the whole unit's time beside
+        both agents' tokens. Since BG0901 the supplied minutes count, labelled with how many of
+        the unit's agents they cover; a page filed before that rule (no `AGENT_MINUTES_RULE`
+        mark) still reads them as NOT MEASURED and says why."""
         self._tagged_run()
         self._record("--delegated-tokens", "40000", "--delegated-unit", "US0001",
                      "--delegated-minutes", "12")
         self._record("--delegated-tokens", "2500", "--delegated-unit", "US0001")
         row = self._unit_rows(self._report()[0])["US0001"]
         self.assertEqual(42_500, row["eu_tokens"]["value"])
-        self.assertEqual("NOT MEASURED", row["eu_minutes"]["value"])
+        self.assertEqual((12.0, "agent minutes (1 of 2 agents)"),
+                         (row["eu_minutes"]["value"], row["eu_minutes"].get("label")))
+        sr = importlib.import_module("sprint_report")
+        before = self._unit_rows(sr.build_report(self.ws.root, RETRO,
+                                                 agent_minutes_rule=False))["US0001"]
+        self.assertEqual("NOT MEASURED", before["eu_minutes"]["value"])
         self.assertIn("1 of its 2 tagged agent(s) reported minutes (12.0 between them)",
-                      row["eu_minutes"]["reason"])
+                      before["eu_minutes"]["reason"])
 
     def test_minutes_must_be_finite(self) -> None:
         """MUTANT: a positive-number check alone, which passes `inf` and `nan` into the run
