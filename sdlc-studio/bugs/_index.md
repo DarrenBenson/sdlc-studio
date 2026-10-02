@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 19 |
+| Open | 20 |
 | In Progress | 0 |
 | Fixed | 722 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **898** |
+| **Total** | **899** |
 
 ## All Bugs
 
@@ -257,6 +257,7 @@
 | [BG0896](BG0896-migrate-s-retired-surface-scan-reads-prose-such.md) | migrate's retired-surface scan reads prose such as 'mutation audit' as a retired command because .py is optional | Open | Low | 2026-10-02 | 2026-10-02 |
 | [BG0897](BG0897-the-boundary-control-in-test-cli-grammar-goes.md) | The boundary control in test_cli_grammar goes red when the corpus holds no open cross-epic reference, so a seal blocks the push | Fixed | High | 2026-10-02 | 2026-10-02 |
 | [BG0898](BG0898-the-report-s-minutes-row-divides-a-wall.md) | The report's Minutes row divides a wall-clock span by an active-work forecast | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0899](BG0899-a-lane-brief-reopens-the-span-of-a.md) | A lane brief reopens the span of a unit already at a terminal status | Open | Low | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 
