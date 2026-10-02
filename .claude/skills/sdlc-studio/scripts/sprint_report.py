@@ -2996,7 +2996,26 @@ DEPLOY_MAPPING = ("a push to main IS the deployment in this trunk-based reposito
 _NO_FORGE = "no forge run data"
 
 
-def _dora_rows(root: Path, start, end, runs: list[dict], ci_source: str) -> list[dict]:
+def _restore_pair(pushes: list[dict], failed: list[dict]):
+    """`(red, green)`: the window's first failure in creation order and the first success
+    created after it that concluded after it - or `(red, None)` when none did, `(None, None)`
+    with no failure. `gh run list` answers newest first, so the list's order is not time: walked
+    as given, RPT0014 paired its 16:10 failure with the 12:22 success and printed -4h 20m."""
+    def created(r):
+        return _at(r.get("createdAt"))
+    ordered = sorted((r for r in pushes if created(r)), key=created)
+    red = next((r for r in ordered if r in failed), None)
+    red_end = _at(red.get("updatedAt")) if red else None
+    if red is None or red_end is None:
+        return red, None
+    greens = [r for r in ordered
+              if created(r) > created(red) and str(r.get("conclusion") or "").lower() == "success"
+              and _at(r.get("updatedAt")) and _at(r.get("updatedAt")) >= red_end]
+    return red, min(greens, key=lambda r: _at(r.get("updatedAt")), default=None)
+
+
+def _dora_rows(root: Path, start, end, runs: list[dict], ci_source: str,
+               restore_rule: bool = True) -> list[dict]:
     """The four keys, each with its value, this project's mapping, the elite band and a source.
 
     Deployment frequency and change failure rate count PUSH-TRIGGERED runs alone. Counting
@@ -3092,17 +3111,35 @@ def _dora_rows(root: Path, start, end, runs: list[dict], ci_source: str) -> list
 
     restore_map = ("the span from a push-triggered run concluding failure on main to the next "
                    "push-triggered run concluding success")
-    restored = None
-    for i, run in enumerate(pushes):
-        if run in failed:
-            for later in pushes[i + 1:]:
-                if str(later.get("conclusion") or "").lower() == "success":
-                    red, green = _at(run.get("updatedAt")), _at(later.get("updatedAt"))
-                    if red and green:
-                        restored = (_hms((green - red).total_seconds()), run, later)
-                    break
-            break
-    if restored:
+    restored, unrestored = None, None
+    if restore_rule:
+        red, green = _restore_pair(pushes, failed)
+        if green is not None:
+            restored = (_hms((_at(green.get("updatedAt")) - _at(red.get("updatedAt")))
+                             .total_seconds()), red, green)
+        elif red is not None:
+            unrestored = red
+    else:
+        # A page filed before BG0891 (no `RESTORE_RULE` mark) re-derives as it was signed.
+        for i, run in enumerate(pushes):
+            if run in failed:
+                for later in pushes[i + 1:]:
+                    if str(later.get("conclusion") or "").lower() == "success":
+                        red, green = _at(run.get("updatedAt")), _at(later.get("updatedAt"))
+                        if red and green:
+                            restored = (_hms((green - red).total_seconds()), run, later)
+                        break
+                break
+    if unrestored is not None:
+        rows.append({"dora_key": fig("dora_key", "Time to restore", ci_source),
+                     "dora_value": fig("dora_value", "not restored", ci_source),
+                     "dora_mapping": fig("dora_mapping", restore_map, ci_source),
+                     "dora_band": fig("dora_band", "under an hour", ci_source),
+                     "dora_source": fig("dora_source",
+                                        f"forge runs {unrestored.get('databaseId')} - red on "
+                                        f"main, and no push-triggered run concluded success "
+                                        f"after it in the run window", ci_source)})
+    elif restored:
         span, red, green = restored
         rows.append({"dora_key": fig("dora_key", "Time to restore", ci_source),
                      "dora_value": fig("dora_value", span, ci_source),
@@ -3714,8 +3751,9 @@ def _rulings_section(state: dict, state_rel: str) -> dict:
                                 sum(1 for r in recs if r.get("by") == "operator"), state_rel)})
 
 
-def _dora_section(root: Path, start, end, runs: list[dict], ci_source: str) -> dict:
-    rows = _dora_rows(root, start, end, runs, ci_source)
+def _dora_section(root: Path, start, end, runs: list[dict], ci_source: str,
+                  restore_rule: bool = True) -> dict:
+    rows = _dora_rows(root, start, end, runs, ci_source, restore_rule)
     if all(r["dora_value"]["value"] == NOT_MEASURED for r in rows):
         return _section("dora", "DORA", not_measured=unmeasured(
             "dora", ci_source,
@@ -3740,11 +3778,17 @@ PORTABLE_PATHS = "record_paths"
 TOKEN_RATIO_RULE = "token_ratio"
 TOKEN_RATIO_EVERY_UNIT = "every-delivered-unit-delegated"
 
+#: The envelope mark of a page whose time to restore pairs a failure with the next success in
+#: creation order (`_restore_pair`, BG0891). A page filed before it re-derives as signed.
+RESTORE_RULE = "restore_pairing"
+RESTORE_NEXT_SUCCESS = "next-success-after-failure"
+
 
 def build_report(root, retro_id: str, as_of: str | None = None,
                  window_end: str | None = None, run_id: str | None = None,
                  filed: dict | None = None, portable: bool = True,
-                 record: dict | None = None, ratio_rule: bool = True) -> dict:
+                 record: dict | None = None, ratio_rule: bool = True,
+                 restore_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -3759,8 +3803,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     never re-read (`_page_readings`). `portable` reads the run record through
     `run_state.portable` and marks the page so (`PORTABLE_PATHS`); a re-derivation passes what
     the page it re-derives carries. `record` is `_run_state_for`'s. `ratio_rule` withholds the
-    tokens ratio over a partial delegated actual and marks the page so (`TOKEN_RATIO_RULE`); a
-    re-derivation passes what the page carries.
+    tokens ratio over a partial delegated actual and marks the page so (`TOKEN_RATIO_RULE`), and
+    `restore_rule` pairs time to restore in time order (`RESTORE_RULE`); a re-derivation passes
+    what the page carries.
     """
     root = Path(root)
     state, state_rel = _run_state_for(root, run_id, record)
@@ -3832,7 +3877,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                               rulings=_retro_rulings(root, retro_id)),
         _signoff_section(state_rel),
         _cost_section(state, state_rel, tokens),
-        _dora_section(root, start, end, *_ci_runs(root, state, state_rel, run_id)),
+        _dora_section(root, start, end, *_ci_runs(root, state, state_rel, run_id),
+                      restore_rule=restore_rule),
         _calibration_section(state, state_rel),
         _rulings_section(state, state_rel),
         # Bounded at both ends by the run's own window, like DORA, so a decision taken before
@@ -3852,7 +3898,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               # change the fingerprint it protects.
               "window_end": _iso(end), "signature": None, "sections": sections,
               **({PORTABLE_PATHS: "portable"} if portable else {}),
-              **({TOKEN_RATIO_RULE: TOKEN_RATIO_EVERY_UNIT} if ratio_rule else {})}
+              **({TOKEN_RATIO_RULE: TOKEN_RATIO_EVERY_UNIT} if ratio_rule else {}),
+              **({RESTORE_RULE: RESTORE_NEXT_SUCCESS} if restore_rule else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -4891,7 +4938,8 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          window_end=_legacy_window_end(root, basis, record),
                          run_id=basis.get("run_id"), filed=anchor,
                          portable=basis.get(PORTABLE_PATHS) == "portable", record=record,
-                         ratio_rule=basis.get(TOKEN_RATIO_RULE) == TOKEN_RATIO_EVERY_UNIT)
+                         ratio_rule=basis.get(TOKEN_RATIO_RULE) == TOKEN_RATIO_EVERY_UNIT,
+                         restore_rule=basis.get(RESTORE_RULE) == RESTORE_NEXT_SUCCESS)
     was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(basis)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)
