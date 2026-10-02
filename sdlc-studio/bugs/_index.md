@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 21 |
+| Open | 22 |
 | In Progress | 6 |
 | Fixed | 722 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **906** |
+| **Total** | **907** |
 
 ## All Bugs
 
@@ -265,6 +265,7 @@
 | [BG0904](BG0904-dora-counts-a-cancelled-or-skipped-ci-run.md) | DORA counts a cancelled or skipped CI run on main as a failed deployment | Open | Low | 2026-10-02 | 2026-10-02 |
 | [BG0905](BG0905-the-tokens-ratio-withheld-rule-s-delivered-unit.md) | The tokens-ratio withheld rule's delivered-unit half is untested, and its help text says briefed where the code counts any span | Open | Low | 2026-10-02 | 2026-10-02 |
 | [BG0906](BG0906-two-of-d0304-s-time-to-restore-rules.md) | Two of D0304's time-to-restore rules are unpinned: the FIRST success restores, and an in-progress run ends no streak | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0907](BG0907-calibration-s-minutes-per-point-falls-back-to.md) | Calibration's minutes per point falls back to a July row because velocity rows carry no wall time | Open | Low | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 
