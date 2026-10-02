@@ -1,6 +1,6 @@
 # BG0892: Velocity rows have recorded no model since RETRO0121, so calibration falls back to a July row of another model
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_velocity_row_model.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
