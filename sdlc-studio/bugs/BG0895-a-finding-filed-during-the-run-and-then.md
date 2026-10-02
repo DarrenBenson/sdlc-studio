@@ -1,6 +1,6 @@
 # BG0895: A finding filed during the run and then added to the batch invalidates the signed page when sign moves it terminal
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_seal_finding_in_batch.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py

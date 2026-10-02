@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 22 |
-| In Progress | 5 |
+| Open | 21 |
+| In Progress | 6 |
 | Fixed | 722 |
 | Verified | 0 |
 | Closed | 87 |
@@ -253,7 +253,7 @@
 | [BG0892](BG0892-velocity-rows-have-recorded-no-model-since-retro0126.md) | Velocity rows have recorded no model since RETRO0121, so calibration falls back to a July row of another model | In Progress | Medium | 2026-10-02 | 2026-10-02 |
 | [BG0893](BG0893-a-closed-and-signed-report-s-header-says.md) | A closed and signed report's header says the run window ends 'to open' | In Progress | Low | 2026-10-02 | 2026-10-02 |
 | [BG0894](BG0894-the-close-carries-a-lessons-status-line-as.md) | The close carries a lessons status line as a known issue ('lessons: 0 hit(s) from cited REJECTs') | In Progress | Low | 2026-10-02 | 2026-10-02 |
-| [BG0895](BG0895-a-finding-filed-during-the-run-and-then.md) | A finding filed during the run and then added to the batch invalidates the signed page when sign moves it terminal | Open | Medium | 2026-10-02 | 2026-10-02 |
+| [BG0895](BG0895-a-finding-filed-during-the-run-and-then.md) | A finding filed during the run and then added to the batch invalidates the signed page when sign moves it terminal | In Progress | Medium | 2026-10-02 | 2026-10-02 |
 | [BG0896](BG0896-migrate-s-retired-surface-scan-reads-prose-such.md) | migrate's retired-surface scan reads prose such as 'mutation audit' as a retired command because .py is optional | Open | Low | 2026-10-02 | 2026-10-02 |
 | [BG0897](BG0897-the-boundary-control-in-test-cli-grammar-goes.md) | The boundary control in test_cli_grammar goes red when the corpus holds no open cross-epic reference, so a seal blocks the push | Fixed | High | 2026-10-02 | 2026-10-02 |
 | [BG0898](BG0898-the-report-s-minutes-row-divides-a-wall.md) | The report's Minutes row divides a wall-clock span by an active-work forecast | Open | Low | 2026-10-02 | 2026-10-02 |
