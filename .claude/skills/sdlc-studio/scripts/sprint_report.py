@@ -4035,6 +4035,11 @@ AGENT_MINUTES_ANY = "any-agent-supplied"
 CANCELLED_RULE = "dora_failures"
 CANCELLED_NOT_FAILED = "failure-or-timed-out-only"
 
+#: The envelope bound of a re-closed page's open findings, waivers and DORA, carried only when it
+#: differs from `window_end`: a re-close keeps the first close's window for the cost figures, but
+#: a finding filed since is still open and the close's checklist still asks for its ruling.
+FINDINGS_END = "findings_window_end"
+
 
 def build_report(root, retro_id: str, as_of: str | None = None,
                  window_end: str | None = None, run_id: str | None = None,
@@ -4043,7 +4048,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  restore_rule: bool = True, discharge_rule: bool = True,
                  findings_rule: bool = True, minutes_rule: bool = True,
                  delegated_rule: bool = True, agent_minutes_rule: bool = True,
-                 cancelled_rule: bool = True) -> dict:
+                 cancelled_rule: bool = True, findings_end: str | None = None) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -4066,7 +4071,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     delegated totals over a meter that read 0 (`DELEGATED_RULE`), and `agent_minutes_rule` reads
     a unit's supplied agent minutes when any agent supplied them (`AGENT_MINUTES_RULE`), and
     `cancelled_rule` reads a cancelled or skipped CI run as no failed deployment
-    (`CANCELLED_RULE`); a re-derivation passes what the page carries.
+    (`CANCELLED_RULE`); a re-derivation passes what the page carries. `findings_end` bounds the
+    open findings, waivers and DORA when a re-close moves them past `window_end` (`FINDINGS_END`).
     """
     root = Path(root)
     state, state_rel = _run_state_for(root, run_id, record)
@@ -4076,6 +4082,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     start = _at(state.get("started_at"))
     end = (_at(window_end) if window_end else
            (_at(state.get("ended_at")) or _at(generated_at)))
+    f_end = _at(findings_end) if findings_end else end
     goal = state.get("sprint_goal") or state.get("goal")
     if not goal or not str(goal).strip():
         raise ReportError(
@@ -4139,17 +4146,17 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                            delegated_rule=delegated_rule),
         _delivered_section(root, state_rel, ledger),
         _known_issues_section(root, state, state_rel, ledger,
-                              state.get("started_at"), _iso(end), readings["findings"],
+                              state.get("started_at"), _iso(f_end), readings["findings"],
                               rulings=_retro_rulings(root, retro_id), batch_rule=findings_rule),
         _signoff_section(state_rel),
         _cost_section(state, state_rel, tokens),
-        _dora_section(root, start, end, *_ci_runs(root, state, state_rel, run_id),
+        _dora_section(root, start, f_end, *_ci_runs(root, state, state_rel, run_id),
                       restore_rule=restore_rule, cancelled_rule=cancelled_rule),
         _calibration_section(state, state_rel),
         _rulings_section(state, state_rel),
         # Bounded at both ends by the run's own window, like DORA, so a decision taken before
         # or after the run cannot move a signed page.
-        _waivers_section(root, _iso(end), _iso(start), readings["waivers"],
+        _waivers_section(root, _iso(f_end), _iso(start), readings["waivers"],
                          units=_units_ever_in_batch(state)),
         _lane_yield_section(root, state, start, end),
         _lessons_section(root, state.get("run_id")),
@@ -4163,6 +4170,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               # An envelope field, never a figure: in the digest, recording the bound would
               # change the fingerprint it protects.
               "window_end": _iso(end), "signature": None, "sections": sections,
+              **({FINDINGS_END: _iso(f_end)} if _iso(f_end) != _iso(end) else {}),
               **({PORTABLE_PATHS: "portable"} if portable else {}),
               **({TOKEN_RATIO_RULE: TOKEN_RATIO_EVERY_UNIT} if ratio_rule else {}),
               **({RESTORE_RULE: RESTORE_NEXT_SUCCESS} if restore_rule else {}),
@@ -5206,8 +5214,9 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
     # against a wider one: without it every commit made after the report - including the commit
     # that files it - entered the fresh figures and nothing else had to change for INVALIDATED
     # to appear. The run is the page's own, archived once the next run opens.
+    bound = _legacy_window_end(root, basis, record)
     fresh = build_report(root, basis.get("retro_id"), as_of=basis.get("generated_at"),
-                         window_end=_legacy_window_end(root, basis, record),
+                         window_end=bound, findings_end=basis.get(FINDINGS_END) or bound,
                          run_id=basis.get("run_id"), filed=anchor,
                          portable=basis.get(PORTABLE_PATHS) == "portable", record=record,
                          ratio_rule=basis.get(TOKEN_RATIO_RULE) == TOKEN_RATIO_EVERY_UNIT,

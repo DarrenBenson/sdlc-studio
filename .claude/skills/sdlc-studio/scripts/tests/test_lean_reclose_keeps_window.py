@@ -81,6 +81,26 @@ class RecloseKeepsWindowTests(unittest.TestCase):
         self.assertEqual(T, again["window_end"])
         self.assertEqual(4000, self.main_thread(again))
 
+    def test_a_finding_filed_between_the_closes_is_on_the_re_filed_page(self) -> None:
+        """D0317: only the cost figures keep the first close's window. A High bug raised at 06:30,
+        between a close at 06:00 and a re-close at 07:00, is still open and the close's checklist
+        asks for its ruling, so the re-filed page lists it while its cost still reads as at the
+        first close. MUTANT: bound the open findings by the first close's window end too."""
+        self.close_at(T)
+        self.spend(9000)
+        bugs = self.root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True, exist_ok=True)
+        (bugs / "BG0999-between.md").write_text(
+            "# BG0999: raised between the closes\n\n> **Status:** Open\n> **Severity:** High\n"
+            "> **Raised-in-batch:** RUN-LEAN0001 close, 2026-09-23T06:30:00Z\n",
+            encoding="utf-8")
+        again = self.close_at(LATER)
+        sec = next(s for s in again["sections"] if s["key"] == "known_issues")
+        listed = {lean._live("sprint").sdlc_md.norm_id(r["issue_id"]["value"])
+                  for r in sec.get("rows") or []}
+        self.assertIn("BG0999", listed)
+        self.assertEqual((T, 4000), (again["window_end"], self.main_thread(again)))
+
     def test_a_close_that_filed_no_page_does_not_fix_the_window(self) -> None:
         """The control. MUTANT: record the window on a close whose page was refused, so the
         first close that does file one is measured to a moment no page was ever filed at."""

@@ -9296,9 +9296,10 @@ def _file_the_report(root, retro_id):
     # no caller buys you. `stamp_tokens` was shipped with its only caller a test, and this is
     # the lane that was missing. Taken BEFORE the report is derived, so the figure the page
     # states is the one the run actually spent up to the moment it was written.
-    # A RE-CLOSE takes no reading and re-derives against the window the first filed page ended
-    # at: the work done after that close is paperwork about the run, not the run's cost, so
-    # only artefact changes move a re-filed page.
+    # A RE-CLOSE takes no reading and re-derives its cost figures against the window the first
+    # filed page ended at: the work done after that close is paperwork about the run, not the
+    # run's cost. Its open findings, waivers and DORA run to the re-close, as the close's
+    # checklist does, so a finding filed since is on the page (`FINDINGS_END`).
     first_end = (run_state.read(root) or {}).get(REPORT_WINDOW_END)
     try:
         if not first_end:
@@ -9309,7 +9310,9 @@ def _file_the_report(root, retro_id):
     except Exception as exc:               # noqa: BLE001 - an unreadable meter is not a failed close
         sdlc_md.debug("sprint.file_the_report.stamp", exc)
     try:
-        report = sprint_report.build_report(str(root), retro_id, window_end=first_end)
+        now = sdlc_md.now_iso8601() if first_end else None
+        report = sprint_report.build_report(str(root), retro_id, as_of=now,
+                                            window_end=first_end, findings_end=now)
         report_id = sprint_report.file_report(str(root), report)
     except sprint_report.ReportError as exc:
         # The composer refuses a run it cannot report honestly - no goal, no run record, a
