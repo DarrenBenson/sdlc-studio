@@ -24,6 +24,7 @@
 - **When** `sprint lane brief --units X` is issued and later `sprint lane return --units X` passes
 - **Then** X's span opens at the brief and closes at the return, the page reports X's minutes measured over that span, and no new flag or refusal is added. Fails on: the current code opens no span, so X reads NOT MEASURED
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_unit_span.py::LaneUnitSpanTests::test_a_lane_brief_and_return_measure_the_unit
+- **Verified:** yes (2026-10-02)
 
 ### AC2: A brief with no return is not measured
 
@@ -31,6 +32,7 @@
 - **When** the page is derived
 - **Then** X's span stays open and X reads NOT MEASURED, never a span closed at the derivation. Fails on: a fix that closes the span at the close instead of the return
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_unit_span.py::LaneUnitSpanTests::test_a_brief_with_no_return_is_not_measured
+- **Verified:** yes (2026-10-02)
 
 ## Revision History
 

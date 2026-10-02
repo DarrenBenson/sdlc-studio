@@ -26,6 +26,7 @@ Render the window end the page derived to (`window_end)`, not the run's open sta
 
 - [ ] **AC1** Given a page derived at the close with `window_end` 2026-10-01T19:54:55Z, when it renders, then the header names that end and never 'to open'. Fails on: the current code prints 'to open'
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_window_header.py::ReportWindowHeaderTests::test_the_header_names_the_window_end
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

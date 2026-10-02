@@ -26,8 +26,10 @@ Carry only the step's failures as known issues, not its status summary.
 
 - [ ] **AC1** Given a close whose retro-extract step fails to file one CR, when the page is derived, then exactly one retro-extract close gap is listed (the failure) and no row holds the 'N hit(s) from cited REJECTs' summary. Fails on: the current code lists both
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close_gap_status_line.py::CloseGapStatusLineTests::test_only_the_failure_is_a_close_gap
+  - **Verified:** yes (2026-10-02)
 - [ ] **AC2** Given a close whose retro-extract step fails, when the page is derived, then that failure is still listed as a close gap (the control beside AC1). Fails on: a fix that drops every retro-extract line
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close_gap_status_line.py::CloseGapStatusLineTests::test_a_real_step_failure_is_still_a_close_gap
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

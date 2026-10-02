@@ -1,6 +1,6 @@
 # BG0895: A finding filed during the run and then added to the batch invalidates the signed page when sign moves it terminal
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_seal_finding_in_batch.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -26,8 +26,10 @@ Exclude batch units from the open-findings-raised-in-the-run scan (they are on t
 
 - [ ] **AC1** Given a run whose batch holds a bug filed during the run, approved and verified but not yet terminal, when the run is closed, signed and checked, then the check reads VALID. Fails on: the current code reads INVALIDATED
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_seal_finding_in_batch.py::SealFindingInBatchTests::test_a_batch_finding_does_not_move_the_signed_page
+  - **Verified:** yes (2026-10-02)
 - [ ] **AC2** Given a bug filed during the run and NOT in the batch, when the run is closed, signed and checked, then it is still listed among the known issues and the check reads VALID. Fails on: a fix that drops every finding raised in the run
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_seal_finding_in_batch.py::SealFindingInBatchTests::test_a_mid_run_finding_outside_the_batch_stays_listed
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

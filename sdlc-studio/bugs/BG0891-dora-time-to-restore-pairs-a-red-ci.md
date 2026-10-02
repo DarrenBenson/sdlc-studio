@@ -26,8 +26,10 @@ Pair each failure with the first success that concludes AFTER it; with none, rep
 
 - [ ] **AC1** Given push-triggered CI runs green at 12:22, red at 16:10 and green at 17:19, when `sprint_report` derives Time to restore, then it reads 1h 9m from the 16:10 failure to the 17:19 success, and never a negative span. Fails on: the current code reads -4h 20m
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_dora_time_to_restore.py::TimeToRestoreTests::test_restore_pairs_a_failure_with_the_next_success
+  - **Verified:** yes (2026-10-02)
 - [ ] **AC2** Given a red push-triggered run with no later success in the window, when sprint_report derives Time to restore, then it reads not restored and never a duration. Fails on: the current code pairs the failure with an earlier success
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_dora_time_to_restore.py::TimeToRestoreTests::test_a_failure_with_no_later_success_reads_not_restored
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

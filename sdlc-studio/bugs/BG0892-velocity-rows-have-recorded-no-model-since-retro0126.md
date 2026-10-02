@@ -26,8 +26,10 @@ Record the run meter's model on the velocity row, as rows up to RETRO0120 did.
 
 - [ ] **AC1** Given a run whose token meter names model claude-opus-5-5, when the close records its velocity row, then the row's model column reads claude-opus-5-5 and the next plan's calibration counts it for that model. Fails on: the current code writes '-'
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_velocity_row_model.py::VelocityRowModelTests::test_the_velocity_row_names_the_run_model
+  - **Verified:** yes (2026-10-02)
 - [ ] **AC2** Given three velocity rows naming claude-opus-5-5, when the next plan prices its batch, then the tokens-per-point calibration rate reads that model's rows and not the fallback to another model's row (the minutes-per-point rate is BG0907). Fails on: the current code's model-less rows (every row since RETRO0121) leave the tokens rate on the fallback
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_velocity_row_model.py::VelocityRowModelTests::test_three_named_rows_end_the_calibration_fallback
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

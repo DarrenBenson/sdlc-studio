@@ -1,6 +1,7 @@
 # BG0909: BG0895 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
+> **Closed with findings in:** BG0895's discharge: its rejecting reviewer's APPROVE answered every finding (RUN-01M3Y7DP critic-verdicts)
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_seal_finding_in_batch.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -29,8 +30,10 @@ Fix each finding above, then deliver BG0895 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC3** BG0895 AC1 still passes: Given a run whose batch holds a bug filed during the run, approved and verified but not yet terminal, when the run is closed, signed and checked, then the check reads VALID. Fails on: the current code reads INVALIDATED
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_seal_finding_in_batch.py::SealFindingInBatchTests::test_a_batch_finding_does_not_move_the_signed_page
+  - **Verified:** yes (2026-10-02)
 - [ ] **AC4** BG0895 AC2 still passes: Given a bug filed during the run and NOT in the batch, when the run is closed, signed and checked, then it is still listed among the known issues and the check reads VALID. Fails on: a fix that drops every finding raised in the run
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_seal_finding_in_batch.py::SealFindingInBatchTests::test_a_mid_run_finding_outside_the_batch_stays_listed
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 
