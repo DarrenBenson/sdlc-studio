@@ -7,13 +7,13 @@
 | Status | Count |
 | --- | --- |
 | Open | 13 |
-| In Progress | 15 |
+| In Progress | 16 |
 | Fixed | 729 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **914** |
+| **Total** | **915** |
 
 ## All Bugs
 
@@ -273,6 +273,7 @@
 | [BG0912](BG0912-the-close-files-a-report-for-sign-off.md) | The close files a report for sign-off without putting the readable page in front of the operator | In Progress | Medium | 2026-10-02 | 2026-10-02 |
 | [BG0913](BG0913-each-re-close-moves-the-run-s-window.md) | Each re-close moves the run's window end and token meter, so work after the first close counts as run cost | In Progress | Medium | 2026-10-02 | 2026-10-02 |
 | [BG0914](BG0914-goal-review-fields-file-help-names-no-seat.md) | goal-review --fields-file help names no seat keys, so a fields document keyed role records nothing under the seat | In Progress | Low | 2026-10-02 | 2026-10-02 |
+| [BG0915](BG0915-retro-validate-and-the-gate-s-unattributed-path.md) | retro-validate and the gate's unattributed path still hand over their header and prose as known issues | In Progress | Low | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 

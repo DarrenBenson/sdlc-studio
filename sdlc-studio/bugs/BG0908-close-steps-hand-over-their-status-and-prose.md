@@ -1,6 +1,7 @@
 # BG0908: Close steps hand over their status and prose lines as known issues
 
 > **Status:** In Progress
+> **Remainder filed as:** BG0915 (D0316)
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_close_gap_lines.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
