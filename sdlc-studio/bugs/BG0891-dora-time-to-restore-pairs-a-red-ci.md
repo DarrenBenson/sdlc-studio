@@ -1,6 +1,6 @@
 # BG0891: DORA time to restore pairs a red CI run with an earlier green one and reports a negative duration
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_dora_time_to_restore.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
