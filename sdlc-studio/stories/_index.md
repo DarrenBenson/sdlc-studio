@@ -10,9 +10,9 @@
 | Draft | 0 |
 | Ready | 1 |
 | Planned | 0 |
-| In Progress | 2 |
+| In Progress | 0 |
 | Review | 0 |
-| Done | 795 |
+| Done | 797 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -337,8 +337,8 @@
 | [US0976](US0976-install-and-upgrade-never-damage-a-consumer-s.md) | Install and upgrade never damage a consumer's files | Done | EP0270 | 2026-10-01 | 2026-10-01 |
 | [US0977](US0977-a-lesson-class-finishes-its-lifecycle.md) | A lesson class finishes its lifecycle | Done | EP0270 | 2026-10-01 | 2026-10-01 |
 | [US0978](US0978-the-handoff-writers-and-the-require-handoff-gate.md) | The handoff writers and the require-handoff gate are retired; old handoff files stay readable | Done | EP0268 | 2026-10-01 | 2026-10-01 |
-| [US0979](US0979-a-lane-brief-and-return-open-and-close.md) | A lane brief and return open and close the unit's span | In Progress | EP0271 | 2026-10-02 | 2026-10-02 |
-| [US0980](US0980-a-lane-return-records-the-builder-s-token.md) | A lane return records the builder's token and minute totals | In Progress | EP0271 | 2026-10-02 | 2026-10-02 |
+| [US0979](US0979-a-lane-brief-and-return-open-and-close.md) | A lane brief and return open and close the unit's span | Done | EP0271 | 2026-10-02 | 2026-10-02 |
+| [US0980](US0980-a-lane-return-records-the-builder-s-token.md) | A lane return records the builder's token and minute totals | Done | EP0271 | 2026-10-02 | 2026-10-02 |
 | [US0981](US0981-a-carry-bug-filed-at-the-review-cap.md) | A carry bug filed at the review cap does not count against the triage cap | Ready | EP0271 | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases

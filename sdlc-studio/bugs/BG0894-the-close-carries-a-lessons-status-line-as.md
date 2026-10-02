@@ -1,6 +1,6 @@
 # BG0894: The close carries a lessons status line as a known issue ('lessons: 0 hit(s) from cited REJECTs')
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_close_gap_status_line.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

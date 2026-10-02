@@ -1,6 +1,6 @@
 # US0980: A lane return records the builder's token and minute totals
 
-> **Status:** In Progress
+> **Status:** Done
 > **Depends on:** US0979
 > **Delivers:** CR0606
 > **Created:** 2026-10-02

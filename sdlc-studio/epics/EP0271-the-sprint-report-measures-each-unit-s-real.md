@@ -16,8 +16,8 @@ Decomposed from CR0605. Delivers the work CR0605 requested.
 
 ## Story Breakdown
 
-- [ ] [US0979: A lane brief and return open and close the unit's span](../stories/US0979-a-lane-brief-and-return-open-and-close.md)
-- [ ] [US0980: A lane return records the builder's token and minute totals](../stories/US0980-a-lane-return-records-the-builder-s-token.md)
+- [x] [US0979: A lane brief and return open and close the unit's span](../stories/US0979-a-lane-brief-and-return-open-and-close.md)
+- [x] [US0980: A lane return records the builder's token and minute totals](../stories/US0980-a-lane-return-records-the-builder-s-token.md)
 - [ ] [US0981: A carry bug filed at the review cap does not count against the triage cap](../stories/US0981-a-carry-bug-filed-at-the-review-cap.md)
 
 ## Revision History

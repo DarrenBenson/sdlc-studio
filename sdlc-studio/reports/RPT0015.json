@@ -5,7 +5,12 @@
   "retro_id": "RETRO0130",
   "generated_at": "2026-10-02T17:06:16Z",
   "window_end": "2026-10-02T17:06:16Z",
-  "signature": null,
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-10-02T21:36:55Z",
+    "report": "RPT0015",
+    "fingerprint": "bf505c4e58236742"
+  },
   "sections": [
     {
       "key": "goal",

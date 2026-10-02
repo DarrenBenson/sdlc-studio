@@ -58,7 +58,7 @@
 
 **0 of 8 unit(s) measured; 8 of 8 forecast at plan time.**
 
-**Sprint tokens/point: 1,085,230** (2,170,461 tokens over 2 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+**Sprint tokens/point: 135,654** (2,170,461 tokens over 16 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 
 **Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
 

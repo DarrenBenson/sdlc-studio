@@ -1,0 +1,723 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M3Y7DP",
+  "started_at": "2026-10-02T11:48:33Z",
+  "ended_at": "2026-10-02T21:36:55Z",
+  "outcome": "goal-reached",
+  "goal": null,
+  "batch": [
+    "BG0890",
+    "BG0891",
+    "BG0892",
+    "US0979",
+    "US0980",
+    "BG0893",
+    "BG0894"
+  ],
+  "plan": "sdlc-studio/.local/sprint-plan.json",
+  "handoff": null,
+  "session_token_baseline": {
+    "tokens": 13023219,
+    "source": "sha256:1d4787a19476",
+    "at": "2026-10-02T11:48:33Z"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 13023219,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T11:48:33Z",
+      "kind": "open",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13029552,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T11:49:10Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13040455,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T12:12:16Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13051288,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T12:12:28Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13103532,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T12:33:58Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13125330,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T12:34:27Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13141739,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T12:40:29Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13152320,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T12:55:55Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13152320,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T12:55:56Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13160660,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T12:56:17Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13214110,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T13:10:21Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13268188,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T13:29:34Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13268188,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T13:29:35Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13276873,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T13:30:12Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13337698,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T13:35:52Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13359700,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T13:53:20Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13365610,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T13:53:24Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 13665503,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T15:10:39Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 16415378,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T16:44:56Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 16450131,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T16:58:14Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 16492054,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T17:06:16Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    }
+  ],
+  "delegated_tokens": [
+    {
+      "tokens": 82412,
+      "agent": "build lane",
+      "note": "sprint lane return (US0980 delivered in 9cae8106: lane return records the builder's --tokens/--minutes tagged to the unit; the tokens ratio is withheld unless every delivered unit has an agent total; agent minutes take precedence over the span)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T12:33:58Z",
+      "unit": "US0980",
+      "minutes": 20.0
+    },
+    {
+      "tokens": 170242,
+      "agent": "build lane",
+      "note": "sprint lane return (US0979 builder totals recorded after US0980 landed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T12:34:00Z",
+      "unit": "US0979",
+      "minutes": 22.0
+    },
+    {
+      "tokens": 134686,
+      "agent": "build lane",
+      "note": "sprint lane return (US0979 QA reviewer totals (review spend, not build))",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T12:34:16Z",
+      "unit": "US0979",
+      "minutes": 15.0
+    },
+    {
+      "tokens": 32391,
+      "agent": "build lane",
+      "note": "sprint lane return (BG0891 delivered in caf79abd: time to restore pairs a failure with the next push success in time order, reads not restored with none; marked pages only)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T12:55:55Z",
+      "unit": "BG0891",
+      "minutes": 11.0
+    },
+    {
+      "tokens": 24294,
+      "agent": "build lane",
+      "note": "sprint lane return (BG0893 delivered in 9098a0d6: the header names the page's window end, never to open)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T12:55:56Z",
+      "unit": "BG0893",
+      "minutes": 9.0
+    },
+    {
+      "tokens": 40330,
+      "agent": "build lane",
+      "note": "sprint lane return (BG0890 delivered in 32c081bb: a carry discharged inside the run counts as delivered on the page and the velocity row)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T13:29:34Z",
+      "unit": "BG0890",
+      "minutes": 10.0
+    },
+    {
+      "tokens": 28231,
+      "agent": "build lane",
+      "note": "sprint lane return (BG0892 delivered in 16fbd14b: a re-recorded velocity row keeps the run's model, else reads the run meter's)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T13:29:35Z",
+      "unit": "BG0892",
+      "minutes": 7.0
+    },
+    {
+      "tokens": 32264,
+      "agent": "build lane",
+      "note": "sprint lane return (US0980 round-1 repair d9f1b34a: the withheld rule covers every live unit that did work; non-positive totals are usage errors)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T13:29:37Z",
+      "unit": "US0980",
+      "minutes": 8.0
+    },
+    {
+      "tokens": 28232,
+      "agent": "build lane",
+      "note": "sprint lane return (BG0891 round-1 repair 862bcef3: incidents by creation, restored by the first success created after, floored at zero, median or not restored (D0304))",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T13:29:38Z",
+      "unit": "BG0891",
+      "minutes": 7.0
+    },
+    {
+      "tokens": 18210,
+      "agent": "build lane",
+      "note": "sprint lane return (BG0894 delivered in 192032a3: a failed close step hands over its failures, not its status summary)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T13:53:20Z",
+      "unit": "BG0894",
+      "minutes": 9.0
+    },
+    {
+      "tokens": 26305,
+      "agent": "build lane",
+      "note": "sprint lane return (BG0895 delivered in 5a61c392: the run's own batch units are left out of the open-findings scan, so sign moving one terminal keeps the page VALID)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T13:53:24Z",
+      "unit": "BG0895",
+      "minutes": 13.0
+    },
+    {
+      "tokens": 12561,
+      "agent": "build lane",
+      "note": "sprint lane return (BG0890 round-1 repair 2a357c32: the discharge reading is frozen at PREPARE, never read live)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T14:07:46Z",
+      "unit": "BG0890",
+      "minutes": 3.0
+    },
+    {
+      "tokens": 12561,
+      "agent": "build lane",
+      "note": "sprint lane return (BG0892 round-1 repair 6f3c8dea: AC2 claims the tokens rate only, the mixed model is pinned)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T14:07:47Z",
+      "unit": "BG0892",
+      "minutes": 3.0
+    },
+    {
+      "tokens": 33867,
+      "agent": "build lane",
+      "note": "sprint lane return (BG0895 round-1 repair 6d7860e9: only delivered batch findings leave the scan, and the checklist agrees (D0306))",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T14:26:11Z",
+      "unit": "BG0895",
+      "minutes": 16.0
+    },
+    {
+      "tokens": 15656,
+      "agent": "build lane",
+      "note": "sprint lane return (BG0895 carry answer 112134e9: a close attempt's checklist asks the live gate (D0308))",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T14:49:15Z",
+      "unit": "BG0895",
+      "minutes": 16.0
+    },
+    {
+      "tokens": 835935,
+      "agent": "QA reviewers and goal seats",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T15:01:25Z",
+      "minutes": 125.0
+    }
+  ],
+  "reopened": [],
+  "batch_changes": [
+    {
+      "action": "drop",
+      "id": "BG0895",
+      "reason": "carried at the review cap: BG0909",
+      "at": "2026-10-02T14:31:55Z"
+    }
+  ],
+  "rulings": [
+    {
+      "id": "D0301",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0302",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0303",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0304",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0305",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0306",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0307",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0308",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    }
+  ],
+  "base_ref": "cb1052d7269d83e5ce7a5e6d8ba679893ed56853",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-10-02T11:48:12Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "Maya signs a sprint report whose delivery, cost and DORA figures match what the run actually did",
+  "sprint_goal_review": {
+    "reviewed": true,
+    "status": "read",
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "product",
+        "achievable": "yes",
+        "done_means": "This run's own report, closed, signed and checked VALID, shows a discharged carry delivered (BG0890), the window end named (BG0893), only real close gaps (BG0894), lane-measured unit minutes (US0979), agent tokens or a withheld ratio (US0980), a velocity row naming the model (BG0892), a non-negative time to restore (BG0891), and a seal with no hand move of mid-run findings (BG0895).",
+        "one_increment": "yes",
+        "note": "Every unit traces to Maya End goal 2 and O3. BG0893 and BG0894 are rows rather than figures, kept at 1 pt each. Out of scope, stated in the plan: the Minutes row compares a wall-clock span with an active-work forecast, spans already measured before a lane opens still cover the whole run, and calibration keeps falling back until three model-named rows exist."
+      },
+      {
+        "seat": "engineering",
+        "achievable": "yes",
+        "done_means": "Each unit's Verify goes red to green against its Fails-on and moves Fixed or Done by transition.py, the full suite is green at the close commit, and the run closes, signs and checks VALID first time with no hand move.",
+        "one_increment": "yes",
+        "note": "All eight share sprint_report.py, sprint.py or retro.py: serial delivery. US0980 depends on US0979. Order: US0979, US0980, BG0891, BG0893, BG0890, BG0892 (before sign writes the velocity row), BG0894, BG0895 last with a rehearsed seal. Re-brief a unit whose sprint_report.py diff moved after its brief (LC-011)."
+      },
+      {
+        "seat": "qa",
+        "achievable": "yes",
+        "done_means": "verify_ac green on every canonical AC, each seen red on its Fails-on; the goal's evidence is this run's signed report read field by field against run state, git log and forge runs.",
+        "one_increment": "yes",
+        "note": "Each criterion needs its control so the goal cannot go green on a fixture: BG0890 the velocity row, BG0891 a failure with no later success, BG0892 the calibration count, US0980 a partial delegated total, US0979 a brief with no return, BG0895 a mid-run finding outside the batch still listed after sign, BG0894 a real failing step still yields its gap."
+      }
+    ],
+    "goal": "Maya signs a sprint report whose delivery, cost and DORA figures match what the run actually did",
+    "shipped_seats": false,
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 84,
+    "objected": false,
+    "objections": [],
+    "reviewed_at": "2026-10-02T11:46:33Z",
+    "change_type": null,
+    "amended_from": null,
+    "requesting_seat": null,
+    "needs_reconsult": [],
+    "themed": [],
+    "discharged": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Fixed (bug), Done (story)",
+    "types": [
+      "bug",
+      "story"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed (bug), Done (story)"
+  },
+  "plan_snapshot": {
+    "units": {
+      "BG0890": {
+        "planned_points": 3,
+        "forecast_tokens": 240564,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0891": {
+        "planned_points": 1,
+        "forecast_tokens": 80188,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0892": {
+        "planned_points": 2,
+        "forecast_tokens": 160376,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0895": {
+        "planned_points": 2,
+        "forecast_tokens": 160376,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0979": {
+        "planned_points": 3,
+        "forecast_tokens": 240564,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0980": {
+        "planned_points": 3,
+        "forecast_tokens": 240564,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0893": {
+        "planned_points": 1,
+        "forecast_tokens": 80188,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0894": {
+        "planned_points": 1,
+        "forecast_tokens": 80188,
+        "forecast_minutes": 6.4,
+        "added": false
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 80188,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 6.4,
+        "source": "fallback: 0 row(s) for claude-opus-5-5, under 3, so the latest rows of any single model: median of RETRO0028"
+      }
+    }
+  },
+  "token_forecast": 1283008,
+  "unit_actuals": {
+    "US0979": {
+      "minutes": 23.1,
+      "tokens": 10903,
+      "started_at": "2026-10-02T11:49:10Z",
+      "start_tokens": 6333,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "US0980": {
+      "minutes": 21.5,
+      "tokens": 52244,
+      "started_at": "2026-10-02T12:12:28Z",
+      "start_tokens": 28069,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0891": {
+      "minutes": 21.47,
+      "tokens": 26990,
+      "started_at": "2026-10-02T12:34:27Z",
+      "start_tokens": 102111,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0893": {
+      "minutes": 15.45,
+      "tokens": 10581,
+      "started_at": "2026-10-02T12:40:29Z",
+      "start_tokens": 118520,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0890": {
+      "minutes": 33.28,
+      "tokens": 107528,
+      "started_at": "2026-10-02T12:56:17Z",
+      "start_tokens": 137441,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0892": {
+      "minutes": 19.23,
+      "tokens": 54078,
+      "started_at": "2026-10-02T13:10:21Z",
+      "start_tokens": 190891,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0894": {
+      "minutes": 23.13,
+      "tokens": 82827,
+      "started_at": "2026-10-02T13:30:12Z",
+      "start_tokens": 253654,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0895": {
+      "minutes": 17.53,
+      "tokens": 27912,
+      "started_at": "2026-10-02T13:35:52Z",
+      "start_tokens": 314479,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    }
+  },
+  "lanes_in_flight": [],
+  "review_base": {
+    "US0979": 0,
+    "US0980": 0,
+    "BG0891": 0,
+    "BG0893": 0,
+    "BG0890": 0,
+    "BG0892": 0,
+    "BG0894": 0,
+    "BG0895": 0
+  },
+  "scaffolded_retro": "RETRO0130",
+  "sprint_goal_verdict": {
+    "verdict": "achieved",
+    "note": "8 of 8 units approved by an independent QA seat (BG0895 discharged by its rejecting reviewer after a carry), every batch unit verifies green. This run's own page measures what RPT0014 could not: every unit carries an agent total from its lane return (builder) and the run carries the reviewers' spend, so the Tokens row counts the builders' and reviewers' spend (see Estimates and the appendix) where RPT0014 printed 0.2x from the main thread alone; a discharged carry counts as delivered (BG0890); time to restore pairs by creation and reads no restore needed for a run with no red (BG0891); the header names its window end (BG0893); a close gap holds only failures (BG0894); a batch finding no longer moves a signed page and the checklist agrees with the page on a re-close (BG0895); velocity rows keep their model (BG0892). Disclosed, out of scope at the goal review: the minutes ratio compares wall-clock with active work (BG0898) and the minutes rate still falls back to a July row (BG0907)."
+  },
+  "close_attempts": [
+    {
+      "at": "2026-10-02T15:05:17Z",
+      "outstanding": 0,
+      "stages": []
+    },
+    {
+      "at": "2026-10-02T16:41:16Z",
+      "outstanding": 0,
+      "stages": []
+    },
+    {
+      "at": "2026-10-02T16:52:51Z",
+      "outstanding": 0,
+      "stages": []
+    },
+    {
+      "at": "2026-10-02T17:02:34Z",
+      "outstanding": 0,
+      "stages": []
+    }
+  ],
+  "close_not_measured": [],
+  "close_tree": "9da372fd223a9dacf9aa94dbd18c119937750a70",
+  "report_gate_clear": [
+    "BG0890",
+    "BG0891",
+    "BG0892",
+    "BG0893",
+    "BG0894",
+    "US0979",
+    "US0980"
+  ],
+  "verified_sha": "3eba65cd25f1890a2230618590891c5abf7fdd97",
+  "close_known_issues": [],
+  "ci_runs": {
+    "source": "gh run list",
+    "runs": [
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-02T15:16:10Z",
+        "databaseId": 37025767700,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "5fd6293c2d9e8706907269e9ca54e2d4559cb624",
+        "updatedAt": "2026-10-02T16:05:27Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-02T14:31:20Z",
+        "databaseId": 37020451101,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "6d7860e951c353a2c0eaf0f1f1667d9dcc0edc5c",
+        "updatedAt": "2026-10-02T15:20:25Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-02T13:58:43Z",
+        "databaseId": 37016645468,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "256df7a7a8754bd3f9ebdff4256c4f309e45a977",
+        "updatedAt": "2026-10-02T14:47:32Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-02T11:54:20Z",
+        "databaseId": 37003594324,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "50de574efa7e5fb996485b22f2ee93ff5d20e091",
+        "updatedAt": "2026-10-02T12:43:35Z",
+        "workflowName": "Lint"
+      }
+    ]
+  },
+  "review_rows": {
+    "BG0890": [
+      "d19bdc90d8698665",
+      "a70cd6a737a2b922"
+    ],
+    "BG0891": [
+      "444901dfd0f24803",
+      "903c7ce935efccdb"
+    ],
+    "BG0892": [
+      "c26698171cc9f67f",
+      "332e7ad03dcce1b6"
+    ],
+    "BG0895": [
+      "b89d5951cf6c6493",
+      "d87acc7b78e14c82",
+      "28279e158c20ee12"
+    ],
+    "US0979": [
+      "6f511777e1a289d4"
+    ],
+    "US0980": [
+      "d23cd0274c26a2b2",
+      "cdc06b7461fb4185"
+    ],
+    "BG0893": [
+      "8f18f0ca0160610d"
+    ],
+    "BG0894": [
+      "40fe30f590860f53"
+    ]
+  },
+  "report_discharged": [
+    "BG0895"
+  ],
+  "report": "RPT0015",
+  "report_fingerprint": "bf505c4e58236742",
+  "unanswered": [],
+  "unanswered_rulings_from": "RETRO0130",
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-10-02T21:36:55Z",
+    "report": "RPT0015",
+    "fingerprint": "bf505c4e58236742"
+  }
+}
