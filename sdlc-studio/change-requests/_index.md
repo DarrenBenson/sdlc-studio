@@ -1,6 +1,6 @@
 # Change Request Index
 
-**Last Updated:** 2026-09-29
+**Last Updated:** 2026-10-02
 
 ## Summary
 
@@ -8,13 +8,13 @@
 | --- | --- |
 | Proposed | 0 |
 | Approved | 0 |
-| In Progress | 0 |
+| In Progress | 2 |
 | Complete | 515 |
 | Rejected | 29 |
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **604** |
+| **Total** | **606** |
 
 ## All Changes
 
@@ -102,6 +102,8 @@
 | [CR-0602](CR0602-a-run-s-token-and-minute-actuals-are.md) | A run's token and minute actuals are measured without the operator stamping a baseline | Rejected | Medium | Improvement | 2026-09-28 | -- |
 | [CR-0603](CR0603-low-severity-crs-consolidated.md) | Low-severity crs (consolidated) | Complete | Low | Improvement | 2026-09-28 | EP0269 |
 | [CR-0604](CR0604-the-andon-cord-stops-the-run-on-an.md) | The andon cord stops the run on an irreversible action or an operating-domain exit | Rejected | Medium | Feature | 2026-09-29 | -- |
+| [CR-0605](CR0605-a-unit-built-through-a-lane-opens-and.md) | A unit built through a lane opens and closes its own span, so the report measures per-unit minutes | In Progress | Medium | Improvement | 2026-10-02 | EP0271 |
+| [CR-0606](CR0606-a-lane-return-records-the-builder-s-own.md) | A lane return records the builder's own token and minute totals, and the estimates ratio is withheld while delegated spend is unmeasured | In Progress | Medium | Improvement | 2026-10-02 | EP0271 |
 
 ## Archived Releases
 

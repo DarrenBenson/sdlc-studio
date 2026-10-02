@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-10-01
+**Last Updated:** 2026-10-02
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 11 |
+| Open | 18 |
 | In Progress | 0 |
 | Fixed | 721 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **889** |
+| **Total** | **896** |
 
 ## All Bugs
 
@@ -248,6 +248,13 @@
 | [BG0887](BG0887-the-review-command-s-dashboard-and-json-show.md) | The review command's dashboard and JSON show a per-document health percentage that no code computes | Open | Low | 2026-10-01 | 2026-10-01 |
 | [BG0888](BG0888-help-gate-md-says-the-commit-msg-hook.md) | help/gate.md says the commit-msg hook snippet degrades honestly with no script, but it blocks | Open | Low | 2026-10-01 | 2026-10-01 |
 | [BG0889](BG0889-a-padded-index-table-holding-a-wide-character.md) | A padded index table holding a wide character still fails MD060 after a row in it is rewritten | Open | Low | 2026-10-01 | 2026-10-01 |
+| [BG0890](BG0890-a-carried-unit-discharged-inside-the-same-run.md) | A carried unit discharged inside the same run is reported as dropped, so the page undercounts delivery | Open | Medium | 2026-10-02 | 2026-10-02 |
+| [BG0891](BG0891-dora-time-to-restore-pairs-a-red-ci.md) | DORA time to restore pairs a red CI run with an earlier green one and reports a negative duration | Open | Medium | 2026-10-02 | 2026-10-02 |
+| [BG0892](BG0892-velocity-rows-have-recorded-no-model-since-retro0126.md) | Velocity rows have recorded no model since RETRO0126, so calibration falls back to a July row of another model | Open | Medium | 2026-10-02 | 2026-10-02 |
+| [BG0893](BG0893-a-closed-and-signed-report-s-header-says.md) | A closed and signed report's header says the run window ends 'to open' | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0894](BG0894-the-close-carries-a-lessons-status-line-as.md) | The close carries a lessons status line as a known issue ('lessons: 0 hit(s) from cited REJECTs') | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0895](BG0895-a-finding-filed-during-the-run-and-then.md) | A finding filed during the run and then added to the batch invalidates the signed page when sign moves it terminal | Open | Medium | 2026-10-02 | 2026-10-02 |
+| [BG0896](BG0896-migrate-s-retired-surface-scan-reads-prose-such.md) | migrate's retired-surface scan reads prose such as 'mutation audit' as a retired command because .py is optional | Open | Low | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 

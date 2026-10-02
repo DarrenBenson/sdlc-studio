@@ -1,6 +1,6 @@
 # Story Index
 
-**Last Updated:** 2026-10-01
+**Last Updated:** 2026-10-02
 
 ## Summary
 
@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 0 |
+| Ready | 2 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **978** |
+| **Total** | **980** |
 
 ## All Stories
 
@@ -337,6 +337,8 @@
 | [US0976](US0976-install-and-upgrade-never-damage-a-consumer-s.md) | Install and upgrade never damage a consumer's files | Done | EP0270 | 2026-10-01 | 2026-10-01 |
 | [US0977](US0977-a-lesson-class-finishes-its-lifecycle.md) | A lesson class finishes its lifecycle | Done | EP0270 | 2026-10-01 | 2026-10-01 |
 | [US0978](US0978-the-handoff-writers-and-the-require-handoff-gate.md) | The handoff writers and the require-handoff gate are retired; old handoff files stay readable | Done | EP0268 | 2026-10-01 | 2026-10-01 |
+| [US0979](US0979-a-lane-brief-and-return-open-and-close.md) | A lane brief and return open and close the unit's span | Ready | EP0271 | 2026-10-02 | 2026-10-02 |
+| [US0980](US0980-a-lane-return-records-the-builder-s-token.md) | A lane return records the builder's token and minute totals | Ready | EP0271 | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 
