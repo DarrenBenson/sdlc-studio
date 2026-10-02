@@ -37,6 +37,8 @@
 | BG0907 | not-stop-ship | Claude (orchestrator) | 2026-10-02 |
 | BG0908 | not-stop-ship | Claude (orchestrator) | 2026-10-02 |
 | BG0910 | not-stop-ship | Claude (orchestrator) | 2026-10-02 |
+| BG0911 | not-stop-ship | Claude (orchestrator) | 2026-10-02 |
+| BG0912 | not-stop-ship | Claude (orchestrator) | 2026-10-02 |
 
 ## Estimate vs actual
 
