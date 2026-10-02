@@ -1,6 +1,6 @@
 # BG0893: A closed and signed report's header says the run window ends 'to open'
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_window_header.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
