@@ -3259,6 +3259,11 @@ def _later_review_bases(root: Path, state: dict) -> dict[str, int]:
 #: place. A list, not a set: the ledger holds exact duplicate rows.
 REVIEW_ROWS = "review_rows"
 
+#: The run record's field holding the carries PREPARE read as discharged inside the run
+#: (`discharged_carries`), frozen beside `REVIEW_ROWS`. Read in place of the live reading
+#: whenever present, so a filed page never reads a status that moves after it.
+DISCHARGED = "report_discharged"
+
 
 def _counted_rows(uid: str, rows: list[dict], state: dict, later_base: int | None,
                   window: tuple) -> list[dict]:
@@ -3320,13 +3325,17 @@ def counted_review_rows(root: Path, state: dict, window: tuple) -> dict[str, lis
 
 def freeze_review_rows(root: Path) -> dict:
     """PREPARE's reading of the verdict ledger, recorded on the live run as `REVIEW_ROWS`, over
-    the window the page will state (`started_at` to now). Re-read on every prepare; the ledger
-    itself is only read. Returns what was recorded."""
+    the window the page will state (`started_at` to now), and with it the carries those rows
+    discharge (`DISCHARGED`), read once here like `report_gate_clear`: a discharged unit is
+    dropped from the batch, so the seal never moves it, and a page reading its status live
+    moved when it was moved by hand after filing. Re-read on every prepare; the ledger itself
+    is only read. Returns the rows recorded."""
     try:
         state = run_state.read(root) or {}
-        frozen = counted_review_rows(root, state, (state.get("started_at"),
-                                                   sdlc_md.now_iso8601()))
-        run_state.update(root, **{REVIEW_ROWS: frozen})
+        window = (state.get("started_at"), sdlc_md.now_iso8601())
+        frozen = counted_review_rows(root, state, window)
+        discharged = discharged_carries(root, {**state, REVIEW_ROWS: frozen}, window)
+        run_state.update(root, **{REVIEW_ROWS: frozen, DISCHARGED: discharged})
     except (run_state.RunStateError, OSError) as exc:
         raise ReportError(f"the review rows could not be frozen on the run record: {exc}"
                           ) from exc
@@ -3376,6 +3385,8 @@ def discharged_carries(root, state: dict, window: tuple) -> list[str]:
     `(start, end)`: delivered work the batch no longer lists. The velocity row adds them to the
     retro's Batch, which the close fills from the batch after the carry dropped them."""
     import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    if isinstance(state.get(DISCHARGED), list):
+        return [sdlc_md.norm_id(u) for u in state[DISCHARGED]]
     root = Path(root)
     _snap, changes, *_rest = _unit_order(state)
     drops = {u: c for u, c in changes.items() if c.get("action") == "drop"}
@@ -3422,13 +3433,19 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
         present = Counter(critic.row_identity(r) for r in verdicts)
     later = (_later_review_bases(root, state)
              if ledger_found and not isinstance(frozen, dict) else {})
+    frozen_discharged = state.get(DISCHARGED)
+    if isinstance(frozen_discharged, list):
+        frozen_discharged = {sdlc_md.norm_id(u) for u in frozen_discharged}
     out = []
     for uid in order:
         found = sdlc_md.find_by_id(root, uid)
         path = Path(found[0]) if found else None
         change = changes.get(uid) or {}
-        discharged = (discharge_rule and ledger_found and _discharged_carry(
-            root, change, _run_rows(uid, verdicts, frozen, state, later.get(uid), window)))
+        # PREPARE's frozen reading when the record holds one, else the live reading.
+        discharged = discharge_rule and (
+            uid in frozen_discharged if isinstance(frozen_discharged, set) else
+            ledger_found and _discharged_carry(
+                root, change, _run_rows(uid, verdicts, frozen, state, later.get(uid), window)))
         dropped = change.get("action") == "drop" and not discharged
         delivered = (True if discharged else False if dropped else
                      uid in cleared if gate_clear is not None else _terminal(root, uid)[1])

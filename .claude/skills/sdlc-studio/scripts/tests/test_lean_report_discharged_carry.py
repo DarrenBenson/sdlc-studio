@@ -144,6 +144,53 @@ class DischargedCarryTests(unittest.TestCase):
         row = next(r for r in retro.velocity_history(self.root) if r.get("id") == RETRO)
         self.assertEqual((2, 5), (row["units"], row["points"]), row)
 
+    def _prepare(self) -> str:
+        """What PREPARE records before it files the page - the units whose terminal gate cleared
+        (`report_gate_clear`, here US0101) and the ledger rows and discharges it freezes
+        (`freeze_review_rows`) - then the page filed as the close files it. Returns its id."""
+        sr = _live("sprint_report")
+        _live("lib.run_state").update(self.root, report_gate_clear=["US0101"])
+        sr.freeze_review_rows(self.root)
+        return sr.file_report(self.root, self._page())
+
+    def _set_status(self, uid: str, status: str) -> None:
+        p = self.root / "sdlc-studio" / "stories" / f"{uid}-x.md"
+        text = p.read_text(encoding="utf-8")
+        old = next(ln for ln in text.splitlines() if ln.startswith("> **Status:**"))
+        p.write_text(text.replace(old, f"> **Status:** {status}"), encoding="utf-8")
+
+    def test_a_unit_moved_by_hand_after_filing_does_not_move_the_page(self) -> None:
+        """BG0890 round 1, the reviewer's repro. The page is filed with the carried unit at
+        Review (answered, not yet terminal), then both units are set Done by hand - the seal
+        moves only batch units, so a dropped one is moved by hand. MUTANT: read the discharge's
+        terminal status live, as round 1 did, so the re-derived page reads US0102 delivered
+        and revalidate reads INVALID."""
+        self._run(carried_status="Review")
+        self._set_status("US0101", "Review")
+        sr = _live("sprint_report")
+        rid = self._prepare()
+        self.assertEqual("dropped - carried at the review cap: BG0201",
+                         self._carried_outcome(sr.read_report(self.root, rid)))
+        self._set_status("US0101", "Done")
+        self._set_status("US0102", "Done")
+        check = sr.revalidate(self.root, rid)
+        self.assertTrue(check["valid"], check["changes"])
+
+    def test_the_frozen_review_rows_path_reads_the_discharge(self) -> None:
+        """The path real runs take: PREPARE froze `REVIEW_ROWS` and the discharges with them.
+        MUTANTS: the frozen-rows branch of `_run_rows` reading nothing, so PREPARE freezes no
+        discharge and US0102 reads dropped; a frozen discharge list the page ignores in favour
+        of a live reading (killed by the repro above)."""
+        self._run()
+        rid = self._prepare()
+        state = _live("lib.run_state").read(self.root)
+        sr = _live("sprint_report")
+        self.assertIn("US0102", state[sr.REVIEW_ROWS], "premise: PREPARE froze the rows")
+        self.assertEqual(["US0102"], state[sr.DISCHARGED])
+        self.assertEqual("delivered - discharged after it was carried at the review cap: "
+                         "BG0201", self._carried_outcome(sr.read_report(self.root, rid)))
+        self.assertTrue(sr.revalidate(self.root, rid)["valid"])
+
     def test_a_page_filed_before_the_fix_re_derives_as_signed(self) -> None:
         """RPT0014 was signed with six discharged carries read as dropped. MUTANTS: apply the
         rule to a page that carries no mark of it, so the signed page reads INVALIDATED; leave
