@@ -201,7 +201,9 @@ class LifecycleFigureTests(unittest.TestCase):
             rid, path = self._file(root, open_run=True)
             report = json.loads(path.read_text(encoding="utf-8"))
             goal = next(s for s in report["sections"] if s["key"] == "goal")
-            self.assertEqual("open", goal["figures"]["ended_at"]["value"])
+            # BG0893: the page names the end of its window, not the run's open state (a page
+            # filed before it read `open`, which `_lifecycle_edits` still allows).
+            self.assertEqual(report["window_end"], goal["figures"]["ended_at"]["value"])
             live = root / "sdlc-studio" / ".local" / "run-state.json"
             state = json.loads(live.read_text(encoding="utf-8"))
             sealed = datetime.strptime(report["generated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(

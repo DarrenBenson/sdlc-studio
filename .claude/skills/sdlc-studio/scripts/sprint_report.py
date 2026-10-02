@@ -3837,7 +3837,10 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                                  if verdict.get("verdict") else "", state_rel),
         "run_id": fig("run_id", state.get("run_id"), state_rel),
         "started_at": fig("started_at", state.get("started_at"), state_rel),
-        "ended_at": fig("ended_at", state.get("ended_at") or "open", state_rel),
+        # The end of the window the page measured to, never the run's open state: the close
+        # derives the page before the seal writes `ended_at`, so reading the record printed
+        # `to open` on every closed page while its duration already ran to this end.
+        "ended_at": fig("ended_at", _iso(end) or "open", state_rel),
         # The unit travels with the figure, so an unmeasured duration is never mis-suffixed.
         "duration_hours": (fig("duration_hours", f"{duration}h", state_rel) if duration else
                            unmeasured("duration_hours", state_rel,
@@ -5003,9 +5006,10 @@ def _lifecycle_edits(root, stored: dict, fresh: dict, record: dict | None = None
     """The figures OUTSIDE_THE_DIGEST, checked against the run record instead of signed.
 
     The seal writes the run's end after the page, so neither figure is in the digest, but each
-    was still fixed when the page was generated. The end is the run record's `ended_at`, or
-    `open` when the run had not ended by the page's generation time; the duration runs to the
-    window the page carries, which the re-derivation replays.
+    was still fixed when the page was generated. The end is the end of the window the page
+    carries, which the re-derivation replays, and so is the duration's; a page filed before
+    the window end was named read `open` when the run had not ended by its generation time,
+    and still may.
 
     ONLY those two. The sections outside the digest read stores that move after the run - the
     lesson store, the per-clone refusal log - so comparing them here reported every later close
