@@ -24,6 +24,7 @@
 - **When** `sprint.py lane brief --units <it>` runs
 - **Then** its "Obligations on this lane" list carries one line saying a repair answering a REJECT carries only the blocking findings and the pins that kill them, and files the rest (D0303); the brief adds no flag, refusal or gate. Fails on: the current brief, which names no repair scope
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_brief_repair_scope.py::LaneBriefRepairScopeTests::test_the_brief_names_the_repair_scope
+- **Verified:** yes (2026-10-02)
 
 > CR0608's other two criteria are answered by D0310, not by code: no check is proposed, so none retires anything (AC2), and LC-005 graduates through the close's existing lesson lifecycle when CR0608 closes Complete (AC3).
 

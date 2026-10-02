@@ -26,6 +26,7 @@ At the close, compare each ratio and token figure the note quotes with the page'
 
 - [ ] **AC1** Given a goal verdict note quoting a tokens ratio of 1.46x and a page that derives 1.69x, when sprint close files the page, then it prints one line naming the note's 1.46x and the page's 1.69x, and the exit code is unchanged. Fails on: the current close prints nothing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_note_matches_page.py::GoalNoteMatchesPageTests::test_a_note_figure_the_page_contradicts_is_named
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

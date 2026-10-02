@@ -25,6 +25,7 @@ Name the seat keys the code reads in the --fields-file help text; no new validat
 
 - [ ] **AC1** Given a goal-review fields document whose seats carry the documented keys, when sprint.py goal-review --help runs, then the --fields-file help names each seat key the code reads (seat, achievable, `done_means`, `one_increment`, note). Fails on: the current help, which names none
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_review_fields_keys.py::GoalReviewFieldsKeysTests::test_help_names_the_seat_keys
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

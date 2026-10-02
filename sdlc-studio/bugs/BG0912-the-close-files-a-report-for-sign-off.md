@@ -26,6 +26,7 @@ At the close, write the HTML twin beside the report (reports/RPTxxxx.html) and p
 
 - [ ] **AC1** Given a run that closes and files RPT0001, when sprint close finishes, then reports/RPT0001.html exists and the output names the markdown page's path and the HTML twin's path before the sign command. Fails on: the current close prints only the sign command
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close_shows_the_page.py::CloseShowsThePageTests::test_the_close_names_the_page_and_its_html_twin
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

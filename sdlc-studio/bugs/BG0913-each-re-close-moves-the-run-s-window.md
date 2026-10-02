@@ -26,6 +26,7 @@ Keep the window end and meter reading of the first successful close on the run r
 
 - [ ] **AC1** Given a run closed once at T with a main-thread meter reading M, when it is re-closed at T plus one hour after more session work, then the re-filed page's window end is T and its main-thread tokens read M. Fails on: the current code moves both to the re-close
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_reclose_keeps_window.py::RecloseKeepsWindowTests::test_a_re_close_keeps_the_first_close_s_window_and_meter
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

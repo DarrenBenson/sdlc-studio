@@ -26,6 +26,7 @@ Have each step hand over only its failures, as BG0894 did for retro-extract, and
 
 - [ ] **AC1** Given a close whose only gap is one unreviewed unit, when the page is filed, then its known issues hold exactly one review-coverage gap naming that unit and no status or prose line. Fails on: the current code hands over three
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close_gap_lines.py::CloseGapLinesTests::test_review_coverage_hands_over_only_its_gap
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

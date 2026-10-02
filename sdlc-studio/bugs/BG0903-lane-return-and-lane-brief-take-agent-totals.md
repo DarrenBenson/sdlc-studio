@@ -26,6 +26,7 @@ Print one line in each case naming what was not recorded or where it went, as re
 
 - [ ] **AC1** Given no open run, a unit outside the batch, and a lane brief, when lane return --tokens or lane brief --tokens runs in each, then each prints one line saying the total was not recorded or was recorded off the batch, and exit codes are unchanged. Fails on: the current code says nothing in all three
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_totals_said.py::LaneTotalsSaidTests::test_each_unrecorded_or_off_batch_total_is_said
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

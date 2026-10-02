@@ -26,6 +26,7 @@ Open a span on brief only for a unit not yet at a terminal status.
 
 - [ ] **AC1** Given a unit that reached Done with a closed 10-minute span, when sprint lane brief briefs the whole batch and the run closes, then the unit still reads 10.0 minutes and no span is reopened. Fails on: the current code reopens the span and reads NOT MEASURED
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_rebrief_terminal.py::LaneRebriefTerminalTests::test_a_brief_leaves_a_terminal_unit_measured
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 
