@@ -8164,14 +8164,27 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
               file=sys.stderr)
         return
     res = results[0]
-    res["agent_total"] = _lane_run_state(
+    unreadable = object()
+    got = _lane_run_state(
         "record_agent_total",
         lambda: run_state.record_delegated_tokens(
             root, tokens, agent="build lane", note=f"sprint lane return ({res['outcome']})",
             unit=res["unit"], minutes=minutes),
-        None,
+        unreadable,
         f"{res['unit']}'s builder total could not be recorded (the run state is unreadable), so "
         f"its tokens and minutes will not reach the page")
+    res["agent_total"] = None if got is unreadable else got
+    if got is None:
+        print("WARNING --tokens was not recorded: no run is open, so there is no run to count "
+              "the builder's total against", file=sys.stderr)
+    elif got is not unreadable and got.get("unit") not in {
+            sdlc_md.norm_id(u) for u in _lane_run_state(
+                "agent_total_batch", lambda: run_state.read(root).get("batch") or [], [],
+                "the run state could not be read, so whether the total is on the batch is "
+                "UNKNOWN")}:
+        print(f"WARNING --tokens was recorded off the batch: {got.get('unit')} is not in the open "
+              f"run's batch, so the total counts in the run's but no per-unit row shows it",
+              file=sys.stderr)
 
 
 def _lane_pairs(values: list[str] | None, flag: str) -> dict:
@@ -8548,6 +8561,10 @@ def cmd_lane(args: argparse.Namespace) -> int:
               file=sys.stderr)
         return 2
     if args.action == "brief":
+        for flag in ("tokens", "minutes"):
+            if getattr(args, flag, None) is not None:
+                print(f"WARNING --{flag} was not recorded: a brief records no agent total - "
+                      f"pass the builder's total to `sprint lane return`", file=sys.stderr)
         dispatch = lane_dispatch(root, units)
         # An IN-FLIGHT marker per briefed unit, taken at dispatch and cleared at return. A lane
         # that dies mid-flight leaves real code in the working tree behind a unit still marked
