@@ -1,6 +1,6 @@
 # CR-0590: the report absorbs the handoff, so a run ends with one page instead of two that must agree
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0268
 > **Supersedes:** CR0581
 > **Priority:** Medium

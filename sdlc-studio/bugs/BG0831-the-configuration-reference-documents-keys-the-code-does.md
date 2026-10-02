@@ -1,6 +1,6 @@
 # BG0831: The configuration reference documents keys the code does not honour: sprint.split_above, review.policy carry-forward, and review.max_rounds
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Groomed:** 2026-10-01 (D0291) - premise reproduced at HEAD: with `sprint: {split_above: 5}` in .config.yaml, `sprint.points_split_above()` returns 8; `carry_forward_covers`, `carry_forward_close_record`, `reject_carries_forward` and `validate_carried` have no caller outside tests and re-exports, so `review.policy` changes nothing; only critic.py reads `review.max_rounds`. Resized 2 -> 3: the retirement is a deletion of carry_forward.py and its re-exports
 > **Severity:** Medium
 > **Points:** 3

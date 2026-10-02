@@ -1,6 +1,6 @@
 # CR-0534: a project's configuration is a surface nobody is introduced to and nobody revisits: the operator cannot see what is in force, what the default would have been, or which setting their own history says is wrong
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0233
 > **Priority:** High
 > **Type:** Improvement

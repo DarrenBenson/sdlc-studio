@@ -1,6 +1,6 @@
 # BG0834: persona generate --team lets a pre-supplied or headless default stand as an answer, so its report claims questions were asked and accepted when none was
 
-> **Status:** Open
+> **Status:** Fixed
 > **Groomed:** 2026-10-01 (D0291) - premise reproduced at HEAD: reference-persona-generate.md Step 1 marks discoveries only `inferred` or `unknown`, and Step 2 ends `Headless runs take the defaults and keep the provisional stamp` with nothing telling the report a default is not an answer (eval 07 rc.1 is the behavioural evidence; an eval re-run is not repeated here). Narrowed to the instruction: the card-stamp list (a persona_gen.py change) is dropped as new record machinery; resized 2 -> 1
 > **Severity:** Medium
 > **Points:** 1

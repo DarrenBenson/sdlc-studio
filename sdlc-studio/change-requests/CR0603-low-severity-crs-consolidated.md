@@ -1,6 +1,6 @@
 # CR-0603: Low-severity crs (consolidated)
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0269
 > **Size:** S
 > **Priority:** Low

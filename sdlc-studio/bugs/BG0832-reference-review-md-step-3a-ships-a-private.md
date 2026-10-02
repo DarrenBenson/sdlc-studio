@@ -1,6 +1,6 @@
 # BG0832: reference-review.md step 3a ships a private project's consultation cast as its example, names amigos with no resolver, and the neutrality lane misses it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Groomed:** 2026-10-01 (D0291) - premise reproduced at HEAD: reference-review.md:279-281 lists `Darren (scope, priorities), Cora (API shape, errors), Webapp Dev ..., HA ...` and line 803 `"stale": ["Webapp Dev"]`; `check_neutrality.py` prints `no blocklisted project names` and exits 0. Narrowed to the doc fix: AC2 (widen the neutrality lane) dropped as a new refusal (D0291), and help/consult.md:56 holds (Sarah Chen is in persona-index-template only, not an amigo card)
 > **Severity:** Medium
 > **Points:** 1

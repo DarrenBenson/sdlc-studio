@@ -1,6 +1,6 @@
 # US0970: The finding writers keep every criterion and verifier they were given
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0592
 > **Created:** 2026-10-01
 > **Created-by:** sdlc-studio new

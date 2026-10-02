@@ -1,6 +1,6 @@
 # US0968: With no --version, install.sh installs the latest published release, verified against its .sha256
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0603
 > **Created:** 2026-10-01
 > **Created-by:** sdlc-studio new

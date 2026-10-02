@@ -1,6 +1,6 @@
 # US0972: Derived figures read honestly
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0592
 > **Created:** 2026-10-01
 > **Created-by:** sdlc-studio new

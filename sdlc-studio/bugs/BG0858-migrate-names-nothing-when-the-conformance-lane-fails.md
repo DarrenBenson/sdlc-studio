@@ -1,6 +1,6 @@
 # BG0858: migrate names nothing when the conformance lane fails only on ULID-id units or repo-wide failures, so a schema v3 project meets the failure at the gate unannounced
 
-> **Status:** Open
+> **Status:** Fixed
 > **Groomed:** 2026-10-01 (D0291) - premise reproduced at HEAD: a ULID fixture with one Done story `US-01M3VEK2` reads `[FAIL] conformance: 1 non-conformant unit(s)` from `gate.py --only conformance`, while `migrate.py --format json` emits only `team-offer`, `index-drift`, `validate-errors` (`_conformance_cutoff` drops every unit whose `id_number` is None). Distinct from US0974, which makes conformance ACCEPT a ULID cutoff; this makes migrate PROPOSE one, so it is blocked by US0974 AC1
 > **Severity:** Medium
 > **Points:** 2

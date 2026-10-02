@@ -1,6 +1,6 @@
 # US0805: A `--fields-file` key spelled as the verb's own flag (`ac`, `option`, `type`, `status`) is accepted as its canonical field
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0559
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new

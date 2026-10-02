@@ -1,0 +1,955 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M3VF2J",
+  "started_at": "2026-10-01T10:19:17Z",
+  "ended_at": "2026-10-02T07:24:55Z",
+  "outcome": "goal-reached",
+  "goal": "done",
+  "batch": [
+    "BG0726",
+    "BG0737",
+    "BG0817",
+    "BG0827",
+    "BG0832",
+    "BG0833",
+    "BG0834",
+    "BG0835",
+    "BG0866",
+    "US0804",
+    "US0966",
+    "BG0867",
+    "BG0868",
+    "BG0869",
+    "BG0855",
+    "BG0860",
+    "US0759",
+    "US0784",
+    "US0968",
+    "US0973",
+    "BG0825",
+    "BG0831",
+    "BG0837",
+    "BG0861",
+    "US0805",
+    "US0969",
+    "US0970",
+    "US0972",
+    "BG0858",
+    "US0975",
+    "US0976",
+    "US0967",
+    "BG0876",
+    "BG0877"
+  ],
+  "plan": "sdlc-studio/.local/sprint-plan.json",
+  "handoff": null,
+  "session_token_baseline": {
+    "tokens": 6917154,
+    "source": "sha256:1d4787a19476",
+    "at": "2026-10-01T10:19:17Z"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 6917154,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T10:19:17Z",
+      "kind": "open",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 6932781,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T10:28:26Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 6952702,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T10:50:38Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 7013489,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T11:22:25Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 7055653,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T11:39:54Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 7125939,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T12:18:13Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 9214545,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T19:34:35Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 9214545,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T19:38:41Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 9240186,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T19:46:02Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 9267901,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-01T19:54:55Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    }
+  ],
+  "delegated_tokens": [],
+  "reopened": [],
+  "batch_changes": [
+    {
+      "action": "drop",
+      "id": "US0978",
+      "reason": "carried at the review cap: BG0874",
+      "at": "2026-10-01T16:04:02Z"
+    },
+    {
+      "action": "drop",
+      "id": "US0974",
+      "reason": "carried at the review cap: BG0875",
+      "at": "2026-10-01T16:04:04Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0876",
+      "at": "2026-10-01T16:05:01Z",
+      "reason": "found by this run's QA review of BG0866/BG0825; same files as a lane already in the batch (D0290: inside the repo and the approved batch's scope)"
+    },
+    {
+      "action": "add",
+      "id": "BG0877",
+      "at": "2026-10-01T16:05:01Z",
+      "reason": "found by this run's QA review of BG0866/BG0825; same files as a lane already in the batch (D0290: inside the repo and the approved batch's scope)"
+    },
+    {
+      "action": "drop",
+      "id": "US0977",
+      "reason": "carried at the review cap: BG0879",
+      "at": "2026-10-01T17:04:21Z"
+    },
+    {
+      "action": "drop",
+      "id": "BG0839",
+      "reason": "carried at the review cap: BG0880",
+      "at": "2026-10-01T17:04:26Z"
+    },
+    {
+      "action": "drop",
+      "id": "BG0824",
+      "reason": "carried at the review cap: BG0883",
+      "at": "2026-10-01T18:14:42Z"
+    },
+    {
+      "action": "drop",
+      "id": "US0971",
+      "reason": "carried at the review cap: BG0884",
+      "at": "2026-10-01T18:37:22Z"
+    }
+  ],
+  "batches": [],
+  "rulings": [],
+  "base_ref": "e1a19b817ec5c7f8ee4c2d7bb4199a069960b0c0",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-10-01T10:18:22Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "Every open finding closes: Maya and Jonah get honest commands, safe installs and upgrades, and leaner sprint machinery",
+  "sprint_goal_review": {
+    "reviewed": false,
+    "status": "not read",
+    "skipped": null,
+    "seats": [],
+    "goal": "Every open finding closes: Maya and Jonah get honest commands, safe installs and upgrades, and leaner sprint machinery",
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 83,
+    "objected": false,
+    "objections": [],
+    "reviewed_goal": "Jonah and Maya meet no false success, safe upgrades and installs, and a run carrying no dead machinery",
+    "reason": "the recorded review is of a different goal ('Jonah and Maya meet no false success, safe upgrades and installs, and a run carrying no dead machinery'), so it says nothing about this one"
+  },
+  "reachable_end_state": {
+    "state": "Fixed (bug), Done (story)",
+    "types": [
+      "bug",
+      "story"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed (bug), Done (story)"
+  },
+  "plan_snapshot": {
+    "units": {
+      "BG0726": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0737": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0817": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0827": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0832": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0833": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0834": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0835": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0866": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "US0804": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "US0966": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0867": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0868": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0869": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0824": {
+        "planned_points": 2,
+        "forecast_tokens": 352834,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0839": {
+        "planned_points": 2,
+        "forecast_tokens": 352834,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0855": {
+        "planned_points": 2,
+        "forecast_tokens": 352834,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0860": {
+        "planned_points": 2,
+        "forecast_tokens": 352834,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0759": {
+        "planned_points": 2,
+        "forecast_tokens": 352834,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0784": {
+        "planned_points": 2,
+        "forecast_tokens": 352834,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0968": {
+        "planned_points": 2,
+        "forecast_tokens": 352834,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0973": {
+        "planned_points": 2,
+        "forecast_tokens": 352834,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0977": {
+        "planned_points": 2,
+        "forecast_tokens": 352834,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0825": {
+        "planned_points": 3,
+        "forecast_tokens": 529251,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0831": {
+        "planned_points": 3,
+        "forecast_tokens": 529251,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0837": {
+        "planned_points": 3,
+        "forecast_tokens": 529251,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0861": {
+        "planned_points": 3,
+        "forecast_tokens": 529251,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0805": {
+        "planned_points": 3,
+        "forecast_tokens": 529251,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0969": {
+        "planned_points": 3,
+        "forecast_tokens": 529251,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0970": {
+        "planned_points": 3,
+        "forecast_tokens": 529251,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0971": {
+        "planned_points": 3,
+        "forecast_tokens": 529251,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0972": {
+        "planned_points": 3,
+        "forecast_tokens": 529251,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0974": {
+        "planned_points": 3,
+        "forecast_tokens": 529251,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0858": {
+        "planned_points": 2,
+        "forecast_tokens": 352834,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0975": {
+        "planned_points": 3,
+        "forecast_tokens": 529251,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0976": {
+        "planned_points": 3,
+        "forecast_tokens": 529251,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "US0967": {
+        "planned_points": 5,
+        "forecast_tokens": 882085,
+        "forecast_minutes": 32.0,
+        "added": false
+      },
+      "US0978": {
+        "planned_points": 3,
+        "forecast_tokens": 529251,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0876": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": true
+      },
+      "BG0877": {
+        "planned_points": 1,
+        "forecast_tokens": 176417,
+        "forecast_minutes": 6.4,
+        "added": true
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 176417,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 6.4,
+        "source": "fallback: 0 row(s) for claude-opus-5-5, under 3, so the latest rows of any single model: median of RETRO0028"
+      }
+    }
+  },
+  "token_forecast": 13760526,
+  "goal_content_review": [
+    {
+      "phase": "plan",
+      "goal": "Every open finding closes: Maya and Jonah get honest commands, safe installs and upgrades, and leaner sprint machinery",
+      "answer": "yes",
+      "missing": "",
+      "shortfall": {},
+      "recorded_at": "2026-10-01T10:19:17Z"
+    }
+  ],
+  "unit_actuals": {
+    "BG0837": {
+      "minutes": 546.15,
+      "tokens": 2281764,
+      "started_at": "2026-10-01T10:28:26Z",
+      "start_tokens": 15627,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0861": {
+      "minutes": 523.95,
+      "tokens": 2261843,
+      "started_at": "2026-10-01T10:50:38Z",
+      "start_tokens": 35548,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "US0784": {
+      "minutes": 492.17,
+      "tokens": 2201056,
+      "started_at": "2026-10-01T11:22:25Z",
+      "start_tokens": 96335,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0831": {
+      "minutes": 474.68,
+      "tokens": 2158892,
+      "started_at": "2026-10-01T11:39:54Z",
+      "start_tokens": 138499,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "US0967": {
+      "minutes": 436.37,
+      "tokens": 2088606,
+      "started_at": "2026-10-01T12:18:13Z",
+      "start_tokens": 208785,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    }
+  },
+  "lanes_in_flight": [
+    {
+      "unit": "BG0839",
+      "started_at": "2026-10-01T14:46:02Z"
+    }
+  ],
+  "review_base": {
+    "BG0837": 0,
+    "BG0861": 0,
+    "US0784": 0,
+    "BG0831": 0,
+    "US0967": 0,
+    "US0978": 0,
+    "US0974": 0,
+    "BG0866": 0,
+    "BG0825": 0,
+    "US0804": 0,
+    "BG0737": 0,
+    "US0966": 0,
+    "BG0833": 0,
+    "US0759": 0,
+    "US0977": 0,
+    "BG0868": 0,
+    "BG0869": 0,
+    "BG0817": 0,
+    "BG0832": 0,
+    "BG0834": 0,
+    "BG0858": 0,
+    "US0805": 0,
+    "US0970": 0,
+    "US0968": 0,
+    "BG0855": 0,
+    "BG0839": 0,
+    "BG0824": 0,
+    "US0976": 0,
+    "BG0876": 0,
+    "BG0835": 0,
+    "BG0827": 0,
+    "US0971": 0,
+    "US0972": 0,
+    "US0969": 0,
+    "BG0726": 0,
+    "BG0860": 0,
+    "BG0877": 0,
+    "BG0867": 0,
+    "US0975": 0,
+    "US0973": 0
+  },
+  "sprint_goal_verdict": {
+    "verdict": "achieved",
+    "note": "Every unit the plan held closed: 40 of 40 approved by an independent QA seat (34 in the batch, 6 discharged by their rejecting reviewers after a carry at the cap), 34 of 34 batch units verify green. Honest commands: a CLI no longer reports success it did not get (US0969), ids print as their files spell them (BG0825, BG0877), docs and comments tell the truth (US0973). Safe installs and upgrades: install.sh takes the latest verified release (US0968), install and upgrade never damage a consumer's files (US0976), a v5 upgrade reads clean and names an unreadable file (US0974), migrate names retired surface in a project's own docs (US0975), js-yaml, brace-expansion and markdown-it held at patched releases (BG0866, BG0876). Leaner machinery: the handoff page, its writers and --require-handoff are retired for the signed report (US0967, US0978), the revert-check lane and batch-span API are gone (US0784, BG0861). Disclosed: 20 findings raised during the run (BG0870-BG0889, all groomed) stay open for the next sprint."
+  },
+  "scaffolded_retro": "RETRO0129",
+  "close_attempts": [
+    {
+      "at": "2026-10-01T19:34:33Z",
+      "outstanding": 2,
+      "stages": [
+        "gate",
+        "retro"
+      ]
+    },
+    {
+      "at": "2026-10-01T19:41:56Z",
+      "outstanding": 0,
+      "stages": []
+    },
+    {
+      "at": "2026-10-01T19:50:49Z",
+      "outstanding": 0,
+      "stages": []
+    }
+  ],
+  "close_not_measured": [],
+  "close_tree": "09358f44c8db87ac353d2824a900dc598b573943",
+  "report_gate_clear": [
+    "BG0726",
+    "BG0737",
+    "BG0817",
+    "BG0825",
+    "BG0827",
+    "BG0831",
+    "BG0832",
+    "BG0833",
+    "BG0834",
+    "BG0835",
+    "BG0837",
+    "BG0855",
+    "BG0858",
+    "BG0860",
+    "BG0861",
+    "BG0866",
+    "BG0867",
+    "BG0868",
+    "BG0869",
+    "BG0876",
+    "BG0877",
+    "US0759",
+    "US0784",
+    "US0804",
+    "US0805",
+    "US0966",
+    "US0967",
+    "US0968",
+    "US0969",
+    "US0970",
+    "US0972",
+    "US0973",
+    "US0975",
+    "US0976"
+  ],
+  "verified_sha": "8d083c6848d5ab661d3bbbf8b2bf00634476b0bd",
+  "close_known_issues": [
+    {
+      "source": "retro-extract",
+      "detail": "LC-005 recurred but its CR was not filed: triage session cap reached (20 findings filed this session) - refusing to file more. Fail loud, not silent drop. The counter is keyed on 'RUN-01M3VF2J', and it resets when that key moves: close this run and open the next, or set SDLC_TRIAGE_SESSION to name a session of your own. Raising triage.session_cap moves the wall rather than removing it. Triaging the backlog does NOT help - it decrements nothing, and offering it as an exit was false at the moment it was read."
+    },
+    {
+      "source": "retro-extract",
+      "detail": "lessons: 0 hit(s) from cited REJECTs"
+    }
+  ],
+  "ci_runs": {
+    "source": "gh run list",
+    "runs": [
+      {
+        "conclusion": "",
+        "createdAt": "2026-10-01T19:21:12Z",
+        "databaseId": 36913650209,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "d6fcdc52853ba2f52130fdd0eee646f37d8fc363",
+        "updatedAt": "2026-10-01T19:21:16Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-01T18:45:37Z",
+        "databaseId": 36909223880,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "66c9ae61f46353efcb59d520a63598cfbc3728b3",
+        "updatedAt": "2026-10-01T19:14:05Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-01T18:22:19Z",
+        "databaseId": 36906324592,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "d0382c3f1bce6fae7710771d60352a8e2c060efc",
+        "updatedAt": "2026-10-01T19:10:35Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-01T17:53:40Z",
+        "databaseId": 36902763151,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "f374d6f751679934d4791a3b43635a021c77bf6c",
+        "updatedAt": "2026-10-01T18:42:14Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-01T17:20:21Z",
+        "databaseId": 36898635717,
+        "event": "dynamic",
+        "headBranch": "main",
+        "headSha": "f996628ef0c745d475aab82363d58256de624de7",
+        "updatedAt": "2026-10-01T17:21:12Z",
+        "workflowName": "Dependabot Updates"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-01T17:20:20Z",
+        "databaseId": 36898634272,
+        "event": "dynamic",
+        "headBranch": "main",
+        "headSha": "f996628ef0c745d475aab82363d58256de624de7",
+        "updatedAt": "2026-10-01T17:21:17Z",
+        "workflowName": "Dependabot Updates"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-01T17:19:01Z",
+        "databaseId": 36898472211,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "f996628ef0c745d475aab82363d58256de624de7",
+        "updatedAt": "2026-10-01T17:56:07Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-10-01T16:11:56Z",
+        "databaseId": 36890169798,
+        "event": "pull_request",
+        "headBranch": "dependabot/npm_and_yarn/brace-expansion-5.0.12",
+        "headSha": "c4989c7440d69e35d9314cd7f93a726471a8dd2e",
+        "updatedAt": "2026-10-01T16:49:17Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-10-01T16:11:55Z",
+        "databaseId": 36890169115,
+        "event": "pull_request",
+        "headBranch": "dependabot/npm_and_yarn/markdown-it-14.3.2",
+        "headSha": "88c12a1e0c6e9b01cfa6aaa36ad2ca2a4cafa350",
+        "updatedAt": "2026-10-01T16:49:21Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-01T16:10:52Z",
+        "databaseId": 36890032918,
+        "event": "dynamic",
+        "headBranch": "main",
+        "headSha": "481ef5019fa3c6aa859678bd71e251856509e2d6",
+        "updatedAt": "2026-10-01T16:11:53Z",
+        "workflowName": "Dependabot Updates"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-01T16:10:52Z",
+        "databaseId": 36890032841,
+        "event": "dynamic",
+        "headBranch": "main",
+        "headSha": "481ef5019fa3c6aa859678bd71e251856509e2d6",
+        "updatedAt": "2026-10-01T16:12:01Z",
+        "workflowName": "Dependabot Updates"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-10-01T16:10:44Z",
+        "databaseId": 36890016236,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "481ef5019fa3c6aa859678bd71e251856509e2d6",
+        "updatedAt": "2026-10-01T16:47:47Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-01T12:22:20Z",
+        "databaseId": 36861303010,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "c76a3569483a75dc7ba0ec5b815e01b1121db31e",
+        "updatedAt": "2026-10-01T13:08:07Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-01T11:06:20Z",
+        "databaseId": 36853267621,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "1062331e305c1afbc59fb10062e15e7c075f1929",
+        "updatedAt": "2026-10-01T11:56:27Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-01T10:28:20Z",
+        "databaseId": 36849337681,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "58cc32027ec86e8e806c1152afd95cc93374d9d9",
+        "updatedAt": "2026-10-01T11:16:35Z",
+        "workflowName": "Lint"
+      }
+    ]
+  },
+  "review_rows": {
+    "BG0726": [
+      "a67baa327689a52a"
+    ],
+    "BG0737": [
+      "cfc04fbbcb1d3f9c"
+    ],
+    "BG0817": [
+      "0a224012a12a63e7"
+    ],
+    "BG0827": [
+      "85bfac897883b680"
+    ],
+    "BG0832": [
+      "c0c010d9653e3f36"
+    ],
+    "BG0833": [
+      "8f7e1e547e938c5e"
+    ],
+    "BG0834": [
+      "b5e082129327273a"
+    ],
+    "BG0835": [
+      "37ddd3f2afc4d889"
+    ],
+    "BG0866": [
+      "f0d9204df75b81ce"
+    ],
+    "US0804": [
+      "55d15dea1240cce7"
+    ],
+    "US0966": [
+      "fb1e7cd6eb1fbf24",
+      "c5ca4a77b0ea4a7e"
+    ],
+    "BG0867": [
+      "af47e76498fc1a18",
+      "a3746ac0b924c571"
+    ],
+    "BG0868": [
+      "498770609d77b9fd"
+    ],
+    "BG0869": [
+      "5e37f133452aaa4e"
+    ],
+    "BG0824": [
+      "d0ce7e90bb8e4e75",
+      "a2dd2202a0032a1b",
+      "853400e81239a682"
+    ],
+    "BG0839": [
+      "bdd4fc7577b12a52",
+      "5520a7aa3a7f73ae",
+      "4f71ef6d904cc072"
+    ],
+    "BG0855": [
+      "6c8bd2e9e8b2f582"
+    ],
+    "BG0860": [
+      "ec83afb30707490a",
+      "54f3ab5ac5d0b850"
+    ],
+    "US0759": [
+      "c04acd5e429870c8",
+      "96c066a102b8b792"
+    ],
+    "US0784": [
+      "5588722e46d12eb1"
+    ],
+    "US0968": [
+      "54afa6fd57eca284"
+    ],
+    "US0973": [
+      "c099a9d3f5827185",
+      "882f65183a6b0764"
+    ],
+    "US0977": [
+      "1b6f26c05ae02547",
+      "2db7936a134ed439",
+      "e6cb3806822bb7d0"
+    ],
+    "BG0825": [
+      "26be39f5bd383269"
+    ],
+    "BG0831": [
+      "82ca1bcf32694597",
+      "842793ba99847465"
+    ],
+    "BG0837": [
+      "d26b0d6c83c4c01a"
+    ],
+    "BG0861": [
+      "725d6578bddb2600"
+    ],
+    "US0805": [
+      "f53aaf775e3e8d8b"
+    ],
+    "US0969": [
+      "61e951341675a7c7"
+    ],
+    "US0970": [
+      "0cc22e1b78efdfbb",
+      "f8bec8e79a5bdd3a"
+    ],
+    "US0971": [
+      "db2f6bf19f69397c",
+      "e70dae06df2004ff",
+      "75acf344d77b7215"
+    ],
+    "US0972": [
+      "16b3444eedd01b96",
+      "57896503ea5097d0"
+    ],
+    "US0974": [
+      "e92ecec2d5ff1a9a",
+      "37a4a017047eb6c3",
+      "b3a9d50ef83b776b"
+    ],
+    "BG0858": [
+      "52da1e966eccff72"
+    ],
+    "US0975": [
+      "6ff5392f20e1bb08",
+      "7d0d67967cdca273"
+    ],
+    "US0976": [
+      "4b4aa2a30743a967",
+      "8f815c84bceed4ae"
+    ],
+    "US0967": [
+      "f60e082ce9eabe1d",
+      "b12a1c7fe63d0dca"
+    ],
+    "US0978": [
+      "1ccd719ed61d2ebf",
+      "34c65a342abaeaee",
+      "1af859c9e2a64521"
+    ],
+    "BG0876": [
+      "421b15897b3ba294"
+    ],
+    "BG0877": [
+      "03c809b210651e31"
+    ]
+  },
+  "report": "RPT0014",
+  "report_fingerprint": "8cb2f1bb218180d9",
+  "unanswered": [],
+  "unanswered_rulings_from": "RETRO0129",
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-10-02T07:24:55Z",
+    "report": "RPT0014",
+    "fingerprint": "8cb2f1bb218180d9"
+  }
+}

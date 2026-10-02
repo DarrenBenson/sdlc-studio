@@ -1,6 +1,6 @@
 # US0804: `verify_ac.py run --unit <id>` is accepted as an alias for `--id`
 
-> **Status:** Ready
+> **Status:** Done
 > **Merged from:** US0806, US0807 (backlog sweep 2026-09-24, sdlc-studio/reviews/backlog-sweep-2026-09-24.md)
 > **Delivers:** CR0559
 > **Created:** 2026-08-27

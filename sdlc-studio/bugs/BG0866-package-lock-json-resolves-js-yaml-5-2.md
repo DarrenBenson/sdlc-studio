@@ -1,6 +1,6 @@
 # BG0866: package-lock.json resolves js-yaml 5.2.2 through markdownlint-cli 0.49.1, inside Dependabot alert 19's vulnerable range
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** package.json, package-lock.json, tools/tests/test_lean_js_yaml_patched.py, changelog.d/BG0866.md

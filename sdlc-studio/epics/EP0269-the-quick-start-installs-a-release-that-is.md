@@ -1,6 +1,6 @@
 # EP0269: The quick start installs a release that is verified
 
-> **Status:** Ready
+> **Status:** Done
 > **Derived Point Total:** 2
 > **Parent:** CR0603
 > **Created:** 2026-10-01
@@ -14,7 +14,7 @@ Decomposed from CR0603. Delivers the work CR0603 requested.
 
 ## Story Breakdown
 
-- [ ] [US0968: With no --version, install.sh installs the latest published release, verified against its .sha256](../stories/US0968-with-no-version-install-sh-installs-the-latest.md)
+- [x] [US0968: With no --version, install.sh installs the latest published release, verified against its .sha256](../stories/US0968-with-no-version-install-sh-installs-the-latest.md)
 
 ## Revision History
 

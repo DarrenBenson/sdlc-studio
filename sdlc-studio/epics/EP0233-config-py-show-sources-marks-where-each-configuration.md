@@ -1,6 +1,6 @@
 # EP0233: `config.py show --sources` marks where each configuration key in force comes from
 
-> **Status:** Ready
+> **Status:** Done
 > **Derived Point Total:** 18
 > **Parent:** CR0534
 > **Created:** 2026-08-27
@@ -14,7 +14,7 @@ Decomposed from CR0534. Delivers the work CR0534 requested.
 
 ## Story Breakdown
 
-- [ ] [US0759: A command prints every configuration key in force with its value, its source and its meaning](../stories/US0759-config-py-show-sources-marks-each-key-in.md)
+- [x] [US0759: A command prints every configuration key in force with its value, its source and its meaning](../stories/US0759-config-py-show-sources-marks-each-key-in.md)
 - [x] [US0760: The keys that are project JUDGEMENTS are named as such and decided explicitly as numbered decisions](../stories/US0760-the-keys-that-are-project-judgements-are-named.md)
 - [x] [US0761: The retro reads the run's measurements against the settings that governed it and proposes changes](../stories/US0761-the-retro-reads-the-run-s-measurements-against.md)
 - [x] [US0762: A proposal is never applied automatically and lands in the retro's findings table to be ruled on](../stories/US0762-a-proposal-is-never-applied-automatically-and-lands.md)

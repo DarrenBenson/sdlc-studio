@@ -1,6 +1,6 @@
 # BG0869: status backlog lists fully decomposed requests as discovery options still to refine
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_status_decomposed_requests.py, changelog.d/BG0869.md, .claude/skills/sdlc-studio/scripts/tests/test_status.py

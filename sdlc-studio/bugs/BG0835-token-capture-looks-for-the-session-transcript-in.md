@@ -1,6 +1,6 @@
 # BG0835: Token capture looks for the session transcript in a directory named by replacing only '/', so a project path holding '.' or '_' reads NOT ATTRIBUTABLE
 
-> **Status:** Open
+> **Status:** Fixed
 > **Groomed:** 2026-10-01 (D0291) - premise reproduced at HEAD: a `claude -p` session started in `.../vp2/my_app.v2` wrote its transcript under `~/.claude/projects/-tmp-claude-1000--home-...-vp2-my-app-v2` (every non-alphanumeric to `-`), while `run_state.session_tokens` (line 732) derives `...-vp2-my_app.v2` by replacing `/` only. The literal-form fallback is dropped: the harness never writes it
 > **Severity:** Medium
 > **Points:** 1

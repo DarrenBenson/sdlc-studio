@@ -1,6 +1,6 @@
 # BG0837: The pre-push gate judges the working tree, not the commits being pushed, so an uncommitted fix turns a red push green
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Groomed:** 2026-10-01 (D0291) - premise reproduced at HEAD: `.githooks/pre-push` (190 lines) runs `python3 "$skill/gate.py" --boundary push` in the working tree and holds no `stash`, `worktree` or dirty-tree check (grep finds none), so the gate imports uncommitted files. Narrowed to the accuracy fix: the `refuse a dirty push` option is dropped as a new refusal (D0291)
 > **Severity:** Medium
 > **Points:** 3

@@ -1,6 +1,6 @@
 # BG0833: The engagement floor judges a decomposed CR by its own criteria, so a CR reconcile derives Complete from planned children is refused as unplanned
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_engagement_decomposed.py, changelog.d/BG0833.md, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py

@@ -1,6 +1,6 @@
 # BG0867: A status transition rewrites an index row in compact style under an aligned header, so markdownlint fails the index it just synced
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_index_row_style.py, changelog.d/BG0867.md, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py

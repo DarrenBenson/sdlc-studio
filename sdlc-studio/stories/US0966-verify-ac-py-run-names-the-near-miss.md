@@ -1,6 +1,6 @@
 # US0966: `verify_ac.py run` names the near-miss node when a Verify selector's file is collected but its node is not
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0559
 > **Created:** 2026-10-01
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # BG0827: The review brief asks the reviewer to judge origin 'at the base ref' but never names the base ref
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_base_ref.py, changelog.d/BG0827.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py

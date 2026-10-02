@@ -1,6 +1,6 @@
 # BG0868: refine add can only add stories under a new epic, so a story for a request's existing epic is minted by hand
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_refine_add_into.py, changelog.d/BG0868.md, .claude/skills/sdlc-studio/scripts/tests/test_refine.py

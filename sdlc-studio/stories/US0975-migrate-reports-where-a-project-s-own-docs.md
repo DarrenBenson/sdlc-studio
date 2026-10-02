@@ -1,6 +1,6 @@
 # US0975: migrate reports where a project's own docs name retired v5 surface
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0592
 > **Created:** 2026-10-01
 > **Created-by:** sdlc-studio new

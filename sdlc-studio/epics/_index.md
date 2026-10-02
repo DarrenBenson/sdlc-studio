@@ -7,10 +7,10 @@
 | Status | Count |
 | --- | --- |
 | Draft | 0 |
-| Ready | 6 |
+| Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 231 |
+| Done | 237 |
 | Superseded | 33 |
 | **Total** | **270** |
 
@@ -45,18 +45,18 @@
 | [EP0230](EP0230-the-planner-answers-whether-a-batch-is-parallelisable.md) | The planner answers whether a batch is parallelisable, rather than which files collide | Superseded | 5 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0231](EP0231-a-charter-can-select-what-a-request-decomposed.md) | A charter can select what a request decomposed into, and says so when it cannot | Superseded | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0232](EP0232-an-uncovered-production-hunk-is-found-by-reverting.md) | An uncovered production hunk is found by reverting it, not by reading it | Superseded | 5 | -- | 2026-08-27 | 2026-08-27 |
-| [EP0233](EP0233-config-py-show-sources-marks-where-each-configuration.md) | `config.py show --sources` marks where each configuration key in force comes from | Ready | 5 | -- | 2026-08-27 | 2026-08-27 |
+| [EP0233](EP0233-config-py-show-sources-marks-where-each-configuration.md) | `config.py show --sources` marks where each configuration key in force comes from | Done | 5 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0234](EP0234-the-specs-learn-about-a-shipped-gate-and.md) | The specs learn about a shipped gate, and the guards that say so can fail | Superseded | 5 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0235](EP0235-the-lane-check-corpus-can-only-shrink.md) | The lane-check corpus can only shrink | Superseded | 3 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0236](EP0236-a-release-is-published-by-a-command-not.md) | A release is published by a command, not by hand after the tag | Superseded | 3 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0237](EP0237-a-run-notices-work-it-delivered-that-its.md) | A run notices work it delivered that its batch never named | Superseded | 3 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0238](EP0238-the-appetite-measures-working-time-and-says-what.md) | The appetite measures working time, and says what it excluded | Superseded | 6 | -- | 2026-08-27 | 2026-08-27 |
-| [EP0239](EP0239-revert-check-measures-in-an-isolated-copy-never.md) | revert-check measures in an isolated copy, never in the live working tree | Ready | 5 | -- | 2026-08-27 | 2026-08-27 |
+| [EP0239](EP0239-revert-check-measures-in-an-isolated-copy-never.md) | revert-check measures in an isolated copy, never in the live working tree | Done | 5 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0240](EP0240-an-exemption-reason-is-judged-on-meaning-not.md) | An exemption reason is judged on meaning, not on character count | Superseded | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0241](EP0241-a-kill-recorded-against-a-node-the-criterion.md) | A kill recorded against a node the criterion does not name is reported, not counted | Superseded | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0242](EP0242-a-bug-s-plan-or-evidence-gets-an.md) | A bug's plan or evidence gets an independent judgement, and the asymmetry is stated | Superseded | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0243](EP0243-the-derived-depth-lane-re-derives-rather-than.md) | The derived-depth lane re-derives, rather than trusting each span's own seal | Superseded | 3 | -- | 2026-08-27 | 2026-08-27 |
-| [EP0244](EP0244-one-concept-one-name-across-every-verb-and.md) | One concept, one name, across every verb and every document key | Ready | 5 | -- | 2026-08-27 | 2026-08-27 |
+| [EP0244](EP0244-one-concept-one-name-across-every-verb-and.md) | One concept, one name, across every verb and every document key | Done | 5 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0245](EP0245-filing-a-finding-leaves-the-disclosure-true.md) | Filing a finding leaves the disclosure true | Superseded | 3 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0246](EP0246-the-declared-python-floor-is-a-gate-not.md) | The declared Python floor is a gate, not a sentence in six documents | Done | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0248](EP0248-a-change-to-a-gate-lane-or-a.md) | A change to a gate lane or a hook is run where the hook runs it before it can reach Fixed | Superseded | 4 | -- | 2026-09-07 | 2026-09-07 |
@@ -75,9 +75,9 @@
 | [EP0265](EP0265-v6-0-0-the-lean-loop-works-on.md) | v6.0.0: the lean loop works on a fresh project, and the release cuts clean | Done | 15 | -- | 2026-09-25 | 2026-09-25 |
 | [EP0266](EP0266-v6-0-0-every-doc-page-and-release.md) | v6.0.0: every doc, page and release note describes the lean product | Done | 7 | -- | 2026-09-25 | 2026-09-25 |
 | [EP0267](EP0267-v6-0-0-the-release-is-honest-end.md) | v6.0.0: the release is honest end to end - signed reports check anywhere, the report measures itself, and a new user's first week works | Done | 7 | -- | 2026-09-27 | 2026-09-27 |
-| [EP0268](EP0268-one-page-ends-a-run-the-report-carries.md) | One page ends a run: the report carries what the handoff carried | Ready | 2 | -- | 2026-10-01 | 2026-10-01 |
-| [EP0269](EP0269-the-quick-start-installs-a-release-that-is.md) | The quick start installs a release that is verified | Ready | 1 | -- | 2026-10-01 | 2026-10-01 |
-| [EP0270](EP0270-low-findings-that-reach-users-fixed-in-themes.md) | Low findings that reach users, fixed in themes | Ready | 9 | -- | 2026-10-01 | 2026-10-01 |
+| [EP0268](EP0268-one-page-ends-a-run-the-report-carries.md) | One page ends a run: the report carries what the handoff carried | Done | 2 | -- | 2026-10-01 | 2026-10-01 |
+| [EP0269](EP0269-the-quick-start-installs-a-release-that-is.md) | The quick start installs a release that is verified | Done | 1 | -- | 2026-10-01 | 2026-10-01 |
+| [EP0270](EP0270-low-findings-that-reach-users-fixed-in-themes.md) | Low findings that reach users, fixed in themes | Done | 9 | -- | 2026-10-01 | 2026-10-01 |
 
 ## Archived Releases
 

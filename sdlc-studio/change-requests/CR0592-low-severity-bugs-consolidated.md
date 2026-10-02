@@ -1,6 +1,6 @@
 # CR-0592: Low-severity bugs (consolidated)
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0270
 > **Supersedes:** CR0601
 > **Size:** S

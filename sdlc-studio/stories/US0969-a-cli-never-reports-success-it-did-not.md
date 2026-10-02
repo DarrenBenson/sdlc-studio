@@ -1,6 +1,6 @@
 # US0969: A CLI never reports success it did not get
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0592
 > **Created:** 2026-10-01
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # US0759: `config.py show --sources` marks each key in force as a skill default or project-set
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0534
 > **Created:** 2026-08-27
 > **Created-by:** sdlc-studio new

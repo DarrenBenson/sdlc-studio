@@ -1,6 +1,6 @@
 # BG0726: the report renders NO DECLARED SEAT without asking whether the project declares any personas at all
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_seat_label.py, changelog.d/BG0726.md

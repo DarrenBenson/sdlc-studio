@@ -1,6 +1,6 @@
 # CR-0559: the same concept is named three ways across the toolchain and twice inside one script, so every invocation is a guess the caller pays for in a refusal
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Supersedes:** CR0563
 > **Decomposed-into:** EP0244
 > **Priority:** Medium

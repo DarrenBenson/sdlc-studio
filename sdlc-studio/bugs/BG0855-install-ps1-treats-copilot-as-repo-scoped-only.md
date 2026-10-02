@@ -1,6 +1,6 @@
 # BG0855: install.ps1 treats Copilot as repo-scoped only, the Windows twin of BG0852
 
-> **Status:** Open
+> **Status:** Fixed
 > **Groomed:** 2026-10-01 (D0291) - premise reproduced at HEAD by source (no `pwsh` on this host; `command -v pwsh` is empty): install.ps1:42 `copilot = @{ global = ''`, :101 detects copilot by `gh` or `.github`, :174 `Copilot: reads .github/skills in the repo`, while install.sh:146 maps `copilot:global` to `$HOME/.agents/skills` (BG0852). The Verify runs install.ps1 for real wherever `pwsh` is on PATH (CI) and falls back to pinning the source here, as test_lean_install_ps1_local.py already does for BG0821
 > **Severity:** Medium
 > **Points:** 2
