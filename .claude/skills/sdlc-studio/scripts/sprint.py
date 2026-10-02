@@ -8110,6 +8110,61 @@ def _lane_unit_ids(args: argparse.Namespace) -> list[str]:
         return []
 
 
+def _lane_positive_int(raw: str) -> int:
+    """`--tokens`: a positive integer, refused by the parser otherwise - a 0 recorded as an
+    agent's total would be added into the run's spend as an agent that cost nothing."""
+    try:
+        value = int(raw)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"expects a positive integer, got {raw!r}") from None
+    if value <= 0:
+        raise argparse.ArgumentTypeError(f"expects a positive integer, got {raw!r}")
+    return value
+
+
+def _lane_positive_minutes(raw: str) -> float:
+    """`--minutes`: a positive finite number of minutes, refused by the parser otherwise."""
+    try:
+        value = float(raw)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"expects a positive number, got {raw!r}") from None
+    if not math.isfinite(value) or value <= 0:
+        raise argparse.ArgumentTypeError(f"expects a positive finite number, got {raw!r}")
+    return value
+
+
+def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]) -> None:
+    """Record the builder's own `--tokens` (and `--minutes`) for the one unit returned, through
+    the delegated record `retro.py accuracy --delegated-unit` writes, so the figure counts once
+    in the run's delegated total and reads as the unit's agent total on the page.
+
+    Optional and never a refusal. Recorded whatever the outcome: a blocked lane spent its
+    tokens too. Two cases record nothing and say so, because the figure cannot be placed:
+    `--minutes` with no `--tokens` (a delegated record IS a token total), and a total given for
+    several units at once (it cannot be split between them)."""
+    tokens, minutes = getattr(args, "tokens", None), getattr(args, "minutes", None)
+    if tokens is None and minutes is None:
+        return
+    if tokens is None:
+        print("WARNING --minutes was not recorded: an agent's minutes are recorded with its "
+              "token total, so pass the builder's --tokens beside them", file=sys.stderr)
+        return
+    if len(results) != 1:
+        print(f"WARNING --tokens was not recorded: one total cannot be split between "
+              f"{len(results)} units - return each unit with its own builder's total",
+              file=sys.stderr)
+        return
+    res = results[0]
+    res["agent_total"] = _lane_run_state(
+        "record_agent_total",
+        lambda: run_state.record_delegated_tokens(
+            root, tokens, agent="build lane", note=f"sprint lane return ({res['outcome']})",
+            unit=res["unit"], minutes=minutes),
+        None,
+        f"{res['unit']}'s builder total could not be recorded (the run state is unreadable), so "
+        f"its tokens and minutes will not reach the page")
+
+
 def _lane_pairs(values: list[str] | None, flag: str) -> dict:
     """`--proof band=evidence` pairs. A malformed pair raises rather than being dropped: a proof
     silently discarded on a typo is the undischarged obligation this command exists to surface."""
@@ -8560,11 +8615,16 @@ def cmd_lane(args: argparse.Namespace) -> int:
                 f"{res['unit']}'s span could not be closed (the run state is unreadable), so "
                 f"its time and tokens may read NOT MEASURED. Its acceptance criteria HAVE been "
                 f"run and their result is reported below")
+    _lane_agent_totals(root, args, results)
     if getattr(args, "format", "text") == "json":
         print(json.dumps(results, indent=2))
     else:
         for res in results:
             print(f"{res['unit']}: {res['outcome']} (claimed {res['claimed']})")
+            if got := res.get("agent_total"):
+                timed = f", {got['minutes']:g} minutes" if got.get("minutes") else ""
+                print(f"  agent total recorded (supplied, not measured): "
+                      f"{got['tokens']:,} tokens{timed}")
             for crit in res["verification"]["criteria"]:
                 print(f"  {crit['ac']}: {crit['state']} (exit {crit['exit_code']}) "
                       f"<- {crit['verifier']}")
@@ -11530,6 +11590,12 @@ def build_parser() -> argparse.ArgumentParser:
                     help="(return) evidence discharging an assigned proof obligation; repeatable")
     ln.add_argument("--gap", action="append", default=None, metavar="BAND=WHY",
                     help="(return) why an assigned obligation could NOT be discharged; repeatable")
+    ln.add_argument("--tokens", type=_lane_positive_int, default=None, metavar="N",
+                    help="(return) the builder agent's OWN reported token total, recorded as a "
+                         "delegated total tagged to the unit; optional")
+    ln.add_argument("--minutes", type=_lane_positive_minutes, default=None, metavar="M",
+                    help="(return) the builder agent's own reported minutes, recorded with "
+                         "--tokens; optional")
     ln.add_argument("--timeout", type=int, default=300,
                     help="(return) per-verifier timeout in seconds (default: 300)")
     ln.add_argument("--format", choices=("text", "json"), default="text")

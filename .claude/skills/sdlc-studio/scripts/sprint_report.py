@@ -3346,7 +3346,7 @@ def _paired(units: list[dict], fkey: str, akey: str) -> tuple:
 
 
 def _estimate_row(measure: str, forecast, actual, basis: str, src: str,
-                  why_forecast: str, why_actual: str) -> dict:
+                  why_forecast: str, why_actual: str, withheld: str | None = None) -> dict:
     if _num(forecast) and isinstance(forecast, float):
         forecast = round(forecast, 1)
     if _num(actual) and isinstance(actual, float):
@@ -3358,7 +3358,8 @@ def _estimate_row(measure: str, forecast, actual, basis: str, src: str,
                          else unmeasured("est_forecast", src, why_forecast)),
         "est_actual": (fig("est_actual", actual, src) if _num(actual)
                        else unmeasured("est_actual", src, why_actual)),
-        "est_ratio": (fig("est_ratio", f"{round(actual / forecast, 2)}x", src) if ok
+        "est_ratio": (unmeasured("est_ratio", src, withheld) if withheld else
+                      fig("est_ratio", f"{round(actual / forecast, 2)}x", src) if ok
                       else unmeasured("est_ratio", src, "needs both a forecast and an actual")),
         "est_basis": fig("est_basis", basis, src)}
 
@@ -3377,8 +3378,28 @@ def _run_tokens_actual(state: dict, run_tokens: dict) -> tuple:
     return tokens + delegated, agents
 
 
+def _tokens_ratio_withheld(state: dict, delivered: list[dict]) -> str | None:
+    """Why the Estimates tokens ratio is withheld, or None when it can be stated.
+
+    The forecast covers every unit's work and the main-thread meter cannot see a delegated
+    agent's spend, so the actual is whole only when every delivered unit's agents supplied
+    theirs. Over a partial actual the ratio understates the run - RPT0014's 0.2x - and a ratio
+    over the units that did supply would compare a part of the actual with all of the forecast
+    or a part of the forecast with a meter shared by every unit. Neither is stated."""
+    howto = "each lane records its builder's total with `sprint lane return --tokens N`"
+    if not run_state.delegated_total(state):
+        return (f"withheld - no delegated spend was supplied, so the actual is the main-thread "
+                f"meter alone, which cannot see a delegated agent's spend; {howto}")
+    missing = [u["id"] for u in delivered if not u["agent_tokens"]]
+    if missing:
+        return (f"withheld - delegated spend not measured for every unit: "
+                f"{', '.join(missing)} supplied no agent total, so the actual undercounts the "
+                f"work the forecast covers; {howto}")
+    return None
+
+
 def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_tokens,
-                       span_minutes) -> dict:
+                       span_minutes, ratio_rule: bool = True) -> dict:
     """Forecast, actual and actual over forecast. Points over the units the run delivered;
     minutes and tokens over the WHOLE run - its span and its meter - because units open at the
     same time share their hours and tokens, so the per-unit figures beneath overlap and summing
@@ -3420,7 +3441,8 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
         "Tokens", f, tokens or None, basis,
         state_rel, "no token forecast is recorded",
         run_tokens.get("reason") or ("the run meter read no spend between its readings"
-                                     if tokens == 0 else "no token actual was recorded")))
+                                     if tokens == 0 else "no token actual was recorded"),
+        withheld=_tokens_ratio_withheld(state, delivered) if ratio_rule else None))
 
     def cell(key, value, why, label=None):
         if _num(value):
@@ -3712,11 +3734,17 @@ def _iso(moment) -> str | None:
 #: stands, so every figure reads as it was signed. An envelope field, never a figure.
 PORTABLE_PATHS = "record_paths"
 
+#: The envelope mark of a page whose tokens ratio is withheld unless every delivered unit's
+#: delegated spend was supplied (`_tokens_ratio_withheld`). A page filed before the rule carries
+#: no mark and re-derives its ratio as it was signed. An envelope field, never a figure.
+TOKEN_RATIO_RULE = "token_ratio"
+TOKEN_RATIO_EVERY_UNIT = "every-delivered-unit-delegated"
+
 
 def build_report(root, retro_id: str, as_of: str | None = None,
                  window_end: str | None = None, run_id: str | None = None,
                  filed: dict | None = None, portable: bool = True,
-                 record: dict | None = None) -> dict:
+                 record: dict | None = None, ratio_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -3730,7 +3758,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     its signing commit holds it: its readings of sources that move after the run are replayed,
     never re-read (`_page_readings`). `portable` reads the run record through
     `run_state.portable` and marks the page so (`PORTABLE_PATHS`); a re-derivation passes what
-    the page it re-derives carries. `record` is `_run_state_for`'s.
+    the page it re-derives carries. `record` is `_run_state_for`'s. `ratio_rule` withholds the
+    tokens ratio over a partial delegated actual and marks the page so (`TOKEN_RATIO_RULE`); a
+    re-derivation passes what the page carries.
     """
     root = Path(root)
     state, state_rel = _run_state_for(root, run_id, record)
@@ -3795,7 +3825,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         _section("goal", "Goal", goal_figs),
         _estimates_section(state, state_rel, ledger, tokens,
                            round((end - start).total_seconds() / 60, 1) if start and end
-                           else None),
+                           else None, ratio_rule=ratio_rule),
         _delivered_section(root, state_rel, ledger),
         _known_issues_section(root, state, state_rel, ledger,
                               state.get("started_at"), _iso(end), readings["findings"],
@@ -3821,7 +3851,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               # An envelope field, never a figure: in the digest, recording the bound would
               # change the fingerprint it protects.
               "window_end": _iso(end), "signature": None, "sections": sections,
-              **({PORTABLE_PATHS: "portable"} if portable else {})}
+              **({PORTABLE_PATHS: "portable"} if portable else {}),
+              **({TOKEN_RATIO_RULE: TOKEN_RATIO_EVERY_UNIT} if ratio_rule else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -4859,7 +4890,8 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
     fresh = build_report(root, basis.get("retro_id"), as_of=basis.get("generated_at"),
                          window_end=_legacy_window_end(root, basis, record),
                          run_id=basis.get("run_id"), filed=anchor,
-                         portable=basis.get(PORTABLE_PATHS) == "portable", record=record)
+                         portable=basis.get(PORTABLE_PATHS) == "portable", record=record,
+                         ratio_rule=basis.get(TOKEN_RATIO_RULE) == TOKEN_RATIO_EVERY_UNIT)
     was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(basis)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)

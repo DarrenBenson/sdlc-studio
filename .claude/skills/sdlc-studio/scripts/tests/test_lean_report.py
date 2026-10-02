@@ -206,7 +206,13 @@ class OnePageTests(unittest.TestCase):
         # Actual is the run meter (1,700,000) plus the delegated agent's reported 123,456.
         self.assertEqual((1_400_000, 1_823_456),
                          (tok["est_forecast"]["value"], tok["est_actual"]["value"]))
-        self.assertEqual("1.3x", tok["est_ratio"]["value"])
+        # US0980: that agent's total is tagged to no delivered unit, so the actual is partial
+        # and the ratio is withheld; a page filed before the rule re-derives the arithmetic.
+        self.assertEqual(sr.NOT_MEASURED, tok["est_ratio"]["value"])
+        self.assertIn("delegated spend not measured for every unit", tok["est_ratio"]["reason"])
+        pre_rule = {r["est_measure"]["value"]: r for r in _sections(sr.build_report(
+            self.root, RETRO, ratio_rule=False))["estimates"]["rows"]}
+        self.assertEqual("1.3x", pre_rule["Tokens"]["est_ratio"]["value"])
         # The resized unit, per unit: planned from the snapshot, actual from the file.
         units = {r["unit_id"]["value"]: r for r in _sections(rep)["delivered"]["rows"]}
         self.assertEqual(3, units["US0001"]["unit_planned_points"]["value"])

@@ -504,3 +504,12 @@ keeps the span it has) and a passing `lane return` closes it, so the sprint repo
 unit's minutes and tokens over that span. A blocked return leaves the span open. A lane briefed
 and never returned stays open through the close and reads NOT MEASURED, never a time measured to
 the close or to the sign.
+
+`lane return --tokens N --minutes M` records the builder agent's own reported totals against the
+unit, as the delegated record `retro.py accuracy --delegated-unit` writes, so they count once in
+the run's delegated spend and the unit's row reads them as agent tokens and agent minutes. Agent
+minutes take precedence over the lane span, which is the fallback. Both are optional. `--minutes`
+with no `--tokens`, or a total given for several units at once, is not recorded and says so. The
+Estimates tokens ratio is withheld unless every delivered unit supplied its delegated spend: the
+main-thread meter cannot see a delegated agent, so a ratio over a partial actual understates the
+run.
