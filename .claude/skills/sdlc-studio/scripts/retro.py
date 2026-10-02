@@ -1139,6 +1139,37 @@ def _covering_run(root, unit_ids) -> dict | None:
     return next((r for r in records if isinstance(r, dict) and _run_covers(r, unit_ids)), None)
 
 
+def _run_active_seconds(root, unit_ids) -> int | None:
+    """The covering run's measured active time over the delivered units, in seconds: each one's
+    agents' supplied minutes, else its closed span. None unless every delivered unit carrying
+    points has one, because a partial time divided by every point understates the rate."""
+    rec = _covering_run(root, unit_ids)
+    if rec is None:
+        return None
+    agents = run_state.unit_agent_totals(rec)
+    spans = {sdlc_md.norm_id(k): v for k, v in (rec.get(run_state.UNIT_ACTUALS) or {}).items()
+             if isinstance(v, dict)}
+    total, any_unit = 0.0, False
+    for uid in unit_ids:
+        hit = sdlc_md.find_by_id(root, uid)
+        if not hit:
+            continue
+        text = sdlc_md.read_text_safe(hit[0])
+        status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"),
+                                          sdlc_md.status_vocab(hit[1], root))
+        pts = sdlc_md.read_points(text)
+        if not (sdlc_md.is_terminal_status(hit[1], status or "")
+                and isinstance(pts, int) and pts > 0):
+            continue   # not among the delivered points the row records
+        agent, span = agents.get(sdlc_md.norm_id(uid)) or {}, spans.get(sdlc_md.norm_id(uid)) or {}
+        minutes = (agent.get("minutes") if agent.get("timed") else
+                   None if span.get("open") else span.get("minutes"))
+        if isinstance(minutes, bool) or not isinstance(minutes, (int, float)) or minutes <= 0:
+            return None
+        total, any_unit = total + minutes, True
+    return round(total * 60) if any_unit else None
+
+
 def _discharged_carries(root, unit_ids) -> list[str]:
     """The units the run that delivered `unit_ids` carried at the review cap and discharged
     inside it (`sprint_report.discharged_carries`). Delivered work the retro's Batch omits: the
@@ -1510,7 +1541,10 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
             "actual_tokens": act_sum,
             "ratio": None if mixed else (round(est_sum / act_sum, 2) if act_sum else None),
             "refused": refused,
-            "wall_time_s": sum(walls) if walls else None,
+            # The runner's worker time; else, for a close with no per-unit telemetry, the run's
+            # measured active time over the delivered units (`_run_active_seconds`).
+            "wall_time_s": (sum(walls) if walls else
+                            _run_active_seconds(root, [u["id"] for u in units])),
             # The overhead split, read from the report that computes it rather than recomputed
             # here - two readings of one question is how they come to disagree. Absent when the
             # run could not attribute it, never 0.
@@ -2226,12 +2260,14 @@ def _row_tokens_per_point(row: dict) -> float | None:
 
 
 def _row_minutes_per_point(row: dict) -> float | None:
-    """A row's active minutes per point: its Wall (s) column is the summed worker time of the
-    measured units, so it covers the points only when every unit was measured."""
+    """A row's active minutes per point. A runner row's Wall (s) is the summed worker time of
+    the measured units, so it covers the points only when every unit was measured; a close's
+    whole-sprint row (Measured 0) carries one only when every delivered unit had a measured time
+    (`_run_active_seconds`), so it covers them."""
     wall, units = row.get("wall_time_s"), row.get("units")
     if not row.get("points") or not isinstance(wall, (int, float)) or wall <= 0:
         return None
-    return wall / 60 / row["points"] if units and row.get("measured") == units else None
+    return wall / 60 / row["points"] if units and row.get("measured") in (units, 0) else None
 
 
 def work_model(root, rows: list[dict] | None = None) -> str | None:
