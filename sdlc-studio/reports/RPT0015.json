@@ -3,8 +3,8 @@
   "report_id": "RPT0015",
   "run_id": "RUN-01M3Y7DP",
   "retro_id": "RETRO0130",
-  "generated_at": "2026-10-02T16:58:14Z",
-  "window_end": "2026-10-02T16:58:14Z",
+  "generated_at": "2026-10-02T17:06:16Z",
+  "window_end": "2026-10-02T17:06:16Z",
   "signature": null,
   "sections": [
     {
@@ -23,7 +23,7 @@
         },
         "goal_verdict_note": {
           "key": "goal_verdict_note",
-          "value": "8 of 8 units approved by an independent QA seat (BG0895 discharged by its rejecting reviewer after a carry), every batch unit verifies green. This run's own page measures what RPT0014 could not: every unit carries an agent total from its lane return (builder) and the run carries the reviewers' spend, so tokens read 2.17M against a 1.28M forecast (1.69x), 1.53M of it the builders and reviewers, where RPT0014 printed 0.2x; a discharged carry counts as delivered (BG0890); time to restore pairs by creation and reads no restore needed for a run with no red (BG0891); the header names its window end (BG0893); a close gap holds only failures (BG0894); a batch finding no longer moves a signed page and the checklist agrees with the page on a re-close (BG0895); velocity rows keep their model (BG0892). Disclosed, out of scope at the goal review: the minutes ratio compares wall-clock with active work (BG0898) and the minutes rate still falls back to a July row (BG0907).",
+          "value": "8 of 8 units approved by an independent QA seat (BG0895 discharged by its rejecting reviewer after a carry), every batch unit verifies green. This run's own page measures what RPT0014 could not: every unit carries an agent total from its lane return (builder) and the run carries the reviewers' spend, so the Tokens row counts the builders' and reviewers' spend (see Estimates and the appendix) where RPT0014 printed 0.2x from the main thread alone; a discharged carry counts as delivered (BG0890); time to restore pairs by creation and reads no restore needed for a run with no red (BG0891); the header names its window end (BG0893); a close gap holds only failures (BG0894); a batch finding no longer moves a signed page and the checklist agrees with the page on a re-close (BG0895); velocity rows keep their model (BG0892). Disclosed, out of scope at the goal review: the minutes ratio compares wall-clock with active work (BG0898) and the minutes rate still falls back to a July row (BG0907).",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "run_id": {
@@ -38,17 +38,17 @@
         },
         "ended_at": {
           "key": "ended_at",
-          "value": "2026-10-02T16:58:14Z",
+          "value": "2026-10-02T17:06:16Z",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "duration_hours": {
           "key": "duration_hours",
-          "value": "5.2h",
+          "value": "5.3h",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "verified_sha": {
           "key": "verified_sha",
-          "value": "b4f3006b587c52fe88728821f7e1b10eb145fdf3",
+          "value": "3eba65cd25f1890a2230618590891c5abf7fdd97",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -100,12 +100,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 309.7,
+            "value": 317.7,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "3.02x",
+            "value": "3.1x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -127,12 +127,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 4955089,
+            "value": 4997012,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "3.86x",
+            "value": "3.89x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -949,7 +949,7 @@
         },
         "tokens_total": {
           "key": "tokens_total",
-          "value": 4955089,
+          "value": 4997012,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "token_coverage": {
@@ -972,7 +972,7 @@
           },
           "model_tokens": {
             "key": "model_tokens",
-            "value": 3426912,
+            "value": 3468835,
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -1019,7 +1019,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "4h 57m",
+            "value": "5h 11m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -1034,7 +1034,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 38 commit(s)",
+            "value": "git history - first to last of 40 commit(s)",
             "source": "git log"
           }
         },
@@ -1522,5 +1522,5 @@
   "restore_pairing": "next-success-after-failure",
   "discharged_carry": "delivered",
   "findings_scan": "delivered-batch-units-excluded",
-  "fingerprint": "91fcd5aa3e576b28"
+  "fingerprint": "bf505c4e58236742"
 }
