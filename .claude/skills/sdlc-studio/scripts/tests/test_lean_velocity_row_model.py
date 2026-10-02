@@ -127,9 +127,31 @@ class VelocityRowModelTests(unittest.TestCase):
         self._close(rid)
         self.assertEqual(MODEL, self._row(rid)["model"], "the run's meter was not read")
 
+    def test_a_meter_naming_several_models_books_the_row_mixed(self) -> None:
+        """BG0892 round 1. MUTANT N4: read the meter's model only when its stamps name one, so
+        a run whose stamps name two models fills a model-less row with nothing (or with one of
+        them) instead of `mixed`, which calibration must keep out of either model's rate."""
+        retro = _live("retro")
+        rid = self._run(1)
+        self._close(rid)
+        rs = _live("lib.run_state")
+        state = rs.read(self.root)
+        state["session_token_stamps"].append({**state["session_token_stamps"][0],
+                                              "model": OTHER, "kind": "unit-start"})
+        (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+            json.dumps(state), encoding="utf-8")
+        path = retro.velocity_path(self.root)              # as a pre-fix close left it
+        text = path.read_text(encoding="utf-8")
+        line = next(ln for ln in text.splitlines() if ln.startswith(f"| {rid} |"))
+        path.write_text(text.replace(line, line.replace(f"| {MODEL} |", "| - |")),
+                        encoding="utf-8")
+        self._close(rid)
+        self.assertEqual(retro.MODEL_MIXED, self._row(rid)["model"])
+
     def test_three_named_rows_end_the_calibration_fallback(self) -> None:
-        """AC2. MUTANT: HEAD's rows, which name no model after a second close, so the plan's
-        rate falls back to the latest row of another model (the July row)."""
+        """AC2, the tokens-per-point rate (the minutes rate is BG0907). MUTANT: HEAD's rows,
+        which name no model after a second close, so the plan's tokens rate falls back to the
+        latest row of another model (the July row)."""
         retro = _live("retro")
         retro.record_velocity(self.root, {     # the July row of another model
             "id": "RETRO0009", "date": "2026-07-15", "n_units": 1, "n_measured": 0,
