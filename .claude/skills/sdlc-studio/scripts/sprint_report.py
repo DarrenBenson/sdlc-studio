@@ -3293,8 +3293,66 @@ def freeze_review_rows(root: Path) -> dict:
     return frozen
 
 
+def _run_rows(uid: str, verdicts: list[dict], frozen, state: dict, later_base: int | None,
+              window: tuple) -> list[dict]:
+    """A unit's delivery verdict rows in this run, in ledger order: the rows PREPARE froze
+    (`REVIEW_ROWS`) that the ledger still holds, else those `_counted_rows` places in it."""
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    if isinstance(frozen, dict):
+        left = Counter(frozen.get(uid) or [])
+        out = []
+        for r in verdicts:
+            ident = critic.row_identity(r)
+            if left[ident] > 0:
+                left[ident] -= 1
+                out.append(r)
+        return out
+    return _counted_rows(uid, verdicts, state, later_base, window)
+
+
+def _discharged_carry(root: Path, change: dict, rows: list[dict]) -> bool:
+    """Was this dropped unit carried at the review cap and then discharged inside the run?
+
+    Carried: the drop names the cap (`critic.CARRIED_REASON`). Discharged: the run's last row
+    for the unit is an APPROVE from a reviewer whose REJECT it holds - the one verdict the cap
+    admits on a carried unit, which answers the carrying REJECT. Delivered only once the unit
+    is terminal too: an answered carry nobody moved is not delivered work."""
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    if change.get("action") != "drop" or not str(change.get("reason") or "").startswith(
+            critic.CARRIED_REASON):
+        return False
+    live = [r for r in rows if not critic.is_superseded(r)]
+    if not live or str(live[-1].get("verdict") or "").upper() != critic.APPROVE:
+        return False
+    approver = live[-1].get("reviewer") or ""
+    if not any(str(r.get("verdict") or "").upper() == critic.REJECT
+               and critic.same_identity(r.get("reviewer") or "", approver) for r in live[:-1]):
+        return False
+    return _terminal(root, sdlc_md.norm_id(change.get("id") or ""))[1]
+
+
+def discharged_carries(root, state: dict, window: tuple) -> list[str]:
+    """The units `state` carried at the review cap and discharged inside `window`, the run's
+    `(start, end)`: delivered work the batch no longer lists. The velocity row adds them to the
+    retro's Batch, which the close fills from the batch after the carry dropped them."""
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    root = Path(root)
+    _snap, changes, *_rest = _unit_order(state)
+    drops = {u: c for u, c in changes.items() if c.get("action") == "drop"}
+    if not drops or not critic.verdicts_path(root, "delivery").is_file():
+        return []
+    verdicts = critic.read_verdicts(root)
+    frozen = state.get(REVIEW_ROWS)
+    if isinstance(frozen, dict):
+        frozen = {sdlc_md.norm_id(u): ids for u, ids in frozen.items()}
+    later = {} if isinstance(frozen, dict) else _later_review_bases(root, state)
+    return [u for u, c in drops.items()
+            if _discharged_carry(root, c, _run_rows(u, verdicts, frozen, state, later.get(u),
+                                                    window))]
+
+
 def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | None,
-                 window: tuple) -> list[dict]:
+                 window: tuple, discharge_rule: bool = True) -> list[dict]:
     """One entry per unit the run planned, added or dropped: plan order, then added order.
 
     Planned points come from the plan snapshot, never the unit file: a unit resized from 3 to 8
@@ -3304,7 +3362,8 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
     status on disk. A unit's Points are the filed page's reading when one is replayed
     (`_page_readings`), else the unit file's. Its review rounds are the rows PREPARE froze on
     the record that the ledger still holds (`REVIEW_ROWS`), else those counted inside `window`,
-    the run's `(start, end)` (`_counted_rows`).
+    the run's `(start, end)` (`_counted_rows`). A unit carried at the review cap and discharged
+    inside the run (`_discharged_carry`) is delivered, not dropped, under `discharge_rule`.
     """
     filed_points = filed_points or {}
     snap, changes, planned, added, order = _unit_order(state)
@@ -3328,9 +3387,11 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
         found = sdlc_md.find_by_id(root, uid)
         path = Path(found[0]) if found else None
         change = changes.get(uid) or {}
-        dropped = change.get("action") == "drop"
-        delivered = (False if dropped else uid in cleared if gate_clear is not None
-                     else _terminal(root, uid)[1])
+        discharged = (discharge_rule and ledger_found and _discharged_carry(
+            root, change, _run_rows(uid, verdicts, frozen, state, later.get(uid), window)))
+        dropped = change.get("action") == "drop" and not discharged
+        delivered = (True if discharged else False if dropped else
+                     uid in cleared if gate_clear is not None else _terminal(root, uid)[1])
         plan, act = snap.get(uid) or {}, actuals.get(uid) or {}
         # The unit's tagged agent totals, where recorded, over its span on the shared meter.
         agent = agent_totals.get(uid) or {}
@@ -3346,7 +3407,8 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
         out.append({
             "id": uid, "rel": _rel(root, path) if path else state_rel,
             "planned": uid in planned, "added": uid not in planned and uid in added,
-            "dropped": dropped, "reason": (change.get("reason") or "").strip(),
+            "dropped": dropped, "discharged": discharged,
+            "reason": (change.get("reason") or "").strip(),
             "delivered": delivered, "carried": not dropped and not delivered,
             "points": points if _num(points) else None,
             "planned_points": plan.get("planned_points"),
@@ -3561,7 +3623,8 @@ def _delivered_section(root: Path, state_rel: str, ledger: list[dict]) -> dict:
     for u in ledger:
         why = u["reason"] or "no reason recorded"
         done = "delivered" if u["delivered"] else "carried, not delivered"
-        outcome = (f"dropped - {why}" if u["dropped"] else
+        outcome = (f"delivered - discharged after it was {why}" if u["discharged"] else
+                   f"dropped - {why}" if u["dropped"] else
                    f"added - {why}; {done}" if u["added"] else
                    f"carried - {why}" if u["carried"] else done)
         rows.append({
@@ -3783,12 +3846,17 @@ TOKEN_RATIO_EVERY_UNIT = "every-delivered-unit-delegated"
 RESTORE_RULE = "restore_pairing"
 RESTORE_NEXT_SUCCESS = "next-success-after-failure"
 
+#: The envelope mark of a page that reads a carry discharged inside the run as delivered
+#: (`_discharged_carry`, BG0890). A page filed before it re-derives as signed.
+DISCHARGE_RULE = "discharged_carry"
+DISCHARGE_DELIVERED = "delivered"
+
 
 def build_report(root, retro_id: str, as_of: str | None = None,
                  window_end: str | None = None, run_id: str | None = None,
                  filed: dict | None = None, portable: bool = True,
                  record: dict | None = None, ratio_rule: bool = True,
-                 restore_rule: bool = True) -> dict:
+                 restore_rule: bool = True, discharge_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -3804,8 +3872,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     `run_state.portable` and marks the page so (`PORTABLE_PATHS`); a re-derivation passes what
     the page it re-derives carries. `record` is `_run_state_for`'s. `ratio_rule` withholds the
     tokens ratio over a partial delegated actual and marks the page so (`TOKEN_RATIO_RULE`), and
-    `restore_rule` pairs time to restore in time order (`RESTORE_RULE`); a re-derivation passes
-    what the page carries.
+    `restore_rule` pairs time to restore in time order (`RESTORE_RULE`), and `discharge_rule`
+    reads a discharged carry as delivered (`DISCHARGE_RULE`); a re-derivation passes what the
+    page carries.
     """
     root = Path(root)
     state, state_rel = _run_state_for(root, run_id, record)
@@ -3868,7 +3937,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     tokens = run_state.run_token_total(state, current)
     readings = _page_readings(filed)
     ledger = _unit_ledger(root, state, state_rel, readings["points"],
-                          (state.get("started_at"), _iso(end)))
+                          (state.get("started_at"), _iso(end)), discharge_rule)
     sections = [
         _section("goal", "Goal", goal_figs),
         _estimates_section(state, state_rel, ledger, tokens,
@@ -3902,7 +3971,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               "window_end": _iso(end), "signature": None, "sections": sections,
               **({PORTABLE_PATHS: "portable"} if portable else {}),
               **({TOKEN_RATIO_RULE: TOKEN_RATIO_EVERY_UNIT} if ratio_rule else {}),
-              **({RESTORE_RULE: RESTORE_NEXT_SUCCESS} if restore_rule else {})}
+              **({RESTORE_RULE: RESTORE_NEXT_SUCCESS} if restore_rule else {}),
+              **({DISCHARGE_RULE: DISCHARGE_DELIVERED} if discharge_rule else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -4942,7 +5012,8 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          run_id=basis.get("run_id"), filed=anchor,
                          portable=basis.get(PORTABLE_PATHS) == "portable", record=record,
                          ratio_rule=basis.get(TOKEN_RATIO_RULE) == TOKEN_RATIO_EVERY_UNIT,
-                         restore_rule=basis.get(RESTORE_RULE) == RESTORE_NEXT_SUCCESS)
+                         restore_rule=basis.get(RESTORE_RULE) == RESTORE_NEXT_SUCCESS,
+                         discharge_rule=basis.get(DISCHARGE_RULE) == DISCHARGE_DELIVERED)
     was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(basis)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)

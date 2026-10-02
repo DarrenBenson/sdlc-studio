@@ -1127,6 +1127,30 @@ def _run_covers(state: dict, unit_ids) -> bool:
     return len(run_batch & retro_units) * 2 > len(retro_units)
 
 
+def _discharged_carries(root, unit_ids) -> list[str]:
+    """The units the run that delivered `unit_ids` carried at the review cap and discharged
+    inside it (`sprint_report.discharged_carries`). Delivered work the retro's Batch omits: the
+    close fills that field from the batch after the carry dropped them. The run is the first
+    record covering the units, live then archived (`_run_covers`, the rule `_run_rung` reads
+    by), measured to its end, or to now while it is open. None found reads nothing added."""
+    records: list[dict] = []
+    for read in (lambda: [run_state.read(root)], lambda: list(reversed(run_state.archived(root)))):
+        try:
+            records.extend(read())
+        except Exception as exc:  # noqa: BLE001 - the velocity read must never die on a record
+            sdlc_md.debug("retro._discharged_carries", exc)
+    rec = next((r for r in records if isinstance(r, dict) and _run_covers(r, unit_ids)), None)
+    if rec is None:
+        return []
+    try:
+        import sprint_report  # noqa: PLC0415 - deferred; the page's own rule, not a copy
+        return sprint_report.discharged_carries(
+            root, rec, (rec.get("started_at"), rec.get("ended_at") or sdlc_md.now_iso8601()))
+    except Exception as exc:  # noqa: BLE001 - an unreadable ledger adds nothing, never crashes
+        sdlc_md.debug("retro._discharged_carries", exc)
+        return []
+
+
 def retro_units(root, retro_id: str) -> list[str]:
     """The delivery units a retro records, or an empty list when there is no such retro."""
     path = find_retro(root, retro_id)
@@ -1280,7 +1304,8 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
     forecast_by_id = telemetry.forecasts(root)
 
     units: list[dict] = []
-    for uid in batch_ids(text):
+    named = batch_ids(text)
+    for uid in named + [u for u in _discharged_carries(root, named) if u not in named]:
         fc = forecast_by_id.get(uid) or {}
         rec = measured_by_id.get(uid, {})
         est = fc.get("tokens")
