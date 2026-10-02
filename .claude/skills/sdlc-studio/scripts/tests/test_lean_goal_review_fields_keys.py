@@ -52,14 +52,16 @@ def _fields_file_help(text: str) -> str:
 
 class GoalReviewFieldsKeysTests(unittest.TestCase):
     def test_help_names_the_seat_keys(self) -> None:
-        """AC1. MUTANT: HEAD, whose entry shows only `{"seats": [{...}]}`; or a help naming
-        `role`, the flag form's word, which the code does not read."""
+        """AC1. Each key is matched quoted, as the help writes a key, so the prose words "seat"
+        and "note" do not stand in for it. MUTANT: HEAD, whose entry shows only
+        `{"seats": [{...}]}`; a help naming `role`, the flag form's word, which the code does not
+        read; a help keying "name" in place of "seat"; or one naming no seat key at all."""
         rc, text = _sprint("goal-review", "--help")
         self.assertEqual(0, rc, text)
         entry = _fields_file_help(text)
         for key in SEAT_KEYS:
             with self.subTest(key=key):
-                self.assertRegex(entry, rf"\b{key}\b", entry)
+                self.assertIn(f'"{key}"', entry)
         self.assertNotRegex(entry, r"\brole\b", entry)
 
     def test_a_document_keyed_as_the_help_says_records_the_seat(self) -> None:
