@@ -3546,15 +3546,18 @@ def _estimate_row(measure: str, forecast, actual, basis: str, src: str,
         "est_basis": fig("est_basis", basis, src)}
 
 
-def _run_tokens_actual(state: dict, run_tokens: dict) -> tuple:
+def _run_tokens_actual(state: dict, run_tokens: dict, delegated_rule: bool = True) -> tuple:
     """`(tokens, agents)`: the run's token actual and how many delegated agents it adds.
 
     The meter plus the delegated agents' reported totals, which are real spend the main-thread
     meter cannot see: a run that fans its work out would otherwise read a fraction of its cost.
-    One reader, so the Estimates row and the checklist's cost row state one figure."""
+    Under `delegated_rule` they count over a meter that read 0, which is a meter that saw none
+    of the work, not a run that spent nothing; without it (a page filed before the rule) only
+    beside a non-zero meter. One reader, so the Estimates row and the checklist's cost row
+    state one figure."""
     tokens = run_tokens.get("tokens")
     delegated = run_state.delegated_total(state)
-    if not (tokens and delegated):
+    if not delegated or tokens is None or not (tokens or delegated_rule):
         return tokens, 0
     agents = len([r for r in (state.get(run_state.DELEGATED) or []) if isinstance(r, dict)])
     return tokens + delegated, agents
@@ -3584,7 +3587,8 @@ def _tokens_ratio_withheld(state: dict, live: list[dict]) -> str | None:
 
 
 def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_tokens,
-                       span_minutes, ratio_rule: bool = True, minutes_rule: bool = True) -> dict:
+                       span_minutes, ratio_rule: bool = True, minutes_rule: bool = True,
+                       delegated_rule: bool = True) -> dict:
     """Forecast, actual and actual over forecast. Points over the units the run delivered;
     tokens over the WHOLE run - its meter - because units open at the same time share their
     tokens, so the per-unit figures beneath overlap and summing them over-counts the run.
@@ -3645,9 +3649,12 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
         f = legacy if _num(legacy) else None
         if f is not None:
             over = "the whole run: the plan's run-level token forecast"
-    tokens, agents = _run_tokens_actual(state, run_tokens)
+    tokens, agents = _run_tokens_actual(state, run_tokens, delegated_rule)
     basis = f"{over}; actual is the run meter, a lower bound"
-    if agents:
+    if agents and run_tokens.get("tokens") == 0:
+        basis = (f"{over}; actual is {agents} delegated agent(s)' reported totals, split in the "
+                 f"appendix - the main-thread meter read 0, taken as unread, not as no spend")
+    elif agents:
         basis = (f"{over}; actual is the main-thread meter plus {agents} delegated agent(s)' "
                  f"reported totals, split in the appendix")
     rows.append(_estimate_row(
@@ -3992,13 +3999,19 @@ FINDINGS_BATCH_EXCLUDED = "delivered-batch-units-excluded"
 MINUTES_RULE = "minutes_ratio"
 MINUTES_MEASURED = "measured-unit-minutes"
 
+#: The envelope mark of a page whose token actual counts the delegated totals over a meter that
+#: read 0 (`_run_tokens_actual`). A page filed before it re-derives as signed.
+DELEGATED_RULE = "delegated_tokens"
+DELEGATED_OVER_ZERO_METER = "counted-over-a-zero-meter"
+
 
 def build_report(root, retro_id: str, as_of: str | None = None,
                  window_end: str | None = None, run_id: str | None = None,
                  filed: dict | None = None, portable: bool = True,
                  record: dict | None = None, ratio_rule: bool = True,
                  restore_rule: bool = True, discharge_rule: bool = True,
-                 findings_rule: bool = True, minutes_rule: bool = True) -> dict:
+                 findings_rule: bool = True, minutes_rule: bool = True,
+                 delegated_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -4017,8 +4030,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     `restore_rule` pairs time to restore in time order (`RESTORE_RULE`), and `discharge_rule`
     reads a discharged carry as delivered (`DISCHARGE_RULE`), and `findings_rule` leaves the
     batch's own units out of the open findings (`FINDINGS_RULE`), and `minutes_rule` compares
-    measured minutes with the forecast (`MINUTES_RULE`); a re-derivation passes what the page
-    carries.
+    measured minutes with the forecast (`MINUTES_RULE`), and `delegated_rule` counts the
+    delegated totals over a meter that read 0 (`DELEGATED_RULE`); a re-derivation passes what
+    the page carries.
     """
     root = Path(root)
     state, state_rel = _run_state_for(root, run_id, record)
@@ -4086,7 +4100,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         _section("goal", "Goal", goal_figs),
         _estimates_section(state, state_rel, ledger, tokens,
                            round((end - start).total_seconds() / 60, 1) if start and end
-                           else None, ratio_rule=ratio_rule, minutes_rule=minutes_rule),
+                           else None, ratio_rule=ratio_rule, minutes_rule=minutes_rule,
+                           delegated_rule=delegated_rule),
         _delivered_section(root, state_rel, ledger),
         _known_issues_section(root, state, state_rel, ledger,
                               state.get("started_at"), _iso(end), readings["findings"],
@@ -4118,7 +4133,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               **({RESTORE_RULE: RESTORE_NEXT_SUCCESS} if restore_rule else {}),
               **({DISCHARGE_RULE: DISCHARGE_DELIVERED} if discharge_rule else {}),
               **({FINDINGS_RULE: FINDINGS_BATCH_EXCLUDED} if findings_rule else {}),
-              **({MINUTES_RULE: MINUTES_MEASURED} if minutes_rule else {})}
+              **({MINUTES_RULE: MINUTES_MEASURED} if minutes_rule else {}),
+              **({DELEGATED_RULE: DELEGATED_OVER_ZERO_METER} if delegated_rule else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -5161,7 +5177,8 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          restore_rule=basis.get(RESTORE_RULE) == RESTORE_NEXT_SUCCESS,
                          discharge_rule=basis.get(DISCHARGE_RULE) == DISCHARGE_DELIVERED,
                          findings_rule=basis.get(FINDINGS_RULE) == FINDINGS_BATCH_EXCLUDED,
-                         minutes_rule=basis.get(MINUTES_RULE) == MINUTES_MEASURED)
+                         minutes_rule=basis.get(MINUTES_RULE) == MINUTES_MEASURED,
+                         delegated_rule=basis.get(DELEGATED_RULE) == DELEGATED_OVER_ZERO_METER)
     was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(basis)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)
