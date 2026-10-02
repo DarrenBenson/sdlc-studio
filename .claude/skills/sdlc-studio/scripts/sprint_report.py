@@ -3584,11 +3584,16 @@ def _tokens_ratio_withheld(state: dict, live: list[dict]) -> str | None:
 
 
 def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_tokens,
-                       span_minutes, ratio_rule: bool = True) -> dict:
+                       span_minutes, ratio_rule: bool = True, minutes_rule: bool = True) -> dict:
     """Forecast, actual and actual over forecast. Points over the units the run delivered;
-    minutes and tokens over the WHOLE run - its span and its meter - because units open at the
-    same time share their hours and tokens, so the per-unit figures beneath overlap and summing
-    them over-counts the run."""
+    tokens over the WHOLE run - its meter - because units open at the same time share their
+    tokens, so the per-unit figures beneath overlap and summing them over-counts the run.
+
+    Minutes, under `minutes_rule`, compare like with like: the forecast is active work minutes,
+    so the actual is the units' measured minutes (spans or agent minutes), both summed over the
+    units carrying the two, and the run's wall-clock span, which counts waiting, stands on its
+    own line with no ratio. Without the rule (a page filed before it) the actual is the
+    span."""
     delivered = [u for u in ledger if u["delivered"]]
     no_plan = "no plan snapshot is recorded"
     f, a, basis = _paired(delivered, "planned_points", "points")
@@ -3605,12 +3610,35 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
                 f"the whole run: forecast over {len(vals)} of {len(live)} unit(s) planned or "
                 f"added and not dropped")
     f, over = forecast("forecast_minutes")
-    rows.append(_estimate_row("Minutes", f, span_minutes,
-                              f"{over}; forecast is active work minutes per point, actual is the run's "
-                              "wall-clock span, start to end, so waiting counts", state_rel,
-                              no_plan if not any(u["in_plan"] for u in ledger) else
-                              "the plan recorded no minute forecast for any unit",
-                              "the run records no start time"))
+    no_minutes = (no_plan if not any(u["in_plan"] for u in ledger) else
+                  "the plan recorded no minute forecast for any unit")
+    if not minutes_rule:
+        rows.append(_estimate_row("Minutes", f, span_minutes,
+                                  f"{over}; forecast is active work minutes per point, actual is "
+                                  "the run's wall-clock span, start to end, so waiting counts",
+                                  state_rel, no_minutes, "the run records no start time"))
+    else:
+        both = [u for u in live if _num(u["forecast_minutes"]) and _num(u["minutes"])]
+        if both:
+            f, basis = (sum(u["forecast_minutes"] for u in both),
+                        f"measured active minutes (spans or agent minutes) against their "
+                        f"forecast, over the {len(both)} of {len(live)} unit(s) planned or added "
+                        f"and not dropped that carry both")
+        else:
+            basis = f"{over}; no unit carries both a forecast and a measured time"
+        rows.append(_estimate_row(
+            "Minutes", f, sum(u["minutes"] for u in both) if both else None, basis, state_rel,
+            no_minutes, "no unit carries a measured time (an In Progress span or agent minutes)"))
+        rows.append({
+            "est_measure": fig("est_measure", "Wall-clock span", state_rel),
+            "est_forecast": fig("est_forecast", "not forecast", state_rel),
+            "est_actual": (fig("est_actual", round(span_minutes, 1), state_rel)
+                           if _num(span_minutes) else
+                           unmeasured("est_actual", state_rel, "the run records no start time")),
+            "est_ratio": fig("est_ratio", "no ratio", state_rel),
+            "est_basis": fig("est_basis", "the run's minutes, start to end, so waiting counts; "
+                             "the forecast is active work, so the two are not compared",
+                             state_rel)})
     f, over = forecast("forecast_tokens")
     if f is None:
         legacy = state.get("token_forecast", state.get("forecast_tokens"))
@@ -3958,13 +3986,19 @@ DISCHARGE_DELIVERED = "delivered"
 FINDINGS_RULE = "findings_scan"
 FINDINGS_BATCH_EXCLUDED = "delivered-batch-units-excluded"
 
+#: The envelope mark of a page whose Minutes ratio compares the units' measured minutes with
+#: their forecast and states the wall-clock span on its own line (`_estimates_section`).
+#: A page filed before it re-derives as signed.
+MINUTES_RULE = "minutes_ratio"
+MINUTES_MEASURED = "measured-unit-minutes"
+
 
 def build_report(root, retro_id: str, as_of: str | None = None,
                  window_end: str | None = None, run_id: str | None = None,
                  filed: dict | None = None, portable: bool = True,
                  record: dict | None = None, ratio_rule: bool = True,
                  restore_rule: bool = True, discharge_rule: bool = True,
-                 findings_rule: bool = True) -> dict:
+                 findings_rule: bool = True, minutes_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -3982,8 +4016,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     tokens ratio over a partial delegated actual and marks the page so (`TOKEN_RATIO_RULE`), and
     `restore_rule` pairs time to restore in time order (`RESTORE_RULE`), and `discharge_rule`
     reads a discharged carry as delivered (`DISCHARGE_RULE`), and `findings_rule` leaves the
-    batch's own units out of the open findings (`FINDINGS_RULE`); a re-derivation passes what
-    the page carries.
+    batch's own units out of the open findings (`FINDINGS_RULE`), and `minutes_rule` compares
+    measured minutes with the forecast (`MINUTES_RULE`); a re-derivation passes what the page
+    carries.
     """
     root = Path(root)
     state, state_rel = _run_state_for(root, run_id, record)
@@ -4051,7 +4086,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         _section("goal", "Goal", goal_figs),
         _estimates_section(state, state_rel, ledger, tokens,
                            round((end - start).total_seconds() / 60, 1) if start and end
-                           else None, ratio_rule=ratio_rule),
+                           else None, ratio_rule=ratio_rule, minutes_rule=minutes_rule),
         _delivered_section(root, state_rel, ledger),
         _known_issues_section(root, state, state_rel, ledger,
                               state.get("started_at"), _iso(end), readings["findings"],
@@ -4082,7 +4117,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               **({TOKEN_RATIO_RULE: TOKEN_RATIO_EVERY_UNIT} if ratio_rule else {}),
               **({RESTORE_RULE: RESTORE_NEXT_SUCCESS} if restore_rule else {}),
               **({DISCHARGE_RULE: DISCHARGE_DELIVERED} if discharge_rule else {}),
-              **({FINDINGS_RULE: FINDINGS_BATCH_EXCLUDED} if findings_rule else {})}
+              **({FINDINGS_RULE: FINDINGS_BATCH_EXCLUDED} if findings_rule else {}),
+              **({MINUTES_RULE: MINUTES_MEASURED} if minutes_rule else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -5124,7 +5160,8 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          ratio_rule=basis.get(TOKEN_RATIO_RULE) == TOKEN_RATIO_EVERY_UNIT,
                          restore_rule=basis.get(RESTORE_RULE) == RESTORE_NEXT_SUCCESS,
                          discharge_rule=basis.get(DISCHARGE_RULE) == DISCHARGE_DELIVERED,
-                         findings_rule=basis.get(FINDINGS_RULE) == FINDINGS_BATCH_EXCLUDED)
+                         findings_rule=basis.get(FINDINGS_RULE) == FINDINGS_BATCH_EXCLUDED,
+                         minutes_rule=basis.get(MINUTES_RULE) == MINUTES_MEASURED)
     was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(basis)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)

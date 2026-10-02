@@ -191,17 +191,21 @@ class OnePageTests(unittest.TestCase):
         unit then reads planned 8, the forecast equals the actual and the error vanishes."""
         rep = self._build()
         rows = {r["est_measure"]["value"]: r for r in _sections(rep)["estimates"]["rows"]}
-        self.assertEqual(["Points", "Minutes", "Tokens"], list(rows))
+        self.assertEqual(["Points", "Minutes", "Wall-clock span", "Tokens"], list(rows))
         # Over the delivered units US0001, US0002 and US0004.
         pts = rows["Points"]
         self.assertEqual((11, 16), (pts["est_forecast"]["value"], pts["est_actual"]["value"]))
         self.assertEqual("1.45x", pts["est_ratio"]["value"])
-        # Minutes and tokens are the whole run's: forecast over every unit planned or added and
-        # not dropped (US0001, 2, 4, 5), actual from the run's span (08:00 to 18:00) and meter.
+        # Minutes compare like with like (BG0898): the measured minutes of the units carrying a
+        # forecast and a measured time (US0001, 2, 4) against their forecast; the run's span
+        # (08:00 to 18:00) stands on its own line with no ratio. Tokens are the whole run's:
+        # forecast over every unit planned or added and not dropped, actual from the meter.
         mins = rows["Minutes"]
-        self.assertEqual((140.0, 600.0),
+        self.assertEqual((110.0, 150.0),
                          (mins["est_forecast"]["value"], mins["est_actual"]["value"]))
-        self.assertEqual("4.29x", mins["est_ratio"]["value"])
+        self.assertEqual("1.36x", mins["est_ratio"]["value"])
+        self.assertEqual((600.0, "no ratio"), (rows["Wall-clock span"]["est_actual"]["value"],
+                                               rows["Wall-clock span"]["est_ratio"]["value"]))
         tok = rows["Tokens"]
         # Actual is the run meter (1,700,000) plus the delegated agent's reported 123,456.
         self.assertEqual((1_400_000, 1_823_456),
@@ -424,17 +428,18 @@ class RunTotalsTests(unittest.TestCase):
 
     def test_overlapping_unit_spans_are_never_summed_into_the_run(self) -> None:
         """MUTANT: take the run's actual as the sum over `unit_actuals` - three units open over
-        the same hours read three times the run's spend and time."""
+        the same hours read three times the run's spend and time. The run's time is its span
+        line; the Minutes row sums the units' measured work against their forecast (BG0898)."""
         lean_run(self.root)
         overlapping = {uid: {"started_at": "2026-09-20T08:00:00Z", "start_tokens": 0,
                              "minutes": 600.0, "tokens": 1_700_000, "open": False}
                        for uid in ("US0001", "US0002", "US0004")}
         self._state(unit_actuals=overlapping)
         est = self._estimates()
-        self.assertEqual(600.0, est["Minutes"]["est_actual"]["value"])
+        self.assertEqual(600.0, est["Wall-clock span"]["est_actual"]["value"])
         # The run meter (1,700,000) plus the fixture's one delegated agent (123,456).
         self.assertEqual(1_823_456, est["Tokens"]["est_actual"]["value"])
-        self.assertIn("span", est["Minutes"]["est_basis"]["value"])
+        self.assertIn("start to end", est["Wall-clock span"]["est_basis"]["value"])
         self.assertIn("meter", est["Tokens"]["est_basis"]["value"])
         md = _md_section(sr.render_markdown(sr.build_report(self.root, RETRO)), "Estimates")
         self.assertIn("open span", md)
@@ -447,10 +452,11 @@ class RunTotalsTests(unittest.TestCase):
         lean_run(self.root)
         self._state(session_token_stamps=None, started_at=None)
         est = self._estimates()
-        for measure in ("Minutes", "Tokens"):
-            self.assertEqual(sr.NOT_MEASURED, est[measure]["est_actual"]["value"], measure)
-            self.assertEqual(sr.NOT_MEASURED, est[measure]["est_ratio"]["value"], measure)
-        self.assertIn("start", est["Minutes"]["est_actual"]["reason"])
+        self.assertEqual(sr.NOT_MEASURED, est["Tokens"]["est_actual"]["value"])
+        self.assertEqual(sr.NOT_MEASURED, est["Tokens"]["est_ratio"]["value"])
+        # The run's time is its span; with no start it reads NOT MEASURED, never the unit sum.
+        self.assertEqual(sr.NOT_MEASURED, est["Wall-clock span"]["est_actual"]["value"])
+        self.assertIn("start", est["Wall-clock span"]["est_actual"]["reason"])
 
 
 class NeverZeroTests(unittest.TestCase):
