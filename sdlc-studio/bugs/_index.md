@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 20 |
+| Open | 21 |
 | In Progress | 5 |
 | Fixed | 722 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **904** |
+| **Total** | **905** |
 
 ## All Bugs
 
@@ -263,6 +263,7 @@
 | [BG0902](BG0902-a-late-lane-return-tokens-writes-into-a.md) | A late lane return --tokens writes into a sealed run and invalidates its signed page | Open | Low | 2026-10-02 | 2026-10-02 |
 | [BG0903](BG0903-lane-return-and-lane-brief-take-agent-totals.md) | lane return and lane brief take agent totals silently in three cases | Open | Low | 2026-10-02 | 2026-10-02 |
 | [BG0904](BG0904-dora-counts-a-cancelled-or-skipped-ci-run.md) | DORA counts a cancelled or skipped CI run on main as a failed deployment | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0905](BG0905-the-tokens-ratio-withheld-rule-s-delivered-unit.md) | The tokens-ratio withheld rule's delivered-unit half is untested, and its help text says briefed where the code counts any span | Open | Low | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 
