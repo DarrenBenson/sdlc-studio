@@ -6,8 +6,8 @@ Maya signs a sprint report whose delivery, cost and DORA figures match what the 
 
 **Verdict: Judged achieved** - 8 of 8 units approved by an independent QA seat (BG0895 discharged by its rejecting reviewer after a carry), every batch unit verifies green. This run's own page measures what RPT0014 could not: every unit carries an agent total from its lane return (builder) and the run carries the reviewers' spend, so tokens read 2.17M against a 1.28M forecast (1.69x), 1.53M of it the builders and reviewers, where RPT0014 printed 0.2x; a discharged carry counts as delivered (BG0890); time to restore pairs by creation and reads no restore needed for a run with no red (BG0891); the header names its window end (BG0893); a close gap holds only failures (BG0894); a batch finding no longer moves a signed page and the checklist agrees with the page on a re-close (BG0895); velocity rows keep their model (BG0892). Disclosed, out of scope at the goal review: the minutes ratio compares wall-clock with active work (BG0898) and the minutes rate still falls back to a July row (BG0907).
 
-> **Run:** 2026-10-02T11:48:33Z to 2026-10-02T16:44:56Z (4.9h)
-> **Verified on:** e04cf69d658e5a2088ad357e5a761d8ffdbc644b   **Fingerprint:** b876e218da58edf6
+> **Run:** 2026-10-02T11:48:33Z to 2026-10-02T16:58:14Z (5.2h)
+> **Verified on:** b4f3006b587c52fe88728821f7e1b10eb145fdf3   **Fingerprint:** 91fcd5aa3e576b28
 
 ## Estimates
 
@@ -18,8 +18,8 @@ over forecast.
 | Measure | Forecast | Actual | Ratio | Over |
 | --- | --- | --- | --- | --- |
 | Points | 16 | 16 | 1.0x | 8 of 8 delivered unit(s) |
-| Minutes | 102.4 | 296.4 | 2.89x | the whole run: forecast over 8 of 8 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
-| Tokens | 1,283,008 | 4,920,336 | 3.84x | the whole run: forecast over 8 of 8 unit(s) planned or added and not dropped; actual is the main-thread meter plus 16 delegated agent(s)' reported totals, split in the appendix |
+| Minutes | 102.4 | 309.7 | 3.02x | the whole run: forecast over 8 of 8 unit(s) planned or added and not dropped; forecast is active work minutes per point, actual is the run's wall-clock span, start to end, so waiting counts |
+| Tokens | 1,283,008 | 4,955,089 | 3.86x | the whole run: forecast over 8 of 8 unit(s) planned or added and not dropped; actual is the main-thread meter plus 16 delegated agent(s)' reported totals, split in the appendix |
 
 Each cell names its source. A figure labelled agent minutes or agent tokens sums the agent
 totals tagged to that unit; an unlabelled one is measured over the unit's own open span. Spans of
@@ -65,10 +65,12 @@ size, plan and added together: 16.
 
 ## Known issues handed over
 
-12 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)
+14 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)
 
 | Issue | Priority | Detail |
 | --- | --- | --- |
+| BG0911 | Medium | The goal verdict's note can quote figures the filed page contradicts, and the close says nothing - not-stop-ship, ruled by Claude (orchestrator) |
+| BG0912 | Medium | The close files a report for sign-off without putting the readable page in front of the operator - not-stop-ship, ruled by Claude (orchestrator) |
 | CR0608 | Medium | Prevent or retire lesson LC-005 (repair breaks its neighbour) |
 | BG0899 | Low | A lane brief reopens the span of a unit already at a terminal status - not-stop-ship, ruled by Claude (orchestrator) |
 | BG0900 | Low | The report drops the delegated token total from the run's actual when the session meter reads zero - not-stop-ship, ruled by Claude (orchestrator) |
@@ -96,9 +98,9 @@ Signing records the principal, the date and this report's fingerprint against RU
 
 | Model | Tokens |
 | --- | --- |
-| claude-opus-5-5 | 3,392,159 |
+| claude-opus-5-5 | 3,426,912 |
 
-Total 4,920,336, of which delegated 1,528,177. Coverage: 1 session(s);
+Total 4,955,089, of which delegated 1,528,177. Coverage: 1 session(s);
 read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp.
 
 ### DORA
@@ -106,7 +108,7 @@ read from stamps, with the opening reading taken from the legacy session_token_b
 | Key | This run | Mapping | Elite band | Derived from |
 | --- | --- | --- | --- | --- |
 | Deployment frequency | 4 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up | on demand | forge runs 37025767700/37020451101/37016645468/37003594324 - 4 push-triggered run(s) on main in the run window |
-| Lead time for changes | 4h 49m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 36 commit(s) |
+| Lead time for changes | 4h 57m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 38 commit(s) |
 | Change failure rate | 0% | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that did not conclude success | 0-15% | forge runs 37025767700/37020451101/37016645468/37003594324 - 4 deployment(s); 0 failed on none |
 | Time to restore | no restore needed | per red streak on main, in creation order, the span from its first failure's conclusion to the conclusion of the first push-triggered run created after it that concluded success, floored at zero; the median over the window's restored streaks, or not restored while the window's last streak is still red | under an hour | forge runs 37025767700/37020451101/37016645468/37003594324 - no push-triggered run on main concluded failure |
 

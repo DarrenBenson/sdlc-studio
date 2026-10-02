@@ -3,8 +3,8 @@
   "report_id": "RPT0015",
   "run_id": "RUN-01M3Y7DP",
   "retro_id": "RETRO0130",
-  "generated_at": "2026-10-02T16:44:56Z",
-  "window_end": "2026-10-02T16:44:56Z",
+  "generated_at": "2026-10-02T16:58:14Z",
+  "window_end": "2026-10-02T16:58:14Z",
   "signature": null,
   "sections": [
     {
@@ -38,17 +38,17 @@
         },
         "ended_at": {
           "key": "ended_at",
-          "value": "2026-10-02T16:44:56Z",
+          "value": "2026-10-02T16:58:14Z",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "duration_hours": {
           "key": "duration_hours",
-          "value": "4.9h",
+          "value": "5.2h",
           "source": "sdlc-studio/.local/run-state.json"
         },
         "verified_sha": {
           "key": "verified_sha",
-          "value": "e04cf69d658e5a2088ad357e5a761d8ffdbc644b",
+          "value": "b4f3006b587c52fe88728821f7e1b10eb145fdf3",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -100,12 +100,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 296.4,
+            "value": 309.7,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "2.89x",
+            "value": "3.02x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -127,12 +127,12 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 4920336,
+            "value": 4955089,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "3.84x",
+            "value": "3.86x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
@@ -669,11 +669,45 @@
       "figures": {
         "findings_scan": {
           "key": "findings_scan",
-          "value": "12 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)",
+          "value": "14 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
       "rows": [
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG0911",
+            "source": "sdlc-studio/bugs/BG0911-the-goal-verdict-s-note-can-quote-figures.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG0911-the-goal-verdict-s-note-can-quote-figures.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The goal verdict's note can quote figures the filed page contradicts, and the close says nothing - not-stop-ship, ruled by Claude (orchestrator)",
+            "source": "sdlc-studio/bugs/BG0911-the-goal-verdict-s-note-can-quote-figures.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG0912",
+            "source": "sdlc-studio/bugs/BG0912-the-close-files-a-report-for-sign-off.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG0912-the-close-files-a-report-for-sign-off.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The close files a report for sign-off without putting the readable page in front of the operator - not-stop-ship, ruled by Claude (orchestrator)",
+            "source": "sdlc-studio/bugs/BG0912-the-close-files-a-report-for-sign-off.md"
+          }
+        },
         {
           "issue_id": {
             "key": "issue_id",
@@ -915,7 +949,7 @@
         },
         "tokens_total": {
           "key": "tokens_total",
-          "value": 4920336,
+          "value": 4955089,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "token_coverage": {
@@ -938,7 +972,7 @@
           },
           "model_tokens": {
             "key": "model_tokens",
-            "value": 3392159,
+            "value": 3426912,
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -985,7 +1019,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "4h 49m",
+            "value": "4h 57m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -1000,7 +1034,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 36 commit(s)",
+            "value": "git history - first to last of 38 commit(s)",
             "source": "git log"
           }
         },
@@ -1488,5 +1522,5 @@
   "restore_pairing": "next-success-after-failure",
   "discharged_carry": "delivered",
   "findings_scan": "delivered-batch-units-excluded",
-  "fingerprint": "b876e218da58edf6"
+  "fingerprint": "91fcd5aa3e576b28"
 }
