@@ -11,7 +11,7 @@
 
 - **Cost is measured per unit.** A lane brief and return open and close a unit's span (US0979);
   a lane return records the builder's token and minute totals, and the token ratio is withheld
-  while any unit that did work lacks one (US0980). This run's page reads 1.46x on 1.87M tokens
+  while any unit that did work lacks one (US0980). This run's page reads 1.69x on 2.17M tokens (1.53M of them builders and reviewers)
   where RPT0014 read 0.2x from the orchestrator's meter alone.
 - **Delivery is counted honestly.** A carry discharged inside the run counts as delivered, read
   from PREPARE's frozen gate (BG0890); a batch finding no longer moves a signed page, and the

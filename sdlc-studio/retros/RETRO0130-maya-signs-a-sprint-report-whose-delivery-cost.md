@@ -6,7 +6,7 @@
 
 ## Keep
 
-- Record each builder's spend through `lane return --tokens/--minutes` and the reviewers' at the close: this run's page measures cost per unit (1.87M tokens, 1.46x) where RPT0014 read 0.2x off the orchestrator's meter.
+- Record each builder's spend through `lane return --tokens/--minutes` and the reviewers' at the close: this run's page measures cost per unit (2.17M tokens, 1.69x) where RPT0014 read 0.2x off the orchestrator's meter.
 - Put the QA seat's control beside each criterion at the goal review, before any build: four units were caught in review on exactly the shapes the controls named.
 - Log every seat ruling as it is made (D0295): eleven rulings (D0298-D0308) are on the record and on this page.
 
