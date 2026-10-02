@@ -3050,6 +3050,10 @@ def _restore_seconds(red: dict, green: dict) -> float | None:
     return max(0.0, (b - a).total_seconds()) if a and b else None
 
 
+#: The conclusions a failed deployment has, under `CANCELLED_RULE`: a cancelled or skipped run
+#: did not fail, and a run still in progress has not concluded.
+FAILED_CONCLUSIONS = ("failure", "timed_out")
+
 #: The time-to-restore mapping a page marked `RESTORE_RULE` states (`_restore_incidents`).
 RESTORE_MAP = ("per red streak on main, in creation order, the span from its first failure's "
                "conclusion to the conclusion of the first push-triggered run created after it "
@@ -3058,17 +3062,23 @@ RESTORE_MAP = ("per red streak on main, in creation order, the span from its fir
 
 
 def _dora_rows(root: Path, start, end, runs: list[dict], ci_source: str,
-               restore_rule: bool = True) -> list[dict]:
+               restore_rule: bool = True, cancelled_rule: bool = True) -> list[dict]:
     """The four keys, each with its value, this project's mapping, the elite band and a source.
 
     Deployment frequency and change failure rate count PUSH-TRIGGERED runs alone. Counting
     every run in the window would let a `workflow_dispatch` or a schedule stand as a
     deployment, which is not a change reaching the trunk, and the rate it produces is a
     different number about a different thing.
+
+    Under `cancelled_rule` a failed deployment is a run that concluded failure or timed out
+    (`FAILED_CONCLUSIONS`): a cancelled or skipped run neither fails nor restores. Without it (a
+    page filed before the rule) every conclusion but success counts as a failure.
     """
     windowed = [r for r in runs if _in_window(r.get("createdAt"), start, end)]
     pushes = [r for r in windowed if str(r.get("event") or "") == "push"]
-    failed = [r for r in pushes if str(r.get("conclusion") or "").lower() not in ("success", "")]
+    failed = [r for r in pushes
+              if (str(r.get("conclusion") or "").lower() in FAILED_CONCLUSIONS if cancelled_rule
+                  else str(r.get("conclusion") or "").lower() not in ("success", ""))]
     ids = "/".join(str(r.get("databaseId")) for r in pushes)
 
     def forge(detail: str) -> str:
@@ -3132,8 +3142,11 @@ def _dora_rows(root: Path, start, end, runs: list[dict], ci_source: str,
                      "dora_source": fig("dora_source", "no commit and no push-triggered run "
                                                        "inside the run window", ci_source)})
 
-    cfr_map = (DEPLOY_MAPPING + "; the rate is the share of push-triggered CI runs on main "
-                                "that did not conclude success")
+    cfr_map = (DEPLOY_MAPPING + ("; the rate is the share of push-triggered CI runs on main "
+                                 "that concluded failure or timed out - a cancelled or skipped "
+                                 "run is not a failed deployment" if cancelled_rule else
+                                 "; the rate is the share of push-triggered CI runs on main "
+                                 "that did not conclude success"))
     if pushes:
         pct = f"{round(100 * len(failed) / len(pushes))}%"
         shas = "/".join(str(r.get("headSha") or "?") for r in failed) or "none"
@@ -3958,8 +3971,8 @@ def _rulings_section(state: dict, state_rel: str) -> dict:
 
 
 def _dora_section(root: Path, start, end, runs: list[dict], ci_source: str,
-                  restore_rule: bool = True) -> dict:
-    rows = _dora_rows(root, start, end, runs, ci_source, restore_rule)
+                  restore_rule: bool = True, cancelled_rule: bool = True) -> dict:
+    rows = _dora_rows(root, start, end, runs, ci_source, restore_rule, cancelled_rule)
     if all(r["dora_value"]["value"] == NOT_MEASURED for r in rows):
         return _section("dora", "DORA", not_measured=unmeasured(
             "dora", ci_source,
@@ -4017,6 +4030,11 @@ DELEGATED_OVER_ZERO_METER = "counted-over-a-zero-meter"
 AGENT_MINUTES_RULE = "agent_minutes"
 AGENT_MINUTES_ANY = "any-agent-supplied"
 
+#: The envelope mark of a page whose DORA figures count only a run that concluded failure or
+#: timed out as a failed deployment (`_dora_rows`). A page filed before it re-derives as signed.
+CANCELLED_RULE = "dora_failures"
+CANCELLED_NOT_FAILED = "failure-or-timed-out-only"
+
 
 def build_report(root, retro_id: str, as_of: str | None = None,
                  window_end: str | None = None, run_id: str | None = None,
@@ -4024,7 +4042,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  record: dict | None = None, ratio_rule: bool = True,
                  restore_rule: bool = True, discharge_rule: bool = True,
                  findings_rule: bool = True, minutes_rule: bool = True,
-                 delegated_rule: bool = True, agent_minutes_rule: bool = True) -> dict:
+                 delegated_rule: bool = True, agent_minutes_rule: bool = True,
+                 cancelled_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -4045,8 +4064,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     batch's own units out of the open findings (`FINDINGS_RULE`), and `minutes_rule` compares
     measured minutes with the forecast (`MINUTES_RULE`), and `delegated_rule` counts the
     delegated totals over a meter that read 0 (`DELEGATED_RULE`), and `agent_minutes_rule` reads
-    a unit's supplied agent minutes when any agent supplied them (`AGENT_MINUTES_RULE`); a
-    re-derivation passes what the page carries.
+    a unit's supplied agent minutes when any agent supplied them (`AGENT_MINUTES_RULE`), and
+    `cancelled_rule` reads a cancelled or skipped CI run as no failed deployment
+    (`CANCELLED_RULE`); a re-derivation passes what the page carries.
     """
     root = Path(root)
     state, state_rel = _run_state_for(root, run_id, record)
@@ -4124,7 +4144,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         _signoff_section(state_rel),
         _cost_section(state, state_rel, tokens),
         _dora_section(root, start, end, *_ci_runs(root, state, state_rel, run_id),
-                      restore_rule=restore_rule),
+                      restore_rule=restore_rule, cancelled_rule=cancelled_rule),
         _calibration_section(state, state_rel),
         _rulings_section(state, state_rel),
         # Bounded at both ends by the run's own window, like DORA, so a decision taken before
@@ -4150,7 +4170,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               **({FINDINGS_RULE: FINDINGS_BATCH_EXCLUDED} if findings_rule else {}),
               **({MINUTES_RULE: MINUTES_MEASURED} if minutes_rule else {}),
               **({DELEGATED_RULE: DELEGATED_OVER_ZERO_METER} if delegated_rule else {}),
-              **({AGENT_MINUTES_RULE: AGENT_MINUTES_ANY} if agent_minutes_rule else {})}
+              **({AGENT_MINUTES_RULE: AGENT_MINUTES_ANY} if agent_minutes_rule else {}),
+              **({CANCELLED_RULE: CANCELLED_NOT_FAILED} if cancelled_rule else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -5195,7 +5216,8 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          findings_rule=basis.get(FINDINGS_RULE) == FINDINGS_BATCH_EXCLUDED,
                          minutes_rule=basis.get(MINUTES_RULE) == MINUTES_MEASURED,
                          delegated_rule=basis.get(DELEGATED_RULE) == DELEGATED_OVER_ZERO_METER,
-                         agent_minutes_rule=basis.get(AGENT_MINUTES_RULE) == AGENT_MINUTES_ANY)
+                         agent_minutes_rule=basis.get(AGENT_MINUTES_RULE) == AGENT_MINUTES_ANY,
+                         cancelled_rule=basis.get(CANCELLED_RULE) == CANCELLED_NOT_FAILED)
     was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(basis)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)
