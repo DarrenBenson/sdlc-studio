@@ -1,0 +1,67 @@
+"""BG0912: the close puts the readable page in front of the operator before asking for a signature.
+
+`sprint close` ended with `sign it with: sprint.py sign --report RPTxxxx` and named neither the
+page nor a rendering of it, so the operator was asked to sign a report they had not been shown.
+The close now writes the HTML twin beside the report and names the Markdown page and the HTML
+twin above the sign command.
+
+Each test runs the real `sprint.py close` with every chain step stubbed green
+(`test_lean_close._close`).
+"""
+# test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
+from __future__ import annotations
+
+import sys
+import tempfile
+import unittest
+import unittest.mock
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import test_lean_close as lean  # noqa: E402 - the close fixture, shared
+
+
+class CloseShowsThePageTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = Path(self._tmp.name)
+        lean._fixture(self.root)
+        self.reports = self.root / "sdlc-studio" / "reports"
+
+    def test_the_close_names_the_page_and_its_html_twin(self) -> None:
+        """AC1. MUTANTS: HEAD, which writes no HTML and prints only the sign command; naming
+        the paths after the sign command, so the last line is no longer the one action left."""
+        rc, out, err = lean._close(self.root)
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual("RPT0001", lean._read(self.root)["report"])
+        html = self.reports / "RPT0001.html"
+        self.assertTrue(html.is_file(), "no HTML twin beside the report")
+        self.assertIn("<h2>Goal</h2>", html.read_text(encoding="utf-8"))
+        md = next(self.reports.glob("RPT0001-*.md"))
+        lines = out.splitlines()
+        sign = next(i for i, ln in enumerate(lines) if ln.startswith("sign it with:"))
+        named_md = [i for i, ln in enumerate(lines) if md.name in ln]
+        named_html = [i for i, ln in enumerate(lines) if "RPT0001.html" in ln]
+        self.assertTrue(named_md and named_html, out)
+        self.assertLess(max(named_md + named_html), sign, out)
+        self.assertEqual(sign, max(i for i, ln in enumerate(lines) if ln.strip()),
+                         "the sign command is no longer the last line")
+
+    def test_a_close_that_files_no_report_names_no_page(self) -> None:
+        """The control. MUTANT: write or name an HTML twin whether or not a page was filed."""
+        sr = lean._live("sprint_report")
+
+        def refuse(*_a, **_k):
+            raise sr.ReportError("the run cannot be reported")
+
+        with unittest.mock.patch.object(sr, "build_report", refuse):
+            rc, out, err = lean._close(self.root)
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual([], list(self.root.rglob("*.html")))
+        self.assertNotIn(".html", out + err)
+        self.assertNotIn("sign it with:", out)
+
+
+if __name__ == "__main__":
+    unittest.main()

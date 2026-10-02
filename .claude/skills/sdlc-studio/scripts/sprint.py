@@ -9263,6 +9263,19 @@ def _file_the_report(root, retro_id):
     fingerprint = report.get("fingerprint", "")
     run_state.update(root, report=report_id, report_fingerprint=fingerprint)
     print(f"\nreport filed: {report_id} (fingerprint {fingerprint})")
+    # The page is put in front of the operator before the sign command asks for a signature:
+    # the Markdown twin as filed, and its HTML rendering written beside it.
+    reports = sprint_report.report_dir(root)
+    for twin in sorted(reports.glob(f"{report_id}-*.md")):
+        print(f"  read it before signing: {_repo_rel(root, twin)}")
+    html = reports / f"{report_id}.html"
+    try:
+        sdlc_md.atomic_write(html, sprint_report.render_html(
+            sprint_report.read_report(root, report_id)))
+    except (sprint_report.ReportError, OSError) as exc:
+        print(f"  the HTML twin was not written - {exc}", file=sys.stderr)
+    else:
+        print(f"  read it before signing: {_repo_rel(root, html)}")
     return report_id, fingerprint
 
 
