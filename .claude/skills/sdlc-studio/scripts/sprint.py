@@ -11525,7 +11525,10 @@ def build_parser() -> argparse.ArgumentParser:
     gr.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
                     help="read the goal, seat verdicts and brief from a JSON object "
                          "({\"goal\": ..., \"seats\": [{...}], \"brief\": ...}) instead of the "
-                         "flags, so a seat note carrying shell metacharacters is stored verbatim")
+                         "flags, so a seat note carrying shell metacharacters is stored "
+                         "verbatim. Each seat object is keyed \"seat\" (its name), "
+                         "\"achievable\", \"done_means\" and \"one_increment\", with \"note\" "
+                         "and \"clauses\" optional")
     gr.add_argument("--brief", default=None,
                     help="the seat brief the verdicts were given against, stored in the round "
                          "so a thin verdict can be told from a thin brief")
