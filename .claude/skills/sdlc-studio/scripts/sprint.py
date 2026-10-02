@@ -9216,6 +9216,11 @@ def _report_holds(root, state) -> list:
     return holds
 
 
+#: The window end of the first page a close filed for the run, which every re-close re-derives
+#: against.
+REPORT_WINDOW_END = "report_window_end"
+
+
 def _file_the_report(root, retro_id):
     """PREPARE's last act: derive the run's report, file it, and name it on the run state.
 
@@ -9239,15 +9244,20 @@ def _file_the_report(root, retro_id):
     # no caller buys you. `stamp_tokens` was shipped with its only caller a test, and this is
     # the lane that was missing. Taken BEFORE the report is derived, so the figure the page
     # states is the one the run actually spent up to the moment it was written.
+    # A RE-CLOSE takes no reading and re-derives against the window the first filed page ended
+    # at: the work done after that close is paperwork about the run, not the run's cost, so
+    # only artefact changes move a re-filed page.
+    first_end = (run_state.read(root) or {}).get(REPORT_WINDOW_END)
     try:
-        run_state.stamp_tokens(root, "report")
+        if not first_end:
+            run_state.stamp_tokens(root, "report")
     except sdlc_md.AllocationLockTimeout as exc:   # the close goes on; the missing stamp is said
         print(f"warning: the report-time token stamp was not recorded - {exc.reason}",
               file=sys.stderr)
     except Exception as exc:               # noqa: BLE001 - an unreadable meter is not a failed close
         sdlc_md.debug("sprint.file_the_report.stamp", exc)
     try:
-        report = sprint_report.build_report(str(root), retro_id)
+        report = sprint_report.build_report(str(root), retro_id, window_end=first_end)
         report_id = sprint_report.file_report(str(root), report)
     except sprint_report.ReportError as exc:
         # The composer refuses a run it cannot report honestly - no goal, no run record, a
@@ -9261,7 +9271,8 @@ def _file_the_report(root, retro_id):
               f"carries no report to sign", file=sys.stderr)
         return "", ""
     fingerprint = report.get("fingerprint", "")
-    run_state.update(root, report=report_id, report_fingerprint=fingerprint)
+    run_state.update(root, report=report_id, report_fingerprint=fingerprint,
+                     **{REPORT_WINDOW_END: first_end or report.get("window_end")})
     print(f"\nreport filed: {report_id} (fingerprint {fingerprint})")
     # The page is put in front of the operator before the sign command asks for a signature:
     # the Markdown twin as filed, and its HTML rendering written beside it.
