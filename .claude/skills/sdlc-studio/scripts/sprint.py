@@ -2503,6 +2503,8 @@ LANE_OBLIGATIONS = (
     "unresolvable one, carrying the verifier's own output rather than a claim about it.",
     "Return the proof the plan's test strategy assigned this unit, or name the obligation you "
     "could not discharge and why.",
+    "A repair answering a REJECT carries only the blocking findings and the pins that kill "
+    "them, and files the rest.",
 )
 
 #: Opens the brief's file-history section. The lane meets the prior work and the defects its
