@@ -3429,7 +3429,8 @@ def discharged_carries(root, state: dict, window: tuple) -> list[str]:
 
 
 def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | None,
-                 window: tuple, discharge_rule: bool = True) -> list[dict]:
+                 window: tuple, discharge_rule: bool = True,
+                 agent_minutes_rule: bool = True) -> list[dict]:
     """One entry per unit the run planned, added or dropped: plan order, then added order.
 
     Planned points come from the plan snapshot, never the unit file: a unit resized from 3 to 8
@@ -3441,6 +3442,8 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
     the record that the ledger still holds (`REVIEW_ROWS`), else those counted inside `window`,
     the run's `(start, end)` (`_counted_rows`). A unit carried at the review cap and discharged
     inside the run (`_discharged_carry`) is delivered, not dropped, under `discharge_rule`.
+    A unit's minutes are its agents' supplied minutes when any agent supplied them, under
+    `agent_minutes_rule`, else only when every agent did; its span is the fallback.
     """
     filed_points = filed_points or {}
     snap, changes, planned, added, order = _unit_order(state)
@@ -3478,9 +3481,11 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
         plan, act = snap.get(uid) or {}, actuals.get(uid) or {}
         # The unit's tagged agent totals, where recorded, over its span on the shared meter.
         agent = agent_totals.get(uid) or {}
-        # Minutes are the unit's only when every tagged agent reported them: a sum over some of
-        # them, beside tokens from all of them, would read as the whole unit's time.
-        agent_minutes = bool(agent) and agent["timed"] == agent["agents"]
+        # The agents' supplied minutes win over the span whenever any agent supplied them, and
+        # the page labels how many of the unit's agents they cover. A page filed before the rule
+        # read them only when every tagged agent had.
+        agent_minutes = bool(agent) and (agent["timed"] > 0 if agent_minutes_rule
+                                         else agent["timed"] == agent["agents"])
         points = (filed_points[uid] if uid in filed_points else
                   sdlc_md.read_points(sdlc_md.read_text_safe(path)) if path else None)
         # A span still open has no end, so its running total (0.0 for a first span) is not the
@@ -3690,7 +3695,9 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
                   "eu_forecast_minutes": cell("eu_forecast_minutes", u["forecast_minutes"],
                                               "not in the plan"),
                   "eu_minutes": cell("eu_minutes", u["minutes"], why(u),
-                                     "agent minutes" if u["agent_minutes"] else None),
+                                     None if not u["agent_minutes"] else
+                                     "agent minutes" if u["timed"] == u["agents"] else
+                                     f"agent minutes ({u['timed']} of {u['agents']} agents)"),
                   "eu_forecast_tokens": cell("eu_forecast_tokens", u["forecast_tokens"],
                                              "not in the plan"),
                   "eu_tokens": cell("eu_tokens", u["tokens"], why(u),
@@ -4004,6 +4011,12 @@ MINUTES_MEASURED = "measured-unit-minutes"
 DELEGATED_RULE = "delegated_tokens"
 DELEGATED_OVER_ZERO_METER = "counted-over-a-zero-meter"
 
+#: The envelope mark of a page whose unit minutes are its agents' supplied minutes when any
+#: agent supplied them, not only when every agent did (`_unit_ledger`). A page filed before it
+#: re-derives as signed.
+AGENT_MINUTES_RULE = "agent_minutes"
+AGENT_MINUTES_ANY = "any-agent-supplied"
+
 
 def build_report(root, retro_id: str, as_of: str | None = None,
                  window_end: str | None = None, run_id: str | None = None,
@@ -4011,7 +4024,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  record: dict | None = None, ratio_rule: bool = True,
                  restore_rule: bool = True, discharge_rule: bool = True,
                  findings_rule: bool = True, minutes_rule: bool = True,
-                 delegated_rule: bool = True) -> dict:
+                 delegated_rule: bool = True, agent_minutes_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -4031,8 +4044,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     reads a discharged carry as delivered (`DISCHARGE_RULE`), and `findings_rule` leaves the
     batch's own units out of the open findings (`FINDINGS_RULE`), and `minutes_rule` compares
     measured minutes with the forecast (`MINUTES_RULE`), and `delegated_rule` counts the
-    delegated totals over a meter that read 0 (`DELEGATED_RULE`); a re-derivation passes what
-    the page carries.
+    delegated totals over a meter that read 0 (`DELEGATED_RULE`), and `agent_minutes_rule` reads
+    a unit's supplied agent minutes when any agent supplied them (`AGENT_MINUTES_RULE`); a
+    re-derivation passes what the page carries.
     """
     root = Path(root)
     state, state_rel = _run_state_for(root, run_id, record)
@@ -4095,7 +4109,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     tokens = run_state.run_token_total(state, current)
     readings = _page_readings(filed)
     ledger = _unit_ledger(root, state, state_rel, readings["points"],
-                          (state.get("started_at"), _iso(end)), discharge_rule)
+                          (state.get("started_at"), _iso(end)), discharge_rule,
+                          agent_minutes_rule)
     sections = [
         _section("goal", "Goal", goal_figs),
         _estimates_section(state, state_rel, ledger, tokens,
@@ -4134,7 +4149,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               **({DISCHARGE_RULE: DISCHARGE_DELIVERED} if discharge_rule else {}),
               **({FINDINGS_RULE: FINDINGS_BATCH_EXCLUDED} if findings_rule else {}),
               **({MINUTES_RULE: MINUTES_MEASURED} if minutes_rule else {}),
-              **({DELEGATED_RULE: DELEGATED_OVER_ZERO_METER} if delegated_rule else {})}
+              **({DELEGATED_RULE: DELEGATED_OVER_ZERO_METER} if delegated_rule else {}),
+              **({AGENT_MINUTES_RULE: AGENT_MINUTES_ANY} if agent_minutes_rule else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -5178,7 +5194,8 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          discharge_rule=basis.get(DISCHARGE_RULE) == DISCHARGE_DELIVERED,
                          findings_rule=basis.get(FINDINGS_RULE) == FINDINGS_BATCH_EXCLUDED,
                          minutes_rule=basis.get(MINUTES_RULE) == MINUTES_MEASURED,
-                         delegated_rule=basis.get(DELEGATED_RULE) == DELEGATED_OVER_ZERO_METER)
+                         delegated_rule=basis.get(DELEGATED_RULE) == DELEGATED_OVER_ZERO_METER,
+                         agent_minutes_rule=basis.get(AGENT_MINUTES_RULE) == AGENT_MINUTES_ANY)
     was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(basis)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)
