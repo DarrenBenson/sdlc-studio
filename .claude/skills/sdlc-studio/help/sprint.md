@@ -498,3 +498,9 @@ reach a shell through this path either.
 
 An orchestrator should call `lane brief` before dispatching and `lane return` before accepting a
 lane's work. Skipping them is how a unit with no contract reaches Fixed.
+
+The pair also measures the unit. `lane brief` opens the unit's span (a unit already In Progress
+keeps the span it has) and a passing `lane return` closes it, so the sprint report states the
+unit's minutes and tokens over that span. A blocked return leaves the span open. A lane briefed
+and never returned stays open through the close and reads NOT MEASURED, never a time measured to
+the close or to the sign.

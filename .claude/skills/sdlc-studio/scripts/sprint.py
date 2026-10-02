@@ -6067,6 +6067,13 @@ def _batch_abandoned_units(root, batch) -> list[tuple[str, str]]:
     return out
 
 
+def _lanes_never_returned(state: dict) -> set[str]:
+    """The units a lane was briefed on and has not returned from, read from the run state the
+    caller already holds (`run_state.IN_FLIGHT`, set by `lane brief`, cleared by `lane return`)."""
+    return {sdlc_md.norm_id(r.get("unit") or "") for r in state.get(run_state.IN_FLIGHT) or []
+            if isinstance(r, dict) and r.get("unit")}
+
+
 def _batch_story_units(root, batch) -> list[str]:
     """The units in the batch the sign-off fan-out reaches, in batch order.
 
@@ -8496,6 +8503,18 @@ def cmd_lane(args: argparse.Namespace) -> int:
                 "record_lane_start", lambda b=b: run_state.record_lane_start(root, b["id"]), None,
                 f"{b['id']}'s lane start could not be recorded (the run state is unreadable), "
                 f"so a restart will not know this lane was briefed")
+            # The brief is where a lane's work starts, so it opens the unit's span by the
+            # transition's own rule: a batch unit of the open run, and never a second span over
+            # one already open (a unit moved to In Progress keeps the span it opened). A unit
+            # built through lanes never passes through In Progress, so without this it read
+            # NOT MEASURED on the page (RPT0014: 29 of 34 units).
+            _lane_run_state(
+                "open_unit_span",
+                lambda b=b: run_state.record_unit_actual(root, b["id"],
+                                                         run_state.UNIT_START_STATUS, False),
+                None,
+                f"{b['id']}'s span could not be opened (the run state is unreadable), so its "
+                f"time and tokens will read NOT MEASURED")
         if getattr(args, "format", "text") == "json":
             print(json.dumps(dispatch, indent=2))
         else:
@@ -8529,6 +8548,18 @@ def cmd_lane(args: argparse.Namespace) -> int:
             f"{res['unit']}'s lane return could not be recorded (the run state is unreadable), "
             f"so it may still be reported as briefed and never returned. Its acceptance "
             f"criteria HAVE been run and their result is reported below")
+        # A PASSING return is where the lane's work ended, so it closes the span the brief
+        # opened. A blocked one leaves it open: the lane came back without the work, and the
+        # span runs on to the return that delivers it. A brief never returned stays open too,
+        # and the close leaves it so (`_lanes_never_returned`) - it reads NOT MEASURED.
+        if res["outcome"] != "blocked":
+            _lane_run_state(
+                "close_unit_span",
+                lambda res=res: run_state.record_unit_actual(root, res["unit"], "", True),
+                None,
+                f"{res['unit']}'s span could not be closed (the run state is unreadable), so "
+                f"its time and tokens may read NOT MEASURED. Its acceptance criteria HAVE been "
+                f"run and their result is reported below")
     if getattr(args, "format", "text") == "json":
         print(json.dumps(results, indent=2))
     else:
@@ -8887,10 +8918,19 @@ def cmd_close(args: argparse.Namespace) -> int:
     # Progress span settled here, on one meter reading, before anything derives from the run:
     # the page then states the span to the close, and the sign's terminal move finds nothing
     # open to close or stamp, so the page it seals still re-derives.
+    # Except a unit whose lane was briefed and never returned: the close is not when its work
+    # ended, so its span stays open and the page reads it NOT MEASURED rather than a time
+    # measured to a moment nobody chose.
+    unreturned = _lanes_never_returned(state)
     if settled := run_state.settle_open_spans(
-            root, _batch_story_units(root, state.get("batch") or [])):
+            root, [u for u in _batch_story_units(root, state.get("batch") or [])
+                   if u not in unreturned]):
         print(f"close: measured to the close the open span of {', '.join(settled)}")
         state = run_state.read(root) or state
+    for uid in sorted(unreturned & set(_batch_story_units(root, state.get("batch") or []))):
+        if ((state.get(run_state.UNIT_ACTUALS) or {}).get(uid) or {}).get("open"):
+            print(f"close: {uid}'s lane was briefed and never returned - its span is left "
+                  f"open and reads NOT MEASURED")
     # ONE PASS. A step that fails is recorded as a known issue for the report and the chain runs
     # on; the report is the page that hands those issues over, so a gap no longer stops it.
     known: list[dict] = []

@@ -3302,6 +3302,10 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
         agent_minutes = bool(agent) and agent["timed"] == agent["agents"]
         points = (filed_points[uid] if uid in filed_points else
                   sdlc_md.read_points(sdlc_md.read_text_safe(path)) if path else None)
+        # A span still open has no end, so its running total (0.0 for a first span) is not the
+        # unit's time: it reads NOT MEASURED. The close settles every open span it can measure
+        # before deriving; one it leaves open is a lane briefed and never returned (US0979).
+        still_open = bool(act.get("open"))
         out.append({
             "id": uid, "rel": _rel(root, path) if path else state_rel,
             "planned": uid in planned, "added": uid not in planned and uid in added,
@@ -3311,9 +3315,11 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
             "planned_points": plan.get("planned_points"),
             "forecast_minutes": plan.get("forecast_minutes"),
             "forecast_tokens": plan.get("forecast_tokens"),
-            "minutes": agent["minutes"] if agent_minutes else act.get("minutes"),
-            "tokens": agent["tokens"] if agent else act.get("tokens"),
+            "minutes": (agent["minutes"] if agent_minutes else
+                        None if still_open else act.get("minutes")),
+            "tokens": agent["tokens"] if agent else None if still_open else act.get("tokens"),
             "agent_minutes": agent_minutes, "agent_tokens": bool(agent), "spanned": bool(act),
+            "open_since": act.get("started_at") if still_open else None,
             "agents": agent.get("agents", 0), "timed": agent.get("timed", 0),
             "timed_minutes": agent.get("minutes"),
             "in_plan": bool(plan), "measured": bool(act) or bool(agent),
@@ -3430,6 +3436,9 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
                     f"so its minutes are unknown - an agent's minutes are recorded with its "
                     f"`--delegated-tokens` as `--delegated-minutes M` when it reports, and "
                     f"cannot be added afterwards")
+        if u["open_since"]:
+            return (f"its span opened at {u['open_since']} is still open (a lane briefed and "
+                    f"never returned, or a unit not yet finished), so its time is unknown, not 0")
         if u["spanned"]:
             return "not recorded on its In Progress span"
         return (f"no In Progress span and no agent total tagged to it - record one with "

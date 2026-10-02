@@ -167,7 +167,13 @@ def record_unit_actual(repo_root: Path | str, unit_id: str, status: str,
                        terminal: bool) -> dict | None:
     """Open or close `unit_id`'s span for a move to `status`, and return its entry - or None
     when nothing is recorded: no open run, a unit outside its batch, a status that neither
-    starts nor ends the work, a start while a span is open, or an end with none open."""
+    starts nor ends the work, a start while a span is open, or an end with none open.
+
+    An end while the unit's lane is in flight (briefed, not returned) records nothing either:
+    that span closes at the lane's passing return, which clears the marker first. A terminal
+    move made over a lane that never returned - `sprint sign`'s, after the close left the span
+    open - would otherwise measure the span to the move and stamp the meter, and the page the
+    signature has just sealed would re-derive INVALIDATED."""
     uid = sdlc_md.norm_id(unit_id)
     starting = status == UNIT_START_STATUS
 
@@ -176,7 +182,9 @@ def record_unit_actual(repo_root: Path | str, unit_id: str, status: str,
                 sdlc_md.norm_id(b) for b in (state.get("batch") or [])}:
             return False
         is_open = bool(((state.get(UNIT_ACTUALS) or {}).get(uid) or {}).get("open"))
-        return (starting and not is_open) or (terminal and is_open)
+        in_flight = uid in {sdlc_md.norm_id(r.get("unit") or "")
+                            for r in state.get(IN_FLIGHT) or [] if isinstance(r, dict)}
+        return (starting and not is_open) or (terminal and is_open and not in_flight)
 
     if not (starting or terminal) or not applies(read(repo_root)):
         return None
