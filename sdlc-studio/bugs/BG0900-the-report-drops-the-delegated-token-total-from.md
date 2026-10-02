@@ -1,6 +1,6 @@
 # BG0900: The report drops the delegated token total from the run's actual when the session meter reads zero
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_meter_zero_delegated.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py

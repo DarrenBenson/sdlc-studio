@@ -1,6 +1,6 @@
 # BG0904: DORA counts a cancelled or skipped CI run on main as a failed deployment
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_dora_cancelled_runs.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py

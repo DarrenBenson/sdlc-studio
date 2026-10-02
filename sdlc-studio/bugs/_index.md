@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 28 |
-| In Progress | 0 |
+| Open | 13 |
+| In Progress | 15 |
 | Fixed | 729 |
 | Verified | 0 |
 | Closed | 87 |
@@ -256,23 +256,23 @@
 | [BG0895](BG0895-a-finding-filed-during-the-run-and-then.md) | A finding filed during the run and then added to the batch invalidates the signed page when sign moves it terminal | Fixed | Medium | 2026-10-02 | 2026-10-02 |
 | [BG0896](BG0896-migrate-s-retired-surface-scan-reads-prose-such.md) | migrate's retired-surface scan reads prose such as 'mutation audit' as a retired command because .py is optional | Open | Low | 2026-10-02 | 2026-10-02 |
 | [BG0897](BG0897-the-boundary-control-in-test-cli-grammar-goes.md) | The boundary control in test_cli_grammar goes red when the corpus holds no open cross-epic reference, so a seal blocks the push | Fixed | High | 2026-10-02 | 2026-10-02 |
-| [BG0898](BG0898-the-report-s-minutes-row-divides-a-wall.md) | The report's Minutes row divides a wall-clock span by an active-work forecast | Open | Low | 2026-10-02 | 2026-10-02 |
-| [BG0899](BG0899-a-lane-brief-reopens-the-span-of-a.md) | A lane brief reopens the span of a unit already at a terminal status | Open | Low | 2026-10-02 | 2026-10-02 |
-| [BG0900](BG0900-the-report-drops-the-delegated-token-total-from.md) | The report drops the delegated token total from the run's actual when the session meter reads zero | Open | Low | 2026-10-02 | 2026-10-02 |
-| [BG0901](BG0901-two-agent-totals-on-one-unit-one-without.md) | Two agent totals on one unit, one without minutes, fall back to the span unlabelled | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0898](BG0898-the-report-s-minutes-row-divides-a-wall.md) | The report's Minutes row divides a wall-clock span by an active-work forecast | In Progress | Low | 2026-10-02 | 2026-10-02 |
+| [BG0899](BG0899-a-lane-brief-reopens-the-span-of-a.md) | A lane brief reopens the span of a unit already at a terminal status | In Progress | Low | 2026-10-02 | 2026-10-02 |
+| [BG0900](BG0900-the-report-drops-the-delegated-token-total-from.md) | The report drops the delegated token total from the run's actual when the session meter reads zero | In Progress | Low | 2026-10-02 | 2026-10-02 |
+| [BG0901](BG0901-two-agent-totals-on-one-unit-one-without.md) | Two agent totals on one unit, one without minutes, fall back to the span unlabelled | In Progress | Low | 2026-10-02 | 2026-10-02 |
 | [BG0902](BG0902-a-late-lane-return-tokens-writes-into-a.md) | A late lane return --tokens writes into a sealed run and invalidates its signed page | Open | Low | 2026-10-02 | 2026-10-02 |
-| [BG0903](BG0903-lane-return-and-lane-brief-take-agent-totals.md) | lane return and lane brief take agent totals silently in three cases | Open | Low | 2026-10-02 | 2026-10-02 |
-| [BG0904](BG0904-dora-counts-a-cancelled-or-skipped-ci-run.md) | DORA counts a cancelled or skipped CI run on main as a failed deployment | Open | Low | 2026-10-02 | 2026-10-02 |
-| [BG0905](BG0905-the-tokens-ratio-withheld-rule-s-delivered-unit.md) | The tokens-ratio withheld rule's delivered-unit half is untested, and its help text says briefed where the code counts any span | Open | Low | 2026-10-02 | 2026-10-02 |
-| [BG0906](BG0906-two-of-d0304-s-time-to-restore-rules.md) | Two of D0304's time-to-restore rules are unpinned: the FIRST success restores, and an in-progress run ends no streak | Open | Low | 2026-10-02 | 2026-10-02 |
-| [BG0907](BG0907-calibration-s-minutes-per-point-falls-back-to.md) | Calibration's minutes per point falls back to a July row because velocity rows carry no wall time | Open | Low | 2026-10-02 | 2026-10-02 |
-| [BG0908](BG0908-close-steps-hand-over-their-status-and-prose.md) | Close steps hand over their status and prose lines as known issues | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0903](BG0903-lane-return-and-lane-brief-take-agent-totals.md) | lane return and lane brief take agent totals silently in three cases | In Progress | Low | 2026-10-02 | 2026-10-02 |
+| [BG0904](BG0904-dora-counts-a-cancelled-or-skipped-ci-run.md) | DORA counts a cancelled or skipped CI run on main as a failed deployment | In Progress | Low | 2026-10-02 | 2026-10-02 |
+| [BG0905](BG0905-the-tokens-ratio-withheld-rule-s-delivered-unit.md) | The tokens-ratio withheld rule's delivered-unit half is untested, and its help text says briefed where the code counts any span | In Progress | Low | 2026-10-02 | 2026-10-02 |
+| [BG0906](BG0906-two-of-d0304-s-time-to-restore-rules.md) | Two of D0304's time-to-restore rules are unpinned: the FIRST success restores, and an in-progress run ends no streak | In Progress | Low | 2026-10-02 | 2026-10-02 |
+| [BG0907](BG0907-calibration-s-minutes-per-point-falls-back-to.md) | Calibration's minutes per point falls back to a July row because velocity rows carry no wall time | In Progress | Low | 2026-10-02 | 2026-10-02 |
+| [BG0908](BG0908-close-steps-hand-over-their-status-and-prose.md) | Close steps hand over their status and prose lines as known issues | In Progress | Low | 2026-10-02 | 2026-10-02 |
 | [BG0909](BG0909-bg0895-did-not-converge-in-review-round-2.md) | BG0895 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-02 | 2026-10-02 |
-| [BG0910](BG0910-the-close-pre-flight-s-live-checklist-read.md) | The close pre-flight's live checklist read is unpinned | Open | Low | 2026-10-02 | 2026-10-02 |
-| [BG0911](BG0911-the-goal-verdict-s-note-can-quote-figures.md) | The goal verdict's note can quote figures the filed page contradicts, and the close says nothing | Open | Medium | 2026-10-02 | 2026-10-02 |
-| [BG0912](BG0912-the-close-files-a-report-for-sign-off.md) | The close files a report for sign-off without putting the readable page in front of the operator | Open | Medium | 2026-10-02 | 2026-10-02 |
-| [BG0913](BG0913-each-re-close-moves-the-run-s-window.md) | Each re-close moves the run's window end and token meter, so work after the first close counts as run cost | Open | Medium | 2026-10-02 | 2026-10-02 |
-| [BG0914](BG0914-goal-review-fields-file-help-names-no-seat.md) | goal-review --fields-file help names no seat keys, so a fields document keyed role records nothing under the seat | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0910](BG0910-the-close-pre-flight-s-live-checklist-read.md) | The close pre-flight's live checklist read is unpinned | In Progress | Low | 2026-10-02 | 2026-10-02 |
+| [BG0911](BG0911-the-goal-verdict-s-note-can-quote-figures.md) | The goal verdict's note can quote figures the filed page contradicts, and the close says nothing | In Progress | Medium | 2026-10-02 | 2026-10-02 |
+| [BG0912](BG0912-the-close-files-a-report-for-sign-off.md) | The close files a report for sign-off without putting the readable page in front of the operator | In Progress | Medium | 2026-10-02 | 2026-10-02 |
+| [BG0913](BG0913-each-re-close-moves-the-run-s-window.md) | Each re-close moves the run's window end and token meter, so work after the first close counts as run cost | In Progress | Medium | 2026-10-02 | 2026-10-02 |
+| [BG0914](BG0914-goal-review-fields-file-help-names-no-seat.md) | goal-review --fields-file help names no seat keys, so a fields document keyed role records nothing under the seat | In Progress | Low | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 

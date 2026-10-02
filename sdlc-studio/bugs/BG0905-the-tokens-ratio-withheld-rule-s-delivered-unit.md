@@ -1,6 +1,6 @@
 # BG0905: The tokens-ratio withheld rule's delivered-unit half is untested, and its help text says briefed where the code counts any span
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_delegated_tokens.py, .claude/skills/sdlc-studio/help/sprint.md

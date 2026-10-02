@@ -1,6 +1,6 @@
 # BG0914: goal-review --fields-file help names no seat keys, so a fields document keyed role records nothing under the seat
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_review_fields_keys.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

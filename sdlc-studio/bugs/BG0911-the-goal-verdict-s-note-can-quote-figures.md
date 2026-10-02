@@ -1,6 +1,6 @@
 # BG0911: The goal verdict's note can quote figures the filed page contradicts, and the close says nothing
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_note_matches_page.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
