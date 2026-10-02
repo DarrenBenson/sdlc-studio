@@ -424,8 +424,9 @@ _COPY_LEAVE_OUT = frozenset({".claude/worktrees", "node_modules", ".git"})
 #: open epic left `ac_scope check` naming nothing on the live tree, and the control went red on a
 #: corpus that was correct. The other six also name closed or recorded work: `flow compute` a done
 #: unit's lead time, the rest the verdict ledger, the decision log, the retros and the artefacts.
-#: Two open epics, and a Ready story under the second whose criterion names BOTH distinctive
-#: words of the first's title (ac_scope's blocking strength), left out of the story index (drift).
+#: Two open epics, and a Ready story under the second whose criterion names a distinctive word
+#: of the first's title (one is enough for `ac_scope check` to report it; the seed names both),
+#: left out of the story index (drift).
 #: Numbered above every range the corpus holds, so each is a real-tree id only in the seeded copy.
 _OPEN_WORK_SEED: dict[str, str] = {
     "sdlc-studio/epics/EP9101-zorblax-quuxify.md":
@@ -597,7 +598,8 @@ class RootIsReadNotJustParsed(unittest.TestCase):
                 # RESOLVES here, so the evidence window moves with the ids rather than expiring.
                 self.assertTrue(
                     _real_tree_ids(out, tree),
-                    f"{script} {' '.join(verb)}: pointed at the real tree it named no artefact "
+                    f"{script} {' '.join(verb)}: pointed at the seeded copy of the real tree it "
+                    f"named no artefact "
                     f"of it, so its row in the guard above asserts nothing - re-measure it in a "
                     f"CLEAN worktree, or remove it")
 
@@ -847,6 +849,22 @@ class RealTreeMarkerTests(unittest.TestCase):
                 with self.subTest(verb=_verb_label(script, verb), seeded=True):
                     named = _real_tree_ids(runner._run(script, verb, root), root)
                     self.assertTrue(set(named) & set(_SEEDED_IDS), named)
+
+    def test_the_control_runs_over_the_seeded_copy_and_resolves_there(self) -> None:
+        """BG0897 AC1, per commit. The control's OWN body, its runner answering only a SEEDED id:
+        green only when the body seeds the tree it runs over AND resolves ids in that tree.
+        MUTANTS: drop `_seed_open_work(tree)` - US9101 resolves nowhere and every verb fails;
+        resolve against `self.REPO` - the seed exists only in the copy, so the same."""
+        body = _test_body(getattr(RootIsReadNotJustParsed, self.CONTROL))
+        self.assertIn("US9101", _SEEDED_IDS)
+        self.assertIsNone(sdlc_md.find_by_id(self.REPO, "US9101"),
+                          "premise: the seeded id is not an artefact of the real tree")
+        result, calls = self._run_isolated(self.CONTROL, body=body, answer="US9101")
+        self._assert_green(result, "the control, every verb answering only the seeded US9101")
+        self.assertEqual(sorted(_verb_label(s, v) for s, v in ROOT_EFFECT_VERBS),
+                         sorted(label for label, _ in calls))
+        self.assertIsNone(sdlc_md.find_by_id(self.REPO, "US9101"),
+                          "the control seeded the real tree")
 
     def test_the_boundary_control_resolves_ids_rather_than_matching_a_frozen_range(self) -> None:
         """AC5. MUTANTS: leave the control on the frozen marker; add a resolving helper beside it
