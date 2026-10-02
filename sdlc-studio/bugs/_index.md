@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 18 |
+| Open | 21 |
 | In Progress | 3 |
 | Fixed | 722 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **900** |
+| **Total** | **903** |
 
 ## All Bugs
 
@@ -259,6 +259,9 @@
 | [BG0898](BG0898-the-report-s-minutes-row-divides-a-wall.md) | The report's Minutes row divides a wall-clock span by an active-work forecast | Open | Low | 2026-10-02 | 2026-10-02 |
 | [BG0899](BG0899-a-lane-brief-reopens-the-span-of-a.md) | A lane brief reopens the span of a unit already at a terminal status | Open | Low | 2026-10-02 | 2026-10-02 |
 | [BG0900](BG0900-the-report-drops-the-delegated-token-total-from.md) | The report drops the delegated token total from the run's actual when the session meter reads zero | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0901](BG0901-two-agent-totals-on-one-unit-one-without.md) | Two agent totals on one unit, one without minutes, fall back to the span unlabelled | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0902](BG0902-a-late-lane-return-tokens-writes-into-a.md) | A late lane return --tokens writes into a sealed run and invalidates its signed page | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0903](BG0903-lane-return-and-lane-brief-take-agent-totals.md) | lane return and lane brief take agent totals silently in three cases | Open | Low | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 
