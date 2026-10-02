@@ -1127,19 +1127,25 @@ def _run_covers(state: dict, unit_ids) -> bool:
     return len(run_batch & retro_units) * 2 > len(retro_units)
 
 
-def _discharged_carries(root, unit_ids) -> list[str]:
-    """The units the run that delivered `unit_ids` carried at the review cap and discharged
-    inside it (`sprint_report.discharged_carries`). Delivered work the retro's Batch omits: the
-    close fills that field from the batch after the carry dropped them. The run is the first
-    record covering the units, live then archived (`_run_covers`, the rule `_run_rung` reads
-    by), measured to its end, or to now while it is open. None found reads nothing added."""
+def _covering_run(root, unit_ids) -> dict | None:
+    """The run record that delivered `unit_ids`: the first covering them (`_run_covers`), live
+    then archived, newest first - the rule `_run_rung` reads by. None when none does."""
     records: list[dict] = []
     for read in (lambda: [run_state.read(root)], lambda: list(reversed(run_state.archived(root)))):
         try:
             records.extend(read())
         except Exception as exc:  # noqa: BLE001 - the velocity read must never die on a record
-            sdlc_md.debug("retro._discharged_carries", exc)
-    rec = next((r for r in records if isinstance(r, dict) and _run_covers(r, unit_ids)), None)
+            sdlc_md.debug("retro._covering_run", exc)
+    return next((r for r in records if isinstance(r, dict) and _run_covers(r, unit_ids)), None)
+
+
+def _discharged_carries(root, unit_ids) -> list[str]:
+    """The units the run that delivered `unit_ids` carried at the review cap and discharged
+    inside it (`sprint_report.discharged_carries`). Delivered work the retro's Batch omits: the
+    close fills that field from the batch after the carry dropped them. The run is
+    `_covering_run`'s, measured to its end, or to now while it is open. None found reads nothing
+    added."""
+    rec = _covering_run(root, unit_ids)
     if rec is None:
         return []
     try:
@@ -1149,6 +1155,18 @@ def _discharged_carries(root, unit_ids) -> list[str]:
     except Exception as exc:  # noqa: BLE001 - an unreadable ledger adds nothing, never crashes
         sdlc_md.debug("retro._discharged_carries", exc)
         return []
+
+
+def _run_meter_model(root, unit_ids) -> str | None:
+    """The model the meter of the run that delivered `unit_ids` names: the single model across
+    its stamps, `mixed` across several, None when none names one or no record covers the units.
+    The run is `_covering_run`'s."""
+    rec = _covering_run(root, unit_ids)
+    if rec is None:
+        return None
+    models = {str(s["model"]) for s in rec.get(run_state.TOKEN_STAMPS) or []
+              if isinstance(s, dict) and s.get("model")}
+    return models.pop() if len(models) == 1 else MODEL_MIXED if models else None
 
 
 def retro_units(root, retro_id: str) -> list[str]:
@@ -3122,6 +3140,12 @@ def cmd_accuracy(args) -> int:
             # The figure is the one already on the row, so its provenance is too. Re-stamping
             # it from this path would relabel a harness capture as an operator's typed claim.
             token_source = SOURCE_UNCHANGED
+            # And so is the model that spent it. The upsert rewrites the whole row, and leaving
+            # this None rewrote it with no model: every row a close recorded twice (a second
+            # attempt, a re-close) lost its model, and calibration fell back to another model's
+            # rows. The row's own model, else the one the run's meter names.
+            sprint_model = (_single_model(existing)
+                            or _run_meter_model(args.root, retro_units(args.root, args.id)))
             capture_note = (f"token actual already recorded for {args.id} "
                             f"({existing['actual_tokens']:,}) - reused, not re-captured; "
                             f"correct it with an explicit `--tokens N`")
