@@ -2084,8 +2084,11 @@ def _open_findings(root: Path, run: dict | None,
 
 
 def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = None,
-              rep: dict | None = None, read_root: Path | str | None = None) -> dict:
-    """The compulsory checklist for a sprint, one row per item. Read-only.
+              rep: dict | None = None, read_root: Path | str | None = None,
+              live_gate: bool = False) -> dict:
+    """The compulsory checklist for a sprint, one row per item. Read-only. `live_gate`: the
+    close's own calls, which judge the batch's delivered findings by the gate asked now
+    (`delivered_batch`); every other caller reads the verdict the filed page states.
 
     Every row carries `state`, and only `state` decides whether the close may proceed: a row is
     OUTSTANDING when it is `not-run` or `unanswered` and no waiver names it. A resolver that
@@ -2107,7 +2110,7 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
         # The page leaves the batch's delivered findings out of the findings that need a
         # ruling, so the checklist does too: two answers to which findings need one made the
         # close hand over `2 unruled` beside a page listing one.
-        done = delivered_batch(root, run or {})
+        done = delivered_batch(root, run or {}, live=live_gate)
         still_open = [u for u in still_open if u not in done]
     ctx = {
         # `read_root` is the tree a READ-ONLY probe should ask, and it differs from `root` in
@@ -2151,13 +2154,15 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
             **_known_issue_rulings(ctx)}
 
 
-def delivered_batch(root, state: dict) -> set[str]:
-    """The batch units the page states as delivered: PREPARE's frozen terminal-gate verdict
-    (`report_gate_clear`) when the record holds one, else that same question asked now
-    (`sprint._report_gate_verdicts`, the close's own reader) - the close's checklist step runs
-    before PREPARE records the verdict."""
+def delivered_batch(root, state: dict, live: bool = False) -> set[str]:
+    """The batch units the page states as delivered. `live`, inside a close attempt: the
+    terminal gate asked now (`sprint._report_gate_verdicts`, the close's own reader), because
+    the attempt's PREPARE freezes its verdict only after the checklist runs and a frozen one is
+    the PREVIOUS attempt's - a re-close then judged its checklist by attempt 1 and its page by
+    attempt 2 (D0308). Otherwise PREPARE's frozen verdict (`report_gate_clear`), the one the
+    filed page states, when the record holds one."""
     gate = state.get("report_gate_clear")
-    if isinstance(gate, list):
+    if not live and isinstance(gate, list):
         return {sdlc_md.norm_id(u) for u in gate}
     if not state.get("batch"):
         return set()

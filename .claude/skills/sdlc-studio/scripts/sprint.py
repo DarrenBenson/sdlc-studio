@@ -5565,7 +5565,9 @@ def _close_checklist(root, retro, state, read_root=None):
     """
     try:
         import sprint_report  # noqa: PLC0415 - deferred, like the chain's sibling imports
-        ck = sprint_report.checklist(root, retro, read_root=read_root or root)
+        # `live_gate`: inside a close attempt the delivered set is the gate asked now, never the
+        # previous attempt's frozen verdict (D0308).
+        ck = sprint_report.checklist(root, retro, read_root=read_root or root, live_gate=True)
     except Exception as exc:  # noqa: BLE001 - a step that cannot check must not report a pass
         return (False, f"the sprint checklist could not be composed: {type(exc).__name__}: {exc}",
                 "fix the error above, or run `sprint_report.py checklist --id "
@@ -7139,7 +7141,7 @@ def _checklist_blockers(root: Path, retro_id: str, state: dict,
     try:
         import sprint_report  # noqa: PLC0415 - deferred, like the close path's other siblings
         units = [sdlc_md.norm_id(b) for b in (state.get("batch") or [])]
-        ck = sprint_report.checklist(root, retro_id, unit_ids=units or None)
+        ck = sprint_report.checklist(root, retro_id, unit_ids=units or None, live_gate=True)
     except Exception as exc:  # noqa: BLE001 - a step that cannot check must not report a pass
         return [{"stage": "checklist",
                  "detail": f"the sprint checklist could not be composed: "

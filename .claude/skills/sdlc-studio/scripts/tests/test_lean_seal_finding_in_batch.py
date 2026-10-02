@@ -87,6 +87,21 @@ class _FindingRun(signing._SignMovesRun):
         time.sleep(1.1)        # the close's window ends a second after the stamps, never on them
 
 
+def _criterion(run: "_FindingRun", green: bool) -> None:
+    """Turn BG0101's criterion green or red and record the run of it, as a lane would, so its
+    terminal gate clears or refuses; the tree is committed so the close takes it."""
+    path = run.root / "sdlc-studio" / "bugs" / "BG0101-x.md"
+    text = path.read_text(encoding="utf-8")
+    path.write_text(text.replace("shell false", "shell true") if green
+                    else text.replace("shell true", "shell false"), encoding="utf-8")
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+        lean._live("verify_ac").main(["run", "--id", "BG0101", "--root", str(run.root)])
+    for argv in (["add", "-A"], ["commit", "-q", "--allow-empty", "-m", "BG0101 moved"]):
+        subprocess.run(["git", "-C", str(run.root), *argv], env=run.env, check=True,
+                       capture_output=True)
+
+
 def _rule(root: Path, *rulings: tuple[str, str]) -> None:
     """The retro's `## Known issues carried` table, ruling each `(id, ruling)` - none given,
     an empty table, so the checklist reads the table rather than finding none."""
@@ -206,6 +221,61 @@ class SealFindingInBatchTests(unittest.TestCase):
         self.assertEqual(2, self._issues(page).count("BG0101"), "its finding row and its "
                                                                  "carried-unit row")
         self.assertFalse(any("UNRULED BG0101" in g["detail"] for g in gaps), gaps)
+
+    def _two_closes(self, first_green: bool) -> tuple[_FindingRun, dict, list[dict]]:
+        """A re-close (D0308): close once with BG0101's criterion `first_green`, turn it the
+        other way, close again. Returns the run, the second attempt's page and its gaps."""
+        run = _FindingRun(self._tmpdir(), outside=True)
+        env = unittest.mock.patch.dict(os.environ, run.env, clear=True)
+        env.start()
+        self.addCleanup(env.stop)
+        run.build()
+        _rule(run.root)                                    # neither finding ruled
+        if not first_green:
+            _criterion(run, green=False)
+        self._close_with_checklist(run)
+        _criterion(run, green=not first_green)
+        return (run, *self._close_with_checklist(run))
+
+    @staticmethod
+    def _unruled(gaps: list[dict]) -> str:
+        handed = [g["detail"] for g in gaps if g["detail"].startswith("known-issues:")]
+        return handed[0] if handed else ""
+
+    def test_a_re_close_red_then_green_judges_the_checklist_by_its_own_gate(self) -> None:
+        """BG0909 (BG0895 round 2), red then green. Attempt 1 froze a gate without BG0101;
+        attempt 2's gate clears it. MUTANT: the close's checklist reads the frozen verdict, so
+        attempt 2 hands over `2 unruled` beside a page listing only BG0102."""
+        _run, page, gaps = self._two_closes(first_green=False)
+        self.assertEqual(["BG0102"], list(self._finding_rows(page)))
+        self.assertIn("1 unruled", self._unruled(gaps))
+
+    def test_a_re_close_green_then_red_judges_the_checklist_by_its_own_gate(self) -> None:
+        """BG0909, green then red. Attempt 1 froze a gate clearing BG0101; attempt 2's refuses
+        it. MUTANT: the close's checklist reads the frozen verdict, so attempt 2 hands over
+        `1 unruled` beside a page listing BG0101 open as well as BG0102."""
+        _run, page, gaps = self._two_closes(first_green=True)
+        self.assertEqual(["BG0101", "BG0102"], sorted(self._finding_rows(page)))
+        self.assertIn("2 unruled", self._unruled(gaps))
+
+    def test_after_the_close_the_checklist_reads_the_filed_page_s_gate(self) -> None:
+        """The opposite pin: outside a close attempt the checklist reads the verdict the filed
+        page states, so it agrees with that page when a unit moves after filing. MUTANT: delete
+        the frozen branch of `delivered_batch`, so BG0101 - delivered on the filed page, its
+        criterion since turned red - is demanded a ruling."""
+        run = _FindingRun(self._tmpdir(), outside=True)
+        env = unittest.mock.patch.dict(os.environ, run.env, clear=True)
+        env.start()
+        self.addCleanup(env.stop)
+        run.build()
+        _rule(run.root)
+        page, _gaps = self._close_with_checklist(run)
+        self.assertEqual(["BG0102"], list(self._finding_rows(page)))
+        _criterion(run, green=False)
+        row = next(r for r in lean._live("sprint_report").checklist(run.root, RETRO)["items"]
+                   if r["id"] == "known-issues")
+        self.assertIn("UNRULED BG0102", row["detail"])
+        self.assertNotIn("BG0101", row["detail"])
 
     def test_a_page_filed_before_the_fix_re_derives_as_signed(self) -> None:
         """RPT0013 listed a batch finding. MUTANTS: apply the rule to a page that carries no
