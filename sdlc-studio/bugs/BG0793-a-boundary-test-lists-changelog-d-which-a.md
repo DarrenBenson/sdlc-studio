@@ -28,7 +28,7 @@ Read an absent changelog.d as no fragments in the test (and anywhere else it is 
   - **Verified:** yes (2026-09-26)
 - [ ] **AC2** Given the same test run with `changelog.d/` absent, then a dedicated case proves the directory's absence is exercised, not skipped. Fails on: a fix that only passes because the directory happens to exist locally
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py::RealTreeMarkerTests::test_the_control_holds_with_no_fragment_directory
-  - **Verified:** yes (2026-09-26)
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

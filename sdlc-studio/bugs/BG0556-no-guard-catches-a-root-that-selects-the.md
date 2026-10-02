@@ -27,9 +27,9 @@ A conformance test per --root-taking verb: run it against a fixture root holding
 - [x] **AC1** Given a `--root` pointed at an empty fixture, when a proven-discriminating verb runs from inside this repository, then its answer names nothing from this repository - the flag is READ, not merely parsed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py -k no_verb_answers_about_the_real_tree
   - **Verified:** yes (2026-08-14)
-- [x] **AC2** Given the same verbs pointed at the REAL tree, when they run, then each names a real artefact - so a clean AC1 means the flag was obeyed, not that the verb prints nothing either way.
+- [x] **AC2** Given the same verbs pointed at a copy of the REAL tree seeded with open work (BG0897), when they run, then each names a real artefact - so a clean AC1 means the flag was obeyed, not that the verb prints nothing either way.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py -k every_listed_verb_can_actually_fail
-  - **Verified:** yes (2026-08-14)
+  - **Verified:** yes (2026-10-02)
 - [x] **AC3** Given the inventory of swept verbs, when it is compared against the verbs the sweep can invoke, then it is a strict subset of them - so the coverage gap cannot be closed by pasting the rest in, which would read as complete and assert less.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py -k inventory_is_a_measured_subset
   - **Verified:** yes (2026-08-14)
@@ -51,7 +51,7 @@ The guard was then falsified before being trusted: making `resolve_root` ignore 
 | Criterion | Mutant - the production change this test must fail on | Title |
 | --- | --- | --- |
 | AC1 | in lib/sdlc_md.py `resolve_root`, ignore a named root so every --root in the family is decorative | Given a `--root` pointed at an empty fixture, when a proven-discriminating verb runs from inside this repository, then its answer names nothing from this repository - the flag is READ, not merely parsed. |
-| AC2 | in tests/test_cli_grammar.py, replace `_REAL_TREE_MARKER` with a pattern that never matches | Given the same verbs pointed at the REAL tree, when they run, then each names a real artefact - so a clean AC1 means the flag was obeyed, not that the verb prints nothing either way. |
+| AC2 | in tests/test_cli_grammar.py, replace `_REAL_TREE_MARKER` with a pattern that never matches | Given the same verbs pointed at a copy of the REAL tree seeded with open work (BG0897), when they run, then each names a real artefact - so a clean AC1 means the flag was obeyed, not that the verb prints nothing either way. |
 | AC3 | in tests/test_cli_grammar.py, widen `ROOT_EFFECT_VERBS` to every invocable --root verb, so 105 rows that cannot fail read as coverage | Given the inventory of swept verbs, when it is read, then it is the MEASURED discriminating set rather than every verb the sweep can invoke, so the guard never claims coverage it does not have. |
 
 ## Revision History
@@ -59,3 +59,4 @@ The guard was then falsified before being trusted: making `resolve_root` ignore 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-08 | sdlc-studio-authoring-session | Filed |
+| 2026-10-02 | engineering seat (orchestrator) | AC2 reworded: the control now runs over a copy of the real tree seeded with open work (BG0897), so it holds on any corpus state |

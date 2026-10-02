@@ -25,10 +25,12 @@ Seed the copy with what each listed verb needs to answer (for `ac_scope`, an ope
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a copy of a corpus in which every epic is terminal, so `ac_scope.py` check names nothing on the live tree, when the boundary control runs over the copy in each fragment state, then it is green, because the copy is seeded with what each listed verb needs to answer. Fails on: the current control at c70de024, red on '`ac_scope.py` check'
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py::RealTreeMarkerTests::test_the_control_is_green_in_either_fragment_state
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py::RealTreeMarkerTests::test_the_seed_gives_every_open_work_verb_an_answer_on_a_closed_corpus
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-02 | sdlc-studio | Filed |
+| 2026-10-02 | engineering seat (orchestrator) | AC1 Verify re-pointed at the per-commit seed test: the boundary control it named skips outside the push |
