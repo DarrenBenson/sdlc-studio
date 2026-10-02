@@ -4705,11 +4705,16 @@ def _close_retro_extract(root, retro_id, state):
         passed, errors = lessons.close_pass_line(res), res["errors"]
     except (OSError, ValueError) as exc:
         passed, errors = "", [f"the lesson store could not be acted on: {exc}"]
+    if (rc != 0 or errors) and passed:
+        # The pass's summary is a status line, not a failure: printed for the operator, and kept
+        # out of the failed step's detail, whose every line the close hands over as a known
+        # issue - RPT0014 listed `lessons: 0 hit(s) from cited REJECTs` as a close gap.
+        print(f"close: {passed}")
     if rc != 0:
-        return False, "\n".join([out, *errors, passed]).strip(), \
+        return False, "\n".join([out, *errors]).strip(), \
             f"`retro.py extract --id {retro_id}` must succeed - see its output"
     if errors:
-        return False, "\n".join([*errors, passed]).strip(), \
+        return False, "\n".join(errors).strip(), \
             f"fix what `{lessons.STORE_FILE}` names above, then re-run the close"
     return True, f"lessons lifted into the lessons stores (idempotent by content)\n{passed}", ""
 
