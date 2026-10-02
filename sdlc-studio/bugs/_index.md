@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 18 |
+| Open | 19 |
 | In Progress | 0 |
 | Fixed | 721 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **896** |
+| **Total** | **897** |
 
 ## All Bugs
 
@@ -255,6 +255,7 @@
 | [BG0894](BG0894-the-close-carries-a-lessons-status-line-as.md) | The close carries a lessons status line as a known issue ('lessons: 0 hit(s) from cited REJECTs') | Open | Low | 2026-10-02 | 2026-10-02 |
 | [BG0895](BG0895-a-finding-filed-during-the-run-and-then.md) | A finding filed during the run and then added to the batch invalidates the signed page when sign moves it terminal | Open | Medium | 2026-10-02 | 2026-10-02 |
 | [BG0896](BG0896-migrate-s-retired-surface-scan-reads-prose-such.md) | migrate's retired-surface scan reads prose such as 'mutation audit' as a retired command because .py is optional | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0897](BG0897-the-boundary-control-in-test-cli-grammar-goes.md) | The boundary control in test_cli_grammar goes red when the corpus holds no open cross-epic reference, so a seal blocks the push | Open | High | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 
