@@ -63,10 +63,36 @@ class GoalNoteMatchesPageTests(unittest.TestCase):
         return rc, (out + err).splitlines(), tokens["est_ratio"]["value"]
 
     def test_a_note_figure_the_page_contradicts_is_named(self) -> None:
-        """AC1. MUTANT: HEAD, which files the page and prints nothing about the note; or a
-        check that reads the note against a live re-derivation rather than the filed page."""
+        """AC1. MUTANT: HEAD, which files the page and prints nothing about the note. The
+        live re-derivation mutant is killed by the filed-page test below."""
         rc, lines, ratio = self._close("tokens 1.87M at 1.46x, every unit delivered")
         self.assertEqual("1.69x", ratio, "premise: the filed page derives 1.69x")
+        self.assertEqual(0, rc, "\n".join(lines))
+        named = [ln for ln in lines if "1.46x" in ln and "1.69x" in ln]
+        self.assertEqual(1, len(named), "\n".join(lines))
+
+    def test_the_note_is_read_against_the_page_as_filed(self) -> None:
+        """AC1's 'read off the page as filed'. Right after the page is filed the run's delegated
+        total drops to 145,000, so a fresh derivation reads 1.46x while the filed page still reads
+        1.69x. MUTANT: `build_report` in place of `read_report` in `goal_note_contradiction`,
+        which agrees with the note and names nothing."""
+        mod = lean._live("sprint")
+        real = mod._file_the_report
+
+        def file_then_move(root, retro_id):
+            filed = real(root, retro_id)
+            lean._live("lib.run_state").update(root, delegated_tokens=[
+                {"tokens": 145_000, "agent": "builder", "note": "", "provenance": "supplied",
+                 "recorded_at": "2026-09-23T00:30:00Z", "unit": "US0101"}])
+            return filed
+
+        with unittest.mock.patch.object(mod, "_file_the_report", file_then_move):
+            rc, lines, ratio = self._close("tokens 1.87M at 1.46x, every unit delivered")
+        self.assertEqual("1.69x", ratio, "premise: the filed page derives 1.69x")
+        fresh = lean._live("sprint_report").build_report(str(self.root), "RETRO0001")
+        est = next(s for s in fresh["sections"] if s["key"] == "estimates")
+        self.assertIn("1.46x", [r["est_ratio"]["value"] for r in est["rows"]],
+                      "premise: a fresh derivation reads 1.46x")
         self.assertEqual(0, rc, "\n".join(lines))
         named = [ln for ln in lines if "1.46x" in ln and "1.69x" in ln]
         self.assertEqual(1, len(named), "\n".join(lines))
