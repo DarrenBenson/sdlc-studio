@@ -5291,10 +5291,12 @@ def _close_review_coverage(root, retro, state):
     covered = f"{len(batch) - len(missing)}/{len(batch)} unit(s) covered by an independent pass"
     if not missing:
         return True, covered, ""
-    detail = (f"  {covered}\n"
-              f"  {len(missing)} unit(s) in this batch are covered by NO independent review: "
-              f"{', '.join(missing)}\n"
-              f"  The close certifies that a review happened; it does not perform one.")
+    # The status line and the prose are printed for the operator and kept out of the detail,
+    # whose every line the close hands over as a known issue: only the gap is a gap.
+    print(f"  {covered}\n  The close certifies that a review happened; it does not perform "
+          f"one.", file=sys.stderr)
+    detail = (f"  {len(missing)} unit(s) in this batch are covered by NO independent review: "
+              f"{', '.join(missing)}")
     remedy = ("review each uncovered unit and record its delivery verdict - "
               f"`critic.py record --units {','.join(missing[:6])}"
               f"{',...' if len(missing) > 6 else ''} --reviewer <who> --author <who> "
