@@ -33,6 +33,7 @@ import importlib
 import json
 import re
 import shutil
+import statistics
 import subprocess
 import sys
 from collections import Counter
@@ -2996,22 +2997,38 @@ DEPLOY_MAPPING = ("a push to main IS the deployment in this trunk-based reposito
 _NO_FORGE = "no forge run data"
 
 
-def _restore_pair(pushes: list[dict], failed: list[dict]):
-    """`(red, green)`: the window's first failure in creation order and the first success
-    created after it that concluded after it - or `(red, None)` when none did, `(None, None)`
-    with no failure. `gh run list` answers newest first, so the list's order is not time: walked
-    as given, RPT0014 paired its 16:10 failure with the 12:22 success and printed -4h 20m."""
+def _restore_incidents(pushes: list[dict], failed: list[dict]) -> list[tuple]:
+    """The window's incidents in creation order, each `(red, green)`: a red streak's first
+    failure and the first push-triggered success CREATED after it, or None while the streak is
+    unrestored. `gh run list` answers newest first, so the list's order is not time: walked as
+    given, RPT0014 paired its 16:10 failure with the 12:22 success and printed -4h 20m. A run
+    neither failed nor successful (still running) neither opens nor ends a streak."""
     def created(r):
         return _at(r.get("createdAt"))
-    ordered = sorted((r for r in pushes if created(r)), key=created)
-    red = next((r for r in ordered if r in failed), None)
-    red_end = _at(red.get("updatedAt")) if red else None
-    if red is None or red_end is None:
-        return red, None
-    greens = [r for r in ordered
-              if created(r) > created(red) and str(r.get("conclusion") or "").lower() == "success"
-              and _at(r.get("updatedAt")) and _at(r.get("updatedAt")) >= red_end]
-    return red, min(greens, key=lambda r: _at(r.get("updatedAt")), default=None)
+    incidents: list[list] = []
+    for run in sorted((r for r in pushes if created(r)), key=created):
+        open_ = bool(incidents) and incidents[-1][1] is None
+        if run in failed:
+            if not open_:
+                incidents.append([run, None])
+        elif str(run.get("conclusion") or "").lower() == "success" and open_:
+            incidents[-1][1] = run
+    return [(red, green) for red, green in incidents]
+
+
+def _restore_seconds(red: dict, green: dict) -> float | None:
+    """The restore span: the success's conclusion less the failure's, floored at zero - a newer
+    commit's run can go green before an older failure reports - or None when either is
+    unreadable."""
+    a, b = _at(red.get("updatedAt")), _at(green.get("updatedAt"))
+    return max(0.0, (b - a).total_seconds()) if a and b else None
+
+
+#: The time-to-restore mapping a page marked `RESTORE_RULE` states (`_restore_incidents`).
+RESTORE_MAP = ("per red streak on main, in creation order, the span from its first failure's "
+               "conclusion to the conclusion of the first push-triggered run created after it "
+               "that concluded success, floored at zero; the median over the window's restored "
+               "streaks, or not restored while the window's last streak is still red")
 
 
 def _dora_rows(root: Path, start, end, runs: list[dict], ci_source: str,
@@ -3111,14 +3128,15 @@ def _dora_rows(root: Path, start, end, runs: list[dict], ci_source: str,
 
     restore_map = ("the span from a push-triggered run concluding failure on main to the next "
                    "push-triggered run concluding success")
-    restored, unrestored = None, None
+    restored, unrestored, timed = None, None, None
     if restore_rule:
-        red, green = _restore_pair(pushes, failed)
-        if green is not None:
-            restored = (_hms((_at(green.get("updatedAt")) - _at(red.get("updatedAt")))
-                             .total_seconds()), red, green)
-        elif red is not None:
-            unrestored = red
+        restore_map = RESTORE_MAP
+        incidents = _restore_incidents(pushes, failed)
+        if incidents and incidents[-1][1] is None:
+            unrestored = incidents[-1][0]
+        elif incidents:
+            timed = [(red, green, secs) for red, green in incidents
+                     if (secs := _restore_seconds(red, green)) is not None]
     else:
         # A page filed before BG0891 (no `RESTORE_RULE` mark) re-derives as it was signed.
         for i, run in enumerate(pushes):
@@ -3131,14 +3149,36 @@ def _dora_rows(root: Path, start, end, runs: list[dict], ci_source: str,
                         break
                 break
     if unrestored is not None:
+        rid = unrestored.get("databaseId")
         rows.append({"dora_key": fig("dora_key", "Time to restore", ci_source),
                      "dora_value": fig("dora_value", "not restored", ci_source),
                      "dora_mapping": fig("dora_mapping", restore_map, ci_source),
                      "dora_band": fig("dora_band", "under an hour", ci_source),
                      "dora_source": fig("dora_source",
-                                        f"forge runs {unrestored.get('databaseId')} - red on "
-                                        f"main, and no push-triggered run concluded success "
-                                        f"after it in the run window", ci_source)})
+                                        f"forge runs {rid} - main went red at run {rid}, and no "
+                                        f"push-triggered run created after it concluded success "
+                                        f"in the run window", ci_source)})
+    elif timed is not None:
+        if timed:
+            median = statistics.median(secs for _r, _g, secs in timed)
+            value = _hms(median) + (f" (median of {len(timed)} incidents)"
+                                    if len(timed) > 1 else "")
+            pairs = ", ".join(f"{r.get('databaseId')}/{g.get('databaseId')}"
+                              for r, g, _secs in timed)
+            source = (f"forge runs {pairs} - each red streak on main restored by the first "
+                      f"push-triggered run created after its first failure that concluded "
+                      f"success")
+            value_fig = fig("dora_value", value, ci_source)
+        else:
+            source = forge("every restored streak's conclusion time is unreadable")
+            value_fig = unmeasured("dora_value", ci_source, "the conclusion times of the runs "
+                                                            "that went red and green are "
+                                                            "unreadable")
+        rows.append({"dora_key": fig("dora_key", "Time to restore", ci_source),
+                     "dora_value": value_fig,
+                     "dora_mapping": fig("dora_mapping", restore_map, ci_source),
+                     "dora_band": fig("dora_band", "under an hour", ci_source),
+                     "dora_source": fig("dora_source", source, ci_source)})
     elif restored:
         span, red, green = restored
         rows.append({"dora_key": fig("dora_key", "Time to restore", ci_source),
@@ -3845,7 +3885,7 @@ TOKEN_RATIO_RULE = "token_ratio"
 TOKEN_RATIO_EVERY_UNIT = "every-delivered-unit-delegated"
 
 #: The envelope mark of a page whose time to restore pairs a failure with the next success in
-#: creation order (`_restore_pair`, BG0891). A page filed before it re-derives as signed.
+#: creation order (`_restore_incidents`). A page filed before it re-derives as signed.
 RESTORE_RULE = "restore_pairing"
 RESTORE_NEXT_SUCCESS = "next-success-after-failure"
 

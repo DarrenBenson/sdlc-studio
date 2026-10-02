@@ -79,8 +79,53 @@ class TimeToRestoreTests(unittest.TestCase):
         row = self._restore([_run(4, "18:00", "success", event="workflow_dispatch"),
                              _run(2, "16:10", "failure"), _run(1, "12:22", "success")])
         self.assertEqual("not restored", row["dora_value"]["value"])
-        self.assertIn("forge runs 2", row["dora_source"]["value"])
-        self.assertIn("no push-triggered run concluded success after", row["dora_source"]["value"])
+        self.assertEqual("forge runs 2 - main went red at run 2, and no push-triggered run "
+                         "created after it concluded success in the run window",
+                         row["dora_source"]["value"])
+
+    def test_a_window_ending_red_reads_not_restored(self) -> None:
+        """D0304, the reviewer's two-incident window. MUTANT: round 1's rule, which pairs only
+        the window's FIRST failure, so a window that went green and then red again at 18:00
+        reads 1h 9m though main ends the window red."""
+        row = self._restore([_run(5, "18:00", "failure"), _run(3, "17:19", "success"),
+                             _run(2, "16:10", "failure"), _run(1, "12:22", "success")])
+        self.assertEqual("not restored", row["dora_value"]["value"])
+        self.assertIn("main went red at run 5", row["dora_source"]["value"])
+
+    def test_overlapping_runs_restore_in_no_time(self) -> None:
+        """D0304: a newer commit's run can go green before an older failure reports. Red
+        created 10:00 concluding 10:40, green created 10:05 concluding 10:20. MUTANTS: no floor
+        (-1h 40m, as `_hms` renders -20 minutes); requiring the success to conclude after the
+        failure, so the overlap reads `not restored` though main is green."""
+        row = self._restore([_run(2, "10:20", "success", created="10:05"),
+                             _run(1, "10:40", "failure", created="10:00")])
+        self.assertEqual("0h 0m", row["dora_value"]["value"])
+        self.assertEqual("forge runs 1/2 - each red streak on main restored by the first "
+                         "push-triggered run created after its first failure that concluded "
+                         "success", row["dora_source"]["value"])
+
+    def test_only_a_success_created_after_the_failure_restores(self) -> None:
+        """D0304, the created-after rule. A success created at 15:00 on an older commit that
+        concludes at 16:30, after the 16:10 failure created at 16:00, is not a fix of it.
+        MUTANT: pair by conclusion time, so it reads 0h 20m."""
+        row = self._restore([_run(2, "16:10", "failure", created="16:00"),
+                             _run(1, "16:30", "success", created="15:00")])
+        self.assertEqual("not restored", row["dora_value"]["value"])
+
+    def test_the_median_over_restored_incidents(self) -> None:
+        """D0304: the median over restored incidents, with their count. MUTANTS: the first
+        incident only (0h 30m); the last only (1h 0m); the mean of three (0h 40m, where the
+        median is 0h 20m)."""
+        two = self._restore([_run(4, "13:00", "success"), _run(3, "12:00", "failure"),
+                             _run(2, "10:30", "success"), _run(1, "10:00", "failure")])
+        self.assertEqual("0h 45m (median of 2 incidents)", two["dora_value"]["value"])
+        self.assertIn("forge runs 1/2, 3/4", two["dora_source"]["value"])
+        self._tmp.cleanup()
+        self.root.mkdir(parents=True, exist_ok=True)
+        three = self._restore([_run(6, "15:30", "success"), _run(5, "14:00", "failure"),
+                               _run(4, "12:20", "success"), _run(3, "12:00", "failure"),
+                               _run(2, "10:10", "success"), _run(1, "10:00", "failure")])
+        self.assertEqual("0h 20m (median of 3 incidents)", three["dora_value"]["value"])
 
     def test_a_page_filed_before_the_fix_re_derives_its_restore(self) -> None:
         """RPT0014 was signed reading -4h 20m. MUTANTS: apply the fix when re-deriving a page
