@@ -2103,6 +2103,12 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
         sdlc_md.debug("sprint_report.checklist.reviews", exc)
         sprint_reviews = []
     filed, still_open = _open_findings(root, run)
+    if still_open is not None:
+        # The page leaves the batch's delivered findings out of the findings that need a
+        # ruling, so the checklist does too: two answers to which findings need one made the
+        # close hand over `2 unruled` beside a page listing one.
+        done = delivered_batch(root, run or {})
+        still_open = [u for u in still_open if u not in done]
     ctx = {
         # `read_root` is the tree a READ-ONLY probe should ask, and it differs from `root` in
         # exactly one caller: `close_dry_run`, whose `root` is a scratch copy holding only
@@ -2143,6 +2149,21 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
             # gate whose only exit is the step it blocks is not a gate, it is a deadlock.
             "pending_in_close": [r["id"] for r in unmet if r.get("discharged_by") == "close"],
             **_known_issue_rulings(ctx)}
+
+
+def delivered_batch(root, state: dict) -> set[str]:
+    """The batch units the page states as delivered: PREPARE's frozen terminal-gate verdict
+    (`report_gate_clear`) when the record holds one, else that same question asked now
+    (`sprint._report_gate_verdicts`, the close's own reader) - the close's checklist step runs
+    before PREPARE records the verdict."""
+    gate = state.get("report_gate_clear")
+    if isinstance(gate, list):
+        return {sdlc_md.norm_id(u) for u in gate}
+    if not state.get("batch"):
+        return set()
+    import sprint  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    return {sdlc_md.norm_id(u) for u, why in sprint._report_gate_verdicts(Path(root), state).items()
+            if not why}
 
 
 def _known_issue_rulings(ctx: dict) -> dict:
@@ -3761,16 +3782,20 @@ def _known_issues_section(root: Path, state: dict, state_rel: str, ledger: list[
     raised, still_open = _open_findings(root, {"started_at": start, "ended_at": end,
                                                "run_id": state.get("run_id")},
                                         at_the_close=True)
-    # A finding the run took into its batch is on the page as a unit - delivered, or carried
-    # below - so it is not listed again as an open finding. Listed, it read open at the close
-    # and the sign's terminal move took it off the re-derived page: the signed page read
-    # INVALIDATED (RUN-01M3VF2J's rehearsal, BG0876 and BG0877). A finding outside the batch,
-    # or dropped from it, is still listed. A page filed before this (no `FINDINGS_RULE` mark)
-    # re-derives as signed.
-    in_batch = {sdlc_md.norm_id(u) for u in state.get("batch") or []} if batch_rule else set()
+    # A finding the run took into its batch and DELIVERED is on the page as a delivered unit,
+    # so it is not listed again as an open finding. Listed, it read open at the close and the
+    # sign's terminal move took it off the re-derived page: the signed page read INVALIDATED
+    # (RUN-01M3VF2J's rehearsal, BG0876 and BG0877). A batch finding carried or dropped is
+    # still open work and keeps its row, severity and ruling, as does a finding outside the
+    # batch. The delivered set is the ledger's, so PREPARE's frozen terminal gate; the
+    # checklist excludes the same units (`delivered_batch`). A page filed before this (no
+    # `FINDINGS_RULE` mark) re-derives as signed.
+    batch = {sdlc_md.norm_id(u) for u in state.get("batch") or []}
+    delivered = ({u["id"] for u in ledger if u["delivered"] and u["id"] in batch}
+                 if batch_rule else set())
     if raised is not None:
-        raised = [u for u in raised if u not in in_batch]
-        still_open = [u for u in still_open or [] if u not in in_batch]
+        raised = [u for u in raised if u not in delivered]
+        still_open = [u for u in still_open or [] if u not in delivered]
 
     def replayed(uid: str) -> tuple[int, dict]:
         row = {k: dict(f) if isinstance(f, dict) else f for k, f in on_page[uid].items()}
@@ -3922,11 +3947,11 @@ RESTORE_NEXT_SUCCESS = "next-success-after-failure"
 DISCHARGE_RULE = "discharged_carry"
 DISCHARGE_DELIVERED = "delivered"
 
-#: The envelope mark of a page whose open findings leave out the run's own batch units, which
-#: the page states as units (`_known_issues_section`). A page filed before it re-derives as
+#: The envelope mark of a page whose open findings leave out the batch units it states as
+#: delivered (`_known_issues_section`, `delivered_batch`). A page filed before it re-derives as
 #: signed.
 FINDINGS_RULE = "findings_scan"
-FINDINGS_BATCH_EXCLUDED = "batch-units-excluded"
+FINDINGS_BATCH_EXCLUDED = "delivered-batch-units-excluded"
 
 
 def build_report(root, retro_id: str, as_of: str | None = None,
