@@ -8521,6 +8521,16 @@ def _lane_run_state(label: str, call, fallback, warning: str):
         return fallback
 
 
+def _at_terminal_status(root: Path, uid: str) -> bool:
+    """True when `uid`'s artefact carries a terminal status for its type."""
+    hit = sdlc_md.find_by_id(root, uid)
+    if hit is None:
+        return False
+    raw = sdlc_md.extract_field(sdlc_md.read_text_safe(hit[0]), "Status") or ""
+    status = sdlc_md.canonical_status(raw, sdlc_md.status_vocab(hit[1], root)) or raw.strip()
+    return sdlc_md.is_terminal_status(hit[1], status)
+
+
 def cmd_lane(args: argparse.Namespace) -> int:
     """`sprint lane brief|return`: the two ends of a delegated unit of delivery.
 
@@ -8571,7 +8581,11 @@ def cmd_lane(args: argparse.Namespace) -> int:
             # transition's own rule: a batch unit of the open run, and never a second span over
             # one already open (a unit moved to In Progress keeps the span it opened). A unit
             # built through lanes never passes through In Progress, so without this it read
-            # NOT MEASURED on the page (RPT0014: 29 of 34 units).
+            # NOT MEASURED on the page (RPT0014: 29 of 34 units). Never for a unit already at a
+            # terminal status: a whole-batch brief would reopen its measured span, and a lane
+            # that never returns would leave it reading NOT MEASURED.
+            if _at_terminal_status(root, b["id"]):
+                continue
             _lane_run_state(
                 "open_unit_span",
                 lambda b=b: run_state.record_unit_actual(root, b["id"],
