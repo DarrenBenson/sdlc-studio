@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 2 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 237 |
 | Superseded | 33 |
-| **Total** | **271** |
+| **Total** | **272** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -79,6 +79,7 @@
 | [EP0269](EP0269-the-quick-start-installs-a-release-that-is.md) | The quick start installs a release that is verified | Done | 1 | -- | 2026-10-01 | 2026-10-01 |
 | [EP0270](EP0270-low-findings-that-reach-users-fixed-in-themes.md) | Low findings that reach users, fixed in themes | Done | 9 | -- | 2026-10-01 | 2026-10-01 |
 | [EP0271](EP0271-the-sprint-report-measures-each-unit-s-real.md) | The sprint report measures each unit's real cost | Draft | 3 | -- | 2026-10-02 | 2026-10-02 |
+| [EP0272](EP0272-a-recurring-lesson-becomes-a-line-the-agent.md) | A recurring lesson becomes a line the agent reads | Draft | 1 | -- | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 

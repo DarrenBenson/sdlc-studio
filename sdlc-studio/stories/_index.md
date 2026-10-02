@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 1 |
+| Ready | 2 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **981** |
+| **Total** | **982** |
 
 ## All Stories
 
@@ -340,6 +340,7 @@
 | [US0979](US0979-a-lane-brief-and-return-open-and-close.md) | A lane brief and return open and close the unit's span | Done | EP0271 | 2026-10-02 | 2026-10-02 |
 | [US0980](US0980-a-lane-return-records-the-builder-s-token.md) | A lane return records the builder's token and minute totals | Done | EP0271 | 2026-10-02 | 2026-10-02 |
 | [US0981](US0981-a-carry-bug-filed-at-the-review-cap.md) | A carry bug filed at the review cap does not count against the triage cap | Ready | EP0271 | 2026-10-02 | 2026-10-02 |
+| [US0982](US0982-the-lane-brief-tells-a-repair-to-carry.md) | The lane brief tells a repair to carry only its blocking fix and pins | Ready | EP0272 | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 0 |
 | Approved | 0 |
-| In Progress | 3 |
+| In Progress | 4 |
 | Complete | 515 |
 | Rejected | 29 |
 | Deferred | 0 |
@@ -105,7 +105,7 @@
 | [CR-0605](CR0605-a-unit-built-through-a-lane-opens-and.md) | A unit built through a lane opens and closes its own span, so the report measures per-unit minutes | In Progress | Medium | Improvement | 2026-10-02 | EP0271 |
 | [CR-0606](CR0606-a-lane-return-records-the-builder-s-own.md) | A lane return records the builder's own token and minute totals, and the estimates ratio is withheld while delegated spend is unmeasured | In Progress | Medium | Improvement | 2026-10-02 | EP0271 |
 | [CR-0607](CR0607-a-carry-bug-filed-at-the-review-cap.md) | A carry bug filed at the review cap does not count against the triage session cap | In Progress | Low | Improvement | 2026-10-02 | EP0271 |
-| [CR-0608](CR0608-prevent-or-retire-lesson-lc-005-repair-breaks.md) | Prevent or retire lesson LC-005 (repair breaks its neighbour) | Proposed | Medium | Improvement | 2026-10-02 | -- |
+| [CR-0608](CR0608-prevent-or-retire-lesson-lc-005-repair-breaks.md) | Prevent or retire lesson LC-005 (repair breaks its neighbour) | In Progress | Medium | Improvement | 2026-10-02 | EP0272 |
 
 ## Archived Releases
 
