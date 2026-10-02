@@ -26,6 +26,7 @@ Pin it: on a red-then-green re-close, close --dry-run names only the finding the
 
 - [ ] **AC1** Given a run closed once with BG0101 carried, then BG0101 verified and approved, when sprint close --dry-run runs, then its known-issues line reads 1 unruled naming only BG0102. Fails on: a pre-flight that reads the previous attempt's frozen gate, which prints 2 unruled
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_preflight_live_gate.py::PreflightLiveGateTests::test_a_re_close_dry_run_names_only_the_page_s_findings
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

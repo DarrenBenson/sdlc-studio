@@ -26,6 +26,7 @@ Sum the agent minutes that were supplied, labelled as agent minutes over the age
 
 - [ ] **AC1** Given unit X with a 7-minute span, a 40-minute agent total and a second agent total with no minutes, when the page is derived, then X's minutes read 40 labelled agent minutes, never the 7-minute span. Fails on: the current code reads 7.0 unlabelled
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_partial_agent_minutes.py::PartialAgentMinutesTests::test_supplied_agent_minutes_win_when_one_agent_gave_none
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

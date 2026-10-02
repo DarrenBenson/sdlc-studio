@@ -25,10 +25,13 @@ Have each step hand over only its failures, as BG0894 and BG0908 did, and pin re
 
 - [ ] **AC1** Given a close whose only gap is one retro-validate failure, when the page is filed, then its known issues hold that failure and not the validator's header line. Fails on: the current code hands over the header too
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close_gap_lines_rest.py::CloseGapLinesRestTests::test_retro_validate_hands_over_only_its_failure
+  - **Verified:** yes (2026-10-02)
 - [ ] **AC2** Given a close whose gate fails on a lane nobody is attributed to, when the page is filed, then its known issues hold that lane's failure line only, not the gate's whole output. Fails on: the current code hands over every output line
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close_gap_lines_rest.py::CloseGapLinesRestTests::test_unattributed_gate_hands_over_only_its_failure
+  - **Verified:** yes (2026-10-02)
 - [ ] **AC3** Given retro-extract exits non-zero, when the close runs, then the page carries one known issue naming the extract failure. Fails on: a mutant dropping the rc check, which the current suite does not kill
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_close_gap_lines_rest.py::CloseGapLinesRestTests::test_extract_failed_is_one_known_issue
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

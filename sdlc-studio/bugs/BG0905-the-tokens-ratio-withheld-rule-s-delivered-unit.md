@@ -26,6 +26,7 @@ Add the control (a delivered unit with no span and no total withholds the ratio)
 
 - [ ] **AC1** Given US0101 delivered with an agent total and US0102 moved to Done with no span and no total, when the page is derived, then the tokens ratio reads withheld naming US0102. Fails on: a spanned-only check, which prints 0.64x
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_ratio_withheld_delivered.py::RatioWithheldDeliveredTests::test_a_delivered_unit_with_no_span_withholds_the_ratio
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

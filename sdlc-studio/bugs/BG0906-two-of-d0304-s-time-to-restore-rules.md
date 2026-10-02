@@ -26,6 +26,7 @@ Pin both: a second success after the restoring one leaves 1h 9m, and a failure f
 
 - [ ] **AC1** Given AC1's runs plus a second success after 17:19, and separately a failure followed only by an in-progress run, when Time to restore is derived, then the first reads 1h 9m and the second reads not restored. Fails on: either mutant, which the current suite does not catch
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_dora_restore_pins.py::DoraRestorePinsTests::test_the_first_success_restores_and_a_running_run_ends_nothing
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

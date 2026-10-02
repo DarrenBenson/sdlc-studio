@@ -26,6 +26,7 @@ Record the run's wall-clock seconds on the velocity row at the close, as earlier
 
 - [ ] **AC1** Given three velocity rows naming claude-opus-5-5 recorded by the close, when the next plan prices its batch, then the minutes-per-point rate reads measured on claude-opus-5-5 and not the fallback. Fails on: the current rows carry no Wall (s) and the minutes rate falls back to RETRO0028
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_velocity_row_wall.py::VelocityRowWallTests::test_the_minutes_rate_measures_on_recent_named_rows
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

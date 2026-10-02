@@ -26,6 +26,7 @@ Add the delegated total to the actual whatever the meter reads, and label a mete
 
 - [ ] **AC1** Given a run whose session meter reads 0 and a lane return recording 250,000 agent tokens for unit X, when the page is derived, then the run's token actual includes the 250,000. Fails on: the current code drops it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_meter_zero_delegated.py::MeterZeroDelegatedTests::test_delegated_tokens_count_when_the_meter_reads_zero
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

@@ -26,6 +26,7 @@ Compare like with like: measured active minutes (unit spans or agent totals) aga
 
 - [ ] **AC1** Given a run with a 600-minute wall-clock span and 120 measured active unit minutes against a 100-minute forecast, when the page is derived, then the Minutes ratio reads 1.2x from the measured minutes and the 600-minute span appears on its own line with no ratio. Fails on: the current code prints 6.0x
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_report_minutes_like_for_like.py::MinutesLikeForLikeTests::test_the_minutes_ratio_compares_measured_with_forecast
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 

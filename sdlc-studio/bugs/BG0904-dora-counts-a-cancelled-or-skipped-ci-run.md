@@ -26,6 +26,7 @@ Count only conclusion failure (and `timed_out)` as a failed deployment; ignore c
 
 - [ ] **AC1** Given push-triggered runs success, cancelled, success in the window, when the page derives DORA, then the change failure rate reads 0% and time to restore reads no incident. Fails on: the current code counts the cancelled run as a failure
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_dora_cancelled_runs.py::DoraCancelledRunsTests::test_a_cancelled_run_is_not_a_failed_deployment
+  - **Verified:** yes (2026-10-02)
 
 ## Revision History
 
