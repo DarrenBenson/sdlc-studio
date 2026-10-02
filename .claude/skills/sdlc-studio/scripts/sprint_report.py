@@ -3730,7 +3730,8 @@ def _finding_row(root: Path, uid: str,
 
 def _known_issues_section(root: Path, state: dict, state_rel: str, ledger: list[dict],
                           start: str | None, end: str | None,
-                          on_page: dict | None = None, rulings: dict | None = None) -> dict:
+                          on_page: dict | None = None, rulings: dict | None = None,
+                          batch_rule: bool = True) -> dict:
     """STOP-SHIP rulings the close recorded, first and marked, so the signer cannot miss one;
     then open findings raised inside the run's window, most severe first, each naming the
     ruling the retro gave it and who ruled (`rulings`, `_retro_rulings`); then the other gaps
@@ -3743,6 +3744,16 @@ def _known_issues_section(root: Path, state: dict, state_rel: str, ledger: list[
     raised, still_open = _open_findings(root, {"started_at": start, "ended_at": end,
                                                "run_id": state.get("run_id")},
                                         at_the_close=True)
+    # A finding the run took into its batch is on the page as a unit - delivered, or carried
+    # below - so it is not listed again as an open finding. Listed, it read open at the close
+    # and the sign's terminal move took it off the re-derived page: the signed page read
+    # INVALIDATED (RUN-01M3VF2J's rehearsal, BG0876 and BG0877). A finding outside the batch,
+    # or dropped from it, is still listed. A page filed before this (no `FINDINGS_RULE` mark)
+    # re-derives as signed.
+    in_batch = {sdlc_md.norm_id(u) for u in state.get("batch") or []} if batch_rule else set()
+    if raised is not None:
+        raised = [u for u in raised if u not in in_batch]
+        still_open = [u for u in still_open or [] if u not in in_batch]
 
     def replayed(uid: str) -> tuple[int, dict]:
         row = {k: dict(f) if isinstance(f, dict) else f for k, f in on_page[uid].items()}
@@ -3894,12 +3905,19 @@ RESTORE_NEXT_SUCCESS = "next-success-after-failure"
 DISCHARGE_RULE = "discharged_carry"
 DISCHARGE_DELIVERED = "delivered"
 
+#: The envelope mark of a page whose open findings leave out the run's own batch units, which
+#: the page states as units (`_known_issues_section`). A page filed before it re-derives as
+#: signed.
+FINDINGS_RULE = "findings_scan"
+FINDINGS_BATCH_EXCLUDED = "batch-units-excluded"
+
 
 def build_report(root, retro_id: str, as_of: str | None = None,
                  window_end: str | None = None, run_id: str | None = None,
                  filed: dict | None = None, portable: bool = True,
                  record: dict | None = None, ratio_rule: bool = True,
-                 restore_rule: bool = True, discharge_rule: bool = True) -> dict:
+                 restore_rule: bool = True, discharge_rule: bool = True,
+                 findings_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -3916,8 +3934,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     the page it re-derives carries. `record` is `_run_state_for`'s. `ratio_rule` withholds the
     tokens ratio over a partial delegated actual and marks the page so (`TOKEN_RATIO_RULE`), and
     `restore_rule` pairs time to restore in time order (`RESTORE_RULE`), and `discharge_rule`
-    reads a discharged carry as delivered (`DISCHARGE_RULE`); a re-derivation passes what the
-    page carries.
+    reads a discharged carry as delivered (`DISCHARGE_RULE`), and `findings_rule` leaves the
+    batch's own units out of the open findings (`FINDINGS_RULE`); a re-derivation passes what
+    the page carries.
     """
     root = Path(root)
     state, state_rel = _run_state_for(root, run_id, record)
@@ -3989,7 +4008,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         _delivered_section(root, state_rel, ledger),
         _known_issues_section(root, state, state_rel, ledger,
                               state.get("started_at"), _iso(end), readings["findings"],
-                              rulings=_retro_rulings(root, retro_id)),
+                              rulings=_retro_rulings(root, retro_id), batch_rule=findings_rule),
         _signoff_section(state_rel),
         _cost_section(state, state_rel, tokens),
         _dora_section(root, start, end, *_ci_runs(root, state, state_rel, run_id),
@@ -4015,7 +4034,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               **({PORTABLE_PATHS: "portable"} if portable else {}),
               **({TOKEN_RATIO_RULE: TOKEN_RATIO_EVERY_UNIT} if ratio_rule else {}),
               **({RESTORE_RULE: RESTORE_NEXT_SUCCESS} if restore_rule else {}),
-              **({DISCHARGE_RULE: DISCHARGE_DELIVERED} if discharge_rule else {})}
+              **({DISCHARGE_RULE: DISCHARGE_DELIVERED} if discharge_rule else {}),
+              **({FINDINGS_RULE: FINDINGS_BATCH_EXCLUDED} if findings_rule else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -5056,7 +5076,8 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          portable=basis.get(PORTABLE_PATHS) == "portable", record=record,
                          ratio_rule=basis.get(TOKEN_RATIO_RULE) == TOKEN_RATIO_EVERY_UNIT,
                          restore_rule=basis.get(RESTORE_RULE) == RESTORE_NEXT_SUCCESS,
-                         discharge_rule=basis.get(DISCHARGE_RULE) == DISCHARGE_DELIVERED)
+                         discharge_rule=basis.get(DISCHARGE_RULE) == DISCHARGE_DELIVERED,
+                         findings_rule=basis.get(FINDINGS_RULE) == FINDINGS_BATCH_EXCLUDED)
     was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(basis)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)
