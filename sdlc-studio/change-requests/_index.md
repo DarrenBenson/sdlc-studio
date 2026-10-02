@@ -8,13 +8,13 @@
 | --- | --- |
 | Proposed | 0 |
 | Approved | 0 |
-| In Progress | 2 |
+| In Progress | 3 |
 | Complete | 515 |
 | Rejected | 29 |
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **606** |
+| **Total** | **607** |
 
 ## All Changes
 
@@ -104,6 +104,7 @@
 | [CR-0604](CR0604-the-andon-cord-stops-the-run-on-an.md) | The andon cord stops the run on an irreversible action or an operating-domain exit | Rejected | Medium | Feature | 2026-09-29 | -- |
 | [CR-0605](CR0605-a-unit-built-through-a-lane-opens-and.md) | A unit built through a lane opens and closes its own span, so the report measures per-unit minutes | In Progress | Medium | Improvement | 2026-10-02 | EP0271 |
 | [CR-0606](CR0606-a-lane-return-records-the-builder-s-own.md) | A lane return records the builder's own token and minute totals, and the estimates ratio is withheld while delegated spend is unmeasured | In Progress | Medium | Improvement | 2026-10-02 | EP0271 |
+| [CR-0607](CR0607-a-carry-bug-filed-at-the-review-cap.md) | A carry bug filed at the review cap does not count against the triage session cap | In Progress | Low | Improvement | 2026-10-02 | EP0271 |
 
 ## Archived Releases
 
