@@ -410,6 +410,52 @@ def _real_tree_ids(text: str, root) -> list[str]:
     return sorted(found)
 
 
+#: Left out of any copy of the repository: none of them an artefact home. `.claude/worktrees` is
+#: most of a working tree's bytes. The VCS entry is, in a linked worktree, a pointer file that
+#: would aim any git a verb runs in the copy at the REAL tree's index - the tree these tests must
+#: never touch - and, in a primary clone, the largest directory there is. Leaving it out can only
+#: turn a verb that needs git red, never green.
+_COPY_LEAVE_OUT = frozenset({".claude/worktrees", "node_modules", ".git"})
+
+#: BG0897. Open work seeded into the tree the control runs over, so the verbs that report only
+#: OPEN work have something to answer whatever the corpus holds. Three inventory verbs do:
+#: `ac_scope check` names only references into an open epic, `reconcile detect` only drift and
+#: open findings, and `status backlog` only the open backlog. Sealing a run that closed the last
+#: open epic left `ac_scope check` naming nothing on the live tree, and the control went red on a
+#: corpus that was correct. The other six also name closed or recorded work: `flow compute` a done
+#: unit's lead time, the rest the verdict ledger, the decision log, the retros and the artefacts.
+#: Two open epics, and a Ready story under the second whose criterion names BOTH distinctive
+#: words of the first's title (ac_scope's blocking strength), left out of the story index (drift).
+#: Numbered above every range the corpus holds, so each is a real-tree id only in the seeded copy.
+_OPEN_WORK_SEED: dict[str, str] = {
+    "sdlc-studio/epics/EP9101-zorblax-quuxify.md":
+        "# EP9101: Zorblax Quuxify\n\n> **Status:** Draft\n",
+    "sdlc-studio/epics/EP9102-plinth-moorage.md":
+        "# EP9102: Plinth Moorage\n\n> **Status:** Draft\n",
+    "sdlc-studio/stories/US9101-seeded-open-work.md":
+        "# US9101: seeded open work\n\n> **Status:** Ready\n> **Epic:** EP9102\n"
+        "> **Points:** 2\n\n## Acceptance Criteria\n\n### AC1: the zorblax quuxify path\n\n"
+        "- **Given** the zorblax quuxify\n- **Verify:** shell true\n",
+}
+_SEEDED_IDS = ("EP9101", "EP9102", "US9101")
+
+
+def _seed_open_work(root: Path) -> None:
+    for rel, text in _OPEN_WORK_SEED.items():
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text(text, encoding="utf-8")
+
+
+def _copy_repo(repo: Path, dest: Path) -> Path:
+    """A copy of `repo` at `dest`, without what `_COPY_LEAVE_OUT` names."""
+    def leave_out(directory, names):
+        rel = Path(directory).relative_to(repo)
+        return [n for n in names if (rel / n).as_posix() in _COPY_LEAVE_OUT]
+
+    shutil.copytree(repo, dest, symlinks=True, ignore=leave_out)
+    return dest
+
+
 class RootIsReadNotJustParsed(unittest.TestCase):
     """BG0555 / BG0556. Grammar conformance above proves a `--root` PARSES in both positions. It
     proves nothing about whether the value is ever READ, and that gap is not theoretical twice
@@ -530,17 +576,27 @@ class RootIsReadNotJustParsed(unittest.TestCase):
         """The control, and the reason the inventory above is a fixed list rather than a sweep of
         everything. Pointed at the REAL tree the same verbs must each name a real artefact - so a
         clean run above means the flag was obeyed, not that the verb prints nothing either way.
-        Without this, an entry that stopped discriminating would sit here passing forever."""
+        Without this, an entry that stopped discriminating would sit here passing forever.
+
+        Run over a COPY of the tree seeded with open work (`_OPEN_WORK_SEED`, BG0897), because
+        three verbs answer only about open work and a corpus can correctly hold none. The seeded
+        ids exist only in the copy, so a verb naming them read the root it was handed."""
+        with tempfile.TemporaryDirectory() as d:
+            tree = _copy_repo(self.REPO, Path(d) / "repo")
+            _seed_open_work(tree)
+            self._every_verb_names_a_real_id(tree)
+
+    def _every_verb_names_a_real_id(self, tree: Path) -> None:
         for script, verb in ROOT_EFFECT_VERBS:
             with self.subTest(verb=f"{script} {' '.join(verb)}".strip()):
-                out = self._run(script, verb, self.REPO)
+                out = self._run(script, verb, tree)
                 # The ROOT PATH is NOT evidence. Accepting it let six verbs that emit only an
                 # error naming their own argument pass this control, and one that CRASHES - a
                 # traceback contains file paths too. Only a real artefact id proves the tree was
                 # read, which is what the guard above needs to mean anything - and only one that
                 # RESOLVES here, so the evidence window moves with the ids rather than expiring.
                 self.assertTrue(
-                    _real_tree_ids(out, self.REPO),
+                    _real_tree_ids(out, tree),
                     f"{script} {' '.join(verb)}: pointed at the real tree it named no artefact "
                     f"of it, so its row in the guard above asserts nothing - re-measure it in a "
                     f"CLEAN worktree, or remove it")
@@ -595,12 +651,8 @@ class RealTreeMarkerTests(unittest.TestCase):
               "epic": "EP9001"}
     RUN = "RUN-01ZZZZZZ"
 
-    #: Left out of AC4's copy, none of them an artefact home. `.claude/worktrees` is most of a
-    #: working tree's bytes. The VCS entry is, in a linked worktree, a pointer file that would aim
-    #: any git a verb runs in the copy at the REAL tree's index - the tree this test must never
-    #: touch - and, in a primary clone, the largest directory there is. Leaving it out can only
-    #: turn a verb that needs git red, never green.
-    LEAVE_OUT = frozenset({".claude/worktrees", "node_modules", ".git"})
+    #: Left out of AC4's copy; the reasons are on `_COPY_LEAVE_OUT`, which every copy shares.
+    LEAVE_OUT = _COPY_LEAVE_OUT
 
     def _populate(self, root: Path) -> None:
         for type_, rid in self.BEYOND.items():
@@ -722,14 +774,8 @@ class RealTreeMarkerTests(unittest.TestCase):
         and after, so a test that touched the real tree fails here."""
         body = _test_body(getattr(RootIsReadNotJustParsed, self.CONTROL))
         before = _fragments(self.REPO)
-
-        def leave_out(directory, names):
-            rel = Path(directory).relative_to(self.REPO)
-            return [n for n in names if (rel / n).as_posix() in self.LEAVE_OUT]
-
         with tempfile.TemporaryDirectory() as d:
-            copy = Path(d) / "repo"
-            shutil.copytree(self.REPO, copy, symlinks=True, ignore=leave_out)
+            copy = _copy_repo(self.REPO, Path(d) / "repo")
             fragments = copy / "changelog.d"
             shutil.rmtree(fragments, ignore_errors=True)
             minted = self._leak(copy)
@@ -774,6 +820,34 @@ class RealTreeMarkerTests(unittest.TestCase):
         state is never the one exercised."""
         self._control_in_fragment_states(("absent",))
 
+    def test_the_seed_gives_every_open_work_verb_an_answer_on_a_closed_corpus(self) -> None:
+        """BG0897. On a corpus whose only epic and story are terminal, the open-work verbs name
+        nothing; once `_seed_open_work` has run, each names a seeded id that resolves there.
+        MUTANT: the control left unseeded (the shape at c70de024) - its first half shows each of
+        these verbs answering nothing, which is how the seal turned the control red."""
+        open_work = [("ac_scope.py", ("check",)), ("reconcile.py", ("detect",)),
+                     ("status.py", ("backlog",))]
+        self.assertTrue(set(open_work) <= set(ROOT_EFFECT_VERBS), "an open-work verb left the list")
+        runner = RootIsReadNotJustParsed("test_the_root_grammar_debt_set_is_empty")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            subprocess.run([sys.executable, str(DIR / "init.py"), "--root", str(root), "run"],
+                           check=True, capture_output=True, text=True)
+            (root / "sdlc-studio" / "epics" / "EP0001-done.md").write_text(
+                "# EP0001: Closed Work\n\n> **Status:** Done\n", encoding="utf-8")
+            (root / "sdlc-studio" / "stories" / "US0001-done.md").write_text(
+                "# US0001: done\n\n> **Status:** Done\n> **Epic:** EP0001\n", encoding="utf-8")
+            subprocess.run([sys.executable, str(DIR / "reconcile.py"), "--root", str(root),
+                            "apply"], check=True, capture_output=True, text=True)
+            for script, verb in open_work:
+                with self.subTest(verb=_verb_label(script, verb), seeded=False):
+                    self.assertEqual([], _real_tree_ids(runner._run(script, verb, root), root))
+            _seed_open_work(root)
+            for script, verb in open_work:
+                with self.subTest(verb=_verb_label(script, verb), seeded=True):
+                    named = _real_tree_ids(runner._run(script, verb, root), root)
+                    self.assertTrue(set(named) & set(_SEEDED_IDS), named)
+
     def test_the_boundary_control_resolves_ids_rather_than_matching_a_frozen_range(self) -> None:
         """AC5. MUTANTS: leave the control on the frozen marker; add a resolving helper beside it
         that the control never calls. The control's OWN body runs here, so either is caught."""
@@ -799,8 +873,12 @@ class RealTreeMarkerTests(unittest.TestCase):
         verbs = sorted(_verb_label(s, v) for s, v in ROOT_EFFECT_VERBS)
         result, calls = self._run_isolated(self.CONTROL, body=body, answer=leak)
         self._assert_green(result, f"the control, every verb answering the real, recent {leak}")
-        self.assertEqual([(v, self.REPO) for v in verbs], sorted(calls),
-                         "the control did not run every listed verb against the real tree")
+        self.assertEqual(verbs, sorted(label for label, _ in calls),
+                         "the control did not run every listed verb")
+        roots = {root for _, root in calls}
+        self.assertEqual(1, len(roots), "the control ran its verbs over more than one tree")
+        self.assertNotEqual(self.REPO, next(iter(roots)),
+                            "the control ran over the real tree, not a seeded copy of it")
         result, _ = self._run_isolated(self.CONTROL, body=body, answer="BG9999")
         self.assertEqual((0, 0), (len(result.errors), len(result.skipped)), self._verdict(result))
         self.assertEqual(verbs, self._failed_verbs(result),
