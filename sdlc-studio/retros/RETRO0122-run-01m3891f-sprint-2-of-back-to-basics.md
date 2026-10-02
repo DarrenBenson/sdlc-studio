@@ -44,9 +44,7 @@
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 
-Review passes, by phase - read from the two verdict ledgers:
-
-  test-plan review: NOT IN FORCE for this run - no verdict of that phase covers any of its units, which is not the same as a run that held them and spent nothing
+Review passes - read from the verdict ledger:
 
   code review: 15 pass(es) over 11 unit(s), 4 rejected
 Unmeasured: US0879, US0880, US0881, US0882, US0883, US0884, US0885, US0886, US0887, US0888, US0889. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.

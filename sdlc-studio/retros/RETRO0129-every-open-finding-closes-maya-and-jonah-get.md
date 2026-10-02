@@ -78,11 +78,17 @@
 | US0967 | 5 | 882,085 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
 | BG0876 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
 | BG0877 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
+| US0978 | 3 | 529,251 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| US0974 | 3 | 529,251 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| US0977 | 2 | 352,834 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG0839 | 2 | 352,834 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG0824 | 2 | 352,834 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| US0971 | 3 | 529,251 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
 | **Batch (rated units only)** | **0** | **0** | **0** | - | **-** | | **-** | - |
 
-**0 of 34 unit(s) measured; 32 of 34 forecast at plan time.**
+**0 of 40 unit(s) measured; 38 of 40 forecast at plan time.**
 
-**Sprint tokens/point: 35,344** (2,297,391 tokens over 65 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+**Sprint tokens/point: 28,717** (2,297,391 tokens over 80 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 
 **Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
 
@@ -90,8 +96,8 @@
 
 Review passes - read from the verdict ledger:
 
-  code review: 45 pass(es) over 34 unit(s), 11 rejected
-Unmeasured: BG0726, BG0737, BG0817, BG0827, BG0832, BG0833, BG0834, BG0835, BG0866, US0804, US0966, BG0867, BG0868, BG0869, BG0855, BG0860, US0759, US0784, US0968, US0973, BG0825, BG0831, BG0837, BG0861, US0805, US0969, US0970, US0972, BG0858, US0975, US0976, US0967. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
+  code review: 63 pass(es) over 40 unit(s), 23 rejected
+Unmeasured: BG0726, BG0737, BG0817, BG0827, BG0832, BG0833, BG0834, BG0835, BG0866, US0804, US0966, BG0867, BG0868, BG0869, BG0855, BG0860, US0759, US0784, US0968, US0973, BG0825, BG0831, BG0837, BG0861, US0805, US0969, US0970, US0972, BG0858, US0975, US0976, US0967, US0978, US0974, US0977, BG0839, BG0824, US0971. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
 Unforecast: BG0876, BG0877. No plan-time forecast was recorded for them, so they are excluded too. The estimate is NOT re-derived from today's constants: a number computed at judgement time, by the model being judged, is not a prediction.
 No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
 

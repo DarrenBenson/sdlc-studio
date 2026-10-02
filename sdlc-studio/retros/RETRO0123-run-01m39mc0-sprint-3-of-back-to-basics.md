@@ -61,15 +61,13 @@ Every finding this sprint leaves OPEN, with the ruling made on it.
 
 **0 of 17 unit(s) measured; 17 of 17 forecast at plan time.**
 
-**Sprint tokens/point: 362,827** (11,610,466 tokens over 32 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+**Sprint tokens/point: 351,832** (11,610,466 tokens over 33 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 
 **Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 
-Review passes, by phase - read from the two verdict ledgers:
-
-  test-plan review: NOT IN FORCE for this run - no verdict of that phase covers any of its units, which is not the same as a run that held them and spent nothing
+Review passes - read from the verdict ledger:
 
   code review: 24 pass(es) over 16 unit(s), 8 rejected
 Unmeasured: BG0742, BG0754, US0890, US0892, US0893, US0894, US0895, US0896, US0897, US0898, US0899, US0901, US0902, US0903, US0906, US0907, US0908. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
