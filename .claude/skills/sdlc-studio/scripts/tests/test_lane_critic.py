@@ -14,8 +14,10 @@ sign-off capacity) went with the per-unit sign-off verb (US0919).
 """
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -36,8 +38,17 @@ class US0642TheClaimInventoryPassIsTierGated(unittest.TestCase):
     def test_the_inventory_block_is_present_at_full_and_absent_at_light(self) -> None:
         """MUTANT: derive the inventory from something other than the tier - the two briefs
         become identical and the tier stops meaning anything at the command."""
-        full = _run("critic.py", "brief", "--unit", "BG0486", "--seat", "qa", "--tier", "full")
-        light = _run("critic.py", "brief", "--unit", "BG0486", "--seat", "qa", "--tier", "light")
+        # A throwaway root holding a copy of the unit: `brief` notes each brief it prints under
+        # `.local/briefs.jsonl`, and run against the repo it wrote into the real one.
+        with tempfile.TemporaryDirectory() as tmp:
+            bugs = Path(tmp) / "sdlc-studio" / "bugs"
+            bugs.mkdir(parents=True)
+            for src in (REPO / "sdlc-studio" / "bugs").glob("BG0486-*.md"):
+                shutil.copy(src, bugs / src.name)
+            full = _run("critic.py", "brief", "--unit", "BG0486", "--seat", "qa",
+                        "--tier", "full", "--root", tmp)
+            light = _run("critic.py", "brief", "--unit", "BG0486", "--seat", "qa",
+                         "--tier", "light", "--root", tmp)
         self.assertEqual(0, full.returncode, full.stderr[-300:])
         self.assertEqual(0, light.returncode, light.stderr[-300:])
         # "CLAIM INVENTORY", as the brief actually prints it. Asserting the hyphenated spelling
