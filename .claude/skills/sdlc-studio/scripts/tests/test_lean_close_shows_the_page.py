@@ -2,8 +2,9 @@
 
 `sprint close` ended with `sign it with: sprint.py sign --report RPTxxxx` and named neither the
 page nor a rendering of it, so the operator was asked to sign a report they had not been shown.
-The close now writes the HTML twin beside the report and names the Markdown page and the HTML
-twin above the sign command.
+The close now writes the HTML page to the ignored `sdlc-studio/.local/reports/` (D2a, D0315: no
+rendered page churns in git, and a tracked file written after the close would make `sprint sign`
+refuse the tree as changed) and names the Markdown page and the HTML page above the sign command.
 
 Each test runs the real `sprint.py close` with every chain step stubbed green
 (`test_lean_close._close`).
@@ -28,21 +29,30 @@ class CloseShowsThePageTests(unittest.TestCase):
         self.root = Path(self._tmp.name)
         lean._fixture(self.root)
         self.reports = self.root / "sdlc-studio" / "reports"
+        self.local_reports = self.root / "sdlc-studio" / ".local" / "reports"
 
     def test_the_close_names_the_page_and_its_html_twin(self) -> None:
-        """AC1. MUTANTS: HEAD, which writes no HTML and prints only the sign command; naming
-        the paths after the sign command, so the last line is no longer the one action left."""
+        """AC1. MUTANTS: writing the HTML into the tracked reports/ folder (01fea1ac, which
+        breaks D2a); writing no HTML and printing only the sign command; naming the paths after
+        the sign command, so the last line is no longer the one action left."""
+        before = set(self.reports.iterdir()) if self.reports.is_dir() else set()
         rc, out, err = lean._close(self.root)
         self.assertEqual(0, rc, out + err)
         self.assertEqual("RPT0001", lean._read(self.root)["report"])
-        html = self.reports / "RPT0001.html"
-        self.assertTrue(html.is_file(), "no HTML twin beside the report")
+        html = self.local_reports / "RPT0001.html"
+        self.assertTrue(html.is_file(), "no HTML page under sdlc-studio/.local/reports/")
         self.assertIn("<h2>Goal</h2>", html.read_text(encoding="utf-8"))
         md = next(self.reports.glob("RPT0001-*.md"))
+        # Nothing under the tracked reports/ folder but the filed page itself: its record, its
+        # Markdown twin and the derived index.
+        filed = {self.reports / "RPT0001.json", md, self.reports / "_index.md"}
+        self.assertEqual(filed, set(self.reports.iterdir()) - before)
+        self.assertEqual([], list(self.reports.rglob("*.html")))
         lines = out.splitlines()
         sign = next(i for i, ln in enumerate(lines) if ln.startswith("sign it with:"))
         named_md = [i for i, ln in enumerate(lines) if md.name in ln]
-        named_html = [i for i, ln in enumerate(lines) if "RPT0001.html" in ln]
+        named_html = [i for i, ln in enumerate(lines)
+                      if "sdlc-studio/.local/reports/RPT0001.html" in ln]
         self.assertTrue(named_md and named_html, out)
         self.assertLess(max(named_md + named_html), sign, out)
         self.assertEqual(sign, max(i for i, ln in enumerate(lines) if ln.strip()),

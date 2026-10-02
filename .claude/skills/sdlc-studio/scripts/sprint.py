@@ -9310,11 +9310,12 @@ def _file_the_report(root, retro_id):
                      **{REPORT_WINDOW_END: first_end or report.get("window_end")})
     print(f"\nreport filed: {report_id} (fingerprint {fingerprint})")
     # The page is put in front of the operator before the sign command asks for a signature:
-    # the Markdown twin as filed, and its HTML rendering written beside it.
+    # the Markdown twin as filed, and its HTML rendering under the ignored `.local/reports/`, so
+    # no rendered page churns in git and the tree `sprint sign` checks is the one the close left.
     reports = sprint_report.report_dir(root)
     for twin in sorted(reports.glob(f"{report_id}-*.md")):
         print(f"  read it before signing: {_repo_rel(root, twin)}")
-    html = reports / f"{report_id}.html"
+    html = Path(root) / "sdlc-studio" / ".local" / "reports" / f"{report_id}.html"
     try:
         sdlc_md.atomic_write(html, sprint_report.render_html(
             sprint_report.read_report(root, report_id)))
