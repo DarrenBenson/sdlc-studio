@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 27 |
+| Open | 28 |
 | In Progress | 0 |
 | Fixed | 729 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **913** |
+| **Total** | **914** |
 
 ## All Bugs
 
@@ -272,6 +272,7 @@
 | [BG0911](BG0911-the-goal-verdict-s-note-can-quote-figures.md) | The goal verdict's note can quote figures the filed page contradicts, and the close says nothing | Open | Medium | 2026-10-02 | 2026-10-02 |
 | [BG0912](BG0912-the-close-files-a-report-for-sign-off.md) | The close files a report for sign-off without putting the readable page in front of the operator | Open | Medium | 2026-10-02 | 2026-10-02 |
 | [BG0913](BG0913-each-re-close-moves-the-run-s-window.md) | Each re-close moves the run's window end and token meter, so work after the first close counts as run cost | Open | Medium | 2026-10-02 | 2026-10-02 |
+| [BG0914](BG0914-goal-review-fields-file-help-names-no-seat.md) | goal-review --fields-file help names no seat keys, so a fields document keyed role records nothing under the seat | Open | Low | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 
