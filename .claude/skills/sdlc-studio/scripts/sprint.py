@@ -9080,6 +9080,8 @@ def cmd_close(args: argparse.Namespace) -> int:
                      if head is not None and head.returncode == 0 else None,
                      **{run_state.CLOSE_KNOWN_ISSUES: known})
     report_id, _fingerprint = _file_the_report(root, args.retro)
+    if report_id and (line := goal_note_contradiction(root, report_id)):
+        print(line, file=sys.stderr)
     # The tree the close LEFT, stamped after the last thing it writes: `sign` refuses a tree
     # that has moved since.
     record_close_tree(root)
@@ -9262,6 +9264,36 @@ def _file_the_report(root, retro_id):
     run_state.update(root, report=report_id, report_fingerprint=fingerprint)
     print(f"\nreport filed: {report_id} (fingerprint {fingerprint})")
     return report_id, fingerprint
+
+
+_NOTE_RATIO_RE = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?)x\b")
+
+
+def goal_note_contradiction(root, report_id: str) -> str | None:
+    """One line naming each ratio the goal verdict's note quotes that the filed page does not
+    derive, or None. Read off the page as filed, never a re-derivation: the note is
+    judged against what the operator will sign. A warning, never a refusal."""
+    import sprint_report  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    try:
+        page = sprint_report.read_report(root, report_id)
+    except (sprint_report.ReportError, OSError, ValueError) as exc:
+        sdlc_md.debug("sprint.goal_note_contradiction", exc)
+        return None
+    goal = next((s for s in page.get("sections") or [] if s.get("key") == "goal"), {})
+    note = str(((goal.get("figures") or {}).get("goal_verdict_note") or {}).get("value") or "")
+    est = next((s for s in page.get("sections") or [] if s.get("key") == "estimates"), {})
+    derived = {str(r["est_measure"]["value"]): str(r["est_ratio"]["value"])
+               for r in est.get("rows") or []
+               if _NOTE_RATIO_RE.fullmatch(str(r.get("est_ratio", {}).get("value") or ""))}
+    quoted = [m.group(0) for m in _NOTE_RATIO_RE.finditer(note)]
+    unmatched = [q for q in dict.fromkeys(quoted) if q not in derived.values()]
+    if not unmatched:
+        return None
+    page_says = (", ".join(f"{m} {r}" for m, r in derived.items()) if derived
+                 else "no ratio")
+    return (f"close: the goal verdict note quotes {', '.join(unmatched)}, which {report_id} "
+            f"does not derive - its Estimates read {page_says}; correct the note with "
+            f"`sprint.py goal-verdict` and re-close before signing")
 
 
 def _cascade_after_signature(root, state, units) -> None:
