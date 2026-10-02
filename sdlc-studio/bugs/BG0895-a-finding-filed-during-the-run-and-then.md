@@ -26,9 +26,12 @@ Exclude batch units from the open-findings-raised-in-the-run scan (they are on t
 
 - [ ] **AC1** Given a run whose batch holds a bug filed during the run, approved and verified but not yet terminal, when the run is closed, signed and checked, then the check reads VALID. Fails on: the current code reads INVALIDATED
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_seal_finding_in_batch.py::SealFindingInBatchTests::test_a_batch_finding_does_not_move_the_signed_page
+- [ ] **AC2** Given a bug filed during the run and NOT in the batch, when the run is closed, signed and checked, then it is still listed among the known issues and the check reads VALID. Fails on: a fix that drops every finding raised in the run
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_seal_finding_in_batch.py::SealFindingInBatchTests::test_a_mid_run_finding_outside_the_batch_stays_listed
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-02 | sdlc-studio | Filed |
+| 2026-10-02 | qa seat (goal review) | AC2 added: the control beside AC1, so the goal cannot go green on a fixture |
