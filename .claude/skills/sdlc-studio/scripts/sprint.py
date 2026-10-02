@@ -4656,6 +4656,10 @@ def _template_demo_count() -> int:
         return 0
 
 
+#: The header `retro.py validate` prints above its failures (`retro RETRO0001: FAIL`).
+_RETRO_FAIL_HEADER_RE = re.compile(r"^retro \S+: FAIL$")
+
+
 def _close_retro_validate(root, retro_id, state):
     """The retro's CONTENT gate.
 
@@ -4676,7 +4680,15 @@ def _close_retro_validate(root, retro_id, state):
               f"--id {retro_id}` names each gap; absent, create it with "
               "`artifact.py new --type retro --title ...` and write it")
     if rc != 0:
-        return False, out, remedy
+        # The validator's `retro <id>: FAIL` header is printed for the operator and kept out of
+        # the detail, whose every line the close hands over as a known issue: only what it found
+        # is a gap.
+        lines = out.splitlines()
+        for ln in lines:
+            if _RETRO_FAIL_HEADER_RE.match(ln):
+                print(ln, file=sys.stderr)
+        return False, "\n".join(ln for ln in lines if not _RETRO_FAIL_HEADER_RE.match(ln)), \
+            remedy
     res = retro.validate(root, retro_id)
     leftovers = res.get("demonstration") or []
     if not leftovers:
@@ -5106,9 +5118,14 @@ def _close_gate(root, retro_id, state):
         saw = ("" if not unread else
                "\n  failing line(s) this close could not parse - the lane format may have moved:"
                + "".join(f"\n    {ln}" for ln in unread[:5]))
-        return False, (f"{out}\nclose gate: the refusal could not be attributed to a lane this "
-                       f"close recognises, so it is treated as a blocker in the WORK. That is "
-                       f"not the same as nothing having been found.{saw}"), \
+        prose = (f"close gate: the refusal could not be attributed to a lane this close "
+                 f"recognises, so it is treated as a blocker in the WORK. That is not the same "
+                 f"as nothing having been found.")
+        # The gate's output and the prose are printed for the operator; the detail, whose every
+        # line the close hands over as a known issue, carries only the failing lines, or the
+        # prose's one line when the gate printed none.
+        print(f"{out}\n{prose}{saw}", file=sys.stderr)
+        return False, "\n".join(unread) or prose, \
                "read the gate output above and clear what it names, then re-run sprint close"
     if split["self"] and not split["work"]:
         names = ", ".join(n for n, _ in split["self"])
