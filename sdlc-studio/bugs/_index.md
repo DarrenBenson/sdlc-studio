@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 21 |
+| Open | 22 |
 | In Progress | 3 |
 | Fixed | 722 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **903** |
+| **Total** | **904** |
 
 ## All Bugs
 
@@ -262,6 +262,7 @@
 | [BG0901](BG0901-two-agent-totals-on-one-unit-one-without.md) | Two agent totals on one unit, one without minutes, fall back to the span unlabelled | Open | Low | 2026-10-02 | 2026-10-02 |
 | [BG0902](BG0902-a-late-lane-return-tokens-writes-into-a.md) | A late lane return --tokens writes into a sealed run and invalidates its signed page | Open | Low | 2026-10-02 | 2026-10-02 |
 | [BG0903](BG0903-lane-return-and-lane-brief-take-agent-totals.md) | lane return and lane brief take agent totals silently in three cases | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0904](BG0904-dora-counts-a-cancelled-or-skipped-ci-run.md) | DORA counts a cancelled or skipped CI run on main as a failed deployment | Open | Low | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 
