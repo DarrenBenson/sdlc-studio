@@ -10728,7 +10728,10 @@ def _seat_from_dict(d: dict) -> dict:
     """Validate a seat verdict supplied as a JSON object (via `--fields-file`): the same three
     required answers as the pipe-delimited form, so a fields-file seat is held to the same bar."""
     out = {"seat": str(d.get("seat") or "").strip()}
-    for f in ("achievable", "done_means", "one_increment"):
+    # The keys the `--fields-file` help names, as the refusals below name them.
+    needs = "'seat', " + ", ".join(repr(k) for k in GOAL_REVIEW_FIELDS[:-1]) + \
+        f" and {GOAL_REVIEW_FIELDS[-1]!r}"
+    for f in GOAL_REVIEW_FIELDS:
         # PRESENCE first, then coerce, then test the COERCED value. `str(x or "")` collapses a
         # JSON `false` to the empty string, so the recommended --fields-file path could record
         # that a goal IS achievable and could not record, in the same encoding, that it is NOT -
@@ -10741,8 +10744,7 @@ def _seat_from_dict(d: dict) -> dict:
         # needed, which is why the emptiness test moved rather than being deleted.
         if f not in d:
             raise ValueError(f"seat {out['seat'] or '(unnamed)'!r} in --fields-file is missing "
-                             f"{f!r} - a verdict needs role, achievable, done_means and "
-                             f"one_increment")
+                             f"{f!r} - a seat object needs {needs}")
         # A verdict field is a STRING or a BOOLEAN, and nothing else. Coercing whatever
         # arrives with `str()` admitted every falsey shape except the empty string - `0`, `0.0`,
         # `[]` and `{}` were all refused at the base ref and would have started recording as
@@ -10764,7 +10766,8 @@ def _seat_from_dict(d: dict) -> dict:
                              f"answer. `false` and `no` are both accepted and both read `no`")
         out[f] = val
     if not out["seat"]:
-        raise ValueError("a seat verdict in --fields-file has no 'seat' role")
+        raise ValueError(f"a seat verdict in --fields-file has no 'seat' (the seat's name) - "
+                         f"a seat object needs {needs}")
     note = str(d.get("note") or "").strip()
     if note:
         out["note"] = note
