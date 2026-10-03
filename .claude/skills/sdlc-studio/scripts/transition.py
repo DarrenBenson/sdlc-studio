@@ -906,7 +906,8 @@ def _unanswered_delivery_reject(root, uid: str) -> str | None:
     else:
         detail = ("the REJECT itemises no findings, and its reviewer has not approved a later "
                   "round")
-    return f"{uid} carries an {UNANSWERED_REJECT} ({who}): {detail}"
+    # Named in its file's spelling: `uid` is the comparison key, which drops a v3 id's dash.
+    return f"{sdlc_md.display_id(root, uid)} carries an {UNANSWERED_REJECT} ({who}): {detail}"
 
 
 def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
