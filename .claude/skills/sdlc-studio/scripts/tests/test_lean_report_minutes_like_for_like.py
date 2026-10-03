@@ -62,6 +62,28 @@ class MinutesLikeForLikeTests(unittest.TestCase):
         self.assertEqual("6.0x", before["Minutes"]["est_ratio"]["value"])
         self.assertNotIn("Wall-clock span", before)
 
+    def test_the_estimates_prose_follows_the_page_s_own_minutes_rule(self) -> None:
+        """BG0898 round 1. MUTANT: one wording for every page - the span sentence (the page under
+        the rule says no per-unit figure is summed, above a Minutes actual that sums them) or the
+        measured sentence (a signed page filed before the rule re-renders a sentence it was
+        never signed with). Both renders, Markdown twin and HTML page, read their own."""
+        span_says = ("minutes and tokens over the whole run, its span and its meter",
+                     "so no per-unit figure is added up into the run's figures above")
+        measured_says = ("minutes over the units' own measured minutes",
+                         "The actual on the Minutes row above sums these minutes")
+        for rule, own, other in ((True, measured_says, span_says),
+                                 (False, span_says, measured_says)):
+            rep = sr.build_report(self.root, lean.RETRO, minutes_rule=rule)
+            self.assertTrue(lean._sections(rep)["estimates"].get("unit_rows"), "fixture: no unit rows")
+            for page in (lean._md_section(sr.render_markdown(rep), "Estimates"),
+                         sr.render_html(rep)):
+                flat = " ".join(page.split())
+                with self.subTest(rule=rule):
+                    for sentence in own:
+                        self.assertIn(sentence, flat)
+                    for sentence in other:
+                        self.assertNotIn(sentence, flat)
+
 
 if __name__ == "__main__":
     unittest.main()

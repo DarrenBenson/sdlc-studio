@@ -17,9 +17,17 @@
 
 ## Estimates
 
+<!-- unless: minutes_measured_rule -->
 How far the plan's forecast was from what the run took. Points are compared over the
 delivered units; minutes and tokens over the whole run, its span and its meter. Ratio is actual
 over forecast.
+<!-- end -->
+<!-- when: minutes_measured_rule -->
+How far the plan's forecast was from what the run took. Points are compared over the
+delivered units; minutes over the units' own measured minutes, summed over the units that also
+carry a forecast; tokens over the whole run. The run's wall-clock span stands on its own
+line with no ratio. Ratio is actual over forecast.
+<!-- end -->
 
 | Measure | Forecast | Actual | Ratio | Over |
 | --- | --- | --- | --- | --- |
@@ -28,10 +36,18 @@ over forecast.
 <!-- end -->
 
 <!-- when: estimates_units -->
+<!-- unless: minutes_measured_rule -->
 Each cell names its source. A figure labelled agent minutes or agent tokens sums the agent
 totals tagged to that unit; an unlabelled one is measured over the unit's own open span. Spans of
 units open at the same time overlap, so no per-unit figure is added up into the run's figures
 above.
+<!-- end -->
+<!-- when: minutes_measured_rule -->
+Each cell names its source. A figure labelled agent minutes or agent tokens sums the agent
+totals tagged to that unit; an unlabelled one is measured over the unit's own open span. The
+actual on the Minutes row above sums these minutes over the units that also carry a forecast;
+spans of units open at the same time overlap, so that sum can exceed the wall-clock span.
+<!-- end -->
 
 | Unit | Forecast minutes | Minutes | Forecast tokens | Tokens |
 | --- | --- | --- | --- | --- |

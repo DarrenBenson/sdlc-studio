@@ -4773,6 +4773,9 @@ def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict
         for field, name in (("rows", _ROW_LISTS.get(sec["key"], sec["key"])),
                             ("unit_rows", f"{sec['key']}_units")):
             rows[name] = [{k: _cell(f) for k, f in row.items()} for row in sec.get(field) or []]
+    # The Estimates prose follows the page's own minutes rule: a page filed before it keeps the
+    # span wording it was signed with, a page under it says the actual sums the units' minutes.
+    flags["minutes_measured_rule"] = report.get(MINUTES_RULE) == MINUTES_MEASURED
     scope["report_fingerprint"] = report.get("fingerprint") or "unsigned"
     sig = report.get("signature") or {}
     if sig.get("principal"):
