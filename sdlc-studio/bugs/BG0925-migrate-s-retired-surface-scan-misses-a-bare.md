@@ -25,6 +25,7 @@ Count a bare script name inside a fenced code block as code, as inside a span; p
 
 - [ ] **AC1** Given a document with a bare retired command inside a fenced code block and the same name in prose, when migrate's retired-surface scan runs, then the fenced line is named and the prose line is not. Fails on: the current scan, which names neither
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_retired_surface_fenced.py::RetiredSurfaceFencedTests::test_a_fenced_bare_command_is_named
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 
