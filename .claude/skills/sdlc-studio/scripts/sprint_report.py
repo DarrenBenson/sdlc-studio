@@ -3664,7 +3664,10 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
             basis = f"{over}; no unit carries both a forecast and a measured time"
         rows.append(_estimate_row(
             "Minutes", f, sum(u["minutes"] for u in both) if both else None, basis, state_rel,
-            no_minutes, "no unit carries a measured time (an In Progress span or agent minutes)"))
+            no_minutes,
+            "no unit carries both a forecast and a measured time"
+            if any(_num(u["minutes"]) for u in live) else
+            "no unit carries a measured time (an In Progress span or agent minutes)"))
         rows.append({
             "est_measure": fig("est_measure", "Wall-clock span", state_rel),
             "est_forecast": fig("est_forecast", "not forecast", state_rel),
