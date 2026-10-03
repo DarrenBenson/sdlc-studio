@@ -726,8 +726,15 @@ def harness_project_slug(repo_root: Path | str) -> str:
 
 
 def _newest_transcript(folder: Path) -> Path | None:
-    files = sorted(folder.glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
-    return files[-1] if files else None
+    """The most recently modified `.jsonl` in `folder`. One whose `stat` fails (a dangling
+    link) is skipped, as an unreadable transcript is when its `cwd` is read."""
+    files = []
+    for f in folder.glob("*.jsonl"):
+        try:
+            files.append((f.stat().st_mtime, f))
+        except OSError:
+            continue
+    return sorted(files, key=lambda t: t[0])[-1][1] if files else None
 
 
 def _records_cwd(transcript: Path, cwd: str) -> bool:
