@@ -8,9 +8,9 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 0 |
-| Ready | 1 |
+| Ready | 0 |
 | Planned | 0 |
-| In Progress | 2 |
+| In Progress | 3 |
 | Review | 0 |
 | Done | 799 |
 | Won't Implement | 92 |
@@ -343,7 +343,7 @@
 | [US0982](US0982-the-lane-brief-tells-a-repair-to-carry.md) | The lane brief tells a repair to carry only its blocking fix and pins | Done | EP0272 | 2026-10-02 | 2026-10-02 |
 | [US0983](US0983-the-v6-1-release-notes-lead-with-what.md) | The v6.1 release notes lead with what changed for the person using it | In Progress | EP0273 | 2026-10-03 | 2026-10-03 |
 | [US0984](US0984-the-docs-and-specifications-describe-the-6-1.md) | The docs and specifications describe the 6.1 code | In Progress | EP0273 | 2026-10-03 | 2026-10-03 |
-| [US0985](US0985-v6-1-0-is-cut-version-changelog-known.md) | v6.1.0 is cut: version, changelog, known issues and install pins | Ready | EP0273 | 2026-10-03 | 2026-10-03 |
+| [US0985](US0985-v6-1-0-is-cut-version-changelog-known.md) | v6.1.0 is cut: version, changelog, known issues and install pins | In Progress | EP0273 | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 
