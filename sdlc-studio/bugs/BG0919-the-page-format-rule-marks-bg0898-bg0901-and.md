@@ -25,6 +25,7 @@ One parametrised test that files a page under each new rule and revalidates it V
 
 - [ ] **AC1** Given a page filed under each of the minutes like-for-like, partial agent minutes and cancelled-run DORA rules, when it is revalidated, then it reads VALID, and with that rule's envelope mark dropped it reads INVALIDATED. Fails on: a mutant dropping any one mark, which the current suite does not kill
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_rule_marks_round_trip.py::RuleMarksRoundTripTests::test_each_rule_mark_round_trips
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

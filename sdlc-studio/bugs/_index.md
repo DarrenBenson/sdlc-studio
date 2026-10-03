@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 13 |
-| In Progress | 20 |
+| Open | 16 |
+| In Progress | 21 |
 | Fixed | 729 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **919** |
+| **Total** | **923** |
 
 ## All Bugs
 
@@ -278,6 +278,10 @@
 | [BG0917](BG0917-a-lane-brief-reopens-the-span-of-a.md) | A lane brief reopens the span of a bug already at Fixed or Verified | In Progress | Low | 2026-10-03 | 2026-10-03 |
 | [BG0918](BG0918-the-close-warns-that-a-note-contradicts-the.md) | The close warns that a note contradicts the page when the note writes 1.70x and the page 1.7x | In Progress | Low | 2026-10-03 | 2026-10-03 |
 | [BG0919](BG0919-the-page-format-rule-marks-bg0898-bg0901-and.md) | The page-format rule marks BG0898, BG0901 and BG0904 added have no file-then-revalidate pin | In Progress | Low | 2026-10-03 | 2026-10-03 |
+| [BG0920](BG0920-the-close-checklist-s-cost-row-reads-the.md) | The close checklist's cost row reads the moved meter on a re-close while the re-filed page reads the first close's | In Progress | Low | 2026-10-03 | 2026-10-03 |
+| [BG0921](BG0921-the-goal-review-refusal-still-names-a-role.md) | The goal-review refusal still names a 'role' key after the help names 'seat' | Open | Low | 2026-10-03 | 2026-10-03 |
+| [BG0922](BG0922-the-goal-note-check-names-an-unrelated-nx.md) | The goal-note check names an unrelated 'Nx' figure as a contradiction and misses 1.7X and the multiplication sign | Open | Low | 2026-10-03 | 2026-10-03 |
+| [BG0923](BG0923-bg0913-did-not-converge-in-review-round-2.md) | BG0913 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 

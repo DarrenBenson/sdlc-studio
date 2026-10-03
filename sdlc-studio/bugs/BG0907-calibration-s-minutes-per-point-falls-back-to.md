@@ -3,7 +3,7 @@
 > **Status:** In Progress
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_velocity_row_wall.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_velocity_row_wall.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/sprint.py
 > **Evidence:** BG0892 QA review round 1 (RUN-01M3Y7DP)
 > **Created:** 2026-10-02
 > **Created-by:** sdlc-studio file
@@ -33,3 +33,4 @@ Record the run's wall-clock seconds on the velocity row at the close, as earlier
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-02 | sdlc-studio | Filed |
+| 2026-10-03 | engineering seat | sprint.py added to Affects: the round-1 repair fixed the capacity floor there (D0321) |
