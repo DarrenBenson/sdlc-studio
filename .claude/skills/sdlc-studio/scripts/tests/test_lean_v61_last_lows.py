@@ -143,6 +143,30 @@ class V61LastLowsTests(unittest.TestCase):
         self.assertEqual(["1.46x"], mod._note_ratios(f"{'tokens-' * 50}tokens 1.46x",
                                                      ["Tokens"]))
 
+    def test_a_name_spanning_words_is_tried_inside_a_dead_run(self) -> None:
+        """AC3's neighbour. MUTANT: dropping `and not crosses` from the scan's skip, so a
+        word-spanning name inside a run a failed one-word name made dead is passed over:
+        `tokens-wall-clock span a b c 1.5x` reads [] for ['1.5x'], its ratio lying beyond
+        `tokens`'s three-word reach. Driven on the measures the filed page carries, and through
+        the real close, which then names nothing. The control: the same note with no `tokens-`
+        prefix is read by either scan, so the pin is the skip, not the name."""
+        mod = lean._live("sprint")
+        note = "Tokens 1.7x over plan; tokens-wall-clock span a b c 1.5x"
+        rc, lines, ratio = self._close("spanning", note)
+        self.assertEqual("1.7x", ratio, "premise: the filed page derives 1.7x")
+        self.assertEqual(0, rc, "\n".join(lines))
+        root = Path(self._tmp.name) / "spanning"
+        page = lean._live("sprint_report").read_report(root, lean._read(root)["report"])
+        est = next(s for s in page["sections"] if s["key"] == "estimates")
+        measures = [str(r["est_measure"]["value"]) for r in est["rows"]]
+        self.assertIn("Wall-clock span", measures, "premise: the page carries the measure")
+        named = self.named(lines)
+        self.assertEqual(1, len(named), lines)
+        self.assertIn("quotes 1.5x, which", named[0])
+        self.assertEqual(["1.5x"],
+                         mod._note_ratios("tokens-wall-clock span a b c 1.5x", measures))
+        self.assertEqual(["1.5x"], mod._note_ratios("wall-clock span a b c 1.5x", measures))
+
 
 if __name__ == "__main__":
     unittest.main()
