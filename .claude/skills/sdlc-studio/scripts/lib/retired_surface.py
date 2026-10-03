@@ -40,8 +40,8 @@ _IN_CODE_SPAN = r"(?=(?:[^`\n]*`[^`\n]*`)*[^`\n]*`[^`\n]*(?:\n|$))"
 
 def _command(script: str, rest: str) -> str:
     """`script` followed by `rest` as a consumer's docs TEACH a command: with its `.py`, or with
-    the bare name inside a code span. Without either it is prose ("we run a mutation audit"),
-    which names nothing."""
+    the bare name inside a code span or a fenced block (`live_mentions` reads a fenced line as
+    one span). Without either it is prose ("we run a mutation audit"), which names nothing."""
     name = re.escape(script)
     return rf"\b{name}(?:\.py|{_IN_CODE_SPAN}){rest}"
 
@@ -197,23 +197,34 @@ def _clause(text: str, starts: list[int], pos: int) -> str:
     return text[lo:hi]
 
 
+def _as_code_span(line: str) -> str:
+    """A fenced line read as one code span, offsets kept: its own backticks become quotes and a
+    closing backtick ends it, so every position on it is inside a span (`_IN_CODE_SPAN`)."""
+    return line.rstrip("\n").replace("`", "'") + "`"
+
+
 def live_mentions(text: str, pats: dict[str, re.Pattern] | None = None
                   ) -> list[tuple[int, str, str]]:
     """(line number, surface label, line) for each line naming a retired surface in a clause
     that does not say it is retired, outside a table whose header says its rows are history. A clause wrapped from the line before counts; an unrelated
-    clause or sentence beside it on the same line does not."""
+    clause or sentence beside it on the same line does not. A line inside a fenced block is
+    code, so it is also read as a code span (`_as_code_span`)."""
     pats = surfaces() if pats is None else pats
     lines = text.splitlines(keepends=True)
     headers = _table_headers([ln.rstrip("\n") for ln in lines])
     starts = [m.end() for m in _SENTENCE_START.finditer(text)]
     out = []
     offset = 0
+    fence: tuple[str, int] | None = None
     for i, line in enumerate(lines):
         at, offset = offset, offset + len(line)
+        was_open = fence is not None
+        fence, is_fence_line = sdlc_md.fence_step(line.strip(), fence)
+        fenced = was_open and fence is not None and not is_fence_line
         if i in headers and HISTORY_HEADER.search(headers[i]):
             continue                                    # a row of a what-was-retired table
         for label, rx in pats.items():
-            m = rx.search(line)
+            m = rx.search(line) or (rx.search(_as_code_span(line)) if fenced else None)
             if not m:
                 continue
             if not RETIRED_CONTEXT.search(_clause(text, starts, at + m.start())):
