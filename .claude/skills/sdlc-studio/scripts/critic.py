@@ -154,13 +154,16 @@ _TICK_RUN = re.compile(r"(?<!\\)`+")
 #: function - a re-recorded verdict, a closure quoting a finding - was being escaped again,
 #: which is how the repair record came to carry hundreds of doubled escapes.
 _BARE_UNDERSCORE = re.compile(r"(?<!\\)_")
-#: An opening bracket straight after a `]` or a `)`. Raw, a finding quoting a regex
-#: (`[A-Z][A-Z]`) or a reversed link (`(state)[2]`) is read as a reference link, and
-#: markdownlint refuses the ledger (MD052, MD011) at the next commit that touches it. A lone
-#: `[new]` tag is no such link, so it is written as the reviewer typed it.
-_LINKING_BRACKET = re.compile(r"(?<=[\])])\[")
-#: The escapes `_escape_outside_spans` writes, which the ledger's readers undo.
-_MD_ESCAPED = re.compile(r"\\_|(?<=[\])])\\\[")
+#: The point straight after a `]` or a `)` where a run of backslashes (often none) meets an
+#: opening bracket. Raw, a finding quoting a regex (`[A-Z][A-Z]`) or a reversed link
+#: (`(state)[2]`) is read as a link, and markdownlint refuses the ledger (MD052, MD011) at the
+#: next commit that touches it. One backslash is added there, so the bracket is escaped and a
+#: run the author typed (`[a-z]\[q]`) stays one longer than written, never confused with an
+#: escape the writer added. A lone `[new]` tag is no such link, so it is written as typed.
+_LINKING_BRACKET = re.compile(r"(?<=[\])])(?=\\*\[)")
+#: The escapes `_escape_outside_spans` writes, which the ledger's readers undo: `\\_`, and the
+#: one backslash added at a `_LINKING_BRACKET` point.
+_MD_ESCAPED = re.compile(r"\\_|(?<=[\])])\\(?=\\*\[)")
 
 
 def _scan_ticks(text: str) -> tuple[list[tuple[int, int]], list[int]]:
@@ -203,11 +206,11 @@ def _outside_spans(text: str, fn) -> str:
 def _escape_outside_spans(text: str) -> str:
     """Escape underscores, and a bracket that would open a link, leaving every code span alone."""
     return _outside_spans(text, lambda t: _LINKING_BRACKET.sub(
-        r"\\[", _BARE_UNDERSCORE.sub(r"\\_", t)))
+        r"\\", _BARE_UNDERSCORE.sub(r"\\_", t)))
 
 
 def _unescape(text: str) -> str:
-    """The escapes `_clean` writes, undone: `\\_` and a linking `\\[` read as typed."""
+    """The escapes `_clean` writes, undone: `\\_`, and the backslash added before a linking `[`."""
     return _MD_ESCAPED.sub(lambda m: m.group(0)[1:], text)
 
 
@@ -1736,9 +1739,10 @@ def parse_findings(issues: str) -> list[dict]:
     if text.lower() in _NO_FINDINGS:
         return []
     out = []
-    for item in split_items(text):
-        # A recorded row carries `_clean`'s escapes (`\[new\]`); a finding reads as written.
-        item = _unescape_outside_spans(item)
+    # A recorded row carries `_clean`'s escapes (`\_`, and `\[` after a `]` or `)`; an origin
+    # tag is written raw). They were added to the whole cell last, so they come off it first,
+    # before the `;` split, and each finding reads as written.
+    for item in split_items(_unescape_outside_spans(text)):
         m = _ORIGIN_TAG.match(item)
         if m:
             origin = m.group(1).lower().replace(" ", "-")

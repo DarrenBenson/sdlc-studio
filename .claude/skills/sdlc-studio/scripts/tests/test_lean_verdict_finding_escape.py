@@ -48,11 +48,10 @@ def _markdownlint() -> str | None:
 
 
 class VerdictFindingEscapeTests(unittest.TestCase):
-    def test_a_bracketed_finding_lints_and_reads_back(self) -> None:
-        """AC1. MUTANT: HEAD's `_clean`, which escapes only `_` outside code spans - the
-        brackets reach the ledger raw and markdownlint reports MD052 on `[A-Z]`. MUTANT: an
-        escape the reader does not undo - the finding reads back as `[A-Z]\\[A-Z\\_]...`,
-        not as given."""
+    def _record_and_lint(self, finding: str) -> tuple[list[dict], str | None, str]:
+        """Record `[new] finding` through the shipped CLI in a throwaway project: the findings
+        the ledger's reader returns, markdownlint's output on the ledger (None when markdownlint
+        is absent), and the ledger text."""
         critic = loader.load_script("critic")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -66,18 +65,49 @@ class VerdictFindingEscapeTests(unittest.TestCase):
             _ok(root, "critic.py", "brief", "--unit", bug, "--seat", "qa")
             _ok(root, "critic.py", "record", "--unit", bug, "--verdict", "REJECT",
                 "--reviewer", "qa seat", "--author", "engineering seat",
-                "--issues", f"[new] {FINDING}")
+                "--issues", f"[new] {finding}")
             [row] = [r for r in critic.read_verdicts(root) if r["verdict"] == "REJECT"]
-            self.assertEqual([{"origin": "new", "text": FINDING}],
-                             critic.parse_findings(row["issues"]))
-            mdl = _markdownlint()
-            if mdl is None:
-                self.skipTest("markdownlint not installed - the pre-commit markdown lane runs it")
             ledger = root / "sdlc-studio" / "reviews" / "critic-verdicts.md"
-            lint = subprocess.run([mdl, "--config", str(_REPO / ".markdownlint.json"), "--",
-                                   str(ledger)], capture_output=True, text=True, timeout=120)
-            self.assertNotIn("MD052", lint.stdout + lint.stderr,
-                             ledger.read_text(encoding="utf-8"))
+            mdl = _markdownlint()
+            lint = None if mdl is None else subprocess.run(
+                [mdl, "--config", str(_REPO / ".markdownlint.json"), "--", str(ledger)],
+                capture_output=True, text=True, timeout=120)
+            return (critic.parse_findings(row["issues"]),
+                    None if lint is None else lint.stdout + lint.stderr,
+                    ledger.read_text(encoding="utf-8"))
+
+    def test_a_bracketed_finding_lints_and_reads_back(self) -> None:
+        """AC1. MUTANT: HEAD's `_clean`, which escapes only `_` outside code spans - the
+        brackets reach the ledger raw and markdownlint reports MD052 on `[A-Z]`. MUTANT: an
+        escape the reader does not undo - the finding reads back as `[A-Z]\\[A-Z\\_]...`,
+        not as given."""
+        findings, lint, ledger = self._record_and_lint(FINDING)
+        self.assertEqual([{"origin": "new", "text": FINDING}], findings)
+        if lint is None:
+            self.skipTest("markdownlint not installed - the pre-commit markdown lane runs it")
+        self.assertNotIn("MD052", lint, ledger)
+
+    def test_an_escaped_bracket_the_author_typed_reads_back_byte_for_byte(self) -> None:
+        """A finding already holding `]\\[` reads back with its backslash. MUTANT: a writer
+        that escapes only a bare `[` after `]` (stores `]\\[` unchanged) - the reader takes the
+        author's backslash for its own escape and returns `[a-z][q]`."""
+        finding = r"the class [a-z]\[q] and ([a-z])\[0-9] stay as typed"
+        findings, lint, ledger = self._record_and_lint(finding)
+        self.assertEqual([{"origin": "new", "text": finding}], findings)
+        if lint is None:
+            self.skipTest("markdownlint not installed - the pre-commit markdown lane runs it")
+        self.assertNotIn("MD052", lint, ledger)
+
+    def test_a_reversed_link_lints_and_reads_back(self) -> None:
+        """`(state)[2]` is a reversed link (MD011) unless its bracket is escaped. MUTANT: the
+        escape narrowed to a bracket after `]` only - the bracket after `)` reaches the ledger
+        raw and markdownlint reports MD011."""
+        finding = "the lookup (state)[2] picks the wrong field"
+        findings, lint, ledger = self._record_and_lint(finding)
+        self.assertEqual([{"origin": "new", "text": finding}], findings)
+        if lint is None:
+            self.skipTest("markdownlint not installed - the pre-commit markdown lane runs it")
+        self.assertNotIn("MD011", lint, ledger)
 
 
 if __name__ == "__main__":
