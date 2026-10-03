@@ -7,13 +7,13 @@
 | Status | Count |
 | --- | --- |
 | Open | 0 |
-| In Progress | 7 |
+| In Progress | 11 |
 | Fixed | 766 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **930** |
+| **Total** | **934** |
 
 ## All Bugs
 
@@ -289,6 +289,10 @@
 | [BG0928](BG0928-bg0885-did-not-converge-in-review-round-2.md) | BG0885 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-03 | 2026-10-03 |
 | [BG0929](BG0929-migrate-does-not-report-the-retired-handoff-surface.md) | migrate does not report the retired handoff surface in a project's own docs | In Progress | Medium | 2026-10-03 | 2026-10-03 |
 | [BG0930](BG0930-transition-py-warns-appetite-spent-against-a-run.md) | transition.py warns APPETITE SPENT against a run that is already signed | In Progress | Low | 2026-10-03 | 2026-10-03 |
+| [BG0931](BG0931-four-lane-fixes-the-v6-1-reviews-found.md) | Four lane fixes the v6.1 reviews found unpinned: a split forecast, a reopened re-close, the newest transcript and a partial run | In Progress | Low | 2026-10-03 | 2026-10-03 |
+| [BG0932](BG0932-a-broken-or-self-looping-transcript-link-still.md) | A broken or self-looping transcript link still crashes the report | In Progress | Low | 2026-10-03 | 2026-10-03 |
+| [BG0933](BG0933-three-texts-still-say-what-the-code-does.md) | Three texts still say what the code does not: the empty-seats refusal, BG0930's docstring and help/gate.md's lane count | In Progress | Low | 2026-10-03 | 2026-10-03 |
+| [BG0934](BG0934-install-ps1-still-installs-from-main-while-install.md) | install.ps1 still installs from main while install.sh installs the latest release | In Progress | Medium | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 

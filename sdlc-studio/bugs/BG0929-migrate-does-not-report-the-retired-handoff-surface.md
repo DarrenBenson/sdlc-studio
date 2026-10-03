@@ -25,6 +25,7 @@ Register the retired handoff surface where the scan already reads retirements (t
 
 - [ ] **AC1** Given a consuming document that uses the retired handoff writers, artifact.py new --type handoff and gate.py --require-handoff in code, and names handoffs in prose, when migrate's retired-surface scan runs, then each retired command is named with its replacement and the prose line is not. Fails on: the current scan, which names none of them
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_retired_handoff_surface.py::RetiredHandoffSurfaceTests::test_the_retired_handoff_surface_is_named
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 
