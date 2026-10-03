@@ -9372,7 +9372,9 @@ def goal_note_contradiction(root, report_id: str) -> str | None:
                for r in est.get("rows") or []
                if _NOTE_RATIO_RE.fullmatch(str(r.get("est_ratio", {}).get("value") or ""))}
     quoted = [m.group(0) for m in _NOTE_RATIO_RE.finditer(note)]
-    unmatched = [q for q in dict.fromkeys(quoted) if q not in derived.values()]
+    # As numbers at the page's precision, so 1.70x and the page's 1.7x agree.
+    stated = {round(float(r[:-1]), 2) for r in derived.values()}
+    unmatched = [q for q in dict.fromkeys(quoted) if round(float(q[:-1]), 2) not in stated]
     if not unmatched:
         return None
     page_says = (", ".join(f"{m} {r}" for m, r in derived.items()) if derived
