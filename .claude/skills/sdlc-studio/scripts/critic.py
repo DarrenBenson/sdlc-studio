@@ -1625,7 +1625,7 @@ def carry_at_cap(repo_root: Path | str, unit: str, row: dict) -> str | None:
                     f"reviewed again. The findings still open: {issues}"),
         "steps": f"1. Read the round {row.get('round')} REJECT of {disp} in the verdict ledger.",
         "fix": f"Fix each finding above, then deliver {disp} again in a later run.",
-    })
+    }, counted=False)  # a review outcome, not a new finding: outside the triage session cap
     bug = res["id"]
     run_state.drop_from_batch(repo_root, uid, f"{CARRIED_REASON}: {bug}")
     return bug

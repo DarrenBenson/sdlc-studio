@@ -2129,10 +2129,13 @@ def duplicate_candidates(repo_root: Path | str, title: str, fields: dict,
 
 
 def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
-                 dry_run: bool = False) -> dict:
+                 dry_run: bool = False, counted: bool = True) -> dict:
     """Allocate an ID, write a structured artifact, append its index row, recompute
     counts. Returns {id, path}, plus `duplicate_warnings` naming any open artefact the finding
-    overlaps (a warning, never a refusal). Raises ValueError on a missing required field."""
+    overlaps (a warning, never a refusal). Raises ValueError on a missing required field.
+
+    `counted=False` files outside the triage session cap: neither refused by it nor counted
+    against it. For a record of a review outcome (a carry at the review cap), not a new finding."""
     if type_ not in TYPES:
         raise ValueError(f"unknown type {type_!r} (expected bug|cr|rfc)")
     spec = TYPES[type_]
@@ -2226,7 +2229,8 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
         # lock, so concurrent filers (multi-agent waves) cannot mint the same v2 id or clobber a
         # shared index row. Best-effort - a no-op on non-POSIX, exactly like `artifact new`.
         with sdlc_md.allocation_lock(root):
-            result = _file_finding_locked(root, type_, spec, title, fields, today, dry_run=False)
+            result = _file_finding_locked(root, type_, spec, title, fields, today, dry_run=False,
+                                          counted=counted)
             if parent_path is not None and result.get("path"):
                 # wire BOTH directions inside the same lock as the mint, so two
                 # concurrent same-parent spawns cannot lose an update on the
@@ -2242,7 +2246,7 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
 
 
 def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields: dict,
-                         today: str, dry_run: bool) -> dict:
+                         today: str, dry_run: bool, counted: bool = True) -> dict:
     if sdlc_md.is_schema_v3(root):
         # era-aware: a v3 project's findings mint the same collision-checked ULID form as
         # `artifact new` - sequential numbers here would race and shadow live ULID aliases.
@@ -2276,7 +2280,8 @@ def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields:
         indexed = (root / rel_dir / "_index.md").exists()
         return {"id": disp_id, "file_id": file_id, "path": str(path),
                 "indexed": indexed, "dry_run": True}
-    triage_noise.enforce_session_cap(root)  # refuse the N+1th individual finding loudly (v3)
+    if counted:
+        triage_noise.enforce_session_cap(root)  # refuse the N+1th individual finding loudly (v3)
     raised_by = sdlc_md.authorship_value(fields.get("author"), root)
     # The index's Author column and the Revision History row both take the resolved author's
     # NAME (the typed triple is the `Raised-by` field's job), so an unattributed filing still
@@ -2291,7 +2296,8 @@ def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields:
     fields = {**fields, "_batch": fields.get("_batch") or (
         f"none open - raised outside a delivery batch, {sdlc_md.now_iso8601()}")}
     sdlc_md.atomic_write(path, _render(type_, disp_id, title, today, fields, create_status))
-    triage_noise.record_creation(root)  # count this minted finding against the session budget
+    if counted:
+        triage_noise.record_creation(root)  # count this minted finding against the session budget
     # One shared header-driven row builder for both create paths: read the index's
     # own columns and fill by name, identical to `artifact new`.
     indexed = False
