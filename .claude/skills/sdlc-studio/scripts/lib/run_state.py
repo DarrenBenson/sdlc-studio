@@ -1573,12 +1573,17 @@ def _page_filed(state: dict) -> bool:
     The close leaves the outcome `running` until the sign, so the outcome alone cannot say the
     page is filed; the run's `report`, the marker `sprint sign` reads, can. A reopen keeps that
     id on the run and records it as the page it broke, so a run reopened since its page was
-    filed is open again until the next close files a new one."""
+    filed is open again until the next close files a new one.
+
+    A page reopened before it was signed is re-filed by the next close under its own id, so a
+    reopen from `running` takes the id off the run: an id back on it is the re-close's."""
     report = sdlc_md.norm_id(state.get("report") or "")
     if not report:
         return False
     reopens = [r for r in state.get("reopened") or [] if isinstance(r, dict)]
-    return not (reopens and sdlc_md.norm_id(reopens[-1].get("report") or "") == report)
+    if not reopens or reopens[-1].get("from_outcome") == RUNNING:
+        return True
+    return sdlc_md.norm_id(reopens[-1].get("report") or "") != report
 
 
 def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
@@ -1670,7 +1675,9 @@ def reopen_run(repo_root: Path | str, reason: str) -> dict:
         state = state or _blank()
         if not state.get("run_id"):
             raise ValueError("no run to reopen")
-        if state.get("outcome") == RUNNING:
+        # A run the close has filed a page for is closed even though its outcome stays
+        # `running` until the sign: its reopen breaks that page as a sealed run's does.
+        if state.get("outcome") == RUNNING and not _page_filed(state):
             raise ValueError(f"{state['run_id']} is already open - nothing to reopen")
         history = list(state.get("reopened") or [])
         history.append({"at": sdlc_md.now_iso8601(),
@@ -1688,6 +1695,10 @@ def reopen_run(repo_root: Path | str, reason: str) -> dict:
                         "report": state.get("report"),
                         "reason": reason.strip()})
         state["reopened"] = history
+        if state.get("outcome") == RUNNING:
+            # Unsigned, so the next close re-files the page in place under the same id: the id
+            # leaves the run until it does, and `sprint sign` has no broken page to sign.
+            state["report"] = None
         state["outcome"] = RUNNING
         state["ended_at"] = None
         return state

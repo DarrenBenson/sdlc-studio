@@ -17447,9 +17447,11 @@ class TheSealIsATransactionTests(unittest.TestCase):
             import transition as _t  # noqa: PLC0415
             self.assertEqual([], _t.requirements(root, "US0101", "In Progress"),
                              "the re-open recorded the break but did not lift the refusal")
-            # ...and a run that was never sealed refuses, naming that.
+            # ...and a run that was never sealed refuses, naming that. Its page id is dropped:
+            # a run whose page is filed and unsigned reopens (BG0937).
             with tempfile.TemporaryDirectory() as d2:
                 fresh = self._sealable(d2)
+                mod.run_state.update(fresh, report=None)
                 o2, e2 = io.StringIO(), io.StringIO()
                 with contextlib.redirect_stdout(o2), contextlib.redirect_stderr(e2):
                     rc2 = mod.main(["reopen", "--reason", "nothing to break",

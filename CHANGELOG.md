@@ -833,6 +833,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The sprint report's review-attribution row no longer labels every reviewer `NO DECLARED
   SEAT` on a project that declares no seat cards: it names the reviewer and claims nothing
   about a seat. Where seats are declared, a reviewer matching none of them is still marked.
+- A run closed and not yet signed can be reopened. `sprint close` leaves the outcome `running`
+  until `sprint sign`, so `sprint reopen` refused it as already open while the filed page
+  refused every late `lane return --tokens`: work added before the sign could record no cost.
+  A run whose page is filed and unsigned now reopens, recording the page it breaks; the page's
+  id leaves the run until the next close re-files it under the same id, so `sprint sign` has no
+  broken page to seal and a total returned after that re-close is still refused. A run with no
+  page filed is still already open (BG0937).
 
 #### Retired flags
 
