@@ -68,7 +68,7 @@ conformance:
   adopt_after: 82
 
 review:
-  # review.policy (D0129 carry-forward) was retired by BG0831: nothing read it; a REJECT at
+  # The review policy setting (D0129 carry-forward) was retired by BG0831: nothing read it; a REJECT at
   # the round cap carries the unit regardless.
   # D0146 (2026-08-21) CUTS this from 6 to 2, superseding D0132's raise, and the reason is a
   # measurement rather than a preference. D0132 raised it to 6 saying "revisit if a run reaches 6";
