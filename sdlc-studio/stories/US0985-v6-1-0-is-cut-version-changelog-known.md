@@ -1,6 +1,6 @@
 # US0985: v6.1.0 is cut: version, changelog, known issues and install pins
 
-> **Status:** In Progress
+> **Status:** Done
 > **Created:** 2026-10-03
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

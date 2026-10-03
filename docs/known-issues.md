@@ -11,13 +11,9 @@ decision.** A finding either reaches a terminal status with its own verifiers pa
 stays open under the triage target below, which one recorded decision rules for the whole list
 rather than a waiver per finding.
 
-**Medium and Low findings ship open, listed here by id, triaged to v6.2.** Each is a real
-defect with a reproduction and, in most cases, a proposed fix. None of them stops the
-lifecycle running. They are listed rather than closed, because closing a bug to make a
-release look clean is the practice this tool exists to prevent.
-
-Each id below is a file in `sdlc-studio/bugs/` in the source repository, carrying the
-evidence, the reproduction and the proposed fix in full.
+**No Medium or Low finding is open.** The corpus carries none at this commit, so the
+table below is empty rather than omitted: an absent section and an empty one say
+different things, and only one of them is checkable.
 
 ## The bar v5.1 was held to, kept as history
 
@@ -37,21 +33,8 @@ buy honestly.
 
 | Id | Severity | Finding |
 | --- | --- | --- |
-| `BG0921` | Low | The goal-review refusal still names a 'role' key after the help names 'seat' |
-| `BG0922` | Low | The goal-note check names an unrelated 'Nx' figure as a contradiction and misses 1.7X and the multiplication sign |
-| `BG0924` | Low | The report says no unit carries a measured time when units carry minutes but none has a forecast |
-| `BG0927` | Low | A broken transcript in another project's folder crashes the long-path transcript scan |
-| `BG0930` | Low | transition.py warns APPETITE SPENT against a run that is already signed |
-| `BG0931` | Low | Four lane fixes the v6.1 reviews found unpinned: a split forecast, a reopened re-close, the newest transcript and a partial run |
-| `BG0932` | Low | A broken or self-looping transcript link still crashes the report |
-| `BG0933` | Low | Three texts still say what the code does not: the empty-seats refusal, BG0930's docstring and help/gate.md's lane count |
-| `BG0935` | Low | The 6.1 notes say migrate leaves prose alone and give no way to install main on Windows |
-| `BG0936` | Low | The v6.1 review residue: three unpinned behaviours, a dropped seats entry, a slow note parser and two TRD rows nothing writes |
-| `BG0926` | Medium | A lane return between the close and the sign records into the run and invalidates the page before it is signed |
-| `BG0929` | Medium | migrate does not report the retired handoff surface in a project's own docs |
-| `BG0934` | Medium | install.ps1 still installs from main while install.sh installs the latest release |
 
-13 findings: 3 Medium, 10 Low.
+0 findings: 0 Medium, 0 Low.
 
 ## Not carried
 

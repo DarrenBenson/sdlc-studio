@@ -1,6 +1,6 @@
 # EP0273: v6.1.0 ships with paperwork that matches the code
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-10-03
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -13,7 +13,7 @@ The paperwork that ships v6.1.0 (D0325): release notes that lead with what chang
 
 - [x] [US0983: The v6.1 release notes lead with what changed for the person using it](../stories/US0983-the-v6-1-release-notes-lead-with-what.md)
 - [x] [US0984: The docs and specifications describe the 6.1 code](../stories/US0984-the-docs-and-specifications-describe-the-6-1.md)
-- [ ] [US0985: v6.1.0 is cut: version, changelog, known issues and install pins](../stories/US0985-v6-1-0-is-cut-version-changelog-known.md)
+- [x] [US0985: v6.1.0 is cut: version, changelog, known issues and install pins](../stories/US0985-v6-1-0-is-cut-version-changelog-known.md)
 
 ## Revision History
 

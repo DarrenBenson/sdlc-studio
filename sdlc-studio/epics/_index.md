@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 0 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 239 |
+| Done | 240 |
 | Superseded | 33 |
 | **Total** | **273** |
 
@@ -80,7 +80,7 @@
 | [EP0270](EP0270-low-findings-that-reach-users-fixed-in-themes.md) | Low findings that reach users, fixed in themes | Done | 9 | -- | 2026-10-01 | 2026-10-01 |
 | [EP0271](EP0271-the-sprint-report-measures-each-unit-s-real.md) | The sprint report measures each unit's real cost | Done | 3 | -- | 2026-10-02 | 2026-10-02 |
 | [EP0272](EP0272-a-recurring-lesson-becomes-a-line-the-agent.md) | A recurring lesson becomes a line the agent reads | Done | 1 | -- | 2026-10-02 | 2026-10-02 |
-| [EP0273](EP0273-v6-1-0-ships-with-paperwork-that-matches.md) | v6.1.0 ships with paperwork that matches the code | Draft | 3 | -- | 2026-10-03 | 2026-10-03 |
+| [EP0273](EP0273-v6-1-0-ships-with-paperwork-that-matches.md) | v6.1.0 ships with paperwork that matches the code | Done | 3 | -- | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 
