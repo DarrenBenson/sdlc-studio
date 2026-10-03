@@ -2,7 +2,7 @@
 
 **Project:** SDLC Studio
 **Version:** 6.0.0
-**Last Updated:** 2026-09-25
+**Last Updated:** 2026-10-03
 **Status:** Generated (brownfield extraction; epics/stories validated and closed out 2026-07-09, commit 841471e)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -11,12 +11,12 @@
 > tests validate the spec against the implementation. Confidence markers and
 > status values are defined at the foot of this document.
 >
-> **Coverage:** v5.1.0 as cut, plus the work sitting on `main` under
-> `CHANGELOG.md` `[Unreleased]`. The v5 line covers the refusal gates (the
-> breakdown gate, the two-role review, the executable-criteria gate on Done, the
-> verifier ratchet), the evidence lane (mutation evidence, vacuous-verifier
-> refusal), the cost work that made the gate cheap enough to leave on, and the
-> derived sprint close. Anything not yet in a tagged release is marked
+> **Coverage:** v6.0.0 as cut, plus the 6.1 work on `main` since. The v6 line
+> covers the refusal gates (the breakdown gate, the executable-criteria gate on
+> Done, the vacuous-verifier refusal), one independent review per unit and one
+> signature per run (`sprint sign`), the cost work that made the gate cheap enough
+> to leave on, and the derived sprint close, which files the sprint report that
+> hands over the remaining work. Anything not yet in a tagged release is marked
 > **[Unreleased]** in the tables below. The document version tracks the product
 > version; it is not itself a release artefact.
 
@@ -270,7 +270,7 @@ epic decomposition cite that governing RFC/CR instead.
 | Cooper persona arbitration | Personas arbitrate rather than decorate: a multi-Primary cast warns, two Primaries on one `Interface:` is an error, `**Serves:**` tags feed a coverage check, and every consult carries the Primary test plus a per-seat objection quota | Complete | Medium | reference-persona.md, scripts/validate.py | EP0030 |
 | Learning loop | Each repeated failure is a failure class in `sdlc-studio/lessons.jsonl` (`LC-NNN`: a rule, a behaviour and the phases it is injected at). The plan, the build brief and the review brief each carry their phase's live classes, at most five; a retro Try item or a review finding cites its class, and the close counts the hit, files one CR for a class repeated twice after it was recorded and retires a class quiet for five runs. A retro is still checked on its content and every finding takes a disposition; `lessons.loop: judgement` makes those close lanes advisory | Complete **[Unreleased]** | High | reference-retro.md, scripts/retro.py, scripts/lessons.py, sdlc-studio/lessons.jsonl | EP0010 |
 | Lessons ranking | `lessons rank` orders the registry by recurrence (computed from citations in the files, never asserted), recency, and structural-fix demotion - a lesson whose class a shipped guard now makes impossible stops crowding out live ones | Complete **[Unreleased]** | Medium | scripts/lessons.py | EP0010 |
-| Mutation gate | Proves the tests can FAIL, where `verify_ac` proves they pass: a bounded declared fault set applied to a surface, re-running the suite per mutation, reporting killed / survived / error / unviable. An opt-in run (`mutation.py run`) that reports its yield; no gate lane reads it | Complete | High | help/mutation.md, reference-test-best-practices.md, scripts/mutation.py | EP0011 |
+| Mutation testing | Proves the tests can FAIL, where `verify_ac` proves they pass: a bounded declared fault set applied to a surface, re-running the suite per mutation, reporting killed / survived / error / unviable. An opt-in run (`mutation.py run`) that reports its yield; no gate lane reads it | Complete | High | help/mutation.md, reference-test-best-practices.md, scripts/mutation.py | EP0011 |
 | Quality gate (`gate`) | One portable, ecosystem-neutral exit code over the deterministic checks (conformance, reconcile, validate, integrity, duplicate-id, doc-coverage, engagement-floor, doc-freshness, ...), plus bound close lanes (retro, lessons, review currency) and `--release`, which EXECUTES every story's `Verify:` line | Complete | High | help/gate.md, scripts/gate.py | EP0026, EP0031 |
 | Independence gate | Author != reviewer, enforced mechanically; a bug reaches Fixed only while its recorded `verify_ac` run is green | Complete | High | scripts/transition.py, scripts/critic.py | EP0026 |
 | Handoff guide | Retired as a written record (US0978): the signed sprint report hands over the remaining work and `sprint plan --worklist RPTxxxx` plans it. `handoff.py show` still prints the remaining-work join - delivered with evidence, remaining with a per-item pointer and a copilot-tail / judgement tag - and a Done unit whose ACs are red or stale reads as remaining, not delivered; the HO files already written stay readable | Complete | Medium | scripts/handoff.py | EP0032 |
@@ -709,6 +709,7 @@ once it has enough delivered units, so today's forecasts still lean on the study
 | 2026-06-20 | 2.0.0 | Brownfield extraction of PRD from skill source (Generate mode) |
 | 2026-07-14 | 4.1.0 | Refresh to the v4 feature set: the engagement floor, the breakdown gate, sprint capacity and the run appetite, the sizing and velocity loop (with its falsification stated), ULID identity, the generated team and stakeholder panel, the learning loop, the mutation gate and the release gate. `autosprint` renamed to `sprint`. Corrected the corpus and test counts, replaced the closed 2026-07-04 enforcement-gap list, and expanded the config reference to the gate-bearing keys |
 | 2026-09-25 | 5.1.0 | Lean refresh (US0929): a numbered Outcomes section citing persona End goals, for a Sprint Goal to trace to; the Mission and Core Behaviours describe the loop as it runs (a goal of 20 words or fewer, one plan approval, one reviewer for at most two rounds with carried known issues, persona rulings, the one-page report); the learning loop is described as failure classes in `lessons.jsonl` |
+| 2026-10-03 | 6.0.0 | Spec truth for 6.1 (US0984): the Coverage note describes the v6 line (one independent review per unit, one signature per run, the signed report handing over the remaining work) in place of the two-role review and mutation evidence v6 retired, and the Mutation gate row is renamed Mutation testing, since no gate lane reads a run |
 
 ---
 

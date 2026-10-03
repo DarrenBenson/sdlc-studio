@@ -2,7 +2,7 @@
 
 > **Project:** SDLC Studio
 > **Version:** 6.0.0
-> **Last Updated:** 2026-07-17
+> **Last Updated:** 2026-10-03
 > **Status:** Generated (brownfield - awaiting validation)
 >
 > Generated in **Generate mode** by reverse-engineering the skill's own test
@@ -14,7 +14,7 @@
 > Consistent with PRD section 5 (Non-Functional Requirements) and section 10
 > (Quality Assessment), and with the TRD component and script inventory.
 >
-> **Coverage:** v5.1.0 as cut, plus the `[Unreleased]` work on `main`. The
+> **Coverage:** v6.0.0 as cut, plus the 6.1 work on `main` since. The
 > document version tracks the product version; it is not itself a release artefact.
 
 ---
@@ -48,9 +48,9 @@ a pass.
   blockquote metadata, mixed case, decorated status lines).
 - Guarantee the read path stays read-only over the workspace, and that every write
   is bounded, tested and atomic for shared files (TRD section 5, contract rule 5).
-- Prove the tests can FAIL: the mutation gate applies a bounded fault set to a
-  surface and reports killed against survived, so a green suite over dead code is
-  visible rather than reassuring.
+- Prove the tests can FAIL: `mutation.py run` applies a bounded fault set to a
+  surface on demand and reports killed against survived, so a green suite over dead
+  code is visible rather than reassuring.
 - Hold the markdown corpus to its house style (British English, no em dashes, no
   banned jargon, no private project names) and structural invariants (resolvable
   links, valid frontmatter, line budgets, version consistency) on every commit.
@@ -159,9 +159,9 @@ overstating coverage.
 > failure what the guard enforces, the offending line, and how to fix it. The
 > assertion-integrity discipline
 > (`reference-test-best-practices.md#assertion-integrity`) asks "would this test fail
-> if the feature broke?" - and it is now executably checked by the mutation gate
-> below, rather than being a rule that holds when the author remembers it. Checked,
-> not enforced: that lane is advisory and reports rather than refusing.
+> if the feature broke?" - and `mutation.py run` (below) answers it on demand, rather
+> than leaving it a rule that holds when the author remembers it. Measured, not
+> enforced: no gate lane reads a mutation run.
 
 ---
 
@@ -174,7 +174,7 @@ overstating coverage.
 | Unit (scripts) | 80% statement (blocking CI gate); ~90% aspiration | Core deterministic logic; the part that can and must be tested as code. The 80% floor is the hard gate, enforced by `coverage report --fail-under=80` in CI; the ~90% figure is the density aspiration, not the gate. [HIGH] |
 | Static / lint (markdown) | 100% of `*.md` pass all checkers | House style and structural invariants are binary - any violation fails the gate. [HIGH] |
 | Integration (scripts vs fixtures) | Every script with side effects has at least one fixture-workspace test; write-confinement asserted by a snapshot before/after; a create-then-validate round trip covers every creator, artefact type and schema era | Confirms the write boundary, and that content supplied to a creator actually reaches the artefact. [HIGH] |
-| Mutation (assertion integrity) | Survived mutants are findings, triaged; an un-mutatable surface is reported un-checked, never passed | A passing suite over dead code is the failure this level exists to expose. Advisory lane, not yet blocking. [HIGH] |
+| Mutation (assertion integrity) | Survived mutants are findings, triaged; an un-mutatable surface is reported un-checked, never passed | A passing suite over dead code is the failure this level exists to expose. Run on demand; no gate lane reads it. [HIGH] |
 | Eval scenarios (flow conformance) | Every blocking behaviour in every scenario graded; an ungraded blocking behaviour fails the gate - `report` enumerates the scenarios on disk, so a scenario nobody touched fails rather than vanishing | The nearest thing the markdown tier has to a behaviour test. Covers named surfaces, not the whole corpus. [HIGH] |
 | End-to-end | Not applicable | No running application or service to drive. [HIGH] |
 
@@ -227,7 +227,6 @@ commit lane pins this list to the tree: the one that did caught missing list ent
 code defect.
 
 ```text
-carry_forward
 triage
 lib/tiers
 ```
@@ -246,7 +245,7 @@ a sprint, the map below records what each tier is responsible for.
 | --- | --- | --- |
 | Parsing core | `lib/sdlc_md.py`, `lib/conventions.py` | Id normalisation across both eras (sequential and ULID, dashed and undashed, mixed case), `extract_field`, `canonical_status` longest-prefix reduction, AC heading and bullet parsing, fenced-block awareness (an example `Verify:` line in a code block is never executed), JSON helpers that never raise, `atomic_write`, `allocation_lock`. |
 | Creators | `artifact.py`, `file_finding.py` | Collision-free id + index row + epic wiring by construction; refusal of a line break in any field written into a metadata line or table cell (the class that let a `--title` forge a `Status` line and an `--ac` inject a sibling `Verify:` line); refusal of a command-shaped `Verify:` in a CR or bug AC; a refused create writes nothing and burns no id. |
-| Verification | `verify_ac.py`, `mutation.py`, `transition.py` | Per-AC pass/fail/manual/unspecified; in-place `Verified:` rewrite; the Done gate; the verification-depth gate on a terminal bug status; killed / survived / error / unviable verdicts, the ledger's bound and provenance, and the per-file STALE-on-edit rule. |
+| Verification | `verify_ac.py`, `mutation.py`, `transition.py` | Per-AC pass/fail/manual/unspecified; in-place `Verified:` rewrite; the Done gate; the Fixed gate, which refuses a bug whose recorded `verify_ac` run is red or that nothing speaks for; killed / survived / error / unviable verdicts and the per-run series row `mutation.py yield` reads. |
 | Drift and census | `reconcile.py`, `status.py`, `validate.py`, `conformance.py` | Disk-census drift kinds and their remediation hints (a check must expose the kinds it can emit, pinned to the real emission sites, so a new kind without a hint fails the build); the four-pillar census; structure and status-vocabulary validation; seat validation. |
 | Gates | `gate.py`, `engagement_floor.py`, `retro.py`, `lessons.py` | Lane verdicts and the bound-lane refusals; the floor's file-count and declaration recognisers (one recogniser, so they cannot disagree); retro content validation and finding disposition; lessons ranking, staleness by recomputed digest rather than a stamp. |
 | Planning | `sprint.py`, `loop_guard.py`, `telemetry.py` | WSJF order, dependency waves, shared-file clusters, the breakdown refusal, appetite resolution at plan time and read-back by the breaker, the forecast band. |
@@ -289,14 +288,14 @@ proves an AC's tests pass; `mutation.py` proves they can fail.
 | Scope | A declared, bounded fault set - `invert-guard`, `stub-return-null`, `unset-delivered-field`, `no-op-mapper` - applied to a surface selected by `--files`, `--since <rev>` or `--story` |
 | Method | Confirm a green baseline (a red baseline cannot judge - every mutation records `error`, never a fake kill), apply one mutation, re-run the suite, restore the bytes, verdict it |
 | Verdicts | **killed** (the test pins the behaviour), **survived** (a finding: the suite stayed green over broken code), **error** (the runner broke; never a kill), **unviable** (a mutant that cannot even parse - evidence of nothing, since any suite fails on it) |
-| Output | `.local/mutation-report.json` - the latest run, carrying the git rev and a content hash per target - plus `.local/mutation-runs.json`, the bounded 200-entry ledger: one entry per mutated file, keyed on that file's content hash at run time and marked `measured` (a run) or `registered` (a hand-applied mutant), entered only when the tests returned killed or survived on that target |
-| Gate | An advisory `mutation` lane in `gate.py` - it reports and never refuses. An absent report reads **not-run**, never PASS. Coverage is judged per file from the LEDGER: a matching content hash reads **covered** (a registered-only match is named as a self-report), a hash that no longer matches reads **STALE** - that file was edited since its mutant ran - and no entry reads **uncovered**. With nothing per-file to judge it degrades to the whole-report checks, where an edited target or a rev change reads STALE |
+| Output | `.local/mutation-report.json` - the latest run, carrying the git rev and a content hash per target - plus one row per run appended to `.local/mutation-series.jsonl`, the cost and yield series `mutation.py yield --run <id>` reads. No per-target ledger is kept |
+| Gate | None. No gate lane reads a mutation run: it is an instrument, run when you want the answer, and its exit is non-zero on survivors |
 | Honest degrade | A file or construct the language profiles cannot mutate is listed **un-checked**, never passed |
 
-It is advisory rather than blocking because a full mutation run costs one suite
+It runs on demand rather than in the gate because a full mutation run costs one suite
 execution per mutant - minutes, not seconds - so it cannot sit on the fast path. That
-is a deliberate trade, and the not-run-is-not-a-pass rule is what keeps it from
-becoming a green light nobody earned.
+is a deliberate trade: nothing reads an absent run as a pass, because nothing reads a
+run as a gate verdict at all.
 
 ### Integration Testing (scripts against fixture workspaces)
 
@@ -328,7 +327,7 @@ from a wrong one. Tests that assert a guard fires must drive it the way a caller
 | Scope | A fixture project built from a machine-readable spec, driven through a named flow |
 | Method | `tools/eval_run.py`: build the fixture, run the flow, record a per-behaviour verdict |
 | Gate | Fails on any blocking behaviour that failed **or was left ungraded** - a behaviour nobody graded is not a pass. `report` enumerates `evals/scenarios/*.json`, so a scenario with zero recorded verdicts fails on its blocking behaviours rather than being skipped for its absence from the results file |
-| Coverage | Named v3/v4 surfaces: schema-v3 identity (ULID allocation, ULID-epic wiring, reconcile coverage), the independence gate (author != reviewer, verified depth on a terminal status), team generation on an ambiguous-by-design fixture, persona arbitration. Not the whole markdown corpus |
+| Coverage | Named v3/v4 surfaces: schema-v3 identity (ULID allocation, ULID-epic wiring, reconcile coverage), the independence gate (author != reviewer, a terminal status standing on criteria the verifier recorded green), team generation on an ambiguous-by-design fixture, persona arbitration. Not the whole markdown corpus |
 
 ### End-to-End Testing
 
@@ -380,7 +379,7 @@ not-gated rationale. This closes the PRD-to-TSD traceability gap.
 
 | NFR (PRD section 5) | Quality gate | Blocking | Confidence |
 | --- | --- | --- | --- |
-| **Performance** - read path sub-second, writes bounded | Indirect: a regression that made scripts slow shows in the gate's own recorded cost, which IS budgeted (`gate.budget_seconds`) and reported per lane. No explicit per-script latency threshold is asserted. Treated as observed, not gated. `mutation` is exempt by design (minutes per run). | No | [MEDIUM] |
+| **Performance** - read path sub-second, writes bounded | Indirect: a regression that made scripts slow shows in the gate's own recorded cost, which IS budgeted (`gate.budget_seconds`) and reported per lane. No explicit per-script latency threshold is asserted. Treated as observed, not gated. A mutation run is not a gate lane (minutes per run). | No | [MEDIUM] |
 | **Performance** - always-loaded context minimal | `check_budgets.py`: `SKILL.md` must be < 500 lines, each `reference-*.md` within its declared ceiling. Hard gate via `lint:budgets`. | Yes | [HIGH] |
 | **Security** - no network calls except `gh` and project Verify tools | Enforced by the script contract and the test design: `github_sync.py` tested with `gh` mocked; pure-stdlib (no third-party clients). Not gated by a network-egress scanner, but the script tier is scanned by bandit (below). | Partial (by test design, plus the bandit scan) | [HIGH] |
 | **Security** - static analysis of the shipped script tier | `bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q` runs as a CI step; a medium-or-high severity finding fails the build. Covers the shipped scripts only. | Yes | [HIGH] |
@@ -420,10 +419,13 @@ deterministic checks, read-only and therefore hook-safe.
 | `integrity`, `duplicate-id` | A corrupt or duplicated id | Yes |
 | `doc-coverage` | A shipped command with no help or reference file | Yes |
 | `engagement-floor` | A shipped multi-file unit with no planning pass (see PRD section 3) | Yes |
-| `doc-freshness` | Stale facts in `LATEST.md` | No (advisory) |
-| `constitution`, `provenance`, `disclosure` | Project-rule and stamping findings | Advisory |
-| `mutation` | Nothing blocking. Per-file coverage from the ledger (covered / STALE / uncovered) plus the report's survivors; an absent report reads not-run, and with no ledger entry to judge it falls back to the whole-report rev and hash checks | Advisory |
-| `hook-enabled` | The tracked pre-commit hook not installed | No (advisory) |
+| `window` | A process has declared it is rewriting source files in place (`mutation.py window`) | Yes |
+| `changelog-fragments` | A malformed CHANGELOG heading, or a hand edit of `[Unreleased]` while `changelog.d/` is live; at the release cut, also a stray fragment | Yes |
+| `constitution`, `provenance` | Project-rule and stamping findings | On demand and advisory, unless the project sets them to enforce |
+| `doc-surface`, `disclosure`, `doc-freshness`, `hook-enabled`, `batch-size` | A documented verb with no invocable form, progressive-disclosure hygiene, stale facts in `LATEST.md`, the tracked hook not installed, a delivered unit whose diff is an outlier for its size | No (on demand; `doc-freshness` also reports at the sprint close) |
+| `full-suite` | Any red test module of either suite, run once at a push or a tag | Yes (push and release boundaries) |
+| `release-rehearsal`, `module-alone` | A greenfield init or a v4 upgrade that fails end to end; a skill test module red when run alone | Yes (release boundary) |
+| `versions` | Version strings that disagree across their homes, CHANGELOG included | Yes (`--release`) |
 
 Bound lanes attach to a specific obligation and **cannot be skipped or excluded
 away** - a deselected bound lane is refused rather than honoured, which closes the
@@ -434,7 +436,7 @@ route by which `--skip retro` once silently voided the retro gate:
 | `--require-retro RETROxxxx` | Sprint close | The retro's **content** (required sections, at least one real lesson, every finding dispositioned) - not its existence, because a gate that tests for a file is satisfied by `touch`, and this one once was. Implies the lessons half |
 | `--require-lessons` | Sprint close | `LESSONS-SUMMARY.md` is the **recomputed** digest of the current lessons log (not a stamp, a count or an mtime - there is nothing to forge), and no open lesson is past its validity horizon |
 | `--require-review` | Sprint close | `reviews/LATEST.md` is at least as new as every artefact. Currency, not presence |
-| `--release` | The pre-tag gate | Binds two lanes. **verify**: EXECUTES every story's `Verify:` expression for real, rather than reading a report that could carry a stale green. Deselecting the verify lane under `--release` is **refused** - no release verdict is printed over an unexamined AC layer. A story with an *unspecified* AC (no `Verify:` line) fails and is named; a story whose ACs are all declared `manual` passes. A story set with no executable verifier at all fails, because a lane with nothing to prove must not read as proof. A verifier blocked by the external-provenance trust boundary reports as **unproven**, never as a red AC. **review-legs** (the BG0110 fix): every required DOCUMENT leg (PRD/TRD/TSD/Persona) must be present or explicitly waived against a recorded decision id, so a tag over a silently-missing required artefact is refused; the CODE leg is out of scope (D0022) and every verdict states that exclusion |
+| `--release` | The pre-tag gate | Binds the `versions` lane, the release form of `changelog-fragments` (which also refuses a stray fragment, unless the release Definition of Done drops `release.changelog`), and two more. **verify**: EXECUTES every story's `Verify:` expression for real, rather than reading a report that could carry a stale green. Deselecting the verify lane under `--release` is **refused** - no release verdict is printed over an unexamined AC layer. A story with an *unspecified* AC (no `Verify:` line) fails and is named; a story whose ACs are all declared `manual` passes. A story set with no executable verifier at all fails, because a lane with nothing to prove must not read as proof. A verifier blocked by the external-provenance trust boundary reports as **unproven**, never as a red AC. **review-legs** (the BG0110 fix): every required DOCUMENT leg (PRD/TRD/TSD/Persona) must be present or explicitly waived against a recorded decision id, so a tag over a silently-missing required artefact is refused; the CODE leg is out of scope (D0022) and every verdict states that exclusion |
 
 ---
 
@@ -461,7 +463,7 @@ python3 -m coverage report -m --omit='*/tests/*'
 ```
 
 Statement coverage is the weaker of the two questions, and it is worth saying which is
-which. Coverage asks *was this line executed*; the mutation gate asks *would a test
+which. Coverage asks *was this line executed*; a mutation run asks *would a test
 have noticed if the line were wrong*. A tier can sit at 90% coverage with surviving
 mutants, and that combination is the one worth hunting.
 
@@ -590,14 +592,12 @@ workflow, so this project files its own defects through the pipeline it ships.
 | Medium | Style or doc drift a checker does not yet catch; a flagged markdown-behaviour gap; a surviving mutant on a live surface | Backlog, prioritise |
 | Low | Cosmetic, wording, or non-blocking allowlist tidy-up | Backlog |
 
-### Verification depth
+### A fix stands on its criteria
 
-A bug does not reach a terminal status on an assertion. `transition.py` requires a
-recorded **verification depth** before Fixed or Closed, and refuses a claim of proof
-above the depth actually performed - a `smoke`-depth check cannot close a bug whose
-`Verified:` line claims a functional or live proof. The depth field exists because the
-depth tiers were documented for a release without any code reading them, which is the
-general failure this document keeps naming: a rule nothing executes is a rule that
+A bug does not reach Fixed on an assertion. `transition.py` refuses Fixed for a bug
+nothing speaks for (no ticked criterion and no `Verify:` line), and for one whose
+recorded `verify_ac` run is red, so the move stands on criteria the verifier ran. This
+is the general rule this document keeps naming: a rule nothing executes is a rule that
 holds only when someone remembers it.
 
 ---
@@ -666,6 +666,7 @@ package.json                # lint and test entry points
 | 2026-07-17 | Spec-truth alignment | Recorded the blocking 80% CI coverage gate (`coverage report --fail-under=80`) and reconciled it with the ~90% aspiration - correcting the stale "coverage is not wired into CI" claim in Coverage Targets and Coverage Measurement. Recorded the blocking bandit security scan (`bandit -r ... -ll -x '*/tests/*' -q`) in Security Testing, the NFR mapping, the tools table, and both quality-gate tables - correcting the stale "no dedicated security scanner is wired" claim |
 | 2026-07-24 | Spec-truth reconcile (mutation) | Reconciled the mutation entries against `mutation.py` and `gate.py`: the Output row now names the per-target ledger beside the report, the Gate row and the gate-lane table carry the per-file covered / STALE / uncovered verdict in place of the superseded whole-blob rev-or-edit rule, and the test-tier map names the ledger's bound and provenance. Corrected the pre-commit blockquote's "executably enforced" over an advisory lane. The findings table, including the claims checked and left unchanged, is recorded in US0385 |
 | 2026-09-25 | Restatements cut (US0933, D0266) | In `## Test Levels`, the Unit Testing suite-size row and the paragraph under its table state no test or module count, and the row drops its two `measured:` markers, whose only reader US0879 deleted. The level headings and backticked paths the runner reads are unchanged. |
+| 2026-10-03 | Spec truth for 6.1 (US0984) | The TSD described machinery v6 retired. The mutation gate, its lane and its `.local/mutation-runs.json` ledger are gone, so the Mutation Testing level describes `mutation.py run` as the on-demand instrument it is (its report and per-run series, read by no gate lane); the artefact-gate lane table names the lanes `gate.py` registers, adding `window`, `changelog-fragments`, the on-demand lanes and the push and release boundary lanes; the verification-depth gate gives way to the Fixed gate on a green recorded run; `carry_forward`, deleted in 6.1, leaves the coverage map. |
 
 ---
 

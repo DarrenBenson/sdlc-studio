@@ -189,7 +189,7 @@ total: pass=7 fail=1 manual=0
 | --- | --- | --- |
 | `--dir <path>` | Stories directory | sdlc-studio/stories |
 | `--story <path>` | Single story file (overrides `--dir`) | none |
-| `--id <id>` | Single story by id, resolved under `--dir` | none |
+| `--id <id>`, `--unit <id>` | Single story by id, resolved under `--dir`; `verify_ac.py run --unit US0042` is the same run, as `revert-check --unit` takes it | none |
 | `--ids <a,b>` | Scope to these story ids (comma-separated, repeatable) | none |
 | `--worklist <path>` | Scope to the ids a tranche file names | none |
 | `--from-run` | Scope to the open run's approved batch | false |

@@ -3,7 +3,7 @@
 **Project:** SDLC Studio
 **Version:** 6.0.0
 **Status:** Draft
-**Last Updated:** 2026-07-14
+**Last Updated:** 2026-10-03
 **PRD Reference:** [PRD](./prd.md)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -159,8 +159,7 @@ The split rule (`reference-scripts.md`): read-only helpers (`reconcile detect`,
 (`artifact`, `file_finding`, `transition`, `reconcile apply`, `verify_ac`,
 `repo_map`, `github_sync`, `plan`, `lessons`, `retro`, `archive`, `critic record`)
 perform bounded, tested mutations. `critic` straddles the line: its `brief`/`show`
-path is read-only, but `record`/`evidence`/`signoff` append to the committed verdict
-logs. Everything else (reading files, walking directories, simple transforms) stays
+path is read-only, but `record`, `correct` and `supersede` append to the committed verdict log. Everything else (reading files, walking directories, simple transforms) stays
 with the agent's built-in tools.
 
 #### The gate tier
@@ -453,8 +452,8 @@ a half-written decomposition never certifies clean.
 | `telemetry.jsonl` | `telemetry.py` (via `artifact close`) | Append-only run/close events feeding the estimate-vs-actual report. `latest_actuals()` reads the last **non-null** value per field, so a bare close record after an instrumented one cannot erase the measurement. [HIGH] |
 | `verify-history.jsonl` | `verify_ac.py` | Append-only per-AC verification history. [HIGH] |
 | `verify-report.json` | `verify_ac.py` | Machine-readable AC verification report (per-AC pass/fail/manual). [HIGH] |
-| `mutation-report.json` | `mutation.py` | The LATEST run: per-mutant killed / survived / error / unviable, with the git rev and a content hash per target. Last-write-wins, so it carries one run's survivors rather than accumulated evidence; its rev and hashes are read as a freshness stamp, and only when the ledger has nothing per-file to judge. [HIGH] |
-| `mutation-runs.json` | `mutation.py` | The bounded per-target ledger the gate's coverage lane reads: one entry per mutated file, carrying that file's content hash at run time and marked `measured` (a run) or `registered` (a mutant a builder applied by hand). A per-file hash survives commits to other files, which a whole-blob rev stamp does not. 200 entries, oldest out first, with a cumulative `dropped` count. [HIGH] |
+| `mutation-report.json` | `mutation.py` | The LATEST run: per-mutant killed / survived / error / unviable, with the git rev and a content hash per target. Last-write-wins, so it carries one run's survivors rather than accumulated evidence; no gate lane reads it. [HIGH] |
+| `mutation-series.jsonl` | `mutation.py` | One row appended per run: what it cost and what it found, read back by `mutation.py yield --run <id>`. No per-target ledger is kept. [HIGH] |
 | `repo-map.json` | `repo_map.py` | Per-file symbols, imports, in-degree score; queried for `READ THESE FILES FIRST` lists. [HIGH] |
 
 One measurement artefact is deliberately **committed** rather than `.local/`:
@@ -568,8 +567,7 @@ breaker bounds an unattended run. Read-only scripts run in well under a second; 
 script suite runs in minutes, not seconds (`tools/gate_timing.py estimate` prints the
 current figure). The one deliberate exception is
 `mutation.py`, which re-runs the suite once per mutant and is measured in minutes -
-which is why its gate lane reads stored evidence rather than executing, and reports a
-file whose bytes changed since its mutant ran as STALE rather than passing.
+which is why it is run on demand and no gate lane reads it.
 
 Distribution scales too, not just context: short-ULID identity (ADR-008) is what
 lets several uncoordinated writers - human and agent, on different machines and git
@@ -1102,6 +1100,7 @@ touches the component. The constraints below span components.
 | 2026-07-29 | 5.0.0 | Spec-truth pass (US0457, US0458, US0459, US0460). ADR-011 records its D0062 amendment (2026-07-24): the breakdown gate is GOAL-AWARE and `design` is the only exemption, with an absent, empty or unknown goal BLOCKING - the ADR previously read as an unconditional refusal while the code already exempted one rung. The counterweight the close really emits (`grooming_report` rendered on the design rung) is named in the Consequences. Four enumerations - the router type list, the default sweep lanes and both drift-kind passages - now cite their shipped definitions and are held to them; the `count-mismatch`/CR0132 caveat goes, justified by CR0132 resolving Complete. The falsified 'a script cannot observe token spend' premise is replaced everywhere it was asserted by the measured one: transcript-measured but a LOWER BOUND, because delegated spend is supplied rather than observed. The porting doctrine is corrected to the direction `tools/forward-port.sh` implements - this repo is the source, the installed copy is the derived mirror - and the bare router line counts are replaced by the budgeted ceiling and its checker. Each claim is now held by a guard in `tools/tests/`. |
 | 2026-09-25 | 5.1.0 | Restatements cut (US0933, D0266). §3 and §5 name `gate.DEFAULT_CHECKS`, the `SKILL.md` Type Reference table and `reconcile.DRIFT_KINDS` rather than copying them, ADR-003 keeps its decision without the drift-kind copy, and the Component Overview and Scaling Strategy drop their counts except the `60+ scripts` claim that `doc_freshness`'s census checks; ADR-001's sizes stay as the decision's record. The three tests that pinned the copies are deleted. |
 | 2026-09-25 | 5.1.0 | The Component Overview gains a Constraints column, which a lane brief reads for the components its unit touches. The Must Have constraints that govern one component (the router, the script layer, `lib/sdlc_md.py`) move into their cells; the ones that span components stay in §13. |
+| 2026-10-03 | 6.0.0 | Spec truth for 6.1 (US0984). The `.local/` state table drops `mutation-runs.json`, the per-target ledger nothing writes since v6, and names `mutation-series.jsonl`, the per-run series `mutation.py` appends; the mutation report and the scaling note no longer say a gate lane reads either; `critic`'s writing verbs are `record`, `correct` and `supersede`, `evidence` and `signoff` being retired. |
 
 ---
 

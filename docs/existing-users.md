@@ -49,6 +49,28 @@ pre-release as equal to its final release, so it never offers you the final. Lat
 a pre-release below its final, so this happens once. Then run `migrate --apply` again: it restamps
 `sdlc-studio/.version` with the version you now run.
 
+### From 6.0 to 6.1
+
+A project already on 6.0 takes three steps: 6.1 retires the handoff writers and one config key.
+
+1. **Reinstall.** A plain install now fetches the latest verified release (the
+   [README](../README.md) has the command).
+2. **`migrate`** is the dry run: it prints what it would change and writes nothing.
+3. **`migrate --apply`** removes `review.policy` from `sdlc-studio/.config.yaml`, the one key 6.1
+   retires: every project now carries a unit whose REJECT stands at the review-round cap
+   (`review.max_rounds`). Both runs also name each line of your markdown docs that still runs a
+   retired handoff command in code, with what replaced it. Neither reads CI files or scripts, so
+   search those yourself for the names below.
+
+| Retired in 6.1 | Use instead |
+| --- | --- |
+| `handoff.py generate`, `artifact.py new --type handoff` | The signed sprint report hands over the remaining work: `sprint.py sign` seals it, and `sprint.py plan --worklist RPTxxxx` plans its open items as the next run |
+| `gate.py --require-handoff` | The signed sprint report from `sprint.py sign`, which the close files and the operator signs |
+
+The HO files already in `sdlc-studio/handoffs/` stay readable: they resolve by id, reconcile
+cleanly and are never rewritten, and `handoff.py show` still prints the remaining-work join
+without writing anything.
+
 ### What `migrate --apply` removes and what it leaves to you
 
 It writes only what is deterministic and reversible:
@@ -102,7 +124,6 @@ as an argparse error; a retired key is ignored where it is still set.
 | `verify_ac.py lint --ratchet`, `verify_ac.py lint --stamp` | `verify_ac.py lint`, which reports a shared selector and exits 0; no baseline is kept |
 | `validate.py warning-ratchet` | `validate.py check`, which prints footprint warnings on open work and exits 0 |
 | `persona_resolve.py panel --dry-run` | Drop the flag; it served the sign-off ceremony only |
-| `handoff.py generate`, `artifact.py new --type handoff`, `gate.py --require-handoff` (6.1) | The signed sprint report from `sprint.py sign` hands over the remaining work; start the next run with `sprint.py plan --worklist RPTxxxx` |
 
 The full inventory, with what each name did before, is the Breaking section of the first v6
 release in [CHANGELOG.md](../CHANGELOG.md).
