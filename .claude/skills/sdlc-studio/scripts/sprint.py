@@ -11064,7 +11064,9 @@ def cmd_goal_review(args) -> int:
         return 2
     seats = seats + carried
     if not seats:
-        print("goal-review record refused: at least one --seat verdict is required",
+        print("goal-review record refused: at least one seat verdict is required - "
+              + ("the --fields-file 'seats' list holds none and no --seat was given"
+                 if from_file else "pass --seat or a --fields-file 'seats' list"),
               file=sys.stderr)
         return 2
     path = root / GOAL_REVIEW_REL

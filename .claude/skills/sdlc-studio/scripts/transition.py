@@ -1415,8 +1415,9 @@ def _report_appetite(args) -> None:
 
     Silent in every uninteresting case - no run, a sealed run, no appetite, budget remaining -
     because a line printed after every transition is one nobody reads on the day it matters.
-    A sealed run is one whose outcome is no longer running: it has no next unit for its ceiling
-    to stop, so an appetite it spent is not reported against later work. Silent on failure
+    A sealed run is one whose outcome is a closed one (`run_state.CLOSED`): it has no next unit
+    for its ceiling to stop, so an appetite it spent is not reported against later work. A run
+    with no outcome recorded is not sealed and still warns. Silent on failure
     too, and that is deliberate here: this is a REPORT beside a transition that already
     succeeded, so a breaker that could not be evaluated must not turn a good transition into a
     traceback. `loop_guard budget` remains the verb that answers the question with an exit code.

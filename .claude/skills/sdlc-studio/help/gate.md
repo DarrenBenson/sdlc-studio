@@ -80,7 +80,7 @@ reach.
 | --- | --- | --- |
 | A commit | the tests the changed files reach | the answer is cheap to correct, and a five-minute wait per commit is what trains people to batch commits or reach for `--no-verify` |
 | A **push** | the full suite, once, plus the standard lanes | the change is leaving your tree |
-| A **release** | the full suite plus the three lanes below | a tag is a claim other people rely on |
+| A **release** | the full suite plus the two lanes below | a tag is a claim other people rely on |
 | A sprint **close** | everything | the close is the moment the batch is declared done |
 
 At a push and a tag, `full-suite` runs every test module of both suites once, as `--run-tests`
