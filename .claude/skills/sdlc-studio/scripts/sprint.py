@@ -9369,8 +9369,12 @@ def _note_ratios(note: str, measures) -> list[str]:
     if not names:
         return []
     lead = r"[^\w\s]*"     # punctuation before the number: `(1.7x)`, `~1.7x`, `=1.7x`
-    beside = re.compile(rf"\b(?:{names})\b\S*?\s*(?:(?!{lead}{_RATIO})\S+\s+){{0,3}}?"
-                        rf"{lead}({_RATIO})", re.IGNORECASE)
+    # Either the rest of the name's own word runs into the ratio (`tokens=1.7x`), or it ends at
+    # whitespace and up to three words follow. Kept as two branches so no character can be
+    # claimed by both a lazy run and the lead: one pattern doing both backtracked
+    # quadratically on a long punctuation run after the name.
+    beside = re.compile(rf"\b(?:{names})\b(?:\S*?|\S*\s+(?:(?!{lead}{_RATIO})\S+\s+){{0,3}}?"
+                        rf"{lead})({_RATIO})", re.IGNORECASE)
     return [m.group(1) for m in beside.finditer(note)]
 
 
@@ -10742,13 +10746,17 @@ def cmd_stop(args) -> int:
     return 0
 
 
-def _seat_from_dict(d: dict) -> dict:
+def _seat_from_dict(d: object) -> dict:
     """Validate a seat verdict supplied as a JSON object (via `--fields-file`): the same three
-    required answers as the pipe-delimited form, so a fields-file seat is held to the same bar."""
-    out = {"seat": str(d.get("seat") or "").strip()}
+    required answers as the pipe-delimited form, so a fields-file seat is held to the same bar.
+    An entry that is not an object is named, as a missing key is, rather than dropped."""
     # The keys the `--fields-file` help names, as the refusals below name them.
     needs = "'seat', " + ", ".join(repr(k) for k in GOAL_REVIEW_FIELDS[:-1]) + \
         f" and {GOAL_REVIEW_FIELDS[-1]!r}"
+    if not isinstance(d, dict):
+        raise ValueError(f"seat entry {d!r} in --fields-file is not an object - a seat object "
+                         f"needs {needs}")
+    out = {"seat": str(d.get("seat") or "").strip()}
     for f in GOAL_REVIEW_FIELDS:
         # PRESENCE first, then coerce, then test the COERCED value. `str(x or "")` collapses a
         # JSON `false` to the empty string, so the recommended --fields-file path could record
@@ -11015,8 +11023,7 @@ def cmd_goal_review(args) -> int:
         return 2
     try:
         seats = [_parse_seat_verdict(s) for s in (args.seat or [])]
-        seats += [_seat_from_dict(s) for s in (from_file.get("seats") or [])
-                  if isinstance(s, dict)]
+        seats += [_seat_from_dict(s) for s in (from_file.get("seats") or [])]
     except ValueError as exc:
         print(f"goal-review record refused: {exc}", file=sys.stderr)
         return 2

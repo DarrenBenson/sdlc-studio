@@ -445,11 +445,11 @@ a half-written decomposition never certifies clean.
 
 | File | Writer | Purpose |
 | --- | --- | --- |
-| `project-state.json` | project orchestration | Tracks `project plan` / `project implement` progress and dependency order. [MEDIUM] |
+| `project-state.json` | the agent running `project implement` (`reference-project.md`) | Tracks `project plan` / `project implement` progress and dependency order. [MEDIUM] |
 | `run-state.json` | `sprint.py`, with `critic.py`, `sprint_report.py`, `decisions.py`, `retro.py` and `transition.py` recording fields on it | A run's identity, batch, resolved appetite and outcome, written under a lock. The breaker reads back the ceiling the plan stamped, so plan and run cannot disagree. [HIGH] |
-| `review-state.json` | review workflow | Review cadence and verdict state. [MEDIUM] |
-| `review-queue.json` | review workflow | Pending review inputs. [MEDIUM] |
-| `wsjf-inputs.json` | the review seats (via the plan-rung consult) | Per-unit value / time-criticality / risk-reduction / size scores feeding the WSJF order. [HIGH] |
+| `review-state.json` | `review_prep.py` (`close`), and the agent running `epic review` (`reference-epic.md`) | Review cadence and verdict state. [MEDIUM] |
+| `review-queue.json` | the agent running `epic review` (`reference-epic.md`), which removes it when the queue empties | Pending review inputs, so a paused review resumes. [MEDIUM] |
+| `wsjf-inputs.json` | the review seats (via the plan-rung consult, `reference-sprint.md`) | Per-unit value / time-criticality / risk-reduction / size scores feeding the WSJF order. [HIGH] |
 | `telemetry.jsonl` | `telemetry.py` (via `artifact close`) | Append-only run/close events feeding the estimate-vs-actual report. `latest_actuals()` reads the last **non-null** value per field, so a bare close record after an instrumented one cannot erase the measurement. [HIGH] |
 | `verify-history.jsonl` | `verify_ac.py` | Append-only per-AC verification history. [HIGH] |
 | `verify-report.json` | `verify_ac.py` | Machine-readable AC verification report (per-AC pass/fail/manual). [HIGH] |
