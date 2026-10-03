@@ -1,6 +1,6 @@
 # BG0920: The close checklist's cost row reads the moved meter on a re-close while the re-filed page reads the first close's
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_reclose_checklist_cost.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py

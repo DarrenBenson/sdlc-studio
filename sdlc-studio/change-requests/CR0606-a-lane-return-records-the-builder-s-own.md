@@ -1,6 +1,6 @@
 # CR-0606: A lane return records the builder's own token and minute totals, and the estimates ratio is withheld while delegated spend is unmeasured
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0271
 > **Priority:** Medium
 > **Type:** Improvement

@@ -1,6 +1,6 @@
 # BG0910: The close pre-flight's live checklist read is unpinned
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_preflight_live_gate.py

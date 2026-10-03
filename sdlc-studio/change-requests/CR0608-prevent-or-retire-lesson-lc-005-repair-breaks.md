@@ -1,6 +1,6 @@
 # CR-0608: Prevent or retire lesson LC-005 (repair breaks its neighbour)
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0272
 > **Priority:** Medium
 > **Type:** Improvement

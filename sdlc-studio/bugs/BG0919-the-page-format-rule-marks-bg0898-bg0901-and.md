@@ -1,6 +1,6 @@
 # BG0919: The page-format rule marks BG0898, BG0901 and BG0904 added have no file-then-revalidate pin
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_rule_marks_round_trip.py

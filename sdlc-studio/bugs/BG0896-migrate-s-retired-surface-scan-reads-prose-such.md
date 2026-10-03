@@ -1,6 +1,6 @@
 # BG0896: migrate's retired-surface scan reads prose such as 'mutation audit' as a retired command because .py is optional
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/retired_surface.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_retired_surface_prose.py

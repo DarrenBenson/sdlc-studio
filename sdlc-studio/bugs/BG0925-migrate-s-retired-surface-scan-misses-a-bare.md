@@ -1,6 +1,6 @@
 # BG0925: migrate's retired-surface scan misses a bare retired command inside a fenced code block
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/retired_surface.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_retired_surface_fenced.py

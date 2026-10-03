@@ -1,6 +1,6 @@
 # BG0915: retro-validate and the gate's unattributed path still hand over their header and prose as known issues
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_close_gap_lines_rest.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

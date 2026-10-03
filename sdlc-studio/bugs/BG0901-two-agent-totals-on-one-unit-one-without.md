@@ -1,6 +1,6 @@
 # BG0901: Two agent totals on one unit, one without minutes, fall back to the span unlabelled
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_partial_agent_minutes.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py

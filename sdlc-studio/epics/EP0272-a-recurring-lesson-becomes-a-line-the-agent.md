@@ -1,6 +1,6 @@
 # EP0272: A recurring lesson becomes a line the agent reads
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 1
 > **Parent:** CR0608
 > **Created:** 2026-10-02
@@ -14,7 +14,7 @@ Decomposed from CR0608. Delivers the work CR0608 requested.
 
 ## Story Breakdown
 
-- [ ] [US0982: The lane brief tells a repair to carry only its blocking fix and pins](../stories/US0982-the-lane-brief-tells-a-repair-to-carry.md)
+- [x] [US0982: The lane brief tells a repair to carry only its blocking fix and pins](../stories/US0982-the-lane-brief-tells-a-repair-to-carry.md)
 
 ## Revision History
 

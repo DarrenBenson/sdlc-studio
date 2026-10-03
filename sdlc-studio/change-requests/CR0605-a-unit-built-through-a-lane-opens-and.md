@@ -1,6 +1,6 @@
 # CR-0605: A unit built through a lane opens and closes its own span, so the report measures per-unit minutes
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0271
 > **Priority:** Medium
 > **Type:** Improvement

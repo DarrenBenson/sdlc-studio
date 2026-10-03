@@ -1,6 +1,6 @@
 # BG0903: lane return and lane brief take agent totals silently in three cases
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_totals_said.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

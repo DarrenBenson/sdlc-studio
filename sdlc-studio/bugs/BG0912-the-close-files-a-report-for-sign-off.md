@@ -1,6 +1,6 @@
 # BG0912: The close files a report for sign-off without putting the readable page in front of the operator
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_close_shows_the_page.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

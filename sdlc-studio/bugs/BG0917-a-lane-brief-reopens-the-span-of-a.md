@@ -1,6 +1,6 @@
 # BG0917: A lane brief reopens the span of a bug already at Fixed or Verified
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_rebrief_terminal_bug.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

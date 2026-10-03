@@ -1,6 +1,6 @@
 # BG0887: The review command's dashboard and JSON show a per-document health percentage that no code computes
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/help/review.md, tools/tests/test_lean_review_health_docs.py, changelog.d/BG0887.md

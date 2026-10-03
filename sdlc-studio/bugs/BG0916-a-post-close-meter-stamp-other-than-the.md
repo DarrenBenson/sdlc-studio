@@ -1,6 +1,6 @@
 # BG0916: A post-close meter stamp other than the report stamp still moves a re-filed page's main-thread tokens
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_reclose_meter_any_stamp.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

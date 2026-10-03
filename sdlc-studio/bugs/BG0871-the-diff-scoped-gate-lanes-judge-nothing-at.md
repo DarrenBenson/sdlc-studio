@@ -1,6 +1,6 @@
 # BG0871: The diff-scoped gate lanes judge nothing at the push boundary, because their scope is the working-tree diff, which is empty on a clean pushed commit
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py,.claude/skills/sdlc-studio/scripts/tests/test_gate.py,changelog.d/BG0871.md

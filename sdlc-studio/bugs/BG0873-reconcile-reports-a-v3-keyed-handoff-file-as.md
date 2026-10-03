@@ -1,6 +1,6 @@
 # BG0873: reconcile reports a v3-keyed handoff file as an orphan index row
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_meta_v3_keys.py, changelog.d/BG0873.md

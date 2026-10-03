@@ -1,6 +1,6 @@
 # US0982: The lane brief tells a repair to carry only its blocking fix and pins
 
-> **Status:** In Progress
+> **Status:** Done
 > **Delivers:** CR0608
 > **Created:** 2026-10-02
 > **Created-by:** sdlc-studio new

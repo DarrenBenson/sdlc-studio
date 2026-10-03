@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 2 |
+| Draft | 0 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 237 |
+| Done | 239 |
 | Superseded | 33 |
 | **Total** | **272** |
 
@@ -78,8 +78,8 @@
 | [EP0268](EP0268-one-page-ends-a-run-the-report-carries.md) | One page ends a run: the report carries what the handoff carried | Done | 2 | -- | 2026-10-01 | 2026-10-01 |
 | [EP0269](EP0269-the-quick-start-installs-a-release-that-is.md) | The quick start installs a release that is verified | Done | 1 | -- | 2026-10-01 | 2026-10-01 |
 | [EP0270](EP0270-low-findings-that-reach-users-fixed-in-themes.md) | Low findings that reach users, fixed in themes | Done | 9 | -- | 2026-10-01 | 2026-10-01 |
-| [EP0271](EP0271-the-sprint-report-measures-each-unit-s-real.md) | The sprint report measures each unit's real cost | Draft | 3 | -- | 2026-10-02 | 2026-10-02 |
-| [EP0272](EP0272-a-recurring-lesson-becomes-a-line-the-agent.md) | A recurring lesson becomes a line the agent reads | Draft | 1 | -- | 2026-10-02 | 2026-10-02 |
+| [EP0271](EP0271-the-sprint-report-measures-each-unit-s-real.md) | The sprint report measures each unit's real cost | Done | 3 | -- | 2026-10-02 | 2026-10-02 |
+| [EP0272](EP0272-a-recurring-lesson-becomes-a-line-the-agent.md) | A recurring lesson becomes a line the agent reads | Done | 1 | -- | 2026-10-02 | 2026-10-02 |
 
 ## Archived Releases
 

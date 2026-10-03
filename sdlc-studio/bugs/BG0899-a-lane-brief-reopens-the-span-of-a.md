@@ -1,6 +1,6 @@
 # BG0899: A lane brief reopens the span of a unit already at a terminal status
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_rebrief_terminal.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

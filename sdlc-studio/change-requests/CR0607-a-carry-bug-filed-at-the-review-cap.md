@@ -1,6 +1,6 @@
 # CR-0607: A carry bug filed at the review cap does not count against the triage session cap
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0271
 > **Priority:** Low
 > **Type:** Improvement

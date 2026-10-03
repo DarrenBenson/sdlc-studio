@@ -1,6 +1,6 @@
 # BG0906: Two of D0304's time-to-restore rules are unpinned: the FIRST success restores, and an in-progress run ends no streak
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_dora_restore_pins.py

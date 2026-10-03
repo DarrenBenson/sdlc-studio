@@ -1,6 +1,6 @@
 # BG0918: The close warns that a note contradicts the page when the note writes 1.70x and the page 1.7x
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_note_ratio_numeric.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
