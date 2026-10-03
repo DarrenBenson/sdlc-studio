@@ -25,12 +25,16 @@ Pin and fix each as named; merge duplicate #### headings in one section; refuse 
 
 - [ ] **AC1** Given a cut with a #### block in a section that a later ### heading follows, and two fragments carrying #### Retired flags in one section, when the changelog is cut, then it lints clean with one merged heading. Fails on: the missing-blank-line mutant and the current duplicate headings
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_last_lows.py::V61LastLowsTests::test_the_cut_places_every_hash4_block_cleanly
+  - **Verified:** yes (2026-10-03)
 - [ ] **AC2** Given a goal-review fields file whose seats value is a string or an object, when record refuses it, then the message says seats must be a list. Fails on: the current refusal naming a character or key
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_last_lows.py::V61LastLowsTests::test_a_non_list_seats_value_is_named
+  - **Verified:** yes (2026-10-03)
 - [ ] **AC3** Given a goal note of 20,000 characters made of repeated measure names with no whitespace, when the close checks it, then it finishes in well under a second. Fails on: the current quadratic scan
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_last_lows.py::V61LastLowsTests::test_the_note_parser_is_linear_on_repeated_names
+  - **Verified:** yes (2026-10-03)
 - [ ] **AC4** Given the TRD's .local table, a row whose writer cell names a retired script command such as 'mutation.py run' fails the specifications test, and the install.ps1 source-read arm fails when the fetched tag is discarded. Fails on: the current tests, which pass both
   - **Verify:** pytest tools/tests/test_lean_docs_v61.py tools/tests/test_lean_install_ps1_default.py
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

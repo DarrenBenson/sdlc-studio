@@ -25,6 +25,7 @@ Let `reopen_run` accept a run whose page is filed and not signed (outcome runnin
 
 - [ ] **AC1** Given a run closed with a filed page and not signed, when sprint reopen runs with a reason, then the run is reopened recording the page it breaks, a later lane return --tokens records, and the next close files a new page; a run with no page filed is still refused as already open. Fails on: the current reopen, which refuses the closed unsigned run
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_reopen_closed_unsigned.py::ReopenClosedUnsignedTests::test_a_closed_unsigned_run_reopens
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 
