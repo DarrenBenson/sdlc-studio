@@ -9354,7 +9354,22 @@ def _file_the_report(root, retro_id):
     return report_id, fingerprint
 
 
-_NOTE_RATIO_RE = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?)x\b")
+#: A ratio as written: a number and x, X or the multiplication sign. The page writes its own
+#: with a lower-case x; a note may write any of the three.
+_RATIO = r"(?<![\w.])\d+(?:\.\d+)?[xX\u00d7](?!\w)"
+_NOTE_RATIO_RE = re.compile(_RATIO)
+
+
+def _note_ratios(note: str, measures) -> list[str]:
+    """The ratios `note` quotes for one of `measures`, as written: each the first ratio within
+    three words after a measure's name (`tokens at 1.7x`, `Tokens ratio 1.7X`). A ratio beside
+    no measure name, such as `10x faster`, is not a claim about the page and is not read."""
+    names = "|".join(re.escape(m) for m in measures if m)
+    if not names:
+        return []
+    beside = re.compile(rf"\b(?:{names})\b\S*\s+(?:(?!{_RATIO})\S+\s+){{0,3}}?({_RATIO})",
+                        re.IGNORECASE)
+    return [m.group(1) for m in beside.finditer(note)]
 
 
 def goal_note_contradiction(root, report_id: str) -> str | None:
@@ -9373,7 +9388,8 @@ def goal_note_contradiction(root, report_id: str) -> str | None:
     derived = {str(r["est_measure"]["value"]): str(r["est_ratio"]["value"])
                for r in est.get("rows") or []
                if _NOTE_RATIO_RE.fullmatch(str(r.get("est_ratio", {}).get("value") or ""))}
-    quoted = [m.group(0) for m in _NOTE_RATIO_RE.finditer(note)]
+    quoted = _note_ratios(note, [str((r.get("est_measure") or {}).get("value") or "")
+                                 for r in est.get("rows") or []])
     # As numbers at the page's precision, so 1.70x and the page's 1.7x agree.
     stated = {round(float(r[:-1]), 2) for r in derived.values()}
     unmatched = [q for q in dict.fromkeys(quoted) if round(float(q[:-1]), 2) not in stated]
