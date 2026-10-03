@@ -8196,14 +8196,20 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
     if got is None:
         print("WARNING --tokens was not recorded: no run is open, so there is no run to count "
               "the builder's total against", file=sys.stderr)
-    elif got is not unreadable and got.get("unit") not in {
-            sdlc_md.norm_id(u) for u in _lane_run_state(
-                "agent_total_batch", lambda: run_state.read(root).get("batch") or [], [],
-                "the run state could not be read, so whether the total is on the batch is "
-                "UNKNOWN")}:
-        print(f"WARNING --tokens was recorded off the batch: {got.get('unit')} is not in the open "
-              f"run's batch, so the total counts in the run's but no per-unit row shows it",
+    elif got is not unreadable and got.get("unit") not in _lane_run_state(
+            # the page's own unit set (planned, added or dropped), so a unit dropped at the cap,
+            # whose per-unit row does show the total, is not warned about
+            "agent_total_batch", lambda: _page_units(run_state.read(root)), [],
+            "the run state could not be read, so whether the total is on the batch is UNKNOWN"):
+        print(f"WARNING --tokens was recorded off the batch: {got.get('unit')} was never in the "
+              f"open run's batch, so the total counts in the run's but no per-unit row shows it",
               file=sys.stderr)
+
+
+def _page_units(state: dict) -> list[str]:
+    """The units the page lists a per-unit row for: planned, added or dropped."""
+    import sprint_report  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    return sprint_report._unit_order(state)[4]
 
 
 def _lane_pairs(values: list[str] | None, flag: str) -> dict:

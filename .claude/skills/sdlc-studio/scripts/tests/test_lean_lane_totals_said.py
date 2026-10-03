@@ -21,7 +21,7 @@ from pathlib import Path
 SCRIPTS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS))
 
-UNITS = ("US0101", "US0199")
+UNITS = ("US0101", "US0198", "US0199")
 
 
 def _live(name: str):
@@ -86,6 +86,24 @@ class LaneTotalsSaidTests(unittest.TestCase):
         self.assertEqual((0, []), (rc, self.said(lines)), lines)
         self.assertEqual([9000, 7000], [r["tokens"] for r in self.rs.delegated_records(
             self.rs.read(self.root))])
+
+    def test_a_dropped_unit_is_not_off_the_batch(self) -> None:
+        """D0317: the warning tests the page's unit set, as `sprint_report._unit_ledger` lists
+        it. A unit planned and then dropped (a carry at the cap) keeps its per-unit row, which
+        shows the total, so nothing is said; a unit never in the batch is still said beside it.
+        MUTANT: test the live batch, which no longer holds the dropped unit."""
+        self.rs.open_run(self.root, batch=["US0101", "US0198"], goal="g")
+        self.rs.drop_from_batch(self.root, "US0198", "carried at the cap")
+        rc, lines = self.lane("return", "--units", "US0198", "--tokens", "9000")
+        self.assertEqual([], self.said(lines), lines)
+        rc_never, lines = self.lane("return", "--units", "US0199", "--tokens", "9000")
+        self.assertEqual(1, len(self.said(lines)), lines)
+        self.assertIn("US0199", self.said(lines)[0])
+        self.assertEqual(rc, rc_never)
+        ledger = _live("sprint_report")._unit_ledger(
+            self.root, self.rs.read(self.root), "run-state", None, (None, None))
+        self.assertIn("US0198", [u["id"] for u in ledger],
+                      "premise: the page lists a row for the dropped unit")
 
 
 if __name__ == "__main__":
