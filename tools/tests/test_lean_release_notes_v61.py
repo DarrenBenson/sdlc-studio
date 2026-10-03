@@ -197,6 +197,25 @@ def migrate_sentence_problems(text: str, named: set[int]) -> list[str]:
     return problems
 
 
+def entries_61(changelog: str) -> list[tuple[str, str]]:
+    """(section, body) of each 6.1 entry wherever the layout holds it at the time: the pending
+    `changelog.d/` fragments before the cut, the `## [6.1.0]` section's subsections after it,
+    so the controls built from the entries hold on both sides of the release commit."""
+    pending = sorted(FRAGMENTS.glob("*.md")) if FRAGMENTS.is_dir() else []
+    if pending:
+        out = []
+        for p in pending:
+            head, _, body = p.read_text(encoding="utf-8").partition("\n")
+            m = re.match(r"<!-- section: (\w+) -->", head)
+            out.append((m.group(1) if m else "", body))
+        return out
+    cut = re.search(r"^## \[6\.1\.0\][^\n]*\n(.*?)(?=^## \[|\Z)", changelog, re.M | re.S)
+    if not cut:
+        return []
+    return [(m.group(1), m.group(2)) for m in
+            re.finditer(r"^### (\w+)\n(.*?)(?=^### |\Z)", cut.group(1), re.M | re.S)]
+
+
 def install_bullet_problems(text: str) -> list[str]:
     """BG0935: the breaking bullet on the install default gives both installers' way to `main`."""
     body = section(text, r"^Breaking changes$") or ""
@@ -233,8 +252,7 @@ class ReleaseNotesTests(unittest.TestCase):
         copied = NOTES_60.read_text(encoding="utf-8")
         self.assertFlags(lead(copied), "the opening")
         self.assertFlags(lead(copied.replace("6.0.0", "6.1.0")), "no theme")
-        fragments = "\n".join("\n".join(p.read_text(encoding="utf-8").splitlines()[1:])
-                              for p in sorted(FRAGMENTS.glob("*.md")))
+        fragments = "\n".join(body for _section, body in entries_61(self.changelog))
         composed = self.text.replace("## Upgrading from 6.0", fragments + "\n\n## Upgrading from 6.0")
         self.assertFlags(lead(composed), "unit id")
         self.assertFlags(lead(self.text + "\n29 of 34 units read NOT MEASURED.\n"),
@@ -253,15 +271,15 @@ class ReleaseNotesTests(unittest.TestCase):
         self.assertEqual([], lead_problems(before.replace("#unreleased)", "#610---2026-10-04)"), cut))
 
     def test_every_breaking_change_names_its_replacement(self) -> None:
-        """AC2. MUTANTS: a section copied from the two fragments filed under Breaking alone,
+        """AC2. MUTANTS: a section copied from the two entries filed under Breaking alone,
         which name the handoff writers and `review.policy` but not the install default or the
         Copilot target; a retired surface listed with no replacement. Each replacement the
         section names is then run."""
-        breaking = [p for p in sorted(FRAGMENTS.glob("*.md"))
-                    if p.read_text(encoding="utf-8").startswith("<!-- section: Breaking -->")]
-        self.assertGreaterEqual(len(breaking), 2, breaking)
-        copied = "## Breaking changes\n\n" + "\n".join(
-            "\n".join(p.read_text(encoding="utf-8").splitlines()[1:]) for p in breaking) + "\n"
+        breaking = [body for section_name, body in entries_61(self.changelog)
+                    if section_name == "Breaking"]
+        self.assertGreaterEqual(sum(len(re.findall(r"^- ", b, re.M)) for b in breaking), 2,
+                                breaking)
+        copied = "## Breaking changes\n\n" + "\n".join(breaking) + "\n"
         problems = breaking_problems(copied)
         self.assertFlags(problems, "the install default")
         self.assertFlags(problems, "the Copilot target")
