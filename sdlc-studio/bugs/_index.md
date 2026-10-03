@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 0 |
+| Open | 1 |
 | In Progress | 0 |
 | Fixed | 782 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **939** |
+| **Total** | **940** |
 
 ## All Bugs
 
@@ -298,6 +298,7 @@
 | [BG0937](BG0937-a-closed-run-that-is-not-yet-signed.md) | A closed run that is not yet signed cannot be reopened, so work added before the sign cannot record its cost | Fixed | Medium | 2026-10-03 | 2026-10-03 |
 | [BG0938](BG0938-the-five-lows-the-last-v6-1-reviews.md) | The five lows the last v6.1 reviews raised (D0334) | Fixed | Low | 2026-10-03 | 2026-10-03 |
 | [BG0939](BG0939-install-ps1-rejects-every-release-download-the-sha256.md) | install.ps1 rejects every release download: the .sha256 sidecar is read as bytes, so the digest never matches | Fixed | High | 2026-10-03 | 2026-10-03 |
+| [BG0940](BG0940-a-ruling-logged-between-the-close-and-the.md) | A ruling logged between the close and the sign changes the filed page, and sign seals it without re-deriving | Open | Medium | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 
