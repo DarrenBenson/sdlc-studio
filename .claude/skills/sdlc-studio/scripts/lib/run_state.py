@@ -43,6 +43,7 @@ import json
 import math
 import os
 import re
+import sys
 from pathlib import Path
 
 from . import sdlc_md
@@ -1565,7 +1566,10 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
     """Record one delegated agent's SUPPLIED token total against the open run.
 
     Returns the record, or None when no run is open - a spend counted against a run with no
-    identity could not be joined to anything later, so it is not counted at all.
+    identity could not be joined to anything later, so it is not counted at all. A run whose
+    outcome is no longer running is sealed: its page is derived from it, so a late total would
+    move a signed figure. Nothing is recorded into it and one line on stderr says so - a
+    warning, not a refusal.
 
     A non-positive or non-integer total RAISES rather than being recorded: the whole point of
     this record is that it is a real figure an agent reported, and a 0 recorded here would be
@@ -1580,7 +1584,13 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
                                 or not math.isfinite(minutes) or minutes <= 0):
         raise ValueError(f"a delegated agent's minutes must be a positive finite number, got "
                          f"{minutes!r}")
-    if not read(repo_root).get("run_id"):
+    state = read(repo_root)
+    if not state.get("run_id"):
+        return None
+    if state.get("outcome") != RUNNING:
+        print(f"WARNING the delegated total of {tokens:,} tokens was not recorded: run "
+              f"{state['run_id']} is sealed (outcome {state.get('outcome')}), so a late total "
+              f"would move its signed page", file=sys.stderr)
         return None
     entry = {"tokens": tokens, "agent": agent, "note": note,
              "provenance": SUPPLIED, "recorded_at": sdlc_md.now_iso8601()}
