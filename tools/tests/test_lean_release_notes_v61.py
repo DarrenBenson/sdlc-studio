@@ -1,0 +1,290 @@
+"""US0983: the v6.1.0 release notes lead with what changed for the person using it.
+
+The reader is a founder-engineer on 6.0.0 deciding whether to take 6.1. Each check is a function
+returning its problems, run on the notes and on a control it must refuse: the 6.0.0 notes with
+the version changed, a draft composed from the changelog fragments, a figure with its source
+cut. The breaking changes are judged by running each named replacement, and the CHANGELOG link
+against the layout the CHANGELOG has at the time: `[Unreleased]` before the cut, `[6.1.0]`
+after it.
+"""
+# test-census-subject: docs/release-notes-v6.1.0.md
+from __future__ import annotations
+
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from test_lean_release_notes_v6 import (  # noqa: E402
+    NOT_A_FIGURE, UNIT_ID, _blank, changelog_sections, section, sections, units)
+
+NOTES = REPO / "docs" / "release-notes-v6.1.0.md"
+NOTES_60 = REPO / "docs" / "release-notes-v6.0.0.md"
+CHANGELOG = REPO / "CHANGELOG.md"
+FRAGMENTS = REPO / "changelog.d"
+SCRIPTS = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts"
+
+THEMES = ("a run ends with its signed report", "the report states what it measured",
+          "a plain install is the latest verified release",
+          "migrate tells you more of what it leaves you", "fewer hand moves at the close")
+#: What a figure's sentence or row may name as its source.
+SOURCE = re.compile(r"RPT\d{4}|gate_timing\.py|CHANGELOG|known-issues")
+#: The release numbers themselves, and an exit status, are not figures.
+RELEASE = re.compile(r"\b6\.[01]\b(?!\.\d)|\b(?:at )?exits? \d\b")
+COUNT_LINE = re.compile(r"^\*\*v6\.1\.0 discloses \d+ open defects: \d+ Medium, \d+ Low\.\*\*$")
+#: Each breaking change, label -> (what names it, the replacement its bullet must carry).
+BREAKING = {
+    "the handoff writers": (r"`handoff\.py generate`.*`artifact\.py new --type handoff`",
+                            r"`sprint\.py plan --worklist RPTxxxx`"),
+    "--require-handoff": (r"`gate\.py --require-handoff`", r"`sprint\.py sign`"),
+    "review.policy": (r"`review\.policy`", r"`migrate --apply`.*review cap"),
+    "the install default": (r"(?i)plain install[^.]*`main`", r"`--version main`"),
+    "the Copilot target": (r"Copilot CLI", r"`~/\.agents/skills`"),
+    "the revert-check lane": (r"`revert-check` lane", r"`verify_ac\.py revert-check"),
+    "validate.py check": (r"`validate\.py check` exits 1", r"`sdlc-studio/`"),
+}
+
+
+def _env() -> dict:
+    return {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+
+
+def _run(*argv: str, cwd: Path | None = None) -> subprocess.CompletedProcess:
+    return subprocess.run(list(argv), capture_output=True, text=True, check=False, timeout=600,
+                          env=_env(), cwd=str(cwd) if cwd else None)
+
+
+def _py(script: str, *argv: str) -> subprocess.CompletedProcess:
+    return _run(sys.executable, "-B", str(SCRIPTS / script), *argv)
+
+
+def _norm(text: str) -> str:
+    return " ".join(text.replace("`", "").replace("**", "").lower().split())
+
+
+def figure_problems(text: str) -> list[str]:
+    """Every sentence or table row holding a figure names its source."""
+    problems = []
+    # A code span becomes a word, so a sentence opening with one still starts a new unit
+    # rather than running on into the sentence before it, whose source would excuse it.
+    for unit in units(re.sub(r"`[^`\n]*`", "Code", _blank(text))):
+        if COUNT_LINE.match(unit.strip()):
+            continue       # written by `known_issues.py write`; its paragraph names the page
+        if re.search(r"\d", RELEASE.sub("", NOT_A_FIGURE.sub("", unit))) and not SOURCE.search(unit):
+            problems.append(f"a figure with no source: {unit.strip()[:140]!r}")
+    return problems
+
+
+def lead_problems(text: str, changelog: str) -> list[str]:
+    """AC1: a one-sentence headline naming 6.1.0 as current, the five themes, the CHANGELOG
+    section holding 6.1's entries and the upgrade page linked, no unit id outside the
+    known-issues and sources passages, and no figure without its source."""
+    problems = []
+    body = text.split("\n", 1)[1] if text.startswith("# ") else text
+    paras = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
+    headline = " ".join(paras[0].replace("**", "").split()) if paras else ""
+    if len(re.findall(r"[.!?](?:\s|$)", headline)) != 1 or not re.search(
+            r"\b6\.1\.0 is the current release\b", headline):
+        problems.append(f"the opening is not one sentence naming 6.1.0 the current release: "
+                        f"{headline[:120]!r}")
+    firsts = sections(text)
+    first = _norm(firsts[0][1]) if firsts else ""
+    problems += [f"the first section lists no theme {t!r}" for t in THEMES if t not in first]
+    labels = changelog_sections(changelog)
+    linked = {labels.get(a) for a in re.findall(r"\]\(\.\./CHANGELOG\.md#([\w-]+)\)", text)}
+    want = "6.1.0" if "6.1.0" in labels.values() else "Unreleased"
+    if want not in linked:
+        problems.append(f"no link to the CHANGELOG's {want} section")
+    if "](existing-users.md)" not in text:
+        problems.append("no link to docs/existing-users.md")
+    for heading, sbody in sections(_blank(text)):
+        if re.search(r"known issues|sources", heading, re.I):
+            continue
+        problems += [f"unit id {m} under '{heading}'" for m in UNIT_ID.findall(sbody)]
+    return problems + figure_problems(text)
+
+
+def breaking_problems(text: str) -> list[str]:
+    """AC2: each change a 6.0 user meets, beside its replacement, in one bullet."""
+    body = section(text, r"^Breaking changes$")
+    if body is None:
+        return ["no 'Breaking changes' section"]
+    bullets = [" ".join(b.split()) for b in re.split(r"\n(?=- )", body) if b.startswith("- ")]
+    problems = []
+    for label, (names, instead) in BREAKING.items():
+        hits = [b for b in bullets if re.search(names, b)]
+        if not hits:
+            problems.append(f"the breaking changes never name {label}")
+        elif not any(re.search(instead, b) for b in hits):
+            problems.append(f"{label} is named with no replacement beside it")
+    return problems
+
+
+def upgrade_problems(text: str) -> list[str]:
+    """AC3: reinstall, `migrate` then `migrate --apply`, what each leaves, the CI limit, the HO
+    files readable, and the upgrade page linked."""
+    old = section(text, r"^Upgrading from 6\.0$")
+    if old is None:
+        return ["no 'Upgrading from 6.0' section"]
+    problems = []
+    if not re.search(r"(?i)\breinstall\b", old) or "latest verified release" not in old:
+        problems.append("the path does not say to reinstall for the latest verified release")
+    lines = [ln for ln in old.splitlines() if ln.startswith("python3") and "migrate.py" in ln]
+    dry = [i for i, ln in enumerate(lines) if "--apply" not in ln]
+    wet = [i for i, ln in enumerate(lines) if "--apply" in ln]
+    if not (dry and wet and dry[0] < wet[0]):
+        problems.append("the steps are not `migrate` then `migrate --apply`")
+    if not re.search(r"\*\*`migrate`\*\*[^\n]*\bwrites nothing\b", old):
+        problems.append("the path does not say the dry run writes nothing")
+    apply = re.search(r"\*\*`migrate --apply`\*\*(.*?)\n\n", old, re.S)
+    apply = " ".join(apply.group(1).split()) if apply else ""
+    if not re.search(r"removes `review\.policy`", apply):
+        problems.append("the path does not say `migrate --apply` removes `review.policy`")
+    if not (re.search(r"markdown docs", apply) and all(
+            n in apply for n in ("`handoff.py generate`", "`gate.py --require-handoff`"))):
+        problems.append("the path does not say migrate names the retired handoff commands "
+                        "in markdown docs")
+    sentences = re.split(r"(?<=[.!?])\s+", " ".join(old.split()))
+    ci = [s for s in sentences if re.search(r"\bCI\b", s)]
+    if not any(re.search(r"(?i)\b(?:neither|not|never)\b", s) and "scripts" in s for s in ci):
+        problems.append("the path does not say migrate leaves CI files and scripts unread")
+    problems += [f"a sentence implies migrate reads CI: {s[:100]!r}" for s in ci
+                 if re.search(r"(?i)\b(?:reads?|scans?|searches|finds|names)\b", s)
+                 and not re.search(r"(?i)\b(?:neither|nor|not|never)\b", s)]
+    if not re.search(r"(?s)\bHO files\b.*?\bstay readable\b", old):
+        problems.append("the path does not say the HO files stay readable")
+    if "](existing-users.md)" not in old:
+        problems.append("the path does not link docs/existing-users.md")
+    return problems
+
+
+class ReleaseNotesTests(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.text = NOTES.read_text(encoding="utf-8")
+        self.changelog = CHANGELOG.read_text(encoding="utf-8")
+
+    def mutant(self, old: str, new: str) -> str:
+        """The notes with `old`, which must occur exactly once, replaced."""
+        self.assertEqual(1, self.text.count(old), f"mutant anchor not unique: {old[:60]!r}")
+        return self.text.replace(old, new)
+
+    def assertFlags(self, problems: list[str], expected: str) -> None:
+        self.assertTrue([p for p in problems if expected in p],
+                        f"no problem naming {expected!r}: {problems}")
+
+    def test_the_notes_lead_with_what_changed_for_you(self) -> None:
+        """AC1. MUTANTS: the 6.0.0 notes with the version changed (headline '6.0.0 is the
+        current release', themes 'one plan, one review, one signature'); a draft composed from
+        the fragments, which are id-laden; '29 of 34 units read NOT MEASURED' with no source;
+        the `#unreleased` link left in place after the cut moved 6.1's entries under [6.1.0]."""
+        lead = lambda text: lead_problems(text, self.changelog)  # noqa: E731
+        copied = NOTES_60.read_text(encoding="utf-8")
+        self.assertFlags(lead(copied), "the opening")
+        self.assertFlags(lead(copied.replace("6.0.0", "6.1.0")), "no theme")
+        fragments = "\n".join("\n".join(p.read_text(encoding="utf-8").splitlines()[1:])
+                              for p in sorted(FRAGMENTS.glob("*.md")))
+        composed = self.text.replace("## Upgrading from 6.0", fragments + "\n\n## Upgrading from 6.0")
+        self.assertFlags(lead(composed), "unit id")
+        self.assertFlags(lead(self.text + "\n29 of 34 units read NOT MEASURED.\n"),
+                         "a figure with no source")
+        self.assertFlags(lead(self.mutant("in RPT0014, 29 of 34", "in one run, 29 of 34")),
+                         "a figure with no source")
+        self.assertFlags(lead(self.text.replace("](existing-users.md)", "]")), "existing-users")
+        self.assertEqual([], lead(self.text))
+
+        before = re.sub(r"#610---\d{4}-\d{2}-\d{2}\)", "#unreleased)", self.text)
+        self.assertIn("](../CHANGELOG.md#unreleased)", before)
+        cut = "## [Unreleased]\n\n## [6.1.0] - 2026-10-04\n\n## [6.0.0] - 2026-09-29\n"
+        precut = "## [Unreleased]\n\n## [6.0.0] - 2026-09-29\n"
+        self.assertEqual([], lead_problems(before, precut))
+        self.assertFlags(lead_problems(before, cut), "6.1.0 section")
+        self.assertEqual([], lead_problems(before.replace("#unreleased)", "#610---2026-10-04)"), cut))
+
+    def test_every_breaking_change_names_its_replacement(self) -> None:
+        """AC2. MUTANTS: a section copied from the two fragments filed under Breaking alone,
+        which name the handoff writers and `review.policy` but not the install default or the
+        Copilot target; a retired surface listed with no replacement. Each replacement the
+        section names is then run."""
+        breaking = [p for p in sorted(FRAGMENTS.glob("*.md"))
+                    if p.read_text(encoding="utf-8").startswith("<!-- section: Breaking -->")]
+        self.assertGreaterEqual(len(breaking), 2, breaking)
+        copied = "## Breaking changes\n\n" + "\n".join(
+            "\n".join(p.read_text(encoding="utf-8").splitlines()[1:]) for p in breaking) + "\n"
+        problems = breaking_problems(copied)
+        self.assertFlags(problems, "the install default")
+        self.assertFlags(problems, "the Copilot target")
+        self.assertFlags(breaking_problems(self.mutant(
+            "pass `--version main` to keep the moving branch", "it is gone")),
+            "the install default is named with no replacement")
+        self.assertEqual([], breaking_problems(self.text))
+
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "p"
+            root.mkdir()
+            self.assertEqual(0, _py("init.py", "run", "--root", str(root)).returncode)
+            config = root / "sdlc-studio" / ".config.yaml"
+            config.write_text(config.read_text(encoding="utf-8")
+                              + "\nreview:\n  policy: carry-forward\n", encoding="utf-8")
+            with self.subTest(replacement="sprint.py plan --worklist RPTxxxx"):
+                proc = _py("sprint.py", "plan", "--root", str(root), "--worklist", "RPT0001")
+                self.assertIn("signed report", proc.stdout + proc.stderr)
+            with self.subTest(replacement="sprint.py sign"):
+                proc = _py("sprint.py", "sign", "--help")
+                self.assertEqual(0, proc.returncode, proc.stderr)
+                self.assertIn("--report", proc.stdout)
+            with self.subTest(retired="handoff.py generate"):
+                self.assertEqual(2, _py("handoff.py", "generate").returncode)
+            with self.subTest(retired="gate.py --require-handoff"):
+                proc = _py("gate.py", "--root", str(root), "--require-handoff", "HO0001")
+                self.assertEqual(2, proc.returncode, proc.stdout + proc.stderr)
+            with self.subTest(replacement="migrate --apply removes review.policy"):
+                proc = _py("migrate.py", "--root", str(root), "--apply")
+                self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+                self.assertNotIn("policy", config.read_text(encoding="utf-8"))
+            with self.subTest(retired="the revert-check lane"):
+                proc = _py("gate.py", "--root", str(root), "--release", "--boundary", "release",
+                           "--only", "revert-check", "--format", "json")
+                self.assertIn("unknown check name(s): revert-check", proc.stdout)
+            with self.subTest(replacement="verify_ac.py revert-check --unit"):
+                proc = _py("verify_ac.py", "revert-check", "--help")
+                self.assertEqual(0, proc.returncode, proc.stderr)
+                self.assertIn("--unit", proc.stdout)
+            with self.subTest(change="validate.py check exits 1"):
+                bare = Path(d) / "bare"
+                bare.mkdir()
+                self.assertEqual(1, _py("validate.py", "check", "--root", str(bare)).returncode)
+        install = _run("bash", str(REPO / "install.sh"), "--help")
+        with self.subTest(replacement="install.sh --version main"):
+            self.assertEqual(0, install.returncode, install.stderr)
+            self.assertRegex(install.stdout, r"--version VER[^\n]*\n?[^\n]*`main`")
+        with self.subTest(change="Copilot CLI's global target"):
+            self.assertRegex(install.stdout, r"(?m)^\s*copilot\s+~/\.agents/skills\b")
+
+    def test_the_60_upgrade_path_is_given(self) -> None:
+        """AC3. MUTANTS: notes telling a 6.0 project a reinstall is all it needs (no `migrate`
+        lines); the two steps in the wrong order; a path implying `migrate` finds
+        `gate.py --require-handoff` in a project's CI."""
+        old = section(self.text, r"^Upgrading from 6\.0$")
+        steps = [ln for ln in old.splitlines() if ln.startswith("python3")]
+        self.assertEqual(2, len(steps), steps)
+        self.assertFlags(upgrade_problems(self.mutant("\n".join(steps) + "\n", "")),
+                         "`migrate` then `migrate --apply`")
+        self.assertFlags(upgrade_problems(self.mutant("\n".join(steps), "\n".join(reversed(steps)))),
+                         "`migrate` then `migrate --apply`")
+        self.assertFlags(upgrade_problems(self.mutant(
+            "Neither reads your CI files or scripts:",
+            "Both also read your CI files and scripts, and name a CI job that runs it:")),
+            "CI")
+        self.assertFlags(upgrade_problems(self.mutant("removes `review.policy`", "keeps your config")),
+                         "review.policy")
+        self.assertEqual([], upgrade_problems(self.text))
+
+
+if __name__ == "__main__":
+    unittest.main()
