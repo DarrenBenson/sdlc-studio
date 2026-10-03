@@ -1873,9 +1873,12 @@ def _ck_known_issues(ctx: dict) -> tuple:
 
 def _ck_cost(ctx: dict) -> tuple:
     """An operator's supplied total overrides; else the run's measured total, the figure the
-    Estimates section states; else per-unit telemetry."""
+    Estimates section states; else per-unit telemetry. The measured total is read over the
+    window the run's first filed page ended at, as a re-filed page reads it."""
+    import sprint  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     spend, run = ctx.get("spend") or {}, ctx.get("run") or {}
-    measured, agents = _run_tokens_actual(run, run_state.run_token_total(run)) if run else (
+    metered = _metered(run, _at(run.get(sprint.REPORT_WINDOW_END)))
+    measured, agents = _run_tokens_actual(run, run_state.run_token_total(metered)) if run else (
         None, 0)
     supplied = ctx.get("sprint_actual_tokens")
     if supplied:
@@ -2964,6 +2967,17 @@ def _ci_runs(root: Path, state: dict, state_rel: str, run_id: str | None
     if run_id or state.get("ended_at"):
         return [], state_rel
     return fetch_ci_runs(root)
+
+
+def _metered(state: dict, end: "datetime | None") -> dict:
+    """`state` keeping only the meter stamps taken at or before `end`, or all when it is None.
+
+    A stamp taken after the window (a unit moved In Progress after the close, a span the
+    re-close settled) is not the run's cost, and counting it moved a re-filed page, every
+    re-derivation of a filed one, and the close checklist's cost row beside the page."""
+    return {**state, run_state.TOKEN_STAMPS: [
+        s for s in state.get(run_state.TOKEN_STAMPS) or []
+        if not (isinstance(s, dict) and end and _at(s.get("at")) and _at(s.get("at")) > end)]}
 
 
 def _at(value) -> "datetime | None":
@@ -4133,12 +4147,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         current = run_state.session_tokens(root)
         if portable:
             current = run_state.portable(current, root)
-    # Only the meter stamps taken inside the window count: one taken after it (a unit moved In
-    # Progress after the close, a span the re-close settled) is not the run's cost, and counting
-    # it moved a re-filed page and every re-derivation of a filed one.
-    metered = {**state, run_state.TOKEN_STAMPS: [
-        s for s in state.get(run_state.TOKEN_STAMPS) or []
-        if not (isinstance(s, dict) and end and _at(s.get("at")) and _at(s.get("at")) > end)]}
+    metered = _metered(state, end)
     tokens = run_state.run_token_total(metered, current)
     readings = _page_readings(filed)
     ledger = _unit_ledger(root, state, state_rel, readings["points"],
