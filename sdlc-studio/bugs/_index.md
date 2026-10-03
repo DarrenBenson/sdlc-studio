@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 16 |
-| In Progress | 21 |
-| Fixed | 729 |
+| Open | 2 |
+| In Progress | 33 |
+| Fixed | 731 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
@@ -228,39 +228,39 @@
 | [BG0867](BG0867-a-status-transition-rewrites-an-index-row-in.md) | A status transition rewrites an index row in compact style under an aligned header, so markdownlint fails the index it just synced | Fixed | Low | 2026-10-01 | 2026-10-01 |
 | [BG0868](BG0868-refine-add-can-only-add-stories-under-a.md) | refine add can only add stories under a new epic, so a story for a request's existing epic is minted by hand | Fixed | Low | 2026-10-01 | 2026-10-01 |
 | [BG0869](BG0869-status-backlog-lists-fully-decomposed-requests-as-discovery.md) | status backlog lists fully decomposed requests as discovery options still to refine | Fixed | Low | 2026-10-01 | 2026-10-01 |
-| [BG0870](BG0870-the-pre-push-hook-s-fail-closed-checkout.md) | The pre-push hook's fail-closed checkout and annotated-tag peel are unpinned, it runs the release lanes on a branch tip pushed beside a tag, and an interrupted push leaves a prunable worktree | Open | Medium | 2026-10-01 | 2026-10-01 |
-| [BG0871](BG0871-the-diff-scoped-gate-lanes-judge-nothing-at.md) | The diff-scoped gate lanes judge nothing at the push boundary, because their scope is the working-tree diff, which is empty on a clean pushed commit | Open | Medium | 2026-10-01 | 2026-10-01 |
-| [BG0872](BG0872-next-id-py-allocate-mints-a-sequential-id.md) | next_id.py allocate mints a sequential id on a schema v3 project, where artifact.py new mints a ULID | Open | Medium | 2026-10-01 | 2026-10-01 |
-| [BG0873](BG0873-reconcile-reports-a-v3-keyed-handoff-file-as.md) | reconcile reports a v3-keyed handoff file as an orphan index row | Open | Low | 2026-10-01 | 2026-10-01 |
+| [BG0870](BG0870-the-pre-push-hook-s-fail-closed-checkout.md) | The pre-push hook's fail-closed checkout and annotated-tag peel are unpinned, it runs the release lanes on a branch tip pushed beside a tag, and an interrupted push leaves a prunable worktree | In Progress | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0871](BG0871-the-diff-scoped-gate-lanes-judge-nothing-at.md) | The diff-scoped gate lanes judge nothing at the push boundary, because their scope is the working-tree diff, which is empty on a clean pushed commit | In Progress | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0872](BG0872-next-id-py-allocate-mints-a-sequential-id.md) | next_id.py allocate mints a sequential id on a schema v3 project, where artifact.py new mints a ULID | In Progress | Medium | 2026-10-01 | 2026-10-01 |
+| [BG0873](BG0873-reconcile-reports-a-v3-keyed-handoff-file-as.md) | reconcile reports a v3-keyed handoff file as an orphan index row | In Progress | Low | 2026-10-01 | 2026-10-01 |
 | [BG0874](BG0874-us0978-did-not-converge-in-review-round-2.md) | US0978 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0875](BG0875-us0974-did-not-converge-in-review-round-2.md) | US0974 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0876](BG0876-npm-audit-reports-brace-expansion-and-markdown-it.md) | npm audit reports brace-expansion and markdown-it advisories in the dev lockfile | Fixed | High | 2026-10-01 | 2026-10-01 |
 | [BG0877](BG0877-four-more-places-still-print-a-schema-v3.md) | Four more places still print a schema v3 id as its hyphenless comparison key | Fixed | Low | 2026-10-01 | 2026-10-01 |
-| [BG0878](BG0878-config-py-show-prints-null-for-keys-whose.md) | config.py show prints null for keys whose default lives only in a reader's code | Open | Low | 2026-10-01 | 2026-10-01 |
+| [BG0878](BG0878-config-py-show-prints-null-for-keys-whose.md) | config.py show prints null for keys whose default lives only in a reader's code | In Progress | Low | 2026-10-01 | 2026-10-01 |
 | [BG0879](BG0879-us0977-did-not-converge-in-review-round-2.md) | US0977 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0880](BG0880-bg0839-did-not-converge-in-review-round-2.md) | BG0839 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0881](BG0881-status-reports-no-personas-for-a-project-holding.md) | status reports no personas for a project holding only the personas/index.md registry | Superseded | Low | 2026-10-01 | 2026-10-01 |
-| [BG0882](BG0882-harness-project-slug-does-not-truncate-a-long.md) | harness_project_slug does not truncate a long project path or map non-BMP characters as the harness does | Open | Low | 2026-10-01 | 2026-10-01 |
+| [BG0882](BG0882-harness-project-slug-does-not-truncate-a-long.md) | harness_project_slug does not truncate a long project path or map non-BMP characters as the harness does | In Progress | Low | 2026-10-01 | 2026-10-01 |
 | [BG0883](BG0883-bg0824-did-not-converge-in-review-round-2.md) | BG0824 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
 | [BG0884](BG0884-us0971-did-not-converge-in-review-round-2.md) | US0971 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-01 | 2026-10-01 |
-| [BG0885](BG0885-critic-py-record-writes-a-finding-into-critic.md) | critic.py record writes a finding into critic-verdicts.md unescaped, so markdown-shaped text breaks the lint | Open | Low | 2026-10-01 | 2026-10-01 |
-| [BG0886](BG0886-the-done-gate-s-own-refusal-messages-still.md) | The done gate's own refusal messages still print a v3 id as its hyphenless comparison key | Open | Low | 2026-10-01 | 2026-10-01 |
-| [BG0887](BG0887-the-review-command-s-dashboard-and-json-show.md) | The review command's dashboard and JSON show a per-document health percentage that no code computes | Open | Low | 2026-10-01 | 2026-10-01 |
-| [BG0888](BG0888-help-gate-md-says-the-commit-msg-hook.md) | help/gate.md says the commit-msg hook snippet degrades honestly with no script, but it blocks | Open | Low | 2026-10-01 | 2026-10-01 |
-| [BG0889](BG0889-a-padded-index-table-holding-a-wide-character.md) | A padded index table holding a wide character still fails MD060 after a row in it is rewritten | Open | Low | 2026-10-01 | 2026-10-01 |
+| [BG0885](BG0885-critic-py-record-writes-a-finding-into-critic.md) | critic.py record writes a finding into critic-verdicts.md unescaped, so markdown-shaped text breaks the lint | In Progress | Low | 2026-10-01 | 2026-10-01 |
+| [BG0886](BG0886-the-done-gate-s-own-refusal-messages-still.md) | The done gate's own refusal messages still print a v3 id as its hyphenless comparison key | In Progress | Low | 2026-10-01 | 2026-10-01 |
+| [BG0887](BG0887-the-review-command-s-dashboard-and-json-show.md) | The review command's dashboard and JSON show a per-document health percentage that no code computes | In Progress | Low | 2026-10-01 | 2026-10-01 |
+| [BG0888](BG0888-help-gate-md-says-the-commit-msg-hook.md) | help/gate.md says the commit-msg hook snippet degrades honestly with no script, but it blocks | In Progress | Low | 2026-10-01 | 2026-10-01 |
+| [BG0889](BG0889-a-padded-index-table-holding-a-wide-character.md) | A padded index table holding a wide character still fails MD060 after a row in it is rewritten | In Progress | Low | 2026-10-01 | 2026-10-01 |
 | [BG0890](BG0890-a-carried-unit-discharged-inside-the-same-run.md) | A carried unit discharged inside the same run is reported as dropped, so the page undercounts delivery | Fixed | Medium | 2026-10-02 | 2026-10-02 |
 | [BG0891](BG0891-dora-time-to-restore-pairs-a-red-ci.md) | DORA time to restore pairs a red CI run with an earlier green one and reports a negative duration | Fixed | Medium | 2026-10-02 | 2026-10-02 |
 | [BG0892](BG0892-velocity-rows-have-recorded-no-model-since-retro0126.md) | Velocity rows have recorded no model since RETRO0121, so calibration falls back to a July row of another model | Fixed | Medium | 2026-10-02 | 2026-10-02 |
 | [BG0893](BG0893-a-closed-and-signed-report-s-header-says.md) | A closed and signed report's header says the run window ends 'to open' | Fixed | Low | 2026-10-02 | 2026-10-02 |
 | [BG0894](BG0894-the-close-carries-a-lessons-status-line-as.md) | The close carries a lessons status line as a known issue ('lessons: 0 hit(s) from cited REJECTs') | Fixed | Low | 2026-10-02 | 2026-10-02 |
 | [BG0895](BG0895-a-finding-filed-during-the-run-and-then.md) | A finding filed during the run and then added to the batch invalidates the signed page when sign moves it terminal | Fixed | Medium | 2026-10-02 | 2026-10-02 |
-| [BG0896](BG0896-migrate-s-retired-surface-scan-reads-prose-such.md) | migrate's retired-surface scan reads prose such as 'mutation audit' as a retired command because .py is optional | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0896](BG0896-migrate-s-retired-surface-scan-reads-prose-such.md) | migrate's retired-surface scan reads prose such as 'mutation audit' as a retired command because .py is optional | In Progress | Low | 2026-10-02 | 2026-10-02 |
 | [BG0897](BG0897-the-boundary-control-in-test-cli-grammar-goes.md) | The boundary control in test_cli_grammar goes red when the corpus holds no open cross-epic reference, so a seal blocks the push | Fixed | High | 2026-10-02 | 2026-10-02 |
 | [BG0898](BG0898-the-report-s-minutes-row-divides-a-wall.md) | The report's Minutes row divides a wall-clock span by an active-work forecast | In Progress | Low | 2026-10-02 | 2026-10-02 |
 | [BG0899](BG0899-a-lane-brief-reopens-the-span-of-a.md) | A lane brief reopens the span of a unit already at a terminal status | In Progress | Low | 2026-10-02 | 2026-10-02 |
 | [BG0900](BG0900-the-report-drops-the-delegated-token-total-from.md) | The report drops the delegated token total from the run's actual when the session meter reads zero | In Progress | Low | 2026-10-02 | 2026-10-02 |
 | [BG0901](BG0901-two-agent-totals-on-one-unit-one-without.md) | Two agent totals on one unit, one without minutes, fall back to the span unlabelled | In Progress | Low | 2026-10-02 | 2026-10-02 |
-| [BG0902](BG0902-a-late-lane-return-tokens-writes-into-a.md) | A late lane return --tokens writes into a sealed run and invalidates its signed page | Open | Low | 2026-10-02 | 2026-10-02 |
+| [BG0902](BG0902-a-late-lane-return-tokens-writes-into-a.md) | A late lane return --tokens writes into a sealed run and invalidates its signed page | In Progress | Low | 2026-10-02 | 2026-10-02 |
 | [BG0903](BG0903-lane-return-and-lane-brief-take-agent-totals.md) | lane return and lane brief take agent totals silently in three cases | In Progress | Low | 2026-10-02 | 2026-10-02 |
 | [BG0904](BG0904-dora-counts-a-cancelled-or-skipped-ci-run.md) | DORA counts a cancelled or skipped CI run on main as a failed deployment | In Progress | Low | 2026-10-02 | 2026-10-02 |
 | [BG0905](BG0905-the-tokens-ratio-withheld-rule-s-delivered-unit.md) | The tokens-ratio withheld rule's delivered-unit half is untested, and its help text says briefed where the code counts any span | In Progress | Low | 2026-10-02 | 2026-10-02 |
@@ -271,7 +271,7 @@
 | [BG0910](BG0910-the-close-pre-flight-s-live-checklist-read.md) | The close pre-flight's live checklist read is unpinned | In Progress | Low | 2026-10-02 | 2026-10-02 |
 | [BG0911](BG0911-the-goal-verdict-s-note-can-quote-figures.md) | The goal verdict's note can quote figures the filed page contradicts, and the close says nothing | In Progress | Medium | 2026-10-02 | 2026-10-02 |
 | [BG0912](BG0912-the-close-files-a-report-for-sign-off.md) | The close files a report for sign-off without putting the readable page in front of the operator | In Progress | Medium | 2026-10-02 | 2026-10-02 |
-| [BG0913](BG0913-each-re-close-moves-the-run-s-window.md) | Each re-close moves the run's window end and token meter, so work after the first close counts as run cost | In Progress | Medium | 2026-10-02 | 2026-10-02 |
+| [BG0913](BG0913-each-re-close-moves-the-run-s-window.md) | Each re-close moves the run's window end and token meter, so work after the first close counts as run cost | Fixed | Medium | 2026-10-02 | 2026-10-02 |
 | [BG0914](BG0914-goal-review-fields-file-help-names-no-seat.md) | goal-review --fields-file help names no seat keys, so a fields document keyed role records nothing under the seat | In Progress | Low | 2026-10-02 | 2026-10-02 |
 | [BG0915](BG0915-retro-validate-and-the-gate-s-unattributed-path.md) | retro-validate and the gate's unattributed path still hand over their header and prose as known issues | In Progress | Low | 2026-10-02 | 2026-10-02 |
 | [BG0916](BG0916-a-post-close-meter-stamp-other-than-the.md) | A post-close meter stamp other than the report stamp still moves a re-filed page's main-thread tokens | In Progress | Low | 2026-10-03 | 2026-10-03 |
@@ -281,7 +281,7 @@
 | [BG0920](BG0920-the-close-checklist-s-cost-row-reads-the.md) | The close checklist's cost row reads the moved meter on a re-close while the re-filed page reads the first close's | In Progress | Low | 2026-10-03 | 2026-10-03 |
 | [BG0921](BG0921-the-goal-review-refusal-still-names-a-role.md) | The goal-review refusal still names a 'role' key after the help names 'seat' | Open | Low | 2026-10-03 | 2026-10-03 |
 | [BG0922](BG0922-the-goal-note-check-names-an-unrelated-nx.md) | The goal-note check names an unrelated 'Nx' figure as a contradiction and misses 1.7X and the multiplication sign | Open | Low | 2026-10-03 | 2026-10-03 |
-| [BG0923](BG0923-bg0913-did-not-converge-in-review-round-2.md) | BG0913 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-03 | 2026-10-03 |
+| [BG0923](BG0923-bg0913-did-not-converge-in-review-round-2.md) | BG0913 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 

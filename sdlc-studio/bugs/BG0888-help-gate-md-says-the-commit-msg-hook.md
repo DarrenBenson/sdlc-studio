@@ -1,6 +1,6 @@
 # BG0888: help/gate.md says the commit-msg hook snippet degrades honestly with no script, but it blocks
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/help/gate.md, tools/tests/test_lean_gate_commit_msg_snippet.py, changelog.d/BG0888.md

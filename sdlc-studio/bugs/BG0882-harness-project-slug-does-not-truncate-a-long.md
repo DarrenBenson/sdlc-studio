@@ -1,6 +1,6 @@
 # BG0882: harness_project_slug does not truncate a long project path or map non-BMP characters as the harness does
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_transcript_dir_harness.py, changelog.d/BG0882.md

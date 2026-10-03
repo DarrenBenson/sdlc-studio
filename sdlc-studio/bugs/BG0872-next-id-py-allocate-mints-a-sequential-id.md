@@ -1,6 +1,6 @@
 # BG0872: next_id.py allocate mints a sequential id on a schema v3 project, where artifact.py new mints a ULID
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/next_id.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_next_id_v3.py, changelog.d/BG0872.md

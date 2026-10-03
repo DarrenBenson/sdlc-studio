@@ -1,6 +1,6 @@
 # BG0870: The pre-push hook's fail-closed checkout and annotated-tag peel are unpinned, it runs the release lanes on a branch tip pushed beside a tag, and an interrupted push leaves a prunable worktree
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .githooks/pre-push,tools/tests/test_pre_push_hook.py,tools/tests/test_lean_prepush_pushed_commit.py,changelog.d/BG0870.md

@@ -1,6 +1,6 @@
 # US0981: A carry bug filed at the review cap does not count against the triage cap
 
-> **Status:** Ready
+> **Status:** In Progress
 > **Delivers:** CR0607
 > **Created:** 2026-10-02
 > **Created-by:** sdlc-studio new

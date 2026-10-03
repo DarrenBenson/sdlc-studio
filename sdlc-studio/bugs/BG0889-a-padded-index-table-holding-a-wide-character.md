@@ -1,6 +1,6 @@
 # BG0889: A padded index table holding a wide character still fails MD060 after a row in it is rewritten
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_index_wide_alignment.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_index_row_style.py, changelog.d/BG0889.md

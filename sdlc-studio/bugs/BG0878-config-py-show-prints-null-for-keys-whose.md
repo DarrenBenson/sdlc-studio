@@ -1,6 +1,6 @@
 # BG0878: config.py show prints null for keys whose default lives only in a reader's code
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_config_code_defaults.py, changelog.d/BG0878.md

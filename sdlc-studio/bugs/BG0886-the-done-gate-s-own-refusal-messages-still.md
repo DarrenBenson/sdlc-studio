@@ -1,6 +1,6 @@
 # BG0886: The done gate's own refusal messages still print a v3 id as its hyphenless comparison key
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_done_gate_display_id.py, changelog.d/BG0886.md

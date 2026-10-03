@@ -1,6 +1,6 @@
 # BG0923: BG0913 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_reclose_keeps_window.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -35,6 +35,7 @@ Fix each finding above, then deliver BG0913 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC6** BG0913 AC1 still passes: Given a run closed once at T with a main-thread meter reading M, when it is re-closed at T plus one hour after more session work, then the re-filed page's window end is T and its main-thread tokens read M. Fails on: the current code moves both to the re-close
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_reclose_keeps_window.py::RecloseKeepsWindowTests::test_a_re_close_keeps_the_first_close_s_window_and_meter
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

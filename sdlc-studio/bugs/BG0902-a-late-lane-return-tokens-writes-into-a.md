@@ -1,6 +1,6 @@
 # BG0902: A late lane return --tokens writes into a sealed run and invalidates its signed page
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_sealed_run_late_total.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
