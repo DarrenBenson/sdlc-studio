@@ -97,9 +97,12 @@ one line per key that `config-defaults.yaml` or the project's `.config.yaml` dec
 `<source> <dotted key> = <value>`, where the source is
 `project` for a leaf `.config.yaml` sets and `default` for one it does not; a project that sets
 `coverage.unit` leaves `coverage.integration` reading `default`. Every dotted key a script reads
-through `config.get` with a fixed default is declared in `config-defaults.yaml` with that default,
-as is `review.max_rounds`, so each is listed with the value in force. `--key` narrows the lines
-to that key or section.
+through `config.get` under a literal name with a fixed default is declared in
+`config-defaults.yaml` with that default, as is `review.max_rounds`, so each is listed with the
+value in force. The `test_execution.*` keys are not declared: `sprint.py` builds their names at
+run time and holds their defaults (`per_commit: selected`, `at_close: full`, `at_release: full`)
+in code, so `show --key test_execution.per_commit` exits 1 and `--sources` lists none of them
+unless the project's `.config.yaml` sets one. `--key` narrows the lines to that key or section.
 
 **PyYAML dependency (graceful):** parsing `.config.yaml` needs PyYAML (`pip install pyyaml`).
 Without it, the scripts do not crash: `config.get` degrades to the built-in default with a
