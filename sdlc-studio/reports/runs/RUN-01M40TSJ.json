@@ -2,7 +2,7 @@
   "schema": 1,
   "run_id": "RUN-01M40TSJ",
   "started_at": "2026-10-03T12:06:32Z",
-  "ended_at": "2026-10-03T19:44:54Z",
+  "ended_at": "2026-10-03T19:56:05Z",
   "outcome": "goal-reached",
   "goal": "done",
   "batch": [
@@ -638,6 +638,14 @@
       "was_ended_at": null,
       "report": "RPT0017",
       "reason": "D0336: BG0939 (High) found by main's windows-smoke CI, fixed before the tag"
+    },
+    {
+      "at": "2026-10-03T19:46:32Z",
+      "run_id": "RUN-01M40TSJ",
+      "from_outcome": "goal-reached",
+      "was_ended_at": "2026-10-03T19:44:54Z",
+      "report": "RPT0017",
+      "reason": "D0337 was logged after the close and before the sign, so the signed RPT0017 re-derives one more operator ruling than it was filed with; re-close and re-sign"
     }
   ],
   "batch_changes": [
@@ -969,7 +977,7 @@
         "undelivered": [],
         "defects": []
       },
-      "recorded_at": "2026-10-03T17:09:51Z"
+      "recorded_at": "2026-10-03T19:53:04Z"
     }
   ],
   "unit_actuals": {
@@ -1159,10 +1167,15 @@
       "at": "2026-10-03T17:06:34Z",
       "outstanding": 0,
       "stages": []
+    },
+    {
+      "at": "2026-10-03T19:49:47Z",
+      "outstanding": 0,
+      "stages": []
     }
   ],
   "close_not_measured": [],
-  "close_tree": "cd95f349021292d0582bf4791de7ff9f9a3a38d4",
+  "close_tree": "34d17472825d13892f9c3adf7e50b369ff5dc290",
   "report_gate_clear": [
     "BG0921",
     "BG0922",
@@ -1184,19 +1197,29 @@
     "US0984",
     "US0985"
   ],
-  "verified_sha": "8fa2207ad93a220c3bae2b49121e27ff534151f3",
+  "verified_sha": "56231b15ac662b7e835909ce178f4358a3f09d03",
   "close_known_issues": [],
   "ci_runs": {
     "source": "gh run list",
     "runs": [
       {
-        "conclusion": "",
+        "conclusion": "success",
+        "createdAt": "2026-10-03T17:17:21Z",
+        "databaseId": 37139961772,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "ab5713d967bbf885a8be383cb6df906c940179ed",
+        "updatedAt": "2026-10-03T17:58:17Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
         "createdAt": "2026-10-03T16:59:18Z",
         "databaseId": 37138857623,
         "event": "push",
         "headBranch": "main",
         "headSha": "428a6cc4789ae57c29ed0360255b394310d5ade4",
-        "updatedAt": "2026-10-03T16:59:22Z",
+        "updatedAt": "2026-10-03T17:53:43Z",
         "workflowName": "Lint"
       },
       {
@@ -1277,15 +1300,15 @@
     ]
   },
   "report_discharged": [],
-  "report": "RPT0017",
-  "report_fingerprint": "db2922d0db3f637e",
+  "report": "RPT0018",
+  "report_fingerprint": "85ed957fdc7797a1",
   "report_window_end": "2026-10-03T15:29:09Z",
   "unanswered": [],
   "unanswered_rulings_from": "RETRO0132",
   "signature": {
     "principal": "Darren Benson",
-    "signed_at": "2026-10-03T19:44:54Z",
-    "report": "RPT0017",
-    "fingerprint": "db2922d0db3f637e"
+    "signed_at": "2026-10-03T19:56:05Z",
+    "report": "RPT0018",
+    "fingerprint": "85ed957fdc7797a1"
   }
 }

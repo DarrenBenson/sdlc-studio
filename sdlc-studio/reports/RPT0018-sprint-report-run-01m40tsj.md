@@ -97,7 +97,7 @@ No open finding, close gap or carried unit is recorded.
 
 | Signed by | Date | Fingerprint signed |
 | --- | --- | --- |
-| not yet signed | not yet signed | not yet signed |
+| Darren Benson | 2026-10-03T19:56:05Z | 85ed957fdc7797a1 |
 
 Signing records the principal, the date and this report's fingerprint against RUN-01M40TSJ.
 
