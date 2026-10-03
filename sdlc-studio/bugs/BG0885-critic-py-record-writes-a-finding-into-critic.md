@@ -26,6 +26,7 @@ Write each finding's text inside a code span, or escape [ ] and | when recording
 
 - [ ] **AC1** Given a fixture bug briefed with `critic.py brief`, when `critic.py record ... --issues '[new] the shape [A-Z][A-Z_]{4,} matches UNKNOWN'` writes the verdict, then markdownlint with this repository's config reports no MD052 on `critic-verdicts.md`, and the ledger's reader (`critic.parse_findings` on the recorded row) returns the finding text exactly as given.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_verdict_finding_escape.py::VerdictFindingEscapeTests::test_a_bracketed_finding_lints_and_reads_back
+  - **Verified:** yes (2026-10-03)
   - **Fails-on:** HEAD writes the brackets raw and markdownlint fails MD052
 
 ## Revision History

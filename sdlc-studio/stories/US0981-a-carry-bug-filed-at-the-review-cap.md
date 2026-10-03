@@ -24,6 +24,7 @@
 - **When** `critic.py record` carries a unit at the review cap
 - **Then** its carry bug is filed and the session's finding count stays at 2, so a third ordinary finding is still refused. Fails on: the current code refuses the carry bug at the cap
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_carry_bug_uncapped.py::CarryBugUncappedTests::test_a_carry_bug_is_filed_past_the_cap_and_not_counted
+- **Verified:** yes (2026-10-03)
 
 ## Revision History
 

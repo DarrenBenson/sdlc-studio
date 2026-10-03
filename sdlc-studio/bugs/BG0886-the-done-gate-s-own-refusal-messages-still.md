@@ -26,6 +26,7 @@ Carry the display id into the gate messages, as BG0877 did for the prefix.
 
 - [ ] **AC1** Given a v3 story `US-<ulid>` with a recorded delivery REJECT, when `transition.py set --id <id> --status Done --root <fixture>` runs, then every line of the refusal names the story as `US-<ulid>` and none as the hyphenless key `US<ulid>`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_done_gate_display_id.py::DoneGateDisplayIdTests::test_the_reject_refusal_names_the_file_spelling
+  - **Verified:** yes (2026-10-03)
   - **Fails-on:** HEAD's inner line reads `US01M3WDB2 carries an unanswered delivery REJECT`
 
 ## Revision History

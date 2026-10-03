@@ -7,13 +7,13 @@
 | Status | Count |
 | --- | --- |
 | Open | 3 |
-| In Progress | 33 |
+| In Progress | 34 |
 | Fixed | 731 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **924** |
+| **Total** | **925** |
 
 ## All Bugs
 
@@ -283,6 +283,7 @@
 | [BG0922](BG0922-the-goal-note-check-names-an-unrelated-nx.md) | The goal-note check names an unrelated 'Nx' figure as a contradiction and misses 1.7X and the multiplication sign | Open | Low | 2026-10-03 | 2026-10-03 |
 | [BG0923](BG0923-bg0913-did-not-converge-in-review-round-2.md) | BG0913 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-03 | 2026-10-03 |
 | [BG0924](BG0924-the-report-says-no-unit-carries-a-measured.md) | The report says no unit carries a measured time when units carry minutes but none has a forecast | Open | Low | 2026-10-03 | 2026-10-03 |
+| [BG0925](BG0925-migrate-s-retired-surface-scan-misses-a-bare.md) | migrate's retired-surface scan misses a bare retired command inside a fenced code block | In Progress | Low | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 

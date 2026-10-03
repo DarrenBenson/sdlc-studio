@@ -26,9 +26,11 @@ Read meta keys through `sdlc_md`'s id parser so both schemas resolve.
 
 - [ ] **AC1** Given a v3 project holding `sdlc-studio/handoffs/HO-01J2ABCDEFGHJKMNPQRSTVWXYZ-x.md` and an index row linking it, when `reconcile.py detect --root <fixture>` runs, then it reports no drift for that handoff.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_meta_v3_keys.py::MetaV3KeyTests::test_a_v3_handoff_is_not_an_orphan
+  - **Verified:** yes (2026-10-03)
   - **Fails-on:** HEAD reports `orphan-row HO-0001` for the row of a file that exists
 - [ ] **AC2** Given the same index row with no file behind it, and beside it a numeric `HO0002-y.md` with its row, when detect runs, then it reports exactly one orphan row, naming the v3 id, and nothing for HO0002.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_meta_v3_keys.py::MetaV3KeyTests::test_a_missing_v3_handoff_is_still_named
+  - **Verified:** yes (2026-10-03)
   - **Fails-on:** a fix that silences every meta row, or names the v3 row by a truncated number
 
 ## Revision History

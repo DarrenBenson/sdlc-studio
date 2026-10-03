@@ -26,9 +26,11 @@ Make `next_id.py` allocate mint the project's schema: a v3 id on a v3 project, o
 
 - [ ] **AC1** Given a fresh `init.py run` project at `schema_version: 3`, when `next_id.py allocate --type story --root <fixture>` runs, then it either prints a v3 id (`US-` and a ULID, the shape `artifact.py new` mints) or exits non-zero naming `artifact.py new`, and it never prints a sequential `US0001`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_next_id_v3.py::NextIdV3Tests::test_a_v3_project_gets_no_sequential_id
+  - **Verified:** yes (2026-10-03)
   - **Fails-on:** HEAD prints `US0001` and exits 0 on a v3 project
 - [ ] **AC2** Given a project at `schema_version: 2`, when the same command runs, then it still prints the next sequential id (`US0001` on an empty project).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_next_id_v3.py::NextIdV3Tests::test_a_v2_project_keeps_sequential_ids
+  - **Verified:** yes (2026-10-03)
   - **Fails-on:** a fix that mints a v3 id, or refuses, whatever the project's schema
 
 ## Revision History

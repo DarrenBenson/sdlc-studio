@@ -26,6 +26,7 @@ Record nothing into a run whose outcome is no longer running and print one line 
 
 - [ ] **AC1** Given a sealed run whose signed page checks VALID, when lane return --units X --tokens 7000 runs, then nothing is recorded, a line says the run is sealed, and the page still checks VALID. Fails on: the current code records into the sealed run and the page reads INVALIDATED
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_sealed_run_late_total.py::SealedRunLateTotalTests::test_a_late_total_leaves_the_sealed_page_valid
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

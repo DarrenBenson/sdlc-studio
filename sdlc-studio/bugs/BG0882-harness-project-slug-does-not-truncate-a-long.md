@@ -26,9 +26,11 @@ Mirror the harness rule: map per UTF-16 code unit and truncate past 200 with the
 
 - [ ] **AC1** Given a repo whose path holds one non-BMP character (an emoji) and a transcript in the folder the harness names (that character mapped to two dashes, one per UTF-16 code unit), when `run_state.session_tokens(root)` runs with HOME at a fixture and no override, then it reads the tokens.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_transcript_dir_harness.py::TranscriptDirHarnessTests::test_a_non_bmp_character_maps_to_two_dashes
+  - **Verified:** yes (2026-10-03)
   - **Fails-on:** HEAD maps the emoji to one dash and reports `no harness transcript directory`
 - [ ] **AC2** Given a repo whose slug exceeds 200 characters and a transcript under `projects/` in a folder that is not the untruncated slug, whose records carry `cwd` equal to the repo's path, when the same call runs, then it reads that transcript; a folder whose records carry a different `cwd` is never read.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_transcript_dir_harness.py::TranscriptDirHarnessTests::test_a_long_path_is_found_by_its_recorded_cwd
+  - **Verified:** yes (2026-10-03)
   - **Fails-on:** HEAD looks only in the untruncated slug folder and reports `no harness transcript directory`
 
 ## Revision History
