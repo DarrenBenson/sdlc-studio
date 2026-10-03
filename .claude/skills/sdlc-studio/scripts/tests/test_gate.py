@@ -3084,6 +3084,76 @@ class DiffScopedLaneTests(unittest.TestCase):
             self.assertEqual(res["summary"]["global_failures"], 1)
 
 
+class PushBoundaryScopeTests(unittest.TestCase):
+    """BG0871: at the push boundary the diff-scoped lanes judge the commits being pushed. The
+    pre-push hook judges each pushed commit in a clean checkout whose only untracked entries are
+    the clone state it links in (`sdlc-studio/.local`), so a scope read from the working tree
+    judged nothing."""
+
+    _BAD = ("# US0002: bad\n\n> **Status:** Bananas\n"
+            "> **Epic:** [EP0001: x](../epics/EP0001-x.md)\n\n"
+            "## Acceptance Criteria\n\n### AC1: works\n- **Given** a thing\n")
+    _GOOD = ("# US0003: good\n\n> **Status:** Ready\n"
+             "> **Epic:** [EP0001: x](../epics/EP0001-x.md)\n\n"
+             "## Acceptance Criteria\n\n### AC1: works\n- **Given** a thing\n"
+             "- **Verify:** shell true\n")
+
+    def _pushed(self, t: str, added: str, *, linked_local: bool) -> Path:
+        """A pushed baseline carrying invalid debt (US0001), then one unpushed commit adding
+        `added`. The tree is clean; `linked_local` adds the hook's `.local` symlink."""
+        root = Path(t) / "clone"
+        sd = root / "sdlc-studio" / "stories"
+        sd.mkdir(parents=True)
+        (sd / "US0001-debt.md").write_text(self._BAD.replace("US0002: bad", "US0001: debt"),
+                                           encoding="utf-8")
+        (root / ".gitignore").write_text("sdlc-studio/.local/\n", encoding="utf-8")
+        remote = Path(t) / "origin.git"
+        gitutil.git(["init", "-q", "--bare", str(remote)], cwd=t)
+        gitutil.git(["init", "-q"], cwd=root)
+        gitutil.git(["add", "-A"], cwd=root)
+        gitutil.git(["commit", "-qm", "baseline"], cwd=root)
+        gitutil.git(["remote", "add", "origin", str(remote)], cwd=root)
+        gitutil.git(["push", "-q", "origin", "HEAD:refs/heads/main"], cwd=root)
+        gitutil.git(["fetch", "-q", "origin"], cwd=root)
+        name = "US0002-bad.md" if added == self._BAD else "US0003-good.md"
+        (sd / name).write_text(added, encoding="utf-8")
+        gitutil.git(["add", "-A"], cwd=root)
+        gitutil.git(["commit", "-qm", "the pushed commit"], cwd=root)
+        if linked_local:
+            state = Path(t) / "clone-state"
+            state.mkdir()
+            (root / "sdlc-studio" / ".local").symlink_to(state)
+        return root
+
+    def test_the_diff_lanes_judge_the_pushed_range(self) -> None:
+        """MUTANT: the push boundary keeps the working-tree scope - the linked checkout judges 0
+        artefacts and passes, and the plainly clean one judges the whole workspace (count 2,
+        the debt included). The control: a pushed commit adding a VALID artefact passes, the
+        pre-existing debt outside the range reported but not blocking."""
+        for linked in (True, False):
+            with self.subTest(linked_local=linked), tempfile.TemporaryDirectory() as t:
+                root = self._pushed(t, self._BAD, linked_local=linked)
+                r = gate.run_gate(str(root), only=["validate"], boundary="push")
+                lane = _lane(r, "validate")
+                self.assertEqual("fail", lane["status"], lane["detail"])
+                self.assertEqual(1, lane["count"], "only the pushed artefact is judged: " + lane["detail"])
+                self.assertIn("over 1 changed artefact(s)", lane["detail"])
+                self.assertFalse(r["ok"])
+                # the sibling diff lane takes the same scope: the pushed story, not the debt
+                conf = _lane(gate.run_gate(str(root), only=["conformance"], boundary="push"),
+                             "conformance")
+                self.assertEqual(1, conf["count"], conf["detail"])
+                self.assertIn("the 1 story unit(s) the pushed commits touch", conf["detail"])
+            with self.subTest(control=linked), tempfile.TemporaryDirectory() as t:
+                root = self._pushed(t, self._GOOD, linked_local=linked)
+                r = gate.run_gate(str(root), only=["validate"], boundary="push")
+                lane = _lane(r, "validate")
+                self.assertEqual("pass", lane["status"], lane["detail"])
+                self.assertIn("over 1 changed artefact(s)", lane["detail"])
+                self.assertIn("US0001-debt.md", lane["detail"], "the debt outside the range is not named")
+                self.assertTrue(r["ok"])
+
+
 class ReleaseGateCostTests(unittest.TestCase):
     """BG0293: `gate --release` could not be completed inside any usable timeout.
 

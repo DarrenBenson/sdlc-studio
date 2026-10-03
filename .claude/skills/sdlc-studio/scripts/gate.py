@@ -121,17 +121,21 @@ def _index_derived(root: str) -> dict:
             if issues else "indexes are derived output"}
 
 
-def _validate(root: str, changed: bool = False) -> dict:
+def _validate(root: str, changed: bool = False, names: "list[str] | None" = None) -> dict:
     """Structural validation over the artefact tree.
 
-    `changed` narrows what is JUDGED to the artefacts in this working tree's diff. Everything
+    `changed` narrows what is JUDGED to the artefacts in this working tree's diff, and `names`
+    (repo-relative paths) to exactly those, in place of the diff. Everything
     is still checked and everything found is still counted somewhere: an untouched error lands
     in the advisory tally and is named in the detail, so a scoped PASS states the debt it did
     not judge instead of hiding it. A git probe that cannot answer judges the whole workspace.
     """
     import validate
     rr = Path(root).resolve()
-    scope = validate.changed_artifact_paths(rr) if changed else None
+    if names is not None:       # an explicit scope: the pushed range at the push boundary
+        scope = {(rr / n).resolve() for n in names}
+    else:
+        scope = validate.changed_artifact_paths(rr) if changed else None
     errors = advisory = judged = untouched = 0
     advisory_files: list[str] = []
     for type_ in sdlc_md.ARTIFACT_TYPES:
@@ -149,7 +153,8 @@ def _validate(root: str, changed: bool = False) -> dict:
     detail = f"{errors} validation error(s)"
     if scope is not None:
         detail += (f" over {judged} changed artefact(s); "
-                   f"{untouched} outside the diff not judged here")
+                   f"{untouched} outside {'the pushed range' if names is not None else 'the diff'}"
+                   " not judged here")
         if advisory:
             detail += (f", {advisory} of them carrying an advisory error "
                        f"({_name_list(advisory_files)})")
@@ -321,6 +326,46 @@ def changed_paths(root: str) -> list[str] | None:
         if name and name not in out:
             out.append(name)
     return out
+
+
+def pushed_paths(root: str) -> list[str] | None:
+    """Repo-relative paths the commits being pushed change: every commit reachable from HEAD
+    and from no remote-tracking ref, which is what a push from this checkout sends.
+
+    The pre-push hook judges each pushed commit in a clean checkout whose only untracked entries
+    are the clone state it links in, so a lane scoped by `changed_paths` there judged nothing.
+    None when git cannot answer, on the same terms as `changed_paths`: UNKNOWN, never empty.
+    """
+    import subprocess
+    rootp = Path(root)
+    try:
+        top = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=str(rootp),
+                             capture_output=True, text=True, timeout=10)
+        if top.returncode != 0 or Path(top.stdout.strip() or ".").resolve() != rootp.resolve():
+            return None
+        proc = subprocess.run(["git", "log", "--format=", "--name-only", "HEAD", "--not",
+                               "--remotes"], cwd=str(rootp), capture_output=True, text=True,
+                              timeout=30)
+        if proc.returncode != 0:
+            return None
+    except Exception:  # noqa: BLE001 - a changed-file probe must never break the gate
+        return None
+    out: list[str] = []
+    for raw in proc.stdout.splitlines():
+        name = raw.strip()
+        if name and name not in out:
+            out.append(name)
+    return out
+
+
+def _pushed_scope(root: str) -> list[str] | None:
+    """The push boundary's scope: the pushed range plus anything this tree changes on top of it.
+    None - judge the whole workspace - when the range is unknown or empty, because an empty diff
+    is not an empty scope."""
+    pushed = pushed_paths(root)
+    if not pushed:
+        return None
+    return pushed + [n for n in (changed_paths(root) or []) if n not in pushed]
 
 
 def _name_list(names: list[str], limit: int = 3) -> str:
@@ -749,6 +794,39 @@ def _conformance_scoped(root: str) -> dict:
 def _validate_scoped(root: str) -> dict:
     """The pre-commit binding of the validate lane: judge the artefacts this commit touches."""
     return _validate(root, changed=True)
+
+
+def _validate_pushed(root: str) -> dict:
+    """The push boundary's binding of the validate lane: judge the artefacts the pushed commits
+    touch."""
+    names = _pushed_scope(root)
+    return _validate(root, names=names) if names is not None else _validate(root)
+
+
+def _conformance_pushed(root: str) -> dict:
+    """The push boundary's binding of the conformance lane: judge the stories the pushed commits
+    touch, the repo-wide stages at full strength."""
+    names = _pushed_scope(root)
+    if names is None:
+        return _conformance(root)
+    rel, _prefix = sdlc_md.ARTIFACT_TYPES["story"]
+    base = (Path(root) / rel).resolve()
+    ids: set[str] = set()
+    for name in names:
+        path = (Path(root) / name).resolve()
+        rid = (sdlc_md.extract_record_id(path.stem)
+               if path.parent == base and path.name != "_index.md" else None)
+        if rid:
+            ids.add(sdlc_md.norm_id(rid))
+    result = _conformance(root, scope_ids=ids)
+    result["detail"] += (f" (scope: the {len(ids)} story unit(s) the pushed commits touch; "
+                         "`--release` judges the whole workspace)")
+    return result
+
+
+#: The diff-scoped lanes rebound at the push boundary to the pushed range, so the hook's clean
+#: checkout judges what is being pushed rather than its empty working-tree diff.
+PUSHED_RANGE_LANES = {"conformance": _conformance_pushed, "validate": _validate_pushed}
 
 
 #: The two lanes the STANDARD gate scopes to the diff and `--release` restores to the whole
@@ -1961,6 +2039,12 @@ def run_gate(root: str = ".", only: list[str] | None = None,
             registry["conformance"] = lambda r, _s=_scope: _conformance(r, scope_ids=_s)
             if "conformance" not in bound:
                 bound.append("conformance")
+    # The push boundary judges the pushed range. Swapped by identity against the shipped
+    # scoped lane, AFTER the release swap and the close's batch scope, so either of those wins.
+    if boundary == "push":
+        for _name, _pushed in PUSHED_RANGE_LANES.items():
+            if registry.get(_name) is DEFAULT_CHECKS.get(_name):
+                registry[_name] = _pushed
     # A wrong/typo'd --only/--skip (or a renamed check) must FAIL, not silently select
     # nothing and report a vacuous PASS - the false-assurance class LL0008 warns against.
     unknown = sorted({n for n in (list(only or []) + list(skip or [])) if n not in registry})
