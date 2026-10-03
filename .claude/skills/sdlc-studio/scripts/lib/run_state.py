@@ -1491,8 +1491,10 @@ def unit_agent_totals(state: dict) -> dict[str, dict]:
 
     A unit's own agents' reported spend, never a span on the main-thread meter, which counts the
     traffic of every unit open beside it. `minutes` sums the `timed` records that carried minutes,
-    None when none did; it is the unit's minutes only when `timed == agents`. A view of
-    `delegated_records` by unit: the records count once, in `delegated_total`, and these sums are
+    None when none did; the page reads it as the unit's minutes whenever `timed` is above 0,
+    naming `timed` of `agents` when fewer agents supplied minutes than were tagged
+    (`sprint_report.AGENT_MINUTES_RULE`; a page filed before the rule read it only when
+    `timed == agents`). A view of `delegated_records` by unit: the records count once, in `delegated_total`, and these sums are
     never added to the run's total beside them."""
     out: dict[str, dict] = {}
     for r in delegated_records(state):
