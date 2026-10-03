@@ -230,6 +230,17 @@ def cmd_allocate(args: argparse.Namespace) -> int:
     type_ = args.type
     repo_root = sdlc_md.resolve_root(args)
     prefix = _spec(type_)[1]
+    if type_ in sdlc_md.ARTIFACT_TYPES and sdlc_md.is_schema_v3(repo_root):
+        # A v3 project's pipeline ids are ULIDs, minted by the allocator `artifact.py new`
+        # uses; a sequential number here would hand the project a second id schema.
+        # Meta ids (RV, RETRO, HO, RPT) stay sequential in every era.
+        ident = sdlc_md.mint_v3_id(repo_root, type_)
+        if args.format == "json":
+            print(json.dumps({"type": type_, "prefix": prefix, "schema_version": 3,
+                              "next_id": ident, "warning": None}, indent=2))
+        else:
+            print(ident)
+        return 0
     local = local_ids(type_, repo_root)
     local_max = max(local) if local else 0
     remote_max = 0
