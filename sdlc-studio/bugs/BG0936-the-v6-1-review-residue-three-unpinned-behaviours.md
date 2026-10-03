@@ -25,12 +25,16 @@ Pin the two refusals apart and the transcript sort; refuse or name a non-dict se
 
 - [ ] **AC1** Given a goal-review run with no fields file and one whose fields file has no seats, then each prints its own refusal, and a seats entry that is not an object is named rather than dropped. Fails on: the current code, which drops it and whose test cannot tell the two refusals apart
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::V61ReviewResidueTests::test_goal_review_refusals_are_distinct_and_name_a_bad_seat
+  - **Verified:** yes (2026-10-03)
 - [ ] **AC2** Given a transcript folder whose files list out of time order, when the newest is resolved, then the newest by time is read. Fails on: a mutant returning glob order unsorted
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::V61ReviewResidueTests::test_the_newest_transcript_is_chosen_by_time
+  - **Verified:** yes (2026-10-03)
 - [ ] **AC3** Given a goal note holding 8,000 consecutive punctuation characters, when the close checks it, then it finishes in well under a second. Fails on: the current quadratic scan
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::V61ReviewResidueTests::test_the_note_parser_is_linear
+  - **Verified:** yes (2026-10-03)
 - [ ] **AC4** Given the TRD's .local table, then every row names a file a shipped script or the harness writes. Fails on: the current project-state.json and review-queue.json rows
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::V61ReviewResidueTests::test_every_local_row_has_a_writer
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 
