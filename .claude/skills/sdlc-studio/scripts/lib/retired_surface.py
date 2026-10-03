@@ -34,6 +34,18 @@ _PY = r"(?:\.py)?"
 _CODE_SPAN = re.compile(r"`((?:[^`\\]|\\.)+)`")
 
 
+#: Holds where an odd number of backticks follows on the line: the position is inside a code span.
+_IN_CODE_SPAN = r"(?=(?:[^`\n]*`[^`\n]*`)*[^`\n]*`[^`\n]*(?:\n|$))"
+
+
+def _command(script: str, rest: str) -> str:
+    """`script` followed by `rest` as a consumer's docs TEACH a command: with its `.py`, or with
+    the bare name inside a code span. Without either it is prose ("we run a mutation audit"),
+    which names nothing."""
+    name = re.escape(script)
+    return rf"\b{name}(?:\.py|{_IN_CODE_SPAN}){rest}"
+
+
 def retired_verbs() -> dict[str, str]:
     """`<script>.py <verb>` -> why, from each script's own `RETIRED_VERBS` registry, read with
     `ast` so no script is imported for it. A reason built from a name, not a literal, is left to
@@ -107,7 +119,7 @@ def consumer_flags(labels: list[str] | None = None) -> dict[str, str]:
         if script is None:
             continue
         verb = rf"\s+(?:{'|'.join(map(re.escape, verbs))})\b" if verbs else r"\b"
-        out[label] = rf"\b{re.escape(script)}{_PY}{verb}[^\n]*?{flag}"
+        out[label] = _command(script, rf"{verb}[^\n]*?{flag}")
     return out
 
 
@@ -131,13 +143,17 @@ _CLAUSE_BREAK = re.compile(
 _SENTENCE_START = re.compile(r"[.!?](?=\s)|\n(?=[ \t]*(?:[-*+|>#]|\d+\.)\s)|\n[ \t]*\n")
 
 
-def derived() -> dict[str, str]:
+def derived(commands_only: bool = False) -> dict[str, str]:
     """The surface the code holds, label -> pattern: each script's `RETIRED_VERBS`, the
-    retired config keys and the retired check ids, read at call time."""
+    retired config keys and the retired check ids, read at call time. A verb matches its script
+    with or without `.py`; `commands_only` (the consumer scan) matches it only as a command is
+    written (`_command`), since a bare script name in a consumer's prose is a word."""
     out: dict[str, str] = {}
     for label in retired_verbs():
         script, verb = label.split(" ")
-        out[label] = rf"\b{re.escape(script[:-3])}{_PY}\s+{re.escape(verb)}\b"
+        rest = rf"\s+{re.escape(verb)}\b"
+        out[label] = (_command(script[:-3], rest) if commands_only
+                      else rf"\b{re.escape(script[:-3])}{_PY}{rest}")
     for key in sdlc_md.RETIRED_CONFIG_KEYS:
         out[key] = rf"(?<![\w.]){re.escape(key)}(?![\w-])"
     for check in sdlc_md.RETIRED_CHECK_IDS:
@@ -149,7 +165,8 @@ def surfaces(flag_patterns: dict[str, str] | None = None) -> dict[str, re.Patter
     """Every shipped retired surface, label -> compiled pattern: the derived half and the
     flags (`flag_patterns`, default `consumer_flags()`)."""
     flag_patterns = consumer_flags() if flag_patterns is None else flag_patterns
-    return {label: re.compile(rx) for label, rx in {**derived(), **flag_patterns}.items()}
+    return {label: re.compile(rx)
+            for label, rx in {**derived(commands_only=True), **flag_patterns}.items()}
 
 
 def _table_headers(lines: list[str]) -> dict[int, str]:
