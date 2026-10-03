@@ -775,15 +775,27 @@ def detect_type(type_: str, repo_root: Path) -> dict:
 _META_INDEX = sdlc_md.META_TYPES
 
 
+def _meta_v3_id(token: str | None, prefix: str) -> str | None:
+    """`token` when it is a v3 id (`HO-01J2ABCD...`) of the meta family `prefix`, else None. A
+    v3 key's ULID opens on digits, so the numeric readers below would truncate it to a number."""
+    if token and sdlc_md.is_v3_id(token) and token.split("-", 1)[0].upper() == prefix:
+        return token
+    return None
+
+
 def meta_census(type_: str, repo_root: Path | str) -> dict[str, str]:
     """{normalised_id: display_id} for the numbered artefact files of a meta type. Only
-    `PREFIX<digits>-...md` stems count - LATEST.md, review prompts and rehearsal notes living
-    alongside are not numbered artefacts and are skipped."""
+    `PREFIX<digits>-...md` and v3 `PREFIX-<ulid>-...md` stems count - LATEST.md, review prompts
+    and rehearsal notes living alongside are not numbered artefacts and are skipped."""
     rel, prefix = _META_INDEX[type_]
     d = Path(repo_root) / rel
     pat = re.compile(rf"^{re.escape(prefix)}0*(\d+)-")
     out: dict[str, str] = {}
     for p in (sorted(d.glob(f"{prefix}*.md")) if d.is_dir() else []):
+        v3 = _meta_v3_id(sdlc_md.stem_record_id(p.stem), prefix)
+        if v3:
+            out[sdlc_md.norm_id(v3)] = v3
+            continue
         m = pat.match(p.stem)
         if m:
             n = int(m.group(1))
@@ -807,6 +819,10 @@ def _meta_index_row_ids(text: str, prefix: str) -> list[str]:
         id_col = lowered.index("id")
         for _ln, cells in tbl["rows"]:
             if id_col >= len(cells):
+                continue
+            v3 = sdlc_md.ANY_ID_SEARCH_RE.search(cells[id_col])
+            if _meta_v3_id(v3.group(0) if v3 else None, prefix):
+                ids.append(sdlc_md.norm_id(v3.group(0)))
                 continue
             m = idre.search(cells[id_col])
             if m:
@@ -852,7 +868,8 @@ def _meta_row_fields(path: Path) -> tuple[str, str]:
     title = path.stem
     m = re.search(r"^#\s+(.+)$", text, re.M)
     if m:
-        title = re.sub(r"^(?:RV|RETRO|HO)[-\s:]*\d+\s*[-:]\s*", "", m.group(1).strip())
+        title = re.sub(r"^(?:RV|RETRO|HO)(?:-[0-9A-HJKMNP-TV-Z]{8,}|[-\s:]*\d+)\s*[-:]\s*", "",
+                       m.group(1).strip())
     dm = re.search(r"\*\*Date:\*\*\s*(\d{4}-\d{2}-\d{2})", text)
     if dm:
         return title, dm.group(1)
@@ -892,8 +909,8 @@ def apply_meta(repo_root: Path | str, dry_run: bool = False) -> dict:
             continue
         changed = False
         for norm, disp in missing:
-            n = int(norm[len(prefix):])
-            matches = sorted((root / rel).glob(f"{prefix}{n:04d}-*.md"))
+            key = disp if _meta_v3_id(disp, prefix) else f"{prefix}{int(norm[len(prefix):]):04d}"
+            matches = sorted((root / rel).glob(f"{key}-*.md"))
             if not matches:
                 result["missing_unapplied"].append(disp)
                 continue
