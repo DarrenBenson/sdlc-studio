@@ -26,6 +26,7 @@ At the push boundary scope the diff lanes to the pushed range (the remote ref's 
 
 - [ ] **AC1** Given a fixture whose pushed commit adds an artefact with a validation error and a clean working tree, when the gate runs at the push boundary for that range, then validate judges that artefact and fails. Fails on: the current scope, which judges 0 units on a clean tree
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::PushBoundaryScopeTests::test_the_diff_lanes_judge_the_pushed_range
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

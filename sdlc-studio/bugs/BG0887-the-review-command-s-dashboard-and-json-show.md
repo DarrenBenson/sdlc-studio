@@ -26,6 +26,7 @@ Drop the per-document percentages, or show the counts the review actually produc
 
 - [ ] **AC1** Given `reference-review.md` and `help/review.md`, when their dashboard and JSON samples are read, then no per-document review bar carries a percentage and no `overall_health` or `health` key appears; each document section shows the finding counts the review produces. A measured coverage figure against its target is not a health score and may stay.
   - **Verify:** pytest tools/tests/test_lean_review_health_docs.py::ReviewHealthDocsTests::test_no_document_health_percentage_is_shown
+  - **Verified:** yes (2026-10-03)
   - **Fails-on:** HEAD's `PRD REVIEW ... 85%` bars and the JSON's `"overall_health": 85`
 
 ## Revision History

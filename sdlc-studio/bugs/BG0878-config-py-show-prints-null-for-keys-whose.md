@@ -26,9 +26,11 @@ Declare each code-owned default in config-defaults.yaml and have the readers tak
 
 - [ ] **AC1** Given a project whose `.config.yaml` sets only `coverage.unit`, when `config.py show --key review.max_rounds --root <fixture>` runs, then it exits 0 and prints `2`, the cap `critic.py` enforces, and `config.py show --sources --key review.max_rounds` prints `default review.max_rounds = 2`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_code_defaults.py::ConfigCodeDefaultsTests::test_show_reports_the_value_in_force
+  - **Verified:** yes (2026-10-03)
   - **Fails-on:** HEAD exits 1 with `no key review.max_rounds` and `--sources` prints no line for it
 - [ ] **AC2** Given the shipped scripts, when every dotted key they read with `config.get(root, "<key>", <literal default>)` is collected, then each has an entry in `config-defaults.yaml` whose value equals that literal default.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_code_defaults.py::ConfigCodeDefaultsTests::test_every_key_read_is_declared_with_its_default
+  - **Verified:** yes (2026-10-03)
   - **Fails-on:** HEAD, where keys such as `sprint.points_split_above`, `gate_budget.seconds` and `lessons.loop` have no entry
 
 ## Revision History

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 2 |
+| Open | 3 |
 | In Progress | 33 |
 | Fixed | 731 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **923** |
+| **Total** | **924** |
 
 ## All Bugs
 
@@ -282,6 +282,7 @@
 | [BG0921](BG0921-the-goal-review-refusal-still-names-a-role.md) | The goal-review refusal still names a 'role' key after the help names 'seat' | Open | Low | 2026-10-03 | 2026-10-03 |
 | [BG0922](BG0922-the-goal-note-check-names-an-unrelated-nx.md) | The goal-note check names an unrelated 'Nx' figure as a contradiction and misses 1.7X and the multiplication sign | Open | Low | 2026-10-03 | 2026-10-03 |
 | [BG0923](BG0923-bg0913-did-not-converge-in-review-round-2.md) | BG0913 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-03 | 2026-10-03 |
+| [BG0924](BG0924-the-report-says-no-unit-carries-a-measured.md) | The report says no unit carries a measured time when units carry minutes but none has a forecast | Open | Low | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 

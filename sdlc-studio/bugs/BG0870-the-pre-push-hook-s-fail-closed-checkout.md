@@ -26,10 +26,13 @@ Pin the fail-closed checkout and the annotated-tag peel with tests; choose the b
 
 - [ ] **AC1** Given a fixture clone where `git worktree add` fails, when `git push` runs the hook, then the push is refused and the remote is unchanged. Fails on: an `exit 0` at the checkout-failure branch, which the current tests let through
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::PrePushWorktreeTests::test_a_failed_checkout_refuses_the_push
+  - **Verified:** yes (2026-10-03)
 - [ ] **AC2** Given main and an annotated tag on the same commit, when both are pushed, then the gate runs once at the release boundary. Fails on: a hook that does not peel the tag
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::PrePushWorktreeTests::test_an_annotated_tag_runs_the_gate_once
+  - **Verified:** yes (2026-10-03)
 - [ ] **AC3** Given main and a tag on an older commit pushed together, when the hook runs, then the branch tip is judged at the push boundary and the tagged commit at the release boundary. Fails on: the current shared boundary, which runs release lanes on both
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::PrePushWorktreeTests::test_each_commit_gets_its_own_boundary
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

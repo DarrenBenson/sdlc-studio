@@ -26,9 +26,11 @@ Measure display width as markdownlint's string-width does (east-asian W/F as 2, 
 
 - [ ] **AC1** Given a lint-clean test-spec index whose padded table holds a CJK title cell (`第二の仕様`, padded by display width), when `transition.py set --id TS0001 --status Complete --root <fixture>` rewrites another row of that table, then markdownlint with this repository's config reports no MD060 on the index.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_index_wide_alignment.py::IndexWideAlignmentTests::test_a_cjk_table_is_realigned_after_a_rewrite
+  - **Verified:** yes (2026-10-03)
   - **Fails-on:** HEAD leaves the table alone (BG0867's wide-character skip), so the rewritten row stays compact and MD060 fails on it
 - [ ] **AC2** Given a padded table holding a cell with a combining mark (`e` followed by U+0301) and one row written compact, when `sdlc_md.align_padded_tables(text, original)` runs, then markdownlint reports no MD060 on the result, and a table no row of which changed is still returned byte for byte.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_index_wide_alignment.py::IndexWideAlignmentTests::test_a_combining_mark_is_measured_as_zero_width
+  - **Verified:** yes (2026-10-03)
   - **Fails-on:** HEAD returns the table unchanged, and a width measured with `len()` puts the mark's row one column out
 
 ## Revision History

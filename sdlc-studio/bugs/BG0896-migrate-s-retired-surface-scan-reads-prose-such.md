@@ -26,6 +26,7 @@ Require .py or a code span around the script name in the consumer scan.
 
 - [ ] **AC1** Given a consumer doc holding 'We run a mutation audit every quarter.' and a second line '`mutation.py audit`', when migrate scans the docs, then only the second line is named. Fails on: the current code names both
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_retired_surface_prose.py::RetiredSurfaceProseTests::test_prose_without_the_script_name_is_not_surface
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

@@ -3,7 +3,7 @@
 > **Status:** In Progress
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_minutes_like_for_like.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_minutes_like_for_like.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/templates/core/sprint-report.md, .claude/skills/sdlc-studio/templates/reports/sprint-report.html, .claude/skills/sdlc-studio/scripts/tests/test_lean_report.py
 > **Evidence:** RPT0014 Estimates table; product seat, report-honesty goal review
 > **Created:** 2026-10-02
 > **Created-by:** sdlc-studio file
@@ -33,3 +33,4 @@ Compare like with like: measured active minutes (unit spans or agent totals) aga
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-02 | sdlc-studio | Filed |
+| 2026-10-03 | engineering seat | Affects widened to the templates and test the build and repair changed (round-2 review) |

@@ -26,9 +26,11 @@ Guard the call on the script existing, or reword the sentence to say it blocks.
 
 - [ ] **AC1** Given the commit-msg snippet extracted from `help/gate.md` and run with `CLAUDE_SKILL_DIR` at a folder holding no `scripts/engagement_floor.py`, when it runs on a message file, then it exits 0 and prints one line naming the missing script.
   - **Verify:** pytest tools/tests/test_lean_gate_commit_msg_snippet.py::GateCommitMsgSnippetTests::test_a_missing_script_does_not_block
+  - **Verified:** yes (2026-10-03)
   - **Fails-on:** HEAD's snippet exits 2 and blocks the commit
 - [ ] **AC2** Given the same snippet with the shipped skill in place and a message whose subject names two ids and carries no `Refs:` trailer, when it runs, then it exits non-zero, as `--strict` promises.
   - **Verify:** pytest tools/tests/test_lean_gate_commit_msg_snippet.py::GateCommitMsgSnippetTests::test_the_strict_check_still_refuses
+  - **Verified:** yes (2026-10-03)
   - **Fails-on:** a guard that makes the snippet exit 0 whatever the message
 
 ## Revision History
