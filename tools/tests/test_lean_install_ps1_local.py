@@ -6,8 +6,8 @@ loads, so its sweep must read the local scope only. Claude Code loads a personal
 project one of the same name, so a local install under a personal copy says so - unless the two
 paths reach one directory (a local install run from the home directory), which shadows nothing.
 
-install.ps1 runs for real (dry run, which is offline) wherever `pwsh` is on PATH, as it is on the
-CI runners. Where it is not, the same claims are pinned on the script's source, so the Verify
+install.ps1 runs for real (a dry run, with its latest-release lookup answered by a stub, so it is
+offline) wherever `pwsh` is on PATH, as it is on the CI runners. Where it is not, the same claims are pinned on the script's source, so the Verify
 selectors never pass on a skip.
 
 MUTANTS: the -Local sweep walks both scopes; the sweep loses the global scope under -Global too;
@@ -19,6 +19,8 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+
+from test_lean_install_ps1_default import run_install_ps1
 
 # test-census-subject: install.ps1
 
@@ -39,12 +41,9 @@ def _skill(path: Path, version: str) -> Path:
 
 
 def _ps1(home: Path, cwd: Path, *argv: str) -> str:
-    """Run install.ps1 as a user would, in a throwaway HOME. A dry run: offline, writes nothing."""
-    env = {**os.environ, "HOME": str(home), "NO_COLOR": "1", "POWERSHELL_TELEMETRY_OPTOUT": "1",
-           "DOTNET_CLI_TELEMETRY_OPTOUT": "1", "DOTNET_NOLOGO": "1"}
-    cp = subprocess.run([PWSH, "-NoProfile", "-NonInteractive", "-File", str(INSTALL_PS1),
-                         "-Target", "claude", "-DryRun", *argv],
-                        cwd=cwd, env=env, capture_output=True, text=True, timeout=120)
+    """Run install.ps1 as a user would, in a throwaway HOME. A dry run with the release lookup
+    stubbed (BG0934): offline, writes nothing."""
+    cp = run_install_ps1(["-Target", "claude", "-DryRun", *argv], home=home, cwd=cwd)
     out = cp.stdout + cp.stderr
     if cp.returncode != 0:
         raise AssertionError(f"install.ps1 {' '.join(argv)} exited {cp.returncode}:\n{out}")
@@ -168,12 +167,8 @@ class InstallPs1CopilotTests(unittest.TestCase):
         copilot = stubs / "copilot"
         copilot.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
         copilot.chmod(0o755)
-        env = {**os.environ, "HOME": str(self.home), "PATH": str(stubs), "NO_COLOR": "1",
-               "POWERSHELL_TELEMETRY_OPTOUT": "1", "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
-               "DOTNET_NOLOGO": "1"}
-        cp = subprocess.run([PWSH, "-NoProfile", "-NonInteractive", "-File", str(INSTALL_PS1),
-                             "-DryRun", *argv], cwd=self.project, env=env,
-                            capture_output=True, text=True, timeout=120)
+        cp = run_install_ps1(["-DryRun", *argv], home=self.home, cwd=self.project,
+                             env={**os.environ, "PATH": str(stubs)})
         out = cp.stdout + cp.stderr
         self.assertEqual(0, cp.returncode, out)
         return out
