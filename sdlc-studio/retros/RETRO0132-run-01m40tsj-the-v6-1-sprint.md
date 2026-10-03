@@ -49,11 +49,13 @@
 | BG0934 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
 | BG0935 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
 | BG0936 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
-| **Batch (rated units only)** | **0** | **0** | **0** | - | **-** | | **8778s** | - |
+| BG0937 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
+| BG0938 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
+| **Batch (rated units only)** | **0** | **0** | **0** | - | **-** | | **10818s** | - |
 
-**0 of 16 unit(s) measured; 10 of 16 forecast at plan time.**
+**0 of 18 unit(s) measured; 10 of 18 forecast at plan time.**
 
-**Sprint tokens/point: 160,346** (3,848,311 tokens over 24 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+**Sprint tokens/point: 142,530** (3,848,311 tokens over 27 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 
 **Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
 
@@ -61,9 +63,9 @@
 
 Review passes - read from the verdict ledger:
 
-  code review: 21 pass(es) over 16 unit(s), 5 rejected
+  code review: 24 pass(es) over 18 unit(s), 6 rejected
 Unmeasured: BG0926, BG0927, BG0924, BG0921, BG0922, BG0930, BG0929, US0984, US0983, US0985. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
-Unforecast: BG0931, BG0932, BG0933, BG0934, BG0935, BG0936. No plan-time forecast was recorded for them, so they are excluded too. The estimate is NOT re-derived from today's constants: a number computed at judgement time, by the model being judged, is not a prediction.
+Unforecast: BG0931, BG0932, BG0933, BG0934, BG0935, BG0936, BG0937, BG0938. No plan-time forecast was recorded for them, so they are excluded too. The estimate is NOT re-derived from today's constants: a number computed at judgement time, by the model being judged, is not a prediction.
 No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
 
 Forecast by `TOKENS_PER_POINT=80188`, recorded at plan time. OUT-OF-SAMPLE: forecast by the constants in force, on a sprint they were not fitted to. This is the only kind of row that tells you anything.

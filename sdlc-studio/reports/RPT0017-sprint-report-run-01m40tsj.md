@@ -4,10 +4,10 @@
 
 Maya installs v6.1.0 and every page she reads, from release notes to sprint report, matches the code.
 
-**Verdict: Judged achieved** - Every unit of the batch, release paperwork included, was delivered and approved by an independent reviewer who ran each paperwork claim against the code; v6.1.0 is cut and waits on the signature and the release gate.
+**Verdict: Judged achieved** - Every unit of the batch, release paperwork and the pre-tag fixes included, was delivered and approved by an independent reviewer who ran each paperwork claim against the code; v6.1.0 is cut and waits on the signature and the release gate.
 
 > **Run:** 2026-10-03T12:06:32Z to 2026-10-03T15:29:09Z (3.4h)
-> **Verified on:** ac549c72d7b37f3b1239543d0fa83c421c4880e1   **Fingerprint:** 0cb26fc2a67f295e
+> **Verified on:** a1beba585561f89fc0a583a62077d4ca3bcc386e   **Fingerprint:** e84a8b047651037c
 
 ## Estimates
 
@@ -18,10 +18,10 @@ line with no ratio. Ratio is actual over forecast.
 
 | Measure | Forecast | Actual | Ratio | Over |
 | --- | --- | --- | --- | --- |
-| Points | 24 | 24 | 1.0x | 16 of 16 delivered unit(s) |
-| Minutes | 146.6 | 146.3 | 1.0x | measured active minutes (spans or agent minutes) against their forecast, over the 16 of 16 unit(s) planned or added and not dropped that carry both |
+| Points | 27 | 27 | 1.0x | 18 of 18 delivered unit(s) |
+| Minutes | 164.9 | 180.3 | 1.09x | measured active minutes (spans or agent minutes) against their forecast, over the 18 of 18 unit(s) planned or added and not dropped that carry both |
 | Wall-clock span | not forecast | 202.6 | no ratio | the run's minutes, start to end, so waiting counts; the forecast is active work, so the two are not compared |
-| Tokens | 1,924,512 | 3,848,311 | 2.0x | the whole run: forecast over 16 of 16 unit(s) planned or added and not dropped; actual is the main-thread meter plus 22 delegated agent(s)' reported totals, split in the appendix |
+| Tokens | 2,165,076 | 4,429,569 | 2.05x | the whole run: forecast over 18 of 18 unit(s) planned or added and not dropped; actual is the main-thread meter plus 26 delegated agent(s)' reported totals, split in the appendix |
 
 Each cell names its source. A figure labelled agent minutes or agent tokens sums the agent
 totals tagged to that unit; an unlabelled one is measured over the unit's own open span. The
@@ -46,6 +46,8 @@ spans of units open at the same time overlap, so that sum can exceed the wall-cl
 | BG0934 | 6.1 | 10.3 agent minutes | 80,188 | 97,378 agent tokens |
 | BG0935 | 6.1 | 3.3 agent minutes | 80,188 | 34,197 agent tokens |
 | BG0936 | 12.2 | 12.0 agent minutes | 160,376 | 113,545 agent tokens |
+| BG0937 | 6.1 | 13.6 agent minutes | 80,188 | 112,855 agent tokens |
+| BG0938 | 12.2 | 20.4 agent minutes | 160,376 | 186,965 agent tokens |
 
 ## Delivered to plan
 
@@ -53,14 +55,14 @@ spans of units open at the same time overlap, so that sum can exceed the wall-cl
 | --- | --- | --- |
 | Planned | 10 | 16 |
 | Delivered of the plan | 10 | 16 |
-| Added mid-run and delivered | 6 of 6 added | 8 |
+| Added mid-run and delivered | 8 of 8 added | 11 |
 | Dropped | 0 | 0 |
 | Carried undelivered | 0 | 0 |
 
 Points here are the sizes the plan recorded: a unit resized since keeps its planned size and
 shows its current size below, and an added unit is sized when it is added. Added units are work
 outside the plan and are never counted as delivering it. Points delivered at their current
-size, plan and added together: 24.
+size, plan and added together: 27.
 
 | Unit | Planned points | Points | Outcome | Review rounds |
 | --- | --- | --- | --- | --- |
@@ -80,6 +82,8 @@ size, plan and added together: 24.
 | BG0934 | 1 | 1 | added - found in the run and fixed in it (D0326, D0331); delivered | 2 |
 | BG0935 | 1 | 1 | added - found by the US0983 review and fixed in the run (D0326, D0332); delivered | 1 |
 | BG0936 | 2 | 2 | added - the v6.1 review residue, fixed in the run (D0326, D0333); delivered | 1 |
+| BG0937 | 1 | 1 | added - pre-tag fix under D0334 and D0335; delivered | 1 |
+| BG0938 | 2 | 2 | added - pre-tag fix under D0334 and D0335; delivered | 2 |
 
 ## Known issues handed over
 
@@ -103,17 +107,17 @@ Signing records the principal, the date and this report's fingerprint against RU
 | --- | --- |
 | claude-opus-5-5 | 569,078 |
 
-Total 3,848,311, of which delegated 3,279,233. Coverage: 1 session(s);
+Total 4,429,569, of which delegated 3,860,491. Coverage: 1 session(s);
 read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp.
 
 ### DORA
 
 | Key | This run | Mapping | Elite band | Derived from |
 | --- | --- | --- | --- | --- |
-| Deployment frequency | 36 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window | on demand | git history - 36 commit(s) on main inside the run window |
-| Lead time for changes | 3h 10m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 36 commit(s) |
-| Change failure rate | NOT MEASURED - no forge run data | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that concluded failure or timed out - a cancelled or skipped run is not a failed deployment | 0-15% | no push-triggered CI run is readable for this run window |
-| Time to restore | NOT MEASURED - no forge run data | per red streak on main, in creation order, the span from its first failure's conclusion to the conclusion of the first push-triggered run created after it that concluded success, floored at zero; the median over the window's restored streaks, or not restored while the window's last streak is still red | under an hour | no push-triggered CI run is readable for this run window |
+| Deployment frequency | 1 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up | on demand | forge runs 37133734434 - 1 push-triggered run(s) on main in the run window |
+| Lead time for changes | 4h 21m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 44 commit(s) |
+| Change failure rate | 100% | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that concluded failure or timed out - a cancelled or skipped run is not a failed deployment | 0-15% | forge runs 37133734434 - 1 deployment(s); 1 failed on 125cc8f92044f91081ef91f293b68eb8ad7e95cb |
+| Time to restore | not restored | per red streak on main, in creation order, the span from its first failure's conclusion to the conclusion of the first push-triggered run created after it that concluded success, floored at zero; the median over the window's restored streaks, or not restored while the window's last streak is still red | under an hour | forge runs 37133734434 - main went red at run 37133734434, and no push-triggered run created after it concluded success in the run window |
 
 ### Calibration
 
@@ -124,8 +128,8 @@ read from stamps, with the opening reading taken from the legacy session_token_b
 
 ### Rulings
 
-Persona seats ruled 4 time(s), 0 of them by citing a
-precedent; the operator ruled 0 time(s).
+Persona seats ruled 5 time(s), 0 of them by citing a
+precedent; the operator ruled 1 time(s).
 
 ### Waivers in force
 
