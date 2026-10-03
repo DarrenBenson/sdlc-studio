@@ -847,6 +847,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fields-file `seats` value that is a string or an object as not a list, rather than refusing
   its first character or key. The goal-note check is linear on a whitespace-free run of
   repeated measure names, which cost most of a second at 20,000 characters (BG0938).
+- `install.ps1` installs a release again. GitHub serves the asset's `.sha256` sidecar as a
+  binary download, which PowerShell hands back as bytes; the installer split those as text, took
+  a byte's value for the digest and refused every release with `Checksum mismatch` before
+  extraction, so a Windows install with no `-Version` failed. The sidecar is now read as text
+  whatever form it arrives in, and a digest that does not match still aborts before
+  extraction (BG0939).
 
 #### Retired flags
 

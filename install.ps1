@@ -287,11 +287,14 @@ Native alternatives (sdlc-studio is a standard skill):
             # zip cannot inject code. Expected digest: SDLC_STUDIO_SHA256 (an explicit pin),
             # else a best-effort sidecar '<url>.sha256'. With none we warn and proceed unless
             # SDLC_STUDIO_REQUIRE_CHECKSUM=1 makes a missing digest fatal.
+            # GitHub serves the sidecar as application/octet-stream, for which .Content is a byte
+            # array; split as it stands, its first field is a byte's decimal value, not the digest.
             $expected = $env:SDLC_STUDIO_SHA256
             if (-not $expected) {
                 try {
                     $sc = (Invoke-WebRequest -Uri "$Url.sha256" -UseBasicParsing).Content
-                    $expected = ($sc -split '\s+')[0]
+                    if ($sc -is [byte[]]) { $sc = [System.Text.Encoding]::UTF8.GetString($sc) }
+                    $expected = ("$sc".Trim() -split '\s+')[0]
                 } catch { $expected = $null }
             }
             if ($expected) {
