@@ -1,0 +1,1962 @@
+{
+  "schema": 2,
+  "report_id": "RPT0018",
+  "run_id": "RUN-01M40TSJ",
+  "retro_id": "RETRO0132",
+  "generated_at": "2026-10-03T19:54:30Z",
+  "window_end": "2026-10-03T15:29:09Z",
+  "signature": null,
+  "sections": [
+    {
+      "key": "goal",
+      "title": "Goal",
+      "figures": {
+        "sprint_goal": {
+          "key": "sprint_goal",
+          "value": "Maya installs v6.1.0 and every page she reads, from release notes to sprint report, matches the code.",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "goal_verdict": {
+          "key": "goal_verdict",
+          "value": "Judged achieved",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "goal_verdict_note": {
+          "key": "goal_verdict_note",
+          "value": "Every unit of the batch, release paperwork and the pre-tag fixes included, was delivered and approved by an independent reviewer who ran each paperwork claim against the code; v6.1.0 is cut and waits on the signature and the release gate.",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "run_id": {
+          "key": "run_id",
+          "value": "RUN-01M40TSJ",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "started_at": {
+          "key": "started_at",
+          "value": "2026-10-03T12:06:32Z",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "ended_at": {
+          "key": "ended_at",
+          "value": "2026-10-03T15:29:09Z",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "duration_hours": {
+          "key": "duration_hours",
+          "value": "3.4h",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "verified_sha": {
+          "key": "verified_sha",
+          "value": "56231b15ac662b7e835909ce178f4358a3f09d03",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "estimates",
+      "title": "Estimates",
+      "figures": {},
+      "rows": [
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Points",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": 29,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 29,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "1.0x",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "19 of 19 delivered unit(s)",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Minutes",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": 177.1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 190.7,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "1.08x",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "measured active minutes (spans or agent minutes) against their forecast, over the 19 of 19 unit(s) planned or added and not dropped that carry both",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Wall-clock span",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": "not forecast",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 202.6,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "no ratio",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "the run's minutes, start to end, so waiting counts; the forecast is active work, so the two are not compared",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Tokens",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": 2325452,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 4611195,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "1.98x",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "the whole run: forecast over 19 of 19 unit(s) planned or added and not dropped; actual is the main-thread meter plus 28 delegated agent(s)' reported totals, split in the appendix",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        }
+      ],
+      "not_measured": null,
+      "unit_rows": [
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0926",
+            "source": "sdlc-studio/bugs/BG0926-a-lane-return-between-the-close-and-the.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 6.1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 4.5,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 80188,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 38173,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0927",
+            "source": "sdlc-studio/bugs/BG0927-a-broken-transcript-in-another-project-s-folder.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 6.1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 2.9,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 80188,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 24292,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0924",
+            "source": "sdlc-studio/bugs/BG0924-the-report-says-no-unit-carries-a-measured.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 6.1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 3.0,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 80188,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 25449,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0921",
+            "source": "sdlc-studio/bugs/BG0921-the-goal-review-refusal-still-names-a-role.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 6.1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 4.7,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 80188,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 39330,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0922",
+            "source": "sdlc-studio/bugs/BG0922-the-goal-note-check-names-an-unrelated-nx.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 6.1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 8.5,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 80188,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 75478,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0930",
+            "source": "sdlc-studio/bugs/BG0930-transition-py-warns-appetite-spent-against-a-run.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 6.1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 3.2,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 80188,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 26604,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0929",
+            "source": "sdlc-studio/bugs/BG0929-migrate-does-not-report-the-retired-handoff-surface.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 12.2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 16.3,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 160376,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 167165,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0984",
+            "source": "sdlc-studio/stories/US0984-the-docs-and-specifications-describe-the-6-1.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 18.4,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 23.7,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 240564,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 241244,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0983",
+            "source": "sdlc-studio/stories/US0983-the-v6-1-release-notes-lead-with-what.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 18.4,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 7.4,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 240564,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 74079,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0985",
+            "source": "sdlc-studio/stories/US0985-v6-1-0-is-cut-version-changelog-known.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 12.2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 32.3,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 160376,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 241299,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0931",
+            "source": "sdlc-studio/bugs/BG0931-four-lane-fixes-the-v6-1-reviews-found.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 12.2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 5.7,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 160376,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 52826,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0932",
+            "source": "sdlc-studio/bugs/BG0932-a-broken-or-self-looping-transcript-link-still.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 6.1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 2.8,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 80188,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 26413,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0933",
+            "source": "sdlc-studio/bugs/BG0933-three-texts-still-say-what-the-code-does.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 6.1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 5.7,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 80188,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 52826,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0934",
+            "source": "sdlc-studio/bugs/BG0934-install-ps1-still-installs-from-main-while-install.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 6.1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 10.3,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 80188,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 97378,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0935",
+            "source": "sdlc-studio/bugs/BG0935-the-6-1-notes-say-migrate-leaves-prose.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 6.1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 3.3,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 80188,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 34197,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0936",
+            "source": "sdlc-studio/bugs/BG0936-the-v6-1-review-residue-three-unpinned-behaviours.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 12.2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 12.0,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 160376,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 113545,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0937",
+            "source": "sdlc-studio/bugs/BG0937-a-closed-run-that-is-not-yet-signed.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 6.1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 13.6,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 80188,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 112855,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0938",
+            "source": "sdlc-studio/bugs/BG0938-the-five-lows-the-last-v6-1-reviews.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 12.2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 20.4,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 160376,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 186965,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0939",
+            "source": "sdlc-studio/bugs/BG0939-install-ps1-rejects-every-release-download-the-sha256.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 12.2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 10.4,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 160376,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 107658,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
+        }
+      ]
+    },
+    {
+      "key": "delivered",
+      "title": "Delivered to plan",
+      "figures": {
+        "planned_units": {
+          "key": "planned_units",
+          "value": 10,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "planned_points": {
+          "key": "planned_points",
+          "value": 16,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "plan_delivered_units": {
+          "key": "plan_delivered_units",
+          "value": 10,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "plan_delivered_points": {
+          "key": "plan_delivered_points",
+          "value": 16,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "added_delivered_units": {
+          "key": "added_delivered_units",
+          "value": 9,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "added_points": {
+          "key": "added_points",
+          "value": 13,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "dropped_units": {
+          "key": "dropped_units",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "dropped_points": {
+          "key": "dropped_points",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "carried_units": {
+          "key": "carried_units",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "carried_points": {
+          "key": "carried_points",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "added_units": {
+          "key": "added_units",
+          "value": 9,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "points_delivered": {
+          "key": "points_delivered",
+          "value": 29,
+          "source": "sdlc-studio/bugs/BG0926-a-lane-return-between-the-close-and-the.md, sdlc-studio/bugs/BG0927-a-broken-transcript-in-another-project-s-folder.md, sdlc-studio/bugs/BG0924-the-report-says-no-unit-carries-a-measured.md, sdlc-studio/bugs/BG0921-the-goal-review-refusal-still-names-a-role.md, sdlc-studio/bugs/BG0922-the-goal-note-check-names-an-unrelated-nx.md, sdlc-studio/bugs/BG0930-transition-py-warns-appetite-spent-against-a-run.md, sdlc-studio/bugs/BG0929-migrate-does-not-report-the-retired-handoff-surface.md, sdlc-studio/stories/US0984-the-docs-and-specifications-describe-the-6-1.md, sdlc-studio/stories/US0983-the-v6-1-release-notes-lead-with-what.md, sdlc-studio/stories/US0985-v6-1-0-is-cut-version-changelog-known.md, sdlc-studio/bugs/BG0931-four-lane-fixes-the-v6-1-reviews-found.md, sdlc-studio/bugs/BG0932-a-broken-or-self-looping-transcript-link-still.md, sdlc-studio/bugs/BG0933-three-texts-still-say-what-the-code-does.md, sdlc-studio/bugs/BG0934-install-ps1-still-installs-from-main-while-install.md, sdlc-studio/bugs/BG0935-the-6-1-notes-say-migrate-leaves-prose.md, sdlc-studio/bugs/BG0936-the-v6-1-review-residue-three-unpinned-behaviours.md, sdlc-studio/bugs/BG0937-a-closed-run-that-is-not-yet-signed.md, sdlc-studio/bugs/BG0938-the-five-lows-the-last-v6-1-reviews.md, sdlc-studio/bugs/BG0939-install-ps1-rejects-every-release-download-the-sha256.md"
+        }
+      },
+      "rows": [
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0926",
+            "source": "sdlc-studio/bugs/BG0926-a-lane-return-between-the-close-and-the.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG0926-a-lane-return-between-the-close-and-the.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0927",
+            "source": "sdlc-studio/bugs/BG0927-a-broken-transcript-in-another-project-s-folder.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG0927-a-broken-transcript-in-another-project-s-folder.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0924",
+            "source": "sdlc-studio/bugs/BG0924-the-report-says-no-unit-carries-a-measured.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG0924-the-report-says-no-unit-carries-a-measured.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0921",
+            "source": "sdlc-studio/bugs/BG0921-the-goal-review-refusal-still-names-a-role.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG0921-the-goal-review-refusal-still-names-a-role.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0922",
+            "source": "sdlc-studio/bugs/BG0922-the-goal-note-check-names-an-unrelated-nx.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG0922-the-goal-note-check-names-an-unrelated-nx.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0930",
+            "source": "sdlc-studio/bugs/BG0930-transition-py-warns-appetite-spent-against-a-run.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG0930-transition-py-warns-appetite-spent-against-a-run.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0929",
+            "source": "sdlc-studio/bugs/BG0929-migrate-does-not-report-the-retired-handoff-surface.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG0929-migrate-does-not-report-the-retired-handoff-surface.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0984",
+            "source": "sdlc-studio/stories/US0984-the-docs-and-specifications-describe-the-6-1.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/stories/US0984-the-docs-and-specifications-describe-the-6-1.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0983",
+            "source": "sdlc-studio/stories/US0983-the-v6-1-release-notes-lead-with-what.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/stories/US0983-the-v6-1-release-notes-lead-with-what.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US0985",
+            "source": "sdlc-studio/stories/US0985-v6-1-0-is-cut-version-changelog-known.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/stories/US0985-v6-1-0-is-cut-version-changelog-known.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0931",
+            "source": "sdlc-studio/bugs/BG0931-four-lane-fixes-the-v6-1-reviews-found.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG0931-four-lane-fixes-the-v6-1-reviews-found.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - found in the run and fixed in it (D0326, D0331); delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0932",
+            "source": "sdlc-studio/bugs/BG0932-a-broken-or-self-looping-transcript-link-still.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG0932-a-broken-or-self-looping-transcript-link-still.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - found in the run and fixed in it (D0326, D0331); delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0933",
+            "source": "sdlc-studio/bugs/BG0933-three-texts-still-say-what-the-code-does.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG0933-three-texts-still-say-what-the-code-does.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - found in the run and fixed in it (D0326, D0331); delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0934",
+            "source": "sdlc-studio/bugs/BG0934-install-ps1-still-installs-from-main-while-install.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG0934-install-ps1-still-installs-from-main-while-install.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - found in the run and fixed in it (D0326, D0331); delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0935",
+            "source": "sdlc-studio/bugs/BG0935-the-6-1-notes-say-migrate-leaves-prose.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG0935-the-6-1-notes-say-migrate-leaves-prose.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - found by the US0983 review and fixed in the run (D0326, D0332); delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0936",
+            "source": "sdlc-studio/bugs/BG0936-the-v6-1-review-residue-three-unpinned-behaviours.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG0936-the-v6-1-review-residue-three-unpinned-behaviours.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - the v6.1 review residue, fixed in the run (D0326, D0333); delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0937",
+            "source": "sdlc-studio/bugs/BG0937-a-closed-run-that-is-not-yet-signed.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG0937-a-closed-run-that-is-not-yet-signed.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - pre-tag fix under D0334 and D0335; delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0938",
+            "source": "sdlc-studio/bugs/BG0938-the-five-lows-the-last-v6-1-reviews.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG0938-the-five-lows-the-last-v6-1-reviews.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - pre-tag fix under D0334 and D0335; delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0939",
+            "source": "sdlc-studio/bugs/BG0939-install-ps1-rejects-every-release-download-the-sha256.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG0939-install-ps1-rejects-every-release-download-the-sha256.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - found by main's CI and fixed before the tag (D0326, D0336); delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "known_issues",
+      "title": "Known issues handed over",
+      "figures": {
+        "findings_scan": {
+          "key": "findings_scan",
+          "value": "0 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "signoff",
+      "title": "Sign-off",
+      "figures": {
+        "principal": {
+          "key": "principal",
+          "value": "not yet signed",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "signed_at": {
+          "key": "signed_at",
+          "value": "not yet signed",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "signed_fingerprint": {
+          "key": "signed_fingerprint",
+          "value": "not yet signed",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "cost",
+      "title": "Tokens by model",
+      "figures": {
+        "tokens_delegated": {
+          "key": "tokens_delegated",
+          "value": 4042117,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "tokens_total": {
+          "key": "tokens_total",
+          "value": 4611195,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "token_coverage": {
+          "key": "token_coverage",
+          "value": "1 session(s)",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "token_shape": {
+          "key": "token_shape",
+          "value": "read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [
+        {
+          "model_name": {
+            "key": "model_name",
+            "value": "claude-opus-5-5",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "model_tokens": {
+            "key": "model_tokens",
+            "value": 569078,
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "dora",
+      "title": "DORA",
+      "figures": {},
+      "rows": [
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Deployment frequency",
+            "source": "gh run list"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": 3,
+            "source": "gh run list"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up",
+            "source": "gh run list"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "on demand",
+            "source": "gh run list"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "forge runs 37139961772/37138857623/37133734434 - 3 push-triggered run(s) on main in the run window",
+            "source": "gh run list"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Lead time for changes",
+            "source": "git log"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "7h 39m",
+            "source": "git log"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches",
+            "source": "git log"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "under a day",
+            "source": "git log"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "git history - first to last of 50 commit(s)",
+            "source": "git log"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Change failure rate",
+            "source": "gh run list"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "33%",
+            "source": "gh run list"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that concluded failure or timed out - a cancelled or skipped run is not a failed deployment",
+            "source": "gh run list"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "0-15%",
+            "source": "gh run list"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "forge runs 37139961772/37138857623/37133734434 - 3 deployment(s); 1 failed on 125cc8f92044f91081ef91f293b68eb8ad7e95cb",
+            "source": "gh run list"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Time to restore",
+            "source": "gh run list"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "1h 26m",
+            "source": "gh run list"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "per red streak on main, in creation order, the span from its first failure's conclusion to the conclusion of the first push-triggered run created after it that concluded success, floored at zero; the median over the window's restored streaks, or not restored while the window's last streak is still red",
+            "source": "gh run list"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "under an hour",
+            "source": "gh run list"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "forge runs 37133734434/37138857623 - each red streak on main restored by the first push-triggered run created after its first failure that concluded success",
+            "source": "gh run list"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "calibration",
+      "title": "Calibration",
+      "figures": {
+        "cal_tokens_per_point": {
+          "key": "cal_tokens_per_point",
+          "value": 80188,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "cal_tokens_source": {
+          "key": "cal_tokens_source",
+          "value": "velocity-record",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "cal_minutes_per_point": {
+          "key": "cal_minutes_per_point",
+          "value": 6.12,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "cal_minutes_source": {
+          "key": "cal_minutes_source",
+          "value": "fallback: 1 row(s) for claude-opus-5-5, under 3, so the latest rows of any single model: median of RETRO0028, RETRO0131",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "rulings",
+      "title": "Rulings",
+      "figures": {
+        "persona_rulings": {
+          "key": "persona_rulings",
+          "value": 6,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "cited_rulings": {
+          "key": "cited_rulings",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "operator_rulings": {
+          "key": "operator_rulings",
+          "value": 2,
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "waivers",
+      "title": "Waivers in force",
+      "figures": {
+        "waivers_note": {
+          "key": "waivers_note",
+          "value": "no gate stood down for this seal - the log was read and carries no accepted waiver dated inside this report's window",
+          "source": "sdlc-studio/decisions.md"
+        },
+        "waivers_count": {
+          "key": "waivers_count",
+          "value": 0,
+          "source": "sdlc-studio/decisions.md"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "lane_yield",
+      "title": "Lane yield",
+      "figures": {
+        "lane_yield_note": {
+          "key": "lane_yield_note",
+          "value": "1 refusal(s) in this run. A refusal is a candidate catch when the next commit changed code or a test from what was refused, paperwork when it changed only artefacts, baselines, indexes or docs, and pending until a commit follows it.",
+          "source": "sdlc-studio/.local/refusals.jsonl, git log"
+        }
+      },
+      "rows": [
+        {
+          "yield_lane": {
+            "key": "yield_lane",
+            "value": "markdown",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_refusals": {
+            "key": "yield_refusals",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_catches": {
+            "key": "yield_catches",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_paperwork": {
+            "key": "yield_paperwork",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_verdict": {
+            "key": "yield_verdict",
+            "value": "delete candidate: 1 refusal(s) over 3 runs and no candidate catch",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          }
+        },
+        {
+          "yield_lane": {
+            "key": "yield_lane",
+            "value": "message-refs",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_refusals": {
+            "key": "yield_refusals",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_catches": {
+            "key": "yield_catches",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_paperwork": {
+            "key": "yield_paperwork",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_verdict": {
+            "key": "yield_verdict",
+            "value": "delete candidate: 3 refusal(s) over 3 runs and no candidate catch",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          }
+        },
+        {
+          "yield_lane": {
+            "key": "yield_lane",
+            "value": "neutrality",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_refusals": {
+            "key": "yield_refusals",
+            "value": 1,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_catches": {
+            "key": "yield_catches",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_paperwork": {
+            "key": "yield_paperwork",
+            "value": 1,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_verdict": {
+            "key": "yield_verdict",
+            "value": "delete candidate: 1 refusal(s) over 3 runs and no candidate catch",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          }
+        },
+        {
+          "yield_lane": {
+            "key": "yield_lane",
+            "value": "repo-writes",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_refusals": {
+            "key": "yield_refusals",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_catches": {
+            "key": "yield_catches",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_paperwork": {
+            "key": "yield_paperwork",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_verdict": {
+            "key": "yield_verdict",
+            "value": "1 candidate catch(es) over 3 runs",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          }
+        },
+        {
+          "yield_lane": {
+            "key": "yield_lane",
+            "value": "style",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_refusals": {
+            "key": "yield_refusals",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_catches": {
+            "key": "yield_catches",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_paperwork": {
+            "key": "yield_paperwork",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_verdict": {
+            "key": "yield_verdict",
+            "value": "7 candidate catch(es) over 3 runs",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          }
+        },
+        {
+          "yield_lane": {
+            "key": "yield_lane",
+            "value": "unit-tests",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_refusals": {
+            "key": "yield_refusals",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_catches": {
+            "key": "yield_catches",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_paperwork": {
+            "key": "yield_paperwork",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_verdict": {
+            "key": "yield_verdict",
+            "value": "1 candidate catch(es) over 3 runs",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "lessons",
+      "title": "Lessons",
+      "figures": {
+        "lessons_note": {
+          "key": "lessons_note",
+          "value": "7 lesson class(es) in force at this close.",
+          "source": "sdlc-studio/lessons.jsonl"
+        }
+      },
+      "rows": [
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-005",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "repair breaks its neighbour",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "graduating (CR0608)",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 1,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 5,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-010",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "the push gate and CI disagree on the runner",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "active",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 1,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-014",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "paperwork during a build",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "active",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 1,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-015",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "a retirement outruns the deletion",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "active",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-016",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "a signed page reads a live source",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "active",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 1,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-017",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "a page-format rule mark nothing round-trips",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "active",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-018",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "a doc claim checked by reading",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "active",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        }
+      ],
+      "not_measured": null
+    }
+  ],
+  "findings_window_end": "2026-10-03T19:54:30Z",
+  "record_paths": "portable",
+  "token_ratio": "every-delivered-unit-delegated",
+  "restore_pairing": "next-success-after-failure",
+  "discharged_carry": "delivered",
+  "findings_scan": "delivered-batch-units-excluded",
+  "minutes_ratio": "measured-unit-minutes",
+  "delegated_tokens": "counted-over-a-zero-meter",
+  "agent_minutes": "any-agent-supplied",
+  "dora_failures": "failure-or-timed-out-only",
+  "fingerprint": "85ed957fdc7797a1"
+}
