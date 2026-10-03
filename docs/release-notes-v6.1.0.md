@@ -50,8 +50,8 @@ python3 "$CLAUDE_SKILL_DIR/scripts/migrate.py"            # dry run: lists what 
 python3 "$CLAUDE_SKILL_DIR/scripts/migrate.py" --apply    # removes review.policy, restamps the project version
 ```
 
-**Reinstall.** A plain `install.sh` now fetches the latest verified release. `install.ps1` still
-installs `main` unless you pass `-Version v6.1.0`.
+**Reinstall.** A plain `install.sh` or `install.ps1` now fetches the latest verified release;
+pass `main` as the version for the moving branch.
 
 **`migrate`** is the dry run: it writes nothing, and lists what `--apply` would change and what
 it leaves to you.

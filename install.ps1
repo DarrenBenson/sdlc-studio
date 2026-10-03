@@ -12,7 +12,7 @@ param(
     [switch]$ListTargets,
     [switch]$DryRun,
     [switch]$NoSweep,
-    [string]$Version = 'main',
+    [string]$Version = '',
     [switch]$Help
 )
 
@@ -66,7 +66,9 @@ Options:
     -NoSweep        Skip refreshing sdlc-studio copies found in other tool
                     locations (default: refresh them all; -Local refreshes
                     only this project's, never the personal copies)
-    -Version VER    Install a specific version/tag (default: main)
+    -Version VER    Install a specific version/tag, or main for the moving
+                    branch (default: the latest published release, or main
+                    when it cannot be looked up)
     -Help           Show this help
 
 Native alternatives (sdlc-studio is a standard skill):
@@ -190,6 +192,24 @@ Native alternatives (sdlc-studio is a standard skill):
             Write-Host ('  {0,-9} {1,-30} {2,-18} {3}' -f $t, $g, $Map[$t].local, $d)
         }
         return
+    }
+
+    # No -Version: install the latest published release, as install.sh does, which goes down
+    # the tagged path and is verified against its published sha256. `main` publishes none, so it
+    # is installed only when asked for by name, or when the lookup fails (an offline machine
+    # still installs). A tag goes into download URLs, so anything but [A-Za-z0-9._-] is no answer.
+    if (-not $Uninstall -and -not $Version) {
+        $latest = $null
+        try {
+            $rel = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" `
+                -UseBasicParsing -TimeoutSec 15
+            if ("$($rel.tag_name)" -match '^[A-Za-z0-9._-]+$') { $latest = "$($rel.tag_name)" }
+        } catch { $latest = $null }
+        if ($latest) { $Version = $latest }
+        else {
+            $Version = 'main'
+            Write-Warn2 'could not resolve the latest release (offline or rate-limited?) - installing main'
+        }
     }
 
     $targets = Resolve-Targets $Target

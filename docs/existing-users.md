@@ -53,9 +53,9 @@ a pre-release below its final, so this happens once. Then run `migrate --apply` 
 
 A project already on 6.0 takes three steps: 6.1 retires the handoff writers and one config key.
 
-1. **Reinstall.** A plain `install.sh` now fetches the latest verified release (the
-   [README](../README.md) has the command); `install.ps1` still installs `main` unless you pass
-   `-Version`.
+1. **Reinstall.** A plain `install.sh` or `install.ps1` now fetches the latest verified release
+   (the [README](../README.md) has the command); pass `main` as the version for the moving
+   branch.
 2. **`migrate`** is the dry run: it prints what it would change and writes nothing.
 3. **`migrate --apply`** removes `review.policy` from `sdlc-studio/.config.yaml`, the one key 6.1
    retires: every project now carries a unit whose REJECT stands at the review-round cap
