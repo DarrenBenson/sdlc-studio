@@ -113,7 +113,7 @@ class IndexRowStyleTests(unittest.TestCase):
         """Round-1 repro. A compact data table, a padded Glossary holding CJK (lint-clean,
         aligned by display width) and a padded Totals table with a right-aligned count, neither
         touched by the write. MUTANT: reflow every aligned table in the index - Totals is
-        re-rendered (and, without the wide-character skip, the Glossary breaks MD060)."""
+        re-rendered."""
         glossary = ("## Glossary\n\n| Term   | Meaning    |\n| ------ | ---------- |\n"
                     "| 用語   | a term     |\n| plain  | not a term |\n\n"
                     "## Totals\n\n| Kind      | Count |\n| --------- | ----: |\n"
@@ -134,14 +134,17 @@ class IndexRowStyleTests(unittest.TestCase):
         self.assertTrue(text.endswith(glossary), text)
         self._lint()
 
-    def test_a_table_holding_a_wide_character_is_left_alone(self) -> None:
-        """Its widths cannot be measured in characters, so it is not reflowed even when a row
-        in it was rewritten. MUTANT: drop the wide-character skip - the table is re-padded by
-        character count, which is not what MD060 measures."""
+    def test_a_table_holding_an_unmeasured_character_is_left_alone(self) -> None:
+        """A wide or combining character is measured by display width (BG0889); an emoji joined
+        by a zero-width joiner takes the width of its grapheme cluster, which a per-character
+        sum gets wrong, so its table is not reflowed even when a row in it was rewritten.
+        MUTANT: drop the unmeasured-character skip - the table is re-padded by a width MD060
+        does not use."""
+        coder = "dev \U0001F469\u200D\U0001F4BB"         # woman + ZWJ + laptop: one cluster
         spec = self.index.parent / "TS0002-spec.md"
-        spec.write_text(spec.read_text(encoding="utf-8").replace("second spec", "第二の仕様"),
+        spec.write_text(spec.read_text(encoding="utf-8").replace("second spec", coder),
                         encoding="utf-8")
-        self.index.write_text(_INDEX.replace("| second spec |", "| 第二の仕様  |"),
+        self.index.write_text(_INDEX.replace("| second spec |", f"| {coder}   |"),
                               encoding="utf-8")
         before = self.index.read_text(encoding="utf-8").splitlines()
         self._set("TS0001", "Complete")

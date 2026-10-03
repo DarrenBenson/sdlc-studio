@@ -547,13 +547,40 @@ def _raw_cells(line: str) -> list[str] | None:
     return [c.strip() for c in _UNESCAPED_PIPE.split(s[1:-1])]
 
 
-def _width_is_not_len(cell: str) -> bool:
-    """Whether a cell holds a character whose display width is not one column: an east-asian
-    wide or full-width character, a combining mark, or a format character (zero-width joiners,
-    variation selectors - the parts of an emoji). Display width is not computed here; a table
-    holding any such cell is left exactly as written."""
-    return any(unicodedata.east_asian_width(ch) in ("W", "F") or unicodedata.combining(ch)
-               or unicodedata.category(ch) in ("Mn", "Me", "Cf") for ch in cell)
+#: Letters that join the grapheme cluster beside them (the Thai and Lao vowel signs, and the
+#: prepended letters of some Brahmic scripts), so `string-width` counts the cluster once.
+_CLUSTER_LETTERS = frozenset((
+    0x0E33, 0x0EB3, 0x0D4E, 0x111C2, 0x111C3, 0x113D1, 0x1193F, 0x11941, 0x11A84, 0x11A85,
+    0x11A86, 0x11A87, 0x11A88, 0x11A89, 0x11D46, 0x11F02))
+
+
+def _unmeasured(ch: str) -> bool:
+    """A character whose width markdownlint's `string-width` decides from the grapheme cluster it
+    joins rather than from the character alone: emoji joiners, variation selectors, skin-tone
+    modifiers, regional indicators and the keycap mark, Hangul jamo and fillers, a virama (an
+    Indic conjunct), and the letters that join a neighbour's cluster (`_CLUSTER_LETTERS`). A
+    per-character sum would get these wrong."""
+    o = ord(ch)
+    return (o in (0x200D, 0x20E3, 0x3164, 0xFFA0) or o in _CLUSTER_LETTERS
+            or 0xFE00 <= o <= 0xFE0F or 0xE0100 <= o <= 0xE01EF
+            or 0x1F3FB <= o <= 0x1F3FF or 0x1F1E6 <= o <= 0x1F1FF
+            or 0x1100 <= o <= 0x11FF or 0xA960 <= o <= 0xA97F or 0xD7B0 <= o <= 0xD7FF
+            or unicodedata.combining(ch) == 9)
+
+
+def display_width(text: str) -> int | None:
+    """The columns `text` takes as markdownlint's MD060 measures them (`string-width`): an
+    east-asian wide or full-width character two, a combining mark, format or control character
+    none, anything else one. None when the text holds a character whose width depends on its
+    grapheme cluster (`_unmeasured`), so a caller leaves it as written rather than guess."""
+    width = 0
+    for ch in text:
+        if _unmeasured(ch):
+            return None
+        if unicodedata.category(ch) in ("Mn", "Mc", "Me", "Cf", "Cc"):
+            continue
+        width += 2 if unicodedata.east_asian_width(ch) in ("W", "F") else 1
+    return width
 
 
 def align_padded_tables(text: str, original: str | None = None) -> str:
@@ -565,11 +592,11 @@ def align_padded_tables(text: str, original: str | None = None) -> str:
     is a candidate. A table is aligned when its header and separator rows put their pipes in the
     same columns and the header pads a cell beyond one space; a compact table is left as it is.
     The table is re-measured, so a new value wider than its column widens the column; no column
-    is narrowed. A table whose rows do not all have the separator's cell count, or holding any
-    cell whose display width is not its length (`_width_is_not_len`), is left alone: widths are
-    measured in characters, which is what MD060 measures only for those. Cells keep their
-    escapes, the separator its `:` markers, an indented table its indent; fenced examples are
-    never touched (the tables come from `iter_tables`)."""
+    is narrowed. Widths are display widths (`display_width`), as MD060 measures them, so a cell
+    holding a wide or combining character is padded to the columns it takes. A table whose rows
+    do not all have the separator's cell count, or holding a cell `display_width` cannot measure,
+    is left alone. Cells keep their escapes, the separator its `:` markers, an indented table its
+    indent; fenced examples are never touched (the tables come from `iter_tables`)."""
     lines = text.splitlines()
     before = None if original is None else set(original.splitlines())
     changed = False
@@ -578,8 +605,8 @@ def align_padded_tables(text: str, original: str | None = None) -> str:
         if h < 0 or h + 1 >= len(lines) or not SEP_ROW_RE.match(lines[h + 1]):
             continue
         head, sep = lines[h], lines[h + 1]
-        pipes = [m.start() for m in _UNESCAPED_PIPE.finditer(head)]
-        if pipes != [m.start() for m in _UNESCAPED_PIPE.finditer(sep)]:
+        pipes = [display_width(head[:m.start()]) for m in _UNESCAPED_PIPE.finditer(head)]
+        if None in pipes or pipes != [m.start() for m in _UNESCAPED_PIPE.finditer(sep)]:
             continue
         if not any(len(seg) > len(seg.strip()) + 2
                    for seg in _UNESCAPED_PIPE.split(head.strip()[1:-1])):
@@ -593,23 +620,25 @@ def align_padded_tables(text: str, original: str | None = None) -> str:
         marks = _raw_cells(sep)
         if any(r is None or len(r) != len(marks) for r in rows):
             continue                                    # ragged: not ours to reflow
-        if any(_width_is_not_len(c) for r in rows for c in r):
-            continue                                    # widths here are not lengths
+        cell_widths = [[display_width(c) for c in r] for r in rows]
+        if any(w is None for r in cell_widths for w in r):
+            continue                                    # a width this cannot measure
         # Never narrower than the separator already is: the table's own widths are kept, and
         # a column grows only for a value that no longer fits.
-        widths = [max(3, len(marks[j]), *(len(r[j]) for r in rows)) for j in range(len(marks))]
+        widths = [max(3, len(marks[j]), *(r[j] for r in cell_widths)) for j in range(len(marks))]
 
         def rule(mark: str, w: int) -> str:
             left, right = mark.startswith(":"), mark.endswith(":")
             return (":" if left else "") + "-" * (w - left - right) + (":" if right else "")
 
-        def render(cells: list[str]) -> str:
-            return "| " + " | ".join(c.ljust(w) for c, w in zip(cells, widths)) + " |"
+        def render(cells: list[str], have: list[int]) -> str:
+            return "| " + " | ".join(c + " " * (w - n)
+                                     for c, n, w in zip(cells, have, widths)) + " |"
 
         indent = head[:len(head) - len(head.lstrip())]
-        new = [indent + render(rows[0]), indent + "| " + " | ".join(
+        new = [indent + render(rows[0], cell_widths[0]), indent + "| " + " | ".join(
             rule(m, w) for m, w in zip(marks, widths)) + " |"]
-        new += [indent + render(r) for r in rows[1:]]
+        new += [indent + render(r, n) for r, n in zip(rows[1:], cell_widths[1:])]
         if new != lines[h:end]:
             lines[h:end] = new
             changed = True
