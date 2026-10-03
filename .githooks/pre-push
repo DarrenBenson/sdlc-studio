@@ -4,8 +4,11 @@
 # git hands this hook one line per ref on stdin - `<local ref> <local sha> <remote ref> <remote
 # sha>`. A tag ref is the RELEASE boundary, a branch ref is the PUSH boundary, and a deletion
 # (all-zero local sha) runs no gate at all. A push runs the full suite ONCE plus the core gate
-# lanes; `release` adds release-rehearsal and module-alone, so a push carrying both
-# a branch and a tag runs the gate ONCE, at `release`. One literal invocation per boundary below.
+# lanes; `release` adds release-rehearsal and module-alone. Each distinct pushed commit is judged
+# once, at its own boundary: `release` for a commit a pushed tag points at, `push` for the rest, so
+# a branch and a tag on one commit run the gate ONCE, at `release`, and a branch tip pushed beside
+# a tag on an older commit is not charged the release lanes (BG0870). One literal invocation per
+# boundary below.
 #
 # The cost is announced BEFORE it is paid: minutes rather than seconds, and a guard whose cost
 # arrives unannounced is one that gets killed and then bypassed (D0180 records the ruling to pay
@@ -17,17 +20,18 @@ repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 skill=".claude/skills/sdlc-studio/scripts"
 zero="0000000000000000000000000000000000000000"
-boundary=""
+boundary=""                                        # the widest boundary in this push: it names the cost announced below
 tag_shas=""
 commits=""                                         # each distinct pushed commit, judged once (BG0837)
+release_commits=""                                 # the pushed commits a tag points at, judged at release (BG0870)
 while read -r _local_ref local_sha remote_ref _remote_sha; do
   [ -z "${local_sha:-}" ] && continue
   [ "$local_sha" = "$zero" ] && continue           # a deletion pushes nothing to gate
+  commit="$(git rev-parse --verify -q "$local_sha^{commit}" || echo "$local_sha")"   # an annotated tag peels to its commit
   case "$remote_ref" in
-    refs/tags/*) boundary="release"; tag_shas="$tag_shas $local_sha" ;;
+    refs/tags/*) boundary="release"; tag_shas="$tag_shas $local_sha"; release_commits="$release_commits $commit" ;;
     *) [ "$boundary" = "release" ] || boundary="push" ;;
   esac
-  commit="$(git rev-parse --verify -q "$local_sha^{commit}" || echo "$local_sha")"   # an annotated tag peels to its commit
   case " $commits " in *" $commit "*) ;; *) commits="$commits $commit" ;; esac
 done
 [ -z "$boundary" ] && exit 0
@@ -171,6 +175,7 @@ echo "pre-push: $cost. Bypass once with: git push --no-verify" >&2
 wt_parent=""
 drop_worktree() {
   [ -n "$wt_parent" ] || return 0
+  cd "$repo_root" || return 0                      # an interrupt can land with the cwd inside the tree being removed
   python3 - "$wt_parent" <<'PY' 2>/dev/null
 import os, shutil, sys
 parent = sys.argv[1]
@@ -186,6 +191,7 @@ PY
 trap drop_worktree EXIT
 trap 'exit 130' INT TERM HUP
 for commit in $commits; do
+  case " $release_commits " in *" $commit "*) at="release" ;; *) at="push" ;; esac
   wt_parent="$(python3 -c 'import tempfile; print(tempfile.mkdtemp(prefix="sdlc-pre-push."))')" || exit 1
   wt="$wt_parent/tree"
   if ! git -c core.hooksPath=/dev/null worktree add -q --detach "$wt" "$commit" 1>&2; then
@@ -218,7 +224,7 @@ PY
   # to see one go red.
   t0=$SECONDS
   cd "$wt"
-  if [ "$boundary" = "release" ]; then
+  if [ "$at" = "release" ]; then
     /usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
        -u GIT_INDEX_VERSION -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
        -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
@@ -233,10 +239,10 @@ PY
   fi
   cd "$repo_root"
   drop_worktree
-  python3 tools/gate_timing.py record --suite "boundary-$boundary" --seconds "$((SECONDS - t0))" >/dev/null 2>&1 || true
+  python3 tools/gate_timing.py record --suite "boundary-$at" --seconds "$((SECONDS - t0))" >/dev/null 2>&1 || true
   if [ "$rc" -ne 0 ]; then
-    echo "pre-push: the $boundary boundary gate refused commit $commit - see the lane named above." >&2
-    echo "  re-run: SDLC_STUDIO_BOUNDARY_SUITE=1 python3 $skill/gate.py --boundary $boundary" >&2
+    echo "pre-push: the $at boundary gate refused commit $commit - see the lane named above." >&2
+    echo "  re-run: SDLC_STUDIO_BOUNDARY_SUITE=1 python3 $skill/gate.py --boundary $at" >&2
     echo "  bypass once (emergency only): git push --no-verify" >&2
     exit "$rc"
   fi

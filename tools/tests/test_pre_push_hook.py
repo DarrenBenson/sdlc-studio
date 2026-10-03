@@ -722,5 +722,84 @@ class BoundaryMarkerReachesThePushTests(unittest.TestCase):
             fx.cleanup()
 
 
+#: A stub gate that records WHICH commit it judged beside its argv, so a test can tell the branch
+#: tip's run from the tagged commit's. It runs in the hook's temporary worktree, whose HEAD is the
+#: commit under judgement.
+RECORDING_GATE = textwrap.dedent('''
+    import os, subprocess, sys
+    from pathlib import Path
+    head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+    Path(os.environ["STUB_ARGV"]).open("a").write(" ".join(sys.argv[1:]) + " @ " + head + "\\n")
+    print("  [PASS] release-rehearsal STUBBED")
+''')
+
+
+class PrePushWorktreeTests(unittest.TestCase):
+    """BG0870 AC1-AC3: the checkout fails closed, an annotated tag is peeled, and each pushed commit
+    is judged at its own boundary."""
+
+    def test_a_failed_checkout_refuses_the_push(self) -> None:
+        """AC1. MUTANT: `exit 0` at the checkout-failure branch - the push lands with no gate run.
+        The positive control: the same push, with the checkout able to succeed, lands."""
+        fx = _Clone()
+        worktrees = fx.clone / ".git" / "worktrees"
+        try:
+            worktrees.mkdir(exist_ok=True)
+            worktrees.chmod(0o555)                       # `git worktree add` cannot register the tree
+            r = fx.push()
+            self.assertNotEqual(0, r.returncode, "a failed checkout let the push through:\n" + r.stderr)
+            self.assertIn("could not check out commit", r.stderr, r.stderr)
+            self.assertEqual(0, fx.remote_count(), "the remote advanced although nothing was judged")
+            self.assertEqual([], fx.gate_calls(), "the gate ran without a checkout to judge")
+            if worktrees.exists():                       # the hook's own prune may have removed it
+                worktrees.chmod(0o755)
+            ok = fx.push()
+            self.assertEqual(0, ok.returncode, "the control push was refused:\n" + ok.stderr)
+            self.assertEqual(1, fx.remote_count(), "the control push did not land")
+            self.assertEqual(["--boundary push"], fx.gate_calls())
+        finally:
+            if worktrees.exists():
+                worktrees.chmod(0o755)
+            fx.cleanup()
+
+    def test_an_annotated_tag_runs_the_gate_once(self) -> None:
+        """AC2. MUTANT: drop the `^{commit}` peel - the tag object and its commit read as two
+        commits, and the gate runs twice."""
+        fx = _Clone()
+        try:
+            _git(fx.clone, "tag", "-a", "v0.0.1", "-m", "release")
+            self.assertEqual("tag", _git(fx.clone, "cat-file", "-t", "v0.0.1").stdout.strip(),
+                             "the fixture tag is not annotated")
+            r = fx.push("main", "v0.0.1")
+            self.assertEqual(0, r.returncode, r.stderr)
+            self.assertEqual(["--boundary release"], fx.gate_calls(),
+                             "main and an annotated tag on one commit must run the gate once, at release")
+            self.assertIn("v0.0.1", _git(fx.remote, "tag", "-l").stdout, "the tag did not land")
+        finally:
+            fx.cleanup()
+
+    def test_each_commit_gets_its_own_boundary(self) -> None:
+        """AC3. MUTANT: one boundary shared by every pushed commit - the branch tip is judged at
+        release too. The control: the tagged commit is still judged at release, not demoted."""
+        fx = _Clone()
+        try:
+            gate = fx.clone / ".claude" / "skills" / "sdlc-studio" / "scripts" / "gate.py"
+            gate.write_text(RECORDING_GATE, encoding="utf-8")
+            _git(fx.clone, "add", "-A")
+            _git(fx.clone, "commit", "-q", "-m", "a recording gate")
+            tagged = _git(fx.clone, "rev-parse", "HEAD").stdout.strip()
+            _git(fx.clone, "tag", "-a", "v0.0.1", "-m", "release")
+            fx.commit_more()
+            tip = _git(fx.clone, "rev-parse", "HEAD").stdout.strip()
+            self.assertNotEqual(tagged, tip)
+            r = fx.push("main", "v0.0.1")
+            self.assertEqual(0, r.returncode, r.stderr)
+            self.assertEqual(sorted([f"--boundary push @ {tip}", f"--boundary release @ {tagged}"]),
+                             sorted(fx.gate_calls()),
+                             "each pushed commit must be judged at its own boundary")
+        finally:
+            fx.cleanup()
+
+
 if __name__ == "__main__":
     unittest.main()
