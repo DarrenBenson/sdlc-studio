@@ -211,11 +211,10 @@ class ReviewKeysAreDeclaredTests(unittest.TestCase):
     scope, who then looked it up, found nothing anywhere."""
 
     #: Read by the code but deliberately NOT declared, each with the reason. An exemption with no
-    #: reason is the one the next author deletes or silently re-adds.
-    DELIBERATELY_ABSENT = {
-        "max_rounds": "its only reader, critic.py, owns the default (`DEFAULT_REVIEW_CEILING`), "
-                      "so declaring it here would give it a second source (BG0831)",
-    }
+    #: reason is the one the next author deletes or silently re-adds. Empty since BG0878 declared
+    #: `review.max_rounds` so `config.py show` reports the cap in force; its value is held equal
+    #: to critic.py's `DEFAULT_REVIEW_CEILING` by test_lean_config_code_defaults.
+    DELIBERATELY_ABSENT: dict = {}
 
     def _keys_the_code_reads(self) -> set:
         scripts = Path(__file__).resolve().parent.parent
@@ -248,9 +247,7 @@ class ReviewKeysAreDeclaredTests(unittest.TestCase):
     #: The readers each deliberately absent key's note must name. The reason the absence is
     #: deliberate is WHO reads the key and owns its default, so a note naming no reader is a bare
     #: assertion, and the next author re-adds the key.
-    ABSENT_KEY_CONSUMERS = {
-        "max_rounds": ("critic.py",),
-    }
+    ABSENT_KEY_CONSUMERS: dict = {}
 
     @staticmethod
     def _comment_runs(text: str) -> list:

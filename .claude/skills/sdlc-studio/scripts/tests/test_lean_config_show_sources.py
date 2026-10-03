@@ -4,9 +4,8 @@
 line per merged leaf naming where its value came from. Each test drives the shipped CLI as a
 subprocess against a throwaway project; nothing reads this repository's own `.config.yaml`.
 
-A default that lives only in its reader's code (`review.max_rounds`, owned by critic.py) is in
-neither file and is not listed; AC1's default-key example is `review.blocking_priority`, which
-`config-defaults.yaml` declares.
+A default that lives only in its reader's code is in neither file and is not listed; AC1's
+default-key example is `review.blocking_priority`, which `config-defaults.yaml` declares.
 """
 from __future__ import annotations
 

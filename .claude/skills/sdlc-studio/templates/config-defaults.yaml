@@ -67,11 +67,12 @@ review:
   # P0..P3 are both covered. An unrecognised value falls back to this default rather than to an
   # empty floor: a floor nobody configured must not silently become no floor at all.
   blocking_priority: high
-  # `review.max_rounds` is the review-round cap, and it is deliberately absent here: its only
-  # reader is critic.py (`critic.review_ceiling`), which owns the default of 2
-  # (`critic.DEFAULT_REVIEW_CEILING`), so declaring it here would give it a second source.
-  # `critic.py record` refuses a delivery round past the cap, and a REJECT at the cap carries
-  # the unit. A project sets it in its own .config.yaml.
+  # `review.max_rounds` is the review-round cap. Its only reader is critic.py
+  # (`critic.review_ceiling`), which falls back to `critic.DEFAULT_REVIEW_CEILING`; the value
+  # here is declared so `config.py show` reports the cap in force, and a test holds the two
+  # equal. `critic.py record` refuses a delivery round past the cap, and a REJECT at the cap
+  # carries the unit. A project sets it in its own .config.yaml.
+  max_rounds: 2
 
   # Requirements/spec documents (schema v3 only). A delivery diff that edits one of these
   # without a citing AC is an UNTRACED spec edit - the critic charter treats it as a blocking
@@ -303,6 +304,8 @@ appetite:
 # `sprint.py breakdown` reports the same census, read-only. See reference-sprint.md.
 sprint:
   breakdown: enforce   # enforce | judgement
+  points_split_above: 8  # the Points: value above which the plan refuses a unit and asks for a split
+  affects_check: warn    # warn | block - what an Affects the unit's own content contradicts does
 
 # Project lessons - how long a lesson stays valid before it must be re-validated. `lessons add`
 # stamps `Review-by: {added + validity_days}`; at the sprint close the gate fails while an open
@@ -310,6 +313,32 @@ sprint:
 # suits a fast-moving codebase where a lesson rots quickly; a longer one suits a stable domain.
 lessons:
   validity_days: 90  # days a project lesson holds before re-validation is due
+  loop: enforce      # enforce | judgement - judgement makes the close's lessons lanes advisory
+
+# The sprint report page. `enabled: false` withholds the rendered text page; the run's data is
+# still recorded.
+report:
+  enabled: true
+
+# Mutation probe cost ceiling per run (`mutation.py run`); enumerations beyond it are counted as
+# truncated, never silently clean.
+quality:
+  mutation_max: 25
+
+# Estimate attribution. `default` names the estimator a unit with no `Estimated-by` is credited
+# to (unset: unattributed). `compulsory_after` maps an id prefix to the first id whose size was
+# demanded by the grooming gate (unset: the era of an unstamped estimate is unknown).
+estimator:
+  default: null
+  compulsory_after: null
+
+# The gate's time cost, as `sprint plan` prices it. `seconds` is the ceiling the measured cost is
+# judged against; `baseline_seconds` and `baseline_date` declare a measured run, used when no run
+# is recorded. All unset by default: an unmeasured cost reads UNKNOWN, never zero.
+gate_budget:
+  seconds: null
+  baseline_seconds: null
+  baseline_date: null
 
 # Flow-metrics ageing flags (US-level, advisory). Unset = the status ageing advisory is OFF
 # (a flag appearing uninvited on a live workflow is a break, not a feature - opt in). When
