@@ -3,7 +3,7 @@
   "report_id": "RPT0017",
   "run_id": "RUN-01M40TSJ",
   "retro_id": "RETRO0132",
-  "generated_at": "2026-10-03T16:39:44Z",
+  "generated_at": "2026-10-03T17:11:16Z",
   "window_end": "2026-10-03T15:29:09Z",
   "signature": null,
   "sections": [
@@ -48,7 +48,7 @@
         },
         "verified_sha": {
           "key": "verified_sha",
-          "value": "a1beba585561f89fc0a583a62077d4ca3bcc386e",
+          "value": "8fa2207ad93a220c3bae2b49121e27ff534151f3",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -68,12 +68,12 @@
           },
           "est_forecast": {
             "key": "est_forecast",
-            "value": 27,
+            "value": 29,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 27,
+            "value": 29,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
@@ -83,7 +83,7 @@
           },
           "est_basis": {
             "key": "est_basis",
-            "value": "18 of 18 delivered unit(s)",
+            "value": "19 of 19 delivered unit(s)",
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -95,22 +95,22 @@
           },
           "est_forecast": {
             "key": "est_forecast",
-            "value": 164.9,
+            "value": 177.1,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 180.3,
+            "value": 190.7,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "1.09x",
+            "value": "1.08x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
             "key": "est_basis",
-            "value": "measured active minutes (spans or agent minutes) against their forecast, over the 18 of 18 unit(s) planned or added and not dropped that carry both",
+            "value": "measured active minutes (spans or agent minutes) against their forecast, over the 19 of 19 unit(s) planned or added and not dropped that carry both",
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -149,22 +149,22 @@
           },
           "est_forecast": {
             "key": "est_forecast",
-            "value": 2165076,
+            "value": 2325452,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 4429569,
+            "value": 4611195,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "2.05x",
+            "value": "1.98x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
             "key": "est_basis",
-            "value": "the whole run: forecast over 18 of 18 unit(s) planned or added and not dropped; actual is the main-thread meter plus 26 delegated agent(s)' reported totals, split in the appendix",
+            "value": "the whole run: forecast over 19 of 19 unit(s) planned or added and not dropped; actual is the main-thread meter plus 28 delegated agent(s)' reported totals, split in the appendix",
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -692,6 +692,35 @@
             "source": "sdlc-studio/.local/run-state.json",
             "label": "agent tokens"
           }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0939",
+            "source": "sdlc-studio/bugs/BG0939-install-ps1-rejects-every-release-download-the-sha256.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 12.2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 10.4,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 160376,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 107658,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          }
         }
       ]
     },
@@ -721,12 +750,12 @@
         },
         "added_delivered_units": {
           "key": "added_delivered_units",
-          "value": 8,
+          "value": 9,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "added_points": {
           "key": "added_points",
-          "value": 11,
+          "value": 13,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "dropped_units": {
@@ -751,13 +780,13 @@
         },
         "added_units": {
           "key": "added_units",
-          "value": 8,
+          "value": 9,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "points_delivered": {
           "key": "points_delivered",
-          "value": 27,
-          "source": "sdlc-studio/bugs/BG0926-a-lane-return-between-the-close-and-the.md, sdlc-studio/bugs/BG0927-a-broken-transcript-in-another-project-s-folder.md, sdlc-studio/bugs/BG0924-the-report-says-no-unit-carries-a-measured.md, sdlc-studio/bugs/BG0921-the-goal-review-refusal-still-names-a-role.md, sdlc-studio/bugs/BG0922-the-goal-note-check-names-an-unrelated-nx.md, sdlc-studio/bugs/BG0930-transition-py-warns-appetite-spent-against-a-run.md, sdlc-studio/bugs/BG0929-migrate-does-not-report-the-retired-handoff-surface.md, sdlc-studio/stories/US0984-the-docs-and-specifications-describe-the-6-1.md, sdlc-studio/stories/US0983-the-v6-1-release-notes-lead-with-what.md, sdlc-studio/stories/US0985-v6-1-0-is-cut-version-changelog-known.md, sdlc-studio/bugs/BG0931-four-lane-fixes-the-v6-1-reviews-found.md, sdlc-studio/bugs/BG0932-a-broken-or-self-looping-transcript-link-still.md, sdlc-studio/bugs/BG0933-three-texts-still-say-what-the-code-does.md, sdlc-studio/bugs/BG0934-install-ps1-still-installs-from-main-while-install.md, sdlc-studio/bugs/BG0935-the-6-1-notes-say-migrate-leaves-prose.md, sdlc-studio/bugs/BG0936-the-v6-1-review-residue-three-unpinned-behaviours.md, sdlc-studio/bugs/BG0937-a-closed-run-that-is-not-yet-signed.md, sdlc-studio/bugs/BG0938-the-five-lows-the-last-v6-1-reviews.md"
+          "value": 29,
+          "source": "sdlc-studio/bugs/BG0926-a-lane-return-between-the-close-and-the.md, sdlc-studio/bugs/BG0927-a-broken-transcript-in-another-project-s-folder.md, sdlc-studio/bugs/BG0924-the-report-says-no-unit-carries-a-measured.md, sdlc-studio/bugs/BG0921-the-goal-review-refusal-still-names-a-role.md, sdlc-studio/bugs/BG0922-the-goal-note-check-names-an-unrelated-nx.md, sdlc-studio/bugs/BG0930-transition-py-warns-appetite-spent-against-a-run.md, sdlc-studio/bugs/BG0929-migrate-does-not-report-the-retired-handoff-surface.md, sdlc-studio/stories/US0984-the-docs-and-specifications-describe-the-6-1.md, sdlc-studio/stories/US0983-the-v6-1-release-notes-lead-with-what.md, sdlc-studio/stories/US0985-v6-1-0-is-cut-version-changelog-known.md, sdlc-studio/bugs/BG0931-four-lane-fixes-the-v6-1-reviews-found.md, sdlc-studio/bugs/BG0932-a-broken-or-self-looping-transcript-link-still.md, sdlc-studio/bugs/BG0933-three-texts-still-say-what-the-code-does.md, sdlc-studio/bugs/BG0934-install-ps1-still-installs-from-main-while-install.md, sdlc-studio/bugs/BG0935-the-6-1-notes-say-migrate-leaves-prose.md, sdlc-studio/bugs/BG0936-the-v6-1-review-residue-three-unpinned-behaviours.md, sdlc-studio/bugs/BG0937-a-closed-run-that-is-not-yet-signed.md, sdlc-studio/bugs/BG0938-the-five-lows-the-last-v6-1-reviews.md, sdlc-studio/bugs/BG0939-install-ps1-rejects-every-release-download-the-sha256.md"
         }
       },
       "rows": [
@@ -1246,6 +1275,33 @@
             "value": 2,
             "source": "sdlc-studio/reviews/critic-verdicts.md"
           }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0939",
+            "source": "sdlc-studio/bugs/BG0939-install-ps1-rejects-every-release-download-the-sha256.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG0939-install-ps1-rejects-every-release-download-the-sha256.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - found by main's CI and fixed before the tag (D0326, D0336); delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
         }
       ],
       "not_measured": null
@@ -1292,12 +1348,12 @@
       "figures": {
         "tokens_delegated": {
           "key": "tokens_delegated",
-          "value": 3860491,
+          "value": 4042117,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "tokens_total": {
           "key": "tokens_total",
-          "value": 4429569,
+          "value": 4611195,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "token_coverage": {
@@ -1340,7 +1396,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": 1,
+            "value": 2,
             "source": "gh run list"
           },
           "dora_mapping": {
@@ -1355,7 +1411,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "forge runs 37133734434 - 1 push-triggered run(s) on main in the run window",
+            "value": "forge runs 37138857623/37133734434 - 2 push-triggered run(s) on main in the run window",
             "source": "gh run list"
           }
         },
@@ -1367,7 +1423,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "4h 21m",
+            "value": "4h 50m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -1382,7 +1438,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 44 commit(s)",
+            "value": "git history - first to last of 48 commit(s)",
             "source": "git log"
           }
         },
@@ -1394,7 +1450,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "100%",
+            "value": "50%",
             "source": "gh run list"
           },
           "dora_mapping": {
@@ -1409,7 +1465,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "forge runs 37133734434 - 1 deployment(s); 1 failed on 125cc8f92044f91081ef91f293b68eb8ad7e95cb",
+            "value": "forge runs 37138857623/37133734434 - 2 deployment(s); 1 failed on 125cc8f92044f91081ef91f293b68eb8ad7e95cb",
             "source": "gh run list"
           }
         },
@@ -1477,7 +1533,7 @@
       "figures": {
         "persona_rulings": {
           "key": "persona_rulings",
-          "value": 5,
+          "value": 6,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "cited_rulings": {
@@ -1892,7 +1948,7 @@
       "not_measured": null
     }
   ],
-  "findings_window_end": "2026-10-03T16:39:44Z",
+  "findings_window_end": "2026-10-03T17:11:16Z",
   "record_paths": "portable",
   "token_ratio": "every-delivered-unit-delegated",
   "restore_pairing": "next-success-after-failure",
@@ -1902,5 +1958,5 @@
   "delegated_tokens": "counted-over-a-zero-meter",
   "agent_minutes": "any-agent-supplied",
   "dora_failures": "failure-or-timed-out-only",
-  "fingerprint": "e84a8b047651037c"
+  "fingerprint": "db2922d0db3f637e"
 }
