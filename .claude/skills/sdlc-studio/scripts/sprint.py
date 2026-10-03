@@ -586,9 +586,11 @@ def _unit_wall_minutes(cal_rows: list[dict]) -> float | None:
 
     A lower bound on a run, never a forecast of it: the history records the time the workers
     spent, not the elapsed clock of the run around them (orchestration, reviews, operator
-    STOPs). It is reported as a floor so nobody reads it as the answer."""
+    STOPs). It is reported as a floor so nobody reads it as the answer. A close's whole-sprint
+    row (Measured 0) carries the run's active time, not any measured unit's, so it counts
+    neither side."""
     total_s = sum(r["wall_time_s"] for r in cal_rows
-                  if isinstance(r.get("wall_time_s"), (int, float)))
+                  if isinstance(r.get("wall_time_s"), (int, float)) and r.get("measured"))
     units = sum(r["measured"] for r in cal_rows if isinstance(r.get("measured"), (int, float)))
     if not total_s or not units:
         return None
