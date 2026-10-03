@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 5 |
+| Open | 7 |
 | In Progress | 0 |
 | Fixed | 766 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **928** |
+| **Total** | **930** |
 
 ## All Bugs
 
@@ -287,6 +287,8 @@
 | [BG0926](BG0926-a-lane-return-between-the-close-and-the.md) | A lane return between the close and the sign records into the run and invalidates the page before it is signed | Open | Medium | 2026-10-03 | 2026-10-03 |
 | [BG0927](BG0927-a-broken-transcript-in-another-project-s-folder.md) | A broken transcript in another project's folder crashes the long-path transcript scan | Open | Low | 2026-10-03 | 2026-10-03 |
 | [BG0928](BG0928-bg0885-did-not-converge-in-review-round-2.md) | BG0885 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-03 | 2026-10-03 |
+| [BG0929](BG0929-migrate-does-not-report-the-retired-handoff-surface.md) | migrate does not report the retired handoff surface in a project's own docs | Open | Medium | 2026-10-03 | 2026-10-03 |
+| [BG0930](BG0930-transition-py-warns-appetite-spent-against-a-run.md) | transition.py warns APPETITE SPENT against a run that is already signed | Open | Low | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 
