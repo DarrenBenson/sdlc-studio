@@ -76,11 +76,18 @@ class RecloseMeterAnyStampTests(unittest.TestCase):
         cost = next(s for s in page["sections"] if s["key"] == "cost")
         return sum(r["model_tokens"]["value"] for r in cost["rows"])
 
+    @staticmethod
+    def tokens_total(page: dict) -> int:
+        cost = next(s for s in page["sections"] if s["key"] == "cost")
+        return cost["figures"]["tokens_total"]["value"]
+
     def test_a_later_stamp_does_not_move_the_meter(self) -> None:
-        """AC1. MUTANT: HEAD, which counts every stamp on the run, so the later stamp moves the
-        re-filed page to 13,000."""
+        """AC1. MUTANTS: HEAD, which counts every stamp on the run, so the later stamp moves the
+        re-filed page to 13,000; and the half-fix that filters only the per-model cost rows,
+        leaving the page's token total at 13,000."""
         first = self.close_at(T)
-        self.assertEqual(4000, self.main_thread(first), "premise: the first close read 4,000")
+        self.assertEqual((4000, 4000), (self.main_thread(first), self.tokens_total(first)),
+                         "premise: the first close read 4,000, nothing delegated")
         self.spend(9000)                                 # post-close paperwork
         with self.clock(BETWEEN):
             stamp = self.rs.stamp_tokens(self.root, "unit-start")
@@ -88,6 +95,7 @@ class RecloseMeterAnyStampTests(unittest.TestCase):
                          "premise: a later, non-report stamp is on the run")
         again = self.close_at(LATER)
         self.assertEqual(4000, self.main_thread(again))
+        self.assertEqual(4000, self.tokens_total(again))
 
     def test_a_stamp_inside_the_window_still_counts(self) -> None:
         """The control: the bound is the window's end, not the report stamp. A unit stamp taken
