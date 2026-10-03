@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 0 |
-| In Progress | 1 |
-| Fixed | 781 |
+| In Progress | 0 |
+| Fixed | 782 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
@@ -297,7 +297,7 @@
 | [BG0936](BG0936-the-v6-1-review-residue-three-unpinned-behaviours.md) | The v6.1 review residue: three unpinned behaviours, a dropped seats entry, a slow note parser and two TRD rows nothing writes | Fixed | Low | 2026-10-03 | 2026-10-03 |
 | [BG0937](BG0937-a-closed-run-that-is-not-yet-signed.md) | A closed run that is not yet signed cannot be reopened, so work added before the sign cannot record its cost | Fixed | Medium | 2026-10-03 | 2026-10-03 |
 | [BG0938](BG0938-the-five-lows-the-last-v6-1-reviews.md) | The five lows the last v6.1 reviews raised (D0334) | Fixed | Low | 2026-10-03 | 2026-10-03 |
-| [BG0939](BG0939-install-ps1-rejects-every-release-download-the-sha256.md) | install.ps1 rejects every release download: the .sha256 sidecar is read as bytes, so the digest never matches | In Progress | High | 2026-10-03 | 2026-10-03 |
+| [BG0939](BG0939-install-ps1-rejects-every-release-download-the-sha256.md) | install.ps1 rejects every release download: the .sha256 sidecar is read as bytes, so the digest never matches | Fixed | High | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 

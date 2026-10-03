@@ -2,13 +2,15 @@
 
 > **Date:** 2026-10-03
 > **Run:** RUN-01M40TSJ
-> **Batch:** BG0926, BG0927, BG0924, BG0921, BG0922, BG0930, BG0929, US0984, US0983, US0985, BG0931, BG0932, BG0933, BG0934, BG0935, BG0936, BG0937, BG0938
+> **Batch:** BG0926, BG0927, BG0924, BG0921, BG0922, BG0930, BG0929, US0984, US0983, US0985, BG0931, BG0932, BG0933, BG0934, BG0935, BG0936, BG0937, BG0938, BG0939
 
 ## Keep
 
 - Brief each paperwork reviewer to run what the doc claims in a fixture, not to read it (D0328): the reviews of US0983, US0984 and BG0935 caught migrate over-claims, a test blind to bare file names and an install sentence a fix had made false, each by executing the claim.
 - Hold the cut until every other unit's review is back: a repair after the cut would have left its fragment out of the 6.1.0 entry.
 - Run the real interpreter for a script's test where the tree lacks it: BG0934's static read passed three broken defaults; real pwsh in a network-less container caught all three.
+
+- Main's own Windows CI is the check a static or stubbed installer test cannot replace: it caught BG0939, a byte-array checksum read that made every default Windows release install fail, once BG0934 made the latest release the default.
 
 ## Stop
 

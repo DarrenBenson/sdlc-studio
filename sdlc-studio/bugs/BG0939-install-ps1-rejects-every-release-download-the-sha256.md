@@ -1,6 +1,6 @@
 # BG0939: install.ps1 rejects every release download: the .sha256 sidecar is read as bytes, so the digest never matches
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
 > **Affects:** install.ps1, tools/tests/test_lean_install_ps1_checksum_bytes.py, CHANGELOG.md
@@ -25,6 +25,7 @@ Read the sidecar as text whatever its content type (decode a byte-array Content 
 
 - [ ] **AC1** Given install.ps1 run under pwsh with the asset download and its sidecar stubbed so the sidecar's Content is a byte array (as GitHub's octet-stream gives) holding the asset's real sha256, when it installs, then the checksum verifies and the install completes; a sidecar holding a different digest still aborts before extraction. Fails on: the current code, which reads the byte array's numbers as the digest and aborts on the matching sidecar
   - **Verify:** pytest tools/tests/test_lean_install_ps1_checksum_bytes.py::InstallPs1ChecksumBytesTests::test_a_byte_array_sidecar_verifies
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

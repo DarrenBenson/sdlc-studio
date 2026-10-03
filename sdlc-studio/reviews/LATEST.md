@@ -26,7 +26,9 @@
   residue are pinned (BG0931, BG0936).
 - **Before the sign (D0334).** The operator ruled the last reviews' five lows fixed before the tag (BG0938); reopening the closed, unsigned run needed BG0937 first, so a run closed and not yet signed can now be reopened and record the work added to it.
 - **Install.** `install.ps1` defaults to the latest release as `install.sh` does, tested by
-  running it under pwsh with the lookup stubbed (BG0934).
+  running it under pwsh with the lookup stubbed (BG0934); main's Windows CI then caught that it
+  read the release's checksum sidecar as bytes and refused every release install, fixed and
+  checked against a real v6.0.0 install before the tag (BG0939, D0336).
 
 ## What is owed
 
@@ -34,5 +36,5 @@
   record-green` and `tag-check`, the `v6.1.0` tag and its GitHub release (D0329).
 - **The website sprint** in sdlc-studio-web, groomed and ready (D0327): its backlog and the 6.1
   site update, with a check-in before the deploy.
-- Every seat ruling is in the decision log (D0328, D0330-D0333, D0335); the operator's are D0325-D0327,
+- Every seat ruling is in the decision log (D0328, D0330-D0333, D0335, D0336); the operator's are D0325-D0327,
   D0329 and D0334.
