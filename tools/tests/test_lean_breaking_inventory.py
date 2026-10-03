@@ -173,7 +173,10 @@ class BreakingInventoryTests(unittest.TestCase):
         root = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, root, True)
         shutil.copy(REPO / "CHANGELOG.md", root / "CHANGELOG.md")
-        shutil.copytree(REPO / "changelog.d", root / "changelog.d")
+        # A release cut consumes every fragment, and git keeps no empty directory: on a cut tree
+        # there is nothing to copy, and the disclosure already sits in a released section.
+        if (REPO / "changelog.d").is_dir():
+            shutil.copytree(REPO / "changelog.d", root / "changelog.d")
         self.assertNotIn("retired `review.policy` has no Breaking line",
                          disclosure_problems(root), "premise: disclosed before the cut")
         _changelog.compose(root, apply=True)
