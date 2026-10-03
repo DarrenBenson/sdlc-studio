@@ -1561,6 +1561,20 @@ def unit_agent_totals(state: dict) -> dict[str, dict]:
     return out
 
 
+def _page_filed(state: dict) -> bool:
+    """True when `sprint close` has filed the run's page and no `sprint reopen` has broken it.
+
+    The close leaves the outcome `running` until the sign, so the outcome alone cannot say the
+    page is filed; the run's `report`, the marker `sprint sign` reads, can. A reopen keeps that
+    id on the run and records it as the page it broke, so a run reopened since its page was
+    filed is open again until the next close files a new one."""
+    report = sdlc_md.norm_id(state.get("report") or "")
+    if not report:
+        return False
+    reopens = [r for r in state.get("reopened") or [] if isinstance(r, dict)]
+    return not (reopens and sdlc_md.norm_id(reopens[-1].get("report") or "") == report)
+
+
 def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
                             note: str = "", unit: str = "", minutes=None) -> dict | None:
     """Record one delegated agent's SUPPLIED token total against the open run.
@@ -1568,8 +1582,9 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
     Returns the record, or None when no run is open - a spend counted against a run with no
     identity could not be joined to anything later, so it is not counted at all. A run whose
     outcome is no longer running is sealed: its page is derived from it, so a late total would
-    move a signed figure. Nothing is recorded into it and one line on stderr says so - a
-    warning, not a refusal.
+    move a signed figure. A run whose page the close has filed (`_page_filed`) is closed to a
+    late total in the same way before it is signed. Nothing is recorded into either and one
+    line on stderr says so - a warning, not a refusal.
 
     A non-positive or non-integer total RAISES rather than being recorded: the whole point of
     this record is that it is a real figure an agent reported, and a 0 recorded here would be
@@ -1591,6 +1606,11 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
         print(f"WARNING the delegated total of {tokens:,} tokens was not recorded: run "
               f"{state['run_id']} is sealed (outcome {state.get('outcome')}), so a late total "
               f"would move its signed page", file=sys.stderr)
+        return None
+    if _page_filed(state):
+        print(f"WARNING the delegated total of {tokens:,} tokens was not recorded: run "
+              f"{state['run_id']} is closed (its page {state.get('report')} is filed), so a "
+              f"late total would move the page before it is signed", file=sys.stderr)
         return None
     entry = {"tokens": tokens, "agent": agent, "note": note,
              "provenance": SUPPLIED, "recorded_at": sdlc_md.now_iso8601()}
