@@ -1,6 +1,6 @@
 # BG0928: BG0885 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_verdict_finding_escape.py, changelog.d/BG0885.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -33,6 +33,7 @@ Fix each finding above, then deliver BG0885 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC5** BG0885 AC1 still passes: Given a fixture bug briefed with `critic.py brief`, when `critic.py record ... --issues '[new] the shape [A-Z][A-Z_]{4,} matches UNKNOWN'` writes the verdict, then markdownlint with this repository's config reports no MD052 on `critic-verdicts.md`, and the ledger's reader (`critic.parse_findings` on the recorded row) returns the finding text exactly as given.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_verdict_finding_escape.py::VerdictFindingEscapeTests::test_a_bracketed_finding_lints_and_reads_back
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

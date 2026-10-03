@@ -1,6 +1,6 @@
 # BG0885: critic.py record writes a finding into critic-verdicts.md unescaped, so markdown-shaped text breaks the lint
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_verdict_finding_escape.py, changelog.d/BG0885.md
