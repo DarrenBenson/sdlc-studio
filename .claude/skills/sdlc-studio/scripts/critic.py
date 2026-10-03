@@ -857,7 +857,8 @@ def _supersede_value(value: str, escape: bool = True) -> str:
 def _supersede_field(body: str, key: str) -> str:
     boundary = "|".join(re.escape(k) for k in _SUPERSEDE_KEYS)
     m = re.search(rf"(?:^|\s){re.escape(key)}=(.*?)(?=\s(?:{boundary})=|$)", body)
-    return _unescape(m.group(1).strip()) if m else ""
+    # The writer escapes outside code spans only (`_clean`), so the reader does too.
+    return _unescape_outside_spans(m.group(1).strip()) if m else ""
 
 
 def read_supersessions(repo_root: Path | str, phase: str = "delivery") -> list[dict]:

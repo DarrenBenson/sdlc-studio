@@ -47,6 +47,22 @@ def _markdownlint() -> str | None:
     return str(local) if local.exists() else shutil.which("markdownlint")
 
 
+def _recorded_reject(root: Path, issues: str) -> str:
+    """A throwaway `init run` project at `root` holding one briefed bug and its REJECT row
+    recorded through the shipped CLI with `issues`: the bug's id."""
+    subprocess.run(["git", "init", "-q", "-b", "main", str(root)],
+                   env=gitutil.git_env(), check=True, capture_output=True)
+    _ok(root, "init.py", "run")
+    bug = _ID.search(_ok(
+        root, "artifact.py", "new", "--type", "bug", "--title", "a widget defect",
+        "--severity", "low", "--points", "1", "--affects", "src/widget.py",
+        "--ac", "the widget holds", "--verify", "shell test -f src/widget.py")).group(1)
+    _ok(root, "critic.py", "brief", "--unit", bug, "--seat", "qa")
+    _ok(root, "critic.py", "record", "--unit", bug, "--verdict", "REJECT",
+        "--reviewer", "qa seat", "--author", "engineering seat", "--issues", issues)
+    return bug
+
+
 class VerdictFindingEscapeTests(unittest.TestCase):
     def _record_and_lint(self, finding: str) -> tuple[list[dict], str | None, str]:
         """Record `[new] finding` through the shipped CLI in a throwaway project: the findings
@@ -55,17 +71,7 @@ class VerdictFindingEscapeTests(unittest.TestCase):
         critic = loader.load_script("critic")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            subprocess.run(["git", "init", "-q", "-b", "main", str(root)],
-                           env=gitutil.git_env(), check=True, capture_output=True)
-            _ok(root, "init.py", "run")
-            bug = _ID.search(_ok(
-                root, "artifact.py", "new", "--type", "bug", "--title", "a widget defect",
-                "--severity", "low", "--points", "1", "--affects", "src/widget.py",
-                "--ac", "the widget holds", "--verify", "shell test -f src/widget.py")).group(1)
-            _ok(root, "critic.py", "brief", "--unit", bug, "--seat", "qa")
-            _ok(root, "critic.py", "record", "--unit", bug, "--verdict", "REJECT",
-                "--reviewer", "qa seat", "--author", "engineering seat",
-                "--issues", f"[new] {finding}")
+            _recorded_reject(root, f"[new] {finding}")
             [row] = [r for r in critic.read_verdicts(root) if r["verdict"] == "REJECT"]
             ledger = root / "sdlc-studio" / "reviews" / "critic-verdicts.md"
             mdl = _markdownlint()
@@ -108,6 +114,25 @@ class VerdictFindingEscapeTests(unittest.TestCase):
         if lint is None:
             self.skipTest("markdownlint not installed - the pre-commit markdown lane runs it")
         self.assertNotIn("MD011", lint, ledger)
+
+    def test_a_supersession_reason_reads_back_byte_for_byte(self) -> None:
+        """The supersession reader undoes the same escapes as the finding reader, outside code
+        spans only. MUTANT: `_supersede_field` reading through the span-blind `_unescape` - the
+        backslash typed inside the span is taken for an added escape and the reason reads back
+        with `a][b`. MUTANT: no unescape at all - `[A-Z]\\[a-z]` and `my\\_var` read back
+        escaped."""
+        critic = loader.load_script("critic")
+        reason = r"span `a]\[b` here, and [A-Z][a-z] with my_var outside it"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bug = _recorded_reject(root, "[new] a finding nobody made")
+            [row] = [r for r in critic.read_verdicts(root) if r["verdict"] == "REJECT"]
+            _ok(root, "critic.py", "supersede", "--unit", bug, "--date", row["date"],
+                "--reason", reason, "--authorised-by", "operator",
+                "--boundary", "operator console")
+            [rec] = critic.read_supersessions(root)
+        self.assertEqual(reason, rec["reason"])
+        self.assertEqual("operator console", rec["boundary"])
 
 
 if __name__ == "__main__":
