@@ -52,6 +52,19 @@ class MeterZeroDelegatedTests(unittest.TestCase):
         self.assertEqual(255_000, row["est_actual"]["value"])
         self.assertNotIn("unread", row["est_basis"]["value"])
 
+    def test_a_filed_page_re_derives_under_its_own_mark(self) -> None:
+        """BG0900 round 1. MUTANTS: drop the DELEGATED_RULE mark from the envelope, so a page
+        filed with the 250,000 re-derives with the rule off (NOT MEASURED) and reads
+        INVALIDATED; hard-wire `delegated_rule=True` in revalidate, so a page filed before the
+        rule re-derives 250,000 against its NOT MEASURED. Each filing is the other's control."""
+        ws, sr = self.ws, lane._live("sprint_report")
+        ws.deliver("US0101", "--tokens", "250000")        # no spend after the open: meter 0
+        for rule, actual in ((True, 250_000), (False, sr.NOT_MEASURED)):
+            page = sr.build_report(ws.root, lane.RETRO, delegated_rule=rule)
+            self.assertEqual(actual, ws.tokens_row(page)["est_actual"]["value"], "premise")
+            check = sr.revalidate(ws.root, sr.file_report(ws.root, page))
+            self.assertTrue(check["valid"], (rule, check["changes"]))
+
 
 if __name__ == "__main__":
     unittest.main()
