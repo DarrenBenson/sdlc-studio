@@ -25,6 +25,7 @@ Read the appetite only for a run that is open (not sealed), as status.py does. N
 
 - [ ] **AC1** Given a workspace whose last run is signed with its appetite spent, when transition.py set moves a unit, then no APPETITE SPENT warning is printed, and an open run with its appetite spent still prints it. Fails on: the current code, which warns against the signed run
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_appetite_sealed_run.py::AppetiteSealedRunTests::test_a_signed_run_spends_no_appetite
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

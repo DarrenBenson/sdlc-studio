@@ -1,6 +1,6 @@
 # US0984: The docs and specifications describe the 6.1 code
 
-> **Status:** Ready
+> **Status:** In Progress
 > **Created:** 2026-10-03
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

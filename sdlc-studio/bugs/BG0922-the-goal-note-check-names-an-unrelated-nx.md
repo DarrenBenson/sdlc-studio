@@ -25,6 +25,7 @@ Read only ratios that sit beside a ratio's measure name, and accept X and the mu
 
 - [ ] **AC1** Given a note saying '10x faster' that quotes the page's tokens ratio, and a second note quoting a wrong ratio as 1.4X, when sprint close files the page, then the first names nothing and the second is named. Fails on: the current parser
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_note_ratio_spelling.py::GoalNoteRatioSpellingTests::test_only_measure_ratios_are_read
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

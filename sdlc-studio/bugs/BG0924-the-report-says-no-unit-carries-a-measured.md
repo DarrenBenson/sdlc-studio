@@ -25,6 +25,7 @@ Name the actual reason: no unit carries both a forecast and a measured time. No 
 
 - [ ] **AC1** Given a run whose units carry measured minutes but no forecast, when the page is built, then the Minutes reason says no unit carries both a forecast and a measured time, and a run with no measured minutes still reads that no unit carries a measured time. Fails on: the current reason
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_minutes_reason_true.py::MinutesReasonTrueTests::test_the_reason_names_the_missing_pair
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

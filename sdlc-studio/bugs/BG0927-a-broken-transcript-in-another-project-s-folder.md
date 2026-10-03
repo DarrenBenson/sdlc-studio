@@ -25,6 +25,7 @@ Skip a transcript that cannot be read while scanning, as an unreadable one elsew
 
 - [ ] **AC1** Given a long-path project and a dangling transcript in an unrelated projects/ folder, when the transcript folder is resolved, then the right folder is returned and nothing raises. Fails on: the current scan, which raises FileNotFoundError
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_transcript_scan_dangling.py::TranscriptScanDanglingTests::test_a_dangling_transcript_is_skipped
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

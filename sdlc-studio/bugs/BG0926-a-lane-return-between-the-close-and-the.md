@@ -25,6 +25,7 @@ Treat a run whose page is filed as closed to late totals, as a sealed run is, an
 
 - [ ] **AC1** Given a run whose page is filed by sprint close and not yet signed, when lane return --tokens is run, then nothing is recorded, a stderr line names the closed run, and the filed page still checks VALID. Fails on: the current code, which records and invalidates the page
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_closed_run_late_total.py::ClosedRunLateTotalTests::test_a_return_after_the_close_records_nothing
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

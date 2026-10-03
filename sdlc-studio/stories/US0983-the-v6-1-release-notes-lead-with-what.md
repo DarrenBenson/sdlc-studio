@@ -1,6 +1,6 @@
 # US0983: The v6.1 release notes lead with what changed for the person using it
 
-> **Status:** Ready
+> **Status:** In Progress
 > **Created:** 2026-10-03
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

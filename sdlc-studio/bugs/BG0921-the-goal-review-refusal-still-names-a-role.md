@@ -25,6 +25,7 @@ Name the keys the code reads in the refusal, as the help now does. No new refusa
 
 - [ ] **AC1** Given a goal-review fields document with a seat missing its key, when record refuses it, then the message names 'seat' and not 'role'. Fails on: the current message
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_review_refusal_keys.py::GoalReviewRefusalKeysTests::test_the_refusal_names_the_seat_key
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 
