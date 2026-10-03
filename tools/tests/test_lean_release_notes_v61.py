@@ -197,23 +197,22 @@ def migrate_sentence_problems(text: str, named: set[int]) -> list[str]:
     return problems
 
 
-def entries_61(changelog: str) -> list[tuple[str, str]]:
-    """(section, body) of each 6.1 entry wherever the layout holds it at the time: the pending
-    `changelog.d/` fragments before the cut, the `## [6.1.0]` section's subsections after it,
-    so the controls built from the entries hold on both sides of the release commit."""
-    pending = sorted(FRAGMENTS.glob("*.md")) if FRAGMENTS.is_dir() else []
-    if pending:
-        out = []
-        for p in pending:
-            head, _, body = p.read_text(encoding="utf-8").partition("\n")
-            m = re.match(r"<!-- section: (\w+) -->", head)
-            out.append((m.group(1) if m else "", body))
-        return out
+def entries_61(changelog: str, fragments: Path = FRAGMENTS) -> list[tuple[str, str]]:
+    """(section, body) of each 6.1 entry wherever the layout holds it at the time: the
+    `## [6.1.0]` section's subsections once the cut has written it, the pending `changelog.d/`
+    fragments only before then, so the controls built from the entries hold on both sides of the
+    release commit. Once the section exists a fragment belongs to the next release: reading it
+    first emptied the 6.1 Breaking entries at the first fragment written after the cut."""
     cut = re.search(r"^## \[6\.1\.0\][^\n]*\n(.*?)(?=^## \[|\Z)", changelog, re.M | re.S)
-    if not cut:
-        return []
-    return [(m.group(1), m.group(2)) for m in
-            re.finditer(r"^### (\w+)\n(.*?)(?=^### |\Z)", cut.group(1), re.M | re.S)]
+    if cut:
+        return [(m.group(1), m.group(2)) for m in
+                re.finditer(r"^### (\w+)\n(.*?)(?=^### |\Z)", cut.group(1), re.M | re.S)]
+    out = []
+    for p in sorted(fragments.glob("*.md")) if fragments.is_dir() else []:
+        head, _, body = p.read_text(encoding="utf-8").partition("\n")
+        m = re.match(r"<!-- section: (\w+) -->", head)
+        out.append((m.group(1) if m else "", body))
+    return out
 
 
 def install_bullet_problems(text: str) -> list[str]:
@@ -377,6 +376,27 @@ class ReleaseNotesTests(unittest.TestCase):
         ps1 = (REPO / "install.ps1").read_text(encoding="utf-8")
         self.assertRegex(ps1, r"(?m)^\s*-Version VER\b[^\n]*\bmain\b",
                          "install.ps1 does not take -Version main")
+
+    def test_a_fragment_written_after_the_cut_leaves_the_61_entries_read(self) -> None:
+        """US0985 round-1 REJECT. MUTANT: `entries_61` reading any pending fragment in
+        preference to the cut `## [6.1.0]` section, so the first fragment of the next release
+        (a Fixed BG9999 here) replaced 6.1's entries and AC2 read 0 Breaking bullets. The
+        fragment lives in a temp directory; the real `changelog.d/` is never written."""
+        cut = re.search(r"(?m)^## \[6\.1\.0\][^\n]*\n(.*?)(?=^## \[|\Z)", self.changelog, re.S)
+        self.assertIsNotNone(cut, "premise: the CHANGELOG holds the cut [6.1.0] section")
+        late = "- **A fix after the cut (BG9999).** Mended.\n"
+        with tempfile.TemporaryDirectory() as d:
+            frags = Path(d)
+            (frags / "BG9999.md").write_text(f"<!-- section: Fixed -->\n{late}", encoding="utf-8")
+            after = entries_61(self.changelog, frags)
+            self.assertEqual(entries_61(self.changelog, frags / "absent"), after,
+                             "a post-cut fragment changed the 6.1 entries")
+            self.assertNotIn(late, [body for _s, body in after])
+            breaking = [body for s, body in after if s == "Breaking"]
+            self.assertGreaterEqual(sum(len(re.findall(r"^- ", b, re.M)) for b in breaking), 2)
+            # The control: before the cut there is no section, and the fragments are the entries.
+            precut = self.changelog.replace(cut.group(0), "", 1)
+            self.assertEqual([("Fixed", late)], entries_61(precut, frags))
 
 
 if __name__ == "__main__":
