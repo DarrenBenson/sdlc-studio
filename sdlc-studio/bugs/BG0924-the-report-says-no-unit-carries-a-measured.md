@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_minutes_reason_true.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_minutes_reason_true.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG0924.md
 > **Created:** 2026-10-03
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

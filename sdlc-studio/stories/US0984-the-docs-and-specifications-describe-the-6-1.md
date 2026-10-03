@@ -30,7 +30,7 @@
 - `sprint plan` reports the TSD stale because the scripts changed after its last commit (`tsd_staleness`, a commit-time comparison). That verdict clears only once this unit's TSD edit is committed after the last script change, so it is not a Verify line here; AC2 checks the content instead.
 - Measured current, so not in Affects: docs/INSTALL.md (US0968 and BG0852 already describe the latest-release default and the Copilot global target), help/handoff.md, help/sprint.md, reference-config.md. The only help gap found is `verify_ac.py run --unit` (US0804), hence help/verify.md.
 - Two existing tests constrain the page: `tools/tests/test_lean_upgrade_page_docs.py` requires the first `##` section to be 'Upgrading to v6' and every retired surface (including `review.policy`) named only inside it, so the 6.0 path is a `###` subsection there; `scripts/tests/test_existing_users_page.py` executes the first fenced bash block after 'Upgrade steps', so keep that block first.
-- `migrate` does not report `handoff.py generate` or `--require-handoff` in a project's docs (no `RETIRED_VERBS` entry for handoff, no Retired flags table row). The page says so rather than this unit adding a scanner entry.
+- After BG0929 (this sprint), `migrate` reports `handoff.py generate` and `--require-handoff` where a project's markdown docs use them in code, and does not scan CI yaml or scripts; the page says so.
 - The specs' Version fields move to 6.1.0 in US0985, the release commit, not here.
 - Name the mutant first: each test's docstring names HEAD's page, HEAD's TSD and HEAD's help/verify.md as the controls it must refuse, and runs `migrate.py` as the user does rather than reading a hand list of keys.
 
@@ -40,3 +40,4 @@
 | --- | --- | --- |
 | 2026-10-03 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-03 | engineering seat (grooming) | Groomed for EP0273 under D0325: user story, three criteria with Verify lines, Affects and the measured staleness of the specs and docs |
+| 2026-10-03 | engineering seat | Note re-groomed for BG0929 (QA seat, goal-review round 87) |

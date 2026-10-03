@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_note_ratio_spelling.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_note_ratio_spelling.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG0922.md
 > **Created:** 2026-10-03
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
