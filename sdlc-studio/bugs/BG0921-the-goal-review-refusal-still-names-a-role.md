@@ -1,6 +1,6 @@
 # BG0921: The goal-review refusal still names a 'role' key after the help names 'seat'
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_review_refusal_keys.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG0921.md

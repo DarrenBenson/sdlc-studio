@@ -1,6 +1,6 @@
 # BG0926: A lane return between the close and the sign records into the run and invalidates the page before it is signed
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_closed_run_late_total.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, changelog.d/BG0926.md

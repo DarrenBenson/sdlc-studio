@@ -1,6 +1,6 @@
 # BG0927: A broken transcript in another project's folder crashes the long-path transcript scan
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_transcript_scan_dangling.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, changelog.d/BG0927.md

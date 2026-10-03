@@ -1,6 +1,6 @@
 # BG0922: The goal-note check names an unrelated 'Nx' figure as a contradiction and misses 1.7X and the multiplication sign
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_note_ratio_spelling.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG0922.md

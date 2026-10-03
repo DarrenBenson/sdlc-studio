@@ -1,6 +1,6 @@
 # BG0924: The report says no unit carries a measured time when units carry minutes but none has a forecast
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_minutes_reason_true.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG0924.md

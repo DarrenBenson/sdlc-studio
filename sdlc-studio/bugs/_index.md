@@ -6,8 +6,8 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 7 |
-| In Progress | 0 |
+| Open | 1 |
+| In Progress | 6 |
 | Fixed | 766 |
 | Verified | 0 |
 | Closed | 87 |
@@ -279,16 +279,16 @@
 | [BG0918](BG0918-the-close-warns-that-a-note-contradicts-the.md) | The close warns that a note contradicts the page when the note writes 1.70x and the page 1.7x | Fixed | Low | 2026-10-03 | 2026-10-03 |
 | [BG0919](BG0919-the-page-format-rule-marks-bg0898-bg0901-and.md) | The page-format rule marks BG0898, BG0901 and BG0904 added have no file-then-revalidate pin | Fixed | Low | 2026-10-03 | 2026-10-03 |
 | [BG0920](BG0920-the-close-checklist-s-cost-row-reads-the.md) | The close checklist's cost row reads the moved meter on a re-close while the re-filed page reads the first close's | Fixed | Low | 2026-10-03 | 2026-10-03 |
-| [BG0921](BG0921-the-goal-review-refusal-still-names-a-role.md) | The goal-review refusal still names a 'role' key after the help names 'seat' | Open | Low | 2026-10-03 | 2026-10-03 |
-| [BG0922](BG0922-the-goal-note-check-names-an-unrelated-nx.md) | The goal-note check names an unrelated 'Nx' figure as a contradiction and misses 1.7X and the multiplication sign | Open | Low | 2026-10-03 | 2026-10-03 |
+| [BG0921](BG0921-the-goal-review-refusal-still-names-a-role.md) | The goal-review refusal still names a 'role' key after the help names 'seat' | In Progress | Low | 2026-10-03 | 2026-10-03 |
+| [BG0922](BG0922-the-goal-note-check-names-an-unrelated-nx.md) | The goal-note check names an unrelated 'Nx' figure as a contradiction and misses 1.7X and the multiplication sign | In Progress | Low | 2026-10-03 | 2026-10-03 |
 | [BG0923](BG0923-bg0913-did-not-converge-in-review-round-2.md) | BG0913 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-03 | 2026-10-03 |
-| [BG0924](BG0924-the-report-says-no-unit-carries-a-measured.md) | The report says no unit carries a measured time when units carry minutes but none has a forecast | Open | Low | 2026-10-03 | 2026-10-03 |
+| [BG0924](BG0924-the-report-says-no-unit-carries-a-measured.md) | The report says no unit carries a measured time when units carry minutes but none has a forecast | In Progress | Low | 2026-10-03 | 2026-10-03 |
 | [BG0925](BG0925-migrate-s-retired-surface-scan-misses-a-bare.md) | migrate's retired-surface scan misses a bare retired command inside a fenced code block | Fixed | Low | 2026-10-03 | 2026-10-03 |
-| [BG0926](BG0926-a-lane-return-between-the-close-and-the.md) | A lane return between the close and the sign records into the run and invalidates the page before it is signed | Open | Medium | 2026-10-03 | 2026-10-03 |
-| [BG0927](BG0927-a-broken-transcript-in-another-project-s-folder.md) | A broken transcript in another project's folder crashes the long-path transcript scan | Open | Low | 2026-10-03 | 2026-10-03 |
+| [BG0926](BG0926-a-lane-return-between-the-close-and-the.md) | A lane return between the close and the sign records into the run and invalidates the page before it is signed | In Progress | Medium | 2026-10-03 | 2026-10-03 |
+| [BG0927](BG0927-a-broken-transcript-in-another-project-s-folder.md) | A broken transcript in another project's folder crashes the long-path transcript scan | In Progress | Low | 2026-10-03 | 2026-10-03 |
 | [BG0928](BG0928-bg0885-did-not-converge-in-review-round-2.md) | BG0885 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-03 | 2026-10-03 |
 | [BG0929](BG0929-migrate-does-not-report-the-retired-handoff-surface.md) | migrate does not report the retired handoff surface in a project's own docs | Open | Medium | 2026-10-03 | 2026-10-03 |
-| [BG0930](BG0930-transition-py-warns-appetite-spent-against-a-run.md) | transition.py warns APPETITE SPENT against a run that is already signed | Open | Low | 2026-10-03 | 2026-10-03 |
+| [BG0930](BG0930-transition-py-warns-appetite-spent-against-a-run.md) | transition.py warns APPETITE SPENT against a run that is already signed | In Progress | Low | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 
