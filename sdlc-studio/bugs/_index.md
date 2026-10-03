@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 1 |
-| In Progress | 1 |
-| Fixed | 783 |
+| Open | 2 |
+| In Progress | 0 |
+| Fixed | 784 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **942** |
+| **Total** | **943** |
 
 ## All Bugs
 
@@ -300,7 +300,8 @@
 | [BG0939](BG0939-install-ps1-rejects-every-release-download-the-sha256.md) | install.ps1 rejects every release download: the .sha256 sidecar is read as bytes, so the digest never matches | Fixed | High | 2026-10-03 | 2026-10-03 |
 | [BG0940](BG0940-a-ruling-logged-between-the-close-and-the.md) | A ruling logged between the close and the sign changes the filed page, and sign seals it without re-deriving | Open | Medium | 2026-10-03 | 2026-10-03 |
 | [BG0941](BG0941-us0937-ac3-pins-bg0717-s-verified-yes-stamp.md) | US0937 AC3 pins BG0717's 'Verified: yes' stamp, which US0978 retired, so the release gate reads it red | Fixed | Medium | 2026-10-03 | 2026-10-03 |
-| [BG0942](BG0942-this-repository-s-own-config-comment-names-the.md) | This repository's own config comment names the retired review.policy key, so US0926 AC1 reads red at the release gate | In Progress | Medium | 2026-10-03 | 2026-10-03 |
+| [BG0942](BG0942-this-repository-s-own-config-comment-names-the.md) | This repository's own config comment names the retired review.policy key, so US0926 AC1 reads red at the release gate | Fixed | Medium | 2026-10-03 | 2026-10-03 |
+| [BG0943](BG0943-config-py-show-cannot-see-any-review-key.md) | config.py show cannot see any review key declared after the severity_levels list | Open | Low | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 

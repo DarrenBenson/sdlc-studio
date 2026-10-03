@@ -37,9 +37,10 @@ buy honestly.
 
 | Id | Severity | Finding |
 | --- | --- | --- |
+| `BG0943` | Low | config.py show cannot see any review key declared after the severity_levels list |
 | `BG0940` | Medium | A ruling logged between the close and the sign changes the filed page, and sign seals it without re-deriving |
 
-1 findings: 1 Medium, 0 Low.
+2 findings: 1 Medium, 1 Low.
 
 ## Not carried
 

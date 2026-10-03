@@ -99,7 +99,7 @@ Every open finding this release ships is listed by id on [the disclosure page](k
 which `tools/known_issues.py write` generates from the bug corpus at the cut, together with the
 count below, so the two cannot disagree.
 
-**v6.1.0 discloses 1 open defects: 1 Medium, 0 Low.**
+**v6.1.0 discloses 2 open defects: 1 Medium, 1 Low.**
 
 ## Sources
 

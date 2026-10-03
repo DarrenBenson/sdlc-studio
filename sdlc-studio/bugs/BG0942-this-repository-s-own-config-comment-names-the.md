@@ -1,6 +1,6 @@
 # BG0942: This repository's own config comment names the retired review.policy key, so US0926 AC1 reads red at the release gate
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** sdlc-studio/.config.yaml

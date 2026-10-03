@@ -1567,6 +1567,7 @@ One row has been removed since adoption.
 | BG0938 | APPROVE | qa-seat-BG0938-v61r1 | engineering-v61-pretag | 2026-10-03 | a63889a11a68 | - | none |
 | BG0939 | APPROVE | qa-seat-BG0939-v61r1 | engineering-v61-pretag | 2026-10-03 | 9fff0108313c | - | none |
 | BG0941 | APPROVE | qa-seat-BG0941-r1 | engineering-seat-release | 2026-10-03 | 0afc7f0a7e1a | - | [new] low: BG0941 AC1 Verify (verify\_ac run --ids US0937 / grep fail=0) exercises only the positive case - the no-Verified-line and non-terminal refusals it names are proven only by hand mutants, not by any shipped lane (BG0941 AC1) |
+| BG0942 | APPROVE | qa-seat-BG0942-r1 | engineering-seat-release | 2026-10-03 | b69b1488cf6a | - | none |
 
 ## Supersessions
 
