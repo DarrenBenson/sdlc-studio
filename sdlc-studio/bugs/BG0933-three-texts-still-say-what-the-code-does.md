@@ -1,6 +1,6 @@
 # BG0933: Three texts still say what the code does not: the empty-seats refusal, BG0930's docstring and help/gate.md's lane count
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/help/gate.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_texts_true.py, changelog.d/BG0933.md

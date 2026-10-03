@@ -1,6 +1,6 @@
 # BG0931: Four lane fixes the v6.1 reviews found unpinned: a split forecast, a reopened re-close, the newest transcript and a partial run
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_lane1_pins.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/transition.py, changelog.d/BG0931.md

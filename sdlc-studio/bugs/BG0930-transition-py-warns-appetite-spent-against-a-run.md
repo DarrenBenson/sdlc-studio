@@ -1,6 +1,6 @@
 # BG0930: transition.py warns APPETITE SPENT against a run that is already signed
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_appetite_sealed_run.py, changelog.d/BG0930.md, .claude/skills/sdlc-studio/scripts/tests/test_transition.py

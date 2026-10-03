@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Open | 0 |
-| In Progress | 13 |
-| Fixed | 766 |
+| In Progress | 0 |
+| Fixed | 779 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
@@ -279,22 +279,22 @@
 | [BG0918](BG0918-the-close-warns-that-a-note-contradicts-the.md) | The close warns that a note contradicts the page when the note writes 1.70x and the page 1.7x | Fixed | Low | 2026-10-03 | 2026-10-03 |
 | [BG0919](BG0919-the-page-format-rule-marks-bg0898-bg0901-and.md) | The page-format rule marks BG0898, BG0901 and BG0904 added have no file-then-revalidate pin | Fixed | Low | 2026-10-03 | 2026-10-03 |
 | [BG0920](BG0920-the-close-checklist-s-cost-row-reads-the.md) | The close checklist's cost row reads the moved meter on a re-close while the re-filed page reads the first close's | Fixed | Low | 2026-10-03 | 2026-10-03 |
-| [BG0921](BG0921-the-goal-review-refusal-still-names-a-role.md) | The goal-review refusal still names a 'role' key after the help names 'seat' | In Progress | Low | 2026-10-03 | 2026-10-03 |
-| [BG0922](BG0922-the-goal-note-check-names-an-unrelated-nx.md) | The goal-note check names an unrelated 'Nx' figure as a contradiction and misses 1.7X and the multiplication sign | In Progress | Low | 2026-10-03 | 2026-10-03 |
+| [BG0921](BG0921-the-goal-review-refusal-still-names-a-role.md) | The goal-review refusal still names a 'role' key after the help names 'seat' | Fixed | Low | 2026-10-03 | 2026-10-03 |
+| [BG0922](BG0922-the-goal-note-check-names-an-unrelated-nx.md) | The goal-note check names an unrelated 'Nx' figure as a contradiction and misses 1.7X and the multiplication sign | Fixed | Low | 2026-10-03 | 2026-10-03 |
 | [BG0923](BG0923-bg0913-did-not-converge-in-review-round-2.md) | BG0913 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-03 | 2026-10-03 |
-| [BG0924](BG0924-the-report-says-no-unit-carries-a-measured.md) | The report says no unit carries a measured time when units carry minutes but none has a forecast | In Progress | Low | 2026-10-03 | 2026-10-03 |
+| [BG0924](BG0924-the-report-says-no-unit-carries-a-measured.md) | The report says no unit carries a measured time when units carry minutes but none has a forecast | Fixed | Low | 2026-10-03 | 2026-10-03 |
 | [BG0925](BG0925-migrate-s-retired-surface-scan-misses-a-bare.md) | migrate's retired-surface scan misses a bare retired command inside a fenced code block | Fixed | Low | 2026-10-03 | 2026-10-03 |
-| [BG0926](BG0926-a-lane-return-between-the-close-and-the.md) | A lane return between the close and the sign records into the run and invalidates the page before it is signed | In Progress | Medium | 2026-10-03 | 2026-10-03 |
-| [BG0927](BG0927-a-broken-transcript-in-another-project-s-folder.md) | A broken transcript in another project's folder crashes the long-path transcript scan | In Progress | Low | 2026-10-03 | 2026-10-03 |
+| [BG0926](BG0926-a-lane-return-between-the-close-and-the.md) | A lane return between the close and the sign records into the run and invalidates the page before it is signed | Fixed | Medium | 2026-10-03 | 2026-10-03 |
+| [BG0927](BG0927-a-broken-transcript-in-another-project-s-folder.md) | A broken transcript in another project's folder crashes the long-path transcript scan | Fixed | Low | 2026-10-03 | 2026-10-03 |
 | [BG0928](BG0928-bg0885-did-not-converge-in-review-round-2.md) | BG0885 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-03 | 2026-10-03 |
-| [BG0929](BG0929-migrate-does-not-report-the-retired-handoff-surface.md) | migrate does not report the retired handoff surface in a project's own docs | In Progress | Medium | 2026-10-03 | 2026-10-03 |
-| [BG0930](BG0930-transition-py-warns-appetite-spent-against-a-run.md) | transition.py warns APPETITE SPENT against a run that is already signed | In Progress | Low | 2026-10-03 | 2026-10-03 |
-| [BG0931](BG0931-four-lane-fixes-the-v6-1-reviews-found.md) | Four lane fixes the v6.1 reviews found unpinned: a split forecast, a reopened re-close, the newest transcript and a partial run | In Progress | Low | 2026-10-03 | 2026-10-03 |
-| [BG0932](BG0932-a-broken-or-self-looping-transcript-link-still.md) | A broken or self-looping transcript link still crashes the report | In Progress | Low | 2026-10-03 | 2026-10-03 |
-| [BG0933](BG0933-three-texts-still-say-what-the-code-does.md) | Three texts still say what the code does not: the empty-seats refusal, BG0930's docstring and help/gate.md's lane count | In Progress | Low | 2026-10-03 | 2026-10-03 |
-| [BG0934](BG0934-install-ps1-still-installs-from-main-while-install.md) | install.ps1 still installs from main while install.sh installs the latest release | In Progress | Medium | 2026-10-03 | 2026-10-03 |
-| [BG0935](BG0935-the-6-1-notes-say-migrate-leaves-prose.md) | The 6.1 notes say migrate leaves prose alone and give no way to install main on Windows | In Progress | Low | 2026-10-03 | 2026-10-03 |
-| [BG0936](BG0936-the-v6-1-review-residue-three-unpinned-behaviours.md) | The v6.1 review residue: three unpinned behaviours, a dropped seats entry, a slow note parser and two TRD rows nothing writes | In Progress | Low | 2026-10-03 | 2026-10-03 |
+| [BG0929](BG0929-migrate-does-not-report-the-retired-handoff-surface.md) | migrate does not report the retired handoff surface in a project's own docs | Fixed | Medium | 2026-10-03 | 2026-10-03 |
+| [BG0930](BG0930-transition-py-warns-appetite-spent-against-a-run.md) | transition.py warns APPETITE SPENT against a run that is already signed | Fixed | Low | 2026-10-03 | 2026-10-03 |
+| [BG0931](BG0931-four-lane-fixes-the-v6-1-reviews-found.md) | Four lane fixes the v6.1 reviews found unpinned: a split forecast, a reopened re-close, the newest transcript and a partial run | Fixed | Low | 2026-10-03 | 2026-10-03 |
+| [BG0932](BG0932-a-broken-or-self-looping-transcript-link-still.md) | A broken or self-looping transcript link still crashes the report | Fixed | Low | 2026-10-03 | 2026-10-03 |
+| [BG0933](BG0933-three-texts-still-say-what-the-code-does.md) | Three texts still say what the code does not: the empty-seats refusal, BG0930's docstring and help/gate.md's lane count | Fixed | Low | 2026-10-03 | 2026-10-03 |
+| [BG0934](BG0934-install-ps1-still-installs-from-main-while-install.md) | install.ps1 still installs from main while install.sh installs the latest release | Fixed | Medium | 2026-10-03 | 2026-10-03 |
+| [BG0935](BG0935-the-6-1-notes-say-migrate-leaves-prose.md) | The 6.1 notes say migrate leaves prose alone and give no way to install main on Windows | Fixed | Low | 2026-10-03 | 2026-10-03 |
+| [BG0936](BG0936-the-v6-1-review-residue-three-unpinned-behaviours.md) | The v6.1 review residue: three unpinned behaviours, a dropped seats entry, a slow note parser and two TRD rows nothing writes | Fixed | Low | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 

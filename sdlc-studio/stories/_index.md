@@ -10,9 +10,9 @@
 | Draft | 0 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 3 |
+| In Progress | 1 |
 | Review | 0 |
-| Done | 799 |
+| Done | 801 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -341,8 +341,8 @@
 | [US0980](US0980-a-lane-return-records-the-builder-s-token.md) | A lane return records the builder's token and minute totals | Done | EP0271 | 2026-10-02 | 2026-10-02 |
 | [US0981](US0981-a-carry-bug-filed-at-the-review-cap.md) | A carry bug filed at the review cap does not count against the triage cap | Done | EP0271 | 2026-10-02 | 2026-10-02 |
 | [US0982](US0982-the-lane-brief-tells-a-repair-to-carry.md) | The lane brief tells a repair to carry only its blocking fix and pins | Done | EP0272 | 2026-10-02 | 2026-10-02 |
-| [US0983](US0983-the-v6-1-release-notes-lead-with-what.md) | The v6.1 release notes lead with what changed for the person using it | In Progress | EP0273 | 2026-10-03 | 2026-10-03 |
-| [US0984](US0984-the-docs-and-specifications-describe-the-6-1.md) | The docs and specifications describe the 6.1 code | In Progress | EP0273 | 2026-10-03 | 2026-10-03 |
+| [US0983](US0983-the-v6-1-release-notes-lead-with-what.md) | The v6.1 release notes lead with what changed for the person using it | Done | EP0273 | 2026-10-03 | 2026-10-03 |
+| [US0984](US0984-the-docs-and-specifications-describe-the-6-1.md) | The docs and specifications describe the 6.1 code | Done | EP0273 | 2026-10-03 | 2026-10-03 |
 | [US0985](US0985-v6-1-0-is-cut-version-changelog-known.md) | v6.1.0 is cut: version, changelog, known issues and install pins | In Progress | EP0273 | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases

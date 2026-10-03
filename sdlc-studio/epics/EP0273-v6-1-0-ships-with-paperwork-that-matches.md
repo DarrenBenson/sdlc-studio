@@ -11,8 +11,8 @@ The paperwork that ships v6.1.0 (D0325): release notes that lead with what chang
 
 ## Story Breakdown
 
-- [ ] [US0983: The v6.1 release notes lead with what changed for the person using it](../stories/US0983-the-v6-1-release-notes-lead-with-what.md)
-- [ ] [US0984: The docs and specifications describe the 6.1 code](../stories/US0984-the-docs-and-specifications-describe-the-6-1.md)
+- [x] [US0983: The v6.1 release notes lead with what changed for the person using it](../stories/US0983-the-v6-1-release-notes-lead-with-what.md)
+- [x] [US0984: The docs and specifications describe the 6.1 code](../stories/US0984-the-docs-and-specifications-describe-the-6-1.md)
 - [ ] [US0985: v6.1.0 is cut: version, changelog, known issues and install pins](../stories/US0985-v6-1-0-is-cut-version-changelog-known.md)
 
 ## Revision History

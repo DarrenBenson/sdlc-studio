@@ -1,6 +1,6 @@
 # BG0934: install.ps1 still installs from main while install.sh installs the latest release
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** install.ps1, tools/tests/test_lean_install_ps1_default.py, changelog.d/BG0934.md

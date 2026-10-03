@@ -1,6 +1,6 @@
 # BG0932: A broken or self-looping transcript link still crashes the report
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_transcript_links_skipped.py, changelog.d/BG0932.md

@@ -1,6 +1,6 @@
 # BG0935: The 6.1 notes say migrate leaves prose alone and give no way to install main on Windows
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** docs/release-notes-v6.1.0.md, tools/tests/test_lean_release_notes_v61.py, changelog.d/BG0935.md
