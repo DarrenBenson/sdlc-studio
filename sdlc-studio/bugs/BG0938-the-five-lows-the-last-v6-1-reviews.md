@@ -1,6 +1,6 @@
 # BG0938: The five lows the last v6.1 reviews raised (D0334)
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/changelog.py, .claude/skills/sdlc-studio/scripts/sprint.py, tools/tests/test_lean_install_ps1_default.py, tools/tests/test_lean_docs_v61.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_last_lows.py, CHANGELOG.md, .claude/skills/sdlc-studio/scripts/tests/test_changelog.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

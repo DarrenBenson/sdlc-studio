@@ -2,7 +2,7 @@
 
 > **Date:** 2026-10-03
 > **Run:** RUN-01M40TSJ
-> **Batch:** BG0926, BG0927, BG0924, BG0921, BG0922, BG0930, BG0929, US0984, US0983, US0985, BG0931, BG0932, BG0933, BG0934, BG0935, BG0936
+> **Batch:** BG0926, BG0927, BG0924, BG0921, BG0922, BG0930, BG0929, US0984, US0983, US0985, BG0931, BG0932, BG0933, BG0934, BG0935, BG0936, BG0937, BG0938
 
 ## Keep
 
@@ -14,6 +14,8 @@
 
 - Reading "found issues are fixed in the run" (D0326) without a stop: each review raised new lows, so the residue unit and an operator stop (D0333) had to be added mid-run to end the loop.
 - Writing a criterion's Verify pattern that the link guard reads as a link (US0985's grep), and a story text that links a file the sprint has not written yet.
+
+- Reopening a closed run before its sign: `sprint reopen` refused it as already open while BG0926 refused its late totals, so the work D0334 added had no way to record its cost until BG0937 fixed the reopen first.
 
 ## Try
 

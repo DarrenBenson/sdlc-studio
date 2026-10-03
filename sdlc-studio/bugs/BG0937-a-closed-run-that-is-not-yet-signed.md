@@ -1,6 +1,6 @@
 # BG0937: A closed run that is not yet signed cannot be reopened, so work added before the sign cannot record its cost
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_reopen_closed_unsigned.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, CHANGELOG.md
