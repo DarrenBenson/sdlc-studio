@@ -157,7 +157,7 @@ build or dependency install is needed.
   personal copy warns, naming both paths and versions, and leaves the personal
   copy as it is.
 - **Specific version**: `--version <tag>` (bash) or `-Version <tag>`
-  (PowerShell), for example `--version v6.0.0`.
+  (PowerShell), for example `--version v6.1.0`.
 - **Uninstall**: `--uninstall` (bash) or `-Uninstall` (PowerShell), with the same
   `--target` / scope you installed with. Preview first with `--dry-run`. The
   uninstall does not sweep other locations.
@@ -183,7 +183,7 @@ pin a tag and make the check mandatory. The example pins the current release; na
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh \
-  | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.0.0
+  | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.1.0
 ```
 
 ```powershell

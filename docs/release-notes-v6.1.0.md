@@ -3,7 +3,7 @@
 **SDLC Studio 6.1.0 is the current release: a run now ends with the sprint report you sign, and
 that report states what it measured rather than what it could see.**
 
-Every entry is in [the CHANGELOG's 6.1 section](../CHANGELOG.md#unreleased). If you run SDLC
+Every entry is in [the CHANGELOG's 6.1 section](../CHANGELOG.md#610---2026-10-03). If you run SDLC
 Studio on a project already, [the existing-users page](existing-users.md) is the whole upgrade
 path, and its "From 6.0 to 6.1" section is the part that is new.
 
@@ -99,7 +99,7 @@ Every open finding this release ships is listed by id on [the disclosure page](k
 which `tools/known_issues.py write` generates from the bug corpus at the cut, together with the
 count below, so the two cannot disagree.
 
-**v6.1.0 discloses 7 open defects: 2 Medium, 5 Low.**
+**v6.1.0 discloses 13 open defects: 3 Medium, 10 Low.**
 
 ## Sources
 

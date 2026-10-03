@@ -4,14 +4,14 @@ The defects SDLC Studio knows about and has chosen to ship. This page is the dis
 half of the release bar: a project that hides its open findings is asking to be trusted
 rather than read.
 
-## The bar v6.0 is held to
+## The bar v6.1 is held to
 
 **Zero open Critical or High finding at the tag, and every open Medium ruled by one triage
 decision.** A finding either reaches a terminal status with its own verifiers passing, or it
 stays open under the triage target below, which one recorded decision rules for the whole list
 rather than a waiver per finding.
 
-**Medium and Low findings ship open, listed here by id, triaged to v6.1.** Each is a real
+**Medium and Low findings ship open, listed here by id, triaged to v6.2.** Each is a real
 defect with a reproduction and, in most cases, a proposed fix. None of them stops the
 lifecycle running. They are listed rather than closed, because closing a bug to make a
 release look clean is the practice this tool exists to prevent.
@@ -33,47 +33,25 @@ severity; it moved on 2026-08-11, because holding a release for findings that ar
 but not release-blocking had cost a month and was buying nothing a disclosure could not
 buy honestly.
 
-## Triaged to v6.1
+## Triaged to v6.2
 
 | Id | Severity | Finding |
 | --- | --- | --- |
-| `BG0691` | Medium | changelog.py shape judges unreadable and symlinked fragments differently in its two modes, and its git-failure refusals are unpinned |
-| `BG0696` | Medium | critic.py's brief checks search the whole brief, so a unit's own text hides a dropped surface, and a REJECT marked as matching no brief can never b... |
-| `BG0701` | Medium | Run-ending routes still read different sets: stop records from the parked derivation, the boundary stop ignores --retro, and stop cannot see the re... |
-| `BG0706` | Medium | The coverage gate charges another unit's added lines to a unit sharing its file, and a coverage ruling is voided by any edit to that file |
-| `BG0712` | Medium | a local guard that tolerates what a criterion refuses lets a breach pass the commit and redden CI |
-| `BG0726` | Medium | the report renders NO DECLARED SEAT without asking whether the project declares any personas at all |
-| `BG0734` | Medium | the blockquote skip in check_versions is unreachable, so it guards nothing |
-| `BG0737` | Medium | the stale downgrade destroys an author's reason on a positive verdict, so the principle BG0733 shipped is violated on the sibling branch of the sam... |
-| `BG0739` | Medium | close_owed reads the Raised-in-batch stamp by its last token while asserting it reads it exactly as sprint_report does, and the two now genuinely d... |
-| `BG0740` | Medium | a gate stood down in prose rather than as a waiver row is invisible to the report's waiver disclosure, which is how the one the operator most neede... |
-| `BG0752` | Medium | Per-commit test selection skips hooks, test infrastructure and code reached through another script |
-| `BG0754` | Medium | A commit touching a widely imported script runs well over the 90-second budget |
-| `BG0817` | Medium | The bug-close guidance says briefed with critic.py brief but never says to hand the reviewer the brief whole, so agents relay a trimmed or broken b... |
-| `BG0824` | Medium | init guided's personas stage seeds the legacy flat personas.md, which the persona registry and sprint plan --serves never read |
-| `BG0825` | Medium | ULID ids are printed as their hyphenless comparison key, so plan, brief, carry and the signed report name ids no file carries |
-| `BG0826` | Medium | The scaffolded retro carries neither the run id nor a Known issues carried table, so the run's rulings cannot be found or written |
-| `BG0827` | Medium | The review brief asks the reviewer to judge origin 'at the base ref' but never names the base ref |
-| `BG0828` | Medium | The one-call closes do not check the review brief: artifact.py close records a verdict with no brief and no warning, and transition --brief accepts... |
-| `BG0829` | Medium | A unit carried at the review cap is filed as an ungroomed bug that sprint plan cannot take, and every carry prints that the operator was notified |
-| `BG0830` | Medium | A verdict or delegated-token record written after the seal lands on the sealed run without a warning |
-| `BG0831` | Medium | The configuration reference documents keys the code does not honour: sprint.split_above, review.policy carry-forward, and review.max_rounds |
-| `BG0832` | Medium | reference-review.md step 3a ships a private project's consultation cast as its example, names amigos with no resolver, and the neutrality lane miss... |
-| `BG0833` | Medium | The engagement floor judges a decomposed CR by its own criteria, so a CR reconcile derives Complete from planned children is refused as unplanned |
-| `BG0834` | Medium | persona generate --team lets a pre-supplied or headless default stand as an answer, so its report claims questions were asked and accepted when non... |
-| `BG0835` | Medium | Token capture looks for the session transcript in a directory named by replacing only '/', so a project path holding '.' or '_' reads NOT ATTRIBUTABLE |
-| `BG0836` | Medium | No command writes a lesson class's graduated state, so every graduation CR carries a criterion only a hand edit can meet |
-| `BG0837` | Medium | The pre-push gate judges the working tree, not the commits being pushed, so an uncommitted fix turns a red push green |
-| `BG0838` | Medium | retired_surface excuses a live retired name by the shape of its sentence, so a live instruction passes as history |
-| `BG0839` | Medium | An eval worker session loads the personal skill ahead of the candidate copy, and nothing in the harness says so or prevents it |
-| `BG0840` | Medium | BG0818 did not converge in review: round 2 REJECT findings |
-| `BG0841` | Medium | The review cap has no per-unit exception path, so an operator-granted extra round can only land by force |
-| `BG0842` | Medium | migrate reports 2 index drift items on a v4.1 project whose gate reconcile lane fails on 28, because project upgrade counts two of reconcile's nine... |
-| `BG0843` | Medium | migrate names no engagement-floor cutoff, so a v4.1 project's gate fails the engagement floor on 349 shipped units before and after the upgrade and... |
-| `BG0844` | Medium | An upgraded project never gets the sdlc-studio/.gitignore that init writes, so gate.py leaves runtime state in git status on every run |
-| `BG0845` | Medium | migrate's conformance cutoff on a v4.1 project exempts the 98 units after the project's own adoption point, because a verdict row with no Author co... |
+| `BG0921` | Low | The goal-review refusal still names a 'role' key after the help names 'seat' |
+| `BG0922` | Low | The goal-note check names an unrelated 'Nx' figure as a contradiction and misses 1.7X and the multiplication sign |
+| `BG0924` | Low | The report says no unit carries a measured time when units carry minutes but none has a forecast |
+| `BG0927` | Low | A broken transcript in another project's folder crashes the long-path transcript scan |
+| `BG0930` | Low | transition.py warns APPETITE SPENT against a run that is already signed |
+| `BG0931` | Low | Four lane fixes the v6.1 reviews found unpinned: a split forecast, a reopened re-close, the newest transcript and a partial run |
+| `BG0932` | Low | A broken or self-looping transcript link still crashes the report |
+| `BG0933` | Low | Three texts still say what the code does not: the empty-seats refusal, BG0930's docstring and help/gate.md's lane count |
+| `BG0935` | Low | The 6.1 notes say migrate leaves prose alone and give no way to install main on Windows |
+| `BG0936` | Low | The v6.1 review residue: three unpinned behaviours, a dropped seats entry, a slow note parser and two TRD rows nothing writes |
+| `BG0926` | Medium | A lane return between the close and the sign records into the run and invalidates the page before it is signed |
+| `BG0929` | Medium | migrate does not report the retired handoff surface in a project's own docs |
+| `BG0934` | Medium | install.ps1 still installs from main while install.sh installs the latest release |
 
-35 findings: 35 Medium, 0 Low.
+13 findings: 3 Medium, 10 Low.
 
 ## Not carried
 

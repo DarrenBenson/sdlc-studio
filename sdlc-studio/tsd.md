@@ -1,7 +1,7 @@
 # Test Strategy Document
 
 > **Project:** SDLC Studio
-> **Version:** 6.0.0
+> **Version:** 6.1.0
 > **Last Updated:** 2026-10-03
 > **Status:** Generated (brownfield - awaiting validation)
 >

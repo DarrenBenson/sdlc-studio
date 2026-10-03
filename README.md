@@ -6,7 +6,7 @@
 
 Ask for software in plain language. The team plans it, builds it, tests it, and proves it is done.
 
-**Version:** 6.0.0
+**Version:** 6.1.0
 
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Lint](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml/badge.svg)](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml)
@@ -35,7 +35,7 @@ the author - and drops the ceremony around each unit that caught nothing.
   carried into the next plan, build and review.
 
 How a run goes, step by step: [the loop](.claude/skills/sdlc-studio/reference-sprint.md#the-loop).
-What changed and why: [the release notes](docs/release-notes-v6.0.0.md). Upgrading a v5
+What changed and why: [the release notes](docs/release-notes-v6.1.0.md). Upgrading a v5
 project: `migrate`, then `migrate --apply`, and [docs/existing-users.md](docs/existing-users.md).
 
 ### Removed in v6
@@ -82,7 +82,7 @@ irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 
 **Installing in a sensitive environment?** The default install fetches the latest published release and verifies it against its `.sha256` sidecar; if the release cannot be looked up (offline, rate-limited) it falls back to `main`, which publishes no sidecar, and proceeds unverified with a warning. To make that fallback impossible, pin a tagged release and make the checksum mandatory:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.0.0
+curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.1.0
 ```
 
 That pins the current release; name any later tag the same way. What it verifies: an archive this project built from the tag and published as a release asset, against a `.sha256` published beside it in the same step. Both halves are ours, so they cannot drift apart. Tags before v5.0.1 have no published assets and this command will refuse them rather than pretend - see [Verifying the download](docs/INSTALL.md#verifying-the-download).
@@ -471,7 +471,8 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 - `/sdlc-studio help` - the command catalogue (also [help/help.md](.claude/skills/sdlc-studio/help/help.md))
 - [Greenfield runbook](.claude/skills/sdlc-studio/help/getting-started.md) and [Brownfield runbook](.claude/skills/sdlc-studio/help/brownfield-runbook.md) - the step-by-step paths
 - [reference-doctrine.md](.claude/skills/sdlc-studio/reference-doctrine.md) - the operating doctrine for running any project with this skill
-- [docs/release-notes-v6.0.0.md](docs/release-notes-v6.0.0.md) - the current release: what v6 is, what changed since the candidate, both upgrade paths and the known issues
+- [docs/release-notes-v6.1.0.md](docs/release-notes-v6.1.0.md) - the current release: a run ends with its signed report, the report states what it measured, a plain install is the latest verified release, and the 6.0 upgrade path
+- [docs/release-notes-v6.0.0.md](docs/release-notes-v6.0.0.md) - what v6 is, what changed since the candidate, both upgrade paths and the known issues
 - [docs/release-notes-v6.0.0-rc.1.md](docs/release-notes-v6.0.0-rc.1.md) - the release candidate: the lean loop, one verdict ledger, one signature, every retired surface and how `migrate --apply` carries a v5.1 project across
 - [docs/release-notes-v5.0.0.md](docs/release-notes-v5.0.0.md) - what v5 is, what it refuses, and what changed, for a reader deciding whether to upgrade
 - [docs/release-notes-v5.1.0.md](docs/release-notes-v5.1.0.md) - faster `status`, and the carried list closed with every Medium disposed of or ruled

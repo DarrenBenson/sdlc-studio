@@ -1,7 +1,7 @@
 # Technical Requirements Document
 
 **Project:** SDLC Studio
-**Version:** 6.0.0
+**Version:** 6.1.0
 **Status:** Draft
 **Last Updated:** 2026-10-03
 **PRD Reference:** [PRD](./prd.md)

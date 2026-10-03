@@ -7,6 +7,840 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.0] - 2026-10-03
+
+### Breaking
+
+- The handoff writers and the require-handoff gate are retired: a run ends with its signed
+  sprint report, which hands over the remaining work (US0967). `handoff.py generate`,
+  `artifact.py new --type handoff` and `gate.py --require-handoff` are gone, and each is refused
+  as unknown (exit 2); `handoff.py show` stays and prints the remaining-work join without
+  writing anything, and `status.py` still reads its remaining count. The HO files already in
+  `sdlc-studio/handoffs/` and their index rows stay readable: they resolve by id, reconcile
+  cleanly and are never rewritten. Pick up the last run with `sprint.py plan --worklist
+  RPTxxxx` instead of the handoff worklist (US0978).
+- The configuration reference documents only keys the code honours. `reference-config.md`
+  named `sprint.split_above`, but the split threshold is read from `sprint.points_split_above`
+  (with `split_above: 5` set the ceiling stayed 8); the row now names the key that is read.
+  `review.policy` is retired and joins the keys `migrate --apply` removes: it was documented as letting
+  a REJECT file its findings and ship, but nothing outside tests called the carry-forward module
+  since every project began carrying a unit at the round cap. `carry_forward.py`,
+  `conformance.carry_forward_covers`, `sprint.carry_forward_close_record` and critic's
+  re-exports are deleted, and `config-defaults.yaml` no longer declares the key. The defaults'
+  note on `review.max_rounds` now says what is true: it is the review-round cap, its only reader
+  is critic.py, which owns its default of 2; `reference-config.md` documents it (BG0831).
+
+### Added
+
+- `docs/release-notes-v6.1.0.md`: the 6.1.0 notes open with what changed for a 6.0 user under
+  five themes, list every change a 6.0 user meets by being refused or surprised beside its
+  replacement (the handoff writers, `gate.py --require-handoff`, `review.policy`, the install
+  default, Copilot CLI's global target, the release gate's `revert-check` lane and
+  `validate.py check` outside a workspace), and give the 6.0 upgrade path: reinstall, `migrate`,
+  then `migrate --apply`, with what each leaves to the reader. Every figure names the report it
+  comes from (US0983).
+
+### Changed
+
+- v6.1.0 is cut: every version home carries 6.1.0, README and `docs/INSTALL.md` pin
+  `--version v6.1.0` and list the 6.1.0 notes as the current release, `docs/known-issues.md`
+  and the notes' open-defect line are derived from the bug corpus at the cut, and the notes
+  link this section (US0985).
+- `docs/existing-users.md` takes a 6.0 project to 6.1 in its own subsection, "From 6.0 to 6.1":
+  reinstall, `migrate`, then `migrate --apply`, which removes `review.policy`; the retired
+  handoff commands, each beside the signed report or `sprint.py plan --worklist RPTxxxx`; and
+  the HO files already written staying readable. README's upgrade answer points a 6.0 user at
+  it, and `help/verify.md` names `verify_ac.py run --unit`. The PRD, TRD and TSD describe the
+  shipped code: no mutation gate, lane or per-target ledger, no verification-depth gate, and
+  the TSD's lane table names the lanes `gate.py` registers; the TRD says `critic record`
+  appends to the verdict log alone. The upgrade page says what `migrate` reads in the root
+  `AGENTS.md` and `CLAUDE.md`: retired config keys and verbs, so `handoff.py generate` is named
+  there but `--type handoff` and `--require-handoff` only in a project's other markdown docs
+  (US0984).
+- A lesson class finishes its lifecycle at the close, with no hand edit to `lessons.jsonl`.
+  `lessons.close_pass` moves a `graduating` class to `graduated` once the CR it filed ships
+  (`Complete` or `Superseded`), and to `retired` when that CR is `Rejected`, since nothing was
+  fixed and a later repeat should bring it back; a class whose CR is open, or which has a hit
+  recorded in the closing run (a cited REJECT or a retro Try item, on any pass of the close),
+  stays `graduating`. Quiet is now judged on the last five runs this clone knows, once it knows
+  more than five: a run the archive has never seen, such as another clone's or a recording label
+  that names no run, is outside that window, so a class recorded or hit only there retires
+  instead of staying active for ever. Its next hit puts it back in force, as before (US0977).
+- `migrate` reports where a project's own docs still teach retired v5 commands. Each line of the
+  project's markdown (the files git tracks, or every `.md` outside a git work tree) that names a
+  command-shaped retired surface - `<script>.py <retired verb>`, a retired flag on the same line
+  as its own script, a retired config key or check id - in a clause not saying it is retired is
+  listed under Needs a human as `file:line` with each name; the file is never rewritten. A table
+  whose header says its rows are history ("Retired in v6", "replaces") is not listed, and
+  `sdlc-studio/`, installed skill copies, `node_modules`, changelogs, release notes and `releases/`
+  folders are not read. The scanner ships as `scripts/lib/retired_surface.py`, deriving verbs,
+  keys and check ids from the shipped registries and reading retired flags from a CHANGELOG only
+  when one is present; the retired phrases and bare flags, which mean something else in a
+  consumer's docs, stay in this repository's own doc tests (US0975).
+- A fresh project's first `sprint plan` prints only what needs attention. With no seats of its
+  own, the goal review names the shipped engineering, product and qa seats that review it,
+  rather than saying no seat can. A TSD stage skipped at `init guided` reads `test strategy:
+  none declared` with no staleness line, not `UNAVAILABLE`. A project with no commit hook
+  installed and no per-commit mode of its own is not told its execution policy diverges; an
+  installed hook that disagrees, or one that exists but cannot be read (a husky hook under
+  `core.hooksPath`, a non-UTF-8 `.githooks/pre-commit`), still is. A hook is found where git
+  itself resolves the hooks directory (`git rev-parse --git-path hooks`), so one in a linked
+  worktree's common directory, or under a `~`-prefixed `core.hooksPath`, counts too. The blocker
+  sweep no longer proposes a retired unit with a historical `Blocked by:` line. And a goal amended at a seat's request discharges that
+  seat's NOT-achievable verdict on the old wording, so the plan no longer prints it as advice.
+- With no `--version`, `install.sh` installs the latest published release (GitHub's
+  `releases/latest`, which skips pre-releases) and verifies it against its `.sha256` sidecar,
+  instead of the unverified `main` branch. `--version main` still installs `main`, and when the
+  lookup fails (offline, rate-limited, or a reply naming no plain tag) the installer prints one
+  line saying so and falls back to `main` as before, so an offline machine still installs.
+  `README.md` and `docs/INSTALL.md` no longer say the default tracks `main` (US0968).
+- A run ends with the signed report alone: the close and `sprint.py sign` write no handoff. The
+  report's `Known issues handed over` section already lists every open finding raised in the run
+  and every carried unit, and the handoff restated it and could disagree: after RUN-01M3T8N1 the
+  plan said `nothing carried over` while RPT0013 handed over three findings. The close chain
+  loses its `handoff` step (nine steps), the cascade and `sign` no longer refresh a handoff, a
+  rolling run's boundary stop records its cause on the run without one, and the compulsory
+  checklist loses its handoff row. The next `sprint plan` names the last signed report and the
+  open items it handed over, and `sprint plan --worklist RPTxxxx` plans them; a run ended by
+  `sprint.py stop --force`, which files no report, has the units it waived named from the run
+  record. Existing handoff files stay on disk, unrewritten (US0967).
+- `verify_ac.py run` names the near-miss node under a FAIL whose selector's node pytest did not
+  find: a Verify line naming `ProbTests::test_alpha` in a file that collects
+  `ProbeTests::test_alpha` now prints `hint: did you mean tests/test_probe.py::ProbeTests::test_alpha`
+  under its `not found` lines. The hint comes from the existing `selector_near_miss`, is read from
+  pytest's own `not found` line (or `--batch`'s `no such test node`), one per missing node of a
+  multi-node selector, and only for a pytest FAIL: a real node that fails an assertion, or a
+  recorded `Verified: no` whose reason says "not found", gets none (US0966).
+- A `--fields-file` document accepts a key spelled as the flag it stands in for. `ac` and
+  `option` are read as `acs` and `options` by every writer sharing the loader (`file_finding.py
+  file`, `artifact.py new`); a document carrying both spellings of one field is still refused.
+  `file_finding.py file` reads `type` from the document when `--type` is not passed, and still
+  exits 2 naming `--type` when neither gives one. `decisions.py add` reads `status` and
+  `supersedes`, and `decisions.py rule` reads `seat` and `subject`. An explicit flag still wins
+  over the document.
+- `verify_ac.py run --unit <id>` is accepted as an alias for `--id`, the flag `revert-check`
+  already takes, so the first guess at it is no longer refused with `unrecognized arguments`.
+  The alias is `--id` itself, so it stays one of `run`'s mutually exclusive selectors (US0804).
+- `config.py show --sources` prints one `<source> <dotted key> = <value>` line per key that the
+  skill's `config-defaults.yaml` or the project's `.config.yaml` declares, marking each `project`
+  when the project sets that leaf and `default` when the value comes from `config-defaults.yaml`.
+  A default that lives only in its reader's code (such as `review.max_rounds`) is in neither file
+  and is not listed. Judged per leaf: setting `coverage.unit` leaves `coverage.integration`
+  reading `default`. `--key` narrows the lines to that key or section; plain `show` prints the
+  same JSON as before (US0759).
+- `sprint lane brief` carries one more line among its "Obligations on this lane": a repair
+  answering a REJECT carries only the blocking findings and the pins that kill them, and files
+  the rest. Stated where the builder reads it, so a repair stops breaking what the first build got
+  right; no flag, refusal or gate is added (US0982, CR0608).
+- A carry bug that `critic.py record` files when a unit is carried at the review cap is filed
+  outside the triage session cap (D0297): it is neither refused by a full session nor counted
+  against it, because it records a review outcome rather than a new finding. Ordinary findings
+  are capped as before.
+- `sprint lane return` takes the builder agent's own `--tokens N` and `--minutes M`, both
+  optional, and records them as a delegated total tagged to the unit, so they count once in the
+  run's delegated spend and the unit's row reads them as agent tokens and agent minutes. Agent
+  minutes take precedence over the lane span, which stays the fallback. `--minutes` with no
+  `--tokens`, or one total for several units, is reported and not recorded (US0980).
+- The sprint report's Estimates tokens ratio is withheld unless every live unit that did work -
+  delivered, or carrying a span (a lane brief or a move to In Progress during the run opens
+  one) - supplied its delegated spend, and says
+  which units supplied none. The main-thread meter cannot see a
+  delegated agent, so RPT0014 printed 0.2x over a partial actual. Pages filed before this change
+  carry no mark of the rule and re-derive their ratio as signed (US0980).
+
+### Removed
+
+- The advisory `revert-check` gate lane is retired from the release boundary. It re-ran every
+  batch unit's verifiers with the unit's change reverted in the live working tree, so a tag
+  rewrote tracked production files while the gate ran, and it never blocked. Its last measured
+  yield, from the gitignored `sdlc-studio/.local/revert-check-yield.json` it alone wrote: 71
+  runs, 730 units examined, 18 that would have been refused. The lane, its accumulator and its
+  writer are deleted, and the pre-push hook, `tools/enable-hooks.sh` and `help/gate.md` no
+  longer name it; a tag runs `release-rehearsal` and `module-alone` beside the full suite. The
+  per-unit `verify_ac.py revert-check --unit <id>`, which an author runs deliberately on one
+  unit, is unchanged (US0784).
+- The delivery-batch span is retired. Nothing has opened one since `sprint review-batch` was
+  retired, so every finding was stamped as raised outside a batch and the close's
+  `finding placement` clause always read `0 raised at a batch boundary`. Removed:
+  `run_state.batches`, `open_batch`, `start_batch`, `close_batch` and `note_finding`, the
+  filer's attribution of a finding to an open span, and the clause on the close's
+  review-coverage step. A new run record no longer carries a `batches` key; an old one keeps
+  it, and nothing reads it. The `Raised-in-batch` stamp is unchanged: the run a caller names,
+  or `none open - raised outside a delivery batch, <moment>`, whose timestamp the sprint report
+  and `close_owed` read (BG0861).
+
+### Fixed
+
+- Install and upgrade no longer damage a consuming project's own files. `init.py run --force`
+  leaves `sdlc-studio/.version` alone, so the version the project was created at survives for
+  the version check. The migrate's `sdlc-studio/.gitignore` append keeps the file's CRLF line
+  endings and writes through a symlinked `.gitignore` to its target, which stays a link; a link
+  whose target cannot be written (dangling, or in a read-only folder) is reported as needing a
+  human, naming the link and its target, and the rest of the step still runs. An
+  explicit `install.sh` install over a skill folder holding no sdlc-studio `SKILL.md` (a user's
+  own notes) skips it with the sweep's `no sdlc-studio SKILL.md - not touching it` warning
+  instead of replacing it; an empty folder is still installed into (US0976).
+- An up-to-date v5 project's `migrate` reads clean and names a file it cannot read. On schema
+  v3, `conformance.adopt_after` accepts the project's own id form (`BG-01KX95QP`), where
+  `parse_cutoff` raised `ValueError` and the remedy the conformance lane names could not be
+  written; the validate lane reads the same key the same way. A v3 suffix is six timestamp
+  characters and two random ones, so the cutoff fails closed: an id minted in an earlier
+  timestamp bucket is exempt, in the cutoff's own bucket only the cutoff id itself is, and a
+  sequential id (minted before the project's v3 ids) is exempt. A standard directory not yet
+  created (`retros/`, `rfcs/`) is no longer listed under needs-a-human: the tool that first
+  writes one creates it. And a file that is not UTF-8 text, or cannot be opened, no longer stops
+  `migrate --format json` with a traceback naming nothing. `.config.yaml`, a pipeline artefact or
+  an index is checked first and named under needs-a-human, with a remedy for its own failure, and
+  nothing else is examined or written. A sweep step that meets any other file it cannot read (a
+  persona card, `AGENTS.md`, `.version`) is reported as a `step-failed` item naming the step and
+  the unreadable files a scan of the workspace's markdown, YAML and instructions files finds.
+  Under `--apply` no step after it writes; what the failed step wrote before it stopped stays
+  written, and the item says so. A file no step reads, such as a review note, does not stop the
+  sweep (US0974).
+- The help, references and comments describe what the tools do today. `help/status.md` no
+  longer claims weighted health scores: `status.py pillars` prints counts and per-type
+  percentages, and its dashboard and `--brief` examples show those figures rather than one
+  percentage per pillar. `reference-tsd.md`'s status workflow reads the same figures and computes
+  no weighted score. The `decisions.py waive` example in `reference-sprint.md` carries the
+  `--rationale` the verb requires, `help/sprint.md` no longer says the close refuses on
+  `unanswered`, and the persona build render no longer points at a contract "above" when it is
+  printed alone. The dead `run_state.ReviewLedgerError` and its three handlers are gone, and
+  `project_upgrade.py` says `init` writes `.version`. The CI and hook snippets in
+  `help/gate.md` name their script through `$CLAUDE_SKILL_DIR`, so they run wherever the skill
+  is installed, and `critic.py record --help` names `\;` for a semicolon inside one finding.
+- Derived figures read honestly. An extension-less root file in a unit's Affects
+  (`CODEOWNERS`, `VERSION`, `Gemfile`, `Procfile`) is taken as a file from a named list of
+  such root files, so a placeholder such as `UNKNOWN` or `PENDING` is not. When none
+  of a unit's Affects tokens is recognised as a path, the plan's delivery mode names them as
+  not recognised instead of saying the unit declares no Affects. `reconcile apply` derives the
+  story index's `Stories by Epic` view, one table per epic, when the view is the shipped shape,
+  and counts only the rows it gained or changed;
+  a view in a project's own columns or with its own prose is left as written. And the TSD's
+  staleness compares commit instants, so a commit written in another offset is not read as
+  later than it was.
+- The finding writers keep every criterion and verifier they are handed. A CR filed through
+  `file_finding.py file` or `artifact.py new` carries each `verify` entry as a Verify line
+  under its own criterion, where both wrote the criteria alone at exit 0. A `verify` entry
+  that pairs with no criterion, or a blank one that would shift the rest onto the wrong
+  criterion, is refused by both commands, naming it, and nothing is written. A criterion
+  object in `acs` (`{"id": "AC1", "text": ..., "verify": ...}`) is read as its text and its
+  Verify line rather than written as Python repr. A Verify selector naming a new test whose
+  name extends a method of the named class (`test_x` collected, `test_x_in_slug_form` named)
+  is filed as not yet written; a near-miss typo is still refused with `did you mean`, including
+  one that extends a shorter method while misspelling a longer one. `artifact.py new` keeps a
+  blank verifier slot in place, so a criterion object with no verifier does not take the next
+  criterion's.
+- Three commands no longer report a success they did not have. `validate.py check` on a
+  directory with no `sdlc-studio/` workspace exits 1 and says so, where it printed
+  `checked=0 errors=0 warnings=0` at exit 0. The sprint report reads a `gh run list` answer that
+  is not a list (an error object such as `{"message": "HTTP 403"}`) as an unreadable CI window,
+  not as a window with no runs. And `artifact.py batch` names the template that rendered its
+  artefacts: a project-declared template by its path, rather than the `--template` value.
+- `config.py show --key` exits 1 and names a key that neither `config-defaults.yaml` nor the
+  project's `.config.yaml` declares, where it printed `null` at exit 0; a key set to null still
+  prints `null`.
+- A unit built through `sprint lane brief` and `sprint lane return` is now measured on the
+  sprint report: the brief opens its span and a passing return closes it, by the same rule an
+  In Progress transition uses. RPT0014 read 29 of 34 units NOT MEASURED because lane-built
+  units never passed through In Progress. A unit already In Progress keeps its one span, and a
+  blocked return leaves the span open. No flag or refusal is added (US0979).
+- A span still open reads NOT MEASURED on the page, with the moment it opened, rather than its
+  running total of 0.0 minutes. A lane briefed and never returned is not measured to the close,
+  and `sprint sign`'s terminal move does not close its span, so the page the signature seals
+  still re-derives (US0979).
+- `sprint.py goal-review record` names a `--fields-file` `seats` entry that is not an object, as
+  it names a seat missing a key, instead of dropping it; a list holding only such an entry was
+  refused as holding none. The refusal with no fields file and the one for an empty `seats`
+  list are now pinned apart, and the token meter's choice of the newest transcript by time
+  rather than listing order is pinned.
+- The close's check of a goal note's ratios no longer slows quadratically on a long punctuation
+  run straight after a measure name: 8,000 such characters took about 2.5 s, and now take
+  about a millisecond. Where a ratio sits in the name's own word ahead of another, the first is
+  the one read.
+- The TRD's `.local` table names a writer for every file: `project-state.json` and
+  `review-queue.json` are written by the agent running `project implement` and `epic review`,
+  `review-state.json` by `review_prep.py close` as well, and `wsjf-inputs.json` by the seats
+  per the sprint reference.
+- The 6.1 release notes say what `migrate` names in a project's docs: a retired command in code
+  or in plain prose, never a line that only talks about handoffs, and in the root `AGENTS.md`
+  and `CLAUDE.md` only `handoff.py generate` of the handoff commands. The install bullet gives
+  `-Version main` for `install.ps1` beside `--version main` for `install.sh` (BG0935).
+- `install.ps1` with no `-Version` now installs the latest published release, as `install.sh`
+  does: it asks the same GitHub endpoint, accepts only a plain tag, and falls back to `main` with
+  one line saying so when the lookup fails. `-Version main` still installs `main`. The upgrade
+  guide and the 6.1.0 notes no longer say the Windows installer defaults to `main`.
+- The test for it now runs `install.ps1` under `pwsh` with its release lookup answered by a local
+  stub, offline: a published tag is installed, a failed lookup or a malformed tag falls back to
+  `main` with its line, and `-Version main` asks nothing. A static read of the script could not
+  tell a tag that was fetched and then dropped from one that was installed. Where `pwsh` is
+  absent the source is still read. The BG0821 and BG0855 dry runs use the same stub, so they
+  stay offline as they say.
+- `sprint.py goal-review record` refusing a `--fields-file` whose `seats` list is empty now
+  names that key instead of pointing only at the `--seat` flag; help/gate.md says a release runs
+  the full suite plus the two lanes it describes, not three; and the appetite report's docstring
+  in `transition.py` says a run is sealed when its outcome is a closed one, so a run with no
+  outcome recorded still warns. No behaviour changes beyond the refusal's wording.
+- A dangling or self-looping `.jsonl` link in the project's own transcript folder no longer
+  crashes the report's token reading: `session_tokens` now picks the newest transcript as the
+  long-path scan does, skipping any whose `stat` fails, and reads the real one beside them.
+- Four v6.1 fixes are now held by tests that fail if they regress: the Minutes reason when one
+  unit carries the forecast and another the measured minutes; a `lane return --tokens` after a
+  reopened run is re-closed, which records nothing and leaves the re-filed page VALID, while a
+  second reopen still lets the total in; the long-path transcript scan reading a folder's
+  newest transcript, not its oldest; and `transition.py set` warning no spent appetite against
+  a signed run of any closed outcome, partial included. No behaviour changes.
+- `transition.py set` no longer warns APPETITE SPENT against a run that is already sealed: the
+  appetite is read only for a run whose outcome is not a closed one, so a workspace whose last
+  run was signed with its appetite spent moves later units quietly. An open run with its
+  appetite spent still warns.
+- `migrate` names the retired handoff commands where a project's own markdown docs still run
+  them in code: `handoff.py generate`, `artifact.py new --type handoff` and
+  `gate.py --require-handoff`. Each line it names in a project's docs now carries what replaced
+  the surface, for every retired surface it reports. Prose about handoffs is not named, and
+  `migrate` reads markdown only: search your CI files and scripts for these commands yourself
+  (BG0929).
+- The release cut folds a fragment's `####` block, such as the retired-flags table below,
+  after its section's bullets with a blank line either side, so the cut CHANGELOG lints clean
+  and every later entry stays under its own section heading (BG0929).
+- A dangling transcript link in another project's folder under `~/.claude/projects` no longer
+  crashes the long-path transcript scan, so the report builds and the token meter still finds
+  the project's own folder. The link is skipped, as an unreadable transcript already was.
+- A delegated token total given between `sprint close` and `sprint sign` is no longer written
+  into the run, so the filed page still checks VALID when it is signed. The close leaves the
+  outcome running, so the guard now also reads the filed page the sign reads; a total before
+  the close, or after a `sprint reopen`, still records. One warning line names the closed run;
+  nothing is refused.
+- `migrate` again names a retired command written bare inside a fenced code block in a project's
+  docs, such as `mutation audit` in a bash fence. A fenced block is code, so its lines count as a
+  code span does; the same words in prose are still not named.
+- When units carry measured minutes but none carries a minute forecast, the report's Minutes
+  actual now says no unit carries both a forecast and a measured time, rather than the false
+  "no unit carries a measured time". A run with no measured minutes still reads the latter.
+- The close's goal-note check reads a ratio only where it follows one of the page's Estimates
+  measure names, singular or plural, within three words (`tokens at 1.7x`, `token ratio 1.7x`),
+  including behind punctuation (`Tokens (1.7x)`, `Tokens: ~1.7x`, `tokens=1.7x`), so a note
+  saying the close ran "10x faster" is no longer named as contradicting the page. A ratio
+  written 1.4X or with the multiplication sign is now read and, when the page does not derive
+  it, named. Nothing is refused.
+- `sprint goal-review record --fields-file` now refuses an incomplete seat by naming the keys
+  the help names - 'seat', 'achievable', 'done_means' and 'one_increment' - rather than a
+  `role` key the code does not read. Nothing new is refused.
+- The close checklist's cost row reads the run's meter over the window the first filed page
+  ended at, as a re-filed page does, so after a re-close it no longer prints a later meter stamp's
+  total beside a page stating the first close's. A run that has filed no page still counts every
+  stamp (BG0920).
+- The page-format marks for the like-for-like Minutes ratio, partial agent minutes and
+  cancelled-run DORA are now pinned by filing a page and revalidating it: a page filed under
+  each rule reads VALID, so does one filed before it, and the same page with its mark removed
+  reads INVALIDATED. No behaviour changed; dropping a mark from the envelope, or hard-wiring a
+  rule on in revalidation, now fails a test (BG0919).
+- `sprint close` compares a ratio the goal verdict's note quotes with the filed page's as a
+  number at the page's precision, so a note quoting 1.70x no longer reads as contradicting a page
+  that states 1.7x. A ratio the page does contradict is still named (BG0918).
+- The `sprint lane brief` rule that leaves a terminal unit's span closed is now pinned for a bug
+  at Fixed, not only a story at Done: the brief reads each unit's terminal statuses for its type,
+  so a Fixed bug whose lane returned 10 minutes still reads 10.0 on the page. No behaviour
+  changed; a check against Done alone now fails its test (BG0917).
+- A report page counts only the session meter stamps taken inside its window, so a stamp taken
+  after the first close (a unit moved In Progress, a span the re-close settled) no longer moves a
+  re-filed page's main-thread tokens or its token total, or those of any re-derivation of a
+  filed page. Every filed page in this repository still re-derives as signed (BG0916).
+- The close hands over only a step's failures from two more steps. A retro that fails
+  validation no longer lists the validator's `retro RETRO0001: FAIL` header as a known issue
+  beside the real failure, and a gate failure no lane can be attributed to hands over its
+  failing line rather than the gate's whole output and the close's prose (or that prose's one
+  line when the gate printed no failing line). Both are still printed for the operator. An
+  extract that exits non-zero is pinned as one known issue (BG0915).
+- `sprint.py goal-review --help` now names the keys of a seat object in a `--fields-file`
+  document: `seat` (the seat's name), `achievable`, `done_means` and `one_increment`, with `note`
+  and `clauses` optional. A document keyed `role`, as the flag form's positional order
+  suggested, was refused for naming no seat (BG0914).
+- Re-running `sprint close` on a run that already filed its page no longer moves the page's
+  window end or takes a new report-time meter reading. The first close that files a page records
+  its window end on the run, and every re-close derives the minutes and main-thread tokens
+  against it, so post-close paperwork no longer counts as the run's minutes or report-time
+  tokens. Open findings, waivers and DORA still run to the re-close, so a finding filed between
+  the two closes is on the re-filed page, as the close's checklist asks, and the page carries
+  the re-close as its findings window, so it re-derives with that finding and checks VALID. A
+  close whose page was refused fixes nothing (BG0913).
+- `sprint close` now puts the page in front of the operator before asking for a signature: it
+  writes the report's HTML rendering to the ignored `sdlc-studio/.local/reports/RPTxxxx.html`
+  and names the Markdown page and the HTML page above the sign command. Nothing is written under
+  the tracked `reports/` folder but the filed page itself, so no rendered page churns in git and
+  `sprint sign` finds the tree the close left. A close that files no report writes and names
+  neither (BG0912).
+- `sprint close` now prints one line naming each ratio the goal verdict's note quotes that the
+  filed page does not derive, beside the ratios the page's Estimates do state, so a note written
+  from a pre-close preview is corrected before the page is signed. Read off the page as filed;
+  a warning only, and the exit code is unchanged (BG0911).
+- The close pre-flight's live checklist read is pinned: on a re-close whose finding went from
+  red to green, `sprint close --dry-run` names only the unruled finding the page will list,
+  never the one the previous attempt's frozen gate carried (BG0910).
+- A close whose review-coverage step finds an unreviewed unit hands over one known issue, the
+  gap naming the unit, rather than three: the `N/M unit(s) covered` status line and the
+  certification prose are printed for the operator and no longer listed on the page as close
+  gaps (BG0908).
+- The close records the run's measured active time on its velocity row: each delivered unit's
+  agent minutes, else its closed span, as the row's Wall (s), when every delivered unit carries
+  one. Such a whole-sprint row now counts toward the minutes-per-point rate, so a plan prices
+  minutes on the run's own model rather than falling back to an old row of another model. The
+  plan's per-unit worker-time floor still reads only rows with measured units, so a whole-sprint
+  row's Wall (Measured 0) no longer inflates it (BG0907).
+- Two of DORA's time-to-restore rules are pinned: the first success created after a failure
+  restores the streak and a later success does not move it, and a run still in progress
+  neither ends a streak nor restores one (BG0906).
+- The Estimates tokens ratio's delivered-unit rule is pinned: a unit moved to Done with no span
+  and no agent total withholds the ratio and is named. The sprint help and the CR0606 entry now
+  say what the rule reads - every live unit delivered or carrying a span, which a lane brief or
+  a move to In Progress during the run opens - rather than only a briefed one (BG0905).
+- DORA no longer counts a cancelled or skipped CI run on main as a failed deployment: only a
+  run that concluded failure or timed out raises the change failure rate or opens a time to
+  restore incident, and the rate's mapping says so. A page filed before the rule carries no
+  mark and re-derives as it was signed (BG0904).
+- `sprint lane` now says when a builder's total is not recorded or lands off the batch, one
+  line each: `lane return --tokens` with no open run (nothing is recorded), `lane return
+  --tokens` for a unit never in the open run's batch (recorded in the run's total, but no
+  per-unit row shows it; a unit planned and then dropped keeps its row and is not named), and
+  `lane brief --tokens` or `--minutes` (a brief records no total). Exit codes are unchanged
+  (BG0903).
+- A delegated token total given after a run is sealed (a late `sprint lane return --tokens`, or
+  `retro.py accuracy --delegated-tokens`) is no longer written into the sealed run, so the
+  signed page still checks VALID. One warning line names the sealed run; nothing is refused.
+- A unit whose builder reported its minutes beside a second agent total with none no longer
+  falls back to its lane span, unlabelled: the minutes the agents supplied count, labelled as
+  agent minutes and naming how many of the unit's agents they cover, and the span is the
+  fallback only when no agent supplied minutes. A page filed before the rule carries no mark and
+  re-derives as it was signed (BG0901).
+- A run whose session meter read 0 no longer drops the token totals its lane returns recorded:
+  the delegated agents' totals count in the run's token actual over a meter of 0 as they already
+  did over a non-zero one, and the basis names a meter of 0 as unread rather than as no spend. A
+  meter that could not be read at all still leaves the actual unmeasured, delegated totals and
+  all. A page filed under the rule carries its mark and re-derives with it; a page filed before
+  the rule carries none and re-derives as it was signed (BG0900).
+- `sprint lane brief` no longer opens a span for a unit already at a terminal status. A plain
+  brief, which briefs the whole batch, reopened a Done unit's measured span, and when that lane
+  never returned the page read NOT MEASURED where it had read the measured minutes. A unit not
+  yet started still has its span opened by the brief (BG0899).
+- The report's Minutes ratio compares like with like: the units' measured minutes (their spans
+  or agent minutes) against their active-minute forecast, over the units carrying both. The
+  run's wall-clock span, which counts waiting, now stands on its own `Wall-clock span` line
+  with no ratio. The Estimates prose follows the page's own rule: a page filed under it says the
+  Minutes actual sums the units' measured minutes, and a page filed before it carries no mark,
+  keeps its span wording and re-derives as it was signed (BG0898).
+- `migrate` no longer reports ordinary prose in a project's docs, such as "We run a mutation
+  audit every quarter.", as naming a retired command. Its scan names a retired verb or flag only
+  as a command is written: the script with its `.py`, or the bare name inside a code span.
+- A finding filed during a run, taken into its batch and delivered is no longer listed among the
+  open findings raised in the run: it is on the sprint report as a delivered unit. Listed, it
+  read open at the close, `sprint sign` moved it terminal, and the signed page re-derived
+  INVALIDATED. A batch finding carried or dropped keeps its row, severity and retro ruling, as
+  does a finding outside the batch. The close's known-issues checklist row leaves out the
+  delivered batch units too, judged by the terminal gate asked in that close attempt - the same
+  question the attempt's page records - so on a first close and on a re-close the page and the
+  checklist agree on which findings need a ruling. Outside a close, the checklist reads the
+  verdict the filed page states. Pages
+  filed before this change re-derive as signed; RPT0013, which listed a batch finding, still
+  checks VALID (BG0895).
+- A close whose lessons pass fails no longer hands the pass's status line (`lessons: N hit(s)
+  from cited REJECTs`) over as a known issue beside the real failure. The line is still printed
+  for the operator; only the step's failures reach the report (BG0894).
+- A sprint report's header names the end of the window the page measured to, rather than
+  `to open`: the close derives the page before the seal writes the run's end, so every closed
+  page read `to open` beside a duration that already ran to its window end (RPT0014). A page
+  derived after the seal names the run's end. Pages filed with `open` still check VALID (BG0893).
+- A velocity row recorded again (a second close attempt, a re-close) keeps the model that spent
+  the run's tokens. The re-record reused the row's token actual but rewrote the row with no
+  model, so VELOCITY.md rows from RETRO0121 on read `-` and counted for no model in the
+  tokens-per-point calibration, which measured on those model-less rows instead of a model's own.
+  The row's own model is kept, else the model the run's meter names (`mixed` when its stamps
+  name several), so a re-close also fills a row an earlier close left model-less (BG0892).
+- Rows RETRO0121-RETRO0129 were re-recorded with the fix: RETRO0127-RETRO0129 now name
+  claude-opus-5-5 and RETRO0121-RETRO0126 read `mixed`; no signed page reads VELOCITY.md, so
+  every signed report still checks VALID. The minutes-per-point rate still falls back for want
+  of a Wall (s) figure (BG0907).
+- The sprint report's DORA time to restore reads the window's incidents in creation order
+  rather than the forge's newest-first list, which paired RPT0014's 16:10 failure with the 12:22
+  success before it and printed -4h 20m. An incident is a red streak; it is restored by the first
+  push-triggered success created after its first failure, and the span runs from that failure's
+  conclusion to the success's, floored at zero because a newer commit can go green before an
+  older failure reports. The page reads `not restored`, naming the failed run, while the window's
+  last incident is red, and otherwise the median over the restored incidents with their count
+  (`1h 9m (median of 2 incidents)`). The mapping sentence states the rule (BG0891).
+- Disclosed: pages filed before this change keep the old pairing and re-derive as signed. Under
+  the new rule RPT0014 would read 1h 8m and RPT0011 2h 41m (it read NOT MEASURED), and every
+  earlier page's mapping sentence would change.
+- A unit carried at the review cap and then discharged inside the same run - its rejecting
+  reviewer's APPROVE recorded and the unit moved terminal - reads `delivered - discharged after
+  it was carried at the review cap` on the sprint report, and counts in Delivered of the plan,
+  the Estimates points row and the run's velocity row, instead of reading dropped. RPT0014 left
+  six such units out of all three. The discharge is read once, at PREPARE, beside the cleared
+  terminal gates, so a dropped unit moved by hand after the page is filed does not move it.
+  Pages filed before this change re-derive as signed (BG0890).
+- A padded index table holding a CJK title or a combining mark stays lint-clean after a status
+  transition rewrites one of its rows: the table is re-aligned by display width, measured as
+  markdownlint's MD060 measures it (an east-asian wide or full-width character two columns, a
+  combining or format character none). A table holding a character whose width depends on its
+  grapheme cluster (an emoji joined by a zero-width joiner, a variation selector, Hangul jamo)
+  is still left as written.
+- The opt-in commit-msg snippet in `help/gate.md` checks that `engagement_floor.py` exists before
+  running it, so a missing script no longer blocks the commit: it is named in one line and the
+  hook exits 0. With the script in place, `--strict` still refuses a two-id subject with no
+  `Refs:` trailer.
+- The review command's dashboard and JSON samples no longer show a per-document health
+  percentage or an `overall_health` score that nothing computes: each document section shows
+  its finding count. Coverage measured against its target stays.
+- The Done gate's unanswered-REJECT line names a schema v3 story in its file's spelling
+  (`US-01ABCDEF carries an unanswered delivery REJECT`), not the hyphenless comparison key, so
+  every line of the refusal names an id a file carries.
+- `critic.py record` escapes an opening bracket that follows `]` or `)` in a verdict cell, so
+  a finding quoting a regex (`[A-Z][A-Z_]{4,}`) or a reversed link (`(state)[2]`) no longer
+  makes markdownlint refuse `critic-verdicts.md` (MD052, MD011). The escape adds one backslash
+  at that point, so a backslash the reviewer already typed there (`[a-z]\[q]`) survives, and
+  the ledger's readers take the added one off the whole cell before splitting it, so
+  `parse_findings` returns the brackets as the reviewer wrote them. A `\_` in the cell reads
+  back as `_`.
+- The token meter finds the transcript folder the harness writes for a repo whose path holds a
+  character outside the BMP (an emoji maps to two dashes, one per UTF-16 code unit) or whose
+  folder name the harness truncated past 200 characters. The truncated folder is found by the
+  `cwd` its newest transcript records, so a folder recording another repo is never read.
+- `config.py show` reports the value in force for the keys whose default lived only in the
+  reading code. `config-defaults.yaml` now declares `review.max_rounds` (2, the cap `critic.py`
+  enforces) and every dotted key a script reads through `config.get` under a literal name with a
+  fixed default - `lessons.loop`, `report.enabled`, `quality.mutation_max`,
+  `sprint.points_split_above`, `sprint.affects_check`, the `estimator.*` and `gate_budget.*`
+  keys - with that default, so `show --key` prints it and `show --sources` lists it. The
+  `test_execution.*` keys, whose names `sprint.py` builds at run time, are not declared, so
+  `show --key` still exits 1 on them unless the project sets one. No value in force changes.
+- Four more places print a schema v3 id in its file's spelling (`US-01ABCDEF`) rather than its
+  hyphenless comparison key: `critic.py brief`'s `Unit under review:` header, the plan's lane
+  partition (and the lane worklists it exports), and the close's review-coverage and done-gate
+  preflight lines. The rejoinder brief's record footer and the retro's Batch line were already
+  right and are now pinned.
+- `package-lock.json` resolves brace-expansion 5.0.12 and markdown-it 14.3.2, clearing the
+  `npm audit` advisories reached through markdownlint-cli (brace-expansion 4.0.0-5.0.11, high:
+  GHSA-q2hr-2g5m-vwhr, GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p; markdown-it below 14.3.1,
+  moderate: GHSA-253c-mchw-3w2r). `package.json` holds both with npm `overrides` beside BG0866's
+  js-yaml one, and `tools/tests/test_lean_dev_advisories_patched.py` pins every lockfile entry
+  and both overrides. `npm audit` reports none, and the linter still refuses known violations
+  (BG0876).
+- `reconcile detect` reads a meta artefact keyed by a v3 id (`HO-<ulid>-slug.md`) and its
+  index row, so a v3 handoff, review or retro with its row is no longer reported as the
+  orphan `HO-0001`; a row whose v3 file is missing is named by its full v3 id. `reconcile
+  apply` appends the row for a v3 meta file that has none.
+- `next_id.py allocate` on a schema v3 project prints a v3 id (`US-01...`, the shape
+  `artifact.py new` mints) for a pipeline type rather than the next sequential `US0001`, so a
+  v3 project no longer collects two id schemas. Schema v2 projects and the meta types (review,
+  retro, handoff, report) keep their sequential ids.
+- At the push boundary the `validate` and `conformance` lanes judge the artefacts the pushed
+  commits touch (those reachable from HEAD and from no remote-tracking ref), not the working-tree
+  diff. The pre-push hook's clean checkout holds only the clone state it links in, so the lanes
+  there judged no unit at all. An unknown or empty pushed range judges the whole workspace.
+- The pre-push hook judges each pushed commit at its own boundary: a commit a pushed tag points
+  at runs the release lanes, and a branch tip pushed beside a tag on an older commit runs only
+  the push lanes. A branch and a tag on one commit still run the gate once, at release. Tests now
+  pin the refusal when the commit cannot be checked out and the peel of an annotated tag, and the
+  temporary worktree is removed from the clone's root when a push is interrupted.
+- `status.py backlog` no longer lists a decomposed request as awaiting refinement. A discovery
+  item with children (the child test `discovery_awaiting` already applies) is shown apart, under
+  `in delivery via their children`, with the units it was decomposed into, and the Discovery
+  heading counts only what still needs refining. JSON output is unchanged (BG0869).
+- `refine.py add` accepts `--into EPxxxx`, as `apply` does, so a story for an epic a request is
+  already decomposed into is added with its `Epic:` and `Delivers:` lines wired and no epic
+  minted, instead of by hand with `artifact.py new`. A breakdown file's `into` key is honoured on
+  `add` too (it used to be refused), and `--into` with `--epic-title` is refused as naming two
+  targets (BG0868).
+- A status transition keeps a padded index table lint-clean. `transition.py set` (through
+  `reconcile` apply) wrote the synced row compact beneath a header and separator padded to
+  aligned widths, so markdownlint failed MD060 on the index and the next commit was refused.
+  A new `sdlc_md.align_padded_tables` re-aligns the aligned-style table that holds a row apply
+  rewrote or appended, widening a column for a value that no longer fits and never narrowing one;
+  every table the write did not touch is left byte for byte. A table holding a cell whose display
+  width is not its length (CJK, combining marks, emoji parts) is left as written, since widths
+  are measured in characters, and so are compact and ragged tables and fenced examples (BG0867).
+- `package-lock.json` resolves js-yaml 5.4.2, outside GHSA-r3ph-w7gj-g6xm (Dependabot alert 19,
+  vulnerable 5.0.0 to 5.4.0). markdownlint-cli 0.49.1, the latest release, pins `js-yaml ~5.2.1`,
+  so no update of it could clear the alert; `package.json` now carries an npm `overrides` entry
+  holding js-yaml at `^5.4.1`, and `tools/tests/test_lean_js_yaml_patched.py` pins both the
+  resolved version (a numeric compare) and the override. The markdownlint range is unchanged and
+  the linter still refuses a file with known violations under the patched js-yaml (BG0866).
+- The signed sprint report now names the retro's ruling on each known issue. A finding the
+  retro's `## Known issues carried` table ruled not-stop-ship, accepted-risk or deferred read on
+  the page exactly like one nobody ruled; only a STOP-SHIP was marked. Each open finding's row now
+  ends with its ruling and who made it (`- not-stop-ship, ruled by Maya`), read through
+  `retro.carried_issues`, so a graduation CR ruled by its lesson class is named too. The rows are
+  fingerprinted with the page, and a filed page's rows are replayed whole when it is re-derived,
+  so a page filed before this change keeps its rows: RPT0011 and RPT0012 still check VALID. A
+  graduation CR the close files in the second it derives the page is now on the page: the
+  window's closing instant counts a finding stamped `<run> close` by this run's own close, and
+  stays open to every other stamp, so a finding filed after the page, or by another run, in that
+  second is still left out (BG0865).
+- One test now runs the operator's whole run end with nothing stubbed:
+  `test_lean_signed_run_end_to_end.py` builds a schema 3 run through the shipped command lines
+  (an approved story at Review and bug at In Progress, a unit carried at the review cap and
+  discharged by its rejecting reviewer, a `sprint decision resolve`, a `--force` on a dropped
+  unit, a lesson that graduates and is ruled by its class), then runs a bare `sprint.py close`,
+  `close --retro`, commit, `sprint.py sign` with the real seal, commit and `sprint_report.py
+  check`. It holds that exactly one report is filed and checks VALID first time, that the carried
+  unit ends through its own gate with no batch unit moved by hand, and that the signed page names
+  every ruling, carry and override. Reverting any one of BG0826, BG0848, BG0849, BG0850, BG0851,
+  BG0859 or BG0865 turns it red. It runs in about five seconds (BG0862).
+- A `sprint plan` preview (no `--write`) no longer records a token forecast. The forecast log
+  keeps a unit's first record, so a preview's row won over the written plan's own, and a unit
+  regroomed between the two was judged at the size it no longer had. The plan that opens the
+  run with `--write` records the forecast the retro judges; a preview says it records nothing.
+- The close's `[status]` pre-flight row and the `--dry-run` STOP no longer name a bug left In
+  Progress that carries an independent delivery APPROVE. `_pre_delivery_status` asked the status
+  alone, so every such bug read as delivered and never transitioned, with a remedy to move it to
+  Review, a status the bug vocabulary does not have. It now asks `awaits_only_signature`, the
+  predicate BG0820 gave the close's unanswered-unit hold, lifted into one function both readers
+  call: a story or bug meeting the seal's bar owes only the signature at any pre-terminal status,
+  and any other kind only at Review. An unreviewed or self-approved bug is still named, and the
+  remedy now names a move its type has: a story's Review, a bug's independent review (after which
+  `sprint.py sign` moves it to Fixed), or a CR's Complete (BG0859).
+- `migrate` names a failing conformance lane it used to pass over in silence. A unit with a
+  schema v3 id (`US-01M3VEK2`) is now proposed as the `conformance.adopt_after` cutoff, with the
+  lane's own count; writing that line clears the lane. A v3 cutoff exempts only itself within
+  its own timestamp bucket, so any failing unit minted in the same bucket is named as still
+  judged after it. A lane failing only on a repo-wide condition (a missing story index) is named
+  with its count and fix and no `adopt_after` line, since no cutoff answers it.
+- The default install's hint no longer names a tool the skill already reaches. It looked for a copy
+  only in the folder `install.sh` would write for each tool, so a copy in `~/.copilot/skills` was
+  refreshed and Copilot CLI then called not installed for, and following the hint made Copilot
+  load the skill twice; opencode was named although it reads the `~/.claude/skills` just written,
+  and Gemini CLI although it reads a copy in `~/.agents/skills`. One per-tool table of the folders
+  each tool reads now decides: Copilot CLI (`~/.copilot/skills`, `~/.agents/skills`), Gemini CLI
+  (`~/.gemini/skills`, `~/.agents/skills`), opencode (`~/.config/opencode/skills`,
+  `~/.claude/skills`, `~/.agents/skills`), Codex (`~/.agents/skills`, `~/.codex/skills`) and
+  Cursor (`~/.agents/skills`, `~/.cursor/skills`, `~/.claude/skills`, `~/.codex/skills`), with the
+  project folders for `--local`. A copy counts only when the sweep would call it one: an empty or
+  foreign `sdlc-studio` folder no longer silences the hint (BG0856).
+- `install.ps1` treats Copilot as `install.sh` does since BG0852: a global install goes to the
+  personal `~/.agents/skills` folder Copilot CLI reads instead of falling back to the repo's
+  `.github/skills`, auto-detection selects copilot by the `copilot` binary or `~/.copilot` (a
+  `gh` binary or `.github` folder counts only for `-Local`), and the post-install note says
+  Copilot CLI reads `~/.agents/skills` as well as `.github/skills` in a repo (BG0855).
+- Every `migrate` item that speaks for a gate lane carries that lane's name (`lane`: `reconcile`,
+  `conformance`, `validate` or `engagement-floor`) and the lane's own number (`count`), set where
+  the item is built, so a reader can hold the report against `gate.py --format json` without a
+  map of its own. The reconcile index-drift and validate-errors items gain both; the conformance
+  and engagement-floor items gain `count`; the conformance item for an unreadable cutoff gains
+  `lane` and an empty `ids` (BG0854).
+- A new end-to-end test runs `migrate.py --apply`, commits the apply, and runs `gate.py`, both as
+  shipped commands, on one committed project shaped like the v4.1 rehearsal. It fails unless the
+  gate fails all four lanes and migrate names each lane the gate fails, with the gate's count,
+  and unless `git status` is left clean of `sdlc-studio/.local`. The rehearsal found migrate and
+  the gate disagreeing on three lanes only by a person reading both outputs (BG0854).
+- The AGENTS.md that `init` and `migrate --apply` seed no longer names the Claude Code skill
+  folder. Every skill path goes through a `<skill>` placeholder, defined once in the file with each
+  tool's location (`~/.claude/skills/sdlc-studio` for Claude Code, `~/.agents/skills/sdlc-studio`
+  for Copilot CLI, Codex, Gemini CLI and Cursor, or the same path in the repository). AGENTS.md is
+  read by every tool a team uses, so a Copilot CLI user was told to open
+  `.claude/skills/sdlc-studio/reference-doctrine.md`, a file their install does not have. The
+  seeded CLAUDE.md, read only by Claude Code, is unchanged (BG0853).
+- The existing agent-instructions check (`validate.py instructions`, which `migrate` reports as
+  its AGENTS.md hygiene item) now reports each AGENTS.md line that names one tool's skill install
+  path, with the line rewritten through `<skill>`, and never edits the file. It catches the three
+  lines of the field report: the `reference-doctrine.md` read, and the
+  `python3 ~/.claude/skills/sdlc-studio/scripts/artifact.py new ...` and `.../gate.py` commands.
+  The answer comes from the text alone, so every clone gets the same one; a skill vendored in the
+  repository under that path, the placeholder's definition line and CLAUDE.md are not reported
+  (BG0853).
+- The skill-path check matches a path only from where a path can start, so a URL to the skill's
+  source is not reported and a `./`, `../`, `"$HOME"/` or drive-letter prefix is replaced whole
+  rather than leaving `.<skill>` or `C:<skill>` behind. A vendored `./.claude/skills/sdlc-studio`
+  path is exempt like the bare form, and Windows forms (`C:\Users\...\.claude\skills\...`,
+  `%USERPROFILE%\.agents\skills\...`) are reported. Only the line that defines `<skill>` is
+  exempt, not any line starting with it, and an AGENTS.md that uses or is told to use `<skill>`
+  without defining it is given the template's definition line to add (BG0853).
+- `install.sh` installs for GitHub Copilot CLI globally. `--target copilot` writes
+  `~/.agents/skills`, a personal folder Copilot CLI reads (shared with `codex` and `agents`, so one
+  copy serves all three), where it was redirected to `.github/skills` in the current directory.
+  `--target auto` now selects Copilot on a global install, and Copilot is detected by the
+  `copilot` CLI or `~/.copilot`; `gh` and a `.github` folder count only for `--local`. Copilot's
+  global target is `~/.agents/skills`, not the current directory's `.github/skills` (BG0852).
+- The default install (Claude Code only) names each other tool on the host that finds no copy in
+  any folder it reads (BG0856), and the `--target` that would add one, e.g. `Detected but not
+  installed for: Copilot CLI. To add: --target claude,copilot`. It names a tool only from its CLI
+  or its own config folder, never from a shared `~/.agents` or a repo's `gh` or `.github`. It printed
+  nothing, so a Copilot CLI user following the quick start got no skill and no reason (BG0852).
+- A global install's sweep also refreshes a copy found in `~/.copilot/skills`, the other folder
+  Copilot CLI reads; a copy placed there by hand stayed stale silently (BG0852).
+- README and `docs/INSTALL.md` no longer call Copilot repo-scoped, and name `~/.agents/skills` as
+  its personal folder. `install.ps1` keeps the old mapping until its own fix (BG0852).
+- The sprint report now states the operator's own interventions. A `sprint.py decision resolve`
+  is counted as an operator ruling, as `decisions.py add --by operator` already was, so Rulings
+  no longer reads "the operator ruled 0 time(s)" over it. Waivers in force now lists every unit
+  the run's batch held - dropped units included, the shape RPT0012's BG0852 had - whose
+  `Forced-override` field is dated inside the run's window, naming the gate it waived, and leaves
+  out an older override. The field is date-only and a later `--force` rewrites it, so re-deriving
+  a filed page replays the overrides that page listed, as it read them: an override written after
+  the seal does not move the signed page, and a page signed before overrides were listed lists
+  none on re-derivation. RPT0011 and RPT0012 still check VALID (BG0851).
+- The reviewer whose REJECT carried a unit at the review cap can now discharge it. `critic.py
+  record` refused their APPROVE `at the cap of 2`, and `transition.py set --status Fixed` then
+  refused the REJECT that APPROVE would have answered, so an approved, merged unit reached Fixed
+  or Done only with `--force`. On a carried unit (a batch drop reasoned `carried at the review
+  cap: <bug>`, read from the open run and every archived run) the cap now admits one verdict: an
+  APPROVE from a reviewer whose REJECT still stands, whether in the carrying run or after another
+  reviewer's two rounds in a later one. Another reviewer's verdict, a further REJECT, and a unit
+  that was never carried are refused as before, and on a carried unit the refusal names the
+  reviewer who can discharge it (BG0850).
+- A retro can now rule a lesson's graduation CR before the close files it. On a schema 3 project
+  the CR's ULID is minted when it is filed, and a close dry run files into a scratch copy, so each
+  dry run and the close named a different id and the CR was always handed over UNRULED. A
+  `## Known issues carried` row may now name the lesson class code (`| LC-002 | not-stop-ship |
+  ... |`): `retro.carried_issues` resolves it through the link the lesson store already keeps
+  (the graduating class's `cr`), so the row rules the CR the close filed, whatever it is titled.
+  A graduation CR nobody ruled is still UNRULED, and its row now names the class to rule it by.
+  A dry run still files its preview CR, but only in its scratch copy, never in the tree (BG0849).
+- `sprint sign` no longer invalidates the report it has just sealed when it moves an approved
+  unit to its terminal status. The close derived each unit's actuals from an In Progress span
+  still open (0.0 minutes, 0 tokens); the sign's move then closed the span and stamped the
+  token meter, so `sprint_report.py check` read INVALIDATED on `eu_minutes`, `eu_tokens`,
+  `tokens_total`, `model_tokens` and `est_actual`. The close now settles, on one meter reading,
+  the open span of every unit the sign will move (the sign's own set, stories and bugs alike)
+  before anything derives from the run: the page states each span measured to the close, the
+  sign's move finds nothing open to close or stamp, and the sealed page checks VALID. A page
+  signed before this change re-derives as before; RPT0011 and RPT0012 still check VALID (BG0848).
+- `migrate`'s conformance cutoff item names a `conformance.adopt_after` the project already sets
+  and proposes the new line as a raise from it (`raise conformance.adopt_after from US0682 to
+  US0784`), no longer telling the user to add a key they have or calling units after their own
+  adoption point pre-adoption history. A v4.1 project was told to add a cutoff at its highest
+  story, which exempts every story it has (BG0845).
+- The item counts apart the failing units whose only gap is an APPROVE row with no recorded
+  author (the ledger before its Author column), which recording the author or a reviewed
+  `pre-gate` stamp answers without a cutoff, from the rest, and lists each set (`approve_no_author`,
+  `other`). It also carries `lane: "conformance"` (BG0845).
+- `migrate --apply` and `project upgrade --apply` seed `sdlc-studio/.gitignore` (`.local/`) with
+  the content `init` writes, so an upgraded project's gate runs no longer leave runtime state
+  untracked in `git status`. The dry run lists it as a deterministic upgrade without writing it.
+  An existing `sdlc-studio/.gitignore` with no `.local/` rule gains the same lines after its own,
+  which are kept; one that re-includes part of `.local/` or cannot be read is reported and left
+  as written (BG0844).
+- When `sdlc-studio/.local/` already holds files git tracks, the upgrade names them as a
+  needs-a-human item with `git rm -r --cached sdlc-studio/.local`, and never runs it. A git
+  that cannot be asked is reported as such rather than read as nothing tracked; a workspace
+  outside git is not asked (BG0844).
+- `migrate` names the engagement-floor cutoff. When the gate's engagement-floor lane would fail
+  shipped units, dry run and `--apply` alike report one needs-a-human item listing them and the
+  exact `engagement_floor.adopt_after: <highest failing id>` line that grandfathers them, and
+  never write it. The lane's own `detect` decides which units fail, so units an existing cutoff
+  or waiver already exempts are not named; a cutoff that stops short is named as a raise from its
+  current value. A v4.1 project was failing the lane on 349 units with no word from the upgrade
+  (BG0843).
+- Nothing is proposed in `engagement_floor: judgement` mode, where the lane never blocks. A
+  cutoff above the highest id, or one the lane cannot parse, is reported in the lane's own words
+  with no line. A unit with a v3 id, which no cutoff can reach, is named with the per-unit
+  remedies and kept out of the line (BG0843).
+- `migrate` and `project upgrade` report the index drift count the gate's reconcile lane blocks
+  on. The upgrade summed `reconcile.detect_type` per artefact type, two of the sweep's drift
+  sources, so a v4.1 project was told of 2 items and then failed the gate on 28; epic-breakdown,
+  link-asymmetry, meta-index and the other sweep-level kinds were not counted. Both now read one
+  public helper, `gate.reconcile_drift_tally`: the full `reconcile.detect_all` sweep less the items
+  the lane sets aside (those awaiting another gate, and those `reconcile settle` applies), so a
+  tree whose only drift is of that kind names no index-drift item (BG0842).
+- `tools/eval_run.py setup` isolates the candidate skill. It builds
+  `<dir>.claude-config/skills/sdlc-studio` from this working tree's skill, a sibling of the
+  fixture so the worker's transcripts never show in its `git status`, and prints the worker
+  command as `CLAUDE_CONFIG_DIR=<dir>.claude-config
+  SDLC_STUDIO_TRANSCRIPTS=<dir>.claude-config/projects/<slug> claude -p ...`, the second naming
+  the folder the worker's transcripts land in by the token meter's own rule, because under
+  `claude -p` a personal `~/.claude/skills/sdlc-studio` is not outranked by a project copy and a
+  worker loaded the operator's installed skill. `--dir` is resolved first, so `--dir .` still
+  puts the config beside the fixture; an unwritable nearest existing ancestor, or a symlink in
+  the config's skill path, is refused, naming the path, before the fixture is written. It never
+  copies a credential; `evals/README.md` says how to supply one (BG0839).
+- The pre-push gate judges the commit being pushed, not the working tree. `.githooks/pre-push`
+  ran `gate.py --boundary push` in the pusher's tree, so an uncommitted fix turned a red push
+  green (CI, checking out the commit, then went red) and an uncommitted red edit refused a green
+  push. Each distinct pushed commit is now checked out into a temporary worktree and judged
+  there; the worktree borrows the clone's `node_modules` and `sdlc-studio/.local` by symlink, so
+  markdownlint and the gate's runtime state (timings, cost record, the red full-suite log) are
+  as before, and it is removed on every exit, red, green or interrupted. A dirty tree is neither
+  refused nor touched (BG0837).
+- The token meter finds the session transcript for a repository whose path holds `.` or `_`.
+  The harness names a project's transcript folder after its path with every character outside
+  `[A-Za-z0-9]` mapped to `-`; `run_state.session_tokens` mapped only `/`, so a repo at
+  `my_app.v2` looked in `-...-my_app.v2`, found nothing, and the report's token actual read NOT
+  ATTRIBUTABLE. An explicit directory or `SDLC_STUDIO_TRANSCRIPTS` still wins (BG0835).
+- `persona generate --team` records a default as a default. Step 1's discoveries table admits a
+  third mark, `defaulted`, and Step 2 tells a headless run to put it on every item it did not ask
+  and never to report a default as answered by the user or the team as accepted when nobody was
+  asked. A headless report had claimed questions answered and the team accepted when none was
+  put (BG0834).
+- The engagement floor no longer refuses a request delivered through its children. A CR whose
+  `Decomposed-into` line names the units `refine` split it into counts as planned, since that
+  decomposition is its planning pass and each child is judged on its own, so a CR reconcile
+  derives Complete from planned children is no longer reported `unplanned`. A `Decomposed-into`
+  line naming no unit still plans nothing (BG0833).
+- `reference-review.md` step 3a (Persona Consultation) and the review JSON sample name neutral
+  sample roles (a product owner, an API consumer, a front-end developer, an operator) instead of
+  one consuming project's operator and agent names, and the step resolves each amigo seat with
+  `persona_resolve.py resolve-consult --role <seat>` rather than reading only the persona index
+  (BG0832).
+- A unit carried at the review cap is now filed as a bug `sprint plan` can take without hand
+  grooming. `critic.py record` wrote the carried bug's criteria as two tool-derived restatements
+  of its summary with no `Verify:` line, so `sprint.py breakdown` reported it ungroomed and the
+  next plan refused it. The bug now carries one criterion per finding of the carrying REJECT
+  (origin tag kept, checked `manual` by the independent review of the redelivery), then the
+  unit's own criteria with their `Verify:` lines, which the redelivery must still pass, and the
+  unit's Points and Affects, since the redelivery re-runs the whole unit. The escalation printed
+  on a carry no longer says the operator is notified, which nothing did: it names where the
+  operator reads it - the sprint report's `Dropped, held and carried over` row and the carried
+  bug - or, for an escalation with no carry, this output and the verdict ledger (BG0829).
+- `critic.py brief` names the commit the reviewer diffs against. When the run whose batch holds
+  the unit recorded a base ref, the diff-scope section prints the exact command,
+  `git diff <base> -- <Affects>`, instead of asking the reviewer to judge "at the base ref" with
+  no ref named. With no run naming the unit, the brief prints no command, as before (BG0827).
+- The retro `sprint close` scaffolds now names its run (`> **Run:** RUN-...`) and carries an
+  empty `## Known issues carried` table with its header. A reader of the run's rulings without
+  `--retro` (`sprint stop`, the close pre-flight, the dry run) finds the run's retro by its run id,
+  which the scaffold never wrote, so it reported the rulings unreadable; and the one table a
+  stop-ship ruling is recorded in had to be added by hand, its header guessed from
+  help/sprint.md. The header is rendered from `retro.KNOWN_ISSUES_COLUMNS`, the columns
+  `carried_issues` reads each row by, so the table a retro is born with is the one its reader
+  parses. An empty table is an answer, and `retro.py validate` accepts it. A retro made with
+  `artifact.py new --type retro` outside a run reads `> **Run:** -` (BG0826).
+- The brief's record footer, the plan's delivery-mode line, the carried-at-cap bug, the retro's
+  Batch line and the report's known-issues rows print an id in its file's spelling, not its
+  comparison key. `sdlc_md.norm_id` drops
+  the dash a schema v3 id is spelled with (`US-01ABCDEF` -> `US01ABCDEF`) and was printed as the
+  id in `critic.py brief`'s record footer, the plan's delivery-mode line, the carried-at-cap
+  bug's title, slug and prose, the retro's Batch line and the signed report's issue table, so a
+  reader searching for it found no file. A new `sdlc_md.display_id` returns the record id the
+  file's stem carries, and each of those now prints it; `norm_id` stays the comparison key, and
+  a signed page replays whichever spelling it printed. The close also printed and recorded
+  `RETRO-0001` for the file `RETRO0001-...md`; it now prints and records `RETRO0001` (BG0825).
+- Guided onboarding's personas stage, and `init --scaffold`, seed the persona registry v6 reads,
+  `sdlc-studio/personas/index.md`, instead of the legacy flat `sdlc-studio/personas.md`, so a
+  user who fills it is read by `sprint plan --serves` and the goal trace. The persona index
+  template carries the `Primary`, `Secondary` and `Negative` sections the registry parses (empty
+  until filled), and the story index template links `../personas/index.md` and drops its
+  `US0001, US0002` numbering note. `status` and the review's persona leg count personas wherever
+  the project keeps them - a registry naming anyone, a persona card, or the legacy flat file -
+  so a guided project whose registry is filled no longer sticks on `persona (no personas yet)`;
+  a seeded registry still empty declares nobody (BG0824, BG0881).
+- The bug fix and close steps in `help/bug.md` and `reference-bug.md` say the reviewer is given
+  the brief whole: `critic.py brief --unit BG{NNNN} --seat qa > brief.txt` writes the brief to the
+  file and its fingerprint footer to stderr, and the file's text, unedited, is the reviewer's
+  prompt. "Briefed with `critic.py brief`" alone had let a worker relay its own summary, dropping
+  the standing practices and lessons (BG0817).
+- The stale downgrade keeps the author's reason. When a criterion stamped
+  `yes (<date>) - <reason>` goes red, `verify_ac.py run` now writes
+  `no (<today>) - downgraded by verify_ac - the selector was red at verification time; was: <reason>`
+  instead of dropping the reason; a bare `yes` downgrades exactly as before. The mark stays
+  first, so a later green run still clears the line as the tool's own (BG0737).
+- The sprint report's review-attribution row no longer labels every reviewer `NO DECLARED
+  SEAT` on a project that declares no seat cards: it names the reviewer and claims nothing
+  about a seat. Where seats are declared, a reviewer matching none of them is still marked.
+
+#### Retired flags
+
+| Before (v6.0) | After (v6.1) | Migration |
+| --- | --- | --- |
+| `artifact.py new --type handoff` | Removed (argparse error) | the signed sprint report hands over the remaining work; start the next run with `sprint.py plan --worklist RPTxxxx` |
+| `gate.py --require-handoff` | Removed (argparse error) | the signed sprint report from `sprint.py sign` is the run's hand-over |
+
 ## [6.0.0] - 2026-09-29
 
 ### Breaking
