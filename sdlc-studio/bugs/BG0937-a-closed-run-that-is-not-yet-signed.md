@@ -3,7 +3,7 @@
 > **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_reopen_closed_unsigned.py, CHANGELOG.md, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_reopen_closed_unsigned.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, CHANGELOG.md
 > **Created:** 2026-10-03
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -32,3 +32,4 @@ Let `reopen_run` accept a run whose page is filed and not signed (outcome runnin
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-03 | sdlc-studio | Filed |
+| 2026-10-03 | engineering seat | Affects corrected to the files a248836d changed (review finding) |
