@@ -1,0 +1,2229 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M3ZAGE",
+  "started_at": "2026-10-02T22:06:20Z",
+  "ended_at": "2026-10-03T11:09:38Z",
+  "outcome": "goal-reached",
+  "goal": "done",
+  "batch": [
+    "BG0911",
+    "BG0912",
+    "BG0898",
+    "BG0899",
+    "BG0900",
+    "BG0901",
+    "BG0903",
+    "BG0904",
+    "BG0908",
+    "BG0907",
+    "BG0914",
+    "BG0905",
+    "BG0906",
+    "BG0910",
+    "US0982",
+    "BG0870",
+    "BG0871",
+    "BG0872",
+    "BG0873",
+    "BG0878",
+    "BG0882",
+    "BG0902",
+    "US0981",
+    "BG0886",
+    "BG0887",
+    "BG0888",
+    "BG0889",
+    "BG0896",
+    "BG0915",
+    "BG0916",
+    "BG0917",
+    "BG0918",
+    "BG0919",
+    "BG0920",
+    "BG0925"
+  ],
+  "plan": "sdlc-studio/.local/sprint-plan.json",
+  "handoff": null,
+  "session_token_baseline": {
+    "tokens": 17848266,
+    "source": "sha256:1d4787a19476",
+    "at": "2026-10-02T22:06:20Z"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 17848266,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:06:20Z",
+      "kind": "open",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:06:55Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:06:56Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:06:56Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:06:57Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:06:57Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:06:57Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:06:58Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:06:58Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:06:59Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:06:59Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:07:00Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:07:00Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:07:00Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:07:01Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:07:01Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17855823,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:07:02Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17963186,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:48:45Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17963186,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:48:45Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17963186,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:48:46Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17963186,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:48:47Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17963186,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:48:48Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17963186,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:48:49Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17963186,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:48:50Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17963186,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:48:50Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17989805,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:49:42Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 17991197,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T22:50:17Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18072973,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:46:15Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18072973,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:46:16Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18072973,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:46:17Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18087349,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:46:18Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18087349,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:46:19Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18087349,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:46:19Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18087349,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:46:20Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18087349,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:46:21Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18087349,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:46:24Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18087349,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:46:24Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18102978,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:47:20Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18102978,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:47:21Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18102978,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:47:21Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18112443,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:47:56Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18112443,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:47:56Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18112443,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:47:56Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18112443,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-02T23:47:56Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18356113,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T00:25:33Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18356113,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T00:25:34Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18356113,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T00:25:35Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18363796,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T00:25:36Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18363796,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T00:25:38Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18363796,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T00:25:39Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18363796,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T00:25:40Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18363796,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T00:26:02Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18363796,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T00:26:02Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18375148,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T00:26:03Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18523209,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T00:46:49Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18523209,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T00:46:50Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18523209,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T00:46:51Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18558567,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T00:47:48Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18566187,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T00:48:27Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18632044,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:05:34Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18632044,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:05:35Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18642538,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:06:07Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18642538,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:06:07Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18686606,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:26:10Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18703289,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:26:33Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18703289,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:26:34Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18703289,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:26:34Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18703289,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:26:35Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18703289,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:26:35Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18703289,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:26:36Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18708044,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:26:36Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18708044,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:26:36Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18708044,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:26:37Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18708044,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:26:37Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18708044,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:26:38Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18708044,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:26:38Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18708044,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:26:39Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18708044,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T01:26:39Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18739122,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:08:33Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18739122,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:08:34Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18752025,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:08:34Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18752025,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:08:35Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18752025,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:08:37Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18752025,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:08:38Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18752025,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:08:39Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18871591,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:49:35Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18871591,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:49:36Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18871591,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:49:37Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18883966,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:49:38Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18883966,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:49:39Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18883966,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:49:40Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18883966,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:49:41Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18883966,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:49:42Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18888696,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T02:50:35Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18996675,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T03:08:01Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 18996675,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T03:08:02Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 19008272,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T03:08:56Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 19027413,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T03:23:47Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 19214667,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T04:10:27Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    }
+  ],
+  "delegated_tokens": [
+    {
+      "tokens": 46682,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T22:48:45Z",
+      "unit": "BG0911",
+      "minutes": 6.6
+    },
+    {
+      "tokens": 36035,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T22:48:45Z",
+      "unit": "BG0912",
+      "minutes": 5.1
+    },
+    {
+      "tokens": 50940,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T22:48:46Z",
+      "unit": "BG0913",
+      "minutes": 7.2
+    },
+    {
+      "tokens": 23259,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T22:48:47Z",
+      "unit": "US0982",
+      "minutes": 3.3
+    },
+    {
+      "tokens": 25061,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T22:48:48Z",
+      "unit": "BG0914",
+      "minutes": 3.5
+    },
+    {
+      "tokens": 31449,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T22:48:49Z",
+      "unit": "BG0899",
+      "minutes": 4.4
+    },
+    {
+      "tokens": 25716,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T22:48:50Z",
+      "unit": "BG0903",
+      "minutes": 3.6
+    },
+    {
+      "tokens": 34233,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T22:48:50Z",
+      "unit": "BG0908",
+      "minutes": 4.8
+    },
+    {
+      "tokens": 49090,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T23:46:15Z",
+      "unit": "BG0912",
+      "minutes": 7.8
+    },
+    {
+      "tokens": 39272,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T23:46:16Z",
+      "unit": "BG0915",
+      "minutes": 6.2
+    },
+    {
+      "tokens": 68726,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T23:46:17Z",
+      "unit": "BG0898",
+      "minutes": 10.9
+    },
+    {
+      "tokens": 29454,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T23:46:18Z",
+      "unit": "BG0900",
+      "minutes": 4.7
+    },
+    {
+      "tokens": 49090,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T23:46:19Z",
+      "unit": "BG0901",
+      "minutes": 7.8
+    },
+    {
+      "tokens": 29454,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T23:46:19Z",
+      "unit": "BG0904",
+      "minutes": 4.7
+    },
+    {
+      "tokens": 29454,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T23:46:20Z",
+      "unit": "BG0905",
+      "minutes": 4.7
+    },
+    {
+      "tokens": 9818,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T23:46:21Z",
+      "unit": "BG0906",
+      "minutes": 1.6
+    },
+    {
+      "tokens": 9818,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T23:46:24Z",
+      "unit": "BG0910",
+      "minutes": 1.6
+    },
+    {
+      "tokens": 29455,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-02T23:46:24Z",
+      "unit": "BG0907",
+      "minutes": 4.7
+    },
+    {
+      "tokens": 14624,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T00:25:33Z",
+      "unit": "BG0911",
+      "minutes": 2.4
+    },
+    {
+      "tokens": 58496,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T00:25:34Z",
+      "unit": "BG0913",
+      "minutes": 9.7
+    },
+    {
+      "tokens": 14624,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T00:25:35Z",
+      "unit": "BG0914",
+      "minutes": 2.4
+    },
+    {
+      "tokens": 21936,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T00:25:36Z",
+      "unit": "BG0903",
+      "minutes": 3.6
+    },
+    {
+      "tokens": 14624,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T00:25:37Z",
+      "unit": "BG0901",
+      "minutes": 2.4
+    },
+    {
+      "tokens": 65808,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T00:25:38Z",
+      "unit": "BG0916",
+      "minutes": 10.9
+    },
+    {
+      "tokens": 14624,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T00:25:39Z",
+      "unit": "BG0917",
+      "minutes": 2.4
+    },
+    {
+      "tokens": 14623,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T00:25:40Z",
+      "unit": "BG0918",
+      "minutes": 2.4
+    },
+    {
+      "tokens": 64478,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T00:46:49Z",
+      "unit": "BG0907",
+      "minutes": 7.9
+    },
+    {
+      "tokens": 32239,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T00:46:50Z",
+      "unit": "BG0900",
+      "minutes": 4.0
+    },
+    {
+      "tokens": 48358,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T00:46:51Z",
+      "unit": "BG0919",
+      "minutes": 5.9
+    },
+    {
+      "tokens": 25369,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T01:05:33Z",
+      "unit": "BG0913",
+      "minutes": 2.7
+    },
+    {
+      "tokens": 20295,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T01:05:34Z",
+      "unit": "BG0916",
+      "minutes": 2.2
+    },
+    {
+      "tokens": 89637,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T01:05:35Z",
+      "unit": "BG0920",
+      "minutes": 9.5
+    },
+    {
+      "tokens": 113412,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T01:26:10Z",
+      "unit": "BG0898",
+      "minutes": 18.8
+    },
+    {
+      "tokens": 27719,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T02:08:33Z",
+      "unit": "BG0870",
+      "minutes": 3.1
+    },
+    {
+      "tokens": 97015,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T02:08:34Z",
+      "unit": "BG0871",
+      "minutes": 11.0
+    },
+    {
+      "tokens": 27719,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T02:08:34Z",
+      "unit": "BG0887",
+      "minutes": 3.1
+    },
+    {
+      "tokens": 20789,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T02:08:35Z",
+      "unit": "BG0888",
+      "minutes": 2.4
+    },
+    {
+      "tokens": 69296,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T02:08:37Z",
+      "unit": "BG0878",
+      "minutes": 7.9
+    },
+    {
+      "tokens": 69296,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T02:08:38Z",
+      "unit": "BG0889",
+      "minutes": 7.9
+    },
+    {
+      "tokens": 41578,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T02:08:39Z",
+      "unit": "BG0896",
+      "minutes": 4.7
+    },
+    {
+      "tokens": 16564,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T02:49:35Z",
+      "unit": "BG0872",
+      "minutes": 2.4
+    },
+    {
+      "tokens": 24846,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T02:49:36Z",
+      "unit": "BG0873",
+      "minutes": 3.6
+    },
+    {
+      "tokens": 33128,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T02:49:37Z",
+      "unit": "BG0882",
+      "minutes": 4.8
+    },
+    {
+      "tokens": 33128,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T02:49:38Z",
+      "unit": "BG0902",
+      "minutes": 4.8
+    },
+    {
+      "tokens": 115947,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T02:49:39Z",
+      "unit": "BG0885",
+      "minutes": 16.8
+    },
+    {
+      "tokens": 24846,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T02:49:40Z",
+      "unit": "US0981",
+      "minutes": 3.6
+    },
+    {
+      "tokens": 16563,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T02:49:41Z",
+      "unit": "BG0886",
+      "minutes": 2.4
+    },
+    {
+      "tokens": 50251,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T03:08:01Z",
+      "unit": "BG0925",
+      "minutes": 7.0
+    },
+    {
+      "tokens": 64607,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T03:08:02Z",
+      "unit": "BG0878",
+      "minutes": 9.1
+    },
+    {
+      "tokens": 98048,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T03:23:47Z",
+      "unit": "BG0885",
+      "minutes": 14.4
+    },
+    {
+      "tokens": 90185,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T03:50:52Z",
+      "unit": "BG0885",
+      "minutes": 20.1
+    },
+    {
+      "tokens": 4147192,
+      "agent": "QA-seat reviewers and goal-review seats (42 runs)",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T03:51:45Z",
+      "minutes": 340.7
+    },
+    {
+      "tokens": 87733,
+      "agent": "QA-seat reviewer, BG0885 discharge",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T03:55:27Z",
+      "minutes": 4.3
+    }
+  ],
+  "reopened": [],
+  "batch_changes": [
+    {
+      "action": "add",
+      "id": "BG0915",
+      "at": "2026-10-02T22:49:42Z",
+      "reason": "BG0908's remainder, split under D0316; on-goal and built in lane A2 beside the BG0912 repair"
+    },
+    {
+      "action": "add",
+      "id": "BG0916",
+      "at": "2026-10-02T23:47:19Z",
+      "reason": "filed from a lane A1 round-1 low under D0317; on-goal, built after the A1 repairs"
+    },
+    {
+      "action": "add",
+      "id": "BG0917",
+      "at": "2026-10-02T23:47:20Z",
+      "reason": "filed from a lane A1 round-1 low under D0317; on-goal, built after the A1 repairs"
+    },
+    {
+      "action": "add",
+      "id": "BG0918",
+      "at": "2026-10-02T23:47:20Z",
+      "reason": "filed from a lane A1 round-1 low under D0317; on-goal, built after the A1 repairs"
+    },
+    {
+      "action": "add",
+      "id": "BG0919",
+      "at": "2026-10-03T00:26:01Z",
+      "reason": "the round-trip gap the BG0900 review found, in the three other marks this run added (D0320)"
+    },
+    {
+      "action": "drop",
+      "id": "BG0913",
+      "reason": "carried at the review cap: BG0923",
+      "at": "2026-10-03T00:47:35Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0920",
+      "at": "2026-10-03T00:47:48Z",
+      "reason": "the checklist cost row the BG0916 review found disagreeing with the re-filed page; on-goal (D0321)"
+    },
+    {
+      "action": "add",
+      "id": "BG0925",
+      "at": "2026-10-03T02:49:41Z",
+      "reason": "a regression the BG0896 review found (a fenced bare command no longer named); repaired in this run (D0324)"
+    },
+    {
+      "action": "drop",
+      "id": "BG0885",
+      "reason": "carried at the review cap: BG0928",
+      "at": "2026-10-03T03:29:31Z"
+    }
+  ],
+  "rulings": [
+    {
+      "id": "D0315",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0316",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0317",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0318",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0319",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0320",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0321",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0322",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0323",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0324",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    }
+  ],
+  "base_ref": "a621884e301ad4376493b7bea4bf9e9f15d80ccb",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-10-02T22:05:40Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "Maya signs a sprint report whose every figure is true, and every tool reports only what it judged.",
+  "sprint_goal_review": {
+    "reviewed": true,
+    "status": "read",
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "product",
+        "achievable": "yes",
+        "done_means": "Maya Okafor signs the next sprint report (O3) with its minutes, tokens, DORA and calibration figures derived from the run they describe and the readable page put in front of her before she signs, and no tool claims a judgement or figure it did not compute (O5).",
+        "one_increment": "no",
+        "note": "24 of 29 units serve the goal: the report-figure cluster (BG0898-BG0907, BG0911, BG0913, BG0882 token meter attribution), the close and sign-off path (BG0899, BG0908, BG0910, BG0912), and tools reporting only what they judged (BG0871, BG0887, BG0888, BG0878, BG0886, BG0873, BG0896, BG0870). Five do not serve it and ride along under D0309: BG0872 (next_id mints sequential ids on v3), BG0885 (critic record breaks the lint), BG0889 (MD060 wide-character table), US0981 (carry bug against the triage cap), US0982 (lane brief repair scope). That makes the batch a backlog sweep with a strong theme, not one increment; named, not dropped."
+      },
+      {
+        "seat": "engineering",
+        "achievable": "yes",
+        "done_means": "The report and close code derive every figure Maya Okafor signs (O3) from the frozen run state, a re-close no longer moves the window or meter (BG0913), and the gate lanes, review dashboard, config show and help text state only what their code computed (O5).",
+        "one_increment": "yes",
+        "note": "Achievable, but eleven units (BG0898-BG0901, BG0903, BG0904, BG0908, BG0911-BG0913, US0982) share report and sprint.py surface and must be built serially, plus BG0882/BG0902 and BG0885/US0981 as pairs; plan them as lanes, not parallel units. Apply LC-016: every figure fix reads only what PREPARE froze, and a step judging the attempt in progress reads the live source. BG0870 serves the clause only marginally (its pins stop the push hook going fail-open silently). Not serving the goal: BG0872, BG0885, BG0889, US0981, US0982."
+      },
+      {
+        "seat": "qa",
+        "achievable": "partial",
+        "done_means": "Each known false figure and over-claiming output in the batch has a failing-first test that is red on the base ref and green at the close, so the report Maya Okafor signs (O3) is true for every figure this batch names and each tool's output is pinned to what it judged (O5).",
+        "one_increment": "yes",
+        "note": "Partial because 'every figure is true' is unbounded: the batch fixes the figures it names, it cannot certify figures nobody has yet found false, so done should be read against the named defects. Several units are themselves unpinned-rule bugs (BG0905, BG0906, BG0910, BG0870), so the risk is tests that pass in lockstep with the code; each needs a named mutant. Not serving the goal: BG0872, BG0885, BG0889, US0981, US0982."
+      }
+    ],
+    "goal": "Maya signs a sprint report whose every figure is true, and every tool reports only what it judged.",
+    "shipped_seats": false,
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 85,
+    "objected": false,
+    "objections": [],
+    "reviewed_at": "2026-10-02T22:01:25Z",
+    "change_type": null,
+    "amended_from": null,
+    "requesting_seat": null,
+    "needs_reconsult": [],
+    "themed": [
+      {
+        "seat": "product",
+        "one_increment": "no",
+        "note": "24 of 29 units serve the goal: the report-figure cluster (BG0898-BG0907, BG0911, BG0913, BG0882 token meter attribution), the close and sign-off path (BG0899, BG0908, BG0910, BG0912), and tools reporting only what they judged (BG0871, BG0887, BG0888, BG0878, BG0886, BG0873, BG0896, BG0870). Five do not serve it and ride along under D0309: BG0872 (next_id mints sequential ids on v3), BG0885 (critic record breaks the lint), BG0889 (MD060 wide-character table), US0981 (carry bug against the triage cap), US0982 (lane brief repair scope). That makes the batch a backlog sweep with a strong theme, not one increment; named, not dropped."
+      }
+    ],
+    "discharged": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Fixed (bug), Done (story)",
+    "types": [
+      "bug",
+      "story"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed (bug), Done (story)"
+  },
+  "plan_snapshot": {
+    "units": {
+      "BG0911": {
+        "planned_points": 2,
+        "forecast_tokens": 134184,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0912": {
+        "planned_points": 2,
+        "forecast_tokens": 134184,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0913": {
+        "planned_points": 2,
+        "forecast_tokens": 134184,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0898": {
+        "planned_points": 2,
+        "forecast_tokens": 134184,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0899": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0900": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0901": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0903": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0904": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0908": {
+        "planned_points": 2,
+        "forecast_tokens": 134184,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0907": {
+        "planned_points": 2,
+        "forecast_tokens": 134184,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0914": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0905": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0906": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0910": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "US0982": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0870": {
+        "planned_points": 2,
+        "forecast_tokens": 134184,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0871": {
+        "planned_points": 2,
+        "forecast_tokens": 134184,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0872": {
+        "planned_points": 2,
+        "forecast_tokens": 134184,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0873": {
+        "planned_points": 2,
+        "forecast_tokens": 134184,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0878": {
+        "planned_points": 3,
+        "forecast_tokens": 201276,
+        "forecast_minutes": 19.2,
+        "added": false
+      },
+      "BG0882": {
+        "planned_points": 2,
+        "forecast_tokens": 134184,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0902": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0885": {
+        "planned_points": 2,
+        "forecast_tokens": 134184,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "US0981": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0886": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0887": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0888": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0889": {
+        "planned_points": 2,
+        "forecast_tokens": 134184,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0896": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": false
+      },
+      "BG0915": {
+        "planned_points": 2,
+        "forecast_tokens": 134184,
+        "forecast_minutes": 12.8,
+        "added": true
+      },
+      "BG0916": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": true
+      },
+      "BG0917": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": true
+      },
+      "BG0918": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": true
+      },
+      "BG0919": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": true
+      },
+      "BG0920": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": true
+      },
+      "BG0925": {
+        "planned_points": 1,
+        "forecast_tokens": 67092,
+        "forecast_minutes": 6.4,
+        "added": true
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 67092,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 6.4,
+        "source": "fallback: 0 row(s) for claude-opus-5-5, under 3, so the latest rows of any single model: median of RETRO0028"
+      }
+    }
+  },
+  "token_forecast": 3019140,
+  "goal_content_review": [
+    {
+      "phase": "plan",
+      "goal": "Maya signs a sprint report whose every figure is true, and every tool reports only what it judged.",
+      "answer": "partial",
+      "missing": "Off-goal backlog clearance kept under D0309: BG0872, BG0885, BG0889, US0981, US0982; 'every figure' is judged against the defects this batch names (D0312).",
+      "shortfall": {},
+      "recorded_at": "2026-10-02T22:06:20Z"
+    },
+    {
+      "phase": "close",
+      "goal": "Maya signs a sprint report whose every figure is true, and every tool reports only what it judged.",
+      "answer": "partial",
+      "missing": "Backlog clearance outside the goal, kept under D0309: BG0872, BG0885, BG0889, US0981, US0982. Every figure is judged against the defects this batch named (D0312).",
+      "shortfall": {
+        "undelivered": [],
+        "defects": [
+          "BG0921",
+          "BG0922",
+          "BG0924",
+          "BG0926",
+          "BG0927"
+        ]
+      },
+      "recorded_at": "2026-10-03T04:08:53Z"
+    }
+  ],
+  "unit_actuals": {
+    "BG0911": {
+      "minutes": 79.45,
+      "tokens": 351033,
+      "started_at": "2026-10-02T23:47:56Z",
+      "start_tokens": 264177,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0912": {
+      "minutes": 97.79,
+      "tokens": 189139,
+      "started_at": "2026-10-02T22:50:17Z",
+      "start_tokens": 142931,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0913": {
+      "minutes": 79.46,
+      "tokens": 351033,
+      "started_at": "2026-10-02T23:47:56Z",
+      "start_tokens": 264177,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0898": {
+      "minutes": 119.38,
+      "tokens": 261218,
+      "started_at": "2026-10-03T01:06:07Z",
+      "start_tokens": 794272,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0899": {
+      "minutes": 41.87,
+      "tokens": 107363,
+      "started_at": "2026-10-02T22:06:57Z",
+      "start_tokens": 7557,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0900": {
+      "minutes": 120.13,
+      "tokens": 379587,
+      "started_at": "2026-10-03T01:06:07Z",
+      "start_tokens": 794272,
+      "open": true,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0901": {
+      "minutes": 99.35,
+      "tokens": 231526,
+      "started_at": "2026-10-02T22:06:58Z",
+      "start_tokens": 7557,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0903": {
+      "minutes": 79.54,
+      "tokens": 358716,
+      "started_at": "2026-10-02T23:47:56Z",
+      "start_tokens": 264177,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0904": {
+      "minutes": 99.33,
+      "tokens": 231526,
+      "started_at": "2026-10-02T22:06:59Z",
+      "start_tokens": 7557,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0908": {
+      "minutes": 41.85,
+      "tokens": 107363,
+      "started_at": "2026-10-02T22:06:59Z",
+      "start_tokens": 7557,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0907": {
+      "minutes": 120.18,
+      "tokens": 390939,
+      "started_at": "2026-10-03T00:26:02Z",
+      "start_tokens": 515530,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0914": {
+      "minutes": 79.45,
+      "tokens": 351033,
+      "started_at": "2026-10-02T23:47:56Z",
+      "start_tokens": 264177,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0905": {
+      "minutes": 99.33,
+      "tokens": 231526,
+      "started_at": "2026-10-02T22:07:00Z",
+      "start_tokens": 7557,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0906": {
+      "minutes": 99.33,
+      "tokens": 231526,
+      "started_at": "2026-10-02T22:07:01Z",
+      "start_tokens": 7557,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0910": {
+      "minutes": 99.38,
+      "tokens": 231526,
+      "started_at": "2026-10-02T22:07:01Z",
+      "start_tokens": 7557,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "US0982": {
+      "minutes": 41.75,
+      "tokens": 107363,
+      "started_at": "2026-10-02T22:07:02Z",
+      "start_tokens": 7557,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0915": {
+      "minutes": 56.57,
+      "tokens": 83168,
+      "started_at": "2026-10-02T22:49:42Z",
+      "start_tokens": 141539,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0916": {
+      "minutes": 55.42,
+      "tokens": 326675,
+      "started_at": "2026-10-03T00:48:27Z",
+      "start_tokens": 717921,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0917": {
+      "minutes": 38.3,
+      "tokens": 260818,
+      "started_at": "2026-10-02T23:47:21Z",
+      "start_tokens": 254712,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0918": {
+      "minutes": 38.32,
+      "tokens": 260818,
+      "started_at": "2026-10-02T23:47:21Z",
+      "start_tokens": 254712,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0919": {
+      "minutes": 20.82,
+      "tokens": 159413,
+      "started_at": "2026-10-03T00:26:02Z",
+      "start_tokens": 515530,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0920": {
+      "minutes": 17.78,
+      "tokens": 73477,
+      "started_at": "2026-10-03T00:47:48Z",
+      "start_tokens": 710301,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0870": {
+      "minutes": 42.0,
+      "tokens": 35833,
+      "started_at": "2026-10-03T01:26:33Z",
+      "start_tokens": 855023,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0871": {
+      "minutes": 42.0,
+      "tokens": 35833,
+      "started_at": "2026-10-03T01:26:34Z",
+      "start_tokens": 855023,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0887": {
+      "minutes": 42.0,
+      "tokens": 48736,
+      "started_at": "2026-10-03T01:26:34Z",
+      "start_tokens": 855023,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0888": {
+      "minutes": 42.0,
+      "tokens": 48736,
+      "started_at": "2026-10-03T01:26:35Z",
+      "start_tokens": 855023,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0878": {
+      "minutes": 59.48,
+      "tokens": 156715,
+      "started_at": "2026-10-03T02:50:35Z",
+      "start_tokens": 1040430,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0889": {
+      "minutes": 42.03,
+      "tokens": 48736,
+      "started_at": "2026-10-03T01:26:36Z",
+      "start_tokens": 855023,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0896": {
+      "minutes": 42.05,
+      "tokens": 43981,
+      "started_at": "2026-10-03T01:26:36Z",
+      "start_tokens": 859778,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0872": {
+      "minutes": 82.98,
+      "tokens": 163547,
+      "started_at": "2026-10-03T01:26:36Z",
+      "start_tokens": 859778,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0873": {
+      "minutes": 82.98,
+      "tokens": 163547,
+      "started_at": "2026-10-03T01:26:37Z",
+      "start_tokens": 859778,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0882": {
+      "minutes": 83.0,
+      "tokens": 163547,
+      "started_at": "2026-10-03T01:26:37Z",
+      "start_tokens": 859778,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0902": {
+      "minutes": 83.0,
+      "tokens": 175922,
+      "started_at": "2026-10-03T01:26:38Z",
+      "start_tokens": 859778,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0885": {
+      "minutes": 97.87,
+      "tokens": 195063,
+      "started_at": "2026-10-03T03:08:56Z",
+      "start_tokens": 1160006,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "US0981": {
+      "minutes": 83.02,
+      "tokens": 175922,
+      "started_at": "2026-10-03T01:26:39Z",
+      "start_tokens": 859778,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0886": {
+      "minutes": 83.03,
+      "tokens": 175922,
+      "started_at": "2026-10-03T01:26:39Z",
+      "start_tokens": 859778,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0925": {
+      "minutes": 18.32,
+      "tokens": 112709,
+      "started_at": "2026-10-03T02:49:42Z",
+      "start_tokens": 1035700,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    }
+  },
+  "lanes_in_flight": [
+    {
+      "unit": "BG0900",
+      "started_at": "2026-10-03T01:06:07Z"
+    }
+  ],
+  "review_base": {
+    "BG0911": 0,
+    "BG0913": 0,
+    "US0982": 0,
+    "BG0914": 0,
+    "BG0899": 0,
+    "BG0903": 0,
+    "BG0908": 0,
+    "BG0912": 0,
+    "BG0915": 0,
+    "BG0900": 0,
+    "BG0901": 0,
+    "BG0904": 0,
+    "BG0905": 0,
+    "BG0910": 0,
+    "BG0907": 0,
+    "BG0906": 0,
+    "BG0916": 0,
+    "BG0918": 0,
+    "BG0917": 0,
+    "BG0919": 0,
+    "BG0898": 0,
+    "BG0920": 0,
+    "BG0870": 0,
+    "BG0871": 0,
+    "BG0887": 0,
+    "BG0888": 0,
+    "BG0878": 0,
+    "BG0889": 0,
+    "BG0896": 0,
+    "BG0872": 0,
+    "BG0873": 0,
+    "BG0882": 0,
+    "BG0902": 0,
+    "BG0885": 0,
+    "US0981": 0,
+    "BG0886": 0,
+    "BG0925": 0
+  },
+  "sprint_goal_verdict": {
+    "verdict": "achieved",
+    "note": "Every unit in the batch was delivered and approved by an independent reviewer, including two carries discharged by the reviewer who rejected them; the report's figures each derive from what the close froze."
+  },
+  "close_attempts": [
+    {
+      "at": "2026-10-03T04:05:22Z",
+      "outstanding": 0,
+      "stages": []
+    }
+  ],
+  "close_not_measured": [],
+  "close_tree": "d4339007391bf2b5aa3135450cd148d958e6b800",
+  "report_gate_clear": [
+    "BG0870",
+    "BG0871",
+    "BG0872",
+    "BG0873",
+    "BG0878",
+    "BG0882",
+    "BG0886",
+    "BG0887",
+    "BG0888",
+    "BG0889",
+    "BG0896",
+    "BG0898",
+    "BG0899",
+    "BG0900",
+    "BG0901",
+    "BG0902",
+    "BG0903",
+    "BG0904",
+    "BG0905",
+    "BG0906",
+    "BG0907",
+    "BG0908",
+    "BG0910",
+    "BG0911",
+    "BG0912",
+    "BG0914",
+    "BG0915",
+    "BG0916",
+    "BG0917",
+    "BG0918",
+    "BG0919",
+    "BG0920",
+    "BG0925",
+    "US0981",
+    "US0982"
+  ],
+  "verified_sha": "ba7787e70c56f03bef1ac132db92738246c4a244",
+  "close_known_issues": [],
+  "ci_runs": {
+    "source": "gh run list",
+    "runs": []
+  },
+  "review_rows": {
+    "BG0911": [
+      "091692b0fb05d5c3",
+      "4b56737502cdb0d9"
+    ],
+    "BG0912": [
+      "1230b3d3bfa4992d"
+    ],
+    "BG0913": [
+      "ed37ee7735ab2f73",
+      "19e042950d73418b",
+      "2cfa0d4f573420e0"
+    ],
+    "BG0898": [
+      "4ad89ddf82cbc1c0",
+      "2877e4c6adc75ff5"
+    ],
+    "BG0899": [
+      "14d6e0c3f8945071"
+    ],
+    "BG0900": [
+      "a80083d303dbf14a",
+      "af5b22a646b33cbf"
+    ],
+    "BG0901": [
+      "ce269d6e9d1574df"
+    ],
+    "BG0903": [
+      "e72c731a353af96b",
+      "8d75628d9f135459"
+    ],
+    "BG0904": [
+      "f672b20b3b6e969d"
+    ],
+    "BG0908": [
+      "73fdc0b4947b2b21"
+    ],
+    "BG0907": [
+      "c4d193003cd1783c",
+      "4d9d493037ce769e"
+    ],
+    "BG0914": [
+      "c13c7f04a9464699",
+      "2533d11bfb0cae5f"
+    ],
+    "BG0905": [
+      "8ebd3d279e112ec2"
+    ],
+    "BG0906": [
+      "3da856645dc56da9"
+    ],
+    "BG0910": [
+      "71453a7055ac4f11"
+    ],
+    "US0982": [
+      "e00a273972aad522"
+    ],
+    "BG0870": [
+      "cf3afe7814bdc34f"
+    ],
+    "BG0871": [
+      "a410ac8ce8ec46a3"
+    ],
+    "BG0872": [
+      "772ad8a31b9e478b"
+    ],
+    "BG0873": [
+      "d396c60cdcedaaf0"
+    ],
+    "BG0878": [
+      "25b0af4af8f2a66b"
+    ],
+    "BG0882": [
+      "2de67cae5aec5ce1"
+    ],
+    "BG0902": [
+      "d05140b848c9ed12"
+    ],
+    "BG0885": [
+      "3a10a775bf95eb3d",
+      "3758a8009986ca0e",
+      "9838fa4c3535f733"
+    ],
+    "US0981": [
+      "ca1a7682c18c2881"
+    ],
+    "BG0886": [
+      "524fa115aae6b0c4"
+    ],
+    "BG0887": [
+      "69be202cab106698"
+    ],
+    "BG0888": [
+      "abeab8c05f3254ea"
+    ],
+    "BG0889": [
+      "f9edfe170bc02c40"
+    ],
+    "BG0896": [
+      "d1238f847352f5b0"
+    ],
+    "BG0915": [
+      "cb40b9d752cc8909"
+    ],
+    "BG0916": [
+      "0ddf5a2c38713239",
+      "9bee11624db7e21f"
+    ],
+    "BG0917": [
+      "517326a78f5c3a59"
+    ],
+    "BG0918": [
+      "b92f71766b2e11db"
+    ],
+    "BG0919": [
+      "e36c0c9b7c3793e8"
+    ],
+    "BG0920": [
+      "1d837f4d21c3389f"
+    ],
+    "BG0925": [
+      "79a0a7c9cd7672b4"
+    ]
+  },
+  "report_discharged": [
+    "BG0913",
+    "BG0885"
+  ],
+  "report": "RPT0016",
+  "report_fingerprint": "24f98f9dc36eb7f6",
+  "report_window_end": "2026-10-03T04:10:27Z",
+  "unanswered": [],
+  "unanswered_rulings_from": "RETRO0131",
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-10-03T11:09:38Z",
+    "report": "RPT0016",
+    "fingerprint": "24f98f9dc36eb7f6"
+  }
+}

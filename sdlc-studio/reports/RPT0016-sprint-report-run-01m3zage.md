@@ -139,7 +139,7 @@ size, plan and added together: 53.
 
 | Signed by | Date | Fingerprint signed |
 | --- | --- | --- |
-| not yet signed | not yet signed | not yet signed |
+| Darren Benson | 2026-10-03T11:09:38Z | 24f98f9dc36eb7f6 |
 
 Signing records the principal, the date and this report's fingerprint against RUN-01M3ZAGE.
 
