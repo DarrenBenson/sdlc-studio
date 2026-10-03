@@ -19,10 +19,13 @@
 
 - **AC1:** Given the release commit, then every version home (package.json, package-lock.json, templates/version.yaml, the SKILL.md frontmatter, README, and the Version fields of prd.md, trd.md and tsd.md) carries 6.1.0 and `check_versions.py --strict` exits 0, and the CHANGELOG's `## [6.1.0] - <date>` section, composed by `release_cut.py changelog-cut --version 6.1.0`, holds the fragments' Breaking entries, with the fragments consumed. Fails on: package.json bumped alone (`--strict` names each home left at 6.0.0, the specs included); a hand-written `## [6.1.0]` heading over fragments still in `changelog.d/`, or fragments deleted without being folded, so the section lacks the handoff retirement
   - **Verify:** shell python3 -c 'import json,sys; core=json.load(open("package.json"))["version"].split("-"); sys.exit(tuple(map(int, core[0].split("."))) < (6, 1, 0))' && python3 tools/check_versions.py --strict && sed -n '/^## \[6\.1\.0\] - /,/^## \[6\.0\.0\] - /p' CHANGELOG.md | grep -q -- 'gate.py --require-handoff' && test ! -e changelog.d/US0978.md
+  - **Verified:** yes (2026-10-03)
 - **AC2:** Given `known_issues.py write --release 6.1.0` run at the cut, then `known_issues.py check` and `bar` exit 0, the 6.1.0 notes carry exactly one filled `**v6.1.0 discloses N open defects: N Medium, N Low.**` line, and the page no longer states the 6.0 bar heading. Fails on: the 6.0.0 page left in place (its heading reads 'The bar v6.0 is held to' and `check` exits 1, as it does at HEAD); a page edited by hand; tagging over an open High
   - **Verify:** shell python3 tools/known_issues.py check && python3 tools/known_issues.py bar && test "$(grep -cE '^\*\*v6\.1\.0 discloses [0-9]+ open defects: [0-9]+ Medium, [0-9]+ Low\.\*\*$' docs/release-notes-v6.1.0.md)" = 1 && ! grep -qx '## The bar v6.0 is held to' docs/known-issues.md
+  - **Verified:** yes (2026-10-03)
 - **AC3:** Given README and docs/INSTALL.md, then every verified install and version example pins `--version v6.1.0`, README's 'New in 6' section links the 6.1.0 notes and its release-notes list calls 6.1.0, and only 6.1.0, the current release; the 6.1.0 notes' CHANGELOG link is re-pointed from `#unreleased` to the `[6.1.0]` heading. Fails on: the version bumped with README and INSTALL still pinning `--version v6.0.0` or the list still calling 6.0.0 current (the front-door test reads the release from package.json and goes red); the notes still linking an emptied `[Unreleased]`
   - **Verify:** shell grep -qE '[]][(]docs/release-notes-v6[.]1[.]0[.]md[)]' README.md && python3 -m pytest -q tools/tests/test_lean_public_docs_retired.py tools/tests/test_lean_release_notes_v61.py
+  - **Verified:** yes (2026-10-03)
 
 ## Notes
 
