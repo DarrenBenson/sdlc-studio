@@ -9362,13 +9362,15 @@ _NOTE_RATIO_RE = re.compile(_RATIO)
 
 def _note_ratios(note: str, measures) -> list[str]:
     """The ratios `note` quotes for one of `measures`, as written: each the first ratio within
-    three words after a measure's name (`tokens at 1.7x`, `Tokens ratio 1.7X`). A ratio beside
-    no measure name, such as `10x faster`, is not a claim about the page and is not read."""
-    names = "|".join(re.escape(m) for m in measures if m)
+    three words after a measure's name, singular or plural, and behind any punctuation
+    (`tokens at 1.7x`, `Tokens (1.7X)`, `token ratio 1.7x`). A ratio beside no measure name,
+    such as `10x faster`, is not a claim about the page and is not read."""
+    names = "|".join(re.escape(m[:-1] if m[-1] in "sS" else m) + "s?" for m in measures if m)
     if not names:
         return []
-    beside = re.compile(rf"\b(?:{names})\b\S*\s+(?:(?!{_RATIO})\S+\s+){{0,3}}?({_RATIO})",
-                        re.IGNORECASE)
+    lead = r"[^\w\s]*"     # punctuation before the number: `(1.7x)`, `~1.7x`, `=1.7x`
+    beside = re.compile(rf"\b(?:{names})\b\S*?\s*(?:(?!{lead}{_RATIO})\S+\s+){{0,3}}?"
+                        rf"{lead}({_RATIO})", re.IGNORECASE)
     return [m.group(1) for m in beside.finditer(note)]
 
 

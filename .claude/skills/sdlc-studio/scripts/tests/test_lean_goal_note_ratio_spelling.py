@@ -62,6 +62,33 @@ class GoalNoteRatioSpellingTests(unittest.TestCase):
                 self.assertEqual(1, len(named), lines)
                 self.assertIn(f"1.4{mark}", named[0])
 
+    def test_a_ratio_behind_punctuation_or_a_singular_name_is_read(self) -> None:
+        """The engineering seat's regressions (D0331). MUTANT: 9ec3d18d's parser, which needs
+        whitespace then a bare number after the name and the name exactly as the page writes
+        it, so none of these is named. The control: each written with the page's own 1.7x
+        names nothing, so a check that names everything also fails."""
+        for i, shape in enumerate(("Tokens ({r}) over plan", "Tokens: ~{r} over plan",
+                                   "tokens={r} over plan", "the token ratio was {r}")):
+            with self.subTest(shape=shape):
+                rc, lines, _ = self._close(f"p-right{i}", shape.format(r="1.7x"))
+                self.assertEqual(0, rc, "\n".join(lines))
+                self.assertEqual([], self.named(lines), lines)
+                rc, lines, _ = self._close(f"p-wrong{i}", shape.format(r="1.4x"))
+                named = self.named(lines)
+                self.assertEqual(1, len(named), lines)
+                self.assertIn("1.4x", named[0])
+
+    def test_the_word_window_is_three(self) -> None:
+        """The pin on the window. MUTANT: {0,3} made {0,1}, which no longer reads a wrong
+        ratio three words after the name, or {0,10}, which reads one four words after it."""
+        rc, lines, _ = self._close("three", "tokens came in at 1.4x")
+        named = self.named(lines)
+        self.assertEqual(1, len(named), lines)
+        self.assertIn("1.4x", named[0])
+        rc, lines, _ = self._close("four", "tokens came in well under, 1.4x faster")
+        self.assertEqual(0, rc, "\n".join(lines))
+        self.assertEqual([], self.named(lines), lines)
+
 
 if __name__ == "__main__":
     unittest.main()
