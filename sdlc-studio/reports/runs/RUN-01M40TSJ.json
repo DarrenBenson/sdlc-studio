@@ -1,0 +1,1291 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M40TSJ",
+  "started_at": "2026-10-03T12:06:32Z",
+  "ended_at": "2026-10-03T19:44:54Z",
+  "outcome": "goal-reached",
+  "goal": "done",
+  "batch": [
+    "BG0926",
+    "BG0927",
+    "BG0924",
+    "BG0921",
+    "BG0922",
+    "BG0930",
+    "BG0929",
+    "US0984",
+    "US0983",
+    "US0985",
+    "BG0931",
+    "BG0932",
+    "BG0933",
+    "BG0934",
+    "BG0935",
+    "BG0936",
+    "BG0937",
+    "BG0938",
+    "BG0939"
+  ],
+  "plan": "sdlc-studio/.local/sprint-plan.json",
+  "handoff": null,
+  "session_token_baseline": {
+    "tokens": 20073242,
+    "source": "sha256:1d4787a19476",
+    "at": "2026-10-03T12:06:32Z"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 20073242,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:06:32Z",
+      "kind": "open",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20073242,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:06:59Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20073242,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:07:00Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20073242,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:07:00Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20073242,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:07:01Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20073242,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:07:01Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20073242,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:07:01Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20100916,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:30:31Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20100916,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:30:31Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20100916,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:30:32Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20100916,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:30:33Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20108482,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:30:34Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20108482,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:30:35Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20108482,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:30:35Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20108482,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:30:36Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20108482,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T12:30:36Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20237760,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:07:01Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20245851,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:07:05Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20245851,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:07:32Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20249942,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:08:26Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20249942,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:08:27Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20249942,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:08:27Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20249942,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:08:28Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20264234,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:08:28Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20323574,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:31:24Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20332709,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:31:26Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20332709,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:31:27Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20332709,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:31:28Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20332709,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:31:28Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20332709,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:31:50Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20336210,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:32:21Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20336210,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:32:21Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20421502,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:50:01Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20428540,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:50:05Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20428540,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:50:07Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20428540,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:50:35Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20428540,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T13:50:35Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20484509,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T14:11:44Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20484509,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T14:11:46Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20513720,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T14:24:48Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20531740,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T14:46:39Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20577070,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T15:01:45Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20592384,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T15:13:41Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20642320,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T15:29:09Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20790300,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T16:18:52Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20807873,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T16:26:11Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20880554,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T16:42:57Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 20918798,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-03T16:54:31Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    }
+  ],
+  "delegated_tokens": [
+    {
+      "tokens": 38173,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T12:30:31Z",
+      "unit": "BG0926",
+      "minutes": 4.5
+    },
+    {
+      "tokens": 24292,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T12:30:31Z",
+      "unit": "BG0927",
+      "minutes": 2.9
+    },
+    {
+      "tokens": 25449,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T12:30:32Z",
+      "unit": "BG0924",
+      "minutes": 3.0
+    },
+    {
+      "tokens": 39330,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T12:30:33Z",
+      "unit": "BG0921",
+      "minutes": 4.7
+    },
+    {
+      "tokens": 35859,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T12:30:34Z",
+      "unit": "BG0922",
+      "minutes": 4.3
+    },
+    {
+      "tokens": 26604,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T12:30:35Z",
+      "unit": "BG0930",
+      "minutes": 3.2
+    },
+    {
+      "tokens": 98772,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T13:07:01Z",
+      "unit": "BG0929",
+      "minutes": 9.8
+    },
+    {
+      "tokens": 172851,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T13:07:05Z",
+      "unit": "US0984",
+      "minutes": 17.2
+    },
+    {
+      "tokens": 74079,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T13:07:32Z",
+      "unit": "US0983",
+      "minutes": 7.4
+    },
+    {
+      "tokens": 39619,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T13:31:24Z",
+      "unit": "BG0922",
+      "minutes": 4.2
+    },
+    {
+      "tokens": 52826,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T13:31:26Z",
+      "unit": "BG0931",
+      "minutes": 5.7
+    },
+    {
+      "tokens": 26413,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T13:31:27Z",
+      "unit": "BG0932",
+      "minutes": 2.8
+    },
+    {
+      "tokens": 52826,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T13:31:28Z",
+      "unit": "BG0933",
+      "minutes": 5.7
+    },
+    {
+      "tokens": 26413,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T13:31:28Z",
+      "unit": "BG0934",
+      "minutes": 2.8
+    },
+    {
+      "tokens": 68393,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T13:50:01Z",
+      "unit": "BG0929",
+      "minutes": 6.5
+    },
+    {
+      "tokens": 68393,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T13:50:05Z",
+      "unit": "US0984",
+      "minutes": 6.5
+    },
+    {
+      "tokens": 34197,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T13:50:07Z",
+      "unit": "BG0935",
+      "minutes": 3.3
+    },
+    {
+      "tokens": 70965,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T14:11:44Z",
+      "unit": "BG0934",
+      "minutes": 7.5
+    },
+    {
+      "tokens": 113545,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T14:11:46Z",
+      "unit": "BG0936",
+      "minutes": 12.0
+    },
+    {
+      "tokens": 153436,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T14:46:39Z",
+      "unit": "US0985",
+      "minutes": 20.7
+    },
+    {
+      "tokens": 87863,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T15:13:41Z",
+      "unit": "US0985",
+      "minutes": 11.6
+    },
+    {
+      "tokens": 1948935,
+      "agent": "QA-seat reviewers and goal-review seats (23 runs)",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T15:16:51Z",
+      "minutes": 73.5
+    },
+    {
+      "tokens": 112855,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T16:11:57Z",
+      "unit": "BG0937",
+      "minutes": 13.6
+    },
+    {
+      "tokens": 112854,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T16:12:03Z",
+      "unit": "BG0938",
+      "minutes": 13.5
+    },
+    {
+      "tokens": 74111,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T16:26:11Z",
+      "unit": "BG0938",
+      "minutes": 6.9
+    },
+    {
+      "tokens": 281438,
+      "agent": "QA-seat reviewers after the D0334 reopen (3 runs)",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T16:27:20Z",
+      "minutes": 10.6
+    },
+    {
+      "tokens": 107658,
+      "agent": "build lane",
+      "note": "sprint lane return (fixed)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T16:54:31Z",
+      "unit": "BG0939",
+      "minutes": 10.4
+    },
+    {
+      "tokens": 73968,
+      "agent": "QA-seat reviewer, BG0939",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-03T16:56:48Z",
+      "minutes": 2.0
+    }
+  ],
+  "reopened": [
+    {
+      "at": "2026-10-03T16:11:46Z",
+      "run_id": "RUN-01M40TSJ",
+      "from_outcome": "running",
+      "was_ended_at": null,
+      "report": "RPT0017",
+      "reason": "D0334: the operator ruled the five lows the last v6.1 reviews raised are fixed before the tag; BG0937 and BG0938 join the batch (D0335)"
+    },
+    {
+      "at": "2026-10-03T16:42:56Z",
+      "run_id": "RUN-01M40TSJ",
+      "from_outcome": "running",
+      "was_ended_at": null,
+      "report": "RPT0017",
+      "reason": "D0336: BG0939 (High) found by main's windows-smoke CI, fixed before the tag"
+    }
+  ],
+  "batch_changes": [
+    {
+      "action": "add",
+      "id": "BG0931",
+      "at": "2026-10-03T13:08:25Z",
+      "reason": "found in the run and fixed in it (D0326, D0331)"
+    },
+    {
+      "action": "add",
+      "id": "BG0932",
+      "at": "2026-10-03T13:08:25Z",
+      "reason": "found in the run and fixed in it (D0326, D0331)"
+    },
+    {
+      "action": "add",
+      "id": "BG0933",
+      "at": "2026-10-03T13:08:26Z",
+      "reason": "found in the run and fixed in it (D0326, D0331)"
+    },
+    {
+      "action": "add",
+      "id": "BG0934",
+      "at": "2026-10-03T13:08:26Z",
+      "reason": "found in the run and fixed in it (D0326, D0331)"
+    },
+    {
+      "action": "add",
+      "id": "BG0935",
+      "at": "2026-10-03T13:31:49Z",
+      "reason": "found by the US0983 review and fixed in the run (D0326, D0332)"
+    },
+    {
+      "action": "add",
+      "id": "BG0936",
+      "at": "2026-10-03T13:50:34Z",
+      "reason": "the v6.1 review residue, fixed in the run (D0326, D0333)"
+    },
+    {
+      "action": "add",
+      "id": "BG0937",
+      "at": "2026-10-03T16:11:46Z",
+      "reason": "pre-tag fix under D0334 and D0335"
+    },
+    {
+      "action": "add",
+      "id": "BG0938",
+      "at": "2026-10-03T16:11:46Z",
+      "reason": "pre-tag fix under D0334 and D0335"
+    },
+    {
+      "action": "add",
+      "id": "BG0939",
+      "at": "2026-10-03T16:42:57Z",
+      "reason": "found by main's CI and fixed before the tag (D0326, D0336)"
+    }
+  ],
+  "rulings": [
+    {
+      "id": "D0330",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0331",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0332",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0333",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0334",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0335",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0336",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0337",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    }
+  ],
+  "base_ref": "9a06a389446d12bb594e799af4a393f502acf414",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-10-03T12:06:09Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "Maya installs v6.1.0 and every page she reads, from release notes to sprint report, matches the code.",
+  "sprint_goal_review": {
+    "reviewed": true,
+    "status": "read",
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "product",
+        "achievable": "yes",
+        "done_means": "Serves O7: a 6.0 user takes 6.1.0 a piece at a time from notes and an upgrade page that name each retired command beside a replacement that runs, migrate names that retired surface in her own docs, and this run's own report checks VALID at the signature.",
+        "one_increment": "yes",
+        "note": "The increment is the v6.1.0 tag; the seven bugs make the sprint report half true, EP0273 the release-notes half. BG0921 (a refusal key) and BG0930 (a terminal warning) are messages, not pages: they serve D0325's empty backlog rather than the goal's wording; keep them, they are 1 point each. Scope finding: US0983 AC3 and its Notes, and US0984's Notes, say migrate does not search a project's docs for the handoff commands; once BG0929 lands it does (for .md docs; still not CI yaml or scripts), so both must be re-groomed against BG0929's shipped scan before they build, or the notes ship a false sentence. Order: bugs, BG0929, re-groom, US0984, US0983, any D0326 findings, US0985 last. Before the tag: every finding raised in the run fixed (D0326), so the known-issues line US0985 fills is derived from a settled corpus."
+      },
+      {
+        "seat": "engineering",
+        "achievable": "yes",
+        "done_means": "Serves O3: this run closes and signs a report that checks VALID with no late total recorded between close and sign (BG0926), builds on any checkout (BG0927) and states true reasons (BG0922, BG0924), then v6.1.0 is cut by release_cut.py from the fragments with every version home at 6.1.0.",
+        "one_increment": "yes",
+        "note": "Sequential, shared files in pairs. Order: BG0926 then BG0927 (run_state.py; BG0926 first because it guards this run's own close-to-sign window); BG0924 (sprint_report.py); BG0921 then BG0922 (sprint.py); BG0930 (transition.py); BG0929 (retired_surface, artifact.py, gate.py) before any doc unit, since US0984 AC3 and US0983 AC3 describe what migrate reports; US0984 then US0983; US0985 last, after every fragment is committed. Grooming gaps, not gates: BG0921, BG0922, BG0924, BG0926 and BG0927 omit changelog.d/<id>.md from Affects though each changes behaviour and US0985's cut folds the fragments; add them at plan. Before the tag: full suite green at the release commit's own sha (LC-013); gate.py --release exit 0, which executes every story's Verify (so US0983 AC1 must read the [6.1.0] anchor after US0985 re-points it), the docs leg and the release_rehearsal lane (tools/rehearse-release.sh all, greenfield plus upgrade); release_cut.py record-green then tag-check; forward-port after the tag. No new lane: the rehearsal walks a v4 upgrade, and the 6.0 path is covered by US0984 AC1's migrate fixture."
+      },
+      {
+        "seat": "qa",
+        "achievable": "partial",
+        "done_means": "Serves O7: each claim in the 6.1.0 notes, the upgrade page, the help and the specs is checked against the shipped CLI by execution, each bug's Verify is seen red on its Fails-on then green, and the release gate's verify lane re-runs them all at the tag.",
+        "one_increment": "yes",
+        "note": "Partial until US0983 AC3 is re-groomed: as written it asserts migrate does not search the reader's docs, which BG0929 makes false, so its test would pin a sentence the code contradicts. 'Every page' is held only for the pages the units enumerate; say so in the plan. Controls a reviewer runs in a throwaway fixture, not reads in the doc. US0983: each Breaking replacement runs (sprint.py plan --worklist RPTxxxx accepted; gate.py --require-handoff refused; migrate --apply removes review.policy on a 6.0 fixture; install.sh --dry-run names the latest release; validate.py check exits 1 with no workspace; the release gate lists no revert-check while verify_ac.py revert-check runs); each figure re-derived from its named RPT or gate_timing.py; the migrate sentence matches BG0929's scan (.md docs yes, CI yaml no). US0984: every command the help names is invoked (verify_ac.py run --unit, config.py show --sources, lane return --tokens/--minutes, refine.py add --into, handoff.py show read-only); the TSD lane table diffed against gate.py's registry; the removed keys read from a migrate run, not a hand list. US0985: check_versions --strict, known_issues check and bar exit 0, the [6.1.0] section entry count equals the fragments consumed, no fragment left, and the pinned --version v6.1.0 resolves once tagged (tag-check). Pre-tag: all ten terminal, this run's RPT signed and VALID, gate.py --release exit 0 including the rehearsal."
+      }
+    ],
+    "goal": "Maya installs v6.1.0 and every page she reads, from release notes to sprint report, matches the code.",
+    "shipped_seats": false,
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 87,
+    "objected": false,
+    "objections": [],
+    "reviewed_at": "2026-10-03T11:48:49Z",
+    "change_type": "material",
+    "amended_from": "Maya's close keeps a filed page true, and every message names the right key, figure and reason.",
+    "requesting_seat": null,
+    "needs_reconsult": [],
+    "themed": [],
+    "discharged": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Fixed (bug), Done (story)",
+    "types": [
+      "bug",
+      "story"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed (bug), Done (story)"
+  },
+  "plan_snapshot": {
+    "units": {
+      "BG0926": {
+        "planned_points": 1,
+        "forecast_tokens": 80188,
+        "forecast_minutes": 6.1,
+        "added": false
+      },
+      "BG0927": {
+        "planned_points": 1,
+        "forecast_tokens": 80188,
+        "forecast_minutes": 6.1,
+        "added": false
+      },
+      "BG0924": {
+        "planned_points": 1,
+        "forecast_tokens": 80188,
+        "forecast_minutes": 6.1,
+        "added": false
+      },
+      "BG0921": {
+        "planned_points": 1,
+        "forecast_tokens": 80188,
+        "forecast_minutes": 6.1,
+        "added": false
+      },
+      "BG0922": {
+        "planned_points": 1,
+        "forecast_tokens": 80188,
+        "forecast_minutes": 6.1,
+        "added": false
+      },
+      "BG0930": {
+        "planned_points": 1,
+        "forecast_tokens": 80188,
+        "forecast_minutes": 6.1,
+        "added": false
+      },
+      "BG0929": {
+        "planned_points": 2,
+        "forecast_tokens": 160376,
+        "forecast_minutes": 12.2,
+        "added": false
+      },
+      "US0984": {
+        "planned_points": 3,
+        "forecast_tokens": 240564,
+        "forecast_minutes": 18.4,
+        "added": false
+      },
+      "US0983": {
+        "planned_points": 3,
+        "forecast_tokens": 240564,
+        "forecast_minutes": 18.4,
+        "added": false
+      },
+      "US0985": {
+        "planned_points": 2,
+        "forecast_tokens": 160376,
+        "forecast_minutes": 12.2,
+        "added": false
+      },
+      "BG0931": {
+        "planned_points": 2,
+        "forecast_tokens": 160376,
+        "forecast_minutes": 12.2,
+        "added": true
+      },
+      "BG0932": {
+        "planned_points": 1,
+        "forecast_tokens": 80188,
+        "forecast_minutes": 6.1,
+        "added": true
+      },
+      "BG0933": {
+        "planned_points": 1,
+        "forecast_tokens": 80188,
+        "forecast_minutes": 6.1,
+        "added": true
+      },
+      "BG0934": {
+        "planned_points": 1,
+        "forecast_tokens": 80188,
+        "forecast_minutes": 6.1,
+        "added": true
+      },
+      "BG0935": {
+        "planned_points": 1,
+        "forecast_tokens": 80188,
+        "forecast_minutes": 6.1,
+        "added": true
+      },
+      "BG0936": {
+        "planned_points": 2,
+        "forecast_tokens": 160376,
+        "forecast_minutes": 12.2,
+        "added": true
+      },
+      "BG0937": {
+        "planned_points": 1,
+        "forecast_tokens": 80188,
+        "forecast_minutes": 6.1,
+        "added": true
+      },
+      "BG0938": {
+        "planned_points": 2,
+        "forecast_tokens": 160376,
+        "forecast_minutes": 12.2,
+        "added": true
+      },
+      "BG0939": {
+        "planned_points": 2,
+        "forecast_tokens": 160376,
+        "forecast_minutes": 12.2,
+        "added": true
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 80188,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 6.12,
+        "source": "fallback: 1 row(s) for claude-opus-5-5, under 3, so the latest rows of any single model: median of RETRO0028, RETRO0131"
+      }
+    }
+  },
+  "token_forecast": 1283008,
+  "goal_content_review": [
+    {
+      "phase": "plan",
+      "goal": "Maya installs v6.1.0 and every page she reads, from release notes to sprint report, matches the code.",
+      "answer": "yes",
+      "missing": "",
+      "shortfall": {},
+      "recorded_at": "2026-10-03T12:06:32Z"
+    },
+    {
+      "phase": "close",
+      "goal": "Maya installs v6.1.0 and every page she reads, from release notes to sprint report, matches the code.",
+      "answer": "yes",
+      "missing": "",
+      "shortfall": {
+        "undelivered": [],
+        "defects": []
+      },
+      "recorded_at": "2026-10-03T17:09:51Z"
+    }
+  ],
+  "unit_actuals": {
+    "BG0926": {
+      "minutes": 23.53,
+      "tokens": 27674,
+      "started_at": "2026-10-03T12:06:59Z",
+      "start_tokens": 0,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0927": {
+      "minutes": 23.52,
+      "tokens": 27674,
+      "started_at": "2026-10-03T12:07:00Z",
+      "start_tokens": 0,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0924": {
+      "minutes": 23.53,
+      "tokens": 27674,
+      "started_at": "2026-10-03T12:07:00Z",
+      "start_tokens": 0,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0921": {
+      "minutes": 23.53,
+      "tokens": 27674,
+      "started_at": "2026-10-03T12:07:01Z",
+      "start_tokens": 0,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0922": {
+      "minutes": 46.48,
+      "tokens": 94580,
+      "started_at": "2026-10-03T13:08:28Z",
+      "start_tokens": 190992,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0930": {
+      "minutes": 23.57,
+      "tokens": 35240,
+      "started_at": "2026-10-03T12:07:01Z",
+      "start_tokens": 0,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0929": {
+      "minutes": 54.1,
+      "tokens": 214570,
+      "started_at": "2026-10-03T13:32:21Z",
+      "start_tokens": 262968,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "US0984": {
+      "minutes": 54.21,
+      "tokens": 229699,
+      "started_at": "2026-10-03T13:32:21Z",
+      "start_tokens": 262968,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "US0983": {
+      "minutes": 36.93,
+      "tokens": 137369,
+      "started_at": "2026-10-03T12:30:36Z",
+      "start_tokens": 35240,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0931": {
+      "minutes": 23.0,
+      "tokens": 82767,
+      "started_at": "2026-10-03T13:08:26Z",
+      "start_tokens": 176700,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0932": {
+      "minutes": 23.0,
+      "tokens": 82767,
+      "started_at": "2026-10-03T13:08:27Z",
+      "start_tokens": 176700,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0933": {
+      "minutes": 23.02,
+      "tokens": 82767,
+      "started_at": "2026-10-03T13:08:27Z",
+      "start_tokens": 176700,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0934": {
+      "minutes": 44.15,
+      "tokens": 138736,
+      "started_at": "2026-10-03T13:50:35Z",
+      "start_tokens": 355298,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0935": {
+      "minutes": 18.28,
+      "tokens": 95831,
+      "started_at": "2026-10-03T13:31:50Z",
+      "start_tokens": 259467,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0936": {
+      "minutes": 21.18,
+      "tokens": 55969,
+      "started_at": "2026-10-03T13:50:35Z",
+      "start_tokens": 355298,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "US0985": {
+      "minutes": 33.78,
+      "tokens": 33334,
+      "started_at": "2026-10-03T15:01:45Z",
+      "start_tokens": 503828,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0938": {
+      "minutes": 7.32,
+      "tokens": 17573,
+      "started_at": "2026-10-03T16:18:52Z",
+      "start_tokens": 717058,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0939": {
+      "minutes": 11.57,
+      "tokens": 38244,
+      "started_at": "2026-10-03T16:42:57Z",
+      "start_tokens": 807312,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    }
+  },
+  "lanes_in_flight": [],
+  "review_base": {
+    "BG0926": 0,
+    "BG0927": 0,
+    "BG0924": 0,
+    "BG0921": 0,
+    "BG0922": 0,
+    "BG0930": 0,
+    "US0983": 0,
+    "US0984": 0,
+    "BG0929": 0,
+    "BG0931": 0,
+    "BG0932": 0,
+    "BG0933": 0,
+    "BG0934": 0,
+    "BG0935": 0,
+    "BG0936": 0,
+    "US0985": 0,
+    "BG0937": 0,
+    "BG0938": 0,
+    "BG0939": 0
+  },
+  "sprint_goal_verdict": {
+    "verdict": "achieved",
+    "note": "Every unit of the batch, release paperwork and the pre-tag fixes included, was delivered and approved by an independent reviewer who ran each paperwork claim against the code; v6.1.0 is cut and waits on the signature and the release gate."
+  },
+  "close_attempts": [
+    {
+      "at": "2026-10-03T15:24:35Z",
+      "outstanding": 0,
+      "stages": []
+    },
+    {
+      "at": "2026-10-03T16:35:03Z",
+      "outstanding": 0,
+      "stages": []
+    },
+    {
+      "at": "2026-10-03T17:06:34Z",
+      "outstanding": 0,
+      "stages": []
+    }
+  ],
+  "close_not_measured": [],
+  "close_tree": "cd95f349021292d0582bf4791de7ff9f9a3a38d4",
+  "report_gate_clear": [
+    "BG0921",
+    "BG0922",
+    "BG0924",
+    "BG0926",
+    "BG0927",
+    "BG0929",
+    "BG0930",
+    "BG0931",
+    "BG0932",
+    "BG0933",
+    "BG0934",
+    "BG0935",
+    "BG0936",
+    "BG0937",
+    "BG0938",
+    "BG0939",
+    "US0983",
+    "US0984",
+    "US0985"
+  ],
+  "verified_sha": "8fa2207ad93a220c3bae2b49121e27ff534151f3",
+  "close_known_issues": [],
+  "ci_runs": {
+    "source": "gh run list",
+    "runs": [
+      {
+        "conclusion": "",
+        "createdAt": "2026-10-03T16:59:18Z",
+        "databaseId": 37138857623,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "428a6cc4789ae57c29ed0360255b394310d5ade4",
+        "updatedAt": "2026-10-03T16:59:22Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-10-03T15:34:43Z",
+        "databaseId": 37133734434,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "125cc8f92044f91081ef91f293b68eb8ad7e95cb",
+        "updatedAt": "2026-10-03T16:26:55Z",
+        "workflowName": "Lint"
+      }
+    ]
+  },
+  "review_rows": {
+    "BG0926": [
+      "dcf3bb4ba3cf387e"
+    ],
+    "BG0927": [
+      "441f198398228029"
+    ],
+    "BG0924": [
+      "4be020e4b04c5493"
+    ],
+    "BG0921": [
+      "2444ea42059d2948"
+    ],
+    "BG0922": [
+      "2db1a647e22967ef",
+      "355958f474c40b5b"
+    ],
+    "BG0930": [
+      "7f847be37f5603ba"
+    ],
+    "BG0929": [
+      "0fea3f75f79a503a",
+      "df43c3b182814f0b"
+    ],
+    "US0984": [
+      "efb4ce02cddcec3f",
+      "cc49f7ac21cb0619"
+    ],
+    "US0983": [
+      "462b0593260dc3ea"
+    ],
+    "US0985": [
+      "3083a705a100d1a6",
+      "6361eb676c80a836"
+    ],
+    "BG0931": [
+      "2fdcd887ba20161d"
+    ],
+    "BG0932": [
+      "1b84f7b19f3bf56d"
+    ],
+    "BG0933": [
+      "ddcaa75a9c85c959"
+    ],
+    "BG0934": [
+      "3c6e7d3a55537ad8",
+      "ccadaa03c256f60d"
+    ],
+    "BG0935": [
+      "aab12a3ab145b054"
+    ],
+    "BG0936": [
+      "3a8a543f9c6dbd32"
+    ],
+    "BG0937": [
+      "52d35180cb48843a"
+    ],
+    "BG0938": [
+      "f4ae7acaf1436ef4",
+      "a102a971adaa1fb0"
+    ],
+    "BG0939": [
+      "a617cff488c0ba44"
+    ]
+  },
+  "report_discharged": [],
+  "report": "RPT0017",
+  "report_fingerprint": "db2922d0db3f637e",
+  "report_window_end": "2026-10-03T15:29:09Z",
+  "unanswered": [],
+  "unanswered_rulings_from": "RETRO0132",
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-10-03T19:44:54Z",
+    "report": "RPT0017",
+    "fingerprint": "db2922d0db3f637e"
+  }
+}
