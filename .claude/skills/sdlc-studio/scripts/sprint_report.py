@@ -4133,7 +4133,13 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         current = run_state.session_tokens(root)
         if portable:
             current = run_state.portable(current, root)
-    tokens = run_state.run_token_total(state, current)
+    # Only the meter stamps taken inside the window count: one taken after it (a unit moved In
+    # Progress after the close, a span the re-close settled) is not the run's cost, and counting
+    # it moved a re-filed page and every re-derivation of a filed one.
+    metered = {**state, run_state.TOKEN_STAMPS: [
+        s for s in state.get(run_state.TOKEN_STAMPS) or []
+        if not (isinstance(s, dict) and end and _at(s.get("at")) and _at(s.get("at")) > end)]}
+    tokens = run_state.run_token_total(metered, current)
     readings = _page_readings(filed)
     ledger = _unit_ledger(root, state, state_rel, readings["points"],
                           (state.get("started_at"), _iso(end)), discharge_rule,
@@ -4149,7 +4155,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                               state.get("started_at"), _iso(f_end), readings["findings"],
                               rulings=_retro_rulings(root, retro_id), batch_rule=findings_rule),
         _signoff_section(state_rel),
-        _cost_section(state, state_rel, tokens),
+        _cost_section(metered, state_rel, tokens),
         _dora_section(root, start, f_end, *_ci_runs(root, state, state_rel, run_id),
                       restore_rule=restore_rule, cancelled_rule=cancelled_rule),
         _calibration_section(state, state_rel),

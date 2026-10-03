@@ -43,7 +43,9 @@ class RecloseKeepsWindowTests(unittest.TestCase):
         self.addCleanup(env.stop)
         lean._fixture(self.root)
         self.spend(1000)
-        rs.stamp_tokens(self.root, "open")               # the meter's opening reading
+        with unittest.mock.patch.object(rs.sdlc_md, "now_iso8601",
+                                        lambda: "2026-09-23T00:00:00Z"):
+            rs.stamp_tokens(self.root, "open")           # the meter's opening reading
         self.spend(4000)                                 # the run's own main-thread work
 
     def spend(self, tokens: int) -> None:

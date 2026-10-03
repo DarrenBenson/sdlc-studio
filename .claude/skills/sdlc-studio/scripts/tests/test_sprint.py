@@ -16921,6 +16921,8 @@ class ReportCostRowTests(unittest.TestCase):
              "at": "2026-09-16T11:00:00Z", "model": "test-model-9"},
             {"tokens": 50_000, "source": "/t/s3.jsonl", "kind": "resume",
              "at": "2026-09-16T12:00:00Z", "model": "test-model-9"}]
+        # the run spans both sessions: a stamp after its end is not its cost (BG0916)
+        state["ended_at"] = "2026-09-16T12:00:00Z"
         p.write_text(json.dumps(state), encoding="utf-8")
         rep, printed, fp = self._prepare(root)
         self.assertIsNotNone(rep, f"PREPARE filed no report: {printed}")
