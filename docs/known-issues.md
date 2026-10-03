@@ -11,9 +11,13 @@ decision.** A finding either reaches a terminal status with its own verifiers pa
 stays open under the triage target below, which one recorded decision rules for the whole list
 rather than a waiver per finding.
 
-**No Medium or Low finding is open.** The corpus carries none at this commit, so the
-table below is empty rather than omitted: an absent section and an empty one say
-different things, and only one of them is checkable.
+**Medium and Low findings ship open, listed here by id, triaged to v6.2.** Each is a real
+defect with a reproduction and, in most cases, a proposed fix. None of them stops the
+lifecycle running. They are listed rather than closed, because closing a bug to make a
+release look clean is the practice this tool exists to prevent.
+
+Each id below is a file in `sdlc-studio/bugs/` in the source repository, carrying the
+evidence, the reproduction and the proposed fix in full.
 
 ## The bar v5.1 was held to, kept as history
 
@@ -33,8 +37,9 @@ buy honestly.
 
 | Id | Severity | Finding |
 | --- | --- | --- |
+| `BG0940` | Medium | A ruling logged between the close and the sign changes the filed page, and sign seals it without re-deriving |
 
-0 findings: 0 Medium, 0 Low.
+1 findings: 1 Medium, 0 Low.
 
 ## Not carried
 
