@@ -7,13 +7,13 @@
 | Status | Count |
 | --- | --- |
 | Open | 0 |
-| In Progress | 0 |
+| In Progress | 2 |
 | Fixed | 779 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **936** |
+| **Total** | **938** |
 
 ## All Bugs
 
@@ -295,6 +295,8 @@
 | [BG0934](BG0934-install-ps1-still-installs-from-main-while-install.md) | install.ps1 still installs from main while install.sh installs the latest release | Fixed | Medium | 2026-10-03 | 2026-10-03 |
 | [BG0935](BG0935-the-6-1-notes-say-migrate-leaves-prose.md) | The 6.1 notes say migrate leaves prose alone and give no way to install main on Windows | Fixed | Low | 2026-10-03 | 2026-10-03 |
 | [BG0936](BG0936-the-v6-1-review-residue-three-unpinned-behaviours.md) | The v6.1 review residue: three unpinned behaviours, a dropped seats entry, a slow note parser and two TRD rows nothing writes | Fixed | Low | 2026-10-03 | 2026-10-03 |
+| [BG0937](BG0937-a-closed-run-that-is-not-yet-signed.md) | A closed run that is not yet signed cannot be reopened, so work added before the sign cannot record its cost | In Progress | Medium | 2026-10-03 | 2026-10-03 |
+| [BG0938](BG0938-the-five-lows-the-last-v6-1-reviews.md) | The five lows the last v6.1 reviews raised (D0334) | In Progress | Low | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 
