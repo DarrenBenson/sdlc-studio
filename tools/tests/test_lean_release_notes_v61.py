@@ -10,6 +10,7 @@ after it.
 # test-census-subject: docs/release-notes-v6.1.0.md
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -163,6 +164,51 @@ def upgrade_problems(text: str) -> list[str]:
     return problems
 
 
+#: A runbook holding a retired command in code, the same command in plain prose, and prose that
+#: only talks about handoffs.
+_RUNBOOK = ("# Ops\n"
+            "\n"
+            "At the close run `handoff.py generate --title \"S3\"`.\n"
+            "\n"
+            "We used to call handoff.py generate at the close.\n"
+            "\n"
+            "We read the last handoff before planning.\n")
+_IN_CODE, _IN_PROSE, _ABOUT = 3, 5, 7
+
+
+def migrate_sentence_problems(text: str, named: set[int]) -> list[str]:
+    """BG0935: the theme bullet's account of what `migrate` names in a project's docs agrees
+    with what it named in the `_RUNBOOK` fixture (`named` holds the fixture lines it named)."""
+    bullet = re.search(r"(?s)^- \*\*`migrate` tells you more[^\n]*\n(?:  [^\n]*\n)*", text, re.M)
+    if bullet is None:
+        return ["no theme bullet on what `migrate` tells you"]
+    said = " ".join(bullet.group(0).split()).split(" Its report ", 1)[0]
+    problems = []
+    if _IN_CODE in named and _IN_PROSE in named:
+        if not re.search(r"\bin code or in plain prose\b", said):
+            problems.append("the sentence does not say a retired command is named in code or "
+                            "in plain prose")
+        if re.search(r"(?i)leaves your prose alone", said):
+            problems.append("the sentence says migrate leaves prose alone")
+    if _ABOUT not in named and not re.search(r"(?i)only talks about handoffs[^.]*\bnot named",
+                                             said):
+        problems.append("the sentence does not say a line only talking about handoffs is "
+                        "not named")
+    return problems
+
+
+def install_bullet_problems(text: str) -> list[str]:
+    """BG0935: the breaking bullet on the install default gives both installers' way to `main`."""
+    body = section(text, r"^Breaking changes$") or ""
+    bullet = next((" ".join(b.split()) for b in re.split(r"\n(?=- )", body)
+                   if "A plain install no longer tracks `main`" in b), "")
+    if not bullet:
+        return ["no breaking bullet on the install default"]
+    return [f"the install bullet does not name {flag}" for flag in ("`--version main`",
+                                                                    "`-Version main`")
+            if flag not in bullet]
+
+
 class ReleaseNotesTests(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -284,6 +330,35 @@ class ReleaseNotesTests(unittest.TestCase):
         self.assertFlags(upgrade_problems(self.mutant("removes `review.policy`", "keeps your config")),
                          "review.policy")
         self.assertEqual([], upgrade_problems(self.text))
+
+    def test_the_migrate_and_install_sentences_are_true(self) -> None:
+        """BG0935 AC1. MUTANTS: the theme bullet saying `migrate` names a retired command 'in
+        code' and 'leaves your prose alone', when a fixture shows it names the same command in
+        plain prose; the install bullet with `--version main` alone, which gives a Windows
+        user no way back to `main`."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "p"
+            root.mkdir()
+            self.assertEqual(0, _py("init.py", "run", "--root", str(root)).returncode)
+            (root / "docs").mkdir()
+            (root / "docs" / "ops.md").write_text(_RUNBOOK, encoding="utf-8")
+            proc = _py("migrate.py", "--root", str(root), "--format", "json")
+            self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+        named = {item["line"] for item in json.loads(proc.stdout)["needs_human"]
+                 if item.get("kind") == "retired-surface" and item.get("file") == "docs/ops.md"}
+        self.assertEqual({_IN_CODE, _IN_PROSE}, named, "the fixture no longer shows the split")
+        self.assertFlags(migrate_sentence_problems(
+            "- **`migrate` tells you more of what it leaves you.** It names each line of your "
+            "markdown docs\n  that still runs a retired command in code, with what replaced it, "
+            "and leaves your prose alone.\n", named), "leaves prose alone")
+        self.assertEqual([], migrate_sentence_problems(self.text, named))
+
+        self.assertFlags(install_bullet_problems(self.mutant(
+            " (`-Version main`\n  for `install.ps1`)", "")), "`-Version main`")
+        self.assertEqual([], install_bullet_problems(self.text))
+        ps1 = (REPO / "install.ps1").read_text(encoding="utf-8")
+        self.assertRegex(ps1, r"(?m)^\s*-Version VER\b[^\n]*\bmain\b",
+                         "install.ps1 does not take -Version main")
 
 
 if __name__ == "__main__":

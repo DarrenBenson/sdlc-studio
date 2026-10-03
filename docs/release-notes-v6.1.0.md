@@ -30,7 +30,8 @@ path, and its "From 6.0 to 6.1" section is the part that is new.
   the default install names a tool on your machine that finds no copy and the `--target` that
   adds one. Install and upgrade no longer damage a project's own files.
 - **`migrate` tells you more of what it leaves you.** It names each line of your markdown docs
-  that still runs a retired command in code, with what replaced it, and leaves your prose alone.
+  that still names a retired command, in code or in plain prose, with what replaced it; a line
+  that only talks about handoffs is not named.
   Its report now agrees with the gate: each item that speaks for a gate lane carries the lane's
   name and count, it names the engagement-floor and conformance cutoffs, seeds the `.gitignore`
   `init` writes, and names a file it cannot read rather than stopping with a traceback.
@@ -58,8 +59,9 @@ it leaves to you.
 
 **`migrate --apply`** removes `review.policy` from `sdlc-studio/.config.yaml`, the one config key
 6.1 retires, keeping every other byte. Both runs name each line of your markdown docs that uses
-a retired handoff command in code (`handoff.py generate`, `artifact.py new --type handoff`,
-`gate.py --require-handoff`), with what replaced it. Neither reads your CI files or scripts:
+a retired handoff command (`handoff.py generate`, `artifact.py new --type handoff`,
+`gate.py --require-handoff`), with what replaced it, except that in the root `AGENTS.md` and
+`CLAUDE.md` they name only `handoff.py generate`. Neither reads your CI files or scripts:
 search those yourself, since a CI job that runs `gate.py --require-handoff` is refused by the
 gate rather than named by `migrate`.
 
@@ -80,7 +82,8 @@ Each change a 6.0 user meets by being refused or surprised, with what to use ins
   carries a unit whose REJECT stands at the review cap (`review.max_rounds`), filing its
   findings as a bug.
 - **A plain install no longer tracks `main`.** `install.sh` with no `--version` installs the
-  latest published release; pass `--version main` to keep the moving branch.
+  latest published release; pass `--version main` to keep the moving branch (`-Version main`
+  for `install.ps1`).
 - **Copilot CLI's global target moved to `~/.agents/skills`.** `--target copilot` writes the
   personal folder Copilot CLI reads, where it wrote the current directory's `.github/skills`;
   `--local` still writes the repository's `.github/skills`.
