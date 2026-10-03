@@ -342,11 +342,16 @@ project's own commit-msg hook:
 ```bash
 # .git/hooks/commit-msg  ($1 is the message file git passes in)
 CLAUDE_SKILL_DIR="${CLAUDE_SKILL_DIR:-.claude/skills/sdlc-studio}"
-python3 "$CLAUDE_SKILL_DIR/scripts/engagement_floor.py" check-commit-msg --strict "$1"
+floor="$CLAUDE_SKILL_DIR/scripts/engagement_floor.py"
+if [ -f "$floor" ]; then
+  python3 "$floor" check-commit-msg --strict "$1"
+else
+  echo "commit-msg: $floor not found - the engagement-floor check did not run" >&2
+fi
 ```
 
 It degrades honestly: with no git, no script, or an unparseable message it exits
-without blocking. See `reference-config.md` (Engagement Floor) for the trailer
+without blocking, and a missing script is named in one line. See `reference-config.md` (Engagement Floor) for the trailer
 grammar and the strict opt-in.
 
 ## See also
