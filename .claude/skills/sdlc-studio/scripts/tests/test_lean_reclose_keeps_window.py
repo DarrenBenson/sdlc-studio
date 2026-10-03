@@ -103,6 +103,29 @@ class RecloseKeepsWindowTests(unittest.TestCase):
         self.assertIn("BG0999", listed)
         self.assertEqual((T, 4000), (again["window_end"], self.main_thread(again)))
 
+    def test_a_re_filed_page_re_derives_over_its_own_findings_window(self) -> None:
+        """BG0913 round 2. The re-filed page carries the re-close as `findings_window_end`, and
+        revalidate re-derives its findings to that mark, so the page listing BG0999 reads VALID.
+        MUTANTS: never write the mark, or revalidate with `findings_end=bound`, so the findings
+        re-derive to 06:00, BG0999 drops out and the page reads INVALIDATED. The control: the
+        first close's page, whose windows coincide, carries no mark and reads VALID too."""
+        sr = lean._live("sprint_report")
+        first = self.close_at(T)
+        self.assertNotIn(sr.FINDINGS_END, first)
+        check = sr.revalidate(self.root, first["report_id"])
+        self.assertTrue(check["valid"], check.get("changes"))
+        self.spend(9000)
+        bugs = self.root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True, exist_ok=True)
+        (bugs / "BG0999-between.md").write_text(
+            "# BG0999: raised between the closes\n\n> **Status:** Open\n> **Severity:** High\n"
+            "> **Raised-in-batch:** RUN-LEAN0001 close, 2026-09-23T06:30:00Z\n",
+            encoding="utf-8")
+        again = self.close_at(LATER)
+        self.assertEqual((T, LATER), (again["window_end"], again.get(sr.FINDINGS_END)))
+        check = sr.revalidate(self.root, again["report_id"])
+        self.assertTrue(check["valid"], check.get("changes"))
+
     def test_a_close_that_filed_no_page_does_not_fix_the_window(self) -> None:
         """The control. MUTANT: record the window on a close whose page was refused, so the
         first close that does file one is measured to a moment no page was ever filed at."""
