@@ -38,6 +38,15 @@ RETIRED_61 = {
 }
 #: The three retired handoff names, as the repo helper labels them.
 HANDOFF_LABELS = ("handoff.py generate", "artifact.py new --type handoff", "gate.py --require-handoff")
+#: A runbook running the three retired handoff commands, in prose code spans and in a fence.
+_HANDOFF_RUNBOOK = ("# Ops\n"
+                    "\n"
+                    "At the close run `handoff.py generate --title \"S3\"`.\n"
+                    "\n"
+                    "```bash\n"
+                    "python3 scripts/artifact.py new --type handoff --title S3\n"
+                    "python3 scripts/gate.py --release --require-handoff HO0003\n"
+                    "```\n")
 #: A history section: what the specs record of the past is not a description of the code.
 _HISTORY = re.compile(r"(?m)^## (?:Revision History|Changelog)\b")
 
@@ -127,6 +136,29 @@ def _local_readers() -> str:
     return "\n".join(out)
 
 
+def _local_table_files(text: str) -> set[str]:
+    """The bare file names a `.local` state table lists (a section whose heading names `.local`)
+    on each row whose writer cell names a script: the TRD's table lists `run-state.json`, not
+    `.local/run-state.json`. A row whose writer is an agent workflow claims no script writes it."""
+    parts = re.split(r"(?m)^(#+ .*)$", text)
+    out: set[str] = set()
+    for i in range(1, len(parts), 2):
+        if ".local" not in parts[i]:
+            continue
+        for row in parts[i + 1].splitlines():
+            cells = row.split("|")
+            first = re.fullmatch(r"\s*`([\w.-]+\.\w+)`\s*", cells[1]) if len(cells) > 3 else None
+            if first and re.search(r"`[\w/]+\.(?:py|sh)`", cells[2]):
+                out.add(first.group(1))
+    return out
+
+
+def _item_labels(item: dict) -> list[str]:
+    """The surface labels one migrate report item names, as a list."""
+    surface = item.get("surface")
+    return list(surface) if isinstance(surface, list) else [surface]
+
+
 class Docs61Tests(unittest.TestCase):
 
     def test_the_upgrade_page_takes_a_60_project_to_61(self) -> None:
@@ -152,9 +184,13 @@ class Docs61Tests(unittest.TestCase):
             config = root / "sdlc-studio" / ".config.yaml"
             config.write_text(config.read_text(encoding="utf-8")
                               + "\nreview:\n  policy: carry-forward\n", encoding="utf-8")
+            (root / "docs").mkdir()
+            for doc in ("AGENTS.md", "CLAUDE.md", "docs/ops.md"):
+                (root / doc).write_text(_HANDOFF_RUNBOOK, encoding="utf-8")
             proc = _py("migrate.py", "--root", str(root), "--format", "json")
             self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
-        keys = sorted({item["key"] for item in json.loads(proc.stdout)["deterministic"]
+        report = json.loads(proc.stdout)
+        keys = sorted({item["key"] for item in report["deterministic"]
                        if item.get("kind") == "retired-config-key"})
         self.assertIn("review.policy", keys, "the 6.0 fixture's key was not reported removed")
         for key in keys:
@@ -169,6 +205,26 @@ class Docs61Tests(unittest.TestCase):
                 self.assertTrue(any("signed" in b and ("`sprint.py plan --worklist RPTxxxx`" in b
                                                        or "`sprint.py sign`" in b) for b in beside),
                                 f"`{name}` is named with no replacement beside it")
+        # What the runs name, by file, against what the page says they name: every handoff
+        # command in the project's other markdown, and in the root instruction files only the
+        # retired verbs (`handoff.py generate`), never the flags.
+        named_in: dict[str, set[str]] = {}
+        for item in report["needs_human"]:
+            if item.get("kind") == "retired-surface":
+                named_in.setdefault(item["file"], set()).update(_item_labels(item))
+        self.assertEqual(set(HANDOFF_LABELS), named_in.get("docs/ops.md", set()),
+                         "migrate does not name every handoff command in docs/ops.md")
+        roots = [named_in.get(f, set()) & set(HANDOFF_LABELS) for f in ("AGENTS.md", "CLAUDE.md")]
+        self.assertEqual(roots[0], roots[1], "migrate reads AGENTS.md and CLAUDE.md differently")
+        said = re.search(r"[^.]*`AGENTS\.md`(?:[^.]|\.(?=[\w`]))*", " ".join(sub.split()))
+        self.assertTrue(said, "the subsection never says what migrate reads in AGENTS.md")
+        yes, _, no = said.group(0).partition(" but not ")
+        self.assertEqual(roots[0], {n for n in HANDOFF_LABELS if f"`{n}`" in yes},
+                         "the page says the root files name a command migrate does not name there")
+        self.assertEqual(set(HANDOFF_LABELS) - roots[0],
+                         {n for n in HANDOFF_LABELS if f"`{n}`" in no},
+                         "the page does not say which commands the root files are not read for")
+
         self.assertRegex(sub, r"(?is)\bHO\b[^.]*\bstay readable\b",
                          "the subsection never says the HO files already written stay readable")
 
@@ -219,7 +275,8 @@ class Docs61Tests(unittest.TestCase):
 
         code = _local_readers()
         for name, path in SPECS.items():
-            for local in sorted(set(re.findall(r"\.local/([\w.-]+\w)", _current(path)))):
+            for local in sorted(set(re.findall(r"\.local/([\w.-]+\w)", _current(path)))
+                                | _local_table_files(_current(path))):
                 with self.subTest(spec=name, local=local):
                     self.assertTrue(local in code, f"{name}.md names .local/{local}, which no "
                                                    f"shipped or tools/ script reads or writes")

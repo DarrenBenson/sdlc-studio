@@ -245,13 +245,14 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
    sub-index; `lessons.py add --global` writes a lesson; `decisions.py` appends to the
    decisions ledger; `retro.py` writes the batch retro artefact and the committed
    `VELOCITY.md` history row; `persona_gen.py` writes the generated seat and stakeholder cards with their
-   provenance stamp (ADR-009); `critic record` appends to the committed verdict, evidence
-   and sign-off logs. This list names the load-bearing writers, not all of them -
+   provenance stamp (ADR-009); `critic record` appends to the committed verdict log (the
+   evidence and per-unit sign-off logs are frozen history nothing writes). This list names
+   the load-bearing writers, not all of them -
    `reference-scripts.md` is the authoritative catalogue of the script write surface.
    Shared-file writes go through `sdlc_md.atomic_write` (temp-then-replace) and id
    allocation is serialised by `sdlc_md.allocation_lock`, so a crash or a concurrent
    writer never corrupts a shared file. The one deliberate exception to atomic-write is
-   the append-only ledgers - `critic`'s verdict/evidence/sign-off logs, `telemetry.jsonl`
+   the append-only ledgers - `critic`'s verdict log, `telemetry.jsonl`
    and `verify-history.jsonl` - each grown by a single `O_APPEND` row write rather than a
    rewrite, so a torn write costs only its own last row (which `critic.read_verdicts`
    reports rather than silently drops), never the file. The scripts are NOT read-only
@@ -1100,7 +1101,7 @@ touches the component. The constraints below span components.
 | 2026-07-29 | 5.0.0 | Spec-truth pass (US0457, US0458, US0459, US0460). ADR-011 records its D0062 amendment (2026-07-24): the breakdown gate is GOAL-AWARE and `design` is the only exemption, with an absent, empty or unknown goal BLOCKING - the ADR previously read as an unconditional refusal while the code already exempted one rung. The counterweight the close really emits (`grooming_report` rendered on the design rung) is named in the Consequences. Four enumerations - the router type list, the default sweep lanes and both drift-kind passages - now cite their shipped definitions and are held to them; the `count-mismatch`/CR0132 caveat goes, justified by CR0132 resolving Complete. The falsified 'a script cannot observe token spend' premise is replaced everywhere it was asserted by the measured one: transcript-measured but a LOWER BOUND, because delegated spend is supplied rather than observed. The porting doctrine is corrected to the direction `tools/forward-port.sh` implements - this repo is the source, the installed copy is the derived mirror - and the bare router line counts are replaced by the budgeted ceiling and its checker. Each claim is now held by a guard in `tools/tests/`. |
 | 2026-09-25 | 5.1.0 | Restatements cut (US0933, D0266). §3 and §5 name `gate.DEFAULT_CHECKS`, the `SKILL.md` Type Reference table and `reconcile.DRIFT_KINDS` rather than copying them, ADR-003 keeps its decision without the drift-kind copy, and the Component Overview and Scaling Strategy drop their counts except the `60+ scripts` claim that `doc_freshness`'s census checks; ADR-001's sizes stay as the decision's record. The three tests that pinned the copies are deleted. |
 | 2026-09-25 | 5.1.0 | The Component Overview gains a Constraints column, which a lane brief reads for the components its unit touches. The Must Have constraints that govern one component (the router, the script layer, `lib/sdlc_md.py`) move into their cells; the ones that span components stay in §13. |
-| 2026-10-03 | 6.0.0 | Spec truth for 6.1 (US0984). The `.local/` state table drops `mutation-runs.json`, the per-target ledger nothing writes since v6, and names `mutation-series.jsonl`, the per-run series `mutation.py` appends; the mutation report and the scaling note no longer say a gate lane reads either; `critic`'s writing verbs are `record`, `correct` and `supersede`, `evidence` and `signoff` being retired. |
+| 2026-10-03 | 6.0.0 | Spec truth for 6.1 (US0984). The `.local/` state table drops `mutation-runs.json`, the per-target ledger nothing writes since v6, and names `mutation-series.jsonl`, the per-run series `mutation.py` appends; the mutation report and the scaling note no longer say a gate lane reads either; `critic`'s writing verbs are `record`, `correct` and `supersede`, `evidence` and `signoff` being retired, and §5's write surface says `critic record` appends to the verdict log alone. |
 
 ---
 

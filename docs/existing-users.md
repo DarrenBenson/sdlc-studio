@@ -59,9 +59,12 @@ A project already on 6.0 takes three steps: 6.1 retires the handoff writers and 
 2. **`migrate`** is the dry run: it prints what it would change and writes nothing.
 3. **`migrate --apply`** removes `review.policy` from `sdlc-studio/.config.yaml`, the one key 6.1
    retires: every project now carries a unit whose REJECT stands at the review-round cap
-   (`review.max_rounds`). Both runs also name each line of your markdown docs that still runs a
-   retired handoff command in code, with what replaced it. Neither reads CI files or scripts, so
-   search those yourself for the names below.
+   (`review.max_rounds`). Both runs also name each line of your markdown docs that still names a
+   retired handoff command, with what replaced it, except in the root `AGENTS.md` and
+   `CLAUDE.md`: there they look only for retired config keys and verbs, so they name
+   `handoff.py generate` but not `artifact.py new --type handoff` or `gate.py --require-handoff`.
+   Neither run reads CI files or scripts, so search those, and the two root files for the two
+   flags, yourself.
 
 | Retired in 6.1 | Use instead |
 | --- | --- |
