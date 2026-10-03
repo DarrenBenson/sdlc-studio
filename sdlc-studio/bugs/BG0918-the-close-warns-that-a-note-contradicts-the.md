@@ -25,6 +25,7 @@ Compare the ratios as numbers at the page's precision. No new refusal.
 
 - [ ] **AC1** Given a note quoting 1.70x and a page deriving 1.7x, when sprint close files the page, then no contradiction is named, and a note quoting 1.46x is still named. Fails on: the current text comparison
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_note_ratio_numeric.py::GoalNoteRatioNumericTests::test_equal_ratios_written_differently_agree
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

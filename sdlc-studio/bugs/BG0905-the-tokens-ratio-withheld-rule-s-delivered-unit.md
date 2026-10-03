@@ -3,7 +3,7 @@
 > **Status:** In Progress
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_delegated_tokens.py, .claude/skills/sdlc-studio/help/sprint.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_ratio_withheld_delivered.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/CR0606.md
 > **Evidence:** US0980 QA review round 2 (RUN-01M3Y7DP)
 > **Created:** 2026-10-02
 > **Created-by:** sdlc-studio file
@@ -33,3 +33,4 @@ Add the control (a delivered unit with no span and no total withholds the ratio)
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-02 | sdlc-studio | Filed |
+| 2026-10-03 | engineering seat | Affects corrected to the files the pin lives in (review finding) |

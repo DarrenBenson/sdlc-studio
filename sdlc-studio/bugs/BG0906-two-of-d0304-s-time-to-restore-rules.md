@@ -3,7 +3,7 @@
 > **Status:** In Progress
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_dora_time_to_restore.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_dora_restore_pins.py
 > **Evidence:** BG0891 QA review round 2 (RUN-01M3Y7DP)
 > **Created:** 2026-10-02
 > **Created-by:** sdlc-studio file
@@ -33,3 +33,4 @@ Pin both: a second success after the restoring one leaves 1h 9m, and a failure f
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-02 | sdlc-studio | Filed |
+| 2026-10-03 | engineering seat | Affects corrected to the files the pin lives in (review finding) |

@@ -25,6 +25,7 @@ Read the main-thread tokens at the first close's report stamp on a re-close, wha
 
 - [ ] **AC1** Given a closed run whose page read 4000 main-thread tokens and a later non-report meter stamp, when the run re-closes, then the re-filed page still reads 4000. Fails on: the current code, which reads the later stamp
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_reclose_meter_any_stamp.py::RecloseMeterAnyStampTests::test_a_later_stamp_does_not_move_the_meter
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

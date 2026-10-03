@@ -25,6 +25,7 @@ Test the shared terminal-status set, not Done alone. No new refusal.
 
 - [ ] **AC1** Given a bug at Fixed whose lane returned 10 minutes, when a lane brief names it again, then its span stays closed and the page reads 10.0. Fails on: a check against Done alone
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_rebrief_terminal_bug.py::LaneRebriefTerminalBugTests::test_a_fixed_bug_keeps_its_span
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

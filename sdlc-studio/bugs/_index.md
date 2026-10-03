@@ -7,13 +7,13 @@
 | Status | Count |
 | --- | --- |
 | Open | 13 |
-| In Progress | 19 |
+| In Progress | 20 |
 | Fixed | 729 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **918** |
+| **Total** | **919** |
 
 ## All Bugs
 
@@ -277,6 +277,7 @@
 | [BG0916](BG0916-a-post-close-meter-stamp-other-than-the.md) | A post-close meter stamp other than the report stamp still moves a re-filed page's main-thread tokens | In Progress | Low | 2026-10-03 | 2026-10-03 |
 | [BG0917](BG0917-a-lane-brief-reopens-the-span-of-a.md) | A lane brief reopens the span of a bug already at Fixed or Verified | In Progress | Low | 2026-10-03 | 2026-10-03 |
 | [BG0918](BG0918-the-close-warns-that-a-note-contradicts-the.md) | The close warns that a note contradicts the page when the note writes 1.70x and the page 1.7x | In Progress | Low | 2026-10-03 | 2026-10-03 |
+| [BG0919](BG0919-the-page-format-rule-marks-bg0898-bg0901-and.md) | The page-format rule marks BG0898, BG0901 and BG0904 added have no file-then-revalidate pin | In Progress | Low | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 
