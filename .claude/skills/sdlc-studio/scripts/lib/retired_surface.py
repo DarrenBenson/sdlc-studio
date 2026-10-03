@@ -5,13 +5,15 @@ Only command-shaped surface ships here, because a consumer's prose is not this s
 `<script>.py <retired verb>` (each script's `RETIRED_VERBS`, read with `ast`, so no script is
 imported), a retired flag on the same line as its own script (from the CHANGELOG's `#### Retired
 flags` tables when a CHANGELOG sits beside the skill or at the root of the repository holding
-it; with none, no flags), and the retired config keys and check ids (`sdlc_md.RETIRED_CONFIG_KEYS`,
+it, and from the unreleased fragments in a `changelog.d/` beside that CHANGELOG; with none, no
+flags), and the retired config keys and check ids (`sdlc_md.RETIRED_CONFIG_KEYS`,
 `sdlc_md.RETIRED_CHECK_IDS`). A phrase such as "plan review", or a bare `--depth`, means
 something else in a consumer's docs; those are judged only by this repository's own doc tests
 (`scripts/tests/retired_surface.py`), which add them.
 
     from lib import retired_surface
     hits = retired_surface.live_mentions(text)   # [(line number, label, line)]
+    instead = retired_surface.replacements()     # {label: what replaced it}
 
 A mention is excused when its clause says the surface is retired, and a table row when its
 table's header does ("Retired in v6", "replaces"): a table of what replaced what is history.
@@ -82,19 +84,32 @@ def changelog_path() -> Path | None:
     return None
 
 
-def changelog_flags(path: Path | None) -> list[str]:
-    """The first code span of each row of EVERY `#### Retired flags` table in `path`, whatever
-    release heading it sits under. [] when there is no CHANGELOG to read."""
+def _flag_rows(path: Path | None) -> list[tuple[str, str]]:
+    """(label, migration) for each row of EVERY `#### Retired flags` table in `path`, whatever
+    release heading it sits under, then in each unreleased fragment of the `changelog.d/` beside
+    it (a fragment is the CHANGELOG's next entry, folded in at the cut): the row's first code
+    span and its last cell. [] when there is no CHANGELOG to read."""
     if path is None or not path.is_file():
         return []
-    out, inside = [], False
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if line.startswith("#"):
-            inside = line.strip().lower() == "#### retired flags"
-            continue
-        if inside and line.startswith("| `"):
-            out.append(_CODE_SPAN.search(line).group(1).replace("\\|", "|"))
+    fragments = path.parent / "changelog.d"
+    sources = [path, *(sorted(fragments.glob("*.md")) if fragments.is_dir() else [])]
+    out: list[tuple[str, str]] = []
+    for source in sources:
+        inside = False
+        for line in source.read_text(encoding="utf-8").splitlines():
+            if line.startswith("#"):
+                inside = line.strip().lower() == "#### retired flags"
+                continue
+            if inside and line.startswith("| `"):
+                cells = [c.strip() for c in re.split(r"(?<!\\)\|", line.strip())[1:-1]]
+                out.append((_CODE_SPAN.search(line).group(1).replace("\\|", "|"), cells[-1]))
     return out
+
+
+def changelog_flags(path: Path | None) -> list[str]:
+    """The label (first code span) of each retired-flag row `_flag_rows` reads from `path` and
+    its unreleased fragments. [] when there is no CHANGELOG to read."""
+    return [label for label, _migration in _flag_rows(path)]
 
 
 def _flag_parts(label: str) -> tuple[str | None, list[str], str]:
@@ -159,6 +174,14 @@ def derived(commands_only: bool = False) -> dict[str, str]:
     for check in sdlc_md.RETIRED_CHECK_IDS:
         out[check] = rf"(?<![\w.]){re.escape(check)}(?![\w-])"
     return out
+
+
+def replacements() -> dict[str, str]:
+    """Each shipped retired surface, label -> what replaced it: a verb's `RETIRED_VERBS` reason,
+    a flag's Migration cell, a config key's or check id's `sdlc_md` reason. `migrate` prints it
+    beside each line it names, so a reader learns the replacement where they meet the name."""
+    return {**retired_verbs(), **sdlc_md.RETIRED_CONFIG_KEYS, **sdlc_md.RETIRED_CHECK_IDS,
+            **dict(_flag_rows(changelog_path()))}
 
 
 def surfaces(flag_patterns: dict[str, str] | None = None) -> dict[str, re.Pattern]:

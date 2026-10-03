@@ -529,6 +529,15 @@ def cmd_show(args: argparse.Namespace) -> int:
     return 0
 
 
+#: Verbs removed from the parser, each with what replaced it. The parser refuses each as an
+#: unknown choice; `migrate` reads this registry (`lib/retired_surface.py`) to name a project's
+#: docs that still run one.
+RETIRED_VERBS = {
+    "generate": "the signed sprint report from `sprint.py sign` hands over the remaining work; "
+                "start the next run from it with `sprint.py plan --worklist RPTxxxx`",
+}
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="The remaining-work join a handoff guide was "
                                             "built from, printed without writing anything. "

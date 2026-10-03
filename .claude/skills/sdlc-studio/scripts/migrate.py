@@ -263,8 +263,10 @@ def _project_docs(root: Path) -> list[Path]:
 def _retired_doc_mentions(root: Path) -> list[dict]:
     """Each line of the project's own docs (`_project_docs`) naming a retired surface in a
     clause that does not say it is retired, by the shipped scanner, one item per line naming
-    every surface on it. Reported for a person, never rewritten: the words are the project's."""
+    every surface on it with what replaced it. Reported for a person, never rewritten: the
+    words are the project's."""
     pats = retired_surface.surfaces()
+    instead = retired_surface.replacements()
     out: list[dict] = []
     for path in _project_docs(root):
         text = sdlc_md.read_text_safe(path)
@@ -275,7 +277,8 @@ def _retired_doc_mentions(root: Path) -> list[dict]:
         for n, label, _line in retired_surface.live_mentions(text, pats):
             by_line.setdefault(n, []).append(label)
         for n, labels in sorted(by_line.items()):
-            names = ", ".join(f"`{label}`" for label in labels)
+            names = "; ".join(f"`{label}` ({instead[label]})" if instead.get(label)
+                              else f"`{label}`" for label in labels)
             out.append({"kind": "retired-surface", "file": rel, "line": n, "surface": labels,
                         "detail": f"{rel}:{n} names the retired {names} - edit it by judgement "
                                   f"(migrate never rewrites a project's own docs)",

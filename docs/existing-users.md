@@ -102,6 +102,7 @@ as an argparse error; a retired key is ignored where it is still set.
 | `verify_ac.py lint --ratchet`, `verify_ac.py lint --stamp` | `verify_ac.py lint`, which reports a shared selector and exits 0; no baseline is kept |
 | `validate.py warning-ratchet` | `validate.py check`, which prints footprint warnings on open work and exits 0 |
 | `persona_resolve.py panel --dry-run` | Drop the flag; it served the sign-off ceremony only |
+| `handoff.py generate`, `artifact.py new --type handoff`, `gate.py --require-handoff` (6.1) | The signed sprint report from `sprint.py sign` hands over the remaining work; start the next run with `sprint.py plan --worklist RPTxxxx` |
 
 The full inventory, with what each name did before, is the Breaking section of the first v6
 release in [CHANGELOG.md](../CHANGELOG.md).
