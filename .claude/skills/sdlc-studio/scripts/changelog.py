@@ -166,8 +166,9 @@ def compose(root, *, apply: bool = False) -> dict:
     opt-in: only `apply=True`, which the release cut passes.
 
     All fragments are parsed BEFORE anything is written (a bad one refuses the whole run - no
-    partial compose). Entries land at the TOP of their section's list; a missing section heading is
-    created at the head of [Unreleased] (most recently composed first - a hand-edit may reorder
+    partial compose). Entries land at the TOP of their section's list, except a fragment's `####`
+    block (a retired-flags table), which lands at the END of its section; a missing section heading
+    is created at the head of [Unreleased] (most recently composed first - a hand-edit may reorder
     headings freely)."""
     root = Path(root)
     frags = _fragment_paths(root)
@@ -192,22 +193,50 @@ def compose(root, *, apply: bool = False) -> dict:
 
     for _path, section, entry in parsed:
         heading = f"### {section}"
+        # a fragment's `####` block (a retired-flags table, say) goes after the section's
+        # bullets, never between them: folded at the top, it ran into the next fragment's bullet
+        bullets, block = _split_block(entry)
         # line-anchored: the heading must BE a line, not a substring of one
         pattern = re.compile(rf"(^{re.escape(heading)}[ \t]*\n\n?)", re.M)
         if pattern.search(unreleased):
-            # insert at the top of the section: right after the heading line + blank
-            unreleased = pattern.sub(lambda m: m.group(1) + entry + "\n", unreleased, count=1)
+            if bullets:
+                # insert at the top of the section: right after the heading line + blank
+                unreleased = pattern.sub(lambda m: m.group(1) + bullets + "\n", unreleased,
+                                         count=1)
         else:
             # create the missing section at its CANONICAL position among the existing
             # headings, so compose never emits an out-of-order heading its own structural
             # check (structure_errors) would then reject - the writer is bound by the same
             # ordering rule as the hand-editor, and the two cannot end in a standoff
-            unreleased = _create_section(unreleased, section, entry)
+            unreleased = _create_section(unreleased, section, bullets or block)
+            if not bullets:
+                block = ""
+        if block:
+            unreleased = _append_to_section(unreleased, heading, block)
     sdlc_md.atomic_write(clog, head + "## [Unreleased]" + unreleased + tail)
     for p, _s, _e in parsed:
         p.unlink()
     return {"composed": len(parsed), "would_compose": len(parsed), "applied": True,
             "sections": sorted({s for _p, s, _e in parsed})}
+
+
+def _split_block(entry: str) -> tuple[str, str]:
+    """(the entry's bullets, its `####` block from the first `#### ` heading on), each stripped
+    of blank edge lines; either may be empty."""
+    m = re.search(r"^#### ", entry, re.M)
+    if not m:
+        return entry, ""
+    return entry[:m.start()].strip("\n"), entry[m.start():].strip("\n")
+
+
+def _append_to_section(unreleased: str, heading: str, block: str) -> str:
+    """Put `block` at the end of the `heading` section (before the next `### ` heading, or at
+    the end of `unreleased`) with a blank line either side."""
+    start = re.search(rf"^{re.escape(heading)}[ \t]*$", unreleased, re.M).end()
+    nxt = re.search(r"^### ", unreleased[start:], re.M)
+    end = start + nxt.start() if nxt else len(unreleased)
+    after = "\n" + unreleased[end:] if nxt else ""
+    return unreleased[:end].rstrip("\n") + "\n\n" + block + "\n" + after
 
 
 def _create_section(unreleased: str, section: str, entry: str) -> str:
