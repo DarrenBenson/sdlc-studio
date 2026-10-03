@@ -154,6 +154,13 @@ _TICK_RUN = re.compile(r"(?<!\\)`+")
 #: function - a re-recorded verdict, a closure quoting a finding - was being escaped again,
 #: which is how the repair record came to carry hundreds of doubled escapes.
 _BARE_UNDERSCORE = re.compile(r"(?<!\\)_")
+#: An opening bracket straight after a `]` or a `)`. Raw, a finding quoting a regex
+#: (`[A-Z][A-Z]`) or a reversed link (`(state)[2]`) is read as a reference link, and
+#: markdownlint refuses the ledger (MD052, MD011) at the next commit that touches it. A lone
+#: `[new]` tag is no such link, so it is written as the reviewer typed it.
+_LINKING_BRACKET = re.compile(r"(?<=[\])])\[")
+#: The escapes `_escape_outside_spans` writes, which the ledger's readers undo.
+_MD_ESCAPED = re.compile(r"\\_|(?<=[\])])\\\[")
 
 
 def _scan_ticks(text: str) -> tuple[list[tuple[int, int]], list[int]]:
@@ -182,15 +189,31 @@ def _scan_ticks(text: str) -> tuple[list[tuple[int, int]], list[int]]:
     return spans, [runs[i][0] for i in range(len(runs)) if i not in paired]
 
 
-def _escape_outside_spans(text: str) -> str:
-    """Escape underscores in `text`, leaving the interior of every code span alone."""
+def _outside_spans(text: str, fn) -> str:
+    """`text` with `fn` applied to every stretch outside a code span, each interior kept."""
     out, last = [], 0
     for start, end in _scan_ticks(text)[0]:
-        out.append(_BARE_UNDERSCORE.sub(r"\\_", text[last:start]))
+        out.append(fn(text[last:start]))
         out.append(text[start:end])
         last = end
-    out.append(_BARE_UNDERSCORE.sub(r"\\_", text[last:]))
+    out.append(fn(text[last:]))
     return "".join(out)
+
+
+def _escape_outside_spans(text: str) -> str:
+    """Escape underscores, and a bracket that would open a link, leaving every code span alone."""
+    return _outside_spans(text, lambda t: _LINKING_BRACKET.sub(
+        r"\\[", _BARE_UNDERSCORE.sub(r"\\_", t)))
+
+
+def _unescape(text: str) -> str:
+    """The escapes `_clean` writes, undone: `\\_` and a linking `\\[` read as typed."""
+    return _MD_ESCAPED.sub(lambda m: m.group(0)[1:], text)
+
+
+def _unescape_outside_spans(text: str) -> str:
+    """The inverse of `_escape_outside_spans`: a ledger cell's text as its author wrote it."""
+    return _outside_spans(text, _unescape)
 
 
 #: How much of the value to quote either side of the stray backtick. A LEADING excerpt was
@@ -831,7 +854,7 @@ def _supersede_value(value: str, escape: bool = True) -> str:
 def _supersede_field(body: str, key: str) -> str:
     boundary = "|".join(re.escape(k) for k in _SUPERSEDE_KEYS)
     m = re.search(rf"(?:^|\s){re.escape(key)}=(.*?)(?=\s(?:{boundary})=|$)", body)
-    return m.group(1).strip().replace("\\_", "_") if m else ""
+    return _unescape(m.group(1).strip()) if m else ""
 
 
 def read_supersessions(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
@@ -1714,6 +1737,8 @@ def parse_findings(issues: str) -> list[dict]:
         return []
     out = []
     for item in split_items(text):
+        # A recorded row carries `_clean`'s escapes (`\[new\]`); a finding reads as written.
+        item = _unescape_outside_spans(item)
         m = _ORIGIN_TAG.match(item)
         if m:
             origin = m.group(1).lower().replace(" ", "-")
@@ -2018,7 +2043,7 @@ def _id(value: str) -> str:
     markdown escaping that `_clean` adds on write removed, so `Dani\\_Okafor` and
     `dani_okafor` compare equal. The empty-cell placeholder `-` normalises to empty,
     so a missing author is treated as no author, not a real id."""
-    out = (value or "").replace("\\_", "_").strip()
+    out = _unescape(value or "").strip()
     return "" if out == "-" else out.casefold()
 
 
