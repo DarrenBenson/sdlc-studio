@@ -1566,6 +1566,7 @@ One row has been removed since adoption.
 | BG0938 | REJECT | qa-seat-BG0938-v61r1 | engineering-v61-pretag | 2026-10-03 | 4291b6ef6b13 | - | [new] low: the goal-note parser's spanning-name exemption is unpinned (sprint.py:9391 `and not crosses`) - dropping it makes `tokens-wall-clock span a b c 1.5x` read [] instead of ['1.5x'] on the shipped `Wall-clock span` measure while test\_lean\_v61\_last\_lows, test\_lean\_goal\_note\_matches\_page, test\_lean\_goal\_note\_ratio\_numeric, test\_lean\_v61\_review\_residue and test\_lean\_dead\_round\_readers all stay green, so the commit's claim that a name spanning words is always tried has no test behind it; BLOCKING: [new] low: pin the spanning-name exemption with a Wall-clock span note whose ratio lies beyond a one-word name's three-word reach (sprint.py:9391) |
 | BG0938 | APPROVE | qa-seat-BG0938-v61r1 | engineering-v61-pretag | 2026-10-03 | a63889a11a68 | - | none |
 | BG0939 | APPROVE | qa-seat-BG0939-v61r1 | engineering-v61-pretag | 2026-10-03 | 9fff0108313c | - | none |
+| BG0941 | APPROVE | qa-seat-BG0941-r1 | engineering-seat-release | 2026-10-03 | 0afc7f0a7e1a | - | [new] low: BG0941 AC1 Verify (verify\_ac run --ids US0937 / grep fail=0) exercises only the positive case - the no-Verified-line and non-terminal refusals it names are proven only by hand mutants, not by any shipped lane (BG0941 AC1) |
 
 ## Supersessions
 
