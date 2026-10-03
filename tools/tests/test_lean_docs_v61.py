@@ -138,8 +138,9 @@ def _local_readers() -> str:
 
 def _local_table_files(text: str) -> set[str]:
     """The bare file names a `.local` state table lists (a section whose heading names `.local`)
-    on each row whose writer cell names a script: the TRD's table lists `run-state.json`, not
-    `.local/run-state.json`. A row whose writer is an agent workflow claims no script writes it."""
+    on each row whose writer cell names a script, bare or running a command (`mutation.py run`):
+    the TRD's table lists `run-state.json`, not `.local/run-state.json`. A row whose writer is an
+    agent workflow claims no script writes it."""
     parts = re.split(r"(?m)^(#+ .*)$", text)
     out: set[str] = set()
     for i in range(1, len(parts), 2):
@@ -148,9 +149,15 @@ def _local_table_files(text: str) -> set[str]:
         for row in parts[i + 1].splitlines():
             cells = row.split("|")
             first = re.fullmatch(r"\s*`([\w.-]+\.\w+)`\s*", cells[1]) if len(cells) > 3 else None
-            if first and re.search(r"`[\w/]+\.(?:py|sh)`", cells[2]):
+            if first and re.search(r"`[\w/]+\.(?:py|sh)\b[^`]*`", cells[2]):
                 out.add(first.group(1))
     return out
+
+
+def _spec_locals(text: str) -> list[str]:
+    """Every `.local` file a spec names as current: by `.local/` path, or as a table row a
+    script writes."""
+    return sorted(set(re.findall(r"\.local/([\w.-]+\w)", text)) | _local_table_files(text))
 
 
 def _item_labels(item: dict) -> list[str]:
@@ -275,11 +282,27 @@ class Docs61Tests(unittest.TestCase):
 
         code = _local_readers()
         for name, path in SPECS.items():
-            for local in sorted(set(re.findall(r"\.local/([\w.-]+\w)", _current(path)))
-                                | _local_table_files(_current(path))):
+            for local in _spec_locals(_current(path)):
                 with self.subTest(spec=name, local=local):
                     self.assertTrue(local in code, f"{name}.md names .local/{local}, which no "
                                                    f"shipped or tools/ script reads or writes")
+
+    def test_a_local_row_whose_writer_runs_a_command_is_read(self) -> None:
+        """AC2's .local clause, pinned (BG0938 AC4). MUTANT: a writer cell read only when it is a
+        bare backticked script name, so the retired `mutation-runs.json` ledger restored to the
+        TRD's table with its writer as `mutation.py run` is never compared with the code. The
+        control: the same row with a bare `mutation.py` is caught as before."""
+        trd = _current(SPECS["trd"])
+        anchor = re.search(r"(?m)^\| `mutation-series\.jsonl` \|.*\n", trd)
+        self.assertTrue(anchor, "premise: the TRD's .local table moved")
+        code = _local_readers()
+        self.assertNotIn("mutation-runs.json", code, "premise: nothing reads the ledger")
+        for writer in ("`mutation.py run`", "`mutation.py`"):
+            with self.subTest(writer=writer):
+                row = f"| `mutation-runs.json` | {writer} | The per-target mutation ledger. |\n"
+                text = trd[:anchor.end()] + row + trd[anchor.end():]
+                self.assertEqual(["mutation-runs.json"],
+                                 [n for n in _spec_locals(text) if n not in code])
 
     def test_each_61_command_change_is_in_its_help(self) -> None:
         """AC3. MUTANTS: HEAD's help, where `verify_ac.py run --unit` is described by its

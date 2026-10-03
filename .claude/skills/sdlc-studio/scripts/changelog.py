@@ -200,9 +200,12 @@ def compose(root, *, apply: bool = False) -> dict:
         pattern = re.compile(rf"(^{re.escape(heading)}[ \t]*\n\n?)", re.M)
         if pattern.search(unreleased):
             if bullets:
-                # insert at the top of the section: right after the heading line + blank
-                unreleased = pattern.sub(lambda m: m.group(1) + bullets + "\n", unreleased,
-                                         count=1)
+                # insert at the top of the section: right after the heading line + blank, and
+                # a blank line after them when the section opens with a `####` block instead
+                unreleased = pattern.sub(
+                    lambda m: m.group(1) + bullets + "\n"
+                    + ("\n" if unreleased[m.end():].startswith("#") else ""),
+                    unreleased, count=1)
         else:
             # create the missing section at its CANONICAL position among the existing
             # headings, so compose never emits an out-of-order heading its own structural
@@ -231,11 +234,29 @@ def _split_block(entry: str) -> tuple[str, str]:
 
 def _append_to_section(unreleased: str, heading: str, block: str) -> str:
     """Put `block` at the end of the `heading` section (before the next `### ` heading, or at
-    the end of `unreleased`) with a blank line either side."""
+    the end of `unreleased`) with a blank line either side. A block whose `####` heading the
+    section already holds joins it under that one heading, and a table repeating the held
+    table's header row continues that table."""
     start = re.search(rf"^{re.escape(heading)}[ \t]*$", unreleased, re.M).end()
     nxt = re.search(r"^### ", unreleased[start:], re.M)
     end = start + nxt.start() if nxt else len(unreleased)
     after = "\n" + unreleased[end:] if nxt else ""
+    body = unreleased[start:end].rstrip("\n")
+    title, _nl, rest = block.partition("\n")
+    held = re.search(rf"^{re.escape(title.rstrip())}[ \t]*$", body, re.M)
+    if held:
+        below = re.search(r"^#{1,4} ", body[held.end():], re.M)
+        cut = held.end() + below.start() if below else len(body)
+        mine, later = body[:cut].rstrip("\n"), body[cut:].strip("\n")
+        rest = rest.strip("\n")
+        lines = rest.split("\n")
+        if (len(lines) > 2 and lines[0].startswith("|") and mine.endswith("|")
+                and "\n".join(lines[:2]) in mine):
+            mine += "\n" + "\n".join(lines[2:])
+        else:
+            mine += "\n\n" + rest
+        body = mine + ("\n\n" + later if later else "")
+        return unreleased[:start] + body + "\n" + after
     return unreleased[:end].rstrip("\n") + "\n\n" + block + "\n" + after
 
 

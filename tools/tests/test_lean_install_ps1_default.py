@@ -88,8 +88,9 @@ class InstallPs1DefaultTests(unittest.TestCase):
 
     def test_install_ps1_defaults_to_the_latest_release(self) -> None:
         """AC1. MUTANTS: HEAD~'s `[string]$Version = 'main'`; the resolved tag discarded
-        (`$Version = $latest` -> `'main'`); a lookup call that always throws (a bad parameter on
-        Invoke-RestMethod). The control: an explicit `-Version main` makes no lookup."""
+        (`$Version = $latest` -> `'main'`), in both arms; a lookup call that always throws (a bad
+        parameter on Invoke-RestMethod). The control: an explicit `-Version main` makes no
+        lookup."""
         if PWSH:
             self._executed()
         else:
@@ -153,6 +154,18 @@ class InstallPs1DefaultTests(unittest.TestCase):
                       "not install.sh's latest-release endpoint")
         self.assertIn("tag_name", lookup)
         self.assertIn(f"-match '{self.tag_re}'", lookup, "not install.sh's tag check")
+        # The fetched tag is what is installed: the lookup's answer is held, its tag_name is
+        # the one checked and kept, and the kept tag becomes $Version (BG0938). Each of these
+        # mutants passed the lines above: the answer discarded (`$null = Invoke-RestMethod`),
+        # another value kept, and `'main'` installed in place of the kept tag.
+        rel = re.search(r"\$(\w+) = Invoke-RestMethod\b", lookup)
+        self.assertIsNotNone(rel, "the lookup's answer is not held")
+        tag = rf'"\$\(\${rel.group(1)}\.tag_name\)"'
+        kept = re.search(rf"if \({tag} -match '{re.escape(self.tag_re)}'\) "
+                         rf"\{{ \$(\w+) = {tag} \}}", lookup)
+        self.assertIsNotNone(kept, "the tag checked is not the tag kept")
+        self.assertRegex(lookup, rf"if \(\${kept.group(1)}\) \{{ \$Version = "
+                                 rf"\${kept.group(1)} \}}", "the kept tag is not installed")
         self.assertIn("$Version = 'main'", lookup, "a failed lookup does not fall back to main")
         self.assertIn(self.warn, lookup, "the fallback to main is silent")
 

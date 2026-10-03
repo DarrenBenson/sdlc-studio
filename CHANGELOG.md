@@ -840,6 +840,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   id leaves the run until the next close re-files it under the same id, so `sprint sign` has no
   broken page to seal and a total returned after that re-close is still refused. A run with no
   page filed is still already open (BG0937).
+- The last lows the v6.1 reviews raised are fixed. The changelog cut leaves a blank line
+  between bullets and a `####` block that opens their section, and two fragments carrying the
+  same `####` heading in one section fold under one heading, a repeated table header continuing
+  the table, so the cut lints clean wherever a block lands. `goal-review record` names a
+  fields-file `seats` value that is a string or an object as not a list, rather than refusing
+  its first character or key. The goal-note check is linear on a whitespace-free run of
+  repeated measure names, which cost most of a second at 20,000 characters (BG0938).
 
 #### Retired flags
 

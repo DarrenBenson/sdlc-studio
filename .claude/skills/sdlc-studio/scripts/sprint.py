@@ -9375,7 +9375,29 @@ def _note_ratios(note: str, measures) -> list[str]:
     # quadratically on a long punctuation run after the name.
     beside = re.compile(rf"\b(?:{names})\b(?:\S*?|\S*\s+(?:(?!{lead}{_RATIO})\S+\s+){{0,3}}?"
                         rf"{lead})({_RATIO})", re.IGNORECASE)
-    return [m.group(1) for m in beside.finditer(note)]
+    # Tried at each name in turn. A one-word name that reads no ratio fails for every later
+    # one-word name in the same whitespace-free run too (each sees a tail of the same run and
+    # the same words after it), so those are passed over: re-trying each ran every attempt to
+    # the end of the run, quadratic on a long run of repeated names. A name spanning words
+    # sees other words, so it is always tried.
+    name = re.compile(rf"\b(?:{names})\b", re.IGNORECASE)
+    spaced = "|".join(re.escape(m[:-1] if m[-1] in "sS" else m) + "s?"
+                      for m in measures if m and re.search(r"\s", m))
+    multi = re.compile(rf"\b(?:{spaced})\b", re.IGNORECASE) if spaced else None
+    found, pos, dead = [], 0, -1
+    while hit := name.search(note, pos):
+        at = hit.start()
+        crosses = bool(multi and multi.match(note, at))
+        m = None if at < dead and not crosses else beside.match(note, at)
+        if m:
+            found.append(m.group(1))
+            pos, dead = m.end(), -1
+            continue
+        pos = at + 1
+        if not crosses and at >= dead:
+            gap = re.compile(r"\s").search(note, at)
+            dead = gap.start() if gap else len(note)
+    return found
 
 
 def goal_note_contradiction(root, report_id: str) -> str | None:
@@ -11023,7 +11045,12 @@ def cmd_goal_review(args) -> int:
         return 2
     try:
         seats = [_parse_seat_verdict(s) for s in (args.seat or [])]
-        seats += [_seat_from_dict(s) for s in (from_file.get("seats") or [])]
+        listed = from_file.get("seats") or []
+        if not isinstance(listed, list):
+            # Iterated, a string or an object would be refused by its first character or key.
+            raise ValueError(f"--fields-file seats must be a list of seat objects, got a "
+                             f"{type(listed).__name__}: {listed!r}")
+        seats += [_seat_from_dict(s) for s in listed]
     except ValueError as exc:
         print(f"goal-review record refused: {exc}", file=sys.stderr)
         return 2
