@@ -726,8 +726,8 @@ def harness_project_slug(repo_root: Path | str) -> str:
 
 
 def _newest_transcript(folder: Path) -> Path | None:
-    """The most recently modified `.jsonl` in `folder`. One whose `stat` fails (a dangling
-    link) is skipped, as an unreadable transcript is when its `cwd` is read."""
+    """The most recently modified `.jsonl` in `folder`. One whose `stat` fails (a dangling or
+    self-looping link) is skipped, as an unreadable transcript is when its `cwd` is read."""
     files = []
     for f in folder.glob("*.jsonl"):
         try:
@@ -794,10 +794,9 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
     d = Path(d)
     if not d.is_dir():
         return {"tokens": None, "reason": f"no harness transcript directory at {d}"}
-    files = sorted(d.glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
-    if not files:
+    src = _newest_transcript(d)     # a dangling or self-looping link is skipped, not raised
+    if src is None:
         return {"tokens": None, "reason": f"no session transcript (*.jsonl) in {d}"}
-    src = files[-1]
     total, seen = 0, False
     #: The distinct models that spent the counted tokens. Collected only from the records that
     #: carry usage - a record with no usage bought nothing, so its model must not colour the
