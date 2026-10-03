@@ -25,6 +25,7 @@ Skip any transcript whose stat or read raises OSError, in the folder scan and in
 
 - [ ] **AC1** Given the project's own transcript folder holding a dangling link and a self-looping link beside a real transcript, when the report's token reading runs, then it reads the real transcript and nothing raises. Fails on: the current code, which raises
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_transcript_links_skipped.py::TranscriptLinksSkippedTests::test_broken_and_looping_links_are_skipped
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

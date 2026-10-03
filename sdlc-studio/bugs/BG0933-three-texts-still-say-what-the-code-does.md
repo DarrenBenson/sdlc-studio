@@ -25,6 +25,7 @@ Make each text say what the code does. No behaviour change.
 
 - [ ] **AC1** Given a goal-review fields file whose seats list is empty, when record refuses it, then the message names the 'seats' key, and help/gate.md's lane count equals the lanes it describes. Fails on: the current refusal naming --seat and the 'three lanes' sentence
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_texts_true.py::V61TextsTrueTests::test_each_text_says_what_the_code_does
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

@@ -25,6 +25,7 @@ Default install.ps1 to the latest release as install.sh does, keeping an explici
 
 - [ ] **AC1** Given install.ps1 run with no version argument, then it resolves the latest release as install.sh does, and an explicit main still installs main. Fails on: the current default of main
   - **Verify:** pytest tools/tests/test_lean_install_ps1_default.py::InstallPs1DefaultTests::test_install_ps1_defaults_to_the_latest_release
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 

@@ -7,13 +7,13 @@
 | Status | Count |
 | --- | --- |
 | Open | 0 |
-| In Progress | 11 |
+| In Progress | 12 |
 | Fixed | 766 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **934** |
+| **Total** | **935** |
 
 ## All Bugs
 
@@ -293,6 +293,7 @@
 | [BG0932](BG0932-a-broken-or-self-looping-transcript-link-still.md) | A broken or self-looping transcript link still crashes the report | In Progress | Low | 2026-10-03 | 2026-10-03 |
 | [BG0933](BG0933-three-texts-still-say-what-the-code-does.md) | Three texts still say what the code does not: the empty-seats refusal, BG0930's docstring and help/gate.md's lane count | In Progress | Low | 2026-10-03 | 2026-10-03 |
 | [BG0934](BG0934-install-ps1-still-installs-from-main-while-install.md) | install.ps1 still installs from main while install.sh installs the latest release | In Progress | Medium | 2026-10-03 | 2026-10-03 |
+| [BG0935](BG0935-the-6-1-notes-say-migrate-leaves-prose.md) | The 6.1 notes say migrate leaves prose alone and give no way to install main on Windows | In Progress | Low | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 

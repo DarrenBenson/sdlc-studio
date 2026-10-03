@@ -25,12 +25,16 @@ Add the four pins; no behaviour change unless a pin exposes a defect.
 
 - [ ] **AC1** Given a run where one unit carries the forecast and a different unit the minutes, when the page is built, then the Minutes reason names the missing pair. Fails on: a reason chosen from no forecast anywhere
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_lane1_pins.py::V61Lane1PinsTests::test_a_split_forecast_names_the_missing_pair
+  - **Verified:** yes (2026-10-03)
 - [ ] **AC2** Given a run reopened after its page was filed and then re-closed, when lane return --tokens is run before the sign, then nothing is recorded and the page checks VALID. Fails on: the reopens[0] and 'return not reopens' mutants
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_lane1_pins.py::V61Lane1PinsTests::test_a_reopened_re_close_records_no_late_total
+  - **Verified:** yes (2026-10-03)
 - [ ] **AC3** Given a matching project folder with an older and a newer transcript, when the transcript is resolved, then the newer one is read. Fails on: an oldest-first pick
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_lane1_pins.py::V61Lane1PinsTests::test_the_newest_transcript_is_read
+  - **Verified:** yes (2026-10-03)
 - [ ] **AC4** Given a signed run whose outcome is partial, when transition.py set moves a unit, then no APPETITE SPENT warning is printed. Fails on: a skip for goal-reached only
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_lane1_pins.py::V61Lane1PinsTests::test_a_partial_run_spends_no_appetite
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 
