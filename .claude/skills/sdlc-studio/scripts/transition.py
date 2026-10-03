@@ -1413,8 +1413,10 @@ def _num(v):
 def _report_appetite(args) -> None:
     """Print the run's appetite verdict at a unit boundary, or nothing at all.
 
-    Silent in every uninteresting case - no run, no appetite, budget remaining - because a line
-    printed after every transition is one nobody reads on the day it matters. Silent on failure
+    Silent in every uninteresting case - no run, a sealed run, no appetite, budget remaining -
+    because a line printed after every transition is one nobody reads on the day it matters.
+    A sealed run is one whose outcome is no longer running: it has no next unit for its ceiling
+    to stop, so an appetite it spent is not reported against later work. Silent on failure
     too, and that is deliberate here: this is a REPORT beside a transition that already
     succeeded, so a breaker that could not be evaluated must not turn a good transition into a
     traceback. `loop_guard budget` remains the verb that answers the question with an exit code.
@@ -1423,6 +1425,8 @@ def _report_appetite(args) -> None:
         import loop_guard  # noqa: PLC0415 - deferred; only terminal transitions pay for it
         root = sdlc_md.resolve_root(args)
         state = loop_guard.run_state.read(root)
+        if isinstance(state, dict) and state.get("outcome") in loop_guard.run_state.CLOSED:
+            return              # a sealed run has no next unit for its ceiling to stop
         appetite = (state.get("appetite") or {}) if isinstance(state, dict) else {}
         minutes = float(appetite.get("minutes") or 0)
         units = int(appetite.get("units") or 0)
