@@ -706,14 +706,62 @@ def disjoint_refusal(repo_root: Path | str, batch) -> "DisjointBatchError | None
                               close_attempts=state.get("close_attempts"), repo_root=repo_root)
 
 
+#: The slug length past which the harness truncates a folder name and appends a hash.
+_HARNESS_SLUG_MAX = 200
+
+
 def harness_project_slug(repo_root: Path | str) -> str:
     """The folder name the harness files a project's transcripts under, inside `projects/`.
 
-    The resolved path with EVERY character outside [A-Za-z0-9] mapped to `-` (`.` and `_`
+    The resolved path with EVERY UTF-16 code unit outside [A-Za-z0-9] mapped to `-` (`.` and `_`
     included, `-` itself kept), so a repo at `my_app.v2` reads `-...-my-app-v2`; mapping `/`
-    alone missed it. One definition, read by the meter here and by anything that points the
-    meter at a transcript folder (the eval harness's worker command)."""
-    return re.sub(r"[^A-Za-z0-9-]", "-", str(Path(repo_root).resolve()))
+    alone missed it. A character outside the BMP is two code units and so two dashes. One
+    definition, read by the meter here and by anything that points the meter at a transcript
+    folder (the eval harness's worker command). Untruncated: past `_HARNESS_SLUG_MAX` the
+    harness shortens it and appends a hash, and `_harness_transcript_dir` finds that folder by
+    the `cwd` its transcript records rather than by re-deriving the hash."""
+    return re.sub(r"[^A-Za-z0-9]", lambda m: "--" if ord(m.group()) > 0xFFFF else "-",
+                  str(Path(repo_root).resolve()))
+
+
+def _newest_transcript(folder: Path) -> Path | None:
+    files = sorted(folder.glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
+    return files[-1] if files else None
+
+
+def _records_cwd(transcript: Path, cwd: str) -> bool:
+    """True when the first record in `transcript` carrying a `cwd` names `cwd`."""
+    try:
+        with transcript.open(encoding="utf-8") as fh:
+            for line in fh:
+                try:
+                    rec = json.loads(line)
+                except ValueError:
+                    continue
+                if isinstance(rec, dict) and isinstance(rec.get("cwd"), str):
+                    return rec["cwd"] == cwd
+    except (OSError, UnicodeDecodeError):
+        return False
+    return False
+
+
+def _harness_transcript_dir(repo_root: Path | str) -> Path:
+    """The folder under `~/.claude/projects` holding this repo's transcripts. The slug folder
+    when it exists or the slug is short enough to be the harness's name for it; for a slug the
+    harness truncated, the folder whose newest transcript records this repo as its `cwd` (the
+    most recent when several do). A folder recording any other `cwd` is never chosen."""
+    projects = Path.home() / ".claude" / "projects"
+    slug = harness_project_slug(repo_root)
+    d = projects / slug
+    if d.is_dir() or len(slug) <= _HARNESS_SLUG_MAX or not projects.is_dir():
+        return d
+    cwd = str(Path(repo_root).resolve())
+    hits = []
+    for folder in projects.iterdir():
+        newest = _newest_transcript(folder) if folder.is_dir() else None
+        if newest is not None and _records_cwd(newest, cwd):
+            hits.append((newest.stat().st_mtime, folder))
+    return max(hits)[1] if hits else d
 
 
 def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = None) -> dict:
@@ -734,7 +782,7 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
     """
     d = transcripts_dir or os.environ.get(TRANSCRIPTS_ENV)
     if not d:
-        d = Path.home() / ".claude" / "projects" / harness_project_slug(repo_root)
+        d = _harness_transcript_dir(repo_root)
     d = Path(d)
     if not d.is_dir():
         return {"tokens": None, "reason": f"no harness transcript directory at {d}"}
