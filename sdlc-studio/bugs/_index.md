@@ -7,13 +7,13 @@
 | Status | Count |
 | --- | --- |
 | Open | 0 |
-| In Progress | 12 |
+| In Progress | 13 |
 | Fixed | 766 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **935** |
+| **Total** | **936** |
 
 ## All Bugs
 
@@ -294,6 +294,7 @@
 | [BG0933](BG0933-three-texts-still-say-what-the-code-does.md) | Three texts still say what the code does not: the empty-seats refusal, BG0930's docstring and help/gate.md's lane count | In Progress | Low | 2026-10-03 | 2026-10-03 |
 | [BG0934](BG0934-install-ps1-still-installs-from-main-while-install.md) | install.ps1 still installs from main while install.sh installs the latest release | In Progress | Medium | 2026-10-03 | 2026-10-03 |
 | [BG0935](BG0935-the-6-1-notes-say-migrate-leaves-prose.md) | The 6.1 notes say migrate leaves prose alone and give no way to install main on Windows | In Progress | Low | 2026-10-03 | 2026-10-03 |
+| [BG0936](BG0936-the-v6-1-review-residue-three-unpinned-behaviours.md) | The v6.1 review residue: three unpinned behaviours, a dropped seats entry, a slow note parser and two TRD rows nothing writes | In Progress | Low | 2026-10-03 | 2026-10-03 |
 
 ## Archived Releases
 

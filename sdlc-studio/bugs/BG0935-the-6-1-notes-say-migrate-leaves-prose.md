@@ -25,6 +25,7 @@ Make the sentence say what migrate names, and add -Version main to the install b
 
 - [ ] **AC1** Given the 6.1 notes, then the migrate sentence matches what migrate names in a fixture (a retired command in code and in plain prose is named, prose about handoffs is not), and the install bullet names -Version main for install.ps1 and --version main for install.sh. Fails on: the current 'leaves your prose alone' sentence and the bullet without -Version main
   - **Verify:** pytest tools/tests/test_lean_release_notes_v61.py::ReleaseNotesTests::test_the_migrate_and_install_sentences_are_true
+  - **Verified:** yes (2026-10-03)
 
 ## Revision History
 
