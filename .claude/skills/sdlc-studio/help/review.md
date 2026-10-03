@@ -89,14 +89,14 @@ Every full run writes `sdlc-studio/reviews/LATEST.md` (overwrites any prior copy
                    DOCUMENT REVIEW SUMMARY
 ══════════════════════════════════════════════════════════
 
-📋 PRD REVIEW                          ▓▓▓▓▓▓▓▓░░ 85%
+📋 PRD REVIEW                          2 findings
    Features: 14 defined
    ⚠️ 2 features need attention
 
-📐 TRD REVIEW                          ▓▓▓▓▓▓▓▓▓░ 92%
+📐 TRD REVIEW                          1 finding
    ✅ Architecture current
 
-🧪 TSD REVIEW                          ▓▓▓▓▓▓▓░░░ 78%
+🧪 TSD REVIEW                          3 findings
    ⚠️ Coverage below target
 
 ──────────────────────────────────────────────────────────
