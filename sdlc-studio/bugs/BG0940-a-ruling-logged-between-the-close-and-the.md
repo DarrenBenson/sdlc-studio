@@ -19,13 +19,13 @@ decisions.py add --by operator (or persona) appends the ruling to the open run's
 
 ## Proposed Fix
 
-Do not count a ruling against a run whose page is filed and not reopened (as BG0926 does for late totals), and have sign re-derive the page and refuse to seal one that no longer matches, naming the figure that moved; say in check's output that an uncommitted fresh signature is awaiting its commit. No new gate beyond sign refusing to seal a page that already fails its own check.
+Do not count a ruling against a run whose page is filed and not reopened (as BG0926 does for late totals), and have sign re-derive the page and refuse to seal one that no longer matches, naming the figure that moved. No new gate beyond sign refusing to seal a page that already fails its own check.
 
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a run closed with a filed page and not signed, when decisions.py add --by operator logs a ruling, then the run's rulings are unchanged and the filed page still checks VALID, and a ruling logged after a reopen is counted. Fails on: the current code, which counts it and invalidates the page
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_ruling_after_close.py::RulingAfterCloseTests::test_a_ruling_after_the_close_leaves_the_page_valid
-- [ ] **AC2** Given a filed page whose run state has moved since the close, when sprint sign runs, then it refuses to seal and names the figure that moved. Fails on: the current sign, which seals a page that already fails its check
+- [ ] **AC2** Given a filed page whose run state has moved since the close, when sprint sign runs, then it refuses to seal and names the figure that moved (e.g. `operator_rulings`), and a page whose run state has not moved still seals; the page is judged before the seal is written, so sign never refuses its own fresh signature. Fails on: the current sign, which seals a page that already fails its check
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_ruling_after_close.py::RulingAfterCloseTests::test_sign_refuses_a_page_that_no_longer_matches
 
 ## Revision History
@@ -33,3 +33,4 @@ Do not count a ruling against a run whose page is filed and not reopened (as BG0
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-03 | sdlc-studio | Filed |
+| 2026-10-05 | orchestrator | Re-groomed on the goal review (D0344): AC2 names the moved figure and keeps an unchanged page sealable; the untested check-output clause is dropped from the fix |
