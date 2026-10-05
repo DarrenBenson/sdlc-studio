@@ -2,6 +2,8 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
 
+- **L-0442: Run each user-facing sentence in a changelog fragment through the CLI before asking for review, as the paperwork reviews already do.**
+- **L-0441: Probe a premise with an input whose result differs under each hypothesis, such as a key whose code fallback differs from its shipped...**
 - **L-0440: A builder that adds a widened env scrub to satisfy a guard test should reuse the pinned list it already has: US0971's `GIT_*` scrub broke...**
 - **L-0439: Settle every permission rule and eval harness at plan time, and run the evals each sprint for any guidance that changed.**
 - **L-0438: Give the review cap a recorded per-unit exception (BG0841), so an operator-granted round lands without a forced transition.**
