@@ -1,0 +1,292 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M45FV6",
+  "started_at": "2026-10-05T07:21:58Z",
+  "ended_at": "2026-10-05T08:13:39Z",
+  "outcome": "goal-reached",
+  "goal": "done",
+  "batch": [
+    "BG0940",
+    "BG0943"
+  ],
+  "plan": "sdlc-studio/.local/sprint-plan.json",
+  "handoff": null,
+  "session_token_baseline": {
+    "tokens": 25229967,
+    "source": "sha256:1d4787a19476",
+    "at": "2026-10-05T07:21:58Z"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 25229967,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-05T07:21:58Z",
+      "kind": "open",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 25229967,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-05T07:22:08Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 25229967,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-05T07:22:08Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 25250523,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-05T07:39:29Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 25257840,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-05T07:39:34Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 25332687,
+      "source": "sha256:1d4787a19476",
+      "at": "2026-10-05T07:59:38Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    }
+  ],
+  "delegated_tokens": [
+    {
+      "tokens": 124372,
+      "agent": "build lane",
+      "note": "sprint lane return (a ruling after the close leaves the filed page valid; sign refuses a page that no longer re-derives, naming the figure)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-05T07:39:29Z",
+      "unit": "BG0940",
+      "minutes": 12.2
+    },
+    {
+      "tokens": 46640,
+      "agent": "build lane",
+      "note": "sprint lane return (config show reads every key config-defaults.yaml declares)",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-05T07:39:34Z",
+      "unit": "BG0943",
+      "minutes": 4.5
+    },
+    {
+      "tokens": 75214,
+      "agent": "s12-goal-review",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-05T07:48:13Z",
+      "minutes": 1.0
+    },
+    {
+      "tokens": 88466,
+      "agent": "qa-s12-bg0943",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-05T07:48:14Z",
+      "minutes": 2.5
+    },
+    {
+      "tokens": 121343,
+      "agent": "qa-s12-bg0940",
+      "note": "",
+      "provenance": "supplied",
+      "recorded_at": "2026-10-05T07:48:15Z",
+      "minutes": 5.7
+    }
+  ],
+  "reopened": [],
+  "batch_changes": [],
+  "rulings": [],
+  "base_ref": "56371aef258cf9917590b8ef8b7f92abd5a8c49f",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-10-05T07:21:41Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "Maya signs only a report that still checks VALID, and config show reads every shipped default.",
+  "sprint_goal_review": {
+    "reviewed": true,
+    "status": "read",
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "product",
+        "achievable": "yes",
+        "done_means": "Serves O3 for Maya Okafor: the page she is asked to sign still checks VALID at the signature because a late ruling no longer moves it and sign will not seal one that has moved; and serves O2: config show tells her the true default of every key the skill ships rather than calling a shipped key undeclared.",
+        "one_increment": "no",
+        "note": "Two independent fixes joined by 'and', sharing no file, so not one increment; each is small and real, so carry both. BG0940's third clause (check's output naming an uncommitted fresh signature as awaiting its commit) has no criterion: either the build leaves it out or it ships unverified, and the review should hold it to that. BG0943's Summary says config.get also drops the keys; execution shows it does not, so the user-visible defect is show alone and the goal wording is right."
+      },
+      {
+        "seat": "engineering",
+        "achievable": "yes",
+        "done_means": "Serves O3: decisions.py stops counting a ruling against a run whose page is filed and not reopened (the BG0926 late-total pattern), sign re-derives through sprint_report's existing compare and refuses naming the moved figure, and config show reads past a nested list, each with a test red on the current code.",
+        "one_increment": "yes",
+        "note": "Sign refusing a page that already fails its own check is the existing check made to run at the point of signing (LC-008), not a new constraint; it must call sprint_report's existing re-derive and moved-figure path, not a second implementation, or the two will drift. Risk: a ruling must still be logged to decisions.md and counted after a reopen (AC1's positive control), never silently dropped. Risk: the uncommitted fresh signature already reads INVALID until committed; sign's re-derive must judge the page before the seal is written, or it refuses its own signature. BG0943 is confined to show's reader; config.get is already right, so no review behaviour moves, and the fix should make show use the same parse rather than patch a second parser."
+      },
+      {
+        "seat": "qa",
+        "achievable": "partial",
+        "done_means": "Serves O3: each Verify is seen red on its Fails-on and green after, with a positive control beside each refusal, so the oracle, not an assertion, shows sign refuses a moved page and still seals an unmoved one, and show prints every declared default.",
+        "one_increment": "yes",
+        "note": "Partial because the goal says 'every shipped default' while BG0943 AC1 names three keys: the test should walk every leaf key in config-defaults.yaml through show, plus the undeclared-key negative, or the goal claims more than its evidence. BG0940 AC2 must assert the moved figure's name (operator_rulings) in the refusal and pair it with a sign that still seals an unchanged page, else a sign that refuses everything passes. AC1 needs the after-reopen ruling counted, already in its wording; hold the test to it. [LC-016] applies: sign judges the live re-derive, never the close's freeze."
+      }
+    ],
+    "goal": "Maya signs only a report that still checks VALID, and config show reads every shipped default.",
+    "shipped_seats": false,
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 88,
+    "objected": false,
+    "objections": [],
+    "reviewed_at": "2026-10-05T07:20:33Z",
+    "change_type": null,
+    "amended_from": null,
+    "requesting_seat": null,
+    "needs_reconsult": [],
+    "themed": [
+      {
+        "seat": "product",
+        "one_increment": "no",
+        "note": "Two independent fixes joined by 'and', sharing no file, so not one increment; each is small and real, so carry both. BG0940's third clause (check's output naming an uncommitted fresh signature as awaiting its commit) has no criterion: either the build leaves it out or it ships unverified, and the review should hold it to that. BG0943's Summary says config.get also drops the keys; execution shows it does not, so the user-visible defect is show alone and the goal wording is right."
+      }
+    ],
+    "discharged": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Fixed",
+    "types": [
+      "bug"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed"
+  },
+  "plan_snapshot": {
+    "units": {
+      "BG0940": {
+        "planned_points": 2,
+        "forecast_tokens": 265400,
+        "forecast_minutes": 12.8,
+        "added": false
+      },
+      "BG0943": {
+        "planned_points": 1,
+        "forecast_tokens": 132700,
+        "forecast_minutes": 6.4,
+        "added": false
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 132700,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 6.4,
+        "source": "fallback: 2 row(s) for claude-opus-5-5, under 3, so the latest rows of any single model: median of RETRO0028, RETRO0131, RETRO0132"
+      }
+    }
+  },
+  "token_forecast": 398100,
+  "lanes_in_flight": [],
+  "unit_actuals": {
+    "BG0940": {
+      "minutes": 17.35,
+      "tokens": 20556,
+      "started_at": "2026-10-05T07:22:08Z",
+      "start_tokens": 0,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    },
+    "BG0943": {
+      "minutes": 17.43,
+      "tokens": 27873,
+      "started_at": "2026-10-05T07:22:08Z",
+      "start_tokens": 0,
+      "open": false,
+      "start_source": "sha256:1d4787a19476"
+    }
+  },
+  "review_base": {
+    "BG0943": 0,
+    "BG0940": 0
+  },
+  "sprint_goal_verdict": {
+    "verdict": "achieved",
+    "note": "Both units delivered and approved in their first review: sign refuses a filed page that no longer re-derives, and config show reads every shipped default; the review Lows are filed under D0338"
+  },
+  "close_attempts": [
+    {
+      "at": "2026-10-05T07:55:16Z",
+      "outstanding": 0,
+      "stages": []
+    }
+  ],
+  "close_not_measured": [],
+  "goal_content_review": [
+    {
+      "phase": "close",
+      "goal": "Maya signs only a report that still checks VALID, and config show reads every shipped default.",
+      "answer": "yes",
+      "missing": "",
+      "shortfall": {
+        "undelivered": [],
+        "defects": [
+          "BG0944",
+          "BG0945"
+        ]
+      },
+      "recorded_at": "2026-10-05T07:58:17Z"
+    }
+  ],
+  "close_tree": "060e426ef152546893420b8dd2c92f01ae4ec04a",
+  "report_gate_clear": [
+    "BG0940",
+    "BG0943"
+  ],
+  "verified_sha": "87d80a6064f5e2ec7d4a974787591ecebfc9548a",
+  "close_known_issues": [],
+  "ci_runs": {
+    "source": "gh run list",
+    "runs": []
+  },
+  "review_rows": {
+    "BG0940": [
+      "4c3944b290029a22"
+    ],
+    "BG0943": [
+      "079c54a2b6cbf48a"
+    ]
+  },
+  "report_discharged": [],
+  "report": "RPT0019",
+  "report_fingerprint": "4b8303e43a18d849",
+  "report_window_end": "2026-10-05T07:59:38Z",
+  "unanswered": [],
+  "unanswered_rulings_from": "RETRO0133",
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-10-05T08:13:39Z",
+    "report": "RPT0019",
+    "fingerprint": "4b8303e43a18d849"
+  }
+}
