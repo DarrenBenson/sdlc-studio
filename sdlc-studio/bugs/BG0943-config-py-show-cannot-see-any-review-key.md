@@ -11,7 +11,7 @@
 
 ## Summary
 
-config-defaults.yaml declares `review.line_coverage`, `review.blocking_priority` and `review.max_rounds` after the `review.severity_levels` list, but config.py show --key reports each as declared nowhere, while keys in sections with no list (epic.perspectives) read fine. Only the show command's reader drops a section's keys after a list: the library reader `config.get` already returns the declared defaults (2, False, 'high'), so no consumer's behaviour changes, but show tells the user a shipped key does not exist, against BG0878. Found while checking the v6.1.0 release.
+config-defaults.yaml declares `review.line_coverage`, `review.blocking_priority` and `review.max_rounds` after the `review.severity_levels` list, but config.py show --key reports each as declared nowhere, while keys in sections with no list (epic.perspectives) read fine. The cause, found in the build: a project `.config.yaml` whose `review:` section holds only comments reads as null, and the merge let that null replace the defaults' whole `review` mapping, so `config.get` returned each consumer's fallback too. The fallbacks equal the shipped defaults, so no consumer's behaviour changed, but show tells the user a shipped key does not exist, against BG0878. Found while checking the v6.1.0 release.
 
 ## Steps to Reproduce
 
@@ -25,6 +25,7 @@ Make show's reader keep reading a mapping's keys after a nested list, ideally by
 
 - [ ] **AC1** Given config-defaults.yaml as shipped, when config.py show --key runs for every leaf key config-defaults.yaml declares (including `review.max_rounds`, `review.line_coverage` and `review.blocking_priority`), then each prints the default `config.get` returns for it, and a key declared nowhere is still reported as undeclared. Fails on: the current reader, which drops keys after `review.severity_levels`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_after_list.py::ConfigKeysAfterListTests::test_keys_after_a_list_are_read
+  - **Verified:** yes (2026-10-05)
 
 ## Revision History
 
@@ -32,3 +33,4 @@ Make show's reader keep reading a mapping's keys after a nested list, ideally by
 | --- | --- | --- |
 | 2026-10-03 | sdlc-studio | Filed |
 | 2026-10-05 | orchestrator | Re-groomed on the goal review (D0344): AC1 covers every shipped key, not three; the defect is confined to show, since config.get already reads the keys |
+| 2026-10-05 | orchestrator | Summary corrected to the cause the build found (a comment-only section merged as null); the D0344 note that config.get already read the keys was wrong, as its fallbacks matched |

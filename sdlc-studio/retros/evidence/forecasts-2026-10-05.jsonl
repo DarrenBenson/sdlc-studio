@@ -1,0 +1,2 @@
+{"id": "BG0940", "tokens": 265400, "points": 2, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 132700}, "planned_at": "2026-10-05T07:21:44Z", "project": "sdlc-studio"}
+{"id": "BG0943", "tokens": 132700, "points": 1, "estimator": "unattributed", "size_gate": "compulsory", "constants": {"TOKENS_PER_POINT": 132700}, "planned_at": "2026-10-05T07:21:44Z", "project": "sdlc-studio"}

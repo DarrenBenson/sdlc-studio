@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/decisions.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_ruling_after_close.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_decisions.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/decisions.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_ruling_after_close.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_decisions.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, AGENTS.md
 > **Created:** 2026-10-03
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -25,8 +25,10 @@ Do not count a ruling against a run whose page is filed and not reopened (as BG0
 
 - [ ] **AC1** Given a run closed with a filed page and not signed, when decisions.py add --by operator logs a ruling, then the run's rulings are unchanged and the filed page still checks VALID, and a ruling logged after a reopen is counted. Fails on: the current code, which counts it and invalidates the page
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_ruling_after_close.py::RulingAfterCloseTests::test_a_ruling_after_the_close_leaves_the_page_valid
+  - **Verified:** yes (2026-10-05)
 - [ ] **AC2** Given a filed page whose run state has moved since the close, when sprint sign runs, then it refuses to seal and names the figure that moved (e.g. `operator_rulings`), and a page whose run state has not moved still seals; the page is judged before the seal is written, so sign never refuses its own fresh signature. Fails on: the current sign, which seals a page that already fails its check
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_ruling_after_close.py::RulingAfterCloseTests::test_sign_refuses_a_page_that_no_longer_matches
+  - **Verified:** yes (2026-10-05)
 
 ## Revision History
 
