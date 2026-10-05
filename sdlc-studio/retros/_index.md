@@ -142,3 +142,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0130](RETRO0130-maya-signs-a-sprint-report-whose-delivery-cost.md) | Maya signs a sprint report whose delivery, cost and DORA figures match what the run actually did | 2026-10-02 | -- | -- |
 | [RETRO-0131](RETRO0131-run-01m3zage-whole-backlog-sprint.md) | RUN-01M3ZAGE whole-backlog sprint | 2026-10-03 | -- | -- |
 | [RETRO-0132](RETRO0132-run-01m40tsj-the-v6-1-sprint.md) | RUN-01M40TSJ the v6.1 sprint | 2026-10-03 | -- | -- |
+| [RETRO-0133](RETRO0133-run-01m45fv6-sign-seals-only-a-page-that.md) | RUN-01M45FV6: sign seals only a page that still checks | 2026-10-05 | -- | -- |
