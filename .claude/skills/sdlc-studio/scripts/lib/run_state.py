@@ -1739,17 +1739,32 @@ def record_ruling(repo_root: Path | str, did: str | None, by: str, seat: str | N
                   subject: str | None = None, kind: str = "ruling") -> bool:
     """Append one ruling to the OPEN run's `rulings` list: who answered a question (`persona`
     or `operator`), and whether it was a new ruling or a precedent `cited`. False, and nothing
-    written, when no run is open - a ruling made between runs belongs to no run."""
+    written, when no run is open - a ruling made between runs belongs to no run.
+
+    A run whose page the close has filed (`_page_filed`) is closed to a late ruling as it is to
+    a late total: the page's Rulings figure is derived from this list, so counting it
+    would move the page before it is signed. The decision row stands; only the count is
+    withheld, one line on stderr says so, and False is returned. A `sprint reopen` counts again.
+    """
     if not is_open(repo_root):
         return False
     entry = {"id": did, "by": by, "seat": seat, "subject": subject, "kind": kind}
+    filed: list[dict] = []
 
     def apply(state: dict) -> dict:
         if state.get("outcome") == RUNNING:
-            state[RULINGS] = [*(state.get(RULINGS) or []), entry]
+            if _page_filed(state):
+                filed.append(state)
+            else:
+                state[RULINGS] = [*(state.get(RULINGS) or []), entry]
         return state
 
     _mutate(repo_root, apply)
+    if filed:
+        print(f"WARNING {did or 'the ruling'} was not counted against run {filed[0]['run_id']}: "
+              f"it is closed (its page {filed[0].get('report')} is filed), so a late ruling "
+              f"would move the page before it is signed", file=sys.stderr)
+        return False
     return True
 
 

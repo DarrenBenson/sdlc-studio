@@ -9576,6 +9576,13 @@ def cmd_sign(args: argparse.Namespace) -> int:
     if moved is None:
         print("sign: the close recorded no tree to compare with - signing on the report alone",
               file=sys.stderr)
+    # THE PAGE IS JUDGED BEFORE THE SEAL IS WRITTEN, by `sprint_report check`'s own reading: an
+    # unchanged tree says nothing of the run state the page is derived from.
+    stale = _page_no_longer_matches(root, report_id)
+    if stale:
+        print(f"sign REFUSED: {report_id} no longer matches what it re-derives to, so it is not "
+              f"sealed - {stale}", file=sys.stderr)
+        return 2
     verdict = (state.get("sprint_goal_verdict") or {}).get("verdict")
     outcome = SIGNED_OUTCOMES.get(verdict, run_state.STOPPED)
     # THE PRINCIPAL IS JUDGED OVER THE WHOLE BATCH, BEFORE ANYTHING IS WRITTEN: a principal the
@@ -9634,6 +9641,29 @@ def cmd_sign(args: argparse.Namespace) -> int:
           f"{report_id}" + (f" (fingerprint {signature.get('fingerprint')})"
                             if signature.get("fingerprint") else ""))
     return 0
+
+
+def _page_no_longer_matches(root, report_id: str) -> str:
+    """Why the filed page fails its own check, naming each figure that moved; "" when it holds.
+
+    `sprint_report.revalidate` is the check's reading, so sign refuses exactly the page `check`
+    would call INVALIDATED or INVALID, and nothing else. A page that cannot be re-derived here
+    (none filed, another schema, a shallow clone) or that predates tracked records is not
+    judged, said on stderr, and signed on the report alone, as before."""
+    import sprint_report  # noqa: PLC0415
+    try:
+        state = sprint_report.revalidate(root, report_id)
+    except (sprint_report.ReportError, OSError) as exc:
+        print(f"sign: {report_id} could not be re-derived ({exc}) - signing on the report alone",
+              file=sys.stderr)
+        return ""
+    if state.get("valid") or state.get("predates"):
+        return ""
+    named = [f"{c['key']} filed {c['signed']!r}, now {c['current']!r}"
+             for c in state.get("changes") or []]
+    named += [f"{e['figure']} edited ({e['detail']})" for e in state.get("edited") or []]
+    return (f"{'; '.join(named) or 'an unnamed figure moved'}. To re-file it, "
+            f"{sprint_report._refile_remedy(state)}")
 
 
 def _write_the_signature(root, report_id: str, principal: str) -> dict:
