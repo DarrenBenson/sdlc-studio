@@ -47,8 +47,13 @@ def _load_errors() -> tuple[type[BaseException], ...]:
 
 
 def _deep_merge(base: dict, over: dict) -> dict:
+    """`over` on `base`, section by section. A section the override leaves empty (its body only
+    comments, which YAML reads as null) sets nothing, so the defaults' keys under it stand:
+    replacing them with null made `show` and `get` read every one as declared nowhere."""
     out = dict(base)
     for key, val in over.items():
+        if val is None and isinstance(out.get(key), dict):
+            continue
         if isinstance(val, dict) and isinstance(out.get(key), dict):
             out[key] = _deep_merge(out[key], val)
         else:
