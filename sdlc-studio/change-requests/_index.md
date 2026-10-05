@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-10-02
+**Last Updated:** 2026-10-05
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 0 |
 | Complete | 519 |
@@ -14,12 +14,14 @@
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **608** |
+| **Total** | **610** |
 
 ## All Changes
 
 | ID | Title | Status | Priority | Type | Date | Linked Epics |
 | --- | --- | --- | --- | --- | --- | --- |
+| [CR-0609](CR0609-publish-a-versioned-evidence-annex-for-the-committed.md) | Publish a versioned evidence annex for the committed sprint records | Proposed | High | Feature | 2026-10-05 | -- |
+| [CR-0610](CR0610-make-the-report-of-record-reviewable-without-local.md) | Make the report of record reviewable without .local/, and let it carry money | Proposed | Medium | Feature | 2026-10-05 | -- |
 
 ## Archived Releases
 
