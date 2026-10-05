@@ -1,6 +1,6 @@
 # BG0943: config.py show cannot see any review key declared after the severity_levels list
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/config.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_after_list.py, .claude/skills/sdlc-studio/scripts/tests/test_config.py

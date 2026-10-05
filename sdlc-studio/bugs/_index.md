@@ -1,6 +1,6 @@
 # Bug Index
 
-**Last Updated:** 2026-10-03
+**Last Updated:** 2026-10-05
 
 ## Summary
 
@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 2 |
 | In Progress | 0 |
-| Fixed | 784 |
+| Fixed | 786 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 39 |
 | Superseded | 31 |
-| **Total** | **943** |
+| **Total** | **945** |
 
 ## All Bugs
 
@@ -298,10 +298,12 @@
 | [BG0937](BG0937-a-closed-run-that-is-not-yet-signed.md) | A closed run that is not yet signed cannot be reopened, so work added before the sign cannot record its cost | Fixed | Medium | 2026-10-03 | 2026-10-03 |
 | [BG0938](BG0938-the-five-lows-the-last-v6-1-reviews.md) | The five lows the last v6.1 reviews raised (D0334) | Fixed | Low | 2026-10-03 | 2026-10-03 |
 | [BG0939](BG0939-install-ps1-rejects-every-release-download-the-sha256.md) | install.ps1 rejects every release download: the .sha256 sidecar is read as bytes, so the digest never matches | Fixed | High | 2026-10-03 | 2026-10-03 |
-| [BG0940](BG0940-a-ruling-logged-between-the-close-and-the.md) | A ruling logged between the close and the sign changes the filed page, and sign seals it without re-deriving | Open | Medium | 2026-10-03 | 2026-10-03 |
+| [BG0940](BG0940-a-ruling-logged-between-the-close-and-the.md) | A ruling logged between the close and the sign changes the filed page, and sign seals it without re-deriving | Fixed | Medium | 2026-10-03 | 2026-10-03 |
 | [BG0941](BG0941-us0937-ac3-pins-bg0717-s-verified-yes-stamp.md) | US0937 AC3 pins BG0717's 'Verified: yes' stamp, which US0978 retired, so the release gate reads it red | Fixed | Medium | 2026-10-03 | 2026-10-03 |
 | [BG0942](BG0942-this-repository-s-own-config-comment-names-the.md) | This repository's own config comment names the retired review.policy key, so US0926 AC1 reads red at the release gate | Fixed | Medium | 2026-10-03 | 2026-10-03 |
-| [BG0943](BG0943-config-py-show-cannot-see-any-review-key.md) | config.py show cannot see any review key declared after the severity_levels list | Open | Low | 2026-10-03 | 2026-10-03 |
+| [BG0943](BG0943-config-py-show-cannot-see-any-review-key.md) | config.py show cannot see any review key declared after the severity_levels list | Fixed | Low | 2026-10-03 | 2026-10-03 |
+| [BG0944](BG0944-three-behaviours-bg0940-and-bg0943-shipped-have-no.md) | Three behaviours BG0940 and BG0943 shipped have no test that fails when they break | Open | Low | 2026-10-05 | 2026-10-05 |
+| [BG0945](BG0945-bg0940-s-changelog-entry-says-a-page-with.md) | BG0940's changelog entry says a page with a late ruling is signed, though sign refuses until the run is re-closed | Open | Low | 2026-10-05 | 2026-10-05 |
 
 ## Archived Releases
 
