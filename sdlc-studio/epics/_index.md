@@ -1,18 +1,18 @@
 # Epic Index
 
-**Last Updated:** 2026-10-03
+**Last Updated:** 2026-10-06
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 0 |
+| Draft | 1 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 240 |
 | Superseded | 33 |
-| **Total** | **273** |
+| **Total** | **274** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -24,6 +24,7 @@
 
 | ID | Title | Status | Stories | Deps | Created | Updated |
 | --- | --- | --- | --- | --- | --- | --- |
+| [EP0274](EP0274-token-actuals-for-sprints-driven-by-cursor-copilot.md) | Token actuals for sprints driven by Cursor, Copilot CLI or OpenCode | Draft | 6 | -- | 2026-10-06 | 2026-10-06 |
 
 ## Archived Releases
 
