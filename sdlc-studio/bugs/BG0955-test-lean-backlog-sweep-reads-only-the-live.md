@@ -1,4 +1,4 @@
-# BG0955: test_lean_backlog_sweep reads only the live _index.md, so the v6.1 row archive turned main red with 25 false disagreements
+# BG0955: `test_lean_backlog_sweep` reads only the live `_index.md`, so the v6.1 row archive turned main red with 25 false disagreements
 
 > **Status:** Fixed
 > **Severity:** Medium
@@ -39,3 +39,4 @@ Have `_index_status` read the live `_index.md` first and then the `archive/**` s
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-06 | sdlc-studio | Filed |
+| 2026-10-06 | sdlc-studio | Retitled: was '`test_lean_backlog_sweep` reads only the live `_index.md`, so the v6.1 row archive turned main red with 25 false disagreements' |
