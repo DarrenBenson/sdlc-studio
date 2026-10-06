@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Low
-> **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py
+> **Points:** 2
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py
 > **Created:** 2026-10-05
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Opus 5.5; agent; v1
@@ -23,11 +23,14 @@ Restamp the report index when `sprint close` files a report, and extend the stal
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Filing a report restamps `reports/_index.md` Last Updated to the filing date
-- [ ] **AC2** `reconcile detect` reports stale-index-stamp for a report index whose header is older than its newest row
+- [ ] **AC1** Filing a report into an index that already exists restamps `reports/_index.md` `Last Updated` to that report's generated date, not only when the index is first created (`sprint_report._sync_report_index`)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py -k restamps_report_index
+- [ ] **AC2** `reconcile detect` reports `stale-index-stamp` for a report index whose `Last Updated` is older than its newest `Generated` row, and `reconcile apply` clears it
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py -k report_index_stale_stamp
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-05 | Claude Opus 5.5 | Filed |
+| 2026-10-06 | Claude Opus 5.5 (triage) | Groomed: the index is written by `sprint_report._sync_report_index`, which stamps only on create, so Affects moves from sprint.py to sprint_report.py; the detector misses it because it reads an `updated`/`created`/`date` column and this index's is `Generated`; 1 -> 2 points; Verify lines added |

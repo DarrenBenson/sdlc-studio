@@ -23,12 +23,16 @@ Have --emit-baseline also emit the placeholder record (ID:{{token}}) for a separ
 
 ## Acceptance Criteria
 
-- [ ] **AC1** `validate.py check --emit-baseline` can produce the placeholder baseline record from the checker's own output
-- [ ] **AC2** A placeholder finding in a v3-id artefact listed in the baseline is downgraded to a warning, shown by a test
-- [ ] **AC3** A new placeholder in a baselined artefact still errors
+- [ ] **AC1** `validate.py check --emit-baseline` can produce the `ID:{{token}}` placeholder baseline record from the checker's own output, redirectable separately from the criteria record
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k emit_placeholder_baseline
+- [ ] **AC2** A placeholder finding in a v3-id artefact (`US-01JQK3F8`) listed in the placeholder baseline is reported as a warning, not an error
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k v3_placeholder_baselined
+- [ ] **AC3** A placeholder token absent from the baseline still errors, in an artefact whose other tokens are baselined
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k new_placeholder_still_errors
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-05 | Claude Opus 5.5 | Filed |
+| 2026-10-06 | Claude Opus 5.5 (triage) | Groomed: reproduced against HEAD (placeholder findings carry no `baseline_key`, so `--emit-baseline` never emits them; `_baselined` matches only 4-digit ids); Verify lines added |

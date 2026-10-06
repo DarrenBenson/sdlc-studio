@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/reference-outputs.md
+> **Affects:** .claude/skills/sdlc-studio/reference-outputs.md, .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py
 > **Created:** 2026-10-05
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Opus 5.5; agent; v1
@@ -23,11 +23,14 @@ Generate the table from `sdlc_md.STATUS_VOCAB` and `TERMINAL_STATUS`, or add a t
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The table's allowed and terminal sets equal `STATUS_VOCAB` and `TERMINAL_STATUS` for every type, including issue and charter
-- [ ] **AC2** A test fails when the table and the code disagree
+- [ ] **AC1** The Status Vocabulary table in reference-outputs.md has a row for every type in `sdlc_md.STATUS_VOCAB` (issue and charter included), and each row's allowed and terminal sets equal `STATUS_VOCAB` and `TERMINAL_STATUS`
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py -k table_matches_code
+- [ ] **AC2** A table that differs from the code by one terminal status fails the check, naming the type and the status
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py -k divergence_named
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-05 | Claude Opus 5.5 | Filed |
+| 2026-10-06 | Claude Opus 5.5 (triage) | Groomed: reproduced against HEAD (bug terminal lacks Fixed/Verified, story and CR list Deferred as terminal, RFC Accepted read as live, no issue or charter rows); Affects adds the test AC2 needs; Verify lines added |

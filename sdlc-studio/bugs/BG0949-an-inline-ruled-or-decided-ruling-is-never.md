@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py
-> **Evidence:** Found migrating agent-bridge (Engram-Labs-UK) from skill 2.4.1 to the installed 6.1.0 on 2026-10-06; reproduced against sdlc-studio main at aa19a2e3.
+> **Evidence:** Found migrating a consuming project from skill 2.4.1 to the installed 6.1.0 on 2026-10-06; reproduced against sdlc-studio main at aa19a2e3.
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Opus 5.5; human; v1
@@ -16,7 +16,7 @@
 
 The docstring says the inline route exists so that demanding the `## Resolved Questions` heading is not 'demanding a layout, not an answer'. For two of the five advertised forms the layout is still demanded, and the refusal does not say why, because the author did write a ruling.
 
-Found while clearing 189 open-question errors on a migrating project: rulings had to be moved under the heading because the inline form silently failed. The same corpus also carried rulings as a `**Resolved:** ...` line directly under the item (agent-bridge EP0006, CR0020, CR0022), which the item-line-only read cannot see - worth deciding whether that form counts while the pattern is being fixed.
+Found while clearing 189 open-question errors on a migrating project: rulings had to be moved under the heading because the inline form silently failed. The same corpus also carried rulings as a `**Resolved:** ...` line directly under the item (the consuming project's EP0006, CR0020, CR0022), which the item-line-only read cannot see - worth deciding whether that form counts while the pattern is being fixed.
 
 ## Steps to Reproduce
 
@@ -46,3 +46,4 @@ Drop the trailing `\b` for the colon forms - e.g. `\b(?:ruled by|settled in|reso
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-06 | Claude Opus 5.5 | Filed |
+| 2026-10-06 | Claude Opus 5.5 (triage) | Consuming-project name generalised for the neutrality lane |

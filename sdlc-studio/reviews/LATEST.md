@@ -25,3 +25,12 @@
 - **BG0945** (Low): BG0940's changelog entry over-claims what sign does after a late ruling.
 - Both filed under D0338 for the next sprint; v6.2.0 is cut when more has accumulated (D0342).
 - The website run (D0341) follows this one: BG-01M4254Y and BG-01M425QW in sdlc-studio-web.
+
+## Triaged since the close (D0345)
+
+- Nine bugs filed from the lens gap analysis, a consuming project's 6.1 migration and homelab
+  (BG0946-BG0954). Eight reproduce against HEAD and are groomed; none is a regression.
+  BG0951 closed Won't Fix (a model-size tier read as review depth).
+- Open skill backlog: ten bugs, 19 points, all passing `sprint.py breakdown`. BG0949 and
+  BG0952 share `unresolved_questions` in sdlc_md.py, so one wave.
+- Order unchanged: the website run first, then a skill sprint over the ten.

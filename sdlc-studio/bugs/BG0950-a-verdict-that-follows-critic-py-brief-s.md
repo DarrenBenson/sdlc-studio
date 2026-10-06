@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py
-> **Evidence:** Found migrating agent-bridge (Engram-Labs-UK) from skill 2.4.1 to the installed 6.1.0 on 2026-10-06; reproduced against sdlc-studio main at aa19a2e3.
+> **Evidence:** Found migrating a consuming project from skill 2.4.1 to the installed 6.1.0 on 2026-10-06; reproduced against sdlc-studio main at aa19a2e3.
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Opus 5.5; human; v1
@@ -18,7 +18,7 @@ The brief's `_RETURN_CONTRACT` (critic.py:2179-2190) tells the reviewer to tag e
 2. A semicolon used as ordinary punctuation inside one finding splits it, and the second half is refused as untagged. The `\;` escape exists (critic.py:3429) but only the `--issues` flag help mentions it; the brief a reviewer actually reads does not.
 3. Even when the reviewer does tag the BLOCKING items, each blocking finding is recorded twice - once from ISSUES, once from the fold.
 
-In the agent-bridge US0601 review a fresh-context reviewer returned exactly the contract's shape (8 tagged findings, 3 untagged blocking items, one in-finding semicolon) and record refused it. The block had to be hand-edited - `[new]` added to each BLOCKING item and a `\;` inserted - before it would record, which is the author touching the reviewer's verdict.
+In the consuming project's US0601 review a fresh-context reviewer returned exactly the contract's shape (8 tagged findings, 3 untagged blocking items, one in-finding semicolon) and record refused it. The block had to be hand-edited - `[new]` added to each BLOCKING item and a `\;` inserted - before it would record, which is the author touching the reviewer's verdict.
 
 ## Steps to Reproduce
 
@@ -48,3 +48,4 @@ Make the contract and the parser agree. Either BLOCKING items inherit their orig
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-06 | Claude Opus 5.5 | Filed |
+| 2026-10-06 | Claude Opus 5.5 (triage) | Consuming-project name generalised for the neutrality lane |
