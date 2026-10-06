@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import re
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -19,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import workspace  # noqa: E402
 from lib import sdlc_md  # noqa: E402
+import archive  # noqa: E402
 import reconcile  # noqa: E402
 
 _REPO = workspace.REPO
@@ -143,14 +145,22 @@ def _close_faults(rec_id: str, type_: str, text: str, story_status) -> list[str]
 
 
 def _index_status(path: Path) -> str:
-    """The Status cell of this artefact's row in its type's `_index.md`, or '' when absent."""
-    col = None
-    for line in (path.parent / "_index.md").read_text(encoding="utf-8").splitlines():
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if cells[0] == "ID" and "Status" in cells:
-            col = cells.index("Status")
-        elif col is not None and f"]({path.name})" in line:
-            return cells[col]
+    """The Status cell of this artefact's row in its type's index, or '' when absent.
+
+    The live `_index.md` is read first and its row wins. An artefact `archive.py` moved out of it
+    is found in the `archive/**` sub-indexes by the rebased `../../` link those rows carry - the
+    union reconcile's census takes. BG0955: reading the live table alone made every archived row
+    read as absent, and the v6.1 archive turned this sweep red 25 times."""
+    for index in (path.parent / "_index.md", *sorted((path.parent / "archive").rglob("*.md"))):
+        if not index.is_file():
+            continue
+        col = None
+        for line in index.read_text(encoding="utf-8").splitlines():
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if cells[0] == "ID" and "Status" in cells:
+                col = cells.index("Status")
+            elif col is not None and (f"]({path.name})" in line or f"/{path.name})" in line):
+                return cells[col]
     return ""
 
 
@@ -340,6 +350,52 @@ class BacklogSweepTests(unittest.TestCase):
                 drift = [d for d in reconcile.detect_type(type_, _REPO)["drift"]
                          if d["kind"] == "count-mismatch" or sdlc_md.norm_id(d["id"] or "") in due]
                 self.assertEqual(drift, [], f"the {type_} index disagrees with the closures")
+
+
+class IndexStatusReaderTests(unittest.TestCase):
+    """BG0955: `_index_status` reads a row wherever `archive.py` left it.
+
+    Unlike the sweep tests these build their own workspace, so they run from any copy. The
+    product writes the fixture - `reconcile.apply_type` builds the live index and `archive.archive`
+    moves the terminal row out of it - so the rows carry the shapes those writers produce, the
+    rebased `../../` link included, rather than shapes a test author chose."""
+
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        self.bugs = root / "sdlc-studio" / "bugs"
+        self.bugs.mkdir(parents=True)
+        self.shipped = self.bugs / "BG0001-shipped.md"
+        self.shipped.write_text("# BG0001: shipped\n\n> **Status:** Fixed\n> **Severity:** Low\n",
+                                encoding="utf-8")
+        (self.bugs / "BG0002-open.md").write_text(
+            "# BG0002: open\n\n> **Status:** Open\n> **Severity:** Low\n", encoding="utf-8")
+        reconcile.apply_type("bug", root)
+        lines = (self.bugs / "_index.md").read_text(encoding="utf-8").splitlines()
+        self.live_row = next(ln for ln in lines if "](BG0001-shipped.md)" in ln)
+        self.open_row = next(ln for ln in lines if "](BG0002-open.md)" in ln)
+        self.assertEqual(archive.archive(root, "bug", "v1")["archived"], ["BG0001"])
+
+    def test_an_archived_row_is_read(self) -> None:
+        """Mutant: read only the live `_index.md`, the BG0955 defect - the archived row reads as
+        ''. Mutant: pass an archived artefact over, or answer with the file's own status - the
+        file below then agrees with its index and the disagreement the sweep exists to catch is
+        hidden."""
+        self.assertEqual(_index_status(self.shipped), "Fixed")
+        self.shipped.write_text(self.shipped.read_text(encoding="utf-8").replace("Fixed", "Open"),
+                                encoding="utf-8")
+        self.assertNotEqual(_index_status(self.shipped),
+                            _status(self.shipped.read_text(encoding="utf-8")))
+
+    def test_a_live_row_wins_over_an_archived_one(self) -> None:
+        """Mutant: read the archive before the live index - the stale archived `Fixed` answers for
+        an artefact whose live row says `Open`."""
+        idx = self.bugs / "_index.md"
+        reopened = self.live_row.replace("| Fixed |", "| Open |")
+        idx.write_text(idx.read_text(encoding="utf-8").replace(
+            self.open_row, f"{self.open_row}\n{reopened}"), encoding="utf-8")
+        self.assertEqual(_index_status(self.shipped), "Open")
 
 
 if __name__ == "__main__":
