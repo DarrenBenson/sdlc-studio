@@ -1,6 +1,6 @@
 # BG0955: test_lean_backlog_sweep reads only the live _index.md, so the v6.1 row archive turned main red with 25 false disagreements
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_backlog_sweep.py
