@@ -48,11 +48,12 @@
   ten bugs and a CR from other sessions (BG0965-BG0967, BG0969, BG0971, BG0973, BG0975,
   BG0977, BG0981, BG0982, CR-0614) and nine bugs and two CRs from this session's own frictions
   (BG0964, BG0968, BG0970, BG0972, BG0974, BG0976, BG0978-BG0980, CR-0612, CR-0613). All
-  reproduce at 8b844a80, none is a regression, all are groomed; about 28 points of bugs, not
-  yet scheduled. BG0981 and BG0982 needed criteria written; BG0967 and BG0974 are the two
+  reproduce at 8b844a80, none is a regression, all are groomed; about 28 points of bugs,
+  scheduled in D0349. BG0981 and BG0982 needed criteria written; BG0967 and BG0974 are the two
   halves of one markdown-safing fix.
-- Next skill sprint (D0348, superseding D0347), after the website run: the sixteen open
-  bugs and EP0274, about 56 points, every unit groomed. BG0963 (Medium, 5: wall-clock tests
-  in the parallel suite refuse commits and pushes under load) joins it on the operator's
-  word, about 61 points. US0986 builds before the rest of
-  EP0274; BG0949 and BG0952 share `unresolved_questions`, so one wave.
+- Next skill sprint (D0349, superseding D0348), after the website run: the 38 bugs triaged by
+  2026-10-07 14:45 (about 69 points) and EP0274 (26), about 95 points; CR-0612 to CR-0614
+  join once refined. BG0962's code is shipped but the bug stays Open: two QA REJECTs reached
+  the cap and it is reviewed afresh in that sprint. BG0984, BG0985, CR-0615 and CR-0616
+  arrived after the ruling and await triage. US0986 builds before the rest of EP0274;
+  BG0949 and BG0952 share `unresolved_questions`, and BG0967 and BG0974 one safing pass.
