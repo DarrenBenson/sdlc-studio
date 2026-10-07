@@ -110,8 +110,11 @@ class ClosingReviewSpansBothLedgersTests(unittest.TestCase):
         self.assertNotIn("unresolved", str(row.get("value")))
 
     def test_later_per_unit_reject_wins(self) -> None:
-        """AC2. Mutant: a per-unit APPROVE taken over any batch verdict whatever the dates, or the
-        per-unit rows sorted before the batch rows - either hides a REJECT that came later."""
+        """AC2. Mutant: the per-unit rows sorted before the batch rows whatever their dates. The
+        coverage reading holds the unit either way (a per-unit REJECT is terminal for it), so the
+        mutant is caught by the row's LABEL: the fold must read the REJECT as the latest verdict
+        and call the unit unresolved, not unreviewed. The per-unit-always-wins mutant is caught
+        by the AC4 and AC5 tests, not here."""
         with self.subTest(case="frozen APPROVE, then a per-unit REJECT"):
             self._frozen("APPROVE")
             self._per_unit("REJECT")
@@ -120,8 +123,10 @@ class ClosingReviewSpansBothLedgersTests(unittest.TestCase):
             self.assertIn("unresolved", str(row.get("value")))
 
     def test_an_earlier_per_unit_approve_does_not_clear_a_later_frozen_reject(self) -> None:
-        """AC2, US0593 kept. Mutant: the per-unit ledger always wins, so a stale APPROVE under a
-        later batch REJECT clears the row over a batch nobody cleared."""
+        """AC4, US0593 kept across the ledgers. Mutant: the per-unit ledger always wins, so a stale
+        APPROVE under a later batch REJECT clears the row over a batch nobody cleared. Here
+        `review_coverage` reports the unit covered and the row still holds it: the row is
+        deliberately stricter than coverage."""
         self._per_unit("APPROVE", date="2026-09-01")
         self._frozen("REJECT")
         row = self._closing()
@@ -129,18 +134,20 @@ class ClosingReviewSpansBothLedgersTests(unittest.TestCase):
         self.assertIn("unresolved", str(row.get("value")))
 
     def test_a_same_day_tie_between_the_ledgers_fails_closed(self) -> None:
-        """Mutant: per-unit rows always sorted after batch rows on the same date, so a per-unit
-        APPROVE recorded the day of a batch REJECT clears it although nothing says which came
-        second. A tie the record cannot order is resolved towards the REJECT."""
+        """AC5. Mutant: per-unit rows always sorted after batch rows on the same date, so a
+        per-unit APPROVE recorded the day of a batch REJECT clears it although nothing says which
+        came second. A tie the record cannot order is resolved towards the REJECT."""
         self._frozen("REJECT")
         self._per_unit("APPROVE", date=FROZEN_DAY)
         row = self._closing()
         self.assertEqual(sr.NOT_RUN, row["state"], row)
 
     def test_agrees_with_review_coverage(self) -> None:
-        """AC3. Mutant: the fold merging the ledgers while the row still decides on a reading of
-        its own - closing-review must clear exactly the unit `review_coverage` reports covered,
-        and hold exactly the one it does not."""
+        """AC3. Two mutants, one per reading. The row deciding on the FOLD alone clears a unit
+        whose latest verdict is an APPROVE that `review_coverage` does not count (a self-review
+        after a frozen REJECT, below); the row deciding on COVERAGE alone clears the AC4 and AC5
+        units, which those tests catch. So: the row never clears a unit coverage calls uncovered,
+        and clears a covered unit whose latest verdict across both ledgers is an APPROVE."""
         self._frozen("REJECT")
         self._per_unit("REJECT")
         self._per_unit("APPROVE")
@@ -155,6 +162,38 @@ class ClosingReviewSpansBothLedgersTests(unittest.TestCase):
         self._per_unit("REJECT")
         self.assertFalse(sprint.review_coverage(self.root, [UNIT])[UNIT]["covered"])
         self.assertEqual(sr.NOT_RUN, self._closing()["state"])
+        # The fold-alone mutant: a frozen REJECT, then a per-unit APPROVE the author recorded on
+        # their own work. The fold's latest verdict is that APPROVE; `review_coverage` refuses it
+        # as not independent, so the unit is uncovered and the row must hold it. The label reads
+        # `unreviewed`, because no INDEPENDENT pass answers the frozen REJECT.
+        critic.verdicts_path(self.root).unlink()
+        self._frozen("REJECT")
+        critic.record_verdict(self.root, UNIT, "APPROVE", reviewer=AUTHOR, author=AUTHOR)
+        self.assertFalse(sprint.review_coverage(self.root, [UNIT])[UNIT]["covered"])
+        row = self._closing()
+        self.assertEqual(sr.NOT_RUN, row["state"], row)
+        self.assertIn("unreviewed", str(row.get("value")))
+
+    def test_a_same_day_per_unit_reject_reads_unresolved(self) -> None:
+        """Pins the comment that a same-day per-unit non-APPROVE sorts AFTER the batch rows.
+        Mutant: that verdict sorted before them - the batch APPROVE then reads as the latest
+        verdict and the held unit is labelled unreviewed, although it was reviewed and rejected."""
+        self._frozen("APPROVE")
+        self._per_unit("REJECT", date=FROZEN_DAY)
+        row = self._closing()
+        self.assertEqual(sr.NOT_RUN, row["state"], row)
+        self.assertIn("unresolved", str(row.get("value")))
+
+    def test_an_unreadable_per_unit_ledger_does_not_break_the_checklist(self) -> None:
+        """Pins the comment that an unreadable ledger is no verdict, not a REJECT. Mutant: the
+        try/except around `verdict_for` removed - the checklist raises instead of answering, and
+        the close cannot report at all."""
+        from unittest import mock  # noqa: PLC0415
+        self._frozen("REJECT")
+        with mock.patch.object(critic, "verdict_for", side_effect=OSError("unreadable")):
+            row = self._closing()
+        self.assertEqual(sr.NOT_RUN, row["state"], row)
+        self.assertIn("unresolved", str(row.get("value")))
 
 
 if __name__ == "__main__":

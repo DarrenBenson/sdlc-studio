@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 37 |
+| Open | 38 |
 | In Progress | 0 |
 | Fixed | 787 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 31 |
-| **Total** | **982** |
+| **Total** | **983** |
 
 ## All Bugs
 
@@ -58,6 +58,7 @@
 | [BG0980](BG0980-filing-refuses-a-verify-selector-for-a-test.md) | Filing refuses a Verify selector for a test the fix will add to an existing module, accepts the same selector into a new file, and judges neither without pytest | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0981](BG0981-breakdown-and-plan-call-a-unit-groomed-when.md) | breakdown and plan call a unit groomed when a Verify line is one verify_ac cannot parse | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0982](BG0982-critic-brief-s-diff-scope-is-the-unit.md) | critic brief's diff scope is the unit's Affects only - files the unit changed but did not declare are invisible to the reviewer | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0983](BG0983-review-coverage-and-verdict-for-read-a-unit.md) | `review_coverage` and `verdict_for` read a unit's whole per-unit ledger, so an APPROVE from an earlier delivery covers a re-delivered unit that nobody reviewed in this run | Open | Medium | 2026-10-07 | 2026-10-07 |
 
 ## Archived Releases
 

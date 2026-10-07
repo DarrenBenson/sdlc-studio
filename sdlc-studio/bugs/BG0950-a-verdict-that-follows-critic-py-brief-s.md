@@ -43,9 +43,14 @@ Make the contract and the parser agree. Either BLOCKING items inherit their orig
 - [ ] **AC3** A semicolon inside one finding either survives as one finding or the brief's contract states the escape, shown by a test
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py -k semicolon_in_finding
 
+## Further evidence
+
+- Reproduced live on 2026-10-07: BG0962's round-1 REJECT, returned by a fresh-context QA reviewer in the brief's own shape (sub-items, an UNVERIFIABLE block and untagged BLOCKING bullets), was refused by `critic.py record --from-verdict`. The author did not edit it; the reviewer was asked to re-emit the same judgement in a recordable shape and did, which cost a round trip.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-06 | Claude Opus 5.5 | Filed |
 | 2026-10-06 | Claude Opus 5.5 (triage) | Consuming-project name generalised for the neutrality lane |
+| 2026-10-07 | Claude Opus 5.5 | Further evidence: reproduced recording BG0962's round 1 |
