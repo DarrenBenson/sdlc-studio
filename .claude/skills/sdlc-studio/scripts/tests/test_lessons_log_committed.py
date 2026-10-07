@@ -92,6 +92,43 @@ class CommittedLessonsLogTests(unittest.TestCase):
             self.assertIn(LEGACY, r.stderr)
             self.assertEqual(before, {p: (root / p).read_bytes() for p in before})
 
+    def test_legacy_log_is_moved_by_retro_extract_too(self) -> None:
+        """AC2, the close's other writer. Mutant: `retro extract` writing the default path without
+        the move - the retro's lessons start a fresh committed log and the legacy lessons are left
+        in `.local/`. Mutant: the conflict not refused there - one machine's log is extended
+        while the other's is silently ignored."""
+        def retro(root: Path) -> subprocess.CompletedProcess:
+            retros = root / "sdlc-studio" / "retros"
+            (retros / "RETRO0001-probe.md").write_text(
+                "# RETRO0001: probe\n\n> **Status:** Complete\n\n## Lessons\n\n"
+                "- A retro lesson worth keeping. It carries a second sentence so the title cuts.\n",
+                encoding="utf-8")
+            (retros / "_index.md").write_text(
+                "# Retros\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "| [RETRO0001](RETRO0001-probe.md) | probe | Complete |\n", encoding="utf-8")
+            return subprocess.run([sys.executable, str(SCRIPTS / "retro.py"), "--root", str(root),
+                                   "extract", "--id", "RETRO0001"],
+                                  capture_output=True, text=True, check=False)
+        with self.subTest(case="legacy only: moved, then extracted into"):
+            root = self._project()
+            self._add(root, "Legacy lesson", "--project-file", LEGACY)
+            r = retro(root)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertFalse((root / LEGACY).exists(), "the legacy log was left behind")
+            log = (root / COMMITTED).read_text(encoding="utf-8")
+            self.assertIn("Legacy lesson", log)
+            self.assertIn("A retro lesson worth keeping", log)
+            self.assertIn("commit", r.stderr.lower())
+        with self.subTest(case="both present: refuse, change nothing"):
+            root = self._project()
+            self._add(root, "Committed lesson")
+            self._add(root, "Legacy lesson", "--project-file", LEGACY)
+            before = {p: (root / p).read_bytes() for p in (COMMITTED, LEGACY)}
+            r = retro(root)
+            self.assertNotEqual(0, r.returncode, "two logs were silently reconciled")
+            self.assertIn(COMMITTED, r.stderr)
+            self.assertEqual(before, {p: (root / p).read_bytes() for p in before})
+
     def test_a_log_missing_listed_lessons_refuses_regeneration(self) -> None:
         """AC3. Mutant: the summary regenerates from whatever log it finds - a log that does not
         hold the summary's lessons replaces them. Mutant: lessons matched by id alone - a fresh
