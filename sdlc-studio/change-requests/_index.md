@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 7 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 519 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **614** |
+| **Total** | **616** |
 
 ## All Changes
 
@@ -26,6 +26,8 @@
 | [CR-0612](CR0612-check-a-finding-filed-into-the-skill-source.md) | Check a finding filed into the skill source repository against the neutrality blocklist when it is filed, not first at commit | Proposed | Medium | Improvement | 2026-10-07 | -- |
 | [CR-0613](CR0613-make-a-clone-that-cannot-run-the-gates.md) | Make a clone that cannot run the gates say so at setup, not 50 minutes into a push | Proposed | Medium | Improvement | 2026-10-07 | -- |
 | [CR-0614](CR0614-sprint-checklist-waivers-cannot-be-scoped-to-a.md) | Sprint-checklist waivers cannot be scoped to a unit or expire, so a defect in one checklist row has only a permanent project-wide exit | Proposed | Medium | Improvement | 2026-10-07 | -- |
+| [CR-0615](CR0615-critic-py-brief-rejoinder-should-read-the-prior.md) | critic.py brief --rejoinder should read the prior verdict from the ledger instead of a hand-written file | Proposed | Low | Improvement | 2026-10-07 | -- |
+| [CR-0616](CR0616-verify-ac-should-record-a-red-baseline-a.md) | verify_ac should record a red baseline: a Verify that already passes before the story is implemented cannot tell done from not-done | Proposed | Medium | Feature | 2026-10-07 | -- |
 
 ## Archived Releases
 

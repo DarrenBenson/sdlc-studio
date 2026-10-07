@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 38 |
+| Open | 41 |
 | In Progress | 0 |
 | Fixed | 787 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 31 |
-| **Total** | **983** |
+| **Total** | **986** |
 
 ## All Bugs
 
@@ -59,6 +59,9 @@
 | [BG0981](BG0981-breakdown-and-plan-call-a-unit-groomed-when.md) | breakdown and plan call a unit groomed when a Verify line is one verify_ac cannot parse | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0982](BG0982-critic-brief-s-diff-scope-is-the-unit.md) | critic brief's diff scope is the unit's Affects only - files the unit changed but did not declare are invisible to the reviewer | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0983](BG0983-review-coverage-and-verdict-for-read-a-unit.md) | `review_coverage` and `verdict_for` read a unit's whole per-unit ledger, so an APPROVE from an earlier delivery covers a re-delivered unit that nobody reviewed in this run | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0984](BG0984-changing-a-criterion-s-verify-expression-keeps-the.md) | Changing a criterion's Verify expression keeps the old Verified date and evidence when the new one passes | Open | Low | 2026-10-07 | 2026-10-07 |
+| [BG0985](BG0985-sprint-close-dry-run-reports-a-non-blocking.md) | sprint close --dry-run reports a non-blocking pre-flight row as a STOP refusal and exits 1, so a close that would proceed previews as refused | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0986](BG0986-tools-forward-port-sh-deletes-the-changelog-md.md) | `tools/forward-port.sh` deletes the CHANGELOG.md the installer ships into the skill, so `project upgrade` loses its changelog digest after every forward-port | Open | Medium | 2026-10-07 | 2026-10-07 |
 
 ## Archived Releases
 

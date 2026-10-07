@@ -55,5 +55,6 @@
   2026-10-07 14:45 (about 69 points) and EP0274 (26), about 95 points; CR-0612 to CR-0614
   join once refined. BG0962's code is shipped but the bug stays Open: two QA REJECTs reached
   the cap and it is reviewed afresh in that sprint. BG0984, BG0985, CR-0615 and CR-0616
-  arrived after the ruling and await triage. US0986 builds before the rest of EP0274;
+  arrived after the ruling and are triaged, with BG0986 (forward-port deletes the shipped
+  CHANGELOG.md, so the last port was not applied); they are not in D0349's batch. US0986 builds before the rest of EP0274;
   BG0949 and BG0952 share `unresolved_questions`, and BG0967 and BG0974 one safing pass.
