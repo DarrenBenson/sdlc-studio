@@ -31,6 +31,11 @@
 - Nine bugs filed from the lens gap analysis, a consuming project's 6.1 migration and homelab
   (BG0946-BG0954). Eight reproduce against HEAD and are groomed; none is a regression.
   BG0951 closed Won't Fix (a model-size tier read as review depth).
-- Open skill backlog: ten bugs, 19 points, all passing `sprint.py breakdown`. BG0949 and
-  BG0952 share `unresolved_questions` in sdlc_md.py, so one wave.
-- Order unchanged: the website run first, then a skill sprint over the ten.
+- BG0955 fixed: the row archive (2c72fe8e) had turned main red through a test reading only
+  the live index. The same archive broke `test_epic_index_derived` (BG0957, masked on CI) and
+  left archived rows no writer reaches (BG0956). BG0958: `mutation.py` misreads diffs under
+  `diff.mnemonicPrefix`.
+- CR-0611 (harness token meters) filed and refined into EP0274, 26 points (D0346).
+- Next skill sprint (D0347), after the website run: all thirteen open bugs (about 23
+  points) and EP0274, about 49 points, every unit groomed. US0986 builds before the rest of
+  EP0274; BG0949 and BG0952 share `unresolved_questions`, so one wave.
