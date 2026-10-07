@@ -19,7 +19,7 @@ homelab US0185 AC1 carried ``- **Verify:** `file utilities/fleet/deploy-manifest
 1. A story whose AC has ``- **Verify:** `file some/path` `` (backticks around the expression)
 2. sprint.py breakdown --worklist <it> -> 0 ungroomed
 3. sprint.py plan --worklist <it> --write -> run opens
-4. `verify_ac.py` run --id <it> -> FAIL: unrecognised verifier '`file'
+4. `verify_ac.py` run --id <it> -> FAIL: unrecognised verifier ``'`file'``
 
 ## Proposed Fix
 
@@ -36,7 +36,7 @@ Have the breakdown census (and so the plan gate) parse each Verify line with the
 
 ## Triage
 
-- Reproduced at 8b844a80: `conformance.unit_is_ungroomed('story', ...)` returns `(False, '')` for a criterion whose Verify is `` `file utilities/x.yaml` ``, while `verify_ac.run_verifier` on the same line returns invalid, "unrecognised verifier '`file'". The grooming gate checks that a verifier exists, not that it parses. Not a regression.
+- Reproduced at 8b844a80: `conformance.unit_is_ungroomed('story', ...)` returns `(False, '')` for a criterion whose Verify is `` `file utilities/x.yaml` ``, while `verify_ac.run_verifier` on the same line returns invalid, ``"unrecognised verifier '`file'"``. The grooming gate checks that a verifier exists, not that it parses. Not a regression.
 - `conformance.py` added to Affects: it holds the grooming predicate `breakdown` and `plan` share. Reuse `verify_ac`'s own parser, as proposed, rather than a second one.
 
 ## Revision History

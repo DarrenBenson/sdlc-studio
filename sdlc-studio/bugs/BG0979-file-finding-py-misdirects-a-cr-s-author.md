@@ -16,7 +16,7 @@
 
 ## Steps to Reproduce
 
-`file_finding.py file --help` -> '--recommendation  rfc recommendation'; file a CR with `ac` and no `verify` -> the sprint-plan warning prints.
+`file_finding.py file --help` -> the `--recommendation` line reads 'rfc recommendation'; file a CR with `ac` and no `verify` -> the sprint-plan warning prints.
 
 ## Proposed Fix
 

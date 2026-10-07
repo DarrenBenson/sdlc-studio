@@ -20,7 +20,7 @@ The markdown-safety pass that wraps `snake_case` identifiers in backticks (BG009
 
 ## Proposed Fix
 
-Leave lines that look like commands (or any content already inside a fenced block) untouched, and emit a multi-line or command-shaped steps value as a fenced ```bash block rather than prose.
+Leave lines that look like commands (or any content already inside a fenced block) untouched, and emit a multi-line or command-shaped steps value as a fenced bash code block rather than prose.
 
 ## Acceptance Criteria
 
