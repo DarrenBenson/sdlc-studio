@@ -51,7 +51,7 @@ Fold the per-unit verdict ledger (critic-verdicts.md) into `_verdict_entries` al
 - [ ] **AC6** A same-day per-unit REJECT after a frozen APPROVE is labelled unresolved: a same-day per-unit non-APPROVE sorts after the batch rows
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_closing_review_per_unit_verdicts.py -k same_day_per_unit_reject_reads_unresolved
   - **Verified:** yes (2026-10-07)
-- [ ] **AC7** An unreadable per-unit ledger is read as no verdict: the checklist still answers and the frozen verdict decides
+- [ ] **AC7** When `critic.verdict_for` raises for a unit, the closing-review fold reads it as having no per-unit verdict and the frozen verdict decides. (A per-unit ledger that cannot be read at all still stops the checklist earlier, in `report()`, which fails closed and predates this unit.)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_closing_review_per_unit_verdicts.py -k unreadable_per_unit_ledger
   - **Verified:** yes (2026-10-07)
 
@@ -69,6 +69,13 @@ Fold the per-unit verdict ledger (critic-verdicts.md) into `_verdict_entries` al
 - Label changes accepted, the row held either way: a frozen REJECT then a self-review or empty-author APPROVE now reads `unreviewed` where it read `unresolved` (no independent pass answers the REJECT), and a unit whose only verdict is a self-review reads `unreviewed` where it read `none recorded`.
 - The pre-existing finding (coverage reads a unit's whole ledger, not its current delivery) is filed as its own bug.
 
+## Review round 2 (REJECT at the cap, 2026-10-07)
+
+- Round 2 ruled every round-1 finding: AC3 CLOSED (true by execution, and the fold-alone mutant now fails its own test), the AC2, AC4 and AC5 labels CLOSED, the same-day comment CLOSED by AC6, the label changes CLOSED as rulings, the unreadable-ledger comment OVER-CLAIMED.
+- Its one blocking item was AC7's wording: a ledger that truly cannot be read crashes `report()` before the new guard, so the checklist does not "still answer". AC7 now states what its test proves. The earlier crash predates this unit and fails closed.
+- Not held: the `verdict_for` comment stays unpinned by ruling (round 1); BG0983, BG0958 and BG0963 are pre-existing.
+- Two REJECTs reached the round cap, so the unit is escalated to the operator, who rules on it.
+
 ## Revision History
 
 | Date | Author | Change |
@@ -77,3 +84,4 @@ Fold the per-unit verdict ledger (critic-verdicts.md) into `_verdict_entries` al
 | 2026-10-07 | Claude Opus 5.5 (triage) | Groomed: reproduced at fb1ce886 by the code path (`_ck_closing_review` folds `latest` from `critic.sprint_reviews`, the frozen batch ledger, only); consuming-project name generalised for the neutrality lane; reconcile's US0914 advisory dismissed; changelog fragment added to Affects |
 | 2026-10-07 | Claude Opus 5.5 (engineering seat) | Built on the fast-track (D0348): per-unit verdicts from `critic.verdict_for` merged into the closing-review fold by date. AC3 made precise; AC4 (US0593 kept across the ledgers) and AC5 (a same-day tie fails closed) added; Affects trimmed to the files changed, `critic.py` needing none |
 | 2026-10-07 | Claude Opus 5.5 (engineering seat) | Repaired after the round-1 REJECT: AC3 reworded, AC6 and AC7 added, test docstrings corrected, the fold-alone mutant killed by AC3's own test |
+| 2026-10-07 | Claude Opus 5.5 (engineering seat) | Round 2 REJECT recorded (cap reached, escalated): AC7 restated to what its test proves, the reviewer's prescribed repair |

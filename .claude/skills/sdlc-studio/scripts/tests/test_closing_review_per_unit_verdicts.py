@@ -185,9 +185,11 @@ class ClosingReviewSpansBothLedgersTests(unittest.TestCase):
         self.assertIn("unresolved", str(row.get("value")))
 
     def test_an_unreadable_per_unit_ledger_does_not_break_the_checklist(self) -> None:
-        """Pins the comment that an unreadable ledger is no verdict, not a REJECT. Mutant: the
-        try/except around `verdict_for` removed - the checklist raises instead of answering, and
-        the close cannot report at all."""
+        """AC7. When `critic.verdict_for` raises for a unit, the fold reads it as having no
+        per-unit verdict and the frozen verdict decides. Mutant: the try/except around
+        `verdict_for` removed - the raise escapes and the checklist cannot answer. Only
+        `verdict_for` is made to raise: a ledger that truly cannot be read stops `report()`
+        earlier, which fails closed and is outside this unit."""
         from unittest import mock  # noqa: PLC0415
         self._frozen("REJECT")
         with mock.patch.object(critic, "verdict_for", side_effect=OSError("unreadable")):
