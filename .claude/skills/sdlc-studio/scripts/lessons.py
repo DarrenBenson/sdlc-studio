@@ -3,7 +3,7 @@
 
 Two lesson tiers (see help/lessons.md and reference-agentic-lessons.md):
 
-  Project tier  `sdlc-studio/.local/lessons.md` in the consuming project -
+  Project tier  `sdlc-studio/retros/LESSONS.md` in the consuming project, committed -
                 the DEFAULT tier: agentic-wave failure memory for this repo,
                 reverse-chronological `## L-NNNN:` entries.
   Skill tier    the skill's own `lessons/` folder - durable, generalisable
@@ -60,7 +60,14 @@ from lib import sdlc_md  # noqa: E402
 # relative path on the result. Reached through the module, per the monkeypatch rule.
 import verify_ac  # noqa: E402  (sibling)
 
-DEFAULT_PROJECT_FILE = "sdlc-studio/.local/lessons.md"
+#: The project-tier log, COMMITTED beside the summary built from it. It lived in the
+#: gitignored `.local/`, so it existed only on the machine that wrote it, while the committed
+#: summary was regenerated from it by every close: on any other machine the close rebuilt the
+#: digest from an empty log, and one repository's 441 lessons were a single close away from
+#: becoming three. A record kept in a gitignored working directory is not a record.
+DEFAULT_PROJECT_FILE = "sdlc-studio/retros/LESSONS.md"
+#: Where the log lived before it was committed. Read only to move it, once, to DEFAULT_PROJECT_FILE.
+LEGACY_PROJECT_FILE = "sdlc-studio/.local/lessons.md"
 DEFAULT_SUMMARY_FILE = "sdlc-studio/retros/LESSONS-SUMMARY.md"
 SKILL_LESSONS_DIR = Path(__file__).resolve().parent.parent / "lessons"
 # How long a project lesson stays valid before it must be re-validated (closed or extended).
@@ -690,7 +697,46 @@ def horizon_of(entry: dict, validity_days: int = DEFAULT_VALIDITY_DAYS) -> str |
 
 
 def default_project_file(repo_root) -> Path:
-    return Path(repo_root) / DEFAULT_PROJECT_FILE
+    """The project log a READER should open: the committed one, or - until a writer has moved it -
+    a legacy `.local/lessons.md`, so a project mid-upgrade keeps its gate lanes and plan digest.
+    Every writer moves the legacy file first (`migrate_legacy_log`), so writes land committed."""
+    root = Path(repo_root)
+    committed, legacy = root / DEFAULT_PROJECT_FILE, root / LEGACY_PROJECT_FILE
+    if not committed.exists() and legacy.is_file():
+        return legacy
+    return committed
+
+
+def migrate_legacy_log(repo_root) -> dict:
+    """Move a legacy `.local/lessons.md` to the committed path, once.
+
+    `{"moved": True, "from", "to"}` when it moved; `{"conflict": True, "legacy", "committed"}`
+    when BOTH exist - two machines' logs that only a person can merge, so nothing is written and
+    the caller refuses; `{}` when there is nothing to move. Never overwrites the committed log.
+    """
+    root = Path(repo_root)
+    legacy, committed = root / LEGACY_PROJECT_FILE, root / DEFAULT_PROJECT_FILE
+    if not legacy.is_file():
+        return {}
+    if committed.exists():
+        return {"conflict": True, "legacy": str(legacy), "committed": str(committed)}
+    committed.parent.mkdir(parents=True, exist_ok=True)
+    sdlc_md.atomic_write(committed, legacy.read_text(encoding="utf-8"))
+    legacy.unlink()
+    return {"moved": True, "from": str(legacy), "to": str(committed)}
+
+
+def migration_message(res: dict) -> str | None:
+    """The line a caller prints for a `migrate_legacy_log` result, or None when it did nothing."""
+    if res.get("conflict"):
+        return (f"refused: two project lessons logs exist - {res['committed']} (committed) and "
+                f"{res['legacy']} (the legacy, gitignored one). They are two machines' records "
+                "and only a person can merge them: fold the legacy entries into the committed "
+                "log, delete the legacy file, and run this again. Nothing was written.")
+    if res.get("moved"):
+        return (f"moved the project lessons log from {res['from']} to {res['to']}, where git "
+                "keeps it - commit it, or another machine's close cannot see it")
+    return None
 
 
 def default_summary_path(repo_root) -> Path:
@@ -783,6 +829,20 @@ def parse_summary_digest(text: str) -> list[str]:
     return [_canon(i) for i in summary_items(text)]
 
 
+def lessons_the_log_lacks(summary_path: Path, entries: list[dict]) -> list[str]:
+    """The lessons `summary_path` lists that appear nowhere in `entries`, open or closed.
+
+    Matched on id AND title, through `_canon`: a fresh log on another machine allocates L-0001
+    again, to a different lesson, and an id-only match would read that as holding the original.
+    """
+    if not summary_path.is_file():
+        return []
+    held = {_canon({"id": e["id"], "title": e["title"], "gist": ""}) for e in entries}
+    return [_canon({"id": i["id"], "title": i["title"], "gist": ""})
+            for i in summary_items(summary_path.read_text(encoding="utf-8"))
+            if _canon({"id": i["id"], "title": i["title"], "gist": ""}) not in held]
+
+
 def _elide(names: list[str]) -> str:
     """Name up to three digest items by id, bound the line."""
     return ", ".join(n.split(" - ")[0] for n in names[:3]) + \
@@ -820,9 +880,9 @@ def summary_status(repo_root, project_file=None, summary_path=None) -> dict:
     if not log.is_file():
         # An absent log is only "nothing to summarise" when the COMMITTED summary agrees that
         # there is nothing. A summary still listing lessons with no log behind it is a
-        # contradiction the gate must not pass over: otherwise `rm .local/lessons.md` is a
-        # one-command defeat of the whole close gate (the log is gitignored, so deleting it
-        # costs nothing and shows in no diff). The asymmetry is checkable without tracking
+        # contradiction the gate must not pass over: otherwise deleting the log is a
+        # one-command defeat of the whole close gate (and on a machine whose log was never
+        # migrated out of the gitignored legacy path, absence is the normal state). The asymmetry is checkable without tracking
         # the log - the summary is the tracked half, and it is the one making a claim.
         listed = parse_summary_digest(summary.read_text(encoding="utf-8")) \
             if summary.is_file() else []
@@ -836,9 +896,11 @@ def summary_status(repo_root, project_file=None, summary_path=None) -> dict:
             "removed": listed, "log": str(log), "summary": str(summary),
             "reason": (f"{summary.name} lists {len(listed)} lesson(s) ({_elide(listed)}) but "
                        f"the log they are derived from ({log}) does not exist - the lessons "
-                       "cannot be re-validated or the digest regenerated. Restore the log, or "
-                       "if this project genuinely has no lessons, run `lessons summary` to "
-                       "clear the digest."),
+                       "cannot be re-validated or the digest regenerated. Restore the log at "
+                       f"{DEFAULT_PROJECT_FILE} from the machine that ran the last close (a "
+                       f"legacy {LEGACY_PROJECT_FILE} there is moved by any `lessons` command), "
+                       "and commit it. Do not regenerate the summary without it: that replaces "
+                       "the listed lessons with whatever this machine holds."),
         }
     entries = parse_project_lessons(log.read_text(encoding="utf-8"))
     expected = expected_digest(entries)
@@ -1991,7 +2053,7 @@ def build_summary_text(entries: list[dict]) -> str:
     out = [
         "# Lessons Summary", "",
         "Rolling digest of still-valid project lessons, read at sprint start. The full log "
-        "with closed entries lives in the project tier (`.local/lessons.md`); regenerate this "
+        "with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this "
         "with `lessons summary`.", "",
     ]
     if not items:
@@ -2130,6 +2192,18 @@ def cmd_summary(args: argparse.Namespace) -> int:
     # and its source cannot come from two different projects; an absolute one is honoured as
     # given. Taken verbatim, it landed beside whichever directory the run started in.
     out_path = verify_ac.under_root(_root(args), args.out) if args.out else _default_summary_out(path)
+    missing = lessons_the_log_lacks(out_path, entries)
+    if missing:
+        # The summary is derived output, but it is also the only committed copy of what
+        # the log held. A log that does not hold a lesson the summary lists is not the log the
+        # summary came from - another machine's, a fresh one, or none - and regenerating from it
+        # deletes those lessons. A CLOSED lesson is still in the log, so closing still shrinks
+        # the digest; only a lesson the log has never heard of stops it.
+        print(f"refused: {out_path.name} lists {len(missing)} lesson(s) the log at {path} does "
+              f"not hold ({_elide(missing)}), so this log is not the one the summary was built "
+              f"from. Restore the log from the machine that ran the last close, or merge it, and "
+              f"run this again. Nothing was written.", file=sys.stderr)
+        return 1
     text = build_summary_text(entries)
     if not args.dry_run:
         out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -2435,6 +2509,10 @@ def cmd_propose(args: argparse.Namespace) -> int:
     return 0
 
 
+#: The verbs that read or write the project-tier log, and so must see one log, not two.
+_PROJECT_TIER_VERBS = (cmd_list, cmd_add, cmd_prune, cmd_recall, cmd_revalidate, cmd_summary)
+
+
 def main(argv: list[str] | None = None) -> int:
     """Parse arguments and dispatch to the chosen subcommand."""
     parser = build_parser()
@@ -2443,6 +2521,17 @@ def main(argv: list[str] | None = None) -> int:
     # run belongs to, not on the cwd the run happened to start in. Per-verb resolution is
     # left in place; this makes the anchor true of a verb that forgets to ask.
     args.root = str(verify_ac.resolve_root(args))
+    # Move a legacy gitignored log to the committed path before any verb that reads or
+    # writes the project tier, so the close (which calls `summary` through here) and every add
+    # see one log. A caller naming its own --project-file is left alone.
+    if (getattr(args, "func", None) in _PROJECT_TIER_VERBS and not getattr(args, "global_", False)
+            and getattr(args, "project_file", DEFAULT_PROJECT_FILE) == DEFAULT_PROJECT_FILE):
+        res = migrate_legacy_log(args.root)
+        msg = migration_message(res)
+        if msg:
+            print(f"lessons: {msg}", file=sys.stderr)
+        if res.get("conflict"):
+            return 1
     return args.func(args)
 
 

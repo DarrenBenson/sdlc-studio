@@ -205,8 +205,9 @@ WRITER_CASES: dict[str, WriterCase] = {
         targets=frozenset({"sdlc-studio/decisions/T1.md"}),
     ),
     "retro.py": WriterCase(
+        # BG0989: the project lessons log is committed, beside the summary built from it.
         argv=("extract", "--id", "RETRO0001"),
-        local_target="sdlc-studio/.local/lessons.md",
+        targets=frozenset({"sdlc-studio/retros/LESSONS.md"}),
     ),
     "gate.py": WriterCase(
         # The gate is otherwise read-only by design (a pre-commit hook runs it). Its two

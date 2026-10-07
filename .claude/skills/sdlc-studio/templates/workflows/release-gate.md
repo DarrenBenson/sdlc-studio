@@ -151,7 +151,7 @@ release ships with no way for an existing project to move across it.
 
 ## Why this checklist exists
 
-Each section above addresses a class of incident that has been observed in real projects. The supporting evidence – project names, bug IDs, dated post-mortems – lives in each project's own `sdlc-studio/.local/lessons.md`. This template stays generic so it transfers cleanly between projects.
+Each section above addresses a class of incident that has been observed in real projects. The supporting evidence – project names, bug IDs, dated post-mortems – lives in each project's own `sdlc-studio/retros/LESSONS.md`. This template stays generic so it transfers cleanly between projects.
 
 | Section | Incident class it closes |
 | --- | --- |

@@ -56,7 +56,7 @@ Hard-won lessons from production runs of `epic implement --agentic` and `project
 
 These are not procedures - they are patterns observed across real project implementations that consistently affect quality and speed. Treat them as constraints on your approach.
 
-> **Scope note.** This file is narrowly about agentic wave execution. For cross-cutting operator patterns (memory-entry drift, silent-CLI-failure localisation, post-release briefing, adversarial-review-as-gate) see **`reference-operator-heuristics.md`**. For project-specific pitfalls see `sdlc-studio/.local/lessons.md` (see `help/lessons.md`).
+> **Scope note.** This file is narrowly about agentic wave execution. For cross-cutting operator patterns (memory-entry drift, silent-CLI-failure localisation, post-release briefing, adversarial-review-as-gate) see **`reference-operator-heuristics.md`**. For project-specific pitfalls see `sdlc-studio/retros/LESSONS.md` (see `help/lessons.md`).
 
 ---
 
@@ -64,7 +64,7 @@ These are not procedures - they are patterns observed across real project implem
 
 ### Load project lessons before exploration
 
-At the start of every wave, load `sdlc-studio/.local/lessons.md` if
+At the start of every wave, load `sdlc-studio/retros/LESSONS.md` if
 it exists. This file accumulates failure patterns specific to the
 current project (not generic advice). Inject the entries into the
 Agent Prompt Template as a `## Known Pitfalls on This Project`
@@ -348,9 +348,11 @@ per-project lessons file closes that gap.
 
 ### Where lessons are stored
 
-`sdlc-studio/.local/lessons.md`. The file is never committed
-(`.local/` is already gitignored) and is created lazily on first
-append.
+`sdlc-studio/retros/LESSONS.md`, committed beside the `LESSONS-SUMMARY.md` digest built from
+it, and created lazily on first append. It once lived in the gitignored legacy
+`sdlc-studio/retros/LESSONS.md`, so it existed only on the machine that wrote it and a
+close anywhere else rebuilt the digest from nothing; any `lessons` command now moves a
+legacy file to the committed path, once.
 
 ### When lessons are recorded
 
@@ -475,7 +477,7 @@ whether the lesson is relevant to the current story. A closed lesson carries
 ### How lessons are consumed
 
 At wave start, the workflow described in
-`reference-agent-prompt-template.md#agentic-execution` reads `.local/lessons.md` and
+`reference-agent-prompt-template.md#agentic-execution` reads `sdlc-studio/retros/LESSONS.md` and
 injects a condensed `## Known Pitfalls on This Project` section into
 every Agent Prompt Template. Agents read this alongside
 `reference-agentic-lessons.md` and the story-specific prompt. The

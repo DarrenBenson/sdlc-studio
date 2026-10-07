@@ -214,9 +214,9 @@ says, and what the last run taught.
 | `/sdlc-studio audit --profile repo` | The same weakness-hunt on an existing repository, zero setup: architecture, code-quality and defensive-security legs, remediation-only on secrets. Also `--profile skill` and `--profile code` |
 | `/sdlc-studio decisions add` / `list` / `promote` / `rule` / `precedent` | Project decisions log (the project spine + delegated-agent context): append a decision, list them, promote a resolved open question, or record a persona seat's ruling against its precedent. See `help/decisions.md` |
 | `/sdlc-studio lessons recall` | Surface relevant cross-project lessons before a decision |
-| `/sdlc-studio lessons add` | Append a new lesson to `.local/lessons.md` (**the default tier**) |
+| `/sdlc-studio lessons add` | Append a new lesson to `sdlc-studio/retros/LESSONS.md` (**the default tier**) |
 | `/sdlc-studio lessons add --global` | Promote a lesson that generalises beyond this repo to the skill's `lessons/` (needs `skill_source_repo`) |
-| `/sdlc-studio lessons list` | Print accumulated project lessons (`.local/lessons.md`) |
+| `/sdlc-studio lessons list` | Print accumulated project lessons (`sdlc-studio/retros/LESSONS.md`) |
 | `/sdlc-studio lessons prune --older EP0003` | Drop entries for old epics |
 | `/sdlc-studio lessons revalidate` | List open lessons with their validity horizon; `--close` / `--extend` / `--stamp` them (gated at the sprint close) |
 | `/sdlc-studio lessons summary` | Regenerate `retros/LESSONS-SUMMARY.md`, the digest the next sprint reads (gated at the sprint close) |

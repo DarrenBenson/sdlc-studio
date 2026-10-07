@@ -832,7 +832,7 @@ Automated workflows for implementing all stories in an epic.
    When a story workflow fails:
    - Update epic workflow status to Paused
    - Record which story and phase failed
-   - **Append a lesson to `.local/lessons.md`** capturing the epic,
+   - **Append a lesson to `sdlc-studio/retros/LESSONS.md`** capturing the epic,
      wave, symptom, root cause (once diagnosed), and fix (once
      applied). Use the format in
      `reference-agentic-lessons.md#lessons-accumulation`. The

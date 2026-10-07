@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_committed.py, .claude/skills/sdlc-studio/help/lessons.md, .claude/skills/sdlc-studio/reference-agentic-lessons.md, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, .claude/skills/sdlc-studio/reference-agent-prompt-template.md, .claude/skills/sdlc-studio/reference-epic.md, .claude/skills/sdlc-studio/reference-operator-heuristics.md, .claude/skills/sdlc-studio/help/help.md, .claude/skills/sdlc-studio/lessons/_index.md, .claude/skills/sdlc-studio/scripts/README.md, .claude/skills/sdlc-studio/templates/workflows/release-gate.md, .claude/skills/sdlc-studio/templates/config-defaults.yaml, changelog.d/BG0989.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_committed.py, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, .claude/skills/sdlc-studio/help/lessons.md, .claude/skills/sdlc-studio/reference-agentic-lessons.md, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, .claude/skills/sdlc-studio/reference-agent-prompt-template.md, .claude/skills/sdlc-studio/reference-epic.md, .claude/skills/sdlc-studio/reference-operator-heuristics.md, .claude/skills/sdlc-studio/help/help.md, .claude/skills/sdlc-studio/lessons/_index.md, .claude/skills/sdlc-studio/scripts/README.md, .claude/skills/sdlc-studio/templates/workflows/release-gate.md, .claude/skills/sdlc-studio/templates/config-defaults.yaml, changelog.d/BG0989.md
 > **Evidence:** homelab RUN-01M4B5HP close pre-flight, 2026-10-07: lessons-summary STOP; `lessons.py summary --dry-run` -> 'would write 0 open lesson(s)'; sdlc-studio/.local/lessons.md absent on studypc2; LESSONS-SUMMARY.md last regenerated 15a2c17 (2026-08-21) with 71 lessons
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -29,12 +29,16 @@ Either (a) commit the project log (move it out of `.local/`, e.g. `sdlc-studio/r
 
 - [ ] **AC1** The project lessons log is read from and written to a committed path, `sdlc-studio/retros/LESSONS.md`, beside the summary built from it, so a fresh clone on another machine reads the lessons its committed summary lists
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_committed.py -k a_fresh_clone_reads_the_committed_log
+  - **Verified:** yes (2026-10-07)
 - [ ] **AC2** A project holding only the legacy `.local/lessons.md` has it moved to the committed path by the first lessons write or `migrate --apply`, with nothing left behind and a line saying to commit it; a project holding both refuses to write and names both files to merge by hand
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_committed.py -k legacy_log_is_moved_once_and_both_refuse
+  - **Verified:** yes (2026-10-07)
 - [ ] **AC3** `lessons summary` and the close's regeneration refuse to write a digest when a lesson the committed summary lists appears nowhere in the log (open or closed), naming the missing ids; closing a lesson still shrinks the digest as today
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_committed.py -k a_log_missing_listed_lessons_refuses_regeneration
+  - **Verified:** yes (2026-10-07)
 - [ ] **AC4** The stale-summary gate's remedy no longer tells the operator to clear the digest when the log is missing, and every shipped doc names the committed path, with `.local/lessons.md` only as the legacy path migration reads
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_committed.py -k remedy_and_docs_name_the_committed_path
+  - **Verified:** yes (2026-10-07)
 
 ## Triage
 

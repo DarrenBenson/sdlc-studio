@@ -234,7 +234,7 @@ read-only). Full workflow: `reference-plan-files.md`. Help: `help/plan.md`.
 
 ### `lessons.py`
 
-Lessons manager for both tiers: the project's `sdlc-studio/.local/lessons.md`
+Lessons manager for both tiers: the project's `sdlc-studio/retros/LESSONS.md`
 and the skill's own cross-project `lessons/` registry.
 
 - `list`: project-tier entries newest first (`--global` for the skill tier)

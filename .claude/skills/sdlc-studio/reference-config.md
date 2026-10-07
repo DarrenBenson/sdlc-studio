@@ -333,7 +333,7 @@ An installed or vendored skill copy is a deployment artefact: an update replaces
 skill_source_repo: ~/code/sdlc-studio
 ```
 
-With the key set, a promoted lesson lands in `<skill_source_repo>/.claude/skills/sdlc-studio/lessons/`, `git status` in that repo shows it, and committing it ships the lesson with the next skill release. Unset, promotion is refused and the project tier (`sdlc-studio/.local/lessons.md`, the default, no config needed) still works. See `reference-agentic-lessons.md#lessons-accumulation`.
+With the key set, a promoted lesson lands in `<skill_source_repo>/.claude/skills/sdlc-studio/lessons/`, `git status` in that repo shows it, and committing it ships the lesson with the next skill release. Unset, promotion is refused and the project tier (`sdlc-studio/retros/LESSONS.md`, the default, no config needed) still works. See `reference-agentic-lessons.md#lessons-accumulation`.
 
 ---
 

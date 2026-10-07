@@ -4,7 +4,7 @@ Cross-cutting patterns for operators running a live service alongside their deve
 
 <!-- Load when: writing a runbook, authoring a release-gate checklist, debugging a live-service incident, or reviewing a memory note before citing it -->
 
-Each pattern below is backed by observed production incidents. Keep the pattern generic – project-specific details (config keys, agent names, PR numbers, date-stamped incidents) belong in the per-project `sdlc-studio/.local/lessons.md`, not here. If a pattern loses its supporting evidence it should be pruned, not kept on faith.
+Each pattern below is backed by observed production incidents. Keep the pattern generic – project-specific details (config keys, agent names, PR numbers, date-stamped incidents) belong in the per-project `sdlc-studio/retros/LESSONS.md`, not here. If a pattern loses its supporting evidence it should be pruned, not kept on faith.
 
 ---
 
@@ -175,4 +175,4 @@ None of these are critical. All of them are real. All are the kind of thing a de
 - `reference-agentic-lessons.md` – agentic wave execution lessons (narrower scope)
 - `templates/workflows/release-gate.md` – the checklist that operationalises the patterns above
 - `reference-reconcile.md#numeric-claim-drift` – the doc-count detection this file's #memory-entry-drift pattern informs
-- `help/lessons.md` – per-project `.local/lessons.md` for project-specific pitfalls (complementary, not replaced). Named incidents, bug IDs, and dated evidence belong there, not here.
+- `help/lessons.md` – per-project `sdlc-studio/retros/LESSONS.md` for project-specific pitfalls (complementary, not replaced). Named incidents, bug IDs, and dated evidence belong there, not here.

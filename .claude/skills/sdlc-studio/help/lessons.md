@@ -6,7 +6,8 @@
 > **Source of truth:** `reference-agentic-lessons.md#lessons-accumulation` - File format and hook points
 
 Per-project failure memory. Each project accumulates its own lessons
-in `sdlc-studio/.local/lessons.md`; agentic waves load this file at
+in `sdlc-studio/retros/LESSONS.md` (committed; a legacy `sdlc-studio/.local/lessons.md` is moved there by the
+first `lessons` command); agentic waves load this file at
 wave start and inject the entries into every Agent Prompt Template
 as a `## Known Pitfalls on This Project` section.
 
@@ -100,7 +101,7 @@ Print the lessons file in reverse chronological order (newest first).
 
 **What happens:**
 
-1. Reads `sdlc-studio/.local/lessons.md`
+1. Reads `sdlc-studio/retros/LESSONS.md`
 2. If the file does not exist, prints a friendly message and exits 0
 3. Otherwise prints each L-NNNN entry with its Epic, Wave, Symptom,
    Root cause, Fix, and Applies to fields
@@ -118,7 +119,7 @@ fields if they are not passed on the command line.
 
 **What happens:**
 
-1. Creates `sdlc-studio/.local/lessons.md` with a header if absent
+1. Creates `sdlc-studio/retros/LESSONS.md` with a header if absent
 2. Assigns the next L-NNNN ID by scanning existing entries
 3. Prompts for: epic, wave, symptom, root cause, fix, applies to
 4. Inserts the new entry at the top of the file (below the header)
@@ -140,7 +141,7 @@ fields if they are not passed on the command line.
 > Root cause: READ THESE FILES FIRST omitted src/db/schema.ts
 > Fix: Added schema.ts to the repo_map hub-files list and every schema-touching prompt
 > Applies to: Any story modifying the schema or adding fields
-Wrote L-0003 to sdlc-studio/.local/lessons.md
+Wrote L-0003 to sdlc-studio/retros/LESSONS.md
 ```
 
 ### prune
@@ -266,7 +267,7 @@ a lesson wasted.
 ## Related Commands
 
 - `/sdlc-studio epic implement --agentic` - Consumes
-  `.local/lessons.md` at wave start
+  `sdlc-studio/retros/LESSONS.md` at wave start
 - `/sdlc-studio project implement --agentic` - Consumes lessons
   before each epic's Wave 1
 

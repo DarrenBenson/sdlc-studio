@@ -247,7 +247,7 @@ lists every script with a one-line summary; open the linked page for the full en
 - `github_sync.py` - Two-way sync between local CR/Story/Epic files and GitHub Issues via
 - `digest.py` - Context tiering - mechanical, drift-checked digests of closed (terminal) artefacts so
 - `plan.py` - Claude Code plan-file manager for `~/.claude/plans/`.
-- `lessons.py` - Lessons manager for both tiers: the project's `sdlc-studio/.local/lessons.md`
+- `lessons.py` - Lessons manager for both tiers: the project's `sdlc-studio/retros/LESSONS.md`
   and the skill's cross-project registry; `revalidate` + `summary` are the gated sprint-close loop
 - `sprint.py` - The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf` selects + dependency-orders...; `plan` refuses an ungroomed batch, `breakdown` reports the same census read-only...
 - `autosprint.py` - Deprecated re-exporting alias for `sprint.py` (the old name); prefer `sprint`.

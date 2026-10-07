@@ -2,7 +2,7 @@
 
 Generalisable engineering/process lessons that improve decisions on **any**
 sdlc-studio project. Lives **in the skill** (shared across projects), distinct
-from a project's own `.local/lessons.md` (transient agentic-wave failure memory)
+from a project's own `sdlc-studio/retros/LESSONS.md` (its committed agentic-wave failure memory)
 and from per-project memory (project-specific facts).
 
 > **Recall** relevant lessons before substantive decisions (`/sdlc-studio lessons recall`).
