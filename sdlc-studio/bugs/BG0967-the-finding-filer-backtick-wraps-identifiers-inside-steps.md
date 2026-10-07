@@ -29,6 +29,8 @@ Leave lines that look like commands (or any content already inside a fenced bloc
 
 ## Triage
 
+- More evidence, 2026-10-07: BG0987 and BG0988 were filed with a closing paren swallowed into a code span (`(`close_is_a_noop)``), the same safing reaching past the identifier.
+
 - Reproduced at 8b844a80 in a scratch root: a steps value `python3 -c "import sys; from lib import sdlc_md; ..."` is filed with `sdlc_md` back-ticked and a broken span after it. Not a regression. BG0974 is the opposite failure in the same safing (the title and Evidence are left bare); fix the two together.
 
 ## Revision History

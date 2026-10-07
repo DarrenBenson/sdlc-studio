@@ -51,10 +51,12 @@
   reproduce at 8b844a80, none is a regression, all are groomed; about 28 points of bugs,
   scheduled in D0349. BG0981 and BG0982 needed criteria written; BG0967 and BG0974 are the two
   halves of one markdown-safing fix.
-- Next skill sprint (D0349, superseding D0348), after the website run: the 38 bugs triaged by
-  2026-10-07 14:45 (about 69 points) and EP0274 (26), about 95 points; CR-0612 to CR-0614
-  join once refined. BG0962's code is shipped but the bug stays Open: two QA REJECTs reached
-  the cap and it is reviewed afresh in that sprint. BG0984, BG0985, CR-0615 and CR-0616
-  arrived after the ruling and are triaged, with BG0986 (forward-port deletes the shipped
-  CHANGELOG.md, so the last port was not applied); they are not in D0349's batch. US0986 builds before the rest of EP0274;
-  BG0949 and BG0952 share `unresolved_questions`, and BG0967 and BG0974 one safing pass.
+- Next skill sprint (D0350, superseding D0349), after the website run: every open bug
+  BG0944-BG0988 (43) with EP0274, and CR-0612 to CR-0617 once refined. BG0962's code is
+  shipped but the bug stays Open for a fresh review (two REJECTs at the cap). US0986
+  builds before the rest of EP0274; BG0949 and BG0952 share `unresolved_questions`, and
+  BG0967 and BG0974 one safing pass.
+- BG0989 (High) is on the fast-track (D0350): the project lessons log is gitignored, so a
+  close on another machine regenerates LESSONS-SUMMARY.md from an empty log. This
+  repository's 441 lessons are exposed: its log is on another machine. Do not run a close
+  here until BG0989 lands or that log is copied back.
