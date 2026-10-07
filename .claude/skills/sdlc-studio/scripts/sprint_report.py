@@ -1089,6 +1089,19 @@ def _verdict_entries(ctx: dict) -> list[tuple]:
         units = [sdlc_md.norm_id(u) for u in re.split(r"[,;\s]+", cell) if u.strip()]
         entries.append(((str(row.get("date") or ""), 0, i),
                         str(row.get("verdict") or "").strip().upper(), units))
+    # BG0962: the per-unit ledger too. The batch ledger is frozen history, so folding it alone
+    # left a unit REJECTed there unresolved after any number of per-unit APPROVEs, and a run whose
+    # every unit was approved could not close. Each unit contributes `critic.verdict_for`'s answer,
+    # which keeps the rule for what answers a REJECT, ordered by its date against the batch rows.
+    # The ledgers record days, not times, so a same-day tie cannot say which came second: a
+    # per-unit APPROVE sorts before that day's batch rows and any other verdict after them, so the
+    # tie fails closed while the batch rows keep their own append order between themselves.
+    for unit, row in (ctx.get("unit_verdicts") or {}).items():
+        if not row:
+            continue
+        verdict = str(row.get("verdict") or "").strip().upper()
+        entries.append(((str(row.get("date") or ""), -1 if verdict == _APPROVE else 1, 0),
+                        verdict, [sdlc_md.norm_id(unit)]))
     entries.sort(key=lambda e: e[0])
     return entries
 
@@ -2108,6 +2121,12 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
     except Exception as exc:  # noqa: BLE001 - a report must not die on a log read
         sdlc_md.debug("sprint_report.checklist.reviews", exc)
         sprint_reviews = []
+    unit_verdicts: dict = {}
+    for uid in units:
+        try:
+            unit_verdicts[uid] = critic.verdict_for(root, uid)
+        except Exception as exc:  # noqa: BLE001 - an unreadable ledger is no verdict, not a REJECT
+            sdlc_md.debug("sprint_report.checklist.unit_verdicts", exc)
     filed, still_open = _open_findings(root, run)
     if still_open is not None:
         # The page leaves the batch's delivered findings out of the findings that need a
@@ -2132,7 +2151,7 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
         # The total passed here, else the one `retro.py accuracy --tokens N --write` recorded.
         "sprint_actual_tokens": (rep.get("sprint_actual_tokens")
                                  or retro.supplied_sprint_tokens(root, retro_id)),
-        "sprint_reviews": sprint_reviews,
+        "sprint_reviews": sprint_reviews, "unit_verdicts": unit_verdicts,
         "filed_in_run": filed, "open_filed_in_run": still_open,
         "carried_issues": _carried_issues(root, retro_id),
         # Named in the checklist so the close can SAY what its window could not

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_closing_review_per_unit_verdicts.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG0962.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_closing_review_per_unit_verdicts.py, changelog.d/BG0962.md
 > **Evidence:** Found closing a consuming project's RUN-01M4APNQ on 2026-10-07 with the installed 6.1.0; reproduced against sdlc-studio main at fb1ce886 by reading the code path.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -35,10 +35,19 @@ Fold the per-unit verdict ledger (critic-verdicts.md) into `_verdict_entries` al
 
 - [ ] **AC1** A unit whose frozen batch REJECT predates a per-unit APPROVE is not reported unresolved by closing-review, shown by a test
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_closing_review_per_unit_verdicts.py -k frozen_reject_then_per_unit_approve
+  - **Verified:** yes (2026-10-07)
 - [ ] **AC2** A per-unit REJECT recorded after an APPROVE still makes the unit unresolved (US0593 kept), shown by a test
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_closing_review_per_unit_verdicts.py -k later_per_unit_reject_wins
-- [ ] **AC3** closing-review and review-coverage agree on a batch whose verdicts span both ledgers
+  - **Verified:** yes (2026-10-07)
+- [ ] **AC3** closing-review clears a unit exactly when `review_coverage` reports it covered on a batch whose verdicts span both ledgers: a per-unit APPROVE after a frozen REJECT is covered and cleared, and a per-unit REJECT after a frozen APPROVE is uncovered and held
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_closing_review_per_unit_verdicts.py -k agrees_with_review_coverage
+  - **Verified:** yes (2026-10-07)
+- [ ] **AC4** A per-unit APPROVE dated before a frozen batch REJECT does not clear the unit (US0593's later-REJECT rule, across the ledgers)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_closing_review_per_unit_verdicts.py -k earlier_per_unit_approve_does_not_clear
+  - **Verified:** yes (2026-10-07)
+- [ ] **AC5** A per-unit APPROVE and a frozen batch REJECT on the same day hold the unit, since the ledgers record days and cannot order them
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_closing_review_per_unit_verdicts.py -k same_day_tie
+  - **Verified:** yes (2026-10-07)
 
 ## Triage
 
@@ -52,3 +61,4 @@ Fold the per-unit verdict ledger (critic-verdicts.md) into `_verdict_entries` al
 | --- | --- | --- |
 | 2026-10-07 | Claude Opus 5.5 | Filed |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Groomed: reproduced at fb1ce886 by the code path (`_ck_closing_review` folds `latest` from `critic.sprint_reviews`, the frozen batch ledger, only); consuming-project name generalised for the neutrality lane; reconcile's US0914 advisory dismissed; changelog fragment added to Affects |
+| 2026-10-07 | Claude Opus 5.5 (engineering seat) | Built on the fast-track (D0348): per-unit verdicts from `critic.verdict_for` merged into the closing-review fold by date. AC3 made precise; AC4 (US0593 kept across the ledgers) and AC5 (a same-day tie fails closed) added; Affects trimmed to the files changed, `critic.py` needing none |
