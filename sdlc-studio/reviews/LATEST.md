@@ -21,6 +21,14 @@
 
 ## What is owed
 
+- **Filed 2026-10-07, triaged the same day:** from planning Sprint 0 on sdlc-studio-lens,
+  BG0959 (Medium, the engagement floor's `adopt_after` rejects a ULID cutoff), BG0960 (Low, a
+  missing-verifier refusal tells you to add Affects and Points), BG0961 (Medium, `<skill>` in a
+  Verify line is a shell redirect); from closing a consuming project's run, BG0962 (High,
+  closing-review reads verdicts only from the frozen batch ledger, so a frozen REJECT blocks a
+  run whose units are all approved). All four reproduce at fb1ce886, none is a regression, and
+  all are groomed.
+  BG0962 is fast-tracked as a single unit now; the other three join the next sprint (D0348).
 - **BG0944** (Low): three behaviours the run shipped have no test that fails when they break.
 - **BG0945** (Low): BG0940's changelog entry over-claims what sign does after a late ruling.
 - Both filed under D0338 for the next sprint; v6.2.0 is cut when more has accumulated (D0342).
@@ -36,6 +44,6 @@
   left archived rows no writer reaches (BG0956). BG0958: `mutation.py` misreads diffs under
   `diff.mnemonicPrefix`.
 - CR-0611 (harness token meters) filed and refined into EP0274, 26 points (D0346).
-- Next skill sprint (D0347), after the website run: all thirteen open bugs (about 23
-  points) and EP0274, about 49 points, every unit groomed. US0986 builds before the rest of
+- Next skill sprint (D0348, superseding D0347), after the website run: the sixteen open
+  bugs and EP0274, about 56 points, every unit groomed. US0986 builds before the rest of
   EP0274; BG0949 and BG0952 share `unresolved_questions`, so one wave.

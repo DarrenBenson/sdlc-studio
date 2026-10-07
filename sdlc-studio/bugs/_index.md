@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-10-06
+**Last Updated:** 2026-10-07
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 13 |
+| Open | 17 |
 | In Progress | 0 |
 | Fixed | 787 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 31 |
-| **Total** | **958** |
+| **Total** | **962** |
 
 ## All Bugs
 
@@ -34,6 +34,10 @@
 | [BG0956](BG0956-transition-set-reports-index-synced-but-leaves-archived.md) | transition set reports index synced but leaves archived index rows stale, and reconcile apply refuses them | Open | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0957](BG0957-test-epic-index-derived-s-negative-control-needs.md) | `test_epic_index_derived`'s negative control needs a live epic row with a count, so an archive that empties the live epic index turns it red | Open | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0958](BG0958-mutation-py-finds-no-changed-lines-when-git.md) | `mutation.py` finds no changed lines when git's `diff.mnemonicPrefix` is set, so a mutation probe scoped to a unit's changes has nothing to mutate | Open | Medium | 2026-10-06 | 2026-10-06 |
+| [BG0959](BG0959-the-engagement-floor-rejects-a-ulid-adopt-after.md) | The engagement floor rejects a ULID adopt_after cutoff and tells you to set a sequential one | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0960](BG0960-a-plan-refused-for-a-missing-verify-line.md) | A plan refused for a missing Verify line tells you to add Affects and Points | Open | Low | 2026-10-07 | 2026-10-07 |
+| [BG0961](BG0961-a-verify-line-cannot-name-the-skill-skill.md) | A Verify line cannot name the skill: <skill> is a shell redirect, not a path | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0962](BG0962-closing-review-reads-a-unit-s-latest-verdict.md) | closing-review reads a unit's latest verdict only from the frozen sprint-review ledger, so a frozen batch REJECT outlives a later per-unit APPROVE and blocks the close as a hard correctness gate | Open | High | 2026-10-07 | 2026-10-07 |
 
 ## Archived Releases
 
