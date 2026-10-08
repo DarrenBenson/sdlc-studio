@@ -31,6 +31,10 @@ Run every wall-clock assertion in the `serial_only` partition, which runs after 
 - [ ] **AC3** Each timing assertion named here still runs at the push boundary, in the serial partition or against a calibrated bound, and still fails on the slowdown it exists to catch
   - **Verify:** pytest tools/tests/test_test_census.py::WallClockCensusTests::test_the_timing_assertions_still_run_at_the_boundary
 
+## Further evidence
+
+- 2026-10-08, commit hook on the BG0989 repair (machine quiet, load 0.4): `test_sprint.py::InertVerifierRepairTests::test_a_close_emits_its_cost_line` failed asserting `398s` in the close's output, which printed `close cost: 399s of gate over 2 run(s)`: the fixture records a 398.0s gate run and the close adds its own gate run's measured seconds before rounding, so a run of half a second or more prints 399. Run alone it failed once and passed twice. Same class as the byte-compared durations named above.
+
 ## Revision History
 
 | Date | Author | Change |

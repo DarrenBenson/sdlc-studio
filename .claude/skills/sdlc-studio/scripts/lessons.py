@@ -573,7 +573,33 @@ def cmd_prune(args: argparse.Namespace) -> int:
         epic = e["fields"].get("epic", "?")
         print(f"Pruned {e['id']}: {e['title']} ({epic})")
     print(f"{len(dropped)} pruned, {len(kept)} kept")
+    # Pruning deletes lessons on purpose, so the committed digest drops them too: the summary
+    # refuses to regenerate over lessons its log lacks, and a pruned lesson is one it lacks.
+    summary = _default_summary_out(path)
+    removed = drop_from_summary(summary, {e["id"] for e in dropped})
+    if removed:
+        print(f"dropped {removed} pruned lesson(s) from {summary.name}")
     return 0
+
+
+def drop_from_summary(summary: Path, ids: set) -> int:
+    """Remove the digest lines for `ids` from `summary`, with any hard-wrapped continuation lines.
+    Returns how many lessons it removed."""
+    if not ids or not summary.is_file():
+        return 0
+    out, removed, skipping = [], 0, False
+    for line in summary.read_text(encoding="utf-8").splitlines():
+        m = SUMMARY_LINE_RE.match(line.strip()) or re.match(r"^-\s+\*\*(L-\d{4}):", line.strip())
+        if m:
+            skipping = m.group(1) in ids
+            removed += skipping
+        elif not (line[:1].isspace() and line.strip()):
+            skipping = False
+        if not skipping:
+            out.append(line)
+    if removed:
+        sdlc_md.atomic_write(summary, "\n".join(out) + "\n")
+    return removed
 
 
 def _matches(title: str, tags: list[str], want_tags: list[str], query: str | None) -> bool:
@@ -829,18 +855,40 @@ def parse_summary_digest(text: str) -> list[str]:
     return [_canon(i) for i in summary_items(text)]
 
 
-def lessons_the_log_lacks(summary_path: Path, entries: list[dict]) -> list[str]:
-    """The lessons `summary_path` lists that appear nowhere in `entries`, open or closed.
+def _as_summarised(entry: dict) -> dict:
+    """An entry as the summary would read it back: rendered with the renderer's line and parsed
+    with the summary's own parser. A title with a bold lead-in (`**Rule** - text`) splits at the
+    inner `**` on the way back, so the log and the summary are only comparable after the same
+    round trip, never as raw title against parsed title."""
+    gist = (entry["fields"].get("rule") or entry["fields"].get("fix")
+            or entry["fields"].get("applies to") or "").strip()
+    line = f"- **{entry['id']}: {entry['title'].strip()}**" + (f" - {gist}" if gist else "")
+    parsed = summary_items(line)
+    return parsed[0] if parsed else {"id": entry["id"], "title": entry["title"].strip(), "gist": gist}
 
-    Matched on id AND title, through `_canon`: a fresh log on another machine allocates L-0001
-    again, to a different lesson, and an id-only match would read that as holding the original.
+
+def lessons_the_log_lacks(summary_path: Path, entries: list[dict]) -> list[str]:
+    """The lessons `summary_path` lists that `entries` does not hold, open or closed.
+
+    A listed lesson is held when the log has its id and, read back through the summary's own
+    round trip, the same title or the same gist: an edited rule or a retitled lesson is still the
+    same lesson. A fresh log on another machine allocates L-0001 again, to a different lesson
+    whose title AND gist both differ, and that is not held.
     """
     if not summary_path.is_file():
         return []
-    held = {_canon({"id": e["id"], "title": e["title"], "gist": ""}) for e in entries}
-    return [_canon({"id": i["id"], "title": i["title"], "gist": ""})
-            for i in summary_items(summary_path.read_text(encoding="utf-8"))
-            if _canon({"id": i["id"], "title": i["title"], "gist": ""}) not in held]
+    held: dict[str, list[dict]] = {}
+    for e in entries:
+        held.setdefault(e["id"], []).append(_as_summarised(e))
+
+    def same(listed: dict, mine: dict) -> bool:
+        canon = lambda i, part: _canon({"id": i["id"], "title": i[part] if part == "title" else "",
+                                        "gist": i["gist"] if part == "gist" else ""})
+        return canon(listed, "title") == canon(mine, "title") or (
+            bool(listed["gist"]) and canon(listed, "gist") == canon(mine, "gist"))
+
+    return [_canon(i) for i in summary_items(summary_path.read_text(encoding="utf-8"))
+            if not any(same(i, m) for m in held.get(i["id"], []))]
 
 
 def _elide(names: list[str]) -> str:
@@ -2198,7 +2246,7 @@ def cmd_summary(args: argparse.Namespace) -> int:
         # the log held. A log that does not hold a lesson the summary lists is not the log the
         # summary came from - another machine's, a fresh one, or none - and regenerating from it
         # deletes those lessons. A CLOSED lesson is still in the log, so closing still shrinks
-        # the digest; only a lesson the log has never heard of stops it.
+        # the digest, and `prune` removes what it deletes from the digest itself.
         print(f"refused: {out_path.name} lists {len(missing)} lesson(s) the log at {path} does "
               f"not hold ({_elide(missing)}), so this log is not the one the summary was built "
               f"from. Restore the log from the machine that ran the last close, or merge it, and "
@@ -2510,7 +2558,8 @@ def cmd_propose(args: argparse.Namespace) -> int:
 
 
 #: The verbs that read or write the project-tier log, and so must see one log, not two.
-_PROJECT_TIER_VERBS = (cmd_list, cmd_add, cmd_prune, cmd_recall, cmd_revalidate, cmd_summary)
+_PROJECT_TIER_VERBS = (cmd_list, cmd_add, cmd_carry, cmd_prune, cmd_recall, cmd_revalidate,
+                       cmd_summary, cmd_violated)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -2524,13 +2573,13 @@ def main(argv: list[str] | None = None) -> int:
     # Move a legacy gitignored log to the committed path before any verb that reads or
     # writes the project tier, so the close (which calls `summary` through here) and every add
     # see one log. A caller naming its own --project-file is left alone.
-    if (getattr(args, "func", None) in _PROJECT_TIER_VERBS and not getattr(args, "global_", False)
+    if (not getattr(args, "global_", False)
             and getattr(args, "project_file", DEFAULT_PROJECT_FILE) == DEFAULT_PROJECT_FILE):
         res = migrate_legacy_log(args.root)
         msg = migration_message(res)
-        if msg:
+        if msg and (res.get("moved") or getattr(args, "func", None) in _PROJECT_TIER_VERBS):
             print(f"lessons: {msg}", file=sys.stderr)
-        if res.get("conflict"):
+        if res.get("conflict") and getattr(args, "func", None) in _PROJECT_TIER_VERBS:
             return 1
     return args.func(args)
 

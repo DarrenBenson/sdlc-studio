@@ -96,13 +96,16 @@ class CommittedLessonsLogTests(unittest.TestCase):
         """AC2, the close's other writer. Mutant: `retro extract` writing the default path without
         the move - the retro's lessons start a fresh committed log and the legacy lessons are left
         in `.local/`. Mutant: the conflict not refused there - one machine's log is extended
-        while the other's is silently ignored."""
-        def retro(root: Path) -> subprocess.CompletedProcess:
+        while the other's is silently ignored. Mutant: the refusal placed after the class store
+        is saved - "nothing was written" is then false."""
+        def retro(root: Path, classed: bool = False) -> subprocess.CompletedProcess:
             retros = root / "sdlc-studio" / "retros"
+            extra = ("- [new: a class of slip] Check before writing. The writer ran first.\n"
+                     if classed else "")
             (retros / "RETRO0001-probe.md").write_text(
                 "# RETRO0001: probe\n\n> **Status:** Complete\n\n## Lessons\n\n"
-                "- A retro lesson worth keeping. It carries a second sentence so the title cuts.\n",
-                encoding="utf-8")
+                "- A retro lesson worth keeping. It carries a second sentence so the title cuts.\n"
+                + extra, encoding="utf-8")
             (retros / "_index.md").write_text(
                 "# Retros\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
                 "| [RETRO0001](RETRO0001-probe.md) | probe | Complete |\n", encoding="utf-8")
@@ -124,12 +127,15 @@ class CommittedLessonsLogTests(unittest.TestCase):
             self._add(root, "Committed lesson")
             self._add(root, "Legacy lesson", "--project-file", LEGACY)
             before = {p: (root / p).read_bytes() for p in (COMMITTED, LEGACY)}
-            r = retro(root)
+            r = retro(root, classed=True)
             self.assertNotEqual(0, r.returncode, "two logs were silently reconciled")
             self.assertIn(COMMITTED, r.stderr)
             self.assertEqual(before, {p: (root / p).read_bytes() for p in before})
+            # Refused before ANY write: the class store is not touched either.
+            self.assertFalse((root / "sdlc-studio" / "lessons.jsonl").exists(),
+                             "the class store was written before the refusal")
 
-    def test_a_log_missing_listed_lessons_refuses_regeneration(self) -> None:
+    def test_summary_guard_refuses_a_log_missing_listed_lessons(self) -> None:
         """AC3. Mutant: the summary regenerates from whatever log it finds - a log that does not
         hold the summary's lessons replaces them. Mutant: lessons matched by id alone - a fresh
         log re-allocating L-0001 to a different lesson passes as holding it."""
@@ -147,7 +153,7 @@ class CommittedLessonsLogTests(unittest.TestCase):
         self.assertIn("L-0002", r.stderr)
         self.assertEqual(digest, (root / SUMMARY).read_bytes(), "the refused summary was written")
 
-    def test_closing_a_lesson_still_shrinks_the_digest(self) -> None:
+    def test_summary_guard_lets_closing_shrink_the_digest(self) -> None:
         """AC3's control. Mutant: the guard refuses any digest smaller than the committed one - a
         closed lesson, which is still in the log, could then never leave the summary."""
         root = self._project()
@@ -162,6 +168,49 @@ class CommittedLessonsLogTests(unittest.TestCase):
         self.assertIn("Stays open", text)
         self.assertNotIn("Closes later", text)
 
+    def test_summary_guard_passes_the_log_that_built_the_summary(self) -> None:
+        """AC3. Mutant: the guard compares the log's raw title with the summary's parsed one - a
+        title with a bold lead-in and a dash (`**Rule** - text`) splits at the inner `**` on the
+        way back, so the log that built the summary is refused the second time, and so is every
+        close. Driven through the close's own summary step as well as the CLI."""
+        import sprint  # noqa: PLC0415
+        root = self._project()
+        self._add(root, "**Rule** - the explanation of it")
+        self._add(root, "A plain lesson")
+        for attempt in (1, 2):
+            r = _cli(root, "summary")
+            self.assertEqual(0, r.returncode, f"attempt {attempt}: {r.stdout}{r.stderr}")
+        ok, out, why = sprint._close_lessons_summary(root, "RETRO0001", {})
+        self.assertTrue(ok, f"{out} {why}")
+
+    def test_summary_guard_lets_prune_shrink_the_digest(self) -> None:
+        """AC3. Mutant: prune deletes lessons from the log and leaves them in the digest - the
+        guard then reads them as missing and the summary can never regenerate again."""
+        root = self._project()
+        self._add(root, "Pruned with its epic", "--epic", "EP0001")
+        self._add(root, "Kept on another epic", "--epic", "EP0002")
+        self.assertEqual(0, _cli(root, "summary").returncode)
+        pruned = _cli(root, "prune", "--epic", "EP0001")
+        self.assertEqual(0, pruned.returncode, pruned.stdout + pruned.stderr)
+        r = _cli(root, "summary")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        text = (root / SUMMARY).read_text(encoding="utf-8")
+        self.assertIn("Kept on another epic", text)
+        self.assertNotIn("Pruned with its epic", text)
+
+    def test_legacy_log_is_moved_by_carry_and_violated(self) -> None:
+        """AC2. Mutant: the move limited to a fixed list of verbs that leaves out `carry` and
+        `violated` - a retro that carries or records a violated lesson on a legacy-only project
+        is told the lesson does not exist."""
+        for verb, extra in (("carry", ()), ("violated", ("--unit", "US0001"))):
+            with self.subTest(verb=verb):
+                root = self._project()
+                self._add(root, "Legacy lesson", "--project-file", LEGACY)
+                r = _cli(root, verb, "--id", "L-0001", *extra)
+                self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+                self.assertFalse((root / LEGACY).exists(), f"{verb} left the legacy log behind")
+                self.assertIn("Legacy lesson", (root / COMMITTED).read_text(encoding="utf-8"))
+
     def test_remedy_and_docs_name_the_committed_path(self) -> None:
         """AC4. Mutant: the missing-log remedy still says to clear the digest, the destructive
         step. Mutant: a shipped doc still names `.local/lessons.md` as the log."""
@@ -172,13 +221,26 @@ class CommittedLessonsLogTests(unittest.TestCase):
         reason = lessons.summary_status(root)["reason"]
         self.assertIn(COMMITTED, reason)
         self.assertNotIn("clear the digest", reason)
+        # Every shipped surface a reader takes the path from. The skill's own LL*.md lessons are
+        # left out on purpose: they are dated records of what happened, not instructions.
         docs = [*SKILL.glob("*.md"), *(SKILL / "help").glob("*.md"),
                 *(SKILL / "templates").rglob("*.md"), SKILL / "templates" / "config-defaults.yaml",
+                *(SKILL / "best-practices").glob("*.md"), *(SKILL / "scripts").glob("*.py"),
+                *(SKILL / "scripts" / "lib").glob("*.py"),
                 SKILL / "scripts" / "README.md", SKILL / "lessons" / "_index.md"]
-        stale = [f"{d.relative_to(SKILL)}:{n}" for d in docs if d.is_file()
-                 for n, line in enumerate(d.read_text(encoding="utf-8").splitlines(), 1)
+        lines = [(f"{d.relative_to(SKILL)}:{n}", line) for d in docs if d.is_file()
+                 for n, line in enumerate(d.read_text(encoding="utf-8").splitlines(), 1)]
+        stale = [at for at, line in lines
                  if ".local/lessons.md" in line and not re.search(r"legacy|migrat", line, re.I)]
         self.assertEqual([], stale, "shipped docs still name the gitignored log as the log")
+        # And the converse: no SENTENCE calls the committed path gitignored or uncommitted. By
+        # sentence, with line wraps joined: a per-line scan missed exactly this, a sentence whose
+        # "gitignored" sat on the line before the wrapped path.
+        wrong = [f"{d.relative_to(SKILL)}: {s[:80]}" for d in docs if d.is_file()
+                 for s in re.split(r"(?<=[.;:])\s+", " ".join(d.read_text(encoding="utf-8").split()))
+                 if "retros/LESSONS.md" in s
+                 and re.search(r"gitignored|never committed|not committed", s, re.I)]
+        self.assertEqual([], wrong, "a shipped doc calls the committed log gitignored")
 
 
 if __name__ == "__main__":

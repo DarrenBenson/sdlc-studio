@@ -11,8 +11,8 @@ first `lessons` command); agentic waves load this file at
 wave start and inject the entries into every Agent Prompt Template
 as a `## Known Pitfalls on This Project` section.
 
-The file is never committed (`.local/` is gitignored). That is the
-**per-project tier** – transient failure memory for agentic waves, and the
+The file is committed, so every clone and every machine reads the same lessons. That is the
+**per-project tier** – failure memory for agentic waves, and the
 **default**: a lesson learned on this project is not automatically true on any
 other, so `lessons add` (no flag) is where a lesson goes first.
 

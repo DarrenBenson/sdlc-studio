@@ -349,8 +349,8 @@ per-project lessons file closes that gap.
 ### Where lessons are stored
 
 `sdlc-studio/retros/LESSONS.md`, committed beside the `LESSONS-SUMMARY.md` digest built from
-it, and created lazily on first append. It once lived in the gitignored legacy
-`sdlc-studio/retros/LESSONS.md`, so it existed only on the machine that wrote it and a
+it, and created lazily on first append. It once lived in the gitignored legacy path
+`sdlc-studio/.local/lessons.md` (legacy), so it existed only on the machine that wrote it and a
 close anywhere else rebuilt the digest from nothing; any `lessons` command now moves a
 legacy file to the committed path, once.
 

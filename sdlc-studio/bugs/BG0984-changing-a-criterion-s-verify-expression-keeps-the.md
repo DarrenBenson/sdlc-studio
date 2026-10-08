@@ -35,6 +35,10 @@ Record the expression's fingerprint beside the stamp (or compare against the las
 
 - Reproduced at 34a7ee59 in a scratch fixture: a criterion stamped `Verified: yes (2026-08-21)` under `shell true`, its Verify changed to `shell test 1 -eq 1`, then `verify_ac.py run` -> pass=1, changes=0, and the stamp still reads 2026-08-21. Not a regression: the residual BG0231 (Fixed) left on the passing path.
 
+## Further evidence
+
+- Reproduced in this repository on 2026-10-07: BG0989's AC3 Verify changed from `-k a_log_missing_listed_lessons_refuses_regeneration` to `-k summary_guard`, and `verify_ac.py run --id BG0989` passed with `changes=0`, keeping the earlier stamp.
+
 ## Revision History
 
 | Date | Author | Change |

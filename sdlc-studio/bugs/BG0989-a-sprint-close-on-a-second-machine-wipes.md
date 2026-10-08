@@ -30,11 +30,11 @@ Either (a) commit the project log (move it out of `.local/`, e.g. `sdlc-studio/r
 - [ ] **AC1** The project lessons log is read from and written to a committed path, `sdlc-studio/retros/LESSONS.md`, beside the summary built from it, so a fresh clone on another machine reads the lessons its committed summary lists
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_committed.py -k a_fresh_clone_reads_the_committed_log
   - **Verified:** yes (2026-10-07)
-- [ ] **AC2** A project holding only the legacy `.local/lessons.md` has it moved to the committed path by the first `lessons` command that reads or writes the project log, or by `retro extract`, with nothing left behind and a line saying to commit it; a project holding both refuses and names both files to merge by hand
+- [ ] **AC2** A project holding only the legacy `.local/lessons.md` has it moved to the committed path by the first `lessons` command (any but a `--global` one, `carry` and `violated` included) or by `retro extract`, with nothing left behind and a line saying to commit it; a project holding both refuses and names both files to merge by hand
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_committed.py -k legacy_log_is_moved
   - **Verified:** yes (2026-10-07)
-- [ ] **AC3** `lessons summary` and the close's regeneration refuse to write a digest when a lesson the committed summary lists appears nowhere in the log (open or closed), naming the missing ids; closing a lesson still shrinks the digest as today
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_committed.py -k a_log_missing_listed_lessons_refuses_regeneration
+- [ ] **AC3** `lessons summary` and the close's regeneration refuse to write a digest when the log does not hold a lesson the committed summary lists (open or closed, compared through the summary's own render-and-parse round trip), naming the missing ids; the log that built the summary is never refused, whatever its titles hold; closing a lesson still shrinks the digest, and `prune` removes what it deletes from the digest too
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_committed.py -k summary_guard
   - **Verified:** yes (2026-10-07)
 - [ ] **AC4** The stale-summary gate's remedy no longer tells the operator to clear the digest when the log is missing, and every shipped doc names the committed path, with `.local/lessons.md` only as the legacy path migration reads
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_committed.py -k remedy_and_docs_name_the_committed_path
@@ -46,6 +46,14 @@ Either (a) commit the project log (move it out of `.local/`, e.g. `sdlc-studio/r
 - Operator ruling (D0350): fix the class now on the fast-track, by moving the log to a committed path, with the guard in AC3 because the move alone does not protect a machine whose log has not been migrated yet. The guard keys on lesson ids present in the log, open or closed, so closing a lesson stays a legitimate shrink.
 - Re-sized 3 -> 5 for the migration, the guard and the documentation sweep. Affects paths corrected to repository paths.
 
+## Review round 1 (REJECT, 2026-10-07)
+
+- The guard compared the log's raw title with the summary's parsed one, so a title with a bold lead-in and a dash, which the parser splits at the inner `**`, refused the log that built it. It now compares both sides after the summary's own render-and-parse round trip, and a lesson counts as held when its id and either its title or its gist match. Pinned through the CLI and the close's summary step.
+- `carry` and `violated` neither moved nor read the legacy log. The move now runs on every non-global `lessons` command, which makes "any `lessons` command" true; the refusal when both logs exist covers every verb that reads the log.
+- `prune` then `summary` refused for ever. Prune now removes the pruned lessons' lines from the committed digest.
+- reference-agentic-lessons.md called the committed path the gitignored legacy one, and help/lessons.md still said the file is never committed; both corrected. The doc check now reads sentences, not lines, and covers the scripts and best-practices too.
+- `retro extract` refused a two-log project after writing the class store; the refusal now comes first, and a classed lesson pins it.
+
 ## Revision History
 
 | Date | Author | Change |
@@ -53,3 +61,4 @@ Either (a) commit the project log (move it out of `.local/`, e.g. `sdlc-studio/r
 | 2026-10-07 | sdlc-studio | Filed |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Groomed for the fast-track (D0350): reproduced against 441 lessons in this repository; tool-derived criteria replaced with four executable ones; Affects corrected and widened to the doc sweep; 3 -> 5 points |
 | 2026-10-07 | Claude Opus 5.5 (engineering seat) | Before review: AC2 said `migrate --apply` moved the log, which was not built; AC2 now names the paths that do (any project-log `lessons` command, and `retro extract`, both tested), and migrate.py leaves Affects |
+| 2026-10-07 | Claude Opus 5.5 (engineering seat) | Repaired after the round-1 REJECT: round-trip guard, migration on every non-global verb, prune drops from the digest, two doc claims corrected, extract refuses before any write; AC2 and AC3 restated; four tests added |

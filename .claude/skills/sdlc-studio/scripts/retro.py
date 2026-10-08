@@ -3570,8 +3570,6 @@ def cmd_extract(args) -> int:
         print(f"retro {args.id}: cannot tell which run the repeats belong to: {exc}",
               file=sys.stderr)
         return 1
-    counted = _extract_classes(args, res["id"], tags, run)
-
     # The retro's lessons go to the committed log; a legacy gitignored one moves first,
     # and two logs are two machines' records that only a person can merge.
     mig = lessons.migrate_legacy_log(args.root)
@@ -3579,6 +3577,8 @@ def cmd_extract(args) -> int:
         print(f"retro {args.id}: {lessons.migration_message(mig)}", file=sys.stderr)
     if mig.get("conflict"):
         return 1
+    counted = _extract_classes(args, res["id"], tags, run)
+
     log = lessons.default_project_file(args.root)
     existing_text = log.read_text(encoding="utf-8") if log.is_file() else lessons.PROJECT_HEADER
     existing = lessons.parse_project_lessons(existing_text)
