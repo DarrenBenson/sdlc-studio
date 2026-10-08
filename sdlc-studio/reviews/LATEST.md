@@ -56,7 +56,19 @@
   shipped but the bug stays Open for a fresh review (two REJECTs at the cap). US0986
   builds before the rest of EP0274; BG0949 and BG0952 share `unresolved_questions`, and
   BG0967 and BG0974 one safing pass.
-- BG0989 (High) is on the fast-track (D0350): the project lessons log is gitignored, so a
-  close on another machine regenerates LESSONS-SUMMARY.md from an empty log. This
-  repository's 441 lessons are exposed: its log is on another machine. Do not run a close
-  here until BG0989 lands or that log is copied back.
+- BG0989 (High) is Fixed and on main (978083c6): the lessons log is committed at
+  `sdlc-studio/retros/LESSONS.md`, and `lessons summary` refuses to regenerate the digest from a
+  log missing lessons it lists. This repository's own log is still on another machine, so a
+  close here is refused at the lessons step rather than wiping the summary: copy that log back
+  (to `retros/LESSONS.md`, or to `.local/lessons.md` and run any `lessons` command), commit it,
+  then close. BG0992 (Low) holds the round-2 review's non-blocking findings.
+- BG0994 (High) fixed main's red noise gate, which BG0989's migration line had tripped from
+  seven legacy-path fixtures; approved, pushing alone (e77cd2d5).
+- BG0993 (High, D0351 fast-track): whether a sprint run is open lived in each machine's
+  `.local`, so another machine could plan a parallel run and could not sign the first. The close
+  now commits the run's record awaiting its signature, `plan --write` refuses while one awaits,
+  and `sign` works from any clone holding it. Committed 3bc1620e, under QA review, not pushed.
+- Third round, 2026-10-08, filed by other sessions: BG0995-BG0999 reproduce at current code,
+  none a regression; CR-0618 and CR-0619 (CR-0619 to refine with BG0950), and CR-0620 to
+  CR-0623 from the homelab retrospective on review seats and persona goals (CR-0620 with
+  CR-0622; CR-0621 and CR-0623 with BG0966). Not yet scheduled.

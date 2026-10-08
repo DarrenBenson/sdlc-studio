@@ -24,9 +24,14 @@ _None yet: add them here, or on the stories `refine` decomposes this into._
 - Confirmed at 194951eb: `critic.py brief` requires `--seat`, so the caller picks every seat and nothing derives one from a unit's Affects or type; the run reviewed every unit from the engineering seat because that is what was asked for.
 - Priority Medium stands; Size M (a seat-selection rule in config, applied by `brief` and the plan-time seat review). Related: CR-0622 (a second, different seat on high-risk units) - both decide which seats review a unit and should be refined together.
 
+## Further evidence (2026-10-08)
+
+- Operator-relayed assessment of the agent-fleet project's run: every unit review used a generic engineering seat, and the goal review ran only the product and engineering seats. A QA seat at grooming, looking for checks that pass with no fix, would have caught the 25 such checks the seats found by hand (CR-0616 is the mechanical half). The plan-time seat review should include QA by default, not only by request.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-08 | sdlc-studio | Raised |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: behaviour confirmed; Affects made repository paths; Size M; relations recorded |
+| 2026-10-08 | Claude Opus 5.5 (triage) | Further evidence: the goal review ran without a QA seat; QA at grooming proposed |

@@ -48,6 +48,8 @@ Make the contract and the parser agree. Either BLOCKING items inherit their orig
 - Reproduced live on 2026-10-07: BG0962's round-1 REJECT, returned by a fresh-context QA reviewer in the brief's own shape (sub-items, an UNVERIFIABLE block and untagged BLOCKING bullets), was refused by `critic.py record --from-verdict`. The author did not edit it; the reviewer was asked to re-emit the same judgement in a recordable shape and did, which cost a round trip.
 - 2026-10-07/08, BG0989's two review rounds, three more refusals of a contract-shaped verdict: untagged Claim inventory, Mutation and Suite paragraphs inside ISSUES; a code span quoting the bug's own trigger with a trailing space (refused as markdownlint MD038), which a review of a whitespace-sensitive bug cannot avoid quoting; and prose after `BLOCKING: none`, folded into BLOCKING and refused as untagged. Each cost the reviewer a re-emit. A trailing `RULINGS:` line records only when BLOCKING names findings: after `BLOCKING: none` it is folded in and refused too, so an APPROVE's rulings cannot be recorded with it at all.
 
+- 2026-10-08, BG0993 round 1: a REJECT whose findings used semicolons inside a sentence was refused, because `record` splits ISSUES on every semicolon and the fragments carry no origin tag. The reviewer re-emitted with full stops; no word changed but punctuation.
+
 ## Revision History
 
 | Date | Author | Change |

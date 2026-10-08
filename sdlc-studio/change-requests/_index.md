@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 14 |
+| Proposed | 17 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 519 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **623** |
+| **Total** | **626** |
 
 ## All Changes
 
@@ -35,6 +35,9 @@
 | [CR-0621](CR0621-make-a-served-persona-s-goals-a-standing.md) | Make a served persona's goals a standing, checkable criterion on the stories that touch them | Proposed | Medium | Feature | 2026-10-08 | -- |
 | [CR-0622](CR0622-a-second-different-seat-on-high-risk-units.md) | A second, different seat on high-risk units - or a different seat on round 2 | Proposed | Medium | Feature | 2026-10-08 | -- |
 | [CR-0623](CR0623-the-story-template-s-persona-reference-section-is.md) | The story template's Persona Reference section is boilerplate - require it to name the goal served, or drop it | Proposed | Medium | Feature | 2026-10-08 | -- |
+| [CR-0624](CR0624-run-revert-check-at-the-terminal-gate-so.md) | Run revert-check at the terminal gate, so a test that passes with the change removed is caught by the tool, not by a reviewer breaking the code by hand | Proposed | Medium | Improvement | 2026-10-08 | -- |
+| [CR-0625](CR0625-validate-seats-checks-a-seat-card-s-named.md) | validate seats checks a seat card's named personas against the project's declared cast, so a seat cannot review for a primary persona the project no longer has | Proposed | Low | Improvement | 2026-10-08 | -- |
+| [CR-0626](CR0626-a-documented-tooled-proportional-path-for-a-small.md) | A documented, tooled proportional path for a small change, so a one-file fix keeps the parts that catch defects and drops the rest | Proposed | Medium | Improvement | 2026-10-08 | -- |
 
 ## Archived Releases
 

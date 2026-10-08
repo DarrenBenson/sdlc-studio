@@ -17,12 +17,16 @@ The homelab defines a 'Household Member' persona - 'affected by the platform wit
 
 ## Acceptance Criteria
 
-_None yet: add them here, or on the stories `refine` decomposes this into._
+- [ ] A persona end goal can carry a Verify line, and the goal review brief lists the testable end goals the batch's served personas declare, so a goal that cannot be checked against them is named at plan
 
 ## Triage
 
 - Confirmed: the persona template and `reference-persona.md` carry no standing criteria, so a served persona's goals become no check on any story.
 - Priority Medium stands; Size L (a persona schema field, a Verify line scoped by area, and seeding or gating it onto matching stories). Related: CR-0623 (a story names the persona goal it serves) and BG0966 (`review_prep`'s persona usage) - the three change how persona goals reach a story and should be refined together.
+
+## Further evidence (2026-10-08)
+
+- Operator-relayed assessment of the agent-fleet project's run: make persona end goals testable (for example, a dependent system sees a persistent agent fault within N seconds), so the goal review can check a Sprint Goal against them mechanically at plan time. In that run the end goal surfaced halfway through the sprint, as a bug.
 
 ## Revision History
 
@@ -30,3 +34,4 @@ _None yet: add them here, or on the stories `refine` decomposes this into._
 | --- | --- | --- |
 | 2026-10-08 | sdlc-studio | Raised |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: behaviour confirmed; Affects made repository paths; Size L; relations recorded |
+| 2026-10-08 | Claude Opus 5.5 (triage) | Further evidence: testable persona end goals, checked at the goal review; AC added |
