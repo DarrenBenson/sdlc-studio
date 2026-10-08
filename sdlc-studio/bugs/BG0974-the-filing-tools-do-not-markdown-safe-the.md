@@ -29,6 +29,10 @@ Apply the same markdown-safing to the title and the Evidence value as to the pro
 - [ ] **AC2** An Evidence value holding such an identifier passes markdownlint too, and its text still reads the same
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py -k evidence_identifier_passes_markdownlint
 
+## Further evidence
+
+- 2026-10-08: BG0991 was filed with code spans ending in a space (`##` and `**Verify:**` each followed by one), which markdownlint refuses (MD038); fixed at triage.
+
 ## Related
 
 - BG0967 is the opposite failure in the same safing: the filer back-ticks identifiers inside Steps to Reproduce and corrupts the shell commands there. Fix the two together, so the title and Evidence are safed and the Steps are left runnable.

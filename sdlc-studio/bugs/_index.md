@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 44 |
+| Open | 46 |
 | In Progress | 0 |
 | Fixed | 787 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 31 |
-| **Total** | **989** |
+| **Total** | **991** |
 
 ## All Bugs
 
@@ -65,6 +65,8 @@
 | [BG0987](BG0987-the-close-s-goal-judgement-reaches-only-the.md) | The close's goal judgement reaches only the terminal, not the sprint report the signer is told to read, and says 'blocks the close' of defects that did not block it | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0988](BG0988-sprint-plan-s-one-run-slot-refusal-tells.md) | sprint plan's one-run-slot refusal tells the operator to finish a close that already finished, when only the signature is owed | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0989](BG0989-a-sprint-close-on-a-second-machine-wipes.md) | A sprint close on a second machine wipes the committed LESSONS-SUMMARY.md: the project lessons log it regenerates from is gitignored, so it exists only on the machine that wrote it | Open | High | 2026-10-07 | 2026-10-07 |
+| [BG0990](BG0990-reconcile-s-field-sync-reads-a-joined-metadata.md) | reconcile's field sync reads a '·'-joined metadata run to end of line, writing 'P2 · **Type:** ...' into index cells and dropping the later fields | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0991](BG0991-verify-ac-attaches-a-verify-line-from-a.md) | verify_ac attaches a **Verify:** line from a LATER section (history, update notes) to the last criterion and executes it, because a criterion block never closes at a ## heading | Open | Medium | 2026-10-07 | 2026-10-07 |
 
 ## Archived Releases
 
