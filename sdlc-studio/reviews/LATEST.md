@@ -67,8 +67,14 @@
 - BG0993 (High, D0351 fast-track): whether a sprint run is open lived in each machine's
   `.local`, so another machine could plan a parallel run and could not sign the first. The close
   now commits the run's record awaiting its signature, `plan --write` refuses while one awaits,
-  and `sign` works from any clone holding it. Committed 3bc1620e, under QA review, not pushed.
+  and `sign` works from any clone holding it. Committed 3bc1620e, not pushed: QA round 1
+  REJECTED it (a reopen in the same checkout is lost or sealed over, a re-close can strip a
+  signature made elsewhere, and a close test was left red). Repair in progress.
 - Third round, 2026-10-08, filed by other sessions: BG0995-BG0999 reproduce at current code,
   none a regression; CR-0618 and CR-0619 (CR-0619 to refine with BG0950), and CR-0620 to
   CR-0623 from the homelab retrospective on review seats and persona goals (CR-0620 with
   CR-0622; CR-0621 and CR-0623 with BG0966). Not yet scheduled.
+- From three consuming projects' assessments of the skill, relayed by the operator: CR-0624
+  (gate `revert-check` at the terminal transition), CR-0625 (`validate seats` checks a card
+  against the cast) and CR-0626 (a proportional path for a small change), with new evidence
+  and criteria on CR-0619, CR-0620 and CR-0621.
