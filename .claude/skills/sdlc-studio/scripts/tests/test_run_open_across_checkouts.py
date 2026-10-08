@@ -342,7 +342,7 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
         with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
             signing.sprint._file_awaiting_record(self.closer)
         self.assertEqual(before, (self.closer / RECORD).read_bytes())
-        self.assertIn("carries a signature", err.getvalue())
+        self.assertIn("is sealed and no reopen here supersedes it", err.getvalue())
 
     def test_an_unreadable_record_refuses_the_plan(self) -> None:
         """Mutant: skip a record that does not parse, which reads a possibly open run as
@@ -370,6 +370,75 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
         other_now = json.loads((clone / "sdlc-studio" / "reports" / "runs" /
                                 "RUN-OTHER0001.json").read_text(encoding="utf-8"))
         self.assertEqual("running", other_now["outcome"])
+
+    # --- round 3: a reopen meeting a signature made in another checkout ---------------------
+
+    def _report_ids(self, root: Path) -> list[str]:
+        return sorted(p.stem for p in (root / "sdlc-studio" / "reports").glob("RPT*.json"))
+
+    def test_a_reopen_before_pulling_a_signature_never_strips_it(self) -> None:
+        """Mutant: the close guards a signed record by reopen counts alone and files the live
+        copy as it stands, so a reopen of the UNSIGNED copy made before the signature was
+        pulled files an unsigned record over the signed one, and the signed page reads INVALID
+        in every clone."""
+        self._close()
+        signer = self._clone("signer")
+        rc, _out, err = signing._sign(signer, REPORT)
+        self.assertEqual(0, rc, err)
+        self._commit(signer, "seal")
+        signed = self._record(signer)["signature"]
+        rc, _out, err = signing._run(self.closer, "reopen", "--reason", "one more change")
+        self.assertEqual(0, rc, err)
+        self._pull(self.closer, signer)
+        rc, _out, err = lean._close(self.closer)
+        self.assertEqual(0, rc, err)
+        self._commit(self.closer, "re-close after the pull")
+        record = self._record(self.closer)
+        self.assertEqual(signed, record.get("signature"), "the signature was stripped")
+        self.assertEqual("running", record["outcome"])
+        # The reopen overtook the signed page, so it reads INVALIDATED, as it does after any
+        # reopen; it is never INVALID, which is the verdict on a stripped signature.
+        import sprint_report  # noqa: PLC0415 - bound at call time, as the suite loads it
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            sprint_report.main(["--root", str(self.closer), "check", "--report", REPORT])
+        self.assertTrue(buf.getvalue().startswith(f"INVALIDATED: {REPORT}"), buf.getvalue())
+        self.assertNotIn("never removed", buf.getvalue())
+        # Every clone still sees the run open, awaiting the re-closed page's signature.
+        rc, _out, err = self._plan(self._clone("after"))
+        self.assertEqual(2, rc, err)
+        self.assertIn(f"awaits a signature on {record['report']}", err)
+
+    def test_a_resignature_elsewhere_after_a_local_reopen_is_taken_up(self) -> None:
+        """Mutant: `sealed_elsewhere` also requires this copy's own signature to equal the
+        record's, which a copy that kept its first signature through a reopen never does, so
+        the closing checkout's plan is refused for a signed run and its close files a third
+        page."""
+        self._close()
+        rc, _out, err = signing._sign(self.closer, REPORT)
+        self.assertEqual(0, rc, err)
+        self._commit(self.closer, "seal")
+        rc, _out, err = signing._run(self.closer, "reopen", "--reason", "a late review landed")
+        self.assertEqual(0, rc, err)
+        rc, _out, err = lean._close(self.closer)
+        self.assertEqual(0, rc, err)
+        self._commit(self.closer, "re-close")
+        refiled = self._live(self.closer)["report"]
+        signer = self._clone("signer")
+        rc, _out, err = signing._sign(signer, refiled)
+        self.assertEqual(0, rc, err)
+        self._commit(signer, "re-seal")
+        self._pull(self.closer, signer)
+        before = self._report_ids(self.closer)
+        rc, _out, err = self._plan(self.closer)
+        self.assertEqual(0, rc, err)
+        self.assertIn(f"{RUN} was signed in another checkout", err)
+        self.assertEqual(before, self._report_ids(self.closer), "a page was filed")
+        import sprint_report  # noqa: PLC0415 - bound at call time, as the suite loads it
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            rc = sprint_report.main(["--root", str(self.closer), "check", "--report", refiled])
+        self.assertEqual(0, rc, buf.getvalue())
 
 
 if __name__ == "__main__":

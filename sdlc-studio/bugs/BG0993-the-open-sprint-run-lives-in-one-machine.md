@@ -67,8 +67,17 @@ Each blocking finding, ruled:
 - A sign after reopening an unsigned run sealed the broken page and wiped the reopen: CLOSED. `sign` never takes up the run this checkout holds, and it takes a record up only after every check has passed, so a refused sign writes nothing.
 - A re-close after a signature elsewhere stripped it: CLOSED. `close` and `sign` in the closing checkout take a signature made elsewhere up (sealed), so the close refuses instead of filing a second page, and `_file_awaiting_record` never files over a signed record unless the run was reopened after it.
 - The docs claimed the named refusal in every clone: CLOSED by narrowing. The help and the fragment say the clone that does not hold the run open gets the named refusal, and the closing checkout the one-run refusal; a test pins the latter.
-- Non-blocking, also done: an unreadable record refusing the plan, `--report` choosing between two awaiting runs, and the fingerprint equal to the filed page's are each pinned; `stop` names the record to commit; the `file_tracked` docstring is corrected. Not done, carried to a follow-up: a clone that never held the run can end it only by signing it.
+- Non-blocking, also done: an unreadable record refusing the plan, `--report` choosing between two awaiting runs, and the fingerprint equal to the filed page's are each pinned; `stop` names the record to commit; the `file_tracked` docstring is corrected. Not done, carried to BG1001: a clone that never held the run can end it only by signing it.
 - Tests: 15 in `test_run_open_across_checkouts.py`. Eighteen mutants: seventeen killed. The survivor is equivalent: removing `sign`'s early refusal of a different open run leaves `adopt_tracked` to refuse the same case, with the same names and nothing written.
+
+## Repair after review round 2 (REJECT, third round authorised in D0352)
+
+Round 2 ruled findings 1, 2, 3 and 5 CLOSED and finding 4 MOVED into two sequences; each is answered:
+
+- A reopen made before a signature elsewhere was pulled let the re-close file an unsigned record over the signed one: CLOSED. The close never strips a signature. A sealed, signed record this copy has not reopened past is left as it is, and any other signed record is filed over with its signature carried forward, since only `sign` writes one. The sequence is pinned: the record keeps the signature, the run awaits the re-closed page's signature in every clone, and the signed page reads INVALIDATED (overtaken by the reopen, as after any reopen), never INVALID.
+- A re-signature made elsewhere after a local reopen was never taken up: CLOSED. `run_state.sealed_elsewhere` drops the own-signature clause; equal reopen counts decide. The sequence is pinned: the closing checkout's plan takes the re-seal up, no third page is filed, and the re-signed page checks VALID.
+- The follow-up claimed in the round-1 repair is now filed as BG1001.
+- Tests: 17 in `test_run_open_across_checkouts.py`. 21 mutants, 20 killed; the survivor is the equivalent one named in round 2.
 
 ## Revision History
 
@@ -78,3 +87,4 @@ Each blocking finding, ruled:
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: confirmed by the code path; tool-derived criteria replaced with four executable ones; Affects corrected; CR-0610 related; workaround recorded |
 | 2026-10-08 | Claude Opus 5.5 (engineering seat) | Fixed in the working tree (D0351 fast-track); Affects narrowed to the files changed: sprint_report.py and its tests were not needed, test_lean_tracked_run_record.py and help/sprint.md were |
 | 2026-10-08 | Claude Opus 5.5 (engineering seat) | Repaired after QA round 1 REJECT: every blocking finding ruled CLOSED; Affects gains test_lean_close_shows_the_page.py |
+| 2026-10-08 | Claude Opus 5.5 (engineering seat) | Repaired after QA round 2 REJECT under D0352: both moved sequences closed and pinned; BG1001 filed |

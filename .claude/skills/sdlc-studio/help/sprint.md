@@ -210,7 +210,9 @@ at `sdlc-studio/reports/runs/<RUN-ID>.json`; commit it with the close's paperwor
 - A checkout still holding the run open after it was signed elsewhere takes the sealed record up
   at its next `plan`, `sign` or `close`; the close then refuses, so no second page is filed for a
   sealed run. A run reopened in that checkout since the signature is its own and is never taken
-  up, and a close never files over a signed record unless the run was reopened after it.
+  up. A close never strips a signature: a sealed, signed record that checkout has not
+  reopened past is left as it is, and any other signed record keeps its signature when the close
+  files over it, so only `sign` writes a new one.
 - A run ended without a signature (`stop`) updates its record the same way, so it stops awaiting
   one, and `stop` names the record to commit. A `reopen` is not marked in the record until the
   run is closed again.

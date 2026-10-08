@@ -8771,18 +8771,21 @@ def _file_awaiting_record(root) -> None:
     state = run_state.read(root) or {}
     if state.get("outcome") != run_state.RUNNING or not state.get("report"):
         return
-    # A SIGNATURE IS NEVER STRIPPED. A signed record is superseded only by a run that records a
-    # reopen after it; anything else would file an unsigned record over a sealed one, and the
-    # signed page would then read INVALID in every clone.
+    # A SIGNATURE IS NEVER STRIPPED. Only `sign` writes one. A sealed, signed record this copy
+    # has not reopened past is left as it is; any other signed record is superseded with its
+    # signature carried forward, so a reopen made here before a signature elsewhere was pulled
+    # cannot file an unsigned record over it and leave the signed page INVALID in every clone.
     try:
         existing = run_state.read_tracked(root, state["run_id"])
     except run_state.RunStateError:
         existing = {}
-    if existing.get("signature") and (len(state.get("reopened") or [])
-                                      <= len(existing.get("reopened") or [])):
-        print(f"close: {state['run_id']}'s tracked record carries a signature no reopen here "
-              f"supersedes, so it is left as it is", file=sys.stderr)
-        return
+    if existing.get("signature"):
+        if (existing.get("outcome") in run_state.CLOSED
+                and len(state.get("reopened") or []) <= len(existing.get("reopened") or [])):
+            print(f"close: {state['run_id']}'s tracked record is sealed and no reopen here "
+                  f"supersedes it, so it is left as it is", file=sys.stderr)
+            return
+        state = {**state, "signature": existing["signature"]}
     try:
         path = run_state.file_tracked(root, state)
     except OSError as exc:

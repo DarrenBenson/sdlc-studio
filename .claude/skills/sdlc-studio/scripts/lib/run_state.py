@@ -579,9 +579,10 @@ def awaiting_signature(repo_root: Path | str) -> list[dict]:
 def sealed_elsewhere(live: dict, record: dict) -> bool:
     """Whether `record`, the tracked record of the run `live` holds, carries a signature made in
     another checkout that this copy has not moved past: the record is sealed and signed, and
-    `live` is the same run, still open, recording no more reopens than the record and no
-    signature of its own that differs. A run signed here and then reopened here records one
-    reopen more than its record, so its reopen is never discarded."""
+    `live` is the same run, still open, recording no more reopens than the record. A run signed
+    here and then reopened here records one reopen more than its record, so its reopen is never
+    discarded; a signature this copy kept through an earlier reopen says nothing about whether
+    the record is newer, so it is not compared."""
     rid = record.get("run_id")
     if not rid or rid != live.get("run_id"):
         return False
@@ -589,10 +590,7 @@ def sealed_elsewhere(live: dict, record: dict) -> bool:
         return False
     if live.get("outcome") != RUNNING:
         return False
-    if len(live.get("reopened") or []) > len(record.get("reopened") or []):
-        return False
-    own = live.get("signature")
-    return not own or own == record.get("signature")
+    return len(live.get("reopened") or []) <= len(record.get("reopened") or [])
 
 
 def adopt_tracked(repo_root: Path | str, record: dict) -> dict:
