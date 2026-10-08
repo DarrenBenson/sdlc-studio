@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 17 |
+| Proposed | 18 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 519 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **626** |
+| **Total** | **627** |
 
 ## All Changes
 
@@ -38,6 +38,7 @@
 | [CR-0624](CR0624-run-revert-check-at-the-terminal-gate-so.md) | Run revert-check at the terminal gate, so a test that passes with the change removed is caught by the tool, not by a reviewer breaking the code by hand | Proposed | Medium | Improvement | 2026-10-08 | -- |
 | [CR-0625](CR0625-validate-seats-checks-a-seat-card-s-named.md) | validate seats checks a seat card's named personas against the project's declared cast, so a seat cannot review for a primary persona the project no longer has | Proposed | Low | Improvement | 2026-10-08 | -- |
 | [CR-0626](CR0626-a-documented-tooled-proportional-path-for-a-small.md) | A documented, tooled proportional path for a small change, so a one-file fix keeps the parts that catch defects and drops the rest | Proposed | Medium | Improvement | 2026-10-08 | -- |
+| [CR-0627](CR0627-goal-review-brief-is-identical-for-every-seat.md) | goal-review brief is identical for every seat - give each seat its own lens and persona card | Proposed | Medium | Feature | 2026-10-08 | -- |
 
 ## Archived Releases
 
