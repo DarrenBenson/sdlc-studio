@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 13 |
+| Proposed | 14 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 519 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **622** |
+| **Total** | **623** |
 
 ## All Changes
 
