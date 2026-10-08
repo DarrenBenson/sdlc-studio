@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-10-07
+**Last Updated:** 2026-10-08
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 8 |
+| Proposed | 13 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 519 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **617** |
+| **Total** | **622** |
 
 ## All Changes
 
@@ -29,6 +29,12 @@
 | [CR-0615](CR0615-critic-py-brief-rejoinder-should-read-the-prior.md) | critic.py brief --rejoinder should read the prior verdict from the ledger instead of a hand-written file | Proposed | Low | Improvement | 2026-10-07 | -- |
 | [CR-0616](CR0616-verify-ac-should-record-a-red-baseline-a.md) | verify_ac should record a red baseline: a Verify that already passes before the story is implemented cannot tell done from not-done | Proposed | Medium | Feature | 2026-10-07 | -- |
 | [CR-0617](CR0617-run-the-repository-corpus-tests-on-a-commit.md) | Run the repository-corpus tests on a commit that changes artefacts, not only at push | Proposed | Medium | Improvement | 2026-10-07 | -- |
+| [CR-0618](CR0618-refine-discards-the-request-s-own-verify-lines.md) | refine discards the request's own Verify lines when it seeds the story, so grooming done on the CR is lost and redone | Proposed | Low | Improvement | 2026-10-08 | -- |
+| [CR-0619](CR0619-a-recorded-review-verdict-has-no-binding-to.md) | A recorded review verdict has no binding to the reviewer's own output - the orchestrator transcribes it into the file critic.py record reads | Proposed | Medium | Improvement | 2026-10-08 | -- |
+| [CR-0620](CR0620-choose-review-seats-by-what-a-change-touches.md) | Choose review seats by what a change touches, not engineering for every unit | Proposed | Medium | Feature | 2026-10-08 | -- |
+| [CR-0621](CR0621-make-a-served-persona-s-goals-a-standing.md) | Make a served persona's goals a standing, checkable criterion on the stories that touch them | Proposed | Medium | Feature | 2026-10-08 | -- |
+| [CR-0622](CR0622-a-second-different-seat-on-high-risk-units.md) | A second, different seat on high-risk units - or a different seat on round 2 | Proposed | Medium | Feature | 2026-10-08 | -- |
+| [CR-0623](CR0623-the-story-template-s-persona-reference-section-is.md) | The story template's Persona Reference section is boilerplate - require it to name the goal served, or drop it | Proposed | Medium | Feature | 2026-10-08 | -- |
 
 ## Archived Releases
 
