@@ -8779,6 +8779,10 @@ def _file_awaiting_record(root) -> None:
         existing = run_state.read_tracked(root, state["run_id"])
     except run_state.RunStateError:
         existing = {}
+    if len(existing.get("reopened") or []) > len(state.get("reopened") or []):
+        print(f"close: {state['run_id']}'s tracked record records more reopens than this copy, "
+              f"so it is newer and is left as it is", file=sys.stderr)
+        return
     if existing.get("signature"):
         if (existing.get("outcome") in run_state.CLOSED
                 and len(state.get("reopened") or []) <= len(existing.get("reopened") or [])):
@@ -8799,9 +8803,10 @@ def _file_awaiting_record(root) -> None:
           f"checkout sees the run is open")
 
 
-def _signed_elsewhere(root, state: dict) -> dict:
-    """The tracked record of the run this checkout holds open, when another checkout signed it
-    and this copy has not moved past it (`run_state.sealed_elsewhere`); else {}. Reads only."""
+def _newer_record(root, state: dict) -> dict:
+    """The tracked record of the run this checkout holds open, when it is newer than this copy
+    (`run_state.supersedes`: another checkout signed the run, or reopened and re-closed it,
+    since this copy last wrote the record); else {}. Reads only."""
     rid = state.get("run_id")
     if not rid or state.get("outcome") != run_state.RUNNING:
         return {}
@@ -8809,20 +8814,30 @@ def _signed_elsewhere(root, state: dict) -> dict:
         rec = run_state.read_tracked(root, rid)
     except run_state.RunStateError:
         return {}
-    return rec if run_state.sealed_elsewhere(state, rec) else {}
+    return rec if run_state.supersedes(state, rec) else {}
+
+
+def _newer_record_line(rec: dict, held: dict) -> str:
+    """What happened to the run in another checkout, in the words a refusal or take-up uses."""
+    if rec.get("outcome") in run_state.CLOSED:
+        return (f"{rec['run_id']} was signed in another checkout ({rec.get('outcome')}, "
+                f"{(rec.get('signature') or {}).get('report') or 'its report'})")
+    return (f"{rec['run_id']} was reopened and re-closed in another checkout: its tracked record "
+            f"records {len(rec.get('reopened') or [])} reopen(s) to this copy's "
+            f"{len(held.get('reopened') or [])}, and awaits a signature on "
+            f"{rec.get('report') or 'its report'}")
 
 
 def _take_up_signature(root, state: dict, verb: str) -> dict | None:
-    """Seal this checkout's copy of its open run from the tracked record when another checkout
-    signed it (`_signed_elsewhere`); the sealed state, or None when there was nothing to take
-    up."""
-    rec = _signed_elsewhere(root, state)
+    """Take up the tracked record of this checkout's open run when it is newer than this copy
+    (`_newer_record`), sealed or awaiting its signature; the state taken up, or None when there
+    was nothing to take up."""
+    rec = _newer_record(root, state)
     if not rec:
         return None
     adopted = run_state.adopt_tracked(root, rec)
-    print(f"{verb}: {rec['run_id']} was signed in another checkout ({rec.get('outcome')}, "
-          f"{(rec.get('signature') or {}).get('report') or 'its report'}); this checkout's copy "
-          f"of it is now sealed from its tracked record", file=sys.stderr)
+    print(f"{verb}: {_newer_record_line(rec, state)}; this checkout's copy of it is now its "
+          f"tracked record", file=sys.stderr)
     return adopted
 
 
@@ -9078,17 +9093,21 @@ def cmd_close(args: argparse.Namespace) -> int:
         print("close refused: no run state - `sprint plan --write` opens the run this "
               "close would end", file=sys.stderr)
         return 2
-    # SIGNED IN ANOTHER CHECKOUT: nothing is left to close, and a re-close would file a second
-    # page for a sealed run. Taken up sealed (not on a preview, which writes nothing).
-    if rec := _signed_elsewhere(root, state):
-        if not getattr(args, "dry_run", False):
+    # MOVED ON IN ANOTHER CHECKOUT: signed there, or reopened and re-closed there, since this
+    # copy last wrote the record. A close here would file a second page for a sealed run, or
+    # file this older copy over the newer record and erase that checkout's reopen, so the
+    # record is taken up instead (not on a preview, which writes nothing) and the close refused.
+    if rec := _newer_record(root, state):
+        dry = getattr(args, "dry_run", False)
+        if not dry:
             run_state.adopt_tracked(root, rec)
-        print(f"close refused: {rec['run_id']} was signed in another checkout "
-              f"({(rec.get('signature') or {}).get('report') or 'its report'}), so there is "
-              f"nothing to close here"
-              + ("" if getattr(args, "dry_run", False) else
-                 "; this checkout's copy of it is now sealed from its tracked record")
-              + ". To change it, `sprint.py reopen --reason ...`", file=sys.stderr)
+        sealed = rec.get("outcome") in run_state.CLOSED
+        nxt = ("To change it, `sprint.py reopen --reason ...`" if sealed else
+               f"Sign it: sprint.py sign --report {rec.get('report')} --principal "
+               f"\"<the operator who signs>\"")
+        print(f"close refused: {_newer_record_line(rec, state)}, so this copy is older than it"
+              + ("" if dry else "; this checkout's copy of it is now its tracked record")
+              + f". {nxt}", file=sys.stderr)
         return 2
     # EVERYTHING OWED, BEFORE ANY REFUSAL CAN SHORT-CIRCUIT IT. This sits above the sprint-goal,
     # retro and goal-verdict refusals deliberately: each of those returns early, so a pre-flight

@@ -207,9 +207,10 @@ at `sdlc-studio/reports/runs/<RUN-ID>.json`; commit it with the close's paperwor
   refused, never discarded.
 - The tree check still holds there: the digest leaves the run records out, so a clone at the
   close's commit matches the tree the close recorded.
-- A checkout still holding the run open after it was signed elsewhere takes the sealed record up
-  at its next `plan`, `sign` or `close`; the close then refuses, so no second page is filed for a
-  sealed run. A run reopened in that checkout since the signature is its own and is never taken
+- A checkout whose copy of the run is older than its record - signed elsewhere, or reopened and
+  re-closed elsewhere (the record carries more reopens) - takes the record up at its next `plan`,
+  `sign` or `close`; the close then refuses, naming what to do next, so it never files a second
+  page for a sealed run or files its older copy over a newer record. A run reopened in that checkout since the signature is its own and is never taken
   up. A close never strips a signature: a sealed, signed record that checkout has not
   reopened past is left as it is, and any other signed record keeps its signature when the close
   files over it, so only `sign` writes a new one.

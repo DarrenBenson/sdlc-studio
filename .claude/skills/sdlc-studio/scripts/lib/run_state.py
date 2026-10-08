@@ -593,6 +593,21 @@ def sealed_elsewhere(live: dict, record: dict) -> bool:
     return len(live.get("reopened") or []) <= len(record.get("reopened") or [])
 
 
+def supersedes(live: dict, record: dict) -> bool:
+    """Whether `record`, the tracked record of the run `live` holds open, is newer than this
+    copy, so it is taken up rather than filed over: it records more reopens than `live`
+    (another checkout reopened and re-closed the run since this copy last wrote it), or it is
+    sealed and signed with no fewer (`sealed_elsewhere`). A copy that has reopened past the
+    record is the newer one, and is never discarded."""
+    if not record.get("run_id") or record.get("run_id") != live.get("run_id"):
+        return False
+    if live.get("outcome") != RUNNING:
+        return False
+    if len(record.get("reopened") or []) > len(live.get("reopened") or []):
+        return True
+    return sealed_elsewhere(live, record)
+
+
 def adopt_tracked(repo_root: Path | str, record: dict) -> dict:
     """Make a tracked run record this checkout's live run state, under the lock: the run was
     closed, or signed, in another checkout. A different run held here and already closed is

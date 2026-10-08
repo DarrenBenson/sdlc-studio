@@ -440,6 +440,84 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
             rc = sprint_report.main(["--root", str(self.closer), "check", "--report", refiled])
         self.assertEqual(0, rc, buf.getvalue())
 
+    # --- round 4: a copy older than its record never files over it --------------------------
+
+    def test_a_stale_copy_never_files_over_a_newer_record(self) -> None:
+        """Mutant: the close compares reopen counts only against a SEALED record, so a closing
+        checkout whose copy predates another clone's reopen and re-close files its older copy
+        over the newer awaiting record, erasing that reopen, and the next signature of the
+        re-closed page reads INVALID."""
+        self._close()
+        other = self._clone("other")
+        rc, _out, err = signing._sign(other, REPORT)
+        self.assertEqual(0, rc, err)
+        self._commit(other, "seal")
+        rc, _out, err = signing._run(other, "reopen", "--reason", "a late review landed")
+        self.assertEqual(0, rc, err)
+        rc, _out, err = lean._close(other)
+        self.assertEqual(0, rc, err)
+        self._commit(other, "re-close")
+        newer = self._record(other)
+        self._pull(self.closer, other)
+        self.assertEqual(0, len(self._live(self.closer).get("reopened") or []))
+        before = self._report_ids(self.closer)
+        rc, _out, err = lean._close(self.closer)
+        self.assertEqual(2, rc, err)
+        self.assertIn("reopened and re-closed in another checkout", err)
+        self.assertIn(f"sprint.py sign --report {newer['report']}", err)
+        self.assertEqual(newer, self._record(self.closer), "the newer record was filed over")
+        self.assertEqual(before, self._report_ids(self.closer), "a page was filed")
+        # The stale checkout now holds the newer record, so it can sign the re-closed page.
+        rc, _out, err = signing._sign(self.closer, newer["report"])
+        self.assertEqual(0, rc, err)
+        self._commit(self.closer, "re-seal")
+        import sprint_report  # noqa: PLC0415 - bound at call time, as the suite loads it
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            rc = sprint_report.main(["--root", str(self._clone("checked")), "check", "--report",
+                                     newer["report"]])
+        self.assertEqual(0, rc, buf.getvalue())
+
+    def test_a_repeated_reclose_refreshes_a_record_carrying_a_signature(self) -> None:
+        """Mutant: the close leaves ANY signed record as it is when this copy records no more
+        reopens, sealed or not, so a second re-close over a carried signature leaves the record
+        stale, its tree no longer the close's, and no clone can sign the page."""
+        self._close()
+        signer = self._clone("signer")
+        rc, _out, err = signing._sign(signer, REPORT)
+        self.assertEqual(0, rc, err)
+        self._commit(signer, "seal")
+        rc, _out, err = signing._run(self.closer, "reopen", "--reason", "one more change")
+        self.assertEqual(0, rc, err)
+        self._pull(self.closer, signer)
+        rc, _out, err = lean._close(self.closer)
+        self.assertEqual(0, rc, err)
+        self._commit(self.closer, "re-close")
+        (self.closer / "src" / "widget.py").write_text("x = 3\n", encoding="utf-8")
+        self._commit(self.closer, "a fix after the re-close")
+        rc, _out, err = lean._close(self.closer)
+        self.assertEqual(0, rc, err)
+        self._commit(self.closer, "close again")
+        self.assertEqual(self._live(self.closer)["close_tree"],
+                         self._record(self.closer)["close_tree"], "the record is stale")
+        rc, _out, err = signing._sign(self._clone("fresh"), self._record(self.closer)["report"])
+        self.assertEqual(0, rc, err)
+
+    def test_the_close_never_files_over_a_record_with_more_reopens(self) -> None:
+        """Mutant: `_file_awaiting_record` files over a running record that records more
+        reopens than this copy. Driven directly, because the close refuses this state first."""
+        self._close()
+        record = self._record(self.closer)
+        record["reopened"] = [{"at": "2099-01-01T00:00:00Z", "run_id": RUN,
+                               "from_outcome": "goal-reached", "reason": "elsewhere"}]
+        (self.closer / RECORD).write_text(json.dumps(record), encoding="utf-8")
+        before = (self.closer / RECORD).read_bytes()
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+            signing.sprint._file_awaiting_record(self.closer)
+        self.assertEqual(before, (self.closer / RECORD).read_bytes())
+        self.assertIn("records more reopens than this copy", err.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()
