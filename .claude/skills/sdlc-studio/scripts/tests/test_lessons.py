@@ -714,7 +714,7 @@ LESSONS_FIXTURE = """# Project Lessons
 
 class RevalidateTests(unittest.TestCase):
     def _write(self, root: Path) -> Path:
-        p = root / "sdlc-studio" / ".local" / "lessons.md"
+        p = root / "sdlc-studio" / "retros" / "LESSONS.md"
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(LESSONS_FIXTURE, encoding="utf-8")
         return p
@@ -757,7 +757,7 @@ def _quiet_main(argv: list[str]) -> int:
 
 class SummaryTests(unittest.TestCase):
     def _write(self, root: Path) -> Path:
-        p = root / "sdlc-studio" / ".local" / "lessons.md"
+        p = root / "sdlc-studio" / "retros" / "LESSONS.md"
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(LESSONS_FIXTURE, encoding="utf-8")
         return p
@@ -976,7 +976,7 @@ class SummaryStalenessTests(unittest.TestCase):
     the `index-derived` discipline, applied to LESSONS-SUMMARY.md. No stamp, no mtime."""
 
     def _seed(self, root: Path) -> tuple[Path, Path]:
-        p = root / "sdlc-studio" / ".local" / "lessons.md"
+        p = root / "sdlc-studio" / "retros" / "LESSONS.md"
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(LESSONS_FIXTURE, encoding="utf-8")
         s = root / "sdlc-studio" / "retros" / "LESSONS-SUMMARY.md"
@@ -986,7 +986,7 @@ class SummaryStalenessTests(unittest.TestCase):
     def _regen(self, root: Path) -> None:
         with contextlib.redirect_stdout(io.StringIO()):
             lessons.main(["summary", "--project-file",
-                          str(root / "sdlc-studio" / ".local" / "lessons.md")])
+                          str(root / "sdlc-studio" / "retros" / "LESSONS.md")])
 
     def test_round_trip_summary_parses_back_to_the_expected_digest(self) -> None:
         entries = lessons.parse_project_lessons(LESSONS_FIXTURE)
@@ -1037,9 +1037,9 @@ class SummaryStalenessTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t:
             base = Path(t)
             proj, elsewhere = base / "proj", base / "elsewhere"
-            (proj / "sdlc-studio" / ".local").mkdir(parents=True)
+            (proj / "sdlc-studio" / "retros").mkdir(parents=True)
             elsewhere.mkdir()
-            (proj / "sdlc-studio" / ".local" / "lessons.md").write_text(
+            (proj / "sdlc-studio" / "retros" / "LESSONS.md").write_text(
                 "# Project Lessons\n\n**Last Updated:** 2026-07-20\n\n"
                 "## L-0001: a lesson worth keeping\n\n- **Added:** 2026-07-20\n",
                 encoding="utf-8")
@@ -1222,7 +1222,7 @@ class ValidityHorizonTests(unittest.TestCase):
     counts as a finding too, or the check would pass vacuously on every legacy log."""
 
     def _seed(self, root: Path, text: str = LESSONS_FIXTURE) -> Path:
-        p = root / "sdlc-studio" / ".local" / "lessons.md"
+        p = root / "sdlc-studio" / "retros" / "LESSONS.md"
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(text, encoding="utf-8")
         return p
@@ -1388,7 +1388,7 @@ class PlanDigestTests(unittest.TestCase):
     def test_digest_comes_from_the_log_when_present(self) -> None:
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
-            p = root / "sdlc-studio" / ".local" / "lessons.md"
+            p = root / "sdlc-studio" / "retros" / "LESSONS.md"
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(LESSONS_FIXTURE, encoding="utf-8")
             d = lessons.plan_digest(root)
@@ -1439,8 +1439,8 @@ class SummaryOutRootAnchoringTests(unittest.TestCase):
         self.root = self.tmp / "proj"
         # `sdlc-studio/stories` is one of the project-root markers discovery looks for.
         (self.root / "sdlc-studio" / "stories").mkdir(parents=True)
-        (self.root / "sdlc-studio" / ".local").mkdir(parents=True)
-        (self.root / "sdlc-studio" / ".local" / "lessons.md").write_text(
+        (self.root / "sdlc-studio" / "retros").mkdir(parents=True)
+        (self.root / "sdlc-studio" / "retros" / "LESSONS.md").write_text(
             self.LOG, encoding="utf-8")
         self.inner = self.root / "scripts"      # a subdirectory inside the project
         self.inner.mkdir()
