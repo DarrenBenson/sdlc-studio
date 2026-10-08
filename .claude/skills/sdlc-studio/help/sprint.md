@@ -197,16 +197,23 @@ The slot holds in every clone, not only the one that closed the run. `.local/run
 exists only on the machine that wrote it, so `close` also files the run's record, still running,
 at `sdlc-studio/reports/runs/<RUN-ID>.json`; commit it with the close's paperwork.
 
-- In any clone holding it, `sprint plan --write` refuses while a tracked record names a report
-  and is still running, naming the run, its report and the `sign` command.
-- `sign --report <id>` takes the run up from that record in a clone that never held it. An older,
-  closed run held there is archived first; one still open there is never discarded.
+- In a clone that does not hold the run open, `sprint plan --write` refuses while a tracked
+  record names a report and is still running, naming the run, its report and the `sign`
+  command. The checkout that closed the run holds it open, so it gives the one-run refusal
+  above.
+- `sign --report <id>` takes the run up from that record in a clone that does not hold it. Every
+  check reads the record as it stands, and only a sign that passes them all writes it into the
+  clone. An older, closed run held there is archived first; a different run still open there is
+  refused, never discarded.
 - The tree check still holds there: the digest leaves the run records out, so a clone at the
   close's commit matches the tree the close recorded.
-- A clone whose `.local` still holds the run open after it was signed elsewhere takes the sealed
-  record up at its next plan.
+- A checkout still holding the run open after it was signed elsewhere takes the sealed record up
+  at its next `plan`, `sign` or `close`; the close then refuses, so no second page is filed for a
+  sealed run. A run reopened in that checkout since the signature is its own and is never taken
+  up, and a close never files over a signed record unless the run was reopened after it.
 - A run ended without a signature (`stop`) updates its record the same way, so it stops awaiting
-  one. A `reopen` is not marked in the record until the run is closed again.
+  one, and `stop` names the record to commit. A `reopen` is not marked in the record until the
+  run is closed again.
 
 ## The breakdown gate
 

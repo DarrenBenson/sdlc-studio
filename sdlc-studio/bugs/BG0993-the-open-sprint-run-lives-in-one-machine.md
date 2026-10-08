@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_integrity.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/BG0993.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_integrity.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_close_shows_the_page.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/BG0993.md
 > **Evidence:** homelab 2026-10-08: RPT0002 (RUN-01M4BZZ9) committed and unsigned; studypc2 .local/run-state.json = RUN-01M4B5HP (sealed); StudyPC = RUN-01KYJXE7; RUN-01M4BZZ9's state not on either
 > **Created:** 2026-10-08
 > **Created-by:** sdlc-studio file
@@ -58,6 +58,18 @@ Commit the run's open/closed marker with the report: when `close` files RPTxxxx,
 - Tests: `test_run_open_across_checkouts.py`, 7 tests through `sprint.main` across real clones; 10 mutants, each killed.
 - Two existing tests changed with the behaviour, each because the close now commits the record: `test_lean_tracked_run_record`'s re-seal test counts the signatures in the record's history rather than the commits that touched it, and `test_lean_report_integrity`'s archived-run fixture seals as `sign` does (the tracked record as well as the archive) instead of the archive alone.
 
+## Repair after review round 1 (REJECT)
+
+Each blocking finding, ruled:
+
+- `test_lean_close_shows_the_page` red at 3bc1620e: CLOSED. The test now expects the run record the close files under `reports/runs/`, and names it. The full suite is run before this repair is committed.
+- A plan after a reopen in the same checkout discarded the reopen: CLOSED. One predicate, `run_state.sealed_elsewhere`, decides every take-up: the record is sealed and signed, and this checkout's copy is the same run, still open, with no more reopens than the record and no differing signature of its own. A run signed here and reopened here fails it, so the plan gives the base refusal and keeps the reopen.
+- A sign after reopening an unsigned run sealed the broken page and wiped the reopen: CLOSED. `sign` never takes up the run this checkout holds, and it takes a record up only after every check has passed, so a refused sign writes nothing.
+- A re-close after a signature elsewhere stripped it: CLOSED. `close` and `sign` in the closing checkout take a signature made elsewhere up (sealed), so the close refuses instead of filing a second page, and `_file_awaiting_record` never files over a signed record unless the run was reopened after it.
+- The docs claimed the named refusal in every clone: CLOSED by narrowing. The help and the fragment say the clone that does not hold the run open gets the named refusal, and the closing checkout the one-run refusal; a test pins the latter.
+- Non-blocking, also done: an unreadable record refusing the plan, `--report` choosing between two awaiting runs, and the fingerprint equal to the filed page's are each pinned; `stop` names the record to commit; the `file_tracked` docstring is corrected. Not done, carried to a follow-up: a clone that never held the run can end it only by signing it.
+- Tests: 15 in `test_run_open_across_checkouts.py`. Eighteen mutants: seventeen killed. The survivor is equivalent: removing `sign`'s early refusal of a different open run leaves `adopt_tracked` to refuse the same case, with the same names and nothing written.
+
 ## Revision History
 
 | Date | Author | Change |
@@ -65,3 +77,4 @@ Commit the run's open/closed marker with the report: when `close` files RPTxxxx,
 | 2026-10-08 | sdlc-studio | Filed |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: confirmed by the code path; tool-derived criteria replaced with four executable ones; Affects corrected; CR-0610 related; workaround recorded |
 | 2026-10-08 | Claude Opus 5.5 (engineering seat) | Fixed in the working tree (D0351 fast-track); Affects narrowed to the files changed: sprint_report.py and its tests were not needed, test_lean_tracked_run_record.py and help/sprint.md were |
+| 2026-10-08 | Claude Opus 5.5 (engineering seat) | Repaired after QA round 1 REJECT: every blocking finding ruled CLOSED; Affects gains test_lean_close_shows_the_page.py |

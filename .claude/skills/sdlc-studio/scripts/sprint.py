@@ -8771,6 +8771,18 @@ def _file_awaiting_record(root) -> None:
     state = run_state.read(root) or {}
     if state.get("outcome") != run_state.RUNNING or not state.get("report"):
         return
+    # A SIGNATURE IS NEVER STRIPPED. A signed record is superseded only by a run that records a
+    # reopen after it; anything else would file an unsigned record over a sealed one, and the
+    # signed page would then read INVALID in every clone.
+    try:
+        existing = run_state.read_tracked(root, state["run_id"])
+    except run_state.RunStateError:
+        existing = {}
+    if existing.get("signature") and (len(state.get("reopened") or [])
+                                      <= len(existing.get("reopened") or [])):
+        print(f"close: {state['run_id']}'s tracked record carries a signature no reopen here "
+              f"supersedes, so it is left as it is", file=sys.stderr)
+        return
     try:
         path = run_state.file_tracked(root, state)
     except OSError as exc:
@@ -8784,28 +8796,46 @@ def _file_awaiting_record(root) -> None:
           f"checkout sees the run is open")
 
 
+def _signed_elsewhere(root, state: dict) -> dict:
+    """The tracked record of the run this checkout holds open, when another checkout signed it
+    and this copy has not moved past it (`run_state.sealed_elsewhere`); else {}. Reads only."""
+    rid = state.get("run_id")
+    if not rid or state.get("outcome") != run_state.RUNNING:
+        return {}
+    try:
+        rec = run_state.read_tracked(root, rid)
+    except run_state.RunStateError:
+        return {}
+    return rec if run_state.sealed_elsewhere(state, rec) else {}
+
+
+def _take_up_signature(root, state: dict, verb: str) -> dict | None:
+    """Seal this checkout's copy of its open run from the tracked record when another checkout
+    signed it (`_signed_elsewhere`); the sealed state, or None when there was nothing to take
+    up."""
+    rec = _signed_elsewhere(root, state)
+    if not rec:
+        return None
+    adopted = run_state.adopt_tracked(root, rec)
+    print(f"{verb}: {rec['run_id']} was signed in another checkout ({rec.get('outcome')}, "
+          f"{(rec.get('signature') or {}).get('report') or 'its report'}); this checkout's copy "
+          f"of it is now sealed from its tracked record", file=sys.stderr)
+    return adopted
+
+
 def _run_held_elsewhere(root) -> str:
     """Why `plan --write` may not open a run here, or "": a tracked record awaits its
-    signature for a run this checkout does not hold open. A run this checkout holds open
-    is judged as before, by `open_run`. A run held open here whose tracked record is SIGNED
-    was sealed in another checkout, so its record is taken up and it no longer stands in the
-    way. An unreadable live state is refused here, by name, and nothing is written."""
+    signature for a run this checkout does not hold open. A run this checkout holds open is
+    judged as before, by `open_run`, unless another checkout signed it and this copy has not
+    moved past that signature: then it is taken up sealed and no longer stands in the way. An
+    unreadable live state is refused here, by name, and nothing is written."""
     try:
         state = run_state.read(root) or {}
+        if (taken := _take_up_signature(root, state, "plan")) is not None:
+            state = taken
     except run_state.RunStateError as exc:
         return f"plan REFUSED: {exc}"
     held = state.get("run_id") if state.get("outcome") == run_state.RUNNING else None
-    if held:
-        try:
-            rec = run_state.read_tracked(root, held)
-        except run_state.RunStateError as exc:
-            return f"plan REFUSED: {exc}"
-        if rec.get("outcome") in run_state.CLOSED and rec.get("signature"):
-            run_state.adopt_tracked(root, rec)
-            print(f"plan: {held} was signed in another checkout ({rec.get('outcome')}); this "
-                  f"checkout's copy of it is now sealed from its tracked record",
-                  file=sys.stderr)
-            held = None
     try:
         waiting = [r for r in run_state.awaiting_signature(root) if r.get("run_id") != held]
     except run_state.RunStateError as exc:
@@ -8822,31 +8852,36 @@ def _run_held_elsewhere(root) -> str:
     return "\n".join(lines)
 
 
-def _committed_run_to_sign(root, state: dict, report_id: str | None) -> tuple[dict, str]:
-    """`(state, refusal)`: the run state `sign` judges. This checkout's own when it holds the
-    run the close filed; otherwise the tracked record awaiting the signature (the one naming
-    `report_id`, or the only one when none is named), taken up as this checkout's live state,
-    so the run can be signed from any clone that holds it. Unchanged when no record matches."""
-    if state.get("outcome") == run_state.RUNNING and state.get("report"):
-        return state, ""
+def _committed_run_to_sign(root, state: dict, report_id: str | None) -> tuple[dict, str, bool]:
+    """`(state, refusal, take_up)`: the run state `sign` judges, and whether it must be taken up
+    as this checkout's live state before the seal is written.
+
+    This checkout's own state whenever it holds a run open - one it closed, or one it reopened,
+    whose report the reopen cleared - and that run is never taken up from a record, which would
+    still name the page the reopen broke. Otherwise the tracked record awaiting a signature
+    (the one naming `report_id`, or the only one when none is named), judged as it stands and
+    taken up only once every check has passed, so a refused sign writes nothing. A different
+    run this checkout holds open is refused, never discarded."""
+    held = state.get("run_id")
+    held_open = state.get("outcome") == run_state.RUNNING
+    if held_open and state.get("report"):
+        return state, "", False
     try:
         waiting = run_state.awaiting_signature(root)
     except run_state.RunStateError as exc:
-        return state, f"sign: {exc}"
+        return state, f"sign: {exc}", False
     if report_id:
         waiting = [r for r in waiting
                    if sdlc_md.norm_id(str(r.get("report") or "")) == sdlc_md.norm_id(report_id)]
+    waiting = [r for r in waiting if r.get("run_id") != held]
     if len(waiting) != 1:
-        return state, ""
+        return state, "", False
     record = waiting[0]
-    try:
-        adopted = run_state.adopt_tracked(root, record)
-    except run_state.RunStateError as exc:
-        return state, f"sign REFUSED: {exc}"
-    print(f"sign: {record.get('run_id')} was closed in another checkout - taken up from "
-          f"{run_state.tracked_path(root, record['run_id']).relative_to(root).as_posix()}",
-          file=sys.stderr)
-    return adopted, ""
+    if held_open:
+        return state, (f"sign REFUSED: this checkout holds {held}, still open, so "
+                       f"{record.get('run_id')} cannot be taken up here without discarding it - "
+                       f"close or stop {held} first"), False
+    return record, "", True
 
 
 def record_close_tree(root) -> None:
@@ -9039,6 +9074,18 @@ def cmd_close(args: argparse.Namespace) -> int:
     if not state:
         print("close refused: no run state - `sprint plan --write` opens the run this "
               "close would end", file=sys.stderr)
+        return 2
+    # SIGNED IN ANOTHER CHECKOUT: nothing is left to close, and a re-close would file a second
+    # page for a sealed run. Taken up sealed (not on a preview, which writes nothing).
+    if rec := _signed_elsewhere(root, state):
+        if not getattr(args, "dry_run", False):
+            run_state.adopt_tracked(root, rec)
+        print(f"close refused: {rec['run_id']} was signed in another checkout "
+              f"({(rec.get('signature') or {}).get('report') or 'its report'}), so there is "
+              f"nothing to close here"
+              + ("" if getattr(args, "dry_run", False) else
+                 "; this checkout's copy of it is now sealed from its tracked record")
+              + ". To change it, `sprint.py reopen --reason ...`", file=sys.stderr)
         return 2
     # EVERYTHING OWED, BEFORE ANY REFUSAL CAN SHORT-CIRCUIT IT. This sits above the sprint-goal,
     # retro and goal-verdict refusals deliberately: each of those returns early, so a pre-flight
@@ -9647,8 +9694,10 @@ def cmd_sign(args: argparse.Namespace) -> int:
     (D0213, RUN-01M2JA6J's own two hours).
     """
     root = Path(args.root)
-    state, refused = _committed_run_to_sign(root, run_state.read(root) or {},
-                                            getattr(args, "report", None))
+    live = run_state.read(root) or {}
+    if (taken := _take_up_signature(root, live, "sign")) is not None:
+        live = taken                     # sealed elsewhere: refused below as already sealed
+    state, refused, take_up = _committed_run_to_sign(root, live, getattr(args, "report", None))
     if refused:
         print(refused, file=sys.stderr)
         return 2
@@ -9698,6 +9747,17 @@ def cmd_sign(args: argparse.Namespace) -> int:
         print("  the run is untouched and still open - sign as an operator outside "
               "the authoring session's control", file=sys.stderr)
         return 2
+    if take_up:
+        # Every check above read the record as it stands; only now does it become this
+        # checkout's run, so a refused sign leaves the live state as it found it.
+        try:
+            state = run_state.adopt_tracked(root, state)
+        except run_state.RunStateError as exc:
+            print(f"sign REFUSED: {exc}", file=sys.stderr)
+            return 2
+        print(f"sign: {state.get('run_id')} was closed in another checkout - taken up from "
+              f"{run_state.tracked_path(root, state['run_id']).relative_to(root).as_posix()}",
+              file=sys.stderr)
     # A STOP-SHIP RULING DOES NOT REFUSE THE SEAL (D0257): the signer decides, and so is shown
     # every one before the seal is written.
     stop_ship = [g for g in state.get(run_state.CLOSE_KNOWN_ISSUES) or []
@@ -10891,7 +10951,11 @@ def cmd_stop(args) -> int:
         # wall-clock the sprint ever held.
         _open_idle_gap(root, cause)
     _render_stop_cost(out)
-    run_state.close_run(root, run_state.STOPPED)
+    stopped = run_state.close_run(root, run_state.STOPPED)
+    if stopped.get("run_id") and run_state.tracked_path(root, stopped["run_id"]).is_file():
+        print(f"stop: commit "
+              f"{run_state.tracked_path(root, stopped['run_id']).relative_to(Path(root)).as_posix()}"
+              f", so no other checkout still reads {stopped['run_id']} as awaiting its signature")
     el = run_elapsed(root)
     print(f"run stopped ({cause}): {stop['detail'] or 'no reason given'}; "
           f"{len(out['blocked'])} blocked, {len(out['unblocked'])} could have proceeded, "

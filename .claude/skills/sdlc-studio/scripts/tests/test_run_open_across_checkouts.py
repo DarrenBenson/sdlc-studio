@@ -9,6 +9,8 @@ transitions stubbed (the shared sign fixture). `gh` is a stub that answers nothi
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import os
 import subprocess
@@ -103,7 +105,9 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
         self.assertEqual(RUN, record["run_id"])
         self.assertEqual("running", record["outcome"])
         self.assertEqual(REPORT, record["report"])
-        self.assertTrue(record.get("report_fingerprint"))
+        filed = json.loads((clone / "sdlc-studio" / "reports" / f"{REPORT}.json")
+                           .read_text(encoding="utf-8"))
+        self.assertEqual(filed["fingerprint"], record.get("report_fingerprint"))
         self.assertTrue(record.get("close_tree"), "the record carries no tree to sign against")
         self.assertIsNone(record.get("signature"))
 
@@ -129,6 +133,11 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
         self.assertEqual(2, rc, err)
         self.assertIn(RUN, err)
         self.assertEqual("RUN-OLDER001", self._live(clone)["run_id"])
+        # The checkout that closed the run holds it open, so its refusal is the one-run
+        # refusal it has always given, not this one.
+        rc, _out, err = self._plan(self.closer)
+        self.assertEqual(2, rc, err)
+        self.assertIn(f"{RUN} is already open", err)
 
     def test_sign_from_a_fresh_clone(self) -> None:
         """AC3. Mutants: `sign` reads only `.local`, so a clone that never held the run cannot
@@ -201,9 +210,10 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
         """A run the close filed and then stopped awaits nothing. Mutant: `close_run` leaves
         the tracked record running, so every clone is refused a plan for good."""
         self._close()
-        rc, _out, err = signing._run(self.closer, "stop", "--reason", "abandoned", "--force")
+        rc, out, err = signing._run(self.closer, "stop", "--reason", "abandoned", "--force")
         self.assertEqual(0, rc, err)
         self.assertNotEqual("running", self._record(self.closer)["outcome"])
+        self.assertIn(f"stop: commit {RECORD}", out)
 
     def test_a_tree_recorded_with_the_run_records_still_signs(self) -> None:
         """A run closed before the digest left the records out recorded a tree holding them.
@@ -227,6 +237,139 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
             json.dumps(state), encoding="utf-8")
         rc, _out, err = signing._sign(self.closer, REPORT)
         self.assertEqual(0, rc, err)
+
+    # --- round 2: a checkout's own newer state is never overwritten by its record ------------
+
+    def test_a_reopen_here_is_never_discarded_by_plan(self) -> None:
+        """Mutant: take up any sealed, signed record of the run held here, which reads a run
+        signed here and then reopened here as signed elsewhere, discards the reopen and opens a
+        new run."""
+        self._close()
+        rc, _out, err = signing._sign(self.closer, REPORT)
+        self.assertEqual(0, rc, err)
+        self._commit(self.closer, "seal")
+        rc, _out, err = signing._run(self.closer, "reopen", "--reason", "a late review landed")
+        self.assertEqual(0, rc, err)
+        rc, _out, err = self._plan(self.closer)
+        self.assertEqual(2, rc, err)
+        self.assertIn(f"{RUN} is already open", err)
+        self.assertNotIn("signed in another checkout", err)
+        live = self._live(self.closer)
+        self.assertEqual(RUN, live["run_id"])
+        self.assertEqual(1, len(live.get("reopened") or []), "the reopen was discarded")
+
+    def test_a_reopen_here_is_never_sealed_over_by_sign(self) -> None:
+        """Mutant: read a run held open with no report (a reopen cleared it) as one this
+        checkout does not hold, take up the stale awaiting record and seal the broken page."""
+        self._close()
+        rc, _out, err = signing._run(self.closer, "reopen", "--reason", "the page is wrong")
+        self.assertEqual(0, rc, err)
+        rc, _out, err = signing._sign(self.closer, REPORT)
+        self.assertEqual(2, rc, err)
+        self.assertIn("is not this run's report", err)
+        live = self._live(self.closer)
+        self.assertEqual("running", live["outcome"])
+        self.assertIsNone(live.get("report"))
+        self.assertIsNone(live.get("signature"))
+        self.assertEqual(1, len(live.get("reopened") or []), "the reopen was discarded")
+
+    def test_a_refused_sign_in_a_fresh_clone_writes_nothing(self) -> None:
+        """Mutant: take the record up before the checks, so a sign the tree check refuses has
+        already replaced the clone's live state."""
+        self._close()
+        clone = self._clone("edited")
+        (clone / "src" / "widget.py").write_text("x = 2\n", encoding="utf-8")
+        rc, _out, err = signing._sign(clone, REPORT)
+        self.assertEqual(2, rc, err)
+        self.assertEqual({}, self._live(clone), "a refused sign wrote a live state")
+
+    def _signed_elsewhere_then_pulled(self) -> dict:
+        """The closing checkout, after another clone signed its run and it pulled the seal.
+        Returns the signature the pulled record carries."""
+        self._close()
+        signer = self._clone("signer")
+        rc, _out, err = signing._sign(signer, REPORT)
+        self.assertEqual(0, rc, err)
+        self._commit(signer, "seal")
+        self._pull(self.closer, signer)
+        self.assertEqual("running", self._live(self.closer)["outcome"])
+        return self._record(self.closer)["signature"]
+
+    def _check_valid(self) -> None:
+        import sprint_report  # noqa: PLC0415 - bound at call time, as the suite loads it
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            rc = sprint_report.main(["--root", str(self.closer), "check", "--report", REPORT])
+        self.assertEqual(0, rc, buf.getvalue())
+        self.assertIn(f"VALID: {REPORT}", buf.getvalue())
+
+    def test_a_reclose_never_strips_a_signature_made_elsewhere(self) -> None:
+        """Mutants: the close never reads the tracked record, so re-running it (the remedy a
+        refused sign prints) files a second page for a sealed run; or it files the awaiting
+        record over the signed one, and the signed page reads INVALID."""
+        signed = self._signed_elsewhere_then_pulled()
+        rc, _out, err = lean._close(self.closer)
+        self.assertEqual(2, rc, err)
+        self.assertIn("signed in another checkout", err)
+        self.assertEqual(signed, self._record(self.closer)["signature"])
+        self.assertEqual("goal-reached", self._live(self.closer)["outcome"])
+        self.assertEqual([], list((self.closer / "sdlc-studio" / "reports").glob("RPT0002*")))
+        self._check_valid()
+
+    def test_a_sign_in_the_closing_checkout_takes_up_a_signature_made_elsewhere(self) -> None:
+        """Mutant: `sign` never reads the tracked record, so the closing checkout is refused
+        over the files the seal commit changed and told to re-run the close."""
+        signed = self._signed_elsewhere_then_pulled()
+        rc, _out, err = signing._sign(self.closer, REPORT)
+        self.assertEqual(2, rc, err)
+        self.assertIn("signed in another checkout", err)
+        self.assertIn("already sealed", err)
+        self.assertNotIn("Re-run the close", err)
+        self.assertEqual(signed, self._live(self.closer)["signature"])
+        self._check_valid()
+
+    def test_the_close_never_files_over_a_signed_record(self) -> None:
+        """Mutant: `_file_awaiting_record` writes without reading the record already there.
+        Driven directly, because the close refuses this state before it reaches the filing."""
+        self._close()
+        record = self._record(self.closer)
+        record.update(outcome="goal-reached", signature={"principal": "elsewhere",
+                                                         "report": REPORT,
+                                                         "fingerprint": "f" * 16})
+        (self.closer / RECORD).write_text(json.dumps(record), encoding="utf-8")
+        before = (self.closer / RECORD).read_bytes()
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+            signing.sprint._file_awaiting_record(self.closer)
+        self.assertEqual(before, (self.closer / RECORD).read_bytes())
+        self.assertIn("carries a signature", err.getvalue())
+
+    def test_an_unreadable_record_refuses_the_plan(self) -> None:
+        """Mutant: skip a record that does not parse, which reads a possibly open run as
+        absent."""
+        self._close()
+        clone = self._clone("damaged")
+        (clone / RECORD).write_text("{not json", encoding="utf-8")
+        rc, _out, err = self._plan(clone)
+        self.assertEqual(2, rc, err)
+        self.assertIn(RECORD.rsplit("/", 1)[-1], err)
+
+    def test_sign_takes_up_only_the_named_report(self) -> None:
+        """Mutant: ignore `--report` when choosing the record to take up, so two runs awaiting
+        a signature leave nothing to choose and the named one cannot be signed."""
+        self._close()
+        other = dict(self._record(self.closer), run_id="RUN-OTHER0001", report="RPT0099")
+        (self.closer / "sdlc-studio" / "reports" / "runs" / "RUN-OTHER0001.json").write_text(
+            json.dumps(other), encoding="utf-8")
+        self._commit(self.closer, "a second run awaiting its signature")
+        clone = self._clone("fresh")
+        rc, _out, err = signing._sign(clone, REPORT)
+        self.assertEqual(0, rc, err)
+        self.assertEqual(RUN, self._live(clone)["run_id"])
+        self.assertEqual("goal-reached", self._record(clone)["outcome"])
+        other_now = json.loads((clone / "sdlc-studio" / "reports" / "runs" /
+                                "RUN-OTHER0001.json").read_text(encoding="utf-8"))
+        self.assertEqual("running", other_now["outcome"])
 
 
 if __name__ == "__main__":

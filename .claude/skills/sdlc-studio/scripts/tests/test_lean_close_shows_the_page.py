@@ -44,9 +44,13 @@ class CloseShowsThePageTests(unittest.TestCase):
         self.assertIn("<h2>Goal</h2>", html.read_text(encoding="utf-8"))
         md = next(self.reports.glob("RPT0001-*.md"))
         # Nothing under the tracked reports/ folder but the filed page itself: its record, its
-        # Markdown twin and the derived index.
-        filed = {self.reports / "RPT0001.json", md, self.reports / "_index.md"}
+        # Markdown twin, the derived index, and the run's record awaiting its signature, so
+        # every checkout sees the run is open (BG0993).
+        filed = {self.reports / "RPT0001.json", md, self.reports / "_index.md",
+                 self.reports / "runs"}
         self.assertEqual(filed, set(self.reports.iterdir()) - before)
+        self.assertEqual([self.reports / "runs" / f"{lean._read(self.root)['run_id']}.json"],
+                         list((self.reports / "runs").iterdir()))
         self.assertEqual([], list(self.reports.rglob("*.html")))
         lines = out.splitlines()
         sign = next(i for i, ln in enumerate(lines) if ln.startswith("sign it with:"))

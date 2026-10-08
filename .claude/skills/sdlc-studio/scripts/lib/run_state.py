@@ -538,7 +538,8 @@ def portable(value, repo_root: Path | str):
 
 
 def file_tracked(repo_root: Path | str, state: dict) -> Path:
-    """File a sealed run's record at `tracked_path`, through `portable`. Returns the path."""
+    """File a run's record at `tracked_path`, through `portable`: still running when the close
+    files it, sealed when `sign` does. Returns the path."""
     p = tracked_path(repo_root, state["run_id"])
     p.parent.mkdir(parents=True, exist_ok=True)
     sdlc_md.atomic_write(p, json.dumps(portable(state, repo_root), indent=2) + "\n")
@@ -573,6 +574,25 @@ def awaiting_signature(repo_root: Path | str) -> list[dict]:
         if rec.get("outcome") == RUNNING and rec.get("report"):
             out.append(rec)
     return out
+
+
+def sealed_elsewhere(live: dict, record: dict) -> bool:
+    """Whether `record`, the tracked record of the run `live` holds, carries a signature made in
+    another checkout that this copy has not moved past: the record is sealed and signed, and
+    `live` is the same run, still open, recording no more reopens than the record and no
+    signature of its own that differs. A run signed here and then reopened here records one
+    reopen more than its record, so its reopen is never discarded."""
+    rid = record.get("run_id")
+    if not rid or rid != live.get("run_id"):
+        return False
+    if record.get("outcome") not in CLOSED or not record.get("signature"):
+        return False
+    if live.get("outcome") != RUNNING:
+        return False
+    if len(live.get("reopened") or []) > len(record.get("reopened") or []):
+        return False
+    own = live.get("signature")
+    return not own or own == record.get("signature")
 
 
 def adopt_tracked(repo_root: Path | str, record: dict) -> dict:
