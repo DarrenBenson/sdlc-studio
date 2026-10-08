@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 49 |
+| Open | 52 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 31 |
-| **Total** | **996** |
+| **Total** | **999** |
 
 ## All Bugs
 
@@ -72,6 +72,9 @@
 | [BG0994](BG0994-bg0989-left-test-lessons-py-s-fixtures-on.md) | BG0989 left test_lessons.py's fixtures on the legacy lessons path, so seven tests print the migration line and CI's noise gate is red on main | Fixed | High | 2026-10-08 | 2026-10-08 |
 | [BG0995](BG0995-refine-leaves-the-bold-acn-label-in-seeded.md) | refine leaves the bold **ACn** label in seeded AC headings, so a request written by the skill's own filer seeds '### AC1: **AC1** ...' (BG0291 incomplete) | Open | Medium | 2026-10-08 | 2026-10-08 |
 | [BG0996](BG0996-the-finding-filer-s-identifier-wrapper-pulls-trailing.md) | The finding filer's identifier wrapper pulls trailing punctuation into the code span: (`API_KEY_2`, `TOKEN_V2)` and `keep_alive.` | Open | Low | 2026-10-08 | 2026-10-08 |
+| [BG0997](BG0997-a-per-unit-engagement-floor-waiver-pasted-with.md) | A per-unit engagement-floor waiver pasted with the dashed v3 id does not waive the unit | Open | Medium | 2026-10-08 | 2026-10-08 |
+| [BG0998](BG0998-the-story-template-ships-verified-no-which-verify.md) | The story template ships Verified no, which verify_ac treats as an authored miss | Open | Medium | 2026-10-08 | 2026-10-08 |
+| [BG0999](BG0999-caller-check-cannot-resolve-a-skill-script-named.md) | Caller-check cannot resolve a skill script named as the consumer | Open | Medium | 2026-10-08 | 2026-10-08 |
 
 ## Archived Releases
 
