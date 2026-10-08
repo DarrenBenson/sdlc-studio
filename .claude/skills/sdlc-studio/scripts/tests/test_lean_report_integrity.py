@@ -459,6 +459,9 @@ class FiledByCloseTests(unittest.TestCase):
         self.assertFalse(sr.revalidate(self.root, rid)["archived"], "the live run is archived")
         sealed = {**self._state(), "outcome": "goal-reached", "ended_at": "2026-09-24T00:00:00Z"}
         sr.run_state.archive(self.root, sealed)
+        # Sealed as `sign` seals it: the close filed the tracked record awaiting its signature,
+        # and the seal files it again sealed (BG0993).
+        sr.run_state.file_tracked(self.root, sealed)
         self.fx._state(self.root, run_id="RUN-LEAN0002")
         self.assertTrue(sr.revalidate(self.root, rid)["archived"])
         rc, out, err = self._build("--write", "--run", "RUN-LEAN0001")

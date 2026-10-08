@@ -38,6 +38,7 @@ A library, not a command: `sprint.py` opens, closes and seals the run, and `crit
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import math
@@ -59,10 +60,12 @@ SCHEMA = 1
 # every existing reader sees exactly what it saw before.
 ARCHIVE_REL = Path("sdlc-studio") / ".local" / "run-archive"
 
-# Where `sprint sign` files a SEALED run's record: tracked, beside the report it underwrites,
-# so any full clone can re-derive the signed page and read the signature from committed
-# history. `.local` exists only in the clone that signed, and anyone who can write it could
-# re-point or strip a signature kept there.
+# Where a run's record is tracked, beside the report it underwrites. `sprint close` files it
+# when the page is filed, still running, which is what says in every clone that the run is
+# closed and awaits its signature; `sprint sign` files it again SEALED, so any full clone can
+# re-derive the signed page and read the signature from committed history. `.local` exists
+# only in the clone that wrote it, and anyone who can write it could re-point or strip a
+# signature kept there.
 TRACKED_REL = Path("sdlc-studio") / "reports" / "runs"
 
 # The outcome vocabulary. A run is RUNNING until something says otherwise; the three ways
@@ -555,6 +558,44 @@ def read_tracked(repo_root: Path | str, run_id: str) -> dict:
     if not isinstance(rec, dict):
         raise RunStateError(f"the tracked run record at {p} is not an object")
     return rec
+
+
+def awaiting_signature(repo_root: Path | str) -> list[dict]:
+    """The tracked run records whose run the close filed and nobody has signed: a record that
+    names a report and whose outcome is still running. Every clone holds them, so whether a
+    run is open is no longer a fact about the machine that closed it. RAISES `RunStateError`
+    on a record that does not parse (`read_tracked`): an unreadable record could be the open
+    one, and is never read as absent."""
+    d = Path(repo_root) / TRACKED_REL
+    out = []
+    for p in sorted(d.glob("*.json")) if d.is_dir() else []:
+        rec = read_tracked(repo_root, p.stem)
+        if rec.get("outcome") == RUNNING and rec.get("report"):
+            out.append(rec)
+    return out
+
+
+def adopt_tracked(repo_root: Path | str, record: dict) -> dict:
+    """Make a tracked run record this checkout's live run state, under the lock: the run was
+    closed, or signed, in another checkout. A different run held here and already closed is
+    archived first, as `open_run` archives it; a different run held here and still OPEN is
+    refused (`RunStateError`), because adopting would discard it."""
+    rid = record.get("run_id")
+
+    def apply(state: dict) -> dict:
+        held = (state or {}).get("run_id")
+        if held and held != rid:
+            if state.get("outcome") == RUNNING:
+                raise RunStateError(
+                    f"this checkout holds {held}, still open, so {rid} cannot be taken up "
+                    f"here without discarding it - close or stop {held} first")
+            archive(repo_root, state)
+        return dict(record)
+
+    adopted = _mutate(repo_root, apply)
+    if adopted.get("outcome") in CLOSED:
+        archive(repo_root, adopted)
+    return adopted
 
 
 def is_open(repo_root: Path | str) -> bool:
@@ -1728,6 +1769,15 @@ def close_run(repo_root: Path | str, outcome: str, handoff: str | None = None) -
     # The record is final here, so keep it: the next `open_run` overwrites the live file, and
     # a closed run that only ever existed there is a sprint whose evidence expires.
     archive(repo_root, state)
+    # A run the close filed as awaiting its signature awaits nothing once it ends, by whichever
+    # route, so its tracked record follows it; a record nobody filed is not created here. A
+    # write that fails leaves the record awaiting, which refuses the next plan and names it:
+    # the safe direction.
+    rid = state.get("run_id")
+    if rid and tracked_path(repo_root, rid).is_file():
+        with contextlib.suppress(RunStateError, OSError):
+            if read_tracked(repo_root, rid).get("outcome") == RUNNING:
+                file_tracked(repo_root, state)
     return state
 
 

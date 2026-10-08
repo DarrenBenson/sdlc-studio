@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG0993.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_integrity.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/BG0993.md
 > **Evidence:** homelab 2026-10-08: RPT0002 (RUN-01M4BZZ9) committed and unsigned; studypc2 .local/run-state.json = RUN-01M4B5HP (sealed); StudyPC = RUN-01KYJXE7; RUN-01M4BZZ9's state not on either
 > **Created:** 2026-10-08
 > **Created-by:** sdlc-studio file
@@ -29,12 +29,16 @@ Commit the run's open/closed marker with the report: when `close` files RPTxxxx,
 
 - [ ] **AC1** When `sprint close` files a report, a committed run record names the run as awaiting signature, with its report and fingerprint, so a fresh clone sees that a run is open
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py -k close_commits_an_awaiting_signature_record
+  - **Verified:** yes (2026-10-08)
 - [ ] **AC2** `sprint plan --write` in a checkout whose local state names no open run still refuses while a committed run record awaits signature, naming the run, its report and the sign command
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py -k plan_refused_by_an_unsigned_committed_run
+  - **Verified:** yes (2026-10-08)
 - [ ] **AC3** `sprint sign --report <id>` seals the run from a fresh clone that holds the committed record but not the closing machine's `.local/` state
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py -k sign_from_a_fresh_clone
+  - **Verified:** yes (2026-10-08)
 - [ ] **AC4** Once signed, the run's committed record no longer blocks a plan anywhere
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py -k signed_record_does_not_block
+  - **Verified:** yes (2026-10-08)
 
 ## Triage
 
@@ -43,9 +47,21 @@ Commit the run's open/closed marker with the report: when `close` files RPTxxxx,
 - Affects paths corrected to repository paths; `lib/run_state.py` added, since the one-run guard lives there. Points stay 5 as filed; refinement may find 8 (three commands change).
 - Until fixed: sign a run on the machine that closed it, and do not plan on another machine while a committed report is unsigned.
 
+## Fix
+
+- `sprint close` files the run's record, still running, at `sdlc-studio/reports/runs/<RUN-ID>.json` after it stamps the tree, so the record carries `close_tree`, `report` and `report_fingerprint`.
+- `sprint plan --write` refuses, before any selection, while a tracked record names a report and is still running for a run this checkout does not hold open. A run held open here whose tracked record is signed is taken up as sealed first (`run_state.adopt_tracked`), so the closing machine is not blocked after a signature elsewhere.
+- `sprint sign` takes the awaiting record up as the live state when this checkout does not hold the run the close filed. An older closed run held here is archived; a different open run is never discarded (refused).
+- `tree_digest` drops `reports/runs/` from its index, so a clone at the close's commit matches `close_tree` without the tree object, which only the closing machine holds. `tree_moved_since_close` ignores paths under it, so a run closed before this change (its `close_tree` holds the records) still signs.
+- `run_state.close_run` refreshes a tracked record that is still running, so a run ended without a signature (`stop`) stops awaiting one.
+- Not covered: between a `reopen` and the next close, the tracked record still reads sealed, so another clone is not refused a plan in that window.
+- Tests: `test_run_open_across_checkouts.py`, 7 tests through `sprint.main` across real clones; 10 mutants, each killed.
+- Two existing tests changed with the behaviour, each because the close now commits the record: `test_lean_tracked_run_record`'s re-seal test counts the signatures in the record's history rather than the commits that touched it, and `test_lean_report_integrity`'s archived-run fixture seals as `sign` does (the tracked record as well as the archive) instead of the archive alone.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-08 | sdlc-studio | Filed |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: confirmed by the code path; tool-derived criteria replaced with four executable ones; Affects corrected; CR-0610 related; workaround recorded |
+| 2026-10-08 | Claude Opus 5.5 (engineering seat) | Fixed in the working tree (D0351 fast-track); Affects narrowed to the files changed: sprint_report.py and its tests were not needed, test_lean_tracked_run_record.py and help/sprint.md were |

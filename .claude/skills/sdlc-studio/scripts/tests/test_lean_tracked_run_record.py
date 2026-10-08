@@ -225,8 +225,14 @@ class TrackedRunRecordTests(unittest.TestCase):
         rc, _out, err = signing._sign(self.root, refiled)
         self.assertEqual(0, rc, err)
         self._commit("seal again")
+        # The close commits the record too, awaiting its signature (BG0993), so count the
+        # signatures the record's history carries rather than the commits that touched it.
         history = self._git("log", "--format=%H", "--", str(self._tracked())).stdout.split()
-        self.assertEqual(2, len(history), "the re-seal did not commit a second signature")
+        rel = self._tracked().relative_to(self.root).as_posix()
+        signed = {json.dumps(json.loads(self._git("show", f"{sha}:{rel}").stdout)
+                             .get("signature"), sort_keys=True) for sha in history}
+        signed.discard("null")
+        self.assertEqual(2, len(signed), "the re-seal did not commit a second signature")
         rc, out = self._check(self.root, refiled)
         self.assertEqual(0, rc, out)
         rc, out = self._check(self._clone("clean"), refiled)

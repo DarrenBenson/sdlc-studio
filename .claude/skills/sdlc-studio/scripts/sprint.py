@@ -8741,9 +8741,13 @@ def tree_digest(root) -> str:
         if add.returncode != 0:
             return ""
         # Dropped from the INDEX rather than excluded by pathspec: `add -- ':(exclude)<p>'`
-        # errors when <p> is also gitignored, which is this repository's own shape.
+        # errors when <p> is also gitignored, which is this repository's own shape. The
+        # tracked run records go too: they are the runs' own bookkeeping, filed by the close
+        # after this digest is taken and again by the signature, and a tree another clone
+        # computes must match the close's without the object the close wrote.
         subprocess.run(["git", "-C", str(root), "rm", "--cached", "-r", "-q",
-                        "--ignore-unmatch", "--", "sdlc-studio/.local"],
+                        "--ignore-unmatch", "--", "sdlc-studio/.local",
+                        run_state.TRACKED_REL.as_posix()],
                        env=env, capture_output=True, timeout=30)
         out = subprocess.run(["git", "-C", str(root), "write-tree"], env=env,
                              capture_output=True, text=True, timeout=30)
@@ -8754,6 +8758,95 @@ def tree_digest(root) -> str:
         if idx:
             with contextlib.suppress(OSError):
                 os.unlink(idx)
+
+
+def _file_awaiting_record(root) -> None:
+    """File the run's record, still running, beside the report the close just filed.
+
+    A run is open until it is signed, and `.local` says so only on the machine that closed it:
+    another clone would plan a second run beside it and could not sign it. The tracked record
+    says so in every clone - `plan` refuses while one awaits its signature, and `sign` takes
+    the run up from it. Filed after the tree is stamped, so it carries the tree the signer
+    compares against; the digest leaves the records out, so filing it moves nothing."""
+    state = run_state.read(root) or {}
+    if state.get("outcome") != run_state.RUNNING or not state.get("report"):
+        return
+    try:
+        path = run_state.file_tracked(root, state)
+    except OSError as exc:
+        print(f"close: the run record could not be filed at "
+              f"{run_state.tracked_path(root, state['run_id'])} ({exc}) - no other checkout "
+              f"can see that {state['run_id']} awaits its signature until it is",
+              file=sys.stderr)
+        return
+    print(f"close: {state['run_id']} awaits its signature - commit "
+          f"{path.relative_to(root).as_posix()} with the close's paperwork, so every "
+          f"checkout sees the run is open")
+
+
+def _run_held_elsewhere(root) -> str:
+    """Why `plan --write` may not open a run here, or "": a tracked record awaits its
+    signature for a run this checkout does not hold open. A run this checkout holds open
+    is judged as before, by `open_run`. A run held open here whose tracked record is SIGNED
+    was sealed in another checkout, so its record is taken up and it no longer stands in the
+    way. An unreadable live state is refused here, by name, and nothing is written."""
+    try:
+        state = run_state.read(root) or {}
+    except run_state.RunStateError as exc:
+        return f"plan REFUSED: {exc}"
+    held = state.get("run_id") if state.get("outcome") == run_state.RUNNING else None
+    if held:
+        try:
+            rec = run_state.read_tracked(root, held)
+        except run_state.RunStateError as exc:
+            return f"plan REFUSED: {exc}"
+        if rec.get("outcome") in run_state.CLOSED and rec.get("signature"):
+            run_state.adopt_tracked(root, rec)
+            print(f"plan: {held} was signed in another checkout ({rec.get('outcome')}); this "
+                  f"checkout's copy of it is now sealed from its tracked record",
+                  file=sys.stderr)
+            held = None
+    try:
+        waiting = [r for r in run_state.awaiting_signature(root) if r.get("run_id") != held]
+    except run_state.RunStateError as exc:
+        return f"plan REFUSED: {exc}"
+    if not waiting:
+        return ""
+    lines = ["plan REFUSED: a project holds one run at a time, and the tracked run records "
+             "say a run is closed and awaits its signature:"]
+    for r in waiting:
+        lines.append(f"  {r.get('run_id')} awaits a signature on {r.get('report')} "
+                     f"({run_state.tracked_path(root, r['run_id']).relative_to(root).as_posix()})"
+                     f" - sign it, from any checkout that holds the record: sprint.py sign "
+                     f"--report {r.get('report')} --principal \"<the operator who signs>\"")
+    return "\n".join(lines)
+
+
+def _committed_run_to_sign(root, state: dict, report_id: str | None) -> tuple[dict, str]:
+    """`(state, refusal)`: the run state `sign` judges. This checkout's own when it holds the
+    run the close filed; otherwise the tracked record awaiting the signature (the one naming
+    `report_id`, or the only one when none is named), taken up as this checkout's live state,
+    so the run can be signed from any clone that holds it. Unchanged when no record matches."""
+    if state.get("outcome") == run_state.RUNNING and state.get("report"):
+        return state, ""
+    try:
+        waiting = run_state.awaiting_signature(root)
+    except run_state.RunStateError as exc:
+        return state, f"sign: {exc}"
+    if report_id:
+        waiting = [r for r in waiting
+                   if sdlc_md.norm_id(str(r.get("report") or "")) == sdlc_md.norm_id(report_id)]
+    if len(waiting) != 1:
+        return state, ""
+    record = waiting[0]
+    try:
+        adopted = run_state.adopt_tracked(root, record)
+    except run_state.RunStateError as exc:
+        return state, f"sign REFUSED: {exc}"
+    print(f"sign: {record.get('run_id')} was closed in another checkout - taken up from "
+          f"{run_state.tracked_path(root, record['run_id']).relative_to(root).as_posix()}",
+          file=sys.stderr)
+    return adopted, ""
 
 
 def record_close_tree(root) -> None:
@@ -9145,6 +9238,7 @@ def cmd_close(args: argparse.Namespace) -> int:
     # The tree the close LEFT, stamped after the last thing it writes: `sign` refuses a tree
     # that has moved since.
     record_close_tree(root)
+    _file_awaiting_record(root)
     if known:
         print(f"close: finished with {len(known)} known issue(s), recorded on the run and "
               + (f"handed over on the report {report_id}" if report_id else
@@ -9534,8 +9628,12 @@ def tree_moved_since_close(root, state: dict) -> list[str] | None:
         return [f"(the tree the close recorded, {recorded[:12]}, cannot be read)"]
     untracked = set(others.stdout.split("\0")) if others.returncode == 0 else set()
     parts = diff.stdout.split("\0")
+    # A tree recorded before the digest left the run records out still holds them; they are
+    # never a change to the tree the report describes.
+    records = run_state.TRACKED_REL.as_posix() + "/"
     return sorted(p for status, p in zip(parts[0::2], parts[1::2])
-                  if p and not (status == "A" and p in untracked))
+                  if p and not (status == "A" and p in untracked)
+                  and not p.startswith(records))
 
 
 def cmd_sign(args: argparse.Namespace) -> int:
@@ -9549,7 +9647,11 @@ def cmd_sign(args: argparse.Namespace) -> int:
     (D0213, RUN-01M2JA6J's own two hours).
     """
     root = Path(args.root)
-    state = run_state.read(root) or {}
+    state, refused = _committed_run_to_sign(root, run_state.read(root) or {},
+                                            getattr(args, "report", None))
+    if refused:
+        print(refused, file=sys.stderr)
+        return 2
     if state.get("outcome") in run_state.CLOSED:
         print(f"sign: {state.get('run_id')} is already sealed ({state.get('outcome')}) - "
               f"`sprint.py reopen --reason ...` to break the seal", file=sys.stderr)
@@ -9915,6 +10017,11 @@ def cmd_plan(args: argparse.Namespace) -> int:
                        getattr(args, "worklist", None), getattr(args, "prd", None))
     if err:
         print(f"policy refused: {err}", file=sys.stderr)
+        return 2
+    # ONE RUN AT A TIME, ACROSS CHECKOUTS. Whether a run is open was a fact about the machine
+    # that closed it; the tracked run records make it one every clone holds.
+    if getattr(args, "write", False) and (held := _run_held_elsewhere(args.root)):
+        print(held, file=sys.stderr)
         return 2
     if getattr(args, "prd", None):  # greenfield authoring - the batch is a PRD
         return _plan_authoring(args)
