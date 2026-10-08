@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 46 |
+| Open | 47 |
 | In Progress | 0 |
 | Fixed | 788 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 31 |
-| **Total** | **992** |
+| **Total** | **993** |
 
 ## All Bugs
 
@@ -68,6 +68,7 @@
 | [BG0990](BG0990-reconcile-s-field-sync-reads-a-joined-metadata.md) | reconcile's field sync reads a '·'-joined metadata run to end of line, writing 'P2 · **Type:** ...' into index cells and dropping the later fields | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0991](BG0991-verify-ac-attaches-a-verify-line-from-a.md) | verify_ac attaches a **Verify:** line from a LATER section (history, update notes) to the last criterion and executes it, because a criterion block never closes at a ## heading | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0992](BG0992-bg0989-s-approved-repair-leaves-three-branches-unpinned.md) | BG0989's approved repair leaves three branches unpinned, and its docs over-claim which commands move the legacy lessons log | Open | Low | 2026-10-08 | 2026-10-08 |
+| [BG0993](BG0993-the-open-sprint-run-lives-in-one-machine.md) | The open sprint run lives in one machine's gitignored .local/run-state.json: another checkout can open a second run beside it, and cannot sign it | Open | High | 2026-10-08 | 2026-10-08 |
 
 ## Archived Releases
 

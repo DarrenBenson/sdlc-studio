@@ -1,0 +1,51 @@
+# BG0993: The open sprint run lives in one machine's gitignored .local/run-state.json: another checkout can open a second run beside it, and cannot sign it
+
+> **Status:** Open
+> **Severity:** High
+> **Points:** 5
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG0993.md
+> **Evidence:** homelab 2026-10-08: RPT0002 (RUN-01M4BZZ9) committed and unsigned; studypc2 .local/run-state.json = RUN-01M4B5HP (sealed); StudyPC = RUN-01KYJXE7; RUN-01M4BZZ9's state not on either
+> **Created:** 2026-10-08
+> **Created-by:** sdlc-studio file
+> **Raised-by:** sdlc-studio; agent; v1
+> **Raised-in-batch:** none open - raised outside a delivery batch, 2026-10-08T08:50:26Z
+
+## Summary
+
+BG0989's class, for run state. `sprint plan` refuses while a run is open ('a project holds exactly one run at a time'), and `sprint sign` seals the open run - but both read `sdlc-studio/.local/run-state.json`, which is gitignored, so 'open' is a per-machine fact. Observed in the homelab consuming project on 2026-10-08: RUN-01M4BZZ9 was planned, built and closed on one workstation (RPT0002 committed, awaiting signature). On a second machine, after `git pull`, run-state.json still names the previous, SEALED run (RUN-01M4B5HP) - so on that machine (a) `sprint plan` would NOT refuse, opening a second concurrent run whose batch could re-select RUN-01M4BZZ9's seven carried units, and (b) `sprint sign --report RPT0002` cannot seal RPT0002, because the run it belongs to is not in this checkout's state. Nothing in the committed tree says a run is open: the report is committed, the run record (`reports/runs/RUN-*.json`) is written only at sign. The agent had already told the operator to run the sign command on the wrong machine before finding this.
+
+## Steps to Reproduce
+
+1. Machine A: sprint plan / build / close -> RPTxxxx committed, run left open for signature
+2. Machine B: git pull; read sdlc-studio/.local/run-state.json -> names an older, sealed run
+3. Machine B: sprint plan --write -> not refused (no open run known here)
+4. Machine B: sprint sign --report RPTxxxx -> the report's run is not this checkout's run
+
+## Proposed Fix
+
+Commit the run's open/closed marker with the report: when `close` files RPTxxxx, write `reports/runs/RUN-xxx.json` (status: awaiting-signature, report, fingerprint) and commit it; `plan` refuses while ANY committed run record is unsigned, naming it and the machine-independent remedy; `sign` can seal from any checkout that has the committed record (the signature needs only the report fingerprint and the batch, both committed). Test: a run closed in one tree, signed from a fresh clone; a plan in a fresh clone refused while the first is unsigned.
+
+## Acceptance Criteria
+
+- [ ] **AC1** When `sprint close` files a report, a committed run record names the run as awaiting signature, with its report and fingerprint, so a fresh clone sees that a run is open
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py -k close_commits_an_awaiting_signature_record
+- [ ] **AC2** `sprint plan --write` in a checkout whose local state names no open run still refuses while a committed run record awaits signature, naming the run, its report and the sign command
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py -k plan_refused_by_an_unsigned_committed_run
+- [ ] **AC3** `sprint sign --report <id>` seals the run from a fresh clone that holds the committed record but not the closing machine's `.local/` state
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py -k sign_from_a_fresh_clone
+- [ ] **AC4** Once signed, the run's committed record no longer blocks a plan anywhere
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py -k signed_record_does_not_block
+
+## Triage
+
+- Confirmed at 978083c6 by the code path: the open run is `sdlc-studio/.local/run-state.json` (lib/run_state.py:51) and the run archive is `sdlc-studio/.local/run-archive/` (:60), both gitignored; the only committed run record is `reports/runs/RUN-*.json`, written when the run is signed. So whether a run is open is a per-machine fact, and on another machine `plan` does not refuse and `sign` cannot find the run. Not a regression.
+- BG0989's class (LL0029: a record kept in a gitignored working directory is not a record), for run state. Related to CR-0610 (make the report of record reviewable without `.local/`), which moves the report's sources to committed files; this bug is the operational half, the open-run marker.
+- Affects paths corrected to repository paths; `lib/run_state.py` added, since the one-run guard lives there. Points stay 5 as filed; refinement may find 8 (three commands change).
+- Until fixed: sign a run on the machine that closed it, and do not plan on another machine while a committed report is unsigned.
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-10-08 | sdlc-studio | Filed |
+| 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: confirmed by the code path; tool-derived criteria replaced with four executable ones; Affects corrected; CR-0610 related; workaround recorded |
