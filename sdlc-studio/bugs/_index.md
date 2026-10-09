@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 66 |
+| Open | 67 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 31 |
-| **Total** | **1013** |
+| **Total** | **1014** |
 
 ## All Bugs
 
@@ -89,6 +89,7 @@
 | [BG1011](BG1011-ll0056-ships-with-its-label-doubled-and-the.md) | LL0056 ships with its label doubled and the template's placeholder sections left in, and nothing refuses a lesson with an unfilled placeholder | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1012](BG1012-the-sprint-checklist-reads-a-run-only-from.md) | The sprint checklist reads a run only from .local, so in any other clone a signed run's rows read 'no run record could be read' | Open | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1013](BG1013-the-waiver-remedy-the-close-and-the-checklist.md) | The waiver remedy the close and the checklist print omits --authorised-by, so the command as printed is refused | Open | Low | 2026-10-09 | 2026-10-09 |
+| [BG1014](BG1014-revert-check-rewrites-production-files-in-place-without.md) | revert-check rewrites production files in place without declaring a rewrite window, so a commit made while it runs can stage a reverted file | Open | Low | 2026-10-09 | 2026-10-09 |
 
 ## Archived Releases
 
