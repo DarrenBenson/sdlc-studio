@@ -67,9 +67,11 @@
 - BG0993 (High, D0351 fast-track): whether a sprint run is open lived in each machine's
   `.local`, so another machine could plan a parallel run and could not sign the first. The close
   now commits the run's record awaiting its signature, `plan --write` refuses while one awaits,
-  and `sign` works from any clone holding it. Committed 3bc1620e, not pushed: QA round 1
-  REJECTED it (a reopen in the same checkout is lost or sealed over, a re-close can strip a
-  signature made elsewhere, and a close test was left red). Repair in progress.
+  `sign` works from any clone, and a copy older than its record takes it up instead of writing
+  over it. QA approved it at round 4 (D0352 and D0353 authorised rounds past the cap); it stays
+  Open under D0354 because the ledger cannot record those rounds (BG1003). Its lows are BG1004
+  (a versioned record) and BG1001. Four rounds: I patched a cross-checkout race one ordering at a
+  time with a reopen-count proxy, and broke the full-suite rule once (BG1000 is the hook gap).
 - Third round, 2026-10-08, filed by other sessions: BG0995-BG0999 reproduce at current code,
   none a regression; CR-0618 and CR-0619 (CR-0619 to refine with BG0950), and CR-0620 to
   CR-0623 from the homelab retrospective on review seats and persona goals (CR-0620 with

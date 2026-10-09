@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-10-08
+**Last Updated:** 2026-10-09
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 56 |
+| Open | 57 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 31 |
-| **Total** | **1003** |
+| **Total** | **1004** |
 
 ## All Bugs
 
@@ -79,6 +79,7 @@
 | [BG1001](BG1001-a-clone-that-never-held-a-run-awaiting.md) | A clone that never held a run awaiting its signature can end it only by signing it: stop there says there is nothing to stop | Open | Low | 2026-10-08 | 2026-10-08 |
 | [BG1002](BG1002-goal-review-brief-ignores-the-plan-s-serves.md) | goal-review brief ignores the plan's --serves and the batch changes made after plan --write | Open | Medium | 2026-10-08 | 2026-10-08 |
 | [BG1003](BG1003-critic-record-refuses-a-review-round-the-operator.md) | critic record refuses a review round the operator authorised past the cap, so the ledger's last word on the unit is a superseded REJECT | Open | Medium | 2026-10-08 | 2026-10-08 |
+| [BG1004](BG1004-bg0993-s-tracked-run-record-tells-a-newer.md) | BG0993's tracked run record tells a newer copy by reopen count alone, so two reopens made at once overwrite each other; and the close preview's no-write guard is unpinned | Open | Low | 2026-10-09 | 2026-10-09 |
 
 ## Archived Releases
 
