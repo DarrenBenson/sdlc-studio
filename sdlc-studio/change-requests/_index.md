@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-10-08
+**Last Updated:** 2026-10-09
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 18 |
+| Proposed | 19 |
 | Approved | 0 |
 | In Progress | 1 |
 | Complete | 519 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **627** |
+| **Total** | **628** |
 
 ## All Changes
 
@@ -39,6 +39,7 @@
 | [CR-0625](CR0625-validate-seats-checks-a-seat-card-s-named.md) | validate seats checks a seat card's named personas against the project's declared cast, so a seat cannot review for a primary persona the project no longer has | Proposed | Low | Improvement | 2026-10-08 | -- |
 | [CR-0626](CR0626-a-documented-tooled-proportional-path-for-a-small.md) | A documented, tooled proportional path for a small change, so a one-file fix keeps the parts that catch defects and drops the rest | Proposed | Medium | Improvement | 2026-10-08 | -- |
 | [CR-0627](CR0627-goal-review-brief-is-identical-for-every-seat.md) | goal-review brief is identical for every seat - give each seat its own lens and persona card | Proposed | Medium | Feature | 2026-10-08 | -- |
+| [CR-0628](CR0628-refine-apply-breakdown-takes-only-title-points-and.md) | refine apply --breakdown takes only title, points and affects, so every story's persona, criteria and Verify lines are re-typed by hand after minting | Proposed | Medium | Improvement | 2026-10-09 | -- |
 
 ## Archived Releases
 
