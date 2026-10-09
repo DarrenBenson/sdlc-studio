@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 62 |
+| Open | 64 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 31 |
-| **Total** | **1009** |
+| **Total** | **1011** |
 
 ## All Bugs
 
@@ -85,6 +85,8 @@
 | [BG1007](BG1007-a-signed-report-s-figure-sources-are-outside.md) | A signed report's figure sources are outside its fingerprint, so every source can be rewritten and the page still checks VALID | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1008](BG1008-a-waiver-recorded-before-the-run-can-answer.md) | A waiver recorded before the run can answer a checklist row while the page's Waivers in force section says no gate stood down | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1009](BG1009-revert-check-reads-a-timed-out-verifier-as.md) | revert-check reads a timed-out verifier as red and an empty revert as green, so it passes a unit it never measured and refuses one it never reverted | Open | Medium | 2026-10-09 | 2026-10-09 |
+| [BG1010](BG1010-sprint-report-py-build-run-resolves-the-named.md) | sprint_report.py build --run resolves the named run and then builds the page from the default run | Open | Low | 2026-10-09 | 2026-10-09 |
+| [BG1011](BG1011-ll0056-ships-with-its-label-doubled-and-the.md) | LL0056 ships with its label doubled and the template's placeholder sections left in, and nothing refuses a lesson with an unfilled placeholder | Open | Low | 2026-10-09 | 2026-10-09 |
 
 ## Archived Releases
 
