@@ -1,17 +1,17 @@
 # RFC Registry Index
 
-**Last Updated:** 2026-09-21
+**Last Updated:** 2026-10-09
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 0 |
+| Draft | 1 |
 | In Review | 0 |
 | Accepted | 55 |
 | Superseded | 2 |
 | Withdrawn | 3 |
-| **Total** | **60** |
+| **Total** | **61** |
 
 ## All RFCs
 
@@ -22,6 +22,7 @@
 | [RFC-0058](RFC0058-stakeholder-feedback-shapes-the-work-when-how-often.md) | Stakeholder feedback shapes the work: when, how often and at what cost the stakeholder personas are consulted | High | Accepted | sdlc-studio | 2026-09-15 | EP0256 |
 | [RFC-0059](RFC0059-a-run-ends-with-one-signed-report-the.md) | A run ends with one signed report: the sign-off becomes a transaction over frozen, derived facts | High | Accepted | sdlc-studio | 2026-09-16 | EP0255 |
 | [RFC-0060](RFC0060-the-dark-factory-a-sprint-that-decides-for.md) | the dark factory: a sprint that decides for itself, and a goal that decides whether it worked | Medium | Accepted | sdlc-studio | 2026-09-21 | CR0593, CR0604, EP0258, EP0259 |
+| [RFC-0061](RFC0061-personas-become-accountable-team-members-each-keeps-its.md) | Personas become accountable team members: each keeps its own memory, learns from its own verdicts at the retro, and passes a persona review before it is trusted | High | Draft | Claude Opus 5.5 | 2026-10-09 | -- |
 
 ## Archived Releases
 

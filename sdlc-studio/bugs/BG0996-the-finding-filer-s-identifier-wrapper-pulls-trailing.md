@@ -32,6 +32,8 @@ End the wrapped token at the identifier's last word character: strip trailing `.
 - Reproduced at 3bc1620e: `_md_safe('keys carry digits (API_KEY_2, TOKEN_V2) is reported')` wraps the second identifier as `TOKEN_V2)`, and `_md_safe('uses resolve_canonical(x) and keep_alive.')` wraps the last as `keep_alive.`, each with the punctuation inside the span. Pre-existing.
 - Severity Low stands: cosmetic in rendered text, though a copied identifier carries the punctuation. Groomed as filed (1 point, new test file).
 
+- 2026-10-09: filing RFC-0061 wrapped `persona_resolve` with the sentence's full stop inside the code span, the same defect in a fresh filing.
+
 ## Revision History
 
 | Date | Author | Change |

@@ -21,7 +21,7 @@ _None yet: add them here, or on the stories `refine` decomposes this into._
 
 ## Triage
 
-- Confirmed: every round of every unit can be briefed for one seat; BG0539 (Fixed) lets the ledger tell a round from a seat, so recording a second seat needs no new ledger shape.
+- Confirmed: every round of every unit can be briefed for one seat. Corrected on 2026-10-09 by the G10 breakdown (D0355): recording a second seat DOES need a new ledger shape. The ledger numbers every verdict on a unit as one sequence of rounds, so an engineering APPROVE then an SRE REJECT records the REJECT as round 2 and carries the unit at the cap, and the opposite order is refused. D0341 and US0872 chose one reviewer per unit for this reason; this CR reverses them for high-risk units.
 - Priority Medium stands; Size M. Related: CR-0620 (choose seats by what a change touches); refine together.
 
 ## Revision History
@@ -30,3 +30,4 @@ _None yet: add them here, or on the stories `refine` decomposes this into._
 | --- | --- | --- |
 | 2026-10-08 | sdlc-studio | Raised |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: behaviour confirmed; Affects made repository paths; Size M; relations recorded |
+| 2026-10-09 | Claude Opus 5.5 (triage) | Triage corrected: a second seat needs per-seat rounds on the ledger (found by the G10 breakdown) |
