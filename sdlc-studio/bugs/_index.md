@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 68 |
+| Open | 69 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 31 |
-| **Total** | **1015** |
+| **Total** | **1016** |
 
 ## All Bugs
 
@@ -91,6 +91,7 @@
 | [BG1013](BG1013-the-waiver-remedy-the-close-and-the-checklist.md) | The waiver remedy the close and the checklist print omits --authorised-by, so the command as printed is refused | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1014](BG1014-revert-check-rewrites-production-files-in-place-without.md) | revert-check rewrites production files in place without declaring a rewrite window, so a commit made while it runs can stage a reverted file | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1015](BG1015-persona-resolve-py-resolve-refuses-a-seat-role.md) | persona_resolve.py resolve refuses a seat role the project declares (sre), though validate seats and critic.py brief accept it | Open | Medium | 2026-10-09 | 2026-10-09 |
+| [BG1016](BG1016-lessons-add-global-defaults-a-promoted-lesson-s.md) | lessons add --global defaults a promoted lesson's origin to the working directory's name, so a consuming project's directory name is written into a shipped lesson | Open | Low | 2026-10-09 | 2026-10-09 |
 
 ## Archived Releases
 
