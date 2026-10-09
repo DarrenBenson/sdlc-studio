@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 59 |
+| Open | 60 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 31 |
-| **Total** | **1006** |
+| **Total** | **1007** |
 
 ## All Bugs
 
@@ -82,6 +82,7 @@
 | [BG1004](BG1004-bg0993-s-tracked-run-record-tells-a-newer.md) | BG0993's tracked run record tells a newer copy by reopen count alone, so two reopens made at once overwrite each other; and the close preview's no-write guard is unpinned | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1005](BG1005-a-pytest-verify-that-partly-skips-is-stamped.md) | A pytest Verify that PARTLY skips is stamped green - BG0317 closed only the all-skipped case | Open | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1006](BG1006-sprint-batch-add-prints-a-refusal-for-an.md) | sprint batch add prints a refusal for an unresolvable Affects path but adds the unit anyway | Open | Low | 2026-10-09 | 2026-10-09 |
+| [BG1007](BG1007-a-signed-report-s-figure-sources-are-outside.md) | A signed report's figure sources are outside its fingerprint, so every source can be rewritten and the page still checks VALID | Open | Low | 2026-10-09 | 2026-10-09 |
 
 ## Archived Releases
 
