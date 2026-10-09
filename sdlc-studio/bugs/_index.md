@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 61 |
+| Open | 62 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 31 |
-| **Total** | **1008** |
+| **Total** | **1009** |
 
 ## All Bugs
 
@@ -84,6 +84,7 @@
 | [BG1006](BG1006-sprint-batch-add-prints-a-refusal-for-an.md) | sprint batch add prints a refusal for an unresolvable Affects path but adds the unit anyway | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1007](BG1007-a-signed-report-s-figure-sources-are-outside.md) | A signed report's figure sources are outside its fingerprint, so every source can be rewritten and the page still checks VALID | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1008](BG1008-a-waiver-recorded-before-the-run-can-answer.md) | A waiver recorded before the run can answer a checklist row while the page's Waivers in force section says no gate stood down | Open | Low | 2026-10-09 | 2026-10-09 |
+| [BG1009](BG1009-revert-check-reads-a-timed-out-verifier-as.md) | revert-check reads a timed-out verifier as red and an empty revert as green, so it passes a unit it never measured and refuses one it never reverted | Open | Medium | 2026-10-09 | 2026-10-09 |
 
 ## Archived Releases
 
