@@ -1,6 +1,8 @@
 # CR-0616: verify_ac should record a red baseline: a Verify that already passes before the story is implemented cannot tell done from not-done
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
+> **Decomposed-into:** EP0281
 > **Priority:** Medium
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/reference-verify.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
@@ -31,3 +33,12 @@ TDD is the doctrine (author the Verify first, then make it pass), but nothing ch
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Raised |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Triaged: Affects paths corrected; criteria added; related bugs named |
+
+## Amigo Consult
+
+_Consulted 2026-10-09: Dani Okafor (engineering, lead), Lena Marsh (product), Sam Eriksson (qa). Settle before building._
+
+- Rule 21: should the operator reverse it for the revert, while mutation stays on demand? The panel says not on today's evidence: the yield is unaudited or relayed, and zero on this repository's sample. It recommends ruling after the yield count above. The drafter agrees.
+- What should `review.revert_check` default to, if the gate is ruled in? Product and engineering recommend shipping `report`, with this repository's own config at `block`. That serves Jonah's End goals 2 and 4, and line coverage already ships `off`. QA prefers `block` everywhere. This draft carries `report`, with `block` here.
+- Dry runs: the panel's reading is that 'not previewed' predicts no pass, so it keeps the ladder's rule that a preflight never predicts a write the real run refuses. It departs from the ladder's literal practice of running every gate on a dry run. Does the operator agree?
+- Should the review brief print the revert verdict, and drop the reviewer's hand revert (the step behind BG0604), as a follow-up after G6 and G10? Until then the gate retires nothing. The cheap 6.2 step is G12 Q6: the brief prints the revert-check command for every unit with a base.

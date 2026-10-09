@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 69 |
+| Open | 71 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 31 |
-| **Total** | **1016** |
+| **Total** | **1018** |
 
 ## All Bugs
 
@@ -92,6 +92,8 @@
 | [BG1014](BG1014-revert-check-rewrites-production-files-in-place-without.md) | revert-check rewrites production files in place without declaring a rewrite window, so a commit made while it runs can stage a reverted file | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1015](BG1015-persona-resolve-py-resolve-refuses-a-seat-role.md) | persona_resolve.py resolve refuses a seat role the project declares (sre), though validate seats and critic.py brief accept it | Open | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1016](BG1016-lessons-add-global-defaults-a-promoted-lesson-s.md) | lessons add --global defaults a promoted lesson's origin to the working directory's name, so a consuming project's directory name is written into a shipped lesson | Open | Low | 2026-10-09 | 2026-10-09 |
+| [BG1017](BG1017-validate-warns-pseudo-verify-on-the-verify-line.md) | validate warns pseudo-verify on the Verify line a request's own writers put beneath each criterion | Open | Low | 2026-10-09 | 2026-10-09 |
+| [BG1018](BG1018-refine-apply-question-leaves-the-request-ending-on.md) | refine apply --question leaves the request ending on a blank line, which markdownlint refuses (MD012) | Open | Low | 2026-10-09 | 2026-10-09 |
 
 ## Archived Releases
 

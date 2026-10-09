@@ -1,6 +1,8 @@
 # CR-0612: Check a finding filed into the skill source repository against the neutrality blocklist when it is filed, not first at commit
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
+> **Decomposed-into:** EP0277
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S
@@ -29,3 +31,9 @@ Every consuming-project agent that files upstream, and every session that later 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Raised |
+
+## Amigo Consult
+
+_Consulted 2026-10-09: Dani Okafor (engineering, lead), Lena Marsh (product), Sam Eriksson (qa). Settle before building._
+
+- Fail-closed or fail-open when the target root's checker cannot run, including a stale checkout whose checker predates `--stdin`? The panel recommends fail-closed (refuse, naming the fix: update the checkout of the skill source), per LL0008; the cost is that an agent filing into a stale clone is refused until that clone is pulled. Drafted fail-closed; the operator decides.

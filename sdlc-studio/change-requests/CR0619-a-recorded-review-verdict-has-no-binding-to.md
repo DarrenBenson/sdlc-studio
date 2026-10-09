@@ -1,6 +1,8 @@
 # CR-0619: A recorded review verdict has no binding to the reviewer's own output - the orchestrator transcribes it into the file critic.py record reads
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
+> **Decomposed-into:** EP0280
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
@@ -41,3 +43,11 @@ The independent-review ledger can be edited between the reviewer and the record 
 | 2026-10-08 | Claude Opus 5.5 | Raised |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: confirmed; private project names generalised; relations recorded |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Further evidence from a consuming project: the authoring session recorded every verdict under a seat's name; AC added |
+
+## Amigo Consult
+
+_Consulted 2026-10-09: Dani Okafor (engineering, lead), Lena Marsh (product), Sam Eriksson (qa). Settle before building._
+
+- Amend BG0950 with an AC4 before it is built: prose after `BLOCKING: none`, and a trailing `RULINGS:` line, record unedited. The panel recommends yes; without it, story 1's premise fails on the commonest APPROVE that carries commentary.
+- Amend BG1003 so its decision is written as an `authorised:<Dnnnn>` token in the ninth `Source` column, and so that, if it lands first, it creates that column with story 2's grammar. That way 6.2 changes the ledger shape once.
+- Story 6, when it ships, refuses a flow that passes today: a transcribed verdict recorded from a main thread that edited the unit fails Done. The panel recommends shipping it as a refusal, announced in the changelog (Jonah Reyes's End goal 4), since a self-review already never clears Done.

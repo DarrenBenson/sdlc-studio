@@ -1,6 +1,8 @@
 # CR-0613: Make a clone that cannot run the gates say so at setup, not 50 minutes into a push
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
+> **Decomposed-into:** EP0278
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
@@ -30,3 +32,10 @@ Every contributor and agent on a fresh clone or a new machine; the cost is commi
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Raised |
+
+## Amigo Consult
+
+_Consulted 2026-10-09: Dani Okafor (engineering, lead), Lena Marsh (product), Sam Eriksson (qa). Settle before building._
+
+- At the push, an externally-managed interpreter with no pip and a refusing-class gap: refuse (fail-closed) with the route that works there, or name it and run the gate anyway? The panel recommends refusing wherever the machine is, which is what the pre-push story drafts.
+- CR0613's second criterion: close it with the evidence above. Whether to also gate 'a session ran `status`' (for example a pre-commit lane failing when core.hooksPath is unset, which cannot gate itself from a hook that is not enabled) is the operator's call; the panel does not recommend adding it here, and nor does this draft.

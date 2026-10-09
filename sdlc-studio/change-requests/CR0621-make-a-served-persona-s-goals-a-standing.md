@@ -1,6 +1,8 @@
 # CR-0621: Make a served persona's goals a standing, checkable criterion on the stories that touch them
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
+> **Decomposed-into:** EP0285
 > **Priority:** Medium
 > **Type:** Feature
 > **Size:** L
@@ -35,3 +37,10 @@ The homelab defines a 'Household Member' persona - 'affected by the platform wit
 | 2026-10-08 | sdlc-studio | Raised |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: behaviour confirmed; Affects made repository paths; Size L; relations recorded |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Further evidence: testable persona end goals, checked at the goal review; AC added |
+
+## Amigo Consult
+
+_Consulted 2026-10-09: Dani Okafor (engineering, lead), Lena Marsh (product), Sam Eriksson (qa). Settle before building._
+
+- Release cut: the panel recommends 6.2 for 19 points (End goal reader 3, goal review 3, plan advisory 3, Serves goal reference 3, --serves 2, goals-served 2, seat-card check 3), with the standing seed (5) later unless BG0995, G9's request-seed story and CR0628's breakdown story land first. Confirm.
+- G7 interplay: should a standing criterion be exempt from revert-check naming? The panel recommends yes, as a seeded, reasoned `Revert-check-exempt` entry. The draft recommends instead that G7 exempt a criterion carrying the `standing:` marker. The field is one line whose single reason covers every id it lists (`revert_exemptions`, verify_ac.py:3926-3943), so a seeded id would either share an author's unrelated reason or overwrite it, and a hand-written standing AC counted by its verbatim Verify would still be named. Rule with G7.

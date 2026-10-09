@@ -1,6 +1,8 @@
 # CR-0609: Publish a versioned evidence annex for the committed sprint records
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
+> **Decomposed-into:** EP0275
 > **Priority:** High
 > **Type:** Feature
 > **Size:** L
@@ -31,3 +33,11 @@ Any external reader of sprint evidence (a dashboard, a PM report) breaks silentl
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-05 | Claude Opus 5.5 | Raised |
+
+## Amigo Consult
+
+_Consulted 2026-10-09: Dani Okafor (engineering, lead), Lena Marsh (product), Sam Eriksson (qa). Settle before building._
+
+- Drift-test reach (left to the operator). Drafted to the panel's recommendation: full key drift for the report and the four ledgers; for the run record, only the keys a consumer reads are contracted (report linkage, lifecycle, signature and the fields the report reads), the suite fails when one is removed or renamed, and unknown keys are tolerated as reference-schema.md:127-128 already rules for artefacts. The alternative is full drift on all 49 run-record keys, which puts the annex in the Affects of most sprint-machinery stories (LL0056).
+- Minimum cut (left to the operator). If capacity forces the 9-point cut (report, fingerprint, stamp), split CR0609 so the run-record and ledger parts become their own request, rather than ship a CR whose first and fourth criteria are part-met.
+- BG1007 (left to the operator): option B, delivered here (recommended), or option A after CR0610's citation story. If B, should 'sources are unsigned' also appear on the page itself, as BG1007's criterion reads? This draft states it in the annex and reference-sprint.md only, because a new template sentence makes `check` print a 'not comparable' note on every earlier page in a consuming project, whose installed template has no history to compare against (sprint_report.py:5407); BG1007's criterion would be amended to match.

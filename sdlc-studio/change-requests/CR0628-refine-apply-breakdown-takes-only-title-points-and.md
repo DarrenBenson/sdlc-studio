@@ -1,6 +1,8 @@
 # CR-0628: refine apply --breakdown takes only title, points and affects, so every story's persona, criteria and Verify lines are re-typed by hand after minting
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
+> **Decomposed-into:** EP0283
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S
@@ -29,3 +31,11 @@ Every refinement re-types its grooming by hand, story by story, with room for tr
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | Claude Opus 5.5 | Raised |
+
+## Amigo Consult
+
+_Consulted 2026-10-09: Dani Okafor (engineering, lead), Lena Marsh (product), Sam Eriksson (qa). Settle before building._
+
+- Priority, if only one request fits 6.2: the panel recommends CR0628, since every D0355 draft carries per-story criteria and no open request carries a Verify line.
+- File the validator contradiction (the `file_as_bugs` entry) as a bug and build it in the same run as the first CR0618 story. The panel recommends yes; the filing is the operator's.
+- Re-grade BG0995 from Medium to Low. The panel recommends yes: no open request carries the label, both CR writers emit plain text, and the defect is loud.

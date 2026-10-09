@@ -28,9 +28,16 @@ Open a window claiming exactly the reverted paths before the first write, owned 
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_revert_check_window.py::RevertCheckWindowTests::test_reverted_paths_are_claimed_while_reverted
 - [ ] **AC2** revert-check refuses to start when another owner's open window claims a path it would revert
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_revert_check_window.py::RevertCheckWindowTests::test_another_owners_window_refuses_the_start
+- [ ] **AC3** A SIGTERM delivered while revert-check holds files reverted restores the bytes and closes its window
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_revert_check_window.py::RevertCheckWindowTests::test_sigterm_restores_and_closes_the_window
+
+## Triage notes (from the G7 breakdown, D0355)
+
+- `mutation.open_window` refuses whenever any window is held (mutation.py:693-706), which is wider than AC2's "a window that claims a path it would revert": decide whether revert-check narrows it or states the wider refusal.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Filed |
+| 2026-10-09 | Claude Opus 5.5 (triage) | AC3 added from the G7 panel review (D0355); a note on open_window's wider refusal |

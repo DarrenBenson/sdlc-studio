@@ -1,6 +1,8 @@
 # CR-0622: A second, different seat on high-risk units - or a different seat on round 2
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
+> **Decomposed-into:** EP0284
 > **Priority:** Medium
 > **Type:** Feature
 > **Size:** M
@@ -31,3 +33,9 @@ _None yet: add them here, or on the stories `refine` decomposes this into._
 | 2026-10-08 | sdlc-studio | Raised |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: behaviour confirmed; Affects made repository paths; Size M; relations recorded |
 | 2026-10-09 | Claude Opus 5.5 (triage) | Triage corrected: a second seat needs per-seat rounds on the ledger (found by the G10 breakdown) |
+
+## Amigo Consult
+
+_Consulted 2026-10-09: Dani Okafor (engineering, lead), Lena Marsh (product), Sam Eriksson (qa). Settle before building._
+
+- For the operator: CR0622 reverses US0872 AC3 (and D0341's stated reason) for high-risk units. Does it go ahead? The panel recommends yes, but only together with per-seat lanes, triggered by Points of 8 or more and a configured path list. It recommends against the `Affects production runtime:` field until a tooled writer emits it (if so, the second-seat story's AC2 is struck and it drops to 2 points) and against the route difficulty band, which judges model size rather than review risk. It also recommends amending AGENTS.md and reference-sprint.md to 'one independent reviewer per unit, and a second seat of a different role on a high-risk unit'.

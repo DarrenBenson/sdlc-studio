@@ -1,6 +1,8 @@
 # CR-0614: Sprint-checklist waivers cannot be scoped to a unit or expire, so a defect in one checklist row has only a permanent project-wide exit
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
+> **Decomposed-into:** EP0279
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
@@ -34,3 +36,10 @@ Operators facing a checker defect either disable a correctness row permanently o
 | --- | --- | --- |
 | 2026-10-07 | Claude Opus 5.5 | Raised |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Triaged: reproduced at 8b844a80, not a regression, consuming-project name generalised for the neutrality lane |
+
+## Amigo Consult
+
+_Consulted 2026-10-09: Dani Okafor (engineering, lead), Lena Marsh (product), Sam Eriksson (qa). Settle before building._
+
+- Supersede the standing one-run waivers now, before this ships (panel recommendation)? That means D0088 (cost), D0090 (goal-seat-reviewed), D0131 (closing-review) and D0215 (known-issues), plus D0091, whose item no longer exists. Keep D0143 (doc-surface, project-wide on purpose). No code is needed, and no filed page moves, because filed pages replay their own readings.
+- BG0997 currently names only engagement_floor.py and its test. Add decisions.py to its Affects before planning, so the shared unit-tail matcher has a home?

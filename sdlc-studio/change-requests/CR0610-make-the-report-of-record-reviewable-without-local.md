@@ -1,6 +1,8 @@
 # CR-0610: Make the report of record reviewable without .local/, and let it carry money
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
+> **Decomposed-into:** EP0276
 > **Priority:** Medium
 > **Type:** Feature
 > **Size:** M
@@ -30,3 +32,12 @@ A project manager reading the committed record sees provenance links that go now
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-05 | Claude Opus 5.5 | Raised |
+
+## Amigo Consult
+
+_Consulted 2026-10-09: Dani Okafor (engineering, lead), Lena Marsh (product), Sam Eriksson (qa). Settle before building._
+
+- Pricing basis: the panel's product seat answers configured rates only on the report of record (Maya's scenario says 'priced from her own rates'; telemetry.py:446 calls the defaults 'NOT a quote'), with `sprint_report show` keeping the estimates. The money story is written that way; confirm.
+- Money scope: (a) delegated-model capture and money, 7 points over two stories, after US0991 (the panel recommends this); or (b) defer both until delegated spend can be priced. Without the delegated model, RPT0006-RPT0011 would price nothing and RPT0016-RPT0019 would leave 81 to 88% of each run unpriced.
+- Lane yield: cut the story and amend CR0610's first criterion to exclude the lane-yield appendix (the panel recommends this), or keep it for a later release. It is marked later here.
+- BG1007: option B (state that sources are unsigned, delivered by CR0609's fingerprint story; recommended) or option A (sign sources under a rule mark, only after this epic's citations story).

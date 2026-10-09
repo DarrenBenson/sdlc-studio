@@ -1,6 +1,8 @@
 # CR-0617: Run the repository-corpus tests on a commit that changes artefacts, not only at push
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
+> **Decomposed-into:** EP0282
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S
@@ -30,3 +32,11 @@ Every artefact commit, from this session and from every consuming project's agen
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Raised |
+
+## Amigo Consult
+
+_Consulted 2026-10-09: Dani Okafor (engineering, lead), Lena Marsh (product), Sam Eriksson (qa). Settle before building._
+
+- The figure the corpus phase reports its own seconds against: the panel suggests 30s, reported and never refused. Operator's figure.
+- An artefact commit's 90-second budget line: on this machine pre-commit alone took 3m36s on an artefact commit at load 16, so every filing would read 'over budget'. Should an artefact commit's line report only the corpus phase's share against the figure above (the panel's recommendation, and what the commit-hooks story drafts), or keep the 90-second whole-commit comparison too?
+- Size: 14 points with the fourth story. Cutting it to 11 leaves the guarded third covered and BG0813's incident outside the net; the panel does not recommend the cut.
