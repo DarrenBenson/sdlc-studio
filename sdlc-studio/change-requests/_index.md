@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 2 |
+| Proposed | 6 |
 | Approved | 0 |
 | In Progress | 20 |
 | Complete | 519 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **630** |
+| **Total** | **634** |
 
 ## All Changes
 
@@ -42,6 +42,10 @@
 | [CR-0628](CR0628-refine-apply-breakdown-takes-only-title-points-and.md) | refine apply --breakdown takes only title, points and affects, so every story's persona, criteria and Verify lines are re-typed by hand after minting | In Progress | Medium | Improvement | 2026-10-09 | EP0283 |
 | [CR-0629](CR0629-a-served-persona-s-testable-end-goal-is.md) | A served persona's testable End goal is run at the close as evidence for the goal verdict | Proposed | Medium | Feature | 2026-10-09 | -- |
 | [CR-0630](CR0630-count-revert-check-s-yield-over-the-last.md) | Count revert-check's yield over the last several signed runs before doctrine rule 21 is ruled on | Proposed | Medium | Improvement | 2026-10-09 | -- |
+| [CR-0631](CR0631-persona-review-a-standard-every-persona-card-is.md) | Persona review: a standard every persona card is held to, and an independent review that blocks a failing card | Proposed | High | Feature | 2026-10-09 | -- |
+| [CR-0632](CR0632-seat-memory-each-persona-keeps-a-committed-memory.md) | Seat memory: each persona keeps a committed memory file of evidenced learnings, carried into its own brief | Proposed | High | Feature | 2026-10-09 | -- |
+| [CR-0633](CR0633-the-learning-loop-at-the-retro-each-seat.md) | The learning loop: at the retro each seat is scored on its own verdicts and writes what it will do differently, approved by another seat | Proposed | High | Feature | 2026-10-09 | -- |
+| [CR-0634](CR0634-user-personas-learn-from-usage-and-a-generalisable.md) | User personas learn from usage, and a generalisable persona learning can be promoted to the shipped amigos | Proposed | Medium | Feature | 2026-10-09 | -- |
 
 ## Archived Releases
 

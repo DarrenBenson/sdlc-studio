@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 71 |
+| Open | 73 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 31 |
-| **Total** | **1018** |
+| **Total** | **1020** |
 
 ## All Bugs
 
@@ -94,6 +94,8 @@
 | [BG1016](BG1016-lessons-add-global-defaults-a-promoted-lesson-s.md) | lessons add --global defaults a promoted lesson's origin to the working directory's name, so a consuming project's directory name is written into a shipped lesson | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1017](BG1017-validate-warns-pseudo-verify-on-the-verify-line.md) | validate warns pseudo-verify on the Verify line a request's own writers put beneath each criterion | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1018](BG1018-refine-apply-question-leaves-the-request-ending-on.md) | refine apply --question leaves the request ending on a blank line, which markdownlint refuses (MD012) | Open | Low | 2026-10-09 | 2026-10-09 |
+| [BG1019](BG1019-artifact-py-retitle-refuses-in-every-consuming-project.md) | artifact.py retitle refuses in every consuming project: it loads tools/check_links.py from the operated repo or the skill's own source checkout, and an installed skill has neither | Open | Medium | 2026-10-09 | 2026-10-09 |
+| [BG1020](BG1020-transition-py-refuses-an-rfc-s-accepted-until.md) | transition.py refuses an RFC's Accepted until its spawned CRs are resolved, contradicting reference-rfc.md's accept step | Open | Low | 2026-10-09 | 2026-10-09 |
 
 ## Archived Releases
 

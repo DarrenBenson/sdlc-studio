@@ -1,6 +1,8 @@
 # RFC-0061: Personas become accountable team members: each keeps its own memory, learns from its own verdicts at the retro, and passes a persona review before it is trusted
 
-> **Status:** Draft
+> **Status:** Accepted
+> **Forced-override:** 2026-10-09: --force waived 1 gate(s) on Accepted - RFC0061 cannot be Accepted: its status is DERIVED from its children, and 4 is/are not yet resolved: CR0631 (Proposed), CR0632 (Proposed), CR0633 (Proposed), CR0634 (Proposed). Finish or close them first
+> **Decomposed-into:** CR0631, CR0632, CR0633, CR0634
 > **Size:** XL
 > **Date:** 2026-10-09
 > **Created-by:** sdlc-studio file
@@ -59,15 +61,15 @@ Reuse the lessons machinery: a lesson or failure class carries `owner: <persona>
 
 | # | Decision | Options | Owner | How it resolves | Status |
 | --- | --- | --- | --- | --- | --- |
-| D1 | Where memory lives | A card section, B memory file, C owned lessons | Operator | Decide at `rfc decide` | Open |
-| D2 | Who writes a learning | the persona, briefed with its evidence; the retro facilitator; the operator | Operator | Consult the seats | Open |
-| D3 | Who approves a learning | the operator; another seat; automatic with a later review | Operator | Consult the seats | Open |
-| D4 | What evidence feeds learning | verdict outcomes, rounds to converge, operator rulings, closing-review and consuming-project findings | Engineering seat | Spike against this repo's ledger | Open |
-| D5 | How memory reaches the persona | every brief (bounded, ranked) or recalled on demand | Engineering seat | Spike: measure brief size | Open |
-| D6 | Scope | seats only, or user personas too | Operator | Decide at `rfc decide` | Open |
-| D7 | Persona review strength and cadence | blocking (a failing persona cannot be resolved into a brief) or advisory; on change, per release, every N sprints | Operator | Decide at `rfc decide` | Open |
-| D8 | Forgetting | horizon and revalidation, a cap on injected learnings, how contradictions resolve | QA seat | Consult | Open |
-| D9 | Cross-project promotion | none; or promote generalisable learnings to the shipped amigos as `lessons add --global` does | Operator | Decide at `rfc decide` | Open |
+| D1 | Where memory lives | A card section, B memory file, C owned lessons | Operator | Decide at `rfc decide` | Resolved: Option B: a committed memory file beside each card (sdlc-studio/personas/memory/<persona>.md), owned by its own tool; the card stays the reviewed identity (operator, 2026-10-09) -> CR0632 |
+| D2 | Who writes a learning | the persona, briefed with its evidence; the retro facilitator; the operator | Operator | Consult the seats | Resolved: The persona itself: a context framed as that persona, briefed with its own verdict record and what followed, writes the learning in its own words (operator) -> CR0633 |
+| D3 | Who approves a learning | the operator; another seat; automatic with a later review | Operator | Consult the seats | Resolved: Another seat approves each learning against its evidence; learnings are listed on the retro the operator signs, where the operator can strike any (operator) -> CR0633 |
+| D4 | What evidence feeds learning | verdict outcomes, rounds to converge, operator rulings, closing-review and consuming-project findings | Engineering seat | Spike against this repo's ledger | Resolved: All four: verdict outcomes, rounds to converge, operator rulings naming the seat, and closing-review and consuming-project findings (operator) -> CR0633 |
+| D5 | How memory reaches the persona | every brief (bounded, ranked) or recalled on demand | Engineering seat | Spike: measure brief size | Resolved: Every brief, bounded: the persona's top approved learnings, capped and ranked by recency and relevance, injected into its own brief (operator) -> CR0632 |
+| D6 | Scope | seats only, or user personas too | Operator | Decide at `rfc decide` | Resolved: Seats first, then user personas from usage evidence such as served-goal outcomes (CR0629) and stakeholder feedback (operator) -> CR0634 |
+| D7 | Persona review strength and cadence | blocking (a failing persona cannot be resolved into a brief) or advisory; on change, per release, every N sprints | Operator | Decide at `rfc decide` | Resolved: Blocking for cards, reported for memory: a new or changed card that fails the standard cannot be resolved into a brief until fixed; runs on every card change and once per release (operator) -> CR0631 |
+| D8 | Forgetting | horizon and revalidation, a cap on injected learnings, how contradictions resolve | QA seat | Consult | Resolved: As project lessons: each learning carries a validity horizon and is revalidated or retired; a cap bounds what is injected; a contradicted learning is retired by the reviewing seat (operator, with D5) -> CR0632 |
+| D9 | Cross-project promotion | none; or promote generalisable learnings to the shipped amigos as `lessons add --global` does | Operator | Decide at `rfc decide` | Resolved: Deliberate promotion only: a generalisable learning is promoted to the shipped amigo cards through the skill source repository, as lessons add --global promotes a lesson (operator) -> CR0634 |
 
 ## Architecture Impact
 
@@ -91,9 +93,11 @@ Reuse the lessons machinery: a lesson or failure class carries `owner: <persona>
 
 ## Decision
 
-> *Filled on acceptance.* Chosen option + rationale + the CRs spawned.
+**Outcome:** Accepted, Option B reusing Option C's mechanics, on 2026-10-09 by the operator.
 
-**Outcome:** {{accepted_option | superseded | withdrawn}}
+Each persona keeps a committed memory file beside its card; at the retro it is scored on its own verdicts from the ledger and writes its learning in its own words; another seat approves it and the operator can strike it on the signed retro; its brief carries its own top learnings, bounded and with horizons; a persona review blocks a failing card and reports memory; seats first, user personas next; deliberate promotion only. Each of D1 to D9 is resolved above with its rationale. Recorded as ADR-012 in the TRD.
+
+**Spawned CRs:** CR0631 (persona review, workstream 1), CR0632 (seat memory, workstream 2), CR0633 (the learning loop, workstream 3), CR0634 (user personas and promotion, workstream 4). CR0629 (a served persona's End goal at the close) feeds workstream 4.
 
 ## Related Artifacts
 
@@ -109,3 +113,15 @@ Reuse the lessons machinery: a lesson or failure class carries `owner: <persona>
 | --- | --- | --- |
 | 2026-10-09 | Claude Opus 5.5 | Filed |
 | 2026-10-09 | Claude Opus 5.5 | Written to the template from the operator's request: context, goals, three options, a recommendation, nine open decisions, impact, risks and a phased plan |
+| 2026-10-09 | rfc resolve (operator decision) | resolve: D1 - Option B: a committed memory file beside each card (sdlc-studio/personas/memory/<persona>.md), owned by its own tool; the card stays the reviewed identity (operator, 2026-10-09) |
+| 2026-10-09 | rfc resolve (operator decision) | resolve: D2 - The persona itself: a context framed as that persona, briefed with its own verdict record and what followed, writes the learning in its own words (operator) |
+| 2026-10-09 | rfc resolve (operator decision) | resolve: D3 - Another seat approves each learning against its evidence; learnings are listed on the retro the operator signs, where the operator can strike any (operator) |
+| 2026-10-09 | rfc resolve (operator decision) | resolve: D4 - All four: verdict outcomes, rounds to converge, operator rulings naming the seat, and closing-review and consuming-project findings (operator) |
+| 2026-10-09 | rfc resolve (operator decision) | resolve: D5 - Every brief, bounded: the persona's top approved learnings, capped and ranked by recency and relevance, injected into its own brief (operator) |
+| 2026-10-09 | rfc resolve (operator decision) | resolve: D6 - Seats first, then user personas from usage evidence such as served-goal outcomes (CR0629) and stakeholder feedback (operator) |
+| 2026-10-09 | rfc resolve (operator decision) | resolve: D7 - Blocking for cards, reported for memory: a new or changed card that fails the standard cannot be resolved into a brief until fixed; runs on every card change and once per release (operator) |
+| 2026-10-09 | rfc resolve (operator decision) | resolve: D8 - As project lessons: each learning carries a validity horizon and is revalidated or retired; a cap bounds what is injected; a contradicted learning is retired by the reviewing seat (operator, with D5) |
+| 2026-10-09 | rfc resolve (operator decision) | resolve: D9 - Deliberate promotion only: a generalisable learning is promoted to the shipped amigo cards through the skill source repository, as lessons add --global promotes a lesson (operator) |
+| 2026-10-09 | Claude Opus 5.5 | Accepted: D1-D9 resolved by the operator; CR0631-CR0634 spawned; ADR-012 |
+| 2026-10-09 | transition set --force | forced RFC0061 -> Accepted, waiving 1 gate(s): RFC0061 cannot be Accepted: its status is DERIVED from its children, and 4 is/are not yet resolved: CR0631 (Proposed), CR0632 (Proposed), CR0633 (Proposed), CR0634 (Proposed). Finish or close them first |
+| 2026-10-09 | Claude Opus 5.5 | Accepted with --force past the derived-terminal gate (D0362; the contradiction is BG1020) |

@@ -1025,6 +1025,51 @@ name that appears somewhere in the prose:
 
 ---
 
+### ADR-012: Personas are accountable team members with their own memory and a review standard
+
+**Status:** Accepted (RFC0061, 2026-10-09)
+
+**Context:** Personas were used as static cards. A review seat was rendered into each brief and
+forgot everything when the brief ended; a user persona was read at planning and then sat still.
+Every learning went to the project's lessons, never to the persona whose judgement it was, so a
+seat repeated its own mistakes (BG0993: one ordering of a race patched per review round, four
+rounds running) and three consuming projects found personas "useful as constraints and useless as
+reviewers". Nothing held a card to a standard of evidence, currency or consistency with the cast.
+
+**Alternatives considered:**
+
+- *Learnings on the card.* One file, but identity and experience change in one diff and every
+  learning re-opens a reviewed card.
+- *Owned lessons* (`owner: <persona>` on the lessons store). Least machinery, but it mixes the
+  project's learnings with one persona's judgement and gives a persona no identity standard.
+- *A memory file beside each card, under its own review, reusing the lessons mechanics.*
+
+**Decision:** The third. Each persona keeps a committed memory file beside its card
+(`sdlc-studio/personas/memory/<persona>.md`), owned by a tool, with validity horizons and
+revalidation as project lessons have (LL0029: never `.local`). At the retro each seat is scored
+mechanically from the verdict ledger against what followed (approvals later found defective,
+findings overturned, defects found only in a later round, rounds to converge, operator rulings,
+closing-review and consuming-project findings); a context framed as that persona writes its
+learning in its own words; a different seat approves it against the evidence; the learnings are
+listed on the retro the operator signs, where any can be struck. A persona's brief carries its
+own top approved learnings, capped and ranked. A persona review holds every card to a written
+standard and blocks a failing card from being resolved into a brief; memory problems are
+reported. Seats learn first, user personas follow from usage evidence; a generalisable learning
+reaches the shipped amigos only by deliberate promotion. Workstreams: CR0631 (review), CR0632
+(memory), CR0633 (the learning loop), CR0634 (user personas and promotion).
+
+**Consequences:**
+
+- Positive: a persona's judgement improves from its own record, and the improvement is a
+  reviewed, committed artefact a reader can audit, not an impression.
+- Positive: the review standard gives every later learning something to be held to, and folds
+  in the cast and goal checks EP0285 delivers.
+- Negative: a learning step per seat and a review ceremony add cost to every close, and a
+  self-written learning can flatter its author; the ledger, not the persona's account, is the
+  evidence, and another seat approves.
+- Depends on verdicts recorded as the reviewer wrote them (CR0619) and authorised rounds being
+  recordable (BG1003); until then the learning loop would read transcriptions.
+
 ## 12. Open Technical Questions
 
 - [ ] **Q:** Should the markdown command flows get executable conformance tests, or
