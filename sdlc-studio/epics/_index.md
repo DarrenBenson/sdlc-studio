@@ -1,18 +1,18 @@
 # Epic Index
 
-**Last Updated:** 2026-10-09
+**Last Updated:** 2026-10-12
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 13 |
+| Draft | 14 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 240 |
 | Superseded | 33 |
-| **Total** | **286** |
+| **Total** | **287** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -37,6 +37,7 @@
 | [EP0284](EP0284-review-seats-chosen-by-what-a-change-touches.md) | Review seats chosen by what a change touches, and each seat briefed through its own lens | Draft | 10 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0285](EP0285-persona-goals-become-checks-the-stories-seats-and.md) | Persona goals become checks the stories, seats and goal review carry | Draft | 8 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0286](EP0286-a-small-change-takes-a-documented-tooled-path.md) | A small change takes a documented, tooled path: an executable criterion, an independent review and the terminal transition, without a run | Draft | 5 | -- | 2026-10-09 | 2026-10-09 |
+| [EP0287](EP0287-personas-become-accountable-team-members-a-review-standard.md) | Personas become accountable team members: a review standard that blocks a failing card, a committed memory, a learning loop from the verdict ledger, and End goals checked at the close | Draft | 23 | -- | 2026-10-12 | 2026-10-12 |
 
 ## Archived Releases
 

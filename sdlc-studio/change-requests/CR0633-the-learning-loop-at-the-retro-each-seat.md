@@ -1,6 +1,8 @@
 # CR-0633: The learning loop: at the retro each seat is scored on its own verdicts and writes what it will do differently, approved by another seat
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-12)
+> **Decomposed-into:** EP0287
 > **Parent:** RFC0061
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -24,3 +26,10 @@ RFC0061 workstream 3 (D2, D3, D4). At the retro, each seat's verdicts are scored
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | Claude Opus 5.5 | Created via `new` (deterministic) |
+
+## Amigo Consult
+
+_Consulted 2026-10-12: Dani Okafor (engineering, lead), Lena Marsh (product), Sam Eriksson (qa). Settle before building._
+
+- Precision bar for a seat's miss (D0364 ruling 3): the draft sets at least 8 of a fresh 12-pair sample, judged by a seat other than the builder, before the rule ships. Confirm or set another bar.
+- Size: the revision is 92 points against the draft's 68 (the operator's two additions are 13; the panel's required changes 11). Confirm 6.2 whole, or apply the cut order in the recommendation.

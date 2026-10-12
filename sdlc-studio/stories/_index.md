@@ -1,13 +1,13 @@
 # Story Index
 
-**Last Updated:** 2026-10-09
+**Last Updated:** 2026-10-12
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 66 |
+| Draft | 89 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **1051** |
+| **Total** | **1074** |
 
 ## All Stories
 
@@ -89,6 +89,29 @@
 | [US1049](US1049-the-review-brief-and-revert-check-diff-against.md) | The review brief and revert-check diff against the base a small change recorded | Draft | EP0286 | 2026-10-09 | 2026-10-09 |
 | [US1050](US1050-a-small-change-reaches-its-terminal-status-only.md) | A small change reaches its terminal status only on an independent approval at the derived depth while it still qualifies, and then owes no sprint close | Draft | EP0286 | 2026-10-09 | 2026-10-09 |
 | [US1051](US1051-the-small-change-path-is-written-down-once.md) | The small-change path is written down once, and every step is a runbook command that runs end to end | Draft | EP0286 | 2026-10-09 | 2026-10-09 |
+| [US1052](US1052-the-persona-standard-names-every-rule-a-card.md) | The persona standard names every rule a card is held to, and persona_review check reports each card against it | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1053](US1053-persona-review-briefs-another-seat-to-review-a.md) | persona_review briefs another seat to review a card against the standard and records its verdict against the card's bytes | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1054](US1054-the-shipped-product-card-names-no-primary-so.md) | The shipped product card names no Primary, so a project's copy of it passes the standard after an upgrade | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1055](US1055-a-persona-card-that-fails-the-standard-is.md) | A persona card that fails the standard is refused at every entry point that resolves it, naming each failed rule and its remedy | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1056](US1056-the-goal-review-refuses-to-brief-from-a.md) | The goal review refuses to brief from a traced persona card that fails the standard | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1057](US1057-sprint-plan-names-each-blocked-persona-card-with.md) | Sprint plan names each blocked persona card with its remedy and each card owed a review, and the release cut names the owed reviews | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1058](US1058-persona-memory-py-keeps-each-persona-s-evidenced.md) | persona_memory.py keeps each persona's evidenced learnings in a committed memory file beside its card | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1059](US1059-a-persona-s-brief-carries-its-own-live.md) | A persona's brief carries its own live learnings, capped and ranked, and never another persona's | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1060](US1060-a-learning-past-its-horizon-is-reported-at.md) | A learning past its horizon is reported at the close until it is revalidated or retired, and the persona review reports memory problems | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1061](US1061-a-unit-s-review-record-names-the-seat.md) | A unit's review record names the seat that built it, so an author's repairs can be scored | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1062](US1062-retro-py-seats-scores-each-seat-on-its.md) | retro.py seats scores each seat on its own verdicts and authored units from the ledger | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1063](US1063-the-seat-record-reads-each-verdict-s-source.md) | The seat record reads each verdict's source and the operator rulings that name the seat | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1064](US1064-the-seat-record-charges-a-later-bug-to.md) | The seat record charges a later bug to the approval that missed it, by the narrow rule | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1065](US1065-each-seat-writes-its-learning-in-its-own.md) | Each seat writes its learning in its own words from a brief carrying its record, and it is recorded as proposed | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1066](US1066-another-seat-approves-or-rejects-each-proposed-learning.md) | Another seat approves or rejects each proposed learning against its evidence and its card | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1067](US1067-the-close-lists-every-learning-about-to-go.md) | The close lists every learning about to go live on the retro, with what it addresses and who approved it | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1068](US1068-a-learning-reaches-a-brief-only-once-a.md) | A learning reaches a brief only once a signed close has listed it, and one the operator strikes at the signature never does | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1069](US1069-the-close-runs-each-traced-persona-s-executable.md) | The close runs each traced persona's executable End goal Verify and records the result beside the goal verdict | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1070](US1070-the-sprint-report-shows-each-traced-end-goal.md) | The sprint report shows each traced End goal's result beside the goal verdict | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1071](US1071-the-plan-runs-the-traced-end-goals-once.md) | The plan runs the traced End goals once, so the close can say which turned green in the run | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1072](US1072-the-close-records-each-traced-persona-s-served.md) | The close records each traced persona's served-goal outcome in its memory, with its run | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1073](US1073-a-user-persona-writes-its-learning-from-its.md) | A user persona writes its learning from its usage evidence, approved by a seat, and the goal review carries it | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1074](US1074-a-generalisable-seat-learning-is-promoted-into-the.md) | A generalisable seat learning is promoted into the skill source's shipped amigo card, and refused into an installed copy | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 
 ## Archived Releases
 
