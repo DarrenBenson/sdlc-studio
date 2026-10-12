@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .githooks/pre-push, tools/tests/test_pre_push_hook.py, tools/tests/test_pre_push_keepalive.py
+> **Affects:** .githooks/pre-push, tools/tests/test_pre_push_hook.py, tools/tests/test_pre_push_keepalive.py, changelog.d/BG0976.md
 > **Evidence:** Found 2026-10-06/07 during the triage session that filed BG0955-BG0963 in this repository.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -34,3 +34,4 @@ Print the line only when no keepalive is in force: no `core.sshCommand` carrying
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
+| 2026-10-12 | Claude Opus 5.5 (planning) | Affects names the unit's changelog fragment, before the first 6.2 run (D0365) |

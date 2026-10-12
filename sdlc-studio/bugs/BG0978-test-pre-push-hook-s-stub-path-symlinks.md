@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** tools/tests/test_pre_push_hook.py, tools/tests/test_pre_push_stub_interpreter.py
+> **Affects:** tools/tests/test_pre_push_hook.py, tools/tests/test_pre_push_stub_interpreter.py, changelog.d/BG0978.md
 > **Evidence:** Found 2026-10-06/07 during the triage session that filed BG0955-BG0963 in this repository. Reproduced in a clean worktree with pytest in a venv.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -32,3 +32,4 @@ Write a small python3 wrapper script that execs `sys.executable` (or symlink `sy
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
+| 2026-10-12 | Claude Opus 5.5 (planning) | Affects names the unit's changelog fragment, before the first 6.2 run (D0365) |

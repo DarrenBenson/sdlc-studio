@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_s12_pins.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_s12_pins.py, changelog.d/BG0944.md
 > **Created:** 2026-10-05
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -35,3 +35,4 @@ Add one test per behaviour, each named for the mutant it kills: a project leaf n
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-05 | sdlc-studio | Filed |
+| 2026-10-12 | Claude Opus 5.5 (planning) | Affects names the unit's changelog fragment, before the first 6.2 run (D0365) |

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** changelog.d/BG0940.md
+> **Affects:** changelog.d/BG0940.md, changelog.d/BG0945.md
 > **Created:** 2026-10-05
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -31,3 +31,4 @@ Reword the fragment to what happens: the page stays VALID, sign refuses the chan
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-05 | sdlc-studio | Filed |
+| 2026-10-12 | Claude Opus 5.5 (planning) | Affects names the unit's changelog fragment, before the first 6.2 run (D0365) |
