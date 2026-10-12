@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-10-11
+**Last Updated:** 2026-10-12
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 77 |
+| Open | 80 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 31 |
-| **Total** | **1024** |
+| **Total** | **1027** |
 
 ## All Bugs
 
@@ -100,6 +100,9 @@
 | [BG1022](BG1022-a-stale-tsd-still-says-the-batch-does.md) | A stale TSD still says the batch does not deliver Unit Testing | Open | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1023](BG1023-verify-ac-s-vitest-and-jest-verbs-fold.md) | verify_ac's vitest and jest verbs fold the whole tail into the -t pattern and call a bare binary, so `vitest <file> -t "name"` can never select its test | Open | Medium | 2026-10-11 | 2026-10-11 |
 | [BG1024](BG1024-verify-ac-s-grep-verb-takes-a-leading.md) | verify_ac's grep verb takes a leading flag as the pattern, so `grep -q -e X file` and `grep -E ... file` Verify lines fail | Open | Low | 2026-10-11 | 2026-10-11 |
+| [BG1025](BG1025-sprint-sign-moves-every-batch-unit-to-its.md) | sprint sign moves every batch unit to its terminal status, overriding a unit an operator ruling deliberately left open (Watching), and the seal then blocks transition from restoring it | Open | Medium | 2026-10-12 | 2026-10-12 |
+| [BG1026](BG1026-an-ac-heading-with-a-suffix-after-its.md) | An AC heading with a suffix after its id (`### AC3 (DEFERRED)`) is not parsed as a criterion, so its Verify line is folded into the criterion above | Open | Low | 2026-10-12 | 2026-10-12 |
+| [BG1027](BG1027-the-commit-time-links-lane-resolves-a-link.md) | The commit-time links lane resolves a link against the working tree, so a staged index row linking to an untracked file passes the commit and turns CI red | Open | Medium | 2026-10-12 | 2026-10-12 |
 
 ## Archived Releases
 

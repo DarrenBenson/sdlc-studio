@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-10-09
+**Last Updated:** 2026-10-12
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 25 |
 | Complete | 519 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **634** |
+| **Total** | **635** |
 
 ## All Changes
 
@@ -46,6 +46,7 @@
 | [CR-0632](CR0632-seat-memory-each-persona-keeps-a-committed-memory.md) | Seat memory: each persona keeps a committed memory file of evidenced learnings, carried into its own brief | In Progress | High | Feature | 2026-10-09 | EP0287 |
 | [CR-0633](CR0633-the-learning-loop-at-the-retro-each-seat.md) | The learning loop: at the retro each seat is scored on its own verdicts and writes what it will do differently, approved by another seat | In Progress | High | Feature | 2026-10-09 | EP0287 |
 | [CR-0634](CR0634-user-personas-learn-from-usage-and-a-generalisable.md) | User personas learn from usage, and a generalisable persona learning can be promoted to the shipped amigos | In Progress | Medium | Feature | 2026-10-09 | EP0287 |
+| [CR-0635](CR0635-run-the-push-gate-and-the-full-suite.md) | Run the push gate and the full suite on a configured gate host over ssh, so a memory-starved workstation stops killing them | Proposed | High | Improvement | 2026-10-12 | -- |
 
 ## Archived Releases
 
