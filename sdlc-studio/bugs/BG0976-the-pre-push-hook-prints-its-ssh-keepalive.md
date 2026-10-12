@@ -29,9 +29,15 @@ Print the line only when no keepalive is in force: no `core.sshCommand` carrying
 - [ ] **AC2** With none configured, the warning still prints
   - **Verify:** pytest tools/tests/test_pre_push_keepalive.py -k keepalive_warning_when_absent
 
+## Planning notes
+
+- Goal review, 2026-10-12: the tests isolate `HOME`, `GIT_CONFIG_GLOBAL` and `GIT_CONFIG_NOSYSTEM`, so this machine's own `core.sshCommand` and `~/.ssh/config` cannot decide them. Isolating HOME does not reach `ssh -G`, which reads the passwd home's config, so the test stubs `ssh` on PATH or passes `-F` with a fixture config.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
 | 2026-10-12 | Claude Opus 5.5 (planning) | Affects names the unit's changelog fragment, before the first 6.2 run (D0365) |
+| 2026-10-12 | Claude Opus 5.5 (planning) | Goal review note added |
+| 2026-10-12 | Claude Opus 5.5 (planning) | Goal review round 2: ssh config isolation through a stub or -F |

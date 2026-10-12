@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 80 |
+| Open | 81 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
-| Superseded | 31 |
-| **Total** | **1027** |
+| Superseded | 32 |
+| **Total** | **1029** |
 
 ## All Bugs
 
@@ -103,6 +103,8 @@
 | [BG1025](BG1025-sprint-sign-moves-every-batch-unit-to-its.md) | sprint sign moves every batch unit to its terminal status, overriding a unit an operator ruling deliberately left open (Watching), and the seal then blocks transition from restoring it | Open | Medium | 2026-10-12 | 2026-10-12 |
 | [BG1026](BG1026-an-ac-heading-with-a-suffix-after-its.md) | An AC heading with a suffix after its id (`### AC3 (DEFERRED)`) is not parsed as a criterion, so its Verify line is folded into the criterion above | Open | Low | 2026-10-12 | 2026-10-12 |
 | [BG1027](BG1027-the-commit-time-links-lane-resolves-a-link.md) | The commit-time links lane resolves a link against the working tree, so a staged index row linking to an untracked file passes the commit and turns CI red | Open | Medium | 2026-10-12 | 2026-10-12 |
+| [BG1028](BG1028-there-is-no-supported-way-to-run-only.md) | There is no supported way to run only the release verify lane: `gate.py --release --only verify` is refused for deselecting the bound lanes, and the refusal's advice (drop --release) leads to `unknown check name(s): verify` | Open | Low | 2026-10-12 | 2026-10-12 |
+| [BG1029](BG1029-critic-record-splits-a-verdict-s-findings-on.md) | critic record splits a verdict's findings on every ';', so reviewer prose with a semicolon is refused as an untagged finding | Superseded | Low | 2026-10-12 | 2026-10-12 |
 
 ## Archived Releases
 

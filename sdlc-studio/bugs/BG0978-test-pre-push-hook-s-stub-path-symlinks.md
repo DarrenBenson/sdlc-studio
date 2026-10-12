@@ -27,9 +27,14 @@ Write a small python3 wrapper script that execs `sys.executable` (or symlink `sy
 - [ ] **AC1** With pytest installed only in the active virtualenv, the pre-push hook tests pass
   - **Verify:** pytest tools/tests/test_pre_push_stub_interpreter.py -k stub_path_keeps_the_running_interpreter
 
+## Planning notes
+
+- Goal review, 2026-10-12: the test builds its own venv-shaped interpreter, so it fails on today's symlink even on a runner whose `python3` is not a venv. The same fault turned the first devserver1 gate run red (D0365).
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
 | 2026-10-12 | Claude Opus 5.5 (planning) | Affects names the unit's changelog fragment, before the first 6.2 run (D0365) |
+| 2026-10-12 | Claude Opus 5.5 (planning) | Goal review note added |

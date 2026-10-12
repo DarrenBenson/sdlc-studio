@@ -41,9 +41,14 @@
 - tools/tests/test_pre_push_hook.py::ThePushBoundaryHasAHookTests::test_the_hook_announces_its_cost_and_the_bypass_before_running pins both literals (lines 303-313). It is updated to the new wording and keeps its mutants: the first push still announces something, before the gate, naming the bypass; a branch push does not name the tag's lanes. BG0978 also edits this module, so this story builds after it.
 - Measured: this clone's recorded boundary-push runs are 3348, 3826, 1543, 2392 and 2957 seconds, against AGENTS.md's 'about five minutes'.
 
+## Planning notes
+
+- Goal review, 2026-10-12: the cost-line test rejects any duration figure on the no-history line (`5 min`, `300 seconds`, `about five minutes`), so a reworded fixed figure also fails.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G4 after the refine panel's review |
+| 2026-10-12 | Claude Opus 5.5 (planning) | Goal review note: the test rejects any fixed duration figure |

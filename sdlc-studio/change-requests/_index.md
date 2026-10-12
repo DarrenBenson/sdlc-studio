@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 3 |
 | Approved | 0 |
 | In Progress | 26 |
 | Complete | 519 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **635** |
+| **Total** | **637** |
 
 ## All Changes
 
@@ -47,6 +47,8 @@
 | [CR-0633](CR0633-the-learning-loop-at-the-retro-each-seat.md) | The learning loop: at the retro each seat is scored on its own verdicts and writes what it will do differently, approved by another seat | In Progress | High | Feature | 2026-10-09 | EP0287 |
 | [CR-0634](CR0634-user-personas-learn-from-usage-and-a-generalisable.md) | User personas learn from usage, and a generalisable persona learning can be promoted to the shipped amigos | In Progress | Medium | Feature | 2026-10-09 | EP0287 |
 | [CR-0635](CR0635-run-the-push-gate-and-the-full-suite.md) | Run the push gate and the full suite on a configured gate host over ssh, so a memory-starved workstation stops killing them | In Progress | High | Improvement | 2026-10-12 | EP0288 |
+| [CR-0636](CR0636-a-project-declared-story-status-such-as-partially.md) | A project-declared story status such as `Partially Done` is always read by the release gate as a completion claim, and no config can declare it non-terminal, so a project must misdescribe a partly-built story as `In Progress` to get its unbuilt criteria out of the red count | Proposed | Low | Improvement | 2026-10-12 | -- |
+| [CR-0637](CR0637-the-test-suite-s-private-temp-root-follows.md) | The test suite's private temp root follows TMPDIR, so on a tmpfs /tmp every fixture repository copy is held in RAM and a killed run's tree is never freed | Proposed | Medium | Improvement | 2026-10-12 | -- |
 
 ## Archived Releases
 

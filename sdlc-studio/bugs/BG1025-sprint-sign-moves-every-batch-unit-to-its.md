@@ -23,11 +23,11 @@ Do not move a unit that the close records as a carried known issue (or whose sta
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a closed run whose retro carries a batch bug as a known issue left Open, when `sprint sign` runs, then that bug keeps its status and sign names it as carried, not moved
+- [ ] **AC1** Given a closed run whose retro carries a batch bug as a known issue left Open, when `sprint sign` runs, then that bug keeps its status, sign names it as carried, not moved, and the signed page still checks VALID
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py::SignRespectsCarriedUnitsTests::test_a_carried_unit_keeps_its_status
 - [ ] **AC2** Given the same run, when `sprint sign` runs, then every batch unit the retro does not carry is still moved to its terminal status
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py::SignRespectsCarriedUnitsTests::test_uncarried_units_are_still_moved
-- [ ] **AC3** Given a unit of a sealed run, when `transition.py set` changes its status with an operator principal and a reason, then the change is made and recorded on the unit with both, and without them the existing refusal stands
+- [ ] **AC3** Given a unit of a sealed run, when `transition.py set` changes its status with `--principal` and `--reason`, then the principal is judged as `sprint sign` judges its signer (refused when it is the unit's author or a reviewer recorded on it), an accepted change is recorded on the unit with both, and without them the existing refusal stands
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py::SignRespectsCarriedUnitsTests::test_a_sealed_unit_is_corrected_only_with_attribution
 
 ## Impact
@@ -46,3 +46,4 @@ Signing a run silently contradicts recorded operator rulings and the bug's own c
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Filed |
 | 2026-10-12 | Claude Opus 5.5 (triage) | Triaged: confirmed on current code; project name generalised; criteria split into three on a new test module (BG0980); changelog fragment named for the unit |
+| 2026-10-12 | Claude Opus 5.5 (planning) | Goal review: AC3 defines the principal by sign's own rule; AC1 re-checks the signed page VALID (LC-016) |

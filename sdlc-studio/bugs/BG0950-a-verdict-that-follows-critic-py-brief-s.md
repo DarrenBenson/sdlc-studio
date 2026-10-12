@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py, changelog.d/BG0950.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG0950.md
 > **Evidence:** Found migrating a consuming project from skill 2.4.1 to the installed 6.1.0 on 2026-10-06; reproduced against sdlc-studio main at aa19a2e3.
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio file
@@ -40,7 +40,7 @@ Make the contract and the parser agree. Either BLOCKING items inherit their orig
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py -k contract_block_records
 - [ ] **AC2** A blocking finding appears once in the recorded row, marked blocking
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py -k blocking_recorded_once
-- [ ] **AC3** A semicolon inside one finding either survives as one finding or the brief's contract states the escape, shown by a test
+- [ ] **AC3** Given a tagged finding whose evidence contains a semicolon (`file.json:69; also in the parent commit`), when the verdict is recorded, then it is one finding, recorded with the reviewer's words unchanged
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py -k semicolon_in_finding
 
 ## Further evidence
@@ -50,6 +50,8 @@ Make the contract and the parser agree. Either BLOCKING items inherit their orig
 
 - 2026-10-08, BG0993 round 1: a REJECT whose findings used semicolons inside a sentence was refused, because `record` splits ISSUES on every semicolon and the fragments carry no origin tag. The reviewer re-emitted with full stops; no word changed but punctuation.
 
+- 2026-10-12, folded in from BG1029 (filed from a homelab run, RUN-01M4EMNN): four of four independent verdicts were refused by `critic.py record --from-verdict` for a semicolon inside a finding's evidence, and the author edited each before it would record, which is the hand the independence rule keeps off a verdict. AC3 no longer offers documenting an escape as an alternative: a reviewer's semicolon survives.
+
 ## Revision History
 
 | Date | Author | Change |
@@ -58,3 +60,4 @@ Make the contract and the parser agree. Either BLOCKING items inherit their orig
 | 2026-10-06 | Claude Opus 5.5 (triage) | Consuming-project name generalised for the neutrality lane |
 | 2026-10-07 | Claude Opus 5.5 | Further evidence: reproduced recording BG0962's round 1 |
 | 2026-10-12 | Claude Opus 5.5 (planning) | Affects names the unit's changelog fragment, before the first 6.2 run (D0365) |
+| 2026-10-12 | Claude Opus 5.5 (planning) | Goal review: AC3 made one requirement (a semicolon inside a finding survives), BG1029's evidence folded in; test_critic.py added to Affects |
