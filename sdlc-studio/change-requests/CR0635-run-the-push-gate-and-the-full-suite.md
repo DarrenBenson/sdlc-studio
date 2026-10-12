@@ -1,6 +1,7 @@
 # CR-0635: Run the push gate and the full suite on a configured gate host over ssh, so a memory-starved workstation stops killing them
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0288
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M
