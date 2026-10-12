@@ -38,10 +38,13 @@ Make the contract and the parser agree. Either BLOCKING items inherit their orig
 
 - [ ] **AC1** A block written exactly to `_RETURN_CONTRACT` - tagged ISSUES and an untagged BLOCKING subset of two or more items - records without edits, shown by a test
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py -k contract_block_records
+  - **Verified:** yes (2026-10-12)
 - [ ] **AC2** A blocking finding appears once in the recorded row, marked blocking
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py -k blocking_recorded_once
+  - **Verified:** yes (2026-10-12)
 - [ ] **AC3** Given a tagged finding whose evidence contains a semicolon (`file.json:69; also in the parent commit`), when the verdict is recorded, then it is one finding, recorded with the reviewer's words unchanged
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py -k semicolon_in_finding
+  - **Verified:** yes (2026-10-12)
 
 ## Further evidence
 

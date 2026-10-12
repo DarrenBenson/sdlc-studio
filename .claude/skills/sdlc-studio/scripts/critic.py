@@ -1114,6 +1114,63 @@ def split_items(text: str) -> list[str]:
     return out
 
 
+#: Where a FINDING starts on a new line of a returned block: its origin tag, behind an optional
+#: list bullet and the tool's own `BLOCKING:` label.
+_FINDING_START = re.compile(
+    r"[ \t]*(?:(?:[-*+]|\d+[.)])[ \t]+)?(?:BLOCKING\s*:\s*)?"
+    r"\[\s*(?:regression|new|pre[- ]existing)\s*\]", re.IGNORECASE)
+_ANY_ORIGIN_TAG = re.compile(r"\[\s*(?:regression|new|pre[- ]existing)\s*\]", re.IGNORECASE)
+_LEADING_BULLET = re.compile(r"^(?:[-*+]|\d+[.)])[ \t]+")
+_OPENERS, _CLOSERS = "([{", ")]}"
+
+
+def _split_block_findings(text: str) -> list[str]:
+    """A returned block's findings, as the reviewer wrote them.
+
+    An unescaped `;` ends a finding unless it sits inside parentheses, brackets or a code span,
+    where it is the reviewer's own punctuation in the finding's evidence (`(x.json:69; also in
+    the parent commit)`); a line break before an origin tag also ends one, so a bulleted list of
+    tagged findings reads as one finding per bullet. Everywhere else the split is
+    `split_items`' own, so untagged text after a bare `;` is still its own finding and still
+    refused as unclassified.
+    """
+    out, buf, i, n = [], [], 0, len(text or "")
+    depth, in_code = 0, False
+
+    def close() -> None:
+        item = _LEADING_BULLET.sub("", "".join(buf).strip())
+        if item:
+            out.append(item)
+
+    while i < n:
+        ch = text[i]
+        if ch == "\\" and i + 1 < n and text[i + 1] in ";\\":
+            buf.append(text[i + 1])
+            i += 2
+            continue
+        if ch == "`":
+            in_code = not in_code
+        elif not in_code and ch in _OPENERS:
+            depth += 1
+        elif not in_code and ch in _CLOSERS and depth:
+            depth -= 1
+        nested = in_code or depth > 0
+        if (ch == ";" and not nested) or (ch == "\n" and _FINDING_START.match(text, i + 1)):
+            close()
+            buf, depth, in_code = [], 0, False
+            i += 1
+            continue
+        buf.append(ch)
+        i += 1
+    close()
+    return out
+
+
+def _escape_item(item: str) -> str:
+    """`item` written so `split_items` reads it back as ONE item, unchanged."""
+    return re.sub(r"\\(?=[;\\])", r"\\\\", item).replace(";", "\\;")
+
+
 def _is_principal_superseded(repo_root: Path | str, unit: str, row: dict) -> bool:
     """True when a verdict row's attribution is retired by a PRINCIPAL-authorised supersession -
     the only kind that stops the row's reviewer counting toward independence. This re-checks the
@@ -2187,7 +2244,11 @@ ISSUES: <semicolon-separated findings, each one TAGGED with its origin and carry
                          (cite the id) - reported, and it does NOT hold the gate
         e.g. ISSUES: [regression] verify_ac crashes on empty Affects (verify_ac.py:88);
                      [pre-existing] BG0123 the gate is slow>
-BLOCKING: <the subset that must be fixed before Done, or 'none'>"""
+        A ';' inside parentheses, brackets or a code span stays in its finding; elsewhere
+        it ends the finding, so write \\; to keep one in plain prose.
+BLOCKING: <the subset that must be fixed before Done, or 'none'. Each item quotes the start
+          of its ISSUES finding (no tag needed), and that finding is recorded once, marked
+          blocking>"""
 
 
 # --- Standing review-brief practices ---------------------------------------------------
@@ -2607,7 +2668,7 @@ def rejoinder_brief(repo_root: Path | str, unit: str, seat: str,
     prior-verdict block is refused loudly - a rejoinder against a verdict that cannot be parsed
     would re-review against a paraphrase. Validation is well-formedness only: an APPROVE prior
     verdict is accepted too (a legitimate post-approval re-review)."""
-    parse_verdict_block(prior_verdict_text)  # validation only; ValueError on malformed
+    parse_verdict_block(prior_verdict_text, strict=False)  # form only; ValueError on malformed
     base = brief(repo_root, unit, seat, tier)
     return f"""{base}
 
@@ -2643,7 +2704,7 @@ def _block_field(text: str, token: str) -> str:
     return m.group(1).strip() if m else ""
 
 
-def parse_verdict_block(text: str) -> tuple[str, str]:
+def parse_verdict_block(text: str, strict: bool = True) -> tuple[str, str]:
     """(verdict, issues) from a returned VERDICT/ISSUES/BLOCKING block.
 
     Refuses (ValueError) a missing VERDICT line, a value outside APPROVE/REJECT,
@@ -2667,8 +2728,106 @@ def parse_verdict_block(text: str) -> tuple[str, str]:
     issues = _block_field(after, "ISSUES")
     blocking = _block_field(after, "BLOCKING")
     if blocking and blocking.lower() != "none":
-        issues = (issues + "; " if issues else "") + f"BLOCKING: {blocking}"
+        issues = _mark_blocking(issues, blocking, strict)
+    elif _ANY_ORIGIN_TAG.search(issues):
+        issues = "; ".join(_escape_item(f) for f in _split_block_findings(issues))
     return verdict, issues
+
+
+def _finding_key(text: str) -> str:
+    """A finding or BLOCKING item reduced to what quoting compares: no label, tag or bullet,
+    case and spacing folded, trailing punctuation dropped."""
+    m = _ORIGIN_TAG.match(text)
+    body = m.group(2) if m else re.sub(r"^\s*BLOCKING\s*:\s*", "", text, flags=re.I)
+    body = _LEADING_BULLET.sub("", body.strip())
+    return re.sub(r"\s+", " ", body).strip(" .;:,").lower()
+
+
+def _blocking_items(blocking: str) -> list[str]:
+    """The BLOCKING section's items. Tagged items split as findings do; untagged ones are a
+    bulleted list (a bullet plus its wrapped lines) or a `;`-separated line."""
+    if _ANY_ORIGIN_TAG.search(blocking):
+        return _split_block_findings(blocking)
+    lines = blocking.splitlines()
+    if not any(_LEADING_BULLET.match(line.strip()) for line in lines):
+        return split_items(blocking)
+    items: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if _LEADING_BULLET.match(stripped):
+            items.append(_LEADING_BULLET.sub("", stripped))
+        elif stripped and items:
+            items[-1] += " " + stripped
+        elif stripped:
+            items.append(stripped)
+    return items
+
+
+_QUOTE_STOPWORDS = frozenset({"the", "and", "for", "with", "that", "this", "from", "its", "into",
+                              "are", "was", "has", "have", "been", "than", "then"})
+
+
+def _content_words(key: str) -> set:
+    return {w for w in re.findall(r"[a-z0-9_./:`'-]+", key)
+            if len(w.strip("`'.:")) > 2 and w not in _QUOTE_STOPWORDS}
+
+
+def _quoted_finding(key: str, keys: list[str]) -> list[int]:
+    """The findings a BLOCKING item quotes, by the first test that matches any: the same text,
+    then the finding's start, then anywhere in it, then every content word of the item among
+    the finding's (a reviewer writes 'the vacuous killing test' for 'vacuous killing test at
+    test_x.py:10'). More than one index is ambiguous."""
+    words = _content_words(key)
+    for test in (lambda k: k == key, lambda k: k.startswith(key), lambda k: key in k,
+                 lambda k: bool(words) and words <= _content_words(k)):
+        hits = [i for i, k in enumerate(keys) if k and test(k)]
+        if hits:
+            return hits
+    return []
+
+
+def _mark_blocking(issues: str, blocking: str, strict: bool = True) -> str:
+    """ISSUES with each finding the BLOCKING section names marked `BLOCKING:` once.
+
+    The contract asks for BLOCKING as the SUBSET of ISSUES that must be fixed, so an untagged
+    item that quotes an ISSUES finding inherits that finding's origin and marks it, instead of
+    being recorded a second time. A tagged item that quotes no finding is recorded as its own
+    blocking finding, as before. An untagged item that quotes none, or quotes several, is
+    refused by name: guessing its origin, or which finding it meant, is the judgement the
+    classification exists to leave to the reviewer. Not `strict` (a block checked for its form
+    only, as a rejoinder's prior verdict is), such an item is folded in as an untagged
+    `BLOCKING:` finding, as it always was, and recording it is refused by the origin check.
+    """
+    has_issues = bool(issues) and issues.strip().lower() not in _NO_FINDINGS
+    findings = _split_block_findings(issues) if has_issues else []
+    keys = [_finding_key(f) for f in findings]
+    marked = [False] * len(findings)
+    extra: list[str] = []
+    for item in _blocking_items(blocking):
+        key = _finding_key(item)
+        if not key or key in _NO_FINDINGS:
+            continue
+        hits = _quoted_finding(key, keys)
+        if len(hits) == 1:
+            marked[hits[0]] = True
+        elif not strict and not (len(hits) == 0 and _ORIGIN_TAG.match(item)):
+            extra.append(f"BLOCKING: {item}")
+        elif len(hits) > 1:
+            raise ValueError(
+                f"BLOCKING item {item!r} quotes {len(hits)} ISSUES findings "
+                f"({'; '.join(findings[i] for i in hits)}) - quote enough of the one it means "
+                f"to tell them apart")
+        elif _ORIGIN_TAG.match(item):
+            extra.append(item if re.match(r"^\s*BLOCKING\s*:", item, re.I)
+                         else f"BLOCKING: {item}")
+        else:
+            raise ValueError(
+                f"BLOCKING item {item!r} quotes no ISSUES finding and carries no origin tag - "
+                f"quote the start of its ISSUES finding, or tag it [regression], [new] or "
+                f"[pre-existing]")
+    out = [f if not flag or re.match(r"^\s*BLOCKING\s*:", f, re.I) else f"BLOCKING: {f}"
+           for f, flag in zip(findings, marked)] + extra
+    return "; ".join(_escape_item(f) for f in out)
 
 
 # --- Per-item repair verdict -----------------------------------------------------------
