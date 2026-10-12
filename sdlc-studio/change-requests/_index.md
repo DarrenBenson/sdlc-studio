@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 4 |
 | Approved | 0 |
 | In Progress | 26 |
 | Complete | 519 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **637** |
+| **Total** | **638** |
 
 ## All Changes
 
@@ -49,6 +49,7 @@
 | [CR-0635](CR0635-run-the-push-gate-and-the-full-suite.md) | Run the push gate and the full suite on a configured gate host over ssh, so a memory-starved workstation stops killing them | In Progress | High | Improvement | 2026-10-12 | EP0288 |
 | [CR-0636](CR0636-a-project-declared-story-status-such-as-partially.md) | A project-declared story status such as `Partially Done` is always read by the release gate as a completion claim, and no config can declare it non-terminal, so a project must misdescribe a partly-built story as `In Progress` to get its unbuilt criteria out of the red count | Proposed | Low | Improvement | 2026-10-12 | -- |
 | [CR-0637](CR0637-the-test-suite-s-private-temp-root-follows.md) | The test suite's private temp root follows TMPDIR, so on a tmpfs /tmp every fixture repository copy is held in RAM and a killed run's tree is never freed | Proposed | Medium | Improvement | 2026-10-12 | -- |
+| [CR-0638](CR0638-the-release-verify-lane-has-no-vitest-batch.md) | The release verify lane has no vitest batch path, so in a vitest project every criterion is a cold `npx vitest run` spawn and the lane runs at three times its declared 600 s budget | Proposed | Medium | Improvement | 2026-10-12 | -- |
 
 ## Archived Releases
 
