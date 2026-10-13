@@ -132,6 +132,8 @@ SCRUB_SITES: dict[str, str] = {
         "environment git has just filled with the pushing repository's locations (BG0641).",
     "tools/tests/test_pre_push_hook.py":
         "pinned by test_every_hook_fixture_module_scrubs_the_same_variables",
+    "tools/tests/test_pre_push_keepalive.py":
+        "pinned by test_every_hook_fixture_module_scrubs_the_same_variables",
     "tools/tests/test_precommit_window_guard.py":
         "pinned by test_every_hook_fixture_module_scrubs_the_same_variables",
     "tools/tests/test_precommit_floor_pending.py":

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .githooks/pre-push, tools/tests/test_pre_push_hook.py, tools/tests/test_pre_push_keepalive.py, changelog.d/BG0976.md
+> **Affects:** .githooks/pre-push, tools/tests/test_pre_push_hook.py, tools/tests/test_pre_push_keepalive.py, changelog.d/BG0976.md, tools/tests/test_skill_tests_env.py
 > **Evidence:** Found 2026-10-06/07 during the triage session that filed BG0955-BG0963 in this repository.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -26,8 +26,10 @@ Print the line only when no keepalive is in force: no `core.sshCommand` carrying
 
 - [ ] **AC1** With a keepalive configured, a push prints no keepalive warning
   - **Verify:** pytest tools/tests/test_pre_push_keepalive.py -k keepalive_warning_silent_when_configured
+  - **Verified:** yes (2026-10-13)
 - [ ] **AC2** With none configured, the warning still prints
   - **Verify:** pytest tools/tests/test_pre_push_keepalive.py -k keepalive_warning_when_absent
+  - **Verified:** yes (2026-10-13)
 
 ## Planning notes
 
