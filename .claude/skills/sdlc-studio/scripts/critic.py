@@ -1132,16 +1132,18 @@ def _split_block_findings(text: str) -> list[str]:
     finding unless it sits inside parentheses, brackets or a code span, where it is the
     reviewer's own punctuation in the evidence (`(x.json:69; also in the parent commit)`). A
     line break before an origin tag also ends one, so a bulleted list of tagged findings reads
-    as one finding per bullet. Only a CLOSED code span counts: an odd backtick out is literal,
-    so it cannot hold the rest of the block open either. Everywhere else the split is
+    as one finding per bullet. Code spans are found as the ledger finds them (`_scan_ticks`):
+    a run of backticks closes on the next run of the same width, so a ``double`` span holds its
+    `;` too, and a backtick run nothing closes is literal and holds nothing open. Everywhere else the split is
     `split_items`' own, so untagged text after a bare `;` is still its own finding and still
     refused as unclassified.
     """
     text = text or ""
     out, buf, i, n = [], [], 0, len(text)
-    depth, in_code = 0, False
-    ticks = [k for k, c in enumerate(text) if c == "`" and (k == 0 or text[k - 1] != "\\")]
-    paired = set(ticks[:len(ticks) - len(ticks) % 2])
+    depth = 0
+    code = [False] * n                      # inside a closed code span, as the ledger reads one
+    for start, end in _scan_ticks(text)[0]:
+        code[start:end] = [True] * (end - start)
 
     def close() -> None:
         item = _LEADING_BULLET.sub("", "".join(buf).strip())
@@ -1154,9 +1156,8 @@ def _split_block_findings(text: str) -> list[str]:
             buf.append(text[i + 1])
             i += 2
             continue
-        if ch == "`" and i in paired:
-            in_code = not in_code
-        elif not in_code and ch in _OPENERS:
+        in_code = code[i]
+        if not in_code and ch in _OPENERS:
             depth += 1
         elif not in_code and ch in _CLOSERS and depth:
             depth -= 1
@@ -2252,8 +2253,9 @@ ISSUES: <semicolon-separated findings, each one TAGGED with its origin and carry
                          (cite the id) - reported, and it does NOT hold the gate
         e.g. ISSUES: [regression] verify_ac crashes on empty Affects (verify_ac.py:88);
                      [pre-existing] BG0123 the gate is slow>
-        A ';' inside parentheses, brackets or a code span stays in its finding; elsewhere
-        it ends the finding, so write \\; to keep one in plain prose.
+        A ';' ends a finding except inside parentheses, brackets or a code span. A ';'
+        followed by an origin tag ends one even inside brackets (never inside a code span),
+        so write \\; before a quoted tag, and \\; to keep a ';' in plain prose.
 BLOCKING: <the subset that must be fixed before Done, or 'none'. Each item quotes the start
           of its ISSUES finding (no tag needed), and that finding is recorded once, marked
           blocking>"""

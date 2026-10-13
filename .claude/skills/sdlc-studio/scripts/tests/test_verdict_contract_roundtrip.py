@@ -264,6 +264,67 @@ class VerdictContractRoundTripTests(unittest.TestCase):
             self.assertEqual(1, len(history), history)
             self.assertIn("the doc is wrong", history[0])
 
+    def test_a_tag_quoted_in_a_code_span_stays_in_its_finding(self) -> None:
+        """BG1032: a rejoinder quotes a prior finding, tag and all, in a code span. MUTANT: a
+        `;` with a tag after it ends the finding inside a closed span too."""
+        block = self._only("[new] round 1's finding `(x.py:1; [regression] y crashes)` is still "
+                           "open (critic.py:9); [pre-existing] BG0123 slow")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            r = self._record(root, block)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertEqual(["new", "pre-existing"], self._origins(root))
+
+    def test_a_double_backtick_span_holds_its_semicolon(self) -> None:
+        """BG1032: spans are found as the ledger finds them. MUTANT: single backticks paired."""
+        block = self._only("[new] the parser reads ``a; b`` as two; [pre-existing] BG0123 slow")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            r = self._record(root, block)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            texts = [f["text"] for f in _critic().parse_findings(self._issues(root))]
+            self.assertEqual(2, len(texts), texts)
+            self.assertIn("``a; b``", texts[0])
+
+    def test_a_closer_with_no_opener_is_ignored(self) -> None:
+        """BG1032. MUTANT: a closer with no opener takes the depth below zero."""
+        block = self._only("[new] two defects: a) the gate skips (gate.py:40; also 52) and "
+                           "b) nothing warns")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            r = self._record(root, block)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertEqual(["new"], self._origins(root))
+
+    def test_a_quoted_tag_in_brackets_follows_the_stated_rule(self) -> None:
+        r"""BG1032: the contract says a `;` before an origin tag ends a finding even inside
+        brackets, and that `\;` keeps it; the parser does exactly that. MUTANT: the contract's
+        rule line reverted, or the escape ignored."""
+        contract = " ".join(_critic()._RETURN_CONTRACT.split())
+        self.assertIn("followed by an origin tag ends one even inside brackets", contract)
+        self.assertIn(r"write \; before a quoted tag", contract)
+        quoted = ("[new] round 1's first finding (an unclosed bracket{}; [regression] per its "
+                  "tag) is open")
+        for sep, origins in (("", ["new", "regression"]), ("\\", ["new"])):
+            with self.subTest(escaped=bool(sep)), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                r = self._record(root, self._only(quoted.format(sep)))
+                self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+                self.assertEqual(origins, self._origins(root))
+
+    def test_the_history_reads_legacy_escapes_and_quoted_tags(self) -> None:
+        r"""BG1032: a row written before code spans were left alone carries `\_` inside a span,
+        and a new finding may quote a pre-existing tag. MUTANTS: the span-preserving unescape
+        restored in the history reader; the substring test for `[pre-existing]` restored."""
+        rows = [{"unit": "US0001", "verdict": "REJECT",
+                 "issues": r"[new] `test\_config` is wrong (c.py:1); "
+                           r"[new] the fix quotes [pre-existing] BG0123 wrongly (d.py:2); "
+                           r"[pre-existing] BG0123 slow"}]
+        history = _load("reconcile_roundtrip", "reconcile.py").blocking_findings(rows, "US0001")
+        self.assertEqual(2, len(history), history)
+        self.assertIn("`test_config`", history[0])
+        self.assertIn("quotes [pre-existing] BG0123", history[1])
+
     def test_readers_split_a_stored_row_as_before(self) -> None:
         mod = _critic()
         self.assertEqual(["a", "b"], [f["text"] for f in mod.parse_findings("a; b")])

@@ -37,10 +37,13 @@ Fix each finding above, then deliver BG0950 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC7** BG0950 AC1 still passes: A block written exactly to `_RETURN_CONTRACT` - tagged ISSUES and an untagged BLOCKING subset of two or more items - records without edits, shown by a test
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py -k contract_block_records
+  - **Verified:** yes (2026-10-13)
 - [ ] **AC8** BG0950 AC2 still passes: A blocking finding appears once in the recorded row, marked blocking
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py -k blocking_recorded_once
+  - **Verified:** yes (2026-10-13)
 - [ ] **AC9** BG0950 AC3 still passes: Given a tagged finding whose evidence contains a semicolon (`file.json:69; also in the parent commit`), when the verdict is recorded, then it is one finding, recorded with the reviewer's words unchanged
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py -k semicolon_in_finding
+  - **Verified:** yes (2026-10-13)
 
 ## Planning notes
 
