@@ -25,10 +25,13 @@ Add one test per behaviour, each named for the mutant it kills: a project leaf n
 
 - [ ] **AC1** Given a project .config.yaml setting `review.max_rounds:` to null and another whose `review:` section holds only comments, when config.get and config.py show --key `review.max_rounds` run, then the first reads null and the second the shipped default. Fails on: a merge guard that skips every null
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_s12_pins.py::S12PinTests::test_a_leaf_null_still_overrides
+  - **Verified:** yes (2026-10-13)
 - [ ] **AC2** Given a run closed, signed and then reopened, when decisions.py add --by operator logs a ruling, then the run's rulings count it. Fails on: `record_ruling` withholding a ruling whenever the state holds a report
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_s12_pins.py::S12PinTests::test_a_ruling_after_reopening_a_sealed_run_counts
+  - **Verified:** yes (2026-10-13)
 - [ ] **AC3** Given a filed page whose re-derive raises ReportError, when sprint sign runs, then it signs on the report alone and prints its note rather than crashing. Fails on: the ReportError catch removed
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_s12_pins.py::S12PinTests::test_an_unjudgeable_page_signs_with_its_note
+  - **Verified:** yes (2026-10-13)
 
 ## Revision History
 
