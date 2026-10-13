@@ -65,3 +65,4 @@ Make the contract and the parser agree. Either BLOCKING items inherit their orig
 | 2026-10-12 | Claude Opus 5.5 (planning) | Affects names the unit's changelog fragment, before the first 6.2 run (D0365) |
 | 2026-10-12 | Claude Opus 5.5 (planning) | Goal review: AC3 made one requirement (a semicolon inside a finding survives), BG1029's evidence folded in; test_critic.py added to Affects |
 | 2026-10-13 | Claude Opus 5.5 (author) | Round-1 REJECT repaired: reconcile.py added to Affects (the brief history reader now uses critic's reader) |
+| 2026-10-13 | Claude Opus 5.5 (author) | Round 2 was given to a fresh instance of the same QA seat on `critic.py brief --rejoinder`, which quotes round 1 verbatim: the round-1 instance could not be resumed after its worktree was removed (CR0639). Round 2 REJECTed at the cap; carried as BG1032, which joins RUN-01M4R168 by operator ruling |
