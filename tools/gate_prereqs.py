@@ -4,11 +4,11 @@
 A fresh clone learned what its gates needed from a push that went red after the full suite, or
 from an install command its system Python refused. This names each missing or too-old
 prerequisite at setup (`tools/enable-hooks.sh` runs it), says what breaks without it, and gives
-an install route read from THIS interpreter: pip only where pip can install, otherwise the OS
-package or a virtual environment placed first on PATH.
+an install route read from the interpreter that lacks it: pip only where pip can install,
+otherwise the OS package or a virtual environment placed first on PATH.
 
-One list: the Python distributions come from `requirements-dev.txt`, the file CI installs from,
-so the checker and CI cannot drift; the Node tool and the executables are declared here.
+One list: the Python distributions come from `requirements-dev.txt`, the file CI installs the
+suite's packages from; the Node tool and the executables are declared here.
 
 Subcommands:
   check   print every gap with its consequence and route; exit 1 if any, 0 if none
@@ -39,7 +39,7 @@ CONSEQUENCE = {
     "pytest-xdist": "the push suite runs serially, so the gate takes several times as long",
 }
 
-#: Prerequisites outside Python: `(name, how it is found, consequence, route)`.
+#: Prerequisites outside Python: `(name, executable, consequence, route)`.
 TOOLS = (
     ("markdownlint", "markdownlint",
      "the commit's markdown lanes skip it, and CI enforces them after the push", "npm ci"),
@@ -48,7 +48,10 @@ TOOLS = (
      "https://cli.github.com (the package `gh`)"),
 )
 
-_REQ = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*(?:>=\s*([0-9][0-9.]*))?\s*(?:#.*)?$")
+#: One requirement line: a name, optional extras, a specifier set, an optional environment marker.
+_REQ = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*(\[[^\]]*\])?\s*([^;#]*?)\s*(;[^#]*)?(#.*)?$")
+_SPEC = re.compile(r"^\s*(>=|==|~=|<=|<|>|!=|===)\s*([0-9][0-9A-Za-z.*+!-]*)\s*$")
+_FLOOR_OPS = (">=", "==", "~=", "===")
 
 
 def normalise(name: str) -> str:
@@ -56,29 +59,48 @@ def normalise(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
-def requirements(root: Path) -> list[tuple[str, tuple[int, ...] | None]]:
-    """`(distribution, floor or None)` for each line of `requirements-dev.txt`."""
-    path = root / "requirements-dev.txt"
-    if not path.is_file():
-        return []
-    out = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
-        m = _REQ.match(line)
-        if m:
-            out.append((m.group(1), _version_tuple(m.group(2)) if m.group(2) else None))
-    return out
-
-
 def _version_tuple(text: str) -> tuple[int, ...]:
     return tuple(int(p) for p in re.findall(r"\d+", text)[:3])
 
 
+def _below(found: tuple[int, ...], floor: tuple[int, ...]) -> bool:
+    """Whether `found` is older than `floor`, comparing release parts padded to one length, so
+    `8.3` meets a floor of `8.3.0` and `8.3.0` meets `8.3`."""
+    width = max(len(found), len(floor))
+    return found + (0,) * (width - len(found)) < floor + (0,) * (width - len(floor))
+
+
+def requirements(root: Path) -> tuple[list[tuple[str, tuple[int, ...] | None]], list[str]]:
+    """`(rows, not understood)`: `(distribution, floor or None)` for each requirement line of
+    `requirements-dev.txt`, and each line the checker cannot read, which it names rather than
+    drops. A floor is the lowest version a specifier admits (`>=`, `==`, `~=`); an upper bound
+    sets none. A pip option line (`-r`, `--index-url`) is not a requirement and is skipped."""
+    path = root / "requirements-dev.txt"
+    if not path.is_file():
+        return [], []
+    rows, unread = [], []
+    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip() or line.lstrip().startswith(("#", "-")):
+            continue
+        m = _REQ.match(line)
+        specs = [s for s in (m.group(3).split(",") if m and m.group(3) else []) if s.strip()]
+        parsed = [_SPEC.match(s) for s in specs]
+        if not m or not all(parsed):
+            unread.append(f"requirements-dev.txt line {n} ({line.strip()}) is not understood, so "
+                          f"it is not checked")
+            continue
+        floors = [_version_tuple(p.group(2)) for p in parsed if p.group(1) in _FLOOR_OPS]
+        rows.append((m.group(1), max(floors) if floors else None))
+    return rows, unread
+
+
 def installed_version(dist: str, python: str | None = None) -> str | None:
-    """The installed version of `dist` on this interpreter, or on `python` when given, read by
-    DISTRIBUTION name: an import name (`yaml`, `xdist`) is not a distribution name."""
-    if python and Path(python).resolve() != Path(sys.executable).resolve():
+    """The installed version of `dist`, read by DISTRIBUTION name (an import name such as `yaml`
+    or `xdist` is not a distribution name): on this interpreter, or, when `python` names one,
+    on THAT interpreter in a subprocess, never this one (a virtual environment's `bin/python`
+    resolves to its base interpreter, which holds different packages). Raises OSError when
+    `python` cannot run."""
+    if python:
         r = subprocess.run([python, "-c", "import importlib.metadata as m, sys\n"
                             "try: print(m.version(sys.argv[1]))\n"
                             "except m.PackageNotFoundError: pass", dist],
@@ -96,13 +118,23 @@ def install_route() -> str:
     in_venv = sys.prefix != sys.base_prefix
     managed = (Path(sysconfig.get_path("stdlib")) / "EXTERNALLY-MANAGED").exists()
     has_pip = importlib.util.find_spec("pip") is not None
-    if in_venv or (has_pip and not managed):
+    if has_pip and (in_venv or not managed):
         return "python3 -m pip install -r requirements-dev.txt"
+    if in_venv:
+        return (f"{exe} is a virtual environment with no pip: add it with `{exe} -m ensurepip`, "
+                f"or install with the tool that made the environment (for example "
+                f"`uv pip install -r requirements-dev.txt`)")
     why = "is externally managed" if managed else "has no pip"
     return (f"{exe} {why}: install the OS packages (for example python3-pytest), or create a "
             f"virtual environment and put it first on PATH: python3 -m venv .venv && "
             f".venv/bin/python -m pip install -r requirements-dev.txt && "
             f"export PATH=\"$PWD/.venv/bin:$PATH\"")
+
+
+def _other_route(python: str, dist: str, floor: tuple[int, ...] | None) -> str:
+    """The route for a distribution checked on an interpreter other than this one."""
+    spec = f"{dist}>={'.'.join(map(str, floor))}" if floor else dist
+    return f"{python} -m pip install '{spec}' (the interpreter SDLC_COVERAGE_PYTHON names)"
 
 
 def gaps(root: Path) -> list[str]:
@@ -112,25 +144,36 @@ def gaps(root: Path) -> list[str]:
         out.append(f"python3 {sys.version.split()[0]} is older than "
                    f"{'.'.join(map(str, PYTHON_FLOOR))}: CI and `repo map build` need "
                    f"{'.'.join(map(str, PYTHON_FLOOR))} or later")
+    rows, unread = requirements(root)
+    out.extend(unread)
     route = None
     coverage_python = os.environ.get("SDLC_COVERAGE_PYTHON") or None
-    for dist, floor in requirements(root):
+    for dist, floor in rows:
         on = coverage_python if normalise(dist) == "coverage" else None
-        found = installed_version(dist, on)
         consequence = CONSEQUENCE.get(normalise(dist), REFUSES)
+        try:
+            found = installed_version(dist, on)
+        except OSError as exc:
+            out.append(f"SDLC_COVERAGE_PYTHON names {on}, which cannot run ({exc.strerror or exc})"
+                       f" - {consequence}. Point it at an interpreter that has {dist}, or unset it")
+            continue
         where = f" on {on}" if on else ""
         if found is None:
             problem = f"{dist} is missing{where}"
-        elif floor and _version_tuple(found) < floor:
+        elif floor and _below(_version_tuple(found), floor):
             problem = (f"{dist} {found} is too old{where}: "
                        f"{'.'.join(map(str, floor))} or later is needed")
         else:
             continue
-        route = route or install_route()
-        out.append(f"{problem} - {consequence}. Install: {route}")
+        if on:
+            how = _other_route(on, dist, floor)
+        else:
+            route = route or install_route()
+            how = route
+        out.append(f"{problem} - {consequence}. Install: {how}")
     for name, exe, consequence, how in TOOLS:
         local = root / "node_modules" / ".bin" / exe
-        if shutil.which(exe) or (name == "markdownlint" and local.exists()):
+        if shutil.which(exe) or (name == "markdownlint" and os.access(local, os.X_OK)):
             continue
         out.append(f"{name} is not found - {consequence}. Install: {how}")
     return out

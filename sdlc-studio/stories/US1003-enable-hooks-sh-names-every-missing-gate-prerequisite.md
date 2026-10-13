@@ -27,7 +27,7 @@
 - **AC3:** Given two interpreters with the same gap, one carrying an `EXTERNALLY-MANAGED` marker in its stdlib directory with no importable pip and one unmanaged with pip importable, when enable-hooks.sh runs with each first on PATH, then only the second offers `python3 -m pip install -r requirements-dev.txt`, and the first names its own path as externally managed and offers the OS package and a virtual environment placed first on PATH.
   - **Verify:** pytest tools/tests/test_gate_prereqs.py::EnableHooksPrerequisiteTests::test_the_install_route_is_read_from_the_interpreter
   - **Verified:** yes (2026-10-13)
-- **AC4:** Given a PATH with no markdownlint, no node_modules/.bin/markdownlint, no rg and no gh, when enable-hooks.sh runs, then each of the four is named on its own line with its consequence (the commit's markdown lanes skip and CI enforces them, the rg-only tests skip, the red-CI read before a push reads UNREAD) and either `npm ci`, a fixed project URL or the package name.
+- **AC4:** Given a PATH with no markdownlint, no node_modules/.bin/markdownlint, no rg and no gh, when enable-hooks.sh runs, then markdownlint (one line covering both the PATH and node_modules/.bin), rg and gh are each named on its own line with its consequence (the commit's markdown lanes skip and CI enforces them, the rg-only tests skip, the red-CI read before a push reads UNREAD) and either `npm ci`, a fixed project URL or the package name.
   - **Verify:** pytest tools/tests/test_gate_prereqs.py::EnableHooksPrerequisiteTests::test_missing_tools_outside_python_are_named_with_their_consequence
   - **Verified:** yes (2026-10-13)
 - **AC5:** Given a clone and interpreter with every prerequisite present, when enable-hooks.sh runs, then it reports every gate prerequisite present, names none missing, and exits 0.
@@ -63,3 +63,4 @@
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G4 after the refine panel's review |
+| 2026-10-13 | Claude Opus 5.5 (author) | AC4 amended after the round-1 review: three lines, not four, as markdownlint's one line covers both places it is looked for |
