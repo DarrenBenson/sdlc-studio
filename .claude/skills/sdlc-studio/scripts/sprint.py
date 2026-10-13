@@ -6139,6 +6139,17 @@ def _signoff_author(root, unit) -> str:
     return ""
 
 
+def _filed_retro(root, state) -> str | None:
+    """The retro the filed page records (`retro_id`): the one the close judged. None when the
+    page cannot be read, and the caller then falls back to the latest retro naming the run."""
+    import sprint_report  # noqa: PLC0415
+    try:
+        page = sprint_report.read_report(root, str((state or {}).get("report") or ""))
+    except (sprint_report.ReportError, OSError, ValueError):
+        return None
+    return str(page.get("retro_id") or "").strip() or None
+
+
 def _seal_units(root, state) -> int:
     """SEAL's per-unit half: each batch unit to its terminal status, and no per-unit row.
 
@@ -6165,11 +6176,17 @@ def _seal_units(root, state) -> int:
               "again", file=sys.stderr)
         return 1
     pending, already, kept = [], 0, []
-    # A unit the run's retro carries as a known issue was ruled on and left where it stands on
-    # purpose (a not-stop-ship bug kept Open to watch it, say). The seal records that ruling; it
-    # never overrules it by moving the unit to its terminal status.
-    retro_id, carried_rows, _unread = _carried_rulings(Path(root), state, None)
-    carried = {sdlc_md.norm_id(str(r.get("id") or "")) for r in carried_rows or [] if r.get("id")}
+    # A unit the close's retro carries with a usable ruling was ruled on and left where it stands
+    # on purpose (a not-stop-ship bug kept Open to watch it, say). The seal records that ruling;
+    # it never overrules it by moving the unit to its terminal status. The retro read is the one
+    # the filed page names, the one the close judged, never the latest that happens to mention
+    # the run; a row the close reads as no ruling (`ok` false) carries nothing here either.
+    retro_id, carried_rows, unread = _carried_rulings(Path(root), state, _filed_retro(root, state))
+    if unread:
+        print(f"sign: the carried known issues could not be read ({unread}) - no unit is held "
+              f"back as carried", file=sys.stderr)
+    carried = {sdlc_md.norm_id(str(r.get("id") or "")) for r in carried_rows or []
+               if r.get("id") and r.get("ok")}
     for unit in units:
         hit = sdlc_md.find_by_id(Path(root), unit)
         # Each unit's OWN type decides its terminal: a bug's is `Fixed`, not `Done`.
