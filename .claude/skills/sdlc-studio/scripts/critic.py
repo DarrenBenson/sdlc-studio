@@ -1127,23 +1127,55 @@ _OPENERS, _CLOSERS = "([{", ")]}"
 def _split_block_findings(text: str) -> list[str]:
     """A returned block's findings, as the reviewer wrote them.
 
-    A `;` followed by an origin tag always ends a finding, unless it is inside a code span: an
-    unclosed bracket in one finding must never swallow the next. Any other unescaped `;` ends a
-    finding unless it sits inside parentheses, brackets or a code span, where it is the
-    reviewer's own punctuation in the evidence (`(x.json:69; also in the parent commit)`). A
-    line break before an origin tag also ends one, so a bulleted list of tagged findings reads
-    as one finding per bullet. Code spans are found as the ledger finds them (`_scan_ticks`):
-    a run of backticks closes on the next run of the same width, so a ``double`` span holds its
-    `;` too, and a backtick run nothing closes is literal and holds nothing open. Everywhere else the split is
-    `split_items`' own, so untagged text after a bare `;` is still its own finding and still
-    refused as unclassified.
+    Two passes. First, an origin tag after an unescaped `;` or a line break ALWAYS starts a new
+    finding, whatever brackets or backticks surround it, so no tag can be swallowed into the
+    finding before it: a bracket or a backtick left open in one finding once held every later
+    finding open, origin tags included, and a regression vanished from the record. A quoted tag
+    is written with `\\;` before it (the contract says so); left bare it starts a finding of its
+    own, which fails closed. Then, within each finding, a `;` ends it unless brackets or a code
+    span that open and close INSIDE that finding enclose it, where it is the reviewer's own
+    punctuation in the evidence (`(x.json:69; also in the parent commit)`). Code spans are found
+    as the ledger finds them (`_scan_ticks`). Anything else is `split_items`' own split, so
+    untagged text after a bare `;` is still its own finding and still refused as unclassified.
     """
-    text = text or ""
-    out, buf, i, n = [], [], 0, len(text)
-    depth = 0
-    code = [False] * n                      # inside a closed code span, as the ledger reads one
-    for start, end in _scan_ticks(text)[0]:
-        code[start:end] = [True] * (end - start)
+    out: list[str] = []
+    for segment in _tag_led_segments(text or ""):
+        out.extend(_split_within_finding(segment))
+    return out
+
+
+def _tag_led_segments(text: str) -> list[str]:
+    """`text` cut at each unescaped `;` or line break that an origin tag follows. Escapes are
+    left as written, so the second pass still reads them."""
+    segments, start, i, n = [], 0, 0, len(text)
+    while i < n:
+        if text[i] == "\\" and i + 1 < n and text[i + 1] in ";\\":
+            i += 2
+            continue
+        if text[i] in ";\n" and _FINDING_START.match(text, i + 1):
+            segments.append(text[start:i])
+            start = i + 1
+        i += 1
+    segments.append(text[start:])
+    return segments
+
+
+def _split_within_finding(segment: str) -> list[str]:
+    """One tag-led segment, split at each `;` no bracket pair or code span inside it encloses."""
+    n = len(segment)
+    held = [False] * n
+    for start, end in _scan_ticks(segment)[0]:
+        held[start:end] = [True] * (end - start)
+    stack: list[tuple[int, str]] = []
+    for k, ch in enumerate(segment):
+        if held[k]:
+            continue
+        if ch in _OPENERS:
+            stack.append((k, ch))
+        elif ch in _CLOSERS and stack and _OPENERS.index(stack[-1][1]) == _CLOSERS.index(ch):
+            opened = stack.pop()[0]
+            held[opened:k + 1] = [True] * (k + 1 - opened)
+    out, buf, i = [], [], 0
 
     def close() -> None:
         item = _LEADING_BULLET.sub("", "".join(buf).strip())
@@ -1151,23 +1183,16 @@ def _split_block_findings(text: str) -> list[str]:
             out.append(item)
 
     while i < n:
-        ch = text[i]
-        if ch == "\\" and i + 1 < n and text[i + 1] in ";\\":
-            buf.append(text[i + 1])
+        ch = segment[i]
+        if ch == "\\" and i + 1 < n and segment[i + 1] in ";\\":
+            buf.append(segment[i + 1])
             i += 2
             continue
-        in_code = code[i]
-        if not in_code and ch in _OPENERS:
-            depth += 1
-        elif not in_code and ch in _CLOSERS and depth:
-            depth -= 1
-        tag_next = bool(_FINDING_START.match(text, i + 1))
-        if not in_code and ((ch == ";" and (depth == 0 or tag_next)) or (ch == "\n" and tag_next)):
+        if ch == ";" and not held[i]:
             close()
-            buf, depth = [], 0
-            i += 1
-            continue
-        buf.append(ch)
+            buf = []
+        else:
+            buf.append(ch)
         i += 1
     close()
     return out
@@ -2253,9 +2278,9 @@ ISSUES: <semicolon-separated findings, each one TAGGED with its origin and carry
                          (cite the id) - reported, and it does NOT hold the gate
         e.g. ISSUES: [regression] verify_ac crashes on empty Affects (verify_ac.py:88);
                      [pre-existing] BG0123 the gate is slow>
-        A ';' ends a finding except inside parentheses, brackets or a code span. A ';'
-        followed by an origin tag ends one even inside brackets (never inside a code span),
-        so write \\; before a quoted tag, and \\; to keep a ';' in plain prose.
+        An origin tag after a ';' or a line break always starts a new finding, so write \\;
+        before a quoted tag, even inside a code span. Any other ';' ends a finding unless
+        brackets or a code span closed within that finding enclose it; write \\; to keep one.
 BLOCKING: <the subset that must be fixed before Done, or 'none'. Each item quotes the start
           of its ISSUES finding (no tag needed), and that finding is recorded once, marked
           blocking>"""

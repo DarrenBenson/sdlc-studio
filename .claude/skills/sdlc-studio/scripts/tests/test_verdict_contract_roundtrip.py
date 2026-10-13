@@ -264,16 +264,55 @@ class VerdictContractRoundTripTests(unittest.TestCase):
             self.assertEqual(1, len(history), history)
             self.assertIn("the doc is wrong", history[0])
 
-    def test_a_tag_quoted_in_a_code_span_stays_in_its_finding(self) -> None:
-        """BG1032: a rejoinder quotes a prior finding, tag and all, in a code span. MUTANT: a
-        `;` with a tag after it ends the finding inside a closed span too."""
-        block = self._only("[new] round 1's finding `(x.py:1; [regression] y crashes)` is still "
-                           "open (critic.py:9); [pre-existing] BG0123 slow")
+    def test_a_tag_quoted_in_a_code_span_needs_its_escape(self) -> None:
+        r"""BG1032: an origin tag after a `;` always starts a finding, even inside a code span,
+        so a rejoinder quoting a prior finding writes `\;` before the tag. Bare, the quote splits
+        into a finding of its own, which fails closed; escaped, it stays whole. MUTANTS: a code
+        span holding a tag-led `;` (the swallow), or the escape ignored."""
+        quote = ("[new] round 1's finding `(x.py:1{}; [regression] y crashes)` is still open "
+                 "(critic.py:9); [pre-existing] BG0123 slow")
+        for sep, origins in (("", ["new", "regression", "pre-existing"]),
+                             ("\\", ["new", "pre-existing"])):
+            with self.subTest(escaped=bool(sep)), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                r = self._record(root, self._only(quote.format(sep)))
+                self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+                self.assertEqual(origins, self._origins(root))
+
+    def test_a_backtick_left_open_never_swallows_a_later_finding(self) -> None:
+        """BG1032 round 1: a backtick run left open in one finding paired with one in a later
+        finding, and the span between them took a regression finding with it, so the unit passed
+        the coverage gate. MUTANT: spans or brackets found across the whole block, or a line
+        break before a tag no longer ending a finding inside one."""
+        layouts = {
+            "one per line": "[pre-existing] a lone ` here\n[regression] the gate crashes (g.py:1)"
+                            "\n[pre-existing] another lone ` there",
+            "one line": "[pre-existing] a lone ` here; [regression] the gate crashes (g.py:1); "
+                        "[pre-existing] another lone ` there",
+            "two backticks": "[pre-existing] a stray `` here\n[regression] the gate crashes "
+                             "(g.py:1)\n[pre-existing] then ``a span`` later",
+        }
+        critic = _critic()
+        for name, issues in layouts.items():
+            with self.subTest(layout=name), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                r = self._record(root, self._only(issues))
+                self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+                self.assertEqual(["pre-existing", "regression", "pre-existing"],
+                                 self._origins(root))
+                row = critic.verdict_for(root, "US0001")
+                self.assertEqual(1, len(critic.blocking_findings(row["issues"])))
+                self.assertFalse(critic.sprint_covers_independently(root, "US0001", row),
+                                 "a REJECT carrying a regression covered the unit")
+
+    def test_a_bracket_left_open_never_holds_an_untagged_tail(self) -> None:
+        """BG1032: a `;` stays in its finding only inside brackets that CLOSE within it. MUTANT:
+        an opener with no closer holding every later `;` in its finding."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            r = self._record(root, block)
-            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
-            self.assertEqual(["new", "pre-existing"], self._origins(root))
+            r = self._record(root, self._only("[pre-existing] slow (see a.py:1; the gate crashes"))
+            self.assertNotEqual(0, r.returncode, "an untagged tail was absorbed into a finding")
+            self.assertIn("the gate crashes", r.stdout + r.stderr)
 
     def test_a_double_backtick_span_holds_its_semicolon(self) -> None:
         """BG1032: spans are found as the ledger finds them. MUTANT: single backticks paired."""
@@ -301,8 +340,9 @@ class VerdictContractRoundTripTests(unittest.TestCase):
         brackets, and that `\;` keeps it; the parser does exactly that. MUTANT: the contract's
         rule line reverted, or the escape ignored."""
         contract = " ".join(_critic()._RETURN_CONTRACT.split())
-        self.assertIn("followed by an origin tag ends one even inside brackets", contract)
-        self.assertIn(r"write \; before a quoted tag", contract)
+        self.assertIn("An origin tag after a ';' or a line break always starts a new finding",
+                      contract)
+        self.assertIn(r"write \; before a quoted tag, even inside a code span", contract)
         quoted = ("[new] round 1's first finding (an unclosed bracket{}; [regression] per its "
                   "tag) is open")
         for sep, origins in (("", ["new", "regression"]), ("\\", ["new"])):
@@ -324,6 +364,20 @@ class VerdictContractRoundTripTests(unittest.TestCase):
         self.assertEqual(2, len(history), history)
         self.assertIn("`test_config`", history[0])
         self.assertIn("quotes [pre-existing] BG0123", history[1])
+
+    def test_the_history_keeps_a_reviewer_s_own_backslash(self) -> None:
+        r"""BG1032 round 1: the history reader split a row before undoing the ledger's escapes,
+        so a reviewer's own backslash before a bracket after `]` was lost. MUTANT: the escapes
+        undone after the split."""
+        block = self._only(r"[new] the regex [a-z]\[q] never matches (r.py:1)")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            r = self._record(root, block)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            rows = [{"unit": "US0001", "verdict": "REJECT", "issues": self._issues(root)}]
+            history = _load("reconcile_roundtrip", "reconcile.py").blocking_findings(rows, "US0001")
+            self.assertEqual(1, len(history), history)
+            self.assertIn(r"[a-z]\[q]", history[0])
 
     def test_readers_split_a_stored_row_as_before(self) -> None:
         mod = _critic()

@@ -2087,8 +2087,10 @@ def blocking_findings(rows: list[dict], unit_id: str) -> list[str]:
     """The first blocking findings the unit's REJECT verdicts recorded, cut for a brief.
 
     An Issues cell is read with the ledger's own reader (`critic.split_items`), so an escaped
-    `;` inside a finding stays in it, and `_clean`'s escapes are undone everywhere, code spans
-    included, as rows written before spans were left alone carry them there. A finding whose
+    `;` inside a finding stays in it, after `_clean`'s escapes are undone on the whole cell, code
+    spans included, as rows written before spans were left alone carry them there. They are
+    undone before the split, as `parse_findings` does: after it, a reviewer's own backslash is
+    lost. A finding whose
     OWN origin tag is pre-existing, or one marked non-blocking, did not hold the unit; one that
     merely quotes a pre-existing tag did."""
     import critic  # noqa: PLC0415 - lazy: critic owns the verdict ledger's reader
@@ -2098,8 +2100,8 @@ def blocking_findings(rows: list[dict], unit_id: str) -> list[str]:
         if (sdlc_md.norm_id(r.get("unit", "")) != me or r.get("superseded")
                 or r.get("verdict", "").upper() != "REJECT"):
             continue
-        for item in critic.split_items(r.get("issues", "")):
-            item = critic._unescape(item).strip()
+        for item in critic.split_items(critic._unescape(r.get("issues", ""))):
+            item = item.strip()
             tag = critic._ORIGIN_TAG.match(item)
             if (not item or item == "-" or "non-blocking" in item.lower()
                     or (tag and tag.group(1).lower().replace(" ", "-") == "pre-existing")):
