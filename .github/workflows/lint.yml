@@ -73,7 +73,9 @@ jobs:
         # ships the lane turns main red on a runner that installs it only for the gate below.
         # pytest-xdist: tools/tests run under the push's pytest plan below, which is parallel with
         # it; without it the `-n 2` variants of test_lean_tmp_hygiene skip here (BG0770).
-        run: python -m pip install --quiet pyyaml pytest pytest-xdist 'coverage>=7.10'
+        # One list: requirements-dev.txt is what tools/gate_prereqs.py checks a clone against,
+        # so CI installs the suite's packages from the same file.
+        run: python -m pip install --quiet -r requirements-dev.txt
 
       - name: Lint (markdown, style, links)
         run: npm run lint
@@ -172,6 +174,10 @@ jobs:
         # `coverage` for the same reason the ci job installs it: criteria that measure a unit's
         # added lines run `verify_ac run --coverage`, and without the package every one of them
         # reads red here while passing on any machine that has it.
+        # Its own list, a declared subset of requirements-dev.txt (pinned by
+        # tools/tests/test_prereq_list_is_ci_list.py): pytest-xdist is left out because this
+        # lane is compared against tools/verify-corpus-baseline.txt, and adding it changes
+        # what that baseline records.
         run: python -m pip install --quiet pyyaml pytest 'coverage>=7.10'
 
       # markdownlint is NOT optional here, though nothing in this lane lints markdown. Two test

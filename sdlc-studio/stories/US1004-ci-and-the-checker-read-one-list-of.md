@@ -21,8 +21,10 @@
 
 - **AC1:** Given .github/workflows/lint.yml, when the ci job's step that installs the suite's Python packages is read, then it installs from requirements-dev.txt and carries no package list of its own.
   - **Verify:** pytest tools/tests/test_prereq_list_is_ci_list.py::OneListTests::test_the_ci_suite_step_installs_from_requirements_dev
+  - **Verified:** yes (2026-10-13)
 - **AC2:** Given lint.yml's scheduled corpus-verify job, which keeps its own install list, when that list is read, then every package it installs is declared in requirements-dev.txt, with a floor no looser than the file's.
   - **Verify:** pytest tools/tests/test_prereq_list_is_ci_list.py::OneListTests::test_the_corpus_verify_job_installs_a_declared_subset
+  - **Verified:** yes (2026-10-13)
 
 ## Notes
 
