@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 3
+> **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/BG1025.md
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio file
@@ -19,7 +19,7 @@ Plan a run whose batch includes a unit an operator rules not-stop-ship and leave
 
 ## Proposed Fix
 
-Do not move a unit that the close records as a carried known issue (or whose status carries an operator ruling) to a terminal status at sign; or ask first and name each unit it will move. Allow an operator-attributed status correction on a sealed run's unit through transition (recorded, not silent).
+Do not move a unit that the close records as a carried known issue (or whose status carries an operator ruling) to a terminal status at sign; or ask first and name each unit it will move. Keep `sprint.py reopen` as the sealed run's one exit (D0367).
 
 ## Acceptance Criteria
 
@@ -27,8 +27,8 @@ Do not move a unit that the close records as a carried known issue (or whose sta
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py::SignRespectsCarriedUnitsTests::test_a_carried_unit_keeps_its_status
 - [ ] **AC2** Given the same run, when `sprint sign` runs, then every batch unit the retro does not carry is still moved to its terminal status
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py::SignRespectsCarriedUnitsTests::test_uncarried_units_are_still_moved
-- [ ] **AC3** Given a unit of a sealed run, when `transition.py set` changes its status with `--principal` and `--reason`, then the principal is judged as `sprint sign` judges its signer (refused when it is the unit's author or a reviewer recorded on it), an accepted change is recorded on the unit with both, and without them the existing refusal stands
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py::SignRespectsCarriedUnitsTests::test_a_sealed_unit_is_corrected_only_with_attribution
+- [ ] **AC3** Given the same run once sealed, when `transition.py set` moves the carried unit, then it is refused, and the refusal names `sprint.py reopen` as the way back
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py::SignRespectsCarriedUnitsTests::test_the_sealed_refusal_names_reopen
 
 ## Impact
 
@@ -38,7 +38,7 @@ Signing a run silently contradicts recorded operator rulings and the bug's own c
 
 - Confirmed at 19415be3 by the code path: sign's walk (`sprint.py:6167-6190`) moves every batch story unit that is neither terminal nor ruled out (`_batch_abandoned_units`) to its type's terminal, and reads nothing from the close's carried known issues. The carried rows are already readable: `_carried_rulings` (`sprint.py:5364`) reads them from the run's retro through `retro.carried_issues`. Pre-existing.
 - Severity Medium stands: sign silently overwrites a recorded operator ruling, and the seal then forces the hand edit the skill otherwise forbids. Points raised to 3 for the two parts (sign, and an attributed correction through transition). Private project name generalised; changelog fragment and the help page added to Affects.
-- AC3 changes what a seal permits, so the reviewer should judge that an attributed correction is recorded and never silent.
+- D0367 (2026-10-13): no correction route through transition; `sprint.py reopen` stays the seal's one exit, so AC3 pins that the refusal names it. Points 3 -> 2.
 
 ## Revision History
 
@@ -47,3 +47,4 @@ Signing a run silently contradicts recorded operator rulings and the bug's own c
 | 2026-10-12 | sdlc-studio | Filed |
 | 2026-10-12 | Claude Opus 5.5 (triage) | Triaged: confirmed on current code; project name generalised; criteria split into three on a new test module (BG0980); changelog fragment named for the unit |
 | 2026-10-12 | Claude Opus 5.5 (planning) | Goal review: AC3 defines the principal by sign's own rule; AC1 re-checks the signed page VALID (LC-016) |
+| 2026-10-13 | Claude Opus 5.5 (planning) | D0367: AC3 replaced (the sealed refusal names reopen; no transition correction route); Points 3 -> 2 |

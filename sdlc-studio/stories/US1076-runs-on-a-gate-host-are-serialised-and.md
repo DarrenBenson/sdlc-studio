@@ -34,9 +34,14 @@
 - AC3 must fail on: the remote gate is left running, or its tree left behind, after the local side goes
 - Run the remote script under `set -o pipefail` and refuse a commit whose lockfile cannot be read: the trial's `git show ... | sha256sum` left a node directory keyed on the digest of empty input.
 
+## Planning notes
+
+- 2026-10-13: devserver1 is also a self-hosted GitHub Actions runner (`Runner.Worker`, `buildkitd`), so a host-side lock serialises gate runs against each other but not against the host's other work: the same push gate took 568 s and 836 s on one day, and BG1031's wall-clock test failed at load average 10.6. The doctor (US1077) or the run's output should report the host's load beside the result.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-12 | Claude Opus 5.5 (engineering seat) | Groomed from the refine breakdown G14 after the refine panel's review |
+| 2026-10-13 | Claude Opus 5.5 (planning) | Note: the gate host is shared with a CI runner |

@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-10-12
+**Last Updated:** 2026-10-13
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 81 |
+| Open | 83 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 32 |
-| **Total** | **1029** |
+| **Total** | **1031** |
 
 ## All Bugs
 
@@ -105,6 +105,8 @@
 | [BG1027](BG1027-the-commit-time-links-lane-resolves-a-link.md) | The commit-time links lane resolves a link against the working tree, so a staged index row linking to an untracked file passes the commit and turns CI red | Open | Medium | 2026-10-12 | 2026-10-12 |
 | [BG1028](BG1028-there-is-no-supported-way-to-run-only.md) | There is no supported way to run only the release verify lane: `gate.py --release --only verify` is refused for deselecting the bound lanes, and the refusal's advice (drop --release) leads to `unknown check name(s): verify` | Open | Low | 2026-10-12 | 2026-10-12 |
 | [BG1029](BG1029-critic-record-splits-a-verdict-s-findings-on.md) | critic record splits a verdict's findings on every ';', so reviewer prose with a semicolon is refused as an untagged finding | Superseded | Low | 2026-10-12 | 2026-10-12 |
+| [BG1030](BG1030-prose-after-blocking-none-or-a-trailing-rulings.md) | Prose after `BLOCKING: none`, or a trailing `RULINGS:` line, is folded into BLOCKING and refused, so an APPROVE carrying rulings cannot be recorded unedited | Open | Low | 2026-10-13 | 2026-10-13 |
+| [BG1031](BG1031-modulealonelanetests-asserts-the-lane-finishes-in-under-3.md) | ModuleAloneLaneTests asserts the lane finishes in under 3.0 seconds of wall clock, so it fails whenever the full parallel suite or another workload shares the cores | Open | Medium | 2026-10-13 | 2026-10-13 |
 
 ## Archived Releases
 
