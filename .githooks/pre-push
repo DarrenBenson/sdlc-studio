@@ -63,12 +63,20 @@ done
 # get as far as paying.
 #
 # Printed only when no keepalive is in force (BG0976): advice that prints whether or not it
-# applies is advice people learn to skip, on the clone that needs it too. In force means
-# `core.sshCommand`, at any scope, carries a positive ServerAliveInterval, or `ssh -G` resolves one
-# for the host of an ssh remote. Bash builtins, git and ssh only: the fixture PATH holds no grep.
+# applies is advice people learn to skip, on the clone that needs it too. In force means the ssh
+# command git will actually use carries a positive ServerAliveInterval - GIT_SSH_COMMAND, which
+# overrides core.sshCommand, else core.sshCommand at any scope; GIT_SSH names a program whose
+# options cannot be read - or that `ssh -G` resolves one for the host of an ssh remote. Bash
+# builtins, git and ssh only: the fixture PATH holds no grep.
 keepalive_in_force() {
   local url="$1" ssh_cmd host rest key value
-  ssh_cmd="$(git config --get core.sshCommand 2>/dev/null || true)"
+  if [ -n "${GIT_SSH_COMMAND:-}" ]; then
+    ssh_cmd="$GIT_SSH_COMMAND"
+  elif [ -n "${GIT_SSH:-}" ]; then
+    ssh_cmd=""
+  else
+    ssh_cmd="$(git config --get core.sshCommand 2>/dev/null || true)"
+  fi
   shopt -s nocasematch
   if [[ $ssh_cmd =~ serveraliveinterval[=[:space:]]*([0-9]+) ]] && (( 10#${BASH_REMATCH[1]} > 0 )); then
     shopt -u nocasematch
@@ -76,7 +84,7 @@ keepalive_in_force() {
   fi
   shopt -u nocasematch
   case "$url" in
-    ssh://*) rest="${url#ssh://}"; rest="${rest#*@}"; host="${rest%%[:/]*}" ;;
+    ssh://* | git+ssh://* | ssh+git://*) rest="${url#*://}"; rest="${rest#*@}"; host="${rest%%[:/]*}" ;;
     *://* | /* | .* | file:*) return 1 ;;
     *:*) rest="${url%%:*}"; host="${rest#*@}" ;;
     *) return 1 ;;
