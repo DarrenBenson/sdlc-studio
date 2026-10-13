@@ -10,6 +10,7 @@ The test builds its own venv-shaped interpreter (`venv --without-pip`, so no net
 puts a marker module in its site-packages only, and runs the fixture under it: the stub PATH's
 `python3` must import the marker. MUTANT: the stub `python3` a symlink to the interpreter again.
 """
+# test-census-subject: .githooks/pre-push
 from __future__ import annotations
 
 import os

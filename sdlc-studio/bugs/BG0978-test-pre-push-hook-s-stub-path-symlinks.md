@@ -39,3 +39,4 @@ Write a small python3 wrapper script that execs `sys.executable` (or symlink `sy
 | 2026-10-07 | sdlc-studio | Filed |
 | 2026-10-12 | Claude Opus 5.5 (planning) | Affects names the unit's changelog fragment, before the first 6.2 run (D0365) |
 | 2026-10-12 | Claude Opus 5.5 (planning) | Goal review note added |
+| 2026-10-13 | Claude Opus 5.5 (author) | After its round-1 APPROVE: test_pre_push_stub_interpreter.py gains a `# test-census-subject: .githooks/pre-push` line (comment only, no behaviour), because the full suite's test-census ratchet counted the new module as unattributed (34 against a baseline of 33). Its review notes are filed as BG1036 |
