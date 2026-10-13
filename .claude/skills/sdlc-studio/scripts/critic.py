@@ -1127,15 +1127,21 @@ _OPENERS, _CLOSERS = "([{", ")]}"
 def _split_block_findings(text: str) -> list[str]:
     """A returned block's findings, as the reviewer wrote them.
 
-    An unescaped `;` ends a finding unless it sits inside parentheses, brackets or a code span,
-    where it is the reviewer's own punctuation in the finding's evidence (`(x.json:69; also in
-    the parent commit)`); a line break before an origin tag also ends one, so a bulleted list of
-    tagged findings reads as one finding per bullet. Everywhere else the split is
+    A `;` followed by an origin tag always ends a finding, unless it is inside a code span: an
+    unclosed bracket in one finding must never swallow the next. Any other unescaped `;` ends a
+    finding unless it sits inside parentheses, brackets or a code span, where it is the
+    reviewer's own punctuation in the evidence (`(x.json:69; also in the parent commit)`). A
+    line break before an origin tag also ends one, so a bulleted list of tagged findings reads
+    as one finding per bullet. Only a CLOSED code span counts: an odd backtick out is literal,
+    so it cannot hold the rest of the block open either. Everywhere else the split is
     `split_items`' own, so untagged text after a bare `;` is still its own finding and still
     refused as unclassified.
     """
-    out, buf, i, n = [], [], 0, len(text or "")
+    text = text or ""
+    out, buf, i, n = [], [], 0, len(text)
     depth, in_code = 0, False
+    ticks = [k for k, c in enumerate(text) if c == "`" and (k == 0 or text[k - 1] != "\\")]
+    paired = set(ticks[:len(ticks) - len(ticks) % 2])
 
     def close() -> None:
         item = _LEADING_BULLET.sub("", "".join(buf).strip())
@@ -1148,16 +1154,16 @@ def _split_block_findings(text: str) -> list[str]:
             buf.append(text[i + 1])
             i += 2
             continue
-        if ch == "`":
+        if ch == "`" and i in paired:
             in_code = not in_code
         elif not in_code and ch in _OPENERS:
             depth += 1
         elif not in_code and ch in _CLOSERS and depth:
             depth -= 1
-        nested = in_code or depth > 0
-        if (ch == ";" and not nested) or (ch == "\n" and _FINDING_START.match(text, i + 1)):
+        tag_next = bool(_FINDING_START.match(text, i + 1))
+        if not in_code and ((ch == ";" and (depth == 0 or tag_next)) or (ch == "\n" and tag_next)):
             close()
-            buf, depth, in_code = [], 0, False
+            buf, depth = [], 0
             i += 1
             continue
         buf.append(ch)
@@ -1167,8 +1173,10 @@ def _split_block_findings(text: str) -> list[str]:
 
 
 def _escape_item(item: str) -> str:
-    """`item` written so `split_items` reads it back as ONE item, unchanged."""
-    return re.sub(r"\\(?=[;\\])", r"\\\\", item).replace(";", "\\;")
+    """`item` written so `split_items` reads it back as ONE item, unchanged: each `;` escaped,
+    and each backslash doubled where `split_items` would read it as an escape, including one at
+    the end, which the `; ` joining the next item would otherwise turn into an escaped `;`."""
+    return re.sub(r"\\(?=[;\\]|$)", r"\\\\", item).replace(";", "\\;")
 
 
 def _is_principal_superseded(repo_root: Path | str, unit: str, row: dict) -> bool:

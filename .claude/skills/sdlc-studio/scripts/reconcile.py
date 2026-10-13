@@ -2086,15 +2086,17 @@ def _cut_finding(item: str) -> str:
 def blocking_findings(rows: list[dict], unit_id: str) -> list[str]:
     """The first blocking findings the unit's REJECT verdicts recorded, cut for a brief.
 
-    An Issues cell is `; `-separated; an item marked non-blocking or `[pre-existing]` did not
+    An Issues cell is read with the ledger's own reader (`critic.split_items`), so an escaped
+    `;` inside a finding stays in it; an item marked non-blocking or `[pre-existing]` did not
     hold the unit, so it is not a defect the unit's work introduced."""
+    import critic  # noqa: PLC0415 - lazy: critic owns the verdict ledger's reader
     me = sdlc_md.norm_id(unit_id)
     found: dict[str, None] = {}
     for r in rows:
         if (sdlc_md.norm_id(r.get("unit", "")) != me or r.get("superseded")
                 or r.get("verdict", "").upper() != "REJECT"):
             continue
-        for item in re.split(r";\s+", re.sub(r"\\(.)", r"\1", r.get("issues", ""))):
+        for item in critic.split_items(critic._unescape_outside_spans(r.get("issues", ""))):
             item = item.strip()
             if (not item or item == "-" or "[pre-existing]" in item
                     or "non-blocking" in item.lower()):
