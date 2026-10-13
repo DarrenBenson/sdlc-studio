@@ -110,6 +110,9 @@ You sign the run once; no per-unit sign-off row is written. One command transiti
 its own terminal - `Done` for a story, `Fixed` for a bug - (AC-verify gated, cascading its parent
 and the request above it), then writes the run's one signature and its outcome, and stops. It does
 NOT run the close tail: a fact that moves after a signature is a fact the signature did not cover.
+A unit the run's retro carries in `## Known issues carried` keeps the status it was ruled on and
+is named as carried, not moved: a bug ruled not-stop-ship and left Open stays Open. Once the run
+is sealed, `sprint.py reopen --reason` is the only way to change a batch unit's status.
 A unit with no independent delivery APPROVE stops it before anything moves, naming the unit. The
 close names the same units first - one short of its terminal as a known issue, one already moved
 to Done in the pre-flight's blocking `review-coverage` row - so the page you sign already shows

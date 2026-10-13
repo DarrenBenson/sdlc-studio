@@ -6164,7 +6164,12 @@ def _seal_units(root, state) -> int:
               "(`critic.py brief --unit <id> --seat qa`, then `critic.py record`), then sign "
               "again", file=sys.stderr)
         return 1
-    pending, already = [], 0
+    pending, already, kept = [], 0, []
+    # A unit the run's retro carries as a known issue was ruled on and left where it stands on
+    # purpose (a not-stop-ship bug kept Open to watch it, say). The seal records that ruling; it
+    # never overrules it by moving the unit to its terminal status.
+    retro_id, carried_rows, _unread = _carried_rulings(Path(root), state, None)
+    carried = {sdlc_md.norm_id(str(r.get("id") or "")) for r in carried_rows or [] if r.get("id")}
     for unit in units:
         hit = sdlc_md.find_by_id(Path(root), unit)
         # Each unit's OWN type decides its terminal: a bug's is `Fixed`, not `Done`.
@@ -6174,8 +6179,13 @@ def _seal_units(root, state) -> int:
             sdlc_md.status_vocab(hit[1], root))
         if status == terminal:
             already += 1
+        elif sdlc_md.norm_id(unit) in carried:
+            kept.append((unit, status))
         else:
             pending.append((unit, terminal))
+    for unit, status in kept:
+        print(f"sign: {unit} is carried as a known issue by {retro_id} - it stays {status}, "
+              f"not moved")
     for unit, terminal in pending:
         try:
             if terminal == "Done":
@@ -6199,6 +6209,7 @@ def _seal_units(root, state) -> int:
             print(f"  {uid} ({kind}) is {status} - transition it before the run is read as "
                   f"delivered", file=sys.stderr)
     print(f"sign: {len(pending)} moved to their terminal status, {already} already there"
+          + (f", {len(kept)} carried and left as they stand" if kept else "")
           + (f", {len(unfanned)} NOT reached (see above)" if unfanned else ""))
     return 0
 

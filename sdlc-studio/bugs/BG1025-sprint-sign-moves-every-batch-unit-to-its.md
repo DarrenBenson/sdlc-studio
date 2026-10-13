@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/BG1025.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/BG1025.md
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -25,10 +25,13 @@ Do not move a unit that the close records as a carried known issue (or whose sta
 
 - [ ] **AC1** Given a closed run whose retro carries a batch bug as a known issue left Open, when `sprint sign` runs, then that bug keeps its status, sign names it as carried, not moved, and the signed page still checks VALID
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py::SignRespectsCarriedUnitsTests::test_a_carried_unit_keeps_its_status
+  - **Verified:** yes (2026-10-13)
 - [ ] **AC2** Given the same run, when `sprint sign` runs, then every batch unit the retro does not carry is still moved to its terminal status
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py::SignRespectsCarriedUnitsTests::test_uncarried_units_are_still_moved
+  - **Verified:** yes (2026-10-13)
 - [ ] **AC3** Given the same run once sealed, when `transition.py set` moves the carried unit, then it is refused, and the refusal names `sprint.py reopen` as the way back
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py::SignRespectsCarriedUnitsTests::test_the_sealed_refusal_names_reopen
+  - **Verified:** yes (2026-10-13)
 
 ## Impact
 
@@ -40,6 +43,10 @@ Signing a run silently contradicts recorded operator rulings and the bug's own c
 - Severity Medium stands: sign silently overwrites a recorded operator ruling, and the seal then forces the hand edit the skill otherwise forbids. Points raised to 3 for the two parts (sign, and an attributed correction through transition). Private project name generalised; changelog fragment and the help page added to Affects.
 - D0367 (2026-10-13): no correction route through transition; `sprint.py reopen` stays the seal's one exit, so AC3 pins that the refusal names it. Points 3 -> 2.
 
+## Build notes
+
+- The review bar before the walk (`seal_bar_unmet`) still applies to every batch unit, a carried one included: relaxing what a seal requires is outside this bug.
+
 ## Revision History
 
 | Date | Author | Change |
@@ -48,3 +55,4 @@ Signing a run silently contradicts recorded operator rulings and the bug's own c
 | 2026-10-12 | Claude Opus 5.5 (triage) | Triaged: confirmed on current code; project name generalised; criteria split into three on a new test module (BG0980); changelog fragment named for the unit |
 | 2026-10-12 | Claude Opus 5.5 (planning) | Goal review: AC3 defines the principal by sign's own rule; AC1 re-checks the signed page VALID (LC-016) |
 | 2026-10-13 | Claude Opus 5.5 (planning) | D0367: AC3 replaced (the sealed refusal names reopen; no transition correction route); Points 3 -> 2 |
+| 2026-10-13 | Claude Opus 5.5 (author) | Built: Affects narrowed to what the fix touches (transition.py unchanged under D0367) |
