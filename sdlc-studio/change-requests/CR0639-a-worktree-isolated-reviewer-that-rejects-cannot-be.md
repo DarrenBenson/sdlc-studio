@@ -23,8 +23,13 @@ Every orchestrator running isolated reviews: a tidy-up between rounds costs the 
 - [ ] Given the toolchain runbook's review step, when an orchestrator reads it, then it says a REJECTing reviewer's worktree is kept until that unit's round 2 is recorded, and names what to do when it is gone (a fresh instance of the same seat on `critic.py brief --rejoinder`)
 - [ ] Given a REJECT recorded through `critic.py record`, when it is written, then the command's output says the rejecting reviewer is needed for round 2
 
+## Further evidence
+
+- 2026-10-13, BG0976: the harness removed the round-1 reviewer's `isolation: worktree` checkout itself, at the agent's completion, because the reviewer had left it unchanged (it mutated and restored byte-identically, as the brief demands). Keeping the worktree is therefore not in the orchestrator's hands when the harness owns it: round 2 again went to a fresh instance of the seat. A reviewer that makes its own checkout (`git worktree add --detach <scratch dir> <commit>`) instead of harness isolation stays resumable, and the brief's isolation requirement is still met.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Raised |
+| 2026-10-13 | Claude Opus 5.5 (triage) | Further evidence: the harness auto-removes an unchanged isolated worktree, so a resumable reviewer makes its own checkout |
