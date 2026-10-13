@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 88 |
+| Open | 89 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 32 |
-| **Total** | **1036** |
+| **Total** | **1037** |
 
 ## All Bugs
 
@@ -112,6 +112,7 @@
 | [BG1034](BG1034-sign-s-predates-exemption-has-no-pin-and.md) | Sign's predates exemption has no pin, and BG0944's reopen pin and module selection are weaker than they look | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1035](BG1035-bg0945-s-test-holds-the-old-claim-off.md) | BG0945's test holds the old claim off by one literal phrase, and the untracked first-ruling branch is unstated and unpinned | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1036](BG1036-bg0978-s-stub-interpreter-test-cannot-tell-sys.md) | BG0978's stub-interpreter test cannot tell sys.executable from the PATH's python3, and checks only an exit code | Open | Low | 2026-10-13 | 2026-10-13 |
+| [BG1037](BG1037-a-bracket-of-another-type-opened-inside-a.md) | A bracket of another type opened inside a pair is not literal, so a ';' the pair encloses is still split, and BG1032's note over-claims inside code spans | Open | Low | 2026-10-13 | 2026-10-13 |
 
 ## Archived Releases
 
