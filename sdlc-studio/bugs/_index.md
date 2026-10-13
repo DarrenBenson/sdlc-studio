@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 85 |
+| Open | 87 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 32 |
-| **Total** | **1033** |
+| **Total** | **1035** |
 
 ## All Bugs
 
@@ -109,6 +109,8 @@
 | [BG1031](BG1031-modulealonelanetests-asserts-the-lane-finishes-in-under-3.md) | ModuleAloneLaneTests asserts the lane finishes in under 3.0 seconds of wall clock, so it fails whenever the full parallel suite or another workload shares the cores | Open | Medium | 2026-10-13 | 2026-10-13 |
 | [BG1032](BG1032-bg0950-did-not-converge-in-review-round-2.md) | BG0950 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-13 | 2026-10-13 |
 | [BG1033](BG1033-when-sign-cannot-read-the-close-s-carried.md) | When sign cannot read the close's carried rows it moves every unit, and the warning it prints has no test | Open | Low | 2026-10-13 | 2026-10-13 |
+| [BG1034](BG1034-sign-s-predates-exemption-has-no-pin-and.md) | Sign's predates exemption has no pin, and BG0944's reopen pin and module selection are weaker than they look | Open | Low | 2026-10-13 | 2026-10-13 |
+| [BG1035](BG1035-bg0945-s-test-holds-the-old-claim-off.md) | BG0945's test holds the old claim off by one literal phrase, and the untracked first-ruling branch is unstated and unpinned | Open | Low | 2026-10-13 | 2026-10-13 |
 
 ## Archived Releases
 
