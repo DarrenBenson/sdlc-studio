@@ -5,7 +5,7 @@
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .githooks/pre-push, AGENTS.md, tools/tests/test_push_first_estimate.py, tools/tests/test_pre_push_hook.py, changelog.d/US1006.md
+> **Affects:** .githooks/pre-push, AGENTS.md, tools/tests/test_push_first_estimate.py, tools/tests/test_pre_push_hook.py, changelog.d/US1006.md, tools/gate_timing.py
 > **Epic:** EP0278
 > **Points:** 2
 > **Depends on:** US1005, BG0978
@@ -21,12 +21,16 @@
 
 - **AC1:** Given a fixture clone with no recorded boundary run and no recorded full commit-suite run, when a branch push and then a tag push run the hook, then each cost line says no run is recorded on this clone and states no fixed number of minutes.
   - **Verify:** pytest tools/tests/test_push_first_estimate.py::FirstRunEstimateTests::test_no_fixed_duration_is_announced_without_a_recorded_run
+  - **Verified:** yes (2026-10-13)
 - **AC2:** Given the same clone, when the push runs once with pytest-xdist hidden from python3 and once with it present, then the cost line says the suite runs serially in the first case and in parallel across the machine's cores in the second, naming the number of test modules each time.
   - **Verify:** pytest tools/tests/test_push_first_estimate.py::FirstRunEstimateTests::test_the_cost_line_reads_parallel_or_serial_from_the_interpreter
+  - **Verified:** yes (2026-10-13)
 - **AC3:** Given a clone with no boundary-push series but a recorded `total` (full commit-suite) series, when a branch push runs the hook, then the cost line cites that series' median as a floor for this machine and still states no fixed figure.
   - **Verify:** pytest tools/tests/test_push_first_estimate.py::FirstRunEstimateTests::test_a_recorded_full_commit_suite_run_is_cited_as_a_floor
+  - **Verified:** yes (2026-10-13)
 - **AC4:** Given AGENTS.md, when the pre-push row of its refusal table is read, then it states no fixed duration and names `gate_timing.py estimate --suite boundary-push`, and running that command from the repository root exits 0.
   - **Verify:** pytest tools/tests/test_push_first_estimate.py::FirstRunEstimateTests::test_agents_md_names_the_command_not_a_figure
+  - **Verified:** yes (2026-10-13)
 
 ## Notes
 

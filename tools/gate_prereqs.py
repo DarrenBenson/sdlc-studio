@@ -12,6 +12,8 @@ suite's packages from; the Node tool and the executables are declared here.
 
 Subcommands:
   check   print every gap with its consequence and route; exit 1 if any, 0 if none
+          (`--refusing`: exit 1 only when a gap turns the push suite red, every other gap
+          printed as a note - the pre-push hook's preflight)
 """
 from __future__ import annotations
 
@@ -185,6 +187,11 @@ def cmd_check(args: argparse.Namespace) -> int:
     if not found:
         print("gate prerequisites: every one present")
         return 0
+    if getattr(args, "refusing", False):
+        refusing = [g for g in found if REFUSES in g]
+        for line in found:
+            print(f"  {'REFUSES' if line in refusing else 'note'}: {line}")
+        return 1 if refusing else 0
     print(f"gate prerequisites: {len(found)} gap(s) on {sys.executable}")
     for line in found:
         print(f"  {line}")
@@ -195,7 +202,10 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--root", default=".", help="the clone's root (default: .)")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("check", help="name every missing prerequisite; exit 1 if any")
+    check = sub.add_parser("check", help="name every missing prerequisite; exit 1 if any")
+    check.add_argument("--refusing", action="store_true",
+                       help="exit 1 only for a gap that turns the push suite red; name the "
+                            "rest as notes")
     args = ap.parse_args(argv)
     return cmd_check(args)
 

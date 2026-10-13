@@ -36,6 +36,26 @@ while read -r _local_ref local_sha remote_ref _remote_sha; do
 done
 [ -z "$boundary" ] && exit 0
 
+# --- what the suite needs, checked BEFORE it runs (US1005) -----------------------------------
+# A missing coverage or PyYAML was found only by the suite's own red tests, after it had run in
+# full; a missing pytest-xdist, rg, markdownlint or gh never makes the suite red. So the check
+# refuses only for the first class, in the time one python3 takes to start, and names the rest
+# as notes. At a tag as at a branch push. It reads SDLC_COVERAGE_PYTHON as the suite does.
+if [ -f tools/gate_prereqs.py ]; then
+  prereqs="$(python3 tools/gate_prereqs.py check --refusing 2>&1)"
+  prereqs_rc=$?
+  while IFS= read -r prereq_line; do
+    [ -n "$prereq_line" ] && echo "pre-push: $prereq_line" >&2
+  done <<< "$prereqs"
+  if [ "$prereqs_rc" -ne 0 ]; then
+    echo "pre-push: refused before the $boundary boundary gate runs: the suite cannot be green on this interpreter without the prerequisite(s) marked REFUSES above - install them by the route each names" >&2
+    echo "  bypass once (emergency only): git push --no-verify" >&2
+    exit 1
+  fi
+else
+  echo "pre-push: the prerequisite check is not present in this clone (tools/gate_prereqs.py) - not checked" >&2
+fi
+
 # A tag publishes docs/known-issues.md as that release's disclosure, so the page must agree with
 # the bug corpus there, and only there (US0898): between releases it states what the last cut
 # wrote, and filing or closing a finding does not redden anything. Judged at each pushed tag's
@@ -188,14 +208,12 @@ esac
 # --- announce the cost, then pay it -------------------------------------------------------
 cost="$(python3 tools/gate_timing.py estimate --suite "boundary-$boundary" --warn-seconds 0 2>/dev/null || true)"
 if [ -z "$cost" ]; then
-  # No run recorded for this boundary yet (the first push is the one this hook exists for). A
-  # measured literal: the full suite across every core is about four and a half minutes here, and
-  # the tag's two lanes add about ten more.
-  if [ "$boundary" = "release" ]; then
-    cost="boundary-release: no run recorded yet - expect about fifteen minutes (the full suite plus release-rehearsal and module-alone)"
-  else
-    cost="boundary-push: no run recorded yet - expect about five minutes (the full suite once, plus the core gate lanes)"
-  fi
+  # No run recorded for this boundary on this clone. Never a fixed figure: one measured on another
+  # machine is the "about five minutes" that read 26 to 64 minutes on a busy one (US1006). Say
+  # what this clone and interpreter do decide: the module count, parallel or serial, and this
+  # clone's own full commit-suite median as a floor when it has one.
+  cost="$(python3 tools/gate_timing.py first-run --suite "boundary-$boundary" 2>/dev/null || true)"
+  [ -n "$cost" ] || cost="boundary-$boundary: no run is recorded on this clone"
 fi
 echo "pre-push: $cost. Bypass once with: git push --no-verify" >&2
 

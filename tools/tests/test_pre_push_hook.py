@@ -305,22 +305,24 @@ class ThePushBoundaryHasAHookTests(unittest.TestCase):
             self.assertEqual(3, len(data["boundary-push"]), "the hook did not record its run")
         finally:
             seeded.cleanup()
-        # no boundary series: a measured literal, naming what THIS boundary runs (US0881)
+        # no boundary series: what is known, naming what THIS boundary runs (US0881), and no
+        # fixed figure (US1006)
         bare = _Clone(no_timings_file=True)
         try:
             r = bare.push(rc=1)
             out = r.stderr
-            self.assertIn("about five minutes (the full suite once, plus the core gate lanes)", out,
-                          "with no history the push literal was not printed:\n" + out)
+            self.assertIn("boundary-push: no run is recorded on this clone", out,
+                          "with no history the push line was not printed:\n" + out)
             self.assertNotIn("module-alone", out.split("release-rehearsal STUBBED")[0],
                              "a branch push announced the tag's heavy lanes:\n" + out)
-            self.assertLess(out.index("about five minutes"), out.index("release-rehearsal STUBBED"),
-                            "the literal did not precede the gate's own output:\n" + out)
+            self.assertLess(out.index("no run is recorded"), out.index("release-rehearsal STUBBED"),
+                            "the line did not precede the gate's own output:\n" + out)
             self.assertIn("git push --no-verify", out.split("release-rehearsal STUBBED")[0],
                           "the bypass was not named before the gate ran")
             _git(bare.clone, "tag", "v0.0.1")
             tag = bare.push("v0.0.1", rc=1).stderr
-            self.assertIn("about fifteen minutes", tag, "with no history the tag literal was not printed:\n" + tag)
+            self.assertIn("boundary-release: no run is recorded on this clone", tag,
+                          "with no history the tag line was not printed:\n" + tag)
             self.assertIn("release-rehearsal and module-alone", tag,
                           "the tag literal does not name the two lanes:\n" + tag)
         finally:

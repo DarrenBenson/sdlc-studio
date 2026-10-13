@@ -21,12 +21,16 @@
 
 - **AC1:** Given a fixture clone with the tracked pre-push hook, the prerequisite check and a stub gate.py that records its argv, and a python3 that cannot import coverage, when a branch push runs the hook, then the push is refused naming coverage and its install route, nothing reaches the remote, and the stub gate.py was never invoked.
   - **Verify:** pytest tools/tests/test_pre_push_prereqs.py::PushPrerequisiteTests::test_a_missing_suite_prerequisite_refuses_before_the_gate_runs
+  - **Verified:** yes (2026-10-13)
 - **AC2:** Given the same fixture with coverage missing, when a tag push runs the hook, then it is refused the same way before the release boundary gate is invoked.
   - **Verify:** pytest tools/tests/test_pre_push_prereqs.py::PushPrerequisiteTests::test_a_tag_push_is_refused_before_the_release_gate
+  - **Verified:** yes (2026-10-13)
 - **AC3:** Given a python3 with pytest, coverage and PyYAML but no pytest-xdist, and a PATH with no rg, markdownlint or gh, when a branch push runs the hook, then each is named as a note with its consequence, nothing is refused for them, and the stub gate.py is invoked once.
   - **Verify:** pytest tools/tests/test_pre_push_prereqs.py::PushPrerequisiteTests::test_a_prerequisite_that_does_not_make_the_suite_red_is_named_not_refused
+  - **Verified:** yes (2026-10-13)
 - **AC4:** Given a python3 and PATH with every prerequisite present, when a branch push runs the hook, then no prerequisite line is printed as missing and the stub gate.py is invoked once with `--boundary push`.
   - **Verify:** pytest tools/tests/test_pre_push_prereqs.py::PushPrerequisiteTests::test_a_complete_environment_reaches_the_gate
+  - **Verified:** yes (2026-10-13)
 
 ## Notes
 

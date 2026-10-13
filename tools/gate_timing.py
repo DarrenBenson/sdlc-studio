@@ -18,6 +18,7 @@ Subcommands:
 from __future__ import annotations
 
 import argparse
+import os
 import json
 import statistics
 import sys
@@ -201,6 +202,57 @@ def expected(root: Path, suite: str) -> float | None:
     return statistics.median(runs) if runs else None
 
 
+#: Where the suite's test modules live: what the first-run line counts.
+SUITE_DIRS = (".claude/skills/sdlc-studio/scripts/tests", "tools/tests")
+
+
+def _xdist_installed() -> bool:
+    """Whether pytest-xdist is installed for this interpreter, read the way the prerequisite
+    check reads it (`gate_prereqs.installed_version`, by distribution name), so the cost line
+    and the push's preflight make one reading of the interpreter."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    try:
+        import gate_prereqs  # noqa: PLC0415 - a sibling tool, optional in a fixture clone
+        return gate_prereqs.installed_version("pytest-xdist") is not None
+    except ImportError:
+        import importlib.metadata  # noqa: PLC0415
+        try:
+            importlib.metadata.version("pytest-xdist")
+            return True
+        except importlib.metadata.PackageNotFoundError:
+            return False
+    finally:
+        sys.path.pop(0)
+
+
+def first_run_line(root: Path, suite: str) -> str:
+    """What a boundary with no recorded run can say about its cost: no fixed figure, which would
+    be another machine's, but what this clone and interpreter decide - the number of test
+    modules, whether they run in parallel or serially, and, when this clone has timed a full
+    commit-suite run, that run's median as a floor."""
+    modules = sum(len(list((root / d).glob("test_*.py"))) for d in SUITE_DIRS)
+    how = (f"in parallel across {os.cpu_count() or 1} cores" if _xdist_installed()
+           else "serially (pytest-xdist is not installed)")
+    line = (f"{suite}: no run is recorded on this clone - the full suite runs {how} over "
+            f"{modules} test module(s)")
+    if suite == "boundary-release":
+        line += ", and a tag adds the release-rehearsal and module-alone lanes"
+    floor = expected(root, "total")
+    if floor is not None:
+        line += (f"; this clone's full commit-suite runs took a median of {floor:.0f}s, a floor "
+                 f"for this one")
+    return line
+
+
+def cmd_first_run(args: argparse.Namespace) -> int:
+    """The first-run line, printed only when the suite has no recorded run: a recorded history
+    is `estimate`'s to announce."""
+    root = Path(args.root)
+    if expected(root, args.suite) is None:
+        print(first_run_line(root, args.suite))
+    return 0
+
+
 def cmd_record(args: argparse.Namespace) -> int:
     record(Path(args.root), args.suite, args.seconds)
     return 0
@@ -287,6 +339,11 @@ def build_parser() -> argparse.ArgumentParser:
     e.add_argument("--suite", required=True)
     e.add_argument("--warn-seconds", type=float, default=60.0)
     e.set_defaults(func=cmd_estimate)
+
+    f = sub.add_parser("first-run", help="what a boundary with no recorded run can say about "
+                                          "its cost, without a fixed figure")
+    f.add_argument("--suite", required=True)
+    f.set_defaults(func=cmd_first_run)
 
     return p
 
