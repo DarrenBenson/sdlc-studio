@@ -390,22 +390,27 @@ def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, br
         _write_verdict_row(path, row)
         if past_cap:
             _append_ruling(path, unit, ruling, reviewer)
+        elif ruling:
+            print(f"note: {sdlc_md.norm_id(unit)} was below the review cap, so ruling "
+                  f"{str(ruling).strip().upper()} was not needed and is not recorded",
+                  file=sys.stderr)
     return path, row
 
 
 def _append_ruling(path: Path, unit: str, ruling: str, reviewer: str) -> None:
-    """Record, below the table, the ruling that authorised the round just written. Called under
-    the ledger lock, after the row, so the round it names is the row's own."""
+    """Record, below the table, the ruling that authorised the round just written: the row by
+    its identity, and the delivery round it was. Called under the ledger lock, after the row."""
+    root = path.parents[2]
     uid = sdlc_md.norm_id(unit)
-    rounds = sum(1 for r in _number_rounds(read_verdicts(path.parents[2]))
-                 if sdlc_md.norm_id(r.get("unit", "")) == uid and r.get("round"))
+    rows = [r for r in read_verdicts(root) if sdlc_md.norm_id(r.get("unit", "")) == uid]
     record = _RULING_PREFIX + " ".join(
-        f"{key}={value}" for key, value in zip(_RULING_KEYS, (
-            uid, rounds, str(ruling).strip().upper(), _id(reviewer) or "-",
-            sdlc_md.now_date())))
+        f"{key}={_ruling_value(value)}" for key, value in zip(_RULING_KEYS, (
+            uid, row_identity(rows[-1]), len(delivery_rounds(root, uid)),
+            str(ruling).strip().upper(), reviewer or "-", sdlc_md.now_date())))
     text = path.read_text(encoding="utf-8")
     with path.open("a", encoding="utf-8") as fh:  # append-only, below the table
-        fh.write(_SUPERSEDE_INTRO if SUPERSEDE_HEADING not in text else "\n")
+        fh.write(_RECORDS_INTRO if SUPERSEDE_HEADING not in text
+                 else "\n" if "RULING record" in text else "\n" + _RULING_NOTE)
         fh.write(record + "\n")
 
 
@@ -617,12 +622,10 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
                   f"skipped: {' | '.join(cells)[:100]}", file=sys.stderr)
     rows = _number_rounds(_annotate_superseded(out, read_supersessions(repo_root, phase)))
     if phase == "delivery":
-        rulings = {(sdlc_md.norm_id(r["unit"]), r["round"]): r["ruling"]
-                   for r in read_round_rulings(repo_root)}
+        rulings = {r["row"]: r["ruling"] for r in read_round_rulings(repo_root) if r["row"]}
         for row in rows:
-            key = (sdlc_md.norm_id(row.get("unit", "")), str(row.get("round") or ""))
-            if key in rulings:
-                row["ruling"] = rulings[key]
+            if rulings and row_identity(row) in rulings:
+                row["ruling"] = rulings[row_identity(row)]
     return rows
 
 
@@ -892,16 +895,42 @@ def _supersede_field(body: str, key: str) -> str:
 
 
 #: A round past `review.max_rounds` that an accepted decision authorised is recorded as one
-#: `RULING` line in the same appended section as the supersession records: the row itself keeps
-#: its eight cells, so no row's identity moves, and every reader annotates the round it names.
-#: The supersession reader takes only its own prefix, so neither record is read as the other.
+#: `RULING` line in the same appended section as the supersession records. The row itself keeps
+#: its eight cells, so no row's identity moves, and the record names the row by that identity
+#: (`row_identity`), so its ruling stays with it when an earlier row is superseded and the
+#: positions shift. The supersession reader takes only its own prefix, and this one only its own.
 _RULING_PREFIX = "RULING "
-_RULING_KEYS = ("unit", "round", "ruling", "reviewer", "recorded")
+_RULING_KEYS = ("unit", "row", "round", "ruling", "reviewer", "recorded")
+#: The appended section's introduction when a ruling record is the first thing in it.
+_RECORDS_INTRO = (
+    "\n" + SUPERSEDE_HEADING + "\n\n"
+    "> Appended, never edited in place. A SUPERSEDED record retires one verdict row above, and\n"
+    "> a RULING record names the decision that authorised a review round past the cap. Prose,\n"
+    "> not a table - the row parser reads every pipe-delimited line here.\n\n")
+#: Written once before the first ruling record in a section whose introduction (the
+#: supersession writer's) speaks of supersessions only.
+_RULING_NOTE = ("> A RULING record names the accepted decision that authorised one review round "
+                "past the cap, and the row it authorised.\n\n")
+
+
+def _ruling_value(value: str) -> str:
+    """One field of a ruling record: single-line, pipe-free, with any embedded ` key=` defused,
+    so a reviewer id cannot forge a field (`qa seat unit=BG0002` stays one reviewer)."""
+    out = _clean(str(value))
+    for key in _RULING_KEYS:
+        out = out.replace(f" {key}=", f" {key}:")
+    return " ".join(out.split())
+
+
+def _ruling_field(body: str, key: str) -> str:
+    boundary = "|".join(re.escape(k) for k in _RULING_KEYS)
+    m = re.search(rf"(?:^|\s){re.escape(key)}=(.*?)(?=\s(?:{boundary})=|$)", body)
+    return _unescape_outside_spans(m.group(1).strip()) if m else ""
 
 
 def read_round_rulings(repo_root: Path | str) -> list[dict]:
-    """Every ruling that authorised a delivery round past the cap, as {unit, round, ruling,
-    reviewer, recorded}, in the order written."""
+    """Every ruling that authorised a delivery round past the cap, as {unit, row, round, ruling,
+    reviewer, recorded}, in the order written. `row` is the authorised row's identity."""
     path = verdicts_path(repo_root, "delivery")
     if not path.exists():
         return []
@@ -910,41 +939,31 @@ def read_round_rulings(repo_root: Path | str) -> list[dict]:
         stripped = line.strip()
         if stripped.startswith(_RULING_PREFIX):
             body = stripped[len(_RULING_PREFIX):]
-            fields = dict(re.findall(r"(\w+)=(\S+)", body))
-            out.append({k: fields.get(k, "") for k in _RULING_KEYS})
+            out.append({k: _ruling_field(body, k) for k in _RULING_KEYS})
     return out
-
-
-def _decision(repo_root: Path | str, did: str) -> tuple[str, str] | None:
-    """`(status, decision text)` for decision `did` in the project's decisions log, or None."""
-    path = Path(repo_root) / "sdlc-studio" / "decisions.md"
-    want = str(did or "").strip().upper()
-    if not path.is_file() or not re.fullmatch(r"D\d{3,}", want):
-        return None
-    for line in path.read_text(encoding="utf-8").splitlines():
-        cells = sdlc_md.table_cells(line) or []
-        if len(cells) >= 4 and cells[0].strip().upper() == want:
-            return cells[3].strip().lower(), cells[1]
-    return None
 
 
 def ruling_refusal(repo_root: Path | str, unit: str, ruling: str) -> str | None:
     """Why `ruling` does not authorise a further round on `unit`, or None when it does.
 
-    It must be an accepted decision in the decisions log whose SUBJECT is the unit - the first
-    work-item id its text names, so a decision that mentions the unit in passing (D0354 names
-    BG0989 and BG0994 beside its subject BG0993) authorises nothing for it - and it must not
-    already have authorised a round on this unit: one ruling, one round."""
+    It must be a decision the log reads as standing and accepted (`decisions.standing`, so one
+    a later decision supersedes is refused before `backfill` flips its cell) whose SUBJECT is
+    the unit: the first artefact id its text names, read with the toolkit's shared id grammar
+    (`CITED_ID_RE`: both id eras, dashed or not, any case, any family), so a decision that only
+    mentions the unit (D0354 names BG0989 and BG0994 beside its subject BG0993) authorises
+    nothing for it. And it must not already have authorised a round on this unit: one ruling,
+    one round."""
+    import decisions  # noqa: PLC0415 - lazy: decisions.py owns the decisions log's reader
     uid = sdlc_md.norm_id(unit)
     did = str(ruling or "").strip().upper()
-    found = _decision(repo_root, did)
+    found = decisions.standing(repo_root, did)
     if found is None:
         return f"ruling {did or '(none)'} is not a decision in sdlc-studio/decisions.md"
     status, text = found
     if status != "accepted":
         return f"ruling {did} is {status or 'not accepted'}, not accepted"
-    first = re.search(r"\b(US|BG|CR|EP|RFC)\d{4}\b", text)
-    subject = sdlc_md.norm_id(first.group(0)) if first else ""
+    first = sdlc_md.CITED_ID_RE.search(text)
+    subject = sdlc_md.norm_id(first.group(1)) if first else ""
     if subject != uid:
         return (f"ruling {did} is about {subject or 'no unit'}, not {uid}: a decision "
                 f"authorises a round on the unit it names first")
@@ -1718,7 +1737,8 @@ def round_refusal(repo_root: Path | str, unit: str, reviewer: str,
     carried - is refused, and on a carried unit the refusal names who can discharge it, unless
     `ruling` names an accepted decision authorising this unit one more round
     (`ruling_refusal`); the round is then judged by the same rejecting-reviewer rule as any
-    other. Every writer of a delivery verdict asks here, so a ruling means the same to all."""
+    other. Every writer of a delivery verdict asks here, so the rules cannot differ between
+    them; only `critic.py record` passes a ruling, so a round past the cap is written there."""
     prior = delivery_rounds(repo_root, unit)
     cap = review_ceiling(repo_root)
     uid = sdlc_md.norm_id(unit)
