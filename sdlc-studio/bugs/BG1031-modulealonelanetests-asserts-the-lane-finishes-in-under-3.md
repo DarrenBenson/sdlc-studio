@@ -25,6 +25,7 @@ Assert the property, not a wall-clock figure: the lane's pool has as many worker
 
 - [ ] **AC1** Given the module-alone lane run on a machine whose cores are all busy, when the test runs, then it passes, because it judges overlap or pool size rather than elapsed seconds
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py -k test_the_push_boundary_runs_every_module_alone_and_names_the_one_that_fails
+  - **Verified:** yes (2026-10-13)
 - [ ] **AC2** Given the lane made serial (a pool of one), when the test runs, then it fails
   - **Verify:** manual: the reviewer runs the test with the lane's pool forced to one worker and sees it fail
 

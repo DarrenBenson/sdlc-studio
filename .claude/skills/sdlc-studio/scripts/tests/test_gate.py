@@ -4989,15 +4989,25 @@ class ModuleAloneLaneTests(unittest.TestCase):
         (tests / "test_e_crash.py").write_text(
             "import os, unittest\n\nclass T(unittest.TestCase):\n    def test_dies(self):\n        os._exit(3)\n",
             encoding="utf-8")
-        # one sleeper per core, capped at sixteen and floored at four: a lane on this machine's
-        # cores finishes them inside three seconds, a half-size pool needs a second wave, a
-        # serial one takes as many seconds as there are sleepers
+        # one sleeper per core, capped at sixteen and floored at four. Each logs its start, then
+        # waits at a barrier until every sleeper has started (or a ceiling passes) before it logs
+        # its end: on the machine's cores they are all asleep at once however loaded the machine
+        # is, while a half-size pool or a serial lane leaves the first wave waiting alone until
+        # the ceiling, so the overlap counted below falls short. Elapsed seconds are not judged:
+        # a wall-clock bound measured the machine's load, not the pool (BG1031).
         self.n_sleepers = min(16, max(4, os.cpu_count() or 1))
+        barrier = ("        deadline = time.monotonic() + 20\n"
+                   "        while time.monotonic() < deadline:\n"
+                   "            started = pathlib.Path('phase.log').read_text().count('-start ')\n"
+                   f"            if started >= {self.n_sleepers}:\n"
+                   "                break\n"
+                   "            time.sleep(0.05)\n"
+                   "        time.sleep(0.2)\n")
         for i in range(1, self.n_sleepers + 1):
             (tests / f"test_s{i}_sleeper.py").write_text(
                 log + "import unittest\n\nclass T(unittest.TestCase):\n    def test_sleep(self):\n"
                 f"        pathlib.Path('phase.log').open('a').write('s{i}-start %f\\n' % time.monotonic())\n"
-                "        time.sleep(1)\n"
+                + barrier +
                 f"        pathlib.Path('phase.log').open('a').write('s{i} %f\\n' % time.monotonic())\n",
                 encoding="utf-8")
         # the marked module: serial_only, so it must run AFTER every parallel module - and RED,
@@ -5026,7 +5036,7 @@ class ModuleAloneLaneTests(unittest.TestCase):
             self.assertNotEqual(0, r.returncode, out)
             m = re.search(r"^\s+\[FAIL\] module-alone \[([0-9.]+)s\]: (.*)$", out, re.M)
             self.assertTrue(m, "no FAIL line for module-alone at the %s boundary:\n%s" % (boundary, out))
-            secs, detail = float(m.group(1)), m.group(2)
+            detail = m.group(2)
             # the borrower is named with its FIRST failure header and the exception line; the
             # silent crash is named by the fallback; the importer, the cwd module, the decoy and
             # the sleepers are not
@@ -5041,16 +5051,15 @@ class ModuleAloneLaneTests(unittest.TestCase):
             self.assertIn("test_e_crash [parallel]: exited non-zero with no output", detail)
             for clean in ("test_a_importer", "test_c_cwd", "test_d_decoy", "test_s1_sleeper", "testextra_ok"):
                 self.assertNotIn(clean + " [", detail, f"{clean} was reported red: {detail}")
-            # parallel: one-second sleepers, one per core, inside three seconds of lane time
-            self.assertLess(secs, 3.0, f"the lane took {secs}s over {self.n_sleepers} one-second modules - serial, or a pool smaller than the cores?")
             # the serial phase: ONLY the marked module, after every other, and the lane says so
             self.assertIn("1 in the serial phase after it (test_z_serial)", detail)
             rows = [ln.split() for ln in (root / "phase.log").read_text(encoding="utf-8").splitlines()]
             when = {name: float(t) for name, t in rows if not name.endswith("-start")}
             self.assertEqual(self.n_sleepers + 1, len(when), rows)
-            # the pool's size is measured, not read back from a string: with the machine's cores
-            # every sleeper is asleep at once, so their intervals all overlap - a pool of a
-            # quarter of the cores runs them in waves, however the detail line was worded
+            # the pool's size is measured, not read back from a string, and not timed: with the
+            # machine's cores every sleeper reaches the barrier, so their intervals all overlap;
+            # a smaller pool or a serial lane runs them in waves, however the detail line was
+            # worded and however busy the machine is
             starts = {n[:-6]: float(t) for n, t in rows if n.endswith("-start")}
             overlap = max(sum(1 for m in starts if starts[m] <= starts[n] < when[m]) for n in starts)
             self.assertGreaterEqual(overlap, self.n_sleepers,
