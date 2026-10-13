@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 84 |
+| Open | 85 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 32 |
-| **Total** | **1032** |
+| **Total** | **1033** |
 
 ## All Bugs
 
@@ -108,6 +108,7 @@
 | [BG1030](BG1030-prose-after-blocking-none-or-a-trailing-rulings.md) | Prose after `BLOCKING: none`, or a trailing `RULINGS:` line, is folded into BLOCKING and refused, so an APPROVE carrying rulings cannot be recorded unedited | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1031](BG1031-modulealonelanetests-asserts-the-lane-finishes-in-under-3.md) | ModuleAloneLaneTests asserts the lane finishes in under 3.0 seconds of wall clock, so it fails whenever the full parallel suite or another workload shares the cores | Open | Medium | 2026-10-13 | 2026-10-13 |
 | [BG1032](BG1032-bg0950-did-not-converge-in-review-round-2.md) | BG0950 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-13 | 2026-10-13 |
+| [BG1033](BG1033-when-sign-cannot-read-the-close-s-carried.md) | When sign cannot read the close's carried rows it moves every unit, and the warning it prints has no test | Open | Low | 2026-10-13 | 2026-10-13 |
 
 ## Archived Releases
 
