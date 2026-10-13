@@ -12,6 +12,7 @@ Run from the repo root:
 from __future__ import annotations
 
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -136,16 +137,25 @@ class _Clone:
         self.argv = self.tmp / "gate-argv.txt"
 
     def stub_path(self, gh_mode: str = "empty") -> Path:
-        """A PATH holding ONLY a `gh` stub plus symlinks to the real git, bash and python3, so
-        no fixture can reach the live forge and the hook can still exec. `gh_mode` selects the
-        stub's answer: red, timed_out, green, empty, fail."""
+        """A PATH holding ONLY a `gh` stub, symlinks to the real git and bash, and a `python3`
+        that runs the interpreter running these tests, so no fixture can reach the live forge
+        and the hook can still exec. `gh_mode` selects the stub's answer: red, timed_out,
+        green, empty, fail.
+
+        `python3` is a wrapper, not a symlink (BG0978): a virtualenv's interpreter finds its
+        packages through the `pyvenv.cfg` beside the path it was started as, so started through
+        a symlink in another directory it runs bare, and the hook's gate cannot import pytest
+        where pytest lives only in the virtualenv."""
         d = self.tmp / "path"
         if not d.exists():
             d.mkdir()
-            for tool in ("git", "bash", "python3"):
+            for tool in ("git", "bash"):
                 real = shutil.which(tool)
                 assert real, tool
                 (d / tool).symlink_to(real)
+            (d / "python3").write_text(f'#!/bin/sh\nexec {shlex.quote(sys.executable)} "$@"\n',
+                                       encoding="utf-8")
+            (d / "python3").chmod(0o755)
             (d / "gh").write_text(STUB_GH, encoding="utf-8")
             (d / "gh").chmod(0o755)
         self.gh_mode = gh_mode

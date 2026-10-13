@@ -26,6 +26,7 @@ Write a small python3 wrapper script that execs `sys.executable` (or symlink `sy
 
 - [ ] **AC1** With pytest installed only in the active virtualenv, the pre-push hook tests pass
   - **Verify:** pytest tools/tests/test_pre_push_stub_interpreter.py -k stub_path_keeps_the_running_interpreter
+  - **Verified:** yes (2026-10-13)
 
 ## Planning notes
 
