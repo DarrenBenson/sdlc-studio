@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 6 |
 | Approved | 0 |
 | In Progress | 26 |
 | Complete | 519 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **639** |
+| **Total** | **640** |
 
 ## All Changes
 
@@ -51,6 +51,7 @@
 | [CR-0637](CR0637-the-test-suite-s-private-temp-root-follows.md) | The test suite's private temp root follows TMPDIR, so on a tmpfs /tmp every fixture repository copy is held in RAM and a killed run's tree is never freed | Proposed | Medium | Improvement | 2026-10-12 | -- |
 | [CR-0638](CR0638-the-release-verify-lane-has-no-vitest-batch.md) | The release verify lane has no vitest batch path, so in a vitest project every criterion is a cold `npx vitest run` spawn and the lane runs at three times its declared 600 s budget | Proposed | Medium | Improvement | 2026-10-12 | -- |
 | [CR-0639](CR0639-a-worktree-isolated-reviewer-that-rejects-cannot-be.md) | A worktree-isolated reviewer that REJECTs cannot be resumed for its round 2 once its worktree is removed, and nothing says to keep it until the review converges | Proposed | Low | Improvement | 2026-10-13 | -- |
+| [CR-0640](CR0640-a-reference-page-edited-without-regenerating-its-reading.md) | A reference page edited without regenerating its reading guide passes every commit lane and is found only by the full suite at push | Proposed | Low | Improvement | 2026-10-13 | -- |
 
 ## Archived Releases
 

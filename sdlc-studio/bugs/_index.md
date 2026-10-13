@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 92 |
+| Open | 93 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 32 |
-| **Total** | **1040** |
+| **Total** | **1041** |
 
 ## All Bugs
 
@@ -116,6 +116,7 @@
 | [BG1038](BG1038-the-pre-push-keepalive-check-reads-git-ssh.md) | The pre-push keepalive check reads GIT_SSH above core.sshCommand, the reverse of git's order, and asks ssh -G without the configured command's own options | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1039](BG1039-us1004-s-one-list-test-no-longer-requires.md) | US1004's one-list test no longer requires `-r` on the suite step, and still checks hand installs against its own list of four packages | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1040](BG1040-gate-prereqs-prints-the-sdlc-coverage-python-route.md) | gate_prereqs prints the SDLC_COVERAGE_PYTHON route without reading that interpreter, reads markers without evaluating them, and skips -r lines silently | Open | Low | 2026-10-13 | 2026-10-13 |
+| [BG1041](BG1041-the-module-alone-lane-test-can-never-pass.md) | The module-alone lane test can never pass on a host with fewer than four cores, and blames the pool for it | Open | Low | 2026-10-13 | 2026-10-13 |
 
 ## Archived Releases
 
