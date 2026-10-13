@@ -314,7 +314,8 @@ def _clean(value: str) -> str:
 def record_verdict(repo_root: Path | str, unit: str, verdict: str,
                    reviewer: str = "independent-critic", author: str = "",
                    issues: str = "", phase: str = "delivery", brief: str = "",
-                   tier: str | None = None, tier_explicit: bool = False) -> Path:
+                   tier: str | None = None, tier_explicit: bool = False,
+                   ruling: str | None = None) -> Path:
     """Append a critic verdict for a unit (creating the table if absent).
 
     `author` is the authoring seat / delegation instance id that produced the diff
@@ -327,19 +328,19 @@ def record_verdict(repo_root: Path | str, unit: str, verdict: str,
     A carry that fails raises `CarryFailed`, whose message says the REJECT row WAS written.
     """
     path, _round, bug = _record(repo_root, unit, verdict, reviewer, author, issues, phase,
-                                brief, tier, tier_explicit)
+                                brief, tier, tier_explicit, ruling)
     if bug:
         print(carried_notice(unit, bug), file=sys.stderr)
     return path
 
 
 def _record(repo_root, unit, verdict, reviewer, author, issues="", phase="delivery", brief="",
-            tier=None, tier_explicit=False) -> tuple[Path, int | None, str | None]:
+            tier=None, tier_explicit=False, ruling=None) -> tuple[Path, int | None, str | None]:
     """Write the verdict, then carry the unit if it is a REJECT at the cap: the ledger path,
     the row's round in its delivery (None off the delivery phase) and the carried bug's id
     (None when nothing was carried)."""
     path, _row = _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase,
-                                brief, tier, tier_explicit)
+                                brief, tier, tier_explicit, ruling)
     if phase != "delivery":
         return path, None, None
     rounds = delivery_rounds(repo_root, unit)
@@ -347,7 +348,7 @@ def _record(repo_root, unit, verdict, reviewer, author, issues="", phase="delive
 
 
 def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, brief,
-                   tier, tier_explicit) -> tuple[Path, str]:
+                   tier, tier_explicit, ruling=None) -> tuple[Path, str]:
     """Check and write one verdict row, returning the ledger path AND the row it wrote. A
     delivery verdict's round is checked under the ledger lock, so two writers cannot both take
     the last round."""
@@ -377,14 +378,35 @@ def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, br
     if phase == "delivery":
         _mark_review_base(repo_root, unit)
     with _ledger_lock(path):
-        if phase == "delivery" and (why := round_refusal(repo_root, unit, reviewer, verdict)):
+        past_cap = (phase == "delivery" and bool(ruling)
+                    and len(delivery_rounds(repo_root, unit)) >= review_ceiling(repo_root))
+        if phase == "delivery" and (why := round_refusal(repo_root, unit, reviewer, verdict,
+                                                         ruling)):
             raise ValueError(why)
         if not path.exists():
             sdlc_md.atomic_write(path, _header(phase))
         _ensure_brief_column(path)
         _ensure_eighth_column(path, "Kind" if phase == "plan-review" else "Tier")
         _write_verdict_row(path, row)
+        if past_cap:
+            _append_ruling(path, unit, ruling, reviewer)
     return path, row
+
+
+def _append_ruling(path: Path, unit: str, ruling: str, reviewer: str) -> None:
+    """Record, below the table, the ruling that authorised the round just written. Called under
+    the ledger lock, after the row, so the round it names is the row's own."""
+    uid = sdlc_md.norm_id(unit)
+    rounds = sum(1 for r in _number_rounds(read_verdicts(path.parents[2]))
+                 if sdlc_md.norm_id(r.get("unit", "")) == uid and r.get("round"))
+    record = _RULING_PREFIX + " ".join(
+        f"{key}={value}" for key, value in zip(_RULING_KEYS, (
+            uid, rounds, str(ruling).strip().upper(), _id(reviewer) or "-",
+            sdlc_md.now_date())))
+    text = path.read_text(encoding="utf-8")
+    with path.open("a", encoding="utf-8") as fh:  # append-only, below the table
+        fh.write(_SUPERSEDE_INTRO if SUPERSEDE_HEADING not in text else "\n")
+        fh.write(record + "\n")
 
 
 def _ledger_lock(path: Path):
@@ -593,7 +615,15 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
             # verdict" signal at the gate. Report and skip, never swallow.
             print(f"warning: malformed row in {path} ({len(cells)} cells, expected 6 or 5), "
                   f"skipped: {' | '.join(cells)[:100]}", file=sys.stderr)
-    return _number_rounds(_annotate_superseded(out, read_supersessions(repo_root, phase)))
+    rows = _number_rounds(_annotate_superseded(out, read_supersessions(repo_root, phase)))
+    if phase == "delivery":
+        rulings = {(sdlc_md.norm_id(r["unit"]), r["round"]): r["ruling"]
+                   for r in read_round_rulings(repo_root)}
+        for row in rows:
+            key = (sdlc_md.norm_id(row.get("unit", "")), str(row.get("round") or ""))
+            if key in rulings:
+                row["ruling"] = rulings[key]
+    return rows
 
 
 def row_identity(row: dict) -> str:
@@ -859,6 +889,71 @@ def _supersede_field(body: str, key: str) -> str:
     m = re.search(rf"(?:^|\s){re.escape(key)}=(.*?)(?=\s(?:{boundary})=|$)", body)
     # The writer escapes outside code spans only (`_clean`), so the reader does too.
     return _unescape_outside_spans(m.group(1).strip()) if m else ""
+
+
+#: A round past `review.max_rounds` that an accepted decision authorised is recorded as one
+#: `RULING` line in the same appended section as the supersession records: the row itself keeps
+#: its eight cells, so no row's identity moves, and every reader annotates the round it names.
+#: The supersession reader takes only its own prefix, so neither record is read as the other.
+_RULING_PREFIX = "RULING "
+_RULING_KEYS = ("unit", "round", "ruling", "reviewer", "recorded")
+
+
+def read_round_rulings(repo_root: Path | str) -> list[dict]:
+    """Every ruling that authorised a delivery round past the cap, as {unit, round, ruling,
+    reviewer, recorded}, in the order written."""
+    path = verdicts_path(repo_root, "delivery")
+    if not path.exists():
+        return []
+    out = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped.startswith(_RULING_PREFIX):
+            body = stripped[len(_RULING_PREFIX):]
+            fields = dict(re.findall(r"(\w+)=(\S+)", body))
+            out.append({k: fields.get(k, "") for k in _RULING_KEYS})
+    return out
+
+
+def _decision(repo_root: Path | str, did: str) -> tuple[str, str] | None:
+    """`(status, decision text)` for decision `did` in the project's decisions log, or None."""
+    path = Path(repo_root) / "sdlc-studio" / "decisions.md"
+    want = str(did or "").strip().upper()
+    if not path.is_file() or not re.fullmatch(r"D\d{3,}", want):
+        return None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        cells = sdlc_md.table_cells(line) or []
+        if len(cells) >= 4 and cells[0].strip().upper() == want:
+            return cells[3].strip().lower(), cells[1]
+    return None
+
+
+def ruling_refusal(repo_root: Path | str, unit: str, ruling: str) -> str | None:
+    """Why `ruling` does not authorise a further round on `unit`, or None when it does.
+
+    It must be an accepted decision in the decisions log whose SUBJECT is the unit - the first
+    work-item id its text names, so a decision that mentions the unit in passing (D0354 names
+    BG0989 and BG0994 beside its subject BG0993) authorises nothing for it - and it must not
+    already have authorised a round on this unit: one ruling, one round."""
+    uid = sdlc_md.norm_id(unit)
+    did = str(ruling or "").strip().upper()
+    found = _decision(repo_root, did)
+    if found is None:
+        return f"ruling {did or '(none)'} is not a decision in sdlc-studio/decisions.md"
+    status, text = found
+    if status != "accepted":
+        return f"ruling {did} is {status or 'not accepted'}, not accepted"
+    first = re.search(r"\b(US|BG|CR|EP|RFC)\d{4}\b", text)
+    subject = sdlc_md.norm_id(first.group(0)) if first else ""
+    if subject != uid:
+        return (f"ruling {did} is about {subject or 'no unit'}, not {uid}: a decision "
+                f"authorises a round on the unit it names first")
+    used = [r for r in read_round_rulings(repo_root)
+            if sdlc_md.norm_id(r["unit"]) == uid and r["ruling"].upper() == did]
+    if used:
+        return (f"ruling {did} already authorised round {used[0]['round']} of {uid}: one "
+                f"ruling authorises one round")
+    return None
 
 
 def read_supersessions(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
@@ -1609,7 +1704,7 @@ def review_ceiling(repo_root: Path | str) -> int:
 
 
 def round_refusal(repo_root: Path | str, unit: str, reviewer: str,
-                  verdict: str | None = None) -> str | None:
+                  verdict: str | None = None, ruling: str | None = None) -> str | None:
     """Why a further delivery `verdict` on `unit` by `reviewer` must not be written, or None.
 
     Two rules: no round past the cap, and a round after a REJECT comes from the reviewer who
@@ -1620,13 +1715,19 @@ def round_refusal(repo_root: Path | str, unit: str, reviewer: str,
     whose REJECT still stands unanswered. It answers that REJECT, the carry's only exit
     (`REJECT_EXITS`); refusing it left `--force` as the only way to close an approved unit.
     Any other verdict past the cap - another reviewer's, a REJECT, or one on a unit never
-    carried - is refused, and on a carried unit the refusal names who can discharge it."""
+    carried - is refused, and on a carried unit the refusal names who can discharge it, unless
+    `ruling` names an accepted decision authorising this unit one more round
+    (`ruling_refusal`); the round is then judged by the same rejecting-reviewer rule as any
+    other. Every writer of a delivery verdict asks here, so a ruling means the same to all."""
     prior = delivery_rounds(repo_root, unit)
     cap = review_ceiling(repo_root)
     uid = sdlc_md.norm_id(unit)
-    if len(prior) >= cap:
+    authorised = bool(ruling) and len(prior) >= cap and ruling_refusal(repo_root, uid, ruling) is None
+    if len(prior) >= cap and not authorised:
         at_cap = (f"{uid} has {len(prior)} review round(s) recorded, at the cap of {cap} "
                   f"(`review.max_rounds`)")
+        if ruling:
+            return f"{at_cap}. {ruling_refusal(repo_root, uid, ruling)}"
         bug = carried_by(repo_root, uid)
         owed = [r.get("reviewer") or "" for r in
                 _unanswered_rejects(_live_verdict_rows(repo_root, uid, "delivery"))]
@@ -3514,7 +3615,8 @@ def cmd_record(args: argparse.Namespace) -> int:
             path, n, bug = _record(args.root, unit, args.verdict, args.reviewer, args.author,
                                    args.issues, brief=brief,
                                    tier=getattr(args, "tier", None),
-                                   tier_explicit=getattr(args, "tier_explicit", False))
+                                   tier_explicit=getattr(args, "tier_explicit", False),
+                                   ruling=getattr(args, "ruling", None))
         except CarryFailed as exc:
             carry_failed.append(unit)
             print(f"record: {exc}", file=sys.stderr)
@@ -3628,6 +3730,10 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--brief-file", metavar="PATH",
                    help="read the brief TEXT from a file and fingerprint it here, for a "
                         "reviewer who saved the brief rather than its fingerprint")
+    r.add_argument("--ruling", metavar="DNNNN", default=None,
+                   help="an accepted decision authorising this unit one review round past "
+                        "`review.max_rounds`: it must name the unit first, and authorises one "
+                        "round, recorded beside the row")
     r.add_argument("--tier", choices=TIERS, default=None,
                    help="the depth this review was taken at, as `critic.py "
                         "brief` reported it. A light verdict does not cover a unit the risk "

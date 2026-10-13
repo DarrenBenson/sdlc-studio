@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_record_past_the_cap.py, changelog.d/BG1003.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_record_past_the_cap.py, changelog.d/BG1003.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/reference-review.md
 > **Evidence:** BG0993, 2026-10-08: round 3 under D0352 refused by record; kept verbatim on the bug instead.
 > **Created:** 2026-10-08
 > **Created-by:** sdlc-studio file
@@ -26,10 +26,13 @@ Let record accept a round past the cap when it names an accepted decision that a
 
 - [ ] **AC1** Given a unit at the review cap and an accepted decision that names the unit and authorises a further round, when `critic.py record --ruling <D-id>` writes the next verdict, then the round is recorded and the row carries the decision id
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_record_past_the_cap.py::RecordPastTheCapTests::test_a_round_authorised_by_a_ruling_naming_the_unit_is_recorded
+  - **Verified:** yes (2026-10-13)
 - [ ] **AC2** Given the same unit, when record names no ruling, a decision that does not exist, one that is not accepted, an accepted one that does not name the unit, or one already used for an earlier round past the cap on that unit, then it is refused at the cap as now, naming which
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_record_past_the_cap.py::RecordPastTheCapTests::test_a_ruling_that_does_not_authorise_this_unit_is_refused
+  - **Verified:** yes (2026-10-13)
 - [ ] **AC3** Given a ruling that authorises a further round on a unit, when any delivery-verdict writer checks the cap, then it honours the same ruling, because the check lives in `round_refusal` and not in record's argument handling
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_record_past_the_cap.py::RecordPastTheCapTests::test_every_verdict_writer_honours_the_same_ruling
+  - **Verified:** yes (2026-10-13)
 
 ## Planning notes (goal review, 2026-10-12)
 
