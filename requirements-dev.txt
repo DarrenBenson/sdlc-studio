@@ -1,0 +1,6 @@
+# The Python distributions the gates and the suite need. CI installs from this file and
+# tools/gate_prereqs.py checks it, so the two cannot drift.
+PyYAML
+pytest
+pytest-xdist
+coverage>=7.10

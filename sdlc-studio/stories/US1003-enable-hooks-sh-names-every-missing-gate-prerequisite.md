@@ -5,7 +5,7 @@
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** tools/gate_prereqs.py, requirements-dev.txt, tools/enable-hooks.sh, AGENTS.md, tools/tests/test_gate_prereqs.py, changelog.d/US1003.md
+> **Affects:** tools/gate_prereqs.py, requirements-dev.txt, tools/enable-hooks.sh, AGENTS.md, tools/tests/test_gate_prereqs.py, changelog.d/US1003.md, tools/tests/test_skill_tests_env.py
 > **Epic:** EP0278
 > **Points:** 3
 > **Persona:** Maya Okafor
@@ -20,14 +20,19 @@
 
 - **AC1:** Given a fixture clone whose requirements-dev.txt declares a distribution that is not installed (`zzq-absent-dist>=1`) and a floor no installed version meets (`coverage>=999`), when `bash tools/enable-hooks.sh` runs, then it names the first as missing and the second as too old with the version found and the floor, still sets core.hooksPath and prints the keepalive line, and exits 0.
   - **Verify:** pytest tools/tests/test_gate_prereqs.py::EnableHooksPrerequisiteTests::test_a_missing_or_too_old_prerequisite_is_named_and_setup_completes
+  - **Verified:** yes (2026-10-13)
 - **AC2:** Given a python3 that cannot import coverage (hidden by a sitecustomize shim on PYTHONPATH), when enable-hooks.sh runs, then coverage is named with its consequence class: the push suite goes red without it.
   - **Verify:** pytest tools/tests/test_gate_prereqs.py::EnableHooksPrerequisiteTests::test_a_suite_prerequisite_is_named_with_the_consequence_of_its_absence
+  - **Verified:** yes (2026-10-13)
 - **AC3:** Given two interpreters with the same gap, one carrying an `EXTERNALLY-MANAGED` marker in its stdlib directory with no importable pip and one unmanaged with pip importable, when enable-hooks.sh runs with each first on PATH, then only the second offers `python3 -m pip install -r requirements-dev.txt`, and the first names its own path as externally managed and offers the OS package and a virtual environment placed first on PATH.
   - **Verify:** pytest tools/tests/test_gate_prereqs.py::EnableHooksPrerequisiteTests::test_the_install_route_is_read_from_the_interpreter
+  - **Verified:** yes (2026-10-13)
 - **AC4:** Given a PATH with no markdownlint, no node_modules/.bin/markdownlint, no rg and no gh, when enable-hooks.sh runs, then each of the four is named on its own line with its consequence (the commit's markdown lanes skip and CI enforces them, the rg-only tests skip, the red-CI read before a push reads UNREAD) and either `npm ci`, a fixed project URL or the package name.
   - **Verify:** pytest tools/tests/test_gate_prereqs.py::EnableHooksPrerequisiteTests::test_missing_tools_outside_python_are_named_with_their_consequence
+  - **Verified:** yes (2026-10-13)
 - **AC5:** Given a clone and interpreter with every prerequisite present, when enable-hooks.sh runs, then it reports every gate prerequisite present, names none missing, and exits 0.
   - **Verify:** pytest tools/tests/test_gate_prereqs.py::EnableHooksPrerequisiteTests::test_a_complete_environment_reports_nothing_missing
+  - **Verified:** yes (2026-10-13)
 
 ## Notes
 

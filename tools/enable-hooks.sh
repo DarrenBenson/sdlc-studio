@@ -34,6 +34,14 @@ for hook in .githooks/*; do
   [ -n "$desc" ] || desc="(no description)"
   printf '  %-14s %s\n' "$(basename "$hook")" "$desc"
 done
+# WHAT THE GATES NEED, named now rather than by a push that goes red after the full suite: each
+# missing or too-old prerequisite, what breaks without it, and an install route that works on the
+# python3 these hooks will run. A gap is reported, never fatal - setup carries on.
+if [ -f tools/gate_prereqs.py ]; then
+  python3 tools/gate_prereqs.py check || true
+else
+  echo "Note: tools/gate_prereqs.py is not in this clone, so the gate prerequisites were not checked"
+fi
 # THE CONNECTION HAS TO OUTLIVE THE GATE. The pre-push hook pays minutes of boundary lanes
 # before the push itself begins, and an ssh connection idle that long is dropped by a NAT or a
 # forge before git ever writes a byte - the push then fails after the gate has passed, and the
