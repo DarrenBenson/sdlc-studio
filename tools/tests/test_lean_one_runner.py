@@ -40,6 +40,28 @@ def _ci_steps() -> list[dict]:
     return yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))["jobs"]["ci"]["steps"]
 
 
+def _installed(step: dict) -> set[str]:
+    """The distribution names a step's `pip install` lines name, a `-r <file>` read from the
+    file: CI installs the suite's packages from requirements-dev.txt (US1004), so a pin on what
+    CI installs reads through the file rather than only the line."""
+    names: set[str] = set()
+    for line in str(step.get("run", "")).splitlines():
+        m = re.search(r"\bpip3?\s+install\b(.*)$", line.split("#", 1)[0])
+        if not m:
+            continue
+        words, reqs = m.group(1).split(), []
+        for i, word in enumerate(words):
+            if word in ("-r", "--requirement") and i + 1 < len(words):
+                reqs += (REPO / words[i + 1]).read_text(encoding="utf-8").splitlines()
+            elif not word.startswith("-") and (i == 0 or words[i - 1] not in ("-r", "--requirement")):
+                reqs.append(word.strip("'\""))
+        for req in reqs:
+            req = req.split("#", 1)[0].strip()
+            if req:
+                names.add(re.split(r"[<>=!~;\[ ]", req, maxsplit=1)[0].lower())
+    return names
+
+
 def _all_runs() -> list[str]:
     jobs = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))["jobs"]
     return [str(s.get("run", "")) for job in jobs.values() for s in job.get("steps", [])]
@@ -275,9 +297,7 @@ class OneRunnerTests(unittest.TestCase):
         MUTANT: the install line without `pytest-xdist`, or installed after the suite."""
         steps = _ci_steps()
         suite = _suite_index(steps)
-        installs = [i for i, s in enumerate(steps)
-                    if re.search(r"pip install\b[^\n]*(?<![\w-])pytest-xdist\b",
-                                 str(s.get("run", "")))]
+        installs = [i for i, s in enumerate(steps) if "pytest-xdist" in _installed(s)]
         self.assertTrue(installs, "no ci step installs pytest-xdist")
         self.assertLess(installs[0], suite, "pytest-xdist is installed after the suite runs")
         self.assertNotIn("if", steps[installs[0]], "the xdist install runs on every push")

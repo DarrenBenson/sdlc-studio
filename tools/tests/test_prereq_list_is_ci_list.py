@@ -43,31 +43,40 @@ def _declared() -> dict[str, tuple[int, ...] | None]:
     return out
 
 
-def _pip_installs(job: dict) -> list[str]:
-    """Each `pip install` command line in a job's steps."""
-    found = []
-    for step in job.get("steps") or []:
-        for line in str(step.get("run") or "").splitlines():
-            if "pip install" in line:
-                found.append(line.strip())
-    return found
+_PIP = re.compile(r"\bpip3?\s+install\b")
 
 
-def _packages(command: str) -> list[str]:
-    """The package specs a `pip install` line names, flags dropped."""
+def _pip_installs(step: dict) -> list[str]:
+    """Each `pip install` or `pip3 install` command line in one step, comments cut."""
+    return [line.split("#", 1)[0].strip()
+            for line in str(step.get("run") or "").splitlines()
+            if _PIP.search(line.split("#", 1)[0])]
+
+
+def _packages(command: str, *, expand: bool = False) -> list[str]:
+    """The package specs a `pip install` line names, flags dropped; with `expand`, a `-r <file>`
+    contributes that file's requirement lines, read from the repository."""
     words = shlex.split(command)
     words = words[words.index("install") + 1:]
-    out, skip = [], False
-    for word in words:
-        if skip:
-            skip = False
-            continue
+    out, i = [], 0
+    while i < len(words):
+        word = words[i]
         if word in ("-r", "--requirement", "-c", "--constraint"):
-            skip = True
+            if expand and word in ("-r", "--requirement") and i + 1 < len(words):
+                for line in (REPO / words[i + 1]).read_text(encoding="utf-8").splitlines():
+                    line = line.split("#", 1)[0].strip()
+                    if line and not line.startswith("-"):
+                        out.append(line)
+            i += 2
             continue
         if not word.startswith("-"):
             out.append(word)
+        i += 1
     return out
+
+
+def _name(spec: str) -> str:
+    return _norm(re.split(r"[<>=!~;\[ ]", spec, maxsplit=1)[0])
 
 
 class OneListTests(unittest.TestCase):
@@ -75,30 +84,34 @@ class OneListTests(unittest.TestCase):
         self.jobs = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))["jobs"]
 
     def test_the_ci_suite_step_installs_from_requirements_dev(self) -> None:
-        suite = [c for c in _pip_installs(self.jobs["ci"])
-                 if "requirements-dev.txt" in c
-                 or SUITE_PACKAGES & {_norm(re.split(r"[<>=!~ ]", p)[0]) for p in _packages(c)}]
-        self.assertTrue(suite, "the ci job installs no suite packages at all")
-        for command in suite:
-            with self.subTest(command=command):
-                self.assertIn("-r requirements-dev.txt", command)
-                self.assertEqual([], _packages(command),
-                                 "the suite step still carries a package list of its own")
+        steps = self.jobs["ci"]["steps"]
+        suite_steps = [s for s in steps
+                       if any("requirements-dev.txt" in c for c in _pip_installs(s))]
+        self.assertTrue(suite_steps, "no ci step installs from requirements-dev.txt")
+        for step in suite_steps:
+            for command in _pip_installs(step):
+                with self.subTest(command=command):
+                    self.assertEqual([], _packages(command),
+                                     "the suite step still carries a package list of its own")
+        for step in steps:
+            for command in _pip_installs(step):
+                named = {_name(p) for p in _packages(command)} & SUITE_PACKAGES
+                with self.subTest(command=command):
+                    self.assertFalse(named, f"a ci step installs suite packages by hand: {named}")
 
     def test_the_corpus_verify_job_installs_a_declared_subset(self) -> None:
         declared = _declared()
-        commands = _pip_installs(self.jobs["corpus-verify"])
-        self.assertTrue(commands, "corpus-verify installs nothing, so this pins nothing")
-        for command in commands:
-            for spec in _packages(command):
-                name = _norm(re.split(r"[<>=!~ ]", spec, maxsplit=1)[0])
-                with self.subTest(package=name):
-                    self.assertIn(name, declared, f"{name} is installed but not declared")
-                    if declared[name]:
-                        self.assertIsNotNone(_floor(spec), f"{name} drops the declared floor")
-                        self.assertGreaterEqual(_floor(spec), declared[name],
-                                                f"{name}'s floor is looser than declared")
-
+        specs = [spec for step in self.jobs["corpus-verify"]["steps"]
+                 for command in _pip_installs(step) for spec in _packages(command, expand=True)]
+        self.assertTrue(specs, "corpus-verify installs no package, so this pins nothing")
+        for spec in specs:
+            name = _name(spec)
+            with self.subTest(package=name):
+                self.assertIn(name, declared, f"{name} is installed but not declared")
+                if declared[name]:
+                    self.assertIsNotNone(_floor(spec), f"{name} drops the declared floor")
+                    self.assertGreaterEqual(_floor(spec), declared[name],
+                                            f"{name}'s floor is looser than declared")
 
 if __name__ == "__main__":
     unittest.main()

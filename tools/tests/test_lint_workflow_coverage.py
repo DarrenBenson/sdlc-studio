@@ -89,8 +89,15 @@ def _coverage_requirements(job: dict) -> list[str]:
         pips = [i for i, t in enumerate(names) if t in ("pip", "pip3")]
         if not pips or "install" not in argv[pips[0] + 1:]:
             continue
-        found += [t for t in argv[argv.index("install", pips[0]) + 1:]
-                  if re.match(r"^coverage(\[[^\]]*\])?(?![\w.-])", t)]
+        args = argv[argv.index("install", pips[0]) + 1:]
+        tokens = list(args)
+        # A `-r <file>` installs that file's requirements: CI installs the suite's packages
+        # from requirements-dev.txt (US1004), so the floor is read where it is declared.
+        for i, arg in enumerate(args):
+            if arg in ("-r", "--requirement") and i + 1 < len(args):
+                tokens += [ln.split("#", 1)[0].strip() for ln in
+                           (REPO / args[i + 1]).read_text(encoding="utf-8").splitlines()]
+        found += [t for t in tokens if re.match(r"^coverage(\[[^\]]*\])?(?![\w.-])", t)]
     return found
 
 
@@ -154,8 +161,16 @@ class CoverageBeforeSuiteTests(unittest.TestCase):
         `coverage` from AGENTS.md's soft-dependency table; drop the `>=7.10` floor from the
         install line."""
         text = (REPO / ".github" / "workflows" / "lint.yml").read_text(encoding="utf-8")
-        install = re.search(r"pip install[^\n]*'coverage>=7\.10'", text)
+        # Directly, or through the requirements file CI installs from (US1004), which must then
+        # carry the floor itself.
+        found = [m for m in (re.search(r"pip install[^\n]*'coverage>=7\.10'", text),
+                             re.search(r"pip install[^\n]*-r requirements-dev\.txt", text)) if m]
+        install = min(found, key=lambda m: m.start()) if found else None
         self.assertIsNotNone(install, "lint.yml must install coverage>=7.10 explicitly")
+        if "requirements-dev.txt" in install.group(0):
+            reqs = (REPO / "requirements-dev.txt").read_text(encoding="utf-8")
+            self.assertRegex(reqs, r"(?m)^coverage>=7\.10\s*$",
+                             "requirements-dev.txt must declare coverage>=7.10")
         suite = text.index("bash tools/skill-tests.sh")
         self.assertLess(install.start(), suite, "the coverage install must sit BEFORE the suite step, by position")
         agents = (REPO / "AGENTS.md").read_text(encoding="utf-8")

@@ -5,7 +5,7 @@
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .github/workflows/lint.yml, tools/tests/test_prereq_list_is_ci_list.py, changelog.d/US1004.md
+> **Affects:** .github/workflows/lint.yml, tools/tests/test_prereq_list_is_ci_list.py, changelog.d/US1004.md, tools/tests/test_lean_one_runner.py, tools/tests/test_lint_workflow_coverage.py
 > **Epic:** EP0278
 > **Points:** 2
 > **Depends on:** US1003
@@ -42,3 +42,4 @@
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G4 after the refine panel's review |
+| 2026-10-13 | Claude Opus 5.5 (author) | Round-1 REJECT repaired: the three lint.yml pins (US0939 AC4, US0815, BG0676) re-pointed through `-r requirements-dev.txt` to the file, not retired; their modules added to Affects |

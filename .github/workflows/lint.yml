@@ -175,9 +175,9 @@ jobs:
         # added lines run `verify_ac run --coverage`, and without the package every one of them
         # reads red here while passing on any machine that has it.
         # Its own list, a declared subset of requirements-dev.txt (pinned by
-        # tools/tests/test_prereq_list_is_ci_list.py): pytest-xdist is left out because this
-        # lane is compared against tools/verify-corpus-baseline.txt, and adding it changes
-        # what that baseline records.
+        # tools/tests/test_prereq_list_is_ci_list.py). pytest-xdist is left out: this lane is
+        # compared against tools/verify-corpus-baseline.txt, recorded without it, and what adding
+        # it would do to that comparison has not been measured.
         run: python -m pip install --quiet pyyaml pytest 'coverage>=7.10'
 
       # markdownlint is NOT optional here, though nothing in this lane lints markdown. Two test
