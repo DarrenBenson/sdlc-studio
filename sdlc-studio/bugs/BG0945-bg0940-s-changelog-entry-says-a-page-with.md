@@ -25,6 +25,7 @@ Reword the fragment to what happens: the page stays VALID, sign refuses the chan
 
 - [ ] **AC1** Given a fixture run closed, then a ruling added with `decisions.py add --by operator`, when `sprint sign` runs through the CLI, then it refuses naming `sdlc-studio/decisions.md`, and `changelog.d/BG0940.md` says that sign refuses the changed tree until a re-close and no longer says the page is signed after a late ruling. Fails on: the current 'still checks VALID when it is signed' wording
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_bg0940_fragment_matches_sign.py::FragmentMatchesSignTests::test_the_fragment_says_what_sign_does
+  - **Verified:** yes (2026-10-13)
 
 ## Revision History
 
