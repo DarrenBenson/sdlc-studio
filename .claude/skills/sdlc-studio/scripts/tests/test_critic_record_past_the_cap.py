@@ -17,7 +17,9 @@ by a narrower id pattern than the shared grammar (a v3, dashed, five-digit or lo
 unseen, so a decision naming one first reads as about the unit it names second) or by any
 mention of the unit; a missing decision admitted; one ruling admitting every later round; the
 record's fields written raw, so a reviewer id forges one; the ruling keyed by the row's position
-rather than its identity; a ruling spent, or refused, below the cap. AC3: `round_refusal`
+rather than its identity, or by its identity alone so a duplicate row shares it; a ruling spent,
+or refused, below the cap, even an unknown one; whitespace folded after keys are defused; an
+`Accepted` cell misread; the section's note decided by the whole ledger. AC3: `round_refusal`
 admitting any ruling at the cap, with the check moved into record's argument handling.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/critic.py
@@ -49,6 +51,7 @@ DECISIONS = """# Decisions
 | D0010 | CR-0007 gets a third round. | Dashed. | accepted | -- | 2026-10-13 |
 | D0011 | BG10001 gets a third round. | Five digits. | accepted | -- | 2026-10-13 |
 | D0012 | bg0001 gets a third round. | Lower case. | accepted | -- | 2026-10-13 |
+| D0013 | BG0001 gets a third round, its status typed by hand. | Case. | Accepted | -- | 2026-10-13 |
 """
 
 
@@ -104,7 +107,7 @@ class RecordPastTheCapTests(unittest.TestCase):
 
     def test_the_subject_is_read_by_the_shared_id_grammar(self) -> None:
         for unit, ruling in (("BG-01JQK3F8", "D0009"), ("CR-0007", "D0010"),
-                             ("BG10001", "D0011"), ("BG0001", "D0012")):
+                             ("BG10001", "D0011"), ("BG0001", "D0012"), ("BG0001", "D0013")):
             with self.subTest(unit=unit, ruling=ruling):
                 root = self._root(unit)
                 r = self._record(root, ruling, unit=unit)
@@ -166,6 +169,11 @@ class RecordPastTheCapTests(unittest.TestCase):
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)
         self.assertIn("BG0001 was below the review cap, so ruling D0001 was not needed", r.stderr)
         self.assertEqual([], _critic().read_round_rulings(root), "a ruling was spent below the cap")
+        with self.subTest(case="an unknown decision below the cap is noted, not refused"):
+            other = self._root(rows=(("REJECT", "qa seat"),))
+            r = self._record(other, "D9999", verdict="REJECT")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertIn("so ruling D9999 was not needed", r.stderr)
         r = self._record(root, "D0001")
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)
         self.assertEqual("D0001", self._rows(root)[-1].get("ruling"))
@@ -179,6 +187,14 @@ class RecordPastTheCapTests(unittest.TestCase):
         self.assertNotEqual("1999-01-01", record["recorded"], "the reviewer id forged a field")
         self.assertIn("BG0002", record["reviewer"], "the reviewer id was cut at an embedded key")
         self.assertTrue(record["reviewer"].startswith("qa seat"), record)
+        with self.subTest(case="a tab before the key"):
+            tabbed = "qa\trecorded=1999-01-01"
+            root = self._root(rows=(("REJECT", tabbed),) * 2)
+            self.assertEqual(0, self._record(root, "D0001", reviewer=tabbed).returncode)
+            [record] = _critic().read_round_rulings(root)
+            self.assertNotEqual("1999-01-01", record["recorded"], "a tab let the reviewer id "
+                                "forge a field")
+            self.assertIn("1999-01-01", record["reviewer"], record)
         r = self._record(root, "D0001", reviewer=forger)
         self.assertNotEqual(0, r.returncode, "one ruling authorised two rounds")
         self.assertIn("already authorised round 3 of BG0001", r.stdout + r.stderr)
@@ -194,6 +210,12 @@ class RecordPastTheCapTests(unittest.TestCase):
         self.assertEqual([("APPROVE", "D0001")], [(r["verdict"], r["ruling"]) for r in ruled],
                          "the ruling moved off the row it authorised when an earlier row was "
                          "superseded")
+        # a ruled row repeating earlier rows' cells: the ruling is its own, not theirs
+        root = self._root()
+        mod._write_verdict(root, "BG0001", "REJECT", "qa seat", "builder",
+                           "[new] it does not work (a.py:1)", "delivery", "", None, False, "D0001")
+        self.assertEqual([None, None, "D0001"], [r.get("ruling") for r in self._rows(root)],
+                         "a ruling was read onto identical rows it did not authorise")
         # a unit's earlier delivery is not counted: the round is the one record prints
         root = self._root(rows=(("REJECT", "qa seat"), ("APPROVE", "qa seat"),
                                 ("REJECT", "qa seat"), ("REJECT", "qa seat")))
@@ -221,6 +243,29 @@ class RecordPastTheCapTests(unittest.TestCase):
         note = section.find("A RULING record names")
         self.assertGreater(note, section.find("Each record retires one verdict row above"))
         self.assertLess(note, section.find("RULING unit="))
+        # a verdict row quoting the phrase does not stand in for the section's own note
+        root = self._root(rows=(("REJECT", "first seat"), ("REJECT", "qa seat"),
+                                ("REJECT", "qa seat")))
+        mod._write_verdict(root, "BG0002", "REJECT", "other seat", "builder",
+                           "the intro is false of a RULING record names nothing", "delivery", "",
+                           None, False)
+        mod.record_supersession(root, "BG0001", mod.sdlc_md.now_date(), "the pass never ran",
+                                "operator", "test boundary", reviewer="first seat")
+        self.assertEqual(0, self._record(root, "D0001").returncode)
+        section = mod.verdicts_path(root, "delivery").read_text(encoding="utf-8").split(
+            "\n" + mod.SUPERSEDE_HEADING + "\n", 1)[1]
+        self.assertIn("A RULING record names", section, "a row's issues stood in for the note")
+        # a section a ruling reached without its note gets the note before the next ruling
+        root = self._root(rows=(("REJECT", "first seat"), ("REJECT", "qa seat"),
+                                ("REJECT", "qa seat")))
+        mod.record_supersession(root, "BG0001", mod.sdlc_md.now_date(), "the pass never ran",
+                                "operator", "test boundary", reviewer="first seat")
+        ledger = mod.verdicts_path(root, "delivery")
+        ledger.write_text(ledger.read_text(encoding="utf-8") + "\nRULING unit=BG0009 row=x#0 "
+                          "round=3 ruling=D0001 reviewer=x recorded=2026-10-01\n", encoding="utf-8")
+        self.assertEqual(0, self._record(root, "D0001").returncode)
+        section = ledger.read_text(encoding="utf-8").split(mod.SUPERSEDE_HEADING, 1)[1]
+        self.assertIn("A RULING record names", section, "a RULING line stood in for the note")
 
 
 if __name__ == "__main__":

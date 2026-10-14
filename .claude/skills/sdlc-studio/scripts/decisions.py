@@ -484,15 +484,17 @@ def _live(root: Path | str) -> list[dict]:
 def standing(root: Path | str, did: str) -> tuple[str, str] | None:
     """`(status, decision text)` for decision `did` as the log's lineage reads it, or None when
     the log has no such decision. A row a later decision supersedes reads `superseded` even while
-    its own Status cell still says accepted, before `backfill` flips it: `_live`'s reading."""
+    its own Status cell still says accepted, before `backfill` flips it: `_live`'s reading, with
+    the cell's case ignored, so a hand-typed `Accepted` is not misnamed superseded."""
     want = _norm_did(did)
-    rows = [r for r in list_decisions(root) if _norm_did(r["id"]) == want] if want else []
+    every = list_decisions(root)
+    rows = [r for r in every if _norm_did(r["id"]) == want] if want else []
     if not rows:
         return None
-    if any(_norm_did(r["id"]) == want for r in _live(root)):
-        return "accepted", rows[-1]["decision"]
     status = rows[-1]["status"].strip().lower()
-    return ("superseded" if status == "accepted" else status or "not accepted"), rows[-1]["decision"]
+    if status == "accepted" and want in {_norm_did(r["supersedes"]) for r in every}:
+        status = "superseded"
+    return status or "not accepted", rows[-1]["decision"]
 
 
 def precedent(root: Path | str, subject: str, question: str = "",

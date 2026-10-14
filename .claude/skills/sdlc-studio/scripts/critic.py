@@ -402,15 +402,17 @@ def _append_ruling(path: Path, unit: str, ruling: str, reviewer: str) -> None:
     its identity, and the delivery round it was. Called under the ledger lock, after the row."""
     root = path.parents[2]
     uid = sdlc_md.norm_id(unit)
-    rows = [r for r in read_verdicts(root) if sdlc_md.norm_id(r.get("unit", "")) == uid]
+    rows = read_verdicts(root)
     record = _RULING_PREFIX + " ".join(
         f"{key}={_ruling_value(value)}" for key, value in zip(_RULING_KEYS, (
-            uid, row_identity(rows[-1]), len(delivery_rounds(root, uid)),
+            uid, _row_keys(rows)[-1], len(delivery_rounds(root, uid)),
             str(ruling).strip().upper(), reviewer or "-", sdlc_md.now_date())))
     text = path.read_text(encoding="utf-8")
+    # The section alone decides the note: a verdict row's issues may quote the phrase.
+    heading = re.search(rf"^{re.escape(SUPERSEDE_HEADING)}[ \t]*$", text, re.M)
     with path.open("a", encoding="utf-8") as fh:  # append-only, below the table
-        fh.write(_RECORDS_INTRO if SUPERSEDE_HEADING not in text
-                 else "\n" if "RULING record" in text else "\n" + _RULING_NOTE)
+        fh.write(_RECORDS_INTRO if heading is None
+                 else "\n" if _RULING_MARK in text[heading.end():] else "\n" + _RULING_NOTE)
         fh.write(record + "\n")
 
 
@@ -623,9 +625,10 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
     rows = _number_rounds(_annotate_superseded(out, read_supersessions(repo_root, phase)))
     if phase == "delivery":
         rulings = {r["row"]: r["ruling"] for r in read_round_rulings(repo_root) if r["row"]}
-        for row in rows:
-            if rulings and row_identity(row) in rulings:
-                row["ruling"] = rulings[row_identity(row)]
+        if rulings:
+            for row, key in zip(rows, _row_keys(rows)):
+                if key in rulings:
+                    row["ruling"] = rulings[key]
     return rows
 
 
@@ -908,18 +911,22 @@ _RECORDS_INTRO = (
     "> a RULING record names the decision that authorised a review round past the cap. Prose,\n"
     "> not a table - the row parser reads every pipe-delimited line here.\n\n")
 #: Written once before the first ruling record in a section whose introduction (the
-#: supersession writer's) speaks of supersessions only.
+#: supersession writer's) speaks of supersessions only. Both texts carry `_RULING_MARK`, which is
+#: how the writer knows the section already explains its ruling records.
 _RULING_NOTE = ("> A RULING record names the accepted decision that authorised one review round "
                 "past the cap, and the row it authorised.\n\n")
+_RULING_MARK = "RULING record names"
 
 
 def _ruling_value(value: str) -> str:
     """One field of a ruling record: single-line, pipe-free, with any embedded ` key=` defused,
-    so a reviewer id cannot forge a field (`qa seat unit=BG0002` stays one reviewer)."""
-    out = _clean(str(value))
+    so a reviewer id cannot forge a field (`qa seat unit=BG0002` stays one reviewer). Whitespace
+    is folded FIRST: a tab or newline before `recorded=` is a field boundary to the reader, so
+    defusing only ` key=` before folding left it live."""
+    out = " ".join(_clean(str(value)).split())
     for key in _RULING_KEYS:
         out = out.replace(f" {key}=", f" {key}:")
-    return " ".join(out.split())
+    return out
 
 
 def _ruling_field(body: str, key: str) -> str:
@@ -928,9 +935,23 @@ def _ruling_field(body: str, key: str) -> str:
     return _unescape_outside_spans(m.group(1).strip()) if m else ""
 
 
+def _row_keys(rows: list[dict]) -> list[str]:
+    """Each row's ruling key: its `row_identity` and how many earlier rows share it
+    (`<identity>#<n>`). The ledger holds exact duplicates, which share an identity, so the
+    identity alone would carry a ruling onto every copy; the table is append-only, so a row's
+    place among its copies never moves."""
+    seen: dict[str, int] = {}
+    keys = []
+    for row in rows:
+        ident = row_identity(row)
+        keys.append(f"{ident}#{seen.get(ident, 0)}")
+        seen[ident] = seen.get(ident, 0) + 1
+    return keys
+
+
 def read_round_rulings(repo_root: Path | str) -> list[dict]:
     """Every ruling that authorised a delivery round past the cap, as {unit, row, round, ruling,
-    reviewer, recorded}, in the order written. `row` is the authorised row's identity."""
+    reviewer, recorded}, in the order written. `row` is the authorised row's key (`_row_keys`)."""
     path = verdicts_path(repo_root, "delivery")
     if not path.exists():
         return []
