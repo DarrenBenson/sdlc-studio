@@ -12,13 +12,15 @@ never fails a commit, and a missing or unreadable history degrades to silence ra
 than to a wrong number.
 
 Subcommands:
-  record    append one run's duration for a suite
-  estimate  print a warning line when the expected duration exceeds a threshold
+  record     append one run's duration for a suite
+  scope      judge whether a run covered its scope, and record its test count
+  estimate   print a warning line when the expected duration exceeds a threshold
+  first-run  for a boundary with no recorded run, say what this clone decides about its
+             cost, without a fixed figure
 """
 from __future__ import annotations
 
 import argparse
-import os
 import json
 import statistics
 import sys
@@ -202,7 +204,8 @@ def expected(root: Path, suite: str) -> float | None:
     return statistics.median(runs) if runs else None
 
 
-#: Where the suite's test modules live: what the first-run line counts.
+#: Where the suite's test modules live: what the first-run line counts. gate.py's
+#: TEST_SUITE_DIRS, restated so the hook's cost line does not import the gate; a test pins the two.
 SUITE_DIRS = (".claude/skills/sdlc-studio/scripts/tests", "tools/tests")
 
 
@@ -231,7 +234,9 @@ def first_run_line(root: Path, suite: str) -> str:
     modules, whether they run in parallel or serially, and, when this clone has timed a full
     commit-suite run, that run's median as a floor."""
     modules = sum(len(list((root / d).glob("test_*.py"))) for d in SUITE_DIRS)
-    how = (f"in parallel across {os.cpu_count() or 1} cores" if _xdist_installed()
+    # The gate runs `-n auto`, whose worker count xdist decides; a core count printed here
+    # could overstate it, so the line says how the suite is spread, not a number of workers.
+    how = ("in parallel across this machine's cores (pytest-xdist, -n auto)" if _xdist_installed()
            else "serially (pytest-xdist is not installed)")
     line = (f"{suite}: no run is recorded on this clone - the full suite runs {how} over "
             f"{modules} test module(s)")

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 93 |
+| Open | 95 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 32 |
-| **Total** | **1041** |
+| **Total** | **1043** |
 
 ## All Bugs
 
@@ -117,6 +117,8 @@
 | [BG1039](BG1039-us1004-s-one-list-test-no-longer-requires.md) | US1004's one-list test no longer requires `-r` on the suite step, and still checks hand installs against its own list of four packages | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1040](BG1040-gate-prereqs-prints-the-sdlc-coverage-python-route.md) | gate_prereqs prints the SDLC_COVERAGE_PYTHON route without reading that interpreter, reads markers without evaluating them, and skips -r lines silently | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1041](BG1041-the-module-alone-lane-test-can-never-pass.md) | The module-alone lane test can never pass on a host with fewer than four cores, and blames the pool for it | Open | Low | 2026-10-13 | 2026-10-13 |
+| [BG1042](BG1042-the-push-preflight-s-tests-leak-sdlc-coverage.md) | The push preflight's tests leak SDLC_COVERAGE_PYTHON and leave its REFUSES mark and pytest's class unpinned | Open | Low | 2026-10-13 | 2026-10-13 |
+| [BG1043](BG1043-the-prerequisite-check-and-the-gate-read-pytest.md) | The prerequisite check and the gate read pytest-xdist two different ways | Open | Low | 2026-10-13 | 2026-10-13 |
 
 ## Archived Releases
 
