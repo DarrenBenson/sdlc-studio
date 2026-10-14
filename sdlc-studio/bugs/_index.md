@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-10-13
+**Last Updated:** 2026-10-14
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 95 |
+| Open | 99 |
 | In Progress | 0 |
 | Fixed | 789 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 32 |
-| **Total** | **1043** |
+| **Total** | **1047** |
 
 ## All Bugs
 
@@ -119,6 +119,10 @@
 | [BG1041](BG1041-the-module-alone-lane-test-can-never-pass.md) | The module-alone lane test can never pass on a host with fewer than four cores, and blames the pool for it | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1042](BG1042-the-push-preflight-s-tests-leak-sdlc-coverage.md) | The push preflight's tests leak SDLC_COVERAGE_PYTHON and leave its REFUSES mark and pytest's class unpinned | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1043](BG1043-the-prerequisite-check-and-the-gate-read-pytest.md) | The prerequisite check and the gate read pytest-xdist two different ways | Open | Low | 2026-10-13 | 2026-10-13 |
+| [BG1044](BG1044-a-ruling-record-s-note-is-decided-by.md) | A ruling record's note is decided by the whole ledger, and a tab in a reviewer id still forges a field | Open | Low | 2026-10-13 | 2026-10-13 |
+| [BG1045](BG1045-us1006-did-not-converge-in-review-round-2.md) | US1006 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-14 | 2026-10-14 |
+| [BG1046](BG1046-a-carry-turns-a-pre-existing-finding-into.md) | A carry turns a pre-existing finding into a criterion the carried bug can never meet | Open | Low | 2026-10-14 | 2026-10-14 |
+| [BG1047](BG1047-test-status-s-backlog-advisory-fixture-dates-its.md) | test_status's backlog advisory fixture dates its bugs 2026-07-16, so it went stale on 2026-10-14 and main is red | Open | High | 2026-10-14 | 2026-10-14 |
 
 ## Archived Releases
 

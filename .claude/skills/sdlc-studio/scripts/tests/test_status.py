@@ -511,12 +511,15 @@ class BacklogTriageAdvisoryTests(unittest.TestCase):
     """US0171: status surfaces a backlog-triage summary; silent on a coherent backlog."""
 
     def _bug(self, root: Path, num: int, title: str, summary: str, affects: str) -> None:
+        # Dated today: the advisory reads staleness against the real clock, so a fixed date ages
+        # into `stale` (a 2026-07-16 one did on 2026-10-14, day 90, and every tree went red).
+        import datetime  # noqa: PLC0415 - only the fixture needs it
         d = root / "sdlc-studio" / "bugs"
         d.mkdir(parents=True, exist_ok=True)
         (d / f"BG{num:04d}-x.md").write_text(
             f"# BG{num:04d}: {title}\n\n> **Status:** Open\n> **Affects:** {affects}\n"
-            f"> **Points:** 3\n> **Date:** 2026-07-16\n\n## Summary\n\n{summary}\n",
-            encoding="utf-8")
+            f"> **Points:** 3\n> **Date:** {datetime.date.today().isoformat()}\n\n"
+            f"## Summary\n\n{summary}\n", encoding="utf-8")
 
     def test_fires_on_a_duplicate_pair(self) -> None:
         with tempfile.TemporaryDirectory() as d:
