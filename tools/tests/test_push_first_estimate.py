@@ -9,8 +9,8 @@ when this clone has timed a full commit-suite run, that median as a floor for th
 Each test drives the tracked hook through `test_pre_push_hook._Clone`; what is installed is the
 test's choice (a `*.dist-info` first on PYTHONPATH, or a `sitecustomize` hiding it).
 
-MUTANTS: the literals restored, a reworded figure ("expect five minutes", "about an hour")
-appended, or the hook's own fallback given one (AC1); `in parallel` hard-coded, or the module count
+MUTANTS: the literals restored, a reworded figure ("expect five minutes", "about an hour",
+"~5min", "300sec", "2hrs") appended, or the hook's own fallback given one (AC1); `in parallel` hard-coded, or the module count
 a fixed figure or a count of every `.py` file (AC2); the clone's own full commit-suite series
 ignored, its mean cited for its median, or a fixed figure added beside the floor (AC3); AGENTS.md's
 figure left in or reworded (AC4); `first-run` speaking beside a recorded history; the counted
@@ -37,10 +37,13 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "tools"))
 import gate_timing  # noqa: E402 - the tool under test
 
-#: Any statement of a duration: a time unit named at all ("five minutes", "about an hour"), or a
-#: number carrying one ("300s", "5 min"). The no-history line states none, so any is a fixed figure.
+#: The time units a duration is stated in, longest spelling first within each.
+_UNIT = r"(?:seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h)"
+#: Any statement of a duration: a time unit named as a word ("five minutes", "about an hour"), or
+#: a number carrying one, spaced or not ("300s", "5 min", "~5min", "2hrs"). The no-history line
+#: states none, so any is a fixed figure.
 FIXED_FIGURE = re.compile(r"\b(?:seconds?|secs?|minutes?|mins?|hours?|hrs?)\b"
-                          r"|\d+(?:\.\d+)?\s*(?:s|m|h)\b", re.I)
+                          rf"|\d+(?:\.\d+)?\s*{_UNIT}\b", re.I)
 
 HIDE_XDIST = textwrap.dedent('''
     import importlib.metadata as _m
@@ -96,6 +99,21 @@ class FirstRunEstimateTests(unittest.TestCase):
         line = next((ln for ln in r.stderr.splitlines() if "Bypass once with" in ln), "")
         self.assertTrue(line, f"no cost line was announced:\n{r.stderr}")
         return line
+
+    def test_every_way_of_stating_a_duration_is_read_as_one(self) -> None:
+        """The detector the other tests lean on. MUTANT: a unit alternative narrowed, so a figure
+        glued to its unit word, or one spelled out, is not read as a duration."""
+        for stated in ("expect about five minutes", "expect five minutes", "roughly fifteen minutes",
+                       "about an hour", "300 seconds", "300s", "5 min", "~5min", "300sec",
+                       "10minutes", "2hrs", "about 1hr", "1.5h", "90 m", "20 secs"):
+            with self.subTest(stated=stated):
+                self.assertIsNotNone(FIXED_FIGURE.search(f"boundary-push: {stated}"), stated)
+        for line in ("boundary-push: no run is recorded on this clone - the full suite runs in "
+                     "parallel across this machine's cores (pytest-xdist, -n auto) over 441 test "
+                     "module(s)", "and a tag adds the release-rehearsal and module-alone lanes",
+                     "serially (pytest-xdist is not installed) over 3 test module(s)"):
+            with self.subTest(line=line):
+                self.assertIsNone(FIXED_FIGURE.search(line), line)
 
     def test_no_fixed_duration_is_announced_without_a_recorded_run(self) -> None:
         fx = self._clone()
