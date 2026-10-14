@@ -1,6 +1,6 @@
 # BG0993: The open sprint run lives in one machine's gitignored .local/run-state.json: another checkout can open a second run beside it, and cannot sign it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_integrity.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_close_shows_the_page.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/BG0993.md
