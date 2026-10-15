@@ -43,3 +43,4 @@
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G4 after the refine panel's review |
 | 2026-10-13 | Claude Opus 5.5 (author) | Round-1 REJECT repaired: the three lint.yml pins (US0939 AC4, US0815, BG0676) re-pointed through `-r requirements-dev.txt` to the file, not retired; their modules added to Affects |
+| 2026-10-14 | Claude Opus 5.5 (author) | D0368: a third review round at full depth, its band having risen to full after round 1's repair widened Affects; taken by a fresh QA seat, the round-1 reviewer's context not being resumable after a context compaction |

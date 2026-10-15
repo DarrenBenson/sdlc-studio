@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 101 |
+| Open | 105 |
 | In Progress | 0 |
 | Fixed | 790 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 32 |
-| **Total** | **1050** |
+| **Total** | **1054** |
 
 ## All Bugs
 
@@ -126,6 +126,10 @@
 | [BG1048](BG1048-forward-port-deletes-the-changelog-md-install-sh.md) | forward-port deletes the CHANGELOG.md install.sh ships into the installed copy | Open | Low | 2026-10-14 | 2026-10-14 |
 | [BG1049](BG1049-bg1044-s-ruling-record-tests-leave-the-date.md) | BG1044's ruling-record tests leave the date, the note's once-only rule, the heading anchor and the case boundary unpinned | Open | Low | 2026-10-14 | 2026-10-14 |
 | [BG1050](BG1050-a-reviewer-id-carrying-a-carriage-return-or.md) | A reviewer id carrying a carriage return or line separator tears its own verdict row | Open | Medium | 2026-10-14 | 2026-10-14 |
+| [BG1051](BG1051-the-close-s-chain-report-cuts-every-refusal.md) | The close's chain report cuts every refusal line at 160 characters, hiding which unit is blocked and why | Open | Medium | 2026-10-14 | 2026-10-14 |
+| [BG1052](BG1052-a-unit-whose-risk-band-rises-after-its.md) | A unit whose risk band rises after its review is found under-reviewed only at the close | Open | Medium | 2026-10-14 | 2026-10-14 |
+| [BG1053](BG1053-us1004-did-not-converge-in-review-round-3.md) | US1004 did not converge in review: round 3 REJECT findings | Open | Medium | 2026-10-14 | 2026-10-14 |
+| [BG1054](BG1054-the-scheduled-corpus-verify-lane-reads-us0892-ac1.md) | The scheduled corpus-verify lane reads US0892 AC1 red because its job installs no pytest-xdist | Open | Medium | 2026-10-14 | 2026-10-14 |
 
 ## Archived Releases
 
