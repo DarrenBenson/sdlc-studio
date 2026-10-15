@@ -169,7 +169,8 @@ class CoverageBeforeSuiteTests(unittest.TestCase):
         self.assertIsNotNone(install, "lint.yml must install coverage>=7.10 explicitly")
         if "requirements-dev.txt" in install.group(0):
             reqs = (REPO / "requirements-dev.txt").read_text(encoding="utf-8")
-            self.assertRegex(reqs, r"(?m)^coverage>=7\.10\s*$",
+            # The floor, with any upper bound or marker beside it (`coverage>=7.10,<8`).
+            self.assertRegex(reqs, r"(?m)^coverage(\[[^\]]*\])?>=7\.10(?![\d.])",
                              "requirements-dev.txt must declare coverage>=7.10")
         suite = text.index("bash tools/skill-tests.sh")
         self.assertLess(install.start(), suite, "the coverage install must sit BEFORE the suite step, by position")
@@ -233,7 +234,9 @@ class CorpusJobEnvironmentTests(unittest.TestCase):
                              f"the {CORPUS_JOB} job installs coverage without the >=7.10 floor")
         # The reader is scoped, not lucky: the same reader over the ci job finds that job's own
         # floored install, and a commented-out install reads as nothing.
-        self.assertIn("coverage>=7.10", _coverage_requirements(_job("ci")))
+        self.assertTrue(any(re.match(r"^coverage(\[[^\]]*\])?>=7\.10(?![\d.])", r)
+                            for r in _coverage_requirements(_job("ci"))),
+                        _coverage_requirements(_job("ci")))
         self.assertEqual(_coverage_requirements(
             {"steps": [{"run": "# pip install 'coverage>=7.10'\npip install pyyaml pytest"}]}), [])
 
