@@ -6,27 +6,31 @@ runs with. The ci job now installs from the file. The scheduled corpus-verify jo
 list on purpose (moving it would add pytest-xdist to a lane compared against a recorded
 baseline), so it is held to a declared subset instead.
 
-What the reader reads (BG1053), each spelling listed in `test_the_readers_and_rules_refuse_what_
-they_must`: pip run as `pip`, `pip3`, `pip3.12`, a path to one, `python -m pip` or `uv pip`, with
-pip's general options before `install`; `-r` and `-c` given separately, attached (`-rFILE`),
-clustered (`-qrFILE`, `-qr FILE`) or long with `=`; and a requirements file's own `-r` lines. A
-`PIP_REQUIREMENT` or `PIP_CONSTRAINT` variable, and a ci install run from another directory, are
-refused outright. Anything else (a pip config file, a wrapper script) is not read.
+A closed world, not a parser (BG1056). Reading every spelling pip accepts failed four review
+rounds running, each finding one more, so the two jobs are held to exact forms instead:
 
-MUTANTS: the inline package list left in the ci job's suite step (AC1); a second requirements
-file on the suite step, a ci step installing anything but the file and a named non-suite tool,
-an install the reader does not see (options before `install`, a clustered `-qr`), or a
-requirements source the line does not show (AC1); requirements-dev.txt including another file
-the checker does not follow (AC1); the corpus-verify job installing a package, or a looser
-floor, that requirements-dev.txt does not declare (AC2); any rule or reader branch dropped (the
-self-test).
+- every command that names pip is `python -m pip install`, `python3 -m pip install`,
+  `pip install` or `pip3 install`, followed only by the flags in `ALLOWED_FLAGS` and, in the ci
+  job, either `-r requirements-dev.txt` alone or the names in `NON_SUITE_TOOLS`; in
+  corpus-verify, plain requirement specs;
+- any other command that names pip (`pip -q install`, `uv pip`, `ensurepip`, `pipx`), another
+  installer (`uv`, `poetry`, `pdm`, `conda`, `mamba`), a `PIP_` setting anywhere in a run block
+  or an `env:`, and a change of directory in a step that installs (`cd`, `pushd`,
+  `working-directory`, a default one) is refused.
+
+A wrapper script that installs packages is not read: it names no pip on the job's own lines.
+
+MUTANTS: the inline package list left in the ci job's suite step (AC1); anything on a pip line
+beyond the exact forms, a pip command in another form, another installer, a `PIP_` setting or a
+directory change (AC1); requirements-dev.txt including another file the checker does not follow
+(AC1); the corpus-verify job installing a package, or a looser floor, that requirements-dev.txt
+does not declare (AC2); any rule dropped (the self-test).
 """
 # test-census-subject: .github/workflows/lint.yml
 from __future__ import annotations
 
 import re
 import shlex
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -38,27 +42,29 @@ SUITE_FILE = "requirements-dev.txt"
 #: Tools a ci step may install by hand: none is a suite package, and none may be declared in
 #: requirements-dev.txt (a declared one comes from the file).
 NON_SUITE_TOOLS = {"bandit"}
-#: Environment variables pip reads as extra requirements or constraints files.
-PIP_FILE_VARIABLES = {"PIP_REQUIREMENT", "PIP_CONSTRAINT"}
-_LONG_FILE = {"--requirement": "requirements", "--constraint": "constraints"}
-_SHORT_FILE = {"r": "requirements", "c": "constraints"}
-#: `pip install` short options that take a value (the rest of the word, or the next word).
-_SHORT_VALUED = {"r", "c", "e", "i", "f", "t"}
-#: `pip install` long options that take a value as the next word.
-_LONG_VALUED = {"--index-url", "--extra-index-url", "--find-links", "--target", "--prefix",
-                "--root", "--src", "--upgrade-strategy", "--progress-bar", "--python-version",
-                "--platform", "--implementation", "--abi", "--editable", "--report"}
-#: pip's general options (before the subcommand) that take a value as the next word.
-_GENERAL_VALUED = {"--log", "--log-file", "--proxy", "--retries", "--timeout",
-                   "--exists-action", "--trusted-host", "--cert", "--client-cert", "--cache-dir",
-                   "--python", "--use-feature", "--use-deprecated", "--keyring-provider",
-                   "--resume-retries"}
-_PIP_EXE = re.compile(r"^(?:.*/)?pip(?:\d+(?:\.\d+)*)?$")
+#: The only ways a job may run pip install.
+PIP_FORMS = (("python", "-m", "pip", "install"), ("python3", "-m", "pip", "install"),
+             ("pip", "install"), ("pip3", "install"))
+#: The only options a pip install line may carry beside what it installs. None takes a value.
+ALLOWED_FLAGS = {"--quiet", "-q", "--upgrade", "-U", "--disable-pip-version-check",
+                 "--no-cache-dir"}
+#: Installers other than pip: none may run in either job.
+OTHER_INSTALLERS = {"uv", "uvx", "poetry", "pdm", "conda", "mamba", "micromamba", "pipx",
+                    "easy_install", "pipenv", "hatch", "rye"}
 _SEPARATOR = re.compile(r"^[;&|]+$")
+#: A command naming pip in any case. A `PIP_` setting on a line names it too, so that line is
+#: refused as a pip command outside the exact forms.
+_NAMES_PIP = re.compile(r"pip", re.I)
+_SPEC = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*(\[[A-Za-z0-9,._-]+\])?\s*([<>=!~]=?[^\s;]+"
+                   r"(\s*,\s*[<>=!~]=?[^\s,;]+)*)?$")
 
 
 def _norm(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def _name(spec: str) -> str:
+    return _norm(re.split(r"[<>=!~;\[ ]", spec, maxsplit=1)[0])
 
 
 def _floor(spec: str) -> tuple[int, ...] | None:
@@ -71,257 +77,246 @@ def _floor(spec: str) -> tuple[int, ...] | None:
     return parts + (0,) * max(0, 3 - len(parts))
 
 
-def _name(spec: str) -> str:
-    return _norm(re.split(r"[<>=!~;\[ ]", spec, maxsplit=1)[0])
-
-
-def _parse(words: list[str]) -> dict[str, list[str]]:
-    """Package specs, requirements files and constraints files named by `pip install` arguments."""
-    out: dict[str, list[str]] = {"specs": [], "requirements": [], "constraints": []}
-    i = 0
-    while i < len(words):
-        word = words[i]
-        flag, eq, value = word.partition("=")
-        if word.startswith("--"):
-            if flag in _LONG_FILE:
-                if not eq and i + 1 < len(words):
-                    i, value = i + 1, words[i + 1]
-                out[_LONG_FILE[flag]].append(value)
-            elif word in _LONG_VALUED:
-                i += 1
-        elif word.startswith("-") and len(word) > 1:
-            # A cluster of short options (`-q`, `-qr FILE`, `-qrFILE`), read as pip reads it: each
-            # letter in turn, and the first that takes a value takes the rest of the word or, when
-            # nothing is left, the next word.
-            for k, letter in enumerate(word[1:], 1):
-                if letter in _SHORT_VALUED:
-                    value = word[k + 1:]
-                    if not value and i + 1 < len(words):
-                        i, value = i + 1, words[i + 1]
-                    if letter in _SHORT_FILE:
-                        out[_SHORT_FILE[letter]].append(value)
-                    elif letter == "e":
-                        out["specs"].append(value)
-                    break
-        else:
-            out["specs"].append(word)
-        i += 1
-    return out
-
-
-def _commands(line: str) -> list[list[str]]:
-    """One shell line's commands, split on `;`, `&&`, `||` and `|`, comments cut."""
-    lexer = shlex.shlex(line, posix=True, punctuation_chars=";&|")
-    lexer.whitespace_split = True
-    lexer.commenters = "#"
-    out: list[list[str]] = [[]]
-    for token in lexer:
-        if _SEPARATOR.match(token):
-            out.append([])
-        else:
-            out[-1].append(token)
+def _commands(text: str) -> list[list[str]]:
+    """A run block's commands, split on newlines, `;`, `&&`, `||` and `|`, comments cut."""
+    out: list[list[str]] = []
+    for line in text.splitlines():
+        lexer = shlex.shlex(line, posix=True, punctuation_chars=";&|")
+        lexer.whitespace_split = True
+        lexer.commenters = "#"
+        current: list[str] = []
+        for token in lexer:
+            if _SEPARATOR.match(token):
+                out.append(current)
+                current = []
+            else:
+                current.append(token)
+        out.append(current)
     return [c for c in out if c]
 
 
 def _install_args(argv: list[str]) -> list[str] | None:
-    """The arguments after `install` when `argv` runs pip install, else None. pip's general
-    options may stand between pip and `install`."""
-    for i, word in enumerate(argv):
-        if not _PIP_EXE.match(word):
+    """What an allowed pip form installs (its arguments, flags removed), or None when `argv` is
+    not exactly an allowed form: a pip command in any other shape, or one carrying an option
+    outside ALLOWED_FLAGS."""
+    for form in PIP_FORMS:
+        if tuple(argv[:len(form)]) != form:
             continue
-        j = i + 1
-        while j < len(argv) and argv[j].startswith("-"):
-            j += 2 if argv[j] in _GENERAL_VALUED else 1
-        if j < len(argv) and argv[j] == "install":
-            return argv[j + 1:]
+        rest, args, i = argv[len(form):], [], 0
+        while i < len(rest):
+            word = rest[i]
+            if word == "-r" and i + 1 < len(rest) and not rest[i + 1].startswith("-"):
+                args += [word, rest[i + 1]]     # the one value-taking option: judged by `allow`
+                i += 2
+                continue
+            if word.startswith("-") and word not in ALLOWED_FLAGS:
+                return None
+            if word not in ALLOWED_FLAGS:
+                args.append(word)
+            i += 1
+        return args
     return None
 
 
-def _invocations(step: dict) -> list[dict]:
-    """Each pip install in one step's `run`: its parsed arguments, and whether a `cd` ran before
-    it on its line (so it installs from another directory)."""
-    out = []
-    for line in str(step.get("run") or "").splitlines():
-        moved = False
-        for argv in _commands(line):
-            if argv and argv[0] in ("cd", "pushd"):
-                moved = True
-            args = _install_args(argv)
-            if args is not None:
-                out.append({"line": line.strip(), "cd": moved, **_parse(args)})
-    return out
-
-
-def _file_specs(rel: str, root: Path = REPO, seen: frozenset = frozenset()) -> list[str]:
-    """The package specs a requirements file declares, its own `-r` lines followed."""
-    if rel in seen:
-        return []
-    specs: list[str] = []
-    for line in (root / rel).read_text(encoding="utf-8").splitlines():
-        line = line.split("#", 1)[0].strip()
-        if not line:
-            continue
-        parsed = _parse(shlex.split(line))
-        specs += parsed["specs"]
-        for nested in parsed["requirements"]:
-            specs += _file_specs(nested, root, seen | {rel})
-    return specs
-
-
-def _option_lines(text: str) -> list[str]:
-    """The lines of a requirements file that are pip options rather than requirements."""
-    return [line for line in (raw.split("#", 1)[0].strip() for raw in text.splitlines())
-            if line.startswith("-")]
-
-
-def _declared(root: Path = REPO) -> dict[str, tuple[int, ...] | None]:
-    return {_name(spec): _floor(spec) for spec in _file_specs(SUITE_FILE, root)}
-
-
-def _ci_violations(workflow: dict, declared: dict) -> list[str]:
-    """Every way the workflow's ci job installs Python packages outside the one list."""
-    job = workflow["jobs"]["ci"]
+def _job_violations(workflow: dict, job_name: str, allow) -> list[str]:
+    """Every way `job_name` runs pip outside the exact forms, or sets pip up outside its lines.
+    `allow(args)` returns why an allowed form's arguments are not acceptable, or None."""
+    job = workflow["jobs"][job_name]
     steps = job.get("steps") or []
     out = []
-    for where, env in [("the workflow", workflow.get("env")), ("the ci job", job.get("env"))] + [
-            (f"ci step {n}", s.get("env")) for n, s in enumerate(steps)]:
+    for where, env in [("the workflow", workflow.get("env")), (f"the {job_name} job",
+                                                               job.get("env"))] + [
+            (f"{job_name} step {n}", s.get("env")) for n, s in enumerate(steps)]:
         for key in env or {}:
-            if str(key).upper() in PIP_FILE_VARIABLES:
-                out.append(f"{where} sets {key}, a requirements source no install line shows")
-    moved_by_default = any(((scope or {}).get("defaults") or {}).get("run", {}).get(
-        "working-directory") for scope in (workflow, job))
-    suite = 0
+            if str(key).upper().startswith("PIP_"):
+                out.append(f"{where} sets {key}")
+    defaults = [((scope or {}).get("defaults") or {}).get("run", {}).get("working-directory")
+                for scope in (workflow, job)]
+    installs = 0
     for n, step in enumerate(steps):
-        for inv in _invocations(step):
-            where = f"ci step {n} ({inv['line']})"
-            if moved_by_default or step.get("working-directory") or inv["cd"]:
-                out.append(f"{where} installs from another directory")
-            if SUITE_FILE in inv["requirements"]:
-                suite += 1
-                if inv["requirements"] != [SUITE_FILE]:
-                    out.append(f"{where} reads a second requirements file")
-                if inv["specs"]:
-                    out.append(f"{where} carries a package list of its own")
-                if inv["constraints"]:
-                    out.append(f"{where} reads a constraints file")
+        commands = _commands(str(step.get("run") or ""))
+        names_pip = any(_NAMES_PIP.search(w) for c in commands for w in c)
+        where = f"{job_name} step {n}"
+        if names_pip and (step.get("working-directory") or any(defaults)
+                          or any(c[0] in ("cd", "pushd", "popd") for c in commands)):
+            out.append(f"{where} installs after changing directory")
+        for argv in commands:
+            line = " ".join(argv)
+            if argv[0] in OTHER_INSTALLERS:
+                out.append(f"{where} runs another installer: {line}")
+            if not any(_NAMES_PIP.search(w) for w in argv):
                 continue
-            if inv["requirements"] or inv["constraints"]:
-                out.append(f"{where} installs from another file")
-            for spec in inv["specs"]:
-                if _name(spec) not in NON_SUITE_TOOLS:
-                    out.append(f"{where} installs {spec} by hand, outside the one list")
-                elif _name(spec) in declared:
-                    out.append(f"{where} installs {spec} by hand though the file declares it")
-    if not suite:
-        out.append(f"no ci step installs from {SUITE_FILE}")
+            args = _install_args(argv)
+            if args is None:
+                out.append(f"{where} runs pip outside the exact forms: {line}")
+                continue
+            installs += 1
+            if (why := allow(args)):
+                out.append(f"{where}: {why}: {line}")
+    if not installs:
+        out.append(f"the {job_name} job runs no pip install in an exact form")
     return out
+
+
+def _ci_allow(declared: dict):
+    def allow(args: list[str]) -> str | None:
+        if args == ["-r", SUITE_FILE]:
+            return None
+        if not args or any(not _SPEC.match(a) or _name(a) not in NON_SUITE_TOOLS for a in args):
+            return f"installs neither `-r {SUITE_FILE}` alone nor named non-suite tools"
+        hand = [a for a in args if _name(a) in declared]
+        return f"installs {hand} by hand though the file declares them" if hand else None
+    return allow
+
+
+def _corpus_allow(declared: dict):
+    def allow(args: list[str]) -> str | None:
+        if not args:
+            return "installs nothing"
+        for spec in args:
+            if not _SPEC.match(spec):
+                return f"{spec!r} is not a plain requirement"
+            name = _name(spec)
+            if name not in declared:
+                return f"{name} is installed but not declared"
+            if declared[name] and (_floor(spec) is None or _floor(spec) < declared[name]):
+                return f"{name}'s floor is dropped or looser than declared"
+        return None
+    return allow
+
+
+def _requirements(text: str) -> tuple[dict[str, tuple[int, ...] | None], list[str]]:
+    """A requirements file's declared `{name: floor}` and its option lines (a `-r`, `-c` or
+    other pip option the checker does not read)."""
+    declared, options = {}, []
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if line.startswith("-"):
+            options.append(line)
+        elif line:
+            declared[_name(line)] = _floor(line)
+    return declared, options
+
+
+def _declared() -> dict[str, tuple[int, ...] | None]:
+    return _requirements((REPO / SUITE_FILE).read_text(encoding="utf-8"))[0]
 
 
 class OneListTests(unittest.TestCase):
     def setUp(self) -> None:
         self.workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
-        self.jobs = self.workflow["jobs"]
 
     def test_the_ci_suite_step_installs_from_requirements_dev(self) -> None:
-        self.assertEqual([], _ci_violations(self.workflow, _declared()))
+        declared, options = _requirements((REPO / SUITE_FILE).read_text(encoding="utf-8"))
+        self.assertEqual([], _job_violations(self.workflow, "ci", _ci_allow(declared)))
+        suite = [a for s in self.workflow["jobs"]["ci"]["steps"]
+                 for c in _commands(str(s.get("run") or "")) if (a := _install_args(c))]
+        self.assertIn(["-r", SUITE_FILE], suite, f"no ci step installs from {SUITE_FILE}")
         # pip follows a `-r` inside the file and tools/gate_prereqs.py does not, so the one list
         # stays one file.
-        self.assertEqual([], _option_lines((REPO / SUITE_FILE).read_text(encoding="utf-8")))
+        self.assertEqual([], options)
 
     def test_the_corpus_verify_job_installs_a_declared_subset(self) -> None:
-        declared = _declared()
-        specs = []
-        for step in self.jobs["corpus-verify"]["steps"]:
-            for inv in _invocations(step):
-                specs += inv["specs"]
-                for rel in inv["requirements"]:
-                    specs += _file_specs(rel)
-        self.assertTrue(specs, "corpus-verify installs no package, so this pins nothing")
-        for spec in specs:
-            name = _name(spec)
-            with self.subTest(package=name):
-                self.assertIn(name, declared, f"{name} is installed but not declared")
-                if declared[name]:
-                    self.assertIsNotNone(_floor(spec), f"{name} drops the declared floor")
-                    self.assertGreaterEqual(_floor(spec), declared[name],
-                                            f"{name}'s floor is looser than declared")
+        self.assertEqual([], _job_violations(self.workflow, "corpus-verify",
+                                             _corpus_allow(_declared())))
 
     def test_the_readers_and_rules_refuse_what_they_must(self) -> None:
-        """Every reader and rule above, over synthetic lines and workflows. MUTANT: any branch
-        dropped, so a spelling pip accepts or a rule the ci job must meet goes unread."""
-        for command, field, value in (
-                ("python -m pip install -r a.txt", "requirements", ["a.txt"]),
-                ("pip install --requirement a.txt", "requirements", ["a.txt"]),
-                ("pip install --requirement=a.txt", "requirements", ["a.txt"]),
-                ("pip install -ra.txt", "requirements", ["a.txt"]),
-                ("pip install -qra.txt", "requirements", ["a.txt"]),
-                ("pip install -qr a.txt", "requirements", ["a.txt"]),
-                ("pip install -r requirements-dev.txt -r b.txt", "requirements",
-                 ["requirements-dev.txt", "b.txt"]),
-                ("pip install -c a.txt x", "constraints", ["a.txt"]),
-                ("pip install --constraint=a.txt x", "constraints", ["a.txt"]),
-                ("pip install -qc a.txt x", "constraints", ["a.txt"]),
-                ("pip install -i https://example.test/simple pytest 'coverage>=7.10'", "specs",
-                 ["pytest", "coverage>=7.10"]),
-                ("pip install --quiet --upgrade bandit", "specs", ["bandit"])):
-            with self.subTest(command=command):
-                [inv] = _invocations({"run": command})
-                self.assertEqual(value, inv[field])
-        for line in ("pip install x", "pip3 install x", "pip3.12 install x", "uv pip install x",
-                     "/usr/bin/pip install x", "python3 -m pip install x", "pip -q install x",
-                     "python -m pip --disable-pip-version-check install x",
-                     "python -m pip --log /tmp/pip.log install x", "echo hi && pip install x"):
-            with self.subTest(line=line):
-                self.assertEqual(1, len(_invocations({"run": line})), line)
-        for line in ("# pip install x", "pipx install x", "pip download x", "pip -q show x"):
-            with self.subTest(not_an_install=line):
-                self.assertEqual([], _invocations({"run": line}), line)
-
-        def ci(*runs: str, **extra) -> dict:
-            steps = [{"run": r} for r in runs]
-            for n, keys in extra.pop("step", {}).items():
-                steps[n].update(keys)
-            return {"jobs": {"ci": {"steps": steps, **extra.pop("job", {})}}, **extra}
-
-        suite, tool = "python -m pip install --quiet -r requirements-dev.txt", "pip install bandit"
+        """Every rule above, over synthetic workflows. MUTANT: any rule dropped, so a line
+        outside the exact forms, or a setting beside them, passes."""
         declared = {"pytest": None, "coverage": (7, 10, 0)}
-        self.assertEqual([], _ci_violations(ci(suite, tool), declared))
-        for name, workflow in (
-                ("no suite step", ci(tool)),
+        suite, tool = "python -m pip install --quiet -r requirements-dev.txt", "pip install bandit"
+
+        def ci(*runs: str, step: dict | None = None, job: dict | None = None, **workflow) -> list:
+            steps = [{"run": r} for r in runs]
+            for n, keys in (step or {}).items():
+                steps[n].update(keys)
+            return _job_violations({"jobs": {"ci": {"steps": steps, **(job or {})}}, **workflow},
+                                   "ci", _ci_allow(declared))
+
+        self.assertEqual([], ci(suite, tool))
+        self.assertEqual([], ci("pip3 install -U -q -r requirements-dev.txt",
+                                "python3 -m pip install --quiet bandit"))
+        self.assertEqual([], ci("echo start && " + suite + "; echo done", tool),
+                         "a chained command was not split from the install")
+        for name, violations in (
+                ("no install", ci("echo hi")),
                 ("a second file", ci(suite + " -r tools/ci-extra.txt")),
-                ("a second file, attached", ci(suite + " -rtools/ci-extra.txt")),
-                ("a second file, long with =", ci(suite + " --requirement=tools/ci-extra.txt")),
-                ("a second file, clustered", ci(suite + " -qrtools/ci-extra.txt")),
+                ("an attached file", ci(suite + " -rtools/ci-extra.txt")),
+                ("a clustered file", ci(suite + " -qrtools/ci-extra.txt")),
+                ("an abbreviated long option", ci(suite + " --requir=tools/ci-extra.txt")),
+                ("requirements from a script",
+                 ci(suite + " --requirements-from-script=tools/deps.py")),
+                ("an editable", ci(suite + " -e tools/extra-pkg")),
+                ("an editable, long", ci(suite + " --editable tools/extra-pkg")),
+                ("an editable, long with =", ci(suite + " --editable=tools/extra-pkg")),
                 ("a list of its own", ci(suite + " pytest-timeout")),
                 ("a constraints file", ci(suite + " -c requirements-dev.txt")),
+                ("a constraints file only", ci("pip install -c requirements-dev.txt")),
+                ("an index", ci(suite + " -i https://example.test/simple")),
                 ("another file in another step", ci(suite, "pip install -r tools/ci-extra.txt")),
                 ("a package by hand", ci(suite, "pip install hypothesis")),
+                ("a declared package by hand", ci(suite, "pip install pytest bandit")),
+                ("a tool with a URL", ci(suite, "pip install bandit@https://example.test/b.whl")),
                 ("options before install", ci(suite, "pip -q install hypothesis")),
-                ("general options before install",
-                 ci(suite, "python -m pip --disable-pip-version-check install hypothesis")),
-                ("a declared package by hand", ci(suite, "pip install pytest")),
-                ("a step variable", ci(suite, step={0: {"env": {"PIP_REQUIREMENT": "x.txt"}}})),
+                ("a general option before install",
+                 ci(suite, "python -m pip --local-log /tmp/x.log install hypothesis")),
+                ("uv pip", ci(suite, "uv pip install hypothesis")),
+                ("another installer", ci(suite, "poetry install")),
+                ("ensurepip", ci(suite, "python -m ensurepip")),
+                ("a pip path", ci(suite, "/usr/bin/pip install hypothesis")),
+                ("a variable before the command",
+                 ci("PIP_REQUIREMENT=tools/ci-extra.txt " + suite)),
+                ("an exported variable on an earlier line",
+                 ci("export PIP_REQUIREMENT=tools/ci-extra.txt\n" + suite)),
+                ("a step variable", ci(suite, step={0: {"env": {"PIP_INDEX_URL": "x"}}})),
                 ("a job variable", ci(suite, job={"env": {"PIP_CONSTRAINT": "x.txt"}})),
                 ("a workflow variable", ci(suite, env={"PIP_REQUIREMENT": "x.txt"})),
+                ("a cd on the line", ci("cd tools && " + suite)),
+                ("a cd on an earlier line", ci("cd tools\n" + suite)),
                 ("a step directory", ci(suite, step={0: {"working-directory": "tools"}})),
                 ("a job default directory",
-                 ci(suite, job={"defaults": {"run": {"working-directory": "tools"}}})),
-                ("a cd on the line", ci("cd tools && " + suite))):
+                 ci(suite, job={"defaults": {"run": {"working-directory": "tools"}}}))):
             with self.subTest(rule=name):
-                self.assertTrue(_ci_violations(workflow, declared), name)
-        self.assertTrue(_ci_violations(ci(suite, tool), {**declared, "bandit": None}),
-                        "a declared tool installed by hand")
-        self.assertEqual(["-r x.txt", "--constraint=z.txt"],
-                         _option_lines("pytest\n-r x.txt  # nested\n# -r y.txt\n--constraint=z.txt\n"))
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            (root / "a.txt").write_text("pytest\n-r b.txt\n# x\n", encoding="utf-8")
-            (root / "b.txt").write_text("--requirement=c.txt\ncoverage>=7.10,<8\n",
-                                        encoding="utf-8")
-            (root / "c.txt").write_text("pytest-timeout\n-r a.txt\n", encoding="utf-8")
-            self.assertEqual(["pytest", "pytest-timeout", "coverage>=7.10,<8"],
-                             _file_specs("a.txt", root))
-        self.assertEqual((7, 10, 0), _floor("coverage==7.10"))
+                self.assertTrue(violations, name)
+        # The rule that must say NO for each, not merely some rule: the rules overlap, and a
+        # dropped one would otherwise hide behind the next.
+        for name, violations, says in (
+                ("options before install", ci(suite, "pip -q install hypothesis"),
+                 "outside the exact forms"),
+                ("a value-taking option", ci(suite + " -i https://example.test/simple"),
+                 "outside the exact forms"),
+                ("an editable", ci(suite + " --editable tools/extra-pkg"),
+                 "outside the exact forms"),
+                ("a variable", ci("export PIP_REQUIREMENT=x.txt\n" + suite),
+                 "outside the exact forms"),
+                ("a second file", ci(suite + " -r tools/ci-extra.txt"), "neither"),
+                ("a declared tool by hand",
+                 _job_violations({"jobs": {"ci": {"steps": [{"run": suite}, {"run": tool}]}}},
+                                 "ci", _ci_allow({**declared, "bandit": None})),
+                 "by hand though the file declares")):
+            with self.subTest(says=name):
+                self.assertTrue(any(says in v for v in violations), violations)
+
+        def corpus(run: str) -> list:
+            return _job_violations({"jobs": {"corpus-verify": {"steps": [{"run": run}]}}},
+                                   "corpus-verify", _corpus_allow(declared))
+
+        self.assertEqual([], corpus("python -m pip install --quiet pytest 'coverage>=7.10'"))
+        self.assertEqual([], corpus("pip install 'coverage==7.10.0' 'coverage>=7.10,<8'"))
+        for name, run in (("an undeclared package", "pip install pytest hypothesis"),
+                          ("a looser floor", "pip install 'coverage>=7.9'"),
+                          ("a dropped floor", "pip install coverage"),
+                          ("a requirements file", "pip install pytest -r tools/corpus-reqs.txt"),
+                          ("an editable", "pip install pytest --editable=tools/extra-pkg"),
+                          ("options before install", "python -m pip --quiet install hypothesis"),
+                          ("a URL requirement", "pip install 'pytest @ https://example.test/p.whl'"),
+                          ("an empty install", "pip install --quiet")):
+            with self.subTest(corpus=name):
+                self.assertTrue(corpus(run), name)
+        declared_here, options = _requirements(
+            "pytest\ncoverage>=7.10,<8  # floor\n-r x.txt\n# -r y.txt\n--constraint=z.txt\n")
+        self.assertEqual({"pytest": None, "coverage": (7, 10, 0)}, declared_here)
+        self.assertEqual(["-r x.txt", "--constraint=z.txt"], options)
         self.assertEqual(_floor("coverage==7.10.0"), _floor("coverage>=7.10,<8"))
         self.assertEqual((7, 10, 0), _floor("coverage~=7.10"))
         self.assertIsNone(_floor("coverage<8"))

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 106 |
+| Open | 107 |
 | In Progress | 0 |
 | Fixed | 790 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 32 |
-| **Total** | **1055** |
+| **Total** | **1056** |
 
 ## All Bugs
 
@@ -131,6 +131,7 @@
 | [BG1053](BG1053-us1004-did-not-converge-in-review-round-3.md) | US1004 did not converge in review: round 3 REJECT findings | Open | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1054](BG1054-the-scheduled-corpus-verify-lane-reads-us0892-ac1.md) | The scheduled corpus-verify lane reads US0892 AC1 red because its job installs no pytest-xdist | Open | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1055](BG1055-a-retro-scaffolded-by-the-close-and-committed.md) | A retro scaffolded by the close and committed before the close re-runs turns the release-verify lane red | Open | Low | 2026-10-15 | 2026-10-15 |
+| [BG1056](BG1056-bg1053-did-not-converge-in-review-round-2.md) | BG1053 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-15 | 2026-10-15 |
 
 ## Archived Releases
 
