@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-10-14
+**Last Updated:** 2026-10-15
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 105 |
+| Open | 106 |
 | In Progress | 0 |
 | Fixed | 790 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 32 |
-| **Total** | **1054** |
+| **Total** | **1055** |
 
 ## All Bugs
 
@@ -130,6 +130,7 @@
 | [BG1052](BG1052-a-unit-whose-risk-band-rises-after-its.md) | A unit whose risk band rises after its review is found under-reviewed only at the close | Open | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1053](BG1053-us1004-did-not-converge-in-review-round-3.md) | US1004 did not converge in review: round 3 REJECT findings | Open | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1054](BG1054-the-scheduled-corpus-verify-lane-reads-us0892-ac1.md) | The scheduled corpus-verify lane reads US0892 AC1 red because its job installs no pytest-xdist | Open | Medium | 2026-10-14 | 2026-10-14 |
+| [BG1055](BG1055-a-retro-scaffolded-by-the-close-and-committed.md) | A retro scaffolded by the close and committed before the close re-runs turns the release-verify lane red | Open | Low | 2026-10-15 | 2026-10-15 |
 
 ## Archived Releases
 

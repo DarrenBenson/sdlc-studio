@@ -155,6 +155,11 @@ def _baseline_problems(text: str, bugs: Path) -> list[str]:
     return problems
 
 
+#: A coverage requirement carrying the 7.10 floor, with anything beside it (an upper bound, an
+#: extra, a marker): what the ci job's install and requirements-dev.txt must declare.
+COVERAGE_FLOOR = re.compile(r"^coverage(\[[^\]]*\])?\s*>=\s*7\.10(?![\d.])")
+
+
 class CoverageBeforeSuiteTests(unittest.TestCase):
     def test_coverage_is_installed_before_the_suite_runs_and_named_as_a_dependency(self) -> None:
         """MUTANTS: move the coverage install step below the suite step in lint.yml; delete
@@ -169,9 +174,8 @@ class CoverageBeforeSuiteTests(unittest.TestCase):
         self.assertIsNotNone(install, "lint.yml must install coverage>=7.10 explicitly")
         if "requirements-dev.txt" in install.group(0):
             reqs = (REPO / "requirements-dev.txt").read_text(encoding="utf-8")
-            # The floor, with any upper bound or marker beside it (`coverage>=7.10,<8`).
-            self.assertRegex(reqs, r"(?m)^coverage(\[[^\]]*\])?>=7\.10(?![\d.])",
-                             "requirements-dev.txt must declare coverage>=7.10")
+            self.assertTrue(any(COVERAGE_FLOOR.match(line.strip()) for line in reqs.splitlines()),
+                            "requirements-dev.txt must declare coverage>=7.10")
         suite = text.index("bash tools/skill-tests.sh")
         self.assertLess(install.start(), suite, "the coverage install must sit BEFORE the suite step, by position")
         agents = (REPO / "AGENTS.md").read_text(encoding="utf-8")
@@ -207,6 +211,14 @@ class CorpusJobEnvironmentTests(unittest.TestCase):
                          "a shell separator did not split the command that follows it")
         self.assertEqual(_baseline_problems("# re-measured from CI run 7\n", Path("/nonexistent")),
                          ["no red-criteria row"])
+        # The coverage floor: an upper bound or extra beside it is still the floor (BG1053).
+        for spec in ("coverage>=7.10", "coverage>=7.10,<8", "coverage[toml]>=7.10",
+                     "coverage>=7.10 ; python_version >= '3.10'"):
+            with self.subTest(floored=spec):
+                self.assertIsNotNone(COVERAGE_FLOOR.match(spec), spec)
+        for spec in ("coverage>=7.1", "coverage>=7.100", "coverage==7.10", "coverage", "pytest"):
+            with self.subTest(unfloored=spec):
+                self.assertIsNone(COVERAGE_FLOOR.match(spec), spec)
         self.assertIn("not `metric|count|prose|ids`",
                       _baseline_problems("# re-measured from CI run 7\nred-criteria|many|x|y\n",
                                          Path("/nonexistent"))[0])
@@ -234,8 +246,7 @@ class CorpusJobEnvironmentTests(unittest.TestCase):
                              f"the {CORPUS_JOB} job installs coverage without the >=7.10 floor")
         # The reader is scoped, not lucky: the same reader over the ci job finds that job's own
         # floored install, and a commented-out install reads as nothing.
-        self.assertTrue(any(re.match(r"^coverage(\[[^\]]*\])?>=7\.10(?![\d.])", r)
-                            for r in _coverage_requirements(_job("ci"))),
+        self.assertTrue(any(COVERAGE_FLOOR.match(r) for r in _coverage_requirements(_job("ci"))),
                         _coverage_requirements(_job("ci")))
         self.assertEqual(_coverage_requirements(
             {"steps": [{"run": "# pip install 'coverage>=7.10'\npip install pyyaml pytest"}]}), [])

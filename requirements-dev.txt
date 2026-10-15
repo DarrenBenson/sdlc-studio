@@ -1,6 +1,7 @@
 # The Python distributions the gates and the suite need. CI's suite step installs from this
-# file and tools/gate_prereqs.py checks a clone against it; a test holds the ci job to it.
-# One file: the checker does not follow a -r line, so none belongs here.
+# file and tools/gate_prereqs.py checks a clone against it; tools/tests/
+# test_prereq_list_is_ci_list.py holds the ci job's pip installs to it, in the spellings that
+# test lists. One file: the checker does not follow a -r line, so none belongs here.
 PyYAML
 pytest
 pytest-xdist
