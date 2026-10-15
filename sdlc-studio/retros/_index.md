@@ -143,3 +143,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0131](RETRO0131-run-01m3zage-whole-backlog-sprint.md) | RUN-01M3ZAGE whole-backlog sprint | 2026-10-03 | -- | -- |
 | [RETRO-0132](RETRO0132-run-01m40tsj-the-v6-1-sprint.md) | RUN-01M40TSJ the v6.1 sprint | 2026-10-03 | -- | -- |
 | [RETRO-0133](RETRO0133-run-01m45fv6-sign-seals-only-a-page-that.md) | RUN-01M45FV6: sign seals only a page that still checks | 2026-10-05 | -- | -- |
+| [RETRO-0134](RETRO0134-maya-s-ledger-and-signed-runs-keep-what.md) | Maya's ledger and signed runs keep what was decided, and her gates say up front what they need and cost | 2026-10-15 | -- | -- |
