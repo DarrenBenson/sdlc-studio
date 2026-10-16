@@ -1,6 +1,6 @@
 # EP0278: A clone that cannot run the gates says so at setup and at the push, in seconds
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 10
 > **Parent:** CR0613
 > **Created:** 2026-10-09
@@ -14,10 +14,10 @@ Decomposed from CR0613. Delivers the work CR0613 requested.
 
 ## Story Breakdown
 
-- [ ] [US1003: enable-hooks.sh names every missing gate prerequisite with a route that works on this interpreter](../stories/US1003-enable-hooks-sh-names-every-missing-gate-prerequisite.md)
-- [ ] [US1004: CI and the checker read one list of suite prerequisites](../stories/US1004-ci-and-the-checker-read-one-list-of.md)
-- [ ] [US1005: The pre-push hook refuses in seconds, before the suite, when the suite cannot be green on this interpreter](../stories/US1005-the-pre-push-hook-refuses-in-seconds-before.md)
-- [ ] [US1006: The push's first-run cost line says what it does not know instead of a fixed five minutes](../stories/US1006-the-push-s-first-run-cost-line-says.md)
+- [x] [US1003: enable-hooks.sh names every missing gate prerequisite with a route that works on this interpreter](../stories/US1003-enable-hooks-sh-names-every-missing-gate-prerequisite.md)
+- [x] [US1004: CI and the checker read one list of suite prerequisites](../stories/US1004-ci-and-the-checker-read-one-list-of.md)
+- [x] [US1005: The pre-push hook refuses in seconds, before the suite, when the suite cannot be green on this interpreter](../stories/US1005-the-pre-push-hook-refuses-in-seconds-before.md)
+- [x] [US1006: The push's first-run cost line says what it does not know instead of a fixed five minutes](../stories/US1006-the-push-s-first-run-cost-line-says.md)
 
 ## Acceptance Criteria (Epic Level)
 

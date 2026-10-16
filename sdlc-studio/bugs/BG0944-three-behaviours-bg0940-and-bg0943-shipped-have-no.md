@@ -1,6 +1,6 @@
 # BG0944: Three behaviours BG0940 and BG0943 shipped have no test that fails when they break
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_s12_pins.py, changelog.d/BG0944.md

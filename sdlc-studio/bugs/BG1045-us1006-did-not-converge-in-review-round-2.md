@@ -1,6 +1,6 @@
 # BG1045: US1006 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** tools/tests/test_push_first_estimate.py, changelog.d/BG1045.md

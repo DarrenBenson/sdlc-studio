@@ -1,6 +1,6 @@
 # BG0976: The pre-push hook prints its ssh keepalive warning on every push, even when the clone already carries a keepalive
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .githooks/pre-push, tools/tests/test_pre_push_hook.py, tools/tests/test_pre_push_keepalive.py, changelog.d/BG0976.md, tools/tests/test_skill_tests_env.py

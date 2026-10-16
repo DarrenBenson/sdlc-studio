@@ -1,6 +1,6 @@
 # BG0978: `test_pre_push_hook`'s stub PATH symlinks python3, which drops a virtualenv's packages, so the push gate cannot pass where pytest lives in a venv
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_pre_push_hook.py, tools/tests/test_pre_push_stub_interpreter.py, changelog.d/BG0978.md

@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 9 |
 | Approved | 0 |
-| In Progress | 26 |
-| Complete | 519 |
+| In Progress | 25 |
+| Complete | 520 |
 | Rejected | 29 |
 | Deferred | 0 |
 | Superseded | 60 |
@@ -24,7 +24,7 @@
 | [CR-0610](CR0610-make-the-report-of-record-reviewable-without-local.md) | Make the report of record reviewable without .local/, and let it carry money | In Progress | Medium | Feature | 2026-10-05 | EP0276 |
 | [CR-0611](CR0611-read-cursor-copilot-and-opencode-token-meters-when.md) | Read Cursor, Copilot, and OpenCode token meters when those harnesses are in use | In Progress | High | Feature | 2026-10-06 | EP0274 |
 | [CR-0612](CR0612-check-a-finding-filed-into-the-skill-source.md) | Check a finding filed into the skill source repository against the neutrality blocklist when it is filed, not first at commit | In Progress | Medium | Improvement | 2026-10-07 | EP0277 |
-| [CR-0613](CR0613-make-a-clone-that-cannot-run-the-gates.md) | Make a clone that cannot run the gates say so at setup, not 50 minutes into a push | In Progress | Medium | Improvement | 2026-10-07 | EP0278 |
+| [CR-0613](CR0613-make-a-clone-that-cannot-run-the-gates.md) | Make a clone that cannot run the gates say so at setup, not 50 minutes into a push | Complete | Medium | Improvement | 2026-10-07 | EP0278 |
 | [CR-0614](CR0614-sprint-checklist-waivers-cannot-be-scoped-to-a.md) | Sprint-checklist waivers cannot be scoped to a unit or expire, so a defect in one checklist row has only a permanent project-wide exit | In Progress | Medium | Improvement | 2026-10-07 | EP0279 |
 | [CR-0615](CR0615-critic-py-brief-rejoinder-should-read-the-prior.md) | critic.py brief --rejoinder should read the prior verdict from the ledger instead of a hand-written file | In Progress | Low | Improvement | 2026-10-07 | EP0280 |
 | [CR-0616](CR0616-verify-ac-should-record-a-red-baseline-a.md) | verify_ac should record a red baseline: a Verify that already passes before the story is implemented cannot tell done from not-done | In Progress | Medium | Feature | 2026-10-07 | EP0281 |

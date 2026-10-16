@@ -1,6 +1,6 @@
 # BG1047: test_status's backlog advisory fixture dates its bugs 2026-07-16, so it went stale on 2026-10-14 and main is red
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_status.py, changelog.d/BG1047.md

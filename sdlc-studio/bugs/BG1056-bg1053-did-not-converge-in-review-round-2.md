@@ -1,6 +1,6 @@
 # BG1056: BG1053 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** tools/tests/test_prereq_list_is_ci_list.py, tools/tests/test_lint_workflow_coverage.py, requirements-dev.txt, changelog.d/US1004.md, changelog.d/BG1053.md, changelog.d/BG1056.md

@@ -86,7 +86,11 @@
 
 **0 of 18 unit(s) measured; 11 of 18 forecast at plan time.**
 
-**7,598,923 tokens supplied, but no rate:** the batch has no delivered unit carrying Points, so there is no denominator. Size the delivered stories/bugs, or the rate stays uncomputable.
+**Sprint tokens/point: 205,376** (7,598,923 tokens over 37 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+
+**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
+
+  secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 
 Review passes - read from the verdict ledger:
 

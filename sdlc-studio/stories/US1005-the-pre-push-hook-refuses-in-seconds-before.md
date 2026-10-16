@@ -1,6 +1,6 @@
 # US1005: The pre-push hook refuses in seconds, before the suite, when the suite cannot be green on this interpreter
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0613
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new

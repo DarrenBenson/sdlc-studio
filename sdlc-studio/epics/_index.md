@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 15 |
+| Draft | 14 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 240 |
+| Done | 241 |
 | Superseded | 33 |
 | **Total** | **288** |
 
@@ -28,7 +28,7 @@
 | [EP0275](EP0275-a-versioned-evidence-annex-that-consumers-of-the.md) | A versioned evidence annex that consumers of the committed sprint records can parse against | Draft | 5 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0276](EP0276-the-report-of-record-is-reviewable-from-the.md) | The report of record is reviewable from the committed tree and states its cost in money | Draft | 5 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0277](EP0277-a-finding-filed-into-the-skill-source-is.md) | A finding filed into the skill source is held to the neutrality rule when it is filed, not first at commit | Draft | 1 | -- | 2026-10-09 | 2026-10-09 |
-| [EP0278](EP0278-a-clone-that-cannot-run-the-gates-says.md) | A clone that cannot run the gates says so at setup and at the push, in seconds | Draft | 4 | -- | 2026-10-09 | 2026-10-09 |
+| [EP0278](EP0278-a-clone-that-cannot-run-the-gates-says.md) | A clone that cannot run the gates says so at setup and at the push, in seconds | Done | 4 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0279](EP0279-a-sprint-checklist-waiver-covers-the-run-it.md) | A sprint-checklist waiver covers the run it names, until the date it names, and the waive help says which subjects take a scope | Draft | 4 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0280](EP0280-a-recorded-review-verdict-is-what-the-reviewer.md) | A recorded review verdict is what the reviewer wrote, bound to its bytes and to the agent that wrote it | Draft | 6 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0281](EP0281-a-unit-s-criteria-are-shown-by-the.md) | A unit's criteria are shown by the tool to fail without its change before it closes | Draft | 4 | -- | 2026-10-09 | 2026-10-09 |

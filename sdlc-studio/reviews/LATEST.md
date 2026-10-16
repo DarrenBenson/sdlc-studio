@@ -1,5 +1,5 @@
 <!-- close-status:begin -->
-> **RUN-01M4R168 closed running.** 18 unit(s) in the batch. **The run signature is OWED and is the operator's** - `sprint sign` seals the batch in one signature.
+> **RUN-01M4R168 closed goal-reached.** 18 unit(s) in the batch. **The run is SIGNED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 > **RUN-01M4R168, the first 6.2 run.** Goal: "Maya's ledger and signed runs keep what was
@@ -27,14 +27,13 @@
 
 ## What is owed
 
-- **The run's signature:** `sprint.py sign --report <the close's page> --principal <operator>`.
-  The author cannot sign.
-- **The lessons log (BG0989, BG1060).** The full log (441 lessons) is still studypc's
-  gitignored `sdlc-studio/.local/lessons.md`. The close ran without it on the operator's ruling of
-  2026-10-16 to carry the gap: its extract started a short `sdlc-studio/retros/LESSONS.md` holding
-  RETRO0134's lessons, and the digest was left as it stood (a known issue on the report). On
-  studypc: move `.local/lessons.md` over that file, re-run `retro.py extract --id RETRO0134`
-  (idempotent, it re-adds the three), then `lessons.py summary`, and commit.
+- **The lessons log (BG0989, BG1060, BG1061).** The full log (441 lessons) is still studypc's
+  gitignored `sdlc-studio/.local/lessons.md`. The run closed without it on the operator's ruling of
+  2026-10-16 to carry the gap, so the digest predates RETRO0134's lessons (a known issue on
+  RPT0020); the short log the close's extract started was not committed, because its headings fail
+  MD026 (BG1061). On studypc: move `.local/lessons.md` to `sdlc-studio/retros/LESSONS.md`, run
+  `retro.py extract --id RETRO0134`, then `lessons.py summary`, and commit; the commit needs
+  BG1061 fixed first.
 - **The unified review** (`/sdlc-studio review`) is cadence debt: 196 artefacts changed since
   the last; the close reports it, not blocks on it.
 - **Known issues carried, all not-stop-ship** (RETRO0134): BG1030, BG1033-BG1043, BG1046,
@@ -59,6 +58,8 @@
 
 ## History
 
+- RUN-01M4R168 (RPT0020, signed 2026-10-16 by the operator, entered by the agent at the
+  operator's instruction): the run summarised above.
 - RUN-01M45FV6 (RPT0019, signed 2026-10-05): sign seals only a page that still checks
   (BG0940); config show reads every shipped default (BG0943). Triage since then is in its retro
   and the decisions log (D0345-D0350).

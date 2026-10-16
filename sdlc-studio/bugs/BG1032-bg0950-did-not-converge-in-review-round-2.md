@@ -1,6 +1,6 @@
 # BG1032: BG0950 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/reconcile.py, changelog.d/BG0950.md, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, changelog.d/BG0950.md, changelog.d/BG1032.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_file_history.py

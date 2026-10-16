@@ -1,6 +1,6 @@
 # BG1031: ModuleAloneLaneTests asserts the lane finishes in under 3.0 seconds of wall clock, so it fails whenever the full parallel suite or another workload shares the cores
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_gate.py, changelog.d/BG1031.md

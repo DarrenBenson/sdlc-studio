@@ -1,6 +1,6 @@
 # BG0950: A verdict that follows `critic.py brief`'s return contract to the letter is refused by `critic.py record --from-verdict`
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/reconcile.py, changelog.d/BG0950.md

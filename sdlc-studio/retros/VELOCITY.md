@@ -199,4 +199,4 @@ it. Compare a fan-out sprint's rate with a single-thread sprint's only with that
 | RETRO0131 | 2026-10-03 | 37 | 0 | 30 | 53 | - | 3,019,140 | 7,753,004 | - | 146,283 | 0 | 18,570 | - | - | TOKENS_PER_POINT=67092 | out-of-sample | claude-opus-5-5 | - | harness+supplied |
 | RETRO0132 | 2026-10-03 | 19 | 0 | 10 | 29 | - | 1,283,008 | 3,848,311 | - | 132,700 | 0 | 11,442 | - | - | TOKENS_PER_POINT=80188 | out-of-sample | claude-opus-5-5 | - | harness+supplied |
 | RETRO0133 | 2026-10-05 | 2 | 0 | 2 | 3 | - | 398,100 | 558,755 | - | 186,252 | 0 | 1,002 | - | - | TOKENS_PER_POINT=132700 | out-of-sample | claude-opus-5-5 | - | harness+supplied |
-| RETRO0134 | 2026-10-15 | 18 | 0 | 11 | - | 37 | 3,255,696 | 7,598,923 | - | - | 0 | - | - | - | TOKENS_PER_POINT=135654 | out-of-sample | claude-opus-5-5 | - | harness |
+| RETRO0134 | 2026-10-15 | 18 | 0 | 11 | 37 | - | 3,255,696 | 7,598,923 | - | 205,376 | 0 | - | - | - | TOKENS_PER_POINT=135654 | out-of-sample | claude-opus-5-5 | - | harness |

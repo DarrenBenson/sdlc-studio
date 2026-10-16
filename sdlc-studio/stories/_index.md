@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 93 |
+| Draft | 89 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 802 |
+| Done | 806 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -40,10 +40,10 @@
 | [US1000](US1000-the-cost-section-states-the-run-s-cost.md) | The cost section states the run's cost in money from a pricing snapshot frozen at the close | Draft | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US1001](US1001-the-lane-yield-appendix-is-read-from-the.md) | The lane-yield appendix is read from the committed run record, as the close froze it | Draft | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US1002](US1002-filing-into-the-skill-source-refuses-a-blocklisted.md) | Filing into the skill source refuses a blocklisted project name before an id is spent | Draft | EP0277 | 2026-10-09 | 2026-10-09 |
-| [US1003](US1003-enable-hooks-sh-names-every-missing-gate-prerequisite.md) | enable-hooks.sh names every missing gate prerequisite with a route that works on this interpreter | Draft | EP0278 | 2026-10-09 | 2026-10-09 |
-| [US1004](US1004-ci-and-the-checker-read-one-list-of.md) | CI and the checker read one list of suite prerequisites | Draft | EP0278 | 2026-10-09 | 2026-10-09 |
-| [US1005](US1005-the-pre-push-hook-refuses-in-seconds-before.md) | The pre-push hook refuses in seconds, before the suite, when the suite cannot be green on this interpreter | Draft | EP0278 | 2026-10-09 | 2026-10-09 |
-| [US1006](US1006-the-push-s-first-run-cost-line-says.md) | The push's first-run cost line says what it does not know instead of a fixed five minutes | Draft | EP0278 | 2026-10-09 | 2026-10-09 |
+| [US1003](US1003-enable-hooks-sh-names-every-missing-gate-prerequisite.md) | enable-hooks.sh names every missing gate prerequisite with a route that works on this interpreter | Done | EP0278 | 2026-10-09 | 2026-10-09 |
+| [US1004](US1004-ci-and-the-checker-read-one-list-of.md) | CI and the checker read one list of suite prerequisites | Done | EP0278 | 2026-10-09 | 2026-10-09 |
+| [US1005](US1005-the-pre-push-hook-refuses-in-seconds-before.md) | The pre-push hook refuses in seconds, before the suite, when the suite cannot be green on this interpreter | Done | EP0278 | 2026-10-09 | 2026-10-09 |
+| [US1006](US1006-the-push-s-first-run-cost-line-says.md) | The push's first-run cost line says what it does not know instead of a fixed five minutes | Done | EP0278 | 2026-10-09 | 2026-10-09 |
 | [US1007](US1007-a-sprint-checklist-waiver-scoped-to-one-run.md) | A sprint-checklist waiver scoped to one run covers that run's close and no other | Draft | EP0279 | 2026-10-09 | 2026-10-09 |
 | [US1008](US1008-a-sprint-checklist-waiver-scoped-to-a-unit.md) | A sprint-checklist waiver scoped to a unit in one run answers that unit's part of a row and nothing else | Draft | EP0279 | 2026-10-09 | 2026-10-09 |
 | [US1009](US1009-a-sprint-checklist-waiver-can-carry-an-expiry.md) | A sprint-checklist waiver can carry an expiry date, after which its row is enforced again | Draft | EP0279 | 2026-10-09 | 2026-10-09 |

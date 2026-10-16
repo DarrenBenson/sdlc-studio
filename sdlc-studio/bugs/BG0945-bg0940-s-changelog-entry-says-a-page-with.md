@@ -1,6 +1,6 @@
 # BG0945: BG0940's changelog entry says a page with a late ruling is signed, though sign refuses until the run is re-closed
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** changelog.d/BG0940.md, .claude/skills/sdlc-studio/scripts/tests/test_bg0940_fragment_matches_sign.py, changelog.d/BG0945.md

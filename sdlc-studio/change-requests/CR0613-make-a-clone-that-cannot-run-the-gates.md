@@ -1,6 +1,6 @@
 # CR-0613: Make a clone that cannot run the gates say so at setup, not 50 minutes into a push
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
 > **Decomposed-into:** EP0278
 > **Priority:** Medium
