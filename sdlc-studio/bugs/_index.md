@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-10-15
+**Last Updated:** 2026-10-16
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 109 |
+| Open | 111 |
 | In Progress | 0 |
 | Fixed | 790 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 32 |
-| **Total** | **1058** |
+| **Total** | **1060** |
 
 ## All Bugs
 
@@ -134,6 +134,8 @@
 | [BG1056](BG1056-bg1053-did-not-converge-in-review-round-2.md) | BG1053 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-15 | 2026-10-15 |
 | [BG1057](BG1057-the-one-list-test-s-check-that-ci.md) | The one-list test's check that ci installs from requirements-dev.txt sits outside its self-tested rules | Open | Low | 2026-10-15 | 2026-10-15 |
 | [BG1058](BG1058-the-close-s-dry-run-names-a-unit.md) | The close's dry run names a unit the run cannot end over that the real tree answers | Open | Medium | 2026-10-15 | 2026-10-15 |
+| [BG1059](BG1059-a-retro-s-batch-field-is-never-compared.md) | A retro's Batch field is never compared with the run's batch, so a unit added after the retro was scaffolded is left out of the run's measurement and its close accounting | Open | Medium | 2026-10-16 | 2026-10-16 |
+| [BG1060](BG1060-retro-extract-starts-a-new-project-lessons-log.md) | retro extract starts a new project lessons log when the committed one is missing, though the committed digest lists the lessons that log holds | Open | Medium | 2026-10-16 | 2026-10-16 |
 
 ## Archived Releases
 

@@ -1,0 +1,717 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M4R168",
+  "started_at": "2026-10-12T12:35:20Z",
+  "ended_at": null,
+  "outcome": "running",
+  "goal": "done",
+  "batch": [
+    "BG1003",
+    "BG1025",
+    "US1003",
+    "BG0944",
+    "BG0945",
+    "BG0976",
+    "BG0978",
+    "US1005",
+    "BG1032",
+    "BG0950",
+    "BG1031",
+    "BG1044",
+    "BG1045",
+    "BG1047",
+    "US1006",
+    "BG1056",
+    "BG1053",
+    "US1004"
+  ],
+  "plan": "sdlc-studio/.local/sprint-plan.json",
+  "handoff": null,
+  "session_token_baseline": {
+    "tokens": 25199700,
+    "source": "sha256:7dc733d4cecb",
+    "at": "2026-10-12T12:35:20Z"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 25199700,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-12T12:35:21Z",
+      "kind": "open",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 32804766,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-16T08:33:39Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    }
+  ],
+  "delegated_tokens": [],
+  "reopened": [],
+  "batch_changes": [
+    {
+      "action": "drop",
+      "id": "BG0950",
+      "reason": "carried at the review cap: BG1032",
+      "at": "2026-10-13T09:26:29Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1032",
+      "at": "2026-10-13T09:27:42Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0950",
+      "at": "2026-10-13T11:33:22Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1031",
+      "at": "2026-10-13T13:14:58Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1044",
+      "at": "2026-10-14T10:58:53Z",
+      "reason": "operator ruling 2026-10-14: fix BG1044 before BG0993's rounds 3 and 4 are recorded under D0352 and D0353, so the RULING records land under a correct note in the append-only ledger"
+    },
+    {
+      "action": "drop",
+      "id": "US1006",
+      "reason": "carried at the review cap: BG1045",
+      "at": "2026-10-14T11:00:56Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1045",
+      "at": "2026-10-14T11:03:04Z",
+      "reason": "operator ruling 2026-10-14: US1006's carry is fixed in this run, as BG0950's was"
+    },
+    {
+      "action": "add",
+      "id": "BG1047",
+      "at": "2026-10-14T11:21:51Z",
+      "reason": "operator ruling 2026-10-14: the test_status fixture aged into staleness on day 90 and turned main red; fixed in this run so it gets a review"
+    },
+    {
+      "action": "add",
+      "id": "US1006",
+      "at": "2026-10-14T11:57:16Z",
+      "reason": "operator ruling 2026-10-14: the reviewer whose round-2 REJECT carried US1006 approved its carry BG1045, discharging the carry; re-added as BG0950 was"
+    },
+    {
+      "action": "drop",
+      "id": "US1004",
+      "reason": "carried at the review cap: BG1053",
+      "at": "2026-10-14T12:39:59Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1053",
+      "at": "2026-10-15T18:14:16Z",
+      "reason": "operator ruling 2026-10-15: US1004's full-depth carry is fixed in this run, as US1006's was"
+    },
+    {
+      "action": "drop",
+      "id": "BG1053",
+      "reason": "carried at the review cap: BG1056",
+      "at": "2026-10-15T19:40:49Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1056",
+      "at": "2026-10-15T19:41:37Z",
+      "reason": "operator delegation 2026-10-15 (complete the sprint autonomously): one bounded closed-world repair of BG1053's carry; if its review does not approve, US1004 is carried to the next run"
+    },
+    {
+      "action": "add",
+      "id": "BG1053",
+      "at": "2026-10-15T20:17:35Z",
+      "reason": "the reviewer whose REJECTs carried BG1053 and US1004 approved BG1056, their carry, discharging both carries; re-added as US1006 was (operator delegation 2026-10-15)"
+    },
+    {
+      "action": "add",
+      "id": "US1004",
+      "at": "2026-10-15T20:17:35Z",
+      "reason": "the reviewer whose REJECTs carried BG1053 and US1004 approved BG1056, their carry, discharging both carries; re-added as US1006 was (operator delegation 2026-10-15)"
+    }
+  ],
+  "rulings": [
+    {
+      "id": "D0367",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0368",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    }
+  ],
+  "base_ref": "855b0353a87505fb5f98855f16e23d91cc75f29e",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-10-12T12:33:36Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "Maya's ledger and signed runs keep what was decided, and her gates say up front what they need and cost.",
+  "sprint_goal_review": {
+    "reviewed": true,
+    "status": "read",
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "engineering",
+        "achievable": "yes - the regrooming closes round 1's engineering risks. The flag is now --ruling, so it no longer clashes with supersede's --authorised-by. The check lives in round_refusal for every verdict writer (BG1003 AC3). BG1025 AC3 judges the principal by sign's own rule. BG0950, BG0976, BG0978, BG0944 and BG0945 now declare their changelog fragments, and BG0950 also declares test_critic.py. Every unit maps to a clause. The ledger: BG1003, BG0950, BG0944 AC1 and AC2. Signed runs: BG1025, BG0944 AC3, BG0945. What the gates need: US1003, US1004, US1005, BG0976, BG0978. What they cost: US1006. 24 points, and the build order still honours every Depends on.",
+        "done_means": "All 31 criteria across the 11 units are green under verify_ac. critic.py record --ruling D0352 records BG0993's round 3 and --ruling D0353 its round 4, after which BG0993 reaches Fixed under D0354. Record refuses a ruling that is absent, not accepted or unrelated, naming which, and every delivery-verdict writer gets the same answer from round_refusal. sprint sign leaves a carried Open bug Open, names it as carried, moves every other unit, and the signed page still checks VALID. A sealed unit's status changes through transition only with --principal and --reason, and never with the unit's author or a reviewer as principal. A reviewer's verdict in the contract's shape, semicolons in its evidence included, records unedited, with each blocking finding once. enable-hooks.sh and the pre-push preflight name what the gate needs before the gate runs. The cost line cites only this clone's own measurements. The existing hook fixtures pass unchanged apart from the cost-line test US1006 rewrites.",
+        "one_increment": "no - the rewording does not change the code. The critic, sprint/transition and pre-push clusters share no file and no dependency, and they can build as parallel tracks. The amended goal now names both halves honestly, so every unit sits under it, but the close should report two increments delivered, not one.",
+        "note": "The regrooming leaves two build points open. First, BG1003 should say what 'names the unit' reads. The id appearing in the decision's text is what can be built. Each ruling should also authorise one round only: D0352 and D0353 each grant exactly one, but AC2 does not refuse a second past-cap round under a ruling already recorded on an earlier row, so a single ruling would lift the cap on that unit for good. And D0354 mentions BG0989 and BG0994 as well as BG0993, so a text match would accept it for either of those units, though it authorises no round. Second, BG0950 at 2 points now changes the split rule, the BLOCKING fold and the pins in test_critic.py; it should keep the existing `\\;` escape working for --issues callers. The pre-push cluster still builds strictly in the listed order."
+      },
+      {
+        "seat": "qa",
+        "achievable": "yes - the oracles round 1 called weak are now executable. BG0945 runs its Steps through the CLI (LC-018). BG0950 AC3 is a single requirement, and AC1's two-finding block catches a build that stops splitting altogether. BG1025 AC1 re-checks that the signed page is still VALID (LC-016), and AC3 now has four negatives: no principal, no reason, the unit's author, and a recorded reviewer. 'Up front' is exactly what US1005's test proves (the stub gate.py is never invoked), so the goal no longer claims a time that no AC measures. Three oracles could still go green on a broken build; they are in the note.",
+        "done_means": "verify_ac is green on all 31 criteria, each from a test that fails on its named mutant, and the following also hold. BG1003 refuses a second past-cap round under a ruling already recorded on an earlier row for that unit. BG0976's tests control what ssh -G returns rather than reading the machine's own ssh config. US1006's no-fixed-figure tests refuse any number with a time unit, not only the two restored literals. BG0944's three pins each fail on their named mutant in a scratch copy.",
+        "one_increment": "no - two test surfaces with no shared fixture: the skill's scripts/tests (critic, sprint, transition) and tools/tests (the hook chain). The amended goal names both, so every criterion traces to a clause, but the done bar is still the sum of two.",
+        "note": "BG0976: isolating HOME does not cover ssh. OpenSSH reads ~/.ssh/config from the passwd entry's home directory, not from $HOME, and it reads /etc/ssh/ssh_config regardless. So if the fix calls ssh -G as proposed, then on a machine whose own ssh config sets ServerAliveInterval, AC2 (the warning prints when none is set) goes red; on a machine without one, AC1 can pass for the wrong reason. A stub `ssh` on the fixture PATH, or -F pointing at a fixture config, lets the test decide the answer. BG1003 AC2 lists no case for a ruling already spent on an earlier round, which is the case that lets the cap lapse. US1006 AC1 says the cost line 'states no fixed number of minutes': the test should reject any figure with a time unit, or a reworded '5 min' or '300 seconds' passes."
+      }
+    ],
+    "goal": "Maya's ledger and signed runs keep what was decided, and her gates say up front what they need and cost.",
+    "shipped_seats": false,
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 3,
+    "objected": false,
+    "objections": [],
+    "reviewed_at": "2026-10-12T12:30:41Z",
+    "change_type": null,
+    "amended_from": null,
+    "requesting_seat": null,
+    "needs_reconsult": [
+      "product"
+    ],
+    "themed": [
+      {
+        "seat": "engineering",
+        "one_increment": "no - the rewording does not change the code. The critic, sprint/transition and pre-push clusters share no file and no dependency, and they can build as parallel tracks. The amended goal now names both halves honestly, so every unit sits under it, but the close should report two increments delivered, not one.",
+        "note": "The regrooming leaves two build points open. First, BG1003 should say what 'names the unit' reads. The id appearing in the decision's text is what can be built. Each ruling should also authorise one round only: D0352 and D0353 each grant exactly one, but AC2 does not refuse a second past-cap round under a ruling already recorded on an earlier row, so a single ruling would lift the cap on that unit for good. And D0354 mentions BG0989 and BG0994 as well as BG0993, so a text match would accept it for either of those units, though it authorises no round. Second, BG0950 at 2 points now changes the split rule, the BLOCKING fold and the pins in test_critic.py; it should keep the existing `\\;` escape working for --issues callers. The pre-push cluster still builds strictly in the listed order."
+      },
+      {
+        "seat": "qa",
+        "one_increment": "no - two test surfaces with no shared fixture: the skill's scripts/tests (critic, sprint, transition) and tools/tests (the hook chain). The amended goal names both, so every criterion traces to a clause, but the done bar is still the sum of two.",
+        "note": "BG0976: isolating HOME does not cover ssh. OpenSSH reads ~/.ssh/config from the passwd entry's home directory, not from $HOME, and it reads /etc/ssh/ssh_config regardless. So if the fix calls ssh -G as proposed, then on a machine whose own ssh config sets ServerAliveInterval, AC2 (the warning prints when none is set) goes red; on a machine without one, AC1 can pass for the wrong reason. A stub `ssh` on the fixture PATH, or -F pointing at a fixture config, lets the test decide the answer. BG1003 AC2 lists no case for a ruling already spent on an earlier round, which is the case that lets the cap lapse. US1006 AC1 says the cost line 'states no fixed number of minutes': the test should reject any figure with a time unit, or a reworded '5 min' or '300 seconds' passes."
+      }
+    ],
+    "discharged": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Fixed (bug), Done (story)",
+    "types": [
+      "bug",
+      "story"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed (bug), Done (story)"
+  },
+  "plan_snapshot": {
+    "units": {
+      "BG0950": {
+        "planned_points": 2,
+        "forecast_tokens": 271308,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG1003": {
+        "planned_points": 3,
+        "forecast_tokens": 406962,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "BG1025": {
+        "planned_points": 3,
+        "forecast_tokens": 406962,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1003": {
+        "planned_points": 3,
+        "forecast_tokens": 406962,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1004": {
+        "planned_points": 2,
+        "forecast_tokens": 271308,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG0944": {
+        "planned_points": 2,
+        "forecast_tokens": 271308,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG0945": {
+        "planned_points": 2,
+        "forecast_tokens": 271308,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG0976": {
+        "planned_points": 1,
+        "forecast_tokens": 135654,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "BG0978": {
+        "planned_points": 1,
+        "forecast_tokens": 135654,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "US1005": {
+        "planned_points": 3,
+        "forecast_tokens": 406962,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1006": {
+        "planned_points": 2,
+        "forecast_tokens": 271308,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG1032": {
+        "planned_points": 3,
+        "forecast_tokens": 406962,
+        "forecast_minutes": 17.5,
+        "added": true
+      },
+      "BG1031": {
+        "planned_points": 2,
+        "forecast_tokens": 271308,
+        "forecast_minutes": 11.7,
+        "added": true
+      },
+      "BG1044": {
+        "planned_points": 2,
+        "forecast_tokens": 271308,
+        "forecast_minutes": 11.7,
+        "added": true
+      },
+      "BG1045": {
+        "planned_points": 2,
+        "forecast_tokens": 271308,
+        "forecast_minutes": 11.7,
+        "added": true
+      },
+      "BG1047": {
+        "planned_points": 1,
+        "forecast_tokens": 135654,
+        "forecast_minutes": 5.8,
+        "added": true
+      },
+      "BG1053": {
+        "planned_points": 2,
+        "forecast_tokens": 271308,
+        "forecast_minutes": 11.7,
+        "added": true
+      },
+      "BG1056": {
+        "planned_points": 2,
+        "forecast_tokens": 271308,
+        "forecast_minutes": 11.7,
+        "added": true
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 135654,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 5.84,
+        "source": "measured on claude-opus-5-5: median of RETRO0131, RETRO0132, RETRO0133"
+      }
+    }
+  },
+  "token_forecast": 3255696,
+  "goal_content_review": [
+    {
+      "phase": "plan",
+      "goal": "Maya's ledger and signed runs keep what was decided, and her gates say up front what they need and cost.",
+      "answer": "yes",
+      "missing": "",
+      "shortfall": {},
+      "recorded_at": "2026-10-12T12:35:21Z"
+    }
+  ],
+  "review_base": {
+    "BG0950": 0,
+    "BG1025": 0,
+    "BG0945": 0,
+    "BG0944": 0,
+    "BG1032": 0,
+    "BG0978": 0,
+    "BG0976": 0,
+    "US1003": 0,
+    "US1004": 0,
+    "BG1031": 0,
+    "BG1003": 0,
+    "US1005": 0,
+    "US1006": 0,
+    "BG1047": 0,
+    "BG1045": 0,
+    "BG1044": 0,
+    "BG1053": 0,
+    "BG1056": 0
+  },
+  "scaffolded_retro": "RETRO0134",
+  "sprint_goal_verdict": {
+    "verdict": "achieved",
+    "note": "RUN-01M4R168: 18 units, each independently approved at its band's depth; the goal is achieved per the operator's ruling of 2026-10-14 that US1004's approval decides it. Closed on 2026-10-16 without the project lessons log, on the operator's ruling to carry the gap (BG1060)."
+  },
+  "close_attempts": [
+    {
+      "at": "2026-10-16T08:11:12Z",
+      "outstanding": 2,
+      "stages": [
+        "gate"
+      ]
+    }
+  ],
+  "close_not_measured": [
+    {
+      "id": "cost",
+      "title": "Cost, velocity and estimate accuracy",
+      "detail": "no per-unit telemetry, no measured run total and no supplied sprint total, so what this sprint cost is not attributable - which is not zero"
+    }
+  ],
+  "close_tree": "5ba0bb61e0040307bd8ce02d54641d78ebdfc72e",
+  "report_gate_clear": [
+    "BG0944",
+    "BG0945",
+    "BG0950",
+    "BG0976",
+    "BG0978",
+    "BG1003",
+    "BG1025",
+    "BG1031",
+    "BG1032",
+    "BG1044",
+    "BG1045",
+    "BG1047",
+    "BG1053",
+    "BG1056",
+    "US1003",
+    "US1004",
+    "US1005",
+    "US1006"
+  ],
+  "verified_sha": "fad902aed553ef6905251387ae059a5dfbe5ca01",
+  "close_known_issues": [
+    {
+      "source": "lessons-summary",
+      "detail": "refused: LESSONS-SUMMARY.md lists 441 lesson(s) the log at /home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/retros/LESSONS.md does not hold (L-0442: Run each user-facing sentence in a changelog fragment through the CLI before asking for review, as the paperwork reviews already do., L-0441: Probe a premise with an input whose result differs under each hypothesis, such as a key whose code fallback differs from its shipped..., L-0440: A builder that adds a widened env scrub to satisfy a guard test should reuse the pinned list it already has: US0971's `GIT_` scrub broke... (+438 more)), so this log is not the one the summary was built from. Restore the log from the machine that ran the last close, or merge it, and run this again. Nothing was written."
+    },
+    {
+      "source": "gate",
+      "detail": "lessons-summary: LESSONS-SUMMARY.md is STALE - 3 lesson(s) added since it was regenerated: L-0003: Date a fixture from today whenever the code under test reads the real clock, and pin the boundary day as BG1047's reviewer did., L-0002: Before a review, put each changelog claim through the shipped entry point against its strongest negative, and name every mutant a message..., L-0001: Re-derive the review tier at every brief and record, and name an under-depth APPROVE the moment it exists (BG1052).; 441 closed or removed since: L-0442: Run each user-facing sentence in a changelog fragment through the CLI before asking for review, as the paperwork reviews already do., L-0441: Probe a premise with an input whose result differs under each hypothesis, such as a key whose code fallback differs from its shipped..., L-0440: A builder that adds a widened env scrub to satisfy a guard test should reuse the pinned list it already has: US0971's `GIT_` scrub broke... (+438 more). Regenerate it: scripts/lessons.py summary"
+    }
+  ],
+  "ci_runs": {
+    "source": "gh run list",
+    "runs": [
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-15T21:00:23Z",
+        "databaseId": 38806484732,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "fad902aed553ef6905251387ae059a5dfbe5ca01",
+        "updatedAt": "2026-10-15T21:45:59Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-15T20:31:41Z",
+        "databaseId": 38802667038,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "cd618e908e8bf06ca0927c64c26cf2f4f1de88b4",
+        "updatedAt": "2026-10-15T21:30:35Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-15T20:04:31Z",
+        "databaseId": 38799004277,
+        "event": "dynamic",
+        "headBranch": "main",
+        "headSha": "95e5e3f867f3b1df3a216813e8e6b0a7f9a96106",
+        "updatedAt": "2026-10-15T20:05:22Z",
+        "workflowName": "Dependency Graph"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-15T20:04:20Z",
+        "databaseId": 38798980550,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "95e5e3f867f3b1df3a216813e8e6b0a7f9a96106",
+        "updatedAt": "2026-10-15T21:00:21Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-15T19:28:36Z",
+        "databaseId": 38794205752,
+        "event": "dynamic",
+        "headBranch": "main",
+        "headSha": "c60b4ee225a1670252aebd15afcc557d7c939af1",
+        "updatedAt": "2026-10-15T19:29:24Z",
+        "workflowName": "Dependency Graph"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-15T19:28:33Z",
+        "databaseId": 38794197044,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "c60b4ee225a1670252aebd15afcc557d7c939af1",
+        "updatedAt": "2026-10-15T20:18:18Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-15T18:30:43Z",
+        "databaseId": 38786229827,
+        "event": "dynamic",
+        "headBranch": "main",
+        "headSha": "6456f66f716edeaf96fa99ad5161a47765d71816",
+        "updatedAt": "2026-10-15T18:31:30Z",
+        "workflowName": "Dependency Graph"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-15T18:30:37Z",
+        "databaseId": 38786214345,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "6456f66f716edeaf96fa99ad5161a47765d71816",
+        "updatedAt": "2026-10-15T19:04:01Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-14T12:20:04Z",
+        "databaseId": 38563007182,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "40cf5411183780c1ed7dc20af997579613fa3538",
+        "updatedAt": "2026-10-14T13:19:29Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-14T11:45:40Z",
+        "databaseId": 38558849979,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "692f867d01873029605574ab76b1259be20253dd",
+        "updatedAt": "2026-10-14T12:31:04Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-10-14T10:52:14Z",
+        "databaseId": 38552579156,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "37fd98d58513ca9dcd866fbb66e6d5f98dcbc825",
+        "updatedAt": "2026-10-14T11:38:33Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-13T15:07:53Z",
+        "databaseId": 38419375826,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "a0f85a1bc41de2453452c3baf193f5686f923b1d",
+        "updatedAt": "2026-10-13T15:51:01Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-13T14:45:07Z",
+        "databaseId": 38416059808,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "1916da62d61b55f28a05387b2d222a686385d9ef",
+        "updatedAt": "2026-10-13T15:20:44Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-13T14:21:31Z",
+        "databaseId": 38412644951,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "78790fcb5069ee04b41340892163654ddbba2725",
+        "updatedAt": "2026-10-13T14:55:01Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-10-13T13:48:44Z",
+        "databaseId": 38408030506,
+        "event": "dynamic",
+        "headBranch": "main",
+        "headSha": "c0241b686686e9a9211c149196f248a8ba34fbff",
+        "updatedAt": "2026-10-13T13:49:44Z",
+        "workflowName": "Dependabot Updates"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-10-13T13:48:22Z",
+        "databaseId": 38407979908,
+        "event": "dynamic",
+        "headBranch": "main",
+        "headSha": "c0241b686686e9a9211c149196f248a8ba34fbff",
+        "updatedAt": "2026-10-13T13:49:23Z",
+        "workflowName": "Dependabot Updates"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-13T13:47:12Z",
+        "databaseId": 38407819531,
+        "event": "dynamic",
+        "headBranch": "main",
+        "headSha": "c0241b686686e9a9211c149196f248a8ba34fbff",
+        "updatedAt": "2026-10-13T13:47:59Z",
+        "workflowName": "Dependency Graph"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-13T13:47:07Z",
+        "databaseId": 38407807659,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "c0241b686686e9a9211c149196f248a8ba34fbff",
+        "updatedAt": "2026-10-13T14:42:36Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-13T11:47:23Z",
+        "databaseId": 38392645887,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "8566b67789dc39c1a19a38b55bbe64205496a660",
+        "updatedAt": "2026-10-13T12:43:22Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-13T09:52:41Z",
+        "databaseId": 38379455382,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "f47fecc9b5fbd58a9437e22584d002673ded3a46",
+        "updatedAt": "2026-10-13T10:52:01Z",
+        "workflowName": "Lint"
+      }
+    ]
+  },
+  "review_rows": {
+    "BG0950": [
+      "21cf4917e7210875",
+      "8bee31889b471eb0",
+      "e1ed02cc75d93578"
+    ],
+    "BG1003": [
+      "82c13baa7decdd07",
+      "7655890019e56622"
+    ],
+    "BG1025": [
+      "8aeabebda9acaebb",
+      "45b826bfafc6985b"
+    ],
+    "US1003": [
+      "001cf347ade7be42",
+      "b32706cdf77a9b40"
+    ],
+    "US1004": [
+      "0e79b7efc69ac1d1",
+      "3ba3d0244d493772",
+      "881060de162d4538",
+      "8982389391d420e4"
+    ],
+    "BG0944": [
+      "bc408509916718ba"
+    ],
+    "BG0945": [
+      "e361627da721a8bf"
+    ],
+    "BG0976": [
+      "08fec6490242017f",
+      "f1ea533b5a2d6676"
+    ],
+    "BG0978": [
+      "3f04141c437b1d45"
+    ],
+    "US1005": [
+      "d66b463a9bd5bfa9"
+    ],
+    "US1006": [
+      "b3c349e3fb941228",
+      "4cbeff7be98a4d82",
+      "1e5abe4ee92fa453"
+    ],
+    "BG1032": [
+      "166f75f1fe039320",
+      "e123f385ed2cfc3a"
+    ],
+    "BG1031": [
+      "1d51df70c10f694e"
+    ],
+    "BG1044": [
+      "59334269e81f1b09"
+    ],
+    "BG1045": [
+      "f6474db1077f8201"
+    ],
+    "BG1047": [
+      "e9ee01d7df1f868c"
+    ],
+    "BG1053": [
+      "84f83a1ca5cce1d5",
+      "bcf86e134dfb6460",
+      "8f8763da163478e2"
+    ],
+    "BG1056": [
+      "4b50f5afa0ce2001"
+    ]
+  },
+  "report_discharged": [],
+  "report": "RPT0020",
+  "report_fingerprint": "cf3fd54456d58755",
+  "report_window_end": "2026-10-16T08:33:39Z"
+}

@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-10-13
+**Last Updated:** 2026-10-16
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 7 |
+| Proposed | 9 |
 | Approved | 0 |
 | In Progress | 26 |
 | Complete | 519 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **641** |
+| **Total** | **643** |
 
 ## All Changes
 
@@ -53,6 +53,8 @@
 | [CR-0639](CR0639-a-worktree-isolated-reviewer-that-rejects-cannot-be.md) | A worktree-isolated reviewer that REJECTs cannot be resumed for its round 2 once its worktree is removed, and nothing says to keep it until the review converges | Proposed | Low | Improvement | 2026-10-13 | -- |
 | [CR-0640](CR0640-a-reference-page-edited-without-regenerating-its-reading.md) | A reference page edited without regenerating its reading guide passes every commit lane and is found only by the full suite at push | Proposed | Low | Improvement | 2026-10-13 | -- |
 | [CR-0641](CR0641-a-review-round-ruling-is-admitted-from-any.md) | A review-round ruling is admitted from any accepted decision about the unit, not one that authorises a round | Proposed | P3 | Improvement | 2026-10-13 | -- |
+| [CR-0642](CR0642-prevent-or-retire-lesson-lc-016-a-signed.md) | Prevent or retire lesson LC-016 (a signed page reads a live source) | Proposed | Medium | Improvement | 2026-10-16 | -- |
+| [CR-0643](CR0643-prevent-or-retire-lesson-lc-018-a-doc.md) | Prevent or retire lesson LC-018 (a doc claim checked by reading) | Proposed | Medium | Improvement | 2026-10-16 | -- |
 
 ## Archived Releases
 

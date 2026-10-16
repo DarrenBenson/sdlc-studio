@@ -1,5 +1,5 @@
 <!-- close-status:begin -->
-> **RUN-01M45FV6 closed goal-reached.** 2 unit(s) in the batch. **The run is SIGNED** - nothing is owed on this run.
+> **RUN-01M4R168 closed running.** 18 unit(s) in the batch. **The run signature is OWED and is the operator's** - `sprint sign` seals the batch in one signature.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 > **RUN-01M4R168, the first 6.2 run.** Goal: "Maya's ledger and signed runs keep what was
@@ -29,16 +29,20 @@
 
 - **The run's signature:** `sprint.py sign --report <the close's page> --principal <operator>`.
   The author cannot sign.
-- **The lessons log (BG0989).** This repository's `sdlc-studio/retros/LESSONS.md` is on
-  studypc only, so the close refuses at its lessons step rather than regenerate the digest from
-  a log missing 441 lessons. Copy the log back and commit it, then `lessons.py summary`.
+- **The lessons log (BG0989, BG1060).** The full log (441 lessons) is still studypc's
+  gitignored `sdlc-studio/.local/lessons.md`. The close ran without it on the operator's ruling of
+  2026-10-16 to carry the gap: its extract started a short `sdlc-studio/retros/LESSONS.md` holding
+  RETRO0134's lessons, and the digest was left as it stood (a known issue on the report). On
+  studypc: move `.local/lessons.md` over that file, re-run `retro.py extract --id RETRO0134`
+  (idempotent, it re-adds the three), then `lessons.py summary`, and commit.
 - **The unified review** (`/sdlc-studio review`) is cadence debt: 196 artefacts changed since
   the last; the close reports it, not blocks on it.
 - **Known issues carried, all not-stop-ship** (RETRO0134): BG1030, BG1033-BG1043, BG1046,
-  BG1048-BG1052, BG1054, BG1055, BG1057 and CR0638-CR0641. The Mediums are BG1050 (a control
-  character in a reviewer id tears its row), BG1051 (the close's report clips refusal lines),
-  BG1052 (a band rise after review is found only at the close) and BG1054 (corpus-verify lacks
-  pytest-xdist).
+  BG1048-BG1052, BG1054, BG1055, BG1057-BG1060 and CR0638-CR0641. The Mediums are BG1050 (a
+  control character in a reviewer id tears its row), BG1051 (the close's report clips refusal
+  lines), BG1052 (a band rise after review is found only at the close), BG1054 (corpus-verify
+  lacks pytest-xdist), BG1058 (the dry run names an answered unit), BG1059 (a retro's Batch field
+  is never checked against the run) and BG1060 (extract starts a log the digest outlives).
 - **Next run (D0365):** CR0635's remote gate (EP0288, US1075-US1078), which retires D0366's
   interim host script, then EP0274's token meters.
 
@@ -50,6 +54,8 @@
   `git commit-tree "$(git write-tree)" -p HEAD`.
 - A retro committed before its close leaves a velocity gap that turns the push suite red
   (BG1055); commit it with the close.
+- A retro scaffolded before a `batch add` silently omits the late units from the close's
+  measurement; read its Batch line against the run state before closing (BG1059).
 
 ## History
 

@@ -2,7 +2,7 @@
 
 > **Date:** 2026-10-15
 > **Run:** RUN-01M4R168
-> **Batch:** BG1003, BG1025, US1003, BG0944, BG0945, BG0976, BG0978, US1005, BG1032, BG0950, BG1031, BG1044, BG1045, BG1047, US1006, BG1053
+> **Batch:** BG1003, BG1025, US1003, BG0944, BG0945, BG0976, BG0978, US1005, BG1032, BG0950, BG1031, BG1044, BG1045, BG1047, US1006, BG1056, BG1053, US1004
 
 ## Keep
 
@@ -55,6 +55,8 @@
 | BG1055 | not-stop-ship | Claude Opus 5.5 (author), under the operator's delegation of 2026-10-15 | 2026-10-15 |
 | BG1057 | not-stop-ship | Claude Opus 5.5 (author), under the operator's delegation of 2026-10-15 | 2026-10-15 |
 | BG1058 | not-stop-ship | Claude Opus 5.5 (author), under the operator's delegation of 2026-10-15 | 2026-10-15 |
+| BG1059 | not-stop-ship | Claude Opus 5.5 (author), under the operator's delegation of 2026-10-15 | 2026-10-16 |
+| BG1060 | not-stop-ship | Claude Opus 5.5 (author), under the operator's delegation of 2026-10-15 | 2026-10-16 |
 
 ## Estimate vs actual
 
@@ -77,16 +79,20 @@
 | BG1045 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
 | BG1047 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
 | US1006 | 2 | 271,308 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1056 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
 | BG1053 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
+| US1004 | 2 | 271,308 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
 | **Batch (rated units only)** | **0** | **0** | **0** | - | **-** | | **-** | - |
 
-**0 of 16 unit(s) measured; 10 of 16 forecast at plan time.**
+**0 of 18 unit(s) measured; 11 of 18 forecast at plan time.**
+
+**7,598,923 tokens supplied, but no rate:** the batch has no delivered unit carrying Points, so there is no denominator. Size the delivered stories/bugs, or the rate stays uncomputable.
 
 Review passes - read from the verdict ledger:
 
-  code review: 27 pass(es) over 16 unit(s), 11 rejected
-Unmeasured: BG1003, BG1025, US1003, BG0944, BG0945, BG0976, BG0978, US1005, BG0950, US1006. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
-Unforecast: BG1032, BG1031, BG1044, BG1045, BG1047, BG1053. No plan-time forecast was recorded for them, so they are excluded too. The estimate is NOT re-derived from today's constants: a number computed at judgement time, by the model being judged, is not a prediction.
+  code review: 32 pass(es) over 18 unit(s), 13 rejected
+Unmeasured: BG1003, BG1025, US1003, BG0944, BG0945, BG0976, BG0978, US1005, BG0950, US1006, US1004. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
+Unforecast: BG1032, BG1031, BG1044, BG1045, BG1047, BG1056, BG1053. No plan-time forecast was recorded for them, so they are excluded too. The estimate is NOT re-derived from today's constants: a number computed at judgement time, by the model being judged, is not a prediction.
 No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
 
 Forecast by `TOKENS_PER_POINT=135654`, recorded at plan time. OUT-OF-SAMPLE: forecast by the constants in force, on a sprint they were not fitted to. This is the only kind of row that tells you anything.
