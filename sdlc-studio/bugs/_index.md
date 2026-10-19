@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 121 |
+| Open | 122 |
 | In Progress | 1 |
 | Fixed | 804 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 41 |
 | Superseded | 32 |
-| **Total** | **1086** |
+| **Total** | **1087** |
 
 ## All Bugs
 
@@ -162,6 +162,7 @@
 | [BG1084](BG1084-remote-gate-doctor-s-exit-codes-are-documented.md) | remote-gate doctor's exit codes are documented as 0, 1 and 3, and a missing transport is reported as an unready host | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1085](BG1085-remote-gate-doctor-prints-the-local-clone-s.md) | remote-gate doctor prints the local clone's Python install route for a gap on the gate host | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1086](BG1086-run-suite-sh-s-passed-count-needs-bc.md) | run-suite.sh's passed count needs bc, which is not a declared prerequisite, and is null with a broken-pipe error where bc is absent | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1087](BG1087-mutation-py-s-changed-line-scope-finds-no.md) | mutation.py's changed-line scope finds no lines on a machine whose git config sets diff.mnemonicprefix or diff.noprefix | Open | Medium | 2026-10-19 | 2026-10-19 |
 
 ## Archived Releases
 
