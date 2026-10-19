@@ -1,6 +1,6 @@
 # US1085: The TRD's stack and the TSD's framework rows name every dependency the clone installs, and the TSD names each CI job and its trigger
 
-> **Status:** In Progress
+> **Status:** Done
 > **Delivers:** CR0644
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio new

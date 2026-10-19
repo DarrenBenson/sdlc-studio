@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 127 |
+| Open | 131 |
 | In Progress | 2 |
 | Fixed | 805 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 41 |
 | Superseded | 32 |
-| **Total** | **1094** |
+| **Total** | **1098** |
 
 ## All Bugs
 
@@ -170,6 +170,10 @@
 | [BG1092](BG1092-the-tsd-says-the-commit-msg-hook-falls.md) | The TSD says the commit-msg hook falls back to skill-tests.sh only without pytest; it also does when the handover carries no selectors | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1093](BG1093-bg1061-s-heading-checks-read-a-heading-s.md) | BG1061's heading checks read a heading's trailing space as its last character, so a mark left behind a space passes | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1094](BG1094-a-lesson-that-is-only-punctuation-gets-an.md) | A lesson that is only punctuation gets an empty heading title since BG1061 | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1095](BG1095-us1086-did-not-converge-in-review-round-2.md) | US1086 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-19 | 2026-10-19 |
+| [BG1096](BG1096-the-trd-says-verify-ac-run-coverage-refuses.md) | The TRD says verify_ac run --coverage refuses under block and reports under report when coverage is absent; the split is the Done gate's | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1097](BG1097-us1085-s-toolchain-doc-tests-leave-coverage-unpinned.md) | US1085's toolchain-doc tests leave coverage unpinned, still pass three counted phrasings, and fail at collection without PyYAML | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1098](BG1098-agents-md-gives-the-local-boundary-push-series.md) | AGENTS.md gives the local boundary-push series as the push's cost on a clone that names a gate host | Open | Low | 2026-10-19 | 2026-10-19 |
 
 ## Archived Releases
 
