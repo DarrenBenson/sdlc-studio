@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 114 |
+| Open | 121 |
 | In Progress | 1 |
 | Fixed | 804 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 41 |
 | Superseded | 32 |
-| **Total** | **1079** |
+| **Total** | **1086** |
 
 ## All Bugs
 
@@ -155,6 +155,13 @@
 | [BG1077](BG1077-test-a-ctrl-c-stops-every-lane-with.md) | test_a_ctrl_c_stops_every_lane_with_the_hook can see every lane finish before its interrupt lands on a loaded host, and reads the hook's clean exit as a failure | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
 | [BG1078](BG1078-us1076-did-not-converge-in-review-round-2.md) | US1076 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1079](BG1079-a-unit-carried-at-the-review-cap-gets.md) | A unit carried at the review cap gets a criterion for every ISSUES item, including info rulings and pre-existing findings already filed | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1080](BG1080-remote-gate-doctor-calls-a-host-ready-without.md) | remote-gate doctor calls a host ready without checking flock and setsid, which every push run on it needs | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1081](BG1081-remote-gate-doctor-sources-gate-env-sh-from.md) | remote-gate doctor sources gate-env.sh from its temporary directory, where the gate sources it from the host's home | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1082](BG1082-four-of-remote-gate-doctor-s-stated-behaviours.md) | Four of remote-gate doctor's stated behaviours have no test that fails without them | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1083](BG1083-enable-hooks-sh-s-tolerance-of-an-unready.md) | enable-hooks.sh's tolerance of an unready or unreachable gate host has no test | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1084](BG1084-remote-gate-doctor-s-exit-codes-are-documented.md) | remote-gate doctor's exit codes are documented as 0, 1 and 3, and a missing transport is reported as an unready host | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1085](BG1085-remote-gate-doctor-prints-the-local-clone-s.md) | remote-gate doctor prints the local clone's Python install route for a gap on the gate host | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1086](BG1086-run-suite-sh-s-passed-count-needs-bc.md) | run-suite.sh's passed count needs bc, which is not a declared prerequisite, and is null with a broken-pipe error where bc is absent | Open | Low | 2026-10-19 | 2026-10-19 |
 
 ## Archived Releases
 
