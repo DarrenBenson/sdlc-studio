@@ -202,10 +202,12 @@ console. This is not cosmetic: a green run that prints `ERROR` lines trains ever
 reader, human and agent, to skim past `ERROR`, which is the exact reflex that lets a
 real one through.
 
-The `test-noise` leg **runs in CI** as its own named step in
-`.github/workflows/lint.yml`, via `tools/skill-tests.sh` - which is also how the skill
-suite is invoked by `npm run test:skill` and by the pre-commit hook, so no path around it
-skips the check. It was previously described here as
+The `test-noise` leg **is held in CI**, in the one run of the skill suite through
+`tools/skill-tests.sh` in `.github/workflows/lint.yml` (`npm run test:skill` runs the same
+script). Where pytest is installed, neither hook holds it: the commit-msg hook runs the
+selected modules through `gate.py --run-tests`, and pytest captures a passing test's output, as
+it does in the push boundary's full suite. Only on a machine without pytest does the commit-msg
+hook fall back to `tools/skill-tests.sh`, the ratchet included. It was previously described here as
 holding the line while being wired into nothing, and its detector matched a single shape
 (`ERROR` or `WARN` followed by an absolute path) that this suite never produces - it
 caught almost none of the 233 lines actually leaking. Detection now lives in `tools/test_noise.py`
@@ -347,7 +349,8 @@ quality-gate table for the NFR mapping.
 The gate's cost has a declared budget of 45 s (`GATE_BUDGET_S` in `gate.py`, set against a
 measured 33 s for the standard lane set, and overridden per project by `gate.budget_seconds`).
 It is not a timeout: every run measures its cost against it and reports an overrun without
-refusing, keeping the last cost in `.local/gate-cost.json`. A commit's selected suites are timed
+refusing, keeping the last cost in `.local/gate-cost.json`. Every run in this repository now
+exceeds it (BG1065), so the 33 s is where the budget came from, not what the gate costs. A commit's selected suites are timed
 against the commit-msg hook's advisory 90-second budget, and a boundary run's measured cost
 comes from `python3 tools/gate_timing.py estimate`.
 
@@ -386,7 +389,7 @@ not-gated rationale. This closes the PRD-to-TSD traceability gap.
 
 | NFR (PRD section 5) | Quality gate | Blocking | Confidence |
 | --- | --- | --- | --- |
-| **Performance** - read path sub-second, writes bounded | Indirect: a regression that made scripts slow shows in the gate's own recorded cost, which IS budgeted (`gate.budget_seconds`) and reported per lane. No explicit per-script latency threshold is asserted. Treated as observed, not gated. A mutation run is not a gate lane (minutes per run). | No | [MEDIUM] |
+| **Performance** - read path sub-second, writes bounded | Indirect: a regression that made scripts slow shows in the gate's own recorded cost, measured on every run against its declared 45 s budget (`GATE_BUDGET_S` in `gate.py`, overridden by `gate.budget_seconds`) and reported per lane, never refused. Every run in this repository now exceeds it (BG1065). No explicit per-script latency threshold is asserted. Treated as observed, not gated. A mutation run is not a gate lane (minutes per run). | No | [MEDIUM] |
 | **Performance** - always-loaded context minimal | `check_budgets.py`: `SKILL.md` must be < 500 lines, each `reference-*.md` within its declared ceiling. Hard gate via `lint:budgets`. | Yes | [HIGH] |
 | **Security** - no network calls except `gh` and project Verify tools | Enforced by the script contract and the test design: `github_sync.py` tested with `gh` mocked; pure-stdlib (no third-party clients). Not gated by a network-egress scanner, but the script tier is scanned by bandit (below). | Partial (by test design, plus the bandit scan) | [HIGH] |
 | **Security** - static analysis of the shipped script tier | `bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q` runs as a CI step; a medium-or-high severity finding fails the build. Covers the shipped scripts only. | Yes | [HIGH] |
@@ -403,7 +406,7 @@ Additional gates that back the NFRs but sit outside the four PRD headings:
 | Markdown lint | `npm run lint` exits 0 (all eight sub-checks) | Yes |
 | Link integrity | `check_links.py`: every anchor resolves | Yes |
 | Skill frontmatter | `validate_skill.py`: valid against Agent Skills standard | Yes |
-| Version consistency | `check_versions.py`: all homes agree (CHANGELOG advisory between releases, required at release) | Yes (release) |
+| Version consistency | `check_versions.py`: all homes agree (CHANGELOG advisory between releases, required at release) | Yes, on every commit (the pre-commit `versions` lane), and strictly at release |
 | Release tag guard | `release_cut.py tag-check --commit <sha>` refuses unless the release gate was recorded green on that commit and the forge reports CI passed on it. It does not ask whether a close is owed: `sprint sign` seals each run, and an owed close is reported by the `status`/`hint` advisory. | Yes (tag) |
 | Release version lane | `gate.py --release` binds a blocking `versions` lane that runs `check_versions --strict`, so the pre-tag obligation is ONE command with ONE exit code rather than a gate plus a separate check whose exit code can be dropped. Invoked as a subprocess: `check_versions.py` is a repo-only development tool, so a consuming project reports the lane N/A rather than failing on a tool it never had. A manual pre-tag step (D0375). | Yes (release) |
 | Neutrality | `check_neutrality.py`: no private consuming-project name in a tracked file | Yes |
@@ -411,11 +414,25 @@ Additional gates that back the NFRs but sit outside the four PRD headings:
 | Security scan | `bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q`: no medium-or-high severity finding in the shipped script tier | Yes |
 | Instruction hygiene | `validate.py instructions` passes | Manual (recommended; not yet CI-wired - no npm script or workflow invokes it) |
 
+### The delivery gates
+
+The commands a unit's delivery runs through refuse on their own conditions, whatever a hook
+does:
+
+| Command | Refuses |
+| --- | --- |
+| `sprint plan` | A batch whose units lack `Affects:` or `Points:`, or exceed the split threshold |
+| `transition -> Done` | A story whose executable acceptance criteria have not passed |
+| `transition -> Fixed` | A bug nothing speaks for (no ticked criterion, no `Verify:` line), or whose recorded `verify_ac` run is red |
+| `sprint close` | An uncommitted change to a file a batch unit declares (uncovered units, unanswered items and failing lanes are recorded as known issues on the report, not refused) |
+| `sprint sign` | A report that is not the run's, a page that no longer re-derives to what was filed, a tree changed since the close, or a principal who is a unit's author or a reviewer recorded on it |
+
 ### The artefact gate (`gate.py`)
 
 Distinct from the lint chain: the lint chain guards the *corpus*, `gate.py` guards the
 *workspace and the delivery*. One portable, ecosystem-neutral exit code over the
-deterministic checks, read-only and therefore hook-safe.
+deterministic checks. It writes only untracked state under `sdlc-studio/.local/` (the TRD's
+gate tier names each file), so it is hook-safe.
 
 | Lane | Fails on | Blocking |
 | --- | --- | --- |
@@ -551,14 +568,16 @@ and none is present in the suite.
    selects (those it imports, loads or is named for), in parallel. The commit's time is reported
    against an advisory 90-second budget, not refused, and a docs or artefact commit runs no
    suites. `.githooks/commit-msg --list` prints its lanes.
-3. **Push (local, enforced):** `.githooks/pre-push` checks the gate's prerequisites first
-   (`tools/gate_prereqs.py check --refusing`), then reads the latest push-triggered Lint run on
-   main and refuses while it is red until that run's id is acknowledged once with
-   `SDLC_PUSH_ACK_RED=<run id>` (D0181). Then the full suite runs once, at the push boundary,
-   with the core gate lanes: `gate.py --boundary push` for a branch push. A tag push runs
-   `gate.py --boundary release`, which adds the slow release lanes and the known-issues check
-   (`tools/known_issues.py check`). `python3 tools/gate_timing.py estimate --suite boundary-push`
-   gives the current cost. Emergency bypass: `git push --no-verify`.
+3. **Push (local, enforced):** `.githooks/pre-push` runs its steps in this order. It checks the
+   gate's prerequisites (`tools/gate_prereqs.py check --refusing`). For a tag, it checks that
+   `docs/known-issues.md` agrees with the bug corpus at the tagged commit (`tools/known_issues.py
+   check --at <sha>`). It reads the latest push-triggered Lint run on main and refuses while it
+   is red until that run's id is acknowledged once with `SDLC_PUSH_ACK_RED=<run id>` (D0181).
+   Then the full suite runs once, at the push boundary, with the core gate lanes. A branch push
+   runs `gate.py --boundary push`. A tag push runs `gate.py --boundary release`, which adds the
+   slow release lanes (release rehearsal and module-alone). `python3 tools/gate_timing.py
+   estimate --suite boundary-push` gives the current cost. Emergency bypass: `git push
+   --no-verify`.
 4. **CI (push and pull request):** the full lint chain, both unittest suites, the portable
    `gate.py` run, the coverage floor (`coverage report --fail-under=80`, blocking) and the bandit
    security scan (blocking); a Windows pwsh smoke test for `install.ps1`.
@@ -566,7 +585,7 @@ and none is present in the suite.
    blocks on drift, the retro is checked on its content, and the review anchor must be
    current - a stale `LATEST.md` once sat claiming "ready to tag" long after that
    stopped being true, which is why currency and not presence is the test.
-6. **Before a release tag (manual, D0375):** no hook or workflow runs these steps, and a tag
+6. **Before a release tag (manual, D0375):** No hook or workflow runs these steps, and a tag
    push does not. `release_cut.py changelog-cut --version <v>` composes the changelog section.
    `gate.py --release` runs the standard gate plus an executing pass over every story's
    `Verify:` DSL, as ONE exit code. `release_cut.py record-green --commit <sha>` stamps the
@@ -592,7 +611,7 @@ running application exists to exercise.
 | Prose style (`lint:style`) | No em dash, no un-allowlisted jargon, no Americanised spelling | Yes |
 | Link integrity (`lint:links`) | All anchors resolve | Yes |
 | Skill frontmatter (`lint:skill`) | Valid | Yes |
-| Version consistency (`lint:versions`) | All homes agree | Yes (release) |
+| Version consistency (`lint:versions`) | All homes agree | Yes, on every commit (the pre-commit `versions` lane), and strictly at release |
 | Line budgets (`lint:budgets`) | Within budget | Yes |
 | Neutrality (`lint:neutrality`) | No private project name in a tracked file | Yes |
 | Coverage floor | `coverage report --fail-under=80`: script-tier statement coverage at or above the 80% floor (~90% is the aspiration, not the gate) | Yes |
@@ -692,7 +711,7 @@ package.json                # lint and test entry points
 | 2026-07-24 | Spec-truth reconcile (mutation) | Reconciled the mutation entries against `mutation.py` and `gate.py`: the Output row now names the per-target ledger beside the report, the Gate row and the gate-lane table carry the per-file covered / STALE / uncovered verdict in place of the superseded whole-blob rev-or-edit rule, and the test-tier map names the ledger's bound and provenance. Corrected the pre-commit blockquote's "executably enforced" over an advisory lane. The findings table, including the claims checked and left unchanged, is recorded in US0385 |
 | 2026-09-25 | Restatements cut (US0933, D0266) | In `## Test Levels`, the Unit Testing suite-size row and the paragraph under its table state no test or module count, and the row drops its two `measured:` markers, whose only reader US0879 deleted. The level headings and backticked paths the runner reads are unchanged. |
 | 2026-10-03 | Spec truth for 6.1 (US0984) | The TSD described machinery v6 retired. The mutation gate, its lane and its `.local/mutation-runs.json` ledger are gone, so the Mutation Testing level describes `mutation.py run` as the on-demand instrument it is (its report and per-run series, read by no gate lane); the artefact-gate lane table names the lanes `gate.py` registers, adding `window`, `changelog-fragments`, the on-demand lanes and the push and release boundary lanes; the verification-depth gate gives way to the Fixed gate on a green recorded run; `carry_forward`, deleted in 6.1, leaves the coverage map. |
-| 2026-10-19 | US1084 | The pipeline stages follow the three hooks in git's order, naming each hook's `--list`, the push stage's prerequisite check and red-main acknowledgement (D0181), and the commit's advisory 90-second budget. The release steps are named manual pre-tag steps (D0375), and the performance NFR states the gate's declared budget |
+| 2026-10-19 | US1084 | The pipeline stages follow the three hooks in git's order, naming each hook's `--list`, the push stage's prerequisite check and red-main acknowledgement (D0181), and the commit's advisory 90-second budget. The release steps are named manual pre-tag steps (D0375), and the performance NFR states the gate's declared budget. The push stage follows the hook's own steps, the artefact gate's write claim is corrected, the noise ratchet's place is stated, the delivery gates are tabulated, and version consistency blocks on every commit |
 
 ---
 

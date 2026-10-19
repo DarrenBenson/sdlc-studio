@@ -195,9 +195,11 @@ Three git hooks run the gate, installed by `tools/enable-hooks.sh`, in the order
    unit suites are needed. `.githooks/pre-commit --list` prints its lanes.
 2. `.githooks/commit-msg` checks the message rules, then runs only the test modules the staged
    change selects. `.githooks/commit-msg --list` prints its lanes.
-3. `.githooks/pre-push` runs the full suite once, at the boundary of what is pushed: `gate.py
-   --boundary push` for a branch push, and `gate.py --boundary release` for a tag push, which
-   adds the slow release lanes.
+3. `.githooks/pre-push` runs the full suite once, at the boundary of what is pushed. A branch
+   push runs `gate.py --boundary push`. A tag push runs `gate.py --boundary release`, which adds
+   the slow release lanes (release rehearsal and module-alone). Before the gate, the hook checks
+   the gate's prerequisites and, for a tag, that `docs/known-issues.md` agrees with the bug
+   corpus (`tools/known_issues.py check`).
 
 ---
 
@@ -635,7 +637,7 @@ cross-machine clash is caught at merge (ADR-008).
 | Always-loaded context | `SKILL.md` under its hard ceiling of 500 lines | Line count of the router, gated by `check_budgets.py` - the ceiling is the claim, not a snapshot of the current count |
 | Script run time | Sub-second on a typical project | `scripts/tests` suite: minutes, not seconds - see `tools/gate_timing.py estimate` for the live figure |
 | Reconcile / status | Sub-second | Read-only census over the artifact tree |
-| Gate run | A declared 45 s budget (`GATE_BUDGET_S` in `gate.py`, set against a measured 33 s for the standard lane set; `gate.budget_seconds` overrides it per project) | Each run measures its own cost against the budget and reports an overrun without refusing; the last cost is kept in `.local/gate-cost.json`. A boundary run is far longer: `python3 tools/gate_timing.py estimate --suite boundary-push` gives the measured figure |
+| Gate run | A declared 45 s budget (`GATE_BUDGET_S` in `gate.py`, set against a measured 33 s for the standard lane set; `gate.budget_seconds` overrides it per project) | Each run measures its own cost against the budget and reports an overrun without refusing; the last cost is kept in `.local/gate-cost.json`. Every run in this repository now exceeds it (BG1065), so the 33 s is the budget's origin, not the gate's cost. A boundary run is far longer: `python3 tools/gate_timing.py estimate --suite boundary-push` gives the measured figure |
 | Mutation run | Minutes, by design | One suite run per mutant; not on the fast path |
 | Install | Single fetch-and-copy | `install.sh` / `install.ps1`, no build step |
 
