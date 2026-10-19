@@ -134,6 +134,9 @@ SCRUB_SITES: dict[str, str] = {
         "pinned by test_every_hook_fixture_module_scrubs_the_same_variables",
     "tools/tests/test_pre_push_keepalive.py":
         "pinned by test_every_hook_fixture_module_scrubs_the_same_variables",
+    "tools/tests/test_remote_gate_push.py":
+        "pinned by test_every_hook_fixture_module_scrubs_the_same_variables. It runs the "
+        "pre-push hook against a stubbed gate host (US1075).",
     "tools/tests/test_gate_prereqs.py":
         "pinned by test_every_hook_fixture_module_scrubs_the_same_variables",
     "tools/tests/test_precommit_window_guard.py":

@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# Run the push boundary gate on the gate host this clone configures (US1075, CR0635).
+#
+#   remote-gate.sh push --commit <sha> [--boundary push|release]
+#       The local side, run by .githooks/pre-push when `git config sdlc.gateHost` names a host.
+#       Sends exactly <sha>, with this clone's remote-tracking refs and tags, to a bare repository
+#       on the host kept for this clone alone, then judges it there. Exit 0 green, 3 when the
+#       host could not be reached or the connection failed, anything else the host's verdict.
+#
+#   remote-gate.sh remote --clone <id> --commit <sha> --boundary <b>
+#       The host side. Never installed on the host: `push` streams it from the PUSHED COMMIT's own
+#       copy of this file, so the host always runs the version being judged.
+#
+# Configuration, all in this clone's git config:
+#   sdlc.gateHost     the host, as ssh names it (unset: the gate runs locally)
+#   sdlc.gateSsh      the transport (default: ssh with BatchMode and a keepalive)
+#   sdlc.gateCloneId  this clone's key on the host, written on first use
+# A host may hold `~/sdlc-gate/gate-env.sh`, sourced before the gate runs, to put its Python and
+# Node on PATH. `SDLC_GATE_LOCAL=1` makes the pre-push hook run the gate locally instead.
+#
+# The local side is written against bash builtins, git and python3 only: the hook's test fixtures
+# run it on a PATH that holds nothing else.
+set -uo pipefail
+
+GATE_DIR="sdlc-gate"
+DEFAULT_SSH="ssh -o BatchMode=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10"
+TRANSPORT_FAILED=3
+
+die() { echo "remote-gate: $1" >&2; exit "${2:-2}"; }
+
+parse() {
+  commit="" boundary="push" clone=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --commit) commit="${2:-}"; shift 2 ;;
+      --boundary) boundary="${2:-}"; shift 2 ;;
+      --clone) clone="${2:-}"; shift 2 ;;
+      *) die "unknown argument: $1" ;;
+    esac
+  done
+  case "$boundary" in push|release) ;; *) die "--boundary must be push or release, not '$boundary'" ;; esac
+  [[ $commit =~ ^[0-9a-f]{7,64}$ ]] || die "--commit needs a commit id, not '$commit'"
+}
+
+transport_failed() {
+  echo "remote-gate: the gate host $host could not judge commit $commit: $1." >&2
+  echo "  nothing ran locally in its place. Check that this clone reaches it: ssh $host true" >&2
+  echo "  or run the gate on this machine for one push: SDLC_GATE_LOCAL=1 git push" >&2
+  exit "$TRANSPORT_FAILED"
+}
+
+cmd_push() {
+  parse "$@"
+  host="$(git config --get sdlc.gateHost || true)"
+  [ -n "$host" ] || die "no gate host is configured: git config sdlc.gateHost <host>"
+  [[ $host == -* ]] && die "sdlc.gateHost may not start with '-': '$host'"
+  ssh_cmd="$(git config --get sdlc.gateSsh || true)"
+  [ -n "$ssh_cmd" ] || ssh_cmd="$DEFAULT_SSH"
+  commit="$(git rev-parse --verify -q "$commit^{commit}")" || die "no such commit in this clone: $commit"
+  id="$(git config --get sdlc.gateCloneId || true)"
+  if [ -z "$id" ]; then
+    id="$(python3 -c 'import uuid; print(uuid.uuid4().hex[:16])')" || die "could not mint a clone id"
+    git config sdlc.gateCloneId "$id" || die "could not record sdlc.gateCloneId"
+  fi
+  [[ $id =~ ^[A-Za-z0-9_-]+$ ]] || die "sdlc.gateCloneId may hold only letters, digits, '-' and '_': '$id'"
+  local repo="$GATE_DIR/clones/$id.git"
+
+  # One bare repository per clone, so one clone's mirrored refs never narrow another's range.
+  $ssh_cmd -- "$host" "mkdir -p $GATE_DIR/clones && git init -q --bare $repo" </dev/null \
+    || transport_failed "its repository could not be prepared (the connection failed before the gate started)"
+
+  # Exactly the pushed commit, never HEAD or the working tree, and with it this clone's
+  # remote-tracking refs and tags: without them the host's pushed range widens to all of history
+  # and its latest-tag lookup fails. `send-pack`, never `git push`, which would run this hook again.
+  local refs=("$commit:refs/heads/gate") ref
+  while read -r ref; do
+    [[ $ref == */HEAD ]] || refs+=("$ref:$ref")
+  done < <(git for-each-ref --format='%(refname)' refs/remotes refs/tags)
+  GIT_SSH_COMMAND="$ssh_cmd" git send-pack --force "$host:$repo" "${refs[@]}" >/dev/null 2>&1 \
+    || transport_failed "the commit could not be sent (the connection failed before the gate started)"
+
+  # The host side comes from the pushed commit's own copy of this file. It is saved to a file on
+  # the host before it runs, so nothing the gate spawns can read the script off stdin.
+  local script
+  script="$(git show "$commit:tools/remote-gate.sh")" \
+    || die "commit $commit carries no tools/remote-gate.sh, so its host side cannot run"
+  printf '%s\n' "$script" | $ssh_cmd -- "$host" \
+    "t=\$(mktemp) || exit 2; cat > \"\$t\"; bash \"\$t\" remote --clone '$id' --commit '$commit' --boundary '$boundary' </dev/null; rc=\$?; rm -f \"\$t\"; exit \$rc" 1>&2
+  local rc=${PIPESTATUS[1]}
+  [ "$rc" -eq 255 ] && transport_failed "the connection failed while it ran"
+  if [ "$rc" -ne 0 ]; then
+    echo "remote-gate: $host refused commit $commit at the $boundary boundary - see the host's output above." >&2
+    echo "  re-run it on the host: bash tools/remote-gate.sh push --commit $commit --boundary $boundary" >&2
+  fi
+  return "$rc"
+}
+
+cmd_remote() {
+  parse "$@"
+  [[ $clone =~ ^[A-Za-z0-9_-]+$ ]] || die "--clone needs this clone's id, not '$clone'"
+  local base="$HOME/$GATE_DIR"
+  local repo="$base/clones/$clone.git" state="$base/local/$clone"
+  # shellcheck disable=SC1091 # the host's own environment file, when it keeps one
+  [ -f "$base/gate-env.sh" ] && . "$base/gate-env.sh"
+  mkdir -p "$state" "$base/runs" "$base/node" || die "cannot create $base on $(uname -n)"
+
+  # node_modules, cached per package-lock: two suite modules refuse to collect without markdownlint.
+  local node_dir=""
+  if lock_json="$(git -C "$repo" show "$commit:package-lock.json" 2>/dev/null)" && [ -n "$lock_json" ]; then
+    local lock_sum
+    lock_sum="$(printf '%s' "$lock_json" | sha256sum | cut -c1-16)"
+    node_dir="$base/node/$lock_sum"
+    if [ ! -d "$node_dir/node_modules" ]; then
+      mkdir -p "$node_dir" && git -C "$repo" show "$commit:package.json" > "$node_dir/package.json" \
+        && printf '%s' "$lock_json" > "$node_dir/package-lock.json" \
+        && (cd "$node_dir" && npm ci --silent --no-audit --no-fund) \
+        || { rm -rf "$node_dir"; die "npm ci failed on $(uname -n) for package-lock $lock_sum"; }
+    fi
+  fi
+
+  local run_dir
+  run_dir="$(mktemp -d "$base/runs/$commit.XXXXXX")" || die "cannot create a run directory under $base/runs"
+  wt="$run_dir/tree"
+  cleanup() {
+    cd "$base" || return
+    [ -L "$wt/node_modules" ] && unlink "$wt/node_modules"
+    [ -L "$wt/sdlc-studio/.local" ] && unlink "$wt/sdlc-studio/.local"
+    rm -rf "$run_dir"
+    git -C "$repo" worktree prune
+  }
+  trap cleanup EXIT
+  trap 'exit 130' INT TERM HUP
+  git -C "$repo" -c core.hooksPath=/dev/null worktree add -q --detach "$wt" "$commit" \
+    || die "cannot check out $commit on $(uname -n)"
+  [ -n "$node_dir" ] && ln -s "$node_dir/node_modules" "$wt/node_modules"
+  mkdir -p "$wt/sdlc-studio" && ln -s "$state" "$wt/sdlc-studio/.local"
+  cd "$wt" || die "cannot enter $wt"
+  echo "remote gate: $(uname -n) judging $commit at --boundary $boundary with $(python3 --version 2>&1)"
+
+  # US1005's preflight, on THIS host's interpreter: the one that will run the suite.
+  if [ -f tools/gate_prereqs.py ]; then
+    if ! python3 tools/gate_prereqs.py check --refusing; then
+      echo "remote gate: refused before the $boundary boundary gate runs: $(uname -n)'s interpreter lacks a prerequisite marked REFUSES above"
+      exit 1
+    fi
+  fi
+
+  local t0=$SECONDS rc
+  SDLC_STUDIO_BOUNDARY_SUITE=1 python3 .claude/skills/sdlc-studio/scripts/gate.py --boundary "$boundary"
+  rc=$?
+  echo "remote gate: exit $rc after $((SECONDS - t0))s"
+  [ "$rc" -ne 0 ] && echo "remote gate: the full log is on $(uname -n) at $state/boundary-suite-last.log"
+  exit "$rc"
+}
+
+case "${1:-}" in
+  push) shift; cmd_push "$@" ;;
+  remote) shift; cmd_remote "$@" ;;
+  *) echo "usage: remote-gate.sh push --commit <sha> [--boundary push|release]" >&2; exit 2 ;;
+esac

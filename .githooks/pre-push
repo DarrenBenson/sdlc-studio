@@ -36,12 +36,24 @@ while read -r _local_ref local_sha remote_ref _remote_sha; do
 done
 [ -z "$boundary" ] && exit 0
 
+# --- where the gate runs (US1075) -----------------------------------------------------------
+# A clone that names a gate host (`git config sdlc.gateHost <host>`) has each pushed commit judged
+# THERE, by tools/remote-gate.sh, so the full suite does not compete with this workstation's other
+# work for memory. SDLC_GATE_LOCAL=1 runs it here instead, for one push. A host that cannot be
+# reached refuses the push: the gate never falls back to running here on its own initiative.
+gate_host="$(git config --get sdlc.gateHost 2>/dev/null || true)"
+on_host=""
+[ -n "$gate_host" ] && [ "${SDLC_GATE_LOCAL:-}" != "1" ] && on_host=1
+
 # --- what the suite needs, checked BEFORE it runs (US1005) -----------------------------------
 # A missing coverage or PyYAML was found only by the suite's own red tests, after it had run in
 # full; a missing pytest-xdist, rg, markdownlint or gh never makes the suite red. So the check
 # refuses only for the first class, in the time one python3 takes to start, and names the rest
-# as notes. At a tag as at a branch push. It reads SDLC_COVERAGE_PYTHON as the suite does.
-if [ -f tools/gate_prereqs.py ]; then
+# as notes. At a tag as at a branch push. It reads SDLC_COVERAGE_PYTHON as the suite does. On a
+# gate host it runs THERE, against the interpreter that runs the suite, before the host's gate.
+if [ -n "$on_host" ]; then
+  echo "pre-push: the gate runs on $gate_host; its prerequisite check runs there, before the gate" >&2
+elif [ -f tools/gate_prereqs.py ]; then
   prereqs="$(python3 tools/gate_prereqs.py check --refusing 2>&1)"
   prereqs_rc=$?
   while IFS= read -r prereq_line; do
@@ -206,16 +218,46 @@ PY
 esac
 
 # --- announce the cost, then pay it -------------------------------------------------------
-cost="$(python3 tools/gate_timing.py estimate --suite "boundary-$boundary" --warn-seconds 0 2>/dev/null || true)"
+suite="boundary-$boundary"
+[ -n "$on_host" ] && suite="boundary-$boundary@$gate_host"      # a host's runs never mix into the local series
+cost="$(python3 tools/gate_timing.py estimate --suite "$suite" --warn-seconds 0 2>/dev/null || true)"
 if [ -z "$cost" ]; then
   # No run recorded for this boundary on this clone. Never a fixed figure: one measured on another
   # machine is the "about five minutes" that read 26 to 64 minutes on a busy one (US1006). Say
   # what this clone and interpreter do decide: the module count, parallel or serial, and this
   # clone's own full commit-suite median as a floor when it has one.
-  cost="$(python3 tools/gate_timing.py first-run --suite "boundary-$boundary" 2>/dev/null || true)"
-  [ -n "$cost" ] || cost="boundary-$boundary: no run is recorded on this clone"
+  [ -z "$on_host" ] && cost="$(python3 tools/gate_timing.py first-run --suite "$suite" 2>/dev/null || true)"
+  [ -n "$cost" ] || cost="$suite: no run is recorded on this clone"
 fi
 echo "pre-push: $cost. Bypass once with: git push --no-verify" >&2
+
+# --- judge each pushed commit on the gate host (US1075) --------------------------------------
+# remote-gate.sh sends exactly the commit, with this clone's remote-tracking refs and tags, and
+# streams the host's output back to this hook's stderr. Exit 3 is the host not judging at all -
+# unreachable, or the connection dropped mid-run - and is refused here with nothing run locally.
+# A host run's duration is recorded under its own suite, never in this machine's local series.
+if [ -n "$on_host" ]; then
+  if [ ! -f tools/remote-gate.sh ]; then
+    echo "pre-push: sdlc.gateHost names $gate_host, but this clone has no tools/remote-gate.sh to send the push with" >&2
+    echo "  run the gate on this machine for one push: SDLC_GATE_LOCAL=1 git push" >&2
+    exit 1
+  fi
+  for commit in $commits; do
+    case " $release_commits " in *" $commit "*) at="release" ;; *) at="push" ;; esac
+    echo "pre-push: judging commit $commit on $gate_host - uncommitted changes are not part of this push" >&2
+    t0=$SECONDS
+    bash tools/remote-gate.sh push --commit "$commit" --boundary "$at"
+    rc=$?
+    [ "$rc" -eq 3 ] && exit 1
+    python3 tools/gate_timing.py record --suite "boundary-$at@$gate_host" --seconds "$((SECONDS - t0))" >/dev/null 2>&1 || true
+    if [ "$rc" -ne 0 ]; then
+      echo "pre-push: the $at boundary gate on $gate_host refused commit $commit - see the lane named above." >&2
+      echo "  bypass once (emergency only): git push --no-verify" >&2
+      exit "$rc"
+    fi
+  done
+  exit 0
+fi
 
 # --- judge the PUSHED commit, never the working tree (BG0837) ------------------------------
 # The gate once ran in the pusher's working tree, so an uncommitted fix turned a red push green

@@ -32,7 +32,7 @@
   - **Verified:** yes (2026-10-19)
 - **AC5:** Given the maintainer card's End goals, when a reviewer reads them, then each names an outcome a unit can fail against, never a mechanism that merely exists
   - **Verify:** manual: the independent review of this unit judges each End goal against this criterion; no test can tell an outcome from a mechanism
-  - **Verified:** yes (2026-10-19)
+  - **Verified:** manual (2026-10-19) - met, judged by this unit's independent QA review in round 2 (qa-seat-US1079-r1)
 
 ## Notes
 
@@ -51,3 +51,4 @@
 | 2026-10-19 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-19 | Claude Opus 5.5 | Groomed after the D0374 stakeholder consult: Primary under D0379, prd.md in Affects, the index order pinned, re-pointed 3 (D0380) |
 | 2026-10-19 | Claude Opus 5.5 | Repair after the round-1 REJECT: AC1 names the Cast role, AC4's unoracled clause becomes the manual AC5, the boundary is checked as one rule |
+| 2026-10-19 | Claude Opus 5.5 | AC5's stamp corrected to manual, recording the round-2 review that judged it met: the repair had inserted AC5 above AC4's own stamp |

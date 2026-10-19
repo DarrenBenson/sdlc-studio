@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 105 |
+| Open | 108 |
 | In Progress | 1 |
 | Fixed | 804 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 32 |
-| **Total** | **1069** |
+| **Total** | **1072** |
 
 ## All Bugs
 
@@ -145,6 +145,9 @@
 | [BG1067](BG1067-the-triage-session-cap-keys-on-the-run.md) | The triage session cap keys on the run state's id whether or not the run is sealed, so a signed run's counter keeps charging every later session's findings | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1068](BG1068-artifact-py-retitle-rewrites-an-inbound-link-s.md) | artifact.py retitle rewrites an inbound link's target but leaves its link text naming the old title, so an epic's story breakdown reads the retired title | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1069](BG1069-critic-escalation-reads-verdicts-across-a-reopen-a.md) | critic escalation reads verdicts across a reopen: a reopened unit's first new-round REJECT is reported as a panel split against the previous delivery's APPROVE | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1070](BG1070-conformance-reads-us0357-and-us0358-as-missing-their.md) | conformance reads US0357 and US0358 as missing their verified stage in a fresh checkout, though both carry Verified stamps, so the lane's verdict depends on the clone's .local state | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1071](BG1071-the-project-seat-card-s-design-persona-check.md) | The project seat card's design-persona check stops at a full stop, so a name followed by a file path before 'design persona' passes | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1072](BG1072-test-persona-coherence-s-id-check-reads-a.md) | test_persona_coherence's id check reads a fixed list of id prefixes, so a card citing a handoff or test-spec id that resolves to nothing passes | Open | Low | 2026-10-19 | 2026-10-19 |
 
 ## Archived Releases
 
