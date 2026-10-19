@@ -12,6 +12,7 @@ Each derived set first asserts a member known to be in it, so an empty derivatio
 instead of passing vacuously. The one fact typed here is git's own order of the three hooks,
 which belongs to git, not to this repository.
 """
+# test-census-subject: sdlc-studio/tsd.md
 from __future__ import annotations
 
 import os
@@ -78,9 +79,12 @@ def _hooks() -> list[str]:
 
 
 def _listing(hook: str) -> list[str]:
-    """The lane keys a hook's own `--list` prints, run as the hook documents it: it runs nothing."""
-    r = subprocess.run([str(HOOKS / hook), "--list"], cwd=REPO, capture_output=True, text=True,
-                       timeout=60)
+    """The lane keys a hook's own `--list` prints, run as the hook documents it: it runs nothing.
+    Run in THIS repository on purpose, since its lanes are what the documents describe, with git's
+    repository-locating variables dropped so no caller's GIT_DIR can point it elsewhere."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    r = subprocess.run([str(HOOKS / hook), "--list"], cwd=REPO, env=env, capture_output=True,
+                       text=True, timeout=60)
     assert r.returncode == 0, r.stderr
     return [line.split("\t", 1)[0] for line in r.stdout.splitlines() if "\t" in line]
 
