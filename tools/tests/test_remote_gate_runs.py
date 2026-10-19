@@ -40,15 +40,18 @@ BLOCKING_GATE = textwrap.dedent('''
     from pathlib import Path
     head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
     release = os.environ["STUB_RELEASE"]
+    limit = os.environ.get("STUB_DEADLINE", "180")
     child = subprocess.Popen([sys.executable, "-c",
-        "import os, sys, time\\nwhile not os.path.exists(sys.argv[1]): time.sleep(0.05)", release])
+        "import os, sys, time\\nend = time.monotonic() + float(sys.argv[2])\\n"
+        "while not os.path.exists(sys.argv[1]) and time.monotonic() < end: time.sleep(0.05)",
+        release, limit])
     Path(os.environ["STUB_GATE_LOG"]).open("a").write(json.dumps(
         {"pid": os.getpid(), "child": child.pid, "cwd": os.getcwd(), "head": head,
-         "argv": sys.argv[1:], "sigint_ignored": signal.getsignal(signal.SIGINT) == signal.SIG_IGN})
-        + "\\n")
+         "argv": sys.argv[1:], "sigint_ignored": signal.getsignal(signal.SIGINT) == signal.SIG_IGN,
+         "sigquit_ignored": signal.getsignal(signal.SIGQUIT) == signal.SIG_IGN}) + "\\n")
     print("  [PASS] stub-lane STUBBED", flush=True)
-    release = Path(os.environ["STUB_RELEASE"])
-    deadline = time.monotonic() + 180
+    release = Path(release)
+    deadline = time.monotonic() + float(limit)
     while not release.exists() and time.monotonic() < deadline:
         time.sleep(0.05)
 ''')
@@ -69,7 +72,7 @@ RELAY_SSH = textwrap.dedent('''
     with open(os.environ["STUB_SSH_LOG"], "a") as log:
         log.write(host + "\\t" + cmd + "\\n")
     env = {"HOME": os.environ["STUB_HOST_HOME"], "PATH": os.environ["STUB_HOST_PATH"]}
-    for key in ("STUB_GATE_LOG", "STUB_PREREQ_LOG", "STUB_RELEASE"):
+    for key in ("STUB_GATE_LOG", "STUB_PREREQ_LOG", "STUB_RELEASE", "STUB_DEADLINE"):
         if key in os.environ:
             env[key] = os.environ[key]
     child = subprocess.Popen(["bash", "-c", cmd], cwd=env["HOME"], env=env, stdin=subprocess.PIPE,
@@ -134,6 +137,7 @@ class _RunsClone(_HostClone):
         self.commit("blocking gate")
         self.release = self.tmp / "release"
         self.drop = self.tmp / "drop"
+        self.deadline = 180.0                 # the most a stub gate or its child waits for release
 
     def env(self) -> dict:
         base = {k: v for k, v in os.environ.items()
@@ -144,7 +148,8 @@ class _RunsClone(_HostClone):
                      "STUB_SSH_LOG": str(self.tmp / "ssh.log"), "STUB_GATE_LOG": str(self.tmp / "gate.log"),
                      "STUB_PREREQ_LOG": str(self.tmp / "prereq.log"), "STUB_KI_LOG": str(self.tmp / "ki.log"),
                      "STUB_HOST_HOME": str(self.host_home), "STUB_HOST_PATH": self.host_path(),
-                     "STUB_RELEASE": str(self.release), "STUB_SSH_DROP": str(self.drop)})
+                     "STUB_RELEASE": str(self.release), "STUB_SSH_DROP": str(self.drop),
+                     "STUB_DEADLINE": str(self.deadline)})
         return base
 
     def start_run(self, commit: str, name: str) -> subprocess.Popen:
@@ -180,15 +185,28 @@ class _RunsClone(_HostClone):
         return f.read_text(encoding="utf-8", errors="replace") if f.exists() else ""
 
     def cleanup(self) -> None:
-        self.release.touch()                  # never leave a blocked stub gate behind
+        """Never leave a stub behind: a test that fails before it releases the gate would
+        otherwise remove the release file's directory under a gate and child still polling it.
+        Every recorded gate and child is killed before the tree goes."""
+        if not self.tmp.exists():
+            return
+        for gate in self.gate_runs():
+            for pid in (gate["pid"], gate.get("child")):
+                if pid and _alive(pid):
+                    os.kill(pid, signal.SIGKILL)
+        try:
+            self.release.touch()
+        except OSError:
+            pass
         super().cleanup()
 
 
 class GateHostRunTests(unittest.TestCase):
 
     def setUp(self) -> None:
-        if self._testMethodName == "test_an_abandoned_push_leaves_nothing_running":
-            return                            # one fixture per abandonment case, made in the test
+        if self._testMethodName in ("test_an_abandoned_push_leaves_nothing_running",
+                                    "test_no_stub_outlives_its_fixture"):
+            return                            # one fixture per case, made in the test
         self.fx = _RunsClone()
         self.addCleanup(self.fx.cleanup)
 
@@ -227,6 +245,7 @@ class GateHostRunTests(unittest.TestCase):
         run = fx.start_run(fx.commit("interrupts reach the suite"), "first")
         gate = _until("the gate to start", lambda: fx.gate_runs())[0]
         self.assertFalse(gate["sigint_ignored"], "the host's gate runs with SIGINT ignored")
+        self.assertFalse(gate["sigquit_ignored"], "the host's gate runs with SIGQUIT ignored")
         fx.release.touch()
         self.assertEqual(run.wait(CEILING), 0, fx.text("first"))
 
@@ -278,6 +297,35 @@ class GateHostRunTests(unittest.TestCase):
                             if pid and _alive(pid):
                                 os.kill(pid, signal.SIGKILL)
                     fx.cleanup()
+
+    def test_no_stub_outlives_its_fixture(self) -> None:
+        """Round 2 of the review: a failing test removed the release file's directory under a
+        stub gate's child, which then polled for ever on a shared gate host. Each guard is held
+        alone. Mutants: the cleanup no longer kills the recorded gate and child (the release is
+        out of reach, so nothing else ends them); the child waits for release with no deadline
+        (the release is never made, so only the deadline ends it)."""
+        with self.subTest(guard="cleanup"):
+            fx = _RunsClone()
+            try:
+                fx.release = fx.tmp / "out-of-reach" / "release"
+                run = fx.start_run(fx.commit("torn down mid-run"), "first")
+                gate = _until("the gate to start", lambda: fx.gate_runs())[0]
+                fx.cleanup()
+                _until("the stub gate to stop with its fixture", lambda: not _alive(gate["pid"]), 30)
+                _until("the stub gate's child to stop with its fixture", lambda: not _alive(gate["child"]), 30)
+                run.wait(CEILING)
+            finally:
+                fx.cleanup()
+        with self.subTest(guard="deadline"):
+            fx = _RunsClone()
+            try:
+                fx.deadline = 2.0
+                run = fx.start_run(fx.commit("never released"), "first")
+                gate = _until("the gate to start", lambda: fx.gate_runs())[0]
+                _until("the stub gate's child to give up at its deadline", lambda: not _alive(gate["child"]), 60)
+                run.wait(CEILING)
+            finally:
+                fx.cleanup()
 
 if __name__ == "__main__":
     unittest.main()
