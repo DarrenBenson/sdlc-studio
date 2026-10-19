@@ -7,6 +7,7 @@
 | Attribute | Value |
 | --- | --- |
 | **Cast role** | Primary |
+| **Interface** | The shipped skill: what installs into a project's skill directory (`.claude/skills/sdlc-studio/`) and runs in her own repository |
 | **Role** | Solo founder-engineer building a SaaS product |
 | **Context** | Works in a terminal with an AI coding agent; long sessions, frequent context resets |
 

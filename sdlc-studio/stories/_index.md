@@ -7,10 +7,10 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 97 |
+| Draft | 96 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 0 |
+| In Progress | 1 |
 | Review | 0 |
 | Done | 806 |
 | Won't Implement | 92 |
@@ -116,7 +116,7 @@
 | [US1076](US1076-runs-on-a-gate-host-are-serialised-and.md) | Runs on a gate host are serialised, and an abandoned push stops its run | Draft | EP0288 | 2026-10-12 | 2026-10-12 |
 | [US1077](US1077-one-command-says-whether-a-gate-host-can.md) | One command says whether a gate host can judge a push | Draft | EP0288 | 2026-10-12 | 2026-10-12 |
 | [US1078](US1078-run-suite-sh-runs-the-full-suite-on.md) | run-suite.sh runs the full suite on the gate host and records a verdict its check can read | Draft | EP0288 | 2026-10-12 | 2026-10-12 |
-| [US1079](US1079-a-skill-maintainer-card-is-the-primary-for.md) | A skill-maintainer card is the Primary for the repository-tooling interface, beside Maya as Primary for the shipped skill | Draft | EP0289 | 2026-10-19 | 2026-10-19 |
+| [US1079](US1079-a-skill-maintainer-card-is-the-primary-for.md) | A skill-maintainer card is the Primary for the repository-tooling interface, beside Maya as Primary for the shipped skill | In Progress | EP0289 | 2026-10-19 | 2026-10-19 |
 | [US1080](US1080-a-unit-is-minted-against-the-primary-of.md) | A unit is minted against the Primary of the interface its Affects touches, read from interface paths the project declares | Draft | EP0289 | 2026-10-19 | 2026-10-19 |
 | [US1081](US1081-maya-s-and-trevor-s-cards-state-the.md) | Maya's and Trevor's cards state the signed run, the shipped gate's cost, the sign-once boundary and which Primary governs a mixed unit | Draft | EP0289 | 2026-10-19 | 2026-10-19 |
 | [US1082](US1082-the-prd-s-outcome-citations-name-end-goals.md) | The PRD's outcome citations name End goals that say them, and Jonah's upgrade goal has an outcome | Draft | EP0289 | 2026-10-19 | 2026-10-19 |

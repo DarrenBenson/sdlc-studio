@@ -1,6 +1,6 @@
 # US1079: A skill-maintainer card is the Primary for the repository-tooling interface, beside Maya as Primary for the shipped skill
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Delivers:** CR0648
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio new
@@ -20,12 +20,16 @@
 
 - **AC1:** Given the registry, when it is read, then it holds two Primaries, Rowan Achterberg for the repository-tooling interface and Maya Okafor for the shipped skill, each card declaring its interface in an `Interface` Quick Reference row, and `validate.py personas` reports no error and no undeclared-interface warning (D0379)
   - **Verify:** pytest tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_each_primary_declares_a_distinct_interface
+  - **Verified:** yes (2026-10-19)
 - **AC2:** Given a story minted with no `--persona`, when it is created, then it names Maya Okafor, the shipped skill's Primary, exactly as before: Maya is listed first under `## Primary` and a test pins that order until US1080 resolves the default by interface
   - **Verify:** pytest tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_an_unnamed_mint_still_defaults_to_the_shipped_skills_primary
+  - **Verified:** yes (2026-10-19)
 - **AC3:** Given the PRD's Target Users and the index, when they are read, then both name the maintainer as Primary for an interface that does not ship, the index preamble says the registry covers two interfaces, and the PRD names no outcome for the maintainer (D0380)
   - **Verify:** pytest tools/tests/test_persona_coherence.py::PrdTargetUsersTests::test_target_users_says_which_interface_each_primary_serves
+  - **Verified:** yes (2026-10-19)
 - **AC4:** Given the maintainer card, when it is read, then each End goal is an outcome a unit can fail against, every id it cites as evidence resolves to an artefact or a decision, and it states the boundary: a unit touching a shipped path is judged against Maya, and the maintainer's want is met in repository-only surface
   - **Verify:** pytest tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_the_maintainer_cards_evidence_resolves_and_states_the_boundary
+  - **Verified:** yes (2026-10-19)
 
 ## Notes
 

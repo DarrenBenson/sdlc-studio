@@ -175,10 +175,14 @@ rule reaches the next plan, build and review.
 The design target is declared in the persona registry,
 [`sdlc-studio/personas/index.md`](./personas/index.md), which is the authority:
 
-- **Primary (the design target):** Maya Okafor, a solo founder-engineer who wants a
-  disciplined, trustworthy lifecycle driven by an agent rather than vibe-coding.
-- **Secondary (served, never at the Primary's expense):** Jonah Reyes, a small-team
-  lead adopting sdlc-studio on an inherited brownfield repo.
+- **Primary for the shipped skill (the design target):** Maya Okafor, a solo founder-engineer
+  who wants a disciplined, trustworthy lifecycle driven by an agent rather than vibe-coding.
+- **Primary for the repository tooling, which does not ship:** Rowan Achterberg, who maintains
+  this repository's hooks, push gate, CI and release cut and forward-ports the skill (D0379). The
+  Outcomes below stay the shipped product's; a repository-only Sprint Goal names him with
+  `--serves` instead (D0380).
+- **Secondary (served, never at the shipped skill's Primary's expense):** Jonah Reyes, a
+  small-team lead adopting sdlc-studio on an inherited brownfield repo.
 - **Negative (deliberately not designed for):** Trevor Hale, an enterprise delivery
   manager wanting a GUI, central governance and a human gate on every change. A
   signal to decline, not a backlog.

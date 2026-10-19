@@ -1,12 +1,17 @@
 # Persona Index
 
-Goal-directed design personas for sdlc-studio itself (the Cooper model, RFC0017). These describe
-who the product is *for*; the review seats that critique artefacts are a separate concern (RFC0016).
+Goal-directed design personas for sdlc-studio itself (the Cooper model, RFC0017). The registry covers
+two interfaces, one Primary each (D0379): the shipped skill, and this repository's own tooling, which
+does not ship. A unit touching a shipped path is judged against the shipped skill's Primary. The
+review seats that critique artefacts are a separate concern (RFC0016).
 
 ## Primary (the design target)
 
 - [Maya Okafor](maya-okafor-founder-engineer.md) - solo founder-engineer; wants a disciplined,
   trustworthy lifecycle driven by an agent, not vibe-coding. Well-formed.
+- [Rowan Achterberg](rowan-achterberg-skill-maintainer.md) - maintainer of this repository; Primary for
+  the repository-tooling interface (hooks, push gate, CI, release cut and forward-port), which does not
+  ship. Listed second, so a story minted with no persona still names the shipped skill's Primary.
 
 ## Secondary (served, never at the Primary's expense)
 
@@ -34,3 +39,4 @@ the design target and is not maintained; this registry is.
 | 2026-07-27 | Claude Fable 5 | Recorded the flat `personas.md` as a superseded legacy appendix (US0451); the PRD's Target Users now names this registry (US0450) |
 | 2026-06-21 | Darren Benson | Seeded sdlc-studio's own Primary + Negative personas (dogfood of the Cooper template, RFC0017/CR0058) |
 | 2026-07-16 | Claude Fable 5 (persona review, operator-directed) | Maya gains the cost-honesty frustration + sprint-report scenario (RFC0038/EP0048); Secondary Jonah Reyes added (brownfield adoption path); Trevor confirmed unchanged |
+| 2026-10-19 | Claude Opus 5.5 (US1079) | Rowan Achterberg added as Primary for the repository-tooling interface beside Maya for the shipped skill, each card declaring its interface (D0379, after the D0374 stakeholder consult) |
