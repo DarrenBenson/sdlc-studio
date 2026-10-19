@@ -55,9 +55,18 @@ def _blocks(text: str) -> list[str]:
 
 
 def _settings() -> set[str]:
+    """Every `sdlc.` key on a line that runs `git config`, however it is spelt (quoted, after any
+    flags, or git's `git config get` form), and every SDLC_GATE_ variable."""
     text = "\n".join(_read(p) for p in READERS)
-    keys = set(re.findall(r"git config(?:\s+--[\w-]+)*\s+(sdlc\.[A-Za-z]+)", text))
+    keys = {k for line in text.splitlines() if re.search(r"\bgit\s+config\b", line)
+            for k in re.findall(r"(?<![\w.])(sdlc\.[A-Za-z]+)", line)}
     return keys | set(re.findall(r"\b(SDLC_GATE_[A-Z_]+)\b", text))
+
+
+#: A transport failure, however a sentence words it, and a claim that the gate then runs here.
+TRANSPORT = r"(?i)cannot be reached|unreachable|transport fail|connection (?:fails|failed|drops|is dropped)|drops mid-run|ssh fails"
+FALLS_BACK = r"(?i)\bfall(?:s|ing)? back\b|\bruns? (?:the gate |it )?(?:locally|here|on this machine)\b|\blocal gate\b"
+NEGATES = r"(?i)\b(?:never|not|no|without|rather than)\s+(?:\w+\s+){0,2}(?:fall(?:s|ing)? back|run(?:s|ning)?\b)"
 
 
 class GateHostDocsTests(unittest.TestCase):
@@ -74,28 +83,37 @@ class GateHostDocsTests(unittest.TestCase):
 
     def test_the_push_stage_names_each_gate_location(self) -> None:
         """AC2. Mutants: the push stage silent on where the gate runs with a host, with none, or
-        with SDLC_GATE_LOCAL=1; an unreachable host said to fall back to running the gate here."""
+        with SDLC_GATE_LOCAL=1, or saying any of the three the wrong way round; an unreachable
+        host said to run the gate here, or its refusal and fall-back swapped; a transport failure,
+        in any wording and in either document, said to fall back to the local gate."""
         stage = [b for b in _blocks(_section(_read(TSD), "Pipeline Stages")) if ".githooks/pre-push" in b]
         self.assertTrue(stage, "no TSD pipeline stage names .githooks/pre-push")
-        push = stage[0]
-        sentences = re.split(r"(?<=[.;])\s+", push)
-        self.assertTrue(any("sdlc.gateHost" in s and re.search(r"(?i)\bhost\b", s) and re.search(r"(?i)\bthere\b|on (?:that|the) host", s)
-                            for s in sentences), "the push stage does not say the gate runs on a configured host")
-        self.assertTrue(any(re.search(r"(?i)\bunset\b|\bno host\b|\bnone\b", s) and re.search(r"(?i)this machine|locally", s)
-                            for s in sentences), "the push stage does not say where the gate runs with no host")
-        self.assertTrue(any("SDLC_GATE_LOCAL=1" in s and re.search(r"(?i)this machine|locally", s) for s in sentences),
-                        "the push stage does not say SDLC_GATE_LOCAL=1 runs the gate here")
-        unreachable = [s for s in sentences if re.search(r"(?i)cannot be reached|unreachable|connection fails", s)]
+        sentences = re.split(r"(?<=[.;])\s+", stage[0])
+        here = r"(?i)this machine|locally"
+        host = [s for s in sentences if re.search(r"sdlc\.gateHost`? set\b", s)]
+        self.assertTrue(any(re.search(r"(?i)\bthere\b|on (?:that|the) host", s) for s in host),
+                        "the push stage does not say the gate runs on a configured host")
+        unset = [s for s in sentences if re.search(r"(?i)\bunset\b|\bno host\b", s)]
+        self.assertTrue(unset, "the push stage does not say where the gate runs with no host")
+        for s in unset:
+            self.assertRegex(s, rf"(?i)gate runs (?:on this machine|locally)", f"no host is not said to run the gate here: {s}")
+            self.assertNotRegex(s, r"(?i)refus|\bnever\b|\bnot\b|\bthere\b", f"no host is said the wrong way round: {s}")
+        local = [s for s in sentences if "SDLC_GATE_LOCAL=1" in s]
+        self.assertTrue(local, "the push stage does not name SDLC_GATE_LOCAL=1")
+        for s in local:
+            self.assertRegex(s, r"(?i)runs (?:it|the gate) on this machine", f"SDLC_GATE_LOCAL=1 is not said to run the gate here: {s}")
+            self.assertNotRegex(s, r"(?i)ignored|still runs there|not on this machine", f"SDLC_GATE_LOCAL=1 is said the wrong way round: {s}")
+        unreachable = [s for s in sentences if re.search(TRANSPORT, s)]
         self.assertTrue(unreachable, "the push stage does not say what an unreachable host does")
-        for s in unreachable:
-            self.assertRegex(s, r"(?i)refus", f"an unreachable host is not said to refuse the push: {s}")
-            self.assertRegex(s, r"(?i)rather than|not .*(?:here|locally|this machine)",
-                             f"an unreachable host is not said to keep the gate off this machine: {s}")
+        self.assertTrue(any(re.search(r"(?i)refus\w*[^.]*\brather than\b[^.]*\brun\w*", s) for s in unreachable),
+                        "an unreachable host is not said to refuse the push rather than run the gate here")
         for doc in (TRD, TSD):
             for s in re.split(r"(?<=[.;])\s+", " ".join(_blocks(_read(doc)))):
-                if re.search(r"(?i)cannot be reached|unreachable", s) and re.search(r"(?i)falls? back|runs? (?:the gate )?(?:locally|here)", s):
-                    self.assertRegex(s, r"(?i)\bnot\b|rather than|never", f"{doc.name} says an unreachable host falls back: {s}")
-
+                if not re.search(TRANSPORT, s):
+                    continue
+                for clause in re.split(r"(?i),\s*(?:but|and|while|whereas)\s+|\s+but\s+", s):
+                    if re.search(FALLS_BACK, clause) and not re.search(NEGATES, clause):
+                        self.fail(f"{doc.name} says a transport failure runs the gate here: {s}")
 
 if __name__ == "__main__":
     unittest.main()

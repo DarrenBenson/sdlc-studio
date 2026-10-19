@@ -213,7 +213,9 @@ both in this clone's git config, shape it: `sdlc.gateSsh` replaces the default s
 machine for one push. A host that cannot be reached refuses the push rather than running the
 gate here. `tools/run-suite.sh` runs its suite on the same host, against the working tree, and
 `bash tools/remote-gate.sh doctor` says whether a host can judge a push;
-`tools/enable-hooks.sh` names the host and runs the doctor.
+`tools/enable-hooks.sh` names the host and runs the doctor. The host needs git on the PATH an
+ssh command sees there, because the commit is received before anything else runs, and the
+Python and Node the gate runs, which `~/sdlc-gate/gate-env.sh` on the host may put on that PATH.
 
 ---
 
