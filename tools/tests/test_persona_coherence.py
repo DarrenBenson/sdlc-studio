@@ -70,7 +70,9 @@ INTERFACE_ROW = re.compile(r"^\|\s*\*\*Interface\*\*\s*\|\s*(.+?)\s*\|\s*$", re.
 #: How a card says its interface is not the shipped skill.
 NOT_SHIPPED = re.compile(r"does not ship", re.I)
 #: An id a card may cite as evidence: a decision or a numbered artefact.
-CITED_ID = re.compile(r"\b(D\d{4}|(?:BG|US|CR|EP|RV|RFC)\d{4})\b")
+CITED_ID = re.compile(r"\b(D\d{4}|(?:BG|US|CR|EP|RV|RFC|LL|RETRO|RPT)\d{4})\b")
+#: A card's `| **Cast role** | ... |` Quick Reference row.
+CAST_ROLE_ROW = re.compile(r"^\|\s*\*\*Cast role\*\*\s*\|\s*(.+?)\s*\|\s*$", re.M)
 
 
 def primary_cards(index_path: Path = REGISTRY) -> list[tuple[str, Path]]:
@@ -106,10 +108,20 @@ def card_section(text: str, heading: str) -> str:
 
 
 def id_resolves(cited: str) -> bool:
-    if cited.startswith("D"):
+    if re.fullmatch(r"D\d{4}", cited):
         decisions = (REPO / "sdlc-studio" / "decisions.md").read_text(encoding="utf-8")
         return f"| {cited} |" in decisions
+    if cited.startswith("LL"):
+        return any((SCRIPTS.parent / "lessons").glob(f"{cited}-*.md"))
     return any((REPO / "sdlc-studio").glob(f"**/{cited}-*.md"))
+
+
+def first_name(name: str) -> str:
+    return name.split()[0]
+
+
+def flat(text: str) -> str:
+    return " ".join(text.split())
 
 
 class PrdTargetUsersTests(unittest.TestCase):
@@ -139,30 +151,34 @@ class PrdTargetUsersTests(unittest.TestCase):
                          "as the authority")
 
     def test_target_users_says_which_interface_each_primary_serves(self) -> None:
-        """US1079 AC3. Mutants it must fail on: the tooling Primary named in Target Users with
-        no word that his interface does not ship; Maya's line losing 'shipped skill'; a PRD
-        outcome citing the tooling Primary (D0380 rules none)."""
+        """US1079 AC3, both halves. Mutants: the PRD's bold label for the tooling Primary saying
+        Secondary, or losing 'does not ship'; the shipped Primary's label losing 'shipped
+        skill'; the index preamble or the tooling Primary's index bullet losing 'does not ship';
+        the index bullet naming paths the card's Interface row does not; a PRD outcome citing
+        the tooling Primary by full or first name (D0380 rules none)."""
         shipped, tooling = shipped_and_tooling()
         self.assertTrue(shipped and tooling, "the registry declares no shipped-skill Primary "
                         "beside a tooling Primary, so there is nothing to check")
-        lines = self.section.splitlines()
-        def bullet(name):
-            idx = next((i for i, ln in enumerate(lines) if name in ln), None)
-            self.assertIsNotNone(idx, f"Target Users does not name {name}")
-            return " ".join(lines[idx - 1:idx + 2]).lower()
-        self.assertIn("shipped skill", bullet(shipped))
-        for name, _ in tooling:
-            self.assertIn("does not ship", bullet(name))
-        registry_text = REGISTRY.read_text(encoding="utf-8")
-        preamble = registry_text.split("\n## ", 1)[0].lower()
-        self.assertIn("two interfaces", preamble,
-                      "the index preamble does not say the registry covers two interfaces")
+        section = flat(self.section)
+        self.assertRegex(section, rf"\*\*Primary for the shipped skill[^*]*:\*\* {re.escape(shipped)}\b")
+        index = REGISTRY.read_text(encoding="utf-8")
+        preamble = flat(index.split("\n## ", 1)[0]).lower()
+        self.assertIn("two interfaces", preamble)
+        self.assertIn("does not ship", preamble)
         outcomes = re.search(r"^## Outcomes\s*$(.*?)(?=^##\s)", PRD.read_text(encoding="utf-8"),
                              re.M | re.S)
         self.assertIsNotNone(outcomes, "the PRD has no ## Outcomes section")
-        for name, _ in tooling:
-            self.assertNotIn(name, outcomes.group(1),
-                             f"a PRD outcome cites {name}, whose interface does not ship (D0380)")
+        for name, card in tooling:
+            self.assertRegex(section, rf"\*\*Primary for [^*]*does not ship:\*\* {re.escape(name)}\b",
+                             f"Target Users does not label {name} Primary for an interface that does not ship")
+            bullet = re.search(rf"^- \[{re.escape(name)}\]\(.*?(?=^- \[|^## |\Z)", index, re.M | re.S)
+            self.assertIsNotNone(bullet, f"the index has no bullet for {name}")
+            self.assertIn("does not ship", flat(bullet.group(0)))
+            for path in re.findall(r"`([^`]+/)`", interface_of(card)):
+                self.assertIn(path, bullet.group(0),
+                              f"the index bullet for {name} omits {path} from the card's Interface row")
+            self.assertNotRegex(outcomes.group(1), rf"\b(?:{re.escape(name)}|{re.escape(first_name(name))})\b",
+                                f"a PRD outcome cites {name}, whose interface does not ship (D0380)")
 
     def test_expected_names_are_derived_from_the_registry_not_hardcoded(self) -> None:
         # 1. The parser reads whatever the registry says, rather than knowing an answer.
@@ -214,6 +230,10 @@ class TwoPrimaryCastTests(unittest.TestCase):
         interfaces = {name: interface_of(path) for name, path in cards}
         self.assertEqual([n for n, i in interfaces.items() if not i], [],
                          "a Primary card declares no Interface row")
+        roles = {name: (CAST_ROLE_ROW.search(path.read_text(encoding="utf-8")) or [None, ""])[1]
+                 for name, path in cards}
+        self.assertEqual({n: r for n, r in roles.items() if r.strip().lower() != "primary"}, {},
+                         "a card the index lists under ## Primary declares another Cast role")
         self.assertEqual(len(set(interfaces.values())), len(interfaces),
                          f"two Primaries declare the same interface: {interfaces}")
         shipped, tooling = shipped_and_tooling()
@@ -249,12 +269,13 @@ class TwoPrimaryCastTests(unittest.TestCase):
             shutil.rmtree(home, ignore_errors=True)
 
     def test_the_maintainer_cards_evidence_resolves_and_states_the_boundary(self) -> None:
-        """AC4. Mutants: an Evidence line citing an id that resolves to nothing; an End goal
-        with no Evidence line; the Boundaries section losing the shipped path, the shipped
-        Primary's name or 'judged against'. Whether each End goal is an outcome rather than
-        machinery is a reviewer's judgement; this test holds that each one carries evidence."""
+        """AC4. Mutants: an id anywhere on the card (Evidence, Frustrations or prose) that resolves
+        to nothing, lessons included; an End goal with no Evidence line; the boundary rule
+        reversed (a shipped path judged against the tooling Primary, the shipped Primary's want
+        met in repository-only surface) or half-removed. Whether each End goal is an outcome
+        rather than machinery is AC5, a declared manual criterion: no test tells them apart."""
         shipped, tooling = shipped_and_tooling()
-        self.assertTrue(tooling, "no tooling Primary card to check")
+        self.assertTrue(shipped and tooling, "no shipped and tooling Primaries to check")
         for name, path in tooling:
             text = path.read_text(encoding="utf-8")
             goals = re.findall(r"^(\d+)\.\s", card_section(text, "End Goals"), re.M)
@@ -264,15 +285,18 @@ class TwoPrimaryCastTests(unittest.TestCase):
             for number in goals:
                 self.assertRegex(evidence, rf"End goal {number}:",
                                  f"{name}'s End goal {number} cites no evidence")
-            cited = CITED_ID.findall(evidence)
-            self.assertTrue(cited, f"{name}'s Evidence cites no id")
+            cited = CITED_ID.findall(text)
+            self.assertTrue(cited, f"{name}'s card cites no id")
             self.assertEqual([c for c in cited if not id_resolves(c)], [],
-                             f"{name}'s Evidence cites id(s) that resolve to nothing")
-            boundary = card_section(text, "Boundaries")
-            self.assertIn(".claude/skills/sdlc-studio/", boundary)
-            self.assertIn(shipped, boundary)
-            self.assertIn("judged against", boundary)
-
+                             f"{name}'s card cites id(s) that resolve to nothing")
+            boundary = flat(card_section(text, "Boundaries"))
+            judged = rf"(?:{re.escape(shipped)}|{re.escape(first_name(shipped))})"
+            self.assertRegex(boundary, rf"touches a shipped path \(`\.claude/skills/sdlc-studio/`\) "
+                                       rf"is judged against {judged}\.",
+                             f"{name}'s card does not judge a shipped-path unit against {shipped}")
+            self.assertRegex(boundary, rf"{re.escape(first_name(name))}'s want is met in "
+                                       rf"repository-only surface, never by shipped surface",
+                             f"{name}'s card does not keep his want to repository-only surface")
 
 def tracked_markdown() -> list[Path]:
     """Every tracked markdown file, listed from the repo rather than enumerated."""

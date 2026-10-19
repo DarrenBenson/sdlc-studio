@@ -10,8 +10,8 @@ review seats that critique artefacts are a separate concern (RFC0016).
 - [Maya Okafor](maya-okafor-founder-engineer.md) - solo founder-engineer; wants a disciplined,
   trustworthy lifecycle driven by an agent, not vibe-coding. Well-formed.
 - [Rowan Achterberg](rowan-achterberg-skill-maintainer.md) - maintainer of this repository; Primary for
-  the repository-tooling interface (hooks, push gate, CI, release cut and forward-port), which does not
-  ship. Listed second, so a story minted with no persona still names the shipped skill's Primary.
+  the repository-tooling interface (this repository's `tools/`, `.githooks/` and `.github/`, and the
+  forward-port to the installed copy), which does not ship. Listed second, so a story minted with no persona still names the shipped skill's Primary.
 
 ## Secondary (served, never at the Primary's expense)
 

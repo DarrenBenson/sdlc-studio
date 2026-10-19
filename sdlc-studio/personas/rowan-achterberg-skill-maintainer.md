@@ -25,8 +25,8 @@ before the push rather than after it.
 
 *What they are trying to accomplish, most important first. The design is judged against these.*
 
-1. A push is judged against exactly the commit pushed, in minutes the work can absorb, without
-   competing with agent sessions for the workstation's memory
+1. A push is judged against exactly the commit pushed in about the ten minutes a gate host takes,
+   not the hour it took on a workstation shared with agent sessions
 2. A fix landed in this repository is in force in the installed copy the same day, so no fix is
    believed shipped while it runs nowhere
 3. A release ships that a consuming team can upgrade to: the release boundary green, every known

@@ -178,9 +178,9 @@ The design target is declared in the persona registry,
 - **Primary for the shipped skill (the design target):** Maya Okafor, a solo founder-engineer
   who wants a disciplined, trustworthy lifecycle driven by an agent rather than vibe-coding.
 - **Primary for the repository tooling, which does not ship:** Rowan Achterberg, who maintains
-  this repository's hooks, push gate, CI and release cut and forward-ports the skill (D0379). The
-  Outcomes below stay the shipped product's; a repository-only Sprint Goal names him with
-  `--serves` instead (D0380).
+  this repository's own tooling (`tools/`, `.githooks/` and `.github/`) and forward-ports the
+  skill (D0379). The PRD's Outcomes stay the shipped product's; a repository-only Sprint Goal
+  names him with `--serves` instead (D0380).
 - **Secondary (served, never at the shipped skill's Primary's expense):** Jonah Reyes, a
   small-team lead adopting sdlc-studio on an inherited brownfield repo.
 - **Negative (deliberately not designed for):** Trevor Hale, an enterprise delivery

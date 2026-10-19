@@ -18,7 +18,7 @@
 
 ## Acceptance Criteria
 
-- **AC1:** Given the registry, when it is read, then it holds two Primaries, Rowan Achterberg for the repository-tooling interface and Maya Okafor for the shipped skill, each card declaring its interface in an `Interface` Quick Reference row, and `validate.py personas` reports no error and no undeclared-interface warning (D0379)
+- **AC1:** Given the registry, when it is read, then it holds two Primaries, Rowan Achterberg for the repository-tooling interface and Maya Okafor for the shipped skill, each card declaring its interface in an `Interface` Quick Reference row and its `Cast role` as Primary, in agreement with the index, and `validate.py personas` reports no error and no undeclared-interface warning (D0379)
   - **Verify:** pytest tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_each_primary_declares_a_distinct_interface
   - **Verified:** yes (2026-10-19)
 - **AC2:** Given a story minted with no `--persona`, when it is created, then it names Maya Okafor, the shipped skill's Primary, exactly as before: Maya is listed first under `## Primary` and a test pins that order until US1080 resolves the default by interface
@@ -27,8 +27,11 @@
 - **AC3:** Given the PRD's Target Users and the index, when they are read, then both name the maintainer as Primary for an interface that does not ship, the index preamble says the registry covers two interfaces, and the PRD names no outcome for the maintainer (D0380)
   - **Verify:** pytest tools/tests/test_persona_coherence.py::PrdTargetUsersTests::test_target_users_says_which_interface_each_primary_serves
   - **Verified:** yes (2026-10-19)
-- **AC4:** Given the maintainer card, when it is read, then each End goal is an outcome a unit can fail against, every id it cites as evidence resolves to an artefact or a decision, and it states the boundary: a unit touching a shipped path is judged against Maya, and the maintainer's want is met in repository-only surface
+- **AC4:** Given the maintainer card, when it is read, then every id it cites anywhere resolves to an artefact, a decision or a lesson, each End goal has an Evidence line, and it states the boundary as one rule: a unit touching a shipped path is judged against Maya, and the maintainer's want is met in repository-only surface
   - **Verify:** pytest tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_the_maintainer_cards_evidence_resolves_and_states_the_boundary
+  - **Verified:** yes (2026-10-19)
+- **AC5:** Given the maintainer card's End goals, when a reviewer reads them, then each names an outcome a unit can fail against, never a mechanism that merely exists
+  - **Verify:** manual: the independent review of this unit judges each End goal against this criterion; no test can tell an outcome from a mechanism
   - **Verified:** yes (2026-10-19)
 
 ## Notes
@@ -36,7 +39,7 @@
 - AC1 must fail on: either card losing its Interface row, or both declaring the same interface (validate errors on that).
 - AC2 must fail on: Rowan listed first under `## Primary`, which silently makes every unnamed mint his (`PersonaRegistry.primary` returns the first bullet; the consult confirmed it by fixture).
 - AC3 must fail on: the PRD's Target Users left without the maintainer (the existing `test_target_users_names_every_declared_persona` already fails then), or a maintainer outcome added to `## Outcomes`.
-- AC4 must fail on: an End goal phrased as machinery ('a gate exists') rather than an outcome, a cited id that resolves to nothing, or the shipped-path boundary line removed.
+- AC4 must fail on: a cited id anywhere on the card that resolves to nothing, an End goal with no Evidence line, or the boundary rule reversed or half-removed. AC5, an End goal phrased as machinery ('a gate exists'), is judged by the review, since no test can tell the two apart (round 1 of this unit's review).
 - Consult folds (consult-EP0289-stakeholders-2026-10-19.md): prd.md joins Affects because the coherence test reds without it; the card is written to EP0287's standard (Evidence section, End goals a Verify can attach to later); the gate-cost and prerequisite frustrations with their figures go on this card, never Maya's; Maya's card gains only its Interface row here; one footer line says outside contributors share the interface; the card does not name the real operator.
 - End goals, in order: a push is judged against exactly the commit pushed in minutes the work can absorb (D0366, D0370); a fix landed here is in force in the installed copy the same day (forward-port); a release ships that a consuming team can upgrade to (D0375; Jonah's End goal 4 depends on it); main is never left red and unread (D0181).
 - After this lands, US1075-US1078 and US1084-US1086 are repointed at this card before their reviews (D0380), and recorded in each one's revision history.
@@ -47,3 +50,4 @@
 | --- | --- | --- |
 | 2026-10-19 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-19 | Claude Opus 5.5 | Groomed after the D0374 stakeholder consult: Primary under D0379, prd.md in Affects, the index order pinned, re-pointed 3 (D0380) |
+| 2026-10-19 | Claude Opus 5.5 | Repair after the round-1 REJECT: AC1 names the Cast role, AC4's unoracled clause becomes the manual AC5, the boundary is checked as one rule |
