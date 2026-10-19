@@ -190,7 +190,7 @@ overstating coverage.
 | Coverage Target | 80% statement, blocking CI gate (`coverage report --fail-under=80`); ~90% aspiration [HIGH] |
 | Framework | Python `unittest` (stdlib) |
 | Execution | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` (shipped scripts); the repo-only checkers under `tools/tests` run under pytest through the push's plan, `gate.py --boundary push --run-tests tools/tests/test_*.py`, in CI as at the push; `npm test` runs both |
-| Suite size | MINUTES rather than seconds for the skill suite, seconds for the tools suite. Run the discover command for the live count and `tools/gate_timing.py estimate` for the live duration rather than trusting a pinned number: both drift every sprint, and the cost is why the hook skips the suites for a commit that cannot reach them |
+| Suite size | MINUTES rather than seconds for both suites. Run the discover command for the live count and `tools/gate_timing.py estimate` for the live duration rather than trusting a pinned number: both drift every sprint, and the cost is why the hook skips the suites for a commit that cannot reach them |
 | Location | `.claude/skills/sdlc-studio/scripts/tests/test_<script>.py`; `tools/tests/` for the repo-only checkers |
 
 The suite operates on small temporary fixture trees, which is what keeps a
@@ -256,13 +256,13 @@ a sprint, the map below records what each tier is responsible for.
 
 ### Static / Lint Testing (markdown)
 
-This level is the primary guard on the markdown corpus. `npm run lint` chains eight
-checkers; any non-zero exit fails the gate. Every one except markdownlint runs as a
-plain Python or bash command, so a machine without Node still runs seven of the eight.
+This level is the primary guard on the markdown corpus. `npm run lint` chains the checks
+the table below names; any non-zero exit fails the gate. Every one except markdownlint runs
+as a plain Python or bash command, so a machine without Node still runs all the others.
 
 | Check | Command | Enforces | Tooling |
 | --- | --- | --- | --- |
-| Markdown house style | `lint:md` | markdownlint rules per `.markdownlint.json` (MD013 off, MD024 siblings-only, MD033 off, MD041 off, MD036 off, fenced code) | markdownlint-cli |
+| Markdown house style | `lint:md` | markdownlint rules, run by `tools/lint-md.sh` over the tracked markdown: the repository's files under `.markdownlint.json` (MD013 off, MD024 siblings-only, MD033 off, MD041 off, MD036 off, fenced code), and the shipped payload under `.claude/skills/sdlc-studio/.markdownlint.json` | markdownlint-cli |
 | Prose style | `lint:style` | No em dash (U+2014); no banned corporate jargon outside `tools/style-allowlist.txt`; no Americanised spelling (a bounded auto-checked list); no internal provenance tags in consuming-facing files | `tools/lint-style.sh` (bash + grep) |
 | Link integrity | `lint:links` | Every `path.md#anchor` reference inside the skill subtree resolves to an existing file and anchor; the repo-root docs' markdown links resolve to existing files | `tools/check_links.py` |
 | Skill frontmatter | `lint:skill` | `name` 1-64 chars matching the directory and `^[a-z0-9]+(-[a-z0-9]+)*$`; `description` 1-1024 chars; `metadata.version` X.Y.Z semver; no unknown frontmatter fields | `tools/validate_skill.py` |
@@ -270,6 +270,8 @@ plain Python or bash command, so a machine without Node still runs seven of the 
 | Line budgets | `lint:budgets` | `SKILL.md` < 500 lines; each `reference-*.md` within its declared ceiling (with a recorded allowlist and a tolerance factor) | `tools/check_budgets.py` |
 | Neutrality | `lint:neutrality` | No private consuming-project name in a tracked file | `tools/check_neutrality.py` |
 | Action pins | `lint:action-pins` | CI actions pinned, not floating | `tools/check_action_pins.sh` |
+| Dead flags | `lint:dead-flags` | No flag whose parsed destination no line acts on | `scripts/command_audit.py --dead-flags` |
+| Disclosure | `lint:disclosure` | Reference and help files carry a `Load when:` trigger and an index entry (advisory: exits 0 unless run with `--strict`) | `scripts/disclosure.py` |
 
 `lint:fix` (`markdownlint --fix`) is available for auto-fixable markdown issues but
 is not part of the gate.
@@ -542,8 +544,8 @@ and none is present in the suite.
 
 | Layer | Tool | Language |
 | --- | --- | --- |
-| Script unit / integration | `unittest` tests, run by `pytest`, in parallel with `pytest-xdist` | Python 3.10+ |
-| Coverage | `coverage` (7.10 or later), for the CI floor | Python 3.10+ |
+| Script unit / integration | `unittest` tests: the hooks and the push gate run them under `pytest`, in parallel with `pytest-xdist`, and CI and `npm run test:skill` run the skill suite under `python3 -m unittest` | Python 3.10+ |
+| Coverage | `coverage` (7.10 or later), measuring CI's skill-suite run for the floor | Python 3.10+ |
 | Config and workflow parsing | `PyYAML` | Python 3.10+ |
 | Mutation / assertion integrity | `scripts/mutation.py` | Python 3.10+ |
 | Flow conformance | `tools/eval_run.py` | Python 3.10+ |
@@ -619,7 +621,7 @@ Each job, read from `.github/workflows/`, with what it runs and the triggers it 
 
 | Job | Workflow | Runs on | What it runs |
 | --- | --- | --- | --- |
-| `ci` | `lint.yml` | a push to main, a pull request to main, the weekly schedule and a manual dispatch | The lint chain, both unit suites once (the skill suite under coverage, with the green-run noise gate), the portable artefact gate, the coverage floor and the bandit scan, on Python 3.10 (the declared floor) and 3.12 |
+| `ci` | `lint.yml` | a push to main, a pull request to main, the weekly schedule and a manual dispatch | The lint chain, both unit suites once (the skill suite under coverage, with the green-run noise gate), the portable artefact gate, the coverage floor and the bandit scan, on Python 3.12, with `tools/tests/test_lean_python_floor.py` also run under 3.10, the declared floor |
 | `windows-smoke` | `lint.yml` | a push to main, a pull request to main, the weekly schedule and a manual dispatch | `install.ps1`: the target listing and dry run, a real local install with its stale-copy sweep, `-NoSweep`, and the verified install path |
 | `corpus` | `lint.yml` | the weekly schedule and a manual dispatch | `npm run lint:corpus`: every tracked markdown file under the strict rules, attributed against the latest tag |
 | `corpus-verify` | `lint.yml` | the weekly schedule and a manual dispatch | Every `Verify:` line in the corpus, executed |

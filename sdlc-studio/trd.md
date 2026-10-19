@@ -224,15 +224,15 @@ gate here. `tools/run-suite.sh` runs its suite on the same host, against the wor
 | Category | Technology | Version | Rationale |
 | --- | --- | --- | --- |
 | Instruction language | Markdown + YAML frontmatter | n/a | The skill is read by an LLM; markdown is the native format for agent instruction files and templates. |
-| Script language | Python | 3.10+ | `str \| None` union syntax and `from **future** import annotations` are used in `lib/sdlc_md.py`. The shipped scripts are pure stdlib apart from one soft dependency, `PyYAML`, which reads `.config.yaml`: without it a config key is warned about and not honoured. |
+| Script language | Python | 3.10+ | `str \| None` union syntax and `from **future** import annotations` are used in `lib/sdlc_md.py`. The shipped scripts are pure stdlib, with soft dependencies a feature degrades without: `PyYAML` reads `.config.yaml` (without it the readers warn and leave a key unhonoured, and `config.py show` refuses), `lizard` scores a non-Python file's complexity (without it the file is left unscored), and `coverage` serves `verify_ac run --coverage` (without it the run refuses under `block` and reports under `report`). |
 | Templating | `{{placeholder}}` convention | n/a | Tool-neutral, plain-text substitution the agent fills in. |
-| Test framework | `unittest` tests, run by `pytest` with `pytest-xdist` | development only | The tests are stdlib `unittest`. The repository runs them under `pytest`, in parallel with `pytest-xdist`, and `coverage` (7.10 or later) measures the CI floor. `requirements-dev.txt` is the one Python dependency list (`PyYAML`, `pytest`, `pytest-xdist`, `coverage`): CI, the hooks' prerequisite check (`tools/gate_prereqs.py`) and the gate host's doctor all read it. |
+| Test framework | `unittest` tests, run by `pytest` with `pytest-xdist` | development only | The tests are stdlib `unittest`. The hooks and the push gate run them under `pytest`, in parallel with `pytest-xdist`. CI and `npm run test:skill` run the skill suite under `python3 -m unittest` through `tools/skill-tests.sh`, and `coverage` (7.10 or later) measures that run for the CI floor. `requirements-dev.txt` is the one Python dependency list (`PyYAML`, `pytest`, `pytest-xdist`, `coverage`): CI, the hooks' prerequisite check (`tools/gate_prereqs.py`) and the gate host's doctor all read it. |
 
 ### Build & Development
 
 | Tool | Purpose |
 | --- | --- |
-| `npm run lint` | The lint chain: each `lint:` script `package.json` names, markdownlint among them from `markdownlint-cli`, the one Node devDependency (`npm ci` installs it). |
+| `npm run lint` | The lint chain: the `lint:` scripts its `lint` script chains (not `lint:corpus` or `lint:fix`), markdownlint among them from `markdownlint-cli`, the one Node devDependency (`npm ci` installs it). |
 | `npm test` (`test:skill`, then `test:tools`), or `tools/run-suite.sh all` | Runs both suites; all must pass before a release is tagged. `run-suite.sh` writes a verdict `--check` can read, and runs on the gate host when one is configured. The Windows installer is gated by a separate `pwsh` smoke job. |
 | `install.sh` / `install.ps1` | Install/uninstall the skill into one or more agent targets. |
 
@@ -1186,7 +1186,7 @@ touches the component. The constraints below span components.
 | 2026-09-25 | 5.1.0 | The Component Overview gains a Constraints column, which a lane brief reads for the components its unit touches. The Must Have constraints that govern one component (the router, the script layer, `lib/sdlc_md.py`) move into their cells; the ones that span components stay in §13. |
 | 2026-10-03 | 6.0.0 | Spec truth for 6.1 (US0984). The `.local/` state table drops `mutation-runs.json`, the per-target ledger nothing writes since v6, and names `mutation-series.jsonl`, the per-run series `mutation.py` appends; the mutation report and the scaling note no longer say a gate lane reads either; `critic`'s writing verbs are `record`, `correct` and `supersede`, `evidence` and `signoff` being retired, and §5's write surface says `critic record` appends to the verdict log alone. |
 | 2026-10-19 | 6.1.0 | US1084: §3 names the three hooks, the push and release boundaries, and the four files the gate writes under `.local/` (it had said the gate wrote none). §10's gate row states the declared 45 s budget and its source, where it had called the gate sub-second |
-| 2026-10-19 | 6.1.0 | US1085: §4 names every package `requirements-dev.txt` and `package.json` declare, `requirements-dev.txt` as the one Python dependency list, and the shipped scripts' one soft dependency (PyYAML); the suites run under pytest |
+| 2026-10-19 | 6.1.0 | US1085: §4 names every package `requirements-dev.txt` and `package.json` declare, `requirements-dev.txt` as the one Python dependency list, and the shipped scripts' soft dependencies (PyYAML, lizard, coverage); which runner runs which suite |
 | 2026-10-19 | 6.1.0 | US1086: §3 describes the gate host: the git config keys and the local override, the fallback when none is set, and that an unreachable host refuses the push |
 
 ---
