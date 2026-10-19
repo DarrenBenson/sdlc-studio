@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-10-16
+**Last Updated:** 2026-10-19
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 9 |
+| Proposed | 15 |
 | Approved | 0 |
 | In Progress | 25 |
 | Complete | 520 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **643** |
+| **Total** | **649** |
 
 ## All Changes
 
@@ -55,6 +55,12 @@
 | [CR-0641](CR0641-a-review-round-ruling-is-admitted-from-any.md) | A review-round ruling is admitted from any accepted decision about the unit, not one that authorises a round | Proposed | P3 | Improvement | 2026-10-13 | -- |
 | [CR-0642](CR0642-prevent-or-retire-lesson-lc-016-a-signed.md) | Prevent or retire lesson LC-016 (a signed page reads a live source) | Proposed | Medium | Improvement | 2026-10-16 | -- |
 | [CR-0643](CR0643-prevent-or-retire-lesson-lc-018-a-doc.md) | Prevent or retire lesson LC-018 (a doc claim checked by reading) | Proposed | Medium | Improvement | 2026-10-16 | -- |
+| [CR-0644](CR0644-bring-the-trd-s-and-tsd-s-gate.md) | Bring the TRD's and TSD's gate architecture current: the three hooks, the boundary gates, the test stack, CI and its scheduled jobs, and the manual pre-tag steps | Proposed | High | Improvement | 2026-10-19 | -- |
+| [CR-0645](CR0645-refresh-the-trd-to-6-2-delivery-units.md) | Refresh the TRD to 6.2: delivery units that execute Verify lines, committed evidence and run records, the type registry, network paths and the stale ADRs | Proposed | High | Improvement | 2026-10-19 | -- |
+| [CR-0646](CR0646-refresh-the-rest-of-the-tsd-the-measured.md) | Refresh the rest of the TSD: the measured coverage, per-unit line coverage, the test-tree conventions, NFR rows and the header | Proposed | Medium | Improvement | 2026-10-19 | -- |
+| [CR-0647](CR0647-refresh-the-prd-to-v6-1-0-plus.md) | Refresh the PRD to v6.1.0 plus 6.2: release markers, the features shipped since July, the business rules and NFRs that moved, and counts as bands | Proposed | Medium | Improvement | 2026-10-19 | -- |
+| [CR-0648](CR0648-refresh-the-persona-registry-a-skill-maintainer-card.md) | Refresh the persona registry: a skill-maintainer card (D0373), Maya's and Trevor's cards brought to current work, the PRD outcome citations and the index | Proposed | Medium | Improvement | 2026-10-19 | -- |
+| [CR-0649](CR0649-extend-the-doc-freshness-census-from-the-trd.md) | Extend the doc_freshness census from the TRD to the PRD and TSD, so a pinned count or stale baseline in either is caught when it drifts | Proposed | Medium | Improvement | 2026-10-19 | -- |
 
 ## Archived Releases
 

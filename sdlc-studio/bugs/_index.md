@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-10-18
+**Last Updated:** 2026-10-19
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 99 |
+| Open | 104 |
 | In Progress | 0 |
 | Fixed | 804 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 32 |
-| **Total** | **1062** |
+| **Total** | **1067** |
 
 ## All Bugs
 
@@ -138,6 +138,11 @@
 | [BG1060](BG1060-retro-extract-starts-a-new-project-lessons-log.md) | retro extract starts a new project lessons log when the committed one is missing, though the committed digest lists the lessons that log holds | Open | Medium | 2026-10-16 | 2026-10-16 |
 | [BG1061](BG1061-the-committed-project-lessons-log-cannot-be-committed.md) | The committed project lessons log cannot be committed where markdownlint's defaults apply: every lesson heading ends in its sentence's punctuation, which MD026 refuses | Open | Medium | 2026-10-16 | 2026-10-16 |
 | [BG1062](BG1062-sprint-sign-names-no-commit-trailers-for-the.md) | sprint sign names no commit trailers for the paperwork it writes, so its commit draws one engagement-floor attribution advisory per unit it moved | Open | Low | 2026-10-18 | 2026-10-18 |
+| [BG1063](BG1063-require-ac-verification-is-documented-as-a-gate.md) | `require_ac_verification` is documented as a gate that aborts the completion cascade on a failed verification, but no code reads it | Open | Medium | 2026-10-19 | 2026-10-19 |
+| [BG1064](BG1064-15-of-69-shipped-scripts-are-tracked-without.md) | 15 of 69 shipped scripts are tracked without the executable bit the TRD's script contract requires, a regression of CR0064's fix | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1065](BG1065-the-gate-s-45-second-cost-budget-is.md) | The gate's 45-second cost budget is exceeded on every run (127 s locally, 143 s in CI, the conformance lane alone 121 s), so its OVER line carries no signal | Open | Medium | 2026-10-19 | 2026-10-19 |
+| [BG1066](BG1066-the-product-seat-approves-only-stories-that-serve.md) | The product seat approves only stories that serve a Primary persona's goal, so a declared Secondary's stories have no approving lens | Open | Medium | 2026-10-19 | 2026-10-19 |
+| [BG1067](BG1067-the-triage-session-cap-keys-on-the-run.md) | The triage session cap keys on the run state's id whether or not the run is sealed, so a signed run's counter keeps charging every later session's findings | Open | Low | 2026-10-19 | 2026-10-19 |
 
 ## Archived Releases
 

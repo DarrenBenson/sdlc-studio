@@ -38,3 +38,4 @@ The volatile project-state pointer lives in `LATEST.md` (not a numbered review).
 | [RV-0025](RV0025-run-01kyy52d-the-review-learned-to-discriminate.md) | RUN-01KYY52D closing review - the review learned to discriminate, and then failed its own new rule | 2026-08-01 |
 | [RV-0026](RV0026-run-01kyzky5-closing-review-thirty-eight-passes-three.md) | RUN-01KYZKY5 closing review - thirty-eight passes, three stop-ship defects, and a sprint that could not close because nobody had reviewed it | 2026-08-02 |
 | [RV-0027](RV0027-run-01m20rwx-closing-review-sixty-six-seat-verdicts.md) | RUN-01M20RWX closing review: sixty-six seat verdicts, forty-four rejections, and one shape found nine times | 2026-09-10 |
+| [RV-0028](RV0028-unified-review-before-the-second-6-2-run.md) | Unified review before the second 6.2 run: PRD, TRD, TSD and personas against v6.1.0 plus 6.2 on main | 2026-10-19 |
