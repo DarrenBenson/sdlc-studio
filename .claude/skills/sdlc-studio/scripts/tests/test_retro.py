@@ -229,8 +229,8 @@ class ALessonIsTitledFromItsSentenceNotItsLine(RetroBase):
             self.assertEqual(retro.cmd_extract(args), 0)
         import lessons as lessons_mod
         text = lessons_mod.default_project_file(str(self.root)).read_text(encoding="utf-8")
-        self.assertIn("## L-0001: A plausible story fitted to a real pattern is not a finding.",
-                      text)
+        self.assertIn("## L-0001: A plausible story fitted to a real pattern is not a finding\n",
+                      text, "the heading carries the sentence without its full stop (BG1061)")
         self.assertIn("r = +0.03", text, "the body must keep the full text, not just the title")
 
 

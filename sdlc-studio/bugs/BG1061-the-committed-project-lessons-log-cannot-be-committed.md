@@ -1,6 +1,6 @@
 # BG1061: The committed project lessons log cannot be committed where markdownlint's defaults apply: every lesson heading ends in its sentence's punctuation, which MD026 refuses
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_lints.py, changelog.d/BG1061.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
@@ -26,8 +26,10 @@ Write the heading without its trailing sentence punctuation (strip it in the hea
 
 - [ ] **AC1** A project lessons log written by `retro.py extract` has no heading with trailing punctuation (markdownlint MD026, on by default), so the commit that adds it passes the repository's markdown lane
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_lints.py -k extracted_log_has_no_trailing_heading_punctuation
+  - **Verified:** yes (2026-10-19)
 - [ ] **AC2** Given an existing log whose headings end in their sentence's punctuation (the shape every log written before this fix has), when it is read and a further retro is extracted into it, then every existing lesson keeps its id and title, nothing is added twice, and the lessons the summary lists are still found
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_lints.py -k an_existing_punctuated_log_reads_without_churn
+  - **Verified:** yes (2026-10-19)
 
 ## Impact
 

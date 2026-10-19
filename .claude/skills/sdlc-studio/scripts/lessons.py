@@ -81,6 +81,8 @@ RUNNING_SKILL = "the running skill"
 SOURCE_MARKERS = ("install.sh", "tools/validate_skill.py")
 
 PROJECT_ENTRY_RE = re.compile(r"^##\s+(L-\d{4}):\s*(.+?)\s*$")
+#: The trailing heading punctuation markdownlint's MD026 refuses with its default settings.
+HEADING_PUNCTUATION = ".,;:!\u3002\uff0c\uff1b\uff1a\uff01"
 FIELD_BULLET_RE = re.compile(r"^-\s+\*\*([^*]+):\*\*\s*(.*)$")
 # A rendered digest line, read back out of LESSONS-SUMMARY.md: `- **L-0001: title** - gist`.
 # The bold delimiters make the split unambiguous even when the gist itself contains " - ".
@@ -115,7 +117,7 @@ def parse_project_lessons(text: str) -> list[dict]:
             if current:
                 current["body"] = "\n".join(body).strip()
                 entries.append(current)
-            current = {"id": m.group(1), "title": m.group(2), "fields": {}}
+            current = {"id": m.group(1), "title": heading_title(m.group(2)), "fields": {}}
             body = []
             continue
         if current is None:
@@ -128,6 +130,19 @@ def parse_project_lessons(text: str) -> list[dict]:
         current["body"] = "\n".join(body).strip()
         entries.append(current)
     return entries
+
+
+def heading_title(title: str) -> str:
+    """A lesson's title as its `## L-NNNN:` heading carries it: without the trailing punctuation
+    MD026 refuses, so the committed log passes a markdown lane on markdownlint's defaults. The
+    body keeps the whole sentence. An elided title keeps its marker as `\u2026`, which MD026
+    accepts, so a heading cut mid-sentence still says it was cut. Read back the same way, so a log
+    written before this, whose headings end in their sentence's full stop, holds the same titles
+    and does not churn."""
+    text = title.strip()
+    if text.endswith("..."):
+        return text[:-3].rstrip() + "\u2026"
+    return text.rstrip(HEADING_PUNCTUATION).rstrip()
 
 
 def project_header_of(text: str) -> str:
@@ -150,7 +165,7 @@ def refresh_last_updated(header: str) -> str:
 
 def render_entry(entry: dict) -> str:
     """One project-tier entry back as markdown."""
-    out = [f"## {entry['id']}: {entry['title']}", ""]
+    out = [f"## {entry['id']}: {heading_title(entry['title'])}", ""]
     if entry["body"]:
         out.append(entry["body"])
     return "\n".join(out).rstrip() + "\n"
@@ -802,8 +817,11 @@ def _canon(item: dict) -> str:
     lessons carry - stripping them made `two_role_after` compare equal to `tworoleafter`, so the
     digest would have stopped noticing a real edit. A normalisation wider than the instability it
     corrects buys nothing and blinds the check.
+
+    The title is compared as its heading carries it (`heading_title`): a summary written before
+    the log's headings dropped their trailing punctuation lists the same lessons, not new ones.
     """
-    text = f"{item['id']}: {item['title']}"
+    text = f"{item['id']}: {heading_title(item['title'])}"
     if item["gist"]:
         text += f" - {item['gist']}"
     text = re.sub(r"\*+", "", text)

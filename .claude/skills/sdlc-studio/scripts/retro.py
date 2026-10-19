@@ -3481,13 +3481,15 @@ def _flat(value) -> str:
 def _recorded(text: str, entries: list[dict]) -> bool:
     """Is this lesson already in the store? Judged on the WHOLE lesson: an entry's body keeps
     the full text as a paragraph of its own, and a one-sentence lesson is its own headline
-    (compared without a trailing `...`). A headline is never compared with a headline: two
+    (compared as the heading carries it, without trailing punctuation or a trailing `...`: an
+    entry written before the headings lost their full stop has no copy of it in its body). A headline is never compared with a headline: two
     lessons opening on the same sentence share one, and the second was dropped as a duplicate,
     while an elided headline that had lost its `...` matched nothing and was recorded again."""
     want = _flat(text)
     for e in entries:
         paragraphs = {_flat(p) for p in re.split(r"\n\s*\n", str(e.get("body") or ""))}
-        if want in paragraphs or _flat(e.get("title")).removesuffix("...") == want:
+        if want in paragraphs or (lessons.heading_title(_flat(e.get("title")))
+                                  == lessons.heading_title(want)):
             return True
     return False
 
@@ -3603,8 +3605,9 @@ def cmd_extract(args) -> int:
     log.parent.mkdir(parents=True, exist_ok=True)
     for title, text in added:
         # The body keeps the WHOLE lesson - the title is a headline, never a truncation of the
-        # record. Only when the lesson is a single sentence are the two the same thing.
-        body = (f"{text}\n\nRecorded from retro {res['id']}." if text != title
+        # record. Only when the heading carries the lesson exactly are the two the same thing: a
+        # sentence's closing full stop is not in its heading, so the sentence is in the body.
+        body = (f"{text}\n\nRecorded from retro {res['id']}." if text != lessons.heading_title(title)
                 else f"Recorded from retro {res['id']}.")
         rc = lessons.cmd_add(argparse.Namespace(
             title=title, body=body, root=args.root,
