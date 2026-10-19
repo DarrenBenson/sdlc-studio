@@ -1,6 +1,6 @@
 # US1076: Runs on a gate host are serialised, and an abandoned push stops its run
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Delivers:** CR0635
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new

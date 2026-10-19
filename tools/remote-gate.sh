@@ -4,19 +4,23 @@
 #   remote-gate.sh push --commit <sha> [--boundary push|release]
 #       The local side, run by .githooks/pre-push when `git config sdlc.gateHost` names a host.
 #       Sends exactly <sha>, with this clone's remote-tracking refs and tags, to a bare repository
-#       on the host kept for this clone alone, then judges it there. Exit 0 green, 3 when the
-#       host could not be reached or the connection failed, anything else the host's verdict.
+#       on the host kept for this clone alone, then judges it there. Exits:
+#         0  the host's gate passed          1  the host's gate refused
+#         3  the connection failed            4  the host did not reach the gate (its setup, or
+#         2  this script could not start         the preflight on its interpreter, refused)
+#       Only 0 and 1 are a gate run whose duration the pre-push hook records.
 #
 #   remote-gate.sh remote --clone <id> --commit <sha> --boundary <b>
 #       The host side. Never installed on the host: `push` streams it from the PUSHED COMMIT's own
 #       copy of this file, so the host always runs the version being judged.
 #
-# Configuration, all in this clone's git config:
+# The host needs git on the PATH an ssh command sees, because the commit is received and checked
+# out before anything else runs. Configuration, all in this clone's git config:
 #   sdlc.gateHost     the host, as ssh names it (unset: the gate runs locally)
 #   sdlc.gateSsh      the transport (default: ssh with BatchMode and a keepalive)
 #   sdlc.gateCloneId  this clone's key on the host, written on first use
-# A host may hold `~/sdlc-gate/gate-env.sh`, sourced before the gate runs, to put its Python and
-# Node on PATH. `SDLC_GATE_LOCAL=1` makes the pre-push hook run the gate locally instead.
+# A host may hold `~/sdlc-gate/gate-env.sh`, sourced before the gate runs, to put the Python and
+# Node the gate needs on PATH. `SDLC_GATE_LOCAL=1` makes the pre-push hook run the gate locally instead.
 #
 # The local side is written against bash builtins, git and python3 only: the hook's test fixtures
 # run it on a PATH that holds nothing else.
@@ -25,6 +29,7 @@ set -uo pipefail
 GATE_DIR="sdlc-gate"
 DEFAULT_SSH="ssh -o BatchMode=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10"
 TRANSPORT_FAILED=3
+HOST_SETUP_FAILED=4
 
 die() { echo "remote-gate: $1" >&2; exit "${2:-2}"; }
 
@@ -65,17 +70,32 @@ cmd_push() {
   [[ $id =~ ^[A-Za-z0-9_-]+$ ]] || die "sdlc.gateCloneId may hold only letters, digits, '-' and '_': '$id'"
   local repo="$GATE_DIR/clones/$id.git"
 
-  # One bare repository per clone, so one clone's mirrored refs never narrow another's range.
-  $ssh_cmd -- "$host" "mkdir -p $GATE_DIR/clones && git init -q --bare $repo" </dev/null \
-    || transport_failed "its repository could not be prepared (the connection failed before the gate started)"
+  # One bare repository per clone, so one clone's mirrored refs never narrow another's range,
+  # prepared and listed in one call. The listing is what lets the send below DROP a tag or a
+  # remote-tracking branch this clone has since deleted: without it the host's range and latest
+  # tag follow everything this clone ever sent, not what it holds now.
+  local host_refs rc
+  host_refs="$($ssh_cmd -- "$host" "mkdir -p $GATE_DIR/clones && git init -q --bare $repo && git -C $repo for-each-ref --format='%(refname)' refs/remotes refs/tags" </dev/null)"
+  rc=$?
+  [ "$rc" -eq 255 ] && transport_failed "it could not be reached (the connection failed before the gate started)"
+  if [ "$rc" -ne 0 ]; then
+    echo "remote-gate: $host could not prepare this clone's repository (exit $rc): git must be on the PATH an ssh command sees there" >&2
+    exit "$HOST_SETUP_FAILED"
+  fi
 
   # Exactly the pushed commit, never HEAD or the working tree, and with it this clone's
   # remote-tracking refs and tags: without them the host's pushed range widens to all of history
   # and its latest-tag lookup fails. `send-pack`, never `git push`, which would run this hook again.
   local refs=("$commit:refs/heads/gate") ref
+  local -A held=()
   while read -r ref; do
-    [[ $ref == */HEAD ]] || refs+=("$ref:$ref")
+    [[ $ref == */HEAD ]] && continue
+    refs+=("$ref:$ref")
+    held[$ref]=1
   done < <(git for-each-ref --format='%(refname)' refs/remotes refs/tags)
+  while read -r ref; do
+    [ -n "$ref" ] && [ -z "${held[$ref]:-}" ] && refs+=(":$ref")
+  done <<< "$host_refs"
   GIT_SSH_COMMAND="$ssh_cmd" git send-pack --force "$host:$repo" "${refs[@]}" >/dev/null 2>&1 \
     || transport_failed "the commit could not be sent (the connection failed before the gate started)"
 
@@ -86,9 +106,11 @@ cmd_push() {
     || die "commit $commit carries no tools/remote-gate.sh, so its host side cannot run"
   printf '%s\n' "$script" | $ssh_cmd -- "$host" \
     "t=\$(mktemp) || exit 2; cat > \"\$t\"; bash \"\$t\" remote --clone '$id' --commit '$commit' --boundary '$boundary' </dev/null; rc=\$?; rm -f \"\$t\"; exit \$rc" 1>&2
-  local rc=${PIPESTATUS[1]}
+  rc=${PIPESTATUS[1]}
   [ "$rc" -eq 255 ] && transport_failed "the connection failed while it ran"
-  if [ "$rc" -ne 0 ]; then
+  if [ "$rc" -eq "$HOST_SETUP_FAILED" ]; then
+    echo "remote-gate: $host did not run the gate for commit $commit - see the host's output above." >&2
+  elif [ "$rc" -ne 0 ]; then
     echo "remote-gate: $host refused commit $commit at the $boundary boundary - see the host's output above." >&2
     echo "  re-run it on the host: bash tools/remote-gate.sh push --commit $commit --boundary $boundary" >&2
   fi
@@ -96,6 +118,7 @@ cmd_push() {
 }
 
 cmd_remote() {
+  die() { echo "remote gate: $1" >&2; exit "$HOST_SETUP_FAILED"; }
   parse "$@"
   [[ $clone =~ ^[A-Za-z0-9_-]+$ ]] || die "--clone needs this clone's id, not '$clone'"
   local base="$HOME/$GATE_DIR"
@@ -141,7 +164,7 @@ cmd_remote() {
   if [ -f tools/gate_prereqs.py ]; then
     if ! python3 tools/gate_prereqs.py check --refusing; then
       echo "remote gate: refused before the $boundary boundary gate runs: $(uname -n)'s interpreter lacks a prerequisite marked REFUSES above"
-      exit 1
+      exit "$HOST_SETUP_FAILED"
     fi
   fi
 

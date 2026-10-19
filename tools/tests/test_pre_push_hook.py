@@ -187,7 +187,11 @@ class _Clone:
                 if k not in _GIT_ENV_VARS and k not in ("SDLC_PUSH_ACK_RED", BOUNDARY_MARKER)}
         path = self.stub_path(getattr(self, "gh_mode", "empty"))     # never the caller's PATH: no fixture reaches the live forge
         base.update({"STUB_ARGV": str(self.argv), "STUB_RC": str(rc), "PATH": str(path),
-                     "STUB_GH_MODE": self.gh_mode, "STUB_GH_ARGV": str(self.tmp / "gh-argv.txt")})
+                     "STUB_GH_MODE": self.gh_mode, "STUB_GH_ARGV": str(self.tmp / "gh-argv.txt"),
+                     # the pusher's own git config never reaches the fixture: a global
+                     # `sdlc.gateHost` would otherwise send these hooks to a gate host (US1075)
+                     "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_SYSTEM": "/dev/null"})
+        base.pop("SDLC_GATE_LOCAL", None)
         return subprocess.run(["bash", ".githooks/pre-push", "origin", str(self.remote)], cwd=self.clone,
                               input=rows, capture_output=True, text=True, env=base, timeout=300)
 

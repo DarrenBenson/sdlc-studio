@@ -7,10 +7,10 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 95 |
+| Draft | 94 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 2 |
+| In Progress | 3 |
 | Review | 0 |
 | Done | 806 |
 | Won't Implement | 92 |
@@ -113,7 +113,7 @@
 | [US1073](US1073-a-user-persona-writes-its-learning-from-its.md) | A user persona writes its learning from its usage evidence, approved by a seat, and the goal review carries it | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1074](US1074-a-generalisable-seat-learning-is-promoted-into-the.md) | A generalisable seat learning is promoted into the skill source's shipped amigo card, and refused into an installed copy | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1075](US1075-a-push-is-judged-on-the-gate-host.md) | A push is judged on the gate host this clone configures | In Progress | EP0288 | 2026-10-12 | 2026-10-12 |
-| [US1076](US1076-runs-on-a-gate-host-are-serialised-and.md) | Runs on a gate host are serialised, and an abandoned push stops its run | Draft | EP0288 | 2026-10-12 | 2026-10-12 |
+| [US1076](US1076-runs-on-a-gate-host-are-serialised-and.md) | Runs on a gate host are serialised, and an abandoned push stops its run | In Progress | EP0288 | 2026-10-12 | 2026-10-12 |
 | [US1077](US1077-one-command-says-whether-a-gate-host-can.md) | One command says whether a gate host can judge a push | Draft | EP0288 | 2026-10-12 | 2026-10-12 |
 | [US1078](US1078-run-suite-sh-runs-the-full-suite-on.md) | run-suite.sh runs the full suite on the gate host and records a verdict its check can read | Draft | EP0288 | 2026-10-12 | 2026-10-12 |
 | [US1079](US1079-a-skill-maintainer-card-is-the-primary-for.md) | A skill-maintainer card is the Primary for the repository-tooling interface, beside Maya as Primary for the shipped skill | In Progress | EP0289 | 2026-10-19 | 2026-10-19 |

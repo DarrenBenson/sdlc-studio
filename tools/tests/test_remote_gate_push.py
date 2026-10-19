@@ -175,11 +175,12 @@ class _HostClone:
         return os.pathsep.join([str(d), os.environ.get("PATH", "/usr/bin:/bin")])
 
     def push(self, *refspec: str, gh: str = "empty", fail: str = "", local: bool = False,
-             no_verify: bool = False) -> subprocess.CompletedProcess:
+             no_verify: bool = False, host_path: str | None = None) -> subprocess.CompletedProcess:
         env = {"PATH": str(self.path()), "STUB_GH_MODE": gh, "STUB_SSH_FAIL": fail,
                "STUB_SSH_LOG": str(self.tmp / "ssh.log"), "STUB_GATE_LOG": str(self.tmp / "gate.log"),
                "STUB_PREREQ_LOG": str(self.tmp / "prereq.log"), "STUB_KI_LOG": str(self.tmp / "ki.log"),
-               "STUB_HOST_HOME": str(self.host_home), "STUB_HOST_PATH": self.host_path()}
+               "STUB_HOST_HOME": str(self.host_home),
+               "STUB_HOST_PATH": host_path if host_path is not None else self.host_path()}
         if local:
             env["SDLC_GATE_LOCAL"] = "1"
         args = ["push", "-q"] + (["--no-verify"] if no_verify else []) + ["origin", *(refspec or ("main",))]
@@ -199,6 +200,10 @@ class _HostClone:
     def ssh_calls(self) -> list[str]:
         return self._lines("ssh.log")
 
+    def timings(self) -> dict:
+        f = self.clone / "sdlc-studio" / ".local" / "gate-timings.json"
+        return json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
+
     def cleanup(self) -> None:
         subprocess.run(["chmod", "-R", "u+w", str(self.tmp)], capture_output=True)
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -212,18 +217,31 @@ class RemoteGatePushTests(unittest.TestCase):
 
     def test_the_host_judges_exactly_the_pushed_commit(self) -> None:
         """AC1. Mutants: the hook sends HEAD or the working tree instead of the pushed commit;
-        it runs the gate locally; the host's red verdict is read as green."""
+        it runs the gate locally; the host's red verdict is read as green; the host side is read
+        from the working tree's copy of remote-gate.sh rather than the pushed commit's."""
         fx = self.fx
-        red = fx.commit("red", verdict="1\n")
-        fx.commit("head moves past it")                       # the pushed commit is not HEAD
+        seed = _git(fx.clone, "rev-parse", "HEAD").stdout.strip()
+        _git(fx.clone, "switch", "-q", "-c", "side")
+        red = fx.commit("red, on a branch HEAD will not reach", verdict="1\n")
+        _git(fx.clone, "switch", "-q", "main")
+        fx.commit("main moves on")                            # HEAD neither is nor contains `red`
+        self.assertNotEqual(_git(fx.clone, "merge-base", "--is-ancestor", red, "HEAD", check=False).returncode,
+                            0, "the fixture's pushed commit must lie outside HEAD's history")
+        self.assertNotEqual(seed, red)
         (fx.clone / "verdict").write_text("0\n", encoding="utf-8")   # uncommitted: would flip it green
+        local_copy = fx.clone / "tools" / "remote-gate.sh"
+        local_copy.write_text(local_copy.read_text(encoding="utf-8").replace(
+            'cmd_remote() {\n', 'cmd_remote() {\n  echo "WORKING-TREE-COPY-OF-THE-HOST-SIDE"\n', 1),
+            encoding="utf-8")                                         # uncommitted, never pushed
         r = fx.push(f"{red}:refs/heads/main")
         self.assertNotEqual(r.returncode, 0, "a commit the host judged red was pushed:\n" + r.stderr)
         runs = fx.gate_runs()
-        self.assertEqual(len(runs), 1, f"expected one gate run, got {runs}")
+        self.assertEqual(len(runs), 1, f"expected one gate run, got {runs}\n{r.stderr}")
         self.assertTrue(fx.on_host(runs[0]), f"the gate ran outside the host's checkout: {runs[0]}")
         self.assertEqual(runs[0]["head"], red, "the host did not judge exactly the pushed commit")
         self.assertIn("stub-lane STUBBED", r.stderr, "the host's output is not on the pusher's stderr")
+        self.assertNotIn("WORKING-TREE-COPY-OF-THE-HOST-SIDE", r.stderr,
+                         "the host ran the working tree's copy of its side, not the pushed commit's")
         self.assertEqual(_git(fx.remote, "rev-parse", "-q", "--verify", "refs/heads/main",
                               check=False).stdout.strip(), "", "the refused commit reached origin")
 
@@ -244,6 +262,29 @@ class RemoteGatePushTests(unittest.TestCase):
         self.assertEqual(run["range"], local_range, "the host computed a different pushed range")
         self.assertEqual(local_tag, "v1.0.0")
         self.assertEqual(run["tag"], local_tag, "the host resolved a different latest tag")
+        # A tag and a remote-tracking branch the host has been sent, then withdrawn here, both on
+        # a commit inside the next push's range: the host's copy must follow this clone, not
+        # everything it was ever sent.
+        published = _git(fx.clone, "rev-parse", "origin/main").stdout.strip()
+        x = fx.commit("x, which a withdrawn tag and branch point at")
+        _git(fx.clone, "tag", "-a", "v2.0.0", "-m", "v2.0.0")
+        _git(fx.clone, "update-ref", "refs/remotes/origin/feature", x)
+        y = fx.commit("y")
+        r = fx.push(f"{published}:refs/heads/older")         # judged on the host: it now holds both refs
+        self.assertEqual(r.returncode, 0, r.stderr)
+        _git(fx.clone, "tag", "-d", "v2.0.0")
+        _git(fx.clone, "update-ref", "-d", "refs/remotes/origin/feature")
+        local_range = _git(fx.clone, "log", y, "--not", "--remotes", "--format=%H").stdout.split()
+        local_tag = _git(fx.clone, "describe", "--tags", "--abbrev=0", y).stdout.strip()
+        self.assertEqual(sorted(local_range), sorted([x, y]))
+        self.assertEqual(local_tag, "v1.0.0")
+        r = fx.push()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        run = fx.gate_runs()[-1]
+        self.assertEqual(run["head"], y)
+        self.assertEqual(run["tag"], local_tag, "the host still resolves a tag this clone withdrew")
+        self.assertEqual(sorted(run["range"]), sorted(local_range),
+                         "a remote-tracking branch this clone pruned still narrows the host's range")
 
     def test_a_tag_is_judged_at_the_release_boundary_on_the_host(self) -> None:
         """AC3. Mutants: the host always runs `--boundary push`; the known-issues check moves to
@@ -264,6 +305,17 @@ class RemoteGatePushTests(unittest.TestCase):
                         f"the known-issues check did not run locally: {ki}")
         self.assertIn(f"check --at {_git(fx.clone, 'rev-parse', 'v2.0.0').stdout.strip()}", ki[0])
         self.assertIn("stub-lane STUBBED", r.stderr, "the host's output is not on the pusher's stderr")
+        # A branch pushed beside a tag on an OLDER, red commit: each distinct commit is judged,
+        # each at its own boundary (BG0870) - never only the first, never all at release.
+        (fx.tmp / "gate.log").unlink()
+        old_red = fx.commit("an older red release", verdict="1\n")
+        _git(fx.clone, "tag", "-a", "v3.0.0", "-m", "v3.0.0")
+        tip = fx.commit("a green tip on main", verdict="0\n")
+        r = fx.push("main", "v3.0.0")
+        self.assertNotEqual(r.returncode, 0, "the red tagged commit was never judged:\n" + r.stderr)
+        judged = {run["head"]: run["argv"] for run in fx.gate_runs()}
+        self.assertEqual(judged.get(tip), ["--boundary", "push"], f"the branch tip: {judged}")
+        self.assertEqual(judged.get(old_red), ["--boundary", "release"], f"the tagged commit: {judged}")
 
     def test_a_transport_failure_refuses_and_names_the_fallback(self) -> None:
         """AC4. Mutants: a transport failure falls back to the local gate; it is read as a pass;
@@ -276,8 +328,12 @@ class RemoteGatePushTests(unittest.TestCase):
                 fx.commit(f"push {when}")
                 r = fx.push(fail=when)
                 self.assertNotEqual(r.returncode, 0, f"a {when}-gate transport failure pushed:\n" + r.stderr)
-                self.assertIn(HOST, r.stderr)
-                self.assertIn("SDLC_GATE_LOCAL=1", r.stderr)
+                lines = r.stderr.splitlines()
+                refusal = next((i for i, ln in enumerate(lines) if "could not judge commit" in ln), None)
+                self.assertIsNotNone(refusal, f"no transport refusal line:\n{r.stderr}")
+                self.assertIn(HOST, lines[refusal], "the refusal line does not name the host")
+                self.assertTrue(any("SDLC_GATE_LOCAL=1" in ln for ln in lines[refusal + 1:refusal + 4]),
+                                "the refusal does not name SDLC_GATE_LOCAL=1")
                 runs = fx.gate_runs()
                 self.assertFalse([run for run in runs if not fx.on_host(run)],
                                  f"the gate ran locally after a transport failure: {runs}")
@@ -303,8 +359,13 @@ class RemoteGatePushTests(unittest.TestCase):
                 self.assertEqual(len(runs), 1, f"{label}: expected one gate run, got {runs}")
                 self.assertEqual(fx.on_host(runs[0]), host and not local,
                                  f"{label}: the gate ran in the wrong place: {runs[0]['cwd']}")
-        timings = json.loads((fx.clone / "sdlc-studio" / ".local" / "gate-timings.json").read_text())
-        self.assertIn(f"boundary-push@{HOST}", timings, "the host run's duration was not recorded")
+                if host and not local:
+                    self.assertEqual(fx.timings().get("boundary-push"), local_series,
+                                     "a host run's duration entered the local series")
+                    self.assertIn(f"pre-push: boundary-push@{HOST}", r.stderr,
+                                  "the host push's cost line is not read from the host's own series")
+                local_series = fx.timings().get("boundary-push")
+        self.assertIn(f"boundary-push@{HOST}", fx.timings(), "the host run's duration was not recorded")
 
     def test_the_host_path_keeps_the_red_main_read_and_the_preflight(self) -> None:
         """AC6. Mutants: the host path skips the red-main read (D0181); it reads it after the
@@ -324,6 +385,22 @@ class RemoteGatePushTests(unittest.TestCase):
                         f"the preflight did not run on the host's interpreter: {prereq}")
         self.assertEqual(fx.gate_runs(), [], "the host's gate ran past a refusing preflight")
         self.assertIn("refused before the push boundary gate runs", r.stderr)
+        self.assertNotIn(f"boundary-push@{HOST}", fx.timings(),
+                         "a host run that never reached its gate was recorded as a gate duration")
+
+    def test_a_host_setup_fault_is_named_and_records_no_run(self) -> None:
+        """Round-1 review: a host whose ssh PATH has no git is a setup fault there, named as one
+        - never a connection failure - and no gate duration is recorded for it."""
+        fx = self.fx
+        fx.commit("a host without git")
+        no_git = str(fx.tmp / "host-bin")
+        fx.host_path()                                         # creates host-bin with python3 only
+        r = fx.push(host_path=no_git)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("git must be on the PATH", r.stderr, r.stderr)
+        self.assertNotIn("connection failed", r.stderr, "a setup fault on the host was named a connection failure")
+        self.assertEqual(fx.gate_runs(), [])
+        self.assertNotIn(f"boundary-push@{HOST}", fx.timings())
 
 
 if __name__ == "__main__":

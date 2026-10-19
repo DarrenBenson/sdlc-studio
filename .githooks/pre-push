@@ -249,6 +249,13 @@ if [ -n "$on_host" ]; then
     bash tools/remote-gate.sh push --commit "$commit" --boundary "$at"
     rc=$?
     [ "$rc" -eq 3 ] && exit 1
+    if [ "$rc" -ne 0 ] && [ "$rc" -ne 1 ]; then
+      # 4: the host's setup or its preflight refused before its gate ran; 2: remote-gate.sh could
+      # not start. No gate ran, so no duration is recorded and no lane verdict is claimed.
+      echo "pre-push: no gate ran on $gate_host for commit $commit (exit $rc) - see above; the push is refused" >&2
+      echo "  run the gate on this machine for one push: SDLC_GATE_LOCAL=1 git push" >&2
+      exit 1
+    fi
     python3 tools/gate_timing.py record --suite "boundary-$at@$gate_host" --seconds "$((SECONDS - t0))" >/dev/null 2>&1 || true
     if [ "$rc" -ne 0 ]; then
       echo "pre-push: the $at boundary gate on $gate_host refused commit $commit - see the lane named above." >&2

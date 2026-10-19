@@ -88,9 +88,9 @@ SDLC Studio dogfoods itself - it is built with its own lifecycle. A few non-nego
 - **Judge pushes on a gate host (optional).** The push gate pays the full suite, which on a
   workstation shared with agent sessions can take most of an hour. Name a host this clone reaches
   over ssh, and each push is judged there instead, against exactly the commit being pushed:
-  `git config sdlc.gateHost <host>`. The host needs git, Python 3.10+ with the packages in
-  `requirements-dev.txt`, and Node; it may keep `~/sdlc-gate/gate-env.sh` to put them on its
-  PATH. `sdlc.gateSsh` replaces the default ssh transport. A host that cannot be reached refuses
+  `git config sdlc.gateHost <host>`. The host needs git on the PATH an ssh command sees there,
+  and Python 3.10+ with the packages in `requirements-dev.txt` and Node, which it may put on the
+  gate's PATH with `~/sdlc-gate/gate-env.sh`. `sdlc.gateSsh` replaces the default ssh transport. A host that cannot be reached refuses
   the push rather than running the gate here, and `SDLC_GATE_LOCAL=1 git push` runs it on this
   machine for one push.
 - **Trunk-based, small green units.** Commit to `main` in small, individually-green increments; CI

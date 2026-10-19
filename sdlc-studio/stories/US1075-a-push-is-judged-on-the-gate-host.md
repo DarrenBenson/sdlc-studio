@@ -37,7 +37,7 @@
   - **Verify:** pytest tools/tests/test_remote_gate_push.py::RemoteGatePushTests::test_the_host_path_keeps_the_red_main_read_and_the_preflight
   - **Verified:** yes (2026-10-19)
 - **AC7:** Given this clone configured with `sdlc.gateHost` naming the gate host, when one of this repository's own pushes after this unit lands runs with no `--no-verify`, then the host judges it, and its duration is recorded under `boundary-push@<host>` in this clone's gate timings
-  - **Verify:** manual: `git config sdlc.gateHost`, a push without `--no-verify`, then `python3 tools/gate_timing.py show` lists the `boundary-push@devserver1` row
+  - **Verify:** manual: with `git config sdlc.gateHost devserver1` set, push without `--no-verify`, then `python3 tools/gate_timing.py estimate --suite boundary-push@devserver1 --warn-seconds 0` prints an expected figure from at least one recorded run
 
 ## Notes
 
@@ -71,3 +71,4 @@
 | 2026-10-19 | Claude Opus 5.5 | Regroomed after the goal review (round 4): the seats' findings folded in: AC6 (red-main and preflight on the host path), AC7 (a real push judged on the host) |
 | 2026-10-19 | Claude Opus 5.5 | Repointed at Rowan Achterberg, Primary for the repository-tooling interface, before review (D0379, D0380); resolved dependencies cleared: BG0976, BG0978, US1005, US1006 |
 | 2026-10-19 | Claude Opus 5.5 | AC6 corrected before the build: the host's preflight runs in its checkout of the pushed commit, before the gate, since it reads that commit's requirements-dev.txt |
+| 2026-10-19 | Claude Opus 5.5 | Repair after the round-1 REJECT: AC7's Verify line names a command that exists (`gate_timing.py estimate`, not the absent `show`) |
