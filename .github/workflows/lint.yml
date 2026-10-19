@@ -175,10 +175,10 @@ jobs:
         # added lines run `verify_ac run --coverage`, and without the package every one of them
         # reads red here while passing on any machine that has it.
         # Its own list, a declared subset of requirements-dev.txt (pinned by
-        # tools/tests/test_prereq_list_is_ci_list.py). pytest-xdist is left out: this lane is
-        # compared against tools/verify-corpus-baseline.txt, recorded without it, and what adding
-        # it would do to that comparison has not been measured.
-        run: python -m pip install --quiet pyyaml pytest 'coverage>=7.10'
+        # tools/tests/test_prereq_list_is_ci_list.py). pytest-xdist is on it since BG1054: US0892
+        # AC1's test skips without it, and this lane reads an all-skipped verifier as red. What it
+        # did to the baseline comparison is read from the first run after, recorded on BG1054.
+        run: python -m pip install --quiet pyyaml pytest pytest-xdist 'coverage>=7.10'
 
       # markdownlint is NOT optional here, though nothing in this lane lints markdown. Two test
       # modules refuse to collect without it, and a module that cannot be collected makes every
@@ -194,6 +194,23 @@ jobs:
 
       - name: Install Node deps
         run: npm ci
+
+      - name: Install pdftotext
+        # US0957 AC3's verifier reads the whitepaper with pdftotext (poppler-utils), which the
+        # runner image does not carry: without it the criterion reads red here and passes on any
+        # machine that has it (BG1054).
+        run: sudo apt-get install -y --no-install-recommends poppler-utils
+
+      - name: Time the slowest criterion on this runner
+        # US0940 AC1's verifier took 276 s on a developer machine, under the 300 s per-verifier
+        # ceiling below. Timed here, alone, so the ceiling is held against this runner's figure
+        # (BG1054). It reports and never fails the job: the verification step judges the criterion.
+        run: |
+          sel="$(sed -n 's/^  - \*\*Verify:\*\* pytest //p' sdlc-studio/stories/US0940-*.md | head -1)"
+          t0=$SECONDS
+          python -m pytest -q -p no:cacheprovider "$sel" > /dev/null 2>&1
+          rc=$?
+          echo "verifier-time: US0940::AC1 $((SECONDS - t0)) s, exit $rc"
 
       - name: Corpus verification (dead stamps + red criteria, against the baseline)
         # The per-verifier ceiling, above the slowest criteria: GateRealWrapperTests and the

@@ -1,6 +1,6 @@
 # BG1054: The scheduled corpus-verify lane reads US0892 AC1 red because its job installs no pytest-xdist
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .github/workflows/lint.yml, tools/verify-corpus-baseline.txt, sdlc-studio/stories/US0985-v6-1-0-is-cut-version-changelog-known.md, tools/tests/test_corpus_verify_env.py, changelog.d/BG1054.md
