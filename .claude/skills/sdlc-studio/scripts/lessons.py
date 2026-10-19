@@ -81,8 +81,11 @@ RUNNING_SKILL = "the running skill"
 SOURCE_MARKERS = ("install.sh", "tools/validate_skill.py")
 
 PROJECT_ENTRY_RE = re.compile(r"^##\s+(L-\d{4}):\s*(.+?)\s*$")
-#: The trailing heading punctuation markdownlint's MD026 refuses with its default settings.
-HEADING_PUNCTUATION = ".,;:!\u3002\uff0c\uff1b\uff1a\uff01"
+#: The full-width marks markdownlint's MD026 refuses with its default settings, which the shared
+#: heading helper (`sdlc_md.heading_title`) does not strip; its ASCII set covers the rest.
+FULL_WIDTH_PUNCTUATION = "\u3002\uff0c\uff1b\uff1a\uff01"
+#: How an elided lesson title ends in its heading: MD026 does not count it as punctuation.
+ELLIPSIS = "\u2026"
 FIELD_BULLET_RE = re.compile(r"^-\s+\*\*([^*]+):\*\*\s*(.*)$")
 # A rendered digest line, read back out of LESSONS-SUMMARY.md: `- **L-0001: title** - gist`.
 # The bold delimiters make the split unambiguous even when the gist itself contains " - ".
@@ -134,15 +137,27 @@ def parse_project_lessons(text: str) -> list[dict]:
 
 def heading_title(title: str) -> str:
     """A lesson's title as its `## L-NNNN:` heading carries it: without the trailing punctuation
-    MD026 refuses, so the committed log passes a markdown lane on markdownlint's defaults. The
-    body keeps the whole sentence. An elided title keeps its marker as `\u2026`, which MD026
-    accepts, so a heading cut mid-sentence still says it was cut. Read back the same way, so a log
-    written before this, whose headings end in their sentence's full stop, holds the same titles
-    and does not churn."""
-    text = title.strip()
-    if text.endswith("..."):
-        return text[:-3].rstrip() + "\u2026"
-    return text.rstrip(HEADING_PUNCTUATION).rstrip()
+    markdownlint's MD026 refuses (on by default), so the committed log passes a markdown lane that
+    enforces it. The body keeps the whole sentence.
+
+    Built on `sdlc_md.heading_title`, the one definition of a heading made from prose, rather
+    than a copy of it: that collapses whitespace and strips the trailing ASCII punctuation (`?`
+    included, which MD026 allows). This adds the full-width marks MD026 also refuses, and repeats
+    until nothing more comes off, so `Try this: !` loses both marks and the result is the same
+    however often it is applied. An elided title keeps its marker as an ellipsis character,
+    which MD026 accepts, so a heading cut mid-sentence still says it was cut. Titles are read back
+    through this too, so a log written before it, whose headings end in their sentence's full
+    stop, holds the same titles and does not churn."""
+    text = " ".join(str(title).split())
+    elided = text.endswith(("...", ELLIPSIS))
+    if elided:
+        text = text[:-3] if text.endswith("...") else text[:-1]
+    while True:
+        cut = sdlc_md.heading_title(text).rstrip(FULL_WIDTH_PUNCTUATION)
+        if cut == text:
+            break
+        text = cut
+    return text + ELLIPSIS if elided and text else text
 
 
 def project_header_of(text: str) -> str:
@@ -762,7 +777,15 @@ def migrate_legacy_log(repo_root) -> dict:
     if committed.exists():
         return {"conflict": True, "legacy": str(legacy), "committed": str(committed)}
     committed.parent.mkdir(parents=True, exist_ok=True)
-    sdlc_md.atomic_write(committed, legacy.read_text(encoding="utf-8"))
+    # The headings are normalised on the way. A legacy log was written when each heading ended in
+    # its sentence's punctuation, and the committed path is linted: moved byte for byte, it was a
+    # file its own first commit refused, until some later rewrite happened to clean it.
+    lines = legacy.read_text(encoding="utf-8").split("\n")
+    for i, line in enumerate(lines):
+        m = PROJECT_ENTRY_RE.match(line)
+        if m:
+            lines[i] = f"## {m.group(1)}: {heading_title(m.group(2))}"
+    sdlc_md.atomic_write(committed, "\n".join(lines))
     legacy.unlink()
     return {"moved": True, "from": str(legacy), "to": str(committed)}
 
