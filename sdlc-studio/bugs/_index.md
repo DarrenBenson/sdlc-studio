@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 122 |
-| In Progress | 1 |
+| Open | 123 |
+| In Progress | 2 |
 | Fixed | 804 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 41 |
 | Superseded | 32 |
-| **Total** | **1087** |
+| **Total** | **1089** |
 
 ## All Bugs
 
@@ -136,7 +136,7 @@
 | [BG1058](BG1058-the-close-s-dry-run-names-a-unit.md) | The close's dry run names a unit the run cannot end over that the real tree answers | Open | Medium | 2026-10-15 | 2026-10-15 |
 | [BG1059](BG1059-a-retro-s-batch-field-is-never-compared.md) | A retro's Batch field is never compared with the run's batch, so a unit added after the retro was scaffolded is left out of the run's measurement and its close accounting | Open | Medium | 2026-10-16 | 2026-10-16 |
 | [BG1060](BG1060-retro-extract-starts-a-new-project-lessons-log.md) | retro extract starts a new project lessons log when the committed one is missing, though the committed digest lists the lessons that log holds | Open | Medium | 2026-10-16 | 2026-10-16 |
-| [BG1061](BG1061-the-committed-project-lessons-log-cannot-be-committed.md) | The committed project lessons log cannot be committed where markdownlint's defaults apply: every lesson heading ends in its sentence's punctuation, which MD026 refuses | Open | Medium | 2026-10-16 | 2026-10-16 |
+| [BG1061](BG1061-the-committed-project-lessons-log-cannot-be-committed.md) | The committed project lessons log cannot be committed where markdownlint's defaults apply: every lesson heading ends in its sentence's punctuation, which MD026 refuses | In Progress | Medium | 2026-10-16 | 2026-10-16 |
 | [BG1062](BG1062-sprint-sign-names-no-commit-trailers-for-the.md) | sprint sign names no commit trailers for the paperwork it writes, so its commit draws one engagement-floor attribution advisory per unit it moved | Open | Low | 2026-10-18 | 2026-10-18 |
 | [BG1063](BG1063-require-ac-verification-is-documented-as-a-gate.md) | `require_ac_verification` is documented as a gate that aborts the completion cascade on a failed verification, but no code reads it | Open | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1064](BG1064-15-of-69-shipped-scripts-are-tracked-without.md) | 15 of 69 shipped scripts are tracked without the executable bit the TRD's script contract requires, a regression of CR0064's fix | Open | Low | 2026-10-19 | 2026-10-19 |
@@ -163,6 +163,8 @@
 | [BG1085](BG1085-remote-gate-doctor-prints-the-local-clone-s.md) | remote-gate doctor prints the local clone's Python install route for a gap on the gate host | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1086](BG1086-run-suite-sh-s-passed-count-needs-bc.md) | run-suite.sh's passed count needs bc, which is not a declared prerequisite, and is null with a broken-pipe error where bc is absent | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1087](BG1087-mutation-py-s-changed-line-scope-finds-no.md) | mutation.py's changed-line scope finds no lines on a machine whose git config sets diff.mnemonicprefix or diff.noprefix | Open | Medium | 2026-10-19 | 2026-10-19 |
+| [BG1088](BG1088-a-setup-fault-on-a-gate-host-s.md) | A setup fault on a gate host's suite run is named as 'did not run the all suite' with no test that fails without it | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1089](BG1089-us1078-ac3-s-verify-test-does-not-exercise.md) | US1078 AC3's Verify test does not exercise the verdict's binding to the tree sent; only a sibling test does | Open | Low | 2026-10-19 | 2026-10-19 |
 
 ## Archived Releases
 

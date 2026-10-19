@@ -1,6 +1,6 @@
 # US1078: run-suite.sh runs the full suite on the gate host and records a verdict its check can read
 
-> **Status:** In Progress
+> **Status:** Done
 > **Delivers:** CR0635
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new

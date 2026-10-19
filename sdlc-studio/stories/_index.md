@@ -10,9 +10,9 @@
 | Draft | 92 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 4 |
+| In Progress | 3 |
 | Review | 0 |
-| Done | 807 |
+| Done | 808 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -115,7 +115,7 @@
 | [US1075](US1075-a-push-is-judged-on-the-gate-host.md) | A push is judged on the gate host this clone configures | In Progress | EP0288 | 2026-10-12 | 2026-10-12 |
 | [US1076](US1076-runs-on-a-gate-host-are-serialised-and.md) | Runs on a gate host are serialised, and an abandoned push stops its run | In Progress | EP0288 | 2026-10-12 | 2026-10-12 |
 | [US1077](US1077-one-command-says-whether-a-gate-host-can.md) | One command says whether a gate host can judge a push | Done | EP0288 | 2026-10-12 | 2026-10-12 |
-| [US1078](US1078-run-suite-sh-runs-the-full-suite-on.md) | run-suite.sh runs the full suite on the gate host and records a verdict its check can read | In Progress | EP0288 | 2026-10-12 | 2026-10-12 |
+| [US1078](US1078-run-suite-sh-runs-the-full-suite-on.md) | run-suite.sh runs the full suite on the gate host and records a verdict its check can read | Done | EP0288 | 2026-10-12 | 2026-10-12 |
 | [US1079](US1079-a-skill-maintainer-card-is-the-primary-for.md) | A skill-maintainer card is the Primary for the repository-tooling interface, beside Maya as Primary for the shipped skill | In Progress | EP0289 | 2026-10-19 | 2026-10-19 |
 | [US1080](US1080-a-unit-is-minted-against-the-primary-of.md) | A unit is minted against the Primary of the interface its Affects touches, read from interface paths the project declares | Draft | EP0289 | 2026-10-19 | 2026-10-19 |
 | [US1081](US1081-maya-s-and-trevor-s-cards-state-the.md) | Maya's and Trevor's cards state the signed run, the shipped gate's cost, the sign-once boundary and which Primary governs a mixed unit | Draft | EP0289 | 2026-10-19 | 2026-10-19 |

@@ -17,7 +17,7 @@ Decomposed from CR0635. Delivers the work CR0635 requested.
 - [ ] [US1075: A push is judged on the gate host this clone configures](../stories/US1075-a-push-is-judged-on-the-gate-host.md)
 - [ ] [US1076: Runs on a gate host are serialised, and an abandoned push stops its run](../stories/US1076-runs-on-a-gate-host-are-serialised-and.md)
 - [x] [US1077: One command says whether a gate host can judge a push](../stories/US1077-one-command-says-whether-a-gate-host-can.md)
-- [ ] [US1078: run-suite.sh runs the full suite on the gate host and records a verdict its check can read](../stories/US1078-run-suite-sh-runs-the-full-suite-on.md)
+- [x] [US1078: run-suite.sh runs the full suite on the gate host and records a verdict its check can read](../stories/US1078-run-suite-sh-runs-the-full-suite-on.md)
 
 ## Acceptance Criteria (Epic Level)
 
