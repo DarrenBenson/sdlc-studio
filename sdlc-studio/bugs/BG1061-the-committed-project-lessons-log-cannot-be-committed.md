@@ -1,6 +1,6 @@
 # BG1061: The committed project lessons log cannot be committed where markdownlint's defaults apply: every lesson heading ends in its sentence's punctuation, which MD026 refuses
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_lints.py, changelog.d/BG1061.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py

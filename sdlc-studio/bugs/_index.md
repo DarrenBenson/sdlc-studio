@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 126 |
-| In Progress | 2 |
-| Fixed | 804 |
+| Open | 128 |
+| In Progress | 1 |
+| Fixed | 805 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 41 |
 | Superseded | 32 |
-| **Total** | **1092** |
+| **Total** | **1094** |
 
 ## All Bugs
 
@@ -136,7 +136,7 @@
 | [BG1058](BG1058-the-close-s-dry-run-names-a-unit.md) | The close's dry run names a unit the run cannot end over that the real tree answers | Open | Medium | 2026-10-15 | 2026-10-15 |
 | [BG1059](BG1059-a-retro-s-batch-field-is-never-compared.md) | A retro's Batch field is never compared with the run's batch, so a unit added after the retro was scaffolded is left out of the run's measurement and its close accounting | Open | Medium | 2026-10-16 | 2026-10-16 |
 | [BG1060](BG1060-retro-extract-starts-a-new-project-lessons-log.md) | retro extract starts a new project lessons log when the committed one is missing, though the committed digest lists the lessons that log holds | Open | Medium | 2026-10-16 | 2026-10-16 |
-| [BG1061](BG1061-the-committed-project-lessons-log-cannot-be-committed.md) | The committed project lessons log cannot be committed where markdownlint's defaults apply: every lesson heading ends in its sentence's punctuation, which MD026 refuses | In Progress | Medium | 2026-10-16 | 2026-10-16 |
+| [BG1061](BG1061-the-committed-project-lessons-log-cannot-be-committed.md) | The committed project lessons log cannot be committed where markdownlint's defaults apply: every lesson heading ends in its sentence's punctuation, which MD026 refuses | Fixed | Medium | 2026-10-16 | 2026-10-16 |
 | [BG1062](BG1062-sprint-sign-names-no-commit-trailers-for-the.md) | sprint sign names no commit trailers for the paperwork it writes, so its commit draws one engagement-floor attribution advisory per unit it moved | Open | Low | 2026-10-18 | 2026-10-18 |
 | [BG1063](BG1063-require-ac-verification-is-documented-as-a-gate.md) | `require_ac_verification` is documented as a gate that aborts the completion cascade on a failed verification, but no code reads it | Open | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1064](BG1064-15-of-69-shipped-scripts-are-tracked-without.md) | 15 of 69 shipped scripts are tracked without the executable bit the TRD's script contract requires, a regression of CR0064's fix | Open | Low | 2026-10-19 | 2026-10-19 |
@@ -168,6 +168,8 @@
 | [BG1090](BG1090-test-output-prints-in-declared-order-whatever-finishes.md) | test_output_prints_in_declared_order_whatever_finishes_first failed one subtest under heavy load, and passes alone; not yet diagnosed | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1091](BG1091-us1084-s-document-tests-still-pass-three-phrasings.md) | US1084's document tests still pass three phrasings they exist to refuse | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1092](BG1092-the-tsd-says-the-commit-msg-hook-falls.md) | The TSD says the commit-msg hook falls back to skill-tests.sh only without pytest; it also does when the handover carries no selectors | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1093](BG1093-bg1061-s-heading-checks-read-a-heading-s.md) | BG1061's heading checks read a heading's trailing space as its last character, so a mark left behind a space passes | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1094](BG1094-a-lesson-that-is-only-punctuation-gets-an.md) | A lesson that is only punctuation gets an empty heading title since BG1061 | Open | Low | 2026-10-19 | 2026-10-19 |
 
 ## Archived Releases
 
