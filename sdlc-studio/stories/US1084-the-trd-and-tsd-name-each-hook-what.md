@@ -1,6 +1,6 @@
 # US1084: The TRD and TSD name each hook, what it runs, where the full suite runs and what a tag push does not run, read from the hooks themselves
 
-> **Status:** In Progress
+> **Status:** Done
 > **Delivers:** CR0644
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio new

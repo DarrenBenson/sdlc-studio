@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 124 |
+| Open | 126 |
 | In Progress | 2 |
 | Fixed | 804 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 41 |
 | Superseded | 32 |
-| **Total** | **1090** |
+| **Total** | **1092** |
 
 ## All Bugs
 
@@ -166,6 +166,8 @@
 | [BG1088](BG1088-a-setup-fault-on-a-gate-host-s.md) | A setup fault on a gate host's suite run is named as 'did not run the all suite' with no test that fails without it | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1089](BG1089-us1078-ac3-s-verify-test-does-not-exercise.md) | US1078 AC3's Verify test does not exercise the verdict's binding to the tree sent; only a sibling test does | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1090](BG1090-test-output-prints-in-declared-order-whatever-finishes.md) | test_output_prints_in_declared_order_whatever_finishes_first failed one subtest under heavy load, and passes alone; not yet diagnosed | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1091](BG1091-us1084-s-document-tests-still-pass-three-phrasings.md) | US1084's document tests still pass three phrasings they exist to refuse | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1092](BG1092-the-tsd-says-the-commit-msg-hook-falls.md) | The TSD says the commit-msg hook falls back to skill-tests.sh only without pytest; it also does when the handover carries no selectors | Open | Low | 2026-10-19 | 2026-10-19 |
 
 ## Archived Releases
 
