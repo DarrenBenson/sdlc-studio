@@ -403,7 +403,7 @@ Additional gates that back the NFRs but sit outside the four PRD headings:
 | Gate | Criteria | Blocking |
 | --- | --- | --- |
 | Unit suite | The full unittest suite passes (`npm test` exits 0) | Yes |
-| Markdown lint | `npm run lint` exits 0 (all eight sub-checks) | Yes |
+| Markdown lint | `npm run lint` exits 0 (every check its chain runs) | Yes |
 | Link integrity | `check_links.py`: every anchor resolves | Yes |
 | Skill frontmatter | `validate_skill.py`: valid against Agent Skills standard | Yes |
 | Version consistency | `check_versions.py`: all homes agree (CHANGELOG advisory between releases, required at release) | Yes, on every commit (the pre-commit `versions` lane), and strictly at release |
@@ -492,7 +492,7 @@ have noticed if the line were wrong*. A tier can sit at 90% coverage with surviv
 mutants, and that combination is the one worth hunting.
 
 Markdown "coverage" is binary rather than percentage-based: the corpus either
-passes all eight lint checks or it does not. There is no partial-pass state.
+passes every check the lint chain runs or it does not. There is no partial-pass state.
 
 > If async or subprocess code ever shows artificially low coverage, see the
 > Coverage Troubleshooting notes in `help/tsd.md` (greenlet/thread concurrency and
@@ -523,8 +523,8 @@ and none is present in the suite.
 ### Automation Candidates
 
 - The entire script tier (already automated as the unittest suite).
-- All markdown structural and style invariants (already automated as the eight lint
-  checks).
+- All markdown structural and style invariants (already automated by the lint
+  chain).
 - The artefact and delivery invariants (already automated as the `gate.py` lanes).
 - The release gate composition (suite, full lint, `gate.py --release`).
 
@@ -542,13 +542,18 @@ and none is present in the suite.
 
 | Layer | Tool | Language |
 | --- | --- | --- |
-| Script unit / integration | `unittest` (stdlib) | Python 3.10+ |
+| Script unit / integration | `unittest` tests, run by `pytest`, in parallel with `pytest-xdist` | Python 3.10+ |
+| Coverage | `coverage` (7.10 or later), for the CI floor | Python 3.10+ |
+| Config and workflow parsing | `PyYAML` | Python 3.10+ |
 | Mutation / assertion integrity | `scripts/mutation.py` | Python 3.10+ |
 | Flow conformance | `tools/eval_run.py` | Python 3.10+ |
 | Artefact and delivery gate | `scripts/gate.py` | Python 3.10+ |
-| Markdown lint | markdownlint-cli | Node |
+| Markdown lint | `markdownlint-cli`, the one Node devDependency (`npm ci`) | Node |
 | Prose style | `lint-style.sh` (grep) | Bash |
 | Structural checkers | `check_links`, `validate_skill`, `check_versions`, `check_budgets`, `check_neutrality` | Python 3.10+ |
+
+Every Python package above comes from `requirements-dev.txt`, the one Python dependency list, and
+the Node one from `package.json`.
 
 ---
 
@@ -602,6 +607,23 @@ and none is present in the suite.
 There is no merge-to-main E2E stage and no nightly performance stage, because no
 running application exists to exercise.
 
+### CI jobs
+
+Each job, read from `.github/workflows/`, with what it runs and the triggers it runs on:
+
+| Job | Workflow | Runs on | What it runs |
+| --- | --- | --- | --- |
+| `ci` | `lint.yml` | a push to main, a pull request to main, the weekly schedule and a manual dispatch | The lint chain, both unit suites once (the skill suite under coverage, with the green-run noise gate), the portable artefact gate, the coverage floor and the bandit scan, on Python 3.10 (the declared floor) and 3.12 |
+| `windows-smoke` | `lint.yml` | a push to main, a pull request to main, the weekly schedule and a manual dispatch | `install.ps1`: the target listing and dry run, a real local install with its stale-copy sweep, `-NoSweep`, and the verified install path |
+| `corpus` | `lint.yml` | the weekly schedule and a manual dispatch | `npm run lint:corpus`: every tracked markdown file under the strict rules, attributed against the latest tag |
+| `corpus-verify` | `lint.yml` | the weekly schedule and a manual dispatch | Every `Verify:` line in the corpus, executed |
+| `publish` | `release.yml` | a tag push (`v*`) and a manual dispatch naming an existing tag | Builds the release assets from the tag, verifies their sidecars, and publishes the release |
+
+`corpus-verify` compares two counts against `tools/verify-corpus-baseline.txt`: stamped criteria
+whose selector now selects nothing, and criteria that fail when run. It goes red in both
+directions: a count above the baseline is a new defect, and one below is a baseline to lower in
+the same commit.
+
 ### Quality Gates
 
 | Gate | Criteria | Blocking |
@@ -614,6 +636,9 @@ running application exists to exercise.
 | Version consistency (`lint:versions`) | All homes agree | Yes, on every commit (the pre-commit `versions` lane), and strictly at release |
 | Line budgets (`lint:budgets`) | Within budget | Yes |
 | Neutrality (`lint:neutrality`) | No private project name in a tracked file | Yes |
+| Dead flags (`lint:dead-flags`) | No flag whose parsed destination no line acts on | Yes |
+| Action pins (`lint:action-pins`) | Every GitHub Action pinned to a full commit SHA | Yes |
+| Disclosure (`lint:disclosure`) | Reference and help files carry a `Load when:` trigger and an index entry | No (advisory: it exits 0 unless run with `--strict`) |
 | Coverage floor | `coverage report --fail-under=80`: script-tier statement coverage at or above the 80% floor (~90% is the aspiration, not the gate) | Yes |
 | Security scan (bandit) | `bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q`: no medium-or-high severity finding | Yes |
 | Artefact gate (`gate.py`) | Every blocking lane PASSes | Yes |
@@ -712,6 +737,7 @@ package.json                # lint and test entry points
 | 2026-09-25 | Restatements cut (US0933, D0266) | In `## Test Levels`, the Unit Testing suite-size row and the paragraph under its table state no test or module count, and the row drops its two `measured:` markers, whose only reader US0879 deleted. The level headings and backticked paths the runner reads are unchanged. |
 | 2026-10-03 | Spec truth for 6.1 (US0984) | The TSD described machinery v6 retired. The mutation gate, its lane and its `.local/mutation-runs.json` ledger are gone, so the Mutation Testing level describes `mutation.py run` as the on-demand instrument it is (its report and per-run series, read by no gate lane); the artefact-gate lane table names the lanes `gate.py` registers, adding `window`, `changelog-fragments`, the on-demand lanes and the push and release boundary lanes; the verification-depth gate gives way to the Fixed gate on a green recorded run; `carry_forward`, deleted in 6.1, leaves the coverage map. |
 | 2026-10-19 | US1084 | The pipeline stages follow the three hooks in git's order, naming each hook's `--list`, the push stage's prerequisite check and red-main acknowledgement (D0181), and the commit's advisory 90-second budget. The release steps are named manual pre-tag steps (D0375), and the performance NFR states the gate's declared budget. The push stage follows the hook's own steps, the artefact gate's write claim is corrected, the noise ratchet's place is stated, the delivery gates are tabulated, and version consistency blocks on every commit |
+| 2026-10-19 | US1085 | The framework rows name every declared package. A CI jobs table names each job with its triggers and what it runs, and the corpus baseline with what it compares. Every lint check in the chain is named, and no count of them is stated |
 
 ---
 

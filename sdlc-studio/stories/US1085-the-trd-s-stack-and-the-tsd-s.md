@@ -1,6 +1,6 @@
 # US1085: The TRD's stack and the TSD's framework rows name every dependency the clone installs, and the TSD names each CI job and its trigger
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Delivers:** CR0644
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio new
@@ -20,12 +20,16 @@
 
 - **AC1:** Given the packages `requirements-dev.txt` declares and the devDependencies `package.json` declares, when the TRD's technology stack and the TSD's framework rows are read, then each package is named, and the TRD names `requirements-dev.txt` as the one Python dependency list
   - **Verify:** pytest tools/tests/test_lean_gate_toolchain_docs.py::GateToolchainDocsTests::test_every_declared_dependency_is_named
+  - **Verified:** yes (2026-10-19)
 - **AC2:** Given every job in `.github/workflows/*.yml`, when the TSD is read, then each job is named with the trigger it runs on (push, pull request, schedule, dispatch or tag), read from the workflow files, and the scheduled jobs' baseline file `tools/verify-corpus-baseline.txt` is named with what it compares
   - **Verify:** pytest tools/tests/test_lean_gate_toolchain_docs.py::GateToolchainDocsTests::test_every_ci_job_is_named_with_its_trigger
+  - **Verified:** yes (2026-10-19)
 - **AC3:** Given the checks `npm run lint` chains in `package.json`, when the TSD is read, then each is named and neither document states how many there are
   - **Verify:** pytest tools/tests/test_lean_gate_toolchain_docs.py::GateToolchainDocsTests::test_every_lint_check_is_named_uncounted
+  - **Verified:** yes (2026-10-19)
 - **AC4:** Given the oldest Python version the `ci` job installs, when the TRD is read, then the floor it states is that version
   - **Verify:** pytest tools/tests/test_lean_gate_toolchain_docs.py::GateToolchainDocsTests::test_the_python_floor_matches_ci
+  - **Verified:** yes (2026-10-19)
 
 ## Notes
 
