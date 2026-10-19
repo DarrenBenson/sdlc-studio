@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 123 |
+| Open | 124 |
 | In Progress | 2 |
 | Fixed | 804 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 41 |
 | Superseded | 32 |
-| **Total** | **1089** |
+| **Total** | **1090** |
 
 ## All Bugs
 
@@ -165,6 +165,7 @@
 | [BG1087](BG1087-mutation-py-s-changed-line-scope-finds-no.md) | mutation.py's changed-line scope finds no lines on a machine whose git config sets diff.mnemonicprefix or diff.noprefix | Open | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1088](BG1088-a-setup-fault-on-a-gate-host-s.md) | A setup fault on a gate host's suite run is named as 'did not run the all suite' with no test that fails without it | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1089](BG1089-us1078-ac3-s-verify-test-does-not-exercise.md) | US1078 AC3's Verify test does not exercise the verdict's binding to the tree sent; only a sibling test does | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1090](BG1090-test-output-prints-in-declared-order-whatever-finishes.md) | test_output_prints_in_declared_order_whatever_finishes_first failed one subtest under heavy load, and passes alone; not yet diagnosed | Open | Low | 2026-10-19 | 2026-10-19 |
 
 ## Archived Releases
 
