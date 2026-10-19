@@ -21,10 +21,13 @@
 
 - **AC1:** Given two runs of the same commit on one host through the stubbed transport, when both start, then each has its own directory and neither removes the other's tree
   - **Verify:** pytest tools/tests/test_remote_gate_runs.py::GateHostRunTests::test_each_run_has_its_own_tree
+  - **Verified:** yes (2026-10-19)
 - **AC2:** Given a run in progress on the host, when a second run starts, then it waits on a host-side lock, says it is waiting and for which run, and starts when the first ends
   - **Verify:** pytest tools/tests/test_remote_gate_runs.py::GateHostRunTests::test_a_second_run_waits_and_says_so
+  - **Verified:** yes (2026-10-19)
 - **AC3:** Given a hook stopped by INT or TERM, or a transport that drops mid-run, when the push ends, then it is refused and no tree or gate process for that run remains on the host
   - **Verify:** pytest tools/tests/test_remote_gate_runs.py::GateHostRunTests::test_an_abandoned_push_leaves_nothing_running
+  - **Verified:** yes (2026-10-19)
 
 ## Notes
 

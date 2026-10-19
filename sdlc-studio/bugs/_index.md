@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 109 |
+| Open | 112 |
 | In Progress | 1 |
 | Fixed | 804 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 32 |
-| **Total** | **1073** |
+| **Total** | **1076** |
 
 ## All Bugs
 
@@ -149,6 +149,9 @@
 | [BG1071](BG1071-the-project-seat-card-s-design-persona-check.md) | The project seat card's design-persona check stops at a full stop, so a name followed by a file path before 'design persona' passes | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1072](BG1072-test-persona-coherence-s-id-check-reads-a.md) | test_persona_coherence's id check reads a fixed list of id prefixes, so a card citing a handoff or test-spec id that resolves to nothing passes | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1073](BG1073-critic-py-record-writes-a-reviewer-s-findings.md) | critic.py record writes a reviewer's findings verbatim into a ledger the repository's markdownlint refuses, so a finding quoting an email-shaped name blocks the next commit | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1074](BG1074-no-test-pins-that-a-red-gate-host.md) | No test pins that a red gate-host run records its duration, so the hook can stop recording exit 1 with the suite green | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1075](BG1075-tools-remote-gate-sh-s-local-side-needs.md) | tools/remote-gate.sh's local side needs bash 4, so a pusher on stock macOS bash 3.2 has every gate-host push refused | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1076](BG1076-the-rejoinder-brief-asks-a-reviewer-to-rule.md) | The rejoinder brief asks a reviewer to rule each earlier finding, but the return contract has no place for the rulings, so a round-2 verdict that writes them untagged is refused by critic.py record | Open | Low | 2026-10-19 | 2026-10-19 |
 
 ## Archived Releases
 
