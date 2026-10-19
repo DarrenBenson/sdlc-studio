@@ -8,7 +8,7 @@
 > **Affects:** sdlc-studio/trd.md, sdlc-studio/tsd.md, tools/tests/test_lean_gate_docs.py, changelog.d/US1084.md
 > **Epic:** EP0290
 > **Points:** 3
-> **Persona:** Maya Okafor
+> **Persona:** Rowan Achterberg
 
 ## User Story
 
@@ -31,6 +31,7 @@
 
 ## Notes
 
+- Serves: Rowan Achterberg, End goal 3 (D0380 repoint; the card is sdlc-studio/personas/rowan-achterberg-skill-maintainer.md).
 - AC1 must fail on: a hook dropped from either document, or the TSD's stages listed out of git's order.
 - AC2 must fail on: a boundary the hook runs left unnamed, or the TSD restoring 'runs the whole gate on every commit'.
 - AC3 must fail on: the TSD's tag row claiming the tag push runs `--release`, or one of the three steps dropped; the set is derived as the release commands the runbook names minus those any hook or workflow calls, never typed into the test.
@@ -47,3 +48,4 @@
 | 2026-10-19 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-19 | Claude Opus 5.5 | Groomed: criteria, Verify lines and the mutants each must fail on (D0377) |
 | 2026-10-19 | Claude Opus 5.5 | Regroomed after the goal review (round 4): the seats' findings folded in: AC5 for the cost row, each hook's --list, the push stage's prerequisite and red-main checks, the gate_timing writes, known-member floors |
+| 2026-10-19 | Claude Opus 5.5 | Repointed at Rowan Achterberg, Primary for the repository-tooling interface, before review (D0379, D0380) |

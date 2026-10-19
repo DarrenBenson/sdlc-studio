@@ -9,11 +9,11 @@
 > **Epic:** EP0288
 > **Points:** 3
 > **Depends on:** US1075
-> **Persona:** Maya Okafor
+> **Persona:** Rowan Achterberg
 
 ## User Story
 
-**As** the founder-engineer whose agent sessions push to one shared gate host
+**As** the skill maintainer whose agent sessions push to one shared gate host
 **I want** each host run to have its own tree, one run at a time, and an abandoned push to leave nothing running
 **So that** a retry after a dropped connection cannot delete a live run, and two sessions pushing at once do not starve the host the way they starved the workstation
 
@@ -28,6 +28,7 @@
 
 ## Notes
 
+- Serves: Rowan Achterberg, End goal 1 (D0380 repoint; the card is sdlc-studio/personas/rowan-achterberg-skill-maintainer.md).
 - Release: 6.2 (second run, D0365) (refine breakdown G14, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the run directory is keyed only on the commit and removed before reuse, as the trial script did
 - AC2 must fail on: no lock, so both suites run at once
@@ -50,3 +51,4 @@
 | 2026-10-12 | Claude Opus 5.5 (engineering seat) | Groomed from the refine breakdown G14 after the refine panel's review |
 | 2026-10-13 | Claude Opus 5.5 (planning) | Note: the gate host is shared with a CI runner |
 | 2026-10-19 | Claude Opus 5.5 | Regroomed after the goal review (round 4): the seats' findings folded in: event-synchronised lock and signal tests |
+| 2026-10-19 | Claude Opus 5.5 | Repointed at Rowan Achterberg, Primary for the repository-tooling interface, before review (D0379, D0380) |

@@ -8,7 +8,7 @@
 > **Affects:** sdlc-studio/trd.md, sdlc-studio/tsd.md, tools/tests/test_lean_gate_toolchain_docs.py, changelog.d/US1085.md
 > **Epic:** EP0290
 > **Points:** 2
-> **Persona:** Maya Okafor
+> **Persona:** Rowan Achterberg
 
 ## User Story
 
@@ -29,6 +29,7 @@
 
 ## Notes
 
+- Serves: Rowan Achterberg, End goal 3 (D0380 repoint; the card is sdlc-studio/personas/rowan-achterberg-skill-maintainer.md).
 - AC1 must fail on: a package added to requirements-dev.txt or package.json devDependencies and named in neither document, or the TRD restoring 'unittest, stdlib, no third-party runner'.
 - AC2 must fail on: a scheduled job (corpus, corpus-verify) left out of the TSD, or a job named with the wrong trigger.
 - AC3 must fail on: a lint check added to the chain and not named, or 'eight checkers' (or any count) restored.
@@ -45,3 +46,4 @@
 | 2026-10-19 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-19 | Claude Opus 5.5 | Groomed: criteria, Verify lines and the mutants each must fail on (D0377) |
 | 2026-10-19 | Claude Opus 5.5 | Regroomed after the goal review (round 4): the seats' findings folded in: the corpus baseline named, the ci job named for the floor, known-member floors |
+| 2026-10-19 | Claude Opus 5.5 | Repointed at Rowan Achterberg, Primary for the repository-tooling interface, before review (D0379, D0380) |

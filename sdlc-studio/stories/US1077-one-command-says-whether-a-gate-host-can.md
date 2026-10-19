@@ -8,12 +8,12 @@
 > **Affects:** tools/remote-gate.sh, tools/enable-hooks.sh, tools/tests/test_remote_gate_doctor.py, CONTRIBUTING.md, changelog.d/US1077.md
 > **Epic:** EP0288
 > **Points:** 2
-> **Depends on:** US1075, US1004
-> **Persona:** Maya Okafor
+> **Depends on:** US1075
+> **Persona:** Rowan Achterberg
 
 ## User Story
 
-**As** the founder-engineer relying on a gate host
+**As** the skill maintainer relying on a gate host
 **I want** `tools/remote-gate.sh doctor` to check the host against the one prerequisite list, and `enable-hooks.sh` to show the configured host and that verdict
 **So that** a host that has lost a prerequisite is named in seconds, not after a ten-minute run turns red
 
@@ -28,6 +28,7 @@
 
 ## Notes
 
+- Serves: Rowan Achterberg, End goal 1 (D0380 repoint; the card is sdlc-studio/personas/rowan-achterberg-skill-maintainer.md).
 - Release: 6.2 (second run, D0365) (refine breakdown G14, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: doctor checks a hard-coded list of its own instead of the one list
 - AC2 must fail on: doctor reports ready without checking each entry
@@ -40,3 +41,4 @@
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-12 | Claude Opus 5.5 (engineering seat) | Groomed from the refine breakdown G14 after the refine panel's review |
+| 2026-10-19 | Claude Opus 5.5 | Repointed at Rowan Achterberg, Primary for the repository-tooling interface, before review (D0379, D0380); resolved dependencies cleared: US1004 |

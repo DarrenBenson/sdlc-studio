@@ -9,11 +9,11 @@
 > **Epic:** EP0288
 > **Points:** 3
 > **Depends on:** US1075
-> **Persona:** Maya Okafor
+> **Persona:** Rowan Achterberg
 
 ## User Story
 
-**As** the founder-engineer about to commit a change to shared surface
+**As** the skill maintainer about to commit a change to shared surface
 **I want** `tools/run-suite.sh` to run the full suite on the configured gate host over the same tree it already binds its verdict to
 **So that** I can keep the full-suite-before-commit rule when my workstation cannot hold the suite, and the verdict is one `run-suite.sh --check` reads
 
@@ -30,6 +30,7 @@
 
 ## Notes
 
+- Serves: Rowan Achterberg, End goal 4 (D0380 repoint; the card is sdlc-studio/personas/rowan-achterberg-skill-maintainer.md).
 - Release: 6.2 (second run, D0365) (refine breakdown G14, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the wrapper sends HEAD instead of the hashed tree
 - AC2 must fail on: the wrapper sends only the index, recording a green over an unstaged red edit
@@ -48,3 +49,4 @@
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-12 | Claude Opus 5.5 (engineering seat) | Groomed from the refine breakdown G14 after the refine panel's review |
 | 2026-10-19 | Claude Opus 5.5 | Regroomed after the goal review (round 4): the seats' findings folded in: the shipped runbook dropped from Affects, remote-gate.sh added |
+| 2026-10-19 | Claude Opus 5.5 | Repointed at Rowan Achterberg, Primary for the repository-tooling interface, before review (D0379, D0380) |

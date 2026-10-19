@@ -9,7 +9,7 @@
 > **Epic:** EP0290
 > **Points:** 2
 > **Depends on:** US1075, US1084
-> **Persona:** Maya Okafor
+> **Persona:** Rowan Achterberg
 
 ## User Story
 
@@ -26,6 +26,7 @@
 
 ## Notes
 
+- Serves: Rowan Achterberg, End goal 1 (D0380 repoint; the card is sdlc-studio/personas/rowan-achterberg-skill-maintainer.md).
 - AC1 must fail on: a setting the hook or remote-gate.sh reads left unnamed in either document; the set is read from the scripts, never typed into the test.
 - AC2 must fail on: the TSD saying a transport failure falls back to the local gate, or one of the three locations unnamed.
 - Every derived set asserts a known member first (LL0043): `sdlc.gateHost` and `SDLC_GATE_LOCAL`.
@@ -39,3 +40,4 @@
 | 2026-10-19 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-19 | Claude Opus 5.5 | Groomed: criteria, Verify lines and the mutants each must fail on (D0377) |
 | 2026-10-19 | Claude Opus 5.5 | Regroomed after the goal review (round 4): the seats' findings folded in: run-suite.sh and enable-hooks.sh among the sources, known-member floor |
+| 2026-10-19 | Claude Opus 5.5 | Repointed at Rowan Achterberg, Primary for the repository-tooling interface, before review (D0379, D0380) |

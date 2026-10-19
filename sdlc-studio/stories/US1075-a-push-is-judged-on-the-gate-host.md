@@ -8,12 +8,11 @@
 > **Affects:** .githooks/pre-push, tools/remote-gate.sh, tools/tests/test_remote_gate_push.py, tools/tests/test_pre_push_hook.py, CONTRIBUTING.md, changelog.d/US1075.md
 > **Epic:** EP0288
 > **Points:** 5
-> **Depends on:** US1005, US1006, BG0978, BG0976
-> **Persona:** Maya Okafor
+> **Persona:** Rowan Achterberg
 
 ## User Story
 
-**As** the founder-engineer pushing from a workstation shared with agent sessions
+**As** the skill maintainer pushing from a workstation shared with agent sessions
 **I want** the pre-push gate to run on the gate host I configure for this clone, against exactly the commit I am pushing and the same range and tags my clone sees
 **So that** a push is judged in full without competing for my workstation's memory, and a killed gate no longer leaves me choosing between a long retry and a bypass
 
@@ -36,6 +35,7 @@
 
 ## Notes
 
+- Serves: Rowan Achterberg, End goal 1 (D0380 repoint; the card is sdlc-studio/personas/rowan-achterberg-skill-maintainer.md).
 - Release: 6.2 (second run, D0365) (refine breakdown G14, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the hook sends the working tree or HEAD instead of the pushed commit, or runs the gate locally
 - AC2 must fail on: only the commit is sent, so the host's range widens to all history and its tag lookup fails
@@ -63,3 +63,4 @@
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-12 | Claude Opus 5.5 (engineering seat) | Groomed from the refine breakdown G14 after the refine panel's review |
 | 2026-10-19 | Claude Opus 5.5 | Regroomed after the goal review (round 4): the seats' findings folded in: AC6 (red-main and preflight on the host path), AC7 (a real push judged on the host) |
+| 2026-10-19 | Claude Opus 5.5 | Repointed at Rowan Achterberg, Primary for the repository-tooling interface, before review (D0379, D0380); resolved dependencies cleared: BG0976, BG0978, US1005, US1006 |
