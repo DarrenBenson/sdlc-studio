@@ -1,6 +1,6 @@
 # US1084: The TRD and TSD name each hook, what it runs, where the full suite runs and what a tag push does not run, read from the hooks themselves
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Delivers:** CR0644
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio new
@@ -20,14 +20,19 @@
 
 - **AC1:** Given the hooks in `.githooks/`, when the TRD and the TSD are read, then each names every hook, the TSD's pipeline stages give them in the order git runs them (pre-commit, commit-msg, pre-push), and each points at the hook's own `--list` where the hook has one rather than restating its lanes
   - **Verify:** pytest tools/tests/test_lean_gate_docs.py::GateDocsTests::test_every_hook_is_named_in_run_order
+  - **Verified:** yes (2026-10-19)
 - **AC2:** Given each `--boundary` value `.githooks/pre-push` and the host path it sends through pass to `gate.py`, when the documents are read, then both name it beside the push or the tag that runs it, the TSD's push stage names the prerequisite check and the red-main acknowledgement (D0181) that run before the gate, and the TSD says the full suite runs at the push boundary while a commit runs only the selected suites against an advisory budget
   - **Verify:** pytest tools/tests/test_lean_gate_docs.py::GateDocsTests::test_each_boundary_the_hook_runs_is_named
+  - **Verified:** yes (2026-10-19)
 - **AC3:** Given the release steps no hook or workflow runs (`gate.py --release`, `release_cut.py record-green`, `release_cut.py tag-check`), when the TSD is read, then each is named as a manual pre-tag step and neither document says a tag push runs it (D0375)
   - **Verify:** pytest tools/tests/test_lean_gate_docs.py::GateDocsTests::test_unrun_release_steps_are_named_manual
+  - **Verified:** yes (2026-10-19)
 - **AC4:** Given every `.local` path `gate.py` and `tools/gate_timing.py` write, when the TRD is read, then each is named, and neither document says the gate writes nothing or is read-only
   - **Verify:** pytest tools/tests/test_lean_gate_docs.py::GateDocsTests::test_the_gates_local_writes_are_named
+  - **Verified:** yes (2026-10-19)
 - **AC5:** Given the gate's cost budget as `gate.py` declares it, when the TRD's performance row and the TSD's performance NFR are read, then each states the budget as a measured figure with its source and neither calls the gate sub-second
   - **Verify:** pytest tools/tests/test_lean_gate_docs.py::GateDocsTests::test_the_gate_cost_row_states_the_declared_budget
+  - **Verified:** yes (2026-10-19)
 
 ## Notes
 

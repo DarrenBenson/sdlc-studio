@@ -7,10 +7,10 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 92 |
+| Draft | 91 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 3 |
+| In Progress | 4 |
 | Review | 0 |
 | Done | 808 |
 | Won't Implement | 92 |
@@ -121,7 +121,7 @@
 | [US1081](US1081-maya-s-and-trevor-s-cards-state-the.md) | Maya's and Trevor's cards state the signed run, the shipped gate's cost, the sign-once boundary and which Primary governs a mixed unit | Draft | EP0289 | 2026-10-19 | 2026-10-19 |
 | [US1082](US1082-the-prd-s-outcome-citations-name-end-goals.md) | The PRD's outcome citations name End goals that say them, and Jonah's upgrade goal has an outcome | Draft | EP0289 | 2026-10-19 | 2026-10-19 |
 | [US1083](US1083-the-persona-index-s-history-is-complete-and.md) | The persona index's history is complete and ordered, it links the seat cards, and the legacy personas.md agrees with its banner | Draft | EP0289 | 2026-10-19 | 2026-10-19 |
-| [US1084](US1084-the-trd-and-tsd-name-each-hook-what.md) | The TRD and TSD name each hook, what it runs, where the full suite runs and what a tag push does not run, read from the hooks themselves | Draft | EP0290 | 2026-10-19 | 2026-10-19 |
+| [US1084](US1084-the-trd-and-tsd-name-each-hook-what.md) | The TRD and TSD name each hook, what it runs, where the full suite runs and what a tag push does not run, read from the hooks themselves | In Progress | EP0290 | 2026-10-19 | 2026-10-19 |
 | [US1085](US1085-the-trd-s-stack-and-the-tsd-s.md) | The TRD's stack and the TSD's framework rows name every dependency the clone installs, and the TSD names each CI job and its trigger | Draft | EP0290 | 2026-10-19 | 2026-10-19 |
 | [US1086](US1086-the-trd-and-tsd-describe-the-gate-host.md) | The TRD and TSD describe the gate host a clone can configure, the fallback and the local override | Draft | EP0290 | 2026-10-19 | 2026-10-19 |
 

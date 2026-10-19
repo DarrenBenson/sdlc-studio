@@ -3,7 +3,7 @@
 **Project:** SDLC Studio
 **Version:** 6.1.0
 **Status:** Draft
-**Last Updated:** 2026-10-03
+**Last Updated:** 2026-10-19
 **PRD Reference:** [PRD](./prd.md)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -175,8 +175,29 @@ specific obligation and cannot be skipped or excluded away: `--require-retro` (t
 retro's content, plus the lessons summary and validity), `--require-review` (review
 currency, not presence), and `--release`, which EXECUTES every
 story's `Verify:` expression rather than reading a stored report that could carry a
-stale green. The gate writes nothing, so it is hook-safe. Its lanes are the
-mechanism behind ADR-006 through ADR-011: a lane is how a rule stops being prose.
+stale green. Its lanes are the mechanism behind ADR-006 through ADR-011: a lane is how a rule
+stops being prose.
+
+The gate writes only untracked state under `sdlc-studio/.local/`, so a run never dirties the
+tree it judges:
+
+- `gate-cost.json`: the last run's cost, so the next run can state a direction of travel.
+- `gate-suite-verdict.json`: the last suite verdict, reused only for an identical surface.
+- `boundary-suite-last.log`: a red boundary suite's full output, removed by the next green.
+- `gate-timings.json`, through `tools/gate_timing.py`: each suite's recent durations, which
+  `gate_timing.py estimate` reads.
+
+#### The hooks
+
+Three git hooks run the gate, installed by `tools/enable-hooks.sh`, in the order git runs them:
+
+1. `.githooks/pre-commit` runs the cheap guards over the staged change and decides whether the
+   unit suites are needed. `.githooks/pre-commit --list` prints its lanes.
+2. `.githooks/commit-msg` checks the message rules, then runs only the test modules the staged
+   change selects. `.githooks/commit-msg --list` prints its lanes.
+3. `.githooks/pre-push` runs the full suite once, at the boundary of what is pushed: `gate.py
+   --boundary push` for a branch push, and `gate.py --boundary release` for a tag push, which
+   adds the slow release lanes.
 
 ---
 
@@ -613,7 +634,8 @@ cross-machine clash is caught at merge (ADR-008).
 | --- | --- | --- |
 | Always-loaded context | `SKILL.md` under its hard ceiling of 500 lines | Line count of the router, gated by `check_budgets.py` - the ceiling is the claim, not a snapshot of the current count |
 | Script run time | Sub-second on a typical project | `scripts/tests` suite: minutes, not seconds - see `tools/gate_timing.py estimate` for the live figure |
-| Reconcile / status / gate | Sub-second | Read-only census over the artifact tree |
+| Reconcile / status | Sub-second | Read-only census over the artifact tree |
+| Gate run | A declared 45 s budget (`GATE_BUDGET_S` in `gate.py`, set against a measured 33 s for the standard lane set; `gate.budget_seconds` overrides it per project) | Each run measures its own cost against the budget and reports an overrun without refusing; the last cost is kept in `.local/gate-cost.json`. A boundary run is far longer: `python3 tools/gate_timing.py estimate --suite boundary-push` gives the measured figure |
 | Mutation run | Minutes, by design | One suite run per mutant; not on the fast path |
 | Install | Single fetch-and-copy | `install.sh` / `install.ps1`, no build step |
 
@@ -1147,6 +1169,7 @@ touches the component. The constraints below span components.
 | 2026-09-25 | 5.1.0 | Restatements cut (US0933, D0266). §3 and §5 name `gate.DEFAULT_CHECKS`, the `SKILL.md` Type Reference table and `reconcile.DRIFT_KINDS` rather than copying them, ADR-003 keeps its decision without the drift-kind copy, and the Component Overview and Scaling Strategy drop their counts except the `60+ scripts` claim that `doc_freshness`'s census checks; ADR-001's sizes stay as the decision's record. The three tests that pinned the copies are deleted. |
 | 2026-09-25 | 5.1.0 | The Component Overview gains a Constraints column, which a lane brief reads for the components its unit touches. The Must Have constraints that govern one component (the router, the script layer, `lib/sdlc_md.py`) move into their cells; the ones that span components stay in §13. |
 | 2026-10-03 | 6.0.0 | Spec truth for 6.1 (US0984). The `.local/` state table drops `mutation-runs.json`, the per-target ledger nothing writes since v6, and names `mutation-series.jsonl`, the per-run series `mutation.py` appends; the mutation report and the scaling note no longer say a gate lane reads either; `critic`'s writing verbs are `record`, `correct` and `supersede`, `evidence` and `signoff` being retired, and §5's write surface says `critic record` appends to the verdict log alone. |
+| 2026-10-19 | 6.1.0 | US1084: §3 names the three hooks, the push and release boundaries, and the four files the gate writes under `.local/` (it had said the gate wrote none). §10's gate row states the declared 45 s budget and its source, where it had called the gate sub-second |
 
 ---
 
