@@ -1,6 +1,6 @@
 # BG1066: The product seat approves only stories that serve a Primary persona's goal, so a declared Secondary's stories have no approving lens
 
-> **Status:** Open
+> **Status:** In Progress
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/templates/personas/amigos/product.md, sdlc-studio/personas/seats/product.md, .claude/skills/sdlc-studio/scripts/tests/test_seat_admits_secondary.py, changelog.d/BG1066.md
@@ -26,10 +26,13 @@ Reword both cards: 'a Primary or Secondary persona's End goal, a Secondary never
 
 - [ ] **AC1** Given a story whose declared persona is a Secondary, when the shipped and the project product seat cards are read, then each approves a story that serves a Primary's or a declared Secondary's End goal, a Secondary never at the Primary's expense
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_seat_admits_secondary.py::ProductSeatLensTests::test_product_seat_admits_a_secondary_goal
+  - **Verified:** yes (2026-10-19)
 - [ ] **AC2** Given a cast with more than one Primary, each declaring an interface, when the seat cards are read, then each judges a unit against the Primary of the interface the unit's Affects touches, a unit touching the shipped interface is judged against its Primary, and the project card names no single Primary as the design persona
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_seat_admits_secondary.py::ProductSeatLensTests::test_product_seat_judges_against_the_interfaces_primary
+  - **Verified:** yes (2026-10-19)
 - [ ] **AC3** Given a single-Primary cast with no interfaces declared, when the shipped seat card is read, then its approval test reads as it does today for that Primary
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_seat_admits_secondary.py::ProductSeatLensTests::test_a_single_primary_cast_reads_as_before
+  - **Verified:** yes (2026-10-19)
 
 ## Impact
 
