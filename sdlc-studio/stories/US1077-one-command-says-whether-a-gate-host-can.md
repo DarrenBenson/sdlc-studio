@@ -1,6 +1,6 @@
 # US1077: One command says whether a gate host can judge a push
 
-> **Status:** In Progress
+> **Status:** Done
 > **Delivers:** CR0635
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
