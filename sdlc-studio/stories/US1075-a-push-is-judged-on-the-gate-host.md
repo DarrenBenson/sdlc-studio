@@ -29,6 +29,10 @@
   - **Verify:** pytest tools/tests/test_remote_gate_push.py::RemoteGatePushTests::test_a_transport_failure_refuses_and_names_the_fallback
 - **AC5:** Given the same commit, when the push runs with no host configured, and again with a host configured and `SDLC_GATE_LOCAL=1`, then each runs the gate once in the local worktree, and with a host configured and neither, the gate runs on the host
   - **Verify:** pytest tools/tests/test_remote_gate_push.py::RemoteGatePushTests::test_the_gate_runs_where_the_configuration_says
+- **AC6:** Given a configured host and a red latest push run on main that is not acknowledged, or a prerequisite the host's interpreter lacks, when the hook runs, then it refuses before anything is sent: the red-main read stays local and runs first, and US1005's preflight runs against the host's interpreter
+  - **Verify:** pytest tools/tests/test_remote_gate_push.py::RemoteGatePushTests::test_the_host_path_keeps_the_red_main_read_and_the_preflight
+- **AC7:** Given this clone configured with `sdlc.gateHost` naming the gate host, when one of this repository's own pushes after this unit lands runs with no `--no-verify`, then the host judges it, and its duration is recorded under `boundary-push@<host>` in this clone's gate timings
+  - **Verify:** manual: `git config sdlc.gateHost`, a push without `--no-verify`, then `python3 tools/gate_timing.py show` lists the `boundary-push@devserver1` row
 
 ## Notes
 
@@ -47,9 +51,15 @@
 - A red host run's refusal names the host's log path and the remote re-run, not the local re-run the host exists to avoid.
 - Panel correction on the trial: of its three red tests, `BoundaryMarkerReachesThePushTests` and `FrozenNotesTests` were BG0978; `test_gate.py::ModuleAloneLaneTests` failed its 3.0-second wall-clock bound at exactly 3.0 under the full parallel suite, and passed on the rerun.
 
+## Grooming note (2026-10-19)
+
+- AC6 must fail on: the host path skipping the red-main read (D0181) or the preflight (US1005), both previously Notes only.
+- AC7 is the live proof the goal review asked for: every other criterion runs a stubbed transport. It also retires D0370's interim `--no-verify` rule for this clone.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-12 | Claude Opus 5.5 (engineering seat) | Groomed from the refine breakdown G14 after the refine panel's review |
+| 2026-10-19 | Claude Opus 5.5 | Regroomed after the goal review (round 4): the seats' findings folded in: AC6 (red-main and preflight on the host path), AC7 (a real push judged on the host) |

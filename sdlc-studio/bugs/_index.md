@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 104 |
+| Open | 106 |
 | In Progress | 0 |
 | Fixed | 804 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 40 |
 | Superseded | 32 |
-| **Total** | **1067** |
+| **Total** | **1069** |
 
 ## All Bugs
 
@@ -143,6 +143,8 @@
 | [BG1065](BG1065-the-gate-s-45-second-cost-budget-is.md) | The gate's 45-second cost budget is exceeded on every run (127 s locally, 143 s in CI, the conformance lane alone 121 s), so its OVER line carries no signal | Open | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1066](BG1066-the-product-seat-approves-only-stories-that-serve.md) | The product seat approves only stories that serve a Primary persona's goal, so a declared Secondary's stories have no approving lens | Open | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1067](BG1067-the-triage-session-cap-keys-on-the-run.md) | The triage session cap keys on the run state's id whether or not the run is sealed, so a signed run's counter keeps charging every later session's findings | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1068](BG1068-artifact-py-retitle-rewrites-an-inbound-link-s.md) | artifact.py retitle rewrites an inbound link's target but leaves its link text naming the old title, so an epic's story breakdown reads the retired title | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1069](BG1069-critic-escalation-reads-verdicts-across-a-reopen-a.md) | critic escalation reads verdicts across a reopen: a reopened unit's first new-round REJECT is reported as a panel split against the previous delivery's APPROVE | Open | Low | 2026-10-19 | 2026-10-19 |
 
 ## Archived Releases
 

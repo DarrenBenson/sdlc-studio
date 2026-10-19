@@ -38,6 +38,10 @@
 
 - 2026-10-13: devserver1 is also a self-hosted GitHub Actions runner (`Runner.Worker`, `buildkitd`), so a host-side lock serialises gate runs against each other but not against the host's other work: the same push gate took 568 s and 836 s on one day, and BG1031's wall-clock test failed at load average 10.6. The doctor (US1077) or the run's output should report the host's load beside the result.
 
+## Grooming note (2026-10-19)
+
+- The lock and signal tests synchronise on events (a marker file, a pipe), never on wall-clock sleeps: they will run on a gate host shared with a CI runner, where wall-clock bounds have failed before (BG1031).
+
 ## Revision History
 
 | Date | Author | Change |
@@ -45,3 +49,4 @@
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-12 | Claude Opus 5.5 (engineering seat) | Groomed from the refine breakdown G14 after the refine panel's review |
 | 2026-10-13 | Claude Opus 5.5 (planning) | Note: the gate host is shared with a CI runner |
+| 2026-10-19 | Claude Opus 5.5 | Regroomed after the goal review (round 4): the seats' findings folded in: event-synchronised lock and signal tests |

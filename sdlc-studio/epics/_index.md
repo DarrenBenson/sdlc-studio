@@ -1,18 +1,18 @@
 # Epic Index
 
-**Last Updated:** 2026-10-12
+**Last Updated:** 2026-10-19
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 14 |
+| Draft | 16 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 241 |
 | Superseded | 33 |
-| **Total** | **288** |
+| **Total** | **290** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -39,6 +39,8 @@
 | [EP0286](EP0286-a-small-change-takes-a-documented-tooled-path.md) | A small change takes a documented, tooled path: an executable criterion, an independent review and the terminal transition, without a run | Draft | 5 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0287](EP0287-personas-become-accountable-team-members-a-review-standard.md) | Personas become accountable team members: a review standard that blocks a failing card, a committed memory, a learning loop from the verdict ledger, and End goals checked at the close | Draft | 23 | -- | 2026-10-12 | 2026-10-12 |
 | [EP0288](EP0288-the-push-gate-and-the-full-suite-run.md) | The push gate and the full suite run on a configured gate host | Draft | 4 | -- | 2026-10-12 | 2026-10-12 |
+| [EP0289](EP0289-the-persona-registry-matches-the-work-it-serves.md) | The persona registry matches the work it serves: a maintainer Primary for the repository tooling, and cards that state current goals | Draft | 5 | -- | 2026-10-19 | 2026-10-19 |
+| [EP0290](EP0290-the-trd-and-tsd-describe-the-gate-as.md) | The TRD and TSD describe the gate as it runs: the hooks, the boundary gates, the toolchain, CI and the gate host | Draft | 3 | -- | 2026-10-19 | 2026-10-19 |
 
 ## Archived Releases
 

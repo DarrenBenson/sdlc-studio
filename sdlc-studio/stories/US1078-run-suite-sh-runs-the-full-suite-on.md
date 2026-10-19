@@ -5,7 +5,7 @@
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** tools/run-suite.sh, tools/tests/test_run_suite_remote.py, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, AGENTS.md, changelog.d/US1078.md
+> **Affects:** tools/run-suite.sh, tools/remote-gate.sh, tools/tests/test_run_suite_remote.py, AGENTS.md, changelog.d/US1078.md
 > **Epic:** EP0288
 > **Points:** 3
 > **Depends on:** US1075
@@ -37,9 +37,14 @@
 - AC4 must fail on: the wrapper ignores `sdlc.gateHost`
 - Wrap `tree_state()`'s tree with `git commit-tree` on a scratch ref; nothing is added to the branch (run-suite.sh:63-108, BG0492).
 
+## Grooming note (2026-10-19)
+
+- The shipped `reference-sprint-toolchain.md` is dropped from Affects: its two run-suite rows (run a suite, confirm its verdict) mean the same wherever the suite runs, so the unit stays wholly repository tooling and is judged against the skill maintainer (D0379, D0380). `tools/remote-gate.sh` joins Affects: the wrapper reuses US1075's send rather than duplicating it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-12 | Claude Opus 5.5 (engineering seat) | Groomed from the refine breakdown G14 after the refine panel's review |
+| 2026-10-19 | Claude Opus 5.5 | Regroomed after the goal review (round 4): the seats' findings folded in: the shipped runbook dropped from Affects, remote-gate.sh added |

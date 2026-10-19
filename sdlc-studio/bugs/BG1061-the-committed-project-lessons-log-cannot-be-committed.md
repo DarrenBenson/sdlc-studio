@@ -24,8 +24,10 @@ Write the heading without its trailing sentence punctuation (strip it in the hea
 
 ## Acceptance Criteria
 
-- [ ] **AC1** A project lessons log written by `retro.py extract` passes markdownlint under its default rules
+- [ ] **AC1** A project lessons log written by `retro.py extract` has no heading with trailing punctuation (markdownlint MD026, on by default), so the commit that adds it passes the repository's markdown lane
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_lints.py -k extracted_log_has_no_trailing_heading_punctuation
+- [ ] **AC2** Given an existing log whose headings end in their sentence's punctuation (the shape every log written before this fix has), when it is read and a further retro is extracted into it, then every existing lesson keeps its id and title, nothing is added twice, and the lessons the summary lists are still found
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_lints.py -k an_existing_punctuated_log_reads_without_churn
 
 ## Impact
 
@@ -36,3 +38,4 @@ The log BG0989 made committed cannot be committed in this repository, or in any 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-16 | Claude Opus 5.5 | Filed |
+| 2026-10-19 | Claude Opus 5.5 | Regroomed after the goal review (round 4): the seats' findings folded in: AC1 names MD026, AC2 pins the no-churn read of an existing log |
