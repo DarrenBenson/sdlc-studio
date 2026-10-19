@@ -133,7 +133,8 @@ its `changelog.d/<UNIT-ID>.md` fragment (`lessons/LL0004`).
 
 **Run the full suite before a commit that touches shared surface.** The gate runs a selected
 subset, so a green commit is not a green tree. This rule has been broken by the agent that
-shipped it.
+shipped it. `tools/run-suite.sh all` is that run: with `sdlc.gateHost` set it runs on
+the gate host against the working tree, and `run-suite.sh --check` reads its verdict.
 
 ## Project overview
 

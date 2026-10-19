@@ -43,6 +43,14 @@ rather than a rolling file a later run overwrites. A red run prints the failing
 test NAMES to stderr before the tail, because a count without a name cannot be
 acted on. The ten most recent logs are kept.
 
+With `git config sdlc.gateHost <host>` set, the suite runs on that host instead:
+the tree this script hashes - the working tree, staged or not, untracked files
+included - is wrapped as a commit (nothing is added to any branch), sent with
+tools/remote-gate.sh, and run there by the commit's own copy of this script. The
+verdict is written here, against that tree, so --check reads it as it reads a
+local one. SDLC_GATE_LOCAL=1 runs it on this machine. A run on the host takes
+its environment from the host (~/sdlc-gate/gate-env.sh), never from this one.
+
 --check confirms a verdict is current and covers the suite asked about. With no
 suite named it requires `all`, because an unqualified claim of greenness is a
 claim about the whole tree and only `all` establishes that. `--check scripts`
@@ -237,6 +245,28 @@ CMD="${SUITE_CMD_OVERRIDE:-$CMD}"
 cd "$PROJECT_ROOT" || exit 2
 mkdir -p "$(dirname "$VERDICT_REL")"
 
+# ON THE GATE HOST this clone names (US1078). What runs there is the tree the verdict will be
+# bound to, not HEAD and not the index: a green over a red edit nobody staged is the false claim
+# the tree binding exists to remove. `commit-tree` makes it a commit without moving any ref.
+GATE_HOST="$(git config --get sdlc.gateHost 2>/dev/null || true)"
+SENT_TREE=""
+if [[ -n "$GATE_HOST" && -z "${SDLC_GATE_LOCAL:-}" ]]; then
+    SENT_TREE="$(tree_state || true)"
+    if [[ -z "$SENT_TREE" ]]; then
+        echo "run-suite: cannot write the working tree as a tree to send to $GATE_HOST" >&2
+        exit 2
+    fi
+    PARENT=()
+    git rev-parse -q --verify HEAD >/dev/null && PARENT=(-p HEAD)
+    SENT="$(git commit-tree "$SENT_TREE" ${PARENT[@]+"${PARENT[@]}"} \
+        -m "run-suite $SUITE: this clone's working tree, run on $GATE_HOST")" || {
+        echo "run-suite: cannot wrap the working tree as a commit to send to $GATE_HOST" >&2
+        exit 2
+    }
+    echo "run-suite: running suite $SUITE on $GATE_HOST (sdlc.gateHost) against the working tree as commit ${SENT:0:12} - SDLC_GATE_LOCAL=1 runs it here"
+    CMD="bash tools/remote-gate.sh push --commit $SENT --suite $SUITE"
+fi
+
 # The failing test's NAME is what a red run must leave behind, and until BG0513 this script
 # destroyed it: the full output went to a `mktemp` file removed by an EXIT trap, and only
 # `tail -25` reached stderr. unittest prints its `FAIL:` headers well above the closing
@@ -294,7 +324,12 @@ HEAD_SHA="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
 # started against - a run that rewrites a fixture would otherwise record a hash for a state
 # that no longer exists. Recorded empty when the tree cannot be hashed; `--check` refuses on
 # an empty one rather than skipping the comparison.
-TREE_HASH="$(tree_state || true)"
+# A run on the gate host is bound to the tree it SENT: an edit made while it ran is not in it.
+if [[ -n "$SENT_TREE" ]]; then
+    TREE_HASH="$SENT_TREE"
+else
+    TREE_HASH="$(tree_state || true)"
+fi
 
 cat > "$VERDICT_REL" <<EOF
 {
@@ -321,7 +356,9 @@ else
     # red can come from either: unittest emits `FAIL: test_x (mod.Class)`, pytest's short
     # summary emits `FAILED path::Class::test_x - AssertionError`. Reporting the count without
     # the name is the whole of BG0513.
-    NAMED="$(grep -E '^(FAIL|ERROR): |^FAILED ' "$OUT" || true)"
+    # Each name once, in order: a run on the gate host prints the host's named list and then
+    # its tail, which carries pytest's summary of the same names again.
+    NAMED="$(grep -E '^(FAIL|ERROR): |^FAILED ' "$OUT" | awk '!seen[$0]++' || true)"
     if [[ -n "$NAMED" ]]; then
         printf '  failing test(s):\n%s\n' "$NAMED" >&2
     else

@@ -10,6 +10,10 @@
 #         2  this script could not start         the preflight on its interpreter, refused)
 #       Only 0 and 1 are a gate run whose duration the pre-push hook records.
 #
+#   remote-gate.sh push --commit <sha> --suite scripts|tools|all
+#       The same, but the host runs the commit's own `tools/run-suite.sh <suite>` in place of the
+#       gate (US1078): what tools/run-suite.sh sends when this clone names a host. 0 green, 1 red.
+#
 #   remote-gate.sh doctor
 #       Whether the configured host can judge a push: git on its ssh PATH, Node and npm, and every
 #       Python distribution on this clone's one prerequisite list (`requirements-dev.txt`, read by
@@ -46,24 +50,30 @@ SCRIPT_END="__REMOTE_GATE_SCRIPT_END__"
 die() { echo "remote-gate: $1" >&2; exit "${2:-2}"; }
 
 parse() {
-  commit="" boundary="push" clone="" run=""
+  commit="" boundary="push" clone="" run="" suite=""
   while [ $# -gt 0 ]; do
     case "$1" in
       --commit) commit="${2:-}"; shift 2 ;;
       --boundary) boundary="${2:-}"; shift 2 ;;
       --clone) clone="${2:-}"; shift 2 ;;
       --run) run="${2:-}"; shift 2 ;;
+      --suite) suite="${2:-}"; shift 2 ;;
       *) die "unknown argument: $1" ;;
     esac
   done
   case "$boundary" in push|release) ;; *) die "--boundary must be push or release, not '$boundary'" ;; esac
+  case "$suite" in ""|scripts|tools|all) ;; *) die "--suite must be scripts, tools or all, not '$suite'" ;; esac
   [[ $commit =~ ^[0-9a-f]{7,64}$ ]] || die "--commit needs a commit id, not '$commit'"
 }
 
 transport_failed() {
   echo "remote-gate: the gate host $host could not judge commit $commit: $1." >&2
   echo "  nothing ran locally in its place. Check that this clone reaches it: ssh $host true" >&2
-  echo "  or run the gate on this machine for one push: SDLC_GATE_LOCAL=1 git push" >&2
+  if [ -n "$suite" ]; then
+    echo "  or run the suite on this machine: SDLC_GATE_LOCAL=1 tools/run-suite.sh $suite" >&2
+  else
+    echo "  or run the gate on this machine for one push: SDLC_GATE_LOCAL=1 git push" >&2
+  fi
   exit "$TRANSPORT_FAILED"
 }
 
@@ -132,8 +142,10 @@ while os.getppid() == parent:
 ')
   feeder_pid=$!
   trap 'kill "$feeder_pid" ${ssh_pid:+"$ssh_pid"} 2>/dev/null; exit 130' INT TERM HUP
+  local suite_arg=""
+  [ -n "$suite" ] && suite_arg=" --suite '$suite'"
   $ssh_cmd -- "$host" \
-    "t=\$(mktemp) || exit 2; while IFS= read -r l; do [ \"\$l\" = $SCRIPT_END ] && break; printf '%s\n' \"\$l\"; done > \"\$t\"; bash \"\$t\" remote --clone '$id' --commit '$commit' --boundary '$boundary' --run '$run'; rc=\$?; rm -f \"\$t\"; exit \$rc" \
+    "t=\$(mktemp) || exit 2; while IFS= read -r l; do [ \"\$l\" = $SCRIPT_END ] && break; printf '%s\n' \"\$l\"; done > \"\$t\"; bash \"\$t\" remote --clone '$id' --commit '$commit' --boundary '$boundary' --run '$run'$suite_arg; rc=\$?; rm -f \"\$t\"; exit \$rc" \
     <&"$feed_fd" 1>&2 &
   ssh_pid=$!
   exec {feed_fd}<&-
@@ -144,6 +156,8 @@ while os.getppid() == parent:
   [ "$rc" -eq 255 ] && transport_failed "the connection failed while it ran"
   if [ "$rc" -eq "$HOST_SETUP_FAILED" ]; then
     echo "remote-gate: $host did not run the gate for commit $commit - see the host's output above." >&2
+  elif [ "$rc" -ne 0 ] && [ -n "$suite" ]; then
+    echo "remote-gate: the $suite suite was red on $host for commit $commit - see the host's output above." >&2
   elif [ "$rc" -ne 0 ]; then
     echo "remote-gate: $host refused commit $commit at the $boundary boundary - see the host's output above." >&2
     echo "  re-run it on the host: bash tools/remote-gate.sh push --commit $commit --boundary $boundary" >&2
@@ -224,12 +238,22 @@ os.kill(int(sys.argv[1]), signal.SIGTERM)' "$$" <&0 >/dev/null 2>&1 &
   [ -n "$node_dir" ] && ln -s "$node_dir/node_modules" "$wt/node_modules"
   mkdir -p "$wt/sdlc-studio" && ln -s "$state" "$wt/sdlc-studio/.local"
   cd "$wt" || die "cannot enter $wt"
-  echo "remote gate: $here judging $commit at --boundary $boundary with $(python3 --version 2>&1), load $(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo unknown)"
+  # What runs: the boundary gate, or with --suite the commit's own run-suite.sh (US1078).
+  local what="the $boundary boundary gate" job_log="$state/boundary-suite-last.log"
+  local doing="judging $commit at --boundary $boundary"
+  local -a job=(python3 .claude/skills/sdlc-studio/scripts/gate.py --boundary "$boundary")
+  if [ -n "$suite" ]; then
+    what="the $suite suite" job_log="$state/suite-logs"
+    doing="running the $suite suite on $commit"
+    job=(bash tools/run-suite.sh "$suite")
+    export SDLC_GATE_LOCAL=1          # the suite runs HERE: never sent on to a host of its own
+  fi
+  echo "remote gate: $here $doing with $(python3 --version 2>&1), load $(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo unknown)"
 
   # US1005's preflight, on THIS host's interpreter: the one that will run the suite.
   if [ -f tools/gate_prereqs.py ]; then
     if ! python3 tools/gate_prereqs.py check --refusing; then
-      echo "remote gate: refused before the $boundary boundary gate runs: $here's interpreter lacks a prerequisite marked REFUSES above"
+      echo "remote gate: refused before $what runs: $here's interpreter lacks a prerequisite marked REFUSES above"
       exit "$HOST_SETUP_FAILED"
     fi
   fi
@@ -243,13 +267,13 @@ os.kill(int(sys.argv[1]), signal.SIGTERM)' "$$" <&0 >/dev/null 2>&1 &
   SDLC_STUDIO_BOUNDARY_SUITE=1 setsid python3 -c 'import os, signal, sys
 for sig in (signal.SIGINT, signal.SIGQUIT):
     signal.signal(sig, signal.SIG_DFL)
-os.execvp(sys.argv[1], sys.argv[1:])' python3 .claude/skills/sdlc-studio/scripts/gate.py --boundary "$boundary" &
+os.execvp(sys.argv[1], sys.argv[1:])' "${job[@]}" &
   gate_pid=$!
   wait "$gate_pid"
   rc=$?
   gate_pid=""
   echo "remote gate: exit $rc after $((SECONDS - t0))s"
-  [ "$rc" -ne 0 ] && echo "remote gate: the full log is on $here at $state/boundary-suite-last.log"
+  [ "$rc" -ne 0 ] && echo "remote gate: the full log is on $here at $job_log"
   exit "$rc"
 }
 
@@ -334,5 +358,5 @@ case "${1:-}" in
   doctor) shift; cmd_doctor "$@" ;;
   host-doctor) shift; cmd_host_doctor "$@" ;;
   remote) shift; cmd_remote "$@" ;;
-  *) echo "usage: remote-gate.sh push --commit <sha> [--boundary push|release] | doctor" >&2; exit 2 ;;
+  *) echo "usage: remote-gate.sh push --commit <sha> [--boundary push|release | --suite scripts|tools|all] | doctor" >&2; exit 2 ;;
 esac

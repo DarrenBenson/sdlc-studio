@@ -1,6 +1,6 @@
 # US1078: run-suite.sh runs the full suite on the gate host and records a verdict its check can read
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Delivers:** CR0635
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
@@ -21,12 +21,16 @@
 
 - **AC1:** Given a configured host and a working tree whose change breaks a test, when `tools/run-suite.sh all` runs, then the tree run-suite already hashes is wrapped as a commit, sent and run on the host, and the wrapper exits non-zero naming the failing test
   - **Verify:** pytest tools/tests/test_run_suite_remote.py::RunSuiteRemoteTests::test_the_hashed_tree_is_what_runs
+  - **Verified:** yes (2026-10-19)
 - **AC2:** Given a staged green change beside an unstaged edit that breaks a test, when the wrapper runs on the host, then the run is red
   - **Verify:** pytest tools/tests/test_run_suite_remote.py::RunSuiteRemoteTests::test_an_unstaged_red_edit_is_judged
+  - **Verified:** yes (2026-10-19)
 - **AC3:** Given a green host run, when `run-suite.sh --check` runs, then it exits 0, and after one further edit it refuses
   - **Verify:** pytest tools/tests/test_run_suite_remote.py::RunSuiteRemoteTests::test_check_reads_the_host_verdict
+  - **Verified:** yes (2026-10-19)
 - **AC4:** Given the same tree, when the wrapper runs with no host configured, then the suite runs locally, and with one configured it runs on the host
   - **Verify:** pytest tools/tests/test_run_suite_remote.py::RunSuiteRemoteTests::test_the_suite_runs_where_the_configuration_says
+  - **Verified:** yes (2026-10-19)
 
 ## Notes
 
