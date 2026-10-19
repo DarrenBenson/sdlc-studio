@@ -229,9 +229,15 @@ os.kill(int(sys.argv[1]), signal.SIGTERM)' "$$" <&0 >/dev/null 2>&1 &
   fi
 
   # The gate in a session of its own, waited on rather than run in the foreground: a signal then
-  # reaches this script at once, and the cleanup stops the gate's whole process group.
+  # reaches this script at once, and the cleanup stops the gate's whole process group. A
+  # background job in a non-interactive shell starts with SIGINT and SIGQUIT IGNORED, and every
+  # process it starts inherits that, so a suite test that interrupts a hook it runs could not; the
+  # gate is execed with both back at their defaults.
   local t0=$SECONDS rc
-  SDLC_STUDIO_BOUNDARY_SUITE=1 setsid python3 .claude/skills/sdlc-studio/scripts/gate.py --boundary "$boundary" &
+  SDLC_STUDIO_BOUNDARY_SUITE=1 setsid python3 -c 'import os, signal, sys
+for sig in (signal.SIGINT, signal.SIGQUIT):
+    signal.signal(sig, signal.SIG_DFL)
+os.execvp(sys.argv[1], sys.argv[1:])' python3 .claude/skills/sdlc-studio/scripts/gate.py --boundary "$boundary" &
   gate_pid=$!
   wait "$gate_pid"
   rc=$?

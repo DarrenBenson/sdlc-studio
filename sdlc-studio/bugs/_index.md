@@ -11,9 +11,9 @@
 | Fixed | 804 |
 | Verified | 0 |
 | Closed | 87 |
-| Won't Fix | 40 |
+| Won't Fix | 41 |
 | Superseded | 32 |
-| **Total** | **1076** |
+| **Total** | **1077** |
 
 ## All Bugs
 
@@ -152,6 +152,7 @@
 | [BG1074](BG1074-no-test-pins-that-a-red-gate-host.md) | No test pins that a red gate-host run records its duration, so the hook can stop recording exit 1 with the suite green | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1075](BG1075-tools-remote-gate-sh-s-local-side-needs.md) | tools/remote-gate.sh's local side needs bash 4, so a pusher on stock macOS bash 3.2 has every gate-host push refused | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1076](BG1076-the-rejoinder-brief-asks-a-reviewer-to-rule.md) | The rejoinder brief asks a reviewer to rule each earlier finding, but the return contract has no place for the rulings, so a round-2 verdict that writes them untagged is refused by critic.py record | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1077](BG1077-test-a-ctrl-c-stops-every-lane-with.md) | test_a_ctrl_c_stops_every_lane_with_the_hook can see every lane finish before its interrupt lands on a loaded host, and reads the hook's clean exit as a failure | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
 
 ## Archived Releases
 
