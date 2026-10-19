@@ -582,7 +582,13 @@ the Node one from `package.json`.
    runs `gate.py --boundary push`. A tag push runs `gate.py --boundary release`, which adds the
    slow release lanes (release rehearsal and module-alone). `python3 tools/gate_timing.py
    estimate --suite boundary-push` gives the current cost. Emergency bypass: `git push
-   --no-verify`.
+   --no-verify`. With `sdlc.gateHost` set, the hook sends exactly the commit being pushed to
+   that host and the gate runs there, through `tools/remote-gate.sh`; the host's own
+   preflight takes the prerequisite check's place. `sdlc.gateSsh` replaces the default ssh
+   transport, and `sdlc.gateCloneId` keys this clone's state on the host. With no host
+   configured (`sdlc.gateHost` unset), the gate runs on this machine. `SDLC_GATE_LOCAL=1 git
+   push` runs it on this machine for one push. A host that cannot be reached refuses the push
+   rather than running the gate here.
 4. **CI (push and pull request):** the full lint chain, both unittest suites, the portable
    `gate.py` run, the coverage floor (`coverage report --fail-under=80`, blocking) and the bandit
    security scan (blocking); a Windows pwsh smoke test for `install.ps1`.
@@ -738,6 +744,7 @@ package.json                # lint and test entry points
 | 2026-10-03 | Spec truth for 6.1 (US0984) | The TSD described machinery v6 retired. The mutation gate, its lane and its `.local/mutation-runs.json` ledger are gone, so the Mutation Testing level describes `mutation.py run` as the on-demand instrument it is (its report and per-run series, read by no gate lane); the artefact-gate lane table names the lanes `gate.py` registers, adding `window`, `changelog-fragments`, the on-demand lanes and the push and release boundary lanes; the verification-depth gate gives way to the Fixed gate on a green recorded run; `carry_forward`, deleted in 6.1, leaves the coverage map. |
 | 2026-10-19 | US1084 | The pipeline stages follow the three hooks in git's order, naming each hook's `--list`, the push stage's prerequisite check and red-main acknowledgement (D0181), and the commit's advisory 90-second budget. The release steps are named manual pre-tag steps (D0375), and the performance NFR states the gate's declared budget. The push stage follows the hook's own steps, the artefact gate's write claim is corrected, the noise ratchet's place is stated, the delivery gates are tabulated, and version consistency blocks on every commit |
 | 2026-10-19 | US1085 | The framework rows name every declared package. A CI jobs table names each job with its triggers and what it runs, and the corpus baseline with what it compares. Every lint check in the chain is named, and no count of them is stated |
+| 2026-10-19 | US1086 | The push stage says where the gate runs with a host configured, with none, and with `SDLC_GATE_LOCAL=1`, and that an unreachable host refuses the push |
 
 ---
 

@@ -201,6 +201,20 @@ Three git hooks run the gate, installed by `tools/enable-hooks.sh`, in the order
    the gate's prerequisites and, for a tag, that `docs/known-issues.md` agrees with the bug
    corpus (`tools/known_issues.py check`).
 
+#### The gate host
+
+A clone can have its push gate judged on another machine. `git config sdlc.gateHost <host>` names
+the host, as ssh names it, and `.githooks/pre-push` then sends exactly the commit being pushed to
+a repository kept there for this clone and runs the gate on that host through
+`tools/remote-gate.sh`, whose host side comes from the pushed commit's own copy. Two more keys,
+both in this clone's git config, shape it: `sdlc.gateSsh` replaces the default ssh transport, and
+`sdlc.gateCloneId` keys this clone's state on the host, written on first use. With
+`sdlc.gateHost` unset, the gate runs on this machine, and `SDLC_GATE_LOCAL=1` runs it on this
+machine for one push. A host that cannot be reached refuses the push rather than running the
+gate here. `tools/run-suite.sh` runs its suite on the same host, against the working tree, and
+`bash tools/remote-gate.sh doctor` says whether a host can judge a push;
+`tools/enable-hooks.sh` names the host and runs the doctor.
+
 ---
 
 ## 4. Technology Stack
@@ -1173,6 +1187,7 @@ touches the component. The constraints below span components.
 | 2026-10-03 | 6.0.0 | Spec truth for 6.1 (US0984). The `.local/` state table drops `mutation-runs.json`, the per-target ledger nothing writes since v6, and names `mutation-series.jsonl`, the per-run series `mutation.py` appends; the mutation report and the scaling note no longer say a gate lane reads either; `critic`'s writing verbs are `record`, `correct` and `supersede`, `evidence` and `signoff` being retired, and §5's write surface says `critic record` appends to the verdict log alone. |
 | 2026-10-19 | 6.1.0 | US1084: §3 names the three hooks, the push and release boundaries, and the four files the gate writes under `.local/` (it had said the gate wrote none). §10's gate row states the declared 45 s budget and its source, where it had called the gate sub-second |
 | 2026-10-19 | 6.1.0 | US1085: §4 names every package `requirements-dev.txt` and `package.json` declare, `requirements-dev.txt` as the one Python dependency list, and the shipped scripts' one soft dependency (PyYAML); the suites run under pytest |
+| 2026-10-19 | 6.1.0 | US1086: §3 describes the gate host: the git config keys and the local override, the fallback when none is set, and that an unreachable host refuses the push |
 
 ---
 

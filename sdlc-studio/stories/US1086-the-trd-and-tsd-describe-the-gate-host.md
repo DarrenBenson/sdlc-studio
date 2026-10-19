@@ -1,6 +1,6 @@
 # US1086: The TRD and TSD describe the gate host a clone can configure, the fallback and the local override
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Delivers:** CR0644
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio new
@@ -21,8 +21,10 @@
 
 - **AC1:** Given every `git config` key and environment variable `.githooks/pre-push`, `tools/remote-gate.sh`, `tools/run-suite.sh` and `tools/enable-hooks.sh` read to choose or report where the gate runs, when the TRD and TSD are read, then each is named
   - **Verify:** pytest tools/tests/test_lean_gate_host_docs.py::GateHostDocsTests::test_every_gate_host_setting_is_named
+  - **Verified:** yes (2026-10-19)
 - **AC2:** Given the push stage of the TSD, when it is read, then it says where the gate runs with a host configured, with none, and with `SDLC_GATE_LOCAL=1`, and that a transport failure refuses the push rather than running the gate locally
   - **Verify:** pytest tools/tests/test_lean_gate_host_docs.py::GateHostDocsTests::test_the_push_stage_names_each_gate_location
+  - **Verified:** yes (2026-10-19)
 
 ## Notes
 
