@@ -42,6 +42,16 @@ if [ -f tools/gate_prereqs.py ]; then
 else
   echo "Note: tools/gate_prereqs.py is not in this clone, so the gate prerequisites were not checked"
 fi
+# The gate host, when this clone names one (US1077): which host the push gate runs on, and
+# whether it can judge a push, asked of the host itself.
+gate_host="$(git config --get sdlc.gateHost 2>/dev/null || true)"
+if [ -n "$gate_host" ]; then
+  echo "Gate host: $gate_host (git config sdlc.gateHost) - pushes are judged there"
+  if [ -f tools/remote-gate.sh ]; then
+    bash tools/remote-gate.sh doctor || true
+  fi
+fi
+
 # THE CONNECTION HAS TO OUTLIVE THE GATE. The pre-push hook pays minutes of boundary lanes
 # before the push itself begins, and an ssh connection idle that long is dropped by a NAT or a
 # forge before git ever writes a byte - the push then fails after the gate has passed, and the

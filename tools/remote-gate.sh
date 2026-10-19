@@ -10,6 +10,12 @@
 #         2  this script could not start         the preflight on its interpreter, refused)
 #       Only 0 and 1 are a gate run whose duration the pre-push hook records.
 #
+#   remote-gate.sh doctor
+#       Whether the configured host can judge a push: git on its ssh PATH, Node and npm, and every
+#       Python distribution on this clone's one prerequisite list (`requirements-dev.txt`, read by
+#       tools/gate_prereqs.py) on the interpreter the gate would run. Exit 0 ready, 1 not, 3 when
+#       the host could not be reached. `tools/enable-hooks.sh` runs it when a host is configured.
+#
 #   remote-gate.sh remote --clone <id> --commit <sha> --boundary <b> --run <token>
 #       The host side. Never installed on the host: `push` streams it from the PUSHED COMMIT's own
 #       copy of this file, so the host always runs the version being judged.
@@ -247,8 +253,86 @@ os.execvp(sys.argv[1], sys.argv[1:])' python3 .claude/skills/sdlc-studio/scripts
   exit "$rc"
 }
 
+cmd_doctor() {
+  local host ssh_cmd file rc
+  host="$(git config --get sdlc.gateHost || true)"
+  [ -n "$host" ] || die "no gate host is configured: git config sdlc.gateHost <host>"
+  [[ $host == -* ]] && die "sdlc.gateHost may not start with '-': '$host'"
+  ssh_cmd="$(git config --get sdlc.gateSsh || true)"
+  [ -n "$ssh_cmd" ] || ssh_cmd="$DEFAULT_SSH"
+  for file in tools/remote-gate.sh tools/gate_prereqs.py requirements-dev.txt; do
+    git cat-file -e "HEAD:$file" 2>/dev/null || die "HEAD carries no $file to check the host against"
+  done
+  echo "remote-gate doctor: checking $host (sdlc.gateHost) against this clone's prerequisite list" >&2
+  # The checker and the one list travel with the doctor, from this clone's HEAD - the list a push
+  # from here would be judged against - so the host needs nothing of this repository installed.
+  # Judged by ssh's exit alone: an archive cut short by a connection that failed is not a fault.
+  git archive --format=tar HEAD tools/remote-gate.sh tools/gate_prereqs.py requirements-dev.txt \
+    | $ssh_cmd -- "$host" \
+      "d=\$(mktemp -d) || exit 4; tar -x -C \"\$d\" || exit 4; cd \"\$d\" && bash tools/remote-gate.sh host-doctor </dev/null; rc=\$?; cd /; rm -rf \"\$d\"; exit \$rc" 1>&2
+  rc=${PIPESTATUS[1]}
+  if [ "$rc" -eq 255 ]; then
+    echo "remote-gate doctor: $host could not be reached (the connection failed) - try: ssh $host true" >&2
+    return "$TRANSPORT_FAILED"
+  fi
+  if [ "$rc" -eq 0 ]; then
+    echo "remote-gate doctor: $host is ready to judge a push" >&2
+    return 0
+  fi
+  echo "remote-gate doctor: $host is NOT ready to judge a push - fix what is named above" >&2
+  return 1
+}
+
+cmd_host_doctor() {
+  local here problems=0 tool
+  here="$(uname -n)"
+  # git first, on the PATH an ssh command sees: a push's commit is received before gate-env.sh runs.
+  if ! command -v git >/dev/null 2>&1; then
+    echo "  git is not on $here's ssh PATH - a push cannot be received; install git there"
+    problems=1
+  fi
+  # shellcheck source=/dev/null # the host's own environment file, when it keeps one
+  [ -f "$HOME/$GATE_DIR/gate-env.sh" ] && . "$HOME/$GATE_DIR/gate-env.sh"
+  for tool in node npm; do
+    command -v "$tool" >/dev/null 2>&1 || {
+      echo "  $tool is not on $here's PATH - the gate's markdownlint is installed with npm ci; put it on the PATH, or in ~/$GATE_DIR/gate-env.sh"
+      problems=1
+    }
+  done
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "  python3 is not on $here's PATH - the gate cannot run; put it on the PATH, or in ~/$GATE_DIR/gate-env.sh"
+    exit 1
+  fi
+  # The one list, read by the one checker. Its non-Python tools are the pusher's (gh, for the
+  # red-main read) or optional on a host (rg; markdownlint comes from npm ci), so they are notes.
+  python3 - <<'PY' || problems=1
+import sys
+from pathlib import Path
+sys.path.insert(0, "tools")
+import gate_prereqs
+tools = {tool[0] for tool in gate_prereqs.TOOLS}
+gaps = gate_prereqs.gaps(Path("."))
+notes = [g for g in gaps if g.split(" ", 1)[0] in tools]
+missing = [g for g in gaps if g not in notes]
+for line in missing:
+    print(f"  {line}")
+for line in notes:
+    print(f"  note: {line}")
+print(f"  {sys.executable} {sys.version.split()[0]}")
+raise SystemExit(1 if missing else 0)
+PY
+  if [ "$problems" -eq 0 ]; then
+    echo "remote gate doctor: $here has what a push needs"
+  else
+    echo "remote gate doctor: $here lacks what is named above"
+  fi
+  exit "$problems"
+}
+
 case "${1:-}" in
   push) shift; cmd_push "$@" ;;
+  doctor) shift; cmd_doctor "$@" ;;
+  host-doctor) shift; cmd_host_doctor "$@" ;;
   remote) shift; cmd_remote "$@" ;;
-  *) echo "usage: remote-gate.sh push --commit <sha> [--boundary push|release]" >&2; exit 2 ;;
+  *) echo "usage: remote-gate.sh push --commit <sha> [--boundary push|release] | doctor" >&2; exit 2 ;;
 esac

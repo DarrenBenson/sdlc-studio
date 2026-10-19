@@ -1,6 +1,6 @@
 # US1077: One command says whether a gate host can judge a push
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Delivers:** CR0635
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given a fixture host home whose interpreter carries every entry on the prerequisite list US1004 creates, when `doctor` runs through the stubbed transport, then it exits 0 and names the host
   - **Verify:** pytest tools/tests/test_remote_gate_doctor.py::GateHostDoctorTests::test_a_complete_host_is_reported_ready
+  - **Verified:** yes (2026-10-19)
 - **AC2:** Given the same home without pytest-xdist, when `doctor` runs, then it exits non-zero naming pytest-xdist and the install route
   - **Verify:** pytest tools/tests/test_remote_gate_doctor.py::GateHostDoctorTests::test_a_missing_prerequisite_is_named
+  - **Verified:** yes (2026-10-19)
 - **AC3:** Given a clone with `sdlc.gateHost` set, when `tools/enable-hooks.sh` runs, then it prints the configured host and doctor's verdict
   - **Verify:** pytest tools/tests/test_remote_gate_doctor.py::GateHostDoctorTests::test_enable_hooks_names_the_host_and_its_verdict
+  - **Verified:** yes (2026-10-19)
 
 ## Notes
 

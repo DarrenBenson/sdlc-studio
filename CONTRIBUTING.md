@@ -90,7 +90,9 @@ SDLC Studio dogfoods itself - it is built with its own lifecycle. A few non-nego
   over ssh, and each push is judged there instead, against exactly the commit being pushed:
   `git config sdlc.gateHost <host>`. The host needs git on the PATH an ssh command sees there,
   and Python 3.10+ with the packages in `requirements-dev.txt` and Node, which it may put on the
-  gate's PATH with `~/sdlc-gate/gate-env.sh`. `sdlc.gateSsh` replaces the default ssh transport. A host that cannot be reached refuses
+  gate's PATH with `~/sdlc-gate/gate-env.sh`. `bash tools/remote-gate.sh doctor` asks the host
+  whether it has all of that, naming each gap with its install route, and `tools/enable-hooks.sh`
+  runs it whenever a host is configured. `sdlc.gateSsh` replaces the default ssh transport. A host that cannot be reached refuses
   the push rather than running the gate here, and `SDLC_GATE_LOCAL=1 git push` runs it on this
   machine for one push.
 - **Trunk-based, small green units.** Commit to `main` in small, individually-green increments; CI
