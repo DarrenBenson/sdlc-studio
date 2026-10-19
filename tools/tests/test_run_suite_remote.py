@@ -8,11 +8,16 @@ side runs the commit's own run-suite.sh exactly as it would run the real one.
 
 Which tree reached the host is read from the outcome, never from the script's word for it: a red
 edit that is staged, or not staged at all, turns the host's run red only if that edit was sent.
+Which suite ran is read from the host's OWN verdict, which the commit's run-suite.sh writes there
+from its argument: the host's override runs one command whatever the suite, so the command alone
+cannot tell `all` from `scripts`.
 """
 from __future__ import annotations
 
 import json
 import os
+import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -42,10 +47,29 @@ class _SuiteClone(_HostClone):
         (self.clone / "checks").mkdir()
         (self.clone / "checks" / "test_value.py").write_text(CHECK, encoding="utf-8")
         self.commit("a suite of one test", **{"value.txt": "green\n"})
+        self.host_suite(HOST_SUITE)
+
+    def host_suite(self, command: str) -> None:
+        """The command the host's run-suite.sh runs, named in its gate-env.sh."""
         gate_dir = self.host_home / "sdlc-gate"
         gate_dir.mkdir(parents=True, exist_ok=True)
-        (gate_dir / "gate-env.sh").write_text(f"export SUITE_CMD_OVERRIDE='{HOST_SUITE}'\n",
+        (gate_dir / "gate-env.sh").write_text(f"export SUITE_CMD_OVERRIDE={shlex.quote(command)}\n",
                                               encoding="utf-8")
+
+    def host_verdict(self) -> dict:
+        """The verdict the host's own run-suite.sh wrote, in this clone's state directory there."""
+        clone_id = _git(self.clone, "config", "--get", "sdlc.gateCloneId").stdout.strip()
+        f = self.host_home / "sdlc-gate" / "local" / clone_id / "suite-verdict.json"
+        return json.loads(f.read_text(encoding="utf-8"))
+
+    def sent_tree(self, out: str) -> str:
+        """The tree of the commit run-suite.sh said it sent."""
+        sent = re.search(r"as commit ([0-9a-f]{12})", out)
+        assert sent, out
+        return _git(self.clone, "rev-parse", f"{sent.group(1)}^{{tree}}").stdout.strip()
+
+    def status(self) -> str:
+        return _git(self.clone, "status", "--porcelain", "--untracked-files=all").stdout
 
     def write(self, name: str, body: str) -> None:
         (self.clone / name).write_text(body, encoding="utf-8")
@@ -85,6 +109,8 @@ class RunSuiteRemoteTests(unittest.TestCase):
         head = _git(fx.clone, "rev-parse", "HEAD").stdout.strip()
         fx.write("value.txt", "red\n")
         _git(fx.clone, "add", "value.txt")
+        fx.write("untracked.txt", "never added\n")
+        status = fx.status()
         r = fx.run_suite("all")
         out = r.stdout + r.stderr
         self.assertNotEqual(r.returncode, 0, "the host's run passed over a red change:\n" + out)
@@ -93,10 +119,10 @@ class RunSuiteRemoteTests(unittest.TestCase):
                             for line in out.splitlines()), "the failing test is not named:\n" + out)
         named = r.stderr.split("failing test(s):", 1)[-1].split("full output:", 1)[0].split()
         self.assertEqual(named.count("FAILED"), 1, "the wrapper names the failing test more than once:\n" + r.stderr)
+        self.assertEqual(fx.host_verdict()["suite"], "all", "the host ran a suite other than the one asked for")
         self.assertEqual(_git(fx.clone, "rev-parse", "HEAD").stdout.strip(), head,
                          "running the suite on the host moved HEAD")
-        self.assertEqual(_git(fx.clone, "diff", "--cached", "--name-only").stdout.split(), ["value.txt"],
-                         "running the suite on the host changed what is staged")
+        self.assertEqual(fx.status(), status, "running the suite on the host changed the index or the tree")
 
     def test_an_unstaged_red_edit_is_judged(self) -> None:
         """AC2. Mutant: the wrapper sends only the index, recording a green over an unstaged red
@@ -110,6 +136,8 @@ class RunSuiteRemoteTests(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0, "a green was recorded over an unstaged red edit:\n" + out)
         self.assertEqual(len(fx.suite_calls()), 1, "the suite was not run on the host:\n" + out)
         self.assertNotEqual(fx.verdict()["exit_code"], 0, "the verdict records the red run as green")
+        self.assertIn("FAILED checks/test_value.py::test_value", out,
+                      "the run was red without the host's suite failing on the unstaged edit")
 
     def test_check_reads_the_host_verdict(self) -> None:
         """AC3. Mutants: the host's verdict is not written to the local suite verdict; it is
@@ -119,6 +147,8 @@ class RunSuiteRemoteTests(unittest.TestCase):
         r = fx.run_suite("all")
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertEqual(len(fx.suite_calls()), 1, "the suite was not run on the host")
+        self.assertEqual(fx.verdict()["tree_hash"], fx.sent_tree(r.stdout),
+                         "the verdict is not bound to the tree that was sent")
         check = fx.run_suite("--check")
         self.assertEqual(check.returncode, 0, "a green host run did not satisfy --check:\n" + check.stderr)
         self.assertIn("GREEN (all)", check.stdout)
@@ -139,6 +169,12 @@ class RunSuiteRemoteTests(unittest.TestCase):
         self.assertIn(f"on {HOST} (sdlc.gateHost)", r.stdout)
         self.assertFalse((fx.clone / "ran-here").exists(),
                          "this machine's suite command ran, or reached the host, in a run sent there")
+        self.assertEqual(fx.host_verdict()["suite"], "all")
+        r = fx.run_suite("scripts", SDLC_GATE_LOCAL="0")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(len(fx.suite_calls()), 2, "SDLC_GATE_LOCAL=0 kept the suite here; only 1 does")
+        self.assertEqual((fx.host_verdict()["suite"], fx.verdict()["suite"]), ("scripts", "scripts"),
+                         "the host ran, or this clone recorded, a suite other than the one asked for")
         for case, extra in (("SDLC_GATE_LOCAL", {"SDLC_GATE_LOCAL": "1", "SUITE_CMD_OVERRIDE": marker}),
                             ("no host", {"SUITE_CMD_OVERRIDE": marker})):
             with self.subTest(case=case):
@@ -172,6 +208,45 @@ class RunSuiteRemoteTests(unittest.TestCase):
         self.assertNotIn("git push", r.stderr)
         self.assertEqual(fx.verdict()["exit_code"], 3, "an unreachable host left no red verdict")
 
+
+    def test_an_edit_made_while_the_host_runs_is_not_covered(self) -> None:
+        """The verdict is bound to the tree SENT. An edit made while the host runs is not in it,
+        so --check refuses at once. Mutant: the verdict bound to the tree as it stands after the
+        run, which would read green over an edit the host never judged."""
+        fx = self.fx
+        fx.host_suite(f"{HOST_SUITE} && echo 'edited while the host ran' > {shlex.quote(str(fx.clone / 'notes.txt'))}")
+        r = fx.run_suite("all")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertTrue((fx.clone / "notes.txt").exists(), "the fixture's mid-run edit did not happen")
+        self.assertEqual(fx.verdict()["tree_hash"], fx.sent_tree(r.stdout))
+        check = fx.run_suite("--check")
+        self.assertEqual(check.returncode, 1, "--check accepted an edit made while the host ran")
+        self.assertIn("TREE has changed", check.stderr)
+
+    def test_a_suites_own_exit_4_is_a_red_suite(self) -> None:
+        """A suite's exit 4 (pytest's usage error) is a red suite, never the host's setup fault,
+        which is what 4 means to the pusher. Mutant: the host passes the suite's code through."""
+        fx = self.fx
+        fx.host_suite("exit 4")
+        r = fx.run_suite("all")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("the all suite was red on", r.stdout + r.stderr)
+        self.assertNotIn("did not run", r.stdout + r.stderr)
+
+    def test_a_suite_name_that_is_not_a_suite_is_refused(self) -> None:
+        """The name travels inside a single-quoted remote command, so only the three suites pass.
+        Mutant: the --suite check dropped."""
+        fx = self.fx
+        head = _git(fx.clone, "rev-parse", "HEAD").stdout.strip()
+        env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        env.update({"GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_SYSTEM": "/dev/null",
+                    "STUB_SSH_LOG": str(fx.tmp / "ssh.log"), "STUB_HOST_HOME": str(fx.host_home),
+                    "STUB_HOST_PATH": fx.host_path()})
+        r = subprocess.run(["bash", "tools/remote-gate.sh", "push", "--commit", head, "--suite", "x'y"],
+                           cwd=fx.clone, env=env, capture_output=True, text=True, timeout=120)
+        self.assertEqual(r.returncode, 2, r.stderr)
+        self.assertIn("--suite must be scripts, tools or all", r.stderr)
+        self.assertEqual(fx.ssh_calls(), [], "a suite name that is not a suite was sent to the host")
 
 if __name__ == "__main__":
     unittest.main()

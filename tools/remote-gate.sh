@@ -154,8 +154,10 @@ while os.getppid() == parent:
   kill "$feeder_pid" 2>/dev/null
   trap - INT TERM HUP
   [ "$rc" -eq 255 ] && transport_failed "the connection failed while it ran"
+  local ran="the gate"
+  [ -n "$suite" ] && ran="the $suite suite"
   if [ "$rc" -eq "$HOST_SETUP_FAILED" ]; then
-    echo "remote-gate: $host did not run the gate for commit $commit - see the host's output above." >&2
+    echo "remote-gate: $host did not run $ran for commit $commit - see the host's output above." >&2
   elif [ "$rc" -ne 0 ] && [ -n "$suite" ]; then
     echo "remote-gate: the $suite suite was red on $host for commit $commit - see the host's output above." >&2
   elif [ "$rc" -ne 0 ]; then
@@ -239,11 +241,11 @@ os.kill(int(sys.argv[1]), signal.SIGTERM)' "$$" <&0 >/dev/null 2>&1 &
   mkdir -p "$wt/sdlc-studio" && ln -s "$state" "$wt/sdlc-studio/.local"
   cd "$wt" || die "cannot enter $wt"
   # What runs: the boundary gate, or with --suite the commit's own run-suite.sh (US1078).
-  local what="the $boundary boundary gate" job_log="$state/boundary-suite-last.log"
+  local what="the $boundary boundary gate" job_log="at $state/boundary-suite-last.log"
   local doing="judging $commit at --boundary $boundary"
   local -a job=(python3 .claude/skills/sdlc-studio/scripts/gate.py --boundary "$boundary")
   if [ -n "$suite" ]; then
-    what="the $suite suite" job_log="$state/suite-logs"
+    what="the $suite suite" job_log="under $state/suite-logs, named above"
     doing="running the $suite suite on $commit"
     job=(bash tools/run-suite.sh "$suite")
     export SDLC_GATE_LOCAL=1          # the suite runs HERE: never sent on to a host of its own
@@ -273,7 +275,10 @@ os.execvp(sys.argv[1], sys.argv[1:])' "${job[@]}" &
   rc=$?
   gate_pid=""
   echo "remote gate: exit $rc after $((SECONDS - t0))s"
-  [ "$rc" -ne 0 ] && echo "remote gate: the full log is on $here at $job_log"
+  [ "$rc" -ne 0 ] && echo "remote gate: the full log is on $here $job_log"
+  # A suite run is green or red and nothing else: its own exit 4 (pytest's usage error) must not
+  # reach the pusher as 4, which there means this host's setup refused before anything ran.
+  [ -n "$suite" ] && [ "$rc" -ne 0 ] && rc=1
   exit "$rc"
 }
 

@@ -8,8 +8,8 @@
 # reported green with a real failure in it.
 #
 # Telling people to be careful does not fix it: the pipe is there because a six-minute suite's
-# output does not fit in one read, so the incentive comes back every run. This prints ONE line
-# and writes the verdict to sdlc-studio/.local/suite-verdict.json, so the question "was it
+# output does not fit in one read, so the incentive comes back every run. This prints ONE verdict
+# line (a run on the gate host names the host on the line before it) and writes the verdict to sdlc-studio/.local/suite-verdict.json, so the question "was it
 # green" is answered by reading a field instead of interpreting a stream.
 #
 # The verdict is written on FAILURE as well as success, and deliberately overwrites: a wrapper
@@ -48,8 +48,9 @@ the tree this script hashes - the working tree, staged or not, untracked files
 included - is wrapped as a commit (nothing is added to any branch), sent with
 tools/remote-gate.sh, and run there by the commit's own copy of this script. The
 verdict is written here, against that tree, so --check reads it as it reads a
-local one. SDLC_GATE_LOCAL=1 runs it on this machine. A run on the host takes
-its environment from the host (~/sdlc-gate/gate-env.sh), never from this one.
+local one. SDLC_GATE_LOCAL=1 runs it on this machine (that value only, as the
+pre-push hook reads it). The host's suite command comes from the host and its
+~/sdlc-gate/gate-env.sh: this clone's SUITE_CMD_OVERRIDE is not sent.
 
 --check confirms a verdict is current and covers the suite asked about. With no
 suite named it requires `all`, because an unqualified claim of greenness is a
@@ -250,7 +251,7 @@ mkdir -p "$(dirname "$VERDICT_REL")"
 # the tree binding exists to remove. `commit-tree` makes it a commit without moving any ref.
 GATE_HOST="$(git config --get sdlc.gateHost 2>/dev/null || true)"
 SENT_TREE=""
-if [[ -n "$GATE_HOST" && -z "${SDLC_GATE_LOCAL:-}" ]]; then
+if [[ -n "$GATE_HOST" && "${SDLC_GATE_LOCAL:-}" != "1" ]]; then
     SENT_TREE="$(tree_state || true)"
     if [[ -z "$SENT_TREE" ]]; then
         echo "run-suite: cannot write the working tree as a tree to send to $GATE_HOST" >&2
