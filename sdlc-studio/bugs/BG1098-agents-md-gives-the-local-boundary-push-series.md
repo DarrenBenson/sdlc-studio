@@ -1,6 +1,7 @@
 # BG1098: AGENTS.md gives the local boundary-push series as the push's cost on a clone that names a gate host
 
 > **Status:** Open
+> **Supersedes:** BG1105
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** AGENTS.md, tools/tests/test_agents_push_cost_series.py, changelog.d/BG1098.md

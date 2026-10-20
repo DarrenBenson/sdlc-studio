@@ -12,8 +12,8 @@
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 41 |
-| Superseded | 32 |
-| **Total** | **1104** |
+| Superseded | 33 |
+| **Total** | **1105** |
 
 ## All Bugs
 
@@ -180,6 +180,7 @@
 | [BG1102](BG1102-the-corpus-verify-timing-step-s-ceiling-is.md) | The corpus-verify timing step's ceiling is pinned only as an integer, so one as long as the job's own cap passes | Open | Low | 2026-10-20 | 2026-10-20 |
 | [BG1103](BG1103-the-close-binds-the-untracked-files-it-leaves.md) | The close binds the untracked files it leaves into the signature without naming them, so tidying one refuses the sign | Open | Low | 2026-10-20 | 2026-10-20 |
 | [BG1104](BG1104-a-message-only-amend-runs-the-whole-workspace.md) | A message-only amend runs the whole-workspace gate at commit, because the hook's gate lane reads an empty staged diff as no diff to scope to | Open | Low | 2026-10-20 | 2026-10-20 |
+| [BG1105](BG1105-agents-md-names-the-local-push-cost-series.md) | AGENTS.md names the local push-cost series as the current push figure, which a clone with a gate host never adds to | Superseded | Low | 2026-10-20 | 2026-10-20 |
 
 ## Archived Releases
 

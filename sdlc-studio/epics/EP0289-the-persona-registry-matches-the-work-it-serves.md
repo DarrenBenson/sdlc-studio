@@ -1,7 +1,7 @@
 # EP0289: The persona registry matches the work it serves: a maintainer Primary for the repository tooling, and cards that state current goals
 
 > **Status:** Draft
-> **Derived Point Total:** 9
+> **Derived Point Total:** 10
 > **Parent:** CR0648
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio new

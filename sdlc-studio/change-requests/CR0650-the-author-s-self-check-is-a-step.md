@@ -1,6 +1,8 @@
 # CR-0650: The author's self-check is a step the tools run and require, not a rule an agent remembers
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-20)
+> **Decomposed-into:** EP0291
 > **Priority:** High
 > **Type:** Process
 > **Size:** M
@@ -32,3 +34,9 @@ Ship (2) first, since it costs one print. Then (3), the refusal. Then (1), which
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Raised |
+
+## Amigo Consult
+
+_Consulted 2026-10-20: Dani Okafor (engineering, lead), Lena Marsh (product), Sam Eriksson (qa). Settle before building._
+
+- CR0650 part (1), the pre-push hook naming a missing green run-suite verdict for the tree pushed: does it earn its place (LL0056) when the push gate on the gate host already runs the full suite on that commit? Left out of this breakdown pending the operator's ruling at plan approval. Answered by the operator on 2026-10-20: part (1) is retired, because the push gate is the full-suite check, and AGENTS.md's rule is reworded under US1090 (D0382).
