@@ -48,6 +48,19 @@ Decide the lane's intent and make one reading: either install pytest-xdist in co
 - Rescoping: dispatched run 39226633444 at 35a795df (2026-10-19) reads the current red set; the criteria this bug answers are re-read from it before delivery, since the scheduled run it was filed against predates 48 commits.
 - Widened on 2026-10-19 from US0892 alone to the four NEW criteria of the same run, as the operator ruled (D0377); re-pointed 2 to 3.
 
+## Corpus-verify runs
+
+The dispatched runs this bug's AC5 reads, with what each recorded. Adding pytest-xdist to the job
+is judged here: a criterion reading red only because of it would show as NEW.
+
+| Run | Commit | dead-stamps | red-criteria | NEW | verifier-time |
+| --- | --- | --- | --- | --- | --- |
+| 39226633444 (before the fix) | 35a795df | 0 (baseline 0) | 3 | US0892::AC1 US0957::AC3 US0985::AC2 | not timed |
+| 39322298831 (part one) | 8653d0c9 | 0 (baseline 0) | 2 | US0253::AC3 (BG1099) US0940::AC1 (at the 300 s ceiling) | US0940::AC1 353 s, exit 0 |
+
+Run 39322298831 no longer reads US0892 AC1, US0957 AC3 or US0985 AC2 red, and names no criterion
+red that pytest-xdist could explain, so the baseline is not re-banked.
+
 ## Revision History
 
 | Date | Author | Change |

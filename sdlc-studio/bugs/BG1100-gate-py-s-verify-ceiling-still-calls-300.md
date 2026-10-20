@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_release_verify_ceiling.py, changelog.d/BG1100.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/templates/workflows/release-gate.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_release_verify_ceiling.py, changelog.d/BG1100.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
 > **Evidence:** lint.yml run 39322298831 (2026-10-19): 'verifier-time: US0940::AC1 353 s'. BG1054 part two sets SDLC_VERIFY_TIMEOUT: 450. gate.py VERIFY_TIMEOUT = 300.
 > **Created:** 2026-10-20
 > **Created-by:** sdlc-studio file
@@ -12,7 +12,7 @@
 
 ## Summary
 
-gate.py's `VERIFY_TIMEOUT` comment says the release verify lane's 300 s default is 'CI's figure', so that a release gate on a developer machine never reads red what CI reads green. BG1054 raised the corpus-verify job's `SDLC_VERIFY_TIMEOUT` to 450 s after run 39322298831 measured US0940 AC1 at 353 s on the runner. The comment is now false, and `test_lean_release_verify_ceiling.py` pins the old 300.
+gate.py's `VERIFY_TIMEOUT` comment says the release verify lane's 300 s default is 'CI's figure', so that a release gate on a developer machine never reads red what CI reads green. BG1054 raised the corpus-verify job's `SDLC_VERIFY_TIMEOUT` to 450 s after run 39322298831 measured US0940 AC1 at 353 s on the runner. The comment is now false, as is the shipped `templates/workflows/release-gate.md`, which tells a consuming project that 300 s is "the figure CI's corpus verification uses, so no override is needed to match CI". `test_lean_release_verify_ceiling.py` pins the old 300.
 
 ## Steps to Reproduce
 

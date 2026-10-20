@@ -41,3 +41,4 @@
 | --- | --- | --- |
 | 2026-10-03 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-03 | engineering seat (grooming) | Groomed for EP0273 under D0325: user story, three criteria with shell Verify lines run red at 6589fbf0, Affects modelled on the v6.0.0 release commit 96bd94d1 |
+| 2026-10-20 | Claude Opus 5.5 | BG1054: AC2's Verify re-pointed to the v6.1.0 record (`check --at v6.1.0`, `bar --root` on an archive of the v6.1.0 tree), so a High defect filed after the cut no longer turns this Done criterion red |

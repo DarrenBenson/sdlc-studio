@@ -149,8 +149,8 @@ jobs:
     # exactly like a failure if nobody checks the code - and this job's conclusion is what
     # BG0676 AC5 reads, so a cap kill would be indistinguishable from a corpus regression.
     # MEASURED, not estimated: 56.9 min at the 120 s per-verifier ceiling (run 34830172971),
-    # then 75.9 min (35063993893) and 85.6 min (35072360410) once the 300 s ceiling below let
-    # slow criteria finish instead of being killed. The 90 the cap held was sized on the first
+    # then 75.9 min (35063993893) and 85.6 min (35072360410) once a 300 s per-verifier ceiling
+    # let slow criteria finish instead of being killed (the ceiling is 450 s since BG1054). The 90 the cap held was sized on the first
     # of those figures and left 4 min against a 9.7-min spread between the last two.
     timeout-minutes: 150
     steps:
@@ -177,7 +177,7 @@ jobs:
         # Its own list, a declared subset of requirements-dev.txt (pinned by
         # tools/tests/test_prereq_list_is_ci_list.py). pytest-xdist is on it since BG1054: US0892
         # AC1's test skips without it, and this lane reads an all-skipped verifier as red. What it
-        # did to the baseline comparison is read from the first run after, recorded on BG1054.
+        # did to the baseline comparison is recorded, run by run, on BG1054.
         run: python -m pip install --quiet pyyaml pytest pytest-xdist 'coverage>=7.10'
 
       # markdownlint is NOT optional here, though nothing in this lane lints markdown. Two test
@@ -202,14 +202,23 @@ jobs:
         run: sudo apt-get install -y --no-install-recommends poppler-utils
 
       - name: Time the slowest criterion on this runner
-        # US0940 AC1's verifier is the slowest criterion: 276 s on a developer machine, 353 s here.
-        # Timed alone on every run, so the ceiling below is held against this runner's own figure
-        # (BG1054). It reports and never fails the job: the verification step judges the criterion.
+        # US0940 AC1's verifier is the slowest criterion known: 276 s on a developer machine, 353 s
+        # here. Timed alone on every run, so the ceiling below can be set from this runner's own
+        # figure (BG1054). It reports and never stops the job: the step runs under `bash -e`, so the
+        # verifier's exit is caught rather than ending the step, an AC1 with no pytest Verify line
+        # is reported and not timed, and a hang ends at the step's own ceiling, which
+        # continue-on-error keeps from skipping the verification step that judges the criterion.
+        timeout-minutes: 15
+        continue-on-error: true
         run: |
-          sel="$(sed -n 's/^  - \*\*Verify:\*\* pytest //p' sdlc-studio/stories/US0940-*.md | head -1)"
+          sel="$(awk '/\*\*AC[0-9]+:\*\*/ { ac1 = ($0 ~ /\*\*AC1:\*\*/) } ac1 && /^  - \*\*Verify:\*\* pytest / { sub(/^  - \*\*Verify:\*\* pytest /, ""); print; exit }' sdlc-studio/stories/US0940-*.md)"
+          if [ -z "$sel" ]; then
+            echo "verifier-time: US0940::AC1 not timed - its AC1 names no pytest Verify line"
+            exit 0
+          fi
           t0=$SECONDS
-          python -m pytest -q -p no:cacheprovider "$sel" > /dev/null 2>&1
-          rc=$?
+          rc=0
+          python -m pytest -q -p no:cacheprovider "$sel" > /dev/null 2>&1 || rc=$?
           echo "verifier-time: US0940::AC1 $((SECONDS - t0)) s, exit $rc"
 
       - name: Corpus verification (dead stamps + red criteria, against the baseline)

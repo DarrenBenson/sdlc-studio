@@ -1,6 +1,6 @@
 # BG1099: US1084's TSD rewording broke US0253 AC3's verifier, which greps for the test-noise leg running in CI
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** sdlc-studio/tsd.md, changelog.d/BG1099.md
