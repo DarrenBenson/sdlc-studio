@@ -1,0 +1,1966 @@
+{
+  "schema": 2,
+  "report_id": "RPT0021",
+  "run_id": "RUN-01M59TRM",
+  "retro_id": "RETRO0135",
+  "generated_at": "2026-10-20T09:45:29Z",
+  "window_end": "2026-10-20T09:45:29Z",
+  "signature": null,
+  "sections": [
+    {
+      "key": "goal",
+      "title": "Goal",
+      "figures": {
+        "sprint_goal": {
+          "key": "sprint_goal",
+          "value": "Rowan's push is judged on a configured gate host, and the gate's documents and weekly run tell the truth.",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "goal_verdict": {
+          "key": "goal_verdict",
+          "value": "Judged partial",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "goal_verdict_note": {
+          "key": "goal_verdict_note",
+          "value": "Every clause of the goal holds on main, but two of the eleven units are carried, so the definition of done recorded at goal review (all eleven terminal, plus a live proof) is not met. Pushes are judged on devserver1 against exactly the commit pushed, proven live (US1075, US1077, US1078). The TRD and TSD were judged accurate (US1084, US1085, and US1086's documents). The weekly run reads true: dispatched run 39389634097 has corpus-verify at red-criteria 0, baseline 0 (BG1054, BG1099). US1076 (BG1078) and US1086 (BG1095) hit the review cap on test repairs that did not converge; their behaviour and documents are on main.",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "run_id": {
+          "key": "run_id",
+          "value": "RUN-01M59TRM",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "started_at": {
+          "key": "started_at",
+          "value": "2026-10-19T10:07:34Z",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "ended_at": {
+          "key": "ended_at",
+          "value": "2026-10-20T09:45:29Z",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "duration_hours": {
+          "key": "duration_hours",
+          "value": "23.6h",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "verified_sha": {
+          "key": "verified_sha",
+          "value": "6ceeae70fa961a03e1a9b82d7d08f14293413db0",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "estimates",
+      "title": "Estimates",
+      "figures": {},
+      "rows": [
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Points",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": 27,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 27,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "1.0x",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "10 of 10 delivered unit(s)",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Minutes",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": 145.9,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 5309.6,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "36.39x",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "measured active minutes (spans or agent minutes) against their forecast, over the 9 of 10 unit(s) planned or added and not dropped that carry both",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Wall-clock span",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": "not forecast",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 1417.9,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "no ratio",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "the run's minutes, start to end, so waiting counts; the forecast is active work, so the two are not compared",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Tokens",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": 3949641,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 10098487,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/run-state.json",
+            "reason": "withheld - no delegated spend was supplied, so the actual is the main-thread meter alone, which cannot see a delegated agent's spend; each lane records its builder's total with `sprint lane return --tokens N`"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "the whole run: forecast over 10 of 10 unit(s) planned or added and not dropped; actual is the run meter, a lower bound",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        }
+      ],
+      "not_measured": null,
+      "unit_rows": [
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1079",
+            "source": "sdlc-studio/stories/US1079-a-skill-maintainer-card-is-the-primary-for.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 17.5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 1407.9,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 438849,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 10098487,
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1066",
+            "source": "sdlc-studio/bugs/BG1066-the-product-seat-approves-only-stories-that-serve.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 17.5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 1388.5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 438849,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 9889864,
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1075",
+            "source": "sdlc-studio/stories/US1075-a-push-is-judged-on-the-gate-host.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 29.2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 1335.3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 731415,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 9426526,
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1077",
+            "source": "sdlc-studio/stories/US1077-one-command-says-whether-a-gate-host-can.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 47.2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 292566,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 551611,
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1078",
+            "source": "sdlc-studio/stories/US1078-run-suite-sh-runs-the-full-suite-on.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 17.5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 80.7,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 438849,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 810296,
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1061",
+            "source": "sdlc-studio/bugs/BG1061-the-committed-project-lessons-log-cannot-be-committed.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 138.1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 292566,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 898745,
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1084",
+            "source": "sdlc-studio/stories/US1084-the-trd-and-tsd-name-each-hook-what.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 17.5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 88.5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 438849,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 651739,
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1085",
+            "source": "sdlc-studio/stories/US1085-the-trd-s-stack-and-the-tsd-s.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/run-state.json",
+            "reason": "no In Progress span and no agent total tagged to it - record one with `retro.py accuracy --delegated-tokens N --delegated-unit US1085 --delegated-minutes M`"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 292566,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/run-state.json",
+            "reason": "no In Progress span and no agent total tagged to it - record one with `retro.py accuracy --delegated-tokens N --delegated-unit US1085 --delegated-minutes M`"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1054",
+            "source": "sdlc-studio/bugs/BG1054-the-scheduled-corpus-verify-lane-reads-us0892-ac1.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 17.5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 773.3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 438849,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 5287828,
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1099",
+            "source": "sdlc-studio/bugs/BG1099-us1084-s-tsd-rewording-broke-us0253-ac3-s.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 5.8,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 50.1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 146283,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 150794,
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        }
+      ]
+    },
+    {
+      "key": "delivered",
+      "title": "Delivered to plan",
+      "figures": {
+        "planned_units": {
+          "key": "planned_units",
+          "value": 11,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "planned_points": {
+          "key": "planned_points",
+          "value": 31,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "plan_delivered_units": {
+          "key": "plan_delivered_units",
+          "value": 9,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "plan_delivered_points": {
+          "key": "plan_delivered_points",
+          "value": 26,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "added_delivered_units": {
+          "key": "added_delivered_units",
+          "value": 1,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "added_points": {
+          "key": "added_points",
+          "value": 1,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "dropped_units": {
+          "key": "dropped_units",
+          "value": 2,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "dropped_points": {
+          "key": "dropped_points",
+          "value": 5,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "carried_units": {
+          "key": "carried_units",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "carried_points": {
+          "key": "carried_points",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "added_units": {
+          "key": "added_units",
+          "value": 1,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "points_delivered": {
+          "key": "points_delivered",
+          "value": 27,
+          "source": "sdlc-studio/stories/US1079-a-skill-maintainer-card-is-the-primary-for.md, sdlc-studio/bugs/BG1066-the-product-seat-approves-only-stories-that-serve.md, sdlc-studio/stories/US1075-a-push-is-judged-on-the-gate-host.md, sdlc-studio/stories/US1077-one-command-says-whether-a-gate-host-can.md, sdlc-studio/stories/US1078-run-suite-sh-runs-the-full-suite-on.md, sdlc-studio/bugs/BG1061-the-committed-project-lessons-log-cannot-be-committed.md, sdlc-studio/stories/US1084-the-trd-and-tsd-name-each-hook-what.md, sdlc-studio/stories/US1085-the-trd-s-stack-and-the-tsd-s.md, sdlc-studio/bugs/BG1054-the-scheduled-corpus-verify-lane-reads-us0892-ac1.md, sdlc-studio/bugs/BG1099-us1084-s-tsd-rewording-broke-us0253-ac3-s.md"
+        }
+      },
+      "rows": [
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1079",
+            "source": "sdlc-studio/stories/US1079-a-skill-maintainer-card-is-the-primary-for.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/stories/US1079-a-skill-maintainer-card-is-the-primary-for.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1066",
+            "source": "sdlc-studio/bugs/BG1066-the-product-seat-approves-only-stories-that-serve.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/bugs/BG1066-the-product-seat-approves-only-stories-that-serve.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1075",
+            "source": "sdlc-studio/stories/US1075-a-push-is-judged-on-the-gate-host.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 5,
+            "source": "sdlc-studio/stories/US1075-a-push-is-judged-on-the-gate-host.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1076",
+            "source": "sdlc-studio/stories/US1076-runs-on-a-gate-host-are-serialised-and.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/stories/US1076-runs-on-a-gate-host-are-serialised-and.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "dropped - carried at the review cap: BG1078",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1077",
+            "source": "sdlc-studio/stories/US1077-one-command-says-whether-a-gate-host-can.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/stories/US1077-one-command-says-whether-a-gate-host-can.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1078",
+            "source": "sdlc-studio/stories/US1078-run-suite-sh-runs-the-full-suite-on.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/stories/US1078-run-suite-sh-runs-the-full-suite-on.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1061",
+            "source": "sdlc-studio/bugs/BG1061-the-committed-project-lessons-log-cannot-be-committed.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1061-the-committed-project-lessons-log-cannot-be-committed.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1084",
+            "source": "sdlc-studio/stories/US1084-the-trd-and-tsd-name-each-hook-what.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/stories/US1084-the-trd-and-tsd-name-each-hook-what.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1085",
+            "source": "sdlc-studio/stories/US1085-the-trd-s-stack-and-the-tsd-s.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/stories/US1085-the-trd-s-stack-and-the-tsd-s.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1086",
+            "source": "sdlc-studio/stories/US1086-the-trd-and-tsd-describe-the-gate-host.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/stories/US1086-the-trd-and-tsd-describe-the-gate-host.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "dropped - carried at the review cap: BG1095",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1054",
+            "source": "sdlc-studio/bugs/BG1054-the-scheduled-corpus-verify-lane-reads-us0892-ac1.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/bugs/BG1054-the-scheduled-corpus-verify-lane-reads-us0892-ac1.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1099",
+            "source": "sdlc-studio/bugs/BG1099-us1084-s-tsd-rewording-broke-us0253-ac3-s.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG1099-us1084-s-tsd-rewording-broke-us0253-ac3-s.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - BG1054's dispatched run found US1084's TSD rewording broke US0253 AC3; the operator chose to fix it this run; delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "known_issues",
+      "title": "Known issues handed over",
+      "figures": {
+        "findings_scan": {
+          "key": "findings_scan",
+          "value": "32 open finding(s) raised in the run, 2 close gap(s), 0 carried unit(s)",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "CR0650",
+            "source": "sdlc-studio/change-requests/CR0650-the-author-s-self-check-is-a-step.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "High",
+            "source": "sdlc-studio/change-requests/CR0650-the-author-s-self-check-is-a-step.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The author's self-check is a step the tools run and require, not a rule an agent remembers - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/change-requests/CR0650-the-author-s-self-check-is-a-step.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1078",
+            "source": "sdlc-studio/bugs/BG1078-us1076-did-not-converge-in-review-round-2.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1078-us1076-did-not-converge-in-review-round-2.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "US1076 did not converge in review: round 2 REJECT findings - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1078-us1076-did-not-converge-in-review-round-2.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1087",
+            "source": "sdlc-studio/bugs/BG1087-mutation-py-s-changed-line-scope-finds-no.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1087-mutation-py-s-changed-line-scope-finds-no.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "mutation.py's changed-line scope finds no lines on a machine whose git config sets diff.mnemonicprefix or diff.noprefix - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1087-mutation-py-s-changed-line-scope-finds-no.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1095",
+            "source": "sdlc-studio/bugs/BG1095-us1086-did-not-converge-in-review-round-2.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1095-us1086-did-not-converge-in-review-round-2.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "US1086 did not converge in review: round 2 REJECT findings - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1095-us1086-did-not-converge-in-review-round-2.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1101",
+            "source": "sdlc-studio/bugs/BG1101-test-repo-hygiene-writes-probe-fixtures-into-the.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1101-test-repo-hygiene-writes-probe-fixtures-into-the.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "test_repo_hygiene writes probe fixtures into the real scripts/tests directory, so a parallel test copying that tree can fail - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1101-test-repo-hygiene-writes-probe-fixtures-into-the.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1070",
+            "source": "sdlc-studio/bugs/BG1070-conformance-reads-us0357-and-us0358-as-missing-their.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1070-conformance-reads-us0357-and-us0358-as-missing-their.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "conformance reads US0357 and US0358 as missing their verified stage in a fresh checkout, though both carry Verified stamps, so the lane's verdict depends on the clone's .local state - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1070-conformance-reads-us0357-and-us0358-as-missing-their.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1071",
+            "source": "sdlc-studio/bugs/BG1071-the-project-seat-card-s-design-persona-check.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1071-the-project-seat-card-s-design-persona-check.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The project seat card's design-persona check stops at a full stop, so a name followed by a file path before 'design persona' passes - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1071-the-project-seat-card-s-design-persona-check.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1072",
+            "source": "sdlc-studio/bugs/BG1072-test-persona-coherence-s-id-check-reads-a.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1072-test-persona-coherence-s-id-check-reads-a.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "test_persona_coherence's id check reads a fixed list of id prefixes, so a card citing a handoff or test-spec id that resolves to nothing passes - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1072-test-persona-coherence-s-id-check-reads-a.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1073",
+            "source": "sdlc-studio/bugs/BG1073-critic-py-record-writes-a-reviewer-s-findings.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1073-critic-py-record-writes-a-reviewer-s-findings.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "critic.py record writes a reviewer's findings verbatim into a ledger the repository's markdownlint refuses, so a finding quoting an email-shaped name blocks the next commit - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1073-critic-py-record-writes-a-reviewer-s-findings.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1074",
+            "source": "sdlc-studio/bugs/BG1074-no-test-pins-that-a-red-gate-host.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1074-no-test-pins-that-a-red-gate-host.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "No test pins that a red gate-host run records its duration, so the hook can stop recording exit 1 with the suite green - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1074-no-test-pins-that-a-red-gate-host.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1075",
+            "source": "sdlc-studio/bugs/BG1075-tools-remote-gate-sh-s-local-side-needs.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1075-tools-remote-gate-sh-s-local-side-needs.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "tools/remote-gate.sh's local side needs bash 4, so a pusher on stock macOS bash 3.2 has every gate-host push refused - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1075-tools-remote-gate-sh-s-local-side-needs.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1076",
+            "source": "sdlc-studio/bugs/BG1076-the-rejoinder-brief-asks-a-reviewer-to-rule.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1076-the-rejoinder-brief-asks-a-reviewer-to-rule.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The rejoinder brief asks a reviewer to rule each earlier finding, but the return contract has no place for the rulings, so a round-2 verdict that writes them untagged is refused by critic.py record - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1076-the-rejoinder-brief-asks-a-reviewer-to-rule.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1079",
+            "source": "sdlc-studio/bugs/BG1079-a-unit-carried-at-the-review-cap-gets.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1079-a-unit-carried-at-the-review-cap-gets.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "A unit carried at the review cap gets a criterion for every ISSUES item, including info rulings and pre-existing findings already filed - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1079-a-unit-carried-at-the-review-cap-gets.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1080",
+            "source": "sdlc-studio/bugs/BG1080-remote-gate-doctor-calls-a-host-ready-without.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1080-remote-gate-doctor-calls-a-host-ready-without.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "remote-gate doctor calls a host ready without checking flock and setsid, which every push run on it needs - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1080-remote-gate-doctor-calls-a-host-ready-without.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1081",
+            "source": "sdlc-studio/bugs/BG1081-remote-gate-doctor-sources-gate-env-sh-from.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1081-remote-gate-doctor-sources-gate-env-sh-from.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "remote-gate doctor sources gate-env.sh from its temporary directory, where the gate sources it from the host's home - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1081-remote-gate-doctor-sources-gate-env-sh-from.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1082",
+            "source": "sdlc-studio/bugs/BG1082-four-of-remote-gate-doctor-s-stated-behaviours.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1082-four-of-remote-gate-doctor-s-stated-behaviours.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "Four of remote-gate doctor's stated behaviours have no test that fails without them - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1082-four-of-remote-gate-doctor-s-stated-behaviours.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1083",
+            "source": "sdlc-studio/bugs/BG1083-enable-hooks-sh-s-tolerance-of-an-unready.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1083-enable-hooks-sh-s-tolerance-of-an-unready.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "enable-hooks.sh's tolerance of an unready or unreachable gate host has no test - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1083-enable-hooks-sh-s-tolerance-of-an-unready.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1084",
+            "source": "sdlc-studio/bugs/BG1084-remote-gate-doctor-s-exit-codes-are-documented.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1084-remote-gate-doctor-s-exit-codes-are-documented.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "remote-gate doctor's exit codes are documented as 0, 1 and 3, and a missing transport is reported as an unready host - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1084-remote-gate-doctor-s-exit-codes-are-documented.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1085",
+            "source": "sdlc-studio/bugs/BG1085-remote-gate-doctor-prints-the-local-clone-s.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1085-remote-gate-doctor-prints-the-local-clone-s.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "remote-gate doctor prints the local clone's Python install route for a gap on the gate host - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1085-remote-gate-doctor-prints-the-local-clone-s.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1086",
+            "source": "sdlc-studio/bugs/BG1086-run-suite-sh-s-passed-count-needs-bc.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1086-run-suite-sh-s-passed-count-needs-bc.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "run-suite.sh's passed count needs bc, which is not a declared prerequisite, and is null with a broken-pipe error where bc is absent - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1086-run-suite-sh-s-passed-count-needs-bc.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1088",
+            "source": "sdlc-studio/bugs/BG1088-a-setup-fault-on-a-gate-host-s.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1088-a-setup-fault-on-a-gate-host-s.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "A setup fault on a gate host's suite run is named as 'did not run the all suite' with no test that fails without it - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1088-a-setup-fault-on-a-gate-host-s.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1089",
+            "source": "sdlc-studio/bugs/BG1089-us1078-ac3-s-verify-test-does-not-exercise.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1089-us1078-ac3-s-verify-test-does-not-exercise.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "US1078 AC3's Verify test does not exercise the verdict's binding to the tree sent; only a sibling test does - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1089-us1078-ac3-s-verify-test-does-not-exercise.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1090",
+            "source": "sdlc-studio/bugs/BG1090-test-output-prints-in-declared-order-whatever-finishes.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1090-test-output-prints-in-declared-order-whatever-finishes.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "test_output_prints_in_declared_order_whatever_finishes_first failed one subtest under heavy load, and passes alone; not yet diagnosed - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1090-test-output-prints-in-declared-order-whatever-finishes.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1091",
+            "source": "sdlc-studio/bugs/BG1091-us1084-s-document-tests-still-pass-three-phrasings.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1091-us1084-s-document-tests-still-pass-three-phrasings.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "US1084's document tests still pass three phrasings they exist to refuse - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1091-us1084-s-document-tests-still-pass-three-phrasings.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1092",
+            "source": "sdlc-studio/bugs/BG1092-the-tsd-says-the-commit-msg-hook-falls.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1092-the-tsd-says-the-commit-msg-hook-falls.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The TSD says the commit-msg hook falls back to skill-tests.sh only without pytest; it also does when the handover carries no selectors - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1092-the-tsd-says-the-commit-msg-hook-falls.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1093",
+            "source": "sdlc-studio/bugs/BG1093-bg1061-s-heading-checks-read-a-heading-s.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1093-bg1061-s-heading-checks-read-a-heading-s.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1061's heading checks read a heading's trailing space as its last character, so a mark left behind a space passes - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1093-bg1061-s-heading-checks-read-a-heading-s.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1094",
+            "source": "sdlc-studio/bugs/BG1094-a-lesson-that-is-only-punctuation-gets-an.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1094-a-lesson-that-is-only-punctuation-gets-an.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "A lesson that is only punctuation gets an empty heading title since BG1061 - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1094-a-lesson-that-is-only-punctuation-gets-an.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1096",
+            "source": "sdlc-studio/bugs/BG1096-the-trd-says-verify-ac-run-coverage-refuses.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1096-the-trd-says-verify-ac-run-coverage-refuses.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The TRD says verify_ac run --coverage refuses under block and reports under report when coverage is absent; the split is the Done gate's - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1096-the-trd-says-verify-ac-run-coverage-refuses.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1097",
+            "source": "sdlc-studio/bugs/BG1097-us1085-s-toolchain-doc-tests-leave-coverage-unpinned.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1097-us1085-s-toolchain-doc-tests-leave-coverage-unpinned.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "US1085's toolchain-doc tests leave coverage unpinned, still pass three counted phrasings, and fail at collection without PyYAML - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1097-us1085-s-toolchain-doc-tests-leave-coverage-unpinned.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1098",
+            "source": "sdlc-studio/bugs/BG1098-agents-md-gives-the-local-boundary-push-series.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1098-agents-md-gives-the-local-boundary-push-series.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "AGENTS.md gives the local boundary-push series as the push's cost on a clone that names a gate host - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1098-agents-md-gives-the-local-boundary-push-series.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1100",
+            "source": "sdlc-studio/bugs/BG1100-gate-py-s-verify-ceiling-still-calls-300.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1100-gate-py-s-verify-ceiling-still-calls-300.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "gate.py's verify ceiling still calls 300 s CI's figure, though corpus-verify now runs every criterion under 450 s - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1100-gate-py-s-verify-ceiling-still-calls-300.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1102",
+            "source": "sdlc-studio/bugs/BG1102-the-corpus-verify-timing-step-s-ceiling-is.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1102-the-corpus-verify-timing-step-s-ceiling-is.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The corpus-verify timing step's ceiling is pinned only as an integer, so one as long as the job's own cap passes - not-stop-ship, ruled by Darren Benson (operator)",
+            "source": "sdlc-studio/bugs/BG1102-the-corpus-verify-timing-step-s-ceiling-is.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "lessons-summary",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "refused: LESSONS-SUMMARY.md lists 441 lesson(s) the log at /home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/retros/LESSONS.md does not hold (L-0442: Run each user-facing sentence in a changelog fragment through the CLI before asking for review, as the paperwork reviews already do, L-0441: Probe a premise with an input whose result differs under each hypothesis, such as a key whose code fallback differs from its shipped…, L-0440: A builder that adds a widened env scrub to satisfy a guard test should reuse the pinned list it already has: US0971's `GIT_` scrub broke… (+438 more)), so this log is not the one the summary was built from. Restore the log from the machine that ran the last close, or merge it, and run this again. Nothing was written.",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "gate",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "lessons-summary: LESSONS-SUMMARY.md is STALE - 2 lesson(s) added since it was regenerated: L-0002: Write a documentation unit's criteria against structured content a test can compare exactly, such as a table cell's set read from the…, L-0001: Before every brief, mutate my own tests as the QA seat does, with paraphrases, swapped clauses and a negation elsewhere in the sentence…; 441 closed or removed since: L-0442: Run each user-facing sentence in a changelog fragment through the CLI before asking for review, as the paperwork reviews already do, L-0441: Probe a premise with an input whose result differs under each hypothesis, such as a key whose code fallback differs from its shipped…, L-0440: A builder that adds a widened env scrub to satisfy a guard test should reuse the pinned list it already has: US0971's `GIT_` scrub broke… (+438 more). Regenerate it: scripts/lessons.py summary",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "signoff",
+      "title": "Sign-off",
+      "figures": {
+        "principal": {
+          "key": "principal",
+          "value": "not yet signed",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "signed_at": {
+          "key": "signed_at",
+          "value": "not yet signed",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "signed_fingerprint": {
+          "key": "signed_fingerprint",
+          "value": "not yet signed",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "cost",
+      "title": "Tokens by model",
+      "figures": {
+        "tokens_delegated": {
+          "key": "tokens_delegated",
+          "value": "NOT MEASURED",
+          "source": "sdlc-studio/.local/run-state.json",
+          "reason": "no delegated agent supplied a total, which is not the same fact as no work having been delegated"
+        },
+        "tokens_total": {
+          "key": "tokens_total",
+          "value": 10098487,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "token_coverage": {
+          "key": "token_coverage",
+          "value": "1 session(s)",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "token_shape": {
+          "key": "token_shape",
+          "value": "read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [
+        {
+          "model_name": {
+            "key": "model_name",
+            "value": "claude-opus-5-5",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "model_tokens": {
+            "key": "model_tokens",
+            "value": 10098487,
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "dora",
+      "title": "DORA",
+      "figures": {},
+      "rows": [
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Deployment frequency",
+            "source": "gh run list"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": 18,
+            "source": "gh run list"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up",
+            "source": "gh run list"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "on demand",
+            "source": "gh run list"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "forge runs 39392921925/39389633678/39322204508/39317590448/39315716391/39312220156/39307080528/39302574041/39294371349/39288005794/39283565141/39279699470/39255842339/39248977496/39243631708/39241288465/39239542114/39237451586 - 18 push-triggered run(s) on main in the run window",
+            "source": "gh run list"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Lead time for changes",
+            "source": "git log"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "22h 43m",
+            "source": "git log"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches",
+            "source": "git log"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "under a day",
+            "source": "git log"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "git history - first to last of 37 commit(s)",
+            "source": "git log"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Change failure rate",
+            "source": "gh run list"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "0%",
+            "source": "gh run list"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that concluded failure or timed out - a cancelled or skipped run is not a failed deployment",
+            "source": "gh run list"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "0-15%",
+            "source": "gh run list"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "forge runs 39392921925/39389633678/39322204508/39317590448/39315716391/39312220156/39307080528/39302574041/39294371349/39288005794/39283565141/39279699470/39255842339/39248977496/39243631708/39241288465/39239542114/39237451586 - 18 deployment(s); 0 failed on none",
+            "source": "gh run list"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Time to restore",
+            "source": "gh run list"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "no restore needed",
+            "source": "gh run list"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "per red streak on main, in creation order, the span from its first failure's conclusion to the conclusion of the first push-triggered run created after it that concluded success, floored at zero; the median over the window's restored streaks, or not restored while the window's last streak is still red",
+            "source": "gh run list"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "under an hour",
+            "source": "gh run list"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "forge runs 39392921925/39389633678/39322204508/39317590448/39315716391/39312220156/39307080528/39302574041/39294371349/39288005794/39283565141/39279699470/39255842339/39248977496/39243631708/39241288465/39239542114/39237451586 - no push-triggered run on main concluded failure",
+            "source": "gh run list"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "calibration",
+      "title": "Calibration",
+      "figures": {
+        "cal_tokens_per_point": {
+          "key": "cal_tokens_per_point",
+          "value": 146283,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "cal_tokens_source": {
+          "key": "cal_tokens_source",
+          "value": "velocity-record",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "cal_minutes_per_point": {
+          "key": "cal_minutes_per_point",
+          "value": 5.84,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "cal_minutes_source": {
+          "key": "cal_minutes_source",
+          "value": "measured on claude-opus-5-5: median of RETRO0131, RETRO0132, RETRO0133",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "rulings",
+      "title": "Rulings",
+      "figures": {
+        "persona_rulings": {
+          "key": "persona_rulings",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "cited_rulings": {
+          "key": "cited_rulings",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "operator_rulings": {
+          "key": "operator_rulings",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "waivers",
+      "title": "Waivers in force",
+      "figures": {
+        "waivers_note": {
+          "key": "waivers_note",
+          "value": "no gate stood down for this seal - the log was read and carries no accepted waiver dated inside this report's window",
+          "source": "sdlc-studio/decisions.md"
+        },
+        "waivers_count": {
+          "key": "waivers_count",
+          "value": 0,
+          "source": "sdlc-studio/decisions.md"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "lane_yield",
+      "title": "Lane yield",
+      "figures": {
+        "lane_yield_note": {
+          "key": "lane_yield_note",
+          "value": "3 refusal(s) in this run. A refusal is a candidate catch when the next commit changed code or a test from what was refused, paperwork when it changed only artefacts, baselines, indexes or docs, and pending until a commit follows it.",
+          "source": "sdlc-studio/.local/refusals.jsonl, git log"
+        }
+      },
+      "rows": [
+        {
+          "yield_lane": {
+            "key": "yield_lane",
+            "value": "markdown",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_refusals": {
+            "key": "yield_refusals",
+            "value": 1,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_catches": {
+            "key": "yield_catches",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_paperwork": {
+            "key": "yield_paperwork",
+            "value": 1,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_verdict": {
+            "key": "yield_verdict",
+            "value": "too few runs: 2 of 3 recorded",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          }
+        },
+        {
+          "yield_lane": {
+            "key": "yield_lane",
+            "value": "message-refs",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_refusals": {
+            "key": "yield_refusals",
+            "value": 2,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_catches": {
+            "key": "yield_catches",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_paperwork": {
+            "key": "yield_paperwork",
+            "value": 2,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_verdict": {
+            "key": "yield_verdict",
+            "value": "too few runs: 2 of 3 recorded",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          }
+        },
+        {
+          "yield_lane": {
+            "key": "yield_lane",
+            "value": "repo-writes",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_refusals": {
+            "key": "yield_refusals",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_catches": {
+            "key": "yield_catches",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_paperwork": {
+            "key": "yield_paperwork",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_verdict": {
+            "key": "yield_verdict",
+            "value": "too few runs: 2 of 3 recorded",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "lessons",
+      "title": "Lessons",
+      "figures": {
+        "lessons_note": {
+          "key": "lessons_note",
+          "value": "6 lesson class(es) in force at this close.",
+          "source": "sdlc-studio/lessons.jsonl"
+        }
+      },
+      "rows": [
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-010",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "the push gate and CI disagree on the runner",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "active",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 1,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-014",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "paperwork during a build",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "active",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 1,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-015",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "a retirement outruns the deletion",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "active",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-016",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "a signed page reads a live source",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "graduating (CR0642)",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 2,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-017",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "a page-format rule mark nothing round-trips",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "active",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-018",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "a doc claim checked by reading",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "graduating (CR0643)",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 6,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 10,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        }
+      ],
+      "not_measured": null
+    }
+  ],
+  "record_paths": "portable",
+  "token_ratio": "every-delivered-unit-delegated",
+  "restore_pairing": "next-success-after-failure",
+  "discharged_carry": "delivered",
+  "findings_scan": "delivered-batch-units-excluded",
+  "minutes_ratio": "measured-unit-minutes",
+  "delegated_tokens": "counted-over-a-zero-meter",
+  "agent_minutes": "any-agent-supplied",
+  "dora_failures": "failure-or-timed-out-only",
+  "fingerprint": "69a1a2631ded6070"
+}

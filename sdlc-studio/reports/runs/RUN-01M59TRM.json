@@ -1,0 +1,752 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M59TRM",
+  "started_at": "2026-10-19T10:07:34Z",
+  "ended_at": null,
+  "outcome": "running",
+  "goal": "done",
+  "batch": [
+    "US1079",
+    "BG1066",
+    "US1075",
+    "US1077",
+    "US1078",
+    "BG1061",
+    "US1084",
+    "US1085",
+    "BG1054",
+    "BG1099"
+  ],
+  "plan": "sdlc-studio/.local/sprint-plan.json",
+  "handoff": null,
+  "session_token_baseline": {
+    "tokens": 35849362,
+    "source": "sha256:7dc733d4cecb",
+    "at": "2026-10-19T10:07:35Z"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 35849362,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-19T10:07:36Z",
+      "kind": "open",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 35849362,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-19T10:07:48Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 36057985,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-19T10:27:08Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 36521323,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-19T11:20:24Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 36937536,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-19T12:05:43Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 38190842,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-19T15:40:09Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 38580135,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-19T16:12:20Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 38742453,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-19T16:27:20Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 39390431,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-19T17:33:04Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 39435591,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-19T17:35:12Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 39461780,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-19T17:44:10Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 40113519,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-19T19:12:38Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 40334336,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-19T19:53:20Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 40621736,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-19T20:14:20Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 45493823,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-20T07:04:57Z",
+      "kind": "unit-start",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 45644617,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-20T07:55:04Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 45909564,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-20T09:07:36Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 45947849,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-20T09:35:40Z",
+      "kind": "unit-end",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "tokens": 45947849,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-20T09:45:29Z",
+      "kind": "report",
+      "model": "claude-opus-5-5"
+    }
+  ],
+  "delegated_tokens": [],
+  "reopened": [],
+  "batch_changes": [
+    {
+      "action": "drop",
+      "id": "US1076",
+      "reason": "carried at the review cap: BG1078",
+      "at": "2026-10-19T15:49:35Z"
+    },
+    {
+      "action": "drop",
+      "id": "US1086",
+      "reason": "carried at the review cap: BG1095",
+      "at": "2026-10-19T20:48:21Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1099",
+      "at": "2026-10-20T07:04:47Z",
+      "reason": "BG1054's dispatched run found US1084's TSD rewording broke US0253 AC3; the operator chose to fix it this run"
+    }
+  ],
+  "rulings": [],
+  "base_ref": "139c7fc2ee8cf2cca2e8dc315fbc919782f17f75",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-10-19T10:05:26Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "Rowan's push is judged on a configured gate host, and the gate's documents and weekly run tell the truth.",
+  "sprint_goal_review": {
+    "reviewed": true,
+    "status": "read",
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "engineering",
+        "achievable": "partial",
+        "done_means": "Done means all eleven units are terminal, plus one live proof that no AC carries. (1) Rowan's card exists: two Primaries, each with its own Interface row; validate personas is clean; an unnamed mint still names Maya; the PRD names Rowan with no outcome (US1079 AC1-AC4). This is the precondition for every Rowan End goal (D0379). (2) Both product seat cards approve a declared Secondary's End goal and judge a unit against the Primary of its interface, and a single-Primary cast reads as before (BG1066 AC1-AC3). This serves Jonah End goal 3 and O8, and it is the lens Rowan's units are reviewed under. (3) With sdlc.gateHost set, a push sends exactly the pushed commit with the remotes and tags refs; the host computes the same range and tag; a tag runs --boundary release there; a transport failure refuses and names SDLC_GATE_LOCAL=1; and the gate runs locally only when the configuration says so (US1075 AC1-AC5). Host runs get their own trees and run one at a time, a waiting run says so, and an abandoned push leaves nothing running (US1076 AC1-AC3). doctor names a missing prerequisite from the one list, and enable-hooks prints the host and its verdict (US1077 AC1-AC3). Together these serve Rowan End goal 1: a push judged against exactly the commit pushed, in minutes the work can absorb. (4) run-suite.sh all judges the hashed tree on the host, unstaged edits included, and --check reads that verdict (US1078 AC1-AC4). This serves Rowan End goal 4: main never left red. (5) The weekly corpus-verify job installs pytest-xdist and pdftotext, US0985 AC2 reads the cut's committed record, the ceiling clears US0940 AC1, and a dispatched run reports at the baseline with no NEW entry (BG1054 AC1-AC5). This serves Rowan End goal 4 and O4. (6) A lessons log written by retro.py extract passes markdownlint defaults (BG1061 AC1). This serves Maya End goal 3 and O3: a close commits without a bypass. (7) The TRD and TSD name every hook in git's order, each boundary, the three manual pre-tag steps, every .local path gate.py writes, every declared dependency, every CI job with its trigger, every lint check without a count, the CI Python floor, every gate-host setting, the three places the gate can run, and the transport refusal, each derived from its source file (US1084 AC1-AC4, US1085 AC1-AC4, US1086 AC1-AC2). This serves O4 and Rowan End goal 3 (a release a consuming team can upgrade to, D0375). (8) Needed for the headline but carried by no AC: this clone's sdlc.gateHost is set (it is unset today), and one real push from this clone is judged on devserver1 without --no-verify, which retires D0370's interim rule. This serves Rowan End goal 1.",
+        "one_increment": "no",
+        "note": "1. The headline clause is proven only through stubs. Every US1075-US1078 AC runs a stubbed transport. No unit configures this clone or shows a real push judged on devserver1, and nothing retires D0370's interim --no-verify rule. Add a live push to the close's done-check or a manual Verify on US1075 [LC-018]. 2. BG1054 is scoped to a stale run. Its four NEW entries come from scheduled run 38246079155 at b3dcc041 (2026-10-12), the last scheduled run gh lists, and the last three all failed corpus-verify. 48 commits, RUN-01M4R168's units among them, have landed since and no scheduled run has read them. Read or dispatch a run at the base before planning. Only the manual AC5 executes anything; AC1-AC4 read workflow text. AC5 falls at unit 8 of 11, so it cannot see the criteria EP0290 adds. AC3's 'or retired' branch has LC-015's shape: US0985 AC2 pins surviving code (known_issues.py bar), so re-point it, never retire it [LC-015]. AC4's 276 s against the 300 s ceiling is a developer-machine figure, so the headroom must be measured on a runner [LC-018]. 3. The documents clause leaves CR0644 text that no unit delivers. trd.md:616 still calls the gate 'Sub-second' (the cost row in CR0644 AC4). No AC carries CR0644 AC1's rule of pointing at each hook's --list, the push stage's prerequisites and red-main acknowledgement, or CR0644 AC3's corpus baselines. 4. US1078's persona and its review lens disagree. Its Affects include the shipped reference-sprint-toolchain.md, so under BG1066 AC2 and US1079 AC4 it is judged against Maya, while D0380 names Rowan. Either drop the runbook edit or name Maya. US1078 also needs US1075's send in tools/remote-gate.sh, which is missing from both its Affects and the shared-file cluster. Decide before planning whether it edits that file in scope or duplicates the send. 5. The derived sets can shrink. US1084 AC2 reads boundaries from pre-push's literal gate.py calls (pre-push:286 and :292), and once US1075 sends the host path through remote-gate.sh that set can shrink. Each derived set in US1084-US1086 needs a non-empty floor, or its test passes vacuously. US1086 AC1's sources leave out run-suite.sh and enable-hooks.sh, which US1078 and US1077 make read the host setting. 6. Ordering and paperwork. US1079, US1084-US1086, EP0289, EP0290 and the D0379/D0380 grooming are uncommitted in the main tree, so a worktree builder branching from HEAD sees none of them. Commit before the first build [LC-014]. Repointing the seven units to Rowan 'before their reviews' has no AC, tool or gate, since artifact.py has no persona setter. critic.py brief reads the seat card from the working tree, so BG1066's own product review is briefed with the card that BG1066 rewrites. At plan time, --serves 'Rowan Achterberg' resolves to unknown until US1079 lands. Name his End goal 1, then record the trace again after unit 1. 7. Why the batch is not one increment: BG1061 traces to no clause of the goal. It is a shipped lessons.py/retro.py fix serving Maya O3. No AC pins its Proposed Fix's no-churn reading of an existing log's punctuated headings, though that is the debt in the other clone it exists to clear."
+      },
+      {
+        "seat": "product",
+        "achievable": "partial",
+        "done_means": "Traced to Rowan's End goals as US1079's Notes number them (1 a push judged against exactly the commit pushed, in minutes the work can absorb; 3 a release a consuming team can upgrade to; 4 main never left red and unread). These stay provisional until his card lands and a seat that did not write it reviews it. Under D0380 Rowan has no PRD outcome; the goal names him with --serves. (1) ENABLER, serves the machinery and no End goal. Rowan is a registered Primary for the repository-tooling interface, Maya stays first and unchanged, and validate.py personas is clean (US1079 AC1-AC4). The product seat judges each unit against the Primary of the interface its Affects touches and admits a declared Secondary (BG1066 AC1-AC3). These make the trace and the lens honest. They are not the increment Rowan feels. (2) ROWAN EG1. With sdlc.gateHost set, a push is judged on the host against exactly the pushed commit, with the same range and tag. A tag is judged at the release boundary. A transport failure refuses and names SDLC_GATE_LOCAL=1 (US1075 AC1-AC5). Host runs are serialised and an abandoned push leaves nothing running (US1076 AC1-AC3). doctor names a missing prerequisite in seconds (US1077 AC1-AC3). run-suite.sh runs the full suite on the host and --check reads that verdict (US1078 AC1-AC4). Persona-level check, which no AC holds: at least one of the run's own pushes is recorded under boundary-push@<host> in gate-timings, with its duration beside D0366's 634-636 s. (3) ROWAN EG1 and EG3. The TRD and TSD name, each read from its own source: every hook in run order, each boundary, the three manual pre-tag steps (D0375) and the gate's .local writes (US1084 AC1-AC4); every declared dependency, each CI job with its trigger, the lint checks uncounted and the 3.10 floor (US1085 AC1-AC4); every gate-host setting and the three gate locations (US1086 AC1-AC2). (4) ROWAN EG4. A dispatched Lint run's corpus-verify job reports red criteria at the baseline with no NEW entry (BG1054 AC1-AC5). (5) MAYA EG3 / O3, shipped, so judged against Maya. A lessons log written by retro.py extract passes markdownlint's defaults, so a close commits without a bypass (BG1061 AC1). This serves a real goal, but no clause of the Sprint Goal names it. Verdict: clauses 2-4 serve real persona goals. Clause 1 serves the machinery, justified by D0379 and D0380. Clause 5 serves Maya, outside the goal's wording.",
+        "one_increment": "no",
+        "note": "Three slices. (a) Rowan's gate increment: EP0288, EP0290 and BG1054. (b) The persona and lens setup before it: US1079 and BG1066, whose shipped half also serves consuming projects' Secondaries. (c) A shipped rider, BG1061. Name BG1061 in the goal or record it as a rider. Risks: 1. A docs gap. US1084's Notes claim RV0028 TRD-9, the trd.md:616 claim that the gate is Sub-second against 127 s measured on a 45 s budget, but no AC fails if that row stays. The cost half of CR0644/EP0290 AC4 has no criterion. Add one derived from gate_timing.py estimate, or 'the gate's documents tell the truth' is only partly met [new] [LC-018]. 2. US1078's Affects includes the shipped reference-sprint-toolchain.md. Under BG1066 AC2 and US1079 AC4's boundary it is judged against Maya, yet D0380 repoints it to Rowan. Get a ruling or split the shipped row out before it is reviewed. The runbook already names the repo-only tools/run-suite.sh (lines 37-38), which is pre-existing and not this batch's regression. 3. The D0380 repointing of US1075-US1078 and US1084-US1086 is a planned step with no unit and no gate. US1075-US1078 still read As the founder-engineer, so repoint the story text as well as the Persona field, cite one of Rowan's End goals, and do it between builds [LC-014]. 4. The lens is written inside the run. Rowan's card is agent-authored and provisional, and US1079 AC4's outcome-not-machinery test is a judgement a pytest cannot make. US1079 and BG1066 must reach Done with an independent review before any later unit is briefed. Otherwise Trevor's point holds: a Primary whose goals are the gate passes the machinery test automatically. 5. BG1054 AC3's retire branch: US0985 AC2 pins known_issues.py bar, which survives, so re-point it, never retire it [LC-015]. AC5 is manual. Dispatch and read it before close, so the weekly-run clause is proven by a run, not by reading lint.yml [LC-018]. 6. BG1061's only AC is lint-pass. Its Proposed Fix says to read the existing headings without churn, and no criterion pins that write-then-reread [LC-017]. 7. The goal clause about Rowan's push is proven only by stubs. Add the boundary-push@<host> record of a real push to the close's evidence."
+      },
+      {
+        "seat": "qa",
+        "achievable": "partial",
+        "done_means": "Serves Rowan's End goal 1 (a push is judged against exactly the commit pushed, in minutes the work can absorb) and End goal 4 (main never left red and unread) through EP0288, and PRD O4, with O1 for BG1054, through EP0290 and BG1054. The plan-time trace reads NONE because the card does not exist yet. After US1079 lands, re-run the trace with --serves naming Rowan (D0380). Clause by clause: (1) 'judged on a gate host', as a mechanism, is proven executably over a stubbed transport. US1075 AC1-AC5: the exact pushed commit is sent with refs mirrored, push and release boundaries are honoured, a transport exit 255 refuses and names SDLC_GATE_LOCAL=1. US1076 AC1-AC3: a tree per run, a host lock, nothing left behind after INT/TERM or a dropped transport. US1077 AC1-AC3: doctor checks the one prerequisite list and enable-hooks names the host. US1078 AC1-AC4: the hashed tree runs on the host and --check reads its verdict. (2) 'Rowan's push' on a 'configured' host has no executable proof. Every one of these tests uses a stub or fixture home. This clone has no sdlc.gateHost set today, and gate-timings holds only the local boundary-push series. Done should mean: sdlc.gateHost names devserver1, remote-gate.sh doctor exits 0 against it, and at least one of the run's own pushes after US1075 is judged there with no --no-verify, shown by a boundary-push@devserver1 row in gate-timings. 'In minutes' has no AC; the timing record is only a US1075 Note. (3) 'The gate's documents tell the truth' is proven for the TRD and TSD by tests derived from the source files. US1084 AC1-AC4: hooks in git's order, each --boundary, the three manual pre-tag steps, the .local writes. US1085 AC1-AC4: dependencies, CI jobs with their triggers, the uncounted lint chain, the Python floor. US1086 AC1-AC2: gate-host settings and the three gate locations. No criterion covers the gate-host prose that US1075 and US1077 add to CONTRIBUTING.md or that US1078 adds to AGENTS.md [LC-018]. (4) 'The weekly run tells the truth': BG1054 AC1-AC4 only read lint.yml and the US0985 verifier, so they show the job is configured, not that it reports truly. The clause rests wholly on the manual AC5. Done should mean a dispatched Lint run (or the 2026-10-26 scheduled one) whose corpus-verify job prints red-criteria: 0 with no NEW entry, against the baseline of 0, with the run id recorded on BG1054 before Fixed. (5) US1079 AC1-AC4 and BG1066 AC1-AC3 prove the card and the seat-card text. They are preconditions for 'Rowan' and for the reviews, not proof of any clause. BG1061 AC1 proves no clause.",
+        "one_increment": "yes",
+        "note": "One increment because 8 of the 11 units deliver the goal's three clauses about one subject: where the gate runs, what its documents say, what its weekly lane reports. US1079 and BG1066 are preconditions under D0380. BG1061 (2 of 31 points) is the one rider and serves no clause. Risks: (a) BG1054 AC5 is manual and alone carries 'the weekly run'. transition -> Fixed does not refuse an unrun manual criterion. The corpus run also re-executes this batch's own new Done criteria in an environment with no gate host. Make AC5 an executable read of the run's red-criteria line, as the pre-push red-main read already does with gh, or require the run id before Fixed. (b) BG1054 AC4's headroom rests on a 276 s developer-machine figure against a 300 s ceiling. tools/verify-corpus-baseline.txt itself rules a local reading inadmissible (BG0676), and ubuntu-latest is slower. (c) BG1054 AC3 is an either/or that a retirement satisfies. known_issues.py bar survives, so re-point the verifier, never retire it [LC-015]. (d) US1075: no AC fails if the configured-host path skips D0181's red-main read or US1005's preflight. Both are Notes only, and test_pre_push_hook.py's red-main tests run with no host. (e) US1076 AC2 and AC3 are lock and signal tests that will run on a host shared with a CI runner (load 10.6, BG1031; ModuleAloneLaneTests at its 3.0 s bound). They must synchronise on events, not wall clock. (f) US1084 AC3/AC4, US1085 AC2 and US1086 AC1 derive their sets from source. Each must assert a known member (sdlc.gateHost, SDLC_GATE_LOCAL, release_cut.py tag-check, gate-suite-verdict.json), or an empty derivation passes vacuously (LL0043). gate-timings.json is written by tools/gate_timing.py, so a grep of gate.py alone is a lower bound; tools/repo_writes.py lists the writes. (g) US1085 AC4 assumes one 'floor job', but ci and corpus-verify both install 3.10 and 3.12; the test must name the job it reads. (h) BG1061 AC1 claims markdownlint's default rules, but its selector names only MD026, and no AC pins that existing headings do not churn. (i) US1078 touches the shipped reference-sprint-toolchain.md, so under US1079 AC4 and BG1066 AC2 it is judged against Maya. D0380 still repoints it to Rowan. The consult raised this and it is unresolved; settle it before its review. (j) D0370 lapses when US1075 ships. With sdlc.gateHost unset, pushes fall back to a local gate this workstation cannot hold. (k) The D0380 persona repoints are main-tree paperwork; commit them only between builds [LC-014]. (l) BG1066's routing by interface is text a reviewer reads. critic.py brief does not carry the unit's persona card, and nothing executes the routing before US1080."
+      }
+    ],
+    "goal": "Rowan's push is judged on a configured gate host, and the gate's documents and weekly run tell the truth.",
+    "shipped_seats": false,
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 4,
+    "objected": false,
+    "objections": [],
+    "reviewed_at": "2026-10-19T08:58:24Z",
+    "change_type": null,
+    "amended_from": null,
+    "requesting_seat": null,
+    "needs_reconsult": [],
+    "themed": [
+      {
+        "seat": "engineering",
+        "one_increment": "no",
+        "note": "1. The headline clause is proven only through stubs. Every US1075-US1078 AC runs a stubbed transport. No unit configures this clone or shows a real push judged on devserver1, and nothing retires D0370's interim --no-verify rule. Add a live push to the close's done-check or a manual Verify on US1075 [LC-018]. 2. BG1054 is scoped to a stale run. Its four NEW entries come from scheduled run 38246079155 at b3dcc041 (2026-10-12), the last scheduled run gh lists, and the last three all failed corpus-verify. 48 commits, RUN-01M4R168's units among them, have landed since and no scheduled run has read them. Read or dispatch a run at the base before planning. Only the manual AC5 executes anything; AC1-AC4 read workflow text. AC5 falls at unit 8 of 11, so it cannot see the criteria EP0290 adds. AC3's 'or retired' branch has LC-015's shape: US0985 AC2 pins surviving code (known_issues.py bar), so re-point it, never retire it [LC-015]. AC4's 276 s against the 300 s ceiling is a developer-machine figure, so the headroom must be measured on a runner [LC-018]. 3. The documents clause leaves CR0644 text that no unit delivers. trd.md:616 still calls the gate 'Sub-second' (the cost row in CR0644 AC4). No AC carries CR0644 AC1's rule of pointing at each hook's --list, the push stage's prerequisites and red-main acknowledgement, or CR0644 AC3's corpus baselines. 4. US1078's persona and its review lens disagree. Its Affects include the shipped reference-sprint-toolchain.md, so under BG1066 AC2 and US1079 AC4 it is judged against Maya, while D0380 names Rowan. Either drop the runbook edit or name Maya. US1078 also needs US1075's send in tools/remote-gate.sh, which is missing from both its Affects and the shared-file cluster. Decide before planning whether it edits that file in scope or duplicates the send. 5. The derived sets can shrink. US1084 AC2 reads boundaries from pre-push's literal gate.py calls (pre-push:286 and :292), and once US1075 sends the host path through remote-gate.sh that set can shrink. Each derived set in US1084-US1086 needs a non-empty floor, or its test passes vacuously. US1086 AC1's sources leave out run-suite.sh and enable-hooks.sh, which US1078 and US1077 make read the host setting. 6. Ordering and paperwork. US1079, US1084-US1086, EP0289, EP0290 and the D0379/D0380 grooming are uncommitted in the main tree, so a worktree builder branching from HEAD sees none of them. Commit before the first build [LC-014]. Repointing the seven units to Rowan 'before their reviews' has no AC, tool or gate, since artifact.py has no persona setter. critic.py brief reads the seat card from the working tree, so BG1066's own product review is briefed with the card that BG1066 rewrites. At plan time, --serves 'Rowan Achterberg' resolves to unknown until US1079 lands. Name his End goal 1, then record the trace again after unit 1. 7. Why the batch is not one increment: BG1061 traces to no clause of the goal. It is a shipped lessons.py/retro.py fix serving Maya O3. No AC pins its Proposed Fix's no-churn reading of an existing log's punctuated headings, though that is the debt in the other clone it exists to clear."
+      },
+      {
+        "seat": "product",
+        "one_increment": "no",
+        "note": "Three slices. (a) Rowan's gate increment: EP0288, EP0290 and BG1054. (b) The persona and lens setup before it: US1079 and BG1066, whose shipped half also serves consuming projects' Secondaries. (c) A shipped rider, BG1061. Name BG1061 in the goal or record it as a rider. Risks: 1. A docs gap. US1084's Notes claim RV0028 TRD-9, the trd.md:616 claim that the gate is Sub-second against 127 s measured on a 45 s budget, but no AC fails if that row stays. The cost half of CR0644/EP0290 AC4 has no criterion. Add one derived from gate_timing.py estimate, or 'the gate's documents tell the truth' is only partly met [new] [LC-018]. 2. US1078's Affects includes the shipped reference-sprint-toolchain.md. Under BG1066 AC2 and US1079 AC4's boundary it is judged against Maya, yet D0380 repoints it to Rowan. Get a ruling or split the shipped row out before it is reviewed. The runbook already names the repo-only tools/run-suite.sh (lines 37-38), which is pre-existing and not this batch's regression. 3. The D0380 repointing of US1075-US1078 and US1084-US1086 is a planned step with no unit and no gate. US1075-US1078 still read As the founder-engineer, so repoint the story text as well as the Persona field, cite one of Rowan's End goals, and do it between builds [LC-014]. 4. The lens is written inside the run. Rowan's card is agent-authored and provisional, and US1079 AC4's outcome-not-machinery test is a judgement a pytest cannot make. US1079 and BG1066 must reach Done with an independent review before any later unit is briefed. Otherwise Trevor's point holds: a Primary whose goals are the gate passes the machinery test automatically. 5. BG1054 AC3's retire branch: US0985 AC2 pins known_issues.py bar, which survives, so re-point it, never retire it [LC-015]. AC5 is manual. Dispatch and read it before close, so the weekly-run clause is proven by a run, not by reading lint.yml [LC-018]. 6. BG1061's only AC is lint-pass. Its Proposed Fix says to read the existing headings without churn, and no criterion pins that write-then-reread [LC-017]. 7. The goal clause about Rowan's push is proven only by stubs. Add the boundary-push@<host> record of a real push to the close's evidence."
+      }
+    ],
+    "discharged": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Fixed (bug), Done (story)",
+    "types": [
+      "bug",
+      "story"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed (bug), Done (story)"
+  },
+  "plan_snapshot": {
+    "units": {
+      "US1079": {
+        "planned_points": 3,
+        "forecast_tokens": 438849,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "BG1066": {
+        "planned_points": 3,
+        "forecast_tokens": 438849,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1075": {
+        "planned_points": 5,
+        "forecast_tokens": 731415,
+        "forecast_minutes": 29.2,
+        "added": false
+      },
+      "US1076": {
+        "planned_points": 3,
+        "forecast_tokens": 438849,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1077": {
+        "planned_points": 2,
+        "forecast_tokens": 292566,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "US1078": {
+        "planned_points": 3,
+        "forecast_tokens": 438849,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "BG1061": {
+        "planned_points": 2,
+        "forecast_tokens": 292566,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "US1084": {
+        "planned_points": 3,
+        "forecast_tokens": 438849,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1085": {
+        "planned_points": 2,
+        "forecast_tokens": 292566,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "US1086": {
+        "planned_points": 2,
+        "forecast_tokens": 292566,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG1054": {
+        "planned_points": 3,
+        "forecast_tokens": 438849,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "BG1099": {
+        "planned_points": 1,
+        "forecast_tokens": 146283,
+        "forecast_minutes": 5.8,
+        "added": true
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 146283,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 5.84,
+        "source": "measured on claude-opus-5-5: median of RETRO0131, RETRO0132, RETRO0133"
+      }
+    }
+  },
+  "token_forecast": 4534773,
+  "goal_content_review": [
+    {
+      "phase": "plan",
+      "goal": "Rowan's push is judged on a configured gate host, and the gate's documents and weekly run tell the truth.",
+      "answer": "yes",
+      "missing": "",
+      "shortfall": {},
+      "recorded_at": "2026-10-19T10:07:36Z"
+    }
+  ],
+  "unit_actuals": {
+    "US1079": {
+      "minutes": 1407.87,
+      "tokens": 10098487,
+      "started_at": "2026-10-19T10:07:48Z",
+      "start_tokens": 0,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb"
+    },
+    "BG1066": {
+      "minutes": 1388.53,
+      "tokens": 9889864,
+      "started_at": "2026-10-19T10:27:08Z",
+      "start_tokens": 208623,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb"
+    },
+    "US1075": {
+      "minutes": 1335.27,
+      "tokens": 9426526,
+      "started_at": "2026-10-19T11:20:24Z",
+      "start_tokens": 671961,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb"
+    },
+    "US1076": {
+      "minutes": 0.0,
+      "tokens": 0,
+      "started_at": "2026-10-19T12:05:43Z",
+      "start_tokens": 1088174,
+      "open": true,
+      "start_source": "sha256:7dc733d4cecb"
+    },
+    "US1077": {
+      "minutes": 47.18,
+      "tokens": 551611,
+      "started_at": "2026-10-19T15:40:09Z",
+      "start_tokens": 2341480,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb"
+    },
+    "US1078": {
+      "minutes": 80.73,
+      "tokens": 810296,
+      "started_at": "2026-10-19T16:12:20Z",
+      "start_tokens": 2730773,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb"
+    },
+    "BG1061": {
+      "minutes": 138.13,
+      "tokens": 898745,
+      "started_at": "2026-10-19T17:35:12Z",
+      "start_tokens": 3586229,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb"
+    },
+    "US1084": {
+      "minutes": 88.47,
+      "tokens": 651739,
+      "started_at": "2026-10-19T17:44:10Z",
+      "start_tokens": 3612418,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb"
+    },
+    "BG1054": {
+      "minutes": 773.27,
+      "tokens": 5287828,
+      "started_at": "2026-10-19T20:14:20Z",
+      "start_tokens": 4772374,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb"
+    },
+    "BG1099": {
+      "minutes": 50.12,
+      "tokens": 150794,
+      "started_at": "2026-10-20T07:04:57Z",
+      "start_tokens": 9644461,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb"
+    }
+  },
+  "review_base": {
+    "BG1066": 0,
+    "US1079": 0,
+    "US1075": 0,
+    "US1076": 0,
+    "US1077": 0,
+    "US1078": 0,
+    "US1084": 0,
+    "BG1061": 0,
+    "US1085": 0,
+    "US1086": 0,
+    "BG1099": 0,
+    "BG1054": 0
+  },
+  "sprint_goal_verdict": {
+    "verdict": "partial",
+    "note": "Every clause of the goal holds on main, but two of the eleven units are carried, so the definition of done recorded at goal review (all eleven terminal, plus a live proof) is not met. Pushes are judged on devserver1 against exactly the commit pushed, proven live (US1075, US1077, US1078). The TRD and TSD were judged accurate (US1084, US1085, and US1086's documents). The weekly run reads true: dispatched run 39389634097 has corpus-verify at red-criteria 0, baseline 0 (BG1054, BG1099). US1076 (BG1078) and US1086 (BG1095) hit the review cap on test repairs that did not converge; their behaviour and documents are on main."
+  },
+  "close_attempts": [
+    {
+      "at": "2026-10-20T09:35:36Z",
+      "outstanding": 1,
+      "stages": [
+        "gate"
+      ]
+    }
+  ],
+  "close_not_measured": [],
+  "close_tree": "099f3de3f3deac003a2c4af487e961b7da576675",
+  "report_gate_clear": [
+    "BG1054",
+    "BG1061",
+    "BG1066",
+    "BG1099",
+    "US1075",
+    "US1077",
+    "US1078",
+    "US1079",
+    "US1084",
+    "US1085"
+  ],
+  "verified_sha": "6ceeae70fa961a03e1a9b82d7d08f14293413db0",
+  "close_known_issues": [
+    {
+      "source": "lessons-summary",
+      "detail": "refused: LESSONS-SUMMARY.md lists 441 lesson(s) the log at /home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/retros/LESSONS.md does not hold (L-0442: Run each user-facing sentence in a changelog fragment through the CLI before asking for review, as the paperwork reviews already do, L-0441: Probe a premise with an input whose result differs under each hypothesis, such as a key whose code fallback differs from its shipped\u2026, L-0440: A builder that adds a widened env scrub to satisfy a guard test should reuse the pinned list it already has: US0971's `GIT_` scrub broke\u2026 (+438 more)), so this log is not the one the summary was built from. Restore the log from the machine that ran the last close, or merge it, and run this again. Nothing was written."
+    },
+    {
+      "source": "gate",
+      "detail": "lessons-summary: LESSONS-SUMMARY.md is STALE - 2 lesson(s) added since it was regenerated: L-0002: Write a documentation unit's criteria against structured content a test can compare exactly, such as a table cell's set read from the\u2026, L-0001: Before every brief, mutate my own tests as the QA seat does, with paraphrases, swapped clauses and a negation elsewhere in the sentence\u2026; 441 closed or removed since: L-0442: Run each user-facing sentence in a changelog fragment through the CLI before asking for review, as the paperwork reviews already do, L-0441: Probe a premise with an input whose result differs under each hypothesis, such as a key whose code fallback differs from its shipped\u2026, L-0440: A builder that adds a widened env scrub to satisfy a guard test should reuse the pinned list it already has: US0971's `GIT_` scrub broke\u2026 (+438 more). Regenerate it: scripts/lessons.py summary"
+    }
+  ],
+  "ci_runs": {
+    "source": "gh run list",
+    "runs": [
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-20T08:22:25Z",
+        "databaseId": 39392921925,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "e161e6ba02a3f1d4005b722a1b2b8d964782d892",
+        "updatedAt": "2026-10-20T09:21:10Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-20T07:54:18Z",
+        "databaseId": 39389634097,
+        "event": "workflow_dispatch",
+        "headBranch": "main",
+        "headSha": "0de87496b5367962e806b0ba9de5a212e7972489",
+        "updatedAt": "2026-10-20T09:06:01Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-20T07:54:18Z",
+        "databaseId": 39389633678,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "0de87496b5367962e806b0ba9de5a212e7972489",
+        "updatedAt": "2026-10-20T08:52:00Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-10-19T20:47:48Z",
+        "databaseId": 39322298831,
+        "event": "workflow_dispatch",
+        "headBranch": "main",
+        "headSha": "8653d0c978ec6c9086eafee677410452e27fc92d",
+        "updatedAt": "2026-10-19T21:54:37Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T20:47:07Z",
+        "databaseId": 39322204508,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "8653d0c978ec6c9086eafee677410452e27fc92d",
+        "updatedAt": "2026-10-19T21:31:29Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T20:14:01Z",
+        "databaseId": 39317590448,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "d9d0c46774302814253aca2428e52c6588c7f808",
+        "updatedAt": "2026-10-19T21:01:00Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T20:00:45Z",
+        "databaseId": 39315716391,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "bcc3d97d612e3bffce524c4d2b52158f4f4ff416",
+        "updatedAt": "2026-10-19T20:52:52Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T19:35:12Z",
+        "databaseId": 39312220156,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "20be66b1967a56635cecb3b10dae0a463033fc4f",
+        "updatedAt": "2026-10-19T20:16:38Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T18:58:48Z",
+        "databaseId": 39307080528,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "69c8c2106e98b95dd98d2cd613bc8dbfbc1bacf6",
+        "updatedAt": "2026-10-19T19:57:30Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T18:26:56Z",
+        "databaseId": 39302574041,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "7bceb77572428c9b5c52cb83c28dd81552103d18",
+        "updatedAt": "2026-10-19T19:01:02Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T17:28:08Z",
+        "databaseId": 39294371349,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "4bfa55191b929b6a9a580ac9cf76bf71c5c87c24",
+        "updatedAt": "2026-10-19T18:13:14Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T16:44:38Z",
+        "databaseId": 39288005794,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "cde808378bb8e29c951e68e537a49eaa97896e6b",
+        "updatedAt": "2026-10-19T17:27:18Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T16:11:57Z",
+        "databaseId": 39283565141,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "7a33544ac919f04a5f67aa680a1ab83a4bc4d1c9",
+        "updatedAt": "2026-10-19T17:10:10Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T15:39:49Z",
+        "databaseId": 39279699470,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "c6f2239c314920f56f1cafc7b7f0b2adf175812d",
+        "updatedAt": "2026-10-19T16:43:52Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T12:55:22Z",
+        "databaseId": 39255842339,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "83b761349c23401e825080b7b85370a3461dd24c",
+        "updatedAt": "2026-10-19T13:54:28Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T12:02:22Z",
+        "databaseId": 39248977496,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "1a5a9f1b41c7a0b60017b3b81309192bce9b272d",
+        "updatedAt": "2026-10-19T12:47:13Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T11:17:58Z",
+        "databaseId": 39243631708,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "c704e6c70b886c401cdadc680ff855b1a737827d",
+        "updatedAt": "2026-10-19T11:56:17Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T10:58:41Z",
+        "databaseId": 39241288465,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "7e1e9ea5cc67495a23676c5cd7841fbe628c0cf1",
+        "updatedAt": "2026-10-19T11:45:42Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T10:43:59Z",
+        "databaseId": 39239542114,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "449b5a4296542914b011224661bad3c31b4f5a3c",
+        "updatedAt": "2026-10-19T11:19:40Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-19T10:26:15Z",
+        "databaseId": 39237451586,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "14746a9433f156d2627297ee3a5c6454a4bc8bf1",
+        "updatedAt": "2026-10-19T11:10:31Z",
+        "workflowName": "Lint"
+      }
+    ]
+  },
+  "review_rows": {
+    "US1079": [
+      "edb7636621239a9a",
+      "5d661f053af8ff59"
+    ],
+    "BG1066": [
+      "86b771133a36d94b",
+      "720683c19df77906"
+    ],
+    "US1075": [
+      "96db739aa7f95b8b",
+      "6675280099611558"
+    ],
+    "US1076": [
+      "595f9b48419499d8",
+      "9d382858bd4c5201"
+    ],
+    "US1077": [
+      "23c47725ca48b5ec"
+    ],
+    "US1078": [
+      "fbd6a50d6d674789",
+      "633498a487a05a52"
+    ],
+    "BG1061": [
+      "b487883e8808677d",
+      "68fd35388e8c3690"
+    ],
+    "US1084": [
+      "c126308138446018",
+      "fa61d617bea74b5f"
+    ],
+    "US1085": [
+      "54f57d191db30e9c",
+      "2d6fadbb18f609f6"
+    ],
+    "US1086": [
+      "4112804a1d7407d4",
+      "119609a27426ad85"
+    ],
+    "BG1054": [
+      "9bd6f48e7b2d850b",
+      "98153e6f3fc642dd"
+    ],
+    "BG1099": [
+      "bb32c9d9fca1911b"
+    ]
+  },
+  "report_discharged": [],
+  "report": "RPT0021",
+  "report_fingerprint": "69a1a2631ded6070",
+  "report_window_end": "2026-10-20T09:45:29Z"
+}
