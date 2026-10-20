@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-10-19
+**Last Updated:** 2026-10-20
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 131 |
-| In Progress | 2 |
+| Open | 132 |
+| In Progress | 3 |
 | Fixed | 805 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 41 |
 | Superseded | 32 |
-| **Total** | **1098** |
+| **Total** | **1100** |
 
 ## All Bugs
 
@@ -174,6 +174,8 @@
 | [BG1096](BG1096-the-trd-says-verify-ac-run-coverage-refuses.md) | The TRD says verify_ac run --coverage refuses under block and reports under report when coverage is absent; the split is the Done gate's | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1097](BG1097-us1085-s-toolchain-doc-tests-leave-coverage-unpinned.md) | US1085's toolchain-doc tests leave coverage unpinned, still pass three counted phrasings, and fail at collection without PyYAML | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1098](BG1098-agents-md-gives-the-local-boundary-push-series.md) | AGENTS.md gives the local boundary-push series as the push's cost on a clone that names a gate host | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1099](BG1099-us1084-s-tsd-rewording-broke-us0253-ac3-s.md) | US1084's TSD rewording broke US0253 AC3's verifier, which greps for the test-noise leg running in CI | In Progress | Medium | 2026-10-20 | 2026-10-20 |
+| [BG1100](BG1100-gate-py-s-verify-ceiling-still-calls-300.md) | gate.py's verify ceiling still calls 300 s CI's figure, though corpus-verify now runs every criterion under 450 s | Open | Low | 2026-10-20 | 2026-10-20 |
 
 ## Archived Releases
 

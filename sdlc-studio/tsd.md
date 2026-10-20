@@ -202,7 +202,7 @@ console. This is not cosmetic: a green run that prints `ERROR` lines trains ever
 reader, human and agent, to skim past `ERROR`, which is the exact reflex that lets a
 real one through.
 
-The `test-noise` leg **is held in CI**, in the one run of the skill suite through
+The `test-noise` leg **runs in CI**, held in the one run of the skill suite through
 `tools/skill-tests.sh` in `.github/workflows/lint.yml` (`npm run test:skill` runs the same
 script). Where pytest is installed, neither hook holds it: the commit-msg hook runs the
 selected modules through `gate.py --run-tests`, and pytest captures a passing test's output, as
