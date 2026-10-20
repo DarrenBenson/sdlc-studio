@@ -34,9 +34,11 @@ Run every wall-clock assertion in the `serial_only` partition, which runs after 
 ## Further evidence
 
 - 2026-10-08, commit hook on the BG0989 repair (machine quiet, load 0.4): `test_sprint.py::InertVerifierRepairTests::test_a_close_emits_its_cost_line` failed asserting `398s` in the close's output, which printed `close cost: 399s of gate over 2 run(s)`: the fixture records a 398.0s gate run and the close adds its own gate run's measured seconds before rounding, so a run of half a second or more prints 399. Run alone it failed once and passed twice. Same class as the byte-compared durations named above.
+- 2026-10-20, push boundary on devserver1 for fd16f28a, an artefact-only commit (signature paperwork): `test_lean_mutation_ledger_retired.py::MutationLedgerRetiredTests::test_brief_and_close_read_no_ledger` failed on `the close reads the ledger`. The two close outputs differed in `cost: 0s of gate over 1 run(s)` against `1s`, which is sprint.py:12643's rounded measured seconds. The same content had passed `run-suite.sh all` on the same host about 40 minutes earlier (8180 passed, 661 s), and the refused run took 909 s.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
+| 2026-10-20 | Claude Opus 5.5 | Further evidence: the 2026-10-20 push refusal of fd16f28a on a byte-compared close cost line |

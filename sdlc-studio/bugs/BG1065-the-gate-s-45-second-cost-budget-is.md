@@ -31,8 +31,13 @@ Find why conformance costs 121 s and cut it, or re-derive the budget from a reco
 
 The performance NFR's only proxy is permanently red, so a real slowdown is indistinguishable from the standing breach.
 
+## Further evidence
+
+- 2026-10-20, cProfile of `gate.py --root .` on a clean tree at fd16f28a (workstation, quiet): gate cost 330.0 s, conformance 280.2 s over the whole workspace (1086 units). Within conformance, `critic.read_verdicts` is called once per unit (812 times) and re-parses the verdict ledger each time, for 125 s, of which `sdlc_md.table_cells` is 51 s. `verify_ac._collect_nodes` spawns 257 collection subprocesses, for 130 s. In engagement-floor (31.7 s), `decisions.list_decisions` is called 2229 times through `waiver_for`, for 27.6 s. Those three account for about 283 s of the 330 s.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-20 | Claude Opus 5.5 | Further evidence: a profile of the conformance and engagement-floor lanes on a clean tree |

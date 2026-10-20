@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 135 |
+| Open | 136 |
 | In Progress | 0 |
 | Fixed | 808 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 41 |
 | Superseded | 32 |
-| **Total** | **1103** |
+| **Total** | **1104** |
 
 ## All Bugs
 
@@ -179,6 +179,7 @@
 | [BG1101](BG1101-test-repo-hygiene-writes-probe-fixtures-into-the.md) | test_repo_hygiene writes probe fixtures into the real scripts/tests directory, so a parallel test copying that tree can fail | Open | Medium | 2026-10-20 | 2026-10-20 |
 | [BG1102](BG1102-the-corpus-verify-timing-step-s-ceiling-is.md) | The corpus-verify timing step's ceiling is pinned only as an integer, so one as long as the job's own cap passes | Open | Low | 2026-10-20 | 2026-10-20 |
 | [BG1103](BG1103-the-close-binds-the-untracked-files-it-leaves.md) | The close binds the untracked files it leaves into the signature without naming them, so tidying one refuses the sign | Open | Low | 2026-10-20 | 2026-10-20 |
+| [BG1104](BG1104-a-message-only-amend-runs-the-whole-workspace.md) | A message-only amend runs the whole-workspace gate at commit, because the hook's gate lane reads an empty staged diff as no diff to scope to | Open | Low | 2026-10-20 | 2026-10-20 |
 
 ## Archived Releases
 
