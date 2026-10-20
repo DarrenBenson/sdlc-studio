@@ -118,5 +118,29 @@ class CorpusVerifyEnvTests(unittest.TestCase):
                              + r.stdout + r.stderr)
 
 
+    def test_the_ceiling_clears_the_slowest_measured_verifier(self) -> None:
+        """AC4. The verification step's per-verifier ceiling clears the time the job measured for
+        the criterion its timing step times, by the headroom recorded beside it, from a named run.
+        Mutants: a ceiling below the measured time; a measurement with no run id; a headroom that
+        does not match the ceiling; a timing step that times nothing."""
+        steps = _job_steps()
+        timed = [s for s in steps if "verifier-time:" in str(s.get("run", ""))]
+        self.assertEqual(len(timed), 1, "the job has no step timing the slowest criterion")
+        criterion = re.search(r"verifier-time: (\S+)", timed[0]["run"]).group(1)
+        self.assertEqual(criterion, "US0940::AC1", "the timed criterion was not read")
+        story = criterion.split("::")[0]
+        self.assertIn(f"stories/{story}-", timed[0]["run"], "the timing step does not read the criterion's own Verify line")
+        verify = [s for s in steps if "verify-corpus.sh" in str(s.get("run", ""))]
+        self.assertEqual(len(verify), 1)
+        ceiling = int(verify[0]["env"]["SDLC_VERIFY_TIMEOUT"])
+        text = _read(WORKFLOW)
+        block = text[text.index("- name: Corpus verification"):text.index("run: bash tools/verify-corpus.sh full")]
+        m = re.search(r"measured: (\S+) (\d+) s in run (\d{6,}), headroom (\d+) s", block)
+        self.assertTrue(m, "no measured time, run id and headroom are recorded beside the ceiling")
+        self.assertEqual(m.group(1), criterion, "the recorded measurement is not of the timed criterion")
+        measured, headroom = int(m.group(2)), int(m.group(4))
+        self.assertGreater(ceiling, measured, f"the {ceiling} s ceiling does not clear the measured {measured} s")
+        self.assertEqual(ceiling - measured, headroom, "the recorded headroom is not the ceiling less the measured time")
+
 if __name__ == "__main__":
     unittest.main()

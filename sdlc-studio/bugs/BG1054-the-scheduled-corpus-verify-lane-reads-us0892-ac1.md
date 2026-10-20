@@ -26,12 +26,16 @@ Decide the lane's intent and make one reading: either install pytest-xdist in co
 
 - [ ] **AC1** Given the corpus-verify job's own install, when it verifies US0892, then AC1's verifiers run rather than skip, because the job installs pytest-xdist from the declared list
   - **Verify:** pytest tools/tests/test_corpus_verify_env.py::CorpusVerifyEnvTests::test_the_job_installs_the_plugin_us0892_needs
+  - **Verified:** yes (2026-10-20)
 - [ ] **AC2** Given US0957 AC3's `pdftotext` verifier, when the corpus-verify job runs it, then the job's own steps have installed the tool
   - **Verify:** pytest tools/tests/test_corpus_verify_env.py::CorpusVerifyEnvTests::test_the_job_installs_the_pdf_tool_us0957_runs
+  - **Verified:** yes (2026-10-20)
 - [ ] **AC3** Given a High defect filed after v6.1.0 was cut, when US0985 AC2's verifier runs, then it still passes: its verifier is re-pointed to the cut's committed record rather than the live backlog's bar. The criterion is not retired, because `known_issues.py bar` survives and the criterion still pins it (LC-015)
   - **Verify:** pytest tools/tests/test_corpus_verify_env.py::CorpusVerifyEnvTests::test_us0985_ac2_does_not_redden_on_a_later_defect
+  - **Verified:** yes (2026-10-20)
 - [ ] **AC4** Given US0940 AC1's verifier (276 s on a developer machine), when the corpus-verify job runs it, then its per-verifier ceiling clears the verifier's time as measured on the runner, with the measured run id and headroom recorded beside the ceiling, or the verifier is made faster
   - **Verify:** pytest tools/tests/test_corpus_verify_env.py::CorpusVerifyEnvTests::test_the_ceiling_clears_the_slowest_measured_verifier
+  - **Verified:** yes (2026-10-20)
 - [ ] **AC5** Given the repaired job, when it runs on a dispatched workflow, then corpus-verify reports red criteria at the baseline with no NEW entry
   - **Verify:** manual: dispatch lint.yml (`gh workflow run lint.yml`) and read the corpus-verify job's `red-criteria:` line
 

@@ -202,8 +202,8 @@ jobs:
         run: sudo apt-get install -y --no-install-recommends poppler-utils
 
       - name: Time the slowest criterion on this runner
-        # US0940 AC1's verifier took 276 s on a developer machine, under the 300 s per-verifier
-        # ceiling below. Timed here, alone, so the ceiling is held against this runner's figure
+        # US0940 AC1's verifier is the slowest criterion: 276 s on a developer machine, 353 s here.
+        # Timed alone on every run, so the ceiling below is held against this runner's own figure
         # (BG1054). It reports and never fails the job: the verification step judges the criterion.
         run: |
           sel="$(sed -n 's/^  - \*\*Verify:\*\* pytest //p' sdlc-studio/stories/US0940-*.md | head -1)"
@@ -217,8 +217,11 @@ jobs:
         # precommit-selection run tests take 97 to 136 s on a developer machine. At gate.py's
         # 120 s default a slower runner times them out, and the baseline cannot tell a timeout
         # from a regression.
+        # The ceiling is set from a MEASURED run, recorded here in the form the test reads:
+        # measured: US0940::AC1 353 s in run 39322298831, headroom 97 s
+        # At 300 s that verifier, 353 s on this runner, read red in the same run (BG1054).
         env:
-          SDLC_VERIFY_TIMEOUT: 300
+          SDLC_VERIFY_TIMEOUT: 450
         run: bash tools/verify-corpus.sh full
 
   windows-smoke:
