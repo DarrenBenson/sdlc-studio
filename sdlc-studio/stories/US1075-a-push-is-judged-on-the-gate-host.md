@@ -1,6 +1,6 @@
 # US1075: A push is judged on the gate host this clone configures
 
-> **Status:** In Progress
+> **Status:** Done
 > **Delivers:** CR0635
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new

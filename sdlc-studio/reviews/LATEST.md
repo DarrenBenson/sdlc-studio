@@ -1,5 +1,5 @@
 <!-- close-status:begin -->
-> **RUN-01M59TRM closed running.** 10 unit(s) in the batch. **The run signature is OWED and is the operator's** - `sprint sign` seals the batch in one signature.
+> **RUN-01M59TRM closed partial.** 10 unit(s) in the batch. **The run is SIGNED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 > **RUN-01M59TRM, the second 6.2 run.** Goal: "Rowan's push is judged on a configured gate host,
@@ -7,6 +7,8 @@
 > one QA seat per unit. Nine reached Done or Fixed, and BG1099 was added and fixed. Two hit the
 > review cap and are carried. First-review approval was 1 of 10, against 9 of 19 the run before
 > (RETRO0135, CR0650). Every push was judged on devserver1 through the hook itself.
+> Signed on 2026-10-20 over RPT0021 by the operator; the agent entered the command at the
+> operator's instruction ("I sign it off").
 
 ## What landed
 
@@ -28,9 +30,7 @@
 
 ## What is owed
 
-- **The run's signature:** `sprint.py sign --report <the close's page> --principal <operator>`.
-  The author cannot sign.
-- **Two units carried at the review cap,** escalated for the operator: US1076 as BG1078 (its fix
+- **Two units carried at the review cap,** going into run three (D0381): US1076 as BG1078 (its fix
   is on main; its test repair was the unconverged part) and US1086 as BG1095 (its documents are
   accurate; its fall-back test reads a fixed phrase list).
 - **The lessons log (D0371).** It is still on studypc, which was off at this close, so the close
@@ -40,8 +40,9 @@
 - **Known issues carried, all not-stop-ship** (RETRO0135): BG1070-BG1076, BG1078-BG1098,
   BG1100-BG1102 and CR0650. The Mediums are BG1078 and BG1095 (the carried units), BG1087 (mutation scoping under a
   user's diff.mnemonicprefix), and BG1101 (a probe-fixture race that refused one push).
-- **Next run (D0378):** BG0962, BG1000 and CR0645-CR0649, then tag 6.2.0. CR0650 (the author's
-  self-check as a gate) is the process fix this run's numbers ask for.
+- **Next run (D0381, superseding D0378):** CR0650 first (the author's self-check as a gate),
+  then BG1078 and BG1095, then BG0962, BG1000, CR0645-CR0649 and US1080-US1083. The operator
+  approves the plan before delivery starts, and 6.2.0 is tagged once that run is signed.
 
 ## Learned the hard way
 

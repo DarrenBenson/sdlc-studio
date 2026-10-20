@@ -1,6 +1,6 @@
 # US1079: A skill-maintainer card is the Primary for the repository-tooling interface, beside Maya as Primary for the shipped skill
 
-> **Status:** In Progress
+> **Status:** Done
 > **Delivers:** CR0648
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio new

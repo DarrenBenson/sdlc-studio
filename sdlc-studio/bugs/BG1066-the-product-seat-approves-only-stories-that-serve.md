@@ -1,6 +1,6 @@
 # BG1066: The product seat approves only stories that serve a Primary persona's goal, so a declared Secondary's stories have no approving lens
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/templates/personas/amigos/product.md, sdlc-studio/personas/seats/product.md, .claude/skills/sdlc-studio/scripts/tests/test_seat_admits_secondary.py, changelog.d/BG1066.md
