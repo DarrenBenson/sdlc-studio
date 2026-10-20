@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 132 |
+| Open | 133 |
 | In Progress | 3 |
 | Fixed | 805 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 41 |
 | Superseded | 32 |
-| **Total** | **1100** |
+| **Total** | **1101** |
 
 ## All Bugs
 
@@ -176,6 +176,7 @@
 | [BG1098](BG1098-agents-md-gives-the-local-boundary-push-series.md) | AGENTS.md gives the local boundary-push series as the push's cost on a clone that names a gate host | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1099](BG1099-us1084-s-tsd-rewording-broke-us0253-ac3-s.md) | US1084's TSD rewording broke US0253 AC3's verifier, which greps for the test-noise leg running in CI | In Progress | Medium | 2026-10-20 | 2026-10-20 |
 | [BG1100](BG1100-gate-py-s-verify-ceiling-still-calls-300.md) | gate.py's verify ceiling still calls 300 s CI's figure, though corpus-verify now runs every criterion under 450 s | Open | Low | 2026-10-20 | 2026-10-20 |
+| [BG1101](BG1101-test-repo-hygiene-writes-probe-fixtures-into-the.md) | test_repo_hygiene writes probe fixtures into the real scripts/tests directory, so a parallel test copying that tree can fail | Open | Medium | 2026-10-20 | 2026-10-20 |
 
 ## Archived Releases
 
