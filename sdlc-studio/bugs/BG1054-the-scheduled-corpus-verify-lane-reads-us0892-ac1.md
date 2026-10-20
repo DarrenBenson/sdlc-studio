@@ -1,6 +1,6 @@
 # BG1054: The scheduled corpus-verify lane reads US0892 AC1 red because its job installs no pytest-xdist
 
-> **Status:** In Progress
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .github/workflows/lint.yml, tools/verify-corpus-baseline.txt, sdlc-studio/stories/US0985-v6-1-0-is-cut-version-changelog-known.md, tools/tests/test_corpus_verify_env.py, changelog.d/BG1054.md
@@ -38,6 +38,7 @@ Decide the lane's intent and make one reading: either install pytest-xdist in co
   - **Verified:** yes (2026-10-20)
 - [ ] **AC5** Given the repaired job, when it runs on a dispatched workflow, then corpus-verify reports red criteria at the baseline with no NEW entry
   - **Verify:** manual: dispatch lint.yml (`gh workflow run lint.yml`) and read the corpus-verify job's `red-criteria:` line
+  - **Verified:** manual (2026-10-20) - dispatched run 39389634097 (lint.yml at 0de87496): corpus-verify read `red-criteria: 0 (baseline 0) OK - identities match`, no NEW entry
 
 ## Notes
 
@@ -57,9 +58,13 @@ is judged here: a criterion reading red only because of it would show as NEW.
 | --- | --- | --- | --- | --- | --- |
 | 39226633444 (before the fix) | 35a795df | 0 (baseline 0) | 3 | US0892::AC1 US0957::AC3 US0985::AC2 | not timed |
 | 39322298831 (part one) | 8653d0c9 | 0 (baseline 0) | 2 | US0253::AC3 (BG1099) US0940::AC1 (at the 300 s ceiling) | US0940::AC1 353 s, exit 0 |
+| 39389634097 (part two) | 0de87496 | 0 (baseline 0) | 0 | none | US0940::AC1 360 s, exit 0 (under the 450 s ceiling) |
 
-Run 39322298831 no longer reads US0892 AC1, US0957 AC3 or US0985 AC2 red, and names no criterion
-red that pytest-xdist could explain, so the baseline is not re-banked.
+Run 39322298831 no longer reads US0892 AC1, US0957 AC3 or US0985 AC2 red. Whether pytest-xdist
+moves US0940 AC1 is not settled by these rows: it was green in 39226633444 (no xdist) and red in
+39322298831 (with xdist), but scheduled run 38246079155, also without xdist, read it red too. The
+450 s ceiling was measured with xdist installed, so the lane is covered either way. The baseline
+is not re-banked.
 
 ## Revision History
 

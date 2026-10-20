@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 133 |
-| In Progress | 2 |
-| Fixed | 806 |
+| Open | 134 |
+| In Progress | 1 |
+| Fixed | 807 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 41 |
 | Superseded | 32 |
-| **Total** | **1101** |
+| **Total** | **1102** |
 
 ## All Bugs
 
@@ -129,7 +129,7 @@
 | [BG1051](BG1051-the-close-s-chain-report-cuts-every-refusal.md) | The close's chain report cuts every refusal line at 160 characters, hiding which unit is blocked and why | Open | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1052](BG1052-a-unit-whose-risk-band-rises-after-its.md) | A unit whose risk band rises after its review is found under-reviewed only at the close | Open | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1053](BG1053-us1004-did-not-converge-in-review-round-3.md) | US1004 did not converge in review: round 3 REJECT findings | Fixed | Medium | 2026-10-14 | 2026-10-14 |
-| [BG1054](BG1054-the-scheduled-corpus-verify-lane-reads-us0892-ac1.md) | The scheduled corpus-verify lane reads US0892 AC1 red because its job installs no pytest-xdist | In Progress | Medium | 2026-10-14 | 2026-10-14 |
+| [BG1054](BG1054-the-scheduled-corpus-verify-lane-reads-us0892-ac1.md) | The scheduled corpus-verify lane reads US0892 AC1 red because its job installs no pytest-xdist | Fixed | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1055](BG1055-a-retro-scaffolded-by-the-close-and-committed.md) | A retro scaffolded by the close and committed before the close re-runs turns the release-verify lane red | Open | Low | 2026-10-15 | 2026-10-15 |
 | [BG1056](BG1056-bg1053-did-not-converge-in-review-round-2.md) | BG1053 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-15 | 2026-10-15 |
 | [BG1057](BG1057-the-one-list-test-s-check-that-ci.md) | The one-list test's check that ci installs from requirements-dev.txt sits outside its self-tested rules | Open | Low | 2026-10-15 | 2026-10-15 |
@@ -177,6 +177,7 @@
 | [BG1099](BG1099-us1084-s-tsd-rewording-broke-us0253-ac3-s.md) | US1084's TSD rewording broke US0253 AC3's verifier, which greps for the test-noise leg running in CI | Fixed | Medium | 2026-10-20 | 2026-10-20 |
 | [BG1100](BG1100-gate-py-s-verify-ceiling-still-calls-300.md) | gate.py's verify ceiling still calls 300 s CI's figure, though corpus-verify now runs every criterion under 450 s | Open | Low | 2026-10-20 | 2026-10-20 |
 | [BG1101](BG1101-test-repo-hygiene-writes-probe-fixtures-into-the.md) | test_repo_hygiene writes probe fixtures into the real scripts/tests directory, so a parallel test copying that tree can fail | Open | Medium | 2026-10-20 | 2026-10-20 |
+| [BG1102](BG1102-the-corpus-verify-timing-step-s-ceiling-is.md) | The corpus-verify timing step's ceiling is pinned only as an integer, so one as long as the job's own cap passes | Open | Low | 2026-10-20 | 2026-10-20 |
 
 ## Archived Releases
 

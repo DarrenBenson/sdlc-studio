@@ -2,68 +2,52 @@
 > **RUN-01M4R168 closed goal-reached.** 18 unit(s) in the batch. **The run is SIGNED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
+> **RUN-01M59TRM, the second 6.2 run.** Goal: "Rowan's push is judged on a configured gate host,
+> and the gate's documents and weekly run tell the truth." Eleven units planned (31 points),
+> one QA seat per unit. Nine reached Done or Fixed, and BG1099 was added and fixed. Two hit the
+> review cap and are carried. First-review approval was 1 of 10, against 9 of 19 the run before
+> (RETRO0135, CR0650). Every push was judged on devserver1 through the hook itself.
 
-# RV0028 - Unified Review - 6.1.0 plus 6.2 on main, before the second 6.2 run
+## What landed
 
-> **Reviewer:** Claude Opus 5.5, one read-only reviewer per leg | **Date:** 2026-10-19
-> **Project version:** 6.1.0 | **Triggered by:** D0372 | **Predecessor unified:** RV0010 (2026-07-16)
-> **Record:** [RV0028](RV0028-unified-review-before-the-second-6-2-run.md) holds every finding
-> with its evidence and where it was filed.
+- **The push is judged on a gate host.** With `sdlc.gateHost` set, the pre-push hook sends
+  exactly the commit pushed to a repository kept on the host for this clone, and judges it there
+  (US1075). Runs on one host are serialised behind a lock, and an abandoned push stops its run
+  (US1076, carried). `remote-gate.sh doctor` says whether a host can judge a push (US1077).
+  `tools/run-suite.sh` runs on the host against the working tree, and `--check` reads its verdict
+  (US1078). Each was proven live on devserver1: a push judged in about ten minutes, and
+  `run-suite.sh all` green with 8157 passed.
+- **The documents tell the truth about the gate.** The TRD and TSD name the three hooks, the
+  boundaries, the manual pre-tag steps, the gate's `.local` writes, its declared budget (US1084),
+  every dependency, CI job and lint check (US1085), and the gate host (US1086, carried).
+- **The weekly run reads true.** corpus-verify installs pytest-xdist and pdftotext, US0985 AC2
+  reads the cut's record, and the per-verifier ceiling is set from a measured runner figure
+  (BG1054). US1084's rewording that broke US0253 AC3 is fixed (BG1099).
+- **The committed lessons log passes MD026** (BG1061). A second Primary, Rowan Achterberg, owns
+  the repository-tooling interface (US1079), and the product seat judges by interface (BG1066).
 
-## Headline
+## What is owed
 
-The product is ahead of its documents by about three months. The PRD, TRD and TSD each describe
-the gate as one pre-commit hook. They miss the commit-msg and pre-push split, the boundary gates and
-the move of run records and evidence into committed storage. The TRD and PRD both say only stories
-execute Verify lines, when bugs do too. RUN-01M4R168 closed and was signed on 2026-10-16 (RPT0020).
-Main is green.
-
-| Leg | Verdict | Filed to |
-| --- | --- | --- |
-| PRD (25) | Requirements satisfied: **no**. Gaps: BG1063 (a documented gate no code reads), BG0959, BG1023, and `reconcile --scope` | CR0647, BG1063 |
-| TRD (25) | Current: **no**. 1 Critical (TRD-1); the hook tier is undocumented; 3 ADRs stale, 1 unbuilt | CR0644, CR0645, BG1064 |
-| TSD (24) | Current: **no**. A commit "runs the whole gate"; coverage 89% in CI, not 82% | CR0644, CR0646, BG1065 |
-| Persona (11) | Current: **no**. None stale; Maya's card trails the work; no maintainer card | CR0648, BG1066, D0373 |
-| Cross-doc | Concerns. Verifier scope, network paths and the gate tier disagree with the code | as above |
-
-CRs: 15 Proposed (none past 14 days), 25 In Progress (all on Draft 6.2 epics), 520 Complete.
-RFCs: none stalled. Agent instructions: clean. No auto-fixes; they land with CR0647. CR0649
-extends the freshness census to the PRD and TSD so the next drift is caught when it happens.
-
-## Rulings (operator, 2026-10-18 and 2026-10-19)
-
-- **D0369, superseded by D0376: run two** is EP0288 (CR0635's remote gate, US1075-US1078),
-  BG1061, and CR0644, the TRD and TSD gate refresh. Refine CR0644 before planning.
-- **D0370:** devserver1's push gate with `--no-verify` stays in force until US1075 ships.
-- **D0371:** once BG1061 lands, the agent copies studypc's `.local/lessons.md` over ssh. That
-  needs studypc switched on.
-- **D0373:** add a skill-maintainer persona card.
-- **D0374:** run a stakeholder consult for persona-changing epics (EP0287 first).
-- **D0375:** the pre-tag `--release`, record-green and tag-check steps stay manual.
-
-## What is open
-
-- **The lessons digest** predates RETRO0134's lessons until the log migrates (D0371, after BG1061);
-  RPT0020 carries it as a known issue.
-- **6.2 release blockers:** BG0962 and BG1000, the open High bugs. CI's corpus-verify job is red
-  (BG1054).
-- **Carried from RETRO0134, all not-stop-ship:** the Mediums are BG1050, BG1051, BG1052, BG1054,
-  BG1058, BG1059 and BG1060. Filed since: BG1062 and BG1067 (filing frictions).
+- **The run's signature:** `sprint.py sign --report <the close's page> --principal <operator>`.
+  The author cannot sign.
+- **Two units carried at the review cap,** escalated for the operator: US1076 as BG1078 (its fix
+  is on main; its test repair was the unconverged part) and US1086 as BG1095 (its documents are
+  accurate; its fall-back test reads a fixed phrase list).
+- **The lessons log (D0371).** It is still on studypc, which was off at this close, so the close
+  refuses at its lessons step. Copy studypc's `sdlc-studio/.local/lessons.md` into this clone's
+  `sdlc-studio/.local/` (not to the committed path), so the migration normalises its headings
+  (BG1061), then `lessons.py summary`.
+- **Known issues carried, all not-stop-ship** (RETRO0135): BG1070-BG1076, BG1078-BG1098,
+  BG1100-BG1102 and CR0650. The Mediums are BG1078 and BG1095 (the carried units), BG1087 (mutation scoping under a
+  user's diff.mnemonicprefix), and BG1101 (a probe-fixture race that refused one push).
+- **Next run (D0378):** BG0962, BG1000 and CR0645-CR0649, then tag 6.2.0. CR0650 (the author's
+  self-check as a gate) is the process fix this run's numbers ask for.
 
 ## Learned the hard way
 
-- A test that enumerates a tool's spellings never converges; hold the input to exact allowed
-  forms instead (BG1056).
-- `git stash create` snapshots the working tree, not the index; build a judged commit with
-  `git commit-tree "$(git write-tree)" -p HEAD`.
-- A retro scaffolded before a `batch add` omits the late units; read its Batch line against the
-  run state before closing (BG1059).
-- Documents drift wherever no census reads them: the TRD's counted bands held, while the PRD's
-  and TSD's pinned counts went stale (CR0649).
-
-## History
-
-- RV0028 (2026-10-19): this review.
-- RUN-01M4R168 (RPT0020, signed 2026-10-16 by the operator, the command entered by the agent at
-  the operator's instruction): ledger rulings, sealed runs, and gates that state their needs.
-- RUN-01M45FV6 (RPT0019, signed 2026-10-05): sign seals only a page that still checks (BG0940).
+- A test of prose by phrase list never converges. Every round a reviewer found a paraphrase it
+  missed (US1084, US1085, US1086). Judge structured content (a table cell's set, read from the
+  source) instead.
+- A rule nobody's command enforces gets broken under time pressure, even by the agent who wrote
+  it down: the full suite skipped before a push, a regression filed as a flake (BG1077). Gate it
+  (CR0650, LL0027).

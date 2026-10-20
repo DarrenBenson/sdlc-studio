@@ -144,3 +144,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0132](RETRO0132-run-01m40tsj-the-v6-1-sprint.md) | RUN-01M40TSJ the v6.1 sprint | 2026-10-03 | -- | -- |
 | [RETRO-0133](RETRO0133-run-01m45fv6-sign-seals-only-a-page-that.md) | RUN-01M45FV6: sign seals only a page that still checks | 2026-10-05 | -- | -- |
 | [RETRO-0134](RETRO0134-maya-s-ledger-and-signed-runs-keep-what.md) | Maya's ledger and signed runs keep what was decided, and her gates say up front what they need and cost | 2026-10-15 | -- | -- |
+| [RETRO-0135](RETRO0135-rowan-s-push-is-judged-on-a-configured.md) | Rowan's push is judged on a configured gate host, and the gate's documents and weekly run tell the truth | 2026-10-20 | -- | -- |
