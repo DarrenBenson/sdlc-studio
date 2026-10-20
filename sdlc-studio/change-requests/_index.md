@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 13 |
+| Proposed | 14 |
 | Approved | 0 |
 | In Progress | 27 |
 | Complete | 520 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 60 |
 | Blocked | 0 |
-| **Total** | **649** |
+| **Total** | **650** |
 
 ## All Changes
 
@@ -61,6 +61,7 @@
 | [CR-0647](CR0647-refresh-the-prd-to-v6-1-0-plus.md) | Refresh the PRD to v6.1.0 plus 6.2: release markers, the features shipped since July, the business rules and NFRs that moved, and counts as bands | Proposed | Medium | Improvement | 2026-10-19 | -- |
 | [CR-0648](CR0648-refresh-the-persona-registry-a-skill-maintainer-card.md) | Refresh the persona registry: a skill-maintainer card (D0373), Maya's and Trevor's cards brought to current work, the PRD outcome citations and the index | In Progress | Medium | Improvement | 2026-10-19 | EP0289 |
 | [CR-0649](CR0649-extend-the-doc-freshness-census-from-the-trd.md) | Extend the doc_freshness census from the TRD to the PRD and TSD, so a pinned count or stale baseline in either is caught when it drifts | Proposed | Medium | Improvement | 2026-10-19 | -- |
+| [CR-0650](CR0650-the-author-s-self-check-is-a-step.md) | The author's self-check is a step the tools run and require, not a rule an agent remembers | Proposed | High | Process | 2026-10-19 | -- |
 
 ## Archived Releases
 
