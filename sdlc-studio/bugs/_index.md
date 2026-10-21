@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 129 |
+| Open | 130 |
 | In Progress | 0 |
 | Fixed | 809 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 38 |
-| **Total** | **1110** |
+| **Total** | **1111** |
 
 ## All Bugs
 
@@ -186,6 +186,7 @@
 | [BG1108](BG1108-a-carried-unit-whose-repair-landed-before-the.md) | A carried unit whose repair landed before the new run's base has an empty review diff, so its redelivery review cannot block | Open | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1109](BG1109-the-artefact-gate-s-conformance-and-engagement-floor.md) | The artefact gate's conformance and engagement-floor lanes re-read the verdict ledger, the decisions log and each verifier's collection once per unit | Open | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1110](BG1110-backlog-triage-s-duplicate-lens-has-no-way.md) | backlog_triage's duplicate lens has no way to record a pair confirmed distinct, so a triaged pair is re-reported on every run | Open | Low | 2026-10-21 | 2026-10-21 |
+| [BG1111](BG1111-the-session-token-meter-sums-every-usage-record.md) | The session token meter sums every usage record, but the harness repeats a message's usage on each of its content blocks, so a run's measured tokens are about 2.5 times what it spent | Open | Medium | 2026-10-21 | 2026-10-21 |
 
 ## Archived Releases
 
