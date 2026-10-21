@@ -2569,6 +2569,60 @@ def assert_brief_claim_pass(brief_text: str) -> None:
                          f"- a claim the pass cannot mark that way is left unruled; refused")
 
 
+# --- The author's self-check ---------------------------------------------------------------
+# What the reviewer is told to run, turned on the author's own work before the brief is handed
+# over. Every instruction is READ from the brief's own texts - the claim-inventory block and the
+# practice to mutate the author's tests - so the author is never told something the reviewer is
+# not, and the two cannot drift apart (LL0042).
+AUTHOR_SELF_CHECK_HEADING = ("--- AUTHOR SELF-CHECK (run it on your own work before handing the "
+                             "brief over) ---")
+_MUTATE_PRACTICE_LEAD = "Mutate the author's TESTS"
+
+
+def _paragraph(block: str, lead: str) -> str:
+    """The paragraph of `block` that starts with `lead`, on one line; "" when none does."""
+    for para in re.split(r"\n[ \t]*\n", block):
+        if para.strip().startswith(lead):
+            return " ".join(para.split())
+    return ""
+
+
+def author_self_check(repo_root: Path | str, unit: str) -> str:
+    """The section `critic.py brief` prints on stderr before its footer: the claim inventory and
+    the mutation pass the reviewer will run, named over this unit's own surfaces and tests, for
+    the author to run first.
+
+    The surfaces are the commit message, every prose surface the brief's claim inventory names
+    (`CLAIM_SURFACES`) and each changelog fragment the unit's Affects declares - read from its
+    Affects, never from its id, because a carried bug ships its story's fragment. The mutation
+    targets are the test files its Affects declares."""
+    root = Path(repo_root)
+    found = sdlc_md.find_by_id(root, unit)
+    if not found:
+        raise ValueError(f"no artefact with id {unit!r} - the self-check needs a real unit")
+    import file_finding  # noqa: PLC0415 - sibling; its test-path convention is the family's
+    affects = sdlc_md.affects_files(sdlc_md.read_text_safe(found[0]))
+    fragments = [a for a in affects if a.startswith("changelog.d/") and a.endswith(".md")]
+    tests = [a for a in affects if file_finding.is_test_path(a)]
+    claims = " ".join("\n".join(_CLAIM_INVENTORY_BLOCK.splitlines()[1:]).split())
+    mutate = _paragraph(_REVIEW_PRACTICES_BLOCK, _MUTATE_PRACTICE_LEAD)
+    surfaces = ["the commit message", *CLAIM_SURFACES, *fragments]
+    lines = [AUTHOR_SELF_CHECK_HEADING,
+             "The reviewer runs the two passes below on this unit. Run them first, so the review "
+             "confirms the work rather than finding what your own pass would have found.",
+             "",
+             f"1. Claim inventory, over: {'; '.join(surfaces)}.",
+             (f"   The unit's changelog fragments: {', '.join(fragments)}." if fragments else
+              "   The unit's Affects declares no changelog fragment."),
+             f"   {claims}",
+             "",
+             (f"2. Mutation pass, over: {', '.join(tests)}." if tests else
+              "2. Mutation pass: the unit's Affects declares no test file, so there is no test "
+              "of its own to mutate."),
+             f"   {mutate}"]
+    return "\n".join(lines)
+
+
 def tier_for(repo_root: Path | str, unit: str) -> str:
     """The review depth this unit's RISK earns, derived from `route.estimate`'s band.
 
@@ -3448,6 +3502,8 @@ def cmd_brief(args: argparse.Namespace) -> int:
             fp = rejoinder_fingerprint(text)
             note_brief(args.root, args.unit, args.seat, tier, fp, rejoinder=True,
                        explicit=explicit)
+            # A repair is the author's work too, so a re-review is preceded by the same check.
+            print(author_self_check(args.root, args.unit), file=sys.stderr)
             how = "chosen" if explicit else "derived from the unit's risk band"
             print(f"\nreview tier: {tier} ({how})\n"
                   f"brief fingerprint: {fp}\n"
@@ -3474,6 +3530,9 @@ def cmd_brief(args: argparse.Namespace) -> int:
             fp = brief_fingerprint(text)
             note_brief(args.root, args.unit, args.seat, tier, fp, rejoinder=False,
                        explicit=explicit)
+            # The author's self-check, on stderr so the brief a reviewer reads from a file
+            # carries none of it and its fingerprint is unmoved.
+            print(author_self_check(args.root, args.unit), file=sys.stderr)
             # On stderr so the brief itself stays pipeable, and stated as the next command so
             # a reviewer does not have to know the flag exists. The tier is carried INTO that
             # command: a tier printed and not recorded is the state this whole flag was in.
