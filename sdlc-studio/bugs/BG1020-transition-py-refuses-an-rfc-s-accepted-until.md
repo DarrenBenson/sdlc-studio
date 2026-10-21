@@ -27,8 +27,13 @@ Decide which is right and make the other match: either an RFC's Accepted is the 
 - [ ] **AC1** Following reference-rfc.md's accept steps through the shipped tools ends with the RFC in the state the reference names, with no --force
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_rfc_accept_with_open_children.py::RfcAcceptTests::test_the_documented_accept_needs_no_force
 
+## Triage (2026-10-21)
+
+- Ruled (D0388): an RFC's Accepted status means decided; delivery is tracked by the units it decomposes into, as a change request derives Complete. The fix makes reference-rfc.md say so in both places (:85 and :101).
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

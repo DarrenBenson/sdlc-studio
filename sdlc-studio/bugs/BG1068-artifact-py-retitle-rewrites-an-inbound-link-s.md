@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py, changelog.d/BG1068.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, tools/check_links.py, .claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, changelog.d/BG1068.md
 > **Evidence:** EP0289 after `artifact.py retitle` of US1080, US1081 and US1082 on 2026-10-19: the three breakdown links pointed at the new slugs and kept the old titles as text, until hand-corrected.
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ The epic, the first thing a reader opens, names work by a title nobody uses any 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

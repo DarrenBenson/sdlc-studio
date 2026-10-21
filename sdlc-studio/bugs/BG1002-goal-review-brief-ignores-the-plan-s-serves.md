@@ -3,8 +3,8 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_live_state.py, changelog.d/BG1002.md
-> **Evidence:** homelab RUN-01M4EMNN goal review, 2026-10-08
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_live_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1002.md
+> **Evidence:** a consuming project's RUN-01M4EMNN goal review, 2026-10-08
 > **Created:** 2026-10-08
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -12,7 +12,7 @@
 
 ## Summary
 
-In the homelab consuming project (RUN-01M4EMNN, 2026-10-08) `sprint plan --write --serves "Household Member"` printed 'goal serves: Household Member (Served)', but `sprint goal-review brief` for every seat then said 'Goal serves: NONE - the goal names no PRD outcome or persona' and its 'Personas designed for' list omitted the Household Member entirely (it listed AI Agent, Operator and the declined Platform Collector). The same brief said 'Batch: 14 unit(s)' after two `sprint batch add` calls had made it 16. Seats are therefore briefed against a goal with no served persona and a batch that is not the one under review - BG0277/BG0381's class (the brief derives from a stale snapshot), on two more fields.
+In a consuming project (RUN-01M4EMNN, 2026-10-08) `sprint plan --write --serves "Household Member"` printed 'goal serves: Household Member (Served)', but `sprint goal-review brief` for every seat then said 'Goal serves: NONE - the goal names no PRD outcome or persona' and its 'Personas designed for' list omitted the Household Member entirely (it listed AI Agent, Operator and the declined Platform Collector). The same brief said 'Batch: 14 unit(s)' after two `sprint batch add` calls had made it 16. Seats are therefore briefed against a goal with no served persona and a batch that is not the one under review - BG0277/BG0381's class (the brief derives from a stale snapshot), on two more fields.
 
 ## Steps to Reproduce
 
@@ -42,3 +42,4 @@ Read `serves` and the batch from the live run state (run-state.json), not the pl
 | --- | --- | --- |
 | 2026-10-08 | sdlc-studio | Filed |
 | 2026-10-09 | Claude Opus 5.5 (triage) | Triaged: confirmed by the code path; Affects corrected; criteria made executable |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

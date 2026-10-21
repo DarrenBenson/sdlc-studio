@@ -1,7 +1,7 @@
 # BG1090: test_output_prints_in_declared_order_whatever_finishes_first failed one subtest under heavy load, and passes alone; not yet diagnosed
 
 > **Status:** Open
-> **Severity:** Low
+> **Severity:** Medium
 > **Points:** 1
 > **Affects:** tools/tests/test_lean_precommit_parallel.py, changelog.d/BG1090.md
 > **Evidence:** 2026-10-19 19:00, studypc2, tools suite at 0d892e52's parent tree plus its fix: `SUBFAILED(run='3') tools/tests/test_lean_precommit_parallel.py::ParallelLaneTests::test_output_prints_in_declared_order_whatever_finishes_first`, 1 failed, 975 passed in 735.65s; three solo re-runs passed (about 12 s each).
@@ -24,8 +24,8 @@ Read the failing subtest's assertion under load (capture its output), and either
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The declared-order test's cause is named, and the test passes under a parallel suite at load
-  - **Verify:** pytest tools/tests/test_lean_precommit_parallel.py::ParallelLaneTests::test_output_prints_in_declared_order_whatever_finishes_first
+- [ ] **AC1** Given each lane started later than the 0.25 s step between the declared sleeps (a start delay the fixture injects, as load does), when the declared-order test's commit runs, then the verdicts still print in declared order, and the test's own Given does not depend on sleep ordering
+  - **Verify:** pytest tools/tests/test_lean_precommit_parallel.py::ParallelLaneTests::test_declared_order_holds_when_lanes_start_late
 
 ## Impact
 
@@ -36,3 +36,4 @@ A push or a local suite run can be refused by a failure that may or may not be a
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

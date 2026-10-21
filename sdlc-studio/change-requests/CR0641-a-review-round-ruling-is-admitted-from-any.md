@@ -1,6 +1,6 @@
 # CR-0641: A review-round ruling is admitted from any accepted decision about the unit, not one that authorises a round
 
-> **Status:** Proposed
+> **Status:** Rejected
 > **Priority:** P3
 > **Type:** Improvement
 > **Size:** S
@@ -32,3 +32,4 @@ Require a structured subject (`decisions.py rule --subject review-round:<unit>`)
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | sdlc-studio | Raised |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): Rejected, not beneficial (LL0056): the tightening would have caught nothing, because all three rulings on the ledger (D0352, D0353, D0368) were genuine round authorisations, and the CR states no criteria or yield |

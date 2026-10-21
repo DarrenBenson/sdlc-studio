@@ -24,8 +24,8 @@ Pin coverage from `verify_ac`'s own absent-module message, judge a count by any 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Deleting the TRD's coverage clause, or adding 'a ten-check chain' to the TSD, turns the toolchain-doc tests red
-  - **Verify:** pytest tools/tests/test_lean_gate_toolchain_docs_residuals.py::ToolchainDocsResidualTests
+- [ ] **AC1** Given coverage deleted from the TRD's soft-dependency row, when the toolchain-doc tests run, then they fail: the soft dependencies the test derives include each third-party module a shipped script imports in a `python -c` subprocess probe (coverage, from verify_ac.py's coverage_version), not only its guarded imports
+  - **Verify:** pytest tools/tests/test_lean_gate_toolchain_docs.py::GateToolchainDocsTests::test_a_subprocess_probed_soft_dependency_is_named
 
 ## Impact
 
@@ -36,3 +36,4 @@ A later edit can drop a true claim or restore a count with the document tests gr
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

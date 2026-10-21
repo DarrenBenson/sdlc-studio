@@ -37,9 +37,18 @@
 - The runtime field has no tooled writer: `artifact.py new --type story` omits it, `--template full` writes the placeholder, and the 16 of 993 stories here that carry it all say false. Until something writes it, the configured-path trigger is the practical one. If the operator follows the panel and drops the field, AC2 is struck and the story is 2 points.
 - AGENTS.md and reference-sprint.md say 'one independent reviewer per unit'; amended to 'and a second seat of a different role on a high-risk unit' only if the operator rules CR0622 in.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- No criterion covers the AGENTS.md and reference-sprint.md change from 'one independent reviewer per unit' to 'plus a second seat of a different role on a high-risk unit', though both files are in Affects and D0356 now requires it. Add a structured check or drop them from Affects
+- The Notes' conditionals ('if the operator follows the panel and drops the field'; 'only if the operator rules CR0622 in') are settled by D0356 and should be struck
+- Depends on US1029, US1032 and US1033 (all Draft)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G10 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

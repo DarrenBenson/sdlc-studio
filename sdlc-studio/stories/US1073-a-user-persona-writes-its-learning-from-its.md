@@ -28,7 +28,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the brief reads every user persona's memory, or only observed entries, so recorded feedback is lost
 - AC2 must fail on: the goal review carries every persona's learnings, or carries observed entries as if they were learnings
 - AC3 must fail on: a user persona proposes with nothing behind it, the same unevidenced learning the seat path refuses
@@ -38,9 +38,18 @@
 - Reuses the seat path's propose, approve and signature with `--persona <card stem>`; any seat may approve. The renderer is the memory brief story's, keyed by the card stem.
 - Edits the goal-review listing after US1040 and the traced-card refusal story.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1072, US1066, US1068, US1056 and US1040 (all Draft)
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

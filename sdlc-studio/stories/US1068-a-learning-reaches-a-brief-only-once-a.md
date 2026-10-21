@@ -30,7 +30,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the strike written only where the renderer does not read, so the struck learning still reaches the qa brief
 - AC2 must fail on: approved learnings injected before the signature, so the operator's strike arrives after a seat has read the learning
 - AC3 must fail on: 'signed' stamped into memory at the seal, so a reopened run's learnings stay live while the signature they relied on is broken
@@ -41,9 +41,19 @@
 - The struck ids are part of what the signature writes, after the page check, kept on the sealed run record (a key the annex tolerates, US0994) and not on the report, so the report's fingerprint and US0992's catalogue are untouched. Every refusal runs before anything is written.
 - `cmd_sign` is also edited by US1018 (later); whichever lands second rebases.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1067 and US1059 (Draft)
+- It shares cmd_sign with US1018 (Draft), so whichever lands second rebases
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

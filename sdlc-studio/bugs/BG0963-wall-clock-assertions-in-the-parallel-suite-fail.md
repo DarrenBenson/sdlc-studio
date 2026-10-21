@@ -1,9 +1,9 @@
 # BG0963: Wall-clock assertions in the parallel suite fail under load, so a busy machine refuses commits and pushes on timing alone
 
 > **Status:** Open
-> **Severity:** Medium
+> **Severity:** High
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_status.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_yield.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_ledger_retired.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_release_verify.py, tools/tests/test_lean_precommit_parallel.py, tools/tests/test_test_census.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_status.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_yield.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_ledger_retired.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, tools/tests/test_lean_release_verify.py, tools/tests/test_lean_precommit_parallel.py, tools/tests/test_test_census.py, changelog.d/BG0963.md
 > **Evidence:** Push boundary gate on 65e36b98 (2026-10-06, load average 17) and fb1ce886 (2026-10-07, load 21-27); commit hook on c578a919 twice (2026-10-07, load 5-11); each named test passed alone in a clean worktree.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -36,9 +36,14 @@ Run every wall-clock assertion in the `serial_only` partition, which runs after 
 - 2026-10-08, commit hook on the BG0989 repair (machine quiet, load 0.4): `test_sprint.py::InertVerifierRepairTests::test_a_close_emits_its_cost_line` failed asserting `398s` in the close's output, which printed `close cost: 399s of gate over 2 run(s)`: the fixture records a 398.0s gate run and the close adds its own gate run's measured seconds before rounding, so a run of half a second or more prints 399. Run alone it failed once and passed twice. Same class as the byte-compared durations named above.
 - 2026-10-20, push boundary on devserver1 for fd16f28a, an artefact-only commit (signature paperwork): `test_lean_mutation_ledger_retired.py::MutationLedgerRetiredTests::test_brief_and_close_read_no_ledger` failed on `the close reads the ledger`. The two close outputs differed in `cost: 0s of gate over 1 run(s)` against `1s`, which is sprint.py:12643's rounded measured seconds. The same content had passed `run-suite.sh all` on the same host about 40 minutes earlier (8180 passed, 661 s), and the refused run took 909 s.
 
+## Triage (2026-10-21)
+
+- Ruled (D0388): raised to High and delivered in run four, before the 6.2.0 tag. Its wall-clock tests in the parallel partition are what refused run three's commits under load, which D0385 and D0386 had to bypass.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
 | 2026-10-20 | Claude Opus 5.5 | Further evidence: the 2026-10-20 push refusal of fd16f28a on a byte-compared close cost line |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

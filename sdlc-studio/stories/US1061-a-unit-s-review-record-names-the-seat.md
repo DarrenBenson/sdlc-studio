@@ -26,7 +26,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the footer prints a fixed author or none, or the lane's seat is never recorded so the footer cannot tell a QA-built unit from an engineering one
 - AC2 must fail on: the author's seat read by `seat_for`'s name heuristic rather than the `(role)` group, so a seatless author passes silently
 - Serves: Maya Okafor #3.
@@ -36,9 +36,18 @@
 - The warning sits in `_write_verdict`, so `transition set --verdict` and `artifact.py close --verdict` get it too; it never refuses (LL0056).
 - Builds after US1030 and US1011, which rewrite the same footer lines; about 2 points as the operator sized it.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1030 and US1011 (Draft)
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

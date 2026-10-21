@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_restamp_on_changed_expression.py, changelog.d/BG0984.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_restamp_on_changed_expression.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, changelog.d/BG0984.md
 > **Evidence:** homelab BG0196:110-113, 2026-10-07; related BG0231
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -45,3 +45,4 @@ Record the expression's fingerprint beside the stamp (or compare against the las
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Triaged: reproduced at 34a7ee59 in a fixture; tool-derived criteria replaced with two executable ones; changelog fragment added |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

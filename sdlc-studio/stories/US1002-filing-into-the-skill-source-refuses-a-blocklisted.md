@@ -31,7 +31,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G3, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G3, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the pre-mint neutrality call removed from file_finding.file_finding, or placed after the dry-run branch (today's code: the bug files as BG0001 and the commit lane is the first to object)
 - AC2 must fail on: the check scans the caller-supplied fields (title, summary, steps, fix, criteria) but not the resolved authorship that `_file_finding_locked` stamps into Raised-by and the revision row
 - AC3 must fail on: the filer falling back to a checker of its own (the skill's repository copy at parents[4]/tools/check_neutrality.py) when the target root carries none, which the filer's 'checked with <path>' line makes visible; or a missing checker treated as a refusal
@@ -50,9 +50,17 @@
 - Consuming projects get this only once their installed copy carries it: the release, or `tools/forward-port.sh --yes` on this machine. A newer filer against an older checkout is AC5's case, and it refuses with the fix: update the checkout.
 - reference-scripts-create.md (### file_finding.py) gains one sentence: filing into a root that carries tools/check_neutrality.py runs it over the would-be artefact before an id is minted, and refuses when it cannot run.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- CR0612's consult question (fail-closed when the target root's checker cannot run) is drafted fail-closed but unruled; confirm before planning.
+- Release note stale: the story says 'Release: 6.2' but D0382 (2026-10-20, supersedes D0381) sets the path to the 6.2.0 tag as run three plus run four's doc refreshes only, so this lands after 6.2.0; re-tag when a run takes it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G3 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

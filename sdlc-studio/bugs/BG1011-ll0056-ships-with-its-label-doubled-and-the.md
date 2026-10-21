@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Low
-> **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/lessons/LL0056-every-check-must-earn-its-place-a-constraint-added-without-retiring-one-is-how-a-process-ratchets-shut.md, .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_placeholders.py, changelog.d/BG1011.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py
+> **Points:** 3
+> **Affects:** .claude/skills/sdlc-studio/lessons/, .claude/skills/sdlc-studio/lessons/_template.md, .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_placeholders.py, changelog.d/BG1011.md
 > **Evidence:** LL0056 lines 12 and 18-38 at 31f63fae.
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio file
@@ -24,13 +24,14 @@ Remove the duplicated label and the leftover template sections from LL0056; refu
 
 ## Acceptance Criteria
 
-- [ ] **AC1** LL0056 carries no `{{` placeholder and no repeated label
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_placeholders.py::LessonPlaceholderTests::test_ll0056_is_clean
-- [ ] **AC2** A lesson file with an unfilled `{{...}}` placeholder is refused by the registry's lint, naming the file and line
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_placeholders.py::LessonPlaceholderTests::test_a_placeholder_lesson_is_refused
+- [ ] **AC1** No shipped lesson carries a repeated `**Lesson.**` label or an unfilled `{{...}}` placeholder section
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_placeholders.py::LessonPlaceholderTests::test_no_shipped_lesson_carries_a_placeholder_or_a_doubled_label
+- [ ] **AC2** `lessons.py add --global` writes a lesson with no unfilled `{{...}}` section: an optional section the author did not supply is omitted, not left as a placeholder
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_placeholders.py::LessonPlaceholderTests::test_add_global_leaves_no_placeholder
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

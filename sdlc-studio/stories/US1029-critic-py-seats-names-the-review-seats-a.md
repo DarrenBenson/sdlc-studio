@@ -31,7 +31,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G10, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G10, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the test-only rule counts the changelog fragment as a non-test file, or tests are ignored, so the story is given engineering
 - AC2 must fail on: unmapped files vote for the type default (the first draft's majority vote), so the test, doc and fragment outvote the monitoring file; or only the shipped settings are read, never the project map
 - AC3 must fail on: one default seat (engineering) for every type, so the bug is not given qa
@@ -51,3 +51,4 @@
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G10 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

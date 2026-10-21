@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Low
-> **Points:** 2
-> **Affects:** .githooks/pre-push, tools/tests/test_pre_push_prereqs.py
+> **Points:** 3
+> **Affects:** .githooks/pre-push, tools/tests/test_pre_push_prereqs.py, changelog.d/BG1042.md
 > **Evidence:** US1005 round-1 QA verdict in sdlc-studio/reviews/critic-verdicts.md (APPROVE, BLOCKING: none), notes 1-5, each executed by the reviewer in its own checkout at 1916da62.
 > **Created:** 2026-10-13
 > **Created-by:** sdlc-studio file
@@ -25,10 +25,17 @@ Set `SDLC_COVERAGE_PYTHON` to empty in the module's push env. Hide coverage and 
 ## Acceptance Criteria
 
 - [ ] **AC1** Given `SDLC_COVERAGE_PYTHON` exported as a path that does not run, when `test_pre_push_prereqs.py` runs on the shipped hook, then every test passes.
+  - **Verify:** shell SDLC_COVERAGE_PYTHON=/nonexistent/python3 python3 -m pytest -q -p no:cacheprovider tools/tests/test_pre_push_prereqs.py
 - [ ] **AC2** Given a check that exits 1 without printing a REFUSES line, when a push runs the hook, then the hook says the check could not run rather than naming prerequisites marked REFUSES.
+  - **Verify:** pytest tools/tests/test_pre_push_prereqs.py::PushPrerequisiteTests::test_a_check_that_could_not_run_is_not_called_a_refusal
+- [ ] **AC3** A push missing coverage prints that prerequisite on a REFUSES line, and a push missing pytest is refused, each pinned by a test that fails when the line is printed as `note`
+  - **Verify:** pytest tools/tests/test_pre_push_prereqs.py::PushPrerequisiteTests::test_coverage_and_pytest_are_marked_refuses
+- [ ] **AC4** The tag-push test hides coverage and PyYAML together and asserts the install route and the bypass the refusal names
+  - **Verify:** pytest tools/tests/test_pre_push_prereqs.py::PushPrerequisiteTests::test_a_tag_push_names_the_install_route_and_the_bypass
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -16,7 +16,7 @@
 
 ## Steps to Reproduce
 
-1. `sprint.py sign --report RPTxxxx --principal <operator>` on a run with N units. 2. Commit the paperwork with a message naming the report alone. 3. The commit hook prints `engagement floor (attribution): this commit stages sdlc-studio/bugs/<id>-....md ... the message never names <id>` N times.
+1. `sprint.py sign --report RPTxxxx --principal <operator>` on a run with N units. 2. Commit the paperwork with a message naming the report and one other unit, for example a bug filed in the same commit (`Refs: RPTxxxx`, `Refs: BGxxxx`). 3. The commit hook prints `engagement floor (attribution): this commit stages sdlc-studio/bugs/<id>-....md ... the message never names <id>` N times.
 
 ## Proposed Fix
 
@@ -36,3 +36,4 @@ Advisory noise on every sign commit, proportional to batch size; a real attribut
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-18 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

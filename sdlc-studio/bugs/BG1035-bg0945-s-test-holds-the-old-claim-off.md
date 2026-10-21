@@ -23,9 +23,7 @@ Judge the note's claim about signing by meaning (no sentence says the page is si
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given the note reworded to say the page is signed after a late ruling in any wording the test enumerates, when the test runs, then it fails
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_bg0940_fragment_matches_sign.py::FragmentMatchesSignTests::test_the_fragment_says_what_sign_does
-- [ ] **AC2** Given a project whose decisions log does not exist at the close, when a late ruling is logged and sign runs, then the outcome is the one the note states, pinned by a test
+- [ ] **AC1** Given a project whose decisions log does not exist at the close, when a late ruling is logged and `sprint sign` runs, then sign seals and the filed page still checks VALID
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_bg0940_fragment_matches_sign.py::FragmentMatchesSignTests::test_a_first_ruling_that_creates_the_log
 
 ## Impact
@@ -37,3 +35,4 @@ A release note can drift back to over-claiming with the test green, and a projec
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

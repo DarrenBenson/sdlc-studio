@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py, .claude/skills/sdlc-studio/help/verify.md, changelog.d/BG1023.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/help/verify.md, changelog.d/BG1023.md
 > **Created:** 2026-10-11
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -43,3 +43,4 @@ The executable AC gate silently cannot run the most natural vitest/jest Verify l
 | --- | --- | --- |
 | 2026-10-11 | sdlc-studio | Filed |
 | 2026-10-12 | Claude Opus 5.5 (triage) | Triaged: confirmed on current code; changelog fragment named for the unit; Verify on a new test module (BG0980) |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

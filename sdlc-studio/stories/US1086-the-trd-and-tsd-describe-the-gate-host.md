@@ -8,7 +8,6 @@
 > **Affects:** sdlc-studio/trd.md, sdlc-studio/tsd.md, tools/tests/test_lean_gate_host_docs.py, changelog.d/US1086.md
 > **Epic:** EP0290
 > **Points:** 2
-> **Depends on:** US1075, US1084
 > **Persona:** Rowan Achterberg
 
 ## User Story
@@ -43,3 +42,4 @@
 | 2026-10-19 | Claude Opus 5.5 | Groomed: criteria, Verify lines and the mutants each must fail on (D0377) |
 | 2026-10-19 | Claude Opus 5.5 | Regroomed after the goal review (round 4): the seats' findings folded in: run-suite.sh and enable-hooks.sh among the sources, known-member floor |
 | 2026-10-19 | Claude Opus 5.5 | Repointed at Rowan Achterberg, Primary for the repository-tooling interface, before review (D0379, D0380) |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387): cleared Depends on; every dependency it named is terminal |

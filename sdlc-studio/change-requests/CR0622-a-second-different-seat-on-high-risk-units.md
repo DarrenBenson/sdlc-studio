@@ -1,4 +1,4 @@
-# CR-0622: A second, different seat on high-risk units - or a different seat on round 2
+# CR-0622: A second, different seat on high-risk units
 
 > **Status:** In Progress
 > **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
@@ -33,6 +33,8 @@ _None yet: add them here, or on the stories `refine` decomposes this into._
 | 2026-10-08 | sdlc-studio | Raised |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: behaviour confirmed; Affects made repository paths; Size M; relations recorded |
 | 2026-10-09 | Claude Opus 5.5 (triage) | Triage corrected: a second seat needs per-seat rounds on the ledger (found by the G10 breakdown) |
+| 2026-10-21 | sdlc-studio | Retitled: was 'A second, different seat on high-risk units - or a different seat on round 2' |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
 
 ## Amigo Consult
 

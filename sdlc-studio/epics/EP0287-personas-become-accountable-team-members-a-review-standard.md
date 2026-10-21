@@ -70,8 +70,15 @@ Decomposed from CR0631. Delivers the work CR0631 requested.
 > slice while grooming - these are the epic's completion bar, not any
 > single story's.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- the D0374 stakeholder consult for EP0287 has not run; it is owed before any of its stories is built
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

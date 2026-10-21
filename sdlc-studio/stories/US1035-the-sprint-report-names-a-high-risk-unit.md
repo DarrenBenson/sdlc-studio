@@ -36,9 +36,16 @@
 - A unit's seats are the lanes the per-seat rounds story defines, read over the run's frozen rows, so the report and the ledger cannot disagree on what a second seat is. The report fingerprint hashes leaf figures only (sprint_report.py:2837), so AC3 is a consistency fix, not a signature change.
 - The candidate to cut first within CR0622: `critic.py seats` already tells the orchestrator the second seat is owed.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on US1034 (Draft)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G10 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

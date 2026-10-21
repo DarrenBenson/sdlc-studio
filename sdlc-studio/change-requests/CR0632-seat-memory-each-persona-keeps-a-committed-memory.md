@@ -21,11 +21,18 @@ RFC0061 workstream 2 (D1, D5, D8). A memory file beside each card (`sdlc-studio/
 - [ ] A persona's brief carries its own approved learnings, capped and ranked, and never another persona's
 - [ ] A learning past its horizon is reported at the close until it is revalidated or retired
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Stakeholder consult on EP0287 (D0374)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | Claude Opus 5.5 | Created via `new` (deterministic) |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
 
 ## Amigo Consult
 

@@ -26,12 +26,18 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G10, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G10, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the unread seats are read from review_seats (the project's declared seats only), so qa is not named; or `_render_goal_review` never reads them (HEAD, which prints only '2 seat(s) examined')
 - AC2 must fail on: the unread seats are listed without consulting seats_for over the batch, so no entry is marked
 - Correction to the first draft: `review_seats` (sprint.py:3004) returns only the project's own seats whenever it declares any, so a project declaring engineering, product and sre does not expect qa at HEAD. The unread seats are computed from persona_resolve.seat_roster (the shipped core plus declared roles, persona_resolve.py:100), which is CR0620's 'QA by default'. `needs_reconsult` moves to the same reader, so its JSON and the text agree.
 - The renderer is the gap: goal_review_status computes needs_reconsult (sprint.py:3118) and reference-sprint.md calls those seats 'reported', but `_render_goal_review` (sprint.py:3682) never prints them.
 - Advice, never a refusal: the plan proceeds. No unread-seat line prints when every expected seat has read the goal; that control sits inside AC1's test, since it passes at HEAD.
+
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- AC2 depends on US1029 (Draft)
 
 ## Revision History
 
@@ -39,3 +45,4 @@
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G10 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

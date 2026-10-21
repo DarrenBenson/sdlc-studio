@@ -1,9 +1,9 @@
-# BG1070: conformance reads US0357 and US0358 as missing their verified stage in a fresh checkout, though both carry Verified stamps, so the lane's verdict depends on the clone's .local state
+# BG1070: conformance reads US0357 and US0358 as missing their verified stage wherever markdownlint is not installed, because their test modules raise at collection and a stamp on a file that will not collect is counted dead
 
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py, tools/tests/test_conformance_fresh_checkout.py, changelog.d/BG1070.md, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/conformance.py, tools/tests/test_lint_corpus.py, tools/tests/test_lint_corpus_attribution.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py, tools/tests/test_conformance_fresh_checkout.py, changelog.d/BG1070.md
 > **Evidence:** 2026-10-19: fresh worktree at c704e6c7 -> 'US0357 (Done): missing verified', 'US0358 (Done): missing verified', rc=1; main clone -> rc=0. US1079 round-1 QA verdict, [pre-existing] finding (sdlc-studio/reviews/critic-verdicts.md).
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio file
@@ -20,7 +20,7 @@
 
 ## Proposed Fix
 
-Find what the verified stage reads for these two that the committed tree does not carry (their stamps are present), and make it read committed evidence; or record why these two need a reading the others do not.
+Make the two corpus test modules skip, not raise, at collection when markdownlint is absent, and make `selector_resolves` tell 'the file errored at collection' (unanswerable, None, as its docstring says) apart from 'the file collected and the node is absent' (dead, False).
 
 ## Acceptance Criteria
 
@@ -36,3 +36,5 @@ A whole-workspace conformance verdict is not a function of the commit, so a revi
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | sdlc-studio | Retitled: was "conformance reads US0357 and US0358 as missing their verified stage in a fresh checkout, though both carry Verified stamps, so the lane's verdict depends on the clone's .local state" |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -24,8 +24,18 @@ Doctrine rule 21 would be ruled on figures that are unaudited, relayed or measur
 - [ ] A committed review page lists each run counted, with its base and verified refs, and per unit the verdict and cause, as the shipped CLI printed them
 - [ ] The page states the totals (refused, passed, not judged, per-pass seconds), and a decision row cites them when rule 21 is ruled on
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Refine needs: Depends on: BG1009
+- Points: 3 (one measurement unit; Size S)
+- Executable criteria on structured content, for example a new tools/tests/test_revert_check_yield_page.py that reads the page's per-unit table and re-totals refused, passed and not-judged against the stated totals (RETRO0135: no prose phrase test)
+- Persona: Maya Okafor (the shipped revert-check)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | Claude Opus 5.5 | Raised |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

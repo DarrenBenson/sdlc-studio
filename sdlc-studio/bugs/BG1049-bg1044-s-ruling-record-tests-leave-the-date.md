@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_record_past_the_cap.py, changelog.d/BG1044.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/decisions.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_record_past_the_cap.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1044.md, changelog.d/BG1049.md
 > **Evidence:** BG1044 round-1 QA verdict in sdlc-studio/reviews/critic-verdicts.md (APPROVE, BLOCKING: none): 25 mutants run, 19 killed, the 6 survivors forming the gaps above, each re-tested alone.
 > **Created:** 2026-10-14
 > **Created-by:** sdlc-studio file
@@ -25,10 +25,15 @@ Assert recorded == today and the reviewer's prefix; record two rulings into one 
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a ruling round recorded with a tab-carrying reviewer id, when the record is read back, then its recorded field equals the day it was written.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_record_past_the_cap.py::RecordPastTheCapTests::test_a_tabbed_reviewer_ruling_records_today
 - [ ] **AC2** Given two ruling rounds recorded into one section, when the ledger is read, then the section holds exactly one note.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_record_past_the_cap.py::RecordPastTheCapTests::test_two_rulings_into_one_section_write_one_note
+- [ ] **AC3** Given a verdict row quoting the Supersessions heading and no section yet, when a ruling is recorded, then the section heading is written; and a superseded decision whose Status reads 'Accepted' does not authorise a round
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_record_past_the_cap.py::RecordPastTheCapTests::test_the_heading_search_is_anchored_and_a_superseded_accepted_is_refused
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-14 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

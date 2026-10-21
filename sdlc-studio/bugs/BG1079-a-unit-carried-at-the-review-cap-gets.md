@@ -1,6 +1,7 @@
 # BG1079: A unit carried at the review cap gets a criterion for every ISSUES item, including info rulings and pre-existing findings already filed
 
 > **Status:** Open
+> **Supersedes:** BG1046
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_carry.py, changelog.d/BG1079.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -36,3 +37,4 @@ The carried bug cannot be closed honestly: one criterion asks for a closure to b
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): supersedes BG1046 |

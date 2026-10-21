@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_under_depth.py, changelog.d/BG1052.md
 > **Evidence:** US1004 on RUN-01M4R168: rounds 1 and 2 recorded light (briefs 86df0fd9e922, f5c983151c46); after ec108328 widened Affects, `critic.py brief` derives full (879f7d809935) and sprint.seal_bar_unmet reads 'a review at the depth this unit's risk band demands'; D0368 authorised a third round.
 > **Created:** 2026-10-14
 > **Created-by:** sdlc-studio file
@@ -24,10 +24,14 @@ Have `critic.py record` refuse or warn when the verdict's tier is below the tier
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a unit whose band derives full and whose only APPROVE is light, when `critic.py record` writes a verdict on it or `status` runs, then the under-depth APPROVE is named with the tier the band demands.
+- [ ] **AC1** Given a unit whose band now derives full and whose only APPROVE is light, when `critic.py record` writes any verdict on it, then stderr names the under-depth APPROVE and the tier the band demands
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_under_depth.py::UnderDepthTests::test_record_names_an_under_depth_approve
+- [ ] **AC2** Given the same unit, when `status` runs, then the under-depth APPROVE is named beside the review-coverage advisory
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_under_depth.py::UnderDepthTests::test_status_names_an_under_depth_approve
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-14 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

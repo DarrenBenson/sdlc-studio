@@ -35,9 +35,18 @@
 - An unfrozen preview of an open run keeps reading the log, as `_ci_runs` does for an unfrozen open run, so test_lean_lane_yield.py stays green unchanged (test_the_appendix_shows_lane_yield builds an unfrozen live run).
 - Refreshed on every prepare, as CI runs are; the section stays outside the digest, so no rule mark is needed.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Marked 'Release: later'; D0356 holds the later stories for 6.3.
+- CR0610's lane-yield question is unruled: the refine panel recommended cutting this story and amending CR0610's first criterion, because a tally frozen from the closer's clone is still partial and only this repository writes the log (LL0056).
+- Persona: consuming projects never hold the refusal log, so Maya Okafor gains nothing; the beneficiary is the repository maintainer (Rowan Achterberg).
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G2 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -24,7 +24,7 @@ Require the overlap to reach min(`n_sleepers`, the pool's size as the lane repor
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a host with two cores, when the module-alone lane test runs, then it passes, and a serial lane still fails it
-  - **Verify:** manual: run the test with PYTHON_CPU_COUNT=2 and see it pass, then with the lane serialised and see it fail
+  - **Verify:** shell PYTHON_CPU_COUNT=2 python3 -m pytest -q .claude/skills/sdlc-studio/scripts/tests/test_gate.py::ModuleAloneLaneTests::test_the_push_boundary_runs_every_module_alone_and_names_the_one_that_fails
 
 ## Impact
 
@@ -35,3 +35,4 @@ Low: a contributor on a two-core machine sees the push gate red for a reason tha
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

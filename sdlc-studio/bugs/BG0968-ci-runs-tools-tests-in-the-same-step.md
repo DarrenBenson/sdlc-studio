@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 1
-> **Affects:** .github/workflows/lint.yml, tools/tests/test_lint_workflow_coverage.py, tools/tests/test_ci_suites_unchained.py
+> **Affects:** .github/workflows/lint.yml, tools/tests/test_lint_workflow_coverage.py, tools/tests/test_ci_suites_unchained.py, changelog.d/BG0968.md
 > **Evidence:** Found 2026-10-06/07 during the triage session that filed BG0955-BG0963 in this repository. CI run 37335339814; BG0957.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -34,3 +34,4 @@ Run tools/tests as its own step with `if: success() || failure()`, or run both c
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

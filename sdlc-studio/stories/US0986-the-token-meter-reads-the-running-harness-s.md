@@ -35,9 +35,16 @@
 - `reference-sprint.md` gains a short Token meters subsection: `SDLC_STUDIO_HARNESS`, the selection order, the never-sum rule and the one basis. Each reader story adds its own line there.
 - Builds first: every other EP0274 story depends on it.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Release note stale: D0355 tied EP0274 to 'before v6.2.0' but D0382 (2026-10-20, supersedes D0381) sets the path to the 6.2.0 tag as run three plus run four's doc refreshes only, so this lands after 6.2.0; re-tag when a run takes it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-06 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-06 | Claude Opus 5.5 (engineering seat) | Groomed for the next skill sprint from CR0611 and D0346: retro.py and its tests move to US0991, which owns the basis wording |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

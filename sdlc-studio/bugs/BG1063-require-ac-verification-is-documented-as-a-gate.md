@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/reference-verify.md, .claude/skills/sdlc-studio/reference-outputs.md, .claude/skills/sdlc-studio/scripts/constitution.py, .claude/skills/sdlc-studio/scripts/tests/test_retired_config_keys.py, changelog.d/BG1063.md, .claude/skills/sdlc-studio/scripts/tests/test_constitution.py
+> **Affects:** .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/reference-verify.md, .claude/skills/sdlc-studio/reference-outputs.md, .claude/skills/sdlc-studio/help/verify.md, .claude/skills/sdlc-studio/scripts/constitution.py, .claude/skills/sdlc-studio/scripts/tests/test_retired_config_keys.py, .claude/skills/sdlc-studio/scripts/tests/test_constitution.py, changelog.d/BG1063.md
 > **Evidence:** RV0028 finding PRD-2; config-defaults.yaml:98; reference-outputs.md:768; transition.py:1042-1049 reads `quality.done_requires_verified`.
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ An operator who sets the documented key believes they changed a gate; nothing ch
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

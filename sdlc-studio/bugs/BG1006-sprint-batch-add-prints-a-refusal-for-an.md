@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_batch_add_affects_wording.py, changelog.d/BG1006.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_batch_add_affects_wording.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1006.md
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -11,7 +11,7 @@
 
 ## Summary
 
-Found in homelab RUN-01M4EMNN (2026-10-09). `sprint.py batch add BG0272 --reason ...` printed 'BG0272: Affects declares path(s) not on disk - ...' (read as a refusal) and exited, yet the unit WAS added: after the Affects line was corrected, the retry said 'added BG0272 to the batch (already present); batch is now 19 unit(s)' - the batch had grown from 17 to 19 across two 'refused' adds. A gate that reports a refusal while mutating the run is worse than no gate: the operator believes the batch is unchanged.
+Found in a consuming project's RUN-01M4EMNN (2026-10-09). `sprint.py batch add BG0272 --reason ...` printed 'BG0272: Affects declares path(s) not on disk - ...' (read as a refusal) and exited, yet the unit WAS added: after the Affects line was corrected, the retry said 'added BG0272 to the batch (already present); batch is now 19 unit(s)' - the batch had grown from 17 to 19 across two 'refused' adds. A gate that reports a refusal while mutating the run is worse than no gate: the operator believes the batch is unchanged.
 
 ## Steps to Reproduce
 
@@ -30,7 +30,7 @@ Run the Affects check before the mutation and exit non-zero without writing; or,
 
 ## Triage
 
-- Reproduced at 750cbd81 in the default `warn` mode: `sprint batch add BG0001` for a bug whose Affects is `HA scripts foo / bar` prints `added BG0001 to the batch; batch is now 2 unit(s)...` and then `BG0001: Affects declares path(s) not on disk - HA scripts foo / bar (a file the unit CREATES is fine)`, exits 0 and adds the unit. The state and the first line agree; the second line carries no warning label and reads as a refusal to anyone reading the last line, which is what happened in the homelab run. In `block` mode the add is refused before the write (BG0521, since August).
+- Reproduced at 750cbd81 in the default `warn` mode: `sprint batch add BG0001` for a bug whose Affects is `HA scripts foo / bar` prints `added BG0001 to the batch; batch is now 2 unit(s)...` and then `BG0001: Affects declares path(s) not on disk - HA scripts foo / bar (a file the unit CREATES is fine)`, exits 0 and adds the unit. The state and the first line agree; the second line carries no warning label and reads as a refusal to anyone reading the last line, which is what happened in that consuming project's run. In `block` mode the add is refused before the write (BG0521, since August).
 - Severity lowered to Low: the output is misleading, not the state. Affects corrected; criteria rewritten for what is actually wrong, including the non-path entry told a created file is fine.
 
 ## Revision History
@@ -39,3 +39,4 @@ Run the Affects check before the mutation and exit non-zero without writing; or,
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Filed |
 | 2026-10-09 | Claude Opus 5.5 (triage) | Triaged: reproduced on current code; Affects made repository paths; criteria made executable; severity Low |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

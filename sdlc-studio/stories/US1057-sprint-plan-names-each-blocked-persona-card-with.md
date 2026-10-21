@@ -9,7 +9,7 @@
 > **Epic:** EP0287
 > **Points:** 5
 > **Depends on:** US1055
-> **Persona:** Maya Okafor
+> **Persona:** Jonah Reyes
 
 ## User Story
 
@@ -30,7 +30,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the plan silent about a card every review in the run will refuse, so the stop lands mid-run in `critic.py brief`, which has no --skip-personas
 - AC2 must fail on: change judged by mtime or git history instead of the recorded body hash, so a reviewed marker reads as a change and a reverted edit as none
 - AC3 must fail on: the newest tag chosen by name order rather than commit date, a same-day review compared against the commit's timestamp, or a repository with no tags erroring
@@ -42,9 +42,19 @@
 - Adds persona-review-owed (reported, under Freshness) to `persona_review.py check` and the standard page. reference-review.md's Persona Review pass names owed reviews from this command (one line replaced; the page sits near its budget).
 - Re-sized 3 to 5 for the blocked-card line (panel).
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- The Persona field does not match the As-a and Serves
+- Blocked on US1055 (Draft)
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

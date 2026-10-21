@@ -23,8 +23,17 @@ PRD and TSD drift accumulates silently between unified reviews, the last of whic
 
 - [ ] `doc_freshness` reports a count or version stated in the PRD or TSD that no longer matches the tree, as it does for the TRD
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Refine needs: one story, Points 3
+- Verify into a new class in test_doc_freshness.py (a PRD count and a TSD baseline that no longer match the tree are each reported)
+- Deliver first in run four so CR0646/CR0647's counts are census-checked
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Raised |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

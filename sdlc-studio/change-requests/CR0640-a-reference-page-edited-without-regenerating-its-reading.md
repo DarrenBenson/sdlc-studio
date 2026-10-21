@@ -23,8 +23,18 @@ Anyone editing a reference page: the drift costs a full-suite run to find, and a
 - [ ] Given a staged change to a reference page whose reading guide it leaves stale, when the pre-commit hook runs, then a cheap lane refuses and names `docgen reading-guides` as the fix
 - [ ] Given the guide regenerated, when the hook runs again, then the lane passes
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Refine needs: one story, Points 2
+- Verify into the new tools/tests/test_precommit_reading_guides.py (stale guide refused naming `docgen reading-guides`; regenerated guide passes)
+- LL0056: say what it retires; the cheaper route is BG1000's census-subject selection selecting a reading-guide drift test for a staged reference page, with no new lane
+- Persona: Rowan Achterberg (.githooks, D0379)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Raised |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

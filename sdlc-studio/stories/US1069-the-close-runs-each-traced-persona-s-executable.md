@@ -30,7 +30,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the Verify lines never run, so the verdict is judged on done_means alone as at HEAD, or a red result recorded silently under 'achieved'
 - AC2 must fail on: a manual or missing check counted as passing, or every persona's End goals run whatever the goal traces to
 - AC3 must fail on: an error read as a failure, which tells the operator the goal is unmet when it was never measured, or as a pass (LL0018)
@@ -42,9 +42,18 @@
 - Results go beside the verdict in `sprint_goal_verdict` via `run_state.record_goal_verdict` (run_state.py:1567), so the tracked record carries them (a key the annex tolerates, US0994).
 - Builds after US1040 and before the served-goal story, which records these results in the persona's memory.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1040, and through it on US1039, which adds End goal Verify lines and lib/persona_goals.py. Today no persona card in this repository carries an End goal Verify (maya-okafor-founder-engineer.md:24-31), so there is nothing to run here until a card gains one
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

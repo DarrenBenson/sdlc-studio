@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 2
+> **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG0987.md
 > **Evidence:** Found closing a consuming project RUN-01M4APNQ on the installed skill (6.1.0 plus the BG0962 fix from main 922b9d6c), 2026-10-07. The close exited 0 and filed RPT0001; RPT0001.md, RPT0001.json and the .local HTML render contain no goal panel, no defect ruling and no caller-check line.
 > **Created:** 2026-10-07
@@ -26,8 +26,8 @@ Write the goal judgement (panel verdict, defects vs goal, caller-check) into the
 
 - [ ] **AC1** The sprint report filed by a close contains the goal panel verdict, each defect ruled blocking with its reason, and the caller-check count
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py -k report_carries_goal_judgement
-- [ ] **AC2** No line the close prints claims to block the close when the close exits 0
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py -k no_block_claim_on_a_passing_close
+- [ ] **AC2** `critic.judge_defects_against_goal` tags each blocking defect with a `basis` of `clause` or `priority`, the close's printed line and the report's section are labelled from that basis, and a close whose only blocking defects have basis `priority` exits 0
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py -k blocking_defects_carry_a_structured_basis
 
 ## Triage
 
@@ -40,3 +40,4 @@ Write the goal judgement (panel verdict, defects vs goal, caller-check) into the
 | --- | --- | --- |
 | 2026-10-07 | Claude Opus 5.5 | Filed |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Triaged: reproduced at e2090297 by the code path, not a regression; consuming-project name generalised; a misplaced code span corrected; changelog fragment added |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

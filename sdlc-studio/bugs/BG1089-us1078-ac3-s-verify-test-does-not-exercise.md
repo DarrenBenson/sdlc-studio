@@ -1,6 +1,6 @@
 # BG1089: US1078 AC3's Verify test does not exercise the verdict's binding to the tree sent; only a sibling test does
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/stories/US1078-run-suite-sh-runs-the-full-suite-on.md, tools/tests/test_run_suite_remote.py, changelog.d/BG1089.md
@@ -36,3 +36,4 @@ A Verify-only check of US1078 does not cover the claim the unit adds.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): Won't Fix, not beneficial (LL0056): its mutant is already killed by a sibling test in the same module |

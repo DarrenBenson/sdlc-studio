@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_read_root.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1058.md
 > **Evidence:** close --dry-run on 2026-10-15 at cd618e90 (scratchpad log) against the direct predicate's [] on the same tree.
 > **Created:** 2026-10-15
 > **Created-by:** sdlc-studio file
@@ -24,10 +24,12 @@ Find which probe under `unanswered_units` or `seal_bar_unmet` reads the scratch 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given an open run whose every batch unit meets the seal bar, when `sprint.py close --dry-run` runs, then its known-issues line names no unit the live predicate answers.
+- [ ] **AC1** Given an open run whose every batch unit meets the seal bar on the real tree, when `sprint.py close --dry-run` runs, then its known-issues line names no unit the live predicate answers
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_read_root.py::DryRunReadRootTests::test_the_dry_run_names_no_unit_the_live_predicate_answers
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-15 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

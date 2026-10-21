@@ -32,7 +32,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G8, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G8, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: test_shell_hazard_rate's corpus tests left unmarked, so the selection never reaches the test that would have caught the 2026-10-07 incident
 - AC2 must fail on: the decorator removed from one guarded test in this repository (for example test_no_legitimate_artefact_field_is_flagged), which the census must then report
 - AC3 must fail on: a census satisfied by `boundary_only` (a unittest skip, boundary.py:60-63, which would silently take a heavy guarded test out of every code commit), or one that counts per module so a marked test hides an unmarked sibling
@@ -44,9 +44,16 @@
 - Check the repo-writes lane while marking. It now runs on artefact commits too, so no marked test may write into `sdlc-studio/.local/`.
 - test_gate.py is also in BG1000's Affects. This story builds after BG1000 and the first story, so the edits are sequential.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on US1021 (Draft)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G8 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

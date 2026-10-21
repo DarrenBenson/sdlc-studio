@@ -40,9 +40,16 @@
 - It uses the run's base and holds BG1014's window for the duration of the revert.
 - The verdict is not cached for the close or the sign (D0180).
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Blocked until BG1014, US1017 and US1020 land; build it after them, not alongside
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G7 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

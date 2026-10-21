@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/templates/core/story.md, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
+> **Affects:** .claude/skills/sdlc-studio/templates/core/story.md, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, changelog.d/BG0953.md
 > **Evidence:** Reproduced 2026-10-06 in a scratch project with skill 6.1.0+12 (aa19a2e3); observed in homelab US0230 promote
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio file
@@ -28,11 +28,11 @@ Resolve `{{config.<dotted.key>}}` from the merged project config (config-default
 ## Acceptance Criteria
 
 - [ ] **AC1** A story written by `artifact.py new --type story --template full` contains no `{{config.` token and no `Minimum edge cases` or `Minimum test scenarios` line
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py -k full_story_no_config_token
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::FullTemplateTests::test_a_full_story_carries_no_config_token_or_floor_line
 - [ ] **AC2** The same holds for a planning story raised by `artifact.py promote --id <id> --to full`
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py -k promote_no_config_token
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::FullTemplateTests::test_a_promoted_story_carries_no_config_token_or_floor_line
 - [ ] **AC3** reference-config.md no longer names the story template as a reader of `story_quality.edge_cases.api` or `story_quality.test_scenarios.api`
-  - **Verify:** manual - two Used In cells in a reference table; read them
+  - **Verify:** shell ! grep -qE '^\| .(edge_cases\.api|test_scenarios\.api). \|.*story template' .claude/skills/sdlc-studio/reference-config.md
 
 ## Triage
 
@@ -52,3 +52,4 @@ Resolve `{{config.<dotted.key>}}` from the merged project config (config-default
 | 2026-10-06 | sdlc-studio | Filed |
 | 2026-10-06 | Claude Opus 5.5 (triage) | Groomed: tool-derived criteria replaced with checkable ones; scoped to the story scaffold, tsd.md out of Affects |
 | 2026-10-06 | Claude Opus 5.5 (triage) | Re-groomed on the operator's ruling to drop the lines: 2 -> 1 point; Affects swaps artifact.py for reference-config.md; AC3 added |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -1,6 +1,6 @@
 # BG1057: The one-list test's check that ci installs from requirements-dev.txt sits outside its self-tested rules
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_prereq_list_is_ci_list.py
@@ -31,3 +31,4 @@ Move the suite-install requirement into `_ci_allow` or `_job_violations` (a ci j
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-15 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): Won't Fix, not beneficial (LL0056): the property it pins is already pinned twice |

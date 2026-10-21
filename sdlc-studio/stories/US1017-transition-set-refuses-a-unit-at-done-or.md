@@ -50,9 +50,19 @@
 - Docs ship in the same commit (LL0004): reference-verify.md (Gated Completion); help/verify.md (a gate paragraph after BG1009's verdict section); reference-config.md; config-defaults.yaml; and the toolchain runbook's 'Change status' row. Do not name the lane in gate.py, .githooks/pre-push, tools/enable-hooks.sh or help/gate.md (test_lean_revert_lane_retired.py pins those).
 - Fixtures run `verify_ac.py run` first, so the Done gate's verify-report is green, then drive `transition.py` by `SCRIPTS / "transition.py"` (BG1000).
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Marked 'Release: later' (D0356: 6.3).
+- Blocked on an unruled operator question: CR0624's consult says Rule 21 should not be reversed on today's evidence (yield unaudited, 0 of 19 refused on this repository's sample), and Proposed CR0630 ('Count revert-check's yield ... before doctrine rule 21 is ruled on') is the prerequisite measurement.
+- Depends on open BG1009, BG1014 and Draft US1049.
+- Overlap to weigh at that ruling: run three's US1088/US1089 make the author record a mutation pass before the brief (D0382).
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G7 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -30,7 +30,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G11, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G11, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the brief keeps today's text-only listing, attaches a Verify to the following goal, or counts a manual Verify as testable
 - AC2 must fail on: the line is missing from either surface, or the plan returns non-zero on it (advice turned refusal)
 - AC3 must fail on: checkability is computed over every persona card rather than the traced personas, so an unrelated testable goal makes an uncheckable Sprint Goal read checkable
@@ -43,9 +43,16 @@
 - One cluster with BG1002 and G10's three CR0627 stories on `_goal_served_lines` and `_compose_seat_brief`, built in sequence: BG1002, then G10's per-seat card story (which restructures the brief), then this story. With BG1002 in, a Served-role persona such as the homelab's Household Member is listed and annotated with no further change here.
 - No served-persona brief or lens is built here or in G10: the served persona reaches every seat's brief as data (these End goals, and the plan advisory's owed list).
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on US1039 and US1036 (Draft) and BG1002 (Open)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G11 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

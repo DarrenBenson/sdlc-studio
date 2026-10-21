@@ -24,8 +24,8 @@ Strip Markdown links and backticked or bare paths before the window is applied, 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The project seat card naming a registry persona as the design persona, with a path or link between the name and the phrase, fails the check
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_seat_admits_secondary.py -k judges_against_the_interfaces_primary
+- [ ] **AC1** The project product seat card's header (its leading HTML comment and `## Who They Are`) names no persona listed in personas/index.md, read from the registry, so no wording, path or link can declare one of them the design persona there
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_seat_admits_secondary.py::ProductSeatLensTests::test_the_project_card_header_names_no_registry_persona
 
 ## Impact
 
@@ -36,3 +36,4 @@ A later edit can reinstate a single design persona in the project card's header 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

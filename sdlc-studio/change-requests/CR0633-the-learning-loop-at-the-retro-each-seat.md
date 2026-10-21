@@ -21,11 +21,18 @@ RFC0061 workstream 3 (D2, D3, D4). At the retro, each seat's verdicts are scored
 - [ ] A retro proposes, for each seat that reviewed in the run, the evidence of its verdicts against outcomes, and records the learning that seat wrote with the approving seat
 - [ ] A learning the operator strikes on the signed retro never reaches the persona's brief
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Stakeholder consult on EP0287 (D0374)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | Claude Opus 5.5 | Created via `new` (deterministic) |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
 
 ## Amigo Consult
 

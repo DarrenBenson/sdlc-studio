@@ -28,7 +28,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: any of the shared-file test, the citation test, the three-id cap, the carried exclusion or the previous-retro window dropped
 - AC2 must fail on: every later bug read as a miss, so a seat is told it missed what it found and chose to pass
 - AC3 must fail on: the record limited to seats that reviewed this batch, so a miss found while the seat sat a run out is never charged
@@ -39,9 +39,19 @@
 - Precision bar, set before re-measuring (LL0036): on a fresh 12-pair sample from this repository's narrow set, drawn by a fixed seed and excluding the panel's 10 pairs, at least 8 lines labelled 'miss' must be misses of the approved unit, judged by a seat other than the builder and recorded in the story's Resolution. Below the bar the story is reworked, not shipped: the label becomes 'possible miss' and the operator rules.
 - Window: each bug is charged once, in the retro whose window holds its creation date (after the previous retro's Date), to whichever seat approved the cited unit in any run; such a seat appears in the record even if it reviewed nothing in the batch (answers the panel's per-seat window point without a stored per-seat record).
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1062 (Draft)
+- Its own precision bar (8 of 12 sampled 'miss' lines must be real) has to be measured and recorded before it ships, or the label becomes 'possible miss'
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

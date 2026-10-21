@@ -20,13 +20,20 @@ The release gate in a vitest project is slow enough that it is run rarely, which
 
 ## Acceptance Criteria
 
-- [ ] In a vitest project the release verify lane resolves file-scoped vitest criteria (DSL or `shell npx vitest run <file> [-t name]`) from one batched vitest JSON run, falls back per criterion only where the batch cannot answer, and a fixture corpus of 50 such criteria runs inside the declared budget
-  - **Verify:** shell python3 -m pytest -q .claude/skills/sdlc-studio/scripts/tests -k vitest_batch_cache
+- [ ] In a vitest project the release verify lane resolves file-scoped vitest criteria from one batched vitest JSON run, falls back per criterion only where the batch cannot answer, and a fixture corpus shows the batch and the per-criterion answers agree. The stories refine writes carry the executable checks.
 
 ## Triage
 
 - Confirmed at 49bb056a by the code path: `verify_ac.py` batches jest (`jest_batch_cache`, verify_ac.py:1687) and pytest (`pytest_batch_cache`, verify_ac.py:1771) and has no vitest batch, so each vitest criterion is its own cold subprocess. Related to BG1023 (the `vitest` verb folds its tail into -t), which is why such criteria are written as `shell npx vitest run ...` today.
 - Private project name generalised. A request, not yet a unit: `refine` sizes it. Not in the first 6.2 run.
+
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Refine needs: one story, Points 5, after BG1023
+- Verify into a new module, e.g. pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_batch.py::VitestBatchTests::test_fifty_criteria_resolve_from_one_run, with vitest stubbed so the budget criterion is deterministic
+- Persona: Maya Okafor (consuming vitest projects)
 
 ## Revision History
 
@@ -34,3 +41,4 @@ The release gate in a vitest project is slow enough that it is run rarely, which
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Raised |
 | 2026-10-12 | Claude Opus 5.5 (triage) | Triaged: confirmed from the code path; project name generalised |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -27,8 +27,18 @@ A rebuild from the TRD would refuse the Verify lines the Fixed gate needs, and i
 - [ ] ADR-003, ADR-009 and ADR-012 match what is built, ADR-012 carries a revision row, and the header's coverage line names v6.1.0 plus 6.2 on main
 - [ ] The `.local` writer pin fails when a documented writer no longer writes the documented file
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Refine needs: about 3 stories, Points 8-13 in total, none above 5 (verifier authority plus the two code comments; storage and run lifecycle; type registry, network and ADRs plus header)
+- Each criterion with a Verify on a new test module that compares structured content (a table's cell set read from the source, `sdlc_md.EXECUTES_VERIFIERS`, `META_TYPES`), never a prose phrase list (RETRO0135)
+- Sequence after US1086/BG1095, which edit the same TRD sections
+- Persona: Maya Okafor
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Raised |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

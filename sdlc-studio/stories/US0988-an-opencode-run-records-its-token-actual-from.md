@@ -36,9 +36,17 @@
 - Pin the message JSON shape (where `tokens.reasoning` sits relative to output) from a real OpenCode database at implementation; the development machine holds only OpenCode's log and repos directories today.
 - Adds the OpenCode line to the Token meters subsection in `reference-sprint.md`.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- External precondition: Notes require the message JSON shape (where tokens.reasoning sits) to be pinned from a real OpenCode database; ~/.local/share/opencode exists but holds no opencode.db and no storage/ tree (ls 2026-10-21), as the Notes already said on 2026-10-06.
+- Release note stale: the story says 'Release: 6.2' but D0382 (2026-10-20, supersedes D0381) sets the path to the 6.2.0 tag as run three plus run four's doc refreshes only, so this lands after 6.2.0; re-tag when a run takes it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-06 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-06 | Claude Opus 5.5 (engineering seat) | Groomed for the next skill sprint from CR0611 and D0346: OpenCode database read-only, child sessions included, legacy JSON fallback |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

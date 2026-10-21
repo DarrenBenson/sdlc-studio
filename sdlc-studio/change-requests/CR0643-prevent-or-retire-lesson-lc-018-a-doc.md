@@ -35,8 +35,16 @@ Every lane and review the class reaches: each repeat of LC-018 has cost a review
 - [ ] Any check this CR proposes names the lane, refusal, baseline or pin it retires, and ships only in exchange for it; a check that retires nothing is not added.
 - [ ] Once the path is fixed and this CR closes Complete, LC-018 reads `graduated` in sdlc-studio/lessons.jsonl; a class that no longer describes a live failure is Rejected here instead, and the close then retires it until it recurs.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- No separate refine needed: EP0291 (US1087-US1089) is the fix path
+- AC1's hit list is stale: it omits the 6 RUN-01M59TRM hits
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-16 | sdlc-studio | Raised |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

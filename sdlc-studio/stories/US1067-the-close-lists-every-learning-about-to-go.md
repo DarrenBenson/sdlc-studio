@@ -28,7 +28,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: only the run's own proposals listed, so `add` then `approve` puts a learning live with no retro listing and no chance to strike it
 - AC2 must fail on: every quiet seat named on every close (noise under one reviewer per unit, D0341), or unattributed rows left out so an empty block reads as a clean run (LL0009)
 - AC3 must fail on: a second block appended, or the author's text rewritten
@@ -38,9 +38,18 @@
 - Panel self-flattery guard (a): whatever wrote an approved learning, it waits for a signed close to list it. Listed, never refused (CR0633).
 - Re-sized 3 to 5: listing every not-yet-live learning, the Listed-in stamp and the two counts.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1066 and US1060 (Draft)
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

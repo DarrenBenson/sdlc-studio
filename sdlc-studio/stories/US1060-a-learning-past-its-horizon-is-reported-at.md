@@ -28,7 +28,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the close refuses on an expired learning (D7 reports memory), or never reads memory, so the learning stays expired unnoticed
 - AC2 must fail on: retire keyed on the reviewer's name rather than the seat, or a retired entry left eligible for the brief
 - AC3 must fail on: memory problems made blocking, contrary to D7, or memory files skipped by the check
@@ -39,9 +39,18 @@
 - Adds the Memory hygiene rows to the standard page, which the standard story's AC1 test then holds; the rules feed `persona_review.py brief`, so the persona review reports memory as D7 asks.
 - Panel cut order: this story can trail the release, its AC3 moving into the store story; no learning can expire until 90 days after the first signed close.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1058 and US1052 (Draft)
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

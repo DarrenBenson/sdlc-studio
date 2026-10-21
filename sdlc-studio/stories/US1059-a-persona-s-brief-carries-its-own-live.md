@@ -32,7 +32,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the renderer reads every memory file, applies no cap, or filters on the file alone, so proposed or expired learnings reach the brief
 - AC2 must fail on: ranking by recency alone, or relevance read from a field no writer sets
 - AC3 must fail on: injection wired into critic.brief only, so a builder, a consult or a goal-review seat is framed without its memory
@@ -47,9 +47,19 @@
 - D5 named a brief-size spike: the story records the critic brief's size for a seat with no memory and with a full cap, in its Resolution.
 - Shares persona_resolve and the goal-review brief with US1037; whichever lands second rebases.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1058 and US1036 (Draft)
+- Its own note says to build it in one run with US1066, US1067 and US1068, so nothing goes live before the signature gate
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

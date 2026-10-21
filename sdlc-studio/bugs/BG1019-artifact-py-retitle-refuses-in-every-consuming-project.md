@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
+> **Points:** 3
+> **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, tools/check_links.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_retitle_refs.py, .claude/skills/sdlc-studio/scripts/tests/test_retitle_installed_layout.py, changelog.d/BG1019.md
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -24,7 +24,7 @@ Ship the inbound-reference scan as runtime payload (move the needed `check_links
 ## Acceptance Criteria
 
 - [ ] **AC1** retitle succeeds in a consuming project with the installed skill layout and no tools/`check_links.py`, still rewriting inbound references
-  - **Verify:** shell python3 -m pytest .claude/skills/sdlc-studio/scripts/tests/test_retitle_installed_layout.py -q
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retitle_installed_layout.py::RetitleInstalledLayoutTests::test_retitle_rewrites_inbound_links_without_tools_check_links
 
 ## Impact
 
@@ -41,3 +41,4 @@ Retitle is unusable outside the skill's own repo; artefact titles drift from the
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Filed |
 | 2026-10-09 | Claude Opus 5.5 (triage) | Triaged: reproduced with the installed copy; project name generalised |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

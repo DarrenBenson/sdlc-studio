@@ -9,7 +9,7 @@
 > **Epic:** EP0287
 > **Points:** 2
 > **Depends on:** US1052, US1046
-> **Persona:** Maya Okafor
+> **Persona:** Jonah Reyes
 
 ## User Story
 
@@ -26,7 +26,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the shipped scenario keeps 'the Primary persona, Sam the new shopper' (product.md:87), which US1046 AC4 records as a true seat-persona-unknown in every project with no Sam
 - AC2 must fail on: the reword drops the scenario or a review-render heading to silence the rule
 - Serves: Jonah Reyes #4 (upgrade safely).
@@ -35,9 +35,19 @@
 - Revises US1046 AC4's second half in test_validate_seats_cast.py: the shipped cards now draw no persona warning in either cast, and the true-positive case moves to a fixture card carrying the old sentence. US1046 lands first (dependency), so this story changes its test rather than racing it.
 - Builds before the refusal story, so no release refuses the shipped card's copy.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- The Persona field does not match the As-a and Serves
+- Blocked on US1052 and US1046 (Draft). Affects names test_validate_seats_cast.py, which US1046 creates
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

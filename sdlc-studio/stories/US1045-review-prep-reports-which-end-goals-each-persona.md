@@ -26,7 +26,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G11, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G11, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: goals served are counted from persona-name mentions rather than goal references, so the boilerplate block counts Jonah as serving
 - AC2 must fail on: the JSON carries the field but the text render the Persona leg reads does not
 - Serves: Maya Okafor #2 (know the true state of the work).
@@ -35,9 +35,16 @@
 - RFC0061 D4 and D6: one input of the 'served-goal outcomes' usage evidence workstream 4 names. Outcomes beside tag counts would be an addition, not a reason to wait.
 - Test on a fixture: `review_prep.py prep` on this repo ran past a two-minute timeout in the probe.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on US1043 (Draft) and BG0966 (Open)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G11 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

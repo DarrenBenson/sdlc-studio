@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/reference-outputs.md, .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py
+> **Affects:** .claude/skills/sdlc-studio/reference-outputs.md, .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py, changelog.d/BG0947.md
 > **Created:** 2026-10-05
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Opus 5.5; agent; v1
@@ -34,3 +34,4 @@ Generate the table from `sdlc_md.STATUS_VOCAB` and `TERMINAL_STATUS`, or add a t
 | --- | --- | --- |
 | 2026-10-05 | Claude Opus 5.5 | Filed |
 | 2026-10-06 | Claude Opus 5.5 (triage) | Groomed: reproduced against HEAD (bug terminal lacks Fixed/Verified, story and CR list Deferred as terminal, RFC Accepted read as live, no issue or charter rows); Affects adds the test AC2 needs; Verify lines added |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

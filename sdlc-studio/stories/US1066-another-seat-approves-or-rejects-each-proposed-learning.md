@@ -30,7 +30,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: independence judged by reviewer name, so a second qa card holder approves qa's learning
 - AC2 must fail on: an approval recorded with no account of which adverse item the learning engages, so a learning that addresses nothing reads as one that addresses everything
 - AC3 must fail on: the approver briefed with the learning alone, so nothing compares a learning with the card it may drift from (ADR-012's drift risk)
@@ -41,9 +41,18 @@
 - Independence is by recorded seat; by context it needs US1014 and US1015 (later).
 - Re-sized 3 to 5 for the addressed items and the card sections.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1065 (Draft)
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

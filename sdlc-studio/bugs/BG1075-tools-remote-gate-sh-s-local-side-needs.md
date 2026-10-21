@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** tools/remote-gate.sh, tools/tests/test_remote_gate_push.py, CONTRIBUTING.md, changelog.d/BG1075.md
+> **Affects:** tools/remote-gate.sh, tools/tests/test_remote_gate_push.py, tools/tests/test_remote_gate_bash32.py, changelog.d/BG1075.md
 > **Evidence:** US1075 round-2 QA verdict (sdlc-studio/reviews/critic-verdicts.md), its [new] finding; tools/remote-gate.sh `local -A held=()`; install.sh avoids bash-4 syntax for macOS.
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio file
@@ -24,8 +24,8 @@ Keep the local side to bash 3.2: membership by a newline-delimited string, a fix
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The local side of remote-gate.sh runs under bash 3.2, or refuses there with a message naming the bash it needs
-  - **Verify:** pytest tools/tests/test_remote_gate_push.py -k runs_where_the_configuration_says
+- [ ] **AC1** The local side of remote-gate.sh (parse, transport_failed, cmd_push, cmd_doctor) uses no construct newer than bash 3.2: no associative array, no `{var}` descriptor redirection, no `$!` taken from a process substitution, no `mapfile`/`readarray`, no `${v,,}`/`${v^^}`
+  - **Verify:** pytest tools/tests/test_remote_gate_bash32.py::RemoteGateBash32Tests::test_the_local_side_needs_no_bash_4
 
 ## Impact
 
@@ -36,3 +36,4 @@ A contributor on stock macOS cannot use a gate host without installing a newer b
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

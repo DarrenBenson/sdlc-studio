@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, changelog.d/BG0949.md
 > **Evidence:** Found migrating a consuming project from skill 2.4.1 to the installed 6.1.0 on 2026-10-06; reproduced against sdlc-studio main at aa19a2e3.
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio file
@@ -47,3 +47,4 @@ Drop the trailing `\b` for the colon forms - e.g. `\b(?:ruled by|settled in|reso
 | --- | --- | --- |
 | 2026-10-06 | Claude Opus 5.5 | Filed |
 | 2026-10-06 | Claude Opus 5.5 (triage) | Consuming-project name generalised for the neutrality lane |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

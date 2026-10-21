@@ -26,12 +26,20 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: no baseline, so the close cannot tell a goal the run served from one that was met before it
 - AC2 must fail on: the baseline recorded by a plan that opens no run, or a red End goal refusing the plan (it is the expected state before the work)
 - Serves: Maya Okafor #4.
 - CR0629's 'optionally at plan, to show it red before the work'. The first CR0629 piece to shed if the release must shrink.
 - Runs only the traced personas' executable End goals, through the same executor as the close, so the plan's cost is a handful of selectors.
+
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1069 (Draft)
+- The 'Release: 6.2' note is stale under D0382
 
 ## Revision History
 
@@ -39,3 +47,4 @@
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

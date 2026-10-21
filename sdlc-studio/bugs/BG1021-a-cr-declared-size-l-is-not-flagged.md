@@ -3,8 +3,8 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_breakdown_size_l_decompose.py, .claude/skills/sdlc-studio/reference-sprint.md, changelog.d/BG1021.md
-> **Evidence:** Field report, 2026-10-09, planning Sprint 1 on sdlc-studio-lens. sprint.py breakdown --crs Proposed reported 10 units, 0 ungroomed, and one decompose candidate: CR-01M46BZJ because it touches 5 files. CR-01M46BKF and CR-01M46B9P are Size L, with fewer than 5 declared paths and no Points, and neither was listed. The plan of those requests then said the batch was within the unit budget and priced no tokens. After they were refined into stories of 8, 5 and 8 points, the same run re-planned at the done rung said the token forecast was over budget (about 525000 against 500000).
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_breakdown_size_l_decompose.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, changelog.d/BG1021.md
+> **Evidence:** Field report, 2026-10-09, planning Sprint 1 in a consuming project. sprint.py breakdown --crs Proposed reported 10 units, 0 ungroomed, and one decompose candidate: CR-01M46BZJ because it touches 5 files. CR-01M46BKF and CR-01M46B9P are Size L, with fewer than 5 declared paths and no Points, and neither was listed. The plan of those requests then said the batch was within the unit budget and priced no tokens. After they were refined into stories of 8, 5 and 8 points, the same run re-planned at the done rung said the token forecast was over budget (about 525000 against 500000).
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Grok 4.7; agent; v1
@@ -38,3 +38,4 @@ Treat Size L and Size XL as the decompose signal the reference already names, al
 | --- | --- | --- |
 | 2026-10-09 | Grok 4.7 | Filed |
 | 2026-10-12 | Claude Opus 5.5 (triage) | Triaged: confirmed on current code; changelog fragment named for the unit; Verify on a new test module (BG0980) |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

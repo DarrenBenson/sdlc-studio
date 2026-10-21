@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** tools/gate_prereqs.py, tools/tests/test_gate_prereqs.py, tools/tests/test_push_first_estimate.py
+> **Affects:** tools/gate_prereqs.py, tools/gate_timing.py, tools/tests/test_gate_prereqs.py, tools/tests/test_push_first_estimate.py, changelog.d/BG1043.md
 > **Evidence:** US1006 round-1 QA verdict (sdlc-studio/reviews/critic-verdicts.md), the xdist note: gate_timing.py reads by metadata, gate.py:894 by find_spec; reported not blocking, by the story's design note.
 > **Created:** 2026-10-13
 > **Created-by:** sdlc-studio file
@@ -24,10 +24,12 @@ Read xdist one way everywhere, by what the gate does: `gate_prereqs` reports pyt
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given an interpreter carrying pytest-xdist's metadata but no importable xdist module, when the prerequisite check runs, then it names pytest-xdist missing and the cost line says the suite runs serially, as gate.py runs it.
+- [ ] **AC1** Given an interpreter carrying pytest-xdist's metadata but no importable xdist module, when the prerequisite check runs, then it names pytest-xdist missing and the cost line says the suite runs serially, as gate.py runs it
+  - **Verify:** pytest tools/tests/test_gate_prereqs.py::XdistReadingTests::test_metadata_without_a_module_reads_as_missing
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

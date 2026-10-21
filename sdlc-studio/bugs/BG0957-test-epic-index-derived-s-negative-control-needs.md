@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 1
-> **Affects:** tools/tests/test_epic_index_derived.py
+> **Affects:** tools/tests/test_epic_index_derived.py, changelog.d/BG0957.md
 > **Evidence:** Pre-push boundary gate on 65e36b98, 2026-10-06 (full-suite lane); reproduced at 2c72fe8e against 9f75496a.
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio file
@@ -34,3 +34,4 @@ Make the negative control independent of what the live index happens to hold: wh
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-06 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

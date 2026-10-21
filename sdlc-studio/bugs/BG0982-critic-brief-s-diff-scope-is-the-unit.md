@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py, changelog.d/BG0982.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py, changelog.d/BG0982.md
 > **Evidence:** homelab RUN-01M4B5HP, US0185 critic brief fingerprint 3ca2252446de (before Affects was corrected), 2026-10-07
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -45,3 +45,4 @@ In critic.py brief, also compute `git diff --name-only <run base>..HEAD` restric
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Groomed: reproduced at 8b844a80; tool-derived criteria replaced with three executable ones, warning chosen over widening; BG0970 cross-referenced; changelog fragment added to Affects |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

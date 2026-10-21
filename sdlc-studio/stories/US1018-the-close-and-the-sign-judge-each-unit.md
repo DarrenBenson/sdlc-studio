@@ -46,9 +46,17 @@
 - The verifier that counts runs appends a line only when it sees the base bytes. That way the close's own verify pass over the batch does not add to the count.
 - Sized at 5, not the panel's 3. It has four CLI criteria, each over a close or sign fixture: the heaviest fixtures in the suite (test_lean_close.py, test_lean_sign.py builds whole runs and recorded reviews). It also threads a judge flag through `artifact.close` and `transition`, and splits one verdict between two consumers. For comparison, US0816 (the coverage gate) was 8 points. Drive the CLIs by `SCRIPTS / "sprint.py"`. Copy fixture shapes rather than importing another test module (BG1000).
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Marked 'Release: later' (D0356: 6.3); depends on US1017 and inherits its Rule 21 / CR0630 ruling.
+- Notes measure about 6 extra minutes per close and per sign on a 19-unit batch; weigh that cost at the same ruling.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G7 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

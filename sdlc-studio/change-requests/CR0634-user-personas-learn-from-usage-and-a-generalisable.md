@@ -21,11 +21,18 @@ RFC0061 workstream 4 (D6, D9). After seat memory: user personas (Maya, Jonah, Tr
 - [ ] A user persona's memory records a served-goal outcome as evidence with its run
 - [ ] Promoting a persona learning writes only to the skill source checkout and is refused into an installed copy
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Stakeholder consult on EP0287 (D0374)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | Claude Opus 5.5 | Created via `new` (deterministic) |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
 
 ## Amigo Consult
 

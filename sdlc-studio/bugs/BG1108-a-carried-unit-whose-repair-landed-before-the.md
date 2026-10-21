@@ -25,7 +25,7 @@ Record, when a unit is carried, the commit its capping REJECT judged, and have t
 ## Acceptance Criteria
 
 - [ ] **AC1** The brief for a carried unit's redelivery names a diff from the commit its capping REJECT judged, and that diff holds the repair landed before the new run
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py::CarriedReviewBaseTests::test_a_carried_units_brief_diffs_from_the_commit_its_capping_reject_judged
 
 ## Impact
 
@@ -36,3 +36,4 @@ A carried unit's redelivery can be approved over a diff no reviewer was shown, o
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-21 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

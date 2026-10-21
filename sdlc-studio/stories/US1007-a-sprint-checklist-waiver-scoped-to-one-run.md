@@ -32,7 +32,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G5, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G5, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: `_resolve_item` looks the waiver up under the unscoped subject only, so the run tail is recorded and never read; or the waived row drops the detail that names what it waived.
 - AC2 must fail on: the scoped lookup matches any waiver whose subject starts with the item, ignoring which run it names.
 - AC3 must fail on: the tail is matched against `.local/run-state.json` and its archive only, so the waiver covers its run on the machine that closed it and nowhere else.
@@ -44,9 +44,16 @@
 - BG1013 fixes the three printed remedies first (sprint.py:5661 in the close step, sprint.py:7202 in the close pre-flight, sprint_report.py:2428 in the footer). This story makes each print the run-scoped form for the run in hand, with the --authorised-by placeholder BG1013 adds. It also corrects the footer's stale 'The close refuses until each is answered' (panel Q6), since the close records an unanswered item as a known issue (sprint.py:9223).
 - Fixture: a retro, a run record and a critic ledger in which US0001 is approved and BG0460 and US0002 are not, so closing-review is outstanding and its detail names the two open units. `_resolve_item` already keeps `detail` on a WAIVED row (sprint_report.py:2253); AC1 pins it, because that detail is what stops a run-scoped waiver written about BG0460 from hiding an unreviewed US0002.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Release note stale: the story says 'Release: 6.2' but D0382 (2026-10-20, supersedes D0381) sets the path to the 6.2.0 tag as run three plus run four's doc refreshes only, so this lands after 6.2.0; re-tag when a run takes it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G5 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

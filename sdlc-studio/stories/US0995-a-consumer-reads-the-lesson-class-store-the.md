@@ -26,7 +26,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G1, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G1, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: a field added to telemetry.FIELDS or audit_cost.LEDGER_FIELDS, or a key added to a lesson row, with no annex line
 - AC2 must fail on: a column added to the critic delivery table or the velocity header with no annex change
 - Serves Jonah's End goal 4 (jonah-reyes-team-lead.md:29).
@@ -36,9 +36,17 @@
 - decisions.md's in-cell markers: `[kind: ...]` and the trailing `[authorised by: ...]` (decisions.py:357-373) are documented, with the authoriser last; any other marker, including G5's planned `[until: ...]`, is named uncontracted until it ships.
 - deploy-log.md does not exist in this repository; it is a consuming-project ledger, so the fixture creates it.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Persona field names Maya Okafor, but the User Story is 'As a team lead' and Notes say it serves Jonah Reyes's End goal 4 (sdlc-studio/personas/jonah-reyes-team-lead.md:24-29); either set '> **Persona:** Jonah Reyes' or record Jonah as the served Secondary, so the product seat judges it against the goal it names (D0380).
+- Release note stale: the story says 'Release: 6.2' but D0382 (2026-10-20, supersedes D0381) sets the path to the 6.2.0 tag as run three plus run four's doc refreshes only, so this lands after 6.2.0; re-tag when a run takes it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G1 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

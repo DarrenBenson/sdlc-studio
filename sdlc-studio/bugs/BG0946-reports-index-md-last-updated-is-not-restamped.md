@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, changelog.d/BG0946.md
 > **Created:** 2026-10-05
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Opus 5.5; agent; v1
@@ -34,3 +34,4 @@ Restamp the report index when `sprint close` files a report, and extend the stal
 | --- | --- | --- |
 | 2026-10-05 | Claude Opus 5.5 | Filed |
 | 2026-10-06 | Claude Opus 5.5 (triage) | Groomed: the index is written by `sprint_report._sync_report_index`, which stamps only on create, so Affects moves from sprint.py to sprint_report.py; the detector misses it because it reads an `updated`/`created`/`date` column and this index's is `Generated`; 1 -> 2 points; Verify lines added |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

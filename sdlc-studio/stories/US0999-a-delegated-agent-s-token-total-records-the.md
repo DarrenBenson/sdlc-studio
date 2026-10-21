@@ -26,7 +26,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G2, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G2, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the new flag parsed but never passed to run_state.record_delegated_tokens, so the entry carries no model
 - AC2 must fail on: defaulting a missing model to the main thread's model, which would price a smaller model's subagent at the session's larger model's rate
 - Serves Maya's scenario, 'priced from her own rates' (maya-okafor-founder-engineer.md:62-63), and makes the money story's headline mostly priced rather than mostly unpriced.
@@ -35,9 +35,17 @@
 - Recording only: the report changes in the money story, so earlier pages are untouched here. Shares run_state.py and retro.py with US0991; no behavioural overlap found.
 - Conditional on the operator taking money scope (a); with (b) this story is deferred with the money story.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Notes make it conditional on the operator taking CR0610's money scope (a); CR0610's Amigo Consult still lists that question as 'Settle before building' with no recorded answer (D0356 took the 6.2 set wholesale without naming it). Confirm before planning.
+- Release note stale: the story says 'Release: 6.2' but D0382 (2026-10-20, supersedes D0381) sets the path to the 6.2.0 tag as run three plus run four's doc refreshes only, so this lands after 6.2.0; re-tag when a run takes it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G2 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

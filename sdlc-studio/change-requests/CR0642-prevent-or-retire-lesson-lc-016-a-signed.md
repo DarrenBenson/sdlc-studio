@@ -1,6 +1,7 @@
 # CR-0642: Prevent or retire lesson LC-016 (a signed page reads a live source)
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Superseded by:** BG1025
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
@@ -38,3 +39,4 @@ Every lane and review the class reaches: each repeat of LC-016 has cost a review
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-16 | sdlc-studio | Raised |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): superseded by BG1025: both failures it records were fixed before it was filed (BG1025 in f47fecc9, BG0911 in ae02df5d), and LC-016 has had no hit since |

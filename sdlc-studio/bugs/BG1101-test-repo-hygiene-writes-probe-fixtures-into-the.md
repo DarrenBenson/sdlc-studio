@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py, changelog.d/BG1101.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py, .claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene_isolation.py, changelog.d/BG1101.md
 > **Evidence:** devserver1 boundary-suite log for 51231a25 (2026-10-20): test_rehearse_release.py::UpgradeRehearsalTests::test_the_v5_upgrade_strips_retired_tags - shutil.Error on .../scripts/tests/_probe_fixture_deferred.py, No such file or directory. test_repo_hygiene.py:171-177 writes and unlinks that file in TESTS_DIR.
 > **Created:** 2026-10-20
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ A push can be refused, and a local suite go red, at random, by a race with no de
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-20 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

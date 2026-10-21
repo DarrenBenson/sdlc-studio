@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/help/status.md, .claude/skills/sdlc-studio/scripts/tests/test_status_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py, changelog.d/BG0977.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/help/status.md, .claude/skills/sdlc-studio/help/help.md, .claude/skills/sdlc-studio/templates/workflows/release-gate.md, .claude/skills/sdlc-studio/scripts/tests/test_status_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py, changelog.d/BG0977.md
 > **Evidence:** Found running a consuming project on the installed skill 6.1.0, 2026-10-07; confirmed by reading the code at sdlc-studio main fb1ce886. `status.py --brief` -> 'error: unrecognized arguments: --brief'; help/status.md lines 18, 39, 260 and project agent-instruction templates recommend it.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -37,3 +37,4 @@ Add `--brief` (or a `brief` subcommand) that prints the documented single line, 
 | --- | --- | --- |
 | 2026-10-07 | Claude Opus 5.5 | Filed |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Triaged: reproduced at 8b844a80, not a regression, consuming-project name generalised for the neutrality lane; changelog fragment added to Affects |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

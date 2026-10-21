@@ -1,9 +1,10 @@
 # BG0986: `tools/forward-port.sh` deletes the CHANGELOG.md the installer ships into the skill, so `project upgrade` loses its changelog digest after every forward-port
 
 > **Status:** Open
+> **Supersedes:** BG1048
 > **Severity:** Medium
 > **Points:** 1
-> **Affects:** tools/forward-port.sh, tools/tests/test_forward_port_changelog.py
+> **Affects:** tools/forward-port.sh, tools/tests/test_forward_port.py, tools/tests/test_forward_port_changelog.py, changelog.d/BG0986.md
 > **Evidence:** Forward-port dry run on 2026-10-07 after pushing 34a7ee59, while shipping BG0962.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -28,6 +29,8 @@ Exclude CHANGELOG.md from the --delete sweep, or have forward-port ship it the w
   - **Verify:** pytest tools/tests/test_forward_port_changelog.py -k changelog_survives_the_sweep
 - [ ] **AC2** Every other file absent from the source is still swept, so the mirror stays exact
   - **Verify:** pytest tools/tests/test_forward_port_changelog.py -k other_strays_are_still_swept
+- [ ] **AC3** Given an installed copy holding the repository's current CHANGELOG.md, when `bash tools/forward-port.sh --check` runs, then it reports no drift for CHANGELOG.md
+  - **Verify:** pytest tools/tests/test_forward_port_changelog.py -k check_does_not_count_the_changelog_as_drift
 
 ## Triage
 
@@ -38,3 +41,4 @@ Exclude CHANGELOG.md from the --delete sweep, or have forward-port ship it the w
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): supersedes BG1048 |

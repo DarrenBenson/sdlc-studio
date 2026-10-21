@@ -32,7 +32,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G5, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G5, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the help keeps today's sentence, 'an optional `:<unit>`/`:<id>-<id>` tail scopes it', which is true of conformance alone.
 - AC2 must fail on: `subject_error`'s colon-boundary rule admits any tail on a declared subject, which records this today and covers nothing (review_prep reads `leg:tsd` exactly).
 - AC3 must fail on: the engagement-floor family has no tail check, so a non-id tail records clean and the floor's exact-id lookup never finds it.
@@ -46,9 +46,16 @@
 - Corrects the comment at decisions.py:175, which says the scan 'costs about a third of a second', to the measured 2.3 to 2.5 s.
 - reference-scripts-create.md (:174-178) documents `waive` and `waiver_for`'s matching rule. US-3 and this story both change them.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Release note stale: the story says 'Release: 6.2' but D0382 (2026-10-20, supersedes D0381) sets the path to the 6.2.0 tag as run three plus run four's doc refreshes only, so this lands after 6.2.0; re-tag when a run takes it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G5 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

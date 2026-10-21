@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py, changelog.d/BG0981.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py, changelog.d/BG0981.md
 > **Evidence:** homelab RUN-01M4B5HP, US0185 AC1, 2026-10-07
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -23,7 +23,7 @@ homelab US0185 AC1 carried ``- **Verify:** `file utilities/fleet/deploy-manifest
 
 ## Proposed Fix
 
-Have the breakdown census (and so the plan gate) parse each Verify line with the same parser `verify_ac.run` uses, and count an unparseable verifier as ungroomed with `verify_ac`'s own message. `verify_ac` already has a `lint` verb; reuse it rather than a second parser.
+Have `conformance.unit_is_ungroomed` ask each Verify line of the parser `verify_ac.run` uses (`_build_command`), or extend `verify_ac.lint_verifier` to make the same refusal, and report an unparseable verifier as ungroomed with that message. One parser, never a second.
 
 ## Acceptance Criteria
 
@@ -45,3 +45,4 @@ Have the breakdown census (and so the plan gate) parse each Verify line with the
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Groomed: reproduced at 8b844a80; tool-derived criteria replaced with three executable ones; conformance.py and a changelog fragment added to Affects; code spans holding backticks double-fenced for markdownlint |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

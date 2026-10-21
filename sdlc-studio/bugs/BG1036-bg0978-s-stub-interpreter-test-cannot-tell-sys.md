@@ -1,6 +1,6 @@
 # BG1036: BG0978's stub-interpreter test cannot tell sys.executable from the PATH's python3, and checks only an exit code
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_pre_push_stub_unactivated.py, changelog.d/BG0978.md, changelog.d/BG1036.md
@@ -35,3 +35,4 @@ A later edit could make the stub follow PATH again with this test green, and the
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): Won't Fix, not beneficial (LL0056): the regression it guards would show as loud red tests, never a false pass |

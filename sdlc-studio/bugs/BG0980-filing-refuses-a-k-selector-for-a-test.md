@@ -1,8 +1,8 @@
-# BG0980: Filing refuses a Verify selector for a test the fix will add to an existing module, accepts the same selector into a new file, and judges neither without pytest
+# BG0980: Filing refuses a `-k` selector for a test the fix will add to an existing module without naming the node-id form it would accept, so authors scatter one-test files
 
 > **Status:** Open
 > **Severity:** Low
-> **Points:** 2
+> **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_filing_selector_for_a_new_test.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, changelog.d/BG0980.md
 > **Evidence:** Found 2026-10-07 filing this session's frictions; BG0955 filed 2026-10-06 without pytest installed.
 > **Created:** 2026-10-07
@@ -24,15 +24,15 @@ Judge a selector the same way whatever is installed, and treat a test the unit w
 
 ## Acceptance Criteria
 
-- [ ] **AC1** A selector naming a new test in an existing module listed in the unit's Affects is accepted at filing
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_selector_for_a_new_test.py -k new_test_in_an_affected_module_is_accepted
+- [ ] **AC1** A `-k` selector that selects nothing in an existing module is refused with a message naming the node-id form (`<module>::<Class>::<test>`) as the way to name a test the fix will add there, and that node-id form of the same test is accepted
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_selector_for_a_new_test.py::NewTestSelectorTests::test_the_k_refusal_names_the_node_id_route
 - [ ] **AC2** A selector naming a near-miss of an existing test is still refused
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_selector_for_a_new_test.py -k near_miss_is_refused
-- [ ] **AC3** The verdict is the same with and without pytest installed
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_selector_for_a_new_test.py -k verdict_does_not_depend_on_pytest
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
+| 2026-10-21 | sdlc-studio | Retitled: was 'Filing refuses a Verify selector for a test the fix will add to an existing module, accepts the same selector into a new file, and judges neither without pytest' |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

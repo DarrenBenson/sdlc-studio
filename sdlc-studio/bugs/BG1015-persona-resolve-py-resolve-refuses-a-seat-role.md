@@ -12,7 +12,7 @@
 
 ## Summary
 
-`persona_resolve.py resolve --seat <role>` checks the role against a fixed `SEATS` tuple (engineering, qa, product) before looking for the card, so a project that declares its own seat with `<!-- role: sre -->` is refused: 'unknown seat 'sre' (expected: engineering, qa, product)'. `validate seats` accepts the same card (errors=0) and `critic.py brief --seat` resolves project-declared seats. Reproduced at f3c928d4 in a fixture holding an sre seat card. A consuming project (homelab) declares an SRE seat, so its delegated worker cannot be framed through the shipped resolver. Found by the G10 breakdown and its panel review (D0355).
+`persona_resolve.py resolve --seat <role>` checks the role against a fixed `SEATS` tuple (engineering, qa, product) before looking for the card, so a project that declares its own seat with `<!-- role: sre -->` is refused: 'unknown seat 'sre' (expected: engineering, qa, product)'. `validate seats` accepts the same card (errors=0) and `critic.py brief --seat` resolves project-declared seats. Reproduced at f3c928d4 in a fixture holding an sre seat card. A consuming project declares an SRE seat, so its delegated worker cannot be framed through the shipped resolver. Found by the G10 breakdown and its panel review (D0355).
 
 ## Steps to Reproduce
 
@@ -34,3 +34,4 @@ Accept any role a project seat card declares, as the consult path and critic do,
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

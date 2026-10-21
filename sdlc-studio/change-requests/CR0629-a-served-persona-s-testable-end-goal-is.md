@@ -25,11 +25,18 @@ A Sprint Goal can be closed as met while the persona End goal it traces to still
 
 - [ ] Given a Sprint Goal that traces to a persona whose End goal carries an executable Verify, when the run closes, then the goal verdict records that Verify's result beside the seats' `done_means`, and a red result is reported by name rather than read as met.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Stakeholder consult on EP0287 (D0374)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | Claude Opus 5.5 | Raised |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
 
 ## Amigo Consult
 

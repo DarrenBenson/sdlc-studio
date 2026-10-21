@@ -25,12 +25,12 @@
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine_breakdown_fields.py::BreakdownFieldsTests::test_a_breakdowns_criteria_win_over_the_request_seed
 - **AC3:** Given an entry that supplies `acs` and no user-story fields, and another that writes its user story as `as`, `i_want` and `so_that`, when refine mints them, then the first story's User Story block is filled from its title and request as today, and the second's carries the given text.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine_breakdown_fields.py::BreakdownFieldsTests::test_user_story_fields_are_filled_or_kept
-- **AC4:** Given help/refine.md and the refine entry in reference-scripts-create.md, when the test reads the breakdown keys they list and refines a breakdown carrying each one, then every listed key is accepted and lands on the minted story.
+- **AC4:** Given the breakdown-key table in help/refine.md and in the refine entry of reference-scripts-create.md (one key per row), when the test reads each table's key column and refines a breakdown carrying each key, then both columns equal refine's accepted key set exactly and every key lands on the minted story.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine_breakdown_fields.py::BreakdownFieldsTests::test_the_documented_breakdown_keys_are_the_accepted_ones
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G9, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G9, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: refine rendering the criteria with a second writer of its own, or `_mark_ungroomed` running after `artifact.new` and replacing the rendered criteria (refine.py:300-307, :388-393)
 - AC2 must fail on: `_seed_acs` still running after `artifact.new` on a one-story refine, so the request's seed overwrites the reviewed breakdown
 - AC3 must fail on: `_fill_user_story` skipped whenever an entry supplies any field, or the CR's spellings refused as unknown keys
@@ -40,9 +40,16 @@
 - The story writer's keys are named once in artifact.py, as a story subset of `FIELDS_FILE_KEYS`, and refine reads that set: one list, never a second copy. CR0628 AC1 names `as`, `i_want` and `so_that`, the D0355 drafts' spelling, so refine accepts them as aliases of `role`, `capability` and `benefit` and refuses an entry that gives both spellings of one field.
 - Shares the pre-mint helper and the precedence rule with the CR0618 story, so it builds after it (panel's order: BG0995, CR0618, then CR0628).
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on US1025 (Draft)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G9 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -33,9 +33,16 @@
 - Touches panel_escalation (critic.py:1424), seat_verdicts (critic.py:685) and escalation_notice, keyed by the lane the per-seat rounds story defines; sprint.panel_escalation is a shim that delegates, and follows any signature change.
 - Split out of the lanes story at the panel's request, so each is sized on its own; the two ship in one run, because lanes without this print a false 'not converging' after one round.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on US1032 (Draft); ship in the same run
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G10 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

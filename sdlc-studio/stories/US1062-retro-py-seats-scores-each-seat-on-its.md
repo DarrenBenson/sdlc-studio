@@ -8,7 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/reference-scripts-create.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_evidence.py, changelog.d/US1062.md
 > **Epic:** EP0287
 > **Points:** 5
-> **Depends on:** US1061, US1030, US1012, BG1003
+> **Depends on:** US1061, US1030, US1012
 > **Persona:** Maya Okafor
 
 ## User Story
@@ -30,7 +30,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: rows attributed through `critic.seat_for`, which gives Sam's row to product (US1032 AC4's shape, probed), or unattributed rows dropped rather than counted
 - AC2 must fail on: a later-round finding charged to every earlier verdict, the seat's own REJECT included, so a reviewer is blamed for a defect the author's repair introduced
 - AC3 must fail on: a superseded row read as an overturned finding, or counted as a verdict that stood
@@ -43,9 +43,18 @@
 - Each adverse item carries a key the approve story cites (`round:<unit>r<k>`, `bug:<id>`, `ruling:<Dnnnn>`). Rounds as the ledger numbers them; per-seat lanes are US1032 (later).
 - Read-only; `--format json` is the record the learning brief embeds. Provenance per verdict moved to the source story (panel's re-size).
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1061, US1030 and US1012 (Draft)
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

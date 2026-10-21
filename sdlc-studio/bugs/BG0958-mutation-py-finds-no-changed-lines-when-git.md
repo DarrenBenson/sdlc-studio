@@ -1,6 +1,7 @@
 # BG0958: `mutation.py` finds no changed lines when git's `diff.mnemonicPrefix` is set, so a mutation probe scoped to a unit's changes has nothing to mutate
 
 > **Status:** Open
+> **Supersedes:** BG1087
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, changelog.d/BG0958.md
@@ -28,11 +29,12 @@ Pass explicit prefixes to that `git diff` (`--src-prefix=a/ --dst-prefix=b/`, wh
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::ChangedLinesTests::test_mnemonic_prefix_config_still_reports_lines
 - [ ] **AC2** With `diff.noprefix` set, `changed_lines` reports the same lines
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::ChangedLinesTests::test_noprefix_config_still_reports_lines
-- [ ] **AC3** The existing changed-line tests pass whatever the operator's global git config holds
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::ChangedLinesTests::test_reports_touched_lines_and_untracked_files
+- [ ] **AC3** With a global git config (GIT_CONFIG_GLOBAL) setting diff.mnemonicprefix, the changed-line scope names the same lines as under git's defaults, so the changed-line tests no longer depend on the operator's config
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::ChangedLinesTests::test_a_global_mnemonic_prefix_config_still_reports_lines
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-06 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): supersedes BG1087 |

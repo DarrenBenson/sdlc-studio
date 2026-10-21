@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Low
-> **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_record_versioned_writes.py, changelog.d/BG1004.md, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Points:** 5
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_record_versioned_writes.py, changelog.d/BG1004.md, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py
 > **Evidence:** BG0993 QA round 4 APPROVE, 2026-10-09, kept verbatim on BG0993 (the ledger refuses a round past the cap, BG1003).
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio file
@@ -34,3 +34,4 @@ Give the tracked record a version that every write (close, sign, stop) checks an
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

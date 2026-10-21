@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_declares_none_forms.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_declares_none_forms.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, changelog.d/BG0952.md
 > **Evidence:** Found migrating a consuming project from skill 2.4.1 to the installed 6.1.0 on 2026-10-06; reproduced against sdlc-studio main at aa19a2e3.
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio file
@@ -45,3 +45,4 @@ Allow leading punctuation and whitespace before the declaration, e.g. `^[\s\-\u2
 | 2026-10-06 | sdlc-studio | Retitled: was '`- [ ] <U+2014> None (...)` is read as an unanswered Open Question - `_DECLARES_NONE_RE` does not allow a leading dash' |
 | 2026-10-06 | Claude Opus 5.5 (triage) | Em dashes spelled as U+2014 / `\u2014` so the house-style lane passes; the repro is unchanged in effect |
 | 2026-10-06 | Claude Opus 5.5 (triage) | Consuming-project name generalised for the neutrality lane |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

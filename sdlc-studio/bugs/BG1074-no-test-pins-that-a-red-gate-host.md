@@ -25,7 +25,7 @@ Assert in the red-host-run case (AC1's) that the host series gains a run.
 ## Acceptance Criteria
 
 - [ ] **AC1** A red host run's duration is recorded under the host's suite, and a test fails when it is not
-  - **Verify:** pytest tools/tests/test_remote_gate_push.py -k host_judges_exactly_the_pushed_commit
+  - **Verify:** pytest tools/tests/test_remote_gate_push.py::RemoteGatePushTests::test_a_red_host_run_records_its_duration
 
 ## Impact
 
@@ -36,3 +36,4 @@ A red host run could silently stop entering the cost estimate the next push anno
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -1,6 +1,7 @@
 # BG1025: sprint sign moves every batch unit to its terminal status, overriding a unit an operator ruling deliberately left open (Watching), and the seal then blocks transition from restoring it
 
 > **Status:** Fixed
+> **Supersedes:** CR0642
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/BG1025.md
@@ -56,3 +57,4 @@ Signing a run silently contradicts recorded operator rulings and the bug's own c
 | 2026-10-12 | Claude Opus 5.5 (planning) | Goal review: AC3 defines the principal by sign's own rule; AC1 re-checks the signed page VALID (LC-016) |
 | 2026-10-13 | Claude Opus 5.5 (planning) | D0367: AC3 replaced (the sealed refusal names reopen; no transition correction route); Points 3 -> 2 |
 | 2026-10-13 | Claude Opus 5.5 (author) | Built: Affects narrowed to what the fix touches (transition.py unchanged under D0367) |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): supersedes CR0642 |

@@ -27,7 +27,7 @@ Pin the predates exemption through `sprint sign` with a page that predates track
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_s12_pins.py::S12PinTests::test_a_page_that_predates_tracked_records_signs
 - [ ] **AC2** Given the reopen pin, when the fixture's sign no longer seals the run, then the pin fails rather than passing on a precondition it never checked
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_s12_pins.py::S12PinTests::test_a_ruling_after_reopening_a_sealed_run_counts
-- [ ] **AC3** Given a change to sprint.py or lib/`run_state.py`, when the commit-time selection runs, then it selects `test_lean_s12_pins.py`
+- [ ] **AC3** Given a change to lib/`run_state.py`, when the commit-time selection runs, then it selects `test_lean_s12_pins.py` (a change to sprint.py has selected it since 0106122e)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_s12_pins.py::S12PinTests::test_the_pins_are_selected_for_the_code_they_guard
 
 ## Impact
@@ -39,3 +39,4 @@ A later edit can drop sign's predates exemption, or weaken the fixture, with the
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

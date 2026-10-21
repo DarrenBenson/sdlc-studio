@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_close.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_uncut.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1051.md
 > **Evidence:** close --dry-run on RUN-01M4R168, 2026-10-14: 'known-issues: 2 batch unit(s) the run cannot end over: US1004 (Draft) - ... ; BG0978 (Ope' (scratchpad log, uncut by any pipe); sprint.py:7545 `body[0][:160]`.
 > **Created:** 2026-10-14
 > **Created-by:** sdlc-studio file
@@ -24,10 +24,12 @@ Never cut a refusal: wrap long body and remedy lines, or give each unit of a lis
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a close whose known-issues refusal names three units with their reasons, when it runs with --dry-run, then each unit's id, status and reason is printed in full.
+- [ ] **AC1** Given a close whose known-issues refusal names three units with their reasons, when it runs with --dry-run, then each unit's id, status and reason is printed in full
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_uncut.py::DryRunUncutTests::test_every_unit_of_a_long_refusal_is_printed_whole
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-14 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

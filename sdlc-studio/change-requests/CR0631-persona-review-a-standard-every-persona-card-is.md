@@ -21,11 +21,18 @@ RFC0061 workstream 1 (D7). Define the persona standard (format, evidence for eve
 - [ ] A new or changed persona card that fails the standard is refused by `persona_resolve` until fixed, naming each failed rule
 - [ ] The persona review runs on every card change and once per release, recorded with the reviewing seat and the outcome
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Stakeholder consult on EP0287 (D0374)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | Claude Opus 5.5 | Created via `new` (deterministic) |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
 
 ## Amigo Consult
 

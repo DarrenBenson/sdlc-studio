@@ -9,7 +9,7 @@
 > **Epic:** EP0286
 > **Points:** 3
 > **Depends on:** US1047, BG1009
-> **Persona:** Maya Okafor
+> **Persona:** Jonah Reyes
 
 ## User Story
 
@@ -32,7 +32,8 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G12, reviewed by the refine panel; see the request's revision history).
+- Serves: Jonah Reyes #3 (hold humans and agents to the same discipline).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G12, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the brief reads only `run_state.unit_run_base_ref`, so a unit no run names gets no base line.
 - AC2 must fail on: revert-check reads only the open run's base and refuses for want of one.
 - AC3 must fail on: the unit's own field is preferred over the run that holds the unit.
@@ -44,9 +45,18 @@
 - The brief prints the revert-check command for every unit with a base, in-run units included, from the same branch that prints `git diff <base>` (panel answer Q6). That is safe only after BG1009, hence the dependency.
 - Fixtures are git trees driven through the CLIs, in the shape test_lean_brief_base_ref.py uses.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- No Serves line, and the Persona field does not match the As-a
+- Blocked on US1047 (Draft) and BG1009 (Open)
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G12 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

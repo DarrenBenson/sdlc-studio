@@ -26,11 +26,18 @@ Every unit whose tests cannot fail costs a review round to discover it, and a un
 - [ ] `transition -> Done` (story) and `-> Fixed` (bug) run revert-check over the unit's declared Affects and refuse a unit whose criteria stay green with the production change reverted, naming each criterion, unless `Revert-check-exempt` names it with a reason
 - [ ] A unit whose production change cannot be isolated from its tests (no production path in Affects) is reported as not judged, never passed
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- CR0630's yield count and a rule-21 ruling before planning
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-08 | Claude Opus 5.5 | Raised |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
 
 ## Amigo Consult
 

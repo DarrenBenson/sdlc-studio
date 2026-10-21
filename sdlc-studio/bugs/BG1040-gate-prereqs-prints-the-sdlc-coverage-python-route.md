@@ -25,8 +25,8 @@ Read the override's route from the override (run the same probe as `install_rout
 
 - [ ] **AC1** Given `SDLC_COVERAGE_PYTHON` naming a virtual environment with no pip and no coverage, when the check runs, then the route it gives is one that interpreter can run
   - **Verify:** pytest tools/tests/test_gate_prereqs_followup.py::FollowupTests::test_the_override_route_is_read_from_the_override
-- [ ] **AC2** Given a requirement whose marker is false on this interpreter, and a `-r` line, when the check runs, then the first is not reported missing and the second is followed or named
-  - **Verify:** pytest tools/tests/test_gate_prereqs_followup.py::FollowupTests::test_markers_and_r_lines_are_not_misread
+- [ ] **AC2** Given a `-r more.txt` line in requirements-dev.txt, when the check runs, then it names the line as not checked rather than skipping it
+  - **Verify:** pytest tools/tests/test_gate_prereqs_followup.py::FollowupTests::test_an_option_line_is_named_not_skipped
 - [ ] **AC3** Given `coverage>=7.10,<8` and coverage 7.15 installed, when the check runs, then no gap is reported
   - **Verify:** pytest tools/tests/test_gate_prereqs_followup.py::FollowupTests::test_an_upper_bound_sets_no_floor
 
@@ -39,3 +39,4 @@ Low: each case is uncommon, and the shipped requirements-dev.txt has neither mar
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

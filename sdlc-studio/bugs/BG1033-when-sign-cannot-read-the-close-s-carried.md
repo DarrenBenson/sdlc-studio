@@ -23,7 +23,7 @@ Decide the branch (refuse to seal while the carried rows the page names cannot b
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a run whose filed page names a retro sign cannot read, when `sprint sign` runs, then it says why on stderr and the outcome for a unit that retro would carry is the one the fix decides, pinned by a test
+- [ ] **AC1** Given a run whose filed page names a retro sign cannot read, when `sprint sign` runs, then it refuses, names the retro and why on stderr, and moves no unit
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_unreadable_carried_rows.py::SignUnreadableCarriedRowsTests::test_unreadable_carried_rows_are_named_and_decided
 
 ## Impact
@@ -35,3 +35,4 @@ Low: unreachable through the CLI today; if a later change makes it reachable, a 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

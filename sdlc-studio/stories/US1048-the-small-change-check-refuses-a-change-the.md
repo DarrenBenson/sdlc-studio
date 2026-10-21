@@ -9,7 +9,7 @@
 > **Epic:** EP0286
 > **Points:** 5
 > **Depends on:** US1047
-> **Persona:** Maya Okafor
+> **Persona:** Jonah Reyes
 
 ## User Story
 
@@ -32,7 +32,8 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G12, reviewed by the refine panel; see the request's revision history).
+- Serves: Jonah Reyes #3 (hold humans and agents to the same discipline).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G12, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the count reads only paths revert-check can revert, so a fix that creates a second module is under-counted; or tests and markdown are counted as production.
 - AC2 must fail on: any one of the three readings is dropped; the test asserts each arm, so a mutant that keeps the configured list and drops the runtime field fails.
 - AC3 must fail on: any one of the three run checks is dropped; the test asserts each arm, so the change could land inside a run whose close or sign then refuses a moved tree.
@@ -46,9 +47,18 @@
 - Glob matching uses spec_guard's rule, which `review.spec_paths` already uses, so one pattern means one thing.
 - Not read: Points, which the author writes, and the derived tier, which reads the file rather than the change (see out of scope).
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- No Serves line, and the Persona field does not match the As-a
+- Blocked on US1047 (Draft), which creates small_change.py and the `Small-change` base the check reads
+- The 'Release: 6.2' note is stale: D0382 sets 6.2.0 as runs three and four, and EP0286 is in neither, so the release target needs a new ruling
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G12 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

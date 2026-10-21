@@ -32,7 +32,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G5, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G5, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the expiry is compared with `<` in place of `<=`, so a run closed on the named day falls outside it.
 - AC2 must fail on: the expiry is written and never read; or it is compared with the close's UTC date, which still reads 1 November.
 - AC3 must fail on: outside a close the expiry is compared with today, or with nothing because the live record is gone, so a filed run's checklist changes after the fact.
@@ -47,9 +47,17 @@
 - The comment at sprint.py:5616 is reworded: the unanswered-unit hold is unchanged (D0196), but its stated reason, 'a waiver never expires', no longer holds.
 - Panel: the first story to cut if 6.2 is tight.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Panel: 'the first story to cut if 6.2 is tight'.
+- Release note stale: the story says 'Release: 6.2' but D0382 (2026-10-20, supersedes D0381) sets the path to the 6.2.0 tag as run three plus run four's doc refreshes only, so this lands after 6.2.0; re-tag when a run takes it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G5 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

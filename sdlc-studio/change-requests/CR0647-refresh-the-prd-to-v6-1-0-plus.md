@@ -27,8 +27,17 @@ The PRD reads as frozen at v4.1 and states requirements the product has moved pa
 - [ ] Derived counts are stated as bands, per prd.md:85, and per-ship history moves from feature blocks to the changelog table
 - [ ] The verified detail criteria are ticked, and the engagement floor reads Partial until BG0959 is Fixed
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Refine needs: 2 stories, Points 5-8 in total (baseline and feature inventory; rules, NFRs, cost model and count bands)
+- Verify into tools/tests/test_lean_prd_refresh.py (already in Affects) on structured content: feature-row set, band syntax, no '[Unreleased]' marker
+- Sequence after CR0649
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Raised |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

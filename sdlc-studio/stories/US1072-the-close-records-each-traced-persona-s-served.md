@@ -26,7 +26,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: an entry per close attempt, or the outcome recorded without its run or its End goal results
 - AC2 must fail on: every persona card written to, a Negative persona recorded as served, or a missing verdict recorded as an outcome
 - Serves: Maya Okafor #4.
@@ -35,9 +35,18 @@
 - Written by the `persona-memory` close stage; observed entries are evidence, not learnings, and are never live (D5 injects approved learnings).
 - Panel cut order: shed with CR0629's stories and the user-persona learning story if the release must shrink.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1058, US1060 and US1069 (Draft)
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

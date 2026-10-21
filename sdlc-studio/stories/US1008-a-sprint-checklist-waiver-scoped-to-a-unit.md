@@ -45,9 +45,17 @@
 - This story extends the tail grammar `sprint_report` publishes and the literal `--subject` help. US-4's test, which composes the expected help from the published grammar, then holds the two together.
 - Deferred to later by the panel: the run scope removes the live harm, and a waived row's detail already names every open unit (US-1 AC1).
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Marked 'Release: later' (D0356 holds later stories for 6.3); its Notes say the run scope (US1007) removes the live harm.
+- Plannable only after US1007, US1010 and BG0997.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G5 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

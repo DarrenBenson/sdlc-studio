@@ -28,7 +28,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the origin defaulted to the working directory's name (BG1016's leak), or the memory entry left unmarked so one learning is promoted twice
 - AC2 must fail on: the write made into the installed copy, which the next skill update replaces wholesale
 - AC3 must fail on: the neutrality check left to file_finding alone, or an sre learning written to a card the skill does not ship
@@ -39,9 +39,18 @@
 - Only live learnings (approved, listed by a signed close, not struck) of the shipped roles (engineering, qa, product) are promotable. The neutrality call follows US1002's `--stdin` contract; the neutral default origin is what BG1016 asks of lessons.
 - The promoted card is then owed a persona review in the skill repository, which the owed-review story names. First to shed if the release must shrink.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1068 and US1002 (Draft)
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

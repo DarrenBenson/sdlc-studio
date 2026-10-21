@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 3
+> **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_budget.py, changelog.d/BG1065.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
 > **Evidence:** RV0028 finding TSD-12; sdlc-studio/.local/gate-cost.json 127.45 s; CI run 38886029272; gate.py:1825-1833.
 > **Created:** 2026-10-19
@@ -24,8 +24,8 @@ Find why conformance costs 121 s and cut it, or re-derive the budget from a reco
 
 ## Acceptance Criteria
 
-- [ ] **AC1** On a clean tree at main the standard gate's recorded cost is within its budget, or the budget is re-derived from a cited measurement
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_budget.py -k budget_cites_its_measurement
+- [ ] **AC1** `GATE_BUDGET_S` is re-derived from a measured standard-gate run recorded beside it as data (seconds, date, commit), and is not below that measurement
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_budget.py::GateBudgetTests::test_the_budget_is_not_below_its_recorded_measurement
 
 ## Impact
 
@@ -41,3 +41,4 @@ The performance NFR's only proxy is permanently red, so a real slowdown is indis
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
 | 2026-10-20 | Claude Opus 5.5 | Further evidence: a profile of the conformance and engagement-floor lanes on a clean tree |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -27,12 +27,12 @@
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine_carries_verify.py::RefineCarriesVerifyTests::test_the_older_given_when_then_shape_is_carried
 - **AC4:** Given a hand-written request whose criterion's Verify selector is a near miss of a test the fixture holds, when `refine.py apply` runs, then it refuses before anything is minted, naming the request, the criterion and the selector to fix, and points to `--no-seed-acs`; the same refine with `--no-seed-acs` mints.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine_carries_verify.py::RefineCarriesVerifyTests::test_a_mistyped_selector_is_refused_before_anything_is_minted
-- **AC5:** Given the refine entry in reference-scripts-create.md and the grooming section of help/refine.md, when the test reads them and runs the refine they describe on a fixture, then both say a criterion's own lines are carried onto the seeded AC, neither says the Then is the criterion or that a multi-story breakdown gets a redistribute note, and the fixture's seed matches what they say.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine_carries_verify.py::RefineCarriesVerifyTests::test_the_catalogue_and_help_describe_what_the_seed_carries
+- **AC5:** Given the fenced example request and the fenced seeded-story excerpt that the refine entry in reference-scripts-create.md and the grooming section of help/refine.md each carry, when the test refines the example request on a fixture, then the seeded Acceptance Criteria section is byte-identical to each document's fenced excerpt.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine_carries_verify.py::RefineCarriesVerifyTests::test_the_documented_seed_is_the_seed_refine_writes
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G9, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G9, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: today's seed (a placeholder Verify for every criterion); verifiers gathered into a list and paired by position, which only the hand-written request's order exposes, because the filer refuses a blank verifier ahead of a filled one; or the selector markdown-safed
 - AC2 must fail on: the carried line written in a shape `verify_ac.parse_story` does not read under a heading block, such as an indented sub-bullet
 - AC3 must fail on: a parser that reads only an indented Verify line, which drops this shape's grooming silently; or one that absorbs the trailing paragraph into the last criterion
@@ -45,9 +45,16 @@
 - `_decompose` (refine.py:300-307) and `_decompose_into` (refine.py:388-393) each repeat the seeding branch; AC1 drives both. The existing test at test_refine.py:859 still holds: a criterion with no Verify keeps the placeholder.
 - Builds after BG0995, so the fixture's headings are clean whatever label the criteria carry.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on BG0995 (Open)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G9 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

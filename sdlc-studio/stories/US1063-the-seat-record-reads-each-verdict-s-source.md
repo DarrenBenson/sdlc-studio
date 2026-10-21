@@ -8,7 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_rulings.py, changelog.d/US1063.md
 > **Epic:** EP0287
 > **Points:** 3
-> **Depends on:** US1062, US1012, BG1003
+> **Depends on:** US1062, US1012
 > **Persona:** Maya Okafor
 
 ## User Story
@@ -28,7 +28,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the bare role word matched (43 decisions here name 'product' in passing), or the seat's own `ruling:` rows counted as operator rulings about it
 - AC2 must fail on: provenance dropped, or findings read from the folded ledger cell when the reviewer's own file exists
 - AC3 must fail on: Source tokens other than the hash ignored, so a round the operator authorised past the cap leaves no trace on the seat
@@ -37,9 +37,18 @@
 - A decision naming a unit the seat rejected is listed against that REJECT, which is where an overturn would show; the persona and its approver judge it.
 - Source grammar is US1012's (`sha256:<16 hex> <basename>`, `-` transcribed) with BG1003's `authorised:<Dnnnn>` token.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1062 and US1012 (Draft)
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

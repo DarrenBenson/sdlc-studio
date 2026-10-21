@@ -41,9 +41,19 @@
 - Authoring evidence (panel, Q5): a Write, Edit or NotebookEdit call on an Affects path, matched repository-relative through the agent's `worktreePath`, made before the context first received the brief (the issued path is unique, so its first appearance is the timestamp). It is bounded to the unit's delivery: from the open run's review base for the unit, or its In Progress transition, so an edit to a shared file for an earlier unit in a long session does not count. Known limit: an author editing through Bash (`sed -i`, a heredoc) is not counted.
 - Re-sized from 3 to 5: three writers instead of one, and the before-the-brief bound.
 
+## Triage (2026-10-21)
+
+- Ruled (D0388): the criteria are re-aimed at the closing-review row and `sprint sign`, where review independence is already judged. No new refusal is added at the transition to Done. AC1 and AC2 need rewriting to that target before the story is planned.
+Kept (D0387). To plan it:
+
+- Marked 'Release: later' (D0356: 6.3); depends on US1014.
+- AC1's 'transition.py refuses the unit Done as not independently reviewed' assumes a Done-time review gate that does not exist (an unreviewed unit reaches Done; US0916 removed the per-unit sign-off). Re-aim AC1/AC2 at where independence is enforced (the closing-review checklist row and sprint sign) or get an explicit ruling adding a Done review gate.
+- Persona: User Story is 'As a team lead' (Jonah Reyes, End goal 3) while the field names Maya Okafor.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G6 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

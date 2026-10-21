@@ -30,7 +30,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G8, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G8, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the marked modules found by a substring scan for 'corpus' (53 of 430 modules carry the word today), so the undecorated module is selected; or today's `_CODE_SUFFIXES` filter left as the only route, so the answer is `skip` with mode `none`
 - AC2 must fail on: the corpus route firing on every change, so a code-only commit pays for the corpus tests too
 - AC3 must fail on: one route replacing the other when both apply, or a module selected whole by a code route run a second time in the corpus phase
@@ -43,9 +43,16 @@
 - `--corpus` must be consumed where it lands, because the pre-commit `dead-flags` lane refuses a parsed flag that nothing acts on.
 - help/gate.md's 'How a commit's selection is made' list (lines 121-131) says artefacts select nothing. This story owns its rewrite, after BG1000 lands.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Its dependency BG1000 is committed (0106122e) but Open until run three is signed; build after that
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G8 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

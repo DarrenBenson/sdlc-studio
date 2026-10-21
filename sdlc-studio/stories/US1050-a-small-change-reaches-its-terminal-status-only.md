@@ -32,7 +32,8 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G12, reviewed by the refine panel; see the request's revision history).
+- Serves: Maya Okafor #1 (ship real features through a disciplined lifecycle, not ad-hoc edits).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G12, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the transition keeps today's rule, refusing only an unanswered REJECT, so a small change nobody reviewed reaches Fixed.
 - AC2 must fail on: the gate asks `critic.coverage_state`, which discounts a self-review but not a shallow tier (critic.py:1971), so the light APPROVE passes; or the gate counts any APPROVE row. The test asserts each arm.
 - AC3 must fail on: the transition reads the review only, so a started change that grew past the path's limits reaches Fixed and is excused its sprint close.
@@ -44,9 +45,18 @@
 - Scoped to units carrying the `Small-change` field, and to delivered terminals (`sdlc_md.is_delivered_terminal`), so a path unit can still be closed Won't Fix without a review. Projects that never use sprints keep today's transition.
 - close_owed counts a terminal unit as accounted for when it carries the field, qualifies and is covered. The field alone accounts for nothing.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- No Serves line
+- Blocked on US1047 and US1048 (both Draft)
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G12 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

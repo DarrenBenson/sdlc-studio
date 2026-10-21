@@ -26,12 +26,18 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G10, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G10, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the list is built from the plan's ungroomed field, which names placeholder criteria only, or is given to every seat
 - AC2 must fail on: an empty list prints nothing, so a seat cannot tell none from not checked
 - Classified by verify_ac.parse_story and a public alias of verify_ac._is_manual, the runner's own reading, so the brief and `verify_ac run` cannot disagree on what manual means (LL0016).
 - The units are the brief's batch, which is BG1002's live batch.
 - Last in the goal-review cluster, after the seat questions story: all of them change the same two brief functions, so they are built in sequence.
+
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on US1037 (Draft)
 
 ## Revision History
 
@@ -39,3 +45,4 @@
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G10 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

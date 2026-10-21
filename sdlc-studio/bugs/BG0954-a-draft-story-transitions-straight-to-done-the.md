@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, changelog.d/BG0954.md
 > **Evidence:** Reproduced 2026-10-06 in a scratch project with skill 6.1.0+12 (aa19a2e3); homelab US0230 Draft -> Done the same day
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio file
@@ -29,11 +29,11 @@ In transition(), refuse a story moving from Draft (or Proposed) to a delivered t
 ## Acceptance Criteria
 
 - [ ] **AC1** A Draft or Proposed story that misses a Definition of Ready check `sprint plan` applies (resolvable `Affects`, `Points` on the scale) is refused by `transition.py set --status Done`, naming the unmet item, even with green executable criteria; the same story with the item met goes through
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k draft_to_done_requires_ready
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_to_done_requires_ready
 - [ ] **AC2** `transition.py requirements --id <story> --status Done` lists that unmet item for the same Draft story
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k requirements_names_ready
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_requirements_names_the_unmet_ready_item
 - [ ] **AC3** A recorded `> **Decision-Override:**` reason lets the move through and is reported, and `Won't Implement` and `Superseded` stay reachable from Draft without the check
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py -k draft_closures_unaffected
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_closures_and_a_recorded_override_are_unaffected
 
 ## Triage
 
@@ -50,3 +50,4 @@ In transition(), refuse a story moving from Draft (or Proposed) to a delivered t
 | --- | --- | --- |
 | 2026-10-06 | sdlc-studio | Filed |
 | 2026-10-06 | Claude Opus 5.5 (triage) | Groomed: tool-derived criteria replaced; scoped to the DoR checks `sprint plan` already runs, from Draft or Proposed only |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

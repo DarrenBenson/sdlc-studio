@@ -29,7 +29,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G11, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G11, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: no name is extracted after the role phrase, the line number is missing, or the finding is an error that fails the generation flow
 - AC2 must fail on: the claimed role is never compared, or is compared with the card's Cast role when the registry is available
 - AC3 must fail on: a matcher that reads 'End' after "persona's" as a name, or that matches within one line only and so mis-reads the wrapped claim
@@ -42,9 +42,18 @@
 - Project cards only; the shipped defaults are examples, and the shipped product card's 'Sam the new shopper' (templates/personas/amigos/product.md:87) is a true positive in any project with no Sam.
 - Edits validate.py, so not in parallel with the reader or Serves stories.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The story predates D0379 (2026-10-19). The registry now declares two Primaries, one per interface (personas/index.md: Maya Okafor and Rowan Achterberg), and no criterion covers a seat card naming either as 'the Primary'. Add a case where a two-Primary registry draws no seat-persona-role warning for either name
+- Stale Notes facts: seats/product.md:4-5 no longer names its Primary (it now says 'one Primary per interface (D0379)'), and the shipped card's Sam line is now templates/personas/amigos/product.md:93, not :87
+- US1054 rewords the shipped product card so it names no Primary, which falsifies this story's AC4 second clause ('the product card's scenario draws seat-persona-unknown'); US1054 owns that test change, so build this first
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G11 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

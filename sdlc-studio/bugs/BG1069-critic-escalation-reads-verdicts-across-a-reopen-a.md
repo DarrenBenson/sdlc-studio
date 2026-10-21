@@ -4,7 +4,7 @@
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/transition.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_reopen_escalation.py, changelog.d/BG1069.md
 > **Severity:** Low
 > **Points:** 2
 
@@ -23,7 +23,7 @@ Partition the verdict history at the unit's last reopen (a transition out of a c
 ## Acceptance Criteria
 
 - [ ] **AC1** A REJECT recorded after a unit is reopened is evaluated only against verdicts recorded since the reopen
-  - **Verify:** manual - unit test to be named when built
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_reopen_escalation.py::ReopenEscalationTests::test_a_reject_after_a_reopen_is_judged_against_the_new_delivery_only
 
 ## Impact
 
@@ -35,3 +35,4 @@ A routine reopen raises a false split escalation, which teaches the operator to 
 | --- | --- | --- |
 | 2026-10-19 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-19 | Claude Opus 5.5 | Neutralised on the operator's instruction: the consuming project's name replaced by 'a consuming project' before commit (the private-name rule; CR0612 is the filed fix for the filer). The finding is otherwise as filed by its session |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

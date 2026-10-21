@@ -24,10 +24,10 @@ Apply the same markdown-safing to the title and the Evidence value as to the pro
 
 ## Acceptance Criteria
 
-- [ ] **AC1** A finding titled with a bare `snake_case` identifier is written so that markdownlint passes its H1 and its index row
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py -k title_identifier_passes_markdownlint
-- [ ] **AC2** An Evidence value holding such an identifier passes markdownlint too, and its text still reads the same
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py -k evidence_identifier_passes_markdownlint
+- [ ] **AC1** A finding titled with a bare `snake_case` identifier is written with that identifier inside a code span in its H1 and in its index row, so no `_` outside a code span remains on either line
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py -k title_identifier_is_code_spanned
+- [ ] **AC2** An Evidence value holding such an identifier is written with it inside a code span, and its text otherwise reads byte-identical
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py -k evidence_identifier_is_code_spanned
 
 ## Further evidence
 
@@ -42,3 +42,4 @@ Apply the same markdown-safing to the title and the Evidence value as to the pro
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

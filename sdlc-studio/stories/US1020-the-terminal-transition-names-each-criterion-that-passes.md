@@ -38,9 +38,16 @@
 - How CR0616's criteria map: (1) the baseline verb and its recorded result are replaced by this derived measurement. (2) Warn at Review/Done becomes a warning at the delivered terminal, the sign included, with no refusal mode. (3) `manual` criteria are already never run by revert_check, and `Revert-check-exempt` is the regression-guard marker; reference-schema.md's line on that field says so.
 - The line is printed in both `report` and `block` modes. Under `off`, nothing runs and nothing is printed.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Blocked until US1018 lands
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G7 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -1,6 +1,7 @@
 # BG1046: A carry turns a pre-existing finding into a criterion the carried bug can never meet
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG1079
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -31,3 +32,4 @@ Write criteria only for the items that hold the gate, by the same reading `recon
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-14 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): superseded by BG1079: duplicate of BG1079, which also covers info items and has an executable Verify |

@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 13 |
+| Proposed | 11 |
 | Approved | 0 |
 | In Progress | 28 |
 | Complete | 520 |
-| Rejected | 29 |
+| Rejected | 30 |
 | Deferred | 0 |
-| Superseded | 60 |
+| Superseded | 61 |
 | Blocked | 0 |
 | **Total** | **650** |
 
@@ -33,7 +33,7 @@
 | [CR-0619](CR0619-a-recorded-review-verdict-has-no-binding-to.md) | A recorded review verdict has no binding to the reviewer's own output - the orchestrator transcribes it into the file critic.py record reads | In Progress | Medium | Improvement | 2026-10-08 | EP0280 |
 | [CR-0620](CR0620-choose-review-seats-by-what-a-change-touches.md) | Choose review seats by what a change touches, not engineering for every unit | In Progress | Medium | Feature | 2026-10-08 | EP0284 |
 | [CR-0621](CR0621-make-a-served-persona-s-goals-a-standing.md) | Make a served persona's goals a standing, checkable criterion on the stories that touch them | In Progress | Medium | Feature | 2026-10-08 | EP0285 |
-| [CR-0622](CR0622-a-second-different-seat-on-high-risk-units.md) | A second, different seat on high-risk units - or a different seat on round 2 | In Progress | Medium | Feature | 2026-10-08 | EP0284 |
+| [CR-0622](CR0622-a-second-different-seat-on-high-risk-units.md) | A second, different seat on high-risk units | In Progress | Medium | Feature | 2026-10-08 | EP0284 |
 | [CR-0623](CR0623-the-story-template-s-persona-reference-section-is.md) | The story template's Persona Reference section is boilerplate - require it to name the goal served, or drop it | In Progress | Medium | Feature | 2026-10-08 | EP0285 |
 | [CR-0624](CR0624-run-revert-check-at-the-terminal-gate-so.md) | Run revert-check at the terminal gate, so a test that passes with the change removed is caught by the tool, not by a reviewer breaking the code by hand | In Progress | Medium | Improvement | 2026-10-08 | EP0281 |
 | [CR-0625](CR0625-validate-seats-checks-a-seat-card-s-named.md) | validate seats checks a seat card's named personas against the project's declared cast, so a seat cannot review for a primary persona the project no longer has | In Progress | Low | Improvement | 2026-10-08 | EP0285 |
@@ -52,8 +52,8 @@
 | [CR-0638](CR0638-the-release-verify-lane-has-no-vitest-batch.md) | The release verify lane has no vitest batch path, so in a vitest project every criterion is a cold `npx vitest run` spawn and the lane runs at three times its declared 600 s budget | Proposed | Medium | Improvement | 2026-10-12 | -- |
 | [CR-0639](CR0639-a-worktree-isolated-reviewer-that-rejects-cannot-be.md) | A worktree-isolated reviewer that REJECTs cannot be resumed for its round 2 once its worktree is removed, and nothing says to keep it until the review converges | Proposed | Low | Improvement | 2026-10-13 | -- |
 | [CR-0640](CR0640-a-reference-page-edited-without-regenerating-its-reading.md) | A reference page edited without regenerating its reading guide passes every commit lane and is found only by the full suite at push | Proposed | Low | Improvement | 2026-10-13 | -- |
-| [CR-0641](CR0641-a-review-round-ruling-is-admitted-from-any.md) | A review-round ruling is admitted from any accepted decision about the unit, not one that authorises a round | Proposed | P3 | Improvement | 2026-10-13 | -- |
-| [CR-0642](CR0642-prevent-or-retire-lesson-lc-016-a-signed.md) | Prevent or retire lesson LC-016 (a signed page reads a live source) | Proposed | Medium | Improvement | 2026-10-16 | -- |
+| [CR-0641](CR0641-a-review-round-ruling-is-admitted-from-any.md) | A review-round ruling is admitted from any accepted decision about the unit, not one that authorises a round | Rejected | P3 | Improvement | 2026-10-13 | -- |
+| [CR-0642](CR0642-prevent-or-retire-lesson-lc-016-a-signed.md) | Prevent or retire lesson LC-016 (a signed page reads a live source) | Superseded | Medium | Improvement | 2026-10-16 | -- |
 | [CR-0643](CR0643-prevent-or-retire-lesson-lc-018-a-doc.md) | Prevent or retire lesson LC-018 (a doc claim checked by reading) | Proposed | Medium | Improvement | 2026-10-16 | -- |
 | [CR-0644](CR0644-bring-the-trd-s-and-tsd-s-gate.md) | Bring the TRD's and TSD's gate architecture current: the three hooks, the boundary gates, the test stack, CI and its scheduled jobs, and the manual pre-tag steps | In Progress | High | Improvement | 2026-10-19 | EP0290 |
 | [CR-0645](CR0645-refresh-the-trd-to-6-2-delivery-units.md) | Refresh the TRD to 6.2: delivery units that execute Verify lines, committed evidence and run records, the type registry, network paths and the stale ADRs | Proposed | High | Improvement | 2026-10-19 | -- |

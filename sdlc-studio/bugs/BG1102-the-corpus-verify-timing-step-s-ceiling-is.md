@@ -1,6 +1,6 @@
 # BG1102: The corpus-verify timing step's ceiling is pinned only as an integer, so one as long as the job's own cap passes
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_corpus_verify_env.py, changelog.d/BG1102.md
@@ -36,3 +36,4 @@ A later edit can raise the step's ceiling to one that lets a hang consume the jo
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-20 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): Won't Fix, not beneficial (LL0056): it pins a hypothetical edit to a timeout ceiling on a step that is already bounded and cannot stop the job |

@@ -47,9 +47,17 @@
 - G7: a standing criterion passes with or without the unit's change, so G7's terminal transition and lane return will name it on every story that carries one. The operator rules on exempting it (see questions); this story writes whatever that ruling requires.
 - RFC0061 D6: if user personas learn from usage evidence, they would read the `standing:` marker this story writes; nothing here changes either way.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- An operator ruling is owed and not in decisions.md: is a standing criterion exempt from revert-check? Such a criterion passes with or without the change, so G7 (US1019/US1020) would name it on every carrying story. The story says it writes 'whatever that ruling requires', so its scope is open
+- Depends on US1039, US1041, BG0995, US1025 and US1026 (Notes: enters only after all three refine-cluster units land)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G11 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

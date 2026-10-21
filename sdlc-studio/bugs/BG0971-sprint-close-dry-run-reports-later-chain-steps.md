@@ -24,8 +24,8 @@ Render dry-run step results conditionally: 'would lift N lessons', 'would gradua
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Every dry-run step line that the real close would write is worded as a preview, not a past action
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_wording.py -k dry_run_lines_are_conditional
+- [ ] **AC1** Every dry-run line that reports an action step run on the scratch copy (`DRY_RUN_ACTION_STEPS`) carries `COPY_MARK`, so no unmarked line reports a write the preview did not make
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_wording.py -k action_step_lines_carry_the_copy_mark
 
 ## Triage
 
@@ -37,3 +37,4 @@ Render dry-run step results conditionally: 'would lift N lessons', 'would gradua
 | --- | --- | --- |
 | 2026-10-07 | Claude Opus 5.5 | Filed |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Triaged: reproduced at 8b844a80, not a regression, consuming-project name generalised for the neutrality lane; changelog fragment added to Affects |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

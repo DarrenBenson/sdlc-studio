@@ -9,7 +9,7 @@
 > **Epic:** EP0287
 > **Points:** 5
 > **Depends on:** US1039, US1046
-> **Persona:** Maya Okafor
+> **Persona:** Jonah Reyes
 
 ## User Story
 
@@ -30,7 +30,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: a rule added to validate.py or persona_review.py with no line on the page, or a page line naming a rule nothing prints (LL0043: a list checked one way is a lower bound)
 - AC2 must fail on: every finding read as blocking, so a card missing only its Evidence exits 1, or none is; or validate keeping its own idea of which rules block (LL0042)
 - AC3 must fail on: the rule checks only that an `## Evidence` heading exists, so a section citing nothing real passes (LL0023: a check of existence is satisfied by touch)
@@ -47,9 +47,19 @@
 - reference-persona.md is 522 of its 600-line budget (tools/check_budgets.py); this group adds about 20 lines there (two rule rows, the review workflow rewritten in place, the refusal and owed paragraphs). Memory and learning-loop docs go to the new reference-persona-learning.md, not here.
 - Edits validate.py, so not in parallel with US1039, US1043 or US1046. Builds first in the group.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- D0374 requires `/sdlc-studio consult stakeholders` for EP0287 before it is built. sdlc-studio/reviews/ holds consults for CR0526, EP0253-EP0256 and EP0289 only, none for EP0287
+- The Persona field does not match the As-a and Serves
+- Blocked on US1039 and US1046 (both Draft; US1039 creates reference-persona.md's rule table)
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

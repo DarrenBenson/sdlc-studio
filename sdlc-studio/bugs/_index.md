@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 139 |
+| Open | 129 |
 | In Progress | 0 |
-| Fixed | 808 |
+| Fixed | 809 |
 | Verified | 0 |
 | Closed | 87 |
-| Won't Fix | 41 |
-| Superseded | 33 |
-| **Total** | **1108** |
+| Won't Fix | 47 |
+| Superseded | 38 |
+| **Total** | **1110** |
 
 ## All Bugs
 
@@ -38,7 +38,7 @@
 | [BG0960](BG0960-a-plan-refused-for-a-missing-verify-line.md) | A plan refused for a missing Verify line tells you to add Affects and Points | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0961](BG0961-a-verify-line-cannot-name-the-skill-skill.md) | A Verify line cannot name the skill: <skill> is a shell redirect, not a path | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0962](BG0962-closing-review-reads-a-unit-s-latest-verdict.md) | closing-review reads a unit's latest verdict only from the frozen sprint-review ledger, so a frozen batch REJECT outlives a later per-unit APPROVE and blocks the close as a hard correctness gate | Open | High | 2026-10-07 | 2026-10-07 |
-| [BG0963](BG0963-wall-clock-assertions-in-the-parallel-suite-fail.md) | Wall-clock assertions in the parallel suite fail under load, so a busy machine refuses commits and pushes on timing alone | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0963](BG0963-wall-clock-assertions-in-the-parallel-suite-fail.md) | Wall-clock assertions in the parallel suite fail under load, so a busy machine refuses commits and pushes on timing alone | Open | High | 2026-10-07 | 2026-10-07 |
 | [BG0964](BG0964-help-refine-md-never-mentions-into-so-a.md) | help/refine.md never mentions `--into`, so a story added to an already-refined epic is made with `artifact.py new` and carries no Delivers link | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0965](BG0965-retro-py-validate-ignores-actions-raised-in-a.md) | retro.py validate ignores '## Actions raised' in a Keep/Stop/Try retro, so it reports '0 findings, all dispositioned' over rows it never read | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0966](BG0966-review-prep-persona-usage-calls-a-persona-unused.md) | review_prep persona_usage calls a persona unused unless its file's H1 appears verbatim in prd.md - stories, CRs and consult logs are never read | Open | Low | 2026-10-07 | 2026-10-07 |
@@ -55,7 +55,7 @@
 | [BG0977](BG0977-help-status-md-documents-sdlc-studio-status-brief.md) | help/status.md documents '/sdlc-studio status --brief' but status.py has no --brief, so the documented one-line summary errors | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0978](BG0978-test-pre-push-hook-s-stub-path-symlinks.md) | `test_pre_push_hook`'s stub PATH symlinks python3, which drops a virtualenv's packages, so the push gate cannot pass where pytest lives in a venv | Fixed | Low | 2026-10-07 | 2026-10-07 |
 | [BG0979](BG0979-file-finding-py-misdirects-a-cr-s-author.md) | `file_finding.py` misdirects a CR's author: `--recommendation` is documented as RFC-only though a CR carries it, and the no-verifier warning cites a `sprint plan` refusal that never applies to a CR | Open | Low | 2026-10-07 | 2026-10-07 |
-| [BG0980](BG0980-filing-refuses-a-verify-selector-for-a-test.md) | Filing refuses a Verify selector for a test the fix will add to an existing module, accepts the same selector into a new file, and judges neither without pytest | Open | Low | 2026-10-07 | 2026-10-07 |
+| [BG0980](BG0980-filing-refuses-a-k-selector-for-a-test.md) | Filing refuses a `-k` selector for a test the fix will add to an existing module without naming the node-id form it would accept, so authors scatter one-test files | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0981](BG0981-breakdown-and-plan-call-a-unit-groomed-when.md) | breakdown and plan call a unit groomed when a Verify line is one verify_ac cannot parse | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0982](BG0982-critic-brief-s-diff-scope-is-the-unit.md) | critic brief's diff scope is the unit's Affects only - files the unit changed but did not declare are invisible to the reviewer | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0983](BG0983-review-coverage-and-verdict-for-read-a-unit.md) | `review_coverage` and `verdict_for` read a unit's whole per-unit ledger, so an APPROVE from an earlier delivery covers a re-delivered unit that nobody reviewed in this run | Open | Medium | 2026-10-07 | 2026-10-07 |
@@ -82,7 +82,7 @@
 | [BG1004](BG1004-bg0993-s-tracked-run-record-tells-a-newer.md) | BG0993's tracked run record tells a newer copy by reopen count alone, so two reopens made at once overwrite each other; and the close preview's no-write guard is unpinned | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1005](BG1005-a-pytest-verify-that-partly-skips-is-stamped.md) | A pytest Verify that PARTLY skips is stamped green - BG0317 closed only the all-skipped case | Open | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1006](BG1006-sprint-batch-add-prints-a-refusal-for-an.md) | sprint batch add prints a refusal for an unresolvable Affects path but adds the unit anyway | Open | Low | 2026-10-09 | 2026-10-09 |
-| [BG1007](BG1007-a-signed-report-s-figure-sources-are-outside.md) | A signed report's figure sources are outside its fingerprint, so every source can be rewritten and the page still checks VALID | Open | Low | 2026-10-09 | 2026-10-09 |
+| [BG1007](BG1007-a-signed-report-s-figure-sources-are-outside.md) | A signed report's figure sources are outside its fingerprint, so every source can be rewritten and the page still checks VALID | Superseded | Low | 2026-10-09 | 2026-10-09 |
 | [BG1008](BG1008-a-waiver-recorded-before-the-run-can-answer.md) | A waiver recorded before the run can answer a checklist row while the page's Waivers in force section says no gate stood down | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1009](BG1009-revert-check-reads-a-timed-out-verifier-as.md) | revert-check reads a timed-out verifier as red and an empty revert as green, so it passes a unit it never measured and refuses one it never reverted | Open | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1010](BG1010-sprint-report-py-build-run-resolves-the-named.md) | sprint_report.py build --run resolves the named run and then builds the page from the default run | Open | Low | 2026-10-09 | 2026-10-09 |
@@ -97,7 +97,7 @@
 | [BG1019](BG1019-artifact-py-retitle-refuses-in-every-consuming-project.md) | artifact.py retitle refuses in every consuming project: it loads tools/check_links.py from the operated repo or the skill's own source checkout, and an installed skill has neither | Open | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1020](BG1020-transition-py-refuses-an-rfc-s-accepted-until.md) | transition.py refuses an RFC's Accepted until its spawned CRs are resolved, contradicting reference-rfc.md's accept step | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1021](BG1021-a-cr-declared-size-l-is-not-flagged.md) | A CR declared Size L is not flagged for decomposition | Open | Medium | 2026-10-09 | 2026-10-09 |
-| [BG1022](BG1022-a-stale-tsd-still-says-the-batch-does.md) | A stale TSD still says the batch does not deliver Unit Testing | Open | Medium | 2026-10-09 | 2026-10-09 |
+| [BG1022](BG1022-a-stale-tsd-still-says-the-batch-does.md) | A stale TSD still says the batch does not deliver Unit Testing | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1023](BG1023-verify-ac-s-vitest-and-jest-verbs-fold.md) | verify_ac's vitest and jest verbs fold the whole tail into the -t pattern and call a bare binary, so `vitest <file> -t "name"` can never select its test | Open | Medium | 2026-10-11 | 2026-10-11 |
 | [BG1024](BG1024-verify-ac-s-grep-verb-takes-a-leading.md) | verify_ac's grep verb takes a leading flag as the pattern, so `grep -q -e X file` and `grep -E ... file` Verify lines fail | Open | Low | 2026-10-11 | 2026-10-11 |
 | [BG1025](BG1025-sprint-sign-moves-every-batch-unit-to-its.md) | sprint sign moves every batch unit to its terminal status, overriding a unit an operator ruling deliberately left open (Watching), and the seal then blocks transition from restoring it | Fixed | Medium | 2026-10-12 | 2026-10-12 |
@@ -111,19 +111,19 @@
 | [BG1033](BG1033-when-sign-cannot-read-the-close-s-carried.md) | When sign cannot read the close's carried rows it moves every unit, and the warning it prints has no test | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1034](BG1034-sign-s-predates-exemption-has-no-pin-and.md) | Sign's predates exemption has no pin, and BG0944's reopen pin and module selection are weaker than they look | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1035](BG1035-bg0945-s-test-holds-the-old-claim-off.md) | BG0945's test holds the old claim off by one literal phrase, and the untracked first-ruling branch is unstated and unpinned | Open | Low | 2026-10-13 | 2026-10-13 |
-| [BG1036](BG1036-bg0978-s-stub-interpreter-test-cannot-tell-sys.md) | BG0978's stub-interpreter test cannot tell sys.executable from the PATH's python3, and checks only an exit code | Open | Low | 2026-10-13 | 2026-10-13 |
+| [BG1036](BG1036-bg0978-s-stub-interpreter-test-cannot-tell-sys.md) | BG0978's stub-interpreter test cannot tell sys.executable from the PATH's python3, and checks only an exit code | Won't Fix | Low | 2026-10-13 | 2026-10-13 |
 | [BG1037](BG1037-a-bracket-of-another-type-opened-inside-a.md) | A bracket of another type opened inside a pair is not literal, so a ';' the pair encloses is still split, and BG1032's note over-claims inside code spans | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1038](BG1038-the-pre-push-keepalive-check-reads-git-ssh.md) | The pre-push keepalive check reads GIT_SSH above core.sshCommand, the reverse of git's order, and asks ssh -G without the configured command's own options | Open | Low | 2026-10-13 | 2026-10-13 |
-| [BG1039](BG1039-us1004-s-one-list-test-no-longer-requires.md) | US1004's one-list test no longer requires `-r` on the suite step, and still checks hand installs against its own list of four packages | Open | Low | 2026-10-13 | 2026-10-13 |
+| [BG1039](BG1039-us1004-s-one-list-test-no-longer-requires.md) | US1004's one-list test no longer requires `-r` on the suite step, and still checks hand installs against its own list of four packages | Fixed | Low | 2026-10-13 | 2026-10-13 |
 | [BG1040](BG1040-gate-prereqs-prints-the-sdlc-coverage-python-route.md) | gate_prereqs prints the SDLC_COVERAGE_PYTHON route without reading that interpreter, reads markers without evaluating them, and skips -r lines silently | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1041](BG1041-the-module-alone-lane-test-can-never-pass.md) | The module-alone lane test can never pass on a host with fewer than four cores, and blames the pool for it | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1042](BG1042-the-push-preflight-s-tests-leak-sdlc-coverage.md) | The push preflight's tests leak SDLC_COVERAGE_PYTHON and leave its REFUSES mark and pytest's class unpinned | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1043](BG1043-the-prerequisite-check-and-the-gate-read-pytest.md) | The prerequisite check and the gate read pytest-xdist two different ways | Open | Low | 2026-10-13 | 2026-10-13 |
 | [BG1044](BG1044-a-ruling-record-s-note-is-decided-by.md) | A ruling record's note is decided by the whole ledger, and a tab in a reviewer id still forges a field | Fixed | Low | 2026-10-13 | 2026-10-13 |
 | [BG1045](BG1045-us1006-did-not-converge-in-review-round-2.md) | US1006 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-14 | 2026-10-14 |
-| [BG1046](BG1046-a-carry-turns-a-pre-existing-finding-into.md) | A carry turns a pre-existing finding into a criterion the carried bug can never meet | Open | Low | 2026-10-14 | 2026-10-14 |
+| [BG1046](BG1046-a-carry-turns-a-pre-existing-finding-into.md) | A carry turns a pre-existing finding into a criterion the carried bug can never meet | Superseded | Low | 2026-10-14 | 2026-10-14 |
 | [BG1047](BG1047-test-status-s-backlog-advisory-fixture-dates-its.md) | test_status's backlog advisory fixture dates its bugs 2026-07-16, so it went stale on 2026-10-14 and main is red | Fixed | High | 2026-10-14 | 2026-10-14 |
-| [BG1048](BG1048-forward-port-deletes-the-changelog-md-install-sh.md) | forward-port deletes the CHANGELOG.md install.sh ships into the installed copy | Open | Low | 2026-10-14 | 2026-10-14 |
+| [BG1048](BG1048-forward-port-deletes-the-changelog-md-install-sh.md) | forward-port deletes the CHANGELOG.md install.sh ships into the installed copy | Superseded | Low | 2026-10-14 | 2026-10-14 |
 | [BG1049](BG1049-bg1044-s-ruling-record-tests-leave-the-date.md) | BG1044's ruling-record tests leave the date, the note's once-only rule, the heading anchor and the case boundary unpinned | Open | Low | 2026-10-14 | 2026-10-14 |
 | [BG1050](BG1050-a-reviewer-id-carrying-a-carriage-return-or.md) | A reviewer id carrying a carriage return or line separator tears its own verdict row | Open | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1051](BG1051-the-close-s-chain-report-cuts-every-refusal.md) | The close's chain report cuts every refusal line at 160 characters, hiding which unit is blocked and why | Open | Medium | 2026-10-14 | 2026-10-14 |
@@ -132,7 +132,7 @@
 | [BG1054](BG1054-the-scheduled-corpus-verify-lane-reads-us0892-ac1.md) | The scheduled corpus-verify lane reads US0892 AC1 red because its job installs no pytest-xdist | Fixed | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1055](BG1055-a-retro-scaffolded-by-the-close-and-committed.md) | A retro scaffolded by the close and committed before the close re-runs turns the release-verify lane red | Open | Low | 2026-10-15 | 2026-10-15 |
 | [BG1056](BG1056-bg1053-did-not-converge-in-review-round-2.md) | BG1053 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-15 | 2026-10-15 |
-| [BG1057](BG1057-the-one-list-test-s-check-that-ci.md) | The one-list test's check that ci installs from requirements-dev.txt sits outside its self-tested rules | Open | Low | 2026-10-15 | 2026-10-15 |
+| [BG1057](BG1057-the-one-list-test-s-check-that-ci.md) | The one-list test's check that ci installs from requirements-dev.txt sits outside its self-tested rules | Won't Fix | Low | 2026-10-15 | 2026-10-15 |
 | [BG1058](BG1058-the-close-s-dry-run-names-a-unit.md) | The close's dry run names a unit the run cannot end over that the real tree answers | Open | Medium | 2026-10-15 | 2026-10-15 |
 | [BG1059](BG1059-a-retro-s-batch-field-is-never-compared.md) | A retro's Batch field is never compared with the run's batch, so a unit added after the retro was scaffolded is left out of the run's measurement and its close accounting | Open | Medium | 2026-10-16 | 2026-10-16 |
 | [BG1060](BG1060-retro-extract-starts-a-new-project-lessons-log.md) | retro extract starts a new project lessons log when the committed one is missing, though the committed digest lists the lessons that log holds | Open | Medium | 2026-10-16 | 2026-10-16 |
@@ -145,13 +145,13 @@
 | [BG1067](BG1067-the-triage-session-cap-keys-on-the-run.md) | The triage session cap keys on the run state's id whether or not the run is sealed, so a signed run's counter keeps charging every later session's findings | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1068](BG1068-artifact-py-retitle-rewrites-an-inbound-link-s.md) | artifact.py retitle rewrites an inbound link's target but leaves its link text naming the old title, so an epic's story breakdown reads the retired title | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1069](BG1069-critic-escalation-reads-verdicts-across-a-reopen-a.md) | critic escalation reads verdicts across a reopen: a reopened unit's first new-round REJECT is reported as a panel split against the previous delivery's APPROVE | Open | Low | 2026-10-19 | 2026-10-19 |
-| [BG1070](BG1070-conformance-reads-us0357-and-us0358-as-missing-their.md) | conformance reads US0357 and US0358 as missing their verified stage in a fresh checkout, though both carry Verified stamps, so the lane's verdict depends on the clone's .local state | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1070](BG1070-conformance-reads-us0357-and-us0358-as-missing-their.md) | conformance reads US0357 and US0358 as missing their verified stage wherever markdownlint is not installed, because their test modules raise at collection and a stamp on a file that will not collect is counted dead | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1071](BG1071-the-project-seat-card-s-design-persona-check.md) | The project seat card's design-persona check stops at a full stop, so a name followed by a file path before 'design persona' passes | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1072](BG1072-test-persona-coherence-s-id-check-reads-a.md) | test_persona_coherence's id check reads a fixed list of id prefixes, so a card citing a handoff or test-spec id that resolves to nothing passes | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1073](BG1073-critic-py-record-writes-a-reviewer-s-findings.md) | critic.py record writes a reviewer's findings verbatim into a ledger the repository's markdownlint refuses, so a finding quoting an email-shaped name blocks the next commit | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1074](BG1074-no-test-pins-that-a-red-gate-host.md) | No test pins that a red gate-host run records its duration, so the hook can stop recording exit 1 with the suite green | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1075](BG1075-tools-remote-gate-sh-s-local-side-needs.md) | tools/remote-gate.sh's local side needs bash 4, so a pusher on stock macOS bash 3.2 has every gate-host push refused | Open | Low | 2026-10-19 | 2026-10-19 |
-| [BG1076](BG1076-the-rejoinder-brief-asks-a-reviewer-to-rule.md) | The rejoinder brief asks a reviewer to rule each earlier finding, but the return contract has no place for the rulings, so a round-2 verdict that writes them untagged is refused by critic.py record | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1076](BG1076-the-rejoinder-brief-asks-a-reviewer-to-rule.md) | The rejoinder brief asks a reviewer to rule each earlier finding, but the return contract has no place for the rulings, so a round-2 verdict that writes them untagged is refused by critic.py record | Superseded | Low | 2026-10-19 | 2026-10-19 |
 | [BG1077](BG1077-test-a-ctrl-c-stops-every-lane-with.md) | test_a_ctrl_c_stops_every_lane_with_the_hook can see every lane finish before its interrupt lands on a loaded host, and reads the hook's clean exit as a failure | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
 | [BG1078](BG1078-us1076-did-not-converge-in-review-round-2.md) | US1076 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1079](BG1079-a-unit-carried-at-the-review-cap-gets.md) | A unit carried at the review cap gets a criterion for every ISSUES item, including info rulings and pre-existing findings already filed | Open | Low | 2026-10-19 | 2026-10-19 |
@@ -162,11 +162,11 @@
 | [BG1084](BG1084-remote-gate-doctor-s-exit-codes-are-documented.md) | remote-gate doctor's exit codes are documented as 0, 1 and 3, and a missing transport is reported as an unready host | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1085](BG1085-remote-gate-doctor-prints-the-local-clone-s.md) | remote-gate doctor prints the local clone's Python install route for a gap on the gate host | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1086](BG1086-run-suite-sh-s-passed-count-needs-bc.md) | run-suite.sh's passed count needs bc, which is not a declared prerequisite, and is null with a broken-pipe error where bc is absent | Open | Low | 2026-10-19 | 2026-10-19 |
-| [BG1087](BG1087-mutation-py-s-changed-line-scope-finds-no.md) | mutation.py's changed-line scope finds no lines on a machine whose git config sets diff.mnemonicprefix or diff.noprefix | Open | Medium | 2026-10-19 | 2026-10-19 |
-| [BG1088](BG1088-a-setup-fault-on-a-gate-host-s.md) | A setup fault on a gate host's suite run is named as 'did not run the all suite' with no test that fails without it | Open | Low | 2026-10-19 | 2026-10-19 |
-| [BG1089](BG1089-us1078-ac3-s-verify-test-does-not-exercise.md) | US1078 AC3's Verify test does not exercise the verdict's binding to the tree sent; only a sibling test does | Open | Low | 2026-10-19 | 2026-10-19 |
-| [BG1090](BG1090-test-output-prints-in-declared-order-whatever-finishes.md) | test_output_prints_in_declared_order_whatever_finishes_first failed one subtest under heavy load, and passes alone; not yet diagnosed | Open | Low | 2026-10-19 | 2026-10-19 |
-| [BG1091](BG1091-us1084-s-document-tests-still-pass-three-phrasings.md) | US1084's document tests still pass three phrasings they exist to refuse | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1087](BG1087-mutation-py-s-changed-line-scope-finds-no.md) | mutation.py's changed-line scope finds no lines on a machine whose git config sets diff.mnemonicprefix or diff.noprefix | Superseded | Medium | 2026-10-19 | 2026-10-19 |
+| [BG1088](BG1088-a-setup-fault-on-a-gate-host-s.md) | A setup fault on a gate host's suite run is named as 'did not run the all suite' with no test that fails without it | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
+| [BG1089](BG1089-us1078-ac3-s-verify-test-does-not-exercise.md) | US1078 AC3's Verify test does not exercise the verdict's binding to the tree sent; only a sibling test does | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
+| [BG1090](BG1090-test-output-prints-in-declared-order-whatever-finishes.md) | test_output_prints_in_declared_order_whatever_finishes_first failed one subtest under heavy load, and passes alone; not yet diagnosed | Open | Medium | 2026-10-19 | 2026-10-19 |
+| [BG1091](BG1091-us1084-s-document-tests-still-pass-three-phrasings.md) | US1084's document tests still pass three phrasings they exist to refuse | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
 | [BG1092](BG1092-the-tsd-says-the-commit-msg-hook-falls.md) | The TSD says the commit-msg hook falls back to skill-tests.sh only without pytest; it also does when the handover carries no selectors | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1093](BG1093-bg1061-s-heading-checks-read-a-heading-s.md) | BG1061's heading checks read a heading's trailing space as its last character, so a mark left behind a space passes | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1094](BG1094-a-lesson-that-is-only-punctuation-gets-an.md) | A lesson that is only punctuation gets an empty heading title since BG1061 | Open | Low | 2026-10-19 | 2026-10-19 |
@@ -177,13 +177,15 @@
 | [BG1099](BG1099-us1084-s-tsd-rewording-broke-us0253-ac3-s.md) | US1084's TSD rewording broke US0253 AC3's verifier, which greps for the test-noise leg running in CI | Fixed | Medium | 2026-10-20 | 2026-10-20 |
 | [BG1100](BG1100-gate-py-s-verify-ceiling-still-calls-300.md) | gate.py's verify ceiling still calls 300 s CI's figure, though corpus-verify now runs every criterion under 450 s | Open | Low | 2026-10-20 | 2026-10-20 |
 | [BG1101](BG1101-test-repo-hygiene-writes-probe-fixtures-into-the.md) | test_repo_hygiene writes probe fixtures into the real scripts/tests directory, so a parallel test copying that tree can fail | Open | Medium | 2026-10-20 | 2026-10-20 |
-| [BG1102](BG1102-the-corpus-verify-timing-step-s-ceiling-is.md) | The corpus-verify timing step's ceiling is pinned only as an integer, so one as long as the job's own cap passes | Open | Low | 2026-10-20 | 2026-10-20 |
+| [BG1102](BG1102-the-corpus-verify-timing-step-s-ceiling-is.md) | The corpus-verify timing step's ceiling is pinned only as an integer, so one as long as the job's own cap passes | Won't Fix | Low | 2026-10-20 | 2026-10-20 |
 | [BG1103](BG1103-the-close-binds-the-untracked-files-it-leaves.md) | The close binds the untracked files it leaves into the signature without naming them, so tidying one refuses the sign | Open | Low | 2026-10-20 | 2026-10-20 |
 | [BG1104](BG1104-a-message-only-amend-runs-the-whole-workspace.md) | A message-only amend runs the whole-workspace gate at commit, because the hook's gate lane reads an empty staged diff as no diff to scope to | Open | Low | 2026-10-20 | 2026-10-20 |
 | [BG1105](BG1105-agents-md-names-the-local-push-cost-series.md) | AGENTS.md names the local push-cost series as the current push figure, which a clone with a gate host never adds to | Superseded | Low | 2026-10-20 | 2026-10-20 |
 | [BG1106](BG1106-package-lock-json-resolves-smol-toml-1-7.md) | package-lock.json resolves smol-toml 1.7.1 and katex 0.16.47 through markdownlint-cli 0.49.1, inside Dependabot alerts 25 and 24 | Open | Low | 2026-10-21 | 2026-10-21 |
 | [BG1107](BG1107-sprint-end-goals-keeps-only-the-first-line.md) | sprint._end_goals keeps only the first line of a wrapped End goal, so the goal-review brief and the goal trace show Rowan's goals cut off mid-sentence | Open | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1108](BG1108-a-carried-unit-whose-repair-landed-before-the.md) | A carried unit whose repair landed before the new run's base has an empty review diff, so its redelivery review cannot block | Open | Medium | 2026-10-21 | 2026-10-21 |
+| [BG1109](BG1109-the-artefact-gate-s-conformance-and-engagement-floor.md) | The artefact gate's conformance and engagement-floor lanes re-read the verdict ledger, the decisions log and each verifier's collection once per unit | Open | Medium | 2026-10-21 | 2026-10-21 |
+| [BG1110](BG1110-backlog-triage-s-duplicate-lens-has-no-way.md) | backlog_triage's duplicate lens has no way to record a pair confirmed distinct, so a triaged pair is re-reported on every run | Open | Low | 2026-10-21 | 2026-10-21 |
 
 ## Archived Releases
 

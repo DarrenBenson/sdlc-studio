@@ -28,7 +28,8 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G12, reviewed by the refine panel; see the request's revision history).
+- Serves: Maya Okafor #1 (ship real features through a disciplined lifecycle, not ad-hoc edits).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G12, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the table omits `small_change.py start`, so revert-check has no base and the transition refuses; or a row names a flag its script does not accept.
 - AC2 must fail on: a disqualifier is added to the command and not to the page, or the reverse.
 - AC3 must fail on: plan prints nothing about the path, so an agent reaching for the full loop is never told it can skip it.
@@ -44,9 +45,18 @@
 - SKILL.md's loading guide gains one pointer line where an agent decides to reach for `sprint`; it stays inside the router's line budget.
 - AC1 is CR0626's second criterion made executable. The test reads the table, not a copy of it, and expects the post-BG1009 revert-check verdicts.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- No Serves line
+- Blocked on US1047-US1050 (Draft) and BG1009 (Open). The review-step warning its notes write depends on BG1014 (Open) still being unfixed
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G12 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

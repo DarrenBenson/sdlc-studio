@@ -1,6 +1,6 @@
 # BG1088: A setup fault on a gate host's suite run is named as 'did not run the all suite' with no test that fails without it
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_run_suite_setup_fault.py, changelog.d/BG1088.md
@@ -36,3 +36,4 @@ The wording can regress with the suite green; the exit stays 4 and the run red.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): Won't Fix, not beneficial (LL0056): message wording only; the exit code and the red run are already pinned |

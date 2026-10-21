@@ -8,7 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/reference-evidence-schema.md, .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_run_record.py, changelog.d/US0994.md
 > **Epic:** EP0275
 > **Points:** 3
-> **Depends on:** US0992, CR0610
+> **Depends on:** US0992, US0998, US1000
 > **Persona:** Maya Okafor
 
 ## User Story
@@ -26,7 +26,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G1, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G1, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: a contracted key (report_fingerprint, say) removed or renamed by its writer with no annex change, or the annex contracting `signature` on an awaiting record
 - AC2 must fail on: an annex predicate reading 'awaiting' as 'carries no signature', which wrongly reads the stopped run as open, or a change to the plan's guard with no annex change
 - Serves Maya's End goal 2, 'Never lose the thread' (maya-okafor-founder-engineer.md:26), for a consumer that reads open and signed runs.
@@ -36,9 +36,17 @@
 - The legacy plan values are documented as legacy: `plan: sha256:<12 hex>` (a digest of a path, five records) and `plan: sdlc-studio/.local/sprint-plan.json`; neither is a content digest.
 - If BG1004 lands first, its write version is documented here.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Notes say 'The 13 committed records hold 49 distinct top-level keys'; there are now 15 records under sdlc-studio/reports/runs/, so re-count at build.
+- Release note stale: the story says 'Release: 6.2' but D0382 (2026-10-20, supersedes D0381) sets the path to the 6.2.0 tag as run three plus run four's doc refreshes only, so this lands after 6.2.0; re-tag when a run takes it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G1 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -28,7 +28,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G6, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G6, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: comparing the verdict word only, so a dropped BLOCKING finding passes silently; or comparing raw text, so every transcription warns, because `_clean` folds newlines (critic.py:262)
 - AC2 must fail on: no header check, so a copy of another unit's verdict file records as this one's; or the replay test made on the path rather than the hash
 - AC3 must fail on: `show` re-hashing the file and comparing it with itself, or testing only that the path exists
@@ -36,9 +36,17 @@
 - Re-briefs share a fingerprint (story 1 AC2), so several issued files can match one `--brief <fp>`. The comparison is made against every issued, unrecorded file for that unit and fingerprint. It warns unless one matches, and the warning names the newest.
 - The replay refusal is not in the CR. It became sound once the brief stamped each file with its UNIT and BRIEF lines (panel's preference over dropping it): 203 of the 1,552 ledger rows are bare APPROVEs, whose bodies are byte-identical across units, and the header makes each issued file's bytes unique.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Plannable only after US1012.
+- Release note stale: the story says 'Release: 6.2' but D0382 (2026-10-20, supersedes D0381) sets the path to the 6.2.0 tag as run three plus run four's doc refreshes only, so this lands after 6.2.0; re-tag when a run takes it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G6 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

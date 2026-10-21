@@ -1,10 +1,10 @@
 # BG1022: A stale TSD still says the batch does not deliver Unit Testing
 
 > **Status:** Open
-> **Severity:** Medium
+> **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_plan_stale_tsd_gaps.py, changelog.d/BG1022.md
-> **Evidence:** Field report, 2026-10-09, both plans of RUN-01M4FSND on sdlc-studio-lens. The plan printed that the TSD is stale because the code outside sdlc-studio/ changed on 2026-10-07 and the TSD was last revised on 2026-07-13. The next lines said the batch touches no TSD risk area, then 'coverage the TSD demands that this batch does NOT deliver: Integration Testing, Unit Testing'. The stories in that batch declare new test files, including backend/tests/test_ingest.py and frontend/src/pages/Reports.test.tsx. The July TSD names older test files, so the new ones do not match.
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_plan_stale_tsd_gaps.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1022.md
+> **Evidence:** Field report, 2026-10-09, both plans of RUN-01M4FSND in a consuming project. The plan printed that the TSD is stale because the code outside sdlc-studio/ changed on 2026-10-07 and the TSD was last revised on 2026-07-13. The next lines said the batch touches no TSD risk area, then 'coverage the TSD demands that this batch does NOT deliver: Integration Testing, Unit Testing'. The stories in that batch declare new test files, including backend/tests/test_ingest.py and frontend/src/pages/Reports.test.tsx. The July TSD names older test files, so the new ones do not match.
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Grok 4.7; agent; v1
@@ -38,3 +38,4 @@ When `tsd_staleness` says the document is stale, do not print those gaps as cove
 | --- | --- | --- |
 | 2026-10-09 | Grok 4.7 | Filed |
 | 2026-10-12 | Claude Opus 5.5 (triage) | Triaged: confirmed on current code; changelog fragment named for the unit; Verify on a new test module (BG0980) |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/help/refine.md, .claude/skills/sdlc-studio/reference-scripts-create.md, changelog.d/BG0964.md
+> **Affects:** .claude/skills/sdlc-studio/help/refine.md, changelog.d/BG0964.md
 > **Evidence:** Found 2026-10-06/07 during the triage session that filed BG0955-BG0963 in this repository. US0991.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -24,7 +24,7 @@ Document `apply --into` and `add --into` in help/refine.md and the scripts catal
 
 ## Acceptance Criteria
 
-- [ ] **AC1** help/refine.md documents `--into` for both `apply` and `add`, and the doc-coverage check passes
+- [ ] **AC1** help/refine.md documents `--into` for both `apply` and `add`, naming the case it serves: a story split out of one already refined into an open epic
   - **Verify:** shell grep -q -- '--into' .claude/skills/sdlc-studio/help/refine.md
 
 ## Revision History
@@ -32,3 +32,4 @@ Document `apply --into` and `add --into` in help/refine.md and the scripts catal
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

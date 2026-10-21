@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_lints.py, changelog.d/BG1093.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_lints.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_heading_space.py, changelog.d/BG1093.md
 > **Evidence:** BG1061 QA review, round 2 (APPROVE), qa-seat-BG1061-r1, 2026-10-19, at 20be66b1: [new] item 1.
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ A regression in the heading strip can pass the suite.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

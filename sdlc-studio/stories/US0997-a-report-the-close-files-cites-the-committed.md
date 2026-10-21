@@ -29,7 +29,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G2, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G2, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: build_report keeps citing state_rel, the path `_run_state_for` happened to read the record from, which at a close is the live .local file
 - AC2 must fail on: `_ci_runs` returning the frozen reading's own source alone (sprint_report.py:2985), so ten to fifteen DORA figures per page cite a command and no committed file
 - AC3 must fail on: citing a path the close never files: the .local run archive, or a record name built differently from run_state.tracked_path
@@ -41,9 +41,17 @@
 - The fourth criterion is the guard BG1007's option A would need: whichever BG1007 option is ruled, this story builds first.
 - Build first in this epic: the plan-digest, money and lane-yield stories cite the same record.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Persona field names Maya Okafor, but the User Story is 'As a team lead' and Notes say it serves Jonah Reyes's End goal 3 (sdlc-studio/personas/jonah-reyes-team-lead.md:24-29); either set '> **Persona:** Jonah Reyes' or record Jonah as the served Secondary, so the product seat judges it against the goal it names (D0380).
+- Release note stale: the story says 'Release: 6.2' but D0382 (2026-10-20, supersedes D0381) sets the path to the 6.2.0 tag as run three plus run four's doc refreshes only, so this lands after 6.2.0; re-tag when a run takes it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G2 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

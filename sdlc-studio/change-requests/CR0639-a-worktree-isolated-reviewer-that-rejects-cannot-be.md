@@ -27,9 +27,19 @@ Every orchestrator running isolated reviews: a tidy-up between rounds costs the 
 
 - 2026-10-13, BG0976: the harness removed the round-1 reviewer's `isolation: worktree` checkout itself, at the agent's completion, because the reviewer had left it unchanged (it mutated and restored byte-identically, as the brief demands). Keeping the worktree is therefore not in the orchestrator's hands when the harness owns it: round 2 again went to a fresh instance of the seat. A reviewer that makes its own checkout (`git worktree add --detach <scratch dir> <commit>`) instead of harness isolation stays resumable, and the brief's isolation requirement is still met.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Refine needs: one story, Points 2
+- AC2 Verify into a new module, e.g. pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_record_reject_round2.py::RejectRoundTwoTests::test_reject_names_the_reviewer_needed_for_round_two
+- AC1 is a doc rule: state it as a structured runbook row a test reads exactly, or mark it manual; avoid a phrase test (RETRO0135)
+- Persona: Maya Okafor
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Raised |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Further evidence: the harness auto-removes an unchanged isolated worktree, so a resumable reviewer makes its own checkout |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

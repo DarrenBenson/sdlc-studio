@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
+> **Depends on:** US1025
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate_request_verify_line.py, changelog.d/BG1017.md, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py
 > **Evidence:** Found by the G9 breakdown of CR0618 and its panel review (D0355); validate.py:390 and :401, file_finding.py:1426.
 > **Created:** 2026-10-09
@@ -32,3 +33,4 @@ Judge only a criterion's prose, as the filer's own `check_prose_acs` does, skipp
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

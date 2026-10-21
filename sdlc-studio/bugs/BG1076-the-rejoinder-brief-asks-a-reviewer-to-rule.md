@@ -1,6 +1,7 @@
 # BG1076: The rejoinder brief asks a reviewer to rule each earlier finding, but the return contract has no place for the rulings, so a round-2 verdict that writes them untagged is refused by critic.py record
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG1030
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_rulings.py, changelog.d/BG1076.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -36,3 +37,4 @@ Every round-2 verdict risks a refusal and a second exchange with the reviewer, a
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): superseded by BG1030: duplicate of BG1030, whose AC3 now carries this bug's criterion |

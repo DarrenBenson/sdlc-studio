@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Low
-> **Points:** 1
+> **Points:** 2
 > **Affects:** tools/tests/test_remote_gate_doctor.py, tools/tests/test_remote_gate_doctor_claims.py, changelog.d/BG1082.md
 > **Evidence:** US1077 QA review, round 1 (APPROVE), qa-seat-US1077-r1, 2026-10-19, at e849ccc4: finding 3, tools/remote-gate.sh:270, :291, :295, :304.
 > **Created:** 2026-10-19
@@ -36,3 +36,4 @@ A later edit can break any of the four with the suite green.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

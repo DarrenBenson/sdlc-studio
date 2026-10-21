@@ -26,12 +26,18 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G9, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G9, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: leaving the checks to `artifact.new` inside the mint loop, where the rollback unlinks the minted files (refine.py:313-319, :403-409) but leaves the index rows `artifact.new` appended
 - AC2 must fail on: a hand-kept key list in refine that drifts from the story writer's set
 - Each entry is validated by `artifact.new(..., dry_run=True)` before the first mint. Its checks (`check_user_story_fields`, `check_prose_acs`, `check_affects_resolvable`, `check_verify_selectors`) all run before its dry-run return (artifact.py:1090-1105, :1185), so refine asks the one authority rather than restating it. This extends the CR0618 story's pre-mint helper (panel: build it once).
 - The epic is not minted during the check, so the dry run validates each entry without its epic link.
 - This is CR0628 AC2.
+
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on US1026 (Draft)
 
 ## Revision History
 
@@ -39,3 +45,4 @@
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G9 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

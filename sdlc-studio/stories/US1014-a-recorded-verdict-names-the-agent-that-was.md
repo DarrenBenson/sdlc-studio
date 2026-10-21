@@ -37,9 +37,19 @@
 - The briefed agent is the context whose earliest record of any kind carries the issued path: a prompt with the brief pasted in, or a later message handing the brief over as a file. A heredoc write appears as a Bash tool_use whose `command` holds the path and the bytes. Lines are filtered for the path string before any JSON is parsed, which bounds the scan.
 - Reuses US0986's harness selection, with one provenance reader per harness. Claude comes first; every other harness answers `unknown`. Copy the fixture records' shape from a real transcript (LL0020). This covers CR0619 AC1's 'session id when known' and AC2's first half.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Marked 'Release: later' (D0356: 6.3).
+- Depends on US1012 and US0986, both Draft.
+- Notes pin the subagent transcript layout from Claude Code 2.1.292; re-pin from a current transcript at build (LL0020).
+- Persona: User Story is 'As a team lead' (Jonah Reyes) while the field names Maya Okafor.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G6 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

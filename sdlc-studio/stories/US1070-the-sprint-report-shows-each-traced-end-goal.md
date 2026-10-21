@@ -26,12 +26,21 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the results kept on the run record only, so the signer never sees them, or a report key added with no annex row (US0992's conformance test)
 - AC2 must fail on: an always-present empty section, so every earlier page stops re-deriving and its signature reads stale
 - Serves: Maya Okafor #4.
 - The section renders only when the run record carries results. Whether the results sit inside the digest is US0993's rule to state; the draft keeps them inside, as the verdict word is.
 - Depends on US0992 so the annex (reference-evidence-schema.md) exists to receive the rows.
+
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Affects names .claude/skills/sdlc-studio/reference-evidence-schema.md, which does not exist and which this story does not create: US0992 (Draft) creates it. sprint plan can take this story only once US0992 has landed, or with US0992 in the same batch
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1069 (Draft)
+- The 'Release: 6.2' note is stale under D0382
 
 ## Revision History
 
@@ -39,3 +48,4 @@
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -1,6 +1,6 @@
 # BG1039: US1004's one-list test no longer requires `-r` on the suite step, and still checks hand installs against its own list of four packages
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_prereq_list_is_ci_list.py, changelog.d/BG1039.md
@@ -37,3 +37,4 @@ Low: the suite still catches the first shape through sibling pins; the second le
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): already fixed: both mutants it names are now refused, fixed by 6456f66f (BG1053) and 95e5e3f8 (BG1056) |

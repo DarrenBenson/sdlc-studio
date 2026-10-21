@@ -1,8 +1,9 @@
 # BG1030: Prose after `BLOCKING: none`, or a trailing `RULINGS:` line, is folded into BLOCKING and refused, so an APPROVE carrying rulings cannot be recorded unedited
 
 > **Status:** Open
+> **Supersedes:** BG1076
 > **Severity:** Low
-> **Points:** 2
+> **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_verdict_trailing_prose.py, changelog.d/BG1030.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Created:** 2026-10-13
 > **Created-by:** sdlc-studio file
@@ -27,6 +28,8 @@ Read BLOCKING as none when its first item is `none`, and either accept `RULINGS:
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verdict_trailing_prose.py::TrailingProseTests::test_prose_after_blocking_none_records
 - [ ] **AC2** Given a block with a `RULINGS:` line after `BLOCKING: none`, when it is recorded, then it records, and the rulings are kept on the row or the contract names where they go
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verdict_trailing_prose.py::TrailingProseTests::test_a_rulings_line_records
+- [ ] **AC3** Given a rejoinder brief, its return contract names the RULINGS line, and a round-2 verdict that rules each earlier finding CLOSED, OVER-CLAIMED or MOVED there is recorded without re-emitting, with the rulings stored as rulings and not as a [new] finding
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verdict_trailing_prose.py::TrailingProseTests::test_the_rejoinder_contract_names_rulings_and_they_record_as_rulings
 
 ## Impact
 
@@ -37,3 +40,4 @@ An APPROVE with rulings, the shape a careful reviewer returns, is refused and mu
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): supersedes BG1076 |

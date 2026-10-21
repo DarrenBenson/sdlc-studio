@@ -1,6 +1,7 @@
 # BG1007: A signed report's figure sources are outside its fingerprint, so every source can be rewritten and the page still checks VALID
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** US0993
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_report_sources_signed.py, .claude/skills/sdlc-studio/reference-sprint.md, changelog.d/BG1007.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -24,7 +25,7 @@ Either fold each figure's source into what `check` judges (a source change names
 
 ## Acceptance Criteria
 
-- [ ] **AC1** A signed page whose figure sources were edited after signing is reported by `check` as edited, naming each figure, or the page and reference state plainly that sources are not signed
+- [ ] **AC1** Given a page signed under the source rule mark whose figure sources were edited after signing, when `sprint_report.py check` runs, then it reports the page edited and names each edited figure, while a page signed before the mark still checks VALID
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_sources_signed.py::SignedSourcesTests::test_an_edited_source_is_named_by_check
 
 ## Revision History
@@ -32,3 +33,4 @@ Either fold each figure's source into what `check` judges (a source change names
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): superseded by US0993: option B is ruled, and US0993 carries it |

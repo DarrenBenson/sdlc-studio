@@ -27,7 +27,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G2, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G2, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: open_run(plan=str(out)) left as it is (sprint.py:10251), which the portable projection turns into sdlc-studio/.local/sprint-plan.json; or the digest written into `plan` in the 12-hex form portable already uses for a path
 - AC2 must fail on: recording the digest only when open_run opens the run, so a re-plan that rewrites the plan leaves the record naming a plan that no longer exists
 - AC3 must fail on: fixing only cmd_plan's call and leaving `_open_next_cycle`'s plan=str(out) (sprint.py:10598)
@@ -38,9 +38,17 @@
 - cmd_plan writes the plan after open_run (the run opens first so a refused plan leaves nothing), so the digest is recorded with run_state.update after each write; `_open_next_cycle` writes first and can record it at open.
 - The panel's engineering seat answered that a content digest is enough for CR0610 (no plan breakdown on the record).
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Persona field names Maya Okafor, but the User Story is 'As a team lead' and Notes say it serves Jonah Reyes's End goal 3 (sdlc-studio/personas/jonah-reyes-team-lead.md:24-29); either set '> **Persona:** Jonah Reyes' or record Jonah as the served Secondary, so the product seat judges it against the goal it names (D0380).
+- Release note stale: the story says 'Release: 6.2' but D0382 (2026-10-20, supersedes D0381) sets the path to the 6.2.0 tag as run three plus run four's doc refreshes only, so this lands after 6.2.0; re-tag when a run takes it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G2 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

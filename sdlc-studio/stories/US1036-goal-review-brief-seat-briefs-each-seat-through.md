@@ -28,7 +28,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G10, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G10, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the brief action ignores --seat (HEAD: the text is byte-identical for every seat)
 - AC2 must fail on: an unresolvable seat falls back to the unframed brief with exit 0
 - AC3 must fail on: the unframed brief carries no pointer to the per-seat form, so an orchestrator hands every seat the same text
@@ -39,9 +39,16 @@
 - `goal-review record` keeps one `brief` per round, read by nothing at HEAD; it is not split per seat until a reader needs it (LL0056). The changelog says the stored brief is whichever the caller passed.
 - Cluster with BG1002 and G11's two goal-review stories on `_compose_seat_brief` and `_goal_served_lines`: BG1002 first, then this story, then G11's (see related).
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on BG1002 and BG1015 (both Open)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G10 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

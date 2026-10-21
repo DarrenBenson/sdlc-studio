@@ -25,7 +25,7 @@ When the recorded tree holds untracked files, the close names each one and says 
 ## Acceptance Criteria
 
 - [ ] **AC1** A close over a tree holding an untracked file names that file as bound into the signature, and a close over a tree with none names no file
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_names_bound_untracked.py
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_names_bound_untracked.py::CloseNamesBoundUntrackedTests::test_a_close_names_each_untracked_file_it_binds
 
 ## Impact
 
@@ -36,3 +36,4 @@ A ruling or a clean-up made between the close and the signature breaks the seal.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-20 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

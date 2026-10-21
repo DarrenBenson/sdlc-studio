@@ -30,7 +30,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G2, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G2, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: pricing at render time from telemetry.model_price without recording a snapshot, a snapshot the cost section never reads, or money printed with no price, currency or date beside it
 - AC2 must fail on: calling telemetry.model_price unchanged, which prices the sonnet session at its 6.00 estimate default (telemetry.py:496), or `price or 0`, which prices unpriced tokens at nothing and states the total as complete
 - AC3 must fail on: the cost section re-reading today's config at re-derivation instead of the record's snapshot
@@ -43,9 +43,17 @@
 - Currency is US dollars per million tokens, the unit model_price already returns; no conversion.
 - Sized at 5 with delegated-model capture as its own 2-point story before it, per the panel.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Same open CR0610 consult questions as US0999 (pricing basis 'confirm', money scope (a) or (b)); settle before planning.
+- Release note stale: the story says 'Release: 6.2' but D0382 (2026-10-20, supersedes D0381) sets the path to the 6.2.0 tag as run three plus run four's doc refreshes only, so this lands after 6.2.0; re-tag when a run takes it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G2 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

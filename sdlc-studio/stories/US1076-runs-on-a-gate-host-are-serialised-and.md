@@ -8,7 +8,6 @@
 > **Affects:** tools/remote-gate.sh, tools/tests/test_remote_gate_runs.py, changelog.d/US1076.md
 > **Epic:** EP0288
 > **Points:** 3
-> **Depends on:** US1075
 > **Persona:** Rowan Achterberg
 
 ## User Story
@@ -55,3 +54,4 @@
 | 2026-10-13 | Claude Opus 5.5 (planning) | Note: the gate host is shared with a CI runner |
 | 2026-10-19 | Claude Opus 5.5 | Regroomed after the goal review (round 4): the seats' findings folded in: event-synchronised lock and signal tests |
 | 2026-10-19 | Claude Opus 5.5 | Repointed at Rowan Achterberg, Primary for the repository-tooling interface, before review (D0379, D0380) |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387): cleared Depends on; every dependency it named is terminal |

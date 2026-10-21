@@ -27,12 +27,19 @@ TDD is the doctrine (author the Verify first, then make it pass), but nothing ch
 - Affects paths corrected to repository paths (they were filed relative to the skill). Criteria added for refinement from the proposal in the Summary. Related, not duplicates: BG0014, BG0193.
 - A design change to the delivery loop, sized at refinement; under LL0056 it should say which check it retires or why none.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- A rule-21 ruling (decisions.md has none) after CR0630's yield count
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Raised |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Triaged: Affects paths corrected; criteria added; related bugs named |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
 
 ## Amigo Consult
 

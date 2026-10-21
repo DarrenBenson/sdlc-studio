@@ -31,7 +31,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: ids numbered per file, so two personas' first learnings are both M-0001 and an approval or a strike naming one is ambiguous, or no Review-by stamped
 - AC2 must fail on: evidence optional or never resolved, or the role checked before the stem, so an ambiguous key silently writes one persona's memory
 - AC3 must fail on: the write made wherever the path points, so a memory git never holds is reported as recorded (LL0029)
@@ -48,9 +48,17 @@
 - Config `personas.memory.validity_days`, default the lessons' 90, in reference-config.md (676 of its 695-line budget; two rows in this group).
 - Ids `M-NNNN` are unique across every memory file; clones can collide as lesson ids can (LL0002), and the parser reports a duplicate.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

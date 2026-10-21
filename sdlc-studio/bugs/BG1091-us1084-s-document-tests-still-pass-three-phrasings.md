@@ -1,6 +1,6 @@
 # BG1091: US1084's document tests still pass three phrasings they exist to refuse
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_lean_gate_docs.py, changelog.d/BG1091.md
@@ -36,3 +36,4 @@ A later edit can restore a false claim about the gate with the document tests gr
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): Won't Fix, not beneficial (LL0056): it widens prose regexes, which RETRO0135 records as never converging |

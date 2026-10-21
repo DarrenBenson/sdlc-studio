@@ -28,8 +28,18 @@ Anyone running the suite on a tmpfs /tmp, which is the default on several Linux 
 
 Until it ships: run the suite and the hooks with TMPDIR on disk (`export TMPDIR=$HOME/.cache/sdlc-tmp`).
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Refine needs: one story, Points 3
+- One Verify per criterion into the new tools/tests/test_suite_temp_root.py (disk-backed default when TMPDIR unset on tmpfs; explicit TMPDIR honoured; stale root removed and named)
+- Affects adds changelog.d/<story>.md
+- Persona: Rowan Achterberg (repo-only tooling, D0379)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | Claude Opus 5.5 (triage) | Raised |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

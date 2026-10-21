@@ -30,7 +30,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G1, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G1, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: stamping a constant the annex masthead does not state, or stamping the report but not the run record
 - AC2 must fail on: file_tracked stamping the signer's current constant, so one run carries two versions
 - AC3 must fail on: putting the stamp in the figure set, which moves every earlier fingerprint
@@ -41,9 +41,17 @@
 - Distinct from the per-artefact `schema` keys already present (report schema 2, run record schema 1), which the annex documents as shape versions; evidence_schema versions the annex as a whole. Distinct from BG1004's write version.
 - The fourth criterion is a docs check by design: the policy is a promise, and the first three criteria are what execute it.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Persona field names Maya Okafor, but the User Story is 'As a team lead' and Notes say it serves Jonah Reyes's End goal 4 (sdlc-studio/personas/jonah-reyes-team-lead.md:24-29); either set '> **Persona:** Jonah Reyes' or record Jonah as the served Secondary, so the product seat judges it against the goal it names (D0380).
+- Release note stale: the story says 'Release: 6.2' but D0382 (2026-10-20, supersedes D0381) sets the path to the 6.2.0 tag as run three plus run four's doc refreshes only, so this lands after 6.2.0; re-tag when a run takes it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G1 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_committed.py, .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/reference-agentic-lessons.md, .claude/skills/sdlc-studio/help/lessons.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_followups.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_followups.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_committed.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/reference-agentic-lessons.md, .claude/skills/sdlc-studio/help/lessons.md, changelog.d/BG0989.md, changelog.d/BG0992.md
 > **Evidence:** BG0989 round-2 QA APPROVE, 2026-10-08 (critic-verdicts.md), mutants N3-N5.
 > **Created:** 2026-10-08
 > **Created-by:** sdlc-studio file
@@ -30,8 +30,8 @@ Add the three tests, each with its named mutant; say in the docstring that a gis
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_followups.py -k retitled_lesson
 - [ ] **AC3** carry and violated each refuse a project holding both logs, pinned by a test
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_followups.py -k carry_and_violated_refuse_two_logs
-- [ ] **AC4** Every doc sentence about which command moves the legacy log names the --global exception
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_committed.py -k remedy_and_docs_name_the_committed_path
+- [ ] **AC4** `lessons list --global` on a project holding only the legacy log leaves the legacy log in place and writes no committed log, pinned by a test that fails when `main`'s `--global` skip is dropped; the three doc sentences name that exception
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_followups.py -k global_verb_leaves_the_legacy_log
 - [ ] **AC5** `default_project_file`'s read fallback (a legacy log and no committed one returns the legacy path, so an unmigrated project's gate lanes and plan digest still read it) is pinned by a test of its own, which fails when the fallback is dropped
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_followups.py -k legacy_log_is_read_until_moved
 
@@ -41,3 +41,4 @@ Add the three tests, each with its named mutant; say in the docstring that a gis
 | --- | --- | --- |
 | 2026-10-08 | sdlc-studio | Filed |
 | 2026-10-08 | Claude Opus 5.5 (triage) | AC5 added from BG0994's QA review: the read fallback has no test of its own once test_lessons.py seeds the committed path, and is caught only as a side effect of other modules' legacy fixtures. Points 2 -> 3 |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

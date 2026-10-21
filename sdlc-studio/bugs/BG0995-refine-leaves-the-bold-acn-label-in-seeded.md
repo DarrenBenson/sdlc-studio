@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py, changelog.d/BG0995.md
 > **Evidence:** Found in a consuming project's run (RUN-01M4BHCT), 2026-10-08; reproduced against this repo's main e77cd2d5. That project's US0608, refined from its CR0554 (filed by artifact.py), seeded '### AC1: **AC1** A REST turn whose history ... with the CR-0158'.
 > **Created:** 2026-10-08
 > **Created-by:** sdlc-studio file
@@ -39,3 +39,4 @@ Accept the bold label with or without a separator, and a separator inside the bo
 | --- | --- | --- |
 | 2026-10-08 | Claude Opus 5.5 | Filed |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: reproduced on current code; private project names generalised; relations recorded |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -25,7 +25,9 @@ Have the hook pass the commit's own staged change set to the gate lane, so an em
 ## Acceptance Criteria
 
 - [ ] **AC1** A commit that stages nothing new over HEAD runs the hook's gate lane over no unit, and names that scope
-  - **Verify:** pytest tools/tests/test_pre_commit_amend_scope.py
+  - **Verify:** pytest tools/tests/test_pre_commit_amend_scope.py::PreCommitAmendScopeTests::test_a_message_only_amend_judges_no_unit
+- [ ] **AC2** `gate.py --root .` run outside the hook on a clean tree still judges the whole workspace, so a committed story with an invalid status still fails it
+  - **Verify:** pytest tools/tests/test_pre_commit_amend_scope.py::PreCommitAmendScopeTests::test_a_clean_tree_outside_a_commit_is_still_judged_whole
 
 ## Impact
 
@@ -36,3 +38,4 @@ Each message-only amend costs one to eleven minutes for no new judgement. That p
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-20 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

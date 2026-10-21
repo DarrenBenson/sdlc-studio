@@ -28,7 +28,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G8, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G8, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: test_critic's BriefTierTests left unmarked, so the test BG0813's filings turned red on 2026-09-28 stays outside the corpus phase
 - AC2 must fail on: one listed test left undecorated (the census over the committed list must name it)
 - AC3 must fail on: the first story's discovery reading only the skill tests tree, so every tools/tests reader (18 of the 37 modules here) is never selected
@@ -40,9 +40,18 @@
 - Same delivery rules as the guarded story: classify by kind, record the times, keep marked tests out of `sdlc-studio/.local/`.
 - Reads made by a spawned subprocess are not counted by an in-process audit hook. Where a test drives a CLI with `--root` at the repository, decide it by reading the test and record the decision in the evidence file.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Affects is provisional: the Notes say a whole-suite audit-hook run at delivery may add modules, so the declared file set (and the parallel-safety it implies) is not final at plan
+- Points 3 looks low next to US1023 (3 points for 20 modules): this one decorates 38+ modules and adds a whole-suite measurement run. Re-estimate (5) when a run takes it
+- Depends on US1021 (Draft)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G8 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

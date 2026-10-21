@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/templates/workflows/release-gate.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_release_verify_ceiling.py, changelog.d/BG1100.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/templates/workflows/release-gate.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_release_verify_ceiling.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_release_verify_ceiling_ci.py, changelog.d/BG1100.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
 > **Evidence:** lint.yml run 39322298831 (2026-10-19): 'verifier-time: US0940::AC1 353 s'. BG1054 part two sets SDLC_VERIFY_TIMEOUT: 450. gate.py VERIFY_TIMEOUT = 300.
 > **Created:** 2026-10-20
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ A slow developer machine reads red at release what CI reads green, the drift the
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-20 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

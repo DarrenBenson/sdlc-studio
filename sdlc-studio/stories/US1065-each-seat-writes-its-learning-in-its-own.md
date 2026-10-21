@@ -28,7 +28,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the brief embeds the whole seats report, so the seat reads another seat's record, or omits the adverse items the approver will ask about
 - AC2 must fail on: evidence taken from the persona's own text (the self-flattering risk RFC0061 names), or the text folded or paraphrased
 - AC3 must fail on: one open proposal per seat and run not enforced, or a seat with nothing on record proposes
@@ -39,9 +39,18 @@
 - propose copies the file's bytes into the entry body; the run is read as `retro.extract_run` reads it.
 - The changelog states the loop's per-close cost, RFC0061's Cost risk: one learn-brief and one approve-brief per seat with a record, about six agent contexts for three seats.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1062, US1063, US1064 and US1059 (Draft)
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

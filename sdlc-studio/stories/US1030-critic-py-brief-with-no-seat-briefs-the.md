@@ -28,7 +28,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G10, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G10, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: brief keeps --seat required, or defaults an absent --seat to engineering instead of calling seats_for
 - AC2 must fail on: the derived seat overrides an explicit --seat, or the explicit path never consults seats_for
 - AC3 must fail on: the footer omits --reviewer, or writes the role in free text, so the verdict is recorded as the default independent-critic with no seat
@@ -37,9 +37,16 @@
 - The why line is inside the fingerprinted brief; note_brief records the seat as derived or explicit beside the tier, as it already does for the tier.
 - AC3's `(<role>)` group is the exact seat attribution the per-seat lanes story keys on and RFC0061's D4 spike scores from, so this story is built before both. It also removes the usual cause of the report's NO DECLARED SEAT label (BG0726).
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on US1029 and US1011 (both Draft)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G10 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

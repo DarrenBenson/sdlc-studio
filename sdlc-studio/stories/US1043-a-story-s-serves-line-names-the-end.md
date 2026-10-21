@@ -30,7 +30,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G11, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G11, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the resolver keeps reading `Maya Okafor #2` as a persona name and warns `serves-unresolved` (today's behaviour), or drops the goal number from coverage
 - AC2 must fail on: the number is parsed but never checked against the card
 - AC3 must fail on: the rule fires on the PRD, or on a delivered story, so adopting the template flags a whole delivered backlog
@@ -42,9 +42,16 @@
 - Adds `serves-goal-unresolved` and `serves-no-goal` to the reference-persona.md rule table.
 - Existing stories keep their block; no rule is added against it.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on US1039 (Draft)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G11 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

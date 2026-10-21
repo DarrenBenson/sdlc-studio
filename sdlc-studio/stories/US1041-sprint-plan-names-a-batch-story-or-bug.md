@@ -30,7 +30,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G11, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G11, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: no advisory is recorded, bugs are skipped, the wrong goal is named, or the advisory becomes a refusal (non-zero exit)
 - AC2 must fail on: carrying is judged by a whole-file search, or by the marker alone, so a groomer who rewords the criterion is told it is owed
 - AC3 must fail on: the advisory matches with a string prefix or fnmatch (which crosses `/` or folds case), or misses a nested directory
@@ -43,9 +43,16 @@
 - Advice, never a refusal (LC-008).
 - In the `_compose_seat_brief` cluster with BG1002, G10's CR0627 stories and the goal review story: built in sequence, never in parallel.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on US1039 and US1040 (both Draft)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G11 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

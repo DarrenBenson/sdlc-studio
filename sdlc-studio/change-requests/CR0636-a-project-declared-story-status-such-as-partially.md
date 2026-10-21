@@ -20,13 +20,21 @@ Partly-delivered stories are either counted as red regressions or recorded with 
 
 ## Acceptance Criteria
 
-- [ ] A project can declare an extended status as not claiming completion (config), the release gate then lists that story's failing criteria as unbuilt, and an undeclared extended status still fails closed
-  - **Verify:** shell python3 -m pytest -q .claude/skills/sdlc-studio/scripts/tests -k declared_non_terminal_status
+- [ ] A project can declare an extended status as not claiming completion in .config.yaml; the release gate then lists that story's failing criteria as unbuilt, and an undeclared extended status still fails. The stories refine writes carry the executable checks.
 
 ## Triage
 
 - Confirmed by the code path the filer cites: `gate._claims_completion` asks the base vocabulary, so a project-declared status falls to the fail-closed branch and claims completion; nothing in config can declare it otherwise. Deliberate in one direction (a project's `Shipped` must not drop red criteria), missing in the other.
 - Private project name generalised. A request, not yet a unit: `refine` sizes it. Not in the first 6.2 run.
+
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Refine needs: one story, Points 3
+- Criteria split in two on the story: declared non-completing lists as unbuilt (pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_declared_status.py::DeclaredStatusTests::test_declared_non_completing_status_is_unbuilt); undeclared still red (…::test_undeclared_extended_status_fails_closed)
+- Affects adds changelog.d/<story>.md and help/gate.md or reference-config for the new key
+- Persona: Maya Okafor
 
 ## Revision History
 
@@ -34,3 +42,4 @@ Partly-delivered stories are either counted as red regressions or recorded with 
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Raised |
 | 2026-10-12 | Claude Opus 5.5 (triage) | Triaged: confirmed from the code path; project name generalised |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

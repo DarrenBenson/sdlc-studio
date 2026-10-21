@@ -25,7 +25,7 @@ Derive the prefixes from `sdlc_md.ARTIFACT_TYPES` and `META_TYPES`, plus D for d
 ## Acceptance Criteria
 
 - [ ] **AC1** A persona card citing an id of any registered artefact type that resolves to nothing fails the check
-  - **Verify:** pytest tools/tests/test_persona_coherence.py -k evidence_resolves_and_states_the_boundary
+  - **Verify:** pytest tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_every_registered_id_prefix_is_read
 
 ## Impact
 
@@ -36,3 +36,4 @@ A dead citation of an unlisted type reaches a persona card with the suite green.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

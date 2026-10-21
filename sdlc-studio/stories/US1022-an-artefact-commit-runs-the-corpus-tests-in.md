@@ -32,7 +32,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G8, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G8, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: pre-commit not handing the corpus selection over (today: the decision is `skip`, 'artefacts ... run no unit suite here', and the commit lands)
 - AC2 must fail on: commit-msg reading a handover that carries corpus lines but no `suite-selector=` line as 'run everything' (commit-msg:250-258 today), so the whole fixture suite runs
 - AC3 must fail on: `total_suite` still keyed on `$selectors` (commit-msg:394), so the corpus run lands in the full-run `total` series that the planner prices commits from (sprint.py:12352) and flips `total.last_series` to `full`, the comparability failure BG0239 fixed
@@ -46,9 +46,17 @@
 - AGENTS.md:189-191 ('a docs or artefact commit runs none') changes to say that an artefact commit now runs a timed corpus phase. Agents commit artefacts with default tool timeouts on the strength of that sentence.
 - Fixture pattern: tools/tests/test_lean_commit_lanes.py and test_commit_msg_hook.py already build throwaway clones with the tracked hooks. Reuse tools/tests/hookutil.py.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on US1021 (Draft)
+- The operator still has to choose which line an artefact commit prints for the 90-second comparison (Notes say it is the operator's question)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G8 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

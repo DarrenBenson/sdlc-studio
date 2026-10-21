@@ -30,7 +30,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G10, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G10, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: one question list is shared by every seat
 - AC2 must fail on: questions are read from the shipped cards only
 - AC3 must fail on: a project card without the section yields no questions, so this repository's own cards would brief none
@@ -41,9 +41,17 @@
 - Accepted and stated in the amigo template: critic.brief points a delivery reviewer at the whole card file (and frame() returns the whole card), so a delivery reviewer also sees the section; its heading says it is for the goal review.
 - In the goal-review cluster after this group's per-seat brief story and G11's testable End goals story, which adds data to the brief's shared part; the QA criteria story follows this one.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on US1036 and US1040 (both Draft)
+- Edits templates/personas/amigos/product.md, as US1054 does; order them
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G10 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -1,6 +1,7 @@
 # BG1087: mutation.py's changed-line scope finds no lines on a machine whose git config sets diff.mnemonicprefix or diff.noprefix
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG0958
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation_diff_prefix.py, changelog.d/BG1087.md, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py
@@ -36,3 +37,4 @@ A developer whose git config differs from the default gets a vacuous changed-lin
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): superseded by BG0958: duplicate of BG0958, the same diff.mnemonicprefix defect; BG0958's AC3 takes this bug's approach of setting the global config inside the test |

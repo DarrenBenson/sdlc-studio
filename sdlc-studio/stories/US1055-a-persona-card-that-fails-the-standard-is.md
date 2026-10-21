@@ -30,7 +30,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the refusal raised as a new exception type, so refine.py (:1142) and triage.py (:240), which catch only RenderError, crash with a traceback that still exits non-zero; or the check placed in one entry point only; or a refused card falling back to the shipped default
 - AC2 must fail on: the FAIL honoured only while its hash equals the card's current bytes, so any edit escapes the block before a review passes it
 - AC3 must fail on: an unreviewed card refused, or a reported rule treated as blocking
@@ -42,9 +42,18 @@
 - Every refusal prints the remedy: 'edit the named line of the card, or remove the card to brief from the shipped card for its role; `persona_review.py check` lists every blocked card'. The changelog fragment names the upgrade case (a project card already breaking a card-level `validate.py seats` error, or naming a persona the cast does not declare, stops resolving until fixed) with that remedy. Fragments are consumed at the release cut, so the printed remedy is what AC1 pins.
 - D0364: blocks any card failing a blocking rule, changed or not, no grace mode. A card with no review row is not refused; it is owed a review.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- Blocked on US1053, US1054 and US1036 (all Draft)
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

@@ -1,6 +1,7 @@
 # BG1048: forward-port deletes the CHANGELOG.md install.sh ships into the installed copy
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG0986
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/forward-port.sh, tools/tests/test_forward_port.py
@@ -31,3 +32,4 @@ Ship the changelog as install.sh does: after the rsync, copy the repository's ro
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-14 | sdlc-studio | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): superseded by BG0986: duplicate of BG0986, the same forward-port defect; its changelog-drift point is BG0986's AC3 |

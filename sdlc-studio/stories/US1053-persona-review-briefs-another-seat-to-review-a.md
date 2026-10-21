@@ -9,7 +9,7 @@
 > **Epic:** EP0287
 > **Points:** 5
 > **Depends on:** US1052
-> **Persona:** Maya Okafor
+> **Persona:** Jonah Reyes
 
 ## User Story
 
@@ -32,7 +32,7 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the brief accepts the card's own role, or leaves out the card's mechanical findings so the seat judges without the floor
 - AC2 must fail on: the raw file hashed, so a stamp or a reviewed marker reads as a content change, or the Seat cell taken from the card's role instead of the reviewer's
 - AC3 must fail on: the PASS-over-a-blocking-rule refusal missing, so a review can pass a card the floor refuses, or the seat read from free text instead of the `(role)` group
@@ -46,9 +46,19 @@
 - `--from-verdict <file>` reads OUTCOME and FAILED lines from the reviewer's own file, as `critic.py record` does. AC3's five refusals are one test with a subTest each.
 - Rewrites reference-persona.md's `persona review` workflow in place to run brief then record; its step 5 (clearing provisional labels) becomes what a PASS does. Regenerate the reading guide and reference-scripts-surface.md.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- The Persona field does not match the As-a and Serves
+- Blocked on US1052. Its notes also read critic.recorded_seat, which US1061 adds, but Depends on does not name US1061
+- The 'Release: 6.2' note is stale under D0382
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

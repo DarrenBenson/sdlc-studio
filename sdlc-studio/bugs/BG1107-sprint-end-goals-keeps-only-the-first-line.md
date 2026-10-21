@@ -25,7 +25,7 @@ Join a numbered item's continuation lines (indented, or not starting a new numbe
 ## Acceptance Criteria
 
 - [ ] **AC1** A card whose numbered End goals wrap across lines yields each goal's whole text from `_end_goals`, and the goal-review brief prints it whole
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py::EndGoalsWrapTests::test_a_wrapped_end_goal_is_returned_whole
 
 ## Impact
 
@@ -36,3 +36,4 @@ The seats and the trace read a Primary's End goals truncated, and can approve or
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-21 | Claude Opus 5.5 | Filed |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

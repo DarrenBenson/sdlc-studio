@@ -26,12 +26,22 @@
 
 ## Notes
 
-- Release: 6.2 (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
+- Serves: Maya Okafor #3 (drive a batch to done, pausing only when a decision is hers).
+- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the End goal listing reads the card without calling the block, or the refusal fires on an untraced persona's failure
 - AC2 must fail on: the plan refuses (advice turned refusal), or lists the refused card's End goals
 - Checked at HEAD: `persona_cards` (sprint.py:9975) reads every card under personas/ with no standard check, and `_goal_served_lines` lists traced personas from it.
 - Calls the one `persona_review.blocking`. A user persona card has no role rules, so only persona-registry-role and a FAIL review can block it (panel Q11: confirmed).
 - Cluster with BG1002, US1036, US1037 and US1040 on `_goal_served_lines`, built last of them.
+
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- The D0374 stakeholder consult for EP0287 is owed before build
+- No Serves line
+- Blocked on US1055 and US1040 (Draft)
+- The 'Release: 6.2' note is stale under D0382
 
 ## Revision History
 
@@ -39,3 +49,4 @@
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

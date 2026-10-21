@@ -26,8 +26,18 @@ The TSD under-reports its own coverage and misdescribes where tests live, so a r
 - [ ] Every PRD non-functional requirement maps to a TSD row, including the network paths, the appetite breaker and ULID identity
 - [ ] The header names the 6.2 baseline, uses one of the document's own status values, and the revision history is in date order
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Refine needs: one story, Points 3
+- Executable criteria: an NFR-to-TSD row mapping a test reads from both tables, and coverage stated by pointing at the CI step rather than a pinned figure
+- Affects adds the new test module and changelog.d/<story>.md
+- Sequence after CR0649, so the stated counts are census-checked, and after BG1095
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Raised |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |

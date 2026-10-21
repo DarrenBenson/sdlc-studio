@@ -8,7 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_critic_rounds_per_seat.py, changelog.d/US1032.md
 > **Epic:** EP0284
 > **Points:** 5
-> **Depends on:** US1030, BG1003, US1012, US1016
+> **Depends on:** US1030, US1012, US1016
 > **Persona:** Maya Okafor
 
 ## User Story
@@ -47,9 +47,16 @@
 - HEAD evidence (draft fixture, re-probed by the panel at d327d5d0): an engineering APPROVE then an sre REJECT recorded round 2, carried the unit and filed BG0001; the reverse order was refused.
 - Riskiest story in the group: every delivery review passes through the cap it changes. Paired with the escalation story in one run, after BG1003 and G6 story 2.
 
+## Triage (2026-10-21)
+
+Kept (D0387). To plan it:
+
+- Depends on US1030, US1012 and US1016 (all Draft)
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G10 after the refine panel's review |
+| 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
