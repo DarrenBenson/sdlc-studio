@@ -877,8 +877,9 @@ def _clip_reason(text: str, limit: int = 300) -> str:
 def _full_suite(root: str) -> dict:
     """PUSH-BOUNDARY lane: every test module of both suites, run ONCE.
 
-    Per-commit selection follows direct edges only, so a hook, test infrastructure or a library
-    reached through another script selects nothing on a commit; this lane is what catches those.
+    Per-commit selection follows direct edges and one level of fixture imports, so a hook, test
+    infrastructure or a library reached through another script selects nothing on a commit;
+    this lane is what catches those.
     Run as the commit hook runs a selection (`run_tests_plan`): across every core under
     pytest-xdist, the `serial_only` tests after. A red run names each failing test and keeps the
     whole output in `sdlc-studio/.local/boundary-suite-last.log`, since the gate prints one line.
@@ -2246,7 +2247,8 @@ TEST_SUITE_DIRS = (
 )
 
 #: The file kinds a test module can import, load or be named for. A doc, a template or an
-#: artefact is none of these, so a commit touching only those selects nothing.
+#: artefact is none of these, so a commit touching only those selects only the modules that
+#: declare one as their `test-census-subject`.
 _CODE_SUFFIXES = (".py", ".sh")
 
 
@@ -2268,12 +2270,18 @@ _FROM_IMPORT = re.compile(
 _PLAIN_IMPORT = re.compile(r"^[ \t]*import[ \t]+([^\n#]*)", re.M)
 
 #: How a test module NAMES the script it loads dynamically. Most modules here build their
-#: subject with `spec_from_file_location`, so there is no import statement to read.
+#: subject with `spec_from_file_location` or the shared `loader.load_script`, so there is no
+#: import statement to read.
 _LOADER_NAME = re.compile(
     r"""spec_from_file_location\(\s*["']([a-z_][a-z0-9_]*)["']"""
     r"""|_load\(\s*["']([a-z_][a-z0-9_]*)["']"""
+    r"""|load_script\(\s*["']([a-z_][a-z0-9_]*)["']"""
     r"""|SCRIPTS\s*/\s*["']([a-z_][a-z0-9_]*)\.py["']""",
     re.IGNORECASE)
+
+#: The header a test module declares its subject with, when that subject is a file no import
+#: reaches: a document, a template, a hook.
+_CENSUS_SUBJECT = re.compile(r"^#[ \t]*test-census-subject:[ \t]*(\S+)[ \t]*$", re.M)
 
 
 def _imported_names(text: str) -> set[str]:
@@ -2293,14 +2301,19 @@ def _imported_names(text: str) -> set[str]:
     return names
 
 
-def reach_index(root: str) -> dict:
-    """`{module stem: {test modules that import or load it}}`, read from the test sources.
+def _selection_indexes(root: str) -> tuple[dict, dict]:
+    """`(reach, census)` from ONE read of the test sources: `reach` is `{module stem: {test
+    modules that import or load it}}`, `census` is `{repo-relative path: {test modules whose
+    test-census-subject names it}}`.
 
-    The import graph restricted to the edges selection needs, in one regex pass: building the
-    whole repository's graph took four seconds, and the commit hook asks this on every commit.
+    A test module that imports another test module inherits what that module reaches, one
+    level deep: a fixture module that loads a script carries the scripts its importers drive
+    (test_lean_close_shows_the_page reaches sprint.py only through test_lean_close).
     """
-    out: dict = {}
     base = Path(root)
+    reach: dict[str, set[str]] = {}
+    by_stem: dict[str, str] = {}
+    census: dict = {}
     for suite in TEST_SUITE_DIRS:
         tests_dir = base / suite
         if not tests_dir.is_dir():
@@ -2313,9 +2326,30 @@ def reach_index(root: str) -> dict:
             names = _imported_names(text)
             names.update(next(g for g in m.groups() if g).lower()
                          for m in _LOADER_NAME.finditer(text))
-            for name in names:
-                out.setdefault(name, set()).add(rel)
-    return out
+            reach[rel] = names
+            by_stem.setdefault(module.stem.lower(), rel)
+            if "test-census-subject" in text:       # a third of modules carry one
+                for m in _CENSUS_SUBJECT.finditer(text):
+                    census.setdefault(m.group(1), set()).add(rel)
+    out: dict = {}
+    for rel, names in reach.items():
+        inherited: set[str] = set()
+        for name in names:
+            fixture = by_stem.get(name)
+            if fixture and fixture != rel:
+                inherited |= reach[fixture]     # the fixture's own reach, not its inheritance
+        for name in names | inherited:
+            out.setdefault(name, set()).add(rel)
+    return out, census
+
+
+def reach_index(root: str) -> dict:
+    """`{module stem: {test modules that import or load it}}`, read from the test sources.
+
+    The import graph restricted to the edges selection needs, in one regex pass: building the
+    whole repository's graph took four seconds, and the commit hook asks this on every commit.
+    """
+    return _selection_indexes(root)[0]
 
 
 def suite_modules(root: str = ".") -> list[str]:
@@ -2346,28 +2380,34 @@ def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
                             "about this diff - running everything")
         return result
     module_set = set(modules)
-    index = reach_index(root)
+    index, census = _selection_indexes(root)
     selected: set[str] = set()
-    code = [p for p in _normalise(changed) if p.endswith(_CODE_SUFFIXES)]
+    paths = _normalise(changed)
+    code = [p for p in paths if p.endswith(_CODE_SUFFIXES)]
     for path in code:
         if path in module_set:
             selected.add(path)
         stem = Path(path).stem.replace("-", "_").lower()
         selected |= {m for m in modules if os.path.basename(m).lower() == f"test_{stem}.py"}
         selected |= index.get(stem, set())
+    for path in paths:
+        selected |= census.get(path, set())
+    reached = [p for p in paths if p in code or p in census]
     result["resolved"] = True
     result["selectors"] = sorted(selected)
     result["excluded"] = len(modules) - len(selected)
     if selected:
-        result["reason"] = (f"{len(selected)} of {len(modules)} test module(s) import, load or "
-                            f"are named for the {len(code)} changed code file(s); "
+        result["reason"] = (f"{len(selected)} of {len(modules)} test module(s) import, load, "
+                            f"are named for or declare as their census subject the "
+                            f"{len(reached)} changed file(s); "
                             f"{result['excluded']} excluded, and the full suite runs at push")
     else:
-        result["reason"] = ("no test module imports, loads or is named for a changed file - "
-                            "per-commit selection follows direct edges only, so docs, "
-                            "artefacts, hooks, test infrastructure and code reached only "
-                            "through another script run no unit suite here; the full suite "
-                            "at push catches them")
+        result["reason"] = ("no test module imports, loads, is named for or declares as its "
+                            "census subject a changed file - per-commit selection follows "
+                            "direct edges and one level of fixture imports, so artefacts, "
+                            "hooks, test infrastructure, a doc no test names and code reached "
+                            "only through another script run no unit suite here; the full "
+                            "suite at push catches them")
     return result
 
 
@@ -2743,8 +2783,10 @@ def build_parser() -> argparse.ArgumentParser:
                         "tools/tests through it with --boundary push")
     p.add_argument("--suite-decision", dest="suite_decision", action="store_true",
                    help="Answer whether the unit suites must run, and over which modules: "
-                        "those that import, load or are named for a changed code file. Skips "
-                        "when none is reached (a docs or artefact change) or when the tracked "
+                        "those that import, load or are named for a changed code file, "
+                        "directly or through one test module they import, and those whose "
+                        "`test-census-subject` names a changed file. Skips when none is "
+                        "reached (an artefact change, or a doc no test names) or when the tracked "
                         "tree hashes identically to the last GREEN verdict's. A boundary runs "
                         "everything. Exits 0 when a run is needed")
     p.add_argument("--changed", nargs="+", metavar="PATH",
