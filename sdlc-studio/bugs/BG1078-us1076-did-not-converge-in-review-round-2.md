@@ -36,6 +36,8 @@ Fix each finding above, then deliver US1076 again in a later run.
 
 ## Grooming note (2026-10-20)
 
+- Goal review, 2026-10-21 (engineering, product and qa seats): 940cdda5, the repair this unit redelivers, landed before this run's base, so the brief's diff against the base is empty. The unit's own diff is `git show 940cdda5`, which changed only `tools/tests/test_remote_gate_runs.py` among its Affects. A diff from c6f2239c would carry US1077's and US1078's changes to `tools/remote-gate.sh` (Goal review amendment round, 2026-10-21, qa). Until BG1108 is fixed, the reviewer is told this diff is the unit's own, so its findings are not read as pre-existing.
+- AC1 must fail on: the stub's child polling with no deadline. AC2 must fail on: the stub recording SIGINT alone. AC3 to AC5 must fail on what US1076's own criteria name.
 - Regroomed as BG1079 proposes: only the round-2 REJECT's `[new]` findings that are not info stay as criteria. Dropped: the `[new] info` item recording that every round-1 finding was CLOSED (not work), and the `[pre-existing]` item naming BG1075, which is open as its own bug.
 - The two remaining findings point at the tests the round-2 repair added (940cdda5), which is already on main. The redelivery is that commit's independent review, and any repair the review asks for. Re-estimated from 3 to 2 points for that reason.
 
@@ -45,3 +47,4 @@ Fix each finding above, then deliver US1076 again in a later run.
 | --- | --- | --- |
 | 2026-10-19 | sdlc-studio | Filed |
 | 2026-10-20 | Claude Opus 5.5 | Regroomed: criteria kept for the [new] non-info findings only (BG1079); see the grooming note |
+| 2026-10-21 | Claude Opus 5.5 | Regroomed on the run-three goal review's two rounds (engineering, product and qa seats; D0384) |

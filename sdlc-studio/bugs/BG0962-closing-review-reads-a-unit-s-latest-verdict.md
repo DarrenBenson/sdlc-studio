@@ -76,6 +76,11 @@ Fold the per-unit verdict ledger (critic-verdicts.md) into `_verdict_entries` al
 - Not held: the `verdict_for` comment stays unpinned by ruling (round 1); BG0983, BG0958 and BG0963 are pre-existing.
 - Two REJECTs reached the round cap, so the unit is escalated to the operator, who rules on it.
 
+## Grooming note (2026-10-21)
+
+- Goal review, 2026-10-21 (engineering, product and qa seats): the standing REJECT (qa-seat-BG0962-r1, 2026-10-07) is answered by a repair and an APPROVE recorded under that reviewer id; the rejoinder brief carries its twelve findings. The fix 922b9d6c predates this run's base, so the unit's diff is `git diff aacd6afa -- <Affects>` (aacd6afa is 922b9d6c's parent) together with the repair's own commits in this run (Goal review amendment round, 2026-10-21).
+- Must fail on, from the REJECT's mutants: AC1, a frozen batch REJECT read over a later per-unit APPROVE; AC2, a later per-unit REJECT ignored; AC3, the row decided on the fold alone (M7) or on coverage alone (M8); AC4, per-unit rows always sorted last (M2); AC5, a same-day tie cleared; AC6, a same-day per-unit non-APPROVE sorted before the batch rows (M5); AC7, the unreadable-ledger guard removed (M11).
+
 ## Revision History
 
 | Date | Author | Change |
@@ -85,3 +90,4 @@ Fold the per-unit verdict ledger (critic-verdicts.md) into `_verdict_entries` al
 | 2026-10-07 | Claude Opus 5.5 (engineering seat) | Built on the fast-track (D0348): per-unit verdicts from `critic.verdict_for` merged into the closing-review fold by date. AC3 made precise; AC4 (US0593 kept across the ledgers) and AC5 (a same-day tie fails closed) added; Affects trimmed to the files changed, `critic.py` needing none |
 | 2026-10-07 | Claude Opus 5.5 (engineering seat) | Repaired after the round-1 REJECT: AC3 reworded, AC6 and AC7 added, test docstrings corrected, the fold-alone mutant killed by AC3's own test |
 | 2026-10-07 | Claude Opus 5.5 (engineering seat) | Round 2 REJECT recorded (cap reached, escalated): AC7 restated to what its test proves, the reviewer's prescribed repair |
+| 2026-10-21 | Claude Opus 5.5 | Regroomed on the run-three goal review's two rounds (engineering, product and qa seats; D0384) |

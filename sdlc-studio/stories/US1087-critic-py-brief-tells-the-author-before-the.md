@@ -18,24 +18,25 @@
 
 ## Acceptance Criteria
 
-- **AC1:** Given a unit with a changelog fragment, when `critic.py brief --unit <id> --seat <seat>` runs, then stderr carries an author self-check section and stdout carries none of its lines, and the brief's fingerprint is the one `critic.brief()` gives for the same unit and seat
+- **AC1:** Given a unit, when `critic.py brief --unit <id> --seat <seat>` runs, then stderr carries an author self-check section and stdout carries none of its lines, and the brief's fingerprint is the one `critic.brief()` gives for the same unit and seat
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_steps_go_to_stderr_and_the_brief_is_unchanged
-- **AC2:** Given a unit whose Affects declares test files, when the brief runs, then the section names `changelog.d/<id>.md` and the commit message as the claim-inventory surfaces and each declared test file as a mutation-pass target; given a unit whose Affects declares no test file, then the section says it declares none
+- **AC2:** Given a unit, when the brief runs, then the section names as claim-inventory surfaces the commit message, each prose surface the brief's own claim inventory names (`CLAIM_SURFACES`), and each changelog fragment the unit's Affects declares (read from its Affects, never from its id), and names each test file its Affects declares as a mutation-pass target; given Affects declaring no test file or no fragment, it says so
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_steps_name_the_units_surfaces_and_tests
 - **AC3:** Given the brief's claim-inventory text and its practice to mutate the author's tests, when either text is changed in-process, then the section's instruction changes with it, because it is derived from those texts and not restated
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_steps_derive_from_the_briefs_practices
 
 ## Notes
 
-- Serves: Maya Okafor, End goal 3 (drive a batch to done, pausing only for her decisions): fewer review rounds a unit.
+- Serves: Maya Okafor, End goal 3 (drive a batch to done, pausing only for her decisions). Its measure is the run's first-round approval rate on the units briefed after US1089, read at the close against RETRO0135's 1 of 10; no criterion can guarantee it.
 - Delivers CR0650 part (2) (D0382).
 - AC1 must fail on: the section printed to stdout, inside the brief a reviewer reads from a file.
-- AC2 must fail on: the mutation targets taken from every test in the repository, or from none, instead of the unit's declared Affects.
+- AC2 must fail on: the fragment taken as `changelog.d/<id>.md`, which misses a carried bug's fragment (BG1078 declares `changelog.d/US1076.md`); the surfaces typed rather than read from `CLAIM_SURFACES`.
 - AC3 must fail on: the section's instruction typed beside `_CLAIM_INVENTORY_BLOCK` and the `mutate the author's TESTS` practice rather than read from them (LL0042).
-- The brief already prints its tier and fingerprint footer on stderr (critic.py `cmd_brief`); the section goes before that footer, on both the first-round and the `--rejoinder` path.
+- The section goes before the tier and fingerprint footer `cmd_brief` already prints on stderr, on the first-round and the `--rejoinder` path. Goal review, 2026-10-21 (engineering, product and qa seats) made AC2 read fragments from Affects and name every claim surface.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-20 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-10-21 | Claude Opus 5.5 | Regroomed on the run-three goal review's two rounds (engineering, product and qa seats; D0384) |

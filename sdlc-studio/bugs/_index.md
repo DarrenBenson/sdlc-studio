@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-10-20
+**Last Updated:** 2026-10-21
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 136 |
+| Open | 139 |
 | In Progress | 0 |
 | Fixed | 808 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 41 |
 | Superseded | 33 |
-| **Total** | **1105** |
+| **Total** | **1108** |
 
 ## All Bugs
 
@@ -181,6 +181,9 @@
 | [BG1103](BG1103-the-close-binds-the-untracked-files-it-leaves.md) | The close binds the untracked files it leaves into the signature without naming them, so tidying one refuses the sign | Open | Low | 2026-10-20 | 2026-10-20 |
 | [BG1104](BG1104-a-message-only-amend-runs-the-whole-workspace.md) | A message-only amend runs the whole-workspace gate at commit, because the hook's gate lane reads an empty staged diff as no diff to scope to | Open | Low | 2026-10-20 | 2026-10-20 |
 | [BG1105](BG1105-agents-md-names-the-local-push-cost-series.md) | AGENTS.md names the local push-cost series as the current push figure, which a clone with a gate host never adds to | Superseded | Low | 2026-10-20 | 2026-10-20 |
+| [BG1106](BG1106-package-lock-json-resolves-smol-toml-1-7.md) | package-lock.json resolves smol-toml 1.7.1 and katex 0.16.47 through markdownlint-cli 0.49.1, inside Dependabot alerts 25 and 24 | Open | Low | 2026-10-21 | 2026-10-21 |
+| [BG1107](BG1107-sprint-end-goals-keeps-only-the-first-line.md) | sprint._end_goals keeps only the first line of a wrapped End goal, so the goal-review brief and the goal trace show Rowan's goals cut off mid-sentence | Open | Medium | 2026-10-21 | 2026-10-21 |
+| [BG1108](BG1108-a-carried-unit-whose-repair-landed-before-the.md) | A carried unit whose repair landed before the new run's base has an empty review diff, so its redelivery review cannot block | Open | Medium | 2026-10-21 | 2026-10-21 |
 
 ## Archived Releases
 

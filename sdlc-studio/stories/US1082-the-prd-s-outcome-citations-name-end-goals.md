@@ -23,18 +23,18 @@
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::OutcomeCitationTests::test_every_end_goal_is_cited_once
 - **AC2:** Given outcome O5, when its citation is read, then it cites Maya Okafor's End goal 5, and an outcome cites Jonah Reyes's End goal 4
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::OutcomeCitationTests::test_o5_and_jonahs_upgrade_goal_are_cited
-- **AC3:** Given Jonah Reyes's card, when its End goals are read, then End goals 1 to 4 are word for word what they are at the run's base ref
+- **AC3:** Given Jonah Reyes's card, when its End goals are read, then End goals 1 to 4 are word for word what they are at commit 7f3e91a9
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::OutcomeCitationTests::test_jonahs_end_goals_are_unchanged
 
 ## Notes
 
 - Serves: Maya Okafor, End goal 4.
-- Delivers CR0648:27 (EP0289:30): no maintainer outcome (D0380). Today O5 (prd.md:103, 'the process stays small enough to serve the work') cites Maya End goal 3, which does not say it, and Jonah End goal 4 ('Upgrade safely as the skill evolves') is cited by no outcome. `outcome_problems` checks only that a cited card and number exist, so both pass today.
-- Whether a goal says an outcome is a judgement; AC2 pins the two citations the consult ruled, and the reviewer judges the wording.
+- Delivers CR0648:27 (EP0289:30): no maintainer outcome (D0380). Today O5 (prd.md:103) cites Maya End goal 3, which does not say it, and Jonah End goal 4 ('Upgrade safely as the skill evolves') is cited by no outcome. `outcome_problems` checks only that a cited card and number exist, so both pass today.
+- Whether a goal says an outcome is a judgement; AC2 pins the two citations D0383 and the consult ruled, and the reviewer judges the wording.
 - AC1 must fail on: O5 still citing Maya End goal 3 (a pair cited twice); Jonah End goal 4 uncited.
 - AC2 must fail on: O5 re-pointed to any other goal.
 - AC3 must fail on: Jonah's End goal 4 reworded to fit an outcome (a goal change under D0374).
-- Depends on US1081, which appends Maya End goal 5 if the operator approves it. Without it, O5 needs another citation and AC2 changes with that ruling.
+- Depends on US1081, which appends Maya End goal 5 (D0383). The base is the committed 7f3e91a9, readable on the gate host and in CI.
 
 ## Revision History
 
@@ -42,3 +42,4 @@
 | --- | --- | --- |
 | 2026-10-19 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-19 | sdlc-studio | Retitled: was "The PRD's outcomes cite End goals the cards state, and Jonah's upgrade goal has an outcome" |
+| 2026-10-21 | Claude Opus 5.5 | Regroomed on the run-three goal review's two rounds (engineering, product and qa seats; D0384) |
