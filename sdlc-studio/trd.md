@@ -3,7 +3,7 @@
 **Project:** SDLC Studio
 **Version:** 6.1.0
 **Status:** Draft
-**Last Updated:** 2026-10-19
+**Last Updated:** 2026-10-22
 **PRD Reference:** [PRD](./prd.md)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -208,10 +208,17 @@ the host, as ssh names it, and `.githooks/pre-push` then sends exactly the commi
 a repository kept there for this clone and runs the gate on that host through
 `tools/remote-gate.sh`, whose host side comes from the pushed commit's own copy. Two more keys,
 both in this clone's git config, shape it: `sdlc.gateSsh` replaces the default ssh transport, and
-`sdlc.gateCloneId` keys this clone's state on the host, written on first use. With
-`sdlc.gateHost` unset, the gate runs on this machine, and `SDLC_GATE_LOCAL=1` runs it on this
-machine for one push. A host that cannot be reached refuses the push rather than running the
-gate here. `tools/run-suite.sh` runs its suite on the same host, against the working tree, and
+`sdlc.gateCloneId` keys this clone's state on the host, written on first use. Where the gate
+runs:
+
+| `sdlc.gateHost` | `SDLC_GATE_LOCAL` in the push's environment | The push gate |
+| --- | --- | --- |
+| unset or empty | any value | runs on this machine |
+| set | `1` | runs on this machine |
+| set | unset, or any value but `1` | runs on that host, through `tools/remote-gate.sh` |
+| set, and the connection to it fails | unset, or any value but `1` | does not run on this machine in its place: the push is refused |
+
+`tools/run-suite.sh` runs its suite on the same host, against the working tree, and
 `bash tools/remote-gate.sh doctor` says whether a host can judge a push;
 `tools/enable-hooks.sh` names the host and runs the doctor. The host needs git on the PATH an
 ssh command sees there, because the commit is received before anything else runs, and the
@@ -1190,6 +1197,7 @@ touches the component. The constraints below span components.
 | 2026-10-19 | 6.1.0 | US1084: §3 names the three hooks, the push and release boundaries, and the four files the gate writes under `.local/` (it had said the gate wrote none). §10's gate row states the declared 45 s budget and its source, where it had called the gate sub-second |
 | 2026-10-19 | 6.1.0 | US1085: §4 names every package `requirements-dev.txt` and `package.json` declare, `requirements-dev.txt` as the one Python dependency list, and the shipped scripts' soft dependencies (PyYAML, lizard, coverage); which runner runs which suite |
 | 2026-10-19 | 6.1.0 | US1086: §3 describes the gate host: the git config keys and the local override, the fallback when none is set, and that an unreachable host refuses the push |
+| 2026-10-22 | 6.1.0 | BG1095: §3 gives where the push gate runs as a table, for each `sdlc.gateHost` and `SDLC_GATE_LOCAL` setting and a failed connection to the host, in place of the sentences |
 
 ---
 

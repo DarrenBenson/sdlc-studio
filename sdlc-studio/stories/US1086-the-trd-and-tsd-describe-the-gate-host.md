@@ -22,7 +22,7 @@
   - **Verify:** pytest tools/tests/test_lean_gate_host_docs.py::GateHostDocsTests::test_every_gate_host_setting_is_named
   - **Verified:** yes (2026-10-19)
 - **AC2:** Given the push stage of the TSD, when it is read, then it says where the gate runs with a host configured, with none, and with `SDLC_GATE_LOCAL=1`, and that a transport failure refuses the push rather than running the gate locally
-  - **Verify:** pytest tools/tests/test_lean_gate_host_docs.py::GateHostDocsTests::test_the_push_stage_names_each_gate_location
+  - **Verify:** pytest tools/tests/test_lean_gate_host_docs.py::GateHostDocsTests::test_the_push_stage_tables_each_gate_location
   - **Verified:** yes (2026-10-19)
 
 ## Notes
@@ -43,3 +43,4 @@
 | 2026-10-19 | Claude Opus 5.5 | Regroomed after the goal review (round 4): the seats' findings folded in: run-suite.sh and enable-hooks.sh among the sources, known-member floor |
 | 2026-10-19 | Claude Opus 5.5 | Repointed at Rowan Achterberg, Primary for the repository-tooling interface, before review (D0379, D0380) |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387): cleared Depends on; every dependency it named is terminal |
+| 2026-10-22 | Claude Opus 5.5 | BG1095: AC2's Verify re-pointed at the table test that replaces the fall-back phrase scan |

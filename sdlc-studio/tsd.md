@@ -2,7 +2,7 @@
 
 > **Project:** SDLC Studio
 > **Version:** 6.1.0
-> **Last Updated:** 2026-10-19
+> **Last Updated:** 2026-10-22
 > **Status:** Generated (brownfield - awaiting validation)
 >
 > Generated in **Generate mode** by reverse-engineering the skill's own test
@@ -585,15 +585,20 @@ the Node one from `package.json`.
    runs `gate.py --boundary push`. A tag push runs `gate.py --boundary release`, which adds the
    slow release lanes (release rehearsal and module-alone). `python3 tools/gate_timing.py
    estimate --suite boundary-push` gives the current cost of a run on this machine, and
-   `--suite boundary-push@<host>` the cost on a gate host, recorded as a series of its own. Emergency bypass: `git push
-   --no-verify`. With `sdlc.gateHost` set, the hook sends exactly the commit being pushed to
-   that host and the gate runs there, through `tools/remote-gate.sh`; the host's own
-   preflight takes the prerequisite check's place, running on the host after the
-   known-issues check and the red-main read. `sdlc.gateSsh` replaces the default ssh
-   transport, and `sdlc.gateCloneId` keys this clone's state on the host. With no host
-   configured (`sdlc.gateHost` unset), the gate runs on this machine. `SDLC_GATE_LOCAL=1 git
-   push` runs it on this machine for one push. A host that cannot be reached refuses the push
-   rather than running the gate here.
+   `--suite boundary-push@<host>` the cost on a gate host, recorded as a series of its own.
+   Emergency bypass: `git push --no-verify`. When the gate runs on a host, the hook sends
+   exactly the commit being pushed, and the host's own preflight takes the prerequisite
+   check's place, running on the host after the known-issues check and the red-main read.
+   `sdlc.gateSsh` replaces the default ssh transport, and `sdlc.gateCloneId` keys this clone's
+   state on the host. Where the gate runs:
+
+   | `sdlc.gateHost` | `SDLC_GATE_LOCAL` in the push's environment | The push gate |
+   | --- | --- | --- |
+   | unset or empty | any value | runs on this machine |
+   | set | `1` | runs on this machine |
+   | set | unset, or any value but `1` | runs on that host, through `tools/remote-gate.sh` |
+   | set, and the connection to it fails | unset, or any value but `1` | does not run on this machine in its place: the push is refused |
+
 4. **CI (push and pull request):** the full lint chain, both unittest suites, the portable
    `gate.py` run, the coverage floor (`coverage report --fail-under=80`, blocking) and the bandit
    security scan (blocking); a Windows pwsh smoke test for `install.ps1`.
@@ -750,6 +755,7 @@ package.json                # lint and test entry points
 | 2026-10-19 | US1084 | The pipeline stages follow the three hooks in git's order, naming each hook's `--list`, the push stage's prerequisite check and red-main acknowledgement (D0181), and the commit's advisory 90-second budget. The release steps are named manual pre-tag steps (D0375), and the performance NFR states the gate's declared budget. The push stage follows the hook's own steps, the artefact gate's write claim is corrected, the noise ratchet's place is stated, the delivery gates are tabulated, and version consistency blocks on every commit |
 | 2026-10-19 | US1085 | The framework rows name every declared package. A CI jobs table names each job with its triggers and what it runs, and the corpus baseline with what it compares. Every lint check in the chain is named, and no count of them is stated |
 | 2026-10-19 | US1086 | The push stage says where the gate runs with a host configured, with none, and with `SDLC_GATE_LOCAL=1`, that an unreachable host refuses the push, when the host's preflight runs, and how a host's cost is estimated |
+| 2026-10-22 | BG1095 | The push stage gives where the gate runs as a table, for each `sdlc.gateHost` and `SDLC_GATE_LOCAL` setting and a failed connection to the host, in place of the sentences |
 
 ---
 
