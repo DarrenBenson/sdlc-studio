@@ -850,9 +850,14 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
     """The CURRENT session's harness-tracked token total, read from the transcript.
 
     The harness records usage per message; the most recently modified session file is the one
-    running this call. Summed: input, output and cache-creation tokens of every record carrying
-    usage. Cache READS are excluded - they re-bill the same context every turn, so counting them
-    would price the conversation quadratically rather than the work.
+    running this call. Summed: input, output and cache-creation tokens of every assistant
+    message carrying usage, ONCE per message. The harness writes one record per content block
+    of a message (thinking, text, each tool call) and repeats the message's usage on every one
+    under the same `message.id`, so summing records billed a message once per block: 2.5 times
+    what was spent on the transcript that found the defect. A record with no `message.id` is
+    counted by itself, as every record was before: nothing tells two of them apart. Cache READS
+    are excluded - they re-bill the same context every turn, so counting them would price the
+    conversation quadratically rather than the work.
 
     Returns {"tokens", "source", "basis"} on success, {"tokens": None, "reason"} when the total
     cannot be read - and the caller must SAY which it got.
@@ -872,6 +877,11 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
     if src is None:
         return {"tokens": None, "reason": f"no session transcript (*.jsonl) in {d}"}
     total, seen = 0, False
+    #: One reading per assistant message, keyed on `message.id`, and the LARGEST of its repeats:
+    #: a message's earlier records can carry a smaller output count than its last, while its
+    #: input and cache-creation counts agree on all of them. Added to `total` once the file is
+    #: read.
+    per_message: dict[str, int] = {}
     #: The distinct models that spent the counted tokens. Collected only from the records that
     #: carry usage - a record with no usage bought nothing, so its model must not colour the
     #: attribution. One model reports as itself; more than one reports as SESSION_MODEL_MIXED,
@@ -894,8 +904,8 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
                 if isinstance(model, str) and model.strip():
                     models_seen.add(model.strip())
                 try:
-                    total += sum(int(usage.get(k) or 0) for k in
-                                 ("input_tokens", "output_tokens", "cache_creation_input_tokens"))
+                    counted = sum(int(usage.get(k) or 0) for k in
+                                  ("input_tokens", "output_tokens", "cache_creation_input_tokens"))
                 except (ArithmeticError, AttributeError, TypeError, ValueError) as exc:
                     # A malformed usage value REFUSES the whole read rather than skipping the
                     # record. Skipping would return a total that is quietly short, and a short
@@ -905,11 +915,19 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
                             "reason": f"transcript {src.name} carries a malformed usage record "
                                       f"({type(exc).__name__}: {exc}) - the total cannot be "
                                       f"trusted, so no figure is reported"}
+                # Parsed BEFORE the repeat is recognised, so a malformed value on a repeated
+                # record refuses the read exactly as it would on the message's first record.
+                msg_id = msg.get("id") if isinstance(msg, dict) else None
+                if isinstance(msg_id, str) and msg_id:
+                    per_message[msg_id] = max(per_message.get(msg_id, 0), counted)
+                else:
+                    total += counted
     except (ArithmeticError, AttributeError, OSError, TypeError, ValueError) as exc:
         # The whole family, not the shapes seen so far. This transcript format is the harness's,
         # not this project's, and it has already moved once (hence the two-shape probe above).
         # `archived()._index` in this same file records the same lesson from its own repairs.
         return {"tokens": None, "reason": f"transcript {src} unreadable ({type(exc).__name__}: {exc})"}
+    total += sum(per_message.values())
     if not seen or total <= 0:
         return {"tokens": None, "reason": f"transcript {src.name} carries no usage records"}
     if len(models_seen) == 1:
@@ -923,7 +941,7 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
             # carries no subagent (sidechain) usage record at all - measured, 6,624,813 tokens
             # of usage with ZERO from sidechains - so a session that delegated work spent more
             # than this. Every caller inherits the sentence, and none of them may drop it.
-            "basis": "current-session transcript usage sum, MAIN THREAD only "
+            "basis": "current-session transcript usage sum, once per message, MAIN THREAD only "
                      "(input + output + cache creation; cache reads excluded). The transcript "
                      "records no subagent usage, so this is a LOWER BOUND on what the session "
                      "cost"}
