@@ -33,11 +33,11 @@
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AmendGoalReviewTests::test_the_amend_round_records_prior_wording_and_requesting_seat
 - **Verified:** yes (2026-07-23)
 
-### AC3: Seats the amendment does not satisfy are flagged for re-consult
+### AC3: Only a seat that asked to re-review is flagged for re-consult (superseded rule, US1096 AC1)
 
-- **Given** goal A reviewed by product, engineering and qa, then amended to goal B satisfying only engineering
+- **Given** goal A reviewed by product, engineering and qa, with qa asking to re-review, then amended to goal B at engineering's request
 - **When** the amended review's status is read
-- **Then** product and qa are reported as needing a fresh verdict against goal B while engineering is not
+- **Then** only qa is reported as needing a fresh verdict against goal B; engineering's and product's verdicts carry forward (US1096 AC1 superseded the earlier rule, under which every seat but the requesting one was re-consulted)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AmendGoalReviewTests::test_seats_not_satisfied_by_the_amendment_still_need_reconsult
 - **Verified:** yes (2026-07-23)
 
@@ -52,3 +52,4 @@ Node-addressed pytest ACs over `test_sprint.py`, red before the code. Mutation-p
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-23 | sdlc-studio | Built and mutation-proven |
 | 2026-10-22 | sdlc | AC3 superseded by US1096 AC1 (2026-10-22): an amendment now carries every seat's verdict forward unless a seat asked to re-review; its Verify test keeps its name and asserts the new rule |
+| 2026-10-22 | sdlc | AC3 reworded to the rule its Verify test now asserts (only a seat that asked to re-review is re-consulted); `verify_ac` run 2026-10-22: 3 of 3 pass (US1096's QA review, LC-015) |

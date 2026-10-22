@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 142 |
+| Open | 145 |
 | In Progress | 0 |
 | Fixed | 809 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 38 |
-| **Total** | **1123** |
+| **Total** | **1126** |
 
 ## All Bugs
 
@@ -199,6 +199,9 @@
 | [BG1121](BG1121-an-author-self-check-record-still-reads-stale.md) | An author self-check record still reads stale in landing orders the per-file own-change view cannot see through: work recorded before its own commit, a cherry-pick, or another unit's hunk in a file the author also changed | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1122](BG1122-each-meter-reading-now-re-reads-every-subagent.md) | Each meter reading now re-reads every subagent transcript from the start, so a lane, transition or report command takes about 36 s on a long session instead of 22 s | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1123](BG1123-a-review-brief-now-carries-two-different-diffs.md) | A review brief now carries two different diffs of the unit: the scope line's `git diff <base> -- <Affects>` (the working tree) and US1094's UNIT DIFF section (base to HEAD) | Open | Low | 2026-10-22 | 2026-10-22 |
+| [BG1124](BG1124-critic-py-brief-s-practice-and-claim-inventory.md) | critic.py brief's practice and claim-inventory refusals read the whole brief, so the unit diff US1094 embeds can satisfy them, and a unit whose own commit removes a practice gets its brief issued | Open | Medium | 2026-10-22 | 2026-10-22 |
+| [BG1125](BG1125-the-review-brief-s-unit-diff-is-the.md) | The review brief's unit diff is the whole run's diff over the unit's files, not the unit's own change, so on a shared file the 400-line cap is spent on other units' work and the unit's own hunks are cut | Open | Medium | 2026-10-22 | 2026-10-22 |
+| [BG1126](BG1126-a-seat-requested-amendment-of-an-open-run.md) | A seat-requested amendment of an open run's goal leaves the run state on the old goal, so the close's goal read reports 'a different goal' | Open | Low | 2026-10-22 | 2026-10-22 |
 
 ## Archived Releases
 
