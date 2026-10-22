@@ -5,7 +5,7 @@
 > **Created:** 2026-10-20
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/help/review.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, changelog.d/US1088.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/help/review.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/sprint_report.py, changelog.d/US1088.md
 > **Epic:** EP0291
 > **Points:** 3
 > **Depends on:** US1087
@@ -48,3 +48,4 @@
 | --- | --- | --- |
 | 2026-10-20 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-21 | Claude Opus 5.5 | Regroomed on the run-three goal review's two rounds (engineering, product and qa seats; D0384) |
+| 2026-10-22 | sdlc | Affects gains scripts/`sprint_report.py`: the new critic.py self-check verb is mechanics, declared in `NON_CEREMONY_VERBS` beside brief, so the cycle-drift guard covers it; US1089's brief refusal is its gate, so no checklist row |
