@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 137 |
+| Open | 138 |
 | In Progress | 0 |
 | Fixed | 809 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 38 |
-| **Total** | **1118** |
+| **Total** | **1119** |
 
 ## All Bugs
 
@@ -194,6 +194,7 @@
 | [BG1116](BG1116-shipped-guidance-tells-a-consuming-project-s-agent.md) | Shipped guidance tells a consuming project's agent to run the full suite before every commit, which the shipped gate's per-commit selection and push-boundary suite exist to avoid | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1117](BG1117-an-author-self-check-record-binds-the-content.md) | An author self-check record binds the content of the unit's whole Affects, so a later unit's commit to a shared file makes it stale and, under block, refuses the earlier unit's brief | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1118](BG1118-four-behaviours-us1088-and-us1089-state-for-the.md) | Four behaviours US1088 and US1089 state for the self-check record and gate are pinned by no test: a restored diff admitted by an older row, the record matched to its own unit, the setting read case-insensitively, and an uncovered first fragment refused | Open | Low | 2026-10-22 | 2026-10-22 |
+| [BG1119](BG1119-two-behaviours-bg1000-s-repair-states-for-per.md) | Two behaviours BG1000's repair states for per-commit selection are pinned loosely or not at all: the census header's 40-line window, and the rewritten run reason | Open | Low | 2026-10-22 | 2026-10-22 |
 
 ## Archived Releases
 
