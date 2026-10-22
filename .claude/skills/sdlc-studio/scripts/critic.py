@@ -2602,6 +2602,10 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
     claims = " ".join("\n".join(_CLAIM_INVENTORY_BLOCK.splitlines()[1:]).split())
     mutate = _paragraph(_REVIEW_PRACTICES_BLOCK, _MUTATE_PRACTICE_LEAD)
     surfaces = [f"the {COMMIT_SURFACE}", *CLAIM_SURFACES, *fragments]
+    # The brief's instruction counts its own surfaces ("all four"), so it is printed under the
+    # prose surfaces it counts, and the commit message and fragments are held to it after.
+    prose = (", ".join(CLAIM_SURFACES[:-1]) + f" and {CLAIM_SURFACES[-1]}"
+             if len(CLAIM_SURFACES) > 1 else "".join(CLAIM_SURFACES))
     lines = [AUTHOR_SELF_CHECK_HEADING,
              "Run the two passes below first, so the review confirms the work rather than "
              "finding what your own pass would have found. At the full review tier the "
@@ -2610,7 +2614,9 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
              f"1. Claim inventory, over: {'; '.join(surfaces)}.",
              (f"   The unit's changelog fragments: {', '.join(fragments)}." if fragments else
               "   The unit's Affects declares no changelog fragment."),
-             f"   {claims}",
+             f"   For {prose}, the brief's own instruction: {claims}",
+             f"   Rule each claim in the {COMMIT_SURFACE}"
+             f"{' and in each changelog fragment' if fragments else ''} the same way.",
              "",
              (f"2. Mutation pass, over: {', '.join(tests)}." if tests else
               "2. Mutation pass: the unit's Affects declares no test file, so there is no test "

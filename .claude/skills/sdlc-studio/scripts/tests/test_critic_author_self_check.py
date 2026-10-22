@@ -6,8 +6,9 @@ surface the brief's claim inventory names, each changelog fragment the unit's Af
 and the unit's declared test files as mutation-pass targets, and its instructions are the brief's
 own claim-inventory text and its practice to mutate the author's tests, never a restatement.
 
-AC1 and AC2 drive `critic.py brief` through its entry point in a throwaway project; AC3 calls the
-section's builder in-process, because it changes the module's texts to see the section follow.
+AC1 and AC2 drive `critic.py brief` through its entry point in a throwaway project. AC2's
+`CLAIM_SURFACES` case and AC3 call the section's builder in-process, because they change the
+module's texts to see the section follow.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/critic.py
 from __future__ import annotations
@@ -65,6 +66,13 @@ def _section(stderr: str) -> str:
     return stderr[start:end if end > 0 else None]
 
 
+def _line(section: str, prefix: str) -> str:
+    """The one line of the section that starts with `prefix`, stripped."""
+    found = [ln.strip() for ln in section.splitlines() if ln.strip().startswith(prefix)]
+    assert len(found) == 1, f"{len(found)} lines start with {prefix!r}:\n{section}"
+    return found[0]
+
+
 class AuthorStepsTests(unittest.TestCase):
 
     def test_the_steps_go_to_stderr_and_the_brief_is_unchanged(self) -> None:
@@ -77,12 +85,14 @@ class AuthorStepsTests(unittest.TestCase):
             _project(root, "US0101", "src/widget.py, tests/test_widget.py, changelog.d/US0101.md")
             r = _brief(root, "US0101")
             self.assertEqual(0, r.returncode, r.stderr)
-            section = _section(r.stderr)
+            _section(r.stderr)
             self.assertNotIn(HEADING, r.stdout)
-            for line in filter(None, (ln.strip() for ln in section.splitlines())):
-                with self.subTest(line=line[:60]):
-                    self.assertNotIn(line, r.stdout, "a line of the section reached stdout")
-            expected = critic.brief_fingerprint(critic.brief(root, "US0101", "qa", "full"))
+            # The whole of stdout is the brief and nothing else, so no part of the section can
+            # reach it; a line-by-line search would trip on the brief's own claim inventory and
+            # practices, which the section quotes by design (AC3).
+            brief = critic.brief(root, "US0101", "qa", "full")
+            self.assertEqual(brief + "\n", r.stdout, "stdout carries more than the brief")
+            expected = critic.brief_fingerprint(brief)
             self.assertIn(f"brief fingerprint: {expected}", r.stderr,
                           "the printed brief no longer fingerprints as critic.brief() does")
             self.assertLess(r.stderr.find(HEADING), r.stderr.find("review tier:"),
@@ -122,34 +132,70 @@ class AuthorStepsTests(unittest.TestCase):
 
     def test_the_steps_name_the_units_surfaces_and_tests(self) -> None:
         """AC2. Mutants: the fragment taken as changelog.d/<id>.md, which misses a carried bug's
-        fragment; the surfaces typed rather than read from CLAIM_SURFACES; the mutation targets
-        taken from anything but the unit's declared test files."""
+        fragment; the surfaces typed rather than read from CLAIM_SURFACES, or one of them left
+        out of step 1's list; the mutation targets taken from anything but the unit's declared
+        test files; the mutation line keyed on the fragments, or the fragment line on the tests,
+        which only a unit declaring one and not the other can tell apart; the brief's
+        instruction, which counts "all four" surfaces, printed under step 1's longer list
+        without naming the four it counts."""
+        opening = " ".join(critic._CLAIM_INVENTORY_BLOCK.split("\n", 1)[1].split())[:40]
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _project(root, "BG0900", "src/widget.py, tests/test_widget.py, changelog.d/US0800.md")
             section = _section(_brief(root, "BG0900").stderr)
             self.assertIn("changelog.d/US0800.md", section, "the declared fragment is not named")
             self.assertNotIn("changelog.d/BG0900.md", section, "a fragment was invented from the id")
-            self.assertIn("commit message", section)
+            listed = _line(section, "1. Claim inventory")
+            self.assertIn("commit message", listed)
+            self.assertIn("changelog.d/US0800.md", listed)
             for surface in critic.CLAIM_SURFACES:
                 with self.subTest(surface=surface):
-                    self.assertIn(surface, section)
-            self.assertIn("tests/test_widget.py", section)
-            self.assertNotIn("src/widget.py", section.split("mutation", 1)[-1],
+                    self.assertIn(f"; {surface};", listed, "a prose surface is missing from step 1")
+            instruction = next(ln for ln in section.splitlines() if opening in ln)
+            scope = instruction[:instruction.index(opening)]
+            for surface in critic.CLAIM_SURFACES:
+                with self.subTest(scope=surface):
+                    self.assertIn(surface, scope, "the brief's instruction is not scoped to the "
+                                                  "surfaces it counts")
+            self.assertNotIn("commit message", scope)
+            self.assertNotIn("changelog.d/US0800.md", scope)
+            mutation = _line(section, "2. Mutation pass")
+            self.assertIn("tests/test_widget.py", mutation)
+            self.assertNotIn("src/widget.py", mutation,
                              "a source file was named as a mutation-pass target")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _project(root, "US0102", "src/widget.py")
             section = _section(_brief(root, "US0102").stderr)
-            self.assertIn("declares no test file", section)
-            self.assertIn("declares no changelog fragment", section)
+            self.assertIn("declares no test file", _line(section, "2. Mutation pass"))
+            self.assertIn("declares no changelog fragment", _line(section, "The unit's"))
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, "US0106", "src/widget.py, tests/test_widget.py")
+            section = _section(_brief(root, "US0106").stderr)
+            self.assertEqual("2. Mutation pass, over: tests/test_widget.py.",
+                             _line(section, "2. Mutation pass"),
+                             "a unit declaring a test file and no fragment is given no target")
+            self.assertEqual("The unit's Affects declares no changelog fragment.",
+                             _line(section, "The unit's"),
+                             "a unit declaring no fragment is told it declares one")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, "US0107", "src/widget.py, changelog.d/US0107.md")
+            section = _section(_brief(root, "US0107").stderr)
+            self.assertEqual("The unit's changelog fragments: changelog.d/US0107.md.",
+                             _line(section, "The unit's"),
+                             "a unit declaring a fragment and no test file is told it has none")
+            self.assertIn("declares no test file", _line(section, "2. Mutation pass"),
+                          "a unit declaring no test file is given a mutation target")
         with unittest.mock.patch.object(critic, "CLAIM_SURFACES",
                                         (*critic.CLAIM_SURFACES, "release notes")):
             with tempfile.TemporaryDirectory() as d:
                 root = Path(d)
                 _project(root, "US0103", "src/widget.py")
-                self.assertIn("release notes", critic.author_self_check(root, "US0103"),
-                              "the surfaces are typed beside CLAIM_SURFACES, not read from it")
+                listed = _line(critic.author_self_check(root, "US0103"), "1. Claim inventory")
+                self.assertIn("release notes", listed,
+                              "step 1's surfaces are typed beside CLAIM_SURFACES, not read from it")
 
     def test_the_steps_derive_from_the_briefs_practices(self) -> None:
         """AC3. Mutant: the section's instruction typed beside the claim-inventory block and
