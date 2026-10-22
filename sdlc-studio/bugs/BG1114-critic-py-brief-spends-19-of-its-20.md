@@ -14,6 +14,8 @@
 
 Measured in-process on 2026-10-21 (US1087's brief): `critic.brief` took 19.9 s, 19.0 s of it in `reconcile.file_history_section`, of which `unit_corpus` took 18.4 s. Without an open `sdlc_md.corpus_cache()`, every `find_by_id` and `artifact_files` call inside it walks and reads the whole tree, which is quadratic (`sdlc_md.corpus_cache`'s docstring measures one such sweep at 777,732 file opens). `sprint.py lane brief` holds the cache open; `critic.brief` does not, so every review brief, and every rejoinder, pays the walk.
 
+US1089's QA review (2026-10-22) adds: the self-check gate runs after `brief()` has rendered the whole brief (critic.py:3757-3768), so an author refused for a missing record still pays the walk first. Running the gate before rendering would save that too.
+
 ## Steps to Reproduce
 
 `time python3 .claude/skills/sdlc-studio/scripts/critic.py brief --unit US1087 --seat qa >/dev/null`: about 20-30 s on this workspace.
