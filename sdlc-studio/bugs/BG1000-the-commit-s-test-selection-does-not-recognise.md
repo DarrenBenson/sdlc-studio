@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_selection_reaches_loaders.py, changelog.d/BG1000.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .githooks/pre-commit
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_selection_reaches_loaders.py, changelog.d/BG1000.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .githooks/pre-commit, .claude/skills/sdlc-studio/help/gate.md
 > **Evidence:** BG0993's commit on 2026-10-08: the hook selected 3311 tests, passed all but a known timing flake, and left test_lean_close_shows_the_page red at 3bc1620e; the QA reviewer found it. Measured with gate.reach_index at 9e2a86ba: 71 of 77 load_script edges missed.
 > **Created:** 2026-10-08
 > **Created-by:** sdlc-studio file
@@ -43,3 +43,4 @@ Recognise `load_script("x")` in `_LOADER_NAME`; select a module whose `test-cens
 | --- | --- | --- |
 | 2026-10-08 | sdlc-studio | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Regroomed on the run-three goal review's two rounds (engineering, product and qa seats; D0384) |
+| 2026-10-22 | sdlc | Affects gains help/gate.md: its selection bullet still described direct edges only, which BG1000 made false (repair agent's finding) |
