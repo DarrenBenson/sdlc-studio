@@ -131,10 +131,10 @@ read it as a known-weak rule and do it anyway.
 **Ship the paperwork in the same commit as the code.** Every behaviour or doc change carries
 its `changelog.d/<UNIT-ID>.md` fragment (`lessons/LL0004`).
 
-**Run the full suite before a commit that touches shared surface.** The gate runs a selected
-subset, so a green commit is not a green tree. This rule has been broken by the agent that
-shipped it. `tools/run-suite.sh all` is that run: with `sdlc.gateHost` set it runs on
-the gate host against the working tree, and `run-suite.sh --check` reads its verdict.
+**The push gate is the full-suite check.** A commit runs only the test modules its change
+selects; the pre-push hook runs the whole suite on each pushed commit, on the gate host when
+`sdlc.gateHost` is set (D0382). `tools/run-suite.sh all` runs it on demand against the working
+tree, on that host too, and `run-suite.sh --check` reads its verdict.
 
 ## Project overview
 
