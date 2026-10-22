@@ -1935,10 +1935,14 @@ harness_tokens = run_state.session_tokens
 def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
     """The tokens the open run is known to have spent, for the retro that is being recorded -
     or a stated reason there is no such number. Over a reading of the main thread alone the run
-    spent AT LEAST this, since delegated work nobody supplied a total for is absent from it;
-    over one that holds the subagent transcripts the delegated work is in the reading, and a
-    supplied total is not added to it. Same shape as `harness_tokens`: {"tokens", "source",
-    "basis"} or {"tokens": None, "reason"}.
+    spent AT LEAST this, since delegated work nobody supplied a total for is absent from it.
+    Whether a supplied delegated total is added is decided by the predicate the sprint report
+    reads, `run_token_total`'s `includes_subagents` over the run's STAMPS (over a run holding
+    only its legacy baseline, that baseline with this reading as its close, the inputs the
+    report passes it for one): over a run whose stamps say their readings hold the subagent
+    transcripts it is not added, and over one whose stamps carry no such flag it is, so the
+    retro and the report add the same totals. Same shape as `harness_tokens`: {"tokens",
+    "source", "basis"} or {"tokens": None, "reason"}.
 
     `retro_id` is REQUIRED, and the units are read from that retro, because the delta is only
     this retro's spend if the open run is the run that delivered it. Reading the open run and
@@ -2036,16 +2040,21 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
     # MEASURED (main thread) + SUPPLIED (delegated), and the sum is a LOWER BOUND. The two halves
     # are different evidence and stay separately named: the delta is a meter reading, a delegated
     # total is a figure an agent reported. Neither the label nor the arithmetic may imply that
-    # the transcript saw the delegated work. A reading that holds the subagent transcripts DID
-    # see it, so over one the supplied totals are not added: that would count each agent twice.
-    whole = bool(cap.get("includes_subagents"))
+    # the transcript saw the delegated work. A run whose readings hold the subagent transcripts
+    # DID see it, so over one the supplied totals are not added: that would count each agent
+    # twice. Which run that is, is the STAMPS' answer, the one the report adds by: a run whose
+    # stamps carry no such flag adds them however this one reading was taken. A run holding
+    # only its legacy baseline is read from that baseline with this reading as its close, the
+    # inputs the report passes `run_token_total` for one.
+    reads_agents = bool(cap.get("includes_subagents"))
+    whole = bool(run_state.run_token_total(state, cap).get("includes_subagents"))
     delegated = run_state.delegated_records(state)
     supplied = 0 if whole else run_state.delegated_total(state)
     total = delta + supplied
     meter = (f"the current-session total {cap['tokens']:,} less the {baseline:,} on the meter "
              f"when the run opened " + (
                  "(input + output + cache write, once per message, over the main thread and "
-                 "its subagent transcripts)" if whole else
+                 "its subagent transcripts)" if reads_agents else
                  "(input + output + cache creation; cache reads excluded)") + rebased)
     bound = (f"a LOWER BOUND, not the run's cost: the meter read the main thread's transcript "
              f"and no subagent's, so any delegated work no one supplied a total for is missing "
@@ -2054,6 +2063,18 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
         basis = (f"{rid} cost {total:,}: {meter}. The subagents are already in the reading"
                  + (f", so the {len(delegated)} delegated total(s) supplied are not added"
                     if delegated else ""))
+    elif reads_agents:
+        # This reading holds the subagent transcripts and the run's stamps do not say theirs
+        # did: the totals are added as the report adds them, and the figure is not called a
+        # floor, since an agent both supplied and read here would be in it twice.
+        basis = (f"{rid} cost {total:,}: {meter}"
+                 + (f", plus {supplied:,} SUPPLIED by {len(delegated)} delegated agent(s)"
+                    if supplied else "")
+                 + ". This reading holds the subagent transcripts, but the run's meter stamps "
+                   "do not say theirs did, so "
+                 + ("the delegated totals supplied are added, as the sprint report adds them, "
+                    "and an agent that ran as a subagent of this session is counted in both"
+                    if supplied else "no delegated total was supplied to add"))
     elif supplied:
         basis = (f"{rid} cost AT LEAST {total:,}: {delta:,} MEASURED on the main thread "
                  f"({meter}), plus {supplied:,} SUPPLIED by {len(delegated)} delegated "
@@ -2064,7 +2085,7 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
                  f"total was supplied, and {bound}. Record one with "
                  f"`accuracy --delegated-tokens N --delegated-agent NAME`")
     return {"tokens": total, "measured_tokens": delta, "delegated_tokens": supplied,
-            "delegated_records": len(delegated), "lower_bound": not whole,
+            "delegated_records": len(delegated), "lower_bound": not (whole or reads_agents),
             # The model the transcript names for the counted usage, carried through from the
             # capture so the interactive close can book the row in the (project, model) cell
             # rather than the unrecorded-model one. `mixed` when the session spanned two.

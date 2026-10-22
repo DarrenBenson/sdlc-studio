@@ -71,11 +71,12 @@ Each reading counts every assistant message once, from the session's transcript 
 subagent transcript beside it (`<session-id>/subagents/agent-*.jsonl`, depth-2 agents included).
 It carries input, output, cache write at 5 minutes and at 1 hour, and cache read, and prices
 them in input-equivalent tokens from one weight table: input 1, output 5, cache write 1.25 (5
-minutes) and 2.0 (1 hour), cache read 0.1 (D0390). The report's Estimates lead with a `Priced
-cost` row, and the close report's COST line states the same figure, each with the input +
-output + cache-write sum beside it as a component; that sum is the `Tokens` row. A session
-whose subagents directory is absent, or holds no `agent-*.jsonl`, reads the main thread alone
-and says so, as a lower bound. Once a run holds a reading by this meter, each reading an
+minutes) and 2.0 (1 hour), cache read 0.1 (D0390). The report's Estimates place a `Priced
+cost` row directly before the `Tokens` row, and the close report's COST section opens on the
+same figure, each with the input + output + cache-write sum beside it as a component. A
+delegated total that the `Tokens` row adds is outside the priced figure, and both say so. A
+session whose subagents directory is absent, or holds no `agent-*.jsonl`, reads the main thread
+alone and says so, as a lower bound. Once a run holds a reading by this meter, each reading an
 earlier meter took for it, in any session, is re-derived from its transcript up to the moment
 it was taken, and the total's basis says so. Where the transcript no longer holds those
 records, the total reads not attributable: never a difference, or a sum, across two counting

@@ -1,7 +1,7 @@
 """BG0919: each page-format rule mark round-trips through filing and revalidation.
 
-BG0898 (minutes like-for-like), BG0901 (partial agent minutes) and BG0904 (cancelled-run DORA)
-each added an envelope mark, so a page filed before the rule re-derives as it was signed and a
+BG0898 (minutes like-for-like), BG0901 (partial agent minutes), BG0904 (cancelled-run DORA) and
+US1091 (the priced cost headline) each added an envelope mark, so a page filed before the rule re-derives as it was signed and a
 page filed under it re-derives under it. Nothing filed such a page and revalidated it: dropping
 a mark from the envelope, or hard-wiring the rule on in `revalidate`, passed every test while
 the page it filed re-derived INVALIDATED.
@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import test_lean_dora_cancelled_runs as cancelled  # noqa: E402 - BG0904's fixture
 import test_lean_report_minutes_like_for_like as like  # noqa: E402 - BG0898's fixture
 import test_lean_report_partial_agent_minutes as partial  # noqa: E402 - BG0901's fixture
+import test_meter_reads_true as meter  # noqa: E402 - US1091's fixture
 
 sr = like.sr
 
@@ -66,9 +67,22 @@ def _cancelled():
         yield root, cancelled.dora.RETRO
 
 
+@contextlib.contextmanager
+def _priced():
+    """US1091: a run whose meter read the main thread and a subagent, its cost priced."""
+    with _borrowed(meter.MeterPricedTests) as t:
+        ws = t.workspace()
+        ws.open()
+        ws.tx.main_says("msg_main_2", meter.MAIN_2)
+        ws.tx.agent_says("b2", "msg_agent_b", meter.AGENT_B, depth=2)
+        t.rs.stamp_tokens(ws.root, "report")
+        yield ws.root, meter.RETRO
+
+
 RULES = (("minutes like-for-like", sr.MINUTES_RULE, "minutes_rule", _minutes),
          ("partial agent minutes", sr.AGENT_MINUTES_RULE, "agent_minutes_rule", _agent_minutes),
-         ("cancelled-run DORA", sr.CANCELLED_RULE, "cancelled_rule", _cancelled))
+         ("cancelled-run DORA", sr.CANCELLED_RULE, "cancelled_rule", _cancelled),
+         ("priced cost headline", sr.PRICED_RULE, "priced_rule", _priced))
 
 
 class RuleMarksRoundTripTests(unittest.TestCase):
@@ -96,6 +110,21 @@ class RuleMarksRoundTripTests(unittest.TestCase):
                 self.assertFalse(check["valid"], "the rule moves no figure on this fixture")
                 self.assertTrue(check["changes"], check)
                 self.assertEqual([], check["edited"], "INVALIDATED, not an edited page")
+
+    def test_a_page_filed_before_the_priced_headline_re_checks_valid(self) -> None:
+        """US1091. MUTANT: the priced rule hard-wired on in `revalidate` - a page filed before
+        it, on a run whose meter read nothing, re-derives with an unmeasured `Priced cost` row
+        it never carried and reads INVALIDATED. The control: the rule moves a figure here."""
+        with _cancelled() as (root, retro):
+            before = sr.build_report(root, retro, priced_rule=False)
+            self.assertNotIn(sr.PRICED_RULE, before)
+            rows = next(s for s in sr.build_report(root, retro)["sections"]
+                        if s["key"] == "estimates")["rows"]
+            row = next(r for r in rows if r["est_measure"]["value"] == "Priced cost")
+            self.assertEqual("NOT MEASURED", row["est_actual"]["value"],
+                             "premise: the run's meter read nothing, and the rule adds the row")
+            check = self._check(root, before)
+            self.assertTrue(check["valid"], check["changes"])
 
 
 if __name__ == "__main__":

@@ -6605,11 +6605,14 @@ def _close_cost(root, state: dict, shipped: list) -> dict:
     # measured to, as `sprint_report._ck_cost` reads it. A run whose stamps carry no priced
     # figure keeps the line it had.
     import sprint_report  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
-    total = run_state.run_token_total(sprint_report._metered(
-        state, sprint_report._at(state.get(REPORT_WINDOW_END))))
+    metered = sprint_report._metered(state, sprint_report._at(state.get(REPORT_WINDOW_END)))
+    total = run_state.run_token_total(metered)
     if isinstance(total.get("priced"), int):
+        # A delegated total the run's actual adds is outside the priced figure, and is said so.
+        actual, agents = sprint_report._run_tokens_actual(metered, total)
         cost.update(priced=total["priced"], components=total["components"],
-                    includes_subagents=total["includes_subagents"])
+                    includes_subagents=total["includes_subagents"],
+                    supplied=(actual - total["tokens"]) if agents else 0, agents=agents)
     points = 0
     for entry in shipped:
         found = sdlc_md.find_by_id(root, entry.split()[0])

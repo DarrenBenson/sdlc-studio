@@ -1540,6 +1540,10 @@ def close_report(summary: dict) -> str:
         cost_line = f"    {priced:,} {run_state.PRICED_LABEL}"
         if isinstance(points, int) and points:
             cost_line += f" over {points} points ({priced // points:,}/point)"
+        if cost.get("supplied"):
+            # The run's token actual adds a supplied delegated total; this figure does not.
+            cost_line += (f"; the {cost['supplied']:,} tokens supplied by {cost.get('agents')} "
+                          f"delegated agent(s) are not in it")
         cost_line += f"\n    components: {run_state.cost_components(cost)}"
         if not cost.get("includes_subagents"):
             cost_line += ("\n    main thread only: no subagent transcript was read, so this is "
@@ -1904,8 +1908,10 @@ def _ck_cost(ctx: dict) -> tuple:
     metered = _metered(run, _at(run.get(sprint.REPORT_WINDOW_END)))
     total = run_state.run_token_total(metered) if run else {}
     measured, agents = _run_tokens_actual(run, total) if run else (None, 0)
-    priced = (f"; priced, the report's headline: {total['priced']:,} "
-              f"{run_state.PRICED_LABEL} ({run_state.cost_components(total)})"
+    priced = (f"; priced, the report's headline"
+              + (", which the supplied totals are outside" if agents else "")
+              + f": {total['priced']:,} {run_state.PRICED_LABEL} "
+                f"({run_state.cost_components(total)})"
               if _num(total.get("priced")) else "")
     supplied = ctx.get("sprint_actual_tokens")
     if supplied:
@@ -3662,10 +3668,13 @@ def _tokens_ratio_withheld(state: dict, live: list[dict]) -> str | None:
     return None
 
 
-def _priced_row(run_tokens: dict, state_rel: str) -> dict | None:
+def _priced_row(run_tokens: dict, state_rel: str, supplied: int = 0,
+                agents: int = 0) -> dict | None:
     """The Estimates row that heads the run's cost: its priced input-equivalent tokens, with the
     input + output + cache-write sum and each component beside it (D0390). None for a run whose
-    stamps predate the priced meter, whose page then reads as it did."""
+    stamps predate the priced meter, whose page then reads as it did. The `supplied` delegated
+    total the Tokens row adds for `agents` agents is outside the priced figure, and its basis
+    says so rather than calling the sum the Tokens row."""
     priced = run_tokens.get("priced")
     if priced is None and run_tokens.get("tokens") is not None:
         return None
@@ -3682,8 +3691,11 @@ def _priced_row(run_tokens: dict, state_rel: str) -> dict | None:
         "est_ratio": fig("est_ratio", "no ratio", state_rel),
         "est_basis": fig("est_basis",
                          (f"{run_state.PRICED_LABEL}, the run's headline cost, each component "
-                          f"times its weight: {run_state.cost_components(run_tokens)}; the "
-                          f"sum is the Tokens row; read from {reach}")
+                          f"times its weight: {run_state.cost_components(run_tokens)}; "
+                          + (f"the Tokens row adds the {supplied:,} supplied by {agents} "
+                             f"delegated agent(s) to that sum, outside this priced figure"
+                             if agents else "the sum is the Tokens row")
+                          + f"; read from {reach}")
                          if _num(priced) else
                          f"{run_state.PRICED_LABEL}, the run's headline cost", state_rel)}
 
@@ -3769,7 +3781,8 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
     elif agents:
         basis = (f"{over}; actual is the main-thread meter plus {agents} delegated agent(s)' "
                  f"reported totals, split in the appendix")
-    head = _priced_row(run_tokens, state_rel) if priced_rule else None
+    head = (_priced_row(run_tokens, state_rel, (tokens or 0) - (run_tokens.get("tokens") or 0),
+                        agents) if priced_rule else None)
     if head:
         rows.append(head)
     rows.append(_estimate_row(

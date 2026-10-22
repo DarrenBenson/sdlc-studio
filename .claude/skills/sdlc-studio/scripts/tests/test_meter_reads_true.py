@@ -220,6 +220,16 @@ class _Case(unittest.TestCase):
         self.addCleanup(env.stop)
         return ws
 
+    def _timed(self, name: str) -> _Workspace:
+        """A workspace whose transcript records carry their times, as the harness writes them."""
+        ws = _Workspace(self.tmp / name, agents=False)
+        shutil.rmtree(ws.tx.dir)
+        ws.tx = _Transcripts(ws.tx.dir)
+        env = unittest.mock.patch.dict(os.environ, {self.rs.TRANSCRIPTS_ENV: str(ws.tx.dir)})
+        env.start()
+        self.addCleanup(env.stop)
+        return ws
+
 
 class MeterComponentsTests(_Case):
     def test_main_and_subagent_components_are_counted_once_per_message(self) -> None:
@@ -227,7 +237,8 @@ class MeterComponentsTests(_Case):
         total drops to the main thread's); the 1h writes folded into 5m (the main thread's
         3,000 read as cache_write_5m); a subagent's repeated records counted per record (each
         agent's figures tripled, BG1111's defect on the new path); the subagent files filtered
-        by `_records_cwd` against the repo (the depth-2 worktree agent's 645 dropped)."""
+        by `_records_cwd` (against the repo root, a temporary path no fixture record names, both
+        agents drop; against the main thread's `/work/repo`, the depth-2 worktree agent's 645)."""
         tx = _Transcripts(self.tmp / "tx")
         tx.main_says("msg_main_1", MAIN_1)
         tx.main_says("msg_main_2", MAIN_2)
@@ -348,6 +359,7 @@ class MeterPricedTests(_Case):
         self.assertIn("priced input-equivalent tokens", head["est_basis"]["value"])
         self.assertIn(f"input + output + cache write {_tokens(spent):,}",
                       head["est_basis"]["value"], "the sum is listed beside it")
+        self.assertIn("the sum is the Tokens row", head["est_basis"]["value"])
         self.assertEqual(_tokens(spent), ws.row(page, "Tokens")["est_actual"]["value"],
                          "the sum stays a component, on its own row")
         out = io.StringIO()
@@ -357,8 +369,60 @@ class MeterPricedTests(_Case):
         self.assertTrue(cost.strip().startswith(
             f"{_priced(spent):,} priced input-equivalent tokens"), cost)
         self.assertIn(f"input + output + cache write {_tokens(spent):,}", cost)
+        self.assertNotIn("main thread only", cost, "a reading of the subagents is no floor")
         self.assertIn(f"{_priced(spent):,} priced input-equivalent tokens",
                       ws.checklist_cost()["detail"], "the close checklist names it too")
+
+    def test_the_close_cost_reads_the_report_window_and_names_what_it_leaves_out(self) -> None:
+        """MUTANTS: the close report's main-thread line dropped (a reading of the main thread
+        alone headlined with no word that it is a lower bound); the supplied total left unsaid
+        (the COST headline and the Priced cost row silent on the 250,000 the Tokens row adds,
+        the row calling the sum the Tokens row); the close cost read unwindowed
+        (`run_token_total(state)`, which prices a reading taken after the window the page
+        measured to: 21,040, where the window holds 13,530)."""
+        ws = self.workspace(agents=False)
+        ws.open()
+        rc, out = ws.lane("brief", "--units", "US0101")
+        self.assertEqual(0, rc, out)
+        ws.tx.main_says("msg_main_2", MAIN_2)
+        rc, out = ws.lane("return", "--units", "US0101", "--tokens", "250000")
+        self.assertEqual(0, rc, out)
+        closing = self.rs.stamp_tokens(ws.root, "report")
+        spent = _parts(MAIN_2)
+
+        def cost() -> str:
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                _live("sprint")._tell_the_operator(ws.root)
+            return out.getvalue().split("  COST\n", 1)[1].split("\n\n", 1)[0]
+
+        text = cost()
+        head = text.strip().splitlines()[0]
+        self.assertTrue(head.startswith(f"{_priced(spent):,} priced input-equivalent tokens"),
+                        text)
+        self.assertIn("the 250,000 tokens supplied by 1 delegated agent(s) are not in it", head)
+        self.assertIn("main thread only: no subagent transcript was read, so this is a lower "
+                      "bound", text)
+        basis = ws.row(ws.page(), "Priced cost")["est_basis"]["value"]
+        self.assertIn("the Tokens row adds the 250,000 supplied by 1 delegated agent(s) to that "
+                      "sum, outside this priced figure", basis)
+        self.assertNotIn("the sum is the Tokens row", basis)
+        self.assertIn("which the supplied totals are outside", ws.checklist_cost()["detail"])
+
+        # A reading taken after the window the run's page measured to is not the run's cost.
+        self.rs.update(ws.root, **{_live("sprint").REPORT_WINDOW_END: closing["at"]})
+        ws.tx.main_says("msg_main_3", MAIN_1)
+        self.rs.stamp_tokens(ws.root, "unit-end")
+        stamps = ws.state()[self.rs.TOKEN_STAMPS]
+        stamps[-1]["at"] = _iso(datetime.now(timezone.utc) + timedelta(hours=1))
+        self.rs.update(ws.root, **{self.rs.TOKEN_STAMPS: stamps})
+        self.assertEqual((13_530, 21_040), (_priced(spent), _priced(_sum(MAIN_2, MAIN_1))))
+        self.assertEqual(_priced(_sum(MAIN_2, MAIN_1)),
+                         self.rs.run_token_total(ws.state())["priced"],
+                         "premise: the later reading moves the unwindowed total")
+        text = cost()
+        self.assertTrue(text.strip().startswith(
+            f"{_priced(spent):,} priced input-equivalent tokens"), text)
 
 
 class MeterStampsTests(_Case):
@@ -395,13 +459,36 @@ class MeterStampsTests(_Case):
         self.assertIn("written before", old["priced_reason"])
         self.assertFalse(old["includes_subagents"])
 
+    def test_a_reading_on_another_basis_stamps_no_priced_figure(self) -> None:
+        """MUTANT: `_priced_fields` taking a reading's components whatever basis it names (the
+        `meter` check dropped) - a reading naming no `meter`, as a stubbed reader or another
+        harness's may return one with components, stamps a priced figure, components, a
+        subagents flag and this meter's basis it was never read on. The control: the open
+        stamp, read by this meter, carries all four."""
+        ws = self.workspace()
+        ws.open()
+        opened = ws.state()[self.rs.TOKEN_STAMPS][0]
+        self.assertEqual(self.rs.METER_BASIS, opened[self.rs.METER])
+        self.assertTrue({"priced", "components", "subagents"} <= set(opened), opened)
+        other = {"tokens": 9_000, "source": str(ws.tx.main), "model": MODEL, "priced": 12_345,
+                 "components": _sum(MAIN_1, MAIN_2), "includes_subagents": True}
+        with unittest.mock.patch.object(self.rs, "session_tokens", return_value=other):
+            stamp = self.rs.stamp_tokens(ws.root, "report")
+        self.assertEqual(9_000, stamp["tokens"], "premise: the reading was stamped")
+        self.assertFalse({"priced", "components", "subagents", self.rs.METER} & set(stamp),
+                         stamp)
+
 
 class MeterDelegatedTests(_Case):
     def test_a_supplied_total_is_not_added_over_a_reading_that_holds_subagents(self) -> None:
         """AC4. MUTANTS: delegated totals added unconditionally (the builder's 250,000 counted
         on top of the subagent transcript that already holds its spend); delegated totals
         suppressed for every run (the run with no subagent reading, and a legacy run, lose the
-        250,000 and an earlier signed page moves)."""
+        250,000 and an earlier signed page moves); the retro deciding from its own live reading
+        rather than the run's stamps (over a run whose stamps carry no flag, read in a session
+        that has a subagents directory, the retro drops the 250,000 the report adds); the
+        checklist's whole-reading wording dropped (its detail calls a reading of the subagents
+        a lower bound)."""
         sr, retro = _live("sprint_report"), _live("retro")
         for agents in (True, False):
             with self.subTest(subagents=agents):
@@ -427,8 +514,15 @@ class MeterDelegatedTests(_Case):
                 cost = next(s for s in page["sections"] if s["key"] == "cost")["figures"]
                 self.assertEqual(spent + added, cost["tokens_total"]["value"],
                                  "the appendix total agrees with the Estimates actual")
-                self.assertEqual(f"{spent + added:,} tokens, measured", ws.checklist_cost()["value"],
+                checked = ws.checklist_cost()
+                self.assertEqual(f"{spent + added:,} tokens, measured", checked["value"],
                                  "the close checklist's cost row agrees too")
+                if agents:
+                    self.assertIn("so the subagents are already in it", checked["detail"])
+                    self.assertNotIn("lower bound", checked["detail"])
+                else:
+                    self.assertIn("plus 1 delegated agent(s)' reported totals", checked["detail"])
+                    self.assertIn("- a lower bound", checked["detail"])
                 cap = retro.run_attributed_tokens(ws.root, RETRO)
                 self.assertEqual(spent + added, cap["tokens"], cap)
                 printed = io.StringIO()
@@ -448,8 +542,9 @@ class MeterDelegatedTests(_Case):
                     self.assertIn(f"harness transcript: AT LEAST {spent + added:,} (",
                                   printed.getvalue())
 
-        # A run whose stamps carry no flag, as every run before this change: still added.
-        self._legacy_run_still_adds(sr)
+        # A run whose stamps carry no flag, as every run before this change: still added, by
+        # the report and the retro alike.
+        self._legacy_run_still_adds(sr, retro)
 
     def test_a_reading_that_holds_the_subagents_states_the_tokens_ratio(self) -> None:
         """MUTANT: the ratio withheld for want of supplied totals over a meter that already read
@@ -472,7 +567,33 @@ class MeterDelegatedTests(_Case):
                     self.assertEqual("NOT MEASURED", ratio["value"])
                     self.assertIn("no delegated spend was supplied", ratio["reason"])
 
-    def _legacy_run_still_adds(self, sr) -> None:
+    def test_the_closing_reading_decides_whether_a_session_holds_its_subagents(self) -> None:
+        """MUTANT: every reading of a session required to hold its subagents, not the closing
+        one (`all(...)` over the rows) - a session with no subagents directory when the run
+        opened, which gains one when the builder runs, reads as main thread only, and the
+        builder's supplied 250,000 is added on top of the transcript that holds its spend."""
+        ws = self.workspace(agents=False)
+        ws.open()
+        rc, out = ws.lane("brief", "--units", "US0101")
+        self.assertEqual(0, rc, out)
+        ws.tx.main_says("msg_main_2", MAIN_2)
+        ws.tx.agent_says("b2", "msg_agent_b", AGENT_B, depth=2)   # the builder
+        rc, out = ws.lane("return", "--units", "US0101", "--tokens", "250000")
+        self.assertEqual(0, rc, out)
+        self.rs.stamp_tokens(ws.root, "report")
+        state = ws.state()
+        self.assertFalse(state[self.rs.TOKEN_STAMPS][0]["subagents"],
+                         "premise: the open stamp read no subagent transcript")
+        total = self.rs.run_token_total(state)
+        spent = _tokens(_sum(MAIN_2, AGENT_B))
+        self.assertTrue(total["includes_subagents"], total)
+        self.assertEqual((spent, 0), _live("sprint_report")._run_tokens_actual(state, total))
+        self.assertEqual(spent, _live("retro").run_attributed_tokens(ws.root, RETRO)["tokens"])
+
+    def _legacy_run_still_adds(self, sr, retro) -> None:
+        """The stamps' answer decides, for the report and the retro alike: over a run whose
+        stamps and baseline carry no flag, in a session whose reading now holds a subagent
+        transcript, both add the supplied total and state one figure."""
         legacy = {self.rs.TOKEN_STAMPS: [
             {"tokens": 1_000, "source": "s", "at": _iso(T0), "kind": "open"},
             {"tokens": 4_000, "source": "s", "at": _iso(T0 + timedelta(hours=1)),
@@ -482,21 +603,48 @@ class MeterDelegatedTests(_Case):
         self.assertEqual((253_000, 1),
                          sr._run_tokens_actual(legacy, self.rs.run_token_total(legacy)))
 
+        ws = self._timed("legacy")
+        ws.tx.main_says("msg_main_1", MAIN_1, at=T0)
+        ws.tx.agent_says("a1", "msg_agent_a", AGENT_A, at=T0 + timedelta(minutes=1))
+        ws.open()
+        rc, out = ws.lane("brief", "--units", "US0101")
+        self.assertEqual(0, rc, out)
+        ws.tx.main_says("msg_main_2", MAIN_2, at=T0 + timedelta(minutes=10))
+        ws.tx.agent_says("b2", "msg_agent_b", AGENT_B, at=T0 + timedelta(minutes=12), depth=2)
+        rc, out = ws.lane("return", "--units", "US0101", "--tokens", "250000")
+        self.assertEqual(0, rc, out)
+        # The run's readings as a stamp written before this change holds them: no priced
+        # figure, no components, no subagents flag and no basis.
+        stamps = [{"tokens": _tokens(_sum(*usages)), "source": str(ws.tx.main), "at": _iso(at),
+                   "kind": kind, "model": MODEL} for kind, at, usages in (
+            ("open", T0 + timedelta(minutes=5), (MAIN_1, AGENT_A)),
+            ("report", T0 + timedelta(minutes=15), (MAIN_1, AGENT_A, MAIN_2, AGENT_B)))]
+        self.rs.update(ws.root, **{
+            self.rs.TOKEN_BASELINE: {k: stamps[0][k] for k in ("tokens", "source", "at")},
+            self.rs.TOKEN_STAMPS: stamps})
+        state = ws.state()
+        total = self.rs.run_token_total(state)
+        self.assertTrue(self.rs.session_tokens(ws.root)["includes_subagents"],
+                        "premise: the live reading holds the subagents")
+        self.assertFalse(total["includes_subagents"], "premise: the stamps do not say so")
+        whole = _tokens(_sum(MAIN_2, AGENT_B)) + 250_000
+        self.assertEqual((whole, 1), sr._run_tokens_actual(state, total))
+        self.assertEqual(whole, ws.row(ws.page(), "Tokens")["est_actual"]["value"])
+        self.assertEqual(f"{whole:,} tokens, measured", ws.checklist_cost()["value"])
+        cap = retro.run_attributed_tokens(ws.root, RETRO)
+        self.assertEqual((whole, 250_000, False),
+                         (cap["tokens"], cap["delegated_tokens"], cap["lower_bound"]), cap)
+        self.assertIn("This reading holds the subagent transcripts, but the run's meter stamps "
+                      "do not say theirs did, so the delegated totals supplied are added",
+                      cap["basis"])
+        self.assertNotIn("LOWER BOUND", cap["basis"])
+        self.assertNotIn("AT LEAST", cap["basis"])
+
 
 class OpenStampBasisTests(_Case):
     """US1097 AC1: a reading taken on an earlier counting basis is re-derived from the
     transcript up to its own time, never subtracted from, or summed with, one on the current
     basis."""
-
-    def _timed(self, name: str) -> _Workspace:
-        """A workspace whose transcript records carry their times, as the harness writes them."""
-        ws = _Workspace(self.tmp / name, agents=False)
-        shutil.rmtree(ws.tx.dir)
-        ws.tx = _Transcripts(ws.tx.dir)
-        env = unittest.mock.patch.dict(os.environ, {self.rs.TRANSCRIPTS_ENV: str(ws.tx.dir)})
-        env.start()
-        self.addCleanup(env.stop)
-        return ws
 
     def _legacy(self, ws: _Workspace, *readings: tuple) -> None:
         """The run's readings as an earlier meter wrote them: counted per record (three records
