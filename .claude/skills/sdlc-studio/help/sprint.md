@@ -309,6 +309,11 @@ python3 <skill>/scripts/sprint.py goal-review record \
   --goal "<the sprint goal>" \
   --seat "engineering|yes|what done means|one increment?|optional note"
 
+# reword the open run's goal: every verdict carries forward unless its seat asked to re-review,
+# and the close judges the new wording (refused once the goal verdict is recorded)
+python3 <skill>/scripts/sprint.py goal-review record --goal "<new wording>" \
+  --amend-from "<the run's goal>" --requested-by operator
+
 # trade units: one recorded decision, not a drop that happens to sit beside an add
 python3 <skill>/scripts/sprint.py batch swap --out US0001,US0002 --in US0003 \
   --reason "the blocking one first"

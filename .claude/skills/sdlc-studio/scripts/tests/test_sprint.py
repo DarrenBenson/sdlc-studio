@@ -7823,7 +7823,8 @@ class _GoalReviewFixture(unittest.TestCase):
 
 
 class AmendGoalReviewTests(_GoalReviewFixture):
-    """US0402: an amendment carries the requesting seat's verdict forward and records the trail."""
+    """US0402: an amendment carries verdicts forward and records the trail (since US1096, every
+    seat's verdict unless that seat asked to re-review)."""
 
     def _seed_goal_a(self, s, root):
         return self._record(s, root, "--goal", "goal A",
@@ -7853,13 +7854,32 @@ class AmendGoalReviewTests(_GoalReviewFixture):
         self.assertEqual(latest["requesting_seat"], "engineering")
 
     def test_seats_not_satisfied_by_the_amendment_still_need_reconsult(self):
+        # US1096: every verdict carries forward unless its seat asked to re-review. MUTANT: the
+        # US0402 carry of the requesting seat alone - product and qa owe a second round.
         s = _load()
         root = self._project()
-        self._seed_goal_a(s, root)
+        self._record(s, root, "--goal", "goal A", "--seat", "product|yes|shipped|yes",
+                     "--seat", "engineering|yes|shipped|yes",
+                     "--seat", "qa|yes|shipped|yes|show me the plan|yes")
         self._record(s, root, "--goal", "goal B", "--amend-from", "goal A",
                      "--requesting-seat", "engineering")
         status = s.goal_review_status(root, "goal B")
-        self.assertEqual(status["needs_reconsult"], ["product", "qa"])   # engineering discharged
+        self.assertEqual(status["needs_reconsult"], ["qa"])   # product carried, qa asked
+
+    def test_a_carried_objection_stands_unless_its_seat_requested_the_amendment(self):
+        # US1096. MUTANT: every carried objection discharged - product's NO, carried to an
+        # amendment engineering asked for, would read as answered.
+        s = _load()
+        root = self._project()
+        self._record(s, root, "--goal", "goal A", "--seat", "product|no|shipped|yes|too big",
+                     "--seat", "engineering|no|shipped|yes|reword it")
+        rc, out = self._record(s, root, "--goal", "goal B", "--amend-from", "goal A",
+                               "--requesting-seat", "engineering")
+        self.assertEqual(rc, 0, out)
+        self.assertIn("judged it NOT achievable (product)", out)
+        status = s.goal_review_status(root, "goal B")
+        self.assertEqual([o["seat"] for o in status["objections"]], ["product"])
+        self.assertEqual(status["discharged"], ["engineering"])
 
     def test_an_amendment_whose_requesting_seat_never_reviewed_the_prior_goal_is_refused(self):
         # The closing review caught this: a requesting seat with no prior verdict carries nothing,

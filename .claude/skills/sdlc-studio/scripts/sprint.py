@@ -3122,11 +3122,19 @@ def goal_review_status(repo_root: Path | str, sprint_goal: str | None,
                 "change_type": latest.get("change_type"),
                 "amended_from": latest.get("amended_from"),
                 "requesting_seat": latest.get("requesting_seat"),
+                "requested_by": latest.get("requested_by"),
                 "needs_reconsult": needs_reconsult,
                 # `themed` is ADVICE the operator reads, never a gate: it is surfaced so that
                 # separating the two answers loses no information.
                 "themed": themed, "discharged": answered,
                 "objected": bool(objections), "objections": objections, "reason": None}
+    if (not seats and latest.get("change_type") == "material"
+            and _norm_goal(latest.get("goal")) == _norm_goal(sprint_goal)):
+        # A material change recorded before any seat has read the new wording: nothing carried,
+        # so every seat owes a verdict on it.
+        return {**base, "needs_reconsult": list(available),
+                "reason": f"a material change from {latest.get('amended_from')!r} carries no "
+                          f"verdict forward, and no seat has reviewed the new wording yet"}
     if not seats:
         who = (f"the shipped {', '.join(available)} seats review it, as this project declares "
                f"no review seats of its own (sdlc-studio/personas/seats/)" if shipped
@@ -3698,6 +3706,7 @@ def _render_goal_review(data: dict) -> None:
         for seat in review.get("discharged") or []:
             print(f"    {seat}: its objection to the prior wording is answered by the amendment "
                   f"it requested")
+        _render_owing(review)
         themed = review.get("themed") or []
         if themed and not review.get("objected"):
             # Surfaced as ADVICE so separating it from achievability loses no information: the
@@ -3707,6 +3716,16 @@ def _render_goal_review(data: dict) -> None:
                   f"achievable - a classification, not an objection; the plan is not refused")
         return
     print(f"  goal review: the Sprint Goal went UNREVIEWED - {review['reason']}")
+    _render_owing(review)
+
+
+def _render_owing(review: dict) -> None:
+    """The seats with no verdict on this wording, named so nobody runs a second round of every
+    seat to find them. Advice, like the rest of the read."""
+    owing = review.get("needs_reconsult") or []
+    if owing:
+        print(f"    owing a verdict on this wording: {', '.join(owing)} - record it with "
+              f"`sprint.py goal-review record` (advice; the plan is not refused)")
 
 
 def _render_seat_provenance(data: dict) -> None:
@@ -9954,16 +9973,17 @@ def _abandon_open_run(root, state) -> None:
 GOAL_WORD_LIMIT = 20
 
 
-def goal_length_refusal(goal: str | None) -> str | None:
+def goal_length_refusal(goal: str | None, refusing: str = "plan refused",
+                        unwritten: str = "Nothing is written and no run is opened.") -> str | None:
     """The refusal for a goal over the word limit, or None. Binds a goal being AUTHORED (the
-    plan); a run already under way is never refused over the goal it recorded. A word carries a
-    letter or digit, so a spaced hyphen is punctuation, not a word."""
+    plan, or an amendment's new wording); a run already under way is never refused over the
+    goal it recorded. A word carries a letter or digit, so a spaced hyphen is punctuation, not
+    a word."""
     words = sum(1 for tok in (goal or "").split() if any(c.isalnum() for c in tok))
     if words <= GOAL_WORD_LIMIT:
         return None
-    return (f"plan refused: the Sprint Goal is {words} words and the limit is {GOAL_WORD_LIMIT}. "
-            f"Say the user value in one sentence somebody can repeat. Nothing is written and no "
-            f"run is opened.")
+    return (f"{refusing}: the Sprint Goal is {words} words and the limit is {GOAL_WORD_LIMIT}. "
+            f"Say the user value in one sentence somebody can repeat. {unwritten}")
 
 
 # ---------------------------------------------------------------------------
@@ -11079,6 +11099,8 @@ def _seat_from_dict(d: object) -> dict:
     note = str(d.get("note") or "").strip()
     if note:
         out["note"] = note
+    if rereview := _rereview_answer(d.get("rereview"), out["seat"]):
+        out["rereview"] = rereview
     # PER-CLAUSE answers, carried through. The reader (`_recorded_clause_verdicts`) was changed
     # to require this key while this whitelist silently stripped it, so no writer in the shipped
     # code could produce one and the goal panel reported UNANSWERED on every close, permanently.
@@ -11234,21 +11256,41 @@ def _brief_goal(root: Path, supplied: str | None, plan: dict) -> str | None:
     return None
 
 
+def _rereview_answer(raw: object, seat: str) -> str | None:
+    """A seat's `rereview` answer: `yes` (it asked to read the reworded goal again), `no`, or
+    None when it gave none. Anything else is refused: an unread answer would carry the verdict
+    of a seat that asked not to be carried."""
+    if isinstance(raw, bool):
+        return "yes" if raw else "no"
+    val = raw.strip().lower() if isinstance(raw, str) else raw
+    if val in (None, ""):
+        return None
+    if val in ("yes", "no"):
+        return val
+    raise ValueError(f"seat {seat or '(unnamed)'!r} gives rereview as {raw!r} - it is yes or no")
+
+
 def _parse_seat_verdict(spec: str) -> dict:
-    """`role|achievable|what done means|one increment[|note]` -> a seat verdict.
+    """`role|achievable|what done means|one increment[|note[|rereview]]` -> a seat verdict.
 
     Every one of the three answers is required. A verdict that says a goal is achievable
     without saying what done means for it is an opinion about an unstated target, and the
-    close would then judge the increment against a definition nobody wrote down."""
+    close would then judge the increment against a definition nobody wrote down. A sixth
+    field is the seat's `rereview` answer, read from the last field so a note keeps its pipes."""
     parts = [p.strip() for p in (spec or "").split("|")]
     if len(parts) < 4 or not all(parts[:4]):
         raise ValueError(
-            f"--seat must be 'role|achievable|what done means|one increment[|note]', "
+            f"--seat must be 'role|achievable|what done means|one increment[|note[|rereview]]', "
             f"got {spec!r}")
     out = {"seat": parts[0], "achievable": parts[1], "done_means": parts[2],
            "one_increment": parts[3]}
-    if len(parts) > 4 and parts[4]:
-        out["note"] = "|".join(parts[4:])
+    note = parts[4:]
+    if len(parts) > 5:
+        if rereview := _rereview_answer(parts[-1], parts[0]):
+            out["rereview"] = rereview
+        note = parts[4:-1]
+    if "|".join(note):
+        out["note"] = "|".join(note)
     return out
 
 
@@ -11316,15 +11358,30 @@ def cmd_goal_review(args) -> int:
         return 2
     brief = args.brief if args.brief is not None else from_file.get("brief")
     prior_rounds = goal_review_rounds(goal_review(root))
-    # Amend vs material: a goal reworded at a seat's request CARRIES that seat's
-    # prior verdict forward (it is discharged for the amended goal); a MATERIAL change carries
-    # nothing. The distinction cannot be made mechanically, so the operator DECLARES it and the
-    # declaration is recorded on the round - an accountable classification, not the tool's guess.
+    # Amend vs material: a reworded goal CARRIES every seat's prior verdict forward unless that
+    # seat asked to re-review it (`rereview: yes`), so one round is the default; a MATERIAL
+    # change carries nothing. The distinction cannot be made mechanically, so the operator
+    # DECLARES it and the declaration is recorded on the round - an accountable classification,
+    # not the tool's guess.
     amend_from = (args.amend_from or "").strip()
+    req = (args.requesting_seat or "").strip()
+    by_operator = getattr(args, "requested_by", None) == "operator"
     change_type = None
     carried: list[dict] = []
+    moves_run: dict | None = None
+    if by_operator and (not amend_from or args.material or req):
+        print("goal-review record refused: --requested-by operator declares who asked for an "
+              "amendment - pass it with --amend-from, without --material and without "
+              "--requesting-seat (one requester per round)", file=sys.stderr)
+        return 2
     if amend_from:
         change_type = "material" if args.material else "amendment"
+        # The new wording is AUTHORED here, so it is held to the plan's limit before anything
+        # is written.
+        if refusal := goal_length_refusal(goal, "goal-review record refused",
+                                          "Nothing is written."):
+            print(refusal, file=sys.stderr)
+            return 2
         prior = next((r for r in reversed(prior_rounds)
                       if _norm_goal(r.get("goal")) == _norm_goal(amend_from)), None)
         if prior is None:
@@ -11332,32 +11389,42 @@ def cmd_goal_review(args) -> int:
                   f"round; the prior goal must be one already reviewed", file=sys.stderr)
             return 2
         if change_type == "amendment":
-            req = (args.requesting_seat or "").strip()
-            if not req:
+            if not req and not by_operator:
                 print("goal-review record refused: an amendment needs --requesting-seat (the "
-                      "seat whose verdict carries forward to the reworded goal)", file=sys.stderr)
+                      "seat that asked for the rewording) or --requested-by operator",
+                      file=sys.stderr)
                 return 2
             fresh_roles = {str(s.get("seat") or "").strip() for s in seats}
             prior_roles = {str(s.get("seat") or "").strip() for s in (prior.get("seats") or [])}
             # The requesting seat must actually have a verdict on the prior goal, or the amendment
             # carries nothing and the round would DECLARE a requesting seat that simultaneously
-            # needs a fresh verdict - a self-contradictory, dishonest trail. Refuse it.
-            if req not in prior_roles and req not in fresh_roles:
+            # needs a fresh verdict - a self-contradictory, dishonest trail. Refuse it. The
+            # operator is no seat, so it needs no prior verdict.
+            if req and req not in prior_roles and req not in fresh_roles:
                 print(f"goal-review record refused: --requesting-seat {req!r} has no verdict on "
                       f"{amend_from!r}, so there is nothing to carry forward - either it reviewed "
                       f"the prior goal (an amendment) or supply its fresh --seat verdict on the "
                       f"new goal", file=sys.stderr)
                 return 2
             for s in (prior.get("seats") or []):
-                if str(s.get("seat") or "").strip() == req and req not in fresh_roles:
+                role = str(s.get("seat") or "").strip()
+                if role not in fresh_roles and s.get("rereview") != "yes":
                     carried.append({**s, "carried_from": amend_from})
+            if by_operator:
+                try:
+                    moves_run = _run_goal_to_amend(root, amend_from)
+                except (run_state.RunStateError, ValueError) as exc:
+                    print(f"goal-review record refused: {exc}", file=sys.stderr)
+                    return 2
     elif args.material:
         print("goal-review record refused: --material declares a change FROM a prior goal - pass "
               "--amend-from with it (a material change of nothing is just a new goal)",
               file=sys.stderr)
         return 2
     seats = seats + carried
-    if not seats:
+    # A material change may be declared before any seat has read the new wording: every seat
+    # then owes a verdict, and the plan names them.
+    if not seats and change_type != "material":
         print("goal-review record refused: at least one seat verdict is required - "
               + ("the --fields-file 'seats' list holds none and no --seat was given"
                  if from_file else "pass --seat or a --fields-file 'seats' list"),
@@ -11374,17 +11441,22 @@ def cmd_goal_review(args) -> int:
     if amend_from:
         rnd["amended_from"] = amend_from
         rnd["change_type"] = change_type
-        if change_type == "amendment":
-            rnd["requesting_seat"] = (args.requesting_seat or "").strip()
+        if change_type == "amendment" and req:
+            rnd["requesting_seat"] = req
+        elif change_type == "amendment":
+            # The operator is recorded apart from the seats, so a project seat whose role is
+            # `operator` is never discharged by an amendment it did not request.
+            rnd["requested_by"] = "operator"
     if brief is not None:
         rnd["brief"] = brief
     rounds.append(rnd)
     sdlc_md.atomic_write(path, json.dumps({"rounds": rounds}, indent=2) + "\n")
     # Report each answer as the answer it actually is. Saying "judged it NOT achievable" over a
     # seat that judged it achievable is a false statement about a recorded verdict, and it is the
-    # sentence the operator reads when deciding whether to override.
+    # sentence the operator reads when deciding whether to override. Only the requesting seat's
+    # carried objection is answered by the amendment; any other carried objection stands.
     objected = [s["seat"] for s in seats if verdict_polarity(s.get("achievable")) == "no"
-                and s not in carried]
+                and not (s in carried and s["seat"] == req)]
     themed_seats = [s["seat"] for s in seats
                     if verdict_polarity(s.get("one_increment")) == "no"]
     tail = (f" - {len(objected)} seat(s) judged it NOT achievable ({', '.join(objected)}); "
@@ -11393,10 +11465,42 @@ def cmd_goal_review(args) -> int:
         tail += (f" - {len(themed_seats)} seat(s) classed it a THEMED batch, not one increment "
                  f"({', '.join(themed_seats)}); that is advice, not an objection, and does not "
                  f"refuse the plan")
-    carried_note = (f", carried {carried[0]['seat']}'s verdict forward" if carried else "")
+    carried_note = (f", carried {', '.join(s['seat'] for s in carried)} forward from "
+                    f"\"{amend_from}\"" if carried else "")
     print(f"recorded {len(seats)} seat verdict(s) on \"{goal}\" (round {len(rounds)})"
           f"{carried_note}{tail} -> {path}")
+    if moves_run is not None:
+        state = run_state.update(root, sprint_goal=goal, sprint_goal_amendments=[
+            *(moves_run.get("sprint_goal_amendments") or []),
+            {"from": moves_run.get("sprint_goal"), "to": goal, "requested_by": "operator",
+             "at": rnd["reviewed_at"]}])
+        print(f"run {state.get('run_id')}: the close now judges \"{goal}\", amended from "
+              f"\"{moves_run.get('sprint_goal')}\"; the plan keeps the goal as planned "
+              f"-> {run_state.path(root)}")
+    elif by_operator:
+        print(f"no open run's goal is \"{amend_from}\", so no run's goal moved")
     return 0
+
+
+def _run_goal_to_amend(root: Path, amend_from: str) -> dict | None:
+    """The open run's state when `amend_from` is its goal - the run an operator's amendment
+    moves - or None, when no run is open or its goal is another wording. Raises ValueError once
+    the run's goal verdict is recorded: that verdict judged the wording, so moving it now would
+    leave the close judging a goal nobody judged."""
+    state = run_state.read(root)
+    if not (state.get("run_id") and state.get("outcome") == run_state.RUNNING
+            and not state.get("ended_at")):
+        return None
+    if _norm_goal(state.get("sprint_goal")) != _norm_goal(amend_from):
+        return None
+    verdict = state.get("sprint_goal_verdict") or {}
+    if verdict:
+        raise ValueError(
+            f"run {state.get('run_id')}'s goal verdict is already recorded "
+            f"({verdict.get('verdict')}: {verdict.get('note') or 'no note'}) on "
+            f"\"{state.get('sprint_goal')}\" - an amendment now would leave that verdict judging "
+            f"wording the run no longer has. Nothing is written.")
+    return state
 
 
 def _parse_labelled(spec: str, what: str) -> tuple[str, str]:
@@ -11902,32 +12006,40 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the Sprint Goal the seats reviewed, verbatim - a verdict carries "
                          "the goal it judged, so a stale file cannot discharge a new goal")
     gr.add_argument("--seat", action="append", metavar="SPEC",
-                    help="repeatable: 'role|achievable|what done means|one increment[|note]'")
+                    help="repeatable: 'role|achievable|what done means|one increment"
+                         "[|note[|rereview]]' - rereview yes asks to read an amended goal again "
+                         "rather than have this verdict carried to it")
     gr.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
                     help="read the goal, seat verdicts and brief from a JSON object "
                          "({\"goal\": ..., \"seats\": [{...}], \"brief\": ...}) instead of the "
                          "flags, so a seat note carrying shell metacharacters is stored "
                          "verbatim. Each seat object is keyed \"seat\" (its name), "
-                         "\"achievable\", \"done_means\" and \"one_increment\", with \"note\" "
-                         "and \"clauses\" optional")
+                         "\"achievable\", \"done_means\" and \"one_increment\", with \"note\", "
+                         "\"clauses\" and \"rereview\" (yes or no) optional")
     gr.add_argument("--brief", default=None,
                     help="the seat brief the verdicts were given against, stored in the round "
                          "so a thin verdict can be told from a thin brief")
     gr.add_argument("--amend-from", dest="amend_from", default=None, metavar="GOAL",
                     help="the PRIOR goal wording this round amends - records the goal was "
-                         "improved, not replaced, and (for an amendment) carries the requesting "
-                         "seat's verdict forward")
+                         "improved, not replaced, and (for an amendment) carries every seat's "
+                         "verdict forward except a seat that asked to re-review; the new wording "
+                         "is held to the 20-word limit")
     gr.add_argument("--requesting-seat", dest="requesting_seat", default=None, metavar="ROLE",
-                    help="the seat that asked for the reframe; its prior verdict carries forward "
-                         "to the amended goal (with --amend-from)")
+                    help="the seat that asked for the reframe (with --amend-from); its carried "
+                         "objection is answered by the amendment")
+    gr.add_argument("--requested-by", dest="requested_by", choices=("operator",), default=None,
+                    help="the operator asked for the amendment (with --amend-from, in place of "
+                         "--requesting-seat): no objection is discharged, and when --amend-from "
+                         "is an open run's goal the close judges the new wording")
     gr.add_argument("--brief-worklist", dest="brief_worklist", metavar="FILE",
                     help="(brief) the batch the brief is to describe - one unit id per line. "
                          "Without it the brief falls back to the persisted plan, which on a new "
                          "sprint is the PREVIOUS run's by construction")
     gr.add_argument("--material", action="store_true",
                     help="declare the change MATERIAL, not an amendment: no verdict carries "
-                         "forward and every seat must review the new goal (the operator's call, "
-                         "recorded - the distinction cannot be made mechanically)")
+                         "forward and every seat must review the new goal, so it may be recorded "
+                         "with no --seat (the operator's call, recorded - the distinction cannot "
+                         "be made mechanically)")
     gr.add_argument("--format", choices=("text", "json"), default="text")
     gr.add_argument("--root", default=".", help="Repo root (default: .)")
     gr.set_defaults(func=cmd_goal_review)
