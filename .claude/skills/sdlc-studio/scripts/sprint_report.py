@@ -1533,7 +1533,18 @@ def close_report(summary: dict) -> str:
     cost = summary.get("cost") or {}
     tokens = cost.get("tokens")
     points = cost.get("points")
-    if isinstance(tokens, int):
+    priced = cost.get("priced")
+    if isinstance(priced, int):
+        # D0390: the headline is the priced cost, the input + output + cache-write sum a
+        # component beside it.
+        cost_line = f"    {priced:,} {run_state.PRICED_LABEL}"
+        if isinstance(points, int) and points:
+            cost_line += f" over {points} points ({priced // points:,}/point)"
+        cost_line += f"\n    components: {run_state.cost_components(cost)}"
+        if not cost.get("includes_subagents"):
+            cost_line += ("\n    main thread only: no subagent transcript was read, so this is "
+                          "a lower bound")
+    elif isinstance(tokens, int):
         cost_line = f"    {tokens:,} tokens"
         if isinstance(points, int) and points:
             cost_line += f" over {points} points ({tokens // points:,}/point)"
@@ -1891,8 +1902,11 @@ def _ck_cost(ctx: dict) -> tuple:
     import sprint  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     spend, run = ctx.get("spend") or {}, ctx.get("run") or {}
     metered = _metered(run, _at(run.get(sprint.REPORT_WINDOW_END)))
-    measured, agents = _run_tokens_actual(run, run_state.run_token_total(metered)) if run else (
-        None, 0)
+    total = run_state.run_token_total(metered) if run else {}
+    measured, agents = _run_tokens_actual(run, total) if run else (None, 0)
+    priced = (f"; priced, the report's headline: {total['priced']:,} "
+              f"{run_state.PRICED_LABEL} ({run_state.cost_components(total)})"
+              if _num(total.get("priced")) else "")
     supplied = ctx.get("sprint_actual_tokens")
     if supplied:
         return (ANSWERED, f"{supplied:,} tokens, supplied",
@@ -1900,10 +1914,15 @@ def _ck_cost(ctx: dict) -> tuple:
                 + (f"the run's measured {measured:,}" if measured else
                    "a run that measured no total"))
     if measured:
+        if total.get("includes_subagents"):
+            return (ANSWERED, f"{measured:,} tokens, measured",
+                    "the run's meter, which reads the main thread and every subagent "
+                    "transcript, so the subagents are already in it, as the report's "
+                    "Estimates section states it" + priced)
         return (ANSWERED, f"{measured:,} tokens, measured",
                 "the run's meter" + (f" plus {agents} delegated agent(s)' reported totals"
                                      if agents else "")
-                + ", as the report's Estimates section states it - a lower bound")
+                + ", as the report's Estimates section states it - a lower bound" + priced)
     if not spend.get("measured_units"):
         return (UNMEASURABLE, "unattributed",
                 "no per-unit telemetry, no measured run total and no supplied sprint total, "
@@ -3605,10 +3624,16 @@ def _run_tokens_actual(state: dict, run_tokens: dict, delegated_rule: bool = Tru
     Under `delegated_rule` they count over a meter that read 0, which is a meter that saw none
     of the work, not a run that spent nothing; without it (a page filed before the rule) only
     beside a non-zero meter. One reader, so the Estimates row and the checklist's cost row
-    state one figure."""
+    state one figure.
+
+    Never over a meter whose readings hold the subagent transcripts (`includes_subagents`):
+    the builders and reviewers the totals were supplied for are already in it, and adding them
+    counts each twice. A run whose stamps carry no such flag, as every run before the meter read
+    subagents, adds them as it always did, so a page filed from it re-derives unchanged."""
     tokens = run_tokens.get("tokens")
     delegated = run_state.delegated_total(state)
-    if not delegated or tokens is None or not (tokens or delegated_rule):
+    if (not delegated or tokens is None or not (tokens or delegated_rule)
+            or run_tokens.get("includes_subagents")):
         return tokens, 0
     agents = len([r for r in (state.get(run_state.DELEGATED) or []) if isinstance(r, dict)])
     return tokens + delegated, agents
@@ -3637,9 +3662,35 @@ def _tokens_ratio_withheld(state: dict, live: list[dict]) -> str | None:
     return None
 
 
+def _priced_row(run_tokens: dict, state_rel: str) -> dict | None:
+    """The Estimates row that heads the run's cost: its priced input-equivalent tokens, with the
+    input + output + cache-write sum and each component beside it (D0390). None for a run whose
+    stamps predate the priced meter, whose page then reads as it did."""
+    priced = run_tokens.get("priced")
+    if priced is None and run_tokens.get("tokens") is not None:
+        return None
+    reach = ("the main thread and every subagent transcript, once per message"
+             if run_tokens.get("includes_subagents") else
+             "the main thread only, once per message - a lower bound, since a subagent's "
+             "transcript was not read")
+    return {
+        "est_measure": fig("est_measure", "Priced cost", state_rel),
+        "est_forecast": fig("est_forecast", "not forecast", state_rel),
+        "est_actual": (fig("est_actual", priced, state_rel) if _num(priced) else
+                       unmeasured("est_actual", state_rel, run_tokens.get("priced_reason")
+                                  or run_tokens.get("reason") or "no priced reading")),
+        "est_ratio": fig("est_ratio", "no ratio", state_rel),
+        "est_basis": fig("est_basis",
+                         (f"{run_state.PRICED_LABEL}, the run's headline cost, each component "
+                          f"times its weight: {run_state.cost_components(run_tokens)}; the "
+                          f"sum is the Tokens row; read from {reach}")
+                         if _num(priced) else
+                         f"{run_state.PRICED_LABEL}, the run's headline cost", state_rel)}
+
+
 def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_tokens,
                        span_minutes, ratio_rule: bool = True, minutes_rule: bool = True,
-                       delegated_rule: bool = True) -> dict:
+                       delegated_rule: bool = True, priced_rule: bool = True) -> dict:
     """Forecast, actual and actual over forecast. Points over the units the run delivered;
     tokens over the WHOLE run - its meter - because units open at the same time share their
     tokens, so the per-unit figures beneath overlap and summing them over-counts the run.
@@ -3705,18 +3756,29 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
             over = "the whole run: the plan's run-level token forecast"
     tokens, agents = _run_tokens_actual(state, run_tokens, delegated_rule)
     basis = f"{over}; actual is the run meter, a lower bound"
-    if agents and run_tokens.get("tokens") == 0:
+    whole = bool(run_tokens.get("includes_subagents"))
+    if whole:
+        supplied = len(run_state.delegated_records(state))
+        basis = (f"{over}; actual is the run meter, which reads the main thread and every "
+                 f"subagent transcript, so the subagents are already in the reading"
+                 + (f" and the {supplied} delegated total(s) supplied are not added"
+                    if supplied else ""))
+    elif agents and run_tokens.get("tokens") == 0:
         basis = (f"{over}; actual is {agents} delegated agent(s)' reported totals, split in the "
                  f"appendix - the main-thread meter read 0, taken as unread, not as no spend")
     elif agents:
         basis = (f"{over}; actual is the main-thread meter plus {agents} delegated agent(s)' "
                  f"reported totals, split in the appendix")
+    head = _priced_row(run_tokens, state_rel) if priced_rule else None
+    if head:
+        rows.append(head)
     rows.append(_estimate_row(
         "Tokens", f, tokens or None, basis,
         state_rel, "no token forecast is recorded",
         run_tokens.get("reason") or ("the run meter read no spend between its readings"
                                      if tokens == 0 else "no token actual was recorded"),
-        withheld=_tokens_ratio_withheld(state, live) if ratio_rule else None))
+        # A meter that reads the subagents holds the whole actual, so nothing is owed by them.
+        withheld=_tokens_ratio_withheld(state, live) if ratio_rule and not whole else None))
 
     def cell(key, value, why, label=None):
         if _num(value):
@@ -3970,7 +4032,9 @@ def _cost_section(state: dict, state_rel: str, total: dict) -> dict:
         f"; {len(uncovered)} session(s) wrote to the run with no closing stamp and are NOT in "
         f"this total: {', '.join(uncovered)}" if uncovered else "")
     figures.update({
-        "tokens_total": fig("tokens_total", total["tokens"] + delegated, state_rel),
+        # The supplied totals are not added over a meter that already read the subagents.
+        "tokens_total": fig("tokens_total", total["tokens"] + (
+            0 if total.get("includes_subagents") else delegated), state_rel),
         "token_coverage": fig("token_coverage", coverage, state_rel),
         "token_shape": fig("token_shape", f"read from {total['shape']}", state_rel)})
     return _section("cost", "Tokens by model", figures, rows)
@@ -4060,6 +4124,11 @@ MINUTES_MEASURED = "measured-unit-minutes"
 DELEGATED_RULE = "delegated_tokens"
 DELEGATED_OVER_ZERO_METER = "counted-over-a-zero-meter"
 
+#: The envelope mark of a page whose Estimates lead the token rows with the run's priced cost
+#: (`_priced_row`, D0390). A page filed before it re-derives as signed.
+PRICED_RULE = "token_headline"
+PRICED_HEADLINE = "priced-input-equivalent"
+
 #: The envelope mark of a page whose unit minutes are its agents' supplied minutes when any
 #: agent supplied them, not only when every agent did (`_unit_ledger`). A page filed before it
 #: re-derives as signed.
@@ -4084,7 +4153,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  restore_rule: bool = True, discharge_rule: bool = True,
                  findings_rule: bool = True, minutes_rule: bool = True,
                  delegated_rule: bool = True, agent_minutes_rule: bool = True,
-                 cancelled_rule: bool = True, findings_end: str | None = None) -> dict:
+                 cancelled_rule: bool = True, findings_end: str | None = None,
+                 priced_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -4107,7 +4177,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     delegated totals over a meter that read 0 (`DELEGATED_RULE`), and `agent_minutes_rule` reads
     a unit's supplied agent minutes when any agent supplied them (`AGENT_MINUTES_RULE`), and
     `cancelled_rule` reads a cancelled or skipped CI run as no failed deployment
-    (`CANCELLED_RULE`); a re-derivation passes what the page carries. `findings_end` bounds the
+    (`CANCELLED_RULE`), and `priced_rule` leads the token rows with the priced cost
+    (`PRICED_RULE`); a re-derivation passes what the page carries. `findings_end` bounds the
     open findings, waivers and DORA when a re-close moves them past `window_end` (`FINDINGS_END`).
     """
     root = Path(root)
@@ -4180,7 +4251,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         _estimates_section(state, state_rel, ledger, tokens,
                            round((end - start).total_seconds() / 60, 1) if start and end
                            else None, ratio_rule=ratio_rule, minutes_rule=minutes_rule,
-                           delegated_rule=delegated_rule),
+                           delegated_rule=delegated_rule, priced_rule=priced_rule),
         _delivered_section(root, state_rel, ledger),
         _known_issues_section(root, state, state_rel, ledger,
                               state.get("started_at"), _iso(f_end), readings["findings"],
@@ -4216,7 +4287,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               **({MINUTES_RULE: MINUTES_MEASURED} if minutes_rule else {}),
               **({DELEGATED_RULE: DELEGATED_OVER_ZERO_METER} if delegated_rule else {}),
               **({AGENT_MINUTES_RULE: AGENT_MINUTES_ANY} if agent_minutes_rule else {}),
-              **({CANCELLED_RULE: CANCELLED_NOT_FAILED} if cancelled_rule else {})}
+              **({CANCELLED_RULE: CANCELLED_NOT_FAILED} if cancelled_rule else {}),
+              **({PRICED_RULE: PRICED_HEADLINE} if priced_rule else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -5266,7 +5338,8 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          minutes_rule=basis.get(MINUTES_RULE) == MINUTES_MEASURED,
                          delegated_rule=basis.get(DELEGATED_RULE) == DELEGATED_OVER_ZERO_METER,
                          agent_minutes_rule=basis.get(AGENT_MINUTES_RULE) == AGENT_MINUTES_ANY,
-                         cancelled_rule=basis.get(CANCELLED_RULE) == CANCELLED_NOT_FAILED)
+                         cancelled_rule=basis.get(CANCELLED_RULE) == CANCELLED_NOT_FAILED,
+                         priced_rule=basis.get(PRICED_RULE) == PRICED_HEADLINE)
     was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(basis)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)

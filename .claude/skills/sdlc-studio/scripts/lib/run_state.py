@@ -131,10 +131,14 @@ TOKEN_STAMPS = "session_token_stamps"
 # delegated agent's spend was invisible to it. A run that fanned out to four cluster agents
 # published 439,982 as "the run's own spend" while the known true figure was at least 1,227,816.
 #
-# A delegated total therefore cannot be measured here. It can only be SUPPLIED - each agent
+# Where no subagent transcript is read, a delegated total can only be SUPPLIED - each agent
 # reports its own total when it finishes - so it is recorded with its own provenance and the
 # published sum is a LOWER BOUND (>=), never an equality. Same discipline as the mutation
 # ledger's registered-versus-re-run distinction: a claim is kept, and kept labelled.
+#
+# The harness does write each subagent's transcript, beside the session's own (`SUBAGENTS_DIR`),
+# and the meter now reads them. A run whose readings hold them (`includes_subagents`) has its
+# agents' spend measured already, so a supplied total is kept on the record and NOT added to it.
 DELEGATED = "delegated_tokens"
 #: The provenance every delegated record carries. Never `measured`: nothing here read a meter.
 SUPPLIED = "supplied"
@@ -148,6 +152,30 @@ TRANSCRIPTS_ENV = "SDLC_STUDIO_TRANSCRIPTS"
 #: with `retro.MODEL_MIXED` (the same string) so a mixed harness capture and a mixed per-unit
 #: batch land in the same history cell and are excluded from the per-model rate the same way.
 SESSION_MODEL_MIXED = "mixed"
+
+
+#: D0390's weight table: what one token of each component costs, in input-token equivalents.
+#: The ONE table every priced figure is read from, at the moment the figure is formed, so a
+#: change here moves every priced figure and no caller keeps a copy of a weight.
+TOKEN_WEIGHTS = {"input": 1, "output": 5, "cache_write_5m": 1.25, "cache_write_1h": 2.0,
+                 "cache_read": 0.1}
+#: The components a reading carries, in the order a page states them.
+TOKEN_COMPONENTS = ("input", "output", "cache_write_5m", "cache_write_1h", "cache_read")
+#: How each component is named where a reader meets it.
+COMPONENT_NAMES = {"input": "input", "output": "output", "cache_write_5m": "cache write 5m",
+                   "cache_write_1h": "cache write 1h", "cache_read": "cache read"}
+#: The label of the headline figure (D0390 (1)).
+PRICED_LABEL = "priced input-equivalent tokens"
+#: The counting basis a reading was taken on, stamped under this key on every stamp and
+#: baseline this reader writes. A stamp naming no basis was taken by an earlier reader (counted
+#: per record before BG1111, once per message on the main thread alone after it), so a reader
+#: can tell a reading on this basis from one that is not.
+METER = "meter"
+METER_BASIS = "once-per-message, main thread and subagent transcripts, priced components"
+#: Where the harness writes a session's subagent transcripts: beside the session's own file,
+#: in `<session-id>/subagents/agent-*.jsonl`, a depth-2 agent in the same flat directory.
+SUBAGENTS_DIR = "subagents"
+SUBAGENT_GLOB = "agent-*.jsonl"
 
 
 # --- lean loop: unit actuals (EP0260) ---
@@ -846,21 +874,153 @@ def _harness_transcript_dir(repo_root: Path | str) -> Path:
     return max(hits)[1] if hits else d
 
 
+def price(components: dict) -> int:
+    """`components` priced in input-equivalent tokens from `TOKEN_WEIGHTS`, read now."""
+    return round(sum(int(components.get(c) or 0) * TOKEN_WEIGHTS[c] for c in TOKEN_COMPONENTS))
+
+
+def _zero() -> dict:
+    return dict.fromkeys(TOKEN_COMPONENTS, 0)
+
+
+def _counted(components: dict) -> int:
+    """input + output + cache write: the sum every reading before D0390 headlined."""
+    return sum(int(components.get(c) or 0) for c in TOKEN_COMPONENTS if c != "cache_read")
+
+
+def _usage_components(usage: dict) -> dict:
+    """One usage record's components. RAISES on a malformed value: the caller refuses the read.
+
+    The cache write is split by duration under `cache_creation`. A write the split does not
+    account for, as in a transcript written before the harness recorded it, is booked at five
+    minutes, the API's default duration, so the total is never short of what was written."""
+    split = usage.get("cache_creation")
+    split = split if isinstance(split, dict) else {}
+    five = int(split.get("ephemeral_5m_input_tokens") or 0)
+    hour = int(split.get("ephemeral_1h_input_tokens") or 0)
+    written = int(usage.get("cache_creation_input_tokens") or 0)
+    return {"input": int(usage.get("input_tokens") or 0),
+            "output": int(usage.get("output_tokens") or 0),
+            "cache_write_5m": five + max(0, written - five - hour),
+            "cache_write_1h": hour,
+            "cache_read": int(usage.get("cache_read_input_tokens") or 0)}
+
+
+class _MeterError(Exception):
+    """Why a transcript gives no reading. Its text is the reason the caller reports."""
+
+
+def _file_records(path: Path, side: str, out: list) -> None:
+    """Append one `(side, message id, components, model)` per usage record of the
+    transcript at `path`. RAISES `_MeterError` naming the file on a malformed or unreadable one.
+
+    No `cwd` check is applied, and none may be: a subagent run in a worktree records the
+    worktree as its `cwd`, and its spend is the session's all the same."""
+    try:
+        with path.open(encoding="utf-8") as fh:
+            for line in fh:
+                try:
+                    rec = json.loads(line)
+                except ValueError:
+                    continue
+                msg = rec.get("message")
+                usage = (msg.get("usage") if isinstance(msg, dict) else None) or rec.get("usage")
+                if not isinstance(usage, dict):
+                    continue
+                model = (msg.get("model") if isinstance(msg, dict) else None) or rec.get("model")
+                try:
+                    parts = _usage_components(usage)
+                except (ArithmeticError, AttributeError, TypeError, ValueError) as exc:
+                    # A malformed usage value REFUSES the whole read rather than skipping the
+                    # record. Skipping would return a total that is quietly short, and a short
+                    # baseline inflates the delta measured against it - a wrong number, which is
+                    # the expensive failure here. Not-attributable is the cheap one.
+                    raise _MeterError(
+                        f"transcript {path.name} carries a malformed usage record "
+                        f"({type(exc).__name__}: {exc}) - the total cannot be trusted, so no "
+                        f"figure is reported") from exc
+                msg_id = msg.get("id") if isinstance(msg, dict) else None
+                out.append((side, msg_id if isinstance(msg_id, str) and msg_id else None, parts,
+                            model.strip() if isinstance(model, str) and model.strip() else None))
+    except (ArithmeticError, AttributeError, OSError, TypeError, ValueError) as exc:
+        # The whole family, not the shapes seen so far. This transcript format is the harness's,
+        # not this project's, and it has already moved once (hence the two-shape probe above).
+        # `archived()._index` in this same file records the same lesson from its own repairs.
+        raise _MeterError(f"transcript {path} unreadable ({type(exc).__name__}: {exc})") from exc
+
+
+def _collect(main: Path) -> dict:
+    """Every usage record of the session whose transcript is `main`, and of its subagents.
+
+    `note` is None when the subagent transcripts were read, and otherwise says why none were:
+    the directory is absent, or holds no file in the layout this reader knows. Either way the
+    reading is the main thread's alone and says so; it is never a zero for the subagents."""
+    records: list = []
+    _file_records(main, "main", records)
+    folder = main.parent / main.stem / SUBAGENTS_DIR
+    files = sorted(folder.glob(SUBAGENT_GLOB)) if folder.is_dir() else []
+    for f in files:
+        _file_records(f, "subagents", records)
+    note = (None if files else
+            f"no subagents directory at {folder}" if not folder.is_dir() else
+            f"the subagents directory {folder} holds no {SUBAGENT_GLOB} transcript, a layout "
+            f"this reader does not know")
+    return {"source": main, "records": records, "files": len(files), "note": note}
+
+
+def _aggregate(collected: dict) -> dict:
+    """The reading `collected` gives, ONCE per assistant message. RAISES `_MeterError` when
+    nothing carries usage.
+
+    The harness writes one record per content block of a message (thinking, text, each tool
+    call) and repeats the message's usage on every one under the same `message.id`, so summing
+    records billed a message once per block. One reading per id is kept, the LARGEST
+    of each component across its repeats: an earlier record can carry a smaller output count
+    than the message's last. A record with no id is counted by itself: nothing tells two of them
+    apart. An id is booked to the side, main thread or subagents, it was first read on."""
+    per_message: dict[str, tuple[str, dict]] = {}
+    sides = {"main": _zero(), "subagents": _zero()}
+    models: set[str] = set()
+    seen = False
+    for side, msg_id, parts, model in collected["records"]:
+        seen = True
+        if model:
+            models.add(model)
+        if msg_id is None:
+            for c in TOKEN_COMPONENTS:
+                sides[side][c] += parts[c]
+            continue
+        held = per_message.get(msg_id)
+        per_message[msg_id] = (side, parts) if held is None else (
+            held[0], {c: max(held[1][c], parts[c]) for c in TOKEN_COMPONENTS})
+    for side, parts in per_message.values():
+        for c in TOKEN_COMPONENTS:
+            sides[side][c] += parts[c]
+    both = {c: sides["main"][c] + sides["subagents"][c] for c in TOKEN_COMPONENTS}
+    if not seen or _counted(both) <= 0:
+        raise _MeterError(f"transcript {collected['source'].name} carries no usage records")
+    with_agents = collected["note"] is None
+    return {"tokens": _counted(both), "priced": price(both), "components": both,
+            "main": sides["main"], "subagents": sides["subagents"] if with_agents else None,
+            "includes_subagents": with_agents, "subagent_files": collected["files"],
+            "models": models}
+
+
 def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = None) -> dict:
-    """The CURRENT session's harness-tracked token total, read from the transcript.
+    """The CURRENT session's harness-tracked token reading, from its transcript and from the
+    transcript of every subagent it ran.
 
     The harness records usage per message; the most recently modified session file is the one
-    running this call. Summed: input, output and cache-creation tokens of every assistant
-    message carrying usage, ONCE per message. The harness writes one record per content block
-    of a message (thinking, text, each tool call) and repeats the message's usage on every one
-    under the same `message.id`, so summing records billed a message once per block: 2.5 times
-    what was spent on the transcript that found the defect. A record with no `message.id` is
-    counted by itself, as every record was before: nothing tells two of them apart. Cache READS
-    are excluded - they re-bill the same context every turn, so counting them would price the
-    conversation quadratically rather than the work.
+    running this call, and its subagents' files sit beside it (`SUBAGENTS_DIR`). Each message is
+    counted ONCE (`_aggregate`). The reading carries each component - input, output, cache
+    write at 5 minutes and at 1 hour, cache read - over both, and split into `main` and
+    `subagents`. `tokens` is input + output + cache write; `priced` weighs every component,
+    cache reads included, from `TOKEN_WEIGHTS` (D0390). A session whose subagents directory is
+    absent or reshaped reads the main thread alone, `subagents` None, and its basis says so.
 
-    Returns {"tokens", "source", "basis"} on success, {"tokens": None, "reason"} when the total
-    cannot be read - and the caller must SAY which it got.
+    Returns {"tokens", "priced", "components", "main", "subagents", "includes_subagents",
+    "source", "model", "basis", ...} on success, {"tokens": None, "reason"} when no reading can
+    be had - and the caller must SAY which it got.
 
     It lives in this module rather than in `retro` because `open_run` has to stamp the baseline
     itself: `open_run` is the only place that knows a fresh run is being minted, and `retro`
@@ -876,84 +1036,53 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
     src = _newest_transcript(d)     # a dangling or self-looping link is skipped, not raised
     if src is None:
         return {"tokens": None, "reason": f"no session transcript (*.jsonl) in {d}"}
-    total, seen = 0, False
-    #: One reading per assistant message, keyed on `message.id`, and the LARGEST of its repeats:
-    #: a message's earlier records can carry a smaller output count than its last, while its
-    #: input and cache-creation counts agree on all of them. Added to `total` once the file is
-    #: read.
-    per_message: dict[str, int] = {}
-    #: The distinct models that spent the counted tokens. Collected only from the records that
-    #: carry usage - a record with no usage bought nothing, so its model must not colour the
-    #: attribution. One model reports as itself; more than one reports as SESSION_MODEL_MIXED,
-    #: never one picked from the set, so a sprint run across two models is booked to neither's
-    #: rate rather than the wrong one's.
-    models_seen: set[str] = set()
     try:
-        with src.open(encoding="utf-8") as fh:
-            for line in fh:
-                try:
-                    rec = json.loads(line)
-                except ValueError:
-                    continue
-                msg = rec.get("message")
-                usage = (msg.get("usage") if isinstance(msg, dict) else None) or rec.get("usage")
-                if not isinstance(usage, dict):
-                    continue
-                seen = True
-                model = (msg.get("model") if isinstance(msg, dict) else None) or rec.get("model")
-                if isinstance(model, str) and model.strip():
-                    models_seen.add(model.strip())
-                try:
-                    counted = sum(int(usage.get(k) or 0) for k in
-                                  ("input_tokens", "output_tokens", "cache_creation_input_tokens"))
-                except (ArithmeticError, AttributeError, TypeError, ValueError) as exc:
-                    # A malformed usage value REFUSES the whole read rather than skipping the
-                    # record. Skipping would return a total that is quietly short, and a short
-                    # baseline inflates the delta measured against it - a wrong number, which is
-                    # the expensive failure here. Not-attributable is the cheap one.
-                    return {"tokens": None,
-                            "reason": f"transcript {src.name} carries a malformed usage record "
-                                      f"({type(exc).__name__}: {exc}) - the total cannot be "
-                                      f"trusted, so no figure is reported"}
-                # Parsed BEFORE the repeat is recognised, so a malformed value on a repeated
-                # record refuses the read exactly as it would on the message's first record.
-                msg_id = msg.get("id") if isinstance(msg, dict) else None
-                if isinstance(msg_id, str) and msg_id:
-                    per_message[msg_id] = max(per_message.get(msg_id, 0), counted)
-                else:
-                    total += counted
-    except (ArithmeticError, AttributeError, OSError, TypeError, ValueError) as exc:
-        # The whole family, not the shapes seen so far. This transcript format is the harness's,
-        # not this project's, and it has already moved once (hence the two-shape probe above).
-        # `archived()._index` in this same file records the same lesson from its own repairs.
-        return {"tokens": None, "reason": f"transcript {src} unreadable ({type(exc).__name__}: {exc})"}
-    total += sum(per_message.values())
-    if not seen or total <= 0:
-        return {"tokens": None, "reason": f"transcript {src.name} carries no usage records"}
-    if len(models_seen) == 1:
-        model = next(iter(models_seen))
-    elif len(models_seen) > 1:
-        model = SESSION_MODEL_MIXED
+        collected = _collect(src)
+        reading = _aggregate(collected)
+    except _MeterError as exc:
+        return {"tokens": None, "reason": str(exc)}
+    return _reading(reading, src, collected["note"])
+
+
+def _reading(agg: dict, src: Path, note: str | None) -> dict:
+    """An `_aggregate` result as the meter reports it: its model and its basis sentence."""
+    models = agg.pop("models")
+    # One model reports as itself; more than one reports as SESSION_MODEL_MIXED, never one
+    # picked from the set, so a sprint run across two models is booked to neither's rate rather
+    # than the wrong one's. A subagent's model counts: its spend is in the reading.
+    model = (next(iter(models)) if len(models) == 1 else
+             SESSION_MODEL_MIXED if models else None)
+    # Both sentences say what `tokens` is and what the priced figure adds: the cache reads that
+    # `tokens` leaves out are most of a run's bill, and only the priced figure carries them.
+    counted = ("tokens is input + output + cache write, cache reads excluded, and the priced "
+               "figure weighs every component, cache reads included, in input-equivalent tokens")
+    if note is None:
+        basis = (f"current-session transcript usage, once per message, over the main thread and "
+                 f"{agg['subagent_files']} subagent transcript(s): {counted}")
     else:
-        model = None   # a transcript that named no model - the caller reports it unrecorded
-    return {"tokens": total, "source": str(src), "model": model,
-            # MAIN THREAD ONLY, said here because here is where it is true: the transcript
-            # carries no subagent (sidechain) usage record at all - measured, 6,624,813 tokens
-            # of usage with ZERO from sidechains - so a session that delegated work spent more
-            # than this. Every caller inherits the sentence, and none of them may drop it.
-            "basis": "current-session transcript usage sum, once per message, MAIN THREAD only "
-                     "(input + output + cache creation; cache reads excluded). The transcript "
-                     "records no subagent usage, so this is a LOWER BOUND on what the session "
-                     "cost"}
+        basis = (f"current-session transcript usage, once per message, MAIN THREAD only: "
+                 f"{note}, so a subagent the session ran is not in this reading and it is a "
+                 f"LOWER BOUND on what the session cost; {counted}")
+    return {**agg, METER: METER_BASIS, "source": str(src), "model": model, "basis": basis}
+
+
+def _priced_fields(cap: dict) -> dict:
+    """The fields a stamp carries from a reading on `METER_BASIS`: none from a reading that
+    lacks them (a reader stubbed in a test, or another harness's), which is then a legacy one."""
+    if cap.get(METER) != METER_BASIS or not isinstance(cap.get("components"), dict):
+        return {}
+    return {"priced": cap.get("priced"), "components": dict(cap["components"]),
+            "subagents": bool(cap.get("includes_subagents")), METER: METER_BASIS}
 
 
 def _session_baseline(repo_root: Path | str) -> dict | None:
     """The token meter reading to stamp on a run being minted, or None.
 
-    `{"tokens": N, "source": <transcript path>, "at": <iso>}`. The SOURCE is half the record:
-    the delta is only meaningful against the same session file, so a close that happens in a
-    later session can tell that this baseline is not its own rather than subtracting a number
-    from an unrelated meter.
+    `{"tokens": N, "source": <transcript path>, "at": <iso>}`, with the priced fields and the
+    `METER` basis when the reading carries them. The SOURCE is half the record: the delta is
+    only meaningful against the same session file, so a close that happens in a later session
+    can tell that this baseline is not its own rather than subtracting a number from an
+    unrelated meter.
 
     None whenever the meter cannot be read - including a session whose transcript carries no
     usage yet, whose true baseline is zero. That is a deliberate false negative: the run then
@@ -972,7 +1101,7 @@ def _session_baseline(repo_root: Path | str) -> dict | None:
     if not cap.get("tokens"):
         return None
     return {"tokens": int(cap["tokens"]), "source": cap.get("source"),
-            "at": sdlc_md.now_iso8601()}
+            "at": sdlc_md.now_iso8601(), **_priced_fields(cap)}
 
 
 def _stamp(repo_root: Path | str, kind: str, transcripts_dir: Path | str | None = None):
@@ -988,7 +1117,8 @@ def _stamp(repo_root: Path | str, kind: str, transcripts_dir: Path | str | None 
     if not cap.get("tokens"):
         return None
     return {"tokens": int(cap["tokens"]), "source": cap.get("source"),
-            "at": sdlc_md.now_iso8601(), "kind": kind, "model": cap.get("model")}
+            "at": sdlc_md.now_iso8601(), "kind": kind, "model": cap.get("model"),
+            **_priced_fields(cap)}
 
 
 def stamp_tokens(repo_root: Path | str, kind: str,
@@ -1015,25 +1145,64 @@ def stamp_tokens(repo_root: Path | str, kind: str,
     return stamp
 
 
-#: What the run token total is, said once so every caller inherits the sentence. The transcript
-#: records no subagent usage at all, and a session that wrote to the run without a closing stamp
-#: contributes nothing, so the figure can only ever be a floor.
+#: What a run token total is, said once so every caller inherits the sentence. A reading of the
+#: main thread alone, which every reading before subagent transcripts were read was, and a
+#: session that wrote to the run without a closing stamp contributes nothing, so that figure can
+#: only ever be a floor.
 TOKEN_TOTAL_BASIS = ("the sum of the per-session meter deltas - a LOWER BOUND: the transcript "
                      "records main-thread usage only, and a session with no closing stamp "
                      "contributes nothing")
+#: The same, for a total whose every session closed on a reading of the main thread and its
+#: subagents (D0390).
+TOKEN_TOTAL_BASIS_SUBAGENTS = ("the sum of the per-session meter deltas, each reading the main "
+                               "thread and every subagent transcript once per message; a "
+                               "session with no closing stamp contributes nothing")
+
+
+def _priced_delta(spans: list[list[dict]]) -> dict:
+    """The priced half of a run total: each component's delta and its price, summed over the
+    covered sessions' `spans`, and whether every one closed on a reading holding its subagents.
+
+    `priced` is None, never 0, with `priced_reason`, when a reading lacks its components: a
+    stamp written before the meter priced them. It is formed from the stamped components, never
+    from `tokens` times a constant."""
+    comps = _zero()
+    for rows in spans:
+        if not all(isinstance(r.get("components"), dict) for r in rows):
+            n = sum(1 for s in spans for r in s if not isinstance(r.get("components"), dict))
+            return {"priced": None, "components": None, "includes_subagents": False,
+                    "priced_reason": (f"{n} meter reading(s) were written before the meter "
+                                      f"priced each component, so the run's priced cost cannot "
+                                      f"be formed from them; its input + output + cache-write "
+                                      f"total is unchanged")}
+        for c in TOKEN_COMPONENTS:
+            vals = [int(r["components"].get(c) or 0) for r in rows]
+            comps[c] += max(0, max(vals) - min(vals))
+    return {"priced": price(comps), "components": comps, "priced_reason": None,
+            "includes_subagents": bool(spans) and all(
+                bool(max(rows, key=lambda r: r["tokens"]).get("subagents")) for rows in spans)}
+
+
+def _total_basis(includes: bool) -> str:
+    return TOKEN_TOTAL_BASIS_SUBAGENTS if includes else TOKEN_TOTAL_BASIS
 
 
 def run_token_total(state: dict, current: dict | None = None) -> dict:
     """What the run spent, from its stamps: the SUM of the per-session deltas.
 
-    `{"tokens", "sessions", "session_count", "uncovered", "model", "shape", "basis", "reason"}`.
-    `tokens` is None only when no reading can be had at all, and the `reason` then says why - it
-    is never 0, because a run whose meter could not be read did not cost nothing.
+    `{"tokens", "priced", "components", "priced_reason", "includes_subagents", "sessions",
+    "session_count", "uncovered", "model", "shape", "basis", "reason"}`. `tokens` is None only
+    when no reading can be had at all, and the `reason` then says why - it is never 0, because a
+    run whose meter could not be read did not cost nothing. `priced` and `components` are the
+    priced delta and each component's delta (`_priced_delta`); `includes_subagents` says every
+    covered session closed on a reading that holds its subagents' spend, so a delegated total
+    supplied for them is already in it.
 
     Each term is `last - first` WITHIN one transcript, so every subtraction is of two readings
-    of the same meter. That is the rule `retro.run_attributed_tokens` enforces by refusing a
-    cross-session baseline; summing per session keeps it and still reports a run closed across
-    sessions, which is the shape that read `not attributable` before.
+    of the same meter. That is the rule
+    `retro.run_attributed_tokens` enforces by refusing a cross-session baseline; summing per
+    session keeps it and still reports a run closed across sessions, which is the shape that
+    read `not attributable` before.
 
     `shape` names which record was read - `stamps` or the LEGACY single `session_token_baseline`
     - so an older run is reported rather than refused, and the reader can tell which it got. For
@@ -1057,9 +1226,14 @@ def run_token_total(state: dict, current: dict | None = None) -> dict:
         folded = (isinstance(legacy, dict) and isinstance(legacy.get("tokens"), int)
                   and str(legacy.get("source") or "") in by_session)
         if folded:
-            by_session[str(legacy["source"])].append({"tokens": int(legacy["tokens"]),
+            by_session[str(legacy["source"])].append({**legacy, "tokens": int(legacy["tokens"]),
                                                       "source": str(legacy["source"])})
-        total, covered, uncovered = 0, [], []
+        models = sorted({s["model"] for s in stamps if s.get("model")})
+        model = models[0] if len(models) == 1 else (SESSION_MODEL_MIXED if models else None)
+        shape = ("stamps" if not folded else
+                 f"stamps, with the opening reading taken from the legacy {TOKEN_BASELINE} "
+                 f"this run predates the open stamp")
+        total, covered, uncovered, spans = 0, [], [], []
         for src, rows in by_session.items():
             if len(rows) < 2:
                 # ONE reading covers no delta. Named, never guessed at and never dropped
@@ -1068,47 +1242,57 @@ def run_token_total(state: dict, current: dict | None = None) -> dict:
                 continue
             total += max(0, max(r["tokens"] for r in rows) - min(r["tokens"] for r in rows))
             covered.append(src)
-        models = sorted({s["model"] for s in stamps if s.get("model")})
-        shape = ("stamps" if not folded else
-                 f"stamps, with the opening reading taken from the legacy {TOKEN_BASELINE} "
-                 f"this run predates the open stamp")
+            spans.append(rows)
         if not covered:
             # EVERY session carries one reading, so no delta is measurable anywhere. `total` is
             # still at its 0 initialiser here, and returning it would publish a cost of zero and
             # a rate of zero per point for the shape EVERY run carries between `open_run`'s
             # stamp and the next one - which is the outcome AC1's own mutant describes and the
             # output AC3 forbids by name. Zero tokens and no reading are different facts.
-            return {"tokens": None, "sessions": [], "session_count": 0,
-                    "uncovered": sorted(uncovered), "shape": shape,
-                    "model": models[0] if len(models) == 1 else (SESSION_MODEL_MIXED if models
-                                                                 else None),
-                    "basis": TOKEN_TOTAL_BASIS,
-                    "reason": (f"{len(uncovered)} session(s) carry a single meter reading and "
-                               f"no closing one, so no delta can be measured: "
-                               f"{', '.join(sorted(uncovered))}")}
-        return {"tokens": total, "sessions": sorted(covered), "session_count": len(covered),
-                "uncovered": sorted(uncovered), "shape": shape, "reason": None,
-                "model": models[0] if len(models) == 1 else (SESSION_MODEL_MIXED if models
-                                                             else None),
-                "basis": TOKEN_TOTAL_BASIS}
+            why = (f"{len(uncovered)} session(s) carry a single meter reading and "
+                   f"no closing one, so no delta can be measured: "
+                   f"{', '.join(sorted(uncovered))}")
+            return {"tokens": None, "priced": None, "components": None, "priced_reason": why,
+                    "includes_subagents": False, "sessions": [], "session_count": 0,
+                    "uncovered": sorted(uncovered), "shape": shape, "model": model,
+                    "basis": TOKEN_TOTAL_BASIS, "reason": why}
+        priced = _priced_delta(spans)
+        return {"tokens": total, **priced, "sessions": sorted(covered),
+                "session_count": len(covered), "uncovered": sorted(uncovered), "shape": shape,
+                "reason": None, "model": model,
+                "basis": _total_basis(priced["includes_subagents"])}
     base = state.get(TOKEN_BASELINE)
     if isinstance(base, dict) and isinstance(base.get("tokens"), int):
         shape = f"the legacy single {TOKEN_BASELINE} (one reading, not a stamp list)"
         if (isinstance(current, dict) and isinstance(current.get("tokens"), int)
                 and current.get("source") == base.get("source")):
-            return {"tokens": max(0, int(current["tokens"]) - int(base["tokens"])),
+            ends = [{**base, "tokens": int(base["tokens"])}, {**current, "subagents": bool(
+                current.get("includes_subagents", current.get("subagents")))}]
+            priced = _priced_delta([ends])
+            return {"tokens": max(0, int(current["tokens"]) - int(base["tokens"])), **priced,
                     "sessions": [str(base["source"])], "session_count": 1, "uncovered": [],
                     "shape": shape, "model": current.get("model"), "reason": None,
-                    "basis": TOKEN_TOTAL_BASIS}
-        return {"tokens": None, "sessions": [str(base.get("source") or "")], "session_count": 0,
-                "uncovered": [str(base.get("source") or "")], "shape": shape,
-                "model": None, "basis": TOKEN_TOTAL_BASIS,
-                "reason": (f"only an opening reading of {base['tokens']} is recorded, from "
-                           f"{base.get('source')}, and no closing reading of that same meter "
-                           f"is available - the difference of two meters is not a spend")}
-    return {"tokens": None, "sessions": [], "session_count": 0, "uncovered": [],
-            "shape": "none", "model": None, "basis": TOKEN_TOTAL_BASIS,
-            "reason": "the run carries no meter stamp and no session token baseline"}
+                    "basis": _total_basis(priced["includes_subagents"])}
+        why = (f"only an opening reading of {base['tokens']} is recorded, from "
+               f"{base.get('source')}, and no closing reading of that same meter "
+               f"is available - the difference of two meters is not a spend")
+        return {"tokens": None, "priced": None, "components": None, "priced_reason": why,
+                "includes_subagents": False, "sessions": [str(base.get("source") or "")],
+                "session_count": 0, "uncovered": [str(base.get("source") or "")],
+                "shape": shape, "model": None, "basis": TOKEN_TOTAL_BASIS, "reason": why}
+    why = "the run carries no meter stamp and no session token baseline"
+    return {"tokens": None, "priced": None, "components": None, "priced_reason": why,
+            "includes_subagents": False, "sessions": [], "session_count": 0, "uncovered": [],
+            "shape": "none", "model": None, "basis": TOKEN_TOTAL_BASIS, "reason": why}
+
+
+def cost_components(total: dict) -> str:
+    """The components of a priced total as a reader meets them, the input + output +
+    cache-write sum first: `input + output + cache write N (input a, output b, ...)`."""
+    comps = total.get("components") or {}
+    return (f"input + output + cache write {_counted(comps):,} ("
+            + ", ".join(f"{COMPONENT_NAMES[c]} {int(comps.get(c) or 0):,} x{TOKEN_WEIGHTS[c]:g}"
+                        for c in TOKEN_COMPONENTS) + ")")
 
 
 #: The commit the run's delivery is measured FROM. Stamped when the run opens, on the run

@@ -6582,6 +6582,15 @@ def _close_cost(root, state: dict, shipped: list) -> dict:
     tokens = forecast.get("actual") if isinstance(forecast, dict) else None
     if isinstance(tokens, int):
         cost["tokens"] = tokens
+    # D0390: the headline is the run's priced cost, from its meter over the window the page
+    # measured to, as `sprint_report._ck_cost` reads it. A run whose stamps carry no priced
+    # figure keeps the line it had.
+    import sprint_report  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    total = run_state.run_token_total(sprint_report._metered(
+        state, sprint_report._at(state.get(REPORT_WINDOW_END))))
+    if isinstance(total.get("priced"), int):
+        cost.update(priced=total["priced"], components=total["components"],
+                    includes_subagents=total["includes_subagents"])
     points = 0
     for entry in shipped:
         found = sdlc_md.find_by_id(root, entry.split()[0])

@@ -66,6 +66,18 @@ with no baseline reports not-attributable rather than a number, and it states pl
 cannot attribute, so `--tokens N` is the manual override and `--elapsed-hours H` supplies the
 elapsed the run-state cannot know. Read-only.
 
+**The meter reads the main thread and every subagent, and the headline is the priced cost.**
+Each reading counts every assistant message once, from the session's transcript and from each
+subagent transcript beside it (`<session-id>/subagents/agent-*.jsonl`, depth-2 agents included).
+It carries input, output, cache write at 5 minutes and at 1 hour, and cache read, and prices
+them in input-equivalent tokens from one weight table: input 1, output 5, cache write 1.25 (5
+minutes) and 2.0 (1 hour), cache read 0.1 (D0390). The report's Estimates lead with a `Priced
+cost` row, and the close report's COST line states the same figure, each with the input +
+output + cache-write sum beside it as a component; that sum is the `Tokens` row. A session
+whose subagents directory is absent, or holds no `agent-*.jsonl`, reads the main thread alone
+and says so, as a lower bound. A run whose stamps predate the priced meter keeps the page it
+had: its Estimates carry no `Priced cost` row, and the close report its unpriced line.
+
 **The compulsory checklist is part of that report, not a second document.** It carries one row per
 STAGE of the cycle - the pre-plan reconcile, the goal's seat review, the grooming gate, the run
 opening, the review verdicts, the ticked criteria the tree supports, the goal verdict, the retro,
@@ -544,4 +556,6 @@ with no `--tokens`, or a total given for several units at once, is not recorded 
 Estimates tokens ratio is withheld unless every live unit delivered or carrying a span (a lane
 brief or a move to In Progress during the run opens one) supplied its delegated spend: the
 main-thread meter cannot see a delegated agent, so a ratio over a partial actual understates the
-run.
+run. A meter whose readings hold the subagent transcripts already counts the builders, so over
+it a supplied `--tokens` total is kept on the record but not added, and the ratio is not
+withheld.
