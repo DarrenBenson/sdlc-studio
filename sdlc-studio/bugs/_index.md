@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 130 |
+| Open | 131 |
 | In Progress | 0 |
 | Fixed | 809 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 38 |
-| **Total** | **1111** |
+| **Total** | **1112** |
 
 ## All Bugs
 
@@ -187,6 +187,7 @@
 | [BG1109](BG1109-the-artefact-gate-s-conformance-and-engagement-floor.md) | The artefact gate's conformance and engagement-floor lanes re-read the verdict ledger, the decisions log and each verifier's collection once per unit | Open | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1110](BG1110-backlog-triage-s-duplicate-lens-has-no-way.md) | backlog_triage's duplicate lens has no way to record a pair confirmed distinct, so a triaged pair is re-reported on every run | Open | Low | 2026-10-21 | 2026-10-21 |
 | [BG1111](BG1111-the-session-token-meter-sums-every-usage-record.md) | The session token meter sums every usage record, but the harness repeats a message's usage on each of its content blocks, so a run's measured tokens are about 2.5 times what it spent | Open | Medium | 2026-10-21 | 2026-10-21 |
+| [BG1112](BG1112-verify-ac-s-timeout-kills-only-the-shell.md) | verify_ac's timeout kills only the shell it started, so a timed-out shell or eval verifier leaves its real test runner (npx, vitest, pytest) running as an orphan that keeps writing into the workspace | Open | Medium | 2026-10-21 | 2026-10-21 |
 
 ## Archived Releases
 
