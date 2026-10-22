@@ -2726,6 +2726,9 @@ def check_self_check(repo_root: Path | str, unit: str, claims: list[dict],
     _affects, fragments, tests = _self_check_scope(repo_root, unit)
     required = [COMMIT_SURFACE, *fragments]
     named = {_surface_key(s): s for s in (*required, *CLAIM_SURFACES)}
+    if not claims:
+        raise ValueError(f"the claims file lists no claim - inventory the claims made by "
+                         f"{', '.join(required)}")
     keys, rulings, covered = [], {}, set()
     for n, entry in enumerate(claims, 1):
         surface, text = _surface_key(entry.get("surface")), str(entry.get("claim") or "").strip()

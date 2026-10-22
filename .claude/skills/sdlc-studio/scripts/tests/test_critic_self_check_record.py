@@ -88,7 +88,8 @@ class SelfCheckRecordTests(unittest.TestCase):
     def test_an_unruled_false_or_unchecked_inventory_is_refused(self) -> None:
         """AC1. Mutants: `validate_claim_inventory` not called, so an unruled claim or one ruled
         MAYBE beside a TRUE one is recorded; the all-UNVERIFIABLE check dropped, so an inventory
-        that checked nothing is recorded; a FALSE ruling recorded rather than refused."""
+        that checked nothing is recorded; a FALSE ruling recorded rather than refused; an empty
+        claims list refused under the all-UNVERIFIABLE cause rather than for making no claim."""
         cases = {
             "unruled": ([*_covered(), _claim("docstrings", None, "w is pure")], "w is pure"),
             "outside the vocabulary": ([*_covered(), _claim("comments", "MAYBE")], "MAYBE"),
@@ -102,6 +103,12 @@ class SelfCheckRecordTests(unittest.TestCase):
                 root = Path(d)
                 _project(root, "US0101", CODE_AND_TEST)
                 self._refused(root, _record(root, "US0101", claims, KILLED), named)
+        with self.subTest(case="no claim at all"), tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, "US0101", CODE_AND_TEST)
+            r = _record(root, "US0101", [], KILLED)
+            self._refused(root, r, "lists no claim")
+            self.assertNotIn("UNVERIFIABLE", r.stderr, "an empty list was refused for a ruling it has not got")
         with tempfile.TemporaryDirectory() as d:  # the positive control beside them
             root = Path(d)
             _project(root, "US0101", CODE_AND_TEST)
@@ -113,7 +120,9 @@ class SelfCheckRecordTests(unittest.TestCase):
     def test_a_claims_file_skipping_a_surface_is_refused(self) -> None:
         """AC2. Mutants: the fragment found as changelog.d/<id>.md rather than read from the
         unit's Affects, which misses a carried bug's fragment; the commit-message surface not
-        required. A surface nobody named is refused rather than counted."""
+        required; only the first declared fragment required, or any one fragment taken as
+        enough, which a unit declaring two tells apart; the surface label compared with its case.
+        A surface nobody named is refused rather than counted."""
         unit, fragment = "BG0201", "changelog.d/US0200.md"
         cases = {
             "no commit-message claim": ([_claim(fragment)], "commit message"),
@@ -128,16 +137,37 @@ class SelfCheckRecordTests(unittest.TestCase):
                 r = _record(root, unit, claims, KILLED)
                 self._refused(root, r, named)
                 self.assertNotIn(f"changelog.d/{unit}.md", r.stderr, "a fragment was taken from the id")
+        second = "changelog.d/US0199.md"
+        with self.subTest(case="the second of two declared fragments uncovered"), \
+                tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, unit, f"src/widget.py, tests/test_widget.py, {fragment}, {second}")
+            self._refused(root, _record(root, unit, _covered(fragment), KILLED), second)
+            r = _record(root, unit, [*_covered(fragment), _claim(second)], KILLED)
+            self.assertEqual(0, r.returncode, r.stderr)
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _project(root, unit, f"src/widget.py, tests/test_widget.py, {fragment}")
-            r = _record(root, unit, [*_covered(fragment), _claim("the commit message")], KILLED)
+            claims = [_claim("The Commit Message"), _claim("Changelog.d/US0200.md")]
+            r = _record(root, unit, claims, KILLED)
+            self.assertEqual(0, r.returncode, r.stderr)
+
+    def test_the_commit_message_is_required_without_a_fragment(self) -> None:
+        """Beyond AC2's letter, which speaks of units declaring fragments. Mutant: the
+        required-surface check gated on the unit declaring a fragment, so a unit declaring none
+        is recorded with no claim on its commit message."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, "US0103", "src/widget.py, tests/test_widget.py")
+            self._refused(root, _record(root, "US0103", [_claim("docstrings")], KILLED),
+                          "commit message")
+            r = _record(root, "US0103", [_claim("commit message")], KILLED)
             self.assertEqual(0, r.returncode, r.stderr)
 
     def test_an_undeclared_test_or_unanswered_survivor_is_refused(self) -> None:
         """AC3. Mutants: a mutant against a test the unit does not declare recorded; a survivor
-        recorded with no answer; a docs-only unit refused for having no mutant, which would leave
-        it unbriefable under `block`."""
+        recorded with no answer, or with an answer of whitespace alone; a docs-only unit refused
+        for having no mutant, which would leave it unbriefable under `block`."""
         survivor = {"mutant": "w returns None", "test": "tests/test_widget.py::test_w",
                     "result": "survived"}
         cases = {
@@ -148,6 +178,8 @@ class SelfCheckRecordTests(unittest.TestCase):
             "a result outside killed and survived": ([{**KILLED[0], "result": "timeout"}],
                                                      "timeout"),
             "an unanswered survivor": ([survivor], "w returns None"),
+            "a survivor answered with whitespace": ([{**survivor, "answer": "   "}],
+                                                    "w returns None"),
         }
         for label, (mutants, named) in cases.items():
             with self.subTest(case=label), tempfile.TemporaryDirectory() as d:
@@ -172,9 +204,10 @@ class SelfCheckRecordTests(unittest.TestCase):
             self.assertIn("no test declared", critic.read_self_checks(root)[-1]["mutants"])
 
     def test_the_record_binds_the_affects_content(self) -> None:
-        """AC4. Mutant: the digest computed over the Affects PATHS (or their sizes) rather than
-        their content, so a same-length edit to a declared file leaves it unmoved. The log is
-        committed, never under .local."""
+        """AC4. Mutants: the digest computed over the Affects PATHS (or their sizes) rather than
+        their content, so a same-length edit to a declared file leaves it unmoved; the paths
+        taken in declared order, so a regroom that only reorders Affects stales the record. The
+        log is committed, never under .local."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _project(root, "US0101", f"{CODE_AND_TEST}, tools/")
@@ -192,6 +225,12 @@ class SelfCheckRecordTests(unittest.TestCase):
             self.assertEqual("TRUE 2, FALSE 0, UNVERIFIABLE 1", first["claims"])
             self.assertEqual("killed 1, survived 0", first["mutants"])
             self.assertEqual(critic.affects_digest(root, "US0101"), first["digest"])
+            _project(root, "US0101", f"tools/, changelog.d/US0101.md, tests/test_widget.py, "
+                                     f"src/widget.py")
+            r = _record(root, "US0101", claims, KILLED, "--author", "builder-7")
+            self.assertEqual(0, r.returncode, r.stderr)
+            self.assertEqual(first["digest"], critic.read_self_checks(root)[-1]["digest"],
+                             "reordering Affects moved the digest")
             # A file, and one inside a declared directory; each edit keeps the file's length.
             for rel, was, now in (("src/widget.py", "1", "2"), ("tools/check.sh", "ok", "no")):
                 with self.subTest(edited=rel):
