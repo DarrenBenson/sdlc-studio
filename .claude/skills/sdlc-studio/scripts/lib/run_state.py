@@ -168,10 +168,16 @@ COMPONENT_NAMES = {"input": "input", "output": "output", "cache_write_5m": "cach
 PRICED_LABEL = "priced input-equivalent tokens"
 #: The counting basis a reading was taken on, stamped under this key on every stamp and
 #: baseline this reader writes. A stamp naming no basis was taken by an earlier reader (counted
-#: per record before BG1111, once per message on the main thread alone after it), so a reader
-#: can tell a reading on this basis from one that is not.
+#: per record before BG1111, once per message on the main thread alone after it), and a
+#: difference between it and a reading on this basis is not a spend (`run_token_total`).
 METER = "meter"
 METER_BASIS = "once-per-message, main thread and subagent transcripts, priced components"
+#: The kind of a stamp re-derived, under `METER_BASIS`, from the transcript records up to an
+#: earlier-basis reading's own time. That time is its `REDERIVES` key, which pairs the two, and
+#: its `at` is the current-basis stamp it was taken with, so a window ending before that stamp
+#: leaves both out. It names no model: the readings beside it name the run's.
+REDERIVED = "rederived"
+REDERIVES = "of"
 #: Where the harness writes a session's subagent transcripts: beside the session's own file,
 #: in `<session-id>/subagents/agent-*.jsonl`, a depth-2 agent in the same flat directory.
 SUBAGENTS_DIR = "subagents"
@@ -218,23 +224,26 @@ def record_unit_actual(repo_root: Path | str, unit_id: str, status: str,
                             for r in state.get(IN_FLIGHT) or [] if isinstance(r, dict)}
         return (starting and not is_open) or (terminal and is_open and not in_flight)
 
-    if not (starting or terminal) or not applies(read(repo_root)):
+    before = read(repo_root)
+    if not (starting or terminal) or not applies(before):
         return None
     stamp = _stamp(repo_root, "unit-start" if starting else "unit-end")
+    owed = _rederivations(before, stamp)
     now = _unit_clock()
 
     def apply(state: dict) -> dict:
         if not applies(state):
             return state
         if stamp:
-            state[TOKEN_STAMPS] = list(state.get(TOKEN_STAMPS) or []) + [stamp]
+            _append_stamp(state, stamp, owed)
         total = run_token_total(state)["tokens"]
         actuals = dict(state.get(UNIT_ACTUALS) or {})
         entry = dict(actuals.get(uid) or {"minutes": 0.0,
                                           "tokens": 0 if isinstance(total, int) else None})
         if starting:
             entry.update(started_at=now, start_tokens=total, open=True,
-                         start_source=(stamp or {}).get("source"))
+                         start_source=(stamp or {}).get("source"),
+                         start_meter=(stamp or {}).get(METER))
             if not isinstance(total, int):
                 entry["tokens"] = None
         else:
@@ -248,15 +257,18 @@ def record_unit_actual(repo_root: Path | str, unit_id: str, status: str,
 
 def _closed_span(entry: dict, now: str, total, stamp: dict | None) -> dict:
     """`entry` with its open span closed at `now`: the span's minutes and, when the reading at
-    `now` is on the meter the span started on, its tokens, added to the entry's own. The ONE
-    rule for ending a span, shared by a terminal move and the close's settle."""
+    `now` is on the meter the span started on, and on its counting basis, its tokens, added to
+    the entry's own. The ONE rule for ending a span, shared by a terminal move and the close's
+    settle. A span opened on an earlier basis, or before a span recorded its basis, and closed
+    on `METER_BASIS` reads None: the run totals at its two ends were formed on different bases."""
     entry = dict(entry)
     elapsed = sdlc_md.parse_iso8601(now) - sdlc_md.parse_iso8601(entry["started_at"])
     entry["minutes"] = round((entry.get("minutes") or 0.0) + elapsed.total_seconds() / 60, 2)
     entry.setdefault("tokens", 0)
     start = entry.get("start_tokens")
     same_meter = bool(stamp and entry.get("start_source")
-                      and stamp.get("source") == entry["start_source"])
+                      and stamp.get("source") == entry["start_source"]
+                      and stamp.get(METER) == entry.get("start_meter"))
     entry["tokens"] = (entry["tokens"] + max(0, total - start)
                        if same_meter and all(isinstance(v, int)
                                              for v in (entry["tokens"], start, total))
@@ -286,9 +298,11 @@ def settle_open_spans(repo_root: Path | str, unit_ids) -> list[str]:
                       if sdlc_md.norm_id(u) in wanted & batch
                       and isinstance(e, dict) and e.get("open") and e.get("started_at"))
 
-    if not open_units(read(repo_root)):
+    before = read(repo_root)
+    if not open_units(before):
         return []
     stamp = _stamp(repo_root, "unit-end")
+    owed = _rederivations(before, stamp)
     now = _unit_clock()
     settled: list[str] = []
 
@@ -297,7 +311,7 @@ def settle_open_spans(repo_root: Path | str, unit_ids) -> list[str]:
         if not units:
             return state
         if stamp:
-            state[TOKEN_STAMPS] = list(state.get(TOKEN_STAMPS) or []) + [stamp]
+            _append_stamp(state, stamp, owed)
         total = run_token_total(state)["tokens"]
         actuals = dict(state.get(UNIT_ACTUALS) or {})
         for uid in units:
@@ -911,7 +925,7 @@ class _MeterError(Exception):
 
 
 def _file_records(path: Path, side: str, out: list) -> None:
-    """Append one `(side, message id, components, model)` per usage record of the
+    """Append one `(side, message id, timestamp, components, model)` per usage record of the
     transcript at `path`. RAISES `_MeterError` naming the file on a malformed or unreadable one.
 
     No `cwd` check is applied, and none may be: a subagent run in a worktree records the
@@ -940,7 +954,8 @@ def _file_records(path: Path, side: str, out: list) -> None:
                         f"({type(exc).__name__}: {exc}) - the total cannot be trusted, so no "
                         f"figure is reported") from exc
                 msg_id = msg.get("id") if isinstance(msg, dict) else None
-                out.append((side, msg_id if isinstance(msg_id, str) and msg_id else None, parts,
+                out.append((side, msg_id if isinstance(msg_id, str) and msg_id else None,
+                            rec.get("timestamp"), parts,
                             model.strip() if isinstance(model, str) and model.strip() else None))
     except (ArithmeticError, AttributeError, OSError, TypeError, ValueError) as exc:
         # The whole family, not the shapes seen so far. This transcript format is the harness's,
@@ -968,9 +983,10 @@ def _collect(main: Path) -> dict:
     return {"source": main, "records": records, "files": len(files), "note": note}
 
 
-def _aggregate(collected: dict) -> dict:
-    """The reading `collected` gives, ONCE per assistant message. RAISES `_MeterError` when
-    nothing carries usage.
+def _aggregate(collected: dict, until=None) -> dict:
+    """The reading `collected` gives, ONCE per assistant message, of the records at or before
+    `until` (a datetime) when it is given. RAISES `_MeterError` when a record cannot be placed
+    against `until`, or when nothing carries usage.
 
     The harness writes one record per content block of a message (thinking, text, each tool
     call) and repeats the message's usage on every one under the same `message.id`, so summing
@@ -982,7 +998,16 @@ def _aggregate(collected: dict) -> dict:
     sides = {"main": _zero(), "subagents": _zero()}
     models: set[str] = set()
     seen = False
-    for side, msg_id, parts, model in collected["records"]:
+    for side, msg_id, at, parts, model in collected["records"]:
+        if until is not None:
+            moment = sdlc_md.parse_iso8601(at) if at else None
+            if moment is None:
+                raise _MeterError(
+                    f"a usage record in {collected['source'].name}'s transcripts carries no "
+                    f"timestamp, so the records up to the stamp cannot be told from the ones "
+                    f"after it")
+            if moment > until:
+                continue
         seen = True
         if model:
             models.add(model)
@@ -998,7 +1023,10 @@ def _aggregate(collected: dict) -> dict:
             sides[side][c] += parts[c]
     both = {c: sides["main"][c] + sides["subagents"][c] for c in TOKEN_COMPONENTS}
     if not seen or _counted(both) <= 0:
-        raise _MeterError(f"transcript {collected['source'].name} carries no usage records")
+        raise _MeterError(
+            f"transcript {collected['source'].name} carries no usage records" if until is None
+            else f"transcript {collected['source'].name} no longer holds a usage record up to "
+                 f"the stamp's time, so the records the stamp read are gone")
     with_agents = collected["note"] is None
     return {"tokens": _counted(both), "priced": price(both), "components": both,
             "main": sides["main"], "subagents": sides["subagents"] if with_agents else None,
@@ -1075,6 +1103,79 @@ def _priced_fields(cap: dict) -> dict:
             "subagents": bool(cap.get("includes_subagents")), METER: METER_BASIS}
 
 
+def rederive(source: str, ats: list) -> dict:
+    """`{at: row}`: the reading of the transcript `source`, and of its subagents, up to each of
+    `ats`, under `METER_BASIS` - one pass over the files for every time asked.
+
+    Each row is a `REDERIVED` stamp whose `REDERIVES` is that time, or one with `tokens` None
+    and the reason no reading could be had: the transcript is gone, a record cannot be placed in
+    time, or it no longer holds any record up to that time. Never raises."""
+    base = {"kind": REDERIVED, "source": source, METER: METER_BASIS}
+    rows: dict = {}
+    path = Path(str(source))
+    try:
+        if not path.is_file():
+            raise _MeterError(f"the transcript {source} it was read from cannot be opened")
+        collected = _collect(path)
+    except _MeterError as exc:
+        return {at: {**base, REDERIVES: at, "tokens": None, "reason": str(exc)} for at in ats}
+    for at in ats:
+        until = sdlc_md.parse_iso8601(at) if at else None
+        try:
+            if until is None:
+                raise _MeterError("the stamp records no time to read the transcript up to")
+            got = _reading(_aggregate(collected, until), path, collected["note"])
+        except _MeterError as exc:
+            rows[at] = {**base, REDERIVES: at, "tokens": None, "reason": str(exc)}
+            continue
+        rows[at] = {**base, REDERIVES: at, "tokens": got["tokens"], **_priced_fields(got)}
+    return rows
+
+
+def _session_rows(state: dict, source: str) -> list[dict]:
+    """Every reading `state` holds of the meter `source`: its stamps and its legacy baseline."""
+    rows = [s for s in state.get(TOKEN_STAMPS) or []
+            if isinstance(s, dict) and str(s.get("source") or "") == source]
+    legacy = state.get(TOKEN_BASELINE)
+    if isinstance(legacy, dict) and str(legacy.get("source") or "") == source:
+        rows.append(legacy)
+    return rows
+
+
+def _rederivations(state: dict, stamp: dict | None) -> list[dict]:
+    """The `REDERIVED` rows a new stamp on `METER_BASIS` owes: one per time at which any of the
+    run's sessions, the new stamp's own included, holds a reading on an earlier basis (a stamp,
+    or the legacy baseline) and no re-derivation of it yet, each carrying the new stamp's `at`.
+    Taken when the first current-basis reading lands, while the transcripts still hold the
+    records."""
+    if not stamp or stamp.get(METER) != METER_BASIS:
+        return []
+    state = state or {}
+    owed: list[dict] = []
+    sources = [str(s.get("source")) for s in state.get(TOKEN_STAMPS) or []
+               if isinstance(s, dict) and s.get("source")]
+    for source in dict.fromkeys([*sources, str(stamp.get("source") or "")]):
+        rows = _session_rows(state, source)
+        done = {r.get(REDERIVES) for r in rows if r.get("kind") == REDERIVED}
+        ats = list(dict.fromkeys(
+            r.get("at") for r in rows
+            if r.get(METER) != METER_BASIS and isinstance(r.get("tokens"), int)
+            and r.get("at") and r.get("at") not in done))
+        if ats:
+            owed += [{**row, "at": stamp.get("at")} for row in rederive(source, ats).values()]
+    return owed
+
+
+def _append_stamp(state: dict, stamp: dict, owed: list[dict]) -> None:
+    """Append `stamp` to `state`'s stamps, after the `owed` re-derivations not already there."""
+    rows = list(state.get(TOKEN_STAMPS) or [])
+    have = {(str(r.get("source")), r.get(REDERIVES)) for r in rows
+            if isinstance(r, dict) and r.get("kind") == REDERIVED}
+    rows += [r for r in owed if (str(r.get("source")), r.get(REDERIVES)) not in have]
+    rows.append(stamp)
+    state[TOKEN_STAMPS] = rows
+
+
 def _session_baseline(repo_root: Path | str) -> dict | None:
     """The token meter reading to stamp on a run being minted, or None.
 
@@ -1128,17 +1229,17 @@ def stamp_tokens(repo_root: Path | str, kind: str,
     Appends - never overwrites. Rewriting one baseline at report time would make the delta
     zero and the run report no cost at all, while a check that merely asserts a stamp exists
     still passed. The earlier stamps are what the later ones are measured against, so losing
-    one loses a session's whole spend.
+    one loses a session's whole spend. Each reading the run holds on an earlier counting basis,
+    in any session, is re-derived beside it (`_rederivations`), and is itself left as it was.
     """
     stamp = _stamp(repo_root, kind, transcripts_dir)
     if stamp is None:
         return None
+    owed = _rederivations(read(repo_root), stamp)
 
     def apply(state: dict) -> dict:
         state = state or _blank()
-        stamps = list(state.get(TOKEN_STAMPS) or [])
-        stamps.append(stamp)
-        state[TOKEN_STAMPS] = stamps
+        _append_stamp(state, stamp, owed)
         return state
 
     _mutate(repo_root, apply)
@@ -1157,6 +1258,33 @@ TOKEN_TOTAL_BASIS = ("the sum of the per-session meter deltas - a LOWER BOUND: t
 TOKEN_TOTAL_BASIS_SUBAGENTS = ("the sum of the per-session meter deltas, each reading the main "
                                "thread and every subagent transcript once per message; a "
                                "session with no closing stamp contributes nothing")
+
+
+def _one_basis(source: str, rows: list[dict], failed: dict,
+               rebase: bool) -> tuple[list[dict], int, str | None]:
+    """`(rows, rebased, why)`: one session's readings, all on the run's one counting basis.
+
+    In a run holding no reading on `METER_BASIS` (`rebase` False) a session is read as it always
+    was: a page filed from those readings re-derives unchanged. Once the run holds one, in any
+    session, each earlier-basis reading is read through its `REDERIVED` row instead, and
+    `rebased` counts the moments re-derived. One with no re-derivation gives `why`, and no
+    total: the difference of two counting bases is not a spend, and neither is their sum."""
+    if not rebase:
+        return [r for r in rows if r.get("kind") != REDERIVED], 0, None
+    live = [r for r in rows if r.get(METER) == METER_BASIS and r.get("kind") != REDERIVED]
+    legacy = [r for r in rows if r.get(METER) != METER_BASIS]
+    redone = {r.get(REDERIVES): r for r in rows if r.get("kind") == REDERIVED}
+    owed = [r for r in legacy if r.get("at") not in redone]
+    if owed:
+        reasons = sorted({failed.get((source, r.get("at")))
+                          or "no re-derivation of it was recorded" for r in owed})
+        return rows, 0, (
+            f"{len({r.get('at') for r in owed})} reading(s) of {source} were taken on an "
+            f"earlier counting basis and "
+            f"cannot be re-derived under the current one ({'; '.join(reasons)}), and the "
+            f"difference of two counting bases is not a spend")
+    moments = {r.get("at") for r in legacy}
+    return live + [redone[r.get("at")] for r in legacy], len(moments), None
 
 
 def _priced_delta(spans: list[list[dict]]) -> dict:
@@ -1183,8 +1311,12 @@ def _priced_delta(spans: list[list[dict]]) -> dict:
                 bool(max(rows, key=lambda r: r["tokens"]).get("subagents")) for rows in spans)}
 
 
-def _total_basis(includes: bool) -> str:
-    return TOKEN_TOTAL_BASIS_SUBAGENTS if includes else TOKEN_TOTAL_BASIS
+def _total_basis(includes: bool, rebased: int) -> str:
+    text = TOKEN_TOTAL_BASIS_SUBAGENTS if includes else TOKEN_TOTAL_BASIS
+    if rebased:
+        text += (f"; {rebased} reading(s) taken on an earlier counting basis were re-derived "
+                 f"from the transcript, up to the moment each was taken, under the current one")
+    return text
 
 
 def run_token_total(state: dict, current: dict | None = None) -> dict:
@@ -1199,7 +1331,7 @@ def run_token_total(state: dict, current: dict | None = None) -> dict:
     supplied for them is already in it.
 
     Each term is `last - first` WITHIN one transcript, so every subtraction is of two readings
-    of the same meter. That is the rule
+    of the same meter, and on ONE counting basis (`_one_basis`). That is the rule
     `retro.run_attributed_tokens` enforces by refusing a cross-session baseline; summing per
     session keeps it and still reports a run closed across sessions, which is the shape that
     read `not attributable` before.
@@ -1209,8 +1341,14 @@ def run_token_total(state: dict, current: dict | None = None) -> dict:
     the legacy shape a `current` reading (a `session_tokens` result) supplies the closing end of
     the one delta available; without it the baseline alone is reported as the opening reading.
     """
-    stamps = [s for s in (state.get(TOKEN_STAMPS) or [])
-              if isinstance(s, dict) and s.get("source") and isinstance(s.get("tokens"), int)]
+    every = [s for s in (state.get(TOKEN_STAMPS) or []) if isinstance(s, dict)]
+    failed = {(str(s.get("source") or ""), s.get(REDERIVES)): s.get("reason") for s in every
+              if s.get("kind") == REDERIVED and not isinstance(s.get("tokens"), int)}
+    # The run is read on ONE basis: the current one as soon as any of its readings, or any
+    # re-derivation, is on it. A re-derivation travels with its session and is stamped with the
+    # reading that caused it, so a subset of sessions, or a window, decides the same way.
+    rebase = any(s.get(METER) == METER_BASIS for s in every)
+    stamps = [s for s in every if s.get("source") and isinstance(s.get("tokens"), int)]
     if stamps:
         by_session: dict[str, list[dict]] = {}
         for s in stamps:
@@ -1233,8 +1371,15 @@ def run_token_total(state: dict, current: dict | None = None) -> dict:
         shape = ("stamps" if not folded else
                  f"stamps, with the opening reading taken from the legacy {TOKEN_BASELINE} "
                  f"this run predates the open stamp")
-        total, covered, uncovered, spans = 0, [], [], []
+        total, covered, uncovered, spans, rebased = 0, [], [], [], 0
         for src, rows in by_session.items():
+            rows, redone, why = _one_basis(src, rows, failed, rebase)
+            if why:
+                return {"tokens": None, "priced": None, "components": None,
+                        "priced_reason": why, "includes_subagents": False, "sessions": [],
+                        "session_count": 0, "uncovered": [], "shape": shape, "model": model,
+                        "basis": TOKEN_TOTAL_BASIS, "reason": f"not attributable: {why}"}
+            rebased += redone
             if len(rows) < 2:
                 # ONE reading covers no delta. Named, never guessed at and never dropped
                 # silently: an unqualified total over a partially stamped run is a partial one.
@@ -1260,19 +1405,33 @@ def run_token_total(state: dict, current: dict | None = None) -> dict:
         return {"tokens": total, **priced, "sessions": sorted(covered),
                 "session_count": len(covered), "uncovered": sorted(uncovered), "shape": shape,
                 "reason": None, "model": model,
-                "basis": _total_basis(priced["includes_subagents"])}
+                "basis": _total_basis(priced["includes_subagents"], rebased)}
     base = state.get(TOKEN_BASELINE)
     if isinstance(base, dict) and isinstance(base.get("tokens"), int):
         shape = f"the legacy single {TOKEN_BASELINE} (one reading, not a stamp list)"
         if (isinstance(current, dict) and isinstance(current.get("tokens"), int)
                 and current.get("source") == base.get("source")):
+            rebased = 0
+            if current.get(METER) == METER_BASIS and base.get(METER) != METER_BASIS:
+                # The closing reading is on the current basis and the opening one is not: the
+                # opening one is re-derived, never subtracted across bases.
+                base = rederive(str(base.get("source")), [base.get("at")])[base.get("at")]
+                if not isinstance(base.get("tokens"), int):
+                    why = (f"the opening reading was taken on an earlier counting basis and "
+                           f"cannot be re-derived under the current one ({base.get('reason')})")
+                    return {"tokens": None, "priced": None, "components": None,
+                            "priced_reason": why, "includes_subagents": False,
+                            "sessions": [str(current.get("source") or "")], "session_count": 0,
+                            "uncovered": [], "shape": shape, "model": None,
+                            "basis": TOKEN_TOTAL_BASIS, "reason": f"not attributable: {why}"}
+                rebased = 1
             ends = [{**base, "tokens": int(base["tokens"])}, {**current, "subagents": bool(
                 current.get("includes_subagents", current.get("subagents")))}]
             priced = _priced_delta([ends])
             return {"tokens": max(0, int(current["tokens"]) - int(base["tokens"])), **priced,
                     "sessions": [str(base["source"])], "session_count": 1, "uncovered": [],
                     "shape": shape, "model": current.get("model"), "reason": None,
-                    "basis": _total_basis(priced["includes_subagents"])}
+                    "basis": _total_basis(priced["includes_subagents"], rebased)}
         why = (f"only an opening reading of {base['tokens']} is recorded, from "
                f"{base.get('source')}, and no closing reading of that same meter "
                f"is available - the difference of two meters is not a spend")

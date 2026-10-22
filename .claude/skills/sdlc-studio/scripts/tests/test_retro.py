@@ -1387,11 +1387,13 @@ class TokenCaptureIsTiedToTheRetroItRecords(InteractiveSprintFixture):
     def _state(self, batch, *, tokens: int, source: Path,
                started: str = "2026-07-16T00:00:00Z",
                ended: str = "2026-07-16T02:00:00Z") -> None:
-        """A CLOSED run with a sound baseline, so only COVERAGE can refuse either path."""
+        """A CLOSED run with a sound baseline, taken on the meter's current counting basis, so
+        only COVERAGE can refuse either path."""
         run_state.write(str(self.root), {
             "schema": 1, "run_id": "RUN-EARLIER", "started_at": started, "ended_at": ended,
             "outcome": run_state.GOAL_REACHED, "goal": None, "batch": list(batch),
-            run_state.TOKEN_BASELINE: {"tokens": tokens, "source": str(source)}})
+            run_state.TOKEN_BASELINE: {"tokens": tokens, "source": str(source),
+                                       run_state.METER: run_state.METER_BASIS}})
 
     def test_a_later_unrelated_run_is_not_this_retro_s_spend(self) -> None:
         # the reproduction: sprint A closes, `sprint plan --write` opens sprint B, and A's
@@ -3116,7 +3118,8 @@ class UnsourcedBaselineTests(unittest.TestCase):
             meter = tr / "s.jsonl"
             meter.write_text(json.dumps({"message": {"usage": {"input_tokens": 900000}}}) + "\n",
                              encoding="utf-8")
-            self._state(root, {"tokens": 100000, "source": str(meter)})
+            self._state(root, {"tokens": 100000, "source": str(meter),
+                               run_state.METER: run_state.METER_BASIS})
             cap = retro.run_attributed_tokens(str(root), "RETRO9001", transcripts_dir=str(tr))
             self.assertEqual(cap["tokens"], 800000)
 

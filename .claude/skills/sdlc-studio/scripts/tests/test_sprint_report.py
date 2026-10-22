@@ -3847,6 +3847,7 @@ class CostRowTests(ReportOfRecordBase):
         state = json.loads((self.root / "sdlc-studio" / ".local"
                             / "run-state.json").read_text(encoding="utf-8"))
         state["session_token_baseline"]["source"] = str(src)
+        state["session_token_baseline"][run_state.METER] = run_state.METER_BASIS
         (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(
             json.dumps(state), encoding="utf-8")
         with mock.patch.dict(os.environ, {run_state.TRANSCRIPTS_ENV: str(transcripts)}):

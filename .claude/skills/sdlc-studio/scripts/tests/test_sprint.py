@@ -6165,7 +6165,9 @@ class ApplySignoffTailTests(unittest.TestCase):
                 encoding="utf-8")
             _close_state(root, scaffolded_retro="RETRO0001",
                          session_token_baseline={"tokens": 900_000, "source": str(src),
-                                                 "at": "2026-07-16T00:00:00Z"})
+                                                 "at": "2026-07-16T00:00:00Z",
+                                                 # on the meter's current counting basis
+                                                 "meter": _load().run_state.METER_BASIS})
             _signoffable_story(root)
             _close_retro(root, batch="US0101")
             mod = _load()

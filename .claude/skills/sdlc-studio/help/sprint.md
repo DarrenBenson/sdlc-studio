@@ -75,8 +75,11 @@ minutes) and 2.0 (1 hour), cache read 0.1 (D0390). The report's Estimates lead w
 cost` row, and the close report's COST line states the same figure, each with the input +
 output + cache-write sum beside it as a component; that sum is the `Tokens` row. A session
 whose subagents directory is absent, or holds no `agent-*.jsonl`, reads the main thread alone
-and says so, as a lower bound. A run whose stamps predate the priced meter keeps the page it
-had: its Estimates carry no `Priced cost` row, and the close report its unpriced line.
+and says so, as a lower bound. Once a run holds a reading by this meter, each reading an
+earlier meter took for it, in any session, is re-derived from its transcript up to the moment
+it was taken, and the total's basis says so. Where the transcript no longer holds those
+records, the total reads not attributable: never a difference, or a sum, across two counting
+rules. A run whose stamps all predate the priced meter keeps the page it had.
 
 **The compulsory checklist is part of that report, not a second document.** It carries one row per
 STAGE of the cycle - the pre-plan reconcile, the goal's seat review, the grooming gate, the run

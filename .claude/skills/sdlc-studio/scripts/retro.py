@@ -2005,6 +2005,29 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
             f"not attributable: {rid} took its baseline in session {Path(base['source']).name} "
             f"but this close is running in {Path(cap['source']).name} - two different meters, "
             f"so their difference is not a spend")}
+    rebased = ""
+    if (cap.get(run_state.METER) == run_state.METER_BASIS
+            and base.get(run_state.METER) != run_state.METER_BASIS):
+        # The opening reading was taken on an earlier counting basis (per record, or the main
+        # thread alone) and the current one on this basis: the opening reading is re-derived from
+        # the transcript up to its own time - the run's stamps carry it once a stamp on this
+        # basis has landed - and never subtracted across the two bases.
+        at = base.get("at")
+        redone = next((s for s in state.get(run_state.TOKEN_STAMPS) or []
+                       if isinstance(s, dict) and s.get("kind") == run_state.REDERIVED
+                       and str(s.get("source") or "") == str(base["source"])
+                       and s.get(run_state.REDERIVES) == at), None) or run_state.rederive(
+            str(base["source"]), [at])[at]
+        if not isinstance(redone.get("tokens"), int):
+            return {"tokens": None, "reason": (
+                f"not attributable: {rid}'s opening reading of {baseline:,} was taken on an "
+                f"earlier counting basis and cannot be re-derived under the current one "
+                f"({redone.get('reason')}), and the difference of two counting bases is not a "
+                f"spend")}
+        rebased = (f"; the opening reading of {baseline:,}, taken on an earlier counting basis, "
+                   f"was re-derived from the transcript up to {base.get('at')} as "
+                   f"{redone['tokens']:,} under the current one")
+        baseline = redone["tokens"]
     delta = cap["tokens"] - baseline
     if delta <= 0:
         return {"tokens": None, "reason": (
@@ -2023,7 +2046,7 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
              f"when the run opened " + (
                  "(input + output + cache write, once per message, over the main thread and "
                  "its subagent transcripts)" if whole else
-                 "(input + output + cache creation; cache reads excluded)"))
+                 "(input + output + cache creation; cache reads excluded)") + rebased)
     bound = (f"a LOWER BOUND, not the run's cost: the meter read the main thread's transcript "
              f"and no subagent's, so any delegated work no one supplied a total for is missing "
              f"from it")

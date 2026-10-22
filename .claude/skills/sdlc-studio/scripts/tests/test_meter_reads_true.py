@@ -18,7 +18,9 @@ Pinned here, one class per criterion's Verify line:
 * the run total carries the priced delta and each component's delta, and a run whose stamps
   carry no priced figure reports `priced` None with a reason (AC3);
 * a supplied builder total is not added over a reading that holds the subagents, and is still
-  added over one that does not (AC4).
+  added over one that does not (AC4);
+* a reading taken on an earlier counting basis is re-derived from the transcript up to its own
+  time, never subtracted from, or summed with, one on the current basis (US1097 AC1).
 
 Every fixture is a throwaway transcript directory in the harness's layout. Run from the repo
 root:
@@ -32,6 +34,7 @@ import importlib
 import io
 import json
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -478,6 +481,162 @@ class MeterDelegatedTests(_Case):
                                  "provenance": self.rs.SUPPLIED}]}
         self.assertEqual((253_000, 1),
                          sr._run_tokens_actual(legacy, self.rs.run_token_total(legacy)))
+
+
+class OpenStampBasisTests(_Case):
+    """US1097 AC1: a reading taken on an earlier counting basis is re-derived from the
+    transcript up to its own time, never subtracted from, or summed with, one on the current
+    basis."""
+
+    def _timed(self, name: str) -> _Workspace:
+        """A workspace whose transcript records carry their times, as the harness writes them."""
+        ws = _Workspace(self.tmp / name, agents=False)
+        shutil.rmtree(ws.tx.dir)
+        ws.tx = _Transcripts(ws.tx.dir)
+        env = unittest.mock.patch.dict(os.environ, {self.rs.TRANSCRIPTS_ENV: str(ws.tx.dir)})
+        env.start()
+        self.addCleanup(env.stop)
+        return ws
+
+    def _legacy(self, ws: _Workspace, *readings: tuple) -> None:
+        """The run's readings as an earlier meter wrote them: counted per record (three records
+        a message), main thread only, naming no basis. The first is the opening one and the
+        baseline."""
+        stamps = [{"tokens": 3 * _tokens(_sum(*usages)), "source": str(ws.tx.main),
+                   "at": _iso(at), "kind": kind, "model": MODEL} for kind, at, usages in readings]
+        base = {k: stamps[0][k] for k in ("tokens", "source", "at")}
+        self.rs.update(ws.root, **{self.rs.TOKEN_BASELINE: base, self.rs.TOKEN_STAMPS: stamps})
+
+    def _opened_before_the_change(self, name: str) -> _Workspace:
+        ws = self._timed(name)
+        ws.tx.main_says("msg_main_1", MAIN_1, at=T0)
+        ws.tx.agent_says("a1", "msg_agent_a", AGENT_A, at=T0 + timedelta(minutes=1))
+        ws.open()
+        self._legacy(ws, ("open", T0 + timedelta(minutes=5), (MAIN_1,)))
+        ws.tx.main_says("msg_main_2", MAIN_2, at=T0 + timedelta(minutes=10))
+        ws.tx.agent_says("b2", "msg_agent_b", AGENT_B, at=T0 + timedelta(minutes=12), depth=2)
+        return ws
+
+    def test_an_open_stamp_on_an_earlier_basis_is_re_derived_not_subtracted(self) -> None:
+        """MUTANTS: the earlier-basis open stamp subtracted from a current-basis reading (3,975,
+        where the run spent 2,975: RUN-01M5EM9N's open stamp is 48,420,326 per record and
+        19,227,104 once per message on the main thread); the re-derivation reading past the
+        stamp's time (the open moment re-derived as the whole transcript, 7,305, not 4,330); a
+        re-derivation that cannot be had read as none owed (the gone records' run then reads one
+        uncovered reading, and its reason names no basis change)."""
+        ws = self._opened_before_the_change("held")
+        report = self.rs.stamp_tokens(ws.root, "report")          # the close's reading
+        spent = _sum(MAIN_2, AGENT_B)
+        redone = [s for s in ws.state()[self.rs.TOKEN_STAMPS] if s["kind"] == self.rs.REDERIVED]
+        self.assertEqual(
+            [(_iso(T0 + timedelta(minutes=5)), report["at"], _tokens(_sum(MAIN_1, AGENT_A)))],
+            [(s[self.rs.REDERIVES], s["at"], s["tokens"]) for s in redone],
+            "the open moment re-derived once, main thread and subagents, by the reading that "
+            "took it")
+
+        total = self.rs.run_token_total(ws.state())
+        self.assertEqual(2_975, total["tokens"])
+        self.assertEqual(_tokens(spent), total["tokens"])
+        self.assertEqual(_priced(spent), total["priced"])
+        self.assertIn("1 reading(s) taken on an earlier counting basis were re-derived",
+                      total["basis"])
+        self.assertEqual(_tokens(spent), ws.row(ws.page(), "Tokens")["est_actual"]["value"],
+                         "the report forms the same total")
+        cap = _live("retro").run_attributed_tokens(ws.root, RETRO)
+        self.assertEqual(_tokens(spent), cap["tokens"], cap)
+        self.assertIn(f"re-derived from the transcript up to {_iso(T0 + timedelta(minutes=5))} "
+                      f"as {_tokens(_sum(MAIN_1, AGENT_A)):,}", cap["basis"])
+
+        # The transcript no longer holds the records up to the open stamp when the first
+        # current-basis reading lands: not attributable, naming the basis change.
+        gone = self._opened_before_the_change("gone")
+        lines = gone.tx.main.read_text(encoding="utf-8").splitlines()
+        gone.tx.main.write_text("\n".join(lines[3:]) + "\n", encoding="utf-8")
+        (gone.tx.subagents / "agent-a1.jsonl").unlink()
+        self.rs.stamp_tokens(gone.root, "report")
+        total = self.rs.run_token_total(gone.state())
+        self.assertIsNone(total["tokens"], total)
+        self.assertIn("taken on an earlier counting basis and cannot be re-derived",
+                      total["reason"])
+        self.assertIn("no longer holds a usage record up to the stamp's time", total["reason"])
+        self.assertEqual("NOT MEASURED", gone.row(gone.page(), "Tokens")["est_actual"]["value"])
+        cap = _live("retro").run_attributed_tokens(gone.root, RETRO)
+        self.assertIsNone(cap["tokens"], cap)
+        self.assertIn("was taken on an earlier counting basis and cannot be re-derived",
+                      cap["reason"])
+
+    def test_a_session_wholly_on_an_earlier_basis_is_re_derived_with_the_run(self) -> None:
+        """MUTANT: the rule applied per session, not per run - the session whose readings were
+        all taken on the earlier basis keeps its per-record delta (6,990, where it spent 2,330)
+        and is summed with the other session's current-basis one."""
+        ws = self._timed("sessions")
+        ws.tx.main_says("msg_main_1", MAIN_1, at=T0)
+        ws.open()
+        ws.tx.main_says("msg_main_2", MAIN_2, at=T0 + timedelta(minutes=10))
+        self._legacy(ws, ("open", T0 + timedelta(minutes=5), (MAIN_1,)),
+                     ("handoff", T0 + timedelta(minutes=15), (MAIN_1, MAIN_2)))
+        # The run resumes in a second session, whose transcript is now the newest.
+        later = ws.tx.dir / "5e5510n-0000-4000-8000-000000000002.jsonl"
+        _Transcripts._append(later, _Transcripts._records(
+            "msg_later_1", MAIN_1, T0 + timedelta(minutes=30), "/work/repo"))
+        self.rs.stamp_tokens(ws.root, "resume")
+        _Transcripts._append(later, _Transcripts._records(
+            "msg_later_2", AGENT_B, T0 + timedelta(minutes=40), "/work/repo"))
+        self.rs.stamp_tokens(ws.root, "report")
+
+        total = self.rs.run_token_total(ws.state())
+        self.assertEqual(_tokens(_sum(MAIN_2)) + _tokens(_sum(AGENT_B)), total["tokens"], total)
+        self.assertEqual(2, total["session_count"])
+        self.assertIn("2 reading(s) taken on an earlier counting basis were re-derived",
+                      total["basis"])
+
+    def test_a_run_holding_only_its_legacy_baseline_is_re_derived(self) -> None:
+        """MUTANTS: the re-derivation owed only by the sessions the earlier stamps name (a run
+        whose one earlier-basis reading is its legacy baseline reads not attributable at its
+        first current-basis stamp, where it spent 2,975); the baseline subtracted from a
+        current-basis closing reading (3,975)."""
+        ws = self._opened_before_the_change("baseline")
+        self.rs.update(ws.root, **{self.rs.TOKEN_STAMPS: []})
+        spent = _tokens(_sum(MAIN_2, AGENT_B))
+        closing = self.rs.run_token_total(ws.state(), self.rs.session_tokens(ws.root))
+        self.assertEqual(spent, closing["tokens"], closing)
+        self.assertIn("1 reading(s) taken on an earlier counting basis were re-derived",
+                      closing["basis"])
+        self.rs.stamp_tokens(ws.root, "report")
+        total = self.rs.run_token_total(ws.state())
+        self.assertEqual(spent, total["tokens"], total)
+        self.assertIn(f"the legacy {self.rs.TOKEN_BASELINE}", total["shape"])
+        self.assertEqual(spent, _live("retro").run_attributed_tokens(ws.root, RETRO)["tokens"])
+
+    def test_a_span_or_a_window_ending_before_the_change_is_never_measured_across_it(
+            self) -> None:
+        """MUTANTS: a unit span opened on the earlier basis measured to a current-basis end
+        (its tokens read 0, a difference across two bases, where they are not measured); the
+        re-derivations stamped with the earlier reading's own time, so a page measured to a
+        moment before the first current-basis reading is rebased (2,330, where it was filed at
+        the per-record 6,990)."""
+        ws = self._timed("span")
+        ws.tx.main_says("msg_main_1", MAIN_1, at=T0)
+        ws.open()
+        ws.tx.main_says("msg_main_2", MAIN_2, at=T0 + timedelta(minutes=10))
+        started = T0 + timedelta(minutes=11)
+        self._legacy(ws, ("open", T0 + timedelta(minutes=5), (MAIN_1,)),
+                     ("unit-start", started, (MAIN_1, MAIN_2)))
+        self.rs.update(ws.root, **{self.rs.UNIT_ACTUALS: {UNITS[0]: {
+            "minutes": 0.0, "tokens": 0, "started_at": _iso(started), "start_tokens": 6_990,
+            "open": True, "start_source": str(ws.tx.main)}}})
+        sr = _live("sprint_report")
+        end = T0 + timedelta(minutes=20)
+        filed = self.rs.run_token_total(sr._metered(ws.state(), end))
+        self.assertEqual(6_990, filed["tokens"], "premise: the page as it was filed")
+
+        ws.tx.main_says("msg_main_3", AGENT_B, at=T0 + timedelta(minutes=12))
+        entry = self.rs.record_unit_actual(ws.root, UNITS[0], "Done", terminal=True)
+        self.assertIsNone(entry["tokens"], entry)
+        self.assertEqual(filed, self.rs.run_token_total(sr._metered(ws.state(), end)),
+                         "the page measured to before the change re-derives unchanged")
+        self.assertEqual(_tokens(_sum(MAIN_2, AGENT_B)),
+                         self.rs.run_token_total(ws.state())["tokens"])
 
 
 if __name__ == "__main__":

@@ -64,11 +64,13 @@ class VelocityRowModelTests(unittest.TestCase):
         (self.root / "sdlc-studio" / "retros" / f"{rid}-x.md").write_text(
             f"# {rid}: x\n\n> **Date:** 2026-10-0{n}\n> **Batch:** {uid}\n", encoding="utf-8")
         src = str(self._transcript(1000))
+        rs = _live("lib.run_state")
+        basis = {rs.METER: rs.METER_BASIS}     # a reading on the meter's current basis
         stamp = {"tokens": 1000 * n, "source": src, "at": f"2026-10-0{n}T09:00:00Z",
-                 "kind": "open", "model": MODEL}
+                 "kind": "open", "model": MODEL, **basis}
         state = {"schema": 1, "run_id": f"RUN-{n}", "started_at": f"2026-10-0{n}T09:00:00Z",
                  "ended_at": None, "outcome": "running", "goal": "done", "batch": [uid],
-                 "session_token_baseline": {"tokens": 1000 * n, "source": src},
+                 "session_token_baseline": {"tokens": 1000 * n, "source": src, **basis},
                  "session_token_stamps": [stamp]}
         p = self.root / "sdlc-studio" / ".local" / "run-state.json"
         p.parent.mkdir(parents=True, exist_ok=True)
