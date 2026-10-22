@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_selection_reaches_loaders.py, changelog.d/BG1000.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .githooks/pre-commit, .claude/skills/sdlc-studio/help/gate.md, AGENTS.md, sdlc-studio/tsd.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_selection_reaches_loaders.py, changelog.d/BG1000.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .githooks/pre-commit, .claude/skills/sdlc-studio/help/gate.md, AGENTS.md, sdlc-studio/tsd.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py
 > **Evidence:** BG0993's commit on 2026-10-08: the hook selected 3311 tests, passed all but a known timing flake, and left test_lean_close_shows_the_page red at 3bc1620e; the QA reviewer found it. Measured with gate.reach_index at 9e2a86ba: 71 of 77 load_script edges missed.
 > **Created:** 2026-10-08
 > **Created-by:** sdlc-studio file
@@ -46,3 +46,4 @@ Recognise `load_script("x")` in `_LOADER_NAME`; select a module whose `test-cens
 | 2026-10-22 | sdlc | Affects gains help/gate.md: its selection bullet still described direct edges only, which BG1000 made false (repair agent's finding) |
 | 2026-10-22 | sdlc | Correction (US1087 QA review, 2026-10-22): 0d32fb0d's D0386 paragraph refers to tree e8bc34cc, the tree of its worktree original 030cc8e2; the cherry-pick on main has tree 10a799a5, proven only within the next push tip |
 | 2026-10-22 | sdlc | Affects gains AGENTS.md and sdlc-studio/tsd.md: both said a docs or artefact commit runs no suites, which BG1000 made false (round-1 QA review) |
+| 2026-10-22 | sdlc | Affects gains test_lean_test_selection.py: its module docstring named three routes and said a docs or artefact commit runs no unit suite, which BG1000 made false (round-2 repair's sweep) |

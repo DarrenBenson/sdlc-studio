@@ -123,12 +123,13 @@ How a commit's selection is made, and why it is safe to keep it narrow:
 - **Routes, read from the test sources.** A changed test module selects itself; `x.py` (or
   `x.sh`) selects `test_x.py`; a module that imports `x` or loads it by name (`load_script("x")`
   included) is selected for it, and so is a module that imports a fixture test module which does
-  (one level, no further); and a module whose `test-census-subject` header names a changed path
-  is selected for it. A change to a widely imported helper selects its importers, not the whole
-  suite. A change none of these reach runs **no** unit suite per commit, and says so: docs,
-  templates and artefacts no module names, a library reached only through another script, a hook
-  no module declares as its census subject, and test infrastructure such as `conftest.py` or
-  `pytest.ini`.
+  (one level, no further; the fixture's imports and loads are inherited, not its name or census
+  subject); and a module whose `test-census-subject` header names a changed path is selected for
+  it. A change to a widely imported helper selects its importers, not the whole suite. A change
+  none of these reach runs **no** unit suite per commit, and says so: a library no test module
+  imports, loads, is named for or declares, which tests drive only through another script, and a
+  file that is not `.py` or `.sh` (a doc, template, artefact, hook or `pytest.ini`) that no
+  module declares as its census subject.
 - **The push is the backstop.** Whatever the selection misses, the full suite at the push
   boundary catches. A boundary never selects and never reuses a verdict.
 - **An unchanged tree reuses the last green verdict.** Every tracked file is hashed by content,

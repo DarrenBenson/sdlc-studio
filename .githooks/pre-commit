@@ -353,10 +353,11 @@ fi
 collect
 
 # Unit tests: the commit runs the test modules its staged change reaches, and none when it
-# reaches none - an artefact commit, a doc no test module declares as its census subject, or
-# code no test module imports, loads (directly or through a fixture module it imports) or is
-# named for. `gate.py --suite-decision --staged` answers with a `suite-decision: run|skip` sentinel and
-# one `suite-selector:` line per module. What it misses, the full suite at push catches.
+# reaches none. A module is reached when it is a staged file, is named for a staged code file,
+# imports or loads one (directly or through a fixture test module it imports), or names a staged
+# path in its `test-census-subject` header. `gate.py --suite-decision --staged` answers with a
+# `suite-decision: run|skip` sentinel and one `suite-selector:` line per module. What it misses,
+# the full suite at push catches.
 #
 # The suites RUN in the commit-msg hook, not here. Git invokes pre-commit before the commit
 # message exists, so only commit-msg can refuse a message defect before the suites are paid

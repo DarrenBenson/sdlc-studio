@@ -1,9 +1,11 @@
 """US0880: a commit's tests finish inside a 90-second budget.
 
 A commit runs only the test modules its change reaches - the changed test module, `test_x.py`
-for `x.py`, and the modules that import or load `x` by name - in parallel where pytest-xdist is
-installed, and reports its elapsed time against 90 seconds without ever refusing on it. A docs
-or artefact commit runs no unit suite; the full suite at push is the backstop for both.
+for `x.py`, the modules that import or load `x` by name (directly or through one fixture test
+module they import) and the modules whose `test-census-subject` header names a changed path - in
+parallel where pytest-xdist is installed, and reports its elapsed time against 90 seconds without
+ever refusing on it. A docs or artefact commit runs only the modules whose census header names a
+file it changes; the full suite at push is the backstop for whatever selection misses.
 
 The hook cases DRIVE THE REAL HOOKS in throwaway repositories. Only the selection-speed case
 reads this repository, because its criterion is about this repository.

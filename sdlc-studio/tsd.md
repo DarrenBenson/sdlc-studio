@@ -572,9 +572,10 @@ the Node one from `package.json`.
    fail on push. `npm install` closes that gap.
 2. **Commit message (local, enforced):** `.githooks/commit-msg` checks the message rules first,
    so a message defect is refused in seconds, then runs only the test modules the staged change
-   selects (those it imports, loads or is named for), in parallel. The commit's time is reported
-   against an advisory 90-second budget, not refused, and a docs or artefact commit runs no
-   suites. `.githooks/commit-msg --list` prints its lanes.
+   selects (`gate.py --suite-decision --help` names the routes), in parallel. The commit's time is
+   reported against an advisory 90-second budget, not refused, and a docs or artefact commit runs
+   only the modules whose `test-census-subject` names a file it stages.
+   `.githooks/commit-msg --list` prints its lanes.
 3. **Push (local, enforced):** `.githooks/pre-push` runs its steps in this order. It checks the
    gate's prerequisites (`tools/gate_prereqs.py check --refusing`). For a tag, it checks that
    `docs/known-issues.md` agrees with the bug corpus at the tagged commit (`tools/known_issues.py

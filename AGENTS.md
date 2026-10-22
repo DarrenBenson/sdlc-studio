@@ -190,10 +190,10 @@ holding a `.local/forward-port.pin` marker.
 every check except markdownlint is a plain Python or bash command** - do not skip the gate
 because npm is missing.
 
-**Budget the time.** A commit runs only the test modules its staged change imports, loads or is
-named for, in parallel, and reports its time against a 90-second budget; a docs or artefact commit
-runs none. A change to a hub script still selects large modules, so give a commit a 10-minute
-timeout. The full suite runs at push.
+**Budget the time.** A commit runs only the test modules its staged change reaches, in parallel,
+and reports its time against a 90-second budget; a docs or artefact commit runs only the modules
+whose `test-census-subject` names a file it stages. A change to a hub script still selects large
+modules, so give a commit a 10-minute timeout. The full suite runs at push.
 
 **The gate spans two hooks, cheapest first.** `pre-commit` runs the cheap guards and decides
 whether the suites are needed; `commit-msg` checks the message rules and only then runs them.

@@ -877,11 +877,12 @@ def _clip_reason(text: str, limit: int = 300) -> str:
 def _full_suite(root: str) -> dict:
     """PUSH-BOUNDARY lane: every test module of both suites, run ONCE.
 
-    Per-commit selection follows a test module's imports and loads (its own, and those of one
-    fixture test module it imports), its name and its `test-census-subject` header, so a change
-    none of those reach selects nothing on a commit: a library reached only through another
-    script, a hook no module declares as its census subject, or test infrastructure such as
-    `conftest.py` or `pytest.ini`. This lane is what catches those.
+    Per-commit selection follows what a test module states about itself: its own path, its name,
+    its imports and loads (and those of one fixture test module it imports) and its
+    `test-census-subject` header. A change none of those reach selects nothing on a commit: a
+    library no test module imports, loads, is named for or declares, which tests drive only
+    through another script, or a file that is not `.py` or `.sh` (a hook, a doc, `pytest.ini`)
+    that no module declares as its census subject. This lane is what catches those.
     Run as the commit hook runs a selection (`run_tests_plan`): across every core under
     pytest-xdist, the `serial_only` tests after. A red run names each failing test and keeps the
     whole output in `sdlc-studio/.local/boundary-suite-last.log`, since the gate prints one line.
@@ -2239,10 +2240,11 @@ def record_suite_verdict(root: str = ".", *, run: str, status: str = "green",
 # are DIRECT: a hub such as `sdlc_md` is imported by nearly every script, so following a
 # script's dependents transitively selects most of the suite on every commit. Between test
 # modules, one that imports a fixture test module inherits what that module imports or loads,
-# one level deep.
-# Whatever these routes miss - a library reached only through another script, a hook or a docs
-# page no module declares as its census subject, test infrastructure such as conftest.py or
-# pytest.ini - selects NOTHING per commit and is caught by the full suite at the push boundary.
+# one level deep; it does not inherit the fixture's name or census subject.
+# Whatever these routes miss selects NOTHING per commit and is caught by the full suite at the
+# push boundary: a library no test module imports, loads, is named for or declares, which tests
+# drive only through another script (`lib/tiers.py`), and a file that is not `.py` or `.sh` (a
+# hook, a docs page, pytest.ini) that no module declares as its census subject.
 # That is the price of a commit that stays fast, and the skip reason says so.
 
 #: Where the suites live, as repo-relative directories.
@@ -2274,9 +2276,9 @@ _FROM_IMPORT = re.compile(
     r"^[ \t]*from[ \t]+([\w.]+)[ \t]+import[ \t]+(?:\(([^)]*)\)|([^\n#]*))", re.M)
 _PLAIN_IMPORT = re.compile(r"^[ \t]*import[ \t]+([^\n#]*)", re.M)
 
-#: How a test module NAMES the script it loads dynamically. Most modules here build their
-#: subject with `spec_from_file_location` or the shared `loader.load_script`, so there is no
-#: import statement to read.
+#: How a test module NAMES the script it loads dynamically. Many modules here build their
+#: subject with `spec_from_file_location` or the shared `loader.load_script` rather than an
+#: import, so there is no import statement to read.
 _LOADER_NAME = re.compile(
     r"""spec_from_file_location\(\s*["']([a-z_][a-z0-9_]*)["']"""
     r"""|_load\(\s*["']([a-z_][a-z0-9_]*)["']"""
@@ -2284,9 +2286,15 @@ _LOADER_NAME = re.compile(
     r"""|SCRIPTS\s*/\s*["']([a-z_][a-z0-9_]*)\.py["']""",
     re.IGNORECASE)
 
-#: The header a test module declares its subject with, when that subject is a file no import
-#: reaches: a document, a template, a hook.
+#: The header a test module names its subject with, `# test-census-subject: <path>`. The subject
+#: may be any file. For one that is not code (a document, a hook) the header is the only route
+#: that selects the module; for a code file it also selects a module that tests the file without
+#: importing, loading or being named for it. Read as this repository's `tools/test_census.py`
+#: reads it: the FIRST marker in the file's first `_CENSUS_HEAD_LINES` lines, wherever it sits
+#: among them, so neither a second marker nor a marker line inside a fixture's string further
+#: down claims a subject.
 _CENSUS_SUBJECT = re.compile(r"^#[ \t]*test-census-subject:[ \t]*(\S+)[ \t]*$", re.M)
+_CENSUS_HEAD_LINES = 40
 
 
 def _imported_names(text: str) -> set[str]:
@@ -2333,8 +2341,9 @@ def _selection_indexes(root: str) -> tuple[dict, dict]:
                          for m in _LOADER_NAME.finditer(text))
             reach[rel] = names
             by_stem.setdefault(module.stem.lower(), rel)
-            if "test-census-subject" in text:       # a third of modules carry one
-                for m in _CENSUS_SUBJECT.finditer(text):
+            if "test-census-subject" in text:       # over a third of modules carry one
+                head = "\n".join(text.splitlines()[:_CENSUS_HEAD_LINES])
+                if m := _CENSUS_SUBJECT.search(head):
                     census.setdefault(m.group(1), set()).add(rel)
     out: dict = {}
     for rel, names in reach.items():
@@ -2371,8 +2380,9 @@ def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
     `{"resolved": bool, "selectors": [...], "total": int, "excluded": int, "reason": str}`.
     `resolved` False means nothing is known about the change - no suites to select from, or a
     changed-file probe that could not answer - and the caller runs everything. Resolved with no
-    selectors is an answer: nothing the change touches is imported, loaded or named by a test
-    module, so the commit runs no unit suite and the push's full run is the check.
+    selectors is an answer: no changed file is a test module, and no test module imports, loads,
+    is named for or declares as its census subject a changed file, so the commit runs no unit
+    suite and the push's full run is the check.
     """
     result: dict = {"resolved": False, "selectors": [], "total": 0, "excluded": 0,
                     "reason": ""}
@@ -2398,14 +2408,14 @@ def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
         selected |= index.get(stem, set())
     for path in paths:
         selected |= census.get(path, set())
-    reached = [p for p in paths if p in code or p in census]
     result["resolved"] = True
     result["selectors"] = sorted(selected)
     result["excluded"] = len(modules) - len(selected)
     if selected:
-        result["reason"] = (f"{len(selected)} of {len(modules)} test module(s) import, load, "
-                            f"are named for or declare as their census subject the "
-                            f"{len(reached)} changed file(s); "
+        result["reason"] = (f"{len(selected)} of {len(modules)} test module(s) selected for "
+                            f"the {len(paths)} changed file(s): each is one of them, or imports, "
+                            f"loads, is named for or declares as its census subject one of them "
+                            f"(an import or load counts through one fixture test module too); "
                             f"{result['excluded']} excluded, and the full suite runs at push")
     else:
         result["reason"] = ("no test module imports, loads, is named for or declares as its "
@@ -2788,12 +2798,12 @@ def build_parser() -> argparse.ArgumentParser:
                         "failure. The commit hook runs its selection through this; CI runs "
                         "tools/tests through it with --boundary push")
     p.add_argument("--suite-decision", dest="suite_decision", action="store_true",
-                   help="Answer whether the unit suites must run, and over which modules: "
-                        "those that import, load or are named for a changed code file, "
-                        "directly or through one test module they import, and those whose "
-                        "`test-census-subject` names a changed file. Skips when none is "
-                        "reached (an artefact or doc no test module names as its census "
-                        "subject, say) or when the tracked "
+                   help="Answer whether the unit suites must run, and over which modules: a "
+                        "changed test module itself, those named for a changed code file, those "
+                        "that import or load it (directly or through one fixture test module "
+                        "they import) and those whose `test-census-subject` header names a "
+                        "changed path. Skips when none is reached (an artefact or doc no test "
+                        "module declares as its census subject, say) or when the tracked "
                         "tree hashes identically to the last GREEN verdict's. A boundary runs "
                         "everything. Exits 0 when a run is needed")
     p.add_argument("--changed", nargs="+", metavar="PATH",

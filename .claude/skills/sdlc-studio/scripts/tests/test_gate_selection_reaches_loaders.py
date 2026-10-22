@@ -1,8 +1,8 @@
 """BG1000: the commit's test selection reaches every module that drives a changed file.
 
 A module that loads its script through `loader.load_script("x")`, one whose `test-census-subject`
-header names the changed file, and one that imports a fixture test module reaching the change are
-each selected. Every case drives `gate.py --suite-decision --changed` through its entry point:
+header names the changed file, and one that imports a fixture test module which imports or loads
+the changed file are each selected. Every case drives `gate.py --suite-decision --changed` through its entry point:
 the fixture cases over a tree laid out as this repository's two suites are, and AC3 over this
 repository, for the reproduction the bug was filed on.
 """
@@ -45,6 +45,13 @@ def _tree(root: Path, files: dict[str, str]) -> None:
         path.write_text(text, encoding="utf-8")
 
 
+def _declaring(subject: str, body: str = "") -> str:
+    """A test module declaring `subject` as a real one does: its census header below a module
+    docstring, never on line 1, so a reader anchored at the file's first byte finds nothing."""
+    return (f'"""Tests that pin {subject}.\n\nThe header sits below this docstring.\n"""\n'
+            f"# test-census-subject: {subject}\nfrom __future__ import annotations\n{body}")
+
+
 class SelectionReachesLoadersTests(unittest.TestCase):
 
     def test_load_script_is_a_load(self) -> None:
@@ -68,12 +75,18 @@ class SelectionReachesLoadersTests(unittest.TestCase):
 
     def test_census_subject_and_fixture_imports_reach(self) -> None:
         """AC2. Mutants: the `test-census-subject` header ignored, so a doc's own test is not
-        selected for a change to the doc; the header read only for a changed file that is not
+        selected for a change to the doc; the header matched only at the file's first byte
+        (`.match` for `.search`), so no module is selected whose header sits below its
+        docstring, as every real one does; the header read only for a changed file that is not
         code (M7), so a module whose census subject is a script, and which neither imports nor
         loads it, is not selected for a change to that script; a fixture test module's reach
-        not inherited by the module importing it; a reach inherited from a test module the
-        importer never names; inheritance followed past one level, which the changelog says it
-        is not."""
+        not inherited by the module importing it; inheritance only through `from x import`, so a
+        module importing its fixture as `import test_x` or `import test_x as y`, the form most
+        real modules use, is not selected; inheritance only from a fixture under the skill's
+        suite, so a tools/tests module importing a tools/tests fixture is not selected; a reach
+        inherited from a test module the importer never names; inheritance followed past one
+        level, which the changelog says it is not; a fixture's census subject or the file it is
+        named for inherited, which the changelog says they are not."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _tree(root, {
@@ -82,12 +95,16 @@ class SelectionReachesLoadersTests(unittest.TestCase):
                 f"{SKILL}/widget.py": "X = 1\n",
                 f"{SKILL}/gadget.py": "Y = 1\n",
                 f"{SKILL}/gizmo.py": "Z = 1\n",
+                "tools/lintkit.py": "W = 1\n",
                 f"{TOOLS_TESTS}/test_gizmo_contract.py":
-                    f"# test-census-subject: {SKILL}/gizmo.py\nNAME = 'gizmo'\n",
+                    _declaring(f"{SKILL}/gizmo.py", "NAME = 'gizmo'\n"),
                 f"{TOOLS_TESTS}/test_guide_claims.py":
-                    "# test-census-subject: docs/guide.md\nGUIDE = 'docs/guide.md'\n",
+                    _declaring("docs/guide.md", "GUIDE = 'docs/guide.md'\n"),
                 f"{TOOLS_TESTS}/test_other_claims.py":
-                    "# test-census-subject: docs/other.md\nOTHER = 'docs/other.md'\n",
+                    _declaring("docs/other.md", "OTHER = 'docs/other.md'\n"),
+                f"{TOOLS_TESTS}/test_guide_reader.py": "import test_guide_claims\n",
+                f"{SKILL_TESTS}/test_gizmo.py": "NAMED_FOR = 'gizmo'\n",
+                f"{SKILL_TESTS}/test_gizmo_reader.py": "import test_gizmo\n",
                 f"{SKILL_TESTS}/test_close_fixture.py":
                     "import loader\nwidget = loader.load_script(\"widget\")\nclass Base: pass\n",
                 f"{SKILL_TESTS}/test_close_page.py":
@@ -98,18 +115,67 @@ class SelectionReachesLoadersTests(unittest.TestCase):
                     "import loader\ngadget = loader.load_script(\"gadget\")\n",
                 f"{SKILL_TESTS}/test_gadget_page.py":
                     "import test_gadget_fixture\n",
+                f"{SKILL_TESTS}/test_gadget_alias.py":
+                    "import test_gadget_fixture as fixture\n",
+                f"{TOOLS_TESTS}/test_lint_fixture.py":
+                    "import lintkit\nclass Base: pass\n",
+                f"{TOOLS_TESTS}/test_lint_page.py":
+                    "import test_lint_fixture as base\n",
             })
             doc = _selected(root, "docs/guide.md")
             self.assertEqual({f"{TOOLS_TESTS}/test_guide_claims.py"}, doc,
-                             "a doc's change must select exactly the module naming it as subject")
-            self.assertEqual({f"{TOOLS_TESTS}/test_gizmo_contract.py"},
+                             "a doc's change must select exactly the module naming it as "
+                             "subject, not a module that imports that one")
+            self.assertEqual({f"{TOOLS_TESTS}/test_gizmo_contract.py", f"{SKILL_TESTS}/test_gizmo.py"},
                              _selected(root, f"{SKILL}/gizmo.py"),
                              "a script's change must select the module naming it as census "
-                             "subject, though that module neither imports nor loads it")
+                             "subject, though that module neither imports nor loads it, and the "
+                             "module named for it, but not a module importing that one")
             self.assertEqual({f"{SKILL_TESTS}/test_close_fixture.py", f"{SKILL_TESTS}/test_close_page.py"},
                              _selected(root, f"{SKILL}/widget.py"),
                              "a change to widget must select its fixture module and the module "
                              "importing it, and no module that imports neither")
+            self.assertEqual({f"{SKILL_TESTS}/test_gadget_fixture.py",
+                              f"{SKILL_TESTS}/test_gadget_page.py",
+                              f"{SKILL_TESTS}/test_gadget_alias.py"},
+                             _selected(root, f"{SKILL}/gadget.py"),
+                             "a plain `import test_x` or `import test_x as y` of a fixture "
+                             "must inherit what the fixture loads")
+            self.assertEqual({f"{TOOLS_TESTS}/test_lint_fixture.py",
+                              f"{TOOLS_TESTS}/test_lint_page.py"},
+                             _selected(root, "tools/lintkit.py"),
+                             "a tools/tests module must inherit what its tools/tests fixture "
+                             "imports")
+
+    def test_census_subject_and_fixture_imports_reach_by_the_census_grammar(self) -> None:
+        """AC2, the header read as the test census reads it: the first marker in a module's
+        first 40 lines. Mutants: the file read past its head (every marker, or the first
+        anywhere), so a marker line inside a fixture string far down a module that declares no
+        subject claims one; every marker in the head read, so a second marker claims a subject
+        too; the head cut short of 40 lines, so a header below a long docstring is missed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            docstring = '"""A module with a long docstring.\n' + "Detail.\n" * 30 + '"""\n'
+            _tree(root, {
+                "docs/first.md": "# First\n",
+                "docs/second.md": "# Second\n",
+                "docs/deep.md": "# Deep\n",
+                f"{TOOLS_TESTS}/test_two_markers.py":
+                    docstring + "# test-census-subject: docs/first.md\n"
+                    "# test-census-subject: docs/second.md\n",
+                f"{TOOLS_TESTS}/test_holds_a_fixture.py":
+                    docstring + "\n" * 20 +
+                    'FIXTURE = """\n# test-census-subject: docs/deep.md\n"""\n',
+            })
+            self.assertEqual({f"{TOOLS_TESTS}/test_two_markers.py"},
+                             _selected(root, "docs/first.md"),
+                             "the first marker, on line 33 below a long docstring, names the "
+                             "module's subject")
+            self.assertEqual(set(), _selected(root, "docs/second.md"),
+                             "a second marker claims no subject")
+            self.assertEqual(set(), _selected(root, "docs/deep.md"),
+                             "a marker line inside a fixture string on line 54, past the head, "
+                             "claims no subject")
 
     def test_the_reproduction_selects_the_close_modules(self) -> None:
         """AC3. Mutant: any of the three close modules the bug names missing from the selection
