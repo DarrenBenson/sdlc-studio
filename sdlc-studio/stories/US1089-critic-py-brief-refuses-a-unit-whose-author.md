@@ -50,3 +50,4 @@
 | --- | --- | --- |
 | 2026-10-20 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-21 | Claude Opus 5.5 | Regroomed on the run-three goal review's two rounds (engineering, product and qa seats; D0384) |
+| 2026-10-22 | sdlc | Correction (US1087 QA review, 2026-10-22): e58c7bcd's D0386 paragraph names host-proven tree 0be4e30d, the tree of its worktree original cb49765b; the cherry-pick on main has tree 25bf3cdc, proven only within the push tip 69951ff0 (gate green) |

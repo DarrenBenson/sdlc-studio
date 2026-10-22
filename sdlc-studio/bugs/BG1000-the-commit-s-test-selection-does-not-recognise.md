@@ -44,3 +44,4 @@ Recognise `load_script("x")` in `_LOADER_NAME`; select a module whose `test-cens
 | 2026-10-08 | sdlc-studio | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Regroomed on the run-three goal review's two rounds (engineering, product and qa seats; D0384) |
 | 2026-10-22 | sdlc | Affects gains help/gate.md: its selection bullet still described direct edges only, which BG1000 made false (repair agent's finding) |
+| 2026-10-22 | sdlc | Correction (US1087 QA review, 2026-10-22): 0d32fb0d's D0386 paragraph refers to tree e8bc34cc, the tree of its worktree original 030cc8e2; the cherry-pick on main has tree 10a799a5, proven only within the next push tip |

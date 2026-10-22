@@ -36,3 +36,4 @@ Runs read 2-3 times more expensive than they were, and the forecast inherits the
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-21 | Claude Opus 5.5 | Filed |
+| 2026-10-22 | sdlc | Correction (US1087 QA review, 2026-10-22): 2a1a0fdd's D0386 paragraph names tree 20fc1a57, the tree of its worktree original e503255e; the cherry-pick on main has tree 9900ea5a, proven only within the next push tip |
