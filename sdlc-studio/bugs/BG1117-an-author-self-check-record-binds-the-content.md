@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_refusal.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_survives_a_later_unit.py, changelog.d/BG1117.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/help/review.md, sdlc-studio/reviews/author-self-checks.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_refusal.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_survives_a_later_unit.py, changelog.d/BG1117.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/help/review.md, sdlc-studio/reviews/author-self-checks.md, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/templates/config-defaults.yaml
 > **Evidence:** Run three, 2026-10-22: self_check_gap on main after e58c7bcd; US1088 and US1089 re-recorded with the same claims and mutants, the author field naming the commit that moved each digest.
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio file
@@ -42,3 +42,4 @@ Re-recording unchanged evidence becomes routine, which teaches authors to re-rec
 | 2026-10-22 | Claude Opus 5.5 | Filed |
 | 2026-10-22 | sdlc | AC2 from US1089's QA review: the review tooling's own writes stale a record whose Affects declares its logs; joins run three before BG1113 |
 | 2026-10-22 | sdlc | Affects gains reference-review.md, help/review.md and the self-check log's header: each says the digest binds whole files, which this fix makes false (its builder's finding) |
+| 2026-10-22 | sdlc | Affects gains reference-config.md and config-defaults.yaml: both state the old whole-content rule (round-1 QA review) |
