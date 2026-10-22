@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 146 |
+| Open | 147 |
 | In Progress | 0 |
 | Fixed | 809 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 38 |
-| **Total** | **1127** |
+| **Total** | **1128** |
 
 ## All Bugs
 
@@ -203,6 +203,7 @@
 | [BG1125](BG1125-the-review-brief-s-unit-diff-is-the.md) | The review brief's unit diff is the whole run's diff over the unit's files, not the unit's own change, so on a shared file the 400-line cap is spent on other units' work and the unit's own hunks are cut | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1126](BG1126-a-seat-requested-amendment-of-an-open-run.md) | A seat-requested amendment of an open run's goal leaves the run state on the old goal, so the close's goal read reports 'a different goal' | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1127](BG1127-a-run-whose-plan-time-baseline-is-folded.md) | A run whose plan-time baseline is folded in as a second reading beside its open stamp reads a measured token cost of 0, so RUN-01M5EM9N's close would report no spend | Open | High | 2026-10-22 | 2026-10-22 |
+| [BG1128](BG1128-the-close-s-goal-panel-reads-only-the.md) | The close's goal panel reads only the latest goal-review round, while the plan now reads every round on the latest wording, so after an owing seat records alone the two disagree on which seats have answered | Open | Low | 2026-10-22 | 2026-10-22 |
 
 ## Archived Releases
 

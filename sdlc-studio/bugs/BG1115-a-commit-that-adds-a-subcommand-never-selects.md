@@ -16,6 +16,8 @@ Per-commit selection (gate.py `_selection_indexes`) selects a test module for a 
 
 A second instance (US1090 build, 2026-10-22): tools/tests/test_lean_commit_lanes.py reads AGENTS.md and declares no census subject, so a commit to AGENTS.md selects only the module that names it as its subject, and never runs this one.
 
+A third instance (BG1095's build, 2026-10-22): tools/tests/test_lean_gate_host_docs.py now pins .githooks/pre-push and tools/remote-gate.sh, but its census subject is only sdlc-studio/tsd.md and gate.py reads one subject per module, so a commit changing only the hook, remote-gate.sh or trd.md does not run it.
+
 ## Steps to Reproduce
 
 Stage a change to any script's `build_parser` and run the pre-commit hook: `test_cli_grammar.py` is not among the selected modules.
