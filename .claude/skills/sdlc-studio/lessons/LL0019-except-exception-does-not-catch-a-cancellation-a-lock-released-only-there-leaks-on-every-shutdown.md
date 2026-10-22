@@ -4,7 +4,7 @@ id: LL0019
 title: except Exception does not catch a cancellation - a lock released only there leaks on every shutdown
 tags: [asyncio, python, shutdown, locks, bug-class]
 added: 2026-07-13
-origin: sdlc-studio-lens
+origin: a consuming project
 ---
 
 **Lesson.** A background task took a DB lock by setting status='syncing', and released it in an  recovery block. asyncio.CancelledError is a BaseException, so a graceful shutdown - which is exactly what delivers a cancellation into an in-flight task - sailed straight past that handler. The status stayed 'syncing'. Nothing anywhere reset it, and the guard that reads it refused the project for ever.

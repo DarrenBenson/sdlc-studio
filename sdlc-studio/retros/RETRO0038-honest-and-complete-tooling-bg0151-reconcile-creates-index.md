@@ -9,7 +9,7 @@
 
 - **BG0151 (5pt) - the old-linking false-positive fix.** `child_parent` now reads the legacy
   `> **Change Request:**` epic->CR link, so `children_of` sees an old-flow-decomposed CR's epics.
-  On ../homelab this dropped `discovery_awaiting` 24 -> 16 and `migrate` needs-refine 12 -> 4 (the
+  On a consuming project this dropped `discovery_awaiting` 24 -> 16 and `migrate` needs-refine 12 -> 4 (the
   false positives cleared; the remainder genuinely childless).
 - **US0158 (5pt) - reconcile creates a missing index.** `reconcile apply` materialises a missing
   pipeline or meta index from its template (`write_empty_index`) and populates it; dry-run reports
@@ -28,17 +28,17 @@
 ## Blocked / deferred
 
 - Nothing blocked. Two big items surfaced this session are captured, NOT built: **RFC0042** (make the
-  sprint close-down un-skippable - the homelab agent shipped without a retro because nothing forced
+  sprint close-down un-skippable - a consuming project's agent shipped without a retro because nothing forced
   it) and a DoR/DoD RFC to raise next (operator directive: finish this sprint, then investigate).
 
 ## What went well
 
-- **Dogfooding on a real project earned its keep.** Pointing the skill at ../homelab surfaced BG0151
+- **Dogfooding on a real project earned its keep.** Pointing the skill at a consuming project surfaced BG0151
   - a false-positive in a feature shipped two sprints ago that misreports EVERY old-flow project.
   The bug was invisible to the test suite because every fixture used new-style links; a real project
   had old-style links.
 - **The honest-split design contained the blast radius.** BG0151's false positives were reporting
-  only: `migrate --apply` never acts on needs-refine, so it could not have harmed homelab - a live
+  only: `migrate --apply` never acts on needs-refine, so it could not have harmed that project - a live
   validation of the deterministic-vs-needs-human contract shipped last sprint.
 - **The independent review, again, on-theme.** Dani caught that `_delivered_points` counted
   NON-delivered batch units as "delivered" - an over-claim, in a sprint whose whole theme is honest
@@ -47,10 +47,10 @@
 ## What was hard / what stalled
 
 - **The operator corrected a doctrine I had been repeating.** "Tokens UNMEASURED (interactive)" was
-  wrong - the harness tracks tokens deterministically (the homelab audit reported ~6.9M). I had
+  wrong - the harness tracks tokens deterministically (the consuming project's audit reported ~6.9M). I had
   conflated "the skill's runner telemetry did not capture it" with "unmeasurable". US0161/US0162
   fix it; the lesson is that a silence in one measurement path is not proof the quantity is unknowable.
-- **The close-down is mandated but not enforced.** The homelab agent shipped and deployed without a
+- **The close-down is mandated but not enforced.** The consuming project's agent shipped and deployed without a
   retro - not from laziness but because `gate --require-retro` is opt-in and nothing runs it
   automatically. A control that only fires when someone remembers to run it is the exact
   silent-control failure this project keeps fighting (LL0027). Captured as RFC0042.
@@ -69,7 +69,7 @@
 - A mandated ceremony with no mechanical enforcement is a silent control - it fires only when
   someone remembers, which under delivery pressure is never. The close-down needs the same
   un-skippable treatment the quality gate got (RFC0042); the machine version of this bug was the
-  whole homelab sprint.
+  consuming project's whole sprint.
 
 ## Estimate vs actual
 
@@ -91,10 +91,10 @@ tokens-per-point over the 22 delivered points. Not-yet-captured, not unknowable.
 
 | Finding | Disposition |
 | --- | --- |
-| Old-flow CRs false-flagged as un-refined (found dogfooding homelab) | closed: BG0151 fixed this sprint (children_of reads the legacy link), verified on homelab + re-review. |
+| Old-flow CRs false-flagged as un-refined (found dogfooding a consuming project) | closed: BG0151 fixed this sprint (children_of reads the legacy link), verified on that project + re-review. |
 | `_delivered_points` counted non-delivered batch units as delivered (found in review) | declined: no ticket - fixed this sprint (filter to terminal units) + test. |
 | audit cost gate over-warned vs its own docs; tokens-without-points was silent (found in review) | declined: no ticket - both fixed this sprint (raised the token threshold; added the no-denominator note) + tests. |
-| The sprint close-down is mandated but not mechanically enforced (homelab agent shipped without a retro) | filed: RFC0042 (make the close-down un-skippable) - a future sprint. |
+| The sprint close-down is mandated but not mechanically enforced (a consuming project's agent shipped without a retro) | filed: RFC0042 (make the close-down un-skippable) - a future sprint. |
 | DoR/DoD as editable per-project artefacts + gates | declined: no ticket yet - raising as its own RFC immediately after this sprint closes, per the operator directive to finish the sprint first. |
 
 <!-- file one with: scripts/file_finding.py -->

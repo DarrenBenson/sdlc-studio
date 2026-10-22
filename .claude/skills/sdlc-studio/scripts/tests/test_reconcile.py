@@ -266,7 +266,7 @@ class MissingIndexCreationTests(unittest.TestCase):
             self.assertFalse(reconcile.apply_type("bug", root).get("created_index"))
 
     def test_meta_index_created_from_template(self) -> None:
-        # the homelab case: a first dated review file, no reviews/_index.md
+        # a consuming project's case: a first dated review file, no reviews/_index.md
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             rv = root / "sdlc-studio" / "reviews" / "RV0001-unified.md"

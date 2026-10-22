@@ -4,7 +4,7 @@
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG0960.md
-> **Evidence:** Field report, 2026-10-07, sprint plan on sdlc-studio-lens. BG-01M46B27 already declared Affects and Points. The refusal named the missing Verify line, then the fix block printed only the Affects and Points templates.
+> **Evidence:** Field report, 2026-10-07, sprint plan on a consuming project. BG-01M46B27 already declared Affects and Points. The refusal named the missing Verify line, then the fix block printed only the Affects and Points templates.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Grok 4.7; agent; v1

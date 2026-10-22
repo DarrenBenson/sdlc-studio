@@ -8892,7 +8892,7 @@ Measured, the hole is 8 destinations across 3 modules.
   `missing-index` drift used to be detect-only - an operator had to hand-author the index. Now
   `reconcile apply` materialises a missing pipeline or meta index (reviews/retros) from
   `templates/indexes/<type>.md` via `write_empty_index` and appends the census rows; dry-run reports
-  would-create. Surfaced dogfooding the homelab audit.
+  would-create. Surfaced dogfooding a consuming project's audit.
 
 - **An audit cost estimate + pre-flight gate (EP0044, CR0276).** New `audit_cost.py` estimates a
   run's agents/tokens/wall-time from the lens count and flags it large or small (calibrated to the
@@ -8913,7 +8913,7 @@ Measured, the hole is 8 destinations across 3 modules.
   `> **Change Request:** CR-XXXX`, not `Parent:`) looked childless - making `status`/`hint`
   `discovery_awaiting` and `migrate` report already-decomposed CRs as awaiting refinement. False
   positives on every old-flow project. `child_parent` now recognises the legacy `Change Request:`
-  epic->CR link. Found dogfooding ../homelab (24 false "awaiting" -> 16, 12 false migrate -> 4).
+  epic->CR link. Found dogfooding a consuming project (24 false "awaiting" -> 16, 12 false migrate -> 4).
 
 - **`migrate` - one command that reviews every artefact and upgrades where safe (EP0042, RFC0041).**
   An operator upgrading a consuming project had to know to run `project upgrade`, `migrate_v3

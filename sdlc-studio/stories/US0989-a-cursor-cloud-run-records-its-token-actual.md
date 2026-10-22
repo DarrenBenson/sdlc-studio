@@ -15,7 +15,7 @@
 
 **As a** solo founder-engineer running a sprint as a Cursor cloud agent (Maya)
 **I want** the close to record the run's token spend from Cursor's usage API when a key is available
-**So that** a Cursor sprint such as sdlc-studio-lens RUN-01M48BNK publishes a measured token actual instead of NOT MEASURED
+**So that** a Cursor sprint such as a consuming project's RUN-01M48BNK publishes a measured token actual instead of NOT MEASURED
 
 ## Acceptance Criteria
 

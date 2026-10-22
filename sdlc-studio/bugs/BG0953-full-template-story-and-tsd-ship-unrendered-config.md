@@ -4,7 +4,7 @@
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/templates/core/story.md, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, changelog.d/BG0953.md
-> **Evidence:** Reproduced 2026-10-06 in a scratch project with skill 6.1.0+12 (aa19a2e3); observed in homelab US0230 promote
+> **Evidence:** Reproduced 2026-10-06 in a scratch project with skill 6.1.0+12 (aa19a2e3); observed in a consuming project's US0230 promote
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -12,7 +12,7 @@
 
 ## Summary
 
-`artifact.py new --type story --template full` and `artifact.py promote --id <id> --to full` both write the two quality-floor lines from templates/core/story.md verbatim: `> **Minimum edge cases:** {{config.story_quality.edge_cases.api}} for API stories, {{config.story_quality.edge_cases.other}} for others` and the matching test-scenarios line. The values exist in templates/config-defaults.yaml (`story_quality)` and the project config, but nothing substitutes `{{config.*}}` keys, so every full story carries two lines the author must hand-delete, and the floor the line exists to state is never shown. templates/core/tsd.md uses the same syntax. Seen live in homelab on 2026-10-06 promoting US0230.
+`artifact.py new --type story --template full` and `artifact.py promote --id <id> --to full` both write the two quality-floor lines from templates/core/story.md verbatim: `> **Minimum edge cases:** {{config.story_quality.edge_cases.api}} for API stories, {{config.story_quality.edge_cases.other}} for others` and the matching test-scenarios line. The values exist in templates/config-defaults.yaml (`story_quality)` and the project config, but nothing substitutes `{{config.*}}` keys, so every full story carries two lines the author must hand-delete, and the floor the line exists to state is never shown. templates/core/tsd.md uses the same syntax. Seen live in a consuming project on 2026-10-06 promoting US0230.
 
 ## Steps to Reproduce
 

@@ -6,7 +6,7 @@
 > **Type:** Feature
 > **Size:** L
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
-> **Evidence:** sdlc-studio-lens RUN-01M48BNK, closed 2026-10-06. open_run stamped session_token_baseline null. session_tokens reported no harness transcript directory at ~/.claude/projects/-workspace. The sprint report left tokens NOT MEASURED. The session was a Cursor cloud agent, not Claude Code.
+> **Evidence:** a consuming project's RUN-01M48BNK, closed 2026-10-06. open_run stamped session_token_baseline null. session_tokens reported no harness transcript directory at ~/.claude/projects/-workspace. The sprint report left tokens NOT MEASURED. The session was a Cursor cloud agent, not Claude Code.
 > **Date:** 2026-10-06
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Cursor Agent; agent; v1

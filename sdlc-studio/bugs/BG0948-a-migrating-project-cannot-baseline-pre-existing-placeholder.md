@@ -11,7 +11,7 @@
 
 ## Summary
 
-`validate.py check --emit-baseline` emits only the criteria baseline. There is no emitter for `.placeholder-baseline.txt`, whose contract says it is 'captured from the checker's own output, never hand-written', so a project upgraded from an old skill (sdlc-studio-lens: 32 Done stories with an unfilled Story Points token) is left with errors it can only clear by hand-writing the file. Separately, `_baselined` keys on `(BG|US|EP|CR|RFC)\d{4}`, so a short-ULID (schema 3) artefact can never match a baseline line. Raised from sdlc-studio-lens RV0003 (observability gap analysis, 2026-10-05).
+`validate.py check --emit-baseline` emits only the criteria baseline. There is no emitter for `.placeholder-baseline.txt`, whose contract says it is 'captured from the checker's own output, never hand-written', so a project upgraded from an old skill (a consuming project: 32 Done stories with an unfilled Story Points token) is left with errors it can only clear by hand-writing the file. Separately, `_baselined` keys on `(BG|US|EP|CR|RFC)\d{4}`, so a short-ULID (schema 3) artefact can never match a baseline line. Raised from that project's RV0003 (observability gap analysis, 2026-10-05).
 
 ## Steps to Reproduce
 

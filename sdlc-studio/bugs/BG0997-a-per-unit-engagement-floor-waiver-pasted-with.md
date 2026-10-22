@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py, changelog.d/BG0997.md
-> **Evidence:** Field report, 2026-10-07, grooming Sprint 0 on sdlc-studio-lens (skill 6.1.0). Thirteen waivers were recorded as rule:engagement-floor:<display id>, the form the floor's own remedy prints, for ids such as BG-01KX8B04. engagement_floor.py check then reported waived 0 and all thirteen still violating. Rewriting the same subjects with the dash removed (rule:engagement-floor:BG01KX8B04) waived them.
+> **Evidence:** Field report, 2026-10-07, grooming Sprint 0 on a consuming project (skill 6.1.0). Thirteen waivers were recorded as rule:engagement-floor:<display id>, the form the floor's own remedy prints, for ids such as BG-01KX8B04. engagement_floor.py check then reported waived 0 and all thirteen still violating. Rewriting the same subjects with the dash removed (rule:engagement-floor:BG01KX8B04) waived them.
 > **Created:** 2026-10-08
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Grok 4.7; agent; v1

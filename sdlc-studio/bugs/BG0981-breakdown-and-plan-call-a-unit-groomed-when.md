@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py, changelog.d/BG0981.md
-> **Evidence:** homelab RUN-01M4B5HP, US0185 AC1, 2026-10-07
+> **Evidence:** a consuming project's RUN-01M4B5HP, US0185 AC1, 2026-10-07
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -12,7 +12,7 @@
 
 ## Summary
 
-homelab US0185 AC1 carried ``- **Verify:** `file utilities/fleet/deploy-manifest.yaml` `` (the expression wrapped in backticks). `sprint.py breakdown` reported the batch `0 ungroomed`, `sprint.py plan --write` opened the run on it, and only `verify_ac.py run` at build time refused it: ``"unrecognised verifier '`file' - use a DSL verb ... or prefix an explicit `shell`"``. The grooming gate checks that a criterion HAS a Verify line, not that the line is one the runner accepts, so an AC that can never pass reaches the sprint as groomed. Seen 2026-10-07, skill 6.1.0+12.
+In a consuming project, US0185 AC1 carried ``- **Verify:** `file utilities/fleet/deploy-manifest.yaml` `` (the expression wrapped in backticks). `sprint.py breakdown` reported the batch `0 ungroomed`, `sprint.py plan --write` opened the run on it, and only `verify_ac.py run` at build time refused it: ``"unrecognised verifier '`file' - use a DSL verb ... or prefix an explicit `shell`"``. The grooming gate checks that a criterion HAS a Verify line, not that the line is one the runner accepts, so an AC that can never pass reaches the sprint as groomed. Seen 2026-10-07, skill 6.1.0+12.
 
 ## Steps to Reproduce
 

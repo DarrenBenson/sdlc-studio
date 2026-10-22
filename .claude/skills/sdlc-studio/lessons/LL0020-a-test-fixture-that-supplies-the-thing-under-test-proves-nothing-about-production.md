@@ -4,7 +4,7 @@ id: LL0020
 title: A test fixture that supplies the thing under test proves nothing about production
 tags: [testing, fixtures, observability, false-green, bug-class]
 added: 2026-07-13
-origin: sdlc-studio-lens
+origin: a consuming project
 ---
 
 **Lesson.** An application never called logging.basicConfig. Uvicorn configures only its own loggers, so the root logger had no handler and EVERY application log line was silently discarded in production - from the first commit onwards.

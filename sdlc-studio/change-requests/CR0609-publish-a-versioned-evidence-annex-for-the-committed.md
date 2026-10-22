@@ -14,7 +14,7 @@
 
 ## Summary
 
-`reference-schema.md` contracts only the markdown artefacts and names 'a future separately versioned annex' as the route for evidence consumers. A consumer such as sdlc-studio-lens now needs that annex: the report of record (`reports/RPT####.json`), the signed run record (`reports/runs/RUN-*.json`), `lessons.jsonl`, `retros/evidence/{actuals,forecasts,audit-cost}-*.jsonl`, and the table columns of `critic-verdicts.md`, `VELOCITY.md`, `decisions.md` and `deploy-log.md` are all uncontracted. The report shape has already changed once (RPT0002-0005 schema 1; RPT0006 on schema 2, with `lessons`, `lane_yield` and `unmeasured` appearing partway through). Raised from sdlc-studio-lens RV0003 (observability gap analysis, 2026-10-05).
+`reference-schema.md` contracts only the markdown artefacts and names 'a future separately versioned annex' as the route for evidence consumers. A consuming project now needs that annex: the report of record (`reports/RPT####.json`), the signed run record (`reports/runs/RUN-*.json`), `lessons.jsonl`, `retros/evidence/{actuals,forecasts,audit-cost}-*.jsonl`, and the table columns of `critic-verdicts.md`, `VELOCITY.md`, `decisions.md` and `deploy-log.md` are all uncontracted. The report shape has already changed once (RPT0002-0005 schema 1; RPT0006 on schema 2, with `lessons`, `lane_yield` and `unmeasured` appearing partway through). Raised from that project's RV0003 (observability gap analysis, 2026-10-05).
 
 ## Impact
 

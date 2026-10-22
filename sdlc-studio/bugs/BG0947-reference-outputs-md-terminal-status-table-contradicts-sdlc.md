@@ -11,7 +11,7 @@
 
 ## Summary
 
-The Status Vocabulary table in reference-outputs.md disagrees with the code that every gate reads: it lists bug terminal as Closed, Won't Fix, Superseded (code adds Fixed, Verified); story terminal includes Deferred (code does not); CR terminal includes Deferred (code does not); RFC Accepted 'stays live' (code treats it as terminal); and it has no rows for issue or charter. An external reader (sdlc-studio-lens copied its vocabulary) or an agent following the reference gets the wrong answer. Raised from sdlc-studio-lens RV0003 (observability gap analysis, 2026-10-05). BG0001 fixed an earlier divergence; the equality test it proposed would have caught this.
+The Status Vocabulary table in reference-outputs.md disagrees with the code that every gate reads: it lists bug terminal as Closed, Won't Fix, Superseded (code adds Fixed, Verified); story terminal includes Deferred (code does not); CR terminal includes Deferred (code does not); RFC Accepted 'stays live' (code treats it as terminal); and it has no rows for issue or charter. An external reader (a consuming project copied its vocabulary) or an agent following the reference gets the wrong answer. Raised from that project's RV0003 (observability gap analysis, 2026-10-05). BG0001 fixed an earlier divergence; the equality test it proposed would have caught this.
 
 ## Steps to Reproduce
 

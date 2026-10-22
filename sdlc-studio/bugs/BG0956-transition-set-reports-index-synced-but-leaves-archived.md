@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, changelog.d/BG0956.md
-> **Evidence:** homelab 2026-10-06: 94-bug close batch; 31 archive rows hand-synced afterwards
+> **Evidence:** a consuming project, 2026-10-06: 94-bug close batch; 31 archive rows hand-synced afterwards
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -12,7 +12,7 @@
 
 ## Summary
 
-Closing 94 Fixed bugs in homelab with `transition.py set --id ... --status Closed` (skill 6.1.0+12) printed `index synced=True` for every unit, but 31 of them have their row in the archive sub-index (sdlc-studio/bugs/archive/v1.0.0/bug.md, written by archive.py), and those rows still read `Fixed`. `reconcile detect` then reports 31 status-mismatch plus a count-mismatch, and `reconcile apply` changes 0 rows: 'row not in a rewritable layout; edit it by hand'. The archive table has the same header as the live index (ID | Title | Severity | Priority | Status | Epic | Story | Created), so the layout is not exotic - the writers simply do not cover archive files while the census (`parse_index`'s union) does read them. Net effect: every transition of an archived unit creates drift that only a hand edit clears, and the sync flag claims otherwise.
+Closing 94 Fixed bugs in a consuming project with `transition.py set --id ... --status Closed` (skill 6.1.0+12) printed `index synced=True` for every unit, but 31 of them have their row in the archive sub-index (sdlc-studio/bugs/archive/v1.0.0/bug.md, written by archive.py), and those rows still read `Fixed`. `reconcile detect` then reports 31 status-mismatch plus a count-mismatch, and `reconcile apply` changes 0 rows: 'row not in a rewritable layout; edit it by hand'. The archive table has the same header as the live index (ID | Title | Severity | Priority | Status | Epic | Story | Created), so the layout is not exotic - the writers simply do not cover archive files while the census (`parse_index`'s union) does read them. Net effect: every transition of an archived unit creates drift that only a hand edit clears, and the sync flag claims otherwise.
 
 ## Steps to Reproduce
 

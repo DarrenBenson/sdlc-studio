@@ -7,7 +7,7 @@
 > **Type:** Feature
 > **Size:** M
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
-> **Evidence:** homelab consuming project, 2026-10-07/08 (RUN-01M4B5HP drift-check sprint, RUN-01M4BZZ9 HA sprint), operator-approved after a session retrospective
+> **Evidence:** a consuming project, 2026-10-07/08 (RUN-01M4B5HP drift-check sprint, RUN-01M4BZZ9 HA sprint), operator-approved after a session retrospective
 > **Date:** 2026-10-08
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -15,7 +15,7 @@
 
 ## Summary
 
-In the homelab the same engineering seat reviewed every round of every unit. Round 2 re-checked round 1's findings well, but nothing brought a different lens: US0188's blocking B2 (host cron content pushed verbatim to Kuma) was a security/SRE-shaped defect that the round-1 reviewer found only because it went looking end to end. Proposal: units flagged high-risk (`affects_production_runtime`: true, a secrets/alerting path, or points >= 8) get a second seat from a different role in the same round - or round 2 is reviewed by a different seat than round 1 - recorded on the critic ledger as distinct seats (BG0539's round-vs-seat distinction already exists). Cost is one more review on a minority of units.
+In that project the same engineering seat reviewed every round of every unit. Round 2 re-checked round 1's findings well, but nothing brought a different lens: US0188's blocking B2 (host cron content pushed verbatim to Kuma) was a security/SRE-shaped defect that the round-1 reviewer found only because it went looking end to end. Proposal: units flagged high-risk (`affects_production_runtime`: true, a secrets/alerting path, or points >= 8) get a second seat from a different role in the same round - or round 2 is reviewed by a different seat than round 1 - recorded on the critic ledger as distinct seats (BG0539's round-vs-seat distinction already exists). Cost is one more review on a minority of units.
 
 ## Acceptance Criteria
 

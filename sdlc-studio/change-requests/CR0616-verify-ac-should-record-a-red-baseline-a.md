@@ -6,7 +6,7 @@
 > **Priority:** Medium
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/reference-verify.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
-> **Evidence:** homelab US0188 AC1 (sdlc-studio/stories/US0188-*.md revision 2026-10-07); related but distinct: BG0014 (source-grep Verify lines), BG0193 (a test filter matching nothing)
+> **Evidence:** a consuming project's US0188 AC1 (sdlc-studio/stories/US0188-*.md revision 2026-10-07); related but distinct: BG0014 (source-grep Verify lines), BG0193 (a test filter matching nothing)
 > **Date:** 2026-10-07
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -14,7 +14,7 @@
 
 ## Summary
 
-TDD is the doctrine (author the Verify first, then make it pass), but nothing checks that a story's Verify expression was ever RED. A Verify that passes at planning time is green whether or not the story is delivered. Observed in the homelab consuming project (US0188 AC1, 2026-10-07): `Verify: shell grep -q drift-check utilities/monitoring/ab01-openclaw-monitoring.cron` was meant to prove the drift check was scheduled, but the file's HEADER COMMENTS already mentioned drift-check.py since an earlier story, so the AC was green before a line of US0188 existed and would have stayed green had the schedule never been added. It was caught by the author re-reading the AC, not by any tool. Proposal: `verify_ac.py baseline --id US....` (or an automatic baseline on the transition into In Progress) runs each executable Verify and records `Baseline: pass|fail (date)` beside it; `transition -> Review/Done` warns (configurable to refuse) on any AC whose baseline was `pass` and whose Verify text has not changed since - 'this AC was already green before you started'. A `manual` AC and an AC explicitly marked as a regression guard (`Baseline-expected: pass`) are exempt.
+TDD is the doctrine (author the Verify first, then make it pass), but nothing checks that a story's Verify expression was ever RED. A Verify that passes at planning time is green whether or not the story is delivered. Observed in a consuming project (US0188 AC1, 2026-10-07): `Verify: shell grep -q drift-check utilities/monitoring/ab01-openclaw-monitoring.cron` was meant to prove the drift check was scheduled, but the file's HEADER COMMENTS already mentioned drift-check.py since an earlier story, so the AC was green before a line of US0188 existed and would have stayed green had the schedule never been added. It was caught by the author re-reading the AC, not by any tool. Proposal: `verify_ac.py baseline --id US....` (or an automatic baseline on the transition into In Progress) runs each executable Verify and records `Baseline: pass|fail (date)` beside it; `transition -> Review/Done` warns (configurable to refuse) on any AC whose baseline was `pass` and whose Verify text has not changed since - 'this AC was already green before you started'. A `manual` AC and an AC explicitly marked as a regression guard (`Baseline-expected: pass`) are exempt.
 
 ## Acceptance Criteria
 

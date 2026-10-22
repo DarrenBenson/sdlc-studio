@@ -4,7 +4,7 @@ id: LL0013
 title: An AC that enumerates the paths it checks silently exempts the path it forgot
 tags: [acceptance-criteria, testing, false-green, bug-class]
 added: 2026-07-13
-origin: sdlc-studio-lens
+origin: a consuming project
 ---
 
 **Lesson.** An acceptance criterion read 'every ADDED or UPDATED document is written with its blob_sha'. A SKIPPED document is neither - so the AC was fully satisfiable while the feature was broken end to end (every pre-existing row kept a NULL blob_sha for ever, so the feature could never engage for a single real install). 752 tests and four green ACs saw nothing.

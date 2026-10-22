@@ -11,7 +11,7 @@
 
 ## Summary
 
-Found in homelab RUN-01M4EMNN (BG0259/BG0260 review). A Verify selecting a structural test and a render test ran '1 passed, 1 skipped' under the gate's pytest (no jinja2, the render test used pytest.importorskip) and was stamped Verified: yes - the behaviour the AC names was never executed where the gate runs; the author's venv ran it, so the mutation proof held only outside the gate. BG0317 made an ALL-skipped run vacuous; a mixed run still reads as a pass.
+Found in a consuming project's RUN-01M4EMNN (BG0259/BG0260 review). A Verify selecting a structural test and a render test ran '1 passed, 1 skipped' under the gate's pytest (no jinja2, the render test used pytest.importorskip) and was stamped Verified: yes - the behaviour the AC names was never executed where the gate runs; the author's venv ran it, so the mutation proof held only outside the gate. BG0317 made an ALL-skipped run vacuous; a mixed run still reads as a pass.
 
 ## Steps to Reproduce
 

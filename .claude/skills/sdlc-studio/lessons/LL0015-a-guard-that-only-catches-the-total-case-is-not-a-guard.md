@@ -4,7 +4,7 @@ id: LL0015
 title: A guard that only catches the total case is not a guard
 tags: [defence, data-loss, bug-class, review]
 added: 2026-07-13
-origin: sdlc-studio-lens
+origin: a consuming project
 ---
 
 **Lesson.** A sync engine had a guard: 'source returned no documents - refusing to delete existing documents'. It fires when the incoming manifest is COMPLETELY empty, and it duly fixed the High-severity bug it was written for.

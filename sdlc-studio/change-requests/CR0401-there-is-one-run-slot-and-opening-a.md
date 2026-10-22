@@ -8,7 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint.py
 > **Date:** 2026-07-22
 > **Created-by:** sdlc-studio file
-> **Raised-by:** agent (homelab session); human; v1
+> **Raised-by:** agent (a consuming project's session); human; v1
 
 ## Summary
 
@@ -40,4 +40,4 @@ The workarounds available today are all bad. Hand-archiving the open run to `.lo
 
 | Date | Author | Change |
 | --- | --- | --- |
-| 2026-07-22 | agent (homelab session) | Raised |
+| 2026-07-22 | agent (a consuming project's session) | Raised |

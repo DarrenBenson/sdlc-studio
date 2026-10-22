@@ -53,7 +53,7 @@ Make the contract and the parser agree. Either BLOCKING items inherit their orig
 
 - 2026-10-08, BG0993 round 1: a REJECT whose findings used semicolons inside a sentence was refused, because `record` splits ISSUES on every semicolon and the fragments carry no origin tag. The reviewer re-emitted with full stops; no word changed but punctuation.
 
-- 2026-10-12, folded in from BG1029 (filed from a homelab run, RUN-01M4EMNN): four of four independent verdicts were refused by `critic.py record --from-verdict` for a semicolon inside a finding's evidence, and the author edited each before it would record, which is the hand the independence rule keeps off a verdict. AC3 no longer offers documenting an escape as an alternative: a reviewer's semicolon survives.
+- 2026-10-12, folded in from BG1029 (filed from a consuming project's run, RUN-01M4EMNN): four of four independent verdicts were refused by `critic.py record --from-verdict` for a semicolon inside a finding's evidence, and the author edited each before it would record, which is the hand the independence rule keeps off a verdict. AC3 no longer offers documenting an escape as an alternative: a reviewer's semicolon survives.
 
 ## Revision History
 

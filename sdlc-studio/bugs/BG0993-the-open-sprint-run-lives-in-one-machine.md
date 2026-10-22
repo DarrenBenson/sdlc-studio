@@ -4,7 +4,7 @@
 > **Severity:** High
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_integrity.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_close_shows_the_page.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/BG0993.md
-> **Evidence:** homelab 2026-10-08: RPT0002 (RUN-01M4BZZ9) committed and unsigned; studypc2 .local/run-state.json = RUN-01M4B5HP (sealed); StudyPC = RUN-01KYJXE7; RUN-01M4BZZ9's state not on either
+> **Evidence:** a consuming project, 2026-10-08: RPT0002 (RUN-01M4BZZ9) committed and unsigned; studypc2 .local/run-state.json = RUN-01M4B5HP (sealed); StudyPC = RUN-01KYJXE7; RUN-01M4BZZ9's state not on either
 > **Created:** 2026-10-08
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -12,7 +12,7 @@
 
 ## Summary
 
-BG0989's class, for run state. `sprint plan` refuses while a run is open ('a project holds exactly one run at a time'), and `sprint sign` seals the open run - but both read `sdlc-studio/.local/run-state.json`, which is gitignored, so 'open' is a per-machine fact. Observed in the homelab consuming project on 2026-10-08: RUN-01M4BZZ9 was planned, built and closed on one workstation (RPT0002 committed, awaiting signature). On a second machine, after `git pull`, run-state.json still names the previous, SEALED run (RUN-01M4B5HP) - so on that machine (a) `sprint plan` would NOT refuse, opening a second concurrent run whose batch could re-select RUN-01M4BZZ9's seven carried units, and (b) `sprint sign --report RPT0002` cannot seal RPT0002, because the run it belongs to is not in this checkout's state. Nothing in the committed tree says a run is open: the report is committed, the run record (`reports/runs/RUN-*.json`) is written only at sign. The agent had already told the operator to run the sign command on the wrong machine before finding this.
+BG0989's class, for run state. `sprint plan` refuses while a run is open ('a project holds exactly one run at a time'), and `sprint sign` seals the open run - but both read `sdlc-studio/.local/run-state.json`, which is gitignored, so 'open' is a per-machine fact. Observed in a consuming project on 2026-10-08: RUN-01M4BZZ9 was planned, built and closed on one workstation (RPT0002 committed, awaiting signature). On a second machine, after `git pull`, run-state.json still names the previous, SEALED run (RUN-01M4B5HP) - so on that machine (a) `sprint plan` would NOT refuse, opening a second concurrent run whose batch could re-select RUN-01M4BZZ9's seven carried units, and (b) `sprint sign --report RPT0002` cannot seal RPT0002, because the run it belongs to is not in this checkout's state. Nothing in the committed tree says a run is open: the report is committed, the run record (`reports/runs/RUN-*.json`) is written only at sign. The agent had already told the operator to run the sign command on the wrong machine before finding this.
 
 ## Steps to Reproduce
 

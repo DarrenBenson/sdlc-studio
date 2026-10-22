@@ -40,7 +40,7 @@
 - 'The batch's served personas' (CR0621's AC) are the personas the goal traces to: its wording and, after BG1002, `--serves` (panel, confirmed).
 - `goal_trace` (sprint.py:10000) gains per-persona testable End goals and `checkable` (present only when the trace names a persona); `_render_goal_trace` and `_goal_served_lines` (sprint.py:11092) both render from that one record.
 - Advice, never a refusal (D0266, LC-008).
-- One cluster with BG1002 and G10's three CR0627 stories on `_goal_served_lines` and `_compose_seat_brief`, built in sequence: BG1002, then G10's per-seat card story (which restructures the brief), then this story. With BG1002 in, a Served-role persona such as the homelab's Household Member is listed and annotated with no further change here.
+- One cluster with BG1002 and G10's three CR0627 stories on `_goal_served_lines` and `_compose_seat_brief`, built in sequence: BG1002, then G10's per-seat card story (which restructures the brief), then this story. With BG1002 in, a Served-role persona such as a consuming project's Household Member is listed and annotated with no further change here.
 - No served-persona brief or lens is built here or in G10: the served persona reaches every seat's brief as data (these End goals, and the plan advisory's owed list).
 
 ## Triage (2026-10-21)

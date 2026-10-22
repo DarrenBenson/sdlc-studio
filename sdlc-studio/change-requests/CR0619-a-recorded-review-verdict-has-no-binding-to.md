@@ -33,7 +33,7 @@ The independent-review ledger can be edited between the reviewer and the record 
 
 ## Further evidence (2026-10-08)
 
-- Operator-relayed assessment of a consuming project's Sprint 0 (sdlc-studio-lens): 'The critic record names Tomas Reinholt as the QA reviewer on all eleven units. I wrote those verdicts in the same session that wrote the code.' Confirmed in `critic.py record` (critic.py:3316): the only self-review check compares the `--author` and `--reviewer` strings, both chosen by the caller, so the authoring session recording a verdict under a seat's name is ledgered as independent.
+- Operator-relayed assessment of a consuming project's Sprint 0: 'The critic record names Tomas Reinholt as the QA reviewer on all eleven units. I wrote those verdicts in the same session that wrote the code.' Confirmed in `critic.py record` (critic.py:3316): the only self-review check compares the `--author` and `--reviewer` strings, both chosen by the caller, so the authoring session recording a verdict under a seat's name is ledgered as independent.
 - This session's own recording on 2026-10-08 hit BG0950's refusals twice more: commentary after `BLOCKING: none`, and semicolons inside a finding, which `record` splits as findings and refuses as untagged. Each needed the reviewer to re-emit its block.
 
 ## Revision History

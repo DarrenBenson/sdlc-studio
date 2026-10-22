@@ -16,7 +16,7 @@ Gap analysis vs proven practice (research sweep 2026-07-16): DORA's four keys re
 
 ## Impact
 
-Projects that deploy (Jonah's team, the operator's homelab services) get no delivery-performance read from the skill at all; the four measures the largest body of delivery research validates are absent while every input for them is already recorded.
+Projects that deploy (Jonah's team, the services of the operator's own consuming project) get no delivery-performance read from the skill at all; the four measures the largest body of delivery research validates are absent while every input for them is already recorded.
 
 ## Acceptance Criteria
 

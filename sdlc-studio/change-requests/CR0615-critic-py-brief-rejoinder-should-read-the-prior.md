@@ -16,7 +16,7 @@
 
 Extends [[CR0329]] (Complete), which introduced the file-based `--rejoinder`; this asks that it read the ledger rather than a hand-written copy.
 
-A REJECT answered in round 2 needs `critic.py brief --unit X --seat S --rejoinder FILE`, where FILE is the round-1 VERDICT/ISSUES/BLOCKING block. The reviewer already recorded that verdict with `critic.py record --from-verdict` into reviews/critic-verdicts.md, so the author had to re-type (or copy from a transcript) a verdict the tool already holds - twice in one sprint (homelab US0185, US0186). Hand transcription is where a finding gets paraphrased or dropped between rounds.
+A REJECT answered in round 2 needs `critic.py brief --unit X --seat S --rejoinder FILE`, where FILE is the round-1 VERDICT/ISSUES/BLOCKING block. The reviewer already recorded that verdict with `critic.py record --from-verdict` into reviews/critic-verdicts.md, so the author had to re-type (or copy from a transcript) a verdict the tool already holds - twice in one sprint (a consuming project's US0185, US0186). Hand transcription is where a finding gets paraphrased or dropped between rounds.
 
 ## Impact
 

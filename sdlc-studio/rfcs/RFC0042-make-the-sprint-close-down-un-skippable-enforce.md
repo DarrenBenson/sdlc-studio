@@ -9,7 +9,7 @@
 
 ## Summary
 
-The sprint close-down (retro + lesson extraction + close gate) is MANDATED by doctrine but only ENFORCED when an agent voluntarily runs 'gate --require-retro RETROxxxx'. The normal gate and the pre-commit hook do NOT require a retro, so an agent can transition stories to Done, commit, push and deploy WITHOUT closing the sprint. Observed live on the homelab project: the agent shipped and deployed the fixes and filed the discoveries, then skipped the retro/lesson-extraction/close-gate entirely - doing it only after the operator pushed twice. Doctrine that is not mechanically enforced gets skipped under pressure - the exact reasoning that made the QUALITY gate a pre-commit hook rather than a checklist. The CLOSE gate never got that treatment. The gap is most acute for INTERACTIVE sprints (no runner run-state to close against).
+The sprint close-down (retro + lesson extraction + close gate) is MANDATED by doctrine but only ENFORCED when an agent voluntarily runs 'gate --require-retro RETROxxxx'. The normal gate and the pre-commit hook do NOT require a retro, so an agent can transition stories to Done, commit, push and deploy WITHOUT closing the sprint. Observed live on a consuming project: the agent shipped and deployed the fixes and filed the discoveries, then skipped the retro/lesson-extraction/close-gate entirely - doing it only after the operator pushed twice. Doctrine that is not mechanically enforced gets skipped under pressure - the exact reasoning that made the QUALITY gate a pre-commit hook rather than a checklist. The CLOSE gate never got that treatment. The gap is most acute for INTERACTIVE sprints (no runner run-state to close against).
 
 ## Design Options
 
@@ -18,9 +18,9 @@ The sprint close-down (retro + lesson extraction + close gate) is MANDATED by do
 - **A soft hint/status nudge only ('N delivered units since the last retro - a close is owed') - discoverable but not blocking**
 - **Combination: the soft nudge on hint/status for discoverability PLUS a blocking gate lane on push/release, so the un-skippable enforcement lands where shipping actually happens**
 
-## Root cause (from the homelab agent's own post-mortem)
+## Root cause (from that agent's own post-mortem)
 
-The homelab agent, asked why it skipped the close, was precise: it "self-certified completion from
+That agent, asked why it skipped the close, was precise: it "self-certified completion from
 memory instead of running the deterministic gate that exists to stop this. SDLC Studio has `gate
 --require-retro` precisely because agents skip the retro. I never invoked it. So nothing failed
 loudly. I had a control available and didn't run it - which is the exact silent-control failure I'd
@@ -32,7 +32,7 @@ broken until much later.
 
 ## Recommendation
 
-**Option D + a harness Stop hook.** The homelab agent independently reached the right shape: "wire a
+**Option D + a harness Stop hook.** That agent independently reached the right shape: "wire a
 Stop hook via settings.json that refuses to let a sprint-close turn end without the retro gate
 passing - so it's the harness enforcing it, not my recall. Same principle as making the check exit
 non-zero." So: (1) a **Stop hook** the skill can install that blocks a turn from ending while a
@@ -55,5 +55,5 @@ it.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-15 | sdlc-studio | Filed |
-| 2026-07-15 | sdlc-studio | Added the homelab agent's root-cause post-mortem; resolved D1 = option D + a harness Stop hook; noted this is the DoD's close clause |
+| 2026-07-15 | sdlc-studio | Added the consuming project agent's root-cause post-mortem; resolved D1 = option D + a harness Stop hook; noted this is the DoD's close clause |
 | 2026-07-19 | sdlc-studio | Decision rows closed with what shipped |

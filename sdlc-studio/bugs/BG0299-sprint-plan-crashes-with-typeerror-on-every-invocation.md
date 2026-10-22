@@ -4,7 +4,7 @@
 > **Verification depth:** functional
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new
-> **Provenance:** Hit in the homelab project trying to plan a bug-closing batch; reproduced on a bare status query
+> **Provenance:** Hit in a consuming project trying to plan a bug-closing batch; reproduced on a bare status query
 > **Raised-by:** Claude Code; human; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Severity:** High

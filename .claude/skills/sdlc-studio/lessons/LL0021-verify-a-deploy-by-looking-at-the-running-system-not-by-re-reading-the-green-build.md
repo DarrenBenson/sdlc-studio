@@ -4,7 +4,7 @@ id: LL0021
 title: Verify a deploy by looking at the running system, not by re-reading the green build
 tags: [deploy, verification, observability, process]
 added: 2026-07-13
-origin: sdlc-studio-lens
+origin: a consuming project
 ---
 
 **Lesson.** A release passed 824 unit tests, a full E2E suite, lint, type-checks and a mutation pass. It deployed cleanly, migrations ran, and /health returned ready:true with the right version. Every gate was green.

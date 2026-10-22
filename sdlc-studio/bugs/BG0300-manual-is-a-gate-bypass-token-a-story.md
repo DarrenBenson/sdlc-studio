@@ -4,7 +4,7 @@
 > **Verification depth:** functional
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new
-> **Provenance:** Raised downstream as homelab BG0144 from an independent Product review of US0151; confirmed in this repo's source
+> **Provenance:** Raised downstream as a consuming project's BG0144 from an independent Product review of US0151; confirmed in this repo's source
 > **Raised-by:** Claude Code; human; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
 > **Severity:** High
@@ -43,7 +43,7 @@ When a story reaching Done has manual ACs, require each to carry a `**Verified:*
 
 Returning None should also be distinguishable from passing at the call site: `None` currently reads as "no opinion" and is consumed as "no objection". A third state - `UNCHECKED` - that the caller must handle explicitly would have made this visible when it was written.
 
-A reference implementation of the evidence check (plus the companion `Affects`-paths-exist check, and 27 tests over real corpus shapes) is in the downstream homelab repo at `utilities/sdlc/check_done_stories.py`, written against BG0144. It runs over a 141-Done-story corpus and finds 11 failures, so the rule is enforceable in practice, not just in principle.
+A reference implementation of the evidence check (plus the companion `Affects`-paths-exist check, and 27 tests over real corpus shapes) is in the downstream consuming project at `utilities/sdlc/check_done_stories.py`, written against BG0144. It runs over a 141-Done-story corpus and finds 11 failures, so the rule is enforceable in practice, not just in principle.
 
 ## Acceptance Criteria
 

@@ -11,7 +11,7 @@
 
 ## Summary
 
-No retro finding has ever become a Bug or CR: `file_finding.py` is wired to review and never to retro. In sdlc-studio-lens, 9 retros carry a Lessons section and reference exactly 1 artefact id between them. Wire `file_finding` into retro, and add a BLOCKING gate leg: each finding must be filed (BG/CR) or declined with a reason. Declining is equally green, so honesty costs what noise costs and there is nothing to game. Untouched prose blocks the close.
+No retro finding has ever become a Bug or CR: `file_finding.py` is wired to review and never to retro. In a consuming project, 9 retros carry a Lessons section and reference exactly 1 artefact id between them. Wire `file_finding` into retro, and add a BLOCKING gate leg: each finding must be filed (BG/CR) or declined with a reason. Declining is equally green, so honesty costs what noise costs and there is nothing to game. Untouched prose blocks the close.
 
 ## Impact
 

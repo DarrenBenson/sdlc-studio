@@ -7,7 +7,7 @@
 > **Type:** Improvement
 > **Size:** S
 > **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, .claude/skills/sdlc-studio/reference-persona.md
-> **Evidence:** Operator-relayed assessment of a consuming project's Sprint 0 (sdlc-studio-lens), 2026-10-08: the product seat's opening says the project manager is the primary reader while its proficiency line still says it is cold on 'the primary persona (Darren)', and its craft goals are the old dashboard sentence. 'A review that cannot cite Maya's frustrations is reviewing a different product.' `validate.check_seats` checks role comments, headings, the demographic denylist, one card per role and provenance stamps; nothing compares a card's persona references with the cast.
+> **Evidence:** Operator-relayed assessment of a consuming project's Sprint 0, 2026-10-08: the product seat's opening says the project manager is the primary reader while its proficiency line still says it is cold on 'the primary persona (Darren)', and its craft goals are the old dashboard sentence. 'A review that cannot cite Maya's frustrations is reviewing a different product.' `validate.check_seats` checks role comments, headings, the demographic denylist, one card per role and provenance stamps; nothing compares a card's persona references with the cast.
 > **Date:** 2026-10-08
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Opus 5.5; agent; v1

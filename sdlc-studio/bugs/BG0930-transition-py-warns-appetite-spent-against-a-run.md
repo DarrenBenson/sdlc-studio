@@ -11,7 +11,7 @@
 
 ## Summary
 
-In sdlc-studio-web, transition.py printed an 'APPETITE SPENT' warning naming RUN-01M3PMW3, a run already signed over RPT0003, while status.py reported no run open. A sealed run has no appetite left to spend, so the warning describes a run that is over. Found by the v6.1 web grooming (D0326).
+In a consuming project, transition.py printed an 'APPETITE SPENT' warning naming RUN-01M3PMW3, a run already signed over RPT0003, while status.py reported no run open. A sealed run has no appetite left to spend, so the warning describes a run that is over. Found by the v6.1 web grooming (D0326).
 
 ## Steps to Reproduce
 

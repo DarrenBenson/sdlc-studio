@@ -12,7 +12,7 @@
 
 ## Summary
 
-Dogfooded during the homelab audit: reconcile detect flags a missing-index drift (e.g. reviews/_index.md absent after the first dated review file), but reconcile apply won't create it - it only fixes counts/status/rows. The agent had to hand-author the index from the template to clear real drift, which is exactly the hand-work the deterministic tooling exists to remove. The machinery already exists (`file_finding.write_empty_index` / `ensure_index` / `_ensure_meta_index).`
+Dogfooded during a consuming project's audit: reconcile detect flags a missing-index drift (e.g. reviews/_index.md absent after the first dated review file), but reconcile apply won't create it - it only fixes counts/status/rows. The agent had to hand-author the index from the template to clear real drift, which is exactly the hand-work the deterministic tooling exists to remove. The machinery already exists (`file_finding.write_empty_index` / `ensure_index` / `_ensure_meta_index).`
 
 ## Impact
 

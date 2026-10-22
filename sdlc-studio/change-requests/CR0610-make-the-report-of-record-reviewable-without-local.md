@@ -14,7 +14,7 @@
 
 ## Summary
 
-Report figures cite their `source` as `sdlc-studio/.local/run-state.json` or `.local/refusals.jsonl`, and `RUN-*.json` records `plan` as `.local/sprint-plan.json`. Those files are gitignored, so a reviewer without the operator's machine cannot follow any of them. Money is computed only by `sprint_report show` from `pricing.<model>`; the report of record carries tokens alone, so a reader who wants cost must re-price with today's prices. Raised from sdlc-studio-lens RV0003 (observability gap analysis, 2026-10-05).
+Report figures cite their `source` as `sdlc-studio/.local/run-state.json` or `.local/refusals.jsonl`, and `RUN-*.json` records `plan` as `.local/sprint-plan.json`. Those files are gitignored, so a reviewer without the operator's machine cannot follow any of them. Money is computed only by `sprint_report show` from `pricing.<model>`; the report of record carries tokens alone, so a reader who wants cost must re-price with today's prices. Raised from a consuming project's RV0003 (observability gap analysis, 2026-10-05).
 
 ## Impact
 

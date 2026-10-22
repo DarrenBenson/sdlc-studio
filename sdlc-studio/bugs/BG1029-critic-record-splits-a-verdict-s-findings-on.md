@@ -11,7 +11,7 @@
 
 ## Summary
 
-Seen on homelab RUN-01M4EMNN (2026-10-12): four of four independent verdicts were refused by `critic.py record --from-verdict` and had to be edited by the author before they would record. The return contract asks for 'semicolon-separated findings' but says nothing against a ';' INSIDE a finding, and reviewers write evidence like '`study_work_mode.json`:69; also in the parent commit' - the fragment after the ';' has no tag and the whole record is refused. BLOCKING items are also parsed as tagged findings, but the contract describes BLOCKING only as 'the subset', so an untagged BLOCKING list is refused too - that half is BG0950 (Open); this bug is the ';'-inside-a-finding half, which BG0950 does not cover. The author editing the reviewer's words to make them record is exactly the hand the independence rule keeps off the verdict.
+Seen on a consuming project's RUN-01M4EMNN (2026-10-12): four of four independent verdicts were refused by `critic.py record --from-verdict` and had to be edited by the author before they would record. The return contract asks for 'semicolon-separated findings' but says nothing against a ';' INSIDE a finding, and reviewers write evidence like '`study_work_mode.json`:69; also in the parent commit' - the fragment after the ';' has no tag and the whole record is refused. BLOCKING items are also parsed as tagged findings, but the contract describes BLOCKING only as 'the subset', so an untagged BLOCKING list is refused too - that half is BG0950 (Open); this bug is the ';'-inside-a-finding half, which BG0950 does not cover. The author editing the reviewer's words to make them record is exactly the hand the independence rule keeps off the verdict.
 
 ## Steps to Reproduce
 
@@ -29,12 +29,12 @@ Split only on ';' followed by optional space and a tag ('; [regression]', '; [ne
 
 ## Triage
 
-- Superseded by BG0950: its AC3 already required a semicolon inside one finding to be handled, and on 2026-10-12 the goal review of the first 6.2 run made it a single requirement (the finding survives, with the reviewer's words unchanged). This bug's evidence (four of four homelab verdicts refused and hand-edited) is folded into BG0950, which is in that run.
+- Superseded by BG0950: its AC3 already required a semicolon inside one finding to be handled, and on 2026-10-12 the goal review of the first 6.2 run made it a single requirement (the finding survives, with the reviewer's words unchanged). This bug's evidence (four of four verdicts refused and hand-edited in a consuming project) is folded into BG0950, which is in that run.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Filed |
-| 2026-10-12 | Claude (homelab RUN-01M4EMNN) | Scoped against BG0950: the BLOCKING-tag half is BG0950's; this bug is the ';' inside a finding. |
+| 2026-10-12 | Claude (a consuming project's RUN-01M4EMNN) | Scoped against BG0950: the BLOCKING-tag half is BG0950's; this bug is the ';' inside a finding. |
 | 2026-10-12 | Claude Opus 5.5 (triage) | Superseded by BG0950, which now carries this evidence and a non-disjunctive criterion |

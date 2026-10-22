@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG0999.md
-> **Evidence:** Field report, 2026-10-07, closing RUN-01M4B28Q on sdlc-studio-lens. Two criteria named their consumer as decisions.py waive and engagement_floor.py check. Both scripts live in the skill scripts directory. The close printed those criteria as unresolved callers, because the check looks only at the consuming project's tracked tree.
+> **Evidence:** Field report, 2026-10-07, closing RUN-01M4B28Q on a consuming project. Two criteria named their consumer as decisions.py waive and engagement_floor.py check. Both scripts live in the skill scripts directory. The close printed those criteria as unresolved callers, because the check looks only at the consuming project's tracked tree.
 > **Created:** 2026-10-08
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Grok 4.7; agent; v1

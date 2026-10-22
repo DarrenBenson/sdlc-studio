@@ -4,7 +4,7 @@ id: LL0018
 title: 'It failed' and 'it did not run' are different questions; a retry loop that conflates them never converges
 tags: [retry, idempotence, status, bug-class, convergence]
 added: 2026-07-13
-origin: sdlc-studio-lens
+origin: a consuming project
 ---
 
 **Lesson.** A sync set status='error' whenever ANY file failed - correct, it had not fully succeeded. A poller advanced its watermark only on status='synced'. So a repo with one permanently-undecodable file could never advance: it re-synced on every tick, for ever, and never converged, while sitting permanently at 'error'.

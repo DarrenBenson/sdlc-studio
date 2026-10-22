@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/templates/core/story.md, .claude/skills/sdlc-studio/reference-story.md, .claude/skills/sdlc-studio/reference-verify.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, changelog.d/BG0998.md
-> **Evidence:** Field report, 2026-10-07, verifying Sprint 0 on sdlc-studio-lens. Every new story was written from templates/core/story.md, so each criterion carried a bare Verified no with no reason. verify_ac.py run reported fail on every criterion, changes 0, with the selector passed but the criterion records Verified no. Deleting those lines and re-running stamped them yes.
+> **Evidence:** Field report, 2026-10-07, verifying Sprint 0 on a consuming project. Every new story was written from templates/core/story.md, so each criterion carried a bare Verified no with no reason. verify_ac.py run reported fail on every criterion, changes 0, with the selector passed but the criterion records Verified no. Deleting those lines and re-running stamped them yes.
 > **Created:** 2026-10-08
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Grok 4.7; agent; v1

@@ -58,10 +58,10 @@ A store that grows without bound gets evicted. That is not a hypothetical; it al
 
 | Repo | Retros | Lessons store | What the evidence says |
 | --- | --- | --- | --- |
-| sdlc-studio-lens | **9** (8 carry a `## Lessons` section) | **none at all** - no `.local/lessons.md`, no `LESSONS-SUMMARY.md` | **1** CR/BG id referenced across all 9 retros. The ceremony runs every sprint; the plumbing behind it does not exist. |
+| a consuming project | **9** (8 carry a `## Lessons` section) | **none at all** - no `.local/lessons.md`, no `LESSONS-SUMMARY.md` | **1** CR/BG id referenced across all 9 retros. The ceremony runs every sprint; the plumbing behind it does not exist. |
 | an infrastructure project | 0 | hand-rolled 750-line `docs/ops-lessons.md`, **outside** the workspace | A team that took lessons seriously built its own store because ours had no home for operational/incident lessons. It then outgrew auto-memory and was evicted. |
 | a runtime project | 4 | `.local/lessons.md` | `L-RV-L1-001` is LL0008 again: deploy reported success, container still on old code. |
-| homelab | 0 | none | No loop at all. |
+| another consuming project | 0 | none | No loop at all. |
 | sdlc-studio | 23 | 22 LLs + summary | The richest store, and the cross-project tier still has **no automatic reader**. |
 
 The pattern is consistent and it is not a motivation problem. Where the retro template prompts for

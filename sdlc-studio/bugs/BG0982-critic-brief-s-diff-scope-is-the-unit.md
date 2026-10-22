@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py, changelog.d/BG0982.md
-> **Evidence:** homelab RUN-01M4B5HP, US0185 critic brief fingerprint 3ca2252446de (before Affects was corrected), 2026-10-07
+> **Evidence:** a consuming project's RUN-01M4B5HP, US0185 critic brief fingerprint 3ca2252446de (before Affects was corrected), 2026-10-07
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

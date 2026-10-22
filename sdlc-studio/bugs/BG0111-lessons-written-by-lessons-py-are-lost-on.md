@@ -11,7 +11,7 @@
 ## Summary
 
 Two defects in the lessons mechanism, found while using it heavily on a consuming project
-(`sdlc-studio-lens`) across five sprints.
+across five sprints.
 
 ### Defect 1 (data loss): `--global` writes to the INSTALL, which is not version-controlled
 
@@ -114,4 +114,4 @@ ls ~/code/DarrenBenson/sdlc-studio/.claude/skills/sdlc-studio/lessons/LL00NN*
 
 | Date | Author | Change |
 | --- | --- | --- |
-| 2026-07-13 | Darren | Found on sdlc-studio-lens: nine lessons written across five sprints exist only in the untracked install and would be destroyed by the next skill update. |
+| 2026-07-13 | Darren | Found on a consuming project: nine lessons written across five sprints exist only in the untracked install and would be destroyed by the next skill update. |

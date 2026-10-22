@@ -32,6 +32,9 @@ _BLOCKED: set[str] = {
     "606938bb66d543079e4388b6921d4988e7f9b42d802c6e6e3f1fe305dd7f041c",
     "450dcf23e621ff10542114dd8f622660cc8b96bdb2abb02af641e69f94c7b2da",
     "09d3bbfa840850aa66cf189464b355d0e592a0dbf84070fe10dec9b11a27fbc3",
+    "8be0b5445fca6eb16d14c6f4eaff1cf1d1a3362ef660bfb2b66e74bf309b7e61",
+    "6aa3f655fe010c45b7461e423846938f9610c967417eeec7523933c9e0b0da5b",
+    "1bb23da303e7033344c38c0b3e13cc9bc8fcbe000a06d330faa92f68fbceb02b",
 }
 
 # Every tracked file is scanned. The filter is a DENYLIST, not an allowlist of suffixes: an

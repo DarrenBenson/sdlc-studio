@@ -4,7 +4,7 @@ id: LL0017
 title: A function that only ever appears inside patch() is untested, however many tests cover it
 tags: [testing, mocking, coverage, false-green, bug-class]
 added: 2026-07-13
-origin: sdlc-studio-lens
+origin: a consuming project
 ---
 
 **Lesson.** Two sprints running, the same shape shipped a HIGH bug: a brand-new function that talks to an external API, where EVERY reference to it in the test suite is a patch(...). Not one test called it.

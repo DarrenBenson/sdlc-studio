@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_affects_root_files.py, changelog.d/BG0811.md, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py
-> **Evidence:** v6.0.0-rc.1 soak: sdlc-studio-web W2 review, 2026-09-27; code: lib/sdlc_md.py affects_files
+> **Evidence:** v6.0.0-rc.1 soak: a consuming project's W2 review, 2026-09-27; code: lib/sdlc_md.py affects_files
 > **Created:** 2026-09-27
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

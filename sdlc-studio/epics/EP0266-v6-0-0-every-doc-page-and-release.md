@@ -21,7 +21,7 @@ Sprint 6 of the v6 release (D0272): the release notes, breaking changes, README,
 
 ## Notes
 
-- - 2026-09-27 (product seat, Sprint 6 planning): the website and deck units (WEB0, W1a-W5, DECK) run as sdlc-studio-web's own lean sprint on the rc.1 skill (operator ruling 2), so they are not stories in this epic; their friction is filed here as rc.1 findings. US0958 is folded into US0924. The epic gains the soak work the rc.1 notes promised: the migration rehearsed on two consuming projects and the eval re-run, plus the scripts' --help text and init's missing project version.
+- - 2026-09-27 (product seat, Sprint 6 planning): the website and deck units (WEB0, W1a-W5, DECK) run as a consuming project's own lean sprint on the rc.1 skill (operator ruling 2), so they are not stories in this epic; their friction is filed here as rc.1 findings. US0958 is folded into US0924. The epic gains the soak work the rc.1 notes promised: the migration rehearsed on two consuming projects and the eval re-run, plus the scripts' --help text and init's missing project version.
 
 ## Revision History
 

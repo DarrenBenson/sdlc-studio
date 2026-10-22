@@ -4,7 +4,7 @@
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_restamp_on_changed_expression.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, changelog.d/BG0984.md
-> **Evidence:** homelab BG0196:110-113, 2026-10-07; related BG0231
+> **Evidence:** a consuming project's BG0196:110-113, 2026-10-07; related BG0231
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -12,7 +12,7 @@
 
 ## Summary
 
-homelab BG0196 AC1's Verify line was changed from `shell bash utilities/monitoring/check-cron-drift.sh` (a retired script) to `shell python3 utilities/fleet/drift-check.py check`. A non-dry `verify_ac.py run --id BG0196` then reported `pass=2 ... changes=0` and left `**Verified:** yes (2026-08-21)` with its evidence line describing the OLD command's run. The stamp now attests, with an August date, to a check that ran in October against a different command. BG0231 (Fixed) made freshness track the AC text; this is the residual on the PASSING path: a pass under a changed expression should restamp the date, or at least mark the evidence as the prior expression's.
+In a consuming project, BG0196 AC1's Verify line was changed from `shell bash utilities/monitoring/check-cron-drift.sh` (a retired script) to `shell python3 utilities/fleet/drift-check.py check`. A non-dry `verify_ac.py run --id BG0196` then reported `pass=2 ... changes=0` and left `**Verified:** yes (2026-08-21)` with its evidence line describing the OLD command's run. The stamp now attests, with an August date, to a check that ran in October against a different command. BG0231 (Fixed) made freshness track the AC text; this is the residual on the PASSING path: a pass under a changed expression should restamp the date, or at least mark the evidence as the prior expression's.
 
 ## Steps to Reproduce
 

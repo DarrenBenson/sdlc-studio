@@ -63,6 +63,13 @@ class CheckNeutralityTests(unittest.TestCase):
     def test_real_blocklist_is_populated(self):
         self.assertGreaterEqual(len(cn._BLOCKED), 3)
 
+    def test_the_three_ruled_consuming_project_names_are_blocked(self):
+        # BG1113: three consuming-project names the operator ruled private, held as hashes
+        ruled = {"8be0b5445fca6eb16d14c6f4eaff1cf1d1a3362ef660bfb2b66e74bf309b7e61",
+                 "6aa3f655fe010c45b7461e423846938f9610c967417eeec7523933c9e0b0da5b",
+                 "1bb23da303e7033344c38c0b3e13cc9bc8fcbe000a06d330faa92f68fbceb02b"}
+        self.assertEqual(ruled - cn._BLOCKED, set())
+
 
 class ScanCoverageTests(unittest.TestCase):
     """BG0327: the contract is every tracked file, so the selector must be a small binary

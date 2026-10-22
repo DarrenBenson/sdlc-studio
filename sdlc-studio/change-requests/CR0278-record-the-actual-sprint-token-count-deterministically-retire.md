@@ -12,7 +12,7 @@
 
 ## Summary
 
-The retro accuracy block, VELOCITY.md and reference-retro treat an interactive sprint's token spend as UNMEASURED, on the premise that a script cannot observe token spend. That is wrong: the harness tracks the token count deterministically (a Workflow run reports it - the homelab audit reported ~6.9M tokens; an interactive run's total is on the session counter). Declaring it UNMEASURED conflates 'the skill's runner-only telemetry did not capture it' with 'unmeasurable', and blocks the estimate-vs-actual loop for exactly the interactive sprints being run. Capture the actual token count for an interactive sprint too (operator-supplied at retro time, or a harness/run-state hook), so tokens-per-point closes for every sprint.
+The retro accuracy block, VELOCITY.md and reference-retro treat an interactive sprint's token spend as UNMEASURED, on the premise that a script cannot observe token spend. That is wrong: the harness tracks the token count deterministically (a Workflow run reports it - a consuming project's audit reported ~6.9M tokens; an interactive run's total is on the session counter). Declaring it UNMEASURED conflates 'the skill's runner-only telemetry did not capture it' with 'unmeasurable', and blocks the estimate-vs-actual loop for exactly the interactive sprints being run. Capture the actual token count for an interactive sprint too (operator-supplied at retro time, or a harness/run-state hook), so tokens-per-point closes for every sprint.
 
 ## Impact
 

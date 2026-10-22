@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/reference-verify.md, changelog.d/BG0961.md
-> **Evidence:** Field report, 2026-10-07, grooming Sprint 0 stories on sdlc-studio-lens. validate.py instructions forbids a tool-specific skill path in committed instructions (BG0853). A story Verify line that has to run a skill script has nowhere legal to point. Reproduced at HEAD: verify_ac.run_verifier('shell test -f <skill>/scripts/verify_ac.py') returns ok=False, stderr '/bin/sh: line 1: skill: No such file or directory'.
+> **Evidence:** Field report, 2026-10-07, grooming Sprint 0 stories on a consuming project. validate.py instructions forbids a tool-specific skill path in committed instructions (BG0853). A story Verify line that has to run a skill script has nowhere legal to point. Reproduced at HEAD: verify_ac.run_verifier('shell test -f <skill>/scripts/verify_ac.py') returns ok=False, stderr '/bin/sh: line 1: skill: No such file or directory'.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Grok 4.7; agent; v1
