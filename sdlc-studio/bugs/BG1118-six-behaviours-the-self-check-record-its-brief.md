@@ -1,4 +1,4 @@
-# BG1118: Four behaviours US1088 and US1089 state for the self-check record and gate are pinned by no test: a restored diff admitted by an older row, the record matched to its own unit, the setting read case-insensitively, and an uncovered first fragment refused
+# BG1118: Six behaviours the self-check record, its brief gate and the author section state are pinned by no test (US1087, US1088, US1089 reviews)
 
 > **Status:** Open
 > **Severity:** Low
@@ -32,6 +32,10 @@ Add the three cases in a new module beside tests/`test_critic_self_check_refusal
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_gate_cases.py::GateCaseTests::test_the_setting_is_read_case_insensitively
 - [ ] **AC4** Given a unit declaring two changelog fragments whose claims cover only the second, when its self-check is recorded, then it is refused naming the first (US1088's round-2 QA review: narrowing the skip check at critic.py:2754 to `fragments[-1:]` survives, because the two-fragment subtest leaves only the last uncovered)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_gate_cases.py::GateCaseTests::test_an_uncovered_first_fragment_is_refused
+- [ ] **AC5** Given a unit that declares no changelog fragment, then US1087's author section's line 'Rule each claim in the commit message ... the same way' names no fragment, and given one that declares a fragment, it names it (US1087 round-2 QA review: dropping the line, making its fragment clause unconditional, or inverting it each survive; critic.py:2618-2619)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_gate_cases.py::GateCaseTests::test_the_rule_line_names_only_declared_fragments
+- [ ] **AC6** Given CLAIM_SURFACES patched to add a fifth surface, then the section's scoped instruction ('For Resolutions, docstrings, comments and CHANGELOG') names all five (a typed copy at critic.py:2607-2608 survives every module)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_gate_cases.py::GateCaseTests::test_the_scoped_instruction_reads_claim_surfaces
 
 ## Impact
 
@@ -44,3 +48,5 @@ Each stated behaviour can regress with the suite green.
 | 2026-10-22 | Claude Opus 5.5 | Filed |
 | 2026-10-22 | sdlc-studio | Retitled: was 'Three behaviours US1089 states for the self-check gate are pinned by no test: a restored diff admitted by an older row, the record matched to its own unit, and the setting read case-insensitively' |
 | 2026-10-22 | sdlc | AC4 from US1088's round-2 QA review: an uncovered FIRST fragment is unpinned |
+| 2026-10-22 | sdlc | AC5 and AC6 from US1087's round-2 QA review: the repair's new rule line and the scoped surface list are unpinned |
+| 2026-10-22 | sdlc-studio | Retitled: was 'Four behaviours US1088 and US1089 state for the self-check record and gate are pinned by no test: a restored diff admitted by an older row, the record matched to its own unit, the setting read case-insensitively, and an uncovered first fragment refused' |

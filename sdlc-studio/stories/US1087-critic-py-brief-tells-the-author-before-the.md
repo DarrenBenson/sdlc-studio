@@ -41,3 +41,4 @@
 | 2026-10-20 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-21 | Claude Opus 5.5 | Regroomed on the run-three goal review's two rounds (engineering, product and qa seats; D0384) |
 | 2026-10-22 | sdlc | Correction (its round-1 QA review, 2026-10-22): 0f7acbbd's D0386 paragraph names tree cd6eb093, the tree of its worktree original d1a62be6; the cherry-pick on main has tree 77024ef4, proven only within the next push tip |
+| 2026-10-22 | sdlc | Correction (round-2 QA review, 2026-10-22): 11e0d5cf's body says the suite was green 'for this tree (3228385a)', the pre-rebase tree; its D0386 paragraph names the landed tree fa03a4d5, which devserver1 proved green |
