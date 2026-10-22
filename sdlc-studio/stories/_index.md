@@ -1,6 +1,6 @@
 # Story Index
 
-**Last Updated:** 2026-10-20
+**Last Updated:** 2026-10-22
 
 ## Summary
 
@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 85 |
-| Ready | 8 |
+| Ready | 14 |
 | Planned | 0 |
 | In Progress | 2 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **1090** |
+| **Total** | **1096** |
 
 ## All Stories
 
@@ -128,6 +128,12 @@
 | [US1088](US1088-critic-py-self-check-record-stores-the-author.md) | critic.py self-check record stores the author's claim inventory, every claim ruled, and the mutation run the unit's tests were checked against, bound to the unit's diff | Ready | EP0291 | 2026-10-20 | 2026-10-20 |
 | [US1089](US1089-critic-py-brief-refuses-a-unit-whose-author.md) | critic.py brief refuses a unit whose author has recorded no self-check for its current diff | Ready | EP0291 | 2026-10-20 | 2026-10-20 |
 | [US1090](US1090-agents-md-names-the-push-gate-as-the.md) | AGENTS.md names the push gate as the full-suite check, retiring the separate full-suite run before a commit | Ready | EP0291 | 2026-10-20 | 2026-10-20 |
+| [US1091](US1091-the-token-meter-reads-the-main-thread-and.md) | The token meter reads the main thread and every subagent transcript once per message, prices each component from one weight table, and the close and the report state that priced cost as their headline | Ready | EP0292 | 2026-10-22 | 2026-10-22 |
+| [US1092](US1092-the-retro-s-accuracy-block-and-its-velocity.md) | The retro's accuracy block and its VELOCITY row carry the priced cost per point under a named basis, and the forecast names every basis it pooled | Ready | EP0292 | 2026-10-22 | 2026-10-22 |
+| [US1093](US1093-sprint-py-lane-brief-hands-a-fresh-builder.md) | sprint.py lane brief hands a fresh builder agent everything it needs to build one unit (its Affects, criteria, author self-check, seat card and the commit and Verify commands), and the runbook builds each unit that way | Ready | EP0292 | 2026-10-22 | 2026-10-22 |
+| [US1094](US1094-critic-py-brief-carries-the-unit-s-own.md) | critic.py brief carries the unit's own capped diff and the command that runs its Verify lines, and each review tier states the sections it carries and its tool-call budget | Ready | EP0292 | 2026-10-22 | 2026-10-22 |
+| [US1095](US1095-the-close-compares-the-run-s-priced-cost.md) | The close compares the run's priced cost per point with the median of recent runs, or a configured baseline until three exist, and carries a run over 1.5 times it as a known issue with a per-unit breakdown, whose cause the retro must name | Ready | EP0292 | 2026-10-22 | 2026-10-22 |
+| [US1096](US1096-a-goal-review-amendment-carries-every-seat-s.md) | A goal-review amendment carries every seat's verdict forward unless a seat asked to re-review, and an amendment of an open run's goal moves the goal the close judges | Ready | EP0292 | 2026-10-22 | 2026-10-22 |
 
 ## Archived Releases
 

@@ -1,18 +1,18 @@
 # Epic Index
 
-**Last Updated:** 2026-10-20
+**Last Updated:** 2026-10-22
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 17 |
+| Draft | 18 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 241 |
 | Superseded | 33 |
-| **Total** | **291** |
+| **Total** | **292** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -42,6 +42,7 @@
 | [EP0289](EP0289-the-persona-registry-matches-the-work-it-serves.md) | The persona registry matches the work it serves: a maintainer Primary for the repository tooling, and cards that state current goals | Draft | 5 | -- | 2026-10-19 | 2026-10-19 |
 | [EP0290](EP0290-the-trd-and-tsd-describe-the-gate-as.md) | The TRD and TSD describe the gate as it runs: the hooks, the boundary gates, the toolchain, CI and the gate host | Draft | 3 | -- | 2026-10-19 | 2026-10-19 |
 | [EP0291](EP0291-the-author-s-self-check-is-run-and.md) | The author's self-check is run and recorded before a reviewer is briefed | Draft | 4 | -- | 2026-10-20 | 2026-10-20 |
+| [EP0292](EP0292-a-sprint-costs-what-its-work-costs-a.md) | A sprint costs what its work costs: a true meter, small fresh contexts per unit, and a regression caught at the close | Draft | 6 | -- | 2026-10-22 | 2026-10-22 |
 
 ## Archived Releases
 

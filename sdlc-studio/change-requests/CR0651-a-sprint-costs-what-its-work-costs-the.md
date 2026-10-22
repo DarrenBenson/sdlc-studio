@@ -1,6 +1,7 @@
 # CR-0651: A sprint costs what its work costs: the meter reads true, each unit is built and reviewed in a small fresh context, and a regression is caught at the close
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0292
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
