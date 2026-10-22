@@ -12,6 +12,7 @@ section's builder in-process, because it changes the module's texts to see the s
 # test-census-subject: .claude/skills/sdlc-studio/scripts/critic.py
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 import tempfile
@@ -48,9 +49,9 @@ def _project(root: Path, unit: str, affects: str) -> None:
            "- **Verify:** shell true\n")
 
 
-def _brief(root: Path, unit: str, *extra: str) -> subprocess.CompletedProcess:
+def _brief(root: Path, unit: str, *extra: str, tier: str = "full") -> subprocess.CompletedProcess:
     return subprocess.run([sys.executable, "-B", str(CRITIC), "brief", "--unit", unit, "--seat",
-                           "qa", "--tier", "full", *extra, "--root", str(root)],
+                           "qa", "--tier", tier, *extra, "--root", str(root)],
                           capture_output=True, text=True, timeout=300, env=gitutil.git_env(),
                           check=False)
 
@@ -69,7 +70,8 @@ class AuthorStepsTests(unittest.TestCase):
     def test_the_steps_go_to_stderr_and_the_brief_is_unchanged(self) -> None:
         """AC1. Mutants: the section printed to stdout, inside the brief a reviewer reads from a
         file, which also moves the brief's fingerprint; the `--rejoinder` path, the brief for a
-        repair, left without the section."""
+        repair, left without the section; the section printed after the tier footer instead of
+        before it, on either path (M9)."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _project(root, "US0101", "src/widget.py, tests/test_widget.py, changelog.d/US0101.md")
@@ -83,6 +85,8 @@ class AuthorStepsTests(unittest.TestCase):
             expected = critic.brief_fingerprint(critic.brief(root, "US0101", "qa", "full"))
             self.assertIn(f"brief fingerprint: {expected}", r.stderr,
                           "the printed brief no longer fingerprints as critic.brief() does")
+            self.assertLess(r.stderr.find(HEADING), r.stderr.find("review tier:"),
+                            "the first-round section is not printed before the tier footer")
             prior = root / "verdict.txt"
             prior.write_text("VERDICT: REJECT\nISSUES: [new] blocking: w returns 1 (src/widget.py:2)\n",
                              encoding="utf-8")
@@ -90,6 +94,31 @@ class AuthorStepsTests(unittest.TestCase):
             self.assertEqual(0, again.returncode, again.stderr)
             self.assertNotIn(HEADING, again.stdout)
             self.assertIn(HEADING, again.stderr, "the rejoinder brief carries no self-check")
+            self.assertLess(again.stderr.find(HEADING), again.stderr.find("review tier:"),
+                            "the rejoinder section is not printed before the tier footer")
+
+    def test_the_lead_is_true_at_the_light_tier(self) -> None:
+        """AC1. Mutant: the section's lead restored to "The reviewer runs the two passes below on
+        this unit", which a light-tier brief makes false, because it carries no claim inventory.
+        The lead tells the author to run both passes, and names the reviewer only for the full
+        tier."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, "US0105", "src/widget.py, tests/test_widget.py")
+            light = _brief(root, "US0105", tier="light")
+            self.assertEqual(0, light.returncode, light.stderr)
+            self.assertNotIn("CLAIM INVENTORY", light.stdout,
+                             "the light brief carries a claim inventory, so the premise is gone")
+            full = _brief(root, "US0105")
+            self.assertIn("CLAIM INVENTORY", full.stdout, "control: the full brief carries one")
+            lead = _section(light.stderr).splitlines()[1]
+            self.assertIn("Run the two passes below first", lead)
+            for sentence in re.split(r"(?<=\.)\s+", lead):
+                if re.search(r"\breviewer\b", sentence):
+                    with self.subTest(sentence=sentence[:60]):
+                        self.assertIn("full review tier", sentence,
+                                      "the lead tells a light-tier author the reviewer runs "
+                                      "passes the light brief does not carry")
 
     def test_the_steps_name_the_units_surfaces_and_tests(self) -> None:
         """AC2. Mutants: the fragment taken as changelog.d/<id>.md, which misses a carried bug's

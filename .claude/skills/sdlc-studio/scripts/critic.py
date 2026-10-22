@@ -2570,10 +2570,11 @@ def assert_brief_claim_pass(brief_text: str) -> None:
 
 
 # --- The author's self-check ---------------------------------------------------------------
-# What the reviewer is told to run, turned on the author's own work before the brief is handed
-# over. Every instruction is READ from the brief's own texts - the claim-inventory block and the
-# practice to mutate the author's tests - so the author is never told something the reviewer is
-# not, and the two cannot drift apart (LL0042).
+# The claim inventory and the mutation pass, turned on the author's own work before the brief
+# is handed over. Every instruction is READ from the brief's own texts - the claim-inventory
+# block and the practice to mutate the author's tests - so wherever the reviewer's brief carries
+# a pass, the author is told it in the same words, and the two cannot drift apart (LL0042). The
+# author runs both at every tier; a full-tier brief asks the reviewer for both as well.
 AUTHOR_SELF_CHECK_HEADING = ("--- AUTHOR SELF-CHECK (run it on your own work before handing the "
                              "brief over) ---")
 _MUTATE_PRACTICE_LEAD = "Mutate the author's TESTS"
@@ -2589,8 +2590,9 @@ def _paragraph(block: str, lead: str) -> str:
 
 def author_self_check(repo_root: Path | str, unit: str) -> str:
     """The section `critic.py brief` prints on stderr before its footer: the claim inventory and
-    the mutation pass the reviewer will run, named over this unit's own surfaces and tests, for
-    the author to run first.
+    the mutation pass, named over this unit's own surfaces and tests, for the author to run on
+    their own work before handing the brief over. A full-tier brief asks the reviewer for both
+    passes as well.
 
     The surfaces are the commit message, every prose surface the brief's claim inventory names
     (`CLAIM_SURFACES`) and each changelog fragment the unit's Affects declares - read from its
@@ -2601,8 +2603,9 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
     mutate = _paragraph(_REVIEW_PRACTICES_BLOCK, _MUTATE_PRACTICE_LEAD)
     surfaces = [f"the {COMMIT_SURFACE}", *CLAIM_SURFACES, *fragments]
     lines = [AUTHOR_SELF_CHECK_HEADING,
-             "The reviewer runs the two passes below on this unit. Run them first, so the review "
-             "confirms the work rather than finding what your own pass would have found.",
+             "Run the two passes below first, so the review confirms the work rather than "
+             "finding what your own pass would have found. At the full review tier the "
+             "reviewer's brief asks for both passes too.",
              "",
              f"1. Claim inventory, over: {'; '.join(surfaces)}.",
              (f"   The unit's changelog fragments: {', '.join(fragments)}." if fragments else
