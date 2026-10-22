@@ -37,6 +37,10 @@ Kept (D0387). To plan it:
 - Affects adds changelog.d/<story>.md
 - Persona: Rowan Achterberg (repo-only tooling, D0379)
 
+## Notes
+
+- Evidence, run three (2026-10-22): two local hook runs failed on 'Disk quota exceeded' in a 6.8G tmpfs /tmp shared with other projects' sessions: a nested pre-push test during BG1000's repair commit, and eight tests (one `git clone`) in BG1111's first hook run. Each passed when re-run.
+
 ## Revision History
 
 | Date | Author | Change |

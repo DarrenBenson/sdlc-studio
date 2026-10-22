@@ -1,7 +1,7 @@
 # EP0292: A sprint costs what its work costs: a true meter, small fresh contexts per unit, and a regression caught at the close
 
 > **Status:** Draft
-> **Derived Point Total:** 23
+> **Derived Point Total:** 26
 > **Parent:** CR0651
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio new
