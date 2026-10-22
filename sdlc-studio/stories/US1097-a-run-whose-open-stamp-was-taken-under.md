@@ -4,7 +4,7 @@
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py, changelog.d/US1097.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py, changelog.d/US1097.md, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/help/sprint.md
 > **Epic:** EP0292
 > **Points:** 3
 > **Depends on:** US1091
@@ -32,3 +32,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-22 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-10-22 | sdlc | Affects gains retro.py, its test module and help/sprint.md: US1091's held AC5 patch re-derives the retro's baseline and documents the rule there |
