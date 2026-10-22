@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 85 |
-| Ready | 14 |
+| Ready | 15 |
 | Planned | 0 |
 | In Progress | 2 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **1096** |
+| **Total** | **1097** |
 
 ## All Stories
 
@@ -134,6 +134,7 @@
 | [US1094](US1094-critic-py-brief-carries-the-unit-s-own.md) | critic.py brief carries the unit's own capped diff and the command that runs its Verify lines, and each review tier states the sections it carries and its tool-call budget | Ready | EP0292 | 2026-10-22 | 2026-10-22 |
 | [US1095](US1095-the-close-compares-the-run-s-priced-cost.md) | The close compares the run's priced cost per point with the median of recent runs, or a configured baseline until three exist, and carries a run over 1.5 times it as a known issue with a per-unit breakdown, whose cause the retro must name | Ready | EP0292 | 2026-10-22 | 2026-10-22 |
 | [US1096](US1096-a-goal-review-amendment-carries-every-seat-s.md) | A goal-review amendment carries every seat's verdict forward unless a seat asked to re-review, and an amendment of an open run's goal moves the goal the close judges | Ready | EP0292 | 2026-10-22 | 2026-10-22 |
+| [US1097](US1097-a-run-whose-open-stamp-was-taken-under.md) | A run whose open stamp was taken under an earlier counting basis has that reading re-derived from the transcript, never subtracted from a reading on the current basis | Ready | EP0292 | 2026-10-22 | 2026-10-22 |
 
 ## Archived Releases
 

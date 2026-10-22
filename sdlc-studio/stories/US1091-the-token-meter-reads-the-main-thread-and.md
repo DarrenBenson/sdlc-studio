@@ -7,7 +7,7 @@
 > **Raised-by:** sdlc-studio; agent; v1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/US1091.md
 > **Epic:** EP0292
-> **Points:** 8
+> **Points:** 5
 > **Depends on:** BG1111
 > **Persona:** Maya Okafor
 
@@ -27,13 +27,11 @@
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py::MeterStampsTests::test_the_run_total_carries_priced_deltas_and_names_legacy_stamps
 - **AC4:** Given a run whose stamps say the reading includes subagent transcripts and a builder total supplied with `sprint.py lane return --units <id> --tokens N`, when the run's actual is formed for the report (`sprint_report._run_tokens_actual`) and the retro (`retro.run_attributed_tokens`), then N is not added and the basis says the subagents are already in the reading; given a run whose stamps carry no such flag, as every run before this change, N is still added, so an earlier signed page re-derives unchanged
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py::MeterDelegatedTests::test_a_supplied_total_is_not_added_over_a_reading_that_holds_subagents
-- **AC5:** Given a run whose open stamp was taken under an earlier counting basis (a stamp that names no basis, as every stamp before BG1111 and this story does), when the run's total is formed at the close or by the report, then the open reading is re-derived from the transcript records up to the stamp's time under the current basis, and the basis says so; where the transcript no longer holds those records, the total is reported not attributable naming the basis change. It is never the difference of two bases
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py::MeterStampsTests::test_an_open_stamp_on_an_earlier_basis_is_re_derived_not_subtracted
 
 ## Notes
 
 - Serves: Maya Okafor, End goal 3.
-- AC5 must fail on: the old-basis open stamp subtracted from a new-basis reading (RUN-01M5EM9N's open stamp is 48,420,326 counted per record; the same point counted once per message is 19,227,104, BG1111's builder, 2026-10-22); the re-derivation reading past the stamp's time.
+- The open stamp taken on an earlier basis is US1097 (split out: at 8 points this story tripped the backlog's oversized lens, which US0854 AC1 holds the push to).
 - AC1 must fail on: the subagents directory not read; 1h writes folded into 5m; a subagent's repeated records counted per record (BG1111's defect reintroduced on the new path); subagent records dropped by the cwd check, since a worktree agent records the worktree as its cwd
 - AC2 must fail on: weights typed beside the sum rather than read from the table; one weight for both cache-write durations; the headline left as the unpriced sum (D0346 (1), superseded by D0390)
 - AC3 must fail on: `priced` defaulting to 0 for a legacy stamp; `priced` derived from `tokens` times a constant rather than from the stamped components
@@ -59,3 +57,4 @@
 | 2026-10-22 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-22 | sdlc | AC5: an open stamp on an earlier counting basis is re-derived from the transcript, never subtracted across bases (BG1111 builder's finding: RUN-01M5EM9N's open stamp) |
 | 2026-10-22 | sdlc | Points 5 -> 8 for AC5's re-derivation of an earlier-basis open stamp |
+| 2026-10-22 | sdlc | AC5 split out to US1097; Points 8 -> 5 (the oversized lens holds the push via US0854 AC1) |
