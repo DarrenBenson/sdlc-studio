@@ -51,3 +51,4 @@ Node-addressed pytest ACs over `test_sprint.py`, red before the code. Mutation-p
 | --- | --- | --- |
 | 2026-07-23 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-07-23 | sdlc-studio | Built and mutation-proven |
+| 2026-10-22 | sdlc | AC3 superseded by US1096 AC1 (2026-10-22): an amendment now carries every seat's verdict forward unless a seat asked to re-review; its Verify test keeps its name and asserts the new rule |

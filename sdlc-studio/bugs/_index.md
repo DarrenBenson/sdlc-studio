@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 141 |
+| Open | 142 |
 | In Progress | 0 |
 | Fixed | 809 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 38 |
-| **Total** | **1122** |
+| **Total** | **1123** |
 
 ## All Bugs
 
@@ -198,6 +198,7 @@
 | [BG1120](BG1120-a-self-check-record-reads-an-author-s.md) | A self-check record reads an author's own edit made in a merge commit as another unit's, so the brief gate admits a changed diff in a project that merges | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1121](BG1121-an-author-self-check-record-still-reads-stale.md) | An author self-check record still reads stale in landing orders the per-file own-change view cannot see through: work recorded before its own commit, a cherry-pick, or another unit's hunk in a file the author also changed | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1122](BG1122-each-meter-reading-now-re-reads-every-subagent.md) | Each meter reading now re-reads every subagent transcript from the start, so a lane, transition or report command takes about 36 s on a long session instead of 22 s | Open | Medium | 2026-10-22 | 2026-10-22 |
+| [BG1123](BG1123-a-review-brief-now-carries-two-different-diffs.md) | A review brief now carries two different diffs of the unit: the scope line's `git diff <base> -- <Affects>` (the working tree) and US1094's UNIT DIFF section (base to HEAD) | Open | Low | 2026-10-22 | 2026-10-22 |
 
 ## Archived Releases
 
