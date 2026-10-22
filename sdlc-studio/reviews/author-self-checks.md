@@ -2,8 +2,9 @@
 
 > Append-only. The author's own claim inventory and mutation pass per unit, recorded by
 > `critic.py self-check record` before a reviewer is briefed. The digest is over the
-> content of the unit's Affects files when the row was written, so a row whose digest no
-> longer matches is a self-check of an earlier diff.
+> content of the unit's Affects files when the row was written, followed by the commit it
+> was taken at. A row whose digest matches neither that content now nor the content with
+> other units' later commits set aside is a self-check of an earlier diff.
 
 | Unit | Author | Date | Claims | Mutants | Digest |
 | --- | --- | --- | --- | --- | --- |

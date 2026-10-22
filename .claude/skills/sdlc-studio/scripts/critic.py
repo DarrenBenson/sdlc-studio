@@ -22,7 +22,7 @@ import json
 import re
 import shlex
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import run_state, sdlc_md  # noqa: E402
@@ -2650,8 +2650,10 @@ def _self_check_scope(repo_root: Path | str, unit: str) -> tuple[list[str], list
 # What the section above tells the author to run, stored once it has run. The record is
 # self-reported, so what it checks is its CONTENT: every claim ruled and none FALSE, the
 # required surfaces each carrying a claim, each mutant run against a test the unit declares,
-# and every survivor answered. It is bound to the content of the unit's Affects, so a record
-# of an earlier diff reads as one. The log is committed, never under `.local`.
+# and every survivor answered. It is bound to the unit's own change: a digest of its Affects
+# content and the commit it was taken at, so after a later edit by the author the record reads
+# as one of an earlier diff, while another unit's later commit to a shared file leaves it
+# current. The log is committed, never under `.local`.
 SELF_CHECK_FILE = "author-self-checks.md"
 #: The surface every unit's claim inventory must cover; each declared fragment is the other.
 COMMIT_SURFACE = "commit message"
@@ -2662,37 +2664,174 @@ _SELF_CHECK_HEADER = (
     "# Author Self-Checks\n\n"
     "> Append-only. The author's own claim inventory and mutation pass per unit, recorded by\n"
     "> `critic.py self-check record` before a reviewer is briefed. The digest is over the\n"
-    "> content of the unit's Affects files when the row was written, so a row whose digest no\n"
-    "> longer matches is a self-check of an earlier diff.\n\n"
+    "> content of the unit's Affects files when the row was written, followed by the commit it\n"
+    "> was taken at. A row whose digest matches neither that content now nor the content with\n"
+    "> other units' later commits set aside is a self-check of an earlier diff.\n\n"
     "| Unit | Author | Date | Claims | Mutants | Digest |\n"
     "| --- | --- | --- | --- | --- | --- |\n")
 _DIGEST_SKIP = (".git", "__pycache__")
+#: What the review tooling itself writes while a unit is reviewed: the self-check log
+#: (`self-check record`), the verdict log (`record`), and the runtime notes under
+#: `sdlc-studio/.local` (`brief` notes each fingerprint there, `record` fixes the review base).
+#: No unit's change is made of them, so the digest leaves them out; a unit declaring one, or a
+#: directory holding one, would otherwise be staled by every record and every brief.
+_REVIEW_TOOL_WRITES = frozenset(f"sdlc-studio/reviews/{name}"
+                                for name in (SELF_CHECK_FILE, _FILE["delivery"]))
+_REVIEW_TOOL_RUNTIME = "sdlc-studio/.local/"
+#: How the Digest cell names the commit a record was taken at: `<digest> at <commit>`. Inside
+#: the cell rather than a seventh column, so the committed log keeps one table width and no
+#: earlier row is rewritten. A row without it names no commit: it was recorded before the
+#: commit was kept, or outside a repository.
+_DIGEST_AT = " at "
+_DIGEST_CELL_RE = re.compile(r"(?P<digest>\S+)(?: at (?P<commit>[0-9a-f]{7,40}))?")
 
 
 def self_checks_path(repo_root: Path | str) -> Path:
     return Path(repo_root) / "sdlc-studio" / "reviews" / SELF_CHECK_FILE
 
 
+def _review_tool_write(rel: str) -> bool:
+    """True for a path the review tooling writes (`_REVIEW_TOOL_WRITES`), relative to the root."""
+    return rel in _REVIEW_TOOL_WRITES or rel.startswith(_REVIEW_TOOL_RUNTIME)
+
+
+def _working_members(root: Path, rel: str) -> list[str]:
+    """The files one Affects path names in the working tree, relative to the root: the file
+    itself, or a declared directory's files beneath it, less the review tooling's own writes."""
+    path = root / rel
+    if path.is_dir():
+        found = (p for p in path.rglob("*") if p.is_file() and not any(
+            part in _DIGEST_SKIP for part in p.relative_to(path).parts))
+    else:
+        found = [path] if path.is_file() else []
+    members = (p.relative_to(root).as_posix() for p in found)
+    return sorted((m for m in members if not _review_tool_write(m)), key=PurePosixPath)
+
+
+def _content_digest(entries: list[tuple[str, list[tuple[str, bytes]]]]) -> str:
+    """The digest of each declared path with the files it names and their bytes, a path naming
+    none marked absent. Both views below feed it, so a match between them is a match of bytes."""
+    import hashlib  # noqa: PLC0415 - local; only the digest needs it
+    h = hashlib.sha256()
+    for rel, members in entries:
+        h.update(f"{rel}\0{len(members) if members else 'absent'}\0".encode("utf-8"))
+        for member, data in members:
+            h.update(f"{member}\0{len(data)}\0".encode("utf-8"))
+            h.update(data)
+    return h.hexdigest()[:16]
+
+
 def affects_digest(repo_root: Path | str, unit: str) -> str:
     """A digest of the CONTENT of the unit's Affects files, as they stand: each path with its
     bytes, a declared directory's files beneath it, and an absent path marked absent, so an edit
-    to any of them, or the creation of one, moves it. Sorted, so reordering Affects does not."""
-    import hashlib  # noqa: PLC0415 - local; only the digest needs it
+    to any of them, or the creation of one, moves it. Sorted, so reordering Affects does not.
+    The review tooling's own writes are left out (`_REVIEW_TOOL_WRITES`)."""
     root = Path(repo_root)
-    h = hashlib.sha256()
-    for rel in sorted(set(_self_check_scope(root, unit)[0])):
-        path = root / rel
-        if path.is_dir():
-            members = sorted(p for p in path.rglob("*") if p.is_file() and not any(
-                part in _DIGEST_SKIP for part in p.relative_to(path).parts))
-        else:
-            members = [path] if path.is_file() else []
-        h.update(f"{rel}\0{len(members) if members else 'absent'}\0".encode("utf-8"))
-        for member in members:
-            data = member.read_bytes()
-            h.update(f"{member.relative_to(root).as_posix()}\0{len(data)}\0".encode("utf-8"))
-            h.update(data)
-    return h.hexdigest()[:16]
+    return _content_digest([
+        (rel, [(m, (root / m).read_bytes()) for m in _working_members(root, rel)])
+        for rel in sorted(set(_self_check_scope(root, unit)[0]))])
+
+
+class _GitUnreadable(RuntimeError):
+    """Git could not answer a question the own-change view asked of it."""
+
+
+def _git(root: Path, *args: str):
+    """`git -C <root> <args>` with bytes out, or None when git cannot be run at all. It runs
+    under the criteria runner's environment (`verify_ac._git_env`), which drops the variables a
+    hook exports that would make git answer for another repository; reusing it adds no copy of
+    that list for a test to hold equal to the others."""
+    import subprocess  # noqa: PLC0415 - local; only the own-change view runs git
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import verify_ac  # noqa: PLC0415 - sibling; its scrubbed environment is the shared one
+    try:
+        return subprocess.run(["git", "-C", str(root), "--literal-pathspecs", *args],
+                              capture_output=True, timeout=60, env=verify_ac._git_env(),
+                              check=False)
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+def _head_commit(root: Path) -> str:
+    """The commit the working tree is checked out at, abbreviated, or "" outside a repository."""
+    cp = _git(root, "rev-parse", "--short=12", "--verify", "--quiet", "HEAD")
+    return cp.stdout.decode("utf-8", "replace").strip() if cp and cp.returncode == 0 else ""
+
+
+def _rev_blob(root: Path, rev: str, rel: str) -> bytes | None:
+    """The bytes of `rel` (relative to the root) at `rev`, or None when it was absent there.
+    Absence is asked of `ls-tree`, so a failure raises rather than reading as absent."""
+    listed = _git(root, "ls-tree", "-z", "--name-only", rev, "--", rel)
+    if listed is None or listed.returncode != 0:
+        raise _GitUnreadable(f"git could not list {rel} at {rev}")
+    if not listed.stdout.strip(b"\0"):
+        return None
+    shown = _git(root, "show", f"{rev}:./{rel}")
+    if shown is None or shown.returncode != 0:
+        raise _GitUnreadable(f"git could not show {rel} at {rev}")
+    return shown.stdout
+
+
+def _names_another_unit(subject: str, uid: str) -> bool:
+    """True when a commit subject names a unit id and none of them is `uid`: the commit is
+    another unit's. A subject naming no id, or naming this unit, is not, so an edit committed
+    under this unit's id or under none is never set aside."""
+    named = {sdlc_md.norm_id(m.group(0)) for m in sdlc_md.ID_SEARCH_RE.finditer(subject)}
+    return bool(named) and uid not in named
+
+
+def _own_change_digest(repo_root: Path | str, unit: str, base: str) -> str | None:
+    """`affects_digest` of the unit's Affects as they would read had the commits ANOTHER unit
+    made since `base` (the commit the record was taken at) not landed on top: each file read at
+    the newest point no other unit produced. None when it cannot be judged: no repository, `base`
+    not an ancestor of HEAD, or git unable to answer, so the caller falls back to the content as
+    it stands.
+
+    For each file, the commits since `base` that touched it are read newest first, and a commit
+    is another unit's when its subject names a unit id that is not this unit's
+    (`_names_another_unit`). The file's own content is its working-tree content when no commit
+    touched it, or when the newest that did is not another unit's, or when it differs from HEAD
+    (an uncommitted edit, which nothing attributes to another unit). Otherwise it is the content
+    after the newest commit that is not another unit's, or at `base` when every one was."""
+    root = Path(repo_root)
+    uid = sdlc_md.norm_id(unit)
+    affects = sorted(set(_self_check_scope(root, unit)[0]))
+    ancestor = _git(root, "merge-base", "--is-ancestor", base, "HEAD")
+    if not affects or ancestor is None or ancestor.returncode != 0:
+        return None
+    log = _git(root, "-c", "core.quotePath=false", "log", "--no-renames", "--topo-order",
+               "--relative", "--name-only", "--format=%x00%H %s", f"{base}..HEAD", "--", *affects)
+    if log is None or log.returncode != 0:
+        return None
+    touched: dict[str, list[tuple[str, bool]]] = {}
+    for chunk in log.stdout.decode("utf-8", "replace").split("\0")[1:]:
+        head, *names = chunk.split("\n")
+        sha, _, subject = head.partition(" ")
+        for name in filter(None, names):
+            touched.setdefault(name, []).append((sha, _names_another_unit(subject, uid)))
+
+    def own(member: str) -> bytes | None:
+        path = root / member
+        now = path.read_bytes() if path.is_file() else None
+        commits = touched.get(member, [])
+        if not commits or not commits[0][1] or _rev_blob(root, "HEAD", member) != now:
+            return now
+        sha = next((s for s, another in commits if not another), base)
+        return _rev_blob(root, sha, member)
+
+    entries = []
+    try:
+        for rel in affects:
+            prefix = PurePosixPath(rel).as_posix()
+            members = set(_working_members(root, rel)) | {
+                t for t in touched if (t == prefix or t.startswith(prefix + "/"))
+                and not _review_tool_write(t) and not any(
+                    part in _DIGEST_SKIP for part in PurePosixPath(t).parts)}
+            views = ((m, own(m)) for m in sorted(members, key=PurePosixPath))
+            entries.append((rel, [(m, data) for m, data in views if data is not None]))
+    except (_GitUnreadable, OSError):
+        return None
+    return _content_digest(entries)
 
 
 def _surface_key(label: str) -> str:
@@ -2796,17 +2935,25 @@ def check_self_check(repo_root: Path | str, unit: str, claims: list[dict],
 def record_self_check(repo_root: Path | str, unit: str, claims: list[dict],
                       mutants: list[dict], author: str = "") -> Path:
     """Append the author's self-check for a unit to the committed log, once `check_self_check`
-    admits it, with the digest of its Affects content as it stands. Nothing is written on a
-    refusal."""
+    admits it, with the digest of its Affects content as it stands and the commit it was taken
+    at (none outside a repository). Nothing is written on a refusal."""
     counts = check_self_check(repo_root, unit, claims, mutants)
+    digest, commit = affects_digest(repo_root, unit), _head_commit(Path(repo_root))
     cells = (sdlc_md.norm_id(unit), _clean(author) or "-", sdlc_md.now_date(),
-             counts["claims"], counts["mutants"], affects_digest(repo_root, unit))
+             counts["claims"], counts["mutants"],
+             f"{digest}{_DIGEST_AT}{commit}" if commit else digest)
     return _append_row(self_checks_path(repo_root), _SELF_CHECK_HEADER, cells)
 
 
 def read_self_checks(repo_root: Path | str) -> list[dict]:
-    """Every recorded self-check row, oldest first."""
-    return _read_rows(self_checks_path(repo_root), _SELF_CHECK_COLS)
+    """Every recorded self-check row, oldest first, its Digest cell read as `digest` and
+    `commit` ("" for a row recorded before the commit was kept, or outside a repository)."""
+    rows = _read_rows(self_checks_path(repo_root), _SELF_CHECK_COLS)
+    for row in rows:
+        cell = _DIGEST_CELL_RE.fullmatch(row["digest"].strip())
+        row["digest"], row["commit"] = ((cell["digest"], cell["commit"] or "") if cell
+                                        else (row["digest"].strip(), ""))
+    return rows
 
 
 # --- The author's self-check, required ------------------------------------------------------
@@ -2837,8 +2984,9 @@ def author_self_check_mode(repo_root: Path | str) -> str:
 
 def self_check_gap(repo_root: Path | str, unit: str) -> str | None:
     """Why the unit has no self-check of its diff as it stands, or None when one of its rows
-    carries the digest of its Affects content now. Any matching row counts, so a diff restored
-    to one already checked needs no second record."""
+    carries the digest of its Affects content now, or of that content with other units' later
+    commits set aside (`_own_change_digest`, from the commit the row was taken at). Any matching
+    row counts, so a diff restored to one already checked needs no second record."""
     uid = sdlc_md.norm_id(unit)
     rows = [r for r in read_self_checks(repo_root) if sdlc_md.norm_id(r["unit"]) == uid]
     if not rows:
@@ -2846,6 +2994,12 @@ def self_check_gap(repo_root: Path | str, unit: str) -> str | None:
     digest = affects_digest(repo_root, unit)
     if any(r["digest"] == digest for r in rows):
         return None
+    own: dict[str, str | None] = {}
+    for row in rows:
+        if (base := row["commit"]) and base not in own:
+            own[base] = _own_change_digest(repo_root, unit, base)
+        if base and own[base] == row["digest"]:
+            return None
     last = rows[-1]
     return (f"the self-check recorded for {uid} on {last['date']} is stale: its digest "
             f"{last['digest']} is of an earlier diff, and the unit's Affects content now digests "
@@ -4046,8 +4200,9 @@ def cmd_self_check_record(args: argparse.Namespace) -> int:
         print(f"self-check record refused: {exc}. Nothing was written.", file=sys.stderr)
         return 2
     row = read_self_checks(args.root)[-1]
+    taken = f" at {row['commit']}" if row["commit"] else ""
     print(f"recorded the self-check for {row['unit']}: claims {row['claims']}; mutants "
-          f"{row['mutants']}; Affects digest {row['digest']} -> {path}")
+          f"{row['mutants']}; Affects digest {row['digest']}{taken} -> {path}")
     return 0
 
 
