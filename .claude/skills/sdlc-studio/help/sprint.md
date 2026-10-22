@@ -541,6 +541,18 @@ found. It opens with the prior-art instruction - run `git log -S <symbol>` befor
 symbol you did not write, let the history outrank an artefact's account, and do not read the
 artefact corpus in bulk. The corpus behind it is walked once per dispatch.
 
+A brief is also a builder's whole brief for its unit. It lists the unit's Affects, one path per
+line, and names the engineering seat card `persona_resolve` resolves (the project's own seat
+before the shipped default) as the work render to adopt. It ends with the author self-check
+`critic.py brief` prints on stderr, verbatim, then the commands that run the unit's criteria
+(`verify_ac.py run --id <id>`), record the self-check (`critic.py self-check record --unit <id>`)
+and commit it: `git add -- <its Affects>`, with the unit id in the commit subject and the rest
+of the message in the project's own shape. A unit with no Affects is told to declare them, and
+no staging command is printed. So a fresh agent builds each unit from its brief, while the
+orchestrator holds the run state and the verdicts, waits on each builder's completion
+notification rather than polling, and accepts the work back with `lane return`. A harness
+without subagents starts a fresh session per unit from the same brief.
+
 `lane return` runs every executable criterion and reports each with the runner's own output and
 exit code, not a summary. It forces the outcome to `blocked` whenever a criterion did not pass,
 **whatever the lane claimed** - a lane cannot inflate its own result. An unresolvable selector is

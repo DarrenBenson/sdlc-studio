@@ -47,6 +47,7 @@ import json
 import math
 import os
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -2615,6 +2616,14 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
                                     "not empty")
     scope = list(dict.fromkeys([*approved, *(unit_ids or [])]))
     seams = _batch_seams(root, scope)
+    # The builder's own section, from the tools that own it: the self-check is the section
+    # `critic.py brief` prints on stderr (`critic.author_self_check`), never a copy that could
+    # drift from it, and the seat is the card `persona_resolve` resolves, so a project's own
+    # engineering seat outranks the shipped default. The seat is one fact about the project,
+    # read once per dispatch.
+    import critic  # noqa: PLC0415 - sibling; the author's self-check is critic's own text
+    import persona_resolve  # noqa: PLC0415 - sibling; one resolver for every seat reader
+    seat = persona_resolve.resolve_card(root, "engineering", render="build")
     briefs: list[dict] = []
     refused: list[dict] = []
     for uid in unit_ids or []:
@@ -2629,7 +2638,9 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
                        "proof": lane_proof(root, contract["id"]),
                        "seams": [s for s in seams if contract["id"] in s["units"]],
                        "lessons": injected,
-                       "affects": sdlc_md.affects_files(contract["text"])})
+                       "affects": sdlc_md.affects_files(contract["text"]),
+                       "self_check": critic.author_self_check(root, contract["id"]),
+                       "seat_card": str(seat) if seat else None})
     # THE FILES' HISTORY, the section the unit's reviewer will read (`critic.py brief`), from the
     # same renderer under the same bounds. One corpus cache around every unit, so the Done-unit
     # corpus is walked once per dispatch rather than once per lane; opened here and nowhere
@@ -2637,7 +2648,7 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
     import reconcile  # noqa: PLC0415 - sibling; the corpus walk is the already-delivered lane's
     with sdlc_md.corpus_cache():
         for b in briefs:
-            b["history"] = reconcile.file_history_section(root, b["id"], b.pop("affects"))
+            b["history"] = reconcile.file_history_section(root, b["id"], list(b["affects"]))
     return {"briefs": briefs, "refused": refused, "seams": seams, "lessons": injected,
             "scope_note": scope_note}
 
@@ -2703,8 +2714,10 @@ def trd_constraints(root: Path, unit_text: str) -> list[dict]:
 
 def lane_brief_text(brief: dict) -> str:
     """One lane's brief as the text handed to whoever (or whatever) picks the unit up: the
-    criteria it is held to, the history of the files it touches, the proof its unit owes, the
-    standing obligations, and the lessons injected at build. Composed purely from the brief record, so the same dispatch renders
+    criteria it is held to, its Affects, the seat card to adopt, the history of the files it
+    touches, the proof its unit owes, the standing obligations, the lessons injected at build,
+    the author self-check, and the commands that run its criteria, record the self-check and
+    commit it. Composed purely from the brief record, so the same dispatch renders
     identically."""
     lines = [f"Unit: {brief['id']} ({brief.get('path') or 'path unknown'})",
              f"Acceptance criteria ({len(brief['criteria'])}) - these are the contract:"]
@@ -2716,6 +2729,19 @@ def lane_brief_text(brief: dict) -> str:
                                         "one is authored")
         lines.append(f"  {crit['ac']}: {crit['title']}")
         lines.append(f"    Verify: {declared}")
+    affects = brief.get("affects") or []
+    if affects:
+        lines.append(f"Affects ({len(affects)}) - the files this unit changes, and the only "
+                     f"ones its commit stages:")
+        lines.extend(f"  {path}" for path in affects)
+    else:
+        lines.append("Affects: NONE DECLARED - declare the files this unit changes before "
+                     "building it.")
+    card = brief.get("seat_card")
+    lines.append(f"Seat: adopt the work render of the engineering seat card {card} - it frames "
+                 f"how you build and never overrides the criteria above." if card else
+                 "Seat: no engineering seat card resolves (neither the project nor the skill "
+                 "carries one) - build from the criteria alone.")
     rules = brief.get("trd_constraints") or []
     lines.append("TRD constraints on the components this unit touches:" if rules
                  else TRD_NO_CONSTRAINTS)
@@ -2740,7 +2766,26 @@ def lane_brief_text(brief: dict) -> str:
     lines.append("Obligations on this lane:")
     lines.extend(f"  - {ob}" for ob in brief.get("obligations", ()))
     lines.extend(lessons.render_phase(brief.get("lessons") or {"phase": "build"}))
+    if brief.get("self_check"):
+        lines += ["", brief["self_check"]]
+    lines += ["", *_lane_builder_commands(brief["id"], affects)]
     return "\n".join(lines)
+
+
+def _lane_builder_commands(uid: str, affects: list[str]) -> list[str]:
+    """The builder's closing commands for `uid`: run its criteria, record its self-check, and
+    commit it by staging exactly its Affects. The commit message's shape is the project's own,
+    so only the unit id is asked of the subject."""
+    lines = [f"Then, for {uid} (the scripts are in {SKILL_ROOT / 'scripts'}):",
+             f"  Run its criteria: verify_ac.py run --id {uid}",
+             f"  Record the self-check: critic.py self-check record --unit {uid} --author <you> "
+             f"--claims CLAIMS.json --mutants MUTANTS.json"]
+    if not affects:
+        return [*lines, f"  Commit: {uid} declares no Affects, so there is no path to stage - "
+                        f"declare them first."]
+    return [*lines, f"  Commit: stage exactly the Affects above, and name {uid} in the commit "
+                    f"subject:",
+            f"    git add -- {' '.join(shlex.quote(p) for p in affects)}"]
 
 
 #: Criterion states that stop a lane returning `fixed`. Derived by SUBTRACTION from the states
@@ -12141,8 +12186,10 @@ def build_parser() -> argparse.ArgumentParser:
     ln = sub.add_parser(
         "lane",
         help="Dispatch and close ONE delegated unit of delivery. `brief` prints what each lane "
-             "is held to (its acceptance criteria, the history of its files, the proof its unit "
-             "owes, the standing obligations and the carried lessons) and REFUSES a unit whose criteria are absent "
+             "is held to (its acceptance criteria, its Affects, the engineering seat card, the "
+             "history of its files, the proof its unit owes, the standing obligations, the "
+             "carried lessons, the author self-check and the commands that run its criteria, "
+             "record the self-check and commit it) and REFUSES a unit whose criteria are absent "
              "or a placeholder. `return` runs the unit's own criteria and reports blocked on a "
              "red, unresolved or unspecified one, carrying the verifier's own output.")
     ln.add_argument("action", choices=("brief", "return"))
