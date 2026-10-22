@@ -94,6 +94,11 @@ review:
   # It was pinned at 12 for one run because the close could not converge - the count included
   # lanes the same pre-flight called advisory, so the converged branch was unreachable at any
   # cap. That is fixed (BG0635), and D0177's interim authorisation expired with it.
+  #
+  # `block`, not the shipped `report` (US1089, D0382, D0383): `critic.py brief` refuses a unit
+  # whose author has recorded no self-check (`critic.py self-check record`) of its current diff,
+  # so no reviewer here is briefed on work its author has not checked first.
+  author_self_check: block
 engagement_floor:
   # The mechanical engagement floor is grandfathered forward-only, like conformance/provenance.
   # This repo's early bugs/CRs shipped multi-file fixes with no per-unit AC (the delivery gate

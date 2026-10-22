@@ -2797,6 +2797,66 @@ def read_self_checks(repo_root: Path | str) -> list[dict]:
     return _read_rows(self_checks_path(repo_root), _SELF_CHECK_COLS)
 
 
+# --- The author's self-check, required ------------------------------------------------------
+# `critic.py brief` asks for a recorded self-check of the diff it is about to brief. A project
+# chooses what a brief without one does: `block` refuses it, `report` prints it and names the
+# missing or stale record, `off` says nothing. `report` is the default, so a project upgrading
+# is not refused on its first review; a project that wants the gate sets `block`.
+AUTHOR_SELF_CHECK_MODES = ("off", "report", "block")
+AUTHOR_SELF_CHECK_DEFAULT = "report"
+
+
+def author_self_check_mode(repo_root: Path | str) -> str:
+    """The project's `review.author_self_check`: `off`, `report` (the default) or `block`.
+
+    An unrecognised value is refused by name, never read as `off`, so a typo cannot switch the
+    gate off silently. YAML reads a bare `off` as False, so False is `off`."""
+    raw = sdlc_md.project_override(repo_root, "review.author_self_check", None)
+    if raw is None or (isinstance(raw, str) and not raw.strip()):
+        return AUTHOR_SELF_CHECK_DEFAULT
+    if raw is False:
+        return "off"
+    value = str(raw).strip().lower()
+    if value not in AUTHOR_SELF_CHECK_MODES:
+        raise ValueError(f"review.author_self_check is `{raw}`, which is not one of "
+                         f"{', '.join(AUTHOR_SELF_CHECK_MODES)} - refused rather than read as off")
+    return value
+
+
+def self_check_gap(repo_root: Path | str, unit: str) -> str | None:
+    """Why the unit has no self-check of its diff as it stands, or None when one of its rows
+    carries the digest of its Affects content now. Any matching row counts, so a diff restored
+    to one already checked needs no second record."""
+    uid = sdlc_md.norm_id(unit)
+    rows = [r for r in read_self_checks(repo_root) if sdlc_md.norm_id(r["unit"]) == uid]
+    if not rows:
+        return f"{uid} has no author self-check recorded"
+    digest = affects_digest(repo_root, unit)
+    if any(r["digest"] == digest for r in rows):
+        return None
+    last = rows[-1]
+    return (f"the self-check recorded for {uid} on {last['date']} is stale: its digest "
+            f"{last['digest']} is of an earlier diff, and the unit's Affects content now digests "
+            f"to {digest}")
+
+
+def _self_check_gate(repo_root: Path | str, unit: str) -> str | None:
+    """Apply `review.author_self_check` before a brief is printed: under `block`, print the
+    author self-check section and raise the refusal; under `report`, return the notice to print
+    after that section; otherwise None."""
+    mode = author_self_check_mode(repo_root)
+    gap = self_check_gap(repo_root, unit) if mode != "off" else None
+    if not gap:
+        return None
+    record = f"`critic.py self-check record --unit {sdlc_md.norm_id(unit)}`"
+    if mode == "block":
+        print(author_self_check(repo_root, unit), file=sys.stderr)
+        raise ValueError(f"{gap} - run the self-check above, record it with {record}, then brief "
+                         f"again (review.author_self_check: block)")
+    return (f"\nauthor self-check: {gap} - record it with {record} before the review "
+            f"(review.author_self_check: report; `block` refuses the brief)")
+
+
 def tier_for(repo_root: Path | str, unit: str) -> str:
     """The review depth this unit's RISK earns, derived from `route.estimate`'s band.
 
@@ -3670,6 +3730,7 @@ def cmd_brief(args: argparse.Namespace) -> int:
             assert_brief_practices(text)
             if tier == "full":
                 assert_brief_claim_pass(text)
+            notice = _self_check_gate(args.root, args.unit)
             print(text)
             # the footer the delivery rejoinder never printed: a re-review's verdict needs the
             # same provenance as the first one, and a fingerprint the reviewer can quote back
@@ -3678,6 +3739,8 @@ def cmd_brief(args: argparse.Namespace) -> int:
                        explicit=explicit)
             # A repair is the author's work too, so a re-review is preceded by the same check.
             print(author_self_check(args.root, args.unit), file=sys.stderr)
+            if notice:
+                print(notice, file=sys.stderr)
             how = "chosen" if explicit else "derived from the unit's risk band"
             print(f"\nreview tier: {tier} ({how})\n"
                   f"brief fingerprint: {fp}\n"
@@ -3700,6 +3763,9 @@ def cmd_brief(args: argparse.Namespace) -> int:
             assert_brief_practices(text)
             if tier == "full":
                 assert_brief_claim_pass(text)
+            # The author's recorded self-check, judged here so a refusal under `block` reaches
+            # neither stdout nor the brief notes.
+            notice = _self_check_gate(args.root, args.unit)
             print(text)
             fp = brief_fingerprint(text)
             note_brief(args.root, args.unit, args.seat, tier, fp, rejoinder=False,
@@ -3707,6 +3773,8 @@ def cmd_brief(args: argparse.Namespace) -> int:
             # The author's self-check, on stderr so the brief a reviewer reads from a file
             # carries none of it and its fingerprint is unmoved.
             print(author_self_check(args.root, args.unit), file=sys.stderr)
+            if notice:
+                print(notice, file=sys.stderr)
             # On stderr so the brief itself stays pipeable, and stated as the next command so
             # a reviewer does not have to know the flag exists. The tier is carried INTO that
             # command: a tier printed and not recorded is the state this whole flag was in.

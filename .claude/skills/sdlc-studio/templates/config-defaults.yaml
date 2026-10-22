@@ -73,6 +73,15 @@ review:
   # equal. `critic.py record` refuses a delivery round past the cap, and a REJECT at the cap
   # carries the unit. A project sets it in its own .config.yaml.
   max_rounds: 2
+  # What `critic.py brief` does when the unit has no author self-check (`critic.py self-check
+  # record`) whose digest matches the content of its Affects as they stand, first round or
+  # `--rejoinder`, at either tier:
+  #   off                say nothing of it
+  #   report  (default)  print the brief and name the missing or stale record on stderr
+  #   block              refuse: exit 2, no brief on stdout, no fingerprint noted, and the
+  #                      author self-check section printed so the author knows what to record
+  # `report` is the default so a project upgrading is not refused on its first review.
+  author_self_check: report
 
   # Requirements/spec documents (schema v3 only). A delivery diff that edits one of these
   # without a citing AC is an UNTRACED spec edit - the critic charter treats it as a blocking

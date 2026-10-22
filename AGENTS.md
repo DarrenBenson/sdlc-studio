@@ -46,6 +46,7 @@ These block. Everything else in this file is guidance.
 | `transition -> Done` | a story whose executable ACs have not passed |
 | `transition -> Fixed` | a bug nothing speaks for (no ticked criterion, no `Verify:` line), or whose recorded `verify_ac` run is red |
 | `sprint close` | an uncommitted change to a file a batch unit declares (uncovered units, unanswered items and failing lanes are recorded as known issues on the report, not refused) |
+| `critic.py brief` | a unit whose author has recorded no self-check of its current diff with `critic.py self-check record` (`review.author_self_check: block`) |
 | `sprint sign` | a report that is not the run's, a page that no longer re-derives to what was filed, a tree changed since the close, or a principal who is a unit's author or a reviewer recorded on it |
 
 **Enable the hooks once per clone: `bash tools/enable-hooks.sh`.** It installs the three tracked hooks
@@ -125,8 +126,9 @@ refusals included, with the positive control beside each one. A library test can
 missing lane, because the wiring is the part it does not exercise: `brief_fingerprint(brief(
 ...))` passed in-process for a whole sprint while `critic.py brief` printed nothing and the
 paperwork said it did. Needing a second review round to learn that is not thoroughness, it is
-verification handed to somebody else. Ungated until CR0520 ships `verify_ac lane-check`, so
-read it as a known-weak rule and do it anyway.
+verification handed to somebody else. `critic.py brief` holds it: this repository sets
+`review.author_self_check: block`, so the brief is refused until the author records that pass,
+claims and mutants, against the unit's current diff with `critic.py self-check record`.
 
 **Ship the paperwork in the same commit as the code.** Every behaviour or doc change carries
 its `changelog.d/<UNIT-ID>.md` fragment (`lessons/LL0004`).
