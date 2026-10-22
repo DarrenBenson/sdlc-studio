@@ -193,7 +193,7 @@
 | [BG1115](BG1115-a-commit-that-adds-a-subcommand-never-selects.md) | A commit that adds a subcommand never selects test_cli_grammar.py, which reaches every script through surface.enumerate_scripts, so a grammar defect is first seen by the full suite at push | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1116](BG1116-shipped-guidance-tells-a-consuming-project-s-agent.md) | Shipped guidance tells a consuming project's agent to run the full suite before every commit, which the shipped gate's per-commit selection and push-boundary suite exist to avoid | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1117](BG1117-an-author-self-check-record-binds-the-content.md) | An author self-check record binds the content of the unit's whole Affects, so a later unit's commit to a shared file makes it stale and, under block, refuses the earlier unit's brief | Open | Medium | 2026-10-22 | 2026-10-22 |
-| [BG1118](BG1118-three-behaviours-us1089-states-for-the-self-check.md) | Three behaviours US1089 states for the self-check gate are pinned by no test: a restored diff admitted by an older row, the record matched to its own unit, and the setting read case-insensitively | Open | Low | 2026-10-22 | 2026-10-22 |
+| [BG1118](BG1118-four-behaviours-us1088-and-us1089-state-for-the.md) | Four behaviours US1088 and US1089 state for the self-check record and gate are pinned by no test: a restored diff admitted by an older row, the record matched to its own unit, the setting read case-insensitively, and an uncovered first fragment refused | Open | Low | 2026-10-22 | 2026-10-22 |
 
 ## Archived Releases
 

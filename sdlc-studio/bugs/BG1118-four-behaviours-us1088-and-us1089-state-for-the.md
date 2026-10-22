@@ -1,4 +1,4 @@
-# BG1118: Three behaviours US1089 states for the self-check gate are pinned by no test: a restored diff admitted by an older row, the record matched to its own unit, and the setting read case-insensitively
+# BG1118: Four behaviours US1088 and US1089 state for the self-check record and gate are pinned by no test: a restored diff admitted by an older row, the record matched to its own unit, the setting read case-insensitively, and an uncovered first fragment refused
 
 > **Status:** Open
 > **Severity:** Low
@@ -30,6 +30,8 @@ Add the three cases in a new module beside tests/`test_critic_self_check_refusal
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_gate_cases.py::GateCaseTests::test_another_units_row_does_not_admit
 - [ ] **AC3** Given the setting written `BLOCK` or `Report`, then it is read as block or report, not refused as unknown
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_gate_cases.py::GateCaseTests::test_the_setting_is_read_case_insensitively
+- [ ] **AC4** Given a unit declaring two changelog fragments whose claims cover only the second, when its self-check is recorded, then it is refused naming the first (US1088's round-2 QA review: narrowing the skip check at critic.py:2754 to `fragments[-1:]` survives, because the two-fragment subtest leaves only the last uncovered)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_gate_cases.py::GateCaseTests::test_an_uncovered_first_fragment_is_refused
 
 ## Impact
 
@@ -40,3 +42,5 @@ Each stated behaviour can regress with the suite green.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-22 | Claude Opus 5.5 | Filed |
+| 2026-10-22 | sdlc-studio | Retitled: was 'Three behaviours US1089 states for the self-check gate are pinned by no test: a restored diff admitted by an older row, the record matched to its own unit, and the setting read case-insensitively' |
+| 2026-10-22 | sdlc | AC4 from US1088's round-2 QA review: an uncovered FIRST fragment is unpinned |
