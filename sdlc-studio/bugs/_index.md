@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 140 |
+| Open | 141 |
 | In Progress | 0 |
 | Fixed | 809 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 38 |
-| **Total** | **1121** |
+| **Total** | **1122** |
 
 ## All Bugs
 
@@ -197,6 +197,7 @@
 | [BG1119](BG1119-two-behaviours-bg1000-s-repair-states-for-per.md) | Two behaviours BG1000's repair states for per-commit selection are pinned loosely or not at all: the census header's 40-line window, and the rewritten run reason | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1120](BG1120-a-self-check-record-reads-an-author-s.md) | A self-check record reads an author's own edit made in a merge commit as another unit's, so the brief gate admits a changed diff in a project that merges | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1121](BG1121-an-author-self-check-record-still-reads-stale.md) | An author self-check record still reads stale in landing orders the per-file own-change view cannot see through: work recorded before its own commit, a cherry-pick, or another unit's hunk in a file the author also changed | Open | Low | 2026-10-22 | 2026-10-22 |
+| [BG1122](BG1122-each-meter-reading-now-re-reads-every-subagent.md) | Each meter reading now re-reads every subagent transcript from the start, so a lane, transition or report command takes about 36 s on a long session instead of 22 s | Open | Medium | 2026-10-22 | 2026-10-22 |
 
 ## Archived Releases
 

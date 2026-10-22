@@ -5,7 +5,7 @@
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/US1091.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/US1091.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_rule_marks_round_trip.py
 > **Epic:** EP0292
 > **Points:** 5
 > **Depends on:** BG1111
@@ -58,3 +58,4 @@
 | 2026-10-22 | sdlc | AC5: an open stamp on an earlier counting basis is re-derived from the transcript, never subtracted across bases (BG1111 builder's finding: RUN-01M5EM9N's open stamp) |
 | 2026-10-22 | sdlc | Points 5 -> 8 for AC5's re-derivation of an earlier-basis open stamp |
 | 2026-10-22 | sdlc | AC5 split out to US1097; Points 8 -> 5 (the oversized lens holds the push via US0854 AC1) |
+| 2026-10-22 | sdlc | Affects gains `test_lean_rule_marks_round_trip.py`: the new `PRICED_RULE` page mark belongs in BG0919's RULES table (round-1 QA review) |
