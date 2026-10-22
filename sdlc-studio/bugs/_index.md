@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 134 |
+| Open | 135 |
 | In Progress | 0 |
 | Fixed | 809 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 38 |
-| **Total** | **1115** |
+| **Total** | **1116** |
 
 ## All Bugs
 
@@ -191,6 +191,7 @@
 | [BG1113](BG1113-the-neutrality-guard-does-not-block-three-consuming.md) | The neutrality guard does not block three consuming-project names the operator ruled private, so 64 tracked files name them, nine shipped lessons among them | Open | High | 2026-10-22 | 2026-10-22 |
 | [BG1114](BG1114-critic-py-brief-spends-19-of-its-20.md) | critic.py brief spends 19 of its 20 seconds walking the artefact corpus, because it reads the files' history without the corpus cache that lane brief opens | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1115](BG1115-a-commit-that-adds-a-subcommand-never-selects.md) | A commit that adds a subcommand never selects test_cli_grammar.py, which reaches every script through surface.enumerate_scripts, so a grammar defect is first seen by the full suite at push | Open | Low | 2026-10-22 | 2026-10-22 |
+| [BG1116](BG1116-shipped-guidance-tells-a-consuming-project-s-agent.md) | Shipped guidance tells a consuming project's agent to run the full suite before every commit, which the shipped gate's per-commit selection and push-boundary suite exist to avoid | Open | Medium | 2026-10-22 | 2026-10-22 |
 
 ## Archived Releases
 

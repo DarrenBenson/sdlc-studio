@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 11 |
+| Proposed | 12 |
 | Approved | 0 |
 | In Progress | 29 |
 | Complete | 520 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 61 |
 | Blocked | 0 |
-| **Total** | **651** |
+| **Total** | **652** |
 
 ## All Changes
 
@@ -63,6 +63,7 @@
 | [CR-0649](CR0649-extend-the-doc-freshness-census-from-the-trd.md) | Extend the doc_freshness census from the TRD to the PRD and TSD, so a pinned count or stale baseline in either is caught when it drifts | Proposed | Medium | Improvement | 2026-10-19 | -- |
 | [CR-0650](CR0650-the-author-s-self-check-is-a-step.md) | The author's self-check is a step the tools run and require, not a rule an agent remembers | In Progress | High | Process | 2026-10-19 | EP0291 |
 | [CR-0651](CR0651-a-sprint-costs-what-its-work-costs-the.md) | A sprint costs what its work costs: the meter reads true, each unit is built and reviewed in a small fresh context, and a regression is caught at the close | In Progress | High | Enhancement | 2026-10-22 | EP0292 |
+| [CR-0652](CR0652-critic-py-self-check-record-has-no-surface.md) | critic.py self-check record has no surface for a documentation unit's own prose, so the claims a doc unit makes in the file it changes cannot be recorded under that file | Proposed | Low | Feature | 2026-10-22 | -- |
 
 ## Archived Releases
 

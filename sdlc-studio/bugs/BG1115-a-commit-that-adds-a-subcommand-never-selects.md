@@ -14,6 +14,8 @@
 
 Per-commit selection (gate.py `_selection_indexes`) selects a test module for a staged file through a direct import, a `load_script` literal, a `test-census-subject` header or one level of fixture import. `test_cli_grammar.py` reaches every shipped script through `surface.enumerate_scripts(DIR)` and declares only `lib/sdlc_md.py` as its census subject, so no change to a script's own parser selects it. US1088 added `critic.py self-check record` with a nested `--root` defaulting to '.': the local hook ran 94 modules and stayed green on it, and the host's full suite was the first to fail `RootPlacementConformance` (2026-10-22, 453 s on devserver1).
 
+A second instance (US1090 build, 2026-10-22): tools/tests/test_lean_commit_lanes.py reads AGENTS.md and declares no census subject, so a commit to AGENTS.md selects only the module that names it as its subject, and never runs this one.
+
 ## Steps to Reproduce
 
 Stage a change to any script's `build_parser` and run the pre-commit hook: `test_cli_grammar.py` is not among the selected modules.
@@ -28,6 +30,8 @@ Let a census header name a glob (`# test-census-subject: .claude/skills/sdlc-stu
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_census_glob.py::CensusGlobTests::test_a_glob_census_subject_selects_each_matching_path
 - [ ] **AC2** Given a staged change to .claude/skills/sdlc-studio/scripts/critic.py, selection includes `test_cli_grammar.py`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_census_glob.py::CensusGlobTests::test_a_script_change_selects_the_grammar_test
+- [ ] **AC3** Given a staged change to AGENTS.md, selection includes `tools/tests/test_lean_commit_lanes.py`, which reads AGENTS.md
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_census_glob.py::CensusGlobTests::test_an_agents_md_change_selects_the_commit_lanes_test
 
 ## Impact
 
@@ -38,3 +42,4 @@ A grammar defect in a new subcommand passes the commit hook and costs a red full
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-22 | Claude Opus 5.5 | Filed |
+| 2026-10-22 | sdlc | Second instance from US1090's build: `test_lean_commit_lanes.py` reads AGENTS.md with no census subject; AC3 and its Affects added |
