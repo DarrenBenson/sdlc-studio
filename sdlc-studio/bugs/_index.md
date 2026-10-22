@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 135 |
+| Open | 136 |
 | In Progress | 0 |
 | Fixed | 809 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 38 |
-| **Total** | **1116** |
+| **Total** | **1117** |
 
 ## All Bugs
 
@@ -192,6 +192,7 @@
 | [BG1114](BG1114-critic-py-brief-spends-19-of-its-20.md) | critic.py brief spends 19 of its 20 seconds walking the artefact corpus, because it reads the files' history without the corpus cache that lane brief opens | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1115](BG1115-a-commit-that-adds-a-subcommand-never-selects.md) | A commit that adds a subcommand never selects test_cli_grammar.py, which reaches every script through surface.enumerate_scripts, so a grammar defect is first seen by the full suite at push | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1116](BG1116-shipped-guidance-tells-a-consuming-project-s-agent.md) | Shipped guidance tells a consuming project's agent to run the full suite before every commit, which the shipped gate's per-commit selection and push-boundary suite exist to avoid | Open | Medium | 2026-10-22 | 2026-10-22 |
+| [BG1117](BG1117-an-author-self-check-record-binds-the-content.md) | An author self-check record binds the content of the unit's whole Affects, so a later unit's commit to a shared file makes it stale and, under block, refuses the earlier unit's brief | Open | Medium | 2026-10-22 | 2026-10-22 |
 
 ## Archived Releases
 
