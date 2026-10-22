@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_survives_a_later_unit.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py, changelog.d/BG1121.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_survives_a_later_unit.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py, changelog.d/BG1121.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/help/review.md, sdlc-studio/reviews/author-self-checks.md
 > **Evidence:** BG1117 QA review round 1, qa-seat-BG1117-r1, at 57a2bb7a: blocking finding 1's cases and the pre-existing US1089 case.
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio file
@@ -38,3 +38,4 @@ Authors re-record unchanged evidence in these orders, the churn BG1117 set out t
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-22 | Claude Opus 5.5 | Filed |
+| 2026-10-22 | sdlc | BG1117 round-2 QA review: help/review.md:48-49, the critic.py comment at 2690-2691 and the self-check log header (critic.py `_SELF_CHECK_HEADER` and author-self-checks.md) still say a record of committed work survives, which a cherry-pick after another unit's commit contradicts; the fix corrects them, and Affects gains the two doc files (critic.py is already declared) |
